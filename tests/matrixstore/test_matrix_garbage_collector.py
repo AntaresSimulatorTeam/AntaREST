@@ -44,12 +44,8 @@ def matrix_garbage_collector(tmp_path: Path):
         patch_service=Mock(spec=PatchService),
     )
     study_service = Mock()
-    study_service.storage_service.variant_study_service.command_factory = (
-        command_factory
-    )
-    study_service.storage_service.variant_study_service.repository = (
-        VariantStudyRepository(cache_service=Mock())
-    )
+    study_service.storage_service.variant_study_service.command_factory = command_factory
+    study_service.storage_service.variant_study_service.repository = VariantStudyRepository(cache_service=Mock())
 
     matrix_garbage_collector = MatrixGarbageCollector(
         config=mock_config, study_service=study_service, matrix_service=Mock()
@@ -68,12 +64,8 @@ def test_get_saved_matrices(
     """
     matrix_name1 = "matrix_name1"
     matrix_name2 = "matrix_name2"
-    (
-        matrix_garbage_collector.saved_matrices_path / f"{matrix_name1}.txt"
-    ).touch()
-    (
-        matrix_garbage_collector.saved_matrices_path / f"{matrix_name2}.txt"
-    ).touch()
+    (matrix_garbage_collector.saved_matrices_path / f"{matrix_name1}.txt").touch()
+    (matrix_garbage_collector.saved_matrices_path / f"{matrix_name2}.txt").touch()
 
     # Get all saved matrices
     saved_matrices = matrix_garbage_collector._get_saved_matrices()
@@ -93,22 +85,12 @@ def test_get_matrices_used_in_raw_studies(
     matrix_name3 = "matrix_name3"
     matrix_name4 = "matrix_name4"
 
-    raw_study_path = (
-        matrix_garbage_collector.managed_studies_path / "raw_study"
-    )
+    raw_study_path = matrix_garbage_collector.managed_studies_path / "raw_study"
     raw_study_path.mkdir()
-    (raw_study_path / f"{matrix_name1}.link").write_text(
-        f"matrix://{matrix_name1}"
-    )
-    (raw_study_path / f"{matrix_name2}.link").write_text(
-        f"matrix://{matrix_name2}"
-    )
-    (raw_study_path / f"{matrix_name3}.link").write_text(
-        f"matrix://{matrix_name3}"
-    )
-    (raw_study_path / f"{matrix_name4}.txt").write_text(
-        f"matrix://{matrix_name4}"
-    )
+    (raw_study_path / f"{matrix_name1}.link").write_text(f"matrix://{matrix_name1}")
+    (raw_study_path / f"{matrix_name2}.link").write_text(f"matrix://{matrix_name2}")
+    (raw_study_path / f"{matrix_name3}.link").write_text(f"matrix://{matrix_name3}")
+    (raw_study_path / f"{matrix_name4}.txt").write_text(f"matrix://{matrix_name4}")
 
     output = matrix_garbage_collector._get_raw_studies_matrices()
 
@@ -215,15 +197,9 @@ def test_get_matrices_used_in_dataset(
 
 @pytest.mark.unit_test
 def test_get_used_matrices(matrix_garbage_collector: MatrixGarbageCollector):
-    matrix_garbage_collector._get_raw_studies_matrices = Mock(
-        return_value={"matrix1", "matrix2"}
-    )
-    matrix_garbage_collector._get_variant_studies_matrices = Mock(
-        return_value={"matrix3", "matrix4"}
-    )
-    matrix_garbage_collector._get_datasets_matrices = Mock(
-        return_value={"matrix4", "matrix6"}
-    )
+    matrix_garbage_collector._get_raw_studies_matrices = Mock(return_value={"matrix1", "matrix2"})
+    matrix_garbage_collector._get_variant_studies_matrices = Mock(return_value={"matrix3", "matrix4"})
+    matrix_garbage_collector._get_datasets_matrices = Mock(return_value={"matrix4", "matrix6"})
     assert matrix_garbage_collector._get_used_matrices() == {
         "matrix1",
         "matrix2",
@@ -253,16 +229,10 @@ def test_delete_unused_saved_matrices(
 
 @pytest.mark.unit_test
 def test_clean_matrices(matrix_garbage_collector: MatrixGarbageCollector):
-    matrix_garbage_collector._get_saved_matrices = Mock(
-        return_value={"matrix1", "matrix2"}
-    )
-    matrix_garbage_collector._get_used_matrices = Mock(
-        return_value={"matrix1"}
-    )
+    matrix_garbage_collector._get_saved_matrices = Mock(return_value={"matrix1", "matrix2"})
+    matrix_garbage_collector._get_used_matrices = Mock(return_value={"matrix1"})
     matrix_garbage_collector._delete_unused_saved_matrices = Mock()
 
     matrix_garbage_collector._clean_matrices()
 
-    matrix_garbage_collector._delete_unused_saved_matrices.assert_called_once_with(
-        unused_matrices={"matrix2"}
-    )
+    matrix_garbage_collector._delete_unused_saved_matrices.assert_called_once_with(unused_matrices={"matrix2"})

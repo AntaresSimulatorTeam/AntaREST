@@ -43,9 +43,7 @@ def build_login(
         role_repo = RoleRepository()
 
         ldap_repo = UserLdapRepository()
-        ldap = LdapService(
-            config=config, users=ldap_repo, groups=group_repo, roles=role_repo
-        )
+        ldap = LdapService(config=config, users=ldap_repo, groups=group_repo, roles=role_repo)
 
         service = LoginService(
             user_repo=user_repo,
@@ -59,9 +57,7 @@ def build_login(
     if application:
 
         @application.exception_handler(AuthJWTException)
-        def authjwt_exception_handler(
-            request: Request, exc: AuthJWTException
-        ) -> Any:
+        def authjwt_exception_handler(request: Request, exc: AuthJWTException) -> Any:
             return JSONResponse(
                 status_code=HTTPStatus.UNAUTHORIZED,
                 content={"detail": exc.message},
@@ -73,11 +69,7 @@ def build_login(
         user_id = subject["id"]
         token_type = subject["type"]
         with db():
-            return (
-                token_type == "bots"
-                and service is not None
-                and not service.exists_bot(user_id)
-            )
+            return token_type == "bots" and service is not None and not service.exists_bot(user_id)
 
     if application:
         application.include_router(create_login_api(service, config))

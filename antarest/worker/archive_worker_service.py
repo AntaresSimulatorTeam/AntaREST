@@ -57,9 +57,7 @@ def run_archive_worker(args: ArgsType = None) -> None:
     workspace = namespace.workspace
     config = Config.from_yaml_file(res=res, file=config_file)
     # Handler for logging to a file, rotating the log file at certain timed intervals.
-    configure_logger(
-        config, handler_cls="logging.handlers.TimedRotatingFileHandler"
-    )
+    configure_logger(config, handler_cls="logging.handlers.TimedRotatingFileHandler")
     logger.info(f"Starting Archive Worker for {namespace}...")
     worker = create_archive_worker(config, workspace, Path(local_root))
     worker.start(threaded=False)

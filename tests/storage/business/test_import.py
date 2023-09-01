@@ -46,9 +46,7 @@ def test_import_study(tmp_path: Path) -> None:
     study_service.get.return_value = data
     study_service.get_study_path.return_value = tmp_path / "other-study"
 
-    filepath_zip = shutil.make_archive(
-        str(study_path.absolute()), "zip", study_path
-    )
+    filepath_zip = shutil.make_archive(str(study_path.absolute()), "zip", study_path)
     shutil.rmtree(study_path)
 
     path_zip = Path(filepath_zip)

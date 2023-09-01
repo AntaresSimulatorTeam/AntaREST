@@ -101,10 +101,7 @@ class CommandFactory:
         if isinstance(args, dict):
             return [self._to_single_command(command_dto.action, args)]
         elif isinstance(args, list):
-            return [
-                self._to_single_command(command_dto.action, argument)
-                for argument in args
-            ]
+            return [self._to_single_command(command_dto.action, argument) for argument in args]
         raise NotImplementedError()
 
     def to_commands(self, cmd_dto_list: List[CommandDTO]) -> List[ICommand]:

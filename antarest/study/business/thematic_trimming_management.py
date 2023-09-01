@@ -191,11 +191,7 @@ class ThematicTrimmingManager:
         study_ver = file_study.config.version
         config = file_study.tree.get(GENERAL_DATA_PATH.split("/"))
         trimming_config = config.get("variables selection", None)
-        selected_vars_reset = (
-            trimming_config.get("selected_vars_reset", True)
-            if trimming_config
-            else None
-        )
+        selected_vars_reset = trimming_config.get("selected_vars_reset", True) if trimming_config else None
 
         def get_value(field_info: FieldInfo) -> Any:
             if study_ver < field_info.get("start_version", -1):  # type: ignore
@@ -212,13 +208,9 @@ class ThematicTrimmingManager:
                 else var_name in trimming_config.get("select_var +", [])
             )
 
-        return ThematicTrimmingFormFields.construct(
-            **{name: get_value(info) for name, info in FIELDS_INFO.items()}
-        )
+        return ThematicTrimmingFormFields.construct(**{name: get_value(info) for name, info in FIELDS_INFO.items()})
 
-    def set_field_values(
-        self, study: Study, field_values: ThematicTrimmingFormFields
-    ) -> None:
+    def set_field_values(self, study: Study, field_values: ThematicTrimmingFormFields) -> None:
         """
         Set Thematic Trimming config from the webapp form
         """

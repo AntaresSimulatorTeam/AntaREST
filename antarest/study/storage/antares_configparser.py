@@ -50,9 +50,7 @@ class AntaresConfigParser(configparser.RawConfigParser):
 
     def __init__(self, *args, **kwargs) -> None:  # type: ignore
         super().__init__(*args, **kwargs)
-        self._proxies[self.default_section] = AntaresSectionProxy(
-            self, self.default_section
-        )
+        self._proxies[self.default_section] = AntaresSectionProxy(self, self.default_section)
 
     def add_section(self, section: str) -> None:
         super().add_section(section)

@@ -25,14 +25,10 @@ def assert_with_errors(
     url = url[len("/v1/studies/") :]
     uuid, url = url.split("/raw?path=")
     params = RequestParameters(user=ADMIN)
-    res = storage_service.edit_study(
-        uuid=uuid, url=url, new=new, params=params
-    )
+    res = storage_service.edit_study(uuid=uuid, url=url, new=new, params=params)
     assert res == new
 
-    res = storage_service.get(
-        uuid=uuid, url=url, depth=-1, formatted=True, params=params
-    )
+    res = storage_service.get(uuid=uuid, url=url, depth=-1, formatted=True, params=params)
     if expected is not None:
         assert res == expected
     else:
@@ -409,9 +405,7 @@ def test_sta_mini_study_antares(storage_service, url: str, new: SUB_JSON):
         ),
     ],
 )
-def test_sta_mini_input(
-    storage_service, url: str, new: SUB_JSON, expected: Optional[SUB_JSON]
-):
+def test_sta_mini_input(storage_service, url: str, new: SUB_JSON, expected: Optional[SUB_JSON]):
     assert_with_errors(
         storage_service=storage_service,
         url=url,

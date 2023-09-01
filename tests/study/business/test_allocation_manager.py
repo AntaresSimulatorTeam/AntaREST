@@ -160,9 +160,7 @@ class TestAllocationMatrix:
 
 
 # noinspection SpellCheckingInspection
-EXECUTE_OR_ADD_COMMANDS = (
-    "antarest.study.business.allocation_management.execute_or_add_commands"
-)
+EXECUTE_OR_ADD_COMMANDS = "antarest.study.business.allocation_management.execute_or_add_commands"
 
 
 class TestAllocationManager:
@@ -178,11 +176,7 @@ class TestAllocationManager:
                     command_context=Mock(spec=CommandContext),
                 ),
             ),
-            get_storage=Mock(
-                return_value=Mock(
-                    spec=RawStudyService, get_raw=Mock(spec=FileStudy)
-                )
-            ),
+            get_storage=Mock(return_value=Mock(spec=RawStudyService, get_raw=Mock(spec=FileStudy))),
         )
 
     # noinspection PyArgumentList
@@ -208,9 +202,7 @@ class TestAllocationManager:
         db_session.commit()
         return raw_study.id
 
-    def test_get_allocation_matrix__nominal_case(
-        self, db_session, study_storage_service, study_uuid
-    ):
+    def test_get_allocation_matrix__nominal_case(self, db_session, study_storage_service, study_uuid):
         # The study must be fetched from the database
         study: RawStudy = db_session.query(Study).get(study_uuid)
 
@@ -253,9 +245,7 @@ class TestAllocationManager:
             ],
         )
 
-    def test_get_allocation_matrix__no_allocation(
-        self, db_session, study_storage_service, study_uuid
-    ):
+    def test_get_allocation_matrix__no_allocation(self, db_session, study_storage_service, study_uuid):
         # The study must be fetched from the database
         study: RawStudy = db_session.query(Study).get(study_uuid)
 
@@ -282,9 +272,7 @@ class TestAllocationManager:
             manager.get_allocation_matrix(study, all_areas)
         assert re.fullmatch(r"Allocation data.*is not found", ctx.value.detail)
 
-    def test_get_allocation_form_fields__nominal_case(
-        self, db_session, study_storage_service, study_uuid
-    ):
+    def test_get_allocation_form_fields__nominal_case(self, db_session, study_storage_service, study_uuid):
         study: RawStudy = db_session.query(Study).get(study_uuid)
         allocation_cfg = {
             "n": {"[allocation]": {"n": 1}},
@@ -309,9 +297,7 @@ class TestAllocationManager:
         area_id = "n"
         manager = AllocationManager(study_storage_service)
 
-        fields = manager.get_allocation_form_fields(
-            all_areas=all_areas, study=study, area_id=area_id
-        )
+        fields = manager.get_allocation_form_fields(all_areas=all_areas, study=study, area_id=area_id)
 
         expected_allocation = [
             AllocationField.construct(area_id=area, coefficient=value)
@@ -319,9 +305,7 @@ class TestAllocationManager:
         ]
         assert fields.allocation == expected_allocation
 
-    def test_get_allocation_form_fields__no_allocation_data(
-        self, db_session, study_storage_service, study_uuid
-    ):
+    def test_get_allocation_form_fields__no_allocation_data(self, db_session, study_storage_service, study_uuid):
         study: RawStudy = db_session.query(Study).get(study_uuid)
         allocation_cfg = {"n": {}}
         storage = study_storage_service.get_storage(study)
@@ -339,14 +323,10 @@ class TestAllocationManager:
         manager = AllocationManager(study_storage_service)
 
         with pytest.raises(AllocationDataNotFound) as ctx:
-            manager.get_allocation_form_fields(
-                all_areas=all_areas, study=study, area_id=area_id
-            )
+            manager.get_allocation_form_fields(all_areas=all_areas, study=study, area_id=area_id)
         assert "n" in ctx.value.detail
 
-    def test_set_allocation_form_fields__nominal_case(
-        self, db_session, study_storage_service, study_uuid
-    ):
+    def test_set_allocation_form_fields__nominal_case(self, db_session, study_storage_service, study_uuid):
         study: RawStudy = db_session.query(Study).get(study_uuid)
         all_areas = [
             AreaInfoDTO(id="n", name="North", type=AreaType.AREA),
@@ -367,15 +347,9 @@ class TestAllocationManager:
                     area_id=area_id,
                     data=AllocationFormFields.construct(
                         allocation=[
-                            AllocationField.construct(
-                                area_id="e", coefficient=0.5
-                            ),
-                            AllocationField.construct(
-                                area_id="s", coefficient=0.25
-                            ),
-                            AllocationField.construct(
-                                area_id="w", coefficient=0.25
-                            ),
+                            AllocationField.construct(area_id="e", coefficient=0.5),
+                            AllocationField.construct(area_id="s", coefficient=0.25),
+                            AllocationField.construct(area_id="w", coefficient=0.25),
                         ],
                     ),
                 )
@@ -390,9 +364,7 @@ class TestAllocationManager:
         assert cmd.target == f"input/hydro/allocation/{area_id}/[allocation]"
         assert cmd.data == {"e": 0.5, "s": 0.25, "w": 0.25}
 
-    def test_set_allocation_form_fields__no_allocation_data(
-        self, db_session, study_storage_service, study_uuid
-    ):
+    def test_set_allocation_form_fields__no_allocation_data(self, db_session, study_storage_service, study_uuid):
         study: RawStudy = db_session.query(Study).get(study_uuid)
 
         all_areas = [
@@ -417,23 +389,15 @@ class TestAllocationManager:
                         area_id=area_id,
                         data=AllocationFormFields.construct(
                             allocation=[
-                                AllocationField.construct(
-                                    area_id="e", coefficient=0.5
-                                ),
-                                AllocationField.construct(
-                                    area_id="s", coefficient=0.25
-                                ),
-                                AllocationField.construct(
-                                    area_id="w", coefficient=0.25
-                                ),
+                                AllocationField.construct(area_id="e", coefficient=0.5),
+                                AllocationField.construct(area_id="s", coefficient=0.25),
+                                AllocationField.construct(area_id="w", coefficient=0.25),
                             ],
                         ),
                     )
         assert "n" in ctx.value.detail
 
-    def test_set_allocation_form_fields__invalid_area_ids(
-        self, db_session, study_storage_service, study_uuid
-    ):
+    def test_set_allocation_form_fields__invalid_area_ids(self, db_session, study_storage_service, study_uuid):
         study: RawStudy = db_session.query(Study).get(study_uuid)
 
         all_areas = [
@@ -450,15 +414,11 @@ class TestAllocationManager:
             allocation=[
                 AllocationField.construct(area_id="e", coefficient=0.5),
                 AllocationField.construct(area_id="s", coefficient=0.25),
-                AllocationField.construct(
-                    area_id="invalid_area", coefficient=0.25
-                ),
+                AllocationField.construct(area_id="invalid_area", coefficient=0.25),
             ]
         )
 
         with pytest.raises(AreaNotFound) as ctx:
-            manager.set_allocation_form_fields(
-                all_areas=all_areas, study=study, area_id=area_id, data=data
-            )
+            manager.set_allocation_form_fields(all_areas=all_areas, study=study, area_id=area_id, data=data)
 
         assert "invalid_area" in ctx.value.detail

@@ -84,9 +84,7 @@ def init_db(
         if config.db.pool_use_lifo:
             extra["pool_use_lifo"] = config.db.pool_use_lifo
 
-    engine = create_engine(
-        config.db.db_url, echo=config.debug, connect_args=connect_args, **extra
-    )
+    engine = create_engine(config.db.db_url, echo=config.debug, connect_args=connect_args, **extra)
 
     session_args = {
         "autocommit": False,
@@ -100,17 +98,13 @@ def init_db(
             session_args=session_args,
         )
     else:
-        DBSessionMiddleware(
-            None, custom_engine=engine, session_args=session_args
-        )
+        DBSessionMiddleware(None, custom_engine=engine, session_args=session_args)
 
 
 def create_event_bus(
     application: Optional[FastAPI], config: Config
 ) -> Tuple[IEventBus, Optional[redis.Redis]]:  # type: ignore
-    redis_client = (
-        new_redis_instance(config.redis) if config.redis is not None else None
-    )
+    redis_client = new_redis_instance(config.redis) if config.redis is not None else None
     return (
         build_eventbus(application, config, True, redis_client),
         redis_client,
@@ -119,20 +113,10 @@ def create_event_bus(
 
 def create_core_services(
     application: Optional[FastAPI], config: Config
-) -> Tuple[
-    ICache,
-    IEventBus,
-    ITaskService,
-    FileTransferManager,
-    LoginService,
-    MatrixService,
-    StudyService,
-]:
+) -> Tuple[ICache, IEventBus, ITaskService, FileTransferManager, LoginService, MatrixService, StudyService,]:
     event_bus, redis_client = create_event_bus(application, config)
     cache = build_cache(config=config, redis_client=redis_client)
-    filetransfer_service = build_filetransfer_service(
-        application, event_bus, config
-    )
+    filetransfer_service = build_filetransfer_service(application, event_bus, config)
     task_service = build_taskjob_manager(application, config, event_bus)
     login_service = build_login(application, config, event_bus=event_bus)
     matrix_service = build_matrix_service(
@@ -176,9 +160,7 @@ def create_watcher(
             task_service=study_service.task_service,
         )
     else:
-        _, _, task_service, _, _, _, study_service = create_core_services(
-            application, config
-        )
+        _, _, task_service, _, _, _, study_service = create_core_services(application, config)
         watcher = Watcher(
             config=config,
             study_service=study_service,
@@ -186,9 +168,7 @@ def create_watcher(
         )
 
     if application:
-        application.include_router(
-            create_watcher_routes(watcher=watcher, config=config)
-        )
+        application.include_router(create_watcher_routes(watcher=watcher, config=config))
 
     return watcher
 
@@ -206,9 +186,7 @@ def create_matrix_gc(
             matrix_service=matrix_service,
         )
     else:
-        _, _, _, _, _, matrix_service, study_service = create_core_services(
-            application, config
-        )
+        _, _, _, _, _, matrix_service, study_service = create_core_services(application, config)
         return MatrixGarbageCollector(
             config=config,
             study_service=study_service,
@@ -237,9 +215,7 @@ def create_simulator_worker(
     return SimulatorWorker(event_bus, matrix_service, config)
 
 
-def create_services(
-    config: Config, application: Optional[FastAPI], create_all: bool = False
-) -> Dict[str, Any]:
+def create_services(config: Config, application: Optional[FastAPI], create_all: bool = False) -> Dict[str, Any]:
     services: Dict[str, Any] = {}
 
     (
@@ -252,9 +228,7 @@ def create_services(
         study_service,
     ) = create_core_services(application, config)
 
-    maintenance_service = build_maintenance_manager(
-        application, config=config, cache=cache, event_bus=event_bus
-    )
+    maintenance_service = build_maintenance_manager(application, config=config, cache=cache, event_bus=event_bus)
 
     launcher = build_launcher(
         application,
@@ -266,16 +240,10 @@ def create_services(
         cache=cache,
     )
 
-    watcher = create_watcher(
-        config=config, application=application, study_service=study_service
-    )
+    watcher = create_watcher(config=config, application=application, study_service=study_service)
     services["watcher"] = watcher
 
-    if (
-        config.server.services
-        and Module.MATRIX_GC.value in config.server.services
-        or create_all
-    ):
+    if config.server.services and Module.MATRIX_GC.value in config.server.services or create_all:
         matrix_garbage_collector = create_matrix_gc(
             config=config,
             application=application,
@@ -284,11 +252,7 @@ def create_services(
         )
         services["matrix_gc"] = matrix_garbage_collector
 
-    if (
-        config.server.services
-        and Module.AUTO_ARCHIVER.value in config.server.services
-        or create_all
-    ):
+    if config.server.services and Module.AUTO_ARCHIVER.value in config.server.services or create_all:
         auto_archiver = AutoArchiveService(study_service, config)
         services["auto_archiver"] = auto_archiver
 

@@ -24,9 +24,7 @@ class MatrixManagerError(Exception):
 
 
 class MatrixEditError(MatrixManagerError):
-    def __init__(
-        self, instruction: MatrixEditInstruction, reason: str
-    ) -> None:
+    def __init__(self, instruction: MatrixEditInstruction, reason: str) -> None:
         msg = f"Cannot edit matrix using {instruction}: {reason}"
         super().__init__(msg)
 
@@ -77,18 +75,14 @@ def update_matrix_content_with_coordinates(
 ) -> pd.DataFrame:
     for row, column in coordinates:
         try:
-            df.iat[row, column] = operation.compute(
-                df.iat[row, column], use_coords=True
-            )
+            df.iat[row, column] = operation.compute(df.iat[row, column], use_coords=True)
         except IndexError as exc:
             raise MatrixIndexError(operation, (row, column), exc) from None
     # noinspection PyTypeChecker
     return df.astype(dict(df.dtypes))
 
 
-def group_by_slices(
-    cells: List[Tuple[int, int]]
-) -> List[Tuple[Tuple[int, int], Tuple[int, int]]]:
+def group_by_slices(cells: List[Tuple[int, int]]) -> List[Tuple[Tuple[int, int], Tuple[int, int]]]:
     """
     Groups the given cells into rectangular slices based on their coordinates.
 
@@ -237,9 +231,7 @@ class MatrixManager:
         logger.info(f"Starting matrix update for {study.id}...")
         storage_service = self.storage_service.get_storage(study)
         file_study = storage_service.get_raw(study)
-        matrix_service = (
-            self.storage_service.variant_study_service.command_factory.command_context.matrix_service
-        )
+        matrix_service = self.storage_service.variant_study_service.command_factory.command_context.matrix_service
 
         matrix_node = file_study.tree.get_node(url=path.split("/"))
 

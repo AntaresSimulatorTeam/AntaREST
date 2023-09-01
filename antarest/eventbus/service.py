@@ -13,16 +13,12 @@ logger = logging.getLogger(__name__)
 
 
 class EventBusService(IEventBus):
-    def __init__(
-        self, backend: IEventBusBackend, autostart: bool = True
-    ) -> None:
+    def __init__(self, backend: IEventBusBackend, autostart: bool = True) -> None:
         self.backend = backend
-        self.listeners: Dict[
-            EventType, Dict[str, Callable[[Event], Awaitable[None]]]
-        ] = {ev_type: {} for ev_type in EventType}
-        self.consumers: Dict[
-            str, Dict[str, Callable[[Event], Awaitable[None]]]
-        ] = {}
+        self.listeners: Dict[EventType, Dict[str, Callable[[Event], Awaitable[None]]]] = {
+            ev_type: {} for ev_type in EventType
+        }
+        self.consumers: Dict[str, Dict[str, Callable[[Event], Awaitable[None]]]] = {}
 
         self.lock = threading.Lock()
         if autostart:
@@ -34,9 +30,7 @@ class EventBusService(IEventBus):
     def queue(self, event: Event, queue: str) -> None:
         self.backend.queue_event(event, queue)
 
-    def add_queue_consumer(
-        self, listener: Callable[[Event], Awaitable[None]], queue: str
-    ) -> str:
+    def add_queue_consumer(self, listener: Callable[[Event], Awaitable[None]], queue: str) -> str:
         with self.lock:
             listener_id = str(uuid.uuid4())
             if queue not in self.consumers:
@@ -74,9 +68,7 @@ class EventBusService(IEventBus):
             try:
                 await self._on_events()
             except Exception as e:
-                logger.error(
-                    "Unexpected error when processing events", exc_info=e
-                )
+                logger.error("Unexpected error when processing events", exc_info=e)
 
     async def _on_events(self) -> None:
         with self.lock:
@@ -86,9 +78,7 @@ class EventBusService(IEventBus):
                     while event is not None:
                         try:
                             await list(self.consumers[queue].values())[
-                                random.randint(
-                                    0, len(self.consumers[queue]) - 1
-                                )
+                                random.randint(0, len(self.consumers[queue]) - 1)
                             ](event)
                         except Exception as ex:
                             logger.error(
@@ -102,9 +92,7 @@ class EventBusService(IEventBus):
                     responses = await asyncio.gather(
                         *[
                             listener(e)
-                            for listener in list(
-                                self.listeners[e.type].values()
-                            )
+                            for listener in list(self.listeners[e.type].values())
                             + list(self.listeners[EventType.ANY].values())
                         ]
                     )
@@ -117,9 +105,7 @@ class EventBusService(IEventBus):
             self.backend.clear_events()
 
     def _async_loop(self, new_loop: bool = True) -> None:
-        loop = (
-            asyncio.new_event_loop() if new_loop else asyncio.get_event_loop()
-        )
+        loop = asyncio.new_event_loop() if new_loop else asyncio.get_event_loop()
         loop.run_until_complete(self._run_loop())
 
     def start(self, threaded: bool = True) -> None:

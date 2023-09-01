@@ -23,11 +23,9 @@ class TestVersionInfo:
 
     @pytest.mark.unit_test
     def test_get_commit_id__commit_id__exist(self, tmp_path) -> None:
-        
         path_commit_id = tmp_path.joinpath("commit_id")
         path_commit_id.write_text("6d891aba6e4a1c3a6f43b8ca00b021a20d319091")
-        assert (get_commit_id(tmp_path) == "6d891aba6e4a1c3a6f43b8ca00b021a20d319091")
-        
+        assert get_commit_id(tmp_path) == "6d891aba6e4a1c3a6f43b8ca00b021a20d319091"
 
     @pytest.mark.unit_test
     def test_get_commit_id__git_call_ok(self, tmp_path) -> None:

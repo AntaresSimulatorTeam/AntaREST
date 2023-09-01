@@ -27,9 +27,7 @@ class CreateLink(ICommand):
     indirect: Optional[Union[List[List[MatrixData]], str]] = None
 
     def __init__(self, **data: Any) -> None:
-        super().__init__(
-            command_name=CommandName.CREATE_LINK, version=1, **data
-        )
+        super().__init__(command_name=CommandName.CREATE_LINK, version=1, **data)
 
     @validator("series", "direct", "indirect", always=True)
     def validate_series(
@@ -43,9 +41,7 @@ class CreateLink(ICommand):
             raise ValueError("Cannot create link on same node")
         return values
 
-    def _create_link_in_config(
-        self, area_from: str, area_to: str, study_data: FileStudyTreeConfig
-    ) -> None:
+    def _create_link_in_config(self, area_from: str, area_to: str, study_data: FileStudyTreeConfig) -> None:
         self.parameters = self.parameters or {}
         study_data.areas[area_from].links[area_to] = Link(
             filters_synthesis=[
@@ -109,9 +105,7 @@ class CreateLink(ICommand):
             ),
         }
 
-    def _apply_config(
-        self, study_data: FileStudyTreeConfig
-    ) -> Tuple[CommandOutput, Dict[str, Any]]:
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         if self.area1 not in study_data.areas:
             return (
                 CommandOutput(
@@ -157,9 +151,7 @@ class CreateLink(ICommand):
 
         self._create_link_in_config(area_from, area_to, study_data)
 
-        if (
-            study_data.path / "input" / "links" / area_from / f"{area_to}.txt"
-        ).exists():
+        if (study_data.path / "input" / "links" / area_from / f"{area_to}.txt").exists():
             return (
                 CommandOutput(
                     status=False,
@@ -187,35 +179,21 @@ class CreateLink(ICommand):
         self.parameters = self.parameters or {}
         link_property = CreateLink.generate_link_properties(self.parameters)
 
-        study_data.tree.save(
-            link_property, ["input", "links", area_from, "properties", area_to]
-        )
-        self.series = self.series or (
-            self.command_context.generator_matrix_constants.get_link(
-                version=version
-            )
-        )
-        self.direct = self.direct or (
-            self.command_context.generator_matrix_constants.get_link_direct()
-        )
-        self.indirect = self.indirect or (
-            self.command_context.generator_matrix_constants.get_link_indirect()
-        )
+        study_data.tree.save(link_property, ["input", "links", area_from, "properties", area_to])
+        self.series = self.series or (self.command_context.generator_matrix_constants.get_link(version=version))
+        self.direct = self.direct or (self.command_context.generator_matrix_constants.get_link_direct())
+        self.indirect = self.indirect or (self.command_context.generator_matrix_constants.get_link_indirect())
 
         assert type(self.series) is str
         if version < 820:
-            study_data.tree.save(
-                self.series, ["input", "links", area_from, area_to]
-            )
+            study_data.tree.save(self.series, ["input", "links", area_from, area_to])
         else:
             study_data.tree.save(
                 self.series,
                 ["input", "links", area_from, f"{area_to}_parameters"],
             )
 
-            study_data.tree.save(
-                {}, ["input", "links", area_from, "capacities"]
-            )
+            study_data.tree.save({}, ["input", "links", area_from, "capacities"])
             if self.direct:
                 assert isinstance(self.direct, str)
                 study_data.tree.save(
@@ -263,11 +241,7 @@ class CreateLink(ICommand):
 
     def match_signature(self) -> str:
         return str(
-            self.command_name.value
-            + MATCH_SIGNATURE_SEPARATOR
-            + self.area1
-            + MATCH_SIGNATURE_SEPARATOR
-            + self.area2
+            self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.area1 + MATCH_SIGNATURE_SEPARATOR + self.area2
         )
 
     def match(self, other: ICommand, equal: bool = False) -> bool:
@@ -292,9 +266,7 @@ class CreateLink(ICommand):
         commands: List[ICommand] = []
         area_from, area_to = sorted([self.area1, self.area2])
         if self.parameters != other.parameters:
-            link_property = CreateLink.generate_link_properties(
-                other.parameters or {}
-            )
+            link_property = CreateLink.generate_link_properties(other.parameters or {})
             commands.append(
                 UpdateConfig(
                     target=f"input/links/{area_from}/properties/{area_to}",

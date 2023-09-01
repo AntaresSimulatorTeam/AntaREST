@@ -78,9 +78,7 @@ class TestFetchRawData:
         user_folder_dir = study_dir.joinpath("user/unknown")
         for file_path in user_folder_dir.glob("*.*"):
             rel_path = file_path.relative_to(study_dir)
-            query_string = urlencode(
-                {"path": f"/{rel_path.as_posix()}", "depth": 1}
-            )
+            query_string = urlencode({"path": f"/{rel_path.as_posix()}", "depth": 1})
             res = client.get(
                 f"/v1/studies/{study_id}/raw?{query_string}",
                 headers={"Authorization": f"Bearer {user_access_token}"},
@@ -94,9 +92,7 @@ class TestFetchRawData:
         user_folder_dir = study_dir.joinpath("user/bad")
         for file_path in user_folder_dir.glob("*.*"):
             rel_path = file_path.relative_to(study_dir)
-            query_string = urlencode(
-                {"path": f"/{rel_path.as_posix()}", "depth": 1}
-            )
+            query_string = urlencode({"path": f"/{rel_path.as_posix()}", "depth": 1})
             res = client.get(
                 f"/v1/studies/{study_id}/raw?{query_string}",
                 headers={"Authorization": f"Bearer {user_access_token}"},

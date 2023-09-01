@@ -21,9 +21,7 @@ class RemoveRenewablesCluster(ICommand):
             **data,
         )
 
-    def _apply_config(
-        self, study_data: FileStudyTreeConfig
-    ) -> Tuple[CommandOutput, Dict[str, Any]]:
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         """
         Applies configuration changes to the study data: remove the renewable clusters from the storages list.
 
@@ -36,50 +34,32 @@ class RemoveRenewablesCluster(ICommand):
         """
         # Search the Area in the configuration
         if self.area_id not in study_data.areas:
-            message = (
-                f"Area '{self.area_id}' does not exist"
-                f" in the study configuration."
-            )
+            message = f"Area '{self.area_id}' does not exist in the study configuration."
             return CommandOutput(status=False, message=message), {}
         area: Area = study_data.areas[self.area_id]
 
         # Search the Renewable cluster in the area
         renewable = next(
-            iter(
-                renewable
-                for renewable in area.renewables
-                if renewable.id == self.cluster_id
-            ),
+            iter(renewable for renewable in area.renewables if renewable.id == self.cluster_id),
             None,
         )
         if renewable is None:
-            message = (
-                f"Renewable cluster '{self.cluster_id}' does not exist"
-                f" in the area '{self.area_id}'."
-            )
+            message = f"Renewable cluster '{self.cluster_id}' does not exist in the area '{self.area_id}'."
             return CommandOutput(status=False, message=message), {}
 
         for renewable in area.renewables:
             if renewable.id == self.cluster_id:
                 break
         else:
-            message = (
-                f"Renewable cluster '{self.cluster_id}' does not exist"
-                f" in the area '{self.area_id}'."
-            )
+            message = f"Renewable cluster '{self.cluster_id}' does not exist in the area '{self.area_id}'."
             return CommandOutput(status=False, message=message), {}
 
         # Remove the Renewable cluster from the configuration
         area.renewables.remove(renewable)
 
-        remove_area_cluster_from_binding_constraints(
-            study_data, self.area_id, self.cluster_id
-        )
+        remove_area_cluster_from_binding_constraints(study_data, self.area_id, self.cluster_id)
 
-        message = (
-            f"Renewable cluster '{self.cluster_id}' removed"
-            f" from the area '{self.area_id}'."
-        )
+        message = f"Renewable cluster '{self.cluster_id}' removed from the area '{self.area_id}'."
         return CommandOutput(status=True, message=message), {}
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
@@ -96,7 +76,7 @@ class RemoveRenewablesCluster(ICommand):
         # It is required to delete the files and folders that correspond to the renewable cluster
         # BEFORE updating the configuration, as we need the configuration to do so.
         # Specifically, deleting the time series uses the list of renewable clusters from the configuration.
-        
+
         paths = [
             ["input", "renewables", "clusters", self.area_id, "list", self.cluster_id],
             ["input", "renewables", "series", self.area_id, self.cluster_id],
@@ -104,7 +84,7 @@ class RemoveRenewablesCluster(ICommand):
         area: Area = study_data.config.areas[self.area_id]
         if len(area.renewables) == 1:
             paths.append(["input", "renewables", "series", self.area_id])
-        
+
         for path in paths:
             study_data.tree.delete(path)
         # Deleting the renewable cluster in the configuration must be done AFTER
@@ -129,10 +109,7 @@ class RemoveRenewablesCluster(ICommand):
     def match(self, other: ICommand, equal: bool = False) -> bool:
         if not isinstance(other, RemoveRenewablesCluster):
             return False
-        return (
-            self.cluster_id == other.cluster_id
-            and self.area_id == other.area_id
-        )
+        return self.cluster_id == other.cluster_id and self.area_id == other.area_id
 
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:
         return []

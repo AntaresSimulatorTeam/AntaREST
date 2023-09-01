@@ -285,9 +285,7 @@ class TestSTStorage:
         obj = res.json()
         description = obj["description"]
         assert siemens_battery_id in description
-        assert re.search(
-            r"fields of storage", description, flags=re.IGNORECASE
-        )
+        assert re.search(r"fields of storage", description, flags=re.IGNORECASE)
         assert re.search(r"not found", description, flags=re.IGNORECASE)
 
         assert res.status_code == 404, res.json()
@@ -376,9 +374,7 @@ class TestSTStorage:
         assert res.status_code == 422, res.json()
         obj = res.json()
         description = obj["description"]
-        assert re.search(
-            r"not a valid enumeration member", description, flags=re.IGNORECASE
-        )
+        assert re.search(r"not a valid enumeration member", description, flags=re.IGNORECASE)
 
         # Check the put with the wrong area_id
         res = client.patch(
@@ -418,9 +414,7 @@ class TestSTStorage:
         obj = res.json()
         description = obj["description"]
         assert siemens_battery_id in description
-        assert re.search(
-            r"fields of storage", description, flags=re.IGNORECASE
-        )
+        assert re.search(r"fields of storage", description, flags=re.IGNORECASE)
         assert re.search(r"not found", description, flags=re.IGNORECASE)
 
         # Check the put with the wrong study_id

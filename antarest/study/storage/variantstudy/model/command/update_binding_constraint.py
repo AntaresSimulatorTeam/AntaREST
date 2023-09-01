@@ -45,15 +45,11 @@ class UpdateBindingConstraint(ICommand):
             return validate_matrix(v, values)
         return None
 
-    def _apply_config(
-        self, study_data: FileStudyTreeConfig
-    ) -> Tuple[CommandOutput, Dict[str, Any]]:
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         return CommandOutput(status=True), {}
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
-        binding_constraints = study_data.tree.get(
-            ["input", "bindingconstraints", "bindingconstraints"]
-        )
+        binding_constraints = study_data.tree.get(["input", "bindingconstraints", "bindingconstraints"])
 
         binding: Optional[JSON] = None
         new_key: Optional[str] = None
@@ -103,9 +99,7 @@ class UpdateBindingConstraint(ICommand):
         )
 
     def match_signature(self) -> str:
-        return str(
-            self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.id
-        )
+        return str(self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.id)
 
     def match(self, other: ICommand, equal: bool = False) -> bool:
         if not isinstance(other, UpdateBindingConstraint):

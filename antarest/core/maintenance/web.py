@@ -12,9 +12,7 @@ from antarest.login.auth import Auth
 logger = logging.getLogger(__name__)
 
 
-def create_maintenance_api(
-    service: MaintenanceService, config: Config
-) -> APIRouter:
+def create_maintenance_api(service: MaintenanceService, config: Config) -> APIRouter:
     """
     Endpoints login implementation
     Args:

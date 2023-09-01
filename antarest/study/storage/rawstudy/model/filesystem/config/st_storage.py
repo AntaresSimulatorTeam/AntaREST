@@ -110,7 +110,5 @@ class STStorageConfig(BaseModel):
         if storage_id := transform_name_to_id(storage_name):
             values["id"] = storage_id
         else:
-            raise ValueError(
-                f"Invalid short term storage name '{storage_name}'."
-            )
+            raise ValueError(f"Invalid short term storage name '{storage_name}'.")
         return values

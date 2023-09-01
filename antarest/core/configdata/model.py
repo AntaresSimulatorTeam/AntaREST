@@ -22,11 +22,7 @@ class ConfigData(Base):  # type: ignore
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, ConfigData):
             return False
-        return bool(
-            other.key == self.key
-            and other.value == self.value
-            and other.owner == self.owner
-        )
+        return bool(other.key == self.key and other.value == self.value and other.owner == self.owner)
 
     def __repr__(self) -> str:
         return f"key={self.key}, value={self.value}, owner={self.owner}"

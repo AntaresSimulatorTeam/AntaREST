@@ -31,14 +31,10 @@ class CreateRenewablesCluster(ICommand):
     def validate_cluster_name(cls, val: str) -> str:
         valid_name = transform_name_to_id(val, lower=False)
         if valid_name != val:
-            raise ValueError(
-                "Area name must only contains [a-zA-Z0-9],&,-,_,(,) characters"
-            )
+            raise ValueError("Area name must only contains [a-zA-Z0-9],&,-,_,(,) characters")
         return val
 
-    def _apply_config(
-        self, study_data: FileStudyTreeConfig
-    ) -> Tuple[CommandOutput, Dict[str, Any]]:
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         if study_data.enr_modelling != ENR_MODELLING.CLUSTERS.value:
             message = (
                 f"Parameter 'renewable-generation-modelling'"
@@ -54,14 +50,10 @@ class CreateRenewablesCluster(ICommand):
         cluster_id = transform_name_to_id(self.cluster_name)
         for cluster in study_data.areas[self.area_id].renewables:
             if cluster.id == cluster_id:
-                message = (
-                    f"Renewable cluster '{self.cluster_name}' already exist"
-                )
+                message = f"Renewable cluster '{self.cluster_name}' already exist"
                 return CommandOutput(status=False, message=message), {}
 
-        study_data.areas[self.area_id].renewables.append(
-            Cluster(id=cluster_id, name=self.cluster_name)
-        )
+        study_data.areas[self.area_id].renewables.append(Cluster(id=cluster_id, name=self.cluster_name))
         message = f"Renewable cluster '{self.cluster_name}' added to area '{self.area_id}'"
         return (
             CommandOutput(status=True, message=message),
@@ -75,9 +67,7 @@ class CreateRenewablesCluster(ICommand):
 
         cluster_id = data["cluster_id"]
 
-        cluster_list_config = study_data.tree.get(
-            ["input", "renewables", "clusters", self.area_id, "list"]
-        )
+        cluster_list_config = study_data.tree.get(["input", "renewables", "clusters", self.area_id, "list"])
         # default values
         if "ts-interpretation" not in self.parameters:
             self.parameters["ts-interpretation"] = "power-generation"
@@ -92,9 +82,7 @@ class CreateRenewablesCluster(ICommand):
                     "clusters": {self.area_id: {"list": cluster_list_config}},
                     "series": {
                         self.area_id: {
-                            cluster_id: {
-                                "series": self.command_context.generator_matrix_constants.get_null_matrix()
-                            }
+                            cluster_id: {"series": self.command_context.generator_matrix_constants.get_null_matrix()}
                         }
                     },
                 }
@@ -126,10 +114,7 @@ class CreateRenewablesCluster(ICommand):
     def match(self, other: ICommand, equal: bool = False) -> bool:
         if not isinstance(other, CreateRenewablesCluster):
             return False
-        simple_match = (
-            self.area_id == other.area_id
-            and self.cluster_name == other.cluster_name
-        )
+        simple_match = self.area_id == other.area_id and self.cluster_name == other.cluster_name
         if not equal:
             return simple_match
         return simple_match and self.parameters == other.parameters

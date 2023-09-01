@@ -14,9 +14,7 @@ from antarest.study.model import DEFAULT_WORKSPACE_NAME
 CONFIG = Config(
     resources_path=Path(),
     security=SecurityConfig(disabled=True),
-    storage=StorageConfig(
-        workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=Path())}
-    ),
+    storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=Path())}),
 )
 
 

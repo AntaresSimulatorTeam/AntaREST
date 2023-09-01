@@ -8,9 +8,7 @@ from antarest.study.storage.rawstudy.model.filesystem.root.input.thermal.cluster
 class InputThermalClusters(FolderNode):
     def build(self) -> TREE:
         children: TREE = {
-            a: InputThermalClustersArea(
-                self.context, self.config.next_file(a), area=a
-            )
+            a: InputThermalClustersArea(self.context, self.config.next_file(a), area=a)
             for a in self.config.area_names()
         }
         return children

@@ -28,8 +28,6 @@ class OutputSimulationMode(FolderNode):
                 self.context, self.config.next_file("mc-ind"), self.simulation
             )
         if self.simulation.synthesis:
-            children["mc-all"] = OutputSimulationModeMcAll(
-                self.context, self.config.next_file("mc-all")
-            )
+            children["mc-all"] = OutputSimulationModeMcAll(self.context, self.config.next_file("mc-all"))
 
         return children

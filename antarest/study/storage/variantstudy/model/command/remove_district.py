@@ -11,13 +11,9 @@ class RemoveDistrict(ICommand):
     id: str
 
     def __init__(self, **data: Any) -> None:
-        super().__init__(
-            command_name=CommandName.REMOVE_DISTRICT, version=1, **data
-        )
+        super().__init__(command_name=CommandName.REMOVE_DISTRICT, version=1, **data)
 
-    def _apply_config(
-        self, study_data: FileStudyTreeConfig
-    ) -> Tuple[CommandOutput, Dict[str, Any]]:
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         del study_data.sets[self.id]
         return CommandOutput(status=True, message=self.id), dict()
 
@@ -35,9 +31,7 @@ class RemoveDistrict(ICommand):
         )
 
     def match_signature(self) -> str:
-        return str(
-            self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.id
-        )
+        return str(self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.id)
 
     def match(self, other: ICommand, equal: bool = False) -> bool:
         if not isinstance(other, RemoveDistrict):

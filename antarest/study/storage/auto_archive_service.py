@@ -36,15 +36,10 @@ class AutoArchiveService(IService):
                 for study in studies
                 if is_managed(study)
                 and (study.last_access or study.updated_at)
-                < now
-                - datetime.timedelta(
-                    days=self.config.storage.auto_archive_threshold_days
-                )
+                < now - datetime.timedelta(days=self.config.storage.auto_archive_threshold_days)
                 and (isinstance(study, VariantStudy) or not study.archived)
             ]
-        for study_id, is_raw_study in study_ids_to_archive[
-            0 : self.max_parallel
-        ]:
+        for study_id, is_raw_study in study_ids_to_archive[0 : self.max_parallel]:
             try:
                 if is_raw_study:
                     logger.info(

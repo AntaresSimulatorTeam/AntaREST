@@ -33,9 +33,7 @@ def test_service_without_cache() -> None:
     normal_mode = MaintenanceMode.NORMAL_MODE.value
     maintenance_mode = MaintenanceMode.MAINTENANCE_MODE.value
 
-    service = MaintenanceService(
-        config=Config(), repository=repo_mock, event_bus=event_bus, cache=cache
-    )
+    service = MaintenanceService(config=Config(), repository=repo_mock, event_bus=event_bus, cache=cache)
 
     # Get maintenance status (maintenance mode)
     repo_mock.get_maintenance_mode.return_value = maintenance_mode
@@ -49,26 +47,20 @@ def test_service_without_cache() -> None:
     # Get maintenance status (normal mode)
     repo_mock.get_maintenance_mode.return_value = normal_mode
     maintenance_status = service.get_maintenance_status()
-    cache.put.assert_called_with(
-        ConfigDataAppKeys.MAINTENANCE_MODE.value, {"content": normal_mode}
-    )
+    cache.put.assert_called_with(ConfigDataAppKeys.MAINTENANCE_MODE.value, {"content": normal_mode})
     assert not maintenance_status
 
     # Get maintenance status when status not found in cache and db
     repo_mock.get_maintenance_mode.return_value = None
     maintenance_status = service.get_maintenance_status()
-    cache.put.assert_called_with(
-        ConfigDataAppKeys.MAINTENANCE_MODE.value, {"content": normal_mode}
-    )
+    cache.put.assert_called_with(ConfigDataAppKeys.MAINTENANCE_MODE.value, {"content": normal_mode})
     assert not maintenance_status
 
     # Get message info
     ret_message = "Hey"
     repo_mock.get_message_info.return_value = ret_message
     message_info = service.get_message_info()
-    cache.put.assert_called_with(
-        ConfigDataAppKeys.MESSAGE_INFO.value, {"content": ret_message}
-    )
+    cache.put.assert_called_with(ConfigDataAppKeys.MESSAGE_INFO.value, {"content": ret_message})
     assert message_info == ret_message
 
     # Get message info when status not found in cache and db
@@ -79,9 +71,7 @@ def test_service_without_cache() -> None:
     # Set maintenance mode
     mode = True
     maintenance_mode = MaintenanceMode.from_bool(mode)
-    service.set_maintenance_status(
-        data=mode, request_params=RequestParameters(user=DEFAULT_ADMIN_USER)
-    )
+    service.set_maintenance_status(data=mode, request_params=RequestParameters(user=DEFAULT_ADMIN_USER))
     repo_mock.save_maintenance_mode.assert_called_with(maintenance_mode.value)
     cache.put.assert_called_with(
         ConfigDataAppKeys.MAINTENANCE_MODE.value,
@@ -97,13 +87,9 @@ def test_service_without_cache() -> None:
 
     # Set message
     data = "Hey"
-    service.set_message_info(
-        data=data, request_params=RequestParameters(user=DEFAULT_ADMIN_USER)
-    )
+    service.set_message_info(data=data, request_params=RequestParameters(user=DEFAULT_ADMIN_USER))
     repo_mock.save_message_info.assert_called_with(data)
-    cache.put.assert_called_with(
-        ConfigDataAppKeys.MESSAGE_INFO.value, {"content": data}
-    )
+    cache.put.assert_called_with(ConfigDataAppKeys.MESSAGE_INFO.value, {"content": data})
     event_bus.push.assert_called_with(
         Event(
             type=EventType.MESSAGE_INFO,
@@ -120,9 +106,7 @@ def test_service_without_cache() -> None:
         groups=[],
     )
     with pytest.raises(UserHasNotPermissionError):
-        service.set_message_info(
-            data=data, request_params=RequestParameters(user=not_admin_user)
-        )
+        service.set_message_info(data=data, request_params=RequestParameters(user=not_admin_user))
 
 
 def test_service_with_cache() -> None:
@@ -133,9 +117,7 @@ def test_service_with_cache() -> None:
     normal_mode = MaintenanceMode.NORMAL_MODE.value
     maintenance_mode = MaintenanceMode.MAINTENANCE_MODE.value
 
-    service = MaintenanceService(
-        config=Config(), repository=repo_mock, event_bus=event_bus, cache=cache
-    )
+    service = MaintenanceService(config=Config(), repository=repo_mock, event_bus=event_bus, cache=cache)
 
     # Get maintenance status (maintenance mode)
     cache.get.return_value = {"content": maintenance_mode}

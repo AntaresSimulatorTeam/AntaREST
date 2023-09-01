@@ -61,9 +61,7 @@ class IniReader(IReader):
 
     @staticmethod
     def _parse_json(json: configparser.SectionProxy) -> JSON:
-        return {
-            key: IniReader.parse_value(value) for key, value in json.items()
-        }
+        return {key: IniReader.parse_value(value) for key, value in json.items()}
 
     def read(self, path: Any) -> JSON:
         config = IniConfigParser()
@@ -71,11 +69,7 @@ class IniReader(IReader):
             config.read(path)
         else:
             config.read_file(path)
-        return {
-            key: IniReader._parse_json(config[key])
-            for key in config
-            if key != "DEFAULT"
-        }
+        return {key: IniReader._parse_json(config[key]) for key in config if key != "DEFAULT"}
 
 
 class SimpleKeyValueReader(IReader):
@@ -93,30 +87,19 @@ class SimpleKeyValueReader(IReader):
     # noinspection PyProtectedMember
     @staticmethod
     def parse_value(value: str) -> SUB_JSON:
-        parsed: Union[
-            str, int, float, bool, None
-        ] = SimpleKeyValueReader._parse_inf(value)
+        parsed: Union[str, int, float, bool, None] = SimpleKeyValueReader._parse_inf(value)
         parsed = parsed if parsed is not None else IniReader._parse_bool(value)
         parsed = parsed if parsed is not None else IniReader._parse_int(value)
-        parsed = (
-            parsed if parsed is not None else IniReader._parse_float(value)
-        )
+        parsed = parsed if parsed is not None else IniReader._parse_float(value)
         return parsed if parsed is not None else value
 
     @staticmethod
     def _parse_json(json: JSON) -> JSON:
-        return {
-            key: SimpleKeyValueReader.parse_value(value)
-            for key, value in json.items()
-        }
+        return {key: SimpleKeyValueReader.parse_value(value) for key, value in json.items()}
 
     def read(self, path: Any) -> JSON:
         json = {}
-        ini_file = (
-            path.open(mode="r", encoding="utf-8")
-            if isinstance(path, Path)
-            else path
-        )
+        ini_file = path.open(mode="r", encoding="utf-8") if isinstance(path, Path) else path
         with ini_file:
             for line in ini_file:
                 line = line.strip()
@@ -159,11 +142,7 @@ class MultipleSameKeysIniReader(IReader):
     def read(self, path: Any) -> JSON:
         data: JSON = {}
         section = ""
-        ini_file = (
-            path.open(mode="r", encoding="utf-8")
-            if isinstance(path, Path)
-            else path
-        )
+        ini_file = path.open(mode="r", encoding="utf-8") if isinstance(path, Path) else path
         with ini_file:
             for line in ini_file:
                 line = line.strip()

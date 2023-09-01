@@ -25,9 +25,7 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import Matri
 logger = logging.getLogger(__name__)
 
 
-class OutputSeriesMatrix(
-    LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON]
-):
+class OutputSeriesMatrix(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON]):
     """
     Generic node to handle output matrix behavior.
     Node needs a DateSerializer and a HeadWriter to work
@@ -120,9 +118,7 @@ class OutputSeriesMatrix(
 
         errors = []
         if not self.config.path.exists():
-            errors.append(
-                f"Output Series Matrix f{self.config.path} not exists"
-            )
+            errors.append(f"Output Series Matrix f{self.config.path} not exists")
         return errors
 
     def load(
@@ -154,9 +150,7 @@ class OutputSeriesMatrix(
                 f"Output file '{self.config.path.name}' not found in study {self.config.study_id}"
             ) from e
 
-    def dump(
-        self, data: Union[bytes, JSON], url: Optional[List[str]] = None
-    ) -> None:
+    def dump(self, data: Union[bytes, JSON], url: Optional[List[str]] = None) -> None:
         if isinstance(data, bytes):
             self.config.path.parent.mkdir(exist_ok=True, parents=True)
             self.config.path.write_bytes(data)

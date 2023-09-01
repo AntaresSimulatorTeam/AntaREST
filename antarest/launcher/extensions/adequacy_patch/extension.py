@@ -41,59 +41,32 @@ class AdequacyPatchExtension(ILauncherExtension):
             ["user"],
         )
         assert_this("flowbased" in user_config)
-        adequacy_patch_config = yaml.safe_load(
-            cast(
-                bytes, study.tree.get(["user", "adequacypatch", "config.yml"])
-            )
-        )
+        adequacy_patch_config = yaml.safe_load(cast(bytes, study.tree.get(["user", "adequacypatch", "config.yml"])))
         assert_this("areas" in adequacy_patch_config)
         self.prepare_study_for_adq_patch(job_id, study, adequacy_patch_config)
 
         full_r_version = "legacy" in launcher_opts and launcher_opts["legacy"]
-        if (
-            "mode" in adequacy_patch_config
-            and adequacy_patch_config["mode"] == "legacy"
-        ):
+        if "mode" in adequacy_patch_config and adequacy_patch_config["mode"] == "legacy":
             full_r_version = True
 
         if full_r_version:
             logger.info("Using legacy quadratic mode")
-            post_processing_file = (
-                Path(__file__).parent
-                / "resources"
-                / "post-processing-legacy.R"
-            )
+            post_processing_file = Path(__file__).parent / "resources" / "post-processing-legacy.R"
         else:
             logger.info("Using linearized mode")
-            post_processing_file = (
-                Path(__file__).parent / "resources" / "post-processing.R"
-            )
-        shutil.copy(
-            post_processing_file, study_export_path / "post-processing.R"
-        )
+            post_processing_file = Path(__file__).parent / "resources" / "post-processing.R"
+        shutil.copy(post_processing_file, study_export_path / "post-processing.R")
 
-    def prepare_study_for_adq_patch(
-        self, job_id: str, study: FileStudy, adq_patch_config: JSON
-    ) -> Dict[str, bool]:
-        area_to_turn_on: List[str] = [
-            transform_name_to_id(area_id)
-            for area_id in adq_patch_config.get("areas", [])
-        ]
+    def prepare_study_for_adq_patch(self, job_id: str, study: FileStudy, adq_patch_config: JSON) -> Dict[str, bool]:
+        area_to_turn_on: List[str] = [transform_name_to_id(area_id) for area_id in adq_patch_config.get("areas", [])]
         original_area_enabled: Dict[str, bool] = {}
         original_link_enabled: Dict[str, bool] = {}
-        year_by_year_active = study.tree.get(
-            ["settings", "generaldata", "general", "year-by-year"]
-        )
-        study.tree.save(
-            True, ["settings", "generaldata", "general", "year-by-year"]
-        )
+        year_by_year_active = study.tree.get(["settings", "generaldata", "general", "year-by-year"])
+        study.tree.save(True, ["settings", "generaldata", "general", "year-by-year"])
         for area_id, area in study.config.areas.items():
             # areas
             original_area_enabled[area_id] = "hourly" in area.filters_year
-            if (
-                not original_area_enabled[area_id]
-                and area_id in area_to_turn_on
-            ):
+            if not original_area_enabled[area_id] and area_id in area_to_turn_on:
                 study.tree.save(
                     ", ".join([*area.filters_year, "hourly"]),
                     [
@@ -110,9 +83,7 @@ class AdequacyPatchExtension(ILauncherExtension):
             for area_2, link in area.links.items():
                 link_id = f"{area_id} - {area_2}"
                 original_link_enabled[link_id] = "hourly" in link.filters_year
-                if not original_link_enabled[link_id] and (
-                    area_id in area_to_turn_on or area_2 in area_to_turn_on
-                ):
+                if not original_link_enabled[link_id] and (area_id in area_to_turn_on or area_2 in area_to_turn_on):
                     study.tree.save(
                         ", ".join([*link.filters_year, "hourly"]),
                         [
@@ -127,27 +98,18 @@ class AdequacyPatchExtension(ILauncherExtension):
 
         with db():
             with open(
-                study.config.study_path
-                / "user"
-                / "adequacypatch"
-                / "hourly-areas.yml",
+                study.config.study_path / "user" / "adequacypatch" / "hourly-areas.yml",
                 "w",
             ) as fh:
                 yaml.dump(original_area_enabled, fh)
             with open(
-                study.config.study_path
-                / "user"
-                / "adequacypatch"
-                / "hourly-links.yml",
+                study.config.study_path / "user" / "adequacypatch" / "hourly-links.yml",
                 "w",
             ) as fh:
                 yaml.dump(original_link_enabled, fh)
             if year_by_year_active:
                 with open(
-                    study.config.study_path
-                    / "user"
-                    / "adequacypatch"
-                    / "year-by-year-active",
+                    study.config.study_path / "user" / "adequacypatch" / "year-by-year-active",
                     "w",
                 ) as fh:
                     fh.write("True")

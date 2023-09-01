@@ -214,15 +214,10 @@ class TestRawStudyService:
         if outputs:
             # If `outputs` is True the filtering can occurs
             if output_filter is None:
-                expected_filter = {
-                    f.replace(".zip", "") for f in my_solver_outputs
-                }
+                expected_filter = {f.replace(".zip", "") for f in my_solver_outputs}
             else:
                 expected_filter = set(output_filter)
-            expected = {
-                f"output/{output_name}/simulation.log"
-                for output_name in expected_filter
-            }
+            expected = {f"output/{output_name}/simulation.log" for output_name in expected_filter}
             assert res_outputs == expected
         else:
             # If `outputs` is False, no output must be exported

@@ -9,9 +9,7 @@ from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import 
 
 class ICommandExtractor(abc.ABC):
     @abstractmethod
-    def extract_area(
-        self, study: FileStudy, area_id: str
-    ) -> Tuple[List["ICommand"], List["ICommand"]]:  # type: ignore
+    def extract_area(self, study: FileStudy, area_id: str) -> Tuple[List["ICommand"], List["ICommand"]]:  # type: ignore
         raise NotImplementedError()
 
     @abstractmethod
@@ -25,9 +23,7 @@ class ICommandExtractor(abc.ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def extract_cluster(
-        self, study: FileStudy, area_id: str, thermal_id: str
-    ) -> List["ICommand"]:  # type: ignore
+    def extract_cluster(self, study: FileStudy, area_id: str, thermal_id: str) -> List["ICommand"]:  # type: ignore
         raise NotImplementedError()
 
     @abstractmethod
@@ -37,15 +33,11 @@ class ICommandExtractor(abc.ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def extract_hydro(
-        self, study: FileStudy, area_id: str
-    ) -> List["ICommand"]:  # type: ignore
+    def extract_hydro(self, study: FileStudy, area_id: str) -> List["ICommand"]:  # type: ignore
         raise NotImplementedError()
 
     @abstractmethod
-    def extract_district(
-        self, study: FileStudy, district_id: str
-    ) -> List["ICommand"]:  # type: ignore
+    def extract_district(self, study: FileStudy, district_id: str) -> List["ICommand"]:  # type: ignore
         raise NotImplementedError()
 
     @abstractmethod

@@ -10,9 +10,7 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 
 
 class TestRemoveRenewablesCluster:
-    def test_apply(
-        self, empty_study: FileStudy, command_context: CommandContext
-    ):
+    def test_apply(self, empty_study: FileStudy, command_context: CommandContext):
         empty_study.config.enr_modelling = ENR_MODELLING.CLUSTERS.value
         empty_study.config.version = 810
         area_name = "Area_name"
@@ -46,10 +44,7 @@ class TestRemoveRenewablesCluster:
         ).apply(empty_study)
 
         assert output.status
-        assert (
-            dirhash(empty_study.config.study_path, "md5")
-            == hash_before_cluster
-        )
+        assert dirhash(empty_study.config.study_path, "md5") == hash_before_cluster
 
         output = RemoveRenewablesCluster(
             area_id="non_existent_area",
@@ -67,15 +62,9 @@ class TestRemoveRenewablesCluster:
 
 
 def test_match(command_context: CommandContext):
-    base = RemoveRenewablesCluster(
-        area_id="foo", cluster_id="bar", command_context=command_context
-    )
-    other_match = RemoveRenewablesCluster(
-        area_id="foo", cluster_id="bar", command_context=command_context
-    )
-    other_not_match = RemoveRenewablesCluster(
-        area_id="foo", cluster_id="baz", command_context=command_context
-    )
+    base = RemoveRenewablesCluster(area_id="foo", cluster_id="bar", command_context=command_context)
+    other_match = RemoveRenewablesCluster(area_id="foo", cluster_id="bar", command_context=command_context)
+    other_not_match = RemoveRenewablesCluster(area_id="foo", cluster_id="baz", command_context=command_context)
     other_other = RemoveArea(id="id", command_context=command_context)
     assert base.match(other_match)
     assert not base.match(other_not_match)
@@ -85,10 +74,6 @@ def test_match(command_context: CommandContext):
 
 
 def test_create_diff(command_context: CommandContext):
-    base = RemoveRenewablesCluster(
-        area_id="foo", cluster_id="bar", command_context=command_context
-    )
-    other_match = RemoveRenewablesCluster(
-        area_id="foo", cluster_id="bar", command_context=command_context
-    )
+    base = RemoveRenewablesCluster(area_id="foo", cluster_id="bar", command_context=command_context)
+    other_match = RemoveRenewablesCluster(area_id="foo", cluster_id="bar", command_context=command_context)
     assert base.create_diff(other_match) == []

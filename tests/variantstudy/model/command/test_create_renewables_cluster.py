@@ -14,9 +14,7 @@ class TestCreateRenewablesCluster:
     def test_validation(self, empty_study: FileStudy):
         pass
 
-    def test_apply(
-        self, empty_study: FileStudy, command_context: CommandContext
-    ):
+    def test_apply(self, empty_study: FileStudy, command_context: CommandContext):
         empty_study.config.enr_modelling = ENR_MODELLING.CLUSTERS.value
         study_path = empty_study.config.study_path
         area_name = "Area"
@@ -49,19 +47,9 @@ class TestCreateRenewablesCluster:
         assert output.status
 
         clusters = configparser.ConfigParser()
-        clusters.read(
-            study_path
-            / "input"
-            / "renewables"
-            / "clusters"
-            / area_id
-            / "list.ini"
-        )
+        clusters.read(study_path / "input" / "renewables" / "clusters" / area_id / "list.ini")
         assert str(clusters[cluster_name]["name"]) == cluster_name
-        assert (
-            str(clusters[cluster_name]["ts-interpretation"])
-            == parameters["ts-interpretation"]
-        )
+        assert str(clusters[cluster_name]["ts-interpretation"]) == parameters["ts-interpretation"]
 
         output = CreateRenewablesCluster.parse_obj(
             {
@@ -103,9 +91,7 @@ def test_match(command_context: CommandContext):
         parameters={},
         command_context=command_context,
     )
-    other_other = RemoveRenewablesCluster(
-        area_id="id", cluster_id="id", command_context=command_context
-    )
+    other_other = RemoveRenewablesCluster(area_id="id", cluster_id="id", command_context=command_context)
     assert base.match(other_match)
     assert not base.match(other_not_match)
     assert not base.match(other_other)

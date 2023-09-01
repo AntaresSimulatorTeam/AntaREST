@@ -24,9 +24,7 @@ class ICommand(ABC, BaseModel):
     command_context: CommandContext
 
     @abstractmethod
-    def _apply_config(
-        self, study_data: FileStudyTreeConfig
-    ) -> Tuple[CommandOutput, Dict[str, Any]]:
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         """
         Applies configuration changes to the study data.
 
@@ -81,10 +79,7 @@ class ICommand(ABC, BaseModel):
                 f"Failed to execute variant command {self.command_name}",
                 exc_info=e,
             )
-            message = (
-                f"Unexpected exception occurred when trying"
-                f" to apply command {self.command_name}: {e}"
-            )
+            message = f"Unexpected exception occurred when trying to apply command {self.command_name}: {e}"
             return CommandOutput(status=False, message=message)
 
     @abstractmethod

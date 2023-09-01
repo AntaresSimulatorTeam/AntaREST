@@ -43,9 +43,7 @@ def study_assets(
         in the resource directory.
     """
     module_path = Path(request.fspath)
-    assets_dir = module_path.parent.joinpath(
-        module_path.stem.replace("test_", "")
-    )
+    assets_dir = module_path.parent.joinpath(module_path.stem.replace("test_", ""))
     asset_dir = assets_dir.joinpath(request.node.name.replace("test_", ""))
     zip_files = list(asset_dir.glob("*.zip"))
     # find the study ZIP and uncompress it
@@ -58,13 +56,9 @@ def study_assets(
         zf.extractall(study_dir)
     # find the expected study ZIP and uncompress it
     try:
-        zip_path = next(
-            iter(p for p in zip_files if p.suffixes == [".expected", ".zip"])
-        )
+        zip_path = next(iter(p for p in zip_files if p.suffixes == [".expected", ".zip"]))
     except StopIteration:
-        raise AssetNotFoundError(
-            asset_dir, "no '{study}.expected.zip' file"
-        ) from None
+        raise AssetNotFoundError(asset_dir, "no '{study}.expected.zip' file") from None
     expected_dir = tmp_path.joinpath(zip_path.stem)
     with zipfile.ZipFile(zip_path) as zf:
         zf.extractall(expected_dir)

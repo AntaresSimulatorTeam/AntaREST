@@ -92,14 +92,10 @@ class SynchTaskService(ITaskService):
             logs=None,
         )
 
-    def list_tasks(
-        self, task_filter: TaskListFilter, request_params: RequestParameters
-    ) -> List[TaskDTO]:
+    def list_tasks(self, task_filter: TaskListFilter, request_params: RequestParameters) -> List[TaskDTO]:
         return []
 
-    def await_task(
-        self, task_id: str, timeout_sec: Optional[int] = None
-    ) -> None:
+    def await_task(self, task_id: str, timeout_sec: Optional[int] = None) -> None:
         pass
 
 

@@ -16,13 +16,9 @@ class UpdateDistrict(ICommand):
     comments: Optional[str]
 
     def __init__(self, **data: Any) -> None:
-        super().__init__(
-            command_name=CommandName.UPDATE_DISTRICT, version=1, **data
-        )
+        super().__init__(command_name=CommandName.UPDATE_DISTRICT, version=1, **data)
 
-    def _apply_config(
-        self, study_data: FileStudyTreeConfig
-    ) -> Tuple[CommandOutput, Dict[str, Any]]:
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         base_set = study_data.sets[self.id]
         if self.id not in study_data.sets:
             return (
@@ -39,9 +35,7 @@ class UpdateDistrict(ICommand):
         else:
             inverted_set = base_set.inverted_set
         study_data.sets[self.id].areas = self.filter_items or base_set.areas
-        study_data.sets[self.id].output = (
-            self.output if self.output is not None else base_set.output
-        )
+        study_data.sets[self.id].output = self.output if self.output is not None else base_set.output
         study_data.sets[self.id].inverted_set = inverted_set
 
         item_key = "-" if inverted_set else "+"
@@ -58,9 +52,7 @@ class UpdateDistrict(ICommand):
         district_id = data["district_id"]
         item_key = data["item_key"]
         apply_filter = (
-            self.base_filter.value
-            if self.base_filter
-            else sets.get("apply-filter", DistrictBaseFilter.remove_all)
+            self.base_filter.value if self.base_filter else sets.get("apply-filter", DistrictBaseFilter.remove_all)
         )
         study_data.tree.save(
             {
@@ -80,9 +72,7 @@ class UpdateDistrict(ICommand):
             action=CommandName.UPDATE_DISTRICT.value,
             args={
                 "id": self.id,
-                "base_filter": self.base_filter.value
-                if self.base_filter
-                else None,
+                "base_filter": self.base_filter.value if self.base_filter else None,
                 "filter_items": self.filter_items,
                 "output": self.output,
                 "comments": self.comments,
@@ -90,9 +80,7 @@ class UpdateDistrict(ICommand):
         )
 
     def match_signature(self) -> str:
-        return str(
-            self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.id
-        )
+        return str(self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.id)
 
     def match(self, other: ICommand, equal: bool = False) -> bool:
         if not isinstance(other, UpdateDistrict):

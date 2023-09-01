@@ -64,20 +64,13 @@ def check_permission(
     if user.is_site_admin() or user.is_admin_token():
         return True
 
-    if (
-        permission_info.owner is not None
-        and user.impersonator == permission_info.owner
-    ):
+    if permission_info.owner is not None and user.impersonator == permission_info.owner:
         return True
 
     allowed_roles = permission_matrix[permission]["roles"]
     group_permission = any(
         role in allowed_roles  # type: ignore
-        for role in [
-            group.role
-            for group in (user.groups or [])
-            if group.id in permission_info.groups
-        ]
+        for role in [group.role for group in (user.groups or []) if group.id in permission_info.groups]
     )
     if group_permission:
         return True

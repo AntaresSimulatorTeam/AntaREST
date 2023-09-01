@@ -35,9 +35,7 @@ MATRIX_STORE_DIR = "matrices"
 
 class IVariantGenerator(ABC):
     @abstractmethod
-    def apply_commands(
-        self, commands: List[CommandDTO], matrices_dir: Path
-    ) -> GenerationResultInfoDTO:
+    def apply_commands(self, commands: List[CommandDTO], matrices_dir: Path) -> GenerationResultInfoDTO:
         raise NotImplementedError()
 
 
@@ -69,13 +67,9 @@ class RemoteVariantGenerator(IVariantGenerator):
         logger.info("Uploading matrices")
         matrix_dataset: List[str] = []
         for matrix_file in matrices_dir.iterdir():
-            matrix = np.loadtxt(
-                matrix_file, delimiter="\t", dtype=np.float64, ndmin=2
-            )
+            matrix = np.loadtxt(matrix_file, delimiter="\t", dtype=np.float64, ndmin=2)
             matrix_data = matrix.tolist()
-            res = self.session.post(
-                self.build_url("/v1/matrix"), json=matrix_data
-            )
+            res = self.session.post(self.build_url("/v1/matrix"), json=matrix_data)
             res.raise_for_status()
             matrix_id = res.json()
             # file_name = matrix_file.with_suffix("").name
@@ -84,57 +78,37 @@ class RemoteVariantGenerator(IVariantGenerator):
 
         # TODO could create a dataset from theses matrices using "variant_<study_id>" as name
         # also the matrix could be named after the command name where they are used
-        stopwatch.log_elapsed(
-            lambda x: logger.info(f"Matrix upload done in {x}s")
-        )
+        stopwatch.log_elapsed(lambda x: logger.info(f"Matrix upload done in {x}s"))
 
         res = self.session.post(
             self.build_url(f"/v1/studies/{self.study_id}/commands"),
             json=[command.dict() for command in commands],
         )
         res.raise_for_status()
-        stopwatch.log_elapsed(
-            lambda x: logger.info(f"Command upload done in {x}s")
-        )
+        stopwatch.log_elapsed(lambda x: logger.info(f"Command upload done in {x}s"))
 
-        res = self.session.put(
-            self.build_url(
-                f"/v1/studies/{self.study_id}/generate?denormalize=true"
-            )
-        )
+        res = self.session.put(self.build_url(f"/v1/studies/{self.study_id}/generate?denormalize=true"))
         res.raise_for_status()
 
         task_id = res.json()
-        res = self.session.get(
-            self.build_url(f"/v1/tasks/{task_id}?wait_for_completion=true")
-        )
+        res = self.session.get(self.build_url(f"/v1/tasks/{task_id}?wait_for_completion=true"))
         res.raise_for_status()
 
-        stopwatch.log_elapsed(
-            lambda x: logger.info(f"Generation done in {x}s")
-        )
+        stopwatch.log_elapsed(lambda x: logger.info(f"Generation done in {x}s"))
         task_result = TaskDTO.parse_obj(res.json())
         assert task_result.result is not None
 
-        return GenerationResultInfoDTO.parse_raw(
-            task_result.result.return_value or ""
-        )
+        return GenerationResultInfoDTO.parse_raw(task_result.result.return_value or "")
 
     def build_url(self, url: str) -> str:
-        return (
-            url
-            if self.host is None
-            else f"{self.host.strip('/')}/{url.strip('/')}"
-        )
+        return url if self.host is None else f"{self.host.strip('/')}/{url.strip('/')}"
 
 
 class LocalVariantGenerator(IVariantGenerator):
     def __init__(self, output_path: Path):
         self.output_path = output_path
 
-    def render_template(
-        self, study_version: str = NEW_DEFAULT_STUDY_VERSION
-    ) -> None:
+    def render_template(self, study_version: str = NEW_DEFAULT_STUDY_VERSION) -> None:
         version_template = STUDY_REFERENCE_TEMPLATES[study_version]
         empty_study_zip = get_local_path() / "resources" / version_template
         with ZipFile(empty_study_zip) as zip_output:
@@ -143,9 +117,7 @@ class LocalVariantGenerator(IVariantGenerator):
             sets_ini = self.output_path.joinpath("input/areas/sets.ini")
             sets_ini.write_bytes(b"")
 
-    def apply_commands(
-        self, commands: List[CommandDTO], matrices_dir: Path
-    ) -> GenerationResultInfoDTO:
+    def apply_commands(self, commands: List[CommandDTO], matrices_dir: Path) -> GenerationResultInfoDTO:
         stopwatch = StopWatch()
         matrix_service = SimpleMatrixService(matrices_dir)
         matrix_resolver = UriResolverService(matrix_service)
@@ -157,37 +129,24 @@ class LocalVariantGenerator(IVariantGenerator):
         )
         generator = VariantCommandGenerator(study_factory)
         command_factory = CommandFactory(
-            generator_matrix_constants=GeneratorMatrixConstants(
-                matrix_service
-            ),
+            generator_matrix_constants=GeneratorMatrixConstants(matrix_service),
             matrix_service=matrix_service,
             patch_service=PatchService(),
         )
 
         command_objs: List[List[ICommand]] = []
         logger.info("Parsing command objects")
-        command_objs.extend(
-            command_factory.to_command(command_block)
-            for command_block in commands
-        )
-        stopwatch.log_elapsed(
-            lambda x: logger.info(f"Command objects parsed in {x}s")
-        )
-        result = generator.generate(
-            command_objs, self.output_path, delete_on_failure=False
-        )
+        command_objs.extend(command_factory.to_command(command_block) for command_block in commands)
+        stopwatch.log_elapsed(lambda x: logger.info(f"Command objects parsed in {x}s"))
+        result = generator.generate(command_objs, self.output_path, delete_on_failure=False)
         if result.success:
             # sourcery skip: extract-method
             logger.info("Building new study tree")
-            study = study_factory.create_from_fs(
-                self.output_path, study_id="", use_cache=False
-            )
+            study = study_factory.create_from_fs(self.output_path, study_id="", use_cache=False)
             logger.info("Denormalizing study")
             stopwatch.reset_current()
             study.tree.denormalize()
-            stopwatch.log_elapsed(
-                lambda x: logger.info(f"Denormalized done in {x}s")
-            )
+            stopwatch.log_elapsed(lambda x: logger.info(f"Denormalized done in {x}s"))
         return result
 
 
@@ -206,13 +165,9 @@ def extract_commands(study_path: Path, commands_output_dir: Path) -> None:
         cache=cache,
     )
 
-    study = study_factory.create_from_fs(
-        study_path, str(study_path), use_cache=False
-    )
+    study = study_factory.create_from_fs(study_path, str(study_path), use_cache=False)
     local_matrix_service = SimpleMatrixService(matrices_dir)
-    extractor = VariantCommandsExtractor(
-        local_matrix_service, patch_service=PatchService()
-    )
+    extractor = VariantCommandsExtractor(local_matrix_service, patch_service=PatchService())
     command_list = extractor.extract(study)
 
     (commands_output_dir / COMMAND_FILE).write_text(
@@ -261,9 +216,7 @@ def generate_diff(
     resolver = UriResolverService(matrix_service=local_matrix_service)
 
     cache = LocalCache()
-    study_factory = StudyFactory(
-        matrix=local_matrix_service, resolver=resolver, cache=cache
-    )
+    study_factory = StudyFactory(matrix=local_matrix_service, resolver=resolver, cache=cache)
 
     create_new_empty_study(
         version=study_version,
@@ -288,22 +241,16 @@ def generate_diff(
                 base / MATRIX_STORE_DIR / matrix_file,
                 matrices_dir / matrix_file,
             )
-    stopwatch.log_elapsed(
-        lambda x: logger.info(f"Base input matrix copied in {x}s")
-    )
+    stopwatch.log_elapsed(lambda x: logger.info(f"Base input matrix copied in {x}s"))
     if (variant / MATRIX_STORE_DIR).exists():
         for matrix_file in os.listdir(variant / MATRIX_STORE_DIR):
             shutil.copyfile(
                 variant / MATRIX_STORE_DIR / matrix_file,
                 matrices_dir / matrix_file,
             )
-    stopwatch.log_elapsed(
-        lambda x: logger.info(f"Variant input matrix copied in {x}s")
-    )
+    stopwatch.log_elapsed(lambda x: logger.info(f"Variant input matrix copied in {x}s"))
 
-    extractor = VariantCommandsExtractor(
-        local_matrix_service, patch_service=PatchService()
-    )
+    extractor = VariantCommandsExtractor(local_matrix_service, patch_service=PatchService())
     diff_commands = extractor.diff(
         base=parse_commands(base_command_file),
         variant=parse_commands(variant_command_file),
@@ -312,10 +259,7 @@ def generate_diff(
 
     (output_dir / COMMAND_FILE).write_text(
         json.dumps(
-            [
-                command.to_dto().dict(exclude={"id"})
-                for command in diff_commands
-            ],
+            [command.to_dto().dict(exclude={"id"}) for command in diff_commands],
             indent=2,
         )
     )
@@ -336,12 +280,8 @@ def parse_commands(file: Path) -> List[CommandDTO]:
         json_commands = json.load(fh)
     stopwatch.log_elapsed(lambda x: logger.info(f"Script file read in {x}s"))
 
-    commands: List[CommandDTO] = [
-        CommandDTO.parse_obj(command) for command in json_commands
-    ]
-    stopwatch.log_elapsed(
-        lambda x: logger.info(f"Script commands parsed in {x}s")
-    )
+    commands: List[CommandDTO] = [CommandDTO.parse_obj(command) for command in json_commands]
+    stopwatch.log_elapsed(lambda x: logger.info(f"Script commands parsed in {x}s"))
 
     return commands
 

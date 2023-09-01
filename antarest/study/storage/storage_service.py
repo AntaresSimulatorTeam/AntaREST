@@ -40,9 +40,7 @@ class StudyStorageService:
         self.raw_study_service = raw_study_service
         self.variant_study_service = variant_study_service
 
-    def get_storage(
-        self, study: Study
-    ) -> IStudyStorageService[Union[RawStudy, VariantStudy]]:
+    def get_storage(self, study: Study) -> IStudyStorageService[Union[RawStudy, VariantStudy]]:
         """
         Get the appropriate study storage service based on the type of study.
 

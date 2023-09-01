@@ -157,9 +157,7 @@ class TestVariantStudyService:
             "My Variant Study",
             params=Mock(
                 spec=RequestParameters,
-                user=Mock(
-                    impersonator=user.id, is_site_admin=Mock(return_value=True)
-                ),
+                user=Mock(impersonator=user.id, is_site_admin=Mock(return_value=True)),
             ),
         )
 
@@ -222,13 +220,8 @@ class TestVariantStudyService:
         ## Collect the resulting files
         workspaces = variant_study_service.config.storage.workspaces
         internal_studies_dir: Path = workspaces["default"].path
-        snapshot_dir = internal_studies_dir.joinpath(
-            variant_study.snapshot.id, "snapshot"
-        )
-        res_study_files = {
-            study_file.relative_to(snapshot_dir).as_posix()
-            for study_file in snapshot_dir.rglob("*.*")
-        }
+        snapshot_dir = internal_studies_dir.joinpath(variant_study.snapshot.id, "snapshot")
+        res_study_files = {study_file.relative_to(snapshot_dir).as_posix() for study_file in snapshot_dir.rglob("*.*")}
 
         if denormalize:
             expected = {f.replace(".link", "") for f in EXPECTED_DENORMALIZED}

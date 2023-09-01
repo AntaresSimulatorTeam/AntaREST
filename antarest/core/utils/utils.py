@@ -25,19 +25,12 @@ class DTO:
         return hash(tuple(sorted(self.__dict__.items())))
 
     def __eq__(self, other: Any) -> bool:
-        return (
-            isinstance(other, type(self)) and self.__dict__ == other.__dict__
-        )
+        return isinstance(other, type(self)) and self.__dict__ == other.__dict__
 
     def __str__(self) -> str:
         return "{}({})".format(
             type(self).__name__,
-            ", ".join(
-                [
-                    "{}={}".format(k, str(self.__dict__[k]))
-                    for k in sorted(self.__dict__)
-                ]
-            ),
+            ", ".join(["{}={}".format(k, str(self.__dict__[k])) for k in sorted(self.__dict__)]),
         )
 
     def __repr__(self) -> str:
@@ -105,22 +98,15 @@ class StopWatch:
     def reset_current(self) -> None:
         self.current_time = time.time()
 
-    def log_elapsed(
-        self, logger: Callable[[float], None], since_start: bool = False
-    ) -> None:
-        logger(
-            time.time()
-            - (self.start_time if since_start else self.current_time)
-        )
+    def log_elapsed(self, logger: Callable[[float], None], since_start: bool = False) -> None:
+        logger(time.time() - (self.start_time if since_start else self.current_time))
         self.current_time = time.time()
 
 
 T = TypeVar("T")
 
 
-def retry(
-    func: Callable[[], T], attempts: int = 10, interval: float = 0.5
-) -> T:
+def retry(func: Callable[[], T], attempts: int = 10, interval: float = 0.5) -> T:
     attempt = 0
     caught_exception: Optional[Exception] = None
     while attempt < attempts:
@@ -155,12 +141,8 @@ def concat_files_to_str(files: List[Path]) -> str:
     return concat_str
 
 
-def zip_dir(
-    dir_path: Path, zip_path: Path, remove_source_dir: bool = False
-) -> None:
-    with ZipFile(
-        zip_path, mode="w", compression=ZIP_DEFLATED, compresslevel=2
-    ) as zipf:
+def zip_dir(dir_path: Path, zip_path: Path, remove_source_dir: bool = False) -> None:
+    with ZipFile(zip_path, mode="w", compression=ZIP_DEFLATED, compresslevel=2) as zipf:
         len_dir_path = len(str(dir_path))
         for root, _, files in os.walk(dir_path):
             for file in files:
@@ -170,9 +152,7 @@ def zip_dir(
         shutil.rmtree(dir_path)
 
 
-def unzip(
-    dir_path: Path, zip_path: Path, remove_source_zip: bool = False
-) -> None:
+def unzip(dir_path: Path, zip_path: Path, remove_source_zip: bool = False) -> None:
     with ZipFile(zip_path, mode="r") as zipf:
         zipf.extractall(dir_path)
     if remove_source_zip:
@@ -183,9 +163,7 @@ def is_zip(path: Path) -> bool:
     return path.name.endswith(".zip")
 
 
-def extract_file_to_tmp_dir(
-    zip_path: Path, inside_zip_path: Path
-) -> Tuple[Path, Any]:
+def extract_file_to_tmp_dir(zip_path: Path, inside_zip_path: Path) -> Tuple[Path, Any]:
     str_inside_zip_path = str(inside_zip_path).replace("\\", "/")
     tmp_dir = tempfile.TemporaryDirectory()
     try:

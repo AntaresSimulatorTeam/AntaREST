@@ -66,27 +66,19 @@ class InputSeriesMatrix(MatrixNode):
                     header=None,
                     float_precision="legacy",
                 )
-            stopwatch.log_elapsed(
-                lambda x: logger.info(f"Matrix parsed in {x}s")
-            )
+            stopwatch.log_elapsed(lambda x: logger.info(f"Matrix parsed in {x}s"))
             matrix.dropna(how="any", axis=1, inplace=True)
             if return_dataframe:
                 return matrix
 
             data = cast(JSON, matrix.to_dict(orient="split"))
-            stopwatch.log_elapsed(
-                lambda x: logger.info(f"Matrix to dict in {x}s")
-            )
+            stopwatch.log_elapsed(lambda x: logger.info(f"Matrix to dict in {x}s"))
 
             return data
         except EmptyDataError:
             logger.warning(f"Empty file found when parsing {file_path}")
             matrix = pd.DataFrame(self.default_empty)
-            return (
-                matrix
-                if return_dataframe
-                else cast(JSON, matrix.to_dict(orient="split"))
-            )
+            return matrix if return_dataframe else cast(JSON, matrix.to_dict(orient="split"))
 
     def check_errors(
         self,
@@ -98,11 +90,7 @@ class InputSeriesMatrix(MatrixNode):
 
         errors = []
         if not self.config.path.exists():
-            errors.append(
-                f"Input Series Matrix f{self.config.path} not exists"
-            )
+            errors.append(f"Input Series Matrix f{self.config.path} not exists")
         if self.nb_columns and len(data) != self.nb_columns:
-            errors.append(
-                f"{self.config.path}: Data was wrong size. expected {self.nb_columns} get {len(data)}"
-            )
+            errors.append(f"{self.config.path}: Data was wrong size. expected {self.nb_columns} get {len(data)}")
         return errors

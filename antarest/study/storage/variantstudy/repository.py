@@ -15,11 +15,7 @@ class VariantStudyRepository(StudyMetadataRepository):
         super().__init__(cache_service)
 
     def get_children(self, parent_id: str) -> List[VariantStudy]:
-        studies: List[VariantStudy] = (
-            db.session.query(VariantStudy)
-            .filter(VariantStudy.parent_id == parent_id)
-            .all()
-        )
+        studies: List[VariantStudy] = db.session.query(VariantStudy).filter(VariantStudy.parent_id == parent_id).all()
         return studies
 
     def get_all_commandblocks(self) -> List[CommandBlock]:

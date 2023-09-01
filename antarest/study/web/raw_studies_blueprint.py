@@ -49,7 +49,6 @@ CONTENT_TYPES = {
 }
 
 
-
 def create_raw_study_routes(
     study_service: StudyService,
     config: Config,
@@ -116,20 +115,17 @@ def create_raw_study_routes(
                     ) from None
             elif encoding:
                 try:
-                    
                     response = PlainTextResponse(output, media_type=content_type)
                     response.charset = encoding
                     return response
-                    
+
                 except ValueError as exc:
                     raise HTTPException(
                         status_code=http.HTTPStatus.UNPROCESSABLE_ENTITY,
                         detail=f"Invalid plain text configuration in path '{path}': {exc}",
                     ) from None
             elif content_type:
-                headers = {
-                    "Content-Disposition": f"attachment; filename='{resource_path.name}'"
-                }
+                headers = {"Content-Disposition": f"attachment; filename='{resource_path.name}'"}
                 return StreamingResponse(
                     io.BytesIO(output),
                     media_type=content_type,
@@ -138,9 +134,7 @@ def create_raw_study_routes(
             else:
                 # Unknown content types are considered binary,
                 # because it's better to avoid raising an exception.
-                return Response(
-                    content=output, media_type="application/octet-stream"
-                )
+                return Response(content=output, media_type="application/octet-stream")
 
         return JSONResponse(content=output)
 
@@ -192,9 +186,7 @@ def create_raw_study_routes(
         tags=[APITag.study_raw_data],
         response_model=List[str],
     )
-    def validate(
-        uuid: str, current_user: JWTUser = Depends(auth.get_current_user)
-    ) -> Any:
+    def validate(uuid: str, current_user: JWTUser = Depends(auth.get_current_user)) -> Any:
         logger.info(
             f"Validating data for study {uuid}",
             extra={"user": current_user.id},

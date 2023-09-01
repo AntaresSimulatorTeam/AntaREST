@@ -9,12 +9,8 @@ from antarest.study.storage.rawstudy.model.filesystem.root.input.renewables.seri
 class ClusteredRenewables(FolderNode):
     def build(self) -> TREE:
         children: TREE = {
-            "clusters": ClusteredRenewableAreaCluster(
-                self.context, self.config.next_file("clusters")
-            ),
-            "series": ClusteredRenewableAreaSeries(
-                self.context, self.config.next_file("series")
-            ),
+            "clusters": ClusteredRenewableAreaCluster(self.context, self.config.next_file("clusters")),
+            "series": ClusteredRenewableAreaSeries(self.context, self.config.next_file("series")),
         }
 
         return children

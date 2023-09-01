@@ -53,15 +53,9 @@ class IniConfigParser(RawConfigParser):
         """Write a single section to the specified `fp`."""
         fp.write(f"[{section_name}]\n")
         for key, value in section_items:
-            if (
-                self.special_keys
-                and key in self.special_keys
-                and isinstance(ast.literal_eval(value), list)
-            ):
+            if self.special_keys and key in self.special_keys and isinstance(ast.literal_eval(value), list):
                 for sub_value in ast.literal_eval(value):
-                    self._write_line(
-                        delimiter, fp, key, section_name, sub_value
-                    )
+                    self._write_line(delimiter, fp, key, section_name, sub_value)
             else:
                 self._write_line(delimiter, fp, key, section_name, value)
         fp.write("\n")

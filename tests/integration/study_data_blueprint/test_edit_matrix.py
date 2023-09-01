@@ -111,9 +111,7 @@ class TestEditMatrix:
             headers={"Authorization": f"Bearer {user_access_token}"},
             json=[
                 {
-                    "slices": [
-                        {"row_from": 0, "column_from": 0, "column_to": 6}
-                    ],
+                    "slices": [{"row_from": 0, "column_from": 0, "column_to": 6}],
                     "operation": {
                         "operation": "=",
                         "value": 1,
@@ -181,9 +179,7 @@ class TestEditMatrix:
             headers={"Authorization": f"Bearer {user_access_token}"},
             json=[
                 {
-                    "slices": [
-                        {"row_from": 0, "row_to": 8760, "column_from": 0}
-                    ],
+                    "slices": [{"row_from": 0, "row_to": 8760, "column_from": 0}],
                     "operation": {
                         "operation": "=",
                         "value": 1,
@@ -237,10 +233,9 @@ class TestEditMatrix:
         res.raise_for_status()
         new_data = res.json()["data"]
         assert new_data != initial_data
-        
+
         assert [[a[i] for a in new_data[2:4]] for i in range(2, 4)] == [[42] * 2] * 2
         assert [[a[i] for a in new_data[9:15]] for i in range(1, 3)] == [[42] * 6] * 2
-        
 
     def test_edit_matrix__thermal_cluster(
         self,

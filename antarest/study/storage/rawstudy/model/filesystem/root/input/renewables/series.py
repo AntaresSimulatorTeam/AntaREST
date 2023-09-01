@@ -31,9 +31,7 @@ class ClusteredRenewableClusterSeries(FolderNode):
 
     def build(self) -> TREE:
         children: TREE = {
-            renewable: ClusteredRenewableSeries(
-                self.context, self.config.next_file(renewable)
-            )
+            renewable: ClusteredRenewableSeries(self.context, self.config.next_file(renewable))
             for renewable in self.config.get_renewable_names(self.area)
         }
         return children
@@ -42,8 +40,6 @@ class ClusteredRenewableClusterSeries(FolderNode):
 class ClusteredRenewableAreaSeries(FolderNode):
     def build(self) -> TREE:
         return {
-            area: ClusteredRenewableClusterSeries(
-                self.context, self.config.next_file(area), area
-            )
+            area: ClusteredRenewableClusterSeries(self.context, self.config.next_file(area), area)
             for area in self.config.area_names()
         }

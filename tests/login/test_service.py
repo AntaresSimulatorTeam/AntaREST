@@ -112,9 +112,7 @@ def test_create_user():
     )
 
     service.create_user(create, param=SADMIN)
-    users.save.assert_called_once_with(
-        User(name="hello", password=Password("world"))
-    )
+    users.save.assert_called_once_with(User(name="hello", password=Password("world")))
 
 
 def test_save_user():
@@ -184,9 +182,7 @@ def test_save_bot():
     bots.get_by_name_and_owner.return_value = None
 
     roles = Mock()
-    roles.get.return_value = Role(
-        identity=Identity(id=3), group=Group(id="group"), type=RoleType.WRITER
-    )
+    roles.get.return_value = Role(identity=Identity(id=3), group=Group(id="group"), type=RoleType.WRITER)
 
     service = LoginService(
         user_repo=Mock(),
@@ -211,9 +207,7 @@ def test_save_bot_wrong_role():
     bots.save.side_effect = lambda b: b
 
     roles = Mock()
-    roles.get.return_value = Role(
-        identity=Identity(id=3), group=Group(id="group"), type=RoleType.READER
-    )
+    roles.get.return_value = Role(identity=Identity(id=3), group=Group(id="group"), type=RoleType.READER)
 
     service = LoginService(
         user_repo=Mock(),
@@ -231,9 +225,7 @@ def test_save_bot_wrong_role():
 
 
 def test_save_role():
-    role = RoleCreationDTO(
-        type=RoleType.ADMIN, identity_id=0, group_id="group"
-    )
+    role = RoleCreationDTO(type=RoleType.ADMIN, identity_id=0, group_id="group")
     users = Mock()
     users.get.return_value = User(id=0, name="admin")
     groups = Mock()
@@ -289,12 +281,8 @@ def test_get_group_info():
     ldap.get.return_value = UserLdap(id=4, name="Jane")
 
     roles = Mock()
-    roles.get_all_by_group.return_value = [
-        Role(group=group, identity=user, type=RoleType.RUNNER)
-    ]
-    roles.get_all_by_user.return_value = [
-        Role(group=group, identity=user, type=RoleType.RUNNER)
-    ]
+    roles.get_all_by_group.return_value = [Role(group=group, identity=user, type=RoleType.RUNNER)]
+    roles.get_all_by_user.return_value = [Role(group=group, identity=user, type=RoleType.RUNNER)]
 
     service = LoginService(
         user_repo=users,
@@ -363,9 +351,7 @@ def test_get_user_info():
     user_id = 3
     # When GADMIN ok, USER3 is himself
     users.get.return_value = user_ok
-    roles.get_all_by_user.return_value = [
-        Role(type=RoleType.ADMIN, group=group_ok, identity=user_ok)
-    ]
+    roles.get_all_by_user.return_value = [Role(type=RoleType.ADMIN, group=group_ok, identity=user_ok)]
     assert_permission(
         test=lambda x: service.get_user_info(user_id, x),
         values=[(SADMIN, True), (GADMIN, True), (USER3, True)],
@@ -424,9 +410,7 @@ def test_get_bot_info():
     bot_id = 3
     # When USER3 is himself
     bots.get.return_value = bot
-    roles.get_all_by_user.return_value = [
-        Role(type=RoleType.ADMIN, group=group, identity=bot)
-    ]
+    roles.get_all_by_user.return_value = [Role(type=RoleType.ADMIN, group=group, identity=bot)]
     assert_permission(
         test=lambda x: service.get_bot_info(bot_id, x),
         values=[(SADMIN, True), (GADMIN, False), (USER3, True)],
@@ -463,9 +447,7 @@ def test_authenticate():
     ldap.get.return_value = None
 
     roles = Mock()
-    roles.get_all_by_user.return_value = [
-        Role(type=RoleType.READER, group=Group(id="group", name="group"))
-    ]
+    roles.get_all_by_user.return_value = [Role(type=RoleType.READER, group=Group(id="group", name="group"))]
 
     exp = JWTUser(
         id=0,
@@ -551,9 +533,7 @@ def test_get_all_users():
     ldap.get_all.return_value = []
 
     user = User(id=3, name="user")
-    role_gadmin_ok = Role(
-        group=Group(id="group"), type=RoleType.ADMIN, identity=user
-    )
+    role_gadmin_ok = Role(group=Group(id="group"), type=RoleType.ADMIN, identity=user)
 
     role_repo = Mock()
     role_repo.get_all_by_user.return_value = [role_gadmin_ok]
@@ -727,12 +707,8 @@ def test_delete_role():
 def test_delete_all_roles():
     roles = Mock()
     user = User(id=3, name="user")
-    role_gadmin_ok = Role(
-        group=Group(id="group"), type=RoleType.READER, identity=user
-    )
-    role_gadmin_nok = Role(
-        group=Group(id="other-group"), type=RoleType.READER, identity=user
-    )
+    role_gadmin_ok = Role(group=Group(id="group"), type=RoleType.READER, identity=user)
+    role_gadmin_nok = Role(group=Group(id="other-group"), type=RoleType.READER, identity=user)
 
     service = LoginService(
         user_repo=Mock(),

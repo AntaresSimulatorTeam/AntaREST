@@ -44,9 +44,7 @@ class Link(BaseModel):
 
     @staticmethod
     def split(line: str) -> List[str]:
-        return [
-            token.strip() for token in line.split(",") if token.strip() != ""
-        ]
+        return [token.strip() for token in line.split(",") if token.strip() != ""]
 
 
 class Area(BaseModel):
@@ -151,9 +149,7 @@ class FileStudyTreeConfig(DTO):
         self.cache = cache or {}
         self.zip_path = zip_path
 
-    def next_file(
-        self, name: str, is_output: bool = False
-    ) -> "FileStudyTreeConfig":
+    def next_file(self, name: str, is_output: bool = False) -> "FileStudyTreeConfig":
         if is_output and name in self.outputs and self.outputs[name].archived:
             zip_path: Optional[Path] = self.path / f"{name}.zip"
         else:
@@ -202,22 +198,14 @@ class FileStudyTreeConfig(DTO):
             [k for k, v in self.sets.items() if v.output or not only_output],
         )
 
-    def get_thermal_names(
-        self, area: str, only_enabled: bool = False
-    ) -> List[str]:
+    def get_thermal_names(self, area: str, only_enabled: bool = False) -> List[str]:
         return self.cache.get(
             f"%thermal%{area}%{only_enabled}%{area}",
-            [
-                thermal.id
-                for thermal in self.areas[area].thermals
-                if not only_enabled or thermal.enabled
-            ],
+            [thermal.id for thermal in self.areas[area].thermals if not only_enabled or thermal.enabled],
         )
 
     def get_st_storage_ids(self, area: str) -> List[str]:
-        return self.cache.get(
-            f"%st-storage%{area}", [s.id for s in self.areas[area].st_storages]
-        )
+        return self.cache.get(f"%st-storage%{area}", [s.id for s in self.areas[area].st_storages])
 
     def get_renewable_names(
         self,
@@ -235,22 +223,16 @@ class FileStudyTreeConfig(DTO):
         )
 
     def get_links(self, area: str) -> List[str]:
-        return self.cache.get(
-            f"%links%{area}", list(self.areas[area].links.keys())
-        )
+        return self.cache.get(f"%links%{area}", list(self.areas[area].links.keys()))
 
-    def get_filters_synthesis(
-        self, area: str, link: Optional[str] = None
-    ) -> List[str]:
+    def get_filters_synthesis(self, area: str, link: Optional[str] = None) -> List[str]:
         if link:
             return self.areas[area].links[link].filters_synthesis
         if area in self.sets and self.sets[area].output:
             return self.sets[area].filters_synthesis
         return self.areas[area].filters_synthesis
 
-    def get_filters_year(
-        self, area: str, link: Optional[str] = None
-    ) -> List[str]:
+    def get_filters_year(self, area: str, link: Optional[str] = None) -> List[str]:
         if link:
             return self.areas[area].links[link].filters_year
         if area in self.sets and self.sets[area].output:

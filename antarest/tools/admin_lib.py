@@ -21,9 +21,7 @@ def clean_locks_from_config(config: Config) -> None:
             for workspace in slurm_workspace.iterdir():
                 lock_file = workspace / WORKSPACE_LOCK_FILE_NAME
                 if lock_file.exists():
-                    logger.info(
-                        f"Removing slurm workspace lock file {lock_file}"
-                    )
+                    logger.info(f"Removing slurm workspace lock file {lock_file}")
                     lock_file.unlink()
 
 

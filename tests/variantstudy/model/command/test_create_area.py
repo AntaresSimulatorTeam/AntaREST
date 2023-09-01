@@ -38,7 +38,6 @@ class TestCreateArea:
         )
         output = create_area_command.apply(study_data=empty_study)
 
-        
         # Areas
         assert area_id in empty_study.config.areas
 
@@ -139,7 +138,6 @@ class TestCreateArea:
 
         # thermal/areas ini file
         assert (study_path / "input" / "thermal" / "areas.ini").exists()
-        
 
         assert output.status
 
@@ -155,12 +153,11 @@ class TestCreateArea:
 
 
 def test_match(command_context: CommandContext):
-    
     base = CreateArea(area_name="foo", command_context=command_context)
     other_match = CreateArea(area_name="foo", command_context=command_context)
     other_not_match = CreateArea(area_name="bar", command_context=command_context)
     other_other = RemoveArea(id="id", command_context=command_context)
-    
+
     assert base.match(other_match)
     assert not base.match(other_not_match)
     assert not base.match(other_other)

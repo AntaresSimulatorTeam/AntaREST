@@ -66,9 +66,7 @@ def build_study_service(
     path_resources = config.resources_path
 
     resolver = UriResolverService(matrix_service=matrix_service)
-    study_factory = StudyFactory(
-        matrix=matrix_service, resolver=resolver, cache=cache
-    )
+    study_factory = StudyFactory(matrix=matrix_service, resolver=resolver, cache=cache)
     metadata_repository = metadata_repository or StudyMetadataRepository(cache)
     variant_repository = variant_repository or VariantStudyRepository(cache)
 
@@ -82,10 +80,7 @@ def build_study_service(
         cache=cache,
     )
 
-    generator_matrix_constants = (
-        generator_matrix_constants
-        or GeneratorMatrixConstants(matrix_service=matrix_service)
-    )
+    generator_matrix_constants = generator_matrix_constants or GeneratorMatrixConstants(matrix_service=matrix_service)
     command_factory = CommandFactory(
         generator_matrix_constants=generator_matrix_constants,
         matrix_service=matrix_service,
@@ -116,23 +111,15 @@ def build_study_service(
     )
 
     if application:
-        application.include_router(
-            create_study_routes(study_service, file_transfer_manager, config)
-        )
-        application.include_router(
-            create_raw_study_routes(study_service, config)
-        )
-        application.include_router(
-            create_study_data_routes(study_service, config)
-        )
+        application.include_router(create_study_routes(study_service, file_transfer_manager, config))
+        application.include_router(create_raw_study_routes(study_service, config))
+        application.include_router(create_study_data_routes(study_service, config))
         application.include_router(
             create_study_variant_routes(
                 study_service=study_service,
                 config=config,
             )
         )
-        application.include_router(
-            create_xpansion_routes(study_service, config)
-        )
+        application.include_router(create_xpansion_routes(study_service, config))
 
     return study_service

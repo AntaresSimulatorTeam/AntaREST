@@ -13,13 +13,7 @@ def test_archive_worker_action(tmp_path: Path):
         Mock(),
         "foo",
         tmp_path,
-        Config(
-            storage=StorageConfig(
-                workspaces={
-                    "foo": WorkspaceConfig(path=workspace_server_mount_point)
-                }
-            )
-        ),
+        Config(storage=StorageConfig(workspaces={"foo": WorkspaceConfig(path=workspace_server_mount_point)})),
     )
 
     zipname = "somezip.zip"

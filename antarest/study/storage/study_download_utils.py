@@ -60,11 +60,7 @@ class StudyDownloader:
             for index, column in enumerate(columns):
                 if len(column) > 0:
                     column_name = column[0]
-                    if (
-                        data.columns
-                        and len(data.columns) > 0
-                        and not (column_name in data.columns)
-                    ):
+                    if data.columns and len(data.columns) > 0 and not (column_name in data.columns):
                         continue
 
                     if target not in matrix.data:
@@ -82,15 +78,11 @@ class StudyDownloader:
                         )
                     )
                 else:
-                    logger.warning(
-                        f"Found an output column with no elements at {url}"
-                    )
+                    logger.warning(f"Found an output column with no elements at {url}")
 
         except (ChildNotFoundError, FilterError) as e:
             matrix.warnings.append(f"{target} has no child")
-            logger.warning(
-                f"Failed to retrieve matrix data for {target}", exc_info=e
-            )
+            logger.warning(f"Failed to retrieve matrix data for {target}", exc_info=e)
 
     @staticmethod
     def level_output_filter(
@@ -112,9 +104,7 @@ class StudyDownloader:
         )
         for elm in files_matcher:
             tmp_url = f"{url}/{elm}"
-            StudyDownloader.read_columns(
-                matrix, year, target, study, tmp_url, data
-            )
+            StudyDownloader.read_columns(matrix, year, target, study, tmp_url, data)
 
     @staticmethod
     def apply_type_filters(
@@ -129,9 +119,7 @@ class StudyDownloader:
         second_element_type_condition: Callable[[str], bool],
     ) -> None:
         if first_element_type_condition:
-            if data.type == StudyDownloadType.LINK and isinstance(
-                type_elm[elm], Area
-            ):
+            if data.type == StudyDownloadType.LINK and isinstance(type_elm[elm], Area):
                 if type_elm[elm].links:
                     for out_link in type_elm[elm].links.keys():
                         if second_element_type_condition(out_link):
@@ -145,9 +133,7 @@ class StudyDownloader:
                                 data,
                             )
             else:
-                StudyDownloader.level_output_filter(
-                    matrix, year, (data.type, elm), study, url, data
-                )
+                StudyDownloader.level_output_filter(matrix, year, (data.type, elm), study, url, data)
 
     @staticmethod
     def get_filters(filter: str) -> Tuple[str, str]:
@@ -169,11 +155,7 @@ class StudyDownloader:
         data: StudyDownloadDTO,
     ) -> None:
         for elm in type_elm.keys():
-            filtered_url = (
-                f"{url}/@ {elm}"
-                if data.type == StudyDownloadType.DISTRICT
-                else f"{url}/{elm}"
-            )
+            filtered_url = f"{url}/@ {elm}" if data.type == StudyDownloadType.DISTRICT else f"{url}/{elm}"
 
             # Filter has priority over FilterIn or FilterOut
             if data.filter and len(data.filter) > 0:
@@ -206,27 +188,12 @@ class StudyDownloader:
                             lambda x: True,
                         )
             else:  # FilterIn, FilterOut
-                flt_out_1, flt_out_2 = (
-                    StudyDownloader.get_filters(data.filterOut)
-                    if data.filterOut
-                    else ("", "")
-                )
-                flt_in_1, flt_in_2 = (
-                    StudyDownloader.get_filters(data.filterIn)
-                    if data.filterIn
-                    else ("", "")
-                )
+                flt_out_1, flt_out_2 = StudyDownloader.get_filters(data.filterOut) if data.filterOut else ("", "")
+                flt_in_1, flt_in_2 = StudyDownloader.get_filters(data.filterIn) if data.filterIn else ("", "")
 
-                first_element_type_condition_in = bool(
-                    re.search(flt_in_1, elm)
-                )
-                first_element_type_condition_out = (
-                    not bool(re.search(flt_out_1, elm)) if flt_out_1 else True
-                )
-                first_element_type_condition = (
-                    first_element_type_condition_in
-                    and first_element_type_condition_out
-                )
+                first_element_type_condition_in = bool(re.search(flt_in_1, elm))
+                first_element_type_condition_out = not bool(re.search(flt_out_1, elm)) if flt_out_1 else True
+                first_element_type_condition = first_element_type_condition_in and first_element_type_condition_out
 
                 def second_element_type_condition(x: str) -> bool:
                     cond1 = not (flt_out_2 and bool(re.search(flt_out_2, x)))
@@ -255,9 +222,7 @@ class StudyDownloader:
         data: StudyDownloadDTO,
     ) -> None:
         if data.type == StudyDownloadType.AREA:
-            StudyDownloader.select_filter(
-                matrix, year, config.areas, study, f"{url}/areas", data
-            )
+            StudyDownloader.select_filter(matrix, year, config.areas, study, f"{url}/areas", data)
         elif data.type == StudyDownloadType.DISTRICT:
             StudyDownloader.select_filter(
                 matrix,
@@ -268,9 +233,7 @@ class StudyDownloader:
                 data,
             )
         else:
-            StudyDownloader.select_filter(
-                matrix, year, config.areas, study, f"{url}/links", data
-            )
+            StudyDownloader.select_filter(matrix, year, config.areas, study, f"{url}/links", data)
 
     @staticmethod
     def years_output_filter(
@@ -285,17 +248,13 @@ class StudyDownloader:
             for year in data.years:
                 prefix = str(year).zfill(5)
                 tmp_url = f"{url}/{prefix}"
-                StudyDownloader.type_output_filter(
-                    matrix, year, config, study, tmp_url, data
-                )
+                StudyDownloader.type_output_filter(matrix, year, config, study, tmp_url, data)
         else:
             years = config.outputs[output_id].nbyears
             for year in range(1, years + 1):
                 prefix = str(year).zfill(5)
                 tmp_url = f"{url}/{prefix}"
-                StudyDownloader.type_output_filter(
-                    matrix, year, config, study, tmp_url, data
-                )
+                StudyDownloader.type_output_filter(matrix, year, config, study, tmp_url, data)
 
     @staticmethod
     def build(
@@ -319,17 +278,10 @@ class StudyDownloader:
             warnings=[],
         )
 
-        if (
-            file_study.config.outputs
-            and output_id in file_study.config.outputs
-        ):
+        if file_study.config.outputs and output_id in file_study.config.outputs:
             sim = file_study.config.outputs[output_id]
             if sim:
-                url += (
-                    f"/{sim.mode}"
-                    if sim.mode != "draft"
-                    else f"/adequacy-draft"
-                )
+                url += f"/{sim.mode}" if sim.mode != "draft" else f"/adequacy-draft"
 
                 if data.synthesis:
                     url += "/mc-all"
@@ -354,18 +306,12 @@ class StudyDownloader:
         return matrix.to_dto()
 
     @staticmethod
-    def export_infos(
-        data: Dict[str, List[TimeSerie]]
-    ) -> Tuple[int, List[str]]:
+    def export_infos(data: Dict[str, List[TimeSerie]]) -> Tuple[int, List[str]]:
         years = list(data.keys())
         if len(years) > 0:
-            columns: List[str] = list(
-                map(lambda x: f"{x.name}", data[years[0]])
-            )
+            columns: List[str] = list(map(lambda x: f"{x.name}", data[years[0]]))
             if len(columns) > 0:
-                return len(data[years[0]][0].data), (
-                    ["Time", "Version"] + columns
-                )
+                return len(data[years[0]][0].data), (["Time", "Version"] + columns)
         return -1, []
 
     @staticmethod
@@ -396,17 +342,11 @@ class StudyDownloader:
                 for ts_data in matrix.data:
                     output = StringIO()
                     writer = csv.writer(output, quoting=csv.QUOTE_NONE)
-                    nb_rows, csv_titles = StudyDownloader.export_infos(
-                        ts_data.data
-                    )
+                    nb_rows, csv_titles = StudyDownloader.export_infos(ts_data.data)
                     if nb_rows == -1:
-                        raise Exception(
-                            f"Outputs export:  No rows for  {ts_data.name} csv"
-                        )
+                        raise Exception(f"Outputs export:  No rows for  {ts_data.name} csv")
                     writer.writerow(csv_titles)
-                    row_date = datetime.strptime(
-                        matrix.index.start_date, "%Y-%m-%d %H:%M:%S"
-                    )
+                    row_date = datetime.strptime(matrix.index.start_date, "%Y-%m-%d %H:%M:%S")
                     for year in ts_data.data:
                         for i in range(0, nb_rows):
                             columns = ts_data.data[year]
@@ -414,25 +354,12 @@ class StudyDownloader:
                                 str(row_date),
                                 int(year),
                             ]
-                            csv_row.extend(
-                                [
-                                    column_data.data[i]
-                                    for column_data in columns
-                                ]
-                            )
+                            csv_row.extend([column_data.data[i] for column_data in columns])
                             writer.writerow(csv_row)
-                            if (
-                                matrix.index.level
-                                == StudyDownloadLevelDTO.WEEKLY
-                                and i == 0
-                            ):
-                                row_date = row_date + timedelta(
-                                    days=matrix.index.first_week_size
-                                )
+                            if matrix.index.level == StudyDownloadLevelDTO.WEEKLY and i == 0:
+                                row_date = row_date + timedelta(days=matrix.index.first_week_size)
                             else:
-                                row_date = matrix.index.level.inc_date(
-                                    row_date
-                                )
+                                row_date = matrix.index.level.inc_date(row_date)
 
                     bytes_data = str.encode(output.getvalue(), "utf-8")
                     if isinstance(output_data, ZipFile):
@@ -455,20 +382,15 @@ class BadOutputFormat(HTTPException):
 def find_first_child(
     folder_node: INode[Any, Any, Any], filter_name: str = ".*", depth: int = 0
 ) -> INode[Any, Any, Any]:
-    children: Dict[str, INode[Any, Any, Any]] = cast(
-        FolderNode, folder_node
-    ).build()
+    children: Dict[str, INode[Any, Any, Any]] = cast(FolderNode, folder_node).build()
     filtered_children = filter(
-        lambda el: re.search(".*" if depth > 0 else filter_name, el)
-        is not None,
+        lambda el: re.search(".*" if depth > 0 else filter_name, el) is not None,
         children.keys(),
     )
     if depth > 0:
         for child in filtered_children:
             try:
-                return find_first_child(
-                    children[child], filter_name, depth - 1
-                )
+                return find_first_child(children[child], filter_name, depth - 1)
             except BadOutputFormat:
                 pass
     else:
@@ -476,10 +398,7 @@ def find_first_child(
             while True:
                 first_child = filtered_children.__next__()
                 first_child_node = children[first_child]
-                if (
-                    not isinstance(first_child_node, LazyNode)
-                    or first_child_node.file_exists()
-                ):
+                if not isinstance(first_child_node, LazyNode) or first_child_node.file_exists():
                     return first_child_node
         except StopIteration:
             raise BadOutputFormat("Couldn't find an output sample")
@@ -487,9 +406,7 @@ def find_first_child(
     raise BadOutputFormat("Couldn't find an output sample")
 
 
-def get_output_variables(
-    base_node: INode[Any, Any, Any], depth_search: int
-) -> List[List[str]]:
+def get_output_variables(base_node: INode[Any, Any, Any], depth_search: int) -> List[List[str]]:
     return cast(
         List[List[str]],
         cast(
@@ -501,9 +418,7 @@ def get_output_variables(
     )
 
 
-def get_output_variables_information(
-    study: FileStudy, output_name: str
-) -> Dict[str, List[str]]:
+def get_output_variables_information(study: FileStudy, output_name: str) -> Dict[str, List[str]]:
     if not study.config.outputs[output_name].by_year:
         raise BadOutputFormat("Not a year by year simulation")
 
@@ -541,42 +456,26 @@ def get_output_variables_information(
     }
 
     try:
-        output_variables["area"] = get_output_variables(
-            first_year_result["areas"], 1
-        )
+        output_variables["area"] = get_output_variables(first_year_result["areas"], 1)
     except BadOutputFormat:
-        logger.warning(
-            f"Failed to retrieve output variables in {study.config.study_id} ({output_name}) for areas"
-        )
+        logger.warning(f"Failed to retrieve output variables in {study.config.study_id} ({output_name}) for areas")
 
     if len(output_variables["area"]) == 0 and "areas" in mc_all_result:
         try:
-            output_variables["area"] = get_output_variables(
-                mc_all_result["areas"], 1
-            )
+            output_variables["area"] = get_output_variables(mc_all_result["areas"], 1)
         except BadOutputFormat:
-            logger.warning(
-                f"Failed to retrieve output variables in {study.config.study_id} ({output_name}) for areas"
-            )
+            logger.warning(f"Failed to retrieve output variables in {study.config.study_id} ({output_name}) for areas")
 
     try:
-        output_variables["link"] = get_output_variables(
-            first_year_result["links"], 2
-        )
+        output_variables["link"] = get_output_variables(first_year_result["links"], 2)
     except BadOutputFormat:
-        logger.warning(
-            f"Failed to retrieve output variables in {study.config.study_id} ({output_name}) for links"
-        )
+        logger.warning(f"Failed to retrieve output variables in {study.config.study_id} ({output_name}) for links")
 
     if len(output_variables["link"]) == 0 and "links" in mc_all_result:
         try:
-            output_variables["link"] = get_output_variables(
-                mc_all_result["links"], 2
-            )
+            output_variables["link"] = get_output_variables(mc_all_result["links"], 2)
         except BadOutputFormat:
-            logger.warning(
-                f"Failed to retrieve output variables in {study.config.study_id} ({output_name}) for links"
-            )
+            logger.warning(f"Failed to retrieve output variables in {study.config.study_id} ({output_name}) for links")
 
     # don't know how to preserve order if using list({col[0] for col in ...})
     area_cols: List[str] = []

@@ -15,9 +15,7 @@ class UpdatePlaylist(ICommand):
     reverse: bool = False
 
     def __init__(self, **data: Any) -> None:
-        super().__init__(
-            command_name=CommandName.UPDATE_PLAYLIST, version=1, **data
-        )
+        super().__init__(command_name=CommandName.UPDATE_PLAYLIST, version=1, **data)
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
         FileStudyHelpers.set_playlist(
@@ -29,9 +27,7 @@ class UpdatePlaylist(ICommand):
         )
         return CommandOutput(status=True)
 
-    def _apply_config(
-        self, study_data: FileStudyTreeConfig
-    ) -> Tuple[CommandOutput, Dict[str, Any]]:
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         return CommandOutput(status=True), {}
 
     def to_dto(self) -> CommandDTO:

@@ -27,9 +27,7 @@ class ExternalAuthConfig:
     def from_dict(data: JSON) -> "ExternalAuthConfig":
         return ExternalAuthConfig(
             url=data.get("url", None),
-            default_group_role=RoleType(
-                data.get("default_group_role", RoleType.READER.value)
-            ),
+            default_group_role=RoleType(data.get("default_group_role", RoleType.READER.value)),
             add_ext_groups=data.get("add_ext_groups", False),
             group_mapping=data.get("group_mapping", {}),
         )
@@ -52,9 +50,7 @@ class SecurityConfig:
             jwt_key=data.get("jwt", {}).get("key", ""),
             admin_pwd=data.get("login", {}).get("admin", {}).get("pwd", ""),
             disabled=data.get("disabled", False),
-            external_auth=ExternalAuthConfig.from_dict(
-                data.get("external_auth", {})
-            ),
+            external_auth=ExternalAuthConfig.from_dict(data.get("external_auth", {})),
         )
 
 
@@ -136,26 +132,17 @@ class StorageConfig:
         return StorageConfig(
             tmp_dir=Path(data.get("tmp_dir", tempfile.gettempdir())),
             matrixstore=Path(data["matrixstore"]),
-            workspaces={
-                n: WorkspaceConfig.from_dict(w)
-                for n, w in data["workspaces"].items()
-            },
+            workspaces={n: WorkspaceConfig.from_dict(w) for n, w in data["workspaces"].items()},
             allow_deletion=data.get("allow_deletion", False),
             archive_dir=Path(data["archive_dir"]),
             watcher_lock=data.get("watcher_lock", True),
             watcher_lock_delay=data.get("watcher_lock_delay", 10),
-            download_default_expiration_timeout_minutes=data.get(
-                "download_default_expiration_timeout_minutes", 1440
-            ),
+            download_default_expiration_timeout_minutes=data.get("download_default_expiration_timeout_minutes", 1440),
             matrix_gc_sleeping_time=data.get("matrix_gc_sleeping_time", 3600),
             matrix_gc_dry_run=data.get("matrix_gc_dry_run", False),
-            auto_archive_threshold_days=data.get(
-                "auto_archive_threshold_days", 60
-            ),
+            auto_archive_threshold_days=data.get("auto_archive_threshold_days", 60),
             auto_archive_dry_run=data.get("auto_archive_dry_run", False),
-            auto_archive_sleeping_time=data.get(
-                "auto_archive_sleeping_time", 3600
-            ),
+            auto_archive_sleeping_time=data.get("auto_archive_sleeping_time", 3600),
             auto_archive_max_parallel=data.get("auto_archive_max_parallel", 5),
         )
 
@@ -203,9 +190,7 @@ class SlurmConfig:
             default_n_cpu=data["default_n_cpu"],
             default_json_db_name=data["default_json_db_name"],
             slurm_script_path=data["slurm_script_path"],
-            antares_versions_on_remote_server=data[
-                "antares_versions_on_remote_server"
-            ],
+            antares_versions_on_remote_server=data["antares_versions_on_remote_server"],
             max_cores=data.get("max_cores", 64),
         )
 
@@ -302,9 +287,7 @@ class CacheConfig:
     @staticmethod
     def from_dict(data: JSON) -> "CacheConfig":
         return CacheConfig(
-            checker_delay=float(data["checker_delay"])
-            if "checker_delay" in data
-            else 0.2,
+            checker_delay=float(data["checker_delay"]) if "checker_delay" in data else 0.2,
         )
 
 
@@ -315,9 +298,7 @@ class RemoteWorkerConfig:
 
     @staticmethod
     def from_dict(data: JSON) -> "RemoteWorkerConfig":
-        return RemoteWorkerConfig(
-            name=data["name"], queues=data.get("queues", [])
-        )
+        return RemoteWorkerConfig(name=data["name"], queues=data.get("queues", []))
 
 
 @dataclass(frozen=True)
@@ -332,9 +313,7 @@ class TaskConfig:
     @staticmethod
     def from_dict(data: JSON) -> "TaskConfig":
         return TaskConfig(
-            max_workers=int(data["max_workers"])
-            if "max_workers" in data
-            else 5,
+            max_workers=int(data["max_workers"]) if "max_workers" in data else 5,
             remote_workers=list(
                 map(
                     lambda x: RemoteWorkerConfig.from_dict(x),
@@ -356,9 +335,7 @@ class ServerConfig:
     @staticmethod
     def from_dict(data: JSON) -> "ServerConfig":
         return ServerConfig(
-            worker_threadpool_size=int(data["worker_threadpool_size"])
-            if "worker_threadpool_size" in data
-            else 5,
+            worker_threadpool_size=int(data["worker_threadpool_size"]) if "worker_threadpool_size" in data else 5,
             services=data.get("services", []),
         )
 
@@ -404,21 +381,11 @@ class Config:
             debug=data.get("debug", False),
             resources_path=res or Path(),
             root_path=data.get("root_path", ""),
-            redis=RedisConfig.from_dict(data["redis"])
-            if "redis" in data
-            else None,
-            eventbus=EventBusConfig.from_dict(data["eventbus"])
-            if "eventbus" in data
-            else EventBusConfig(),
-            cache=CacheConfig.from_dict(data["cache"])
-            if "cache" in data
-            else CacheConfig(),
-            tasks=TaskConfig.from_dict(data["tasks"])
-            if "tasks" in data
-            else TaskConfig(),
-            server=ServerConfig.from_dict(data["server"])
-            if "server" in data
-            else ServerConfig(),
+            redis=RedisConfig.from_dict(data["redis"]) if "redis" in data else None,
+            eventbus=EventBusConfig.from_dict(data["eventbus"]) if "eventbus" in data else EventBusConfig(),
+            cache=CacheConfig.from_dict(data["cache"]) if "cache" in data else CacheConfig(),
+            tasks=TaskConfig.from_dict(data["tasks"]) if "tasks" in data else TaskConfig(),
+            server=ServerConfig.from_dict(data["server"]) if "server" in data else ServerConfig(),
         )
 
     @staticmethod

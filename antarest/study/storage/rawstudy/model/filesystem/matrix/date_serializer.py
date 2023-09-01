@@ -56,11 +56,7 @@ class IDateMatrixSerializer(ABC):
 def rename_unnamed(df: pd.DataFrame) -> pd.DataFrame:
     unnamed_cols: List[str] = []
     for i in range(0, df.columns.nlevels):
-        unnamed_cols += [
-            name
-            for name in df.columns.get_level_values(i).values
-            if "Unnamed:" in name
-        ]
+        unnamed_cols += [name for name in df.columns.get_level_values(i).values if "Unnamed:" in name]
     df.rename(columns={name: "" for name in unnamed_cols}, inplace=True)
     return df
 
@@ -94,13 +90,7 @@ class HourlyMatrixSerializer(IDateMatrixSerializer):
         df_date = df.iloc[:, 2:5]
         df_date.columns = pd.Index(data=["day", "month", "hour"])
         df_date["month"] = df_date["month"].map(IDateMatrixSerializer._MONTHS)
-        date = (
-            df_date["month"].astype(str)
-            + "/"
-            + df_date["day"].astype(str).str.zfill(2)
-            + " "
-            + df_date["hour"]
-        )
+        date = df_date["month"].astype(str) + "/" + df_date["day"].astype(str).str.zfill(2) + " " + df_date["hour"]
 
         # Extract right part with data
         to_remove = cast(Sequence[Hashable], df.columns[0:5])
@@ -138,11 +128,7 @@ class DailyMatrixSerializer(IDateMatrixSerializer):
         df_date = df.iloc[:, 2:4]
         df_date.columns = pd.Index(["day", "month"])
         df_date["month"] = df_date["month"].map(IDateMatrixSerializer._MONTHS)
-        date = (
-            df_date["month"].astype(str)
-            + "/"
-            + df_date["day"].astype(str).str.zfill(2)
-        )
+        date = df_date["month"].astype(str) + "/" + df_date["day"].astype(str).str.zfill(2)
 
         # Extract right part with data
         to_remove = cast(Sequence[Hashable], df.columns[0:4])
@@ -210,9 +196,7 @@ class MonthlyMatrixSerializer(IDateMatrixSerializer):
         df_date = df.iloc[:, 2:3]
         df_date.columns = pd.Index(["month"])
         # noinspection PyUnresolvedReferences
-        df_date["month"] = df_date.loc[:, "month"].map(
-            IDateMatrixSerializer._MONTHS
-        )
+        df_date["month"] = df_date.loc[:, "month"].map(IDateMatrixSerializer._MONTHS)
 
         # Extract right part with data
         to_remove = cast(Sequence[Hashable], df.columns[0:3])
@@ -266,6 +250,4 @@ class FactoryDateSerializer:
         if freq == "annual":
             return AnnualMatrixSerializer(area)
 
-        raise NotImplementedError(
-            f"Any date serializer compatible with freq={freq}"
-        )
+        raise NotImplementedError(f"Any date serializer compatible with freq={freq}")

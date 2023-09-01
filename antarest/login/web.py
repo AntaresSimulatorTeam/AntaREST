@@ -54,21 +54,13 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
 
     auth = Auth(config)
 
-    def generate_tokens(
-        user: JWTUser, jwt_manager: AuthJWT, expire: Optional[timedelta] = None
-    ) -> CredentialsDTO:
-        access_token = jwt_manager.create_access_token(
-            subject=user.json(), expires_time=expire
-        )
+    def generate_tokens(user: JWTUser, jwt_manager: AuthJWT, expire: Optional[timedelta] = None) -> CredentialsDTO:
+        access_token = jwt_manager.create_access_token(subject=user.json(), expires_time=expire)
         refresh_token = jwt_manager.create_refresh_token(subject=user.json())
         return CredentialsDTO(
             user=user.id,
-            access_token=access_token.decode()
-            if isinstance(access_token, bytes)
-            else access_token,
-            refresh_token=refresh_token.decode()
-            if isinstance(refresh_token, bytes)
-            else refresh_token,
+            access_token=access_token.decode() if isinstance(access_token, bytes) else access_token,
+            refresh_token=refresh_token.decode() if isinstance(refresh_token, bytes) else refresh_token,
         )
 
     @bp.post(
@@ -84,9 +76,7 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
         logger.info(f"New login for {credentials.username}")
         user = service.authenticate(credentials.username, credentials.password)
         if not user:
-            raise HTTPException(
-                status_code=401, detail="Bad username or password"
-            )
+            raise HTTPException(status_code=401, detail="Bad username or password")
 
         # Identity can be any data that is json serializable
         resp = generate_tokens(user, jwt_manager)
@@ -134,9 +124,7 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
         details: Optional[bool] = False,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
-        logger.info(
-            f"Fetching user info for {id}", extra={"user": current_user.id}
-        )
+        logger.info(f"Fetching user info for {id}", extra={"user": current_user.id})
         params = RequestParameters(user=current_user)
         u: Any = None
         if details:
@@ -173,28 +161,20 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
         params = RequestParameters(user=current_user)
 
         if id != user_info.id:
-            raise HTTPException(
-                status_code=400, detail="Id in path must be same id in body"
-            )
+            raise HTTPException(status_code=400, detail="Id in path must be same id in body")
 
         return service.save_user(User.from_dto(user_info), params).to_dto()
 
     @bp.delete("/users/{id}", tags=[APITag.users])
-    def users_delete(
-        id: int, current_user: JWTUser = Depends(auth.get_current_user)
-    ) -> Any:
+    def users_delete(id: int, current_user: JWTUser = Depends(auth.get_current_user)) -> Any:
         logger.info(f"Removing user {id}", extra={"user": current_user.id})
         params = RequestParameters(user=current_user)
         service.delete_user(id, params)
         return id
 
     @bp.delete("/users/roles/{id}", tags=[APITag.users])
-    def roles_delete_by_user(
-        id: int, current_user: JWTUser = Depends(auth.get_current_user)
-    ) -> Any:
-        logger.info(
-            f"Removing user {id} roles", extra={"user": current_user.id}
-        )
+    def roles_delete_by_user(id: int, current_user: JWTUser = Depends(auth.get_current_user)) -> Any:
+        logger.info(f"Removing user {id} roles", extra={"user": current_user.id})
         params = RequestParameters(user=current_user)
         service.delete_all_roles_from_user(id, params)
         return id
@@ -222,9 +202,7 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
         details: Optional[bool] = False,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
-        logger.info(
-            f"Fetching group {id} info", extra={"user": current_user.id}
-        )
+        logger.info(f"Fetching group {id} info", extra={"user": current_user.id})
         params = RequestParameters(user=current_user)
         group: Any = None
         if details:
@@ -236,9 +214,7 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
         if group:
             return group
         else:
-            return HTTPException(
-                status_code=404, detail=f"Group {id} not found"
-            )
+            return HTTPException(status_code=404, detail=f"Group {id} not found")
 
     @bp.post("/groups", tags=[APITag.users], response_model=GroupDTO)
     def groups_create(
@@ -257,9 +233,7 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
         return service.save_group(group, params).to_dto()
 
     @bp.delete("/groups/{id}", tags=[APITag.users], response_model=str)
-    def groups_delete(
-        id: str, current_user: JWTUser = Depends(auth.get_current_user)
-    ) -> Any:
+    def groups_delete(id: str, current_user: JWTUser = Depends(auth.get_current_user)) -> Any:
         logger.info(f"Removing group {id}", extra={"user": current_user.id})
         params = RequestParameters(user=current_user)
         service.delete_group(id, params)
@@ -270,18 +244,13 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
         tags=[APITag.users],
         response_model=List[RoleDetailDTO],
     )
-    def roles_get_all(
-        group: str, current_user: JWTUser = Depends(auth.get_current_user)
-    ) -> Any:
+    def roles_get_all(group: str, current_user: JWTUser = Depends(auth.get_current_user)) -> Any:
         logger.info(
             f"Fetching roles for group {group}",
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
-        return [
-            r.to_dto()
-            for r in service.get_all_roles_in_group(group=group, params=params)
-        ]
+        return [r.to_dto() for r in service.get_all_roles_in_group(group=group, params=params)]
 
     @bp.post("/roles", tags=[APITag.users], response_model=RoleDetailDTO)
     def role_create(
@@ -342,9 +311,7 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
             type=bot.type,
             groups=groups,
         )
-        tokens = generate_tokens(
-            jwt, jwt_manager, expire=timedelta(days=368 * 200)
-        )
+        tokens = generate_tokens(jwt, jwt_manager, expire=timedelta(days=368 * 200))
         return tokens.access_token
 
     @bp.get(
@@ -359,11 +326,7 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
     ) -> Any:
         logger.info(f"Fetching bot {id}", extra={"user": current_user.id})
         params = RequestParameters(user=current_user)
-        bot = (
-            service.get_bot_info(id, params)
-            if verbose
-            else service.get_bot(id, params).to_dto()
-        )
+        bot = service.get_bot_info(id, params) if verbose else service.get_bot(id, params).to_dto()
         if not bot:
             return UserHasNotPermissionError()
         return bot
@@ -384,11 +347,7 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
         )
         params = RequestParameters(user=current_user)
 
-        bots = (
-            service.get_all_bots_by_owner(owner, params)
-            if owner
-            else service.get_all_bots(params)
-        )
+        bots = service.get_all_bots_by_owner(owner, params) if owner else service.get_all_bots(params)
         return [b.to_dto() for b in bots]
 
     @bp.delete(
@@ -397,9 +356,7 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
         summary="Revoke bot token",
         response_model=int,
     )
-    def bots_delete(
-        id: int, current_user: JWTUser = Depends(auth.get_current_user)
-    ) -> Any:
+    def bots_delete(id: int, current_user: JWTUser = Depends(auth.get_current_user)) -> Any:
         logger.info(f"Removing bot {id}", extra={"user": current_user.id})
         params = RequestParameters(user=current_user)
         service.delete_bot(id, params)

@@ -14,9 +14,7 @@ class ScenarioBuilderManager:
         self.storage_service = storage_service
 
     def get_config(self, study: Study) -> Dict[str, Any]:
-        temp = self.storage_service.get_storage(study).get(
-            study, "/settings/scenariobuilder"
-        )
+        temp = self.storage_service.get_storage(study).get(study, "/settings/scenariobuilder")
 
         def format_key(key: str) -> List[str]:
             parts = key.split(KEY_SEP)
@@ -39,9 +37,7 @@ class ScenarioBuilderManager:
                     nested_dict = result
                     for key in keys[:-1]:
                         nested_dict = nested_dict.setdefault(key, {})
-                    nested_dict[keys[-1]] = (
-                        v * HL_COEF if keys[0] == "hl" else v
-                    )
+                    nested_dict[keys[-1]] = v * HL_COEF if keys[0] == "hl" else v
             return result
 
         return format_obj(temp)
@@ -61,9 +57,7 @@ class ScenarioBuilderManager:
             # "[symbol],area1,0"
             return key
 
-        def flatten_obj(
-            obj: Dict[str, Any], parent_key: str = ""
-        ) -> Dict[str, Dict[str, int]]:
+        def flatten_obj(obj: Dict[str, Any], parent_key: str = "") -> Dict[str, Dict[str, int]]:
             items = []  # type: ignore
             for k, v in obj.items():
                 new_key = parent_key + KEY_SEP + k if parent_key else k
@@ -85,10 +79,7 @@ class ScenarioBuilderManager:
             [
                 UpdateScenarioBuilder(
                     # The value is a string when it is a ruleset cloning/deleting
-                    data={
-                        k: flatten_obj(v) if isinstance(v, dict) else v
-                        for k, v in data.items()
-                    },
+                    data={k: flatten_obj(v) if isinstance(v, dict) else v for k, v in data.items()},
                     command_context=self.storage_service.variant_study_service.command_factory.command_context,
                 )
             ],

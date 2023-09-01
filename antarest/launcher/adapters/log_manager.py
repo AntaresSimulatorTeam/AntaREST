@@ -18,9 +18,7 @@ class LogTailManager:
     def is_tracking(self, log_path: Optional[Path]) -> bool:
         return str(log_path) in self.tracked_logs if log_path else False
 
-    def track(
-        self, log_path: Optional[Path], handler: Callable[[str], None]
-    ) -> None:
+    def track(self, log_path: Optional[Path], handler: Callable[[str], None]) -> None:
         if log_path is None:
             return None
         if str(log_path) in self.tracked_logs:
@@ -29,9 +27,7 @@ class LogTailManager:
 
         logger.info(f"Adding log {log_path} track")
         thread = Thread(
-            target=lambda: self._follow(
-                log_path, handler, self._stop_tracking(str(log_path))
-            ),
+            target=lambda: self._follow(log_path, handler, self._stop_tracking(str(log_path))),
             name=f"{self.__class__.__name__}-LogsWatcher",
             daemon=True,
         )
@@ -71,9 +67,7 @@ class LogTailManager:
                     try:
                         handler(line)
                     except Exception as e:
-                        logger.error(
-                            "Could not handle this log line", exc_info=e
-                        )
+                        logger.error("Could not handle this log line", exc_info=e)
                     line = ""
                     line_count = 0
                 time.sleep(0.1)
@@ -86,9 +80,7 @@ class LogTailManager:
                     try:
                         handler(line)
                     except Exception as e:
-                        logger.error(
-                            "Could not handle this log line", exc_info=e
-                        )
+                        logger.error("Could not handle this log line", exc_info=e)
                     line = ""
                     line_count = 0
 

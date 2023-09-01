@@ -20,9 +20,7 @@ MOCK_MATRIX_DTO = [[1, 2], [3, 4]]
 
 
 class MockMatrixNode(MatrixNode):
-    def __init__(
-        self, context: ContextServer, config: FileStudyTreeConfig
-    ) -> None:
+    def __init__(self, context: ContextServer, config: FileStudyTreeConfig) -> None:
         super().__init__(
             config=config,
             context=context,
@@ -46,9 +44,7 @@ class MockMatrixNode(MatrixNode):
     #         json.dumps(data, indent=2), encoding="utf-8"
     #     )
 
-    def check_errors(
-        self, data: str, url: Optional[List[str]] = None, raising: bool = False
-    ) -> List[str]:
+    def check_errors(self, data: str, url: Optional[List[str]] = None, raising: bool = False) -> List[str]:
         pass  # not used
 
 
@@ -65,9 +61,7 @@ class TestMatrixNode:
 
         node = MockMatrixNode(
             context=ContextServer(matrix=matrix_service, resolver=resolver),
-            config=FileStudyTreeConfig(
-                study_path=file, path=file, study_id="mi-id", version=-1
-            ),
+            config=FileStudyTreeConfig(study_path=file, path=file, study_id="mi-id", version=-1),
         )
 
         node.normalize()
@@ -89,9 +83,7 @@ class TestMatrixNode:
 
         node = MockMatrixNode(
             context=ContextServer(matrix=Mock(), resolver=resolver),
-            config=FileStudyTreeConfig(
-                study_path=file, path=file, study_id="mi-id", version=-1
-            ),
+            config=FileStudyTreeConfig(study_path=file, path=file, study_id="mi-id", version=-1),
         )
 
         node.denormalize()

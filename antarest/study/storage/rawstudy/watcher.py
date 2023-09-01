@@ -49,10 +49,7 @@ class Watcher(IService):
         self.task_service = task_service
         self.config = config
         self.should_stop = False
-        self.allowed_to_start = (
-            not config.storage.watcher_lock
-            or Watcher._get_lock(config.storage.watcher_lock_delay)
-        )
+        self.allowed_to_start = not config.storage.watcher_lock or Watcher._get_lock(config.storage.watcher_lock_delay)
 
     def start(self, threaded: bool = True) -> None:
         self.should_stop = False
@@ -71,11 +68,7 @@ class Watcher(IService):
 
         """
         with FileLock(f"{Watcher.LOCK}.lock"):
-            start = (
-                int(f"0{Watcher.LOCK.read_text()}")
-                if Watcher.LOCK.exists()
-                else 0
-            )
+            start = int(f"0{Watcher.LOCK.read_text()}") if Watcher.LOCK.exists() else 0
             now = int(time())
             if now - start > lock_delay:
                 Watcher.LOCK.write_text(str(now))
@@ -93,18 +86,14 @@ class Watcher(IService):
             with db():
                 self.study_service.remove_duplicates()
         except Exception as e:
-            logger.error(
-                "Unexpected error when removing duplicates", exc_info=e
-            )
+            logger.error("Unexpected error when removing duplicates", exc_info=e)
 
         while True:
             try:
                 if not self.should_stop:
                     self.scan()
             except Exception as e:
-                logger.error(
-                    "Unexpected error when scanning workspaces", exc_info=e
-                )
+                logger.error("Unexpected error when scanning workspaces", exc_info=e)
             sleep(2)
 
     def _rec_scan(
@@ -117,9 +106,7 @@ class Watcher(IService):
     ) -> List[StudyFolder]:
         try:
             if (path / "AW_NO_SCAN").exists():
-                logger.info(
-                    f"No scan directive file found. Will skip further scan of folder {path}"
-                )
+                logger.info(f"No scan directive file found. Will skip further scan of folder {path}")
                 return []
 
             if (path / "study.antares").exists():
@@ -133,18 +120,8 @@ class Watcher(IService):
                         try:
                             if (
                                 (child.is_dir())
-                                and any(
-                                    [
-                                        re.search(regex, child.name)
-                                        for regex in filter_in
-                                    ]
-                                )
-                                and not any(
-                                    [
-                                        re.search(regex, child.name)
-                                        for regex in filter_out
-                                    ]
-                                )
+                                and any([re.search(regex, child.name) for regex in filter_in])
+                                and not any([re.search(regex, child.name) for regex in filter_out])
                             ):
                                 folders = folders + self._rec_scan(
                                     child,
@@ -154,9 +131,7 @@ class Watcher(IService):
                                     filter_out,
                                 )
                         except Exception as e:
-                            logger.error(
-                                f"Failed to scan dir {child}", exc_info=e
-                            )
+                            logger.error(f"Failed to scan dir {child}", exc_info=e)
                 return folders
         except Exception as e:
             logger.error(f"Failed to scan dir {path}", exc_info=e)
@@ -210,13 +185,9 @@ class Watcher(IService):
                 workspace = self.config.storage.workspaces[workspace_name]
             except KeyError:
                 logger.error(f"Workspace {workspace_name} not found")
-                raise WorkspaceNotFound(
-                    f"Workspace {workspace_name} not found"
-                )
+                raise WorkspaceNotFound(f"Workspace {workspace_name} not found")
 
-            groups = [
-                Group(id=escape(g), name=escape(g)) for g in workspace.groups
-            ]
+            groups = [Group(id=escape(g), name=escape(g)) for g in workspace.groups]
             directory_path = workspace.path / workspace_directory_path
             studies = self._rec_scan(
                 directory_path,
@@ -229,10 +200,7 @@ class Watcher(IService):
             for name, workspace in self.config.storage.workspaces.items():
                 if name != DEFAULT_WORKSPACE_NAME:
                     path = Path(workspace.path)
-                    groups = [
-                        Group(id=escape(g), name=escape(g))
-                        for g in workspace.groups
-                    ]
+                    groups = [Group(id=escape(g), name=escape(g)) for g in workspace.groups]
                     studies = studies + self._rec_scan(
                         path,
                         name,
@@ -240,29 +208,15 @@ class Watcher(IService):
                         workspace.filter_in,
                         workspace.filter_out,
                     )
-                    stopwatch.log_elapsed(
-                        lambda x: logger.info(
-                            f"Workspace {name} scanned in {x}s"
-                        )
-                    )
+                    stopwatch.log_elapsed(lambda x: logger.info(f"Workspace {name} scanned in {x}s"))
         else:
-            raise ValueError(
-                "Both workspace_name and directory_path must be specified"
-            )
+            raise ValueError("Both workspace_name and directory_path must be specified")
         with db():
-            logger.info(
-                f"Waiting for FileLock to synchronize {directory_path or 'all studies'}"
-            )
+            logger.info(f"Waiting for FileLock to synchronize {directory_path or 'all studies'}")
             with FileLock(Watcher.SCAN_LOCK):
-                logger.info(
-                    f"FileLock acquired to synchronize for {directory_path or 'all studies'}"
-                )
-                self.study_service.sync_studies_on_disk(
-                    studies, directory_path
-                )
+                logger.info(f"FileLock acquired to synchronize for {directory_path or 'all studies'}")
+                self.study_service.sync_studies_on_disk(studies, directory_path)
                 stopwatch.log_elapsed(
-                    lambda x: logger.info(
-                        f"{directory_path or 'All studies'} synchronized in {x}s"
-                    ),
+                    lambda x: logger.info(f"{directory_path or 'All studies'} synchronized in {x}s"),
                     since_start=True,
                 )

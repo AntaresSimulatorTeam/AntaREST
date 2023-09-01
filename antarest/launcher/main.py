@@ -38,8 +38,6 @@ def build_launcher(
         )
 
     if service_launcher and application:
-        application.include_router(
-            create_launcher_api(service_launcher, config)
-        )
+        application.include_router(create_launcher_api(service_launcher, config))
 
     return service_launcher

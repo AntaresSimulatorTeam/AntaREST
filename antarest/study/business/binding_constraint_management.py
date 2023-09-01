@@ -60,9 +60,7 @@ class BindingConstraintManager:
         self.storage_service = storage_service
 
     @staticmethod
-    def parse_constraint(
-        key: str, value: str, char: str, new_config: BindingConstraintDTO
-    ) -> bool:
+    def parse_constraint(key: str, value: str, char: str, new_config: BindingConstraintDTO) -> bool:
         split = key.split(char)
         if len(split) == 2:
             value1 = split[0]
@@ -108,20 +106,14 @@ class BindingConstraintManager:
             time_step=constraint_value["type"],
             operator=constraint_value["operator"],
             comments=constraint_value.get("comments", None),
-            filter_year_by_year=constraint_value.get(
-                "filter-year-by-year", ""
-            ),
+            filter_year_by_year=constraint_value.get("filter-year-by-year", ""),
             filter_synthesis=constraint_value.get("filter-synthesis", ""),
             constraints=None,
         )
         for key, value in constraint_value.items():
-            if BindingConstraintManager.parse_constraint(
-                key, value, "%", new_config
-            ):
+            if BindingConstraintManager.parse_constraint(key, value, "%", new_config):
                 continue
-            if BindingConstraintManager.parse_constraint(
-                key, value, ".", new_config
-            ):
+            if BindingConstraintManager.parse_constraint(key, value, ".", new_config):
                 continue
         return new_config
 
@@ -144,27 +136,19 @@ class BindingConstraintManager:
     ) -> Union[BindingConstraintDTO, List[BindingConstraintDTO], None]:
         storage_service = self.storage_service.get_storage(study)
         file_study = storage_service.get_raw(study)
-        config = file_study.tree.get(
-            ["input", "bindingconstraints", "bindingconstraints"]
-        )
+        config = file_study.tree.get(["input", "bindingconstraints", "bindingconstraints"])
         config_values = list(config.values())
         if constraint_id:
             try:
-                index = [value["id"] for value in config_values].index(
-                    constraint_id
-                )
+                index = [value["id"] for value in config_values].index(constraint_id)
                 config_value = config_values[index]
-                return BindingConstraintManager.process_constraint(
-                    config_value
-                )
+                return BindingConstraintManager.process_constraint(config_value)
             except ValueError:
                 return None
 
         binding_constraint = []
         for config_value in config_values:
-            new_config = BindingConstraintManager.process_constraint(
-                config_value
-            )
+            new_config = BindingConstraintManager.process_constraint(config_value)
             binding_constraint.append(new_config)
         return binding_constraint
 
@@ -181,40 +165,22 @@ class BindingConstraintManager:
 
         command = UpdateBindingConstraint(
             id=constraint.id,
-            enabled=data.value
-            if data.key == "enabled"
-            else constraint.enabled,
-            time_step=data.value
-            if data.key == "time_step"
-            else constraint.time_step,
-            operator=data.value
-            if data.key == "operator"
-            else constraint.operator,
+            enabled=data.value if data.key == "enabled" else constraint.enabled,
+            time_step=data.value if data.key == "time_step" else constraint.time_step,
+            operator=data.value if data.key == "operator" else constraint.operator,
             coeffs=BindingConstraintManager.constraints_to_coeffs(constraint),
             values=constraint.values,
-            filter_year_by_year=data.value
-            if data.key == "filterByYear"
-            else constraint.filter_year_by_year,
-            filter_synthesis=data.value
-            if data.key == "filterSynthesis"
-            else constraint.filter_synthesis,
-            comments=data.value
-            if data.key == "comments"
-            else constraint.comments,
+            filter_year_by_year=data.value if data.key == "filterByYear" else constraint.filter_year_by_year,
+            filter_synthesis=data.value if data.key == "filterSynthesis" else constraint.filter_synthesis,
+            comments=data.value if data.key == "comments" else constraint.comments,
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
         )
-        execute_or_add_commands(
-            study, file_study, [command], self.storage_service
-        )
+        execute_or_add_commands(study, file_study, [command], self.storage_service)
 
     @staticmethod
-    def find_constraint_term_id(
-        constraints_term: List[ConstraintTermDTO], constraint_term_id: str
-    ) -> int:
+    def find_constraint_term_id(constraints_term: List[ConstraintTermDTO], constraint_term_id: str) -> int:
         try:
-            index = [elm.id for elm in constraints_term].index(
-                constraint_term_id
-            )
+            index = [elm.id for elm in constraints_term].index(constraint_term_id)
             return index
         except ValueError:
             return -1
@@ -243,24 +209,15 @@ class BindingConstraintManager:
         if constraint_term.data is None:
             raise MissingDataError("Add new constraint term : data is missing")
 
-        constraint_id = BindingConstraintManager.get_constraint_id(
-            constraint_term.data
-        )
+        constraint_id = BindingConstraintManager.get_constraint_id(constraint_term.data)
         constraints_term = constraint.constraints or []
-        if (
-            BindingConstraintManager.find_constraint_term_id(
-                constraints_term, constraint_id
-            )
-            >= 0
-        ):
+        if BindingConstraintManager.find_constraint_term_id(constraints_term, constraint_id) >= 0:
             raise ConstraintAlreadyExistError(study.id)
 
         constraints_term.append(
             ConstraintTermDTO(
                 id=constraint_id,
-                weight=constraint_term.weight
-                if constraint_term.weight is not None
-                else 0.0,
+                weight=constraint_term.weight if constraint_term.weight is not None else 0.0,
                 offset=constraint_term.offset,
                 data=constraint_term.data,
             )
@@ -283,9 +240,7 @@ class BindingConstraintManager:
             filter_synthesis=constraint.filter_synthesis,
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
         )
-        execute_or_add_commands(
-            study, file_study, [command], self.storage_service
-        )
+        execute_or_add_commands(study, file_study, [command], self.storage_service)
 
     def update_constraint_term(
         self,
@@ -306,29 +261,19 @@ class BindingConstraintManager:
         if data_id is None:
             raise ConstraintIdNotFoundError(study.id)
 
-        data_term_index = BindingConstraintManager.find_constraint_term_id(
-            constraints, data_id
-        )
+        data_term_index = BindingConstraintManager.find_constraint_term_id(constraints, data_id)
         if data_term_index < 0:
             raise ConstraintIdNotFoundError(study.id)
 
         if isinstance(data, ConstraintTermDTO):
-            constraint_id = (
-                BindingConstraintManager.get_constraint_id(data.data)
-                if data.data is not None
-                else data_id
-            )
+            constraint_id = BindingConstraintManager.get_constraint_id(data.data) if data.data is not None else data_id
             current_constraint = constraints[data_term_index]
             constraints.append(
                 ConstraintTermDTO(
                     id=constraint_id,
-                    weight=data.weight
-                    if data.weight is not None
-                    else current_constraint.weight,
+                    weight=data.weight if data.weight is not None else current_constraint.weight,
                     offset=data.offset,
-                    data=data.data
-                    if data.data is not None
-                    else current_constraint.data,
+                    data=data.data if data.data is not None else current_constraint.data,
                 )
             )
             del constraints[data_term_index]
@@ -353,9 +298,7 @@ class BindingConstraintManager:
             comments=constraint.comments,
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
         )
-        execute_or_add_commands(
-            study, file_study, [command], self.storage_service
-        )
+        execute_or_add_commands(study, file_study, [command], self.storage_service)
 
     def remove_constraint_term(
         self,
@@ -363,6 +306,4 @@ class BindingConstraintManager:
         binding_constraint_id: str,
         term_id: str,
     ) -> None:
-        return self.update_constraint_term(
-            study, binding_constraint_id, term_id
-        )
+        return self.update_constraint_term(study, binding_constraint_id, term_id)

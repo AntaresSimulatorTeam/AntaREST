@@ -15,10 +15,6 @@ class AdminUser(HttpUser):
             time.sleep(0.2)
 
     def on_start(self):
-        res = self.client.post(
-            "/login", data={"username": "admin", "password": "admin"}
-        )
+        res = self.client.post("/login", data={"username": "admin", "password": "admin"})
         credentials = res.json()
-        self.client.headers.update(
-            {"Authorization": f'Bearer {credentials["access_token"]}'}
-        )
+        self.client.headers.update({"Authorization": f'Bearer {credentials["access_token"]}'})

@@ -12,13 +12,9 @@ class RemoveLink(ICommand):
     area2: str
 
     def __init__(self, **data: Any) -> None:
-        super().__init__(
-            command_name=CommandName.REMOVE_LINK, version=1, **data
-        )
+        super().__init__(command_name=CommandName.REMOVE_LINK, version=1, **data)
 
-    def _apply_config(
-        self, study_data: FileStudyTreeConfig
-    ) -> Tuple[CommandOutput, Dict[str, Any]]:
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         result = self._check_link_exists(study_data)
         if not result[0].status:
             return result
@@ -27,9 +23,7 @@ class RemoveLink(ICommand):
         del study_data.areas[area_from].links[area_to]
         return result
 
-    def _check_link_exists(
-        self, study_data: FileStudyTreeConfig
-    ) -> Tuple[CommandOutput, Dict[str, Any]]:
+    def _check_link_exists(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         if self.area1 not in study_data.areas:
             return (
                 CommandOutput(
@@ -74,9 +68,7 @@ class RemoveLink(ICommand):
         if study_data.config.version < 820:
             study_data.tree.delete(["input", "links", area_from, area_to])
         else:
-            study_data.tree.delete(
-                ["input", "links", area_from, f"{area_to}_parameters"]
-            )
+            study_data.tree.delete(["input", "links", area_from, f"{area_to}_parameters"])
             study_data.tree.delete(
                 [
                     "input",
@@ -95,9 +87,7 @@ class RemoveLink(ICommand):
                     f"{area_to}_indirect",
                 ]
             )
-        study_data.tree.delete(
-            ["input", "links", area_from, "properties", area_to]
-        )
+        study_data.tree.delete(["input", "links", area_from, "properties", area_to])
         del study_data.config.areas[area_from].links[area_to]
         return output
 
@@ -112,11 +102,7 @@ class RemoveLink(ICommand):
 
     def match_signature(self) -> str:
         return str(
-            self.command_name.value
-            + MATCH_SIGNATURE_SEPARATOR
-            + self.area1
-            + MATCH_SIGNATURE_SEPARATOR
-            + self.area2
+            self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.area1 + MATCH_SIGNATURE_SEPARATOR + self.area2
         )
 
     def match(self, other: ICommand, equal: bool = False) -> bool:

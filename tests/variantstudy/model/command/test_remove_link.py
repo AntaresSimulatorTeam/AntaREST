@@ -40,9 +40,7 @@ class TestRemoveLink:
 
     @pytest.mark.parametrize("version", [(810), (820)])
     @pytest.mark.unit_test
-    def test_apply(
-        self, tmpdir: Path, command_context: CommandContext, version: int
-    ):
+    def test_apply(self, tmpdir: Path, command_context: CommandContext, version: int):
         empty_study = self.make_study(tmpdir, version)
         area1 = "Area1"
         area1_id = transform_name_to_id(area1)
@@ -80,21 +78,13 @@ class TestRemoveLink:
         ).apply(empty_study)
 
         assert output.status
-        assert (
-            dirhash(empty_study.config.study_path, "md5") == hash_before_link
-        )
+        assert dirhash(empty_study.config.study_path, "md5") == hash_before_link
 
     @pytest.mark.unit_test
     def test_match(self, command_context: CommandContext):
-        base = RemoveLink(
-            area1="foo", area2="bar", command_context=command_context
-        )
-        other_match = RemoveLink(
-            area1="foo", area2="bar", command_context=command_context
-        )
-        other_not_match = RemoveLink(
-            area1="foo", area2="baz", command_context=command_context
-        )
+        base = RemoveLink(area1="foo", area2="bar", command_context=command_context)
+        other_match = RemoveLink(area1="foo", area2="bar", command_context=command_context)
+        other_not_match = RemoveLink(area1="foo", area2="baz", command_context=command_context)
         other_other = RemoveArea(id="id", command_context=command_context)
         assert base.match(other_match)
         assert not base.match(other_not_match)
@@ -104,10 +94,6 @@ class TestRemoveLink:
 
     @pytest.mark.unit_test
     def test_create_diff(self, command_context: CommandContext):
-        base = RemoveLink(
-            area1="foo", area2="bar", command_context=command_context
-        )
-        other_match = RemoveLink(
-            area1="foo", area2="bar", command_context=command_context
-        )
+        base = RemoveLink(area1="foo", area2="bar", command_context=command_context)
+        other_match = RemoveLink(area1="foo", area2="bar", command_context=command_context)
         assert base.create_diff(other_match) == []

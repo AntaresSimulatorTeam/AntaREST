@@ -134,16 +134,12 @@ class CreateSTStorage(ICommand):
             # Check the matrix values and create the corresponding matrix link
             array = np.array(v, dtype=np.float64)
             if array.shape != (8760, 1):
-                raise ValueError(
-                    f"Invalid matrix shape {array.shape}, expected (8760, 1)"
-                )
+                raise ValueError(f"Invalid matrix shape {array.shape}, expected (8760, 1)")
             if np.isnan(array).any():
                 raise ValueError("Matrix values cannot contain NaN")
             # All matrices except "inflows" are constrained between 0 and 1
             constrained = set(_MATRIX_NAMES) - {"inflows"}
-            if field.name in constrained and (
-                np.any(array < 0) or np.any(array > 1)
-            ):
+            if field.name in constrained and (np.any(array < 0) or np.any(array > 1)):
                 raise ValueError("Matrix values should be between 0 and 1")
             v = cast(MatrixType, array.tolist())
             return validate_matrix(v, values)
@@ -151,9 +147,7 @@ class CreateSTStorage(ICommand):
         # pragma: no cover
         raise TypeError(repr(v))
 
-    def _apply_config(
-        self, study_data: FileStudyTreeConfig
-    ) -> Tuple[CommandOutput, Dict[str, Any]]:
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         """
         Applies configuration changes to the study data: add the short-term storage in the storages list.
 
@@ -171,10 +165,7 @@ class CreateSTStorage(ICommand):
             return (
                 CommandOutput(
                     status=False,
-                    message=(
-                        f"Invalid study version {version},"
-                        f" at least version {REQUIRED_VERSION} is required."
-                    ),
+                    message=(f"Invalid study version {version}, at least version {REQUIRED_VERSION} is required."),
                 ),
                 {},
             )
@@ -195,10 +186,7 @@ class CreateSTStorage(ICommand):
             return (
                 CommandOutput(
                     status=False,
-                    message=(
-                        f"Short-term storage '{self.storage_name}' already exists"
-                        f" in the area '{self.area_id}'."
-                    ),
+                    message=(f"Short-term storage '{self.storage_name}' already exists in the area '{self.area_id}'."),
                 ),
                 {},
             )
@@ -209,10 +197,7 @@ class CreateSTStorage(ICommand):
         return (
             CommandOutput(
                 status=True,
-                message=(
-                    f"Short-term st_storage '{self.storage_name}' successfully added"
-                    f" to area '{self.area_id}'."
-                ),
+                message=(f"Short-term st_storage '{self.storage_name}' successfully added to area '{self.area_id}'."),
             ),
             {"storage_id": self.storage_id},
         )
@@ -234,9 +219,7 @@ class CreateSTStorage(ICommand):
             return output
 
         # Fill-in the "list.ini" file with the parameters
-        config = study_data.tree.get(
-            ["input", "st-storage", "clusters", self.area_id, "list"]
-        )
+        config = study_data.tree.get(["input", "st-storage", "clusters", self.area_id, "list"])
         config[self.storage_id] = json.loads(
             self.parameters.json(
                 by_alias=True,
@@ -249,14 +232,7 @@ class CreateSTStorage(ICommand):
             "input": {
                 "st-storage": {
                     "clusters": {self.area_id: {"list": config}},
-                    "series": {
-                        self.area_id: {
-                            self.storage_id: {
-                                attr: getattr(self, attr)
-                                for attr in _MATRIX_NAMES
-                            }
-                        }
-                    },
+                    "series": {self.area_id: {self.storage_id: {attr: getattr(self, attr) for attr in _MATRIX_NAMES}}},
                 }
             }
         }
@@ -272,18 +248,13 @@ class CreateSTStorage(ICommand):
         Returns:
             The DTO object representing the current command.
         """
-        parameters = json.loads(
-            self.parameters.json(by_alias=True, exclude={"id"})
-        )
+        parameters = json.loads(self.parameters.json(by_alias=True, exclude={"id"}))
         return CommandDTO(
             action=self.command_name.value,
             args={
                 "area_id": self.area_id,
                 "parameters": parameters,
-                **{
-                    attr: strip_matrix_protocol(getattr(self, attr))
-                    for attr in _MATRIX_NAMES
-                },
+                **{attr: strip_matrix_protocol(getattr(self, attr)) for attr in _MATRIX_NAMES},
             },
         )
 
@@ -314,10 +285,7 @@ class CreateSTStorage(ICommand):
             # Deep comparison
             return self.__eq__(other)
         else:
-            return (
-                self.area_id == other.area_id
-                and self.storage_id == other.storage_id
-            )
+            return self.area_id == other.area_id and self.storage_id == other.storage_id
 
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:
         """
@@ -345,9 +313,7 @@ class CreateSTStorage(ICommand):
             if getattr(self, attr) != getattr(other, attr)
         ]
         if self.parameters != other.parameters:
-            data: Dict[str, Any] = json.loads(
-                other.parameters.json(by_alias=True, exclude={"id"})
-            )
+            data: Dict[str, Any] = json.loads(other.parameters.json(by_alias=True, exclude={"id"}))
             commands.append(
                 UpdateConfig(
                     target=f"input/st-storage/clusters/{self.area_id}/list/{self.storage_id}",
@@ -361,8 +327,5 @@ class CreateSTStorage(ICommand):
         """
         Retrieves the list of matrix IDs.
         """
-        matrices: List[str] = [
-            strip_matrix_protocol(getattr(self, attr))
-            for attr in _MATRIX_NAMES
-        ]
+        matrices: List[str] = [strip_matrix_protocol(getattr(self, attr)) for attr in _MATRIX_NAMES]
         return matrices

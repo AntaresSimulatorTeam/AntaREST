@@ -21,9 +21,7 @@ class FactoryLauncher:
     ) -> Dict[str, AbstractLauncher]:
         dict_launchers: Dict[str, AbstractLauncher] = dict()
         if config.launcher.local is not None:
-            dict_launchers["local"] = LocalLauncher(
-                config, callbacks, event_bus, cache
-            )
+            dict_launchers["local"] = LocalLauncher(config, callbacks, event_bus, cache)
         if config.launcher.slurm is not None:
             dict_launchers["slurm"] = SlurmLauncher(
                 config,

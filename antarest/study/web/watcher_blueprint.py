@@ -58,9 +58,7 @@ def create_watcher_routes(
                     "Unexpected exception when tying to retrieve scan path components",
                     exc_info=e,
                 )
-                raise BadPathFormatError(
-                    "Bad path format. Expected <workspace>/<path/to/folder>"
-                )
+                raise BadPathFormatError("Bad path format. Expected <workspace>/<path/to/folder>")
             logger.info(
                 f"Scanning directory {relative_path} of worskpace {workspace}",
                 extra={"user": current_user.id},
@@ -72,8 +70,6 @@ def create_watcher_routes(
             )
             relative_path = None
             workspace = None
-        return watcher.oneshot_scan(
-            params=params, workspace=workspace, path=relative_path
-        )
+        return watcher.oneshot_scan(params=params, workspace=workspace, path=relative_path)
 
     return bp

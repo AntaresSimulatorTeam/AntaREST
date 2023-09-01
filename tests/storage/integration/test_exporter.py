@@ -19,9 +19,7 @@ from antarest.study.storage.variantstudy.business.matrix_constants_generator imp
 from tests.storage.conftest import SimpleFileTransferManager, SimpleSyncTaskService
 
 
-def assert_url_content(
-    url: str, tmp_dir: Path, sta_mini_zip_path: Path
-) -> bytes:
+def assert_url_content(url: str, tmp_dir: Path, sta_mini_zip_path: Path) -> bytes:
     path_studies = tmp_dir / "studies"
 
     with zipfile.ZipFile(sta_mini_zip_path) as zip_output:
@@ -30,11 +28,7 @@ def assert_url_content(
     config = Config(
         resources_path=Path(),
         security=SecurityConfig(disabled=True),
-        storage=StorageConfig(
-            workspaces={
-                DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=path_studies)
-            }
-        ),
+        storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=path_studies)}),
     )
 
     md = RawStudy(
@@ -46,9 +40,7 @@ def assert_url_content(
     repo.get.return_value = md
 
     app = FastAPI(title=__name__)
-    ftm = SimpleFileTransferManager(
-        Config(storage=StorageConfig(tmp_dir=tmp_dir))
-    )
+    ftm = SimpleFileTransferManager(Config(storage=StorageConfig(tmp_dir=tmp_dir)))
     build_study_service(
         app,
         cache=Mock(),
@@ -79,9 +71,7 @@ def test_exporter_file(tmp_path: Path, sta_mini_zip_path: Path) -> None:
     assert data and b"<!DOCTYPE HTML PUBLIC" not in data
 
 
-def test_exporter_file_no_output(
-    tmp_path: Path, sta_mini_zip_path: Path
-) -> None:
+def test_exporter_file_no_output(tmp_path: Path, sta_mini_zip_path: Path) -> None:
     data = assert_url_content(
         url="/v1/studies/STA-mini/export?no-output",
         tmp_dir=tmp_path,
@@ -91,9 +81,7 @@ def test_exporter_file_no_output(
 
 
 @pytest.mark.parametrize("outputs", [True, False, "prout"])
-@pytest.mark.parametrize(
-    "output_list", [None, [], ["20201014-1427eco"], ["20201014-1430adq-2"]]
-)
+@pytest.mark.parametrize("output_list", [None, [], ["20201014-1427eco"], ["20201014-1430adq-2"]])
 @pytest.mark.parametrize("denormalize", [True, False])
 def test_export_flat(
     tmp_path: Path,

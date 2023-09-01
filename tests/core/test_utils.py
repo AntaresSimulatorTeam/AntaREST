@@ -48,9 +48,7 @@ def test_read_in_zip(tmp_path: Path):
         read_in_zip(
             zip_file,
             Path(file),
-            lambda p: expected_results.append(
-                p.read_text(encoding="utf-8") if p else None
-            ),
+            lambda p: expected_results.append(p.read_text(encoding="utf-8") if p else None),
         )
 
     assert expected_results[0] == "0\n1"

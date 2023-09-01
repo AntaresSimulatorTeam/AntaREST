@@ -25,9 +25,7 @@ def upgrade_840(study_path: Path) -> None:
 
     reader = MultipleSameKeysIniReader(DUPLICATE_KEYS)
     data = reader.read(study_path / GENERAL_DATA_PATH)
-    data["optimization"][
-        "transmission-capacities"
-    ] = MAPPING_TRANSMISSION_CAPACITIES[
+    data["optimization"]["transmission-capacities"] = MAPPING_TRANSMISSION_CAPACITIES[
         data["optimization"]["transmission-capacities"]
     ]
     del data["optimization"]["include-split-exported-mps"]

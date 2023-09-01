@@ -29,9 +29,7 @@ DE	hourly				01_solar	02_wind_on
     serializer = HourlyMatrixSerializer(area="de")
     date, body = serializer.extract_date(df)
 
-    pd.testing.assert_index_equal(
-        date, pd.Index(["01/01 00:00", "01/01 01:00"])
-    )
+    pd.testing.assert_index_equal(date, pd.Index(["01/01 00:00", "01/01 01:00"]))
 
     rename_unnamed(body)
     expected = pd.DataFrame(

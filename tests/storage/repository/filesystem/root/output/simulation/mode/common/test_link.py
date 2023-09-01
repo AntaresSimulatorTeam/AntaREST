@@ -72,7 +72,5 @@ class TestOutputSimulationLinkItem:
 
         # check the result
         value: LinkOutputSeriesMatrix
-        actual_obj = {
-            key: {"freq": value.freq} for key, value in actual.items()
-        }
+        actual_obj = {key: {"freq": value.freq} for key, value in actual.items()}
         assert actual_obj == expected

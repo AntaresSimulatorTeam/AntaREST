@@ -22,9 +22,7 @@ class STStorageFieldsNotFoundError(HTTPException):
 class STStorageMatrixNotFoundError(HTTPException):
     """Matrix of the short-term storage is not found"""
 
-    def __init__(
-        self, study_id: str, area_id: str, storage_id: str, ts_name: str
-    ) -> None:
+    def __init__(self, study_id: str, area_id: str, storage_id: str, ts_name: str) -> None:
         detail = f"Time series '{ts_name}' of storage '{storage_id}' not found"
         super().__init__(HTTPStatus.NOT_FOUND, detail)
 
@@ -116,9 +114,7 @@ class NotAManagedStudyException(HTTPException):
 
 class TaskAlreadyRunning(HTTPException):
     def __init__(self) -> None:
-        super(TaskAlreadyRunning, self).__init__(
-            HTTPStatus.EXPECTATION_FAILED, "Task is already running"
-        )
+        super(TaskAlreadyRunning, self).__init__(HTTPStatus.EXPECTATION_FAILED, "Task is already running")
 
 
 class StudyDeletionNotAllowed(HTTPException):

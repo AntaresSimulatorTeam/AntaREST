@@ -20,9 +20,7 @@ ThresholdType = confloat(ge=0)
 class AdequacyPatchFormFields(FormFieldsBaseModel):
     # version 830
     enable_adequacy_patch: Optional[StrictBool]
-    ntc_from_physical_areas_out_to_physical_areas_in_adequacy_patch: Optional[
-        StrictBool
-    ]
+    ntc_from_physical_areas_out_to_physical_areas_in_adequacy_patch: Optional[StrictBool]
     ntc_between_physical_areas_out_adequacy_patch: Optional[StrictBool]
     # version 850
     price_taking_order: Optional[PriceTakingOrder]
@@ -103,19 +101,11 @@ class AdequacyPatchManager:
             target_name = path.split("/")[-1]
             is_in_version = file_study.config.version >= start_version  # type: ignore
 
-            return (
-                parent.get(target_name, field_info["default_value"])
-                if is_in_version
-                else None
-            )
+            return parent.get(target_name, field_info["default_value"]) if is_in_version else None
 
-        return AdequacyPatchFormFields.construct(
-            **{name: get_value(info) for name, info in FIELDS_INFO.items()}
-        )
+        return AdequacyPatchFormFields.construct(**{name: get_value(info) for name, info in FIELDS_INFO.items()})
 
-    def set_field_values(
-        self, study: Study, field_values: AdequacyPatchFormFields
-    ) -> None:
+    def set_field_values(self, study: Study, field_values: AdequacyPatchFormFields) -> None:
         """
         Set adequacy patch config from the webapp form
         """
@@ -135,6 +125,4 @@ class AdequacyPatchManager:
 
         if commands:
             file_study = self.storage_service.get_storage(study).get_raw(study)
-            execute_or_add_commands(
-                study, file_study, commands, self.storage_service
-            )
+            execute_or_add_commands(study, file_study, commands, self.storage_service)

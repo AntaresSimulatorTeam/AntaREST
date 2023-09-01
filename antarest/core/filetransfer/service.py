@@ -32,9 +32,7 @@ class FileTransferManager:
         self.repository = repository
         self.event_bus = event_bus
         self.tmp_dir = config.storage.tmp_dir
-        self.download_default_expiration_timeout_minutes = (
-            config.storage.download_default_expiration_timeout_minutes
-        )
+        self.download_default_expiration_timeout_minutes = config.storage.download_default_expiration_timeout_minutes
 
     @staticmethod
     def _cleanup_file(tmpfile: Path) -> None:
@@ -57,9 +55,7 @@ class FileTransferManager:
             path=str(tmpfile),
             owner=owner.impersonator if owner is not None else None,
             expiration_date=datetime.datetime.utcnow()
-            + datetime.timedelta(
-                minutes=self.download_default_expiration_timeout_minutes
-            ),
+            + datetime.timedelta(minutes=self.download_default_expiration_timeout_minutes),
         )
         self.repository.add(download)
         self.event_bus.push(
@@ -116,9 +112,7 @@ class FileTransferManager:
             Event(
                 type=EventType.DOWNLOAD_EXPIRED,
                 payload=download_id,
-                permissions=PermissionInfo(owner=owner)
-                if owner
-                else PermissionInfo(public_mode=PublicMode.READ),
+                permissions=PermissionInfo(owner=owner) if owner else PermissionInfo(public_mode=PublicMode.READ),
             )
         )
 
@@ -139,9 +133,7 @@ class FileTransferManager:
         background_tasks.add_task(FileTransferManager._cleanup_file, tmppath)
         return tmppath
 
-    def list_downloads(
-        self, params: RequestParameters
-    ) -> List[FileDownloadDTO]:
+    def list_downloads(self, params: RequestParameters) -> List[FileDownloadDTO]:
         if not params.user:
             raise MustBeAuthenticatedError()
         downloads = (
@@ -152,16 +144,11 @@ class FileTransferManager:
         self._clean_up_expired_downloads(downloads)
         return [d.to_dto() for d in downloads]
 
-    def _clean_up_expired_downloads(
-        self, file_downloads: List[FileDownload]
-    ) -> None:
+    def _clean_up_expired_downloads(self, file_downloads: List[FileDownload]) -> None:
         now = datetime.datetime.utcnow()
         to_remove = []
         for file_download in file_downloads:
-            if (
-                file_download.expiration_date is not None
-                and file_download.expiration_date <= now
-            ):
+            if file_download.expiration_date is not None and file_download.expiration_date <= now:
                 to_remove.append(file_download)
         for file_download in to_remove:
             logger.info(f"Removing expired download {file_download}")
@@ -186,17 +173,12 @@ class FileTransferManager:
                 )
             )
 
-    def fetch_download(
-        self, download_id: str, params: RequestParameters
-    ) -> FileDownload:
+    def fetch_download(self, download_id: str, params: RequestParameters) -> FileDownload:
         download = self.repository.get(download_id)
         if not download:
             raise FileDownloadNotFound()
 
-        if not params.user or not (
-            params.user.is_site_admin()
-            or download.owner == params.user.impersonator
-        ):
+        if not params.user or not (params.user.is_site_admin() or download.owner == params.user.impersonator):
             raise UserHasNotPermissionError()
 
         if not download.ready:

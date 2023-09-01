@@ -122,9 +122,7 @@ def test_manage_binding_constraint(
         "type": "weekly",
     }
 
-    remove_bind = RemoveBindingConstraint(
-        id="bd 1", command_context=command_context
-    )
+    remove_bind = RemoveBindingConstraint(id="bd 1", command_context=command_context)
     res3 = remove_bind.apply(empty_study)
     assert res3.status
     assert not bc1_matrix_path.exists()
@@ -212,15 +210,9 @@ def test_match(command_context: CommandContext):
     assert base.get_inner_matrices() == [matrix_id]
 
     base = RemoveBindingConstraint(id="foo", command_context=command_context)
-    other_match = RemoveBindingConstraint(
-        id="foo", command_context=command_context
-    )
-    other_not_match = RemoveBindingConstraint(
-        id="bar", command_context=command_context
-    )
-    other_other = RemoveLink(
-        area1="id", area2="id2", command_context=command_context
-    )
+    other_match = RemoveBindingConstraint(id="foo", command_context=command_context)
+    other_not_match = RemoveBindingConstraint(id="bar", command_context=command_context)
+    other_other = RemoveLink(area1="id", area2="id2", command_context=command_context)
     assert base.match(other_match)
     assert not base.match(other_not_match)
     assert not base.match(other_other)
@@ -330,9 +322,7 @@ def test_revert(command_context: CommandContext):
     ]
     study = FileStudy(config=Mock(), tree=Mock())
     CommandReverter().revert(base, [], study)
-    mock_command_extractor.extract_binding_constraint.assert_called_with(
-        study, "foo"
-    )
+    mock_command_extractor.extract_binding_constraint.assert_called_with(study, "foo")
 
 
 def test_create_diff(command_context: CommandContext):
@@ -387,7 +377,5 @@ def test_create_diff(command_context: CommandContext):
     assert base.create_diff(other_match) == [other_match]
 
     base = RemoveBindingConstraint(id="foo", command_context=command_context)
-    other_match = RemoveBindingConstraint(
-        id="foo", command_context=command_context
-    )
+    other_match = RemoveBindingConstraint(id="foo", command_context=command_context)
     assert base.create_diff(other_match) == []

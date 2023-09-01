@@ -84,9 +84,7 @@ class JobResultDTO(BaseModel):
 class JobLog(DTO, Base):  # type: ignore
     __tablename__ = "launcherjoblog"
 
-    id = Column(
-        Integer(), Sequence("launcherjoblog_id_sequence"), primary_key=True
-    )
+    id = Column(Integer(), Sequence("launcherjoblog_id_sequence"), primary_key=True)
     message = Column(String, nullable=False)
     job_id = Column(
         String(),
@@ -122,9 +120,7 @@ class JobResult(DTO, Base):  # type: ignore
     output_id = Column(String())
     exit_code = Column(Integer)
     solver_stats = Column(String(), nullable=True)
-    logs = relationship(
-        JobLog, uselist=True, cascade="all, delete, delete-orphan"
-    )
+    logs = relationship(JobLog, uselist=True, cascade="all, delete, delete-orphan")
 
     def to_dto(self) -> JobResultDTO:
         return JobResultDTO(
@@ -134,9 +130,7 @@ class JobResult(DTO, Base):  # type: ignore
             launcher_params=self.launcher_params,
             status=self.job_status,
             creation_date=str(self.creation_date),
-            completion_date=str(self.completion_date)
-            if self.completion_date
-            else None,
+            completion_date=str(self.completion_date) if self.completion_date else None,
             msg=self.msg,
             output_id=self.output_id,
             exit_code=self.exit_code,

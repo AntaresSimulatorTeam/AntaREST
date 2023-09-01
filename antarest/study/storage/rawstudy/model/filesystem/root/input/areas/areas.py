@@ -12,14 +12,7 @@ class InputAreas(FolderNode):
         super().__init__(context, config, ["list", "sets"])
 
     def build(self) -> TREE:
-        children: TREE = {
-            a: InputAreasItem(self.context, self.config.next_file(a))
-            for a in self.config.area_names()
-        }
-        children["list"] = InputAreasList(
-            self.context, self.config.next_file("list.txt")
-        )
-        children["sets"] = InputAreasSets(
-            self.context, self.config.next_file("sets.ini")
-        )
+        children: TREE = {a: InputAreasItem(self.context, self.config.next_file(a)) for a in self.config.area_names()}
+        children["list"] = InputAreasList(self.context, self.config.next_file("list.txt"))
+        children["sets"] = InputAreasSets(self.context, self.config.next_file("sets.ini"))
         return children

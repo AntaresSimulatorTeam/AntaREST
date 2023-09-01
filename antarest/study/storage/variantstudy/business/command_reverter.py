@@ -39,29 +39,16 @@ class CommandReverter:
         self.method_dict: Dict[
             CommandName,
             Callable[[ICommand, List[ICommand], FileStudy], List[ICommand]],
-        ] = {
-            command_name: getattr(self, f"_revert_{command_name.value}")
-            for command_name in CommandName
-        }
+        ] = {command_name: getattr(self, f"_revert_{command_name.value}") for command_name in CommandName}
 
     @staticmethod
-    def _revert_create_area(
-        base_command: CreateArea, history: List["ICommand"], base: FileStudy
-    ) -> List[ICommand]:
+    def _revert_create_area(base_command: CreateArea, history: List["ICommand"], base: FileStudy) -> List[ICommand]:
         area_id = transform_name_to_id(base_command.area_name)
-        return [
-            RemoveArea(
-                id=area_id, command_context=base_command.command_context
-            )
-        ]
+        return [RemoveArea(id=area_id, command_context=base_command.command_context)]
 
     @staticmethod
-    def _revert_remove_area(
-        base_command: RemoveArea, history: List["ICommand"], base: FileStudy
-    ) -> List[ICommand]:
-        raise NotImplementedError(
-            "The revert function for RemoveArea is not available"
-        )
+    def _revert_remove_area(base_command: RemoveArea, history: List["ICommand"], base: FileStudy) -> List[ICommand]:
+        raise NotImplementedError("The revert function for RemoveArea is not available")
 
     @staticmethod
     def _revert_create_district(
@@ -70,11 +57,7 @@ class CommandReverter:
         base: FileStudy,
     ) -> List[ICommand]:
         district_id = transform_name_to_id(base_command.name)
-        return [
-            RemoveDistrict(
-                id=district_id, command_context=base_command.command_context
-            )
-        ]
+        return [RemoveDistrict(id=district_id, command_context=base_command.command_context)]
 
     @staticmethod
     def _revert_remove_district(
@@ -82,14 +65,10 @@ class CommandReverter:
         history: List["ICommand"],
         base: FileStudy,
     ) -> List[ICommand]:
-        raise NotImplementedError(
-            "The revert function for RemoveDistrict is not available"
-        )
+        raise NotImplementedError("The revert function for RemoveDistrict is not available")
 
     @staticmethod
-    def _revert_create_link(
-        base_command: CreateLink, history: List["ICommand"], base: FileStudy
-    ) -> List[ICommand]:
+    def _revert_create_link(base_command: CreateLink, history: List["ICommand"], base: FileStudy) -> List[ICommand]:
         return [
             RemoveLink(
                 area1=base_command.area1,
@@ -99,12 +78,8 @@ class CommandReverter:
         ]
 
     @staticmethod
-    def _revert_remove_link(
-        base_command: RemoveLink, history: List["ICommand"], base: FileStudy
-    ) -> List[ICommand]:
-        raise NotImplementedError(
-            "The revert function for RemoveLink is not available"
-        )
+    def _revert_remove_link(base_command: RemoveLink, history: List["ICommand"], base: FileStudy) -> List[ICommand]:
+        raise NotImplementedError("The revert function for RemoveLink is not available")
 
     @staticmethod
     def _revert_create_binding_constraint(
@@ -113,11 +88,7 @@ class CommandReverter:
         base: FileStudy,
     ) -> List[ICommand]:
         bind_id = transform_name_to_id(base_command.name)
-        return [
-            RemoveBindingConstraint(
-                id=bind_id, command_context=base_command.command_context
-            )
-        ]
+        return [RemoveBindingConstraint(id=bind_id, command_context=base_command.command_context)]
 
     @staticmethod
     def _revert_update_binding_constraint(
@@ -126,15 +97,9 @@ class CommandReverter:
         base: FileStudy,
     ) -> List[ICommand]:
         for command in reversed(history):
-            if (
-                isinstance(command, UpdateBindingConstraint)
-                and command.id == base_command.id
-            ):
+            if isinstance(command, UpdateBindingConstraint) and command.id == base_command.id:
                 return [command]
-            elif (
-                isinstance(command, CreateBindingConstraint)
-                and transform_name_to_id(command.name) == base_command.id
-            ):
+            elif isinstance(command, CreateBindingConstraint) and transform_name_to_id(command.name) == base_command.id:
                 return [
                     UpdateBindingConstraint(
                         id=base_command.id,
@@ -150,9 +115,7 @@ class CommandReverter:
                     )
                 ]
 
-        return base_command.get_command_extractor().extract_binding_constraint(
-            base, base_command.id
-        )
+        return base_command.get_command_extractor().extract_binding_constraint(base, base_command.id)
 
     @staticmethod
     def _revert_remove_binding_constraint(
@@ -160,9 +123,7 @@ class CommandReverter:
         history: List["ICommand"],
         base: FileStudy,
     ) -> List[ICommand]:
-        raise NotImplementedError(
-            "The revert function for RemoveBindingConstraint is not available"
-        )
+        raise NotImplementedError("The revert function for RemoveBindingConstraint is not available")
 
     @staticmethod
     def _revert_update_scenario_builder(
@@ -171,9 +132,7 @@ class CommandReverter:
         base: FileStudy,
     ) -> List[ICommand]:
         # todo make the diff between base study scenariobuilder data and base_command
-        raise NotImplementedError(
-            "The revert function for UpdateScenarioBuilder is not available"
-        )
+        raise NotImplementedError("The revert function for UpdateScenarioBuilder is not available")
 
     @staticmethod
     def _revert_create_cluster(
@@ -192,9 +151,7 @@ class CommandReverter:
     def _revert_remove_cluster(
         base_command: RemoveCluster, history: List["ICommand"], base: FileStudy
     ) -> List[ICommand]:
-        raise NotImplementedError(
-            "The revert function for RemoveCluster is not available"
-        )
+        raise NotImplementedError("The revert function for RemoveCluster is not available")
 
     @staticmethod
     def _revert_create_renewables_cluster(
@@ -217,9 +174,7 @@ class CommandReverter:
         history: List["ICommand"],
         base: FileStudy,
     ) -> List[ICommand]:
-        raise NotImplementedError(
-            "The revert function for RemoveRenewablesCluster is not available"
-        )
+        raise NotImplementedError("The revert function for RemoveRenewablesCluster is not available")
 
     @staticmethod
     def _revert_create_st_storage(
@@ -242,36 +197,25 @@ class CommandReverter:
         history: List["ICommand"],
         base: FileStudy,
     ) -> List[ICommand]:
-        raise NotImplementedError(
-            "The revert function for RemoveSTStorage is not available"
-        )
+        raise NotImplementedError("The revert function for RemoveSTStorage is not available")
 
     @staticmethod
     def _revert_replace_matrix(
         base_command: ReplaceMatrix, history: List["ICommand"], base: FileStudy
     ) -> List[ICommand]:
         for command in reversed(history):
-            if (
-                isinstance(command, ReplaceMatrix)
-                and command.target == base_command.target
-            ):
+            if isinstance(command, ReplaceMatrix) and command.target == base_command.target:
                 return [command]
 
         try:
             return [
-                base_command.get_command_extractor().generate_replace_matrix(
-                    base.tree, base_command.target.split("/")
-                )
+                base_command.get_command_extractor().generate_replace_matrix(base.tree, base_command.target.split("/"))
             ]
         except ChildNotFoundError:
-            return (
-                []
-            )  # if the matrix does not exist, there is nothing to revert
+            return []  # if the matrix does not exist, there is nothing to revert
 
     @staticmethod
-    def _revert_update_config(
-        base_command: UpdateConfig, history: List["ICommand"], base: FileStudy
-    ) -> List[ICommand]:
+    def _revert_update_config(base_command: UpdateConfig, history: List["ICommand"], base: FileStudy) -> List[ICommand]:
         update_config_list: List[UpdateConfig] = []
         self_target_path = Path(base_command.target)
         parent_path: Path = Path("../model/command")
@@ -289,8 +233,7 @@ class CommandReverter:
         output_list: List[ICommand] = [
             command
             for command in update_config_list[::-1]
-            if parent_path in Path(command.target).parents
-            or str(parent_path) == command.target
+            if parent_path in Path(command.target).parents or str(parent_path) == command.target
         ]
 
         if output_list:
@@ -298,9 +241,7 @@ class CommandReverter:
 
         try:
             return [
-                base_command.get_command_extractor().generate_update_config(
-                    base.tree, base_command.target.split("/")
-                )
+                base_command.get_command_extractor().generate_update_config(base.tree, base_command.target.split("/"))
             ]
         except ChildNotFoundError as e:
             logger.warning(
@@ -320,11 +261,7 @@ class CommandReverter:
                 return [command]
 
         try:
-            return [
-                base_command.get_command_extractor().generate_update_comments(
-                    base.tree
-                )
-            ]
+            return [base_command.get_command_extractor().generate_update_comments(base.tree)]
         except ChildNotFoundError:
             return []  # if the file does not exist, there is nothing to revert
 
@@ -339,30 +276,17 @@ class CommandReverter:
                 return [command]
 
         try:
-            return [
-                base_command.get_command_extractor().generate_update_playlist(
-                    base.tree
-                )
-            ]
+            return [base_command.get_command_extractor().generate_update_playlist(base.tree)]
         except ChildNotFoundError:
             return []  # if the file does not exist, there is nothing to revert
 
     @staticmethod
-    def _revert_update_file(
-        base_command: UpdateRawFile, history: List["ICommand"], base: FileStudy
-    ) -> List[ICommand]:
+    def _revert_update_file(base_command: UpdateRawFile, history: List["ICommand"], base: FileStudy) -> List[ICommand]:
         for command in reversed(history):
-            if (
-                isinstance(command, UpdateRawFile)
-                and command.target == base_command.target
-            ):
+            if isinstance(command, UpdateRawFile) and command.target == base_command.target:
                 return [command]
 
-        return [
-            base_command.get_command_extractor().generate_update_rawfile(
-                base.tree, base_command.target.split("/")
-            )
-        ]
+        return [base_command.get_command_extractor().generate_update_rawfile(base.tree, base_command.target.split("/"))]
 
     @staticmethod
     def _revert_update_district(
@@ -371,22 +295,12 @@ class CommandReverter:
         base: FileStudy,
     ) -> List[ICommand]:
         for command in reversed(history):
-            if (
-                isinstance(command, UpdateDistrict)
-                and command.id == base_command.id
-            ):
+            if isinstance(command, UpdateDistrict) and command.id == base_command.id:
                 return [command]
-            elif (
-                isinstance(command, CreateDistrict)
-                and transform_name_to_id(command.name) == base_command.id
-            ):
+            elif isinstance(command, CreateDistrict) and transform_name_to_id(command.name) == base_command.id:
                 return [command]
 
-        return [
-            base_command.get_command_extractor().generate_update_district(
-                base, base_command.id
-            )
-        ]
+        return [base_command.get_command_extractor().generate_update_district(base, base_command.id)]
 
     def revert(
         self,
@@ -406,6 +320,4 @@ class CommandReverter:
             A list of commands to revert the given command.
         """
 
-        return self.method_dict[base_command.command_name](
-            base_command, history, base
-        )
+        return self.method_dict[base_command.command_name](base_command, history, base)

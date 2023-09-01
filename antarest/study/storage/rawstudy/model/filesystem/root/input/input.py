@@ -21,32 +21,20 @@ class Input(FolderNode):
     def build(self) -> TREE:
         children: TREE = {
             "areas": InputAreas(self.context, self.config.next_file("areas")),
-            "bindingconstraints": BindingConstraints(
-                self.context, self.config.next_file("bindingconstraints")
-            ),
+            "bindingconstraints": BindingConstraints(self.context, self.config.next_file("bindingconstraints")),
             "hydro": InputHydro(self.context, self.config.next_file("hydro")),
             "links": InputLink(self.context, self.config.next_file("links")),
             "load": InputLoad(self.context, self.config.next_file("load")),
-            "misc-gen": InputMiscGen(
-                self.context, self.config.next_file("misc-gen")
-            ),
-            "reserves": InputReserves(
-                self.context, self.config.next_file("reserves")
-            ),
+            "misc-gen": InputMiscGen(self.context, self.config.next_file("misc-gen")),
+            "reserves": InputReserves(self.context, self.config.next_file("reserves")),
             "solar": InputSolar(self.context, self.config.next_file("solar")),
-            "thermal": InputThermal(
-                self.context, self.config.next_file("thermal")
-            ),
+            "thermal": InputThermal(self.context, self.config.next_file("thermal")),
             "wind": InputWind(self.context, self.config.next_file("wind")),
         }
 
         if self.config.enr_modelling == ENR_MODELLING.CLUSTERS.value:
-            children["renewables"] = ClusteredRenewables(
-                self.context, self.config.next_file("renewables")
-            )
+            children["renewables"] = ClusteredRenewables(self.context, self.config.next_file("renewables"))
         if self.config.version >= 860:
-            children["st-storage"] = InputSTStorage(
-                self.context, self.config.next_file("st-storage")
-            )
+            children["st-storage"] = InputSTStorage(self.context, self.config.next_file("st-storage"))
 
         return children

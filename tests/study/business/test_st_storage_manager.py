@@ -75,11 +75,7 @@ class TestSTStorageManager:
                     command_context=Mock(spec=CommandContext),
                 ),
             ),
-            get_storage=Mock(
-                return_value=Mock(
-                    spec=RawStudyService, get_raw=Mock(spec=FileStudy)
-                )
-            ),
+            get_storage=Mock(return_value=Mock(spec=RawStudyService, get_raw=Mock(spec=FileStudy))),
         )
 
     # noinspection PyArgumentList
@@ -201,9 +197,7 @@ class TestSTStorageManager:
         manager = STStorageManager(study_storage_service)
 
         # run
-        with pytest.raises(
-            STStorageConfigNotFoundError, match="not found"
-        ) as ctx:
+        with pytest.raises(STStorageConfigNotFoundError, match="not found") as ctx:
             manager.get_storages(study, area_id="West")
 
         # ensure the error message contains at least the study ID and area ID
@@ -243,9 +237,7 @@ class TestSTStorageManager:
         manager = STStorageManager(study_storage_service)
 
         # Run the method being tested
-        edit_form = manager.get_storage(
-            study, area_id="West", storage_id="storage1"
-        )
+        edit_form = manager.get_storage(study, area_id="West", storage_id="storage1")
 
         # Assert that the returned storage fields match the expected fields
         actual = edit_form.dict(by_alias=True)
@@ -295,9 +287,7 @@ class TestSTStorageManager:
         manager = STStorageManager(study_storage_service)
 
         # Run the method being tested and expect an exception
-        with pytest.raises(
-            STStorageFieldsNotFoundError, match="not found"
-        ) as ctx:
+        with pytest.raises(STStorageFieldsNotFoundError, match="not found") as ctx:
             manager.get_storage(study, area_id="West", storage_id="storage1")
         # ensure the error message contains at least the study ID, area ID and storage ID
         err_msg = str(ctx.value)
@@ -343,9 +333,7 @@ class TestSTStorageManager:
         manager = STStorageManager(study_storage_service)
 
         # Run the method being tested
-        matrix = manager.get_matrix(
-            study, area_id="West", storage_id="storage1", ts_name="inflows"
-        )
+        matrix = manager.get_matrix(study, area_id="West", storage_id="storage1", ts_name="inflows")
 
         # Assert that the returned storage fields match the expected fields
         actual = matrix.dict(by_alias=True)
@@ -385,12 +373,8 @@ class TestSTStorageManager:
         manager = STStorageManager(study_storage_service)
 
         # Run the method being tested and expect an exception
-        with pytest.raises(
-            STStorageMatrixNotFoundError, match="not found"
-        ) as ctx:
-            manager.get_matrix(
-                study, area_id="West", storage_id="storage1", ts_name="inflows"
-            )
+        with pytest.raises(STStorageMatrixNotFoundError, match="not found") as ctx:
+            manager.get_matrix(study, area_id="West", storage_id="storage1", ts_name="inflows")
         # ensure the error message contains at least the study ID, area ID and storage ID
         err_msg = str(ctx.value)
         assert "storage1" in err_msg
@@ -440,9 +424,7 @@ class TestSTStorageManager:
             ValidationError,
             match=re.escape("time series must have shape (8760, 1)"),
         ):
-            manager.get_matrix(
-                study, area_id="West", storage_id="storage1", ts_name="inflows"
-            )
+            manager.get_matrix(study, area_id="West", storage_id="storage1", ts_name="inflows")
 
     # noinspection SpellCheckingInspection
     def test_validate_matrices__nominal(
@@ -456,13 +438,11 @@ class TestSTStorageManager:
 
         # prepare some random matrices, insuring `lower_rule_curve` <= `upper_rule_curve`
         matrices = {
-            
             "pmax_injection": np.random.rand(8760, 1),
             "pmax_withdrawal": np.random.rand(8760, 1),
             "lower_rule_curve": np.random.rand(8760, 1) / 2,
             "upper_rule_curve": np.random.rand(8760, 1) / 2 + 0.5,
             "inflows": np.random.rand(8760, 1) * 1000,
-            
         }
 
         # Prepare the mocks
@@ -481,9 +461,7 @@ class TestSTStorageManager:
 
         # Given the following arguments, the validation shouldn't raise any exception
         manager = STStorageManager(study_storage_service)
-        assert manager.validate_matrices(
-            study, area_id="West", storage_id="storage1"
-        )
+        assert manager.validate_matrices(study, area_id="West", storage_id="storage1")
 
     # noinspection SpellCheckingInspection
     def test_validate_matrices__out_of_bound(
@@ -497,13 +475,11 @@ class TestSTStorageManager:
 
         # prepare some random matrices, insuring `lower_rule_curve` <= `upper_rule_curve`
         matrices = {
-            
             "pmax_injection": np.random.rand(8760, 1) * 2 - 0.5,  # out of bound
             "pmax_withdrawal": np.random.rand(8760, 1) * 2 - 0.5,  # out of bound
             "lower_rule_curve": np.random.rand(8760, 1) * 2 - 0.5,  # out of bound
             "upper_rule_curve": np.random.rand(8760, 1) * 2 - 0.5,  # out of bound
             "inflows": np.random.rand(8760, 1) * 1000,
-            
         }
 
         # Prepare the mocks
@@ -528,9 +504,7 @@ class TestSTStorageManager:
             ValidationError,
             match=re.escape("4 validation errors"),
         ) as ctx:
-            manager.validate_matrices(
-                study, area_id="West", storage_id="storage1"
-            )
+            manager.validate_matrices(study, area_id="West", storage_id="storage1")
         errors = ctx.value.errors()
         assert errors == [
             {
@@ -567,13 +541,11 @@ class TestSTStorageManager:
 
         # prepare some random matrices, insuring `lower_rule_curve` <= `upper_rule_curve`
         matrices = {
-            
             "pmax_injection": np.random.rand(8760, 1),
             "pmax_withdrawal": np.random.rand(8760, 1),
             "lower_rule_curve": np.random.rand(8760, 1),
             "upper_rule_curve": np.random.rand(8760, 1),
             "inflows": np.random.rand(8760, 1) * 1000,
-            
         }
 
         # Prepare the mocks
@@ -598,9 +570,7 @@ class TestSTStorageManager:
             ValidationError,
             match=re.escape("1 validation error"),
         ) as ctx:
-            manager.validate_matrices(
-                study, area_id="West", storage_id="storage1"
-            )
+            manager.validate_matrices(study, area_id="West", storage_id="storage1")
         error = ctx.value.errors()[0]
         assert error["loc"] == ("__root__",)
         assert "lower_rule_curve" in error["msg"]

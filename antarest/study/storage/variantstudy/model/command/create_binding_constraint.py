@@ -44,27 +44,19 @@ class CreateBindingConstraint(ICommand):
         cls, v: Optional[Union[List[List[MatrixData]], str]], values: Any
     ) -> Optional[Union[List[List[MatrixData]], str]]:
         if v is None:
-            v = values[
-                "command_context"
-            ].generator_matrix_constants.get_null_matrix()
+            v = values["command_context"].generator_matrix_constants.get_null_matrix()
             return v
         else:
             return validate_matrix(v, values)
 
-    def _apply_config(
-        self, study_data_config: FileStudyTreeConfig
-    ) -> Tuple[CommandOutput, Dict[str, Any]]:
+    def _apply_config(self, study_data_config: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         bd_id = transform_name_to_id(self.name)
-        parse_bindings_coeffs_and_save_into_config(
-            bd_id, study_data_config, self.coeffs
-        )
+        parse_bindings_coeffs_and_save_into_config(bd_id, study_data_config, self.coeffs)
         return CommandOutput(status=True), {}
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
         assert_this(isinstance(self.values, str))
-        binding_constraints = study_data.tree.get(
-            ["input", "bindingconstraints", "bindingconstraints"]
-        )
+        binding_constraints = study_data.tree.get(["input", "bindingconstraints", "bindingconstraints"])
         new_key = len(binding_constraints.keys())
         bd_id = transform_name_to_id(self.name)
         return apply_binding_constraint(
@@ -100,9 +92,7 @@ class CreateBindingConstraint(ICommand):
         )
 
     def match_signature(self) -> str:
-        return str(
-            self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.name
-        )
+        return str(self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.name)
 
     def match(self, other: ICommand, equal: bool = False) -> bool:
         if not isinstance(other, CreateBindingConstraint):
@@ -132,9 +122,7 @@ class CreateBindingConstraint(ICommand):
                 time_step=other.time_step,
                 operator=other.operator,
                 coeffs=other.coeffs,
-                values=strip_matrix_protocol(other.values)
-                if self.values != other.values
-                else None,
+                values=strip_matrix_protocol(other.values) if self.values != other.values else None,
                 filter_year_by_year=other.filter_year_by_year,
                 filter_synthesis=other.filter_synthesis,
                 comments=other.comments,

@@ -13,9 +13,7 @@ from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 
 
-def create_file_transfer_api(
-    filetransfer_manager: FileTransferManager, config: Config
-) -> APIRouter:
+def create_file_transfer_api(filetransfer_manager: FileTransferManager, config: Config) -> APIRouter:
     bp = APIRouter(prefix="/v1")
     auth = Auth(config)
 
@@ -28,9 +26,7 @@ def create_file_transfer_api(
     def get_downloads(
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
-        return filetransfer_manager.list_downloads(
-            RequestParameters(user=current_user)
-        )
+        return filetransfer_manager.list_downloads(RequestParameters(user=current_user))
 
     @bp.get(
         "/downloads/{download_id}",
@@ -42,14 +38,10 @@ def create_file_transfer_api(
         download_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
-        download = filetransfer_manager.fetch_download(
-            download_id, RequestParameters(user=current_user)
-        )
+        download = filetransfer_manager.fetch_download(download_id, RequestParameters(user=current_user))
         return FileResponse(
             Path(download.path),
-            headers={
-                "Content-Disposition": f'attachment; filename="{download.filename}"'
-            },
+            headers={"Content-Disposition": f'attachment; filename="{download.filename}"'},
             media_type="application/zip",
         )
 

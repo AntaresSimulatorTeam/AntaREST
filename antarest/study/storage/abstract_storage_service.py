@@ -105,9 +105,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
             else:
                 data = study.tree.get(parts, depth=depth, formatted=formatted)
                 self.cache.put(cache_id, data)
-                logger.info(
-                    f"Cache new entry from RawStudyService (studyID: {metadata.id})"
-                )
+                logger.info(f"Cache new entry from RawStudyService (studyID: {metadata.id})")
         else:
             data = study.tree.get(parts, depth=depth, formatted=formatted)
         del study
@@ -131,27 +129,16 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
             for output in study_data.config.outputs:
                 output_data: Simulation = study_data.config.outputs[output]
                 try:
-                    file_metadata = FileStudyHelpers.get_config(
-                        study_data, output_data.get_file()
-                    )
+                    file_metadata = FileStudyHelpers.get_config(study_data, output_data.get_file())
                     settings = StudySimSettingsDTO(
                         general=file_metadata["general"],
                         input=file_metadata["input"],
                         output=file_metadata["output"],
                         optimization=file_metadata["optimization"],
                         otherPreferences=file_metadata["other preferences"],
-                        advancedParameters=file_metadata[
-                            "advanced parameters"
-                        ],
-                        seedsMersenneTwister=file_metadata[
-                            "seeds - Mersenne Twister"
-                        ],
-                        playlist=[
-                            year
-                            for year in (
-                                get_playlist(file_metadata) or {}
-                            ).keys()
-                        ],
+                        advancedParameters=file_metadata["advanced parameters"],
+                        seedsMersenneTwister=file_metadata["seeds - Mersenne Twister"],
+                        playlist=[year for year in (get_playlist(file_metadata) or {}).keys()],
                     )
 
                     results.append(
@@ -188,9 +175,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
 
         Returns: output id
         """
-        path_output = (
-            Path(metadata.path) / "output" / f"imported_output_{str(uuid4())}"
-        )
+        path_output = Path(metadata.path) / "output" / f"imported_output_{str(uuid4())}"
         study_id = metadata.id
         path_output.mkdir(parents=True)
         output_full_name: Optional[str] = None
@@ -208,19 +193,13 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
             else:
                 extract_zip(output, path_output)
 
-            stopwatch.log_elapsed(
-                lambda t: logger.info(f"Copied output for {study_id} in {t}s")
-            )
+            stopwatch.log_elapsed(lambda t: logger.info(f"Copied output for {study_id} in {t}s"))
             fix_study_root(path_output)
             output_full_name = extract_output_name(path_output, output_name)
             extension = ".zip" if is_zipped else ""
-            path_output = path_output.rename(
-                Path(path_output.parent, output_full_name + extension)
-            )
+            path_output = path_output.rename(Path(path_output.parent, output_full_name + extension))
 
-            data = self.get(
-                metadata, f"output/{output_full_name}", 1, use_cache=False
-            )
+            data = self.get(metadata, f"output/{output_full_name}", 1, use_cache=False)
 
             if data is None:
                 self.delete_output(metadata, "imported_output")
@@ -235,9 +214,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
 
         return output_full_name
 
-    def export_study(
-        self, metadata: T, target: Path, outputs: bool = True
-    ) -> Path:
+    def export_study(self, metadata: T, target: Path, outputs: bool = True) -> Path:
         """
         Export and compress the study inside a ZIP file.
 
@@ -250,21 +227,13 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
             The ZIP file containing the study files compressed inside.
         """
         path_study = Path(metadata.path)
-        with tempfile.TemporaryDirectory(
-            dir=self.config.storage.tmp_dir
-        ) as tmpdir:
-            logger.info(
-                f"Exporting study {metadata.id} to temporary path {tmpdir}"
-            )
+        with tempfile.TemporaryDirectory(dir=self.config.storage.tmp_dir) as tmpdir:
+            logger.info(f"Exporting study {metadata.id} to temporary path {tmpdir}")
             tmp_study_path = Path(tmpdir) / "tmp_copy"
             self.export_study_flat(metadata, tmp_study_path, outputs)
             stopwatch = StopWatch()
             zip_dir(tmp_study_path, target)
-            stopwatch.log_elapsed(
-                lambda x: logger.info(
-                    f"Study {path_study} exported (zipped mode) in {x}s"
-                )
-            )
+            stopwatch.log_elapsed(lambda x: logger.info(f"Study {path_study} exported (zipped mode) in {x}s"))
         return target
 
     def export_output(self, metadata: T, output_id: str, target: Path) -> None:
@@ -289,26 +258,14 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         stopwatch = StopWatch()
         if not path_output_zip.exists():
             zip_dir(path_output, target)
-        stopwatch.log_elapsed(
-            lambda x: logger.info(
-                f"Output {output_id} from study {metadata.path} exported in {x}s"
-            )
-        )
+        stopwatch.log_elapsed(lambda x: logger.info(f"Output {output_id} from study {metadata.path} exported in {x}s"))
 
-    def _read_additional_data_from_files(
-        self, file_study: FileStudy
-    ) -> StudyAdditionalData:
-        logger.info(
-            f"Reading additional data from files for study {file_study.config.study_id}"
-        )
-        horizon = file_study.tree.get(
-            url=["settings", "generaldata", "general", "horizon"]
-        )
+    def _read_additional_data_from_files(self, file_study: FileStudy) -> StudyAdditionalData:
+        logger.info(f"Reading additional data from files for study {file_study.config.study_id}")
+        horizon = file_study.tree.get(url=["settings", "generaldata", "general", "horizon"])
         author = file_study.tree.get(url=["study", "antares", "author"])
         patch = self.patch_service.get_from_filestudy(file_study)
-        study_additional_data = StudyAdditionalData(
-            horizon=horizon, author=author, patch=patch.json()
-        )
+        study_additional_data = StudyAdditionalData(horizon=horizon, author=author, patch=patch.json())
         return study_additional_data
 
     def archive_study_output(self, study: T, output_id: str) -> bool:
@@ -332,9 +289,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
             )
             return False
 
-    def unarchive_study_output(
-        self, study: T, output_id: str, keep_src_zip: bool
-    ) -> bool:
+    def unarchive_study_output(self, study: T, output_id: str, keep_src_zip: bool) -> bool:
         if not (Path(study.path) / "output" / f"{output_id}.zip").exists():
             logger.warning(
                 f"Failed to archive study {study.name} output {output_id}. Maybe it's already unarchived",

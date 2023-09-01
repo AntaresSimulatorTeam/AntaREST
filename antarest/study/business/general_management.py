@@ -86,9 +86,7 @@ class GeneralFormFields(FormFieldsBaseModel):
             return values
 
         if any(v is None for v in day_fields):
-            raise ValueError(
-                "First day, last day and leap year fields must be defined together"
-            )
+            raise ValueError("First day, last day and leap year fields must be defined together")
 
         first_day = cast(int, first_day)
         last_day = cast(int, last_day)
@@ -96,13 +94,9 @@ class GeneralFormFields(FormFieldsBaseModel):
         num_days_in_year = 366 if leap_year else 365
 
         if first_day > last_day:
-            raise ValueError(
-                "Last day must be greater than or equal to the first day"
-            )
+            raise ValueError("Last day must be greater than or equal to the first day")
         if last_day > num_days_in_year:
-            raise ValueError(
-                f"Last day cannot be greater than {num_days_in_year}"
-            )
+            raise ValueError(f"Last day cannot be greater than {num_days_in_year}")
 
         return values
 
@@ -214,29 +208,16 @@ class GeneralManager:
             is_in_version = start_ver <= study_ver <= end_ver
             parent = general if GENERAL_PATH in path else output
 
-            return (
-                parent.get(target_name, field_info["default_value"])
-                if is_in_version
-                else None
-            )
+            return parent.get(target_name, field_info["default_value"]) if is_in_version else None
 
-        return GeneralFormFields.construct(
-            **{
-                name: get_value(name, info)
-                for name, info in FIELDS_INFO.items()
-            }
-        )
+        return GeneralFormFields.construct(**{name: get_value(name, info) for name, info in FIELDS_INFO.items()})
 
-    def set_field_values(
-        self, study: Study, field_values: GeneralFormFields
-    ) -> None:
+    def set_field_values(self, study: Study, field_values: GeneralFormFields) -> None:
         """
         Set Optimization config from the webapp form
         """
         commands: List[UpdateConfig] = []
-        cmd_cx = (
-            self.storage_service.variant_study_service.command_factory.command_context
-        )
+        cmd_cx = self.storage_service.variant_study_service.command_factory.command_context
         file_study = self.storage_service.get_storage(study).get_raw(study)
 
         for field_name, value in field_values.__iter__():
@@ -244,23 +225,13 @@ class GeneralManager:
                 info = FIELDS_INFO[field_name]
 
                 if field_name == BUILDING_MODE:
-                    commands.extend(
-                        GeneralManager.__get_building_mode_update_cmds(
-                            value, file_study, cmd_cx
-                        )
-                    )
+                    commands.extend(GeneralManager.__get_building_mode_update_cmds(value, file_study, cmd_cx))
                     continue
 
-                commands.append(
-                    UpdateConfig(
-                        target=info["path"], data=value, command_context=cmd_cx
-                    )
-                )
+                commands.append(UpdateConfig(target=info["path"], data=value, command_context=cmd_cx))
 
         if commands:
-            execute_or_add_commands(
-                study, file_study, commands, self.storage_service
-            )
+            execute_or_add_commands(study, file_study, commands, self.storage_service)
 
     @staticmethod
     def __get_building_mode_value(general_config: Dict[str, Any]) -> str:
@@ -268,9 +239,7 @@ class GeneralManager:
             return BuildingMode.DERATED.value
 
         # 'custom-scenario' replaces 'custom-ts-numbers' in study versions >= 800
-        if general_config.get("custom-scenario", False) or general_config.get(
-            "custom-ts-numbers", False
-        ):
+        if general_config.get("custom-scenario", False) or general_config.get("custom-ts-numbers", False):
             return BuildingMode.CUSTOM.value
 
         return str(FIELDS_INFO[BUILDING_MODE]["default_value"])

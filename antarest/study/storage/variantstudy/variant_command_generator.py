@@ -14,9 +14,7 @@ from antarest.study.storage.variantstudy.model.model import GenerationResultInfo
 
 logger = logging.getLogger(__name__)
 
-APPLY_CALLBACK = Callable[
-    [ICommand, Union[FileStudyTreeConfig, FileStudy]], CommandOutput
-]
+APPLY_CALLBACK = Callable[[ICommand, Union[FileStudyTreeConfig, FileStudy]], CommandOutput]
 
 
 class VariantCommandGenerator:
@@ -33,9 +31,7 @@ class VariantCommandGenerator:
     ) -> GenerationResultInfoDTO:
         stopwatch = StopWatch()
         # Apply commands
-        results: GenerationResultInfoDTO = GenerationResultInfoDTO(
-            success=True, details=[]
-        )
+        results: GenerationResultInfoDTO = GenerationResultInfoDTO(success=True, details=[])
 
         stopwatch.reset_current()
         logger.info("Applying commands")
@@ -45,28 +41,20 @@ class VariantCommandGenerator:
         for command_batch in commands:
             command_output_status = True
             command_output_message = ""
-            command_name = (
-                command_batch[0].command_name.value
-                if len(command_batch) > 0
-                else ""
-            )
+            command_name = command_batch[0].command_name.value if len(command_batch) > 0 else ""
             try:
                 command_index += 1
                 command_output_messages: List[str] = []
                 for command in command_batch:
                     output = applier(command, data)
                     command_output_messages.append(output.message)
-                    command_output_status = (
-                        command_output_status and output.status
-                    )
+                    command_output_status = command_output_status and output.status
                     if not command_output_status:
                         break
                 command_output_message = "\n".join(command_output_messages)
             except Exception as e:
                 command_output_status = False
-                command_output_message = (
-                    f"Error while applying command {command_name}"
-                )
+                command_output_message = f"Error while applying command {command_name}"
                 logger.error(command_output_message, exc_info=e)
                 break
             finally:
@@ -95,9 +83,7 @@ class VariantCommandGenerator:
         data_type = isinstance(data, FileStudy)
         stopwatch.log_elapsed(
             lambda x: logger.info(
-                f"Variant generation done in {x}s"
-                if data_type
-                else f"Variant light generation done in {x}s"
+                f"Variant generation done in {x}s" if data_type else f"Variant light generation done in {x}s"
             ),
             since_start=True,
         )
@@ -113,9 +99,7 @@ class VariantCommandGenerator:
     ) -> GenerationResultInfoDTO:
         # Build file study
         logger.info("Building study tree")
-        study = self.study_factory.create_from_fs(
-            dest_path, "", use_cache=False
-        )
+        study = self.study_factory.create_from_fs(dest_path, "", use_cache=False)
         if metadata:
             update_antares_info(metadata, study.tree, update_author=True)
 
@@ -142,9 +126,7 @@ class VariantCommandGenerator:
         results = VariantCommandGenerator._generate(
             commands,
             config,
-            lambda command, data: command.apply_config(
-                cast(FileStudyTreeConfig, data)
-            ),
+            lambda command, data: command.apply_config(cast(FileStudyTreeConfig, data)),
             metadata,
             notifier,
         )

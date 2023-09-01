@@ -66,9 +66,7 @@ class LayerInfoDTO(BaseModel):
     areas: List[str]
 
 
-def _get_ui_info_map(
-    file_study: FileStudy, area_ids: Sequence[str]
-) -> Dict[str, Any]:
+def _get_ui_info_map(file_study: FileStudy, area_ids: Sequence[str]) -> Dict[str, Any]:
     """
     Get the UI information (a JSON object) for each selected Area.
 
@@ -86,9 +84,7 @@ def _get_ui_info_map(
     # instead of raising an obscure exception.
     if not area_ids:
         return {}
-    ui_info_map = file_study.tree.get(
-        ["input", "areas", ",".join(area_ids), "ui"]
-    )
+    ui_info_map = file_study.tree.get(["input", "areas", ",".join(area_ids), "ui"])
     # If there is only one ID in the `area_ids`, the result returned from
     # the `file_study.tree.get` call will be a single UI object.
     # On the other hand, if there are multiple values in `area_ids`,
@@ -100,11 +96,7 @@ def _get_ui_info_map(
 
 
 def _get_area_layers(area_uis: Dict[str, Any], area: str) -> List[str]:
-    if (
-        area in area_uis
-        and "ui" in area_uis[area]
-        and "layers" in area_uis[area]["ui"]
-    ):
+    if area in area_uis and "ui" in area_uis[area] and "layers" in area_uis[area]["ui"]:
         return re.split(r"\s+", (str(area_uis[area]["ui"]["layers"]) or ""))
     return []
 
@@ -118,9 +110,7 @@ class AreaManager:
         self.storage_service = storage_service
         self.patch_service = PatchService(repository=repository)
 
-    def get_all_areas(
-        self, study: RawStudy, area_type: Optional[AreaType] = None
-    ) -> List[AreaInfoDTO]:
+    def get_all_areas(self, study: RawStudy, area_type: Optional[AreaType] = None) -> List[AreaInfoDTO]:
         """
         Retrieves all areas and districts of a raw study based on the area type.
 
@@ -206,31 +196,22 @@ class AreaManager:
             for layer in layers
         ]
 
-    def update_layer_areas(
-        self, study: RawStudy, layer_id: str, areas: List[str]
-    ) -> None:
+    def update_layer_areas(self, study: RawStudy, layer_id: str, areas: List[str]) -> None:
         logger.info(f"Updating layer {layer_id} with areas {areas}")
         file_study = self.storage_service.get_storage(study).get_raw(study)
         layers = file_study.tree.get(["layers", "layers", "layers"])
         if layer_id not in [str(layer) for layer in list(layers.keys())]:
             raise LayerNotFound
-        areas_ui = file_study.tree.get(
-            ["input", "areas", ",".join(file_study.config.areas), "ui"]
-        )
+        areas_ui = file_study.tree.get(["input", "areas", ",".join(file_study.config.areas), "ui"])
         # standardizes 'areas_ui' to a dictionary format even if only one area exists.
         cfg_areas = list(file_study.config.areas)
         if len(cfg_areas) == 1:
             areas_ui = {cfg_areas[0]: areas_ui}
 
         existing_areas = [
-            area
-            for area in areas_ui
-            if "ui" in areas_ui[area]
-            and layer_id in _get_area_layers(areas_ui, area)
+            area for area in areas_ui if "ui" in areas_ui[area] and layer_id in _get_area_layers(areas_ui, area)
         ]
-        to_remove_areas = [
-            area for area in existing_areas if area not in areas
-        ]
+        to_remove_areas = [area for area in existing_areas if area not in areas]
         to_add_areas = [area for area in areas if area not in existing_areas]
         commands: List[ICommand] = []
 
@@ -261,11 +242,7 @@ class AreaManager:
                 del areas_ui[area]["layerY"][layer_id]
             if layer_id in area_to_remove_layers:
                 areas_ui[area]["ui"]["layers"] = " ".join(
-                    [
-                        area_layer
-                        for area_layer in area_to_remove_layers
-                        if area_layer != layer_id
-                    ]
+                    [area_layer for area_layer in area_to_remove_layers if area_layer != layer_id]
                 )
             commands.extend(create_update_commands(area))
         for area in to_add_areas:
@@ -275,18 +252,12 @@ class AreaManager:
             if layer_id not in areas_ui[area]["layerY"]:
                 areas_ui[area]["layerY"][layer_id] = areas_ui[area]["ui"]["y"]
             if layer_id not in area_to_add_layers:
-                areas_ui[area]["ui"]["layers"] = " ".join(
-                    area_to_add_layers + [layer_id]
-                )
+                areas_ui[area]["ui"]["layers"] = " ".join(area_to_add_layers + [layer_id])
             commands.extend(create_update_commands(area))
 
-        execute_or_add_commands(
-            study, file_study, commands, self.storage_service
-        )
+        execute_or_add_commands(study, file_study, commands, self.storage_service)
 
-    def update_layer_name(
-        self, study: RawStudy, layer_id: str, layer_name: str
-    ) -> None:
+    def update_layer_name(self, study: RawStudy, layer_id: str, layer_name: str) -> None:
         logger.info(f"Updating layer {layer_id} with name {layer_name}")
         file_study = self.storage_service.get_storage(study).get_raw(study)
         layers = file_study.tree.get(["layers", "layers", "layers"])
@@ -297,16 +268,12 @@ class AreaManager:
             data=layer_name,
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
         )
-        execute_or_add_commands(
-            study, file_study, [command], self.storage_service
-        )
+        execute_or_add_commands(study, file_study, [command], self.storage_service)
 
     def create_layer(self, study: RawStudy, layer_name: str) -> str:
         file_study = self.storage_service.get_storage(study).get_raw(study)
         layers = file_study.tree.get(["layers", "layers", "layers"])
-        command_context = (
-            self.storage_service.variant_study_service.command_factory.command_context
-        )
+        command_context = self.storage_service.variant_study_service.command_factory.command_context
         new_id = max((int(layer) for layer in layers), default=0) + 1
         if new_id == 1:
             command = UpdateConfig(
@@ -320,9 +287,7 @@ class AreaManager:
                 data=layer_name,
                 command_context=command_context,
             )
-        execute_or_add_commands(
-            study, file_study, [command], self.storage_service
-        )
+        execute_or_add_commands(study, file_study, [command], self.storage_service)
         return str(new_id)
 
     def remove_layer(self, study: RawStudy, layer_id: str) -> None:
@@ -349,21 +314,15 @@ class AreaManager:
             data=layers,
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
         )
-        execute_or_add_commands(
-            study, file_study, [command], self.storage_service
-        )
+        execute_or_add_commands(study, file_study, [command], self.storage_service)
 
-    def create_area(
-        self, study: Study, area_creation_info: AreaCreationDTO
-    ) -> AreaInfoDTO:
+    def create_area(self, study: Study, area_creation_info: AreaCreationDTO) -> AreaInfoDTO:
         file_study = self.storage_service.get_storage(study).get_raw(study)
         command = CreateArea(
             area_name=area_creation_info.name,
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
         )
-        execute_or_add_commands(
-            study, file_study, [command], self.storage_service
-        )
+        execute_or_add_commands(study, file_study, [command], self.storage_service)
         area_id = transform_name_to_id(area_creation_info.name)
         patch = self.patch_service.get(study)
         patch.areas = patch.areas or {}
@@ -385,9 +344,7 @@ class AreaManager:
         area_metadata: PatchArea,
     ) -> AreaInfoDTO:
         file_study = self.storage_service.get_storage(study).get_raw(study)
-        area_or_set = file_study.config.areas.get(
-            area_id
-        ) or file_study.config.sets.get(area_id)
+        area_or_set = file_study.config.areas.get(area_id) or file_study.config.sets.get(area_id)
         patch = self.patch_service.get(study)
         patch.areas = patch.areas or {}
         patch.areas[area_id] = area_metadata
@@ -395,18 +352,12 @@ class AreaManager:
         return AreaInfoDTO(
             id=area_id,
             name=area_or_set.name if area_or_set is not None else area_id,
-            type=AreaType.AREA
-            if isinstance(area_or_set, Area)
-            else AreaType.DISTRICT,
+            type=AreaType.AREA if isinstance(area_or_set, Area) else AreaType.DISTRICT,
             metadata=patch.areas.get(area_id),
-            set=area_or_set.get_areas(list(file_study.config.areas))
-            if isinstance(area_or_set, DistrictSet)
-            else [],
+            set=area_or_set.get_areas(list(file_study.config.areas)) if isinstance(area_or_set, DistrictSet) else [],
         )
 
-    def update_area_ui(
-        self, study: Study, area_id: str, area_ui: AreaUI, layer: str = "0"
-    ) -> None:
+    def update_area_ui(self, study: Study, area_id: str, area_ui: AreaUI, layer: str = "0") -> None:
         file_study = self.storage_service.get_storage(study).get_raw(study)
         commands = (
             [
@@ -458,9 +409,7 @@ class AreaManager:
                 ),
             ]
         )
-        execute_or_add_commands(
-            study, file_study, commands, self.storage_service
-        )
+        execute_or_add_commands(study, file_study, commands, self.storage_service)
 
     def update_thermal_cluster_metadata(
         self,
@@ -472,12 +421,7 @@ class AreaManager:
         patch = self.patch_service.get(study)
         patch.areas = patch.areas or {}
         patch.thermal_clusters = patch.thermal_clusters or {}
-        patch.thermal_clusters.update(
-            {
-                f"{area_id}.{tid}": clusters_metadata[tid]
-                for tid in clusters_metadata
-            }
-        )
+        patch.thermal_clusters.update({f"{area_id}.{tid}": clusters_metadata[tid] for tid in clusters_metadata})
         self.patch_service.save(study, patch)
         return AreaInfoDTO(
             id=area_id,
@@ -494,9 +438,7 @@ class AreaManager:
             id=area_id,
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
         )
-        execute_or_add_commands(
-            study, file_study, [command], self.storage_service
-        )
+        execute_or_add_commands(study, file_study, [command], self.storage_service)
 
     @staticmethod
     def _update_with_cluster_metadata(
@@ -510,19 +452,13 @@ class AreaManager:
         return info
 
     @staticmethod
-    def _get_clusters(
-        file_study: FileStudy, area: str, metadata_patch: Patch
-    ) -> List[ClusterInfoDTO]:
-        thermal_clusters_data = file_study.tree.get(
-            ["input", "thermal", "clusters", area, "list"]
-        )
+    def _get_clusters(file_study: FileStudy, area: str, metadata_patch: Patch) -> List[ClusterInfoDTO]:
+        thermal_clusters_data = file_study.tree.get(["input", "thermal", "clusters", area, "list"])
         cluster_patch = metadata_patch.thermal_clusters or {}
         return [
             AreaManager._update_with_cluster_metadata(
                 area,
-                ClusterInfoDTO.parse_obj(
-                    {**thermal_clusters_data[tid], "id": tid}
-                ),
+                ClusterInfoDTO.parse_obj({**thermal_clusters_data[tid], "id": tid}),
                 cluster_patch,
             )
             for tid in thermal_clusters_data

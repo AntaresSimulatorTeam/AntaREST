@@ -62,9 +62,7 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
         if len(names) == 1:
             child = children[names[0]]
             if not get_node:
-                return child.get(  # type: ignore
-                    sub_url, depth=depth, expanded=False, formatted=formatted
-                )
+                return child.get(sub_url, depth=depth, expanded=False, formatted=formatted)  # type: ignore
             else:
                 return child.get_node(
                     sub_url,
@@ -95,9 +93,7 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
         if depth == 0:
             return {}
         return {
-            name: node.get(depth=depth - 1, expanded=True, formatted=formatted)
-            if depth != 1
-            else {}
+            name: node.get(depth=depth - 1, expanded=True, formatted=formatted) if depth != 1 else {}
             for name, node in children.items()
         }
 
@@ -120,9 +116,7 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
         expanded: bool = False,
         formatted: bool = True,
     ) -> JSON:
-        output = self._get(
-            url=url, depth=depth, formatted=formatted, get_node=False
-        )
+        output = self._get(url=url, depth=depth, formatted=formatted, get_node=False)
         assert not isinstance(output, INode)
         return output
 
@@ -181,9 +175,7 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
                         raise ValueError(msg)
                     errors += [msg]
                 else:
-                    errors += children[key].check_errors(
-                        data[key], raising=raising
-                    )
+                    errors += children[key].check_errors(data[key], raising=raising)
             return errors
 
     def normalize(self) -> None:
@@ -194,9 +186,7 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
         for child in self.build().values():
             child.denormalize()
 
-    def extract_child(
-        self, children: TREE, url: List[str]
-    ) -> Tuple[List[str], List[str]]:
+    def extract_child(self, children: TREE, url: List[str]) -> Tuple[List[str], List[str]]:
         names, sub_url = url[0].split(","), url[1:]
         names = (
             list(
@@ -213,15 +203,11 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
             return [], sub_url
 
         if names[0] not in children:
-            raise ChildNotFoundError(
-                f"'{names[0]}' not a child of {self.__class__.__name__}"
-            )
+            raise ChildNotFoundError(f"'{names[0]}' not a child of {self.__class__.__name__}")
         child_class = type(children[names[0]])
         for name in names:
             if name not in children:
-                raise ChildNotFoundError(
-                    f"'{name}' not a child of {self.__class__.__name__}"
-                )
+                raise ChildNotFoundError(f"'{name}' not a child of {self.__class__.__name__}")
             if type(children[name]) != child_class:
                 raise FilterError("Filter selection has different classes")
         return names, sub_url

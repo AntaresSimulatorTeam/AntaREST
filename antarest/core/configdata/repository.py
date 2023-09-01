@@ -15,9 +15,7 @@ class ConfigDataRepository:
         db.session.commit()
         return configdata
 
-    def get(
-        self, key: str, owner: Optional[int] = None
-    ) -> Optional[ConfigData]:
+    def get(self, key: str, owner: Optional[int] = None) -> Optional[ConfigData]:
         configdata: ConfigData = (
             db.session.query(ConfigData)
             .filter(
@@ -30,18 +28,14 @@ class ConfigDataRepository:
         )
         return configdata
 
-    def get_json(
-        self, key: str, owner: Optional[int] = None
-    ) -> Optional[JSON]:
+    def get_json(self, key: str, owner: Optional[int] = None) -> Optional[JSON]:
         configdata = self.get(key, owner)
         if configdata:
             data: JSON = json.loads(configdata.value)
             return data
         return None
 
-    def put_json(
-        self, key: str, data: JSON, owner: Optional[int] = None
-    ) -> None:
+    def put_json(self, key: str, data: JSON, owner: Optional[int] = None) -> None:
         configdata = ConfigData(
             key=key,
             value=json.dumps(data),
