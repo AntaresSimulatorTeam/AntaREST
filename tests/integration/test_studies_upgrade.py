@@ -1,8 +1,9 @@
 import os
 
 import pytest
-from antarest.core.tasks.model import TaskStatus
 from starlette.testclient import TestClient
+
+from antarest.core.tasks.model import TaskStatus
 from tests.integration.utils import wait_task_completion
 
 RUN_ON_WINDOWS = os.name == "nt"

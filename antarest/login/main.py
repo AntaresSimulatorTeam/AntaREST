@@ -1,6 +1,6 @@
 import json
 from http import HTTPStatus
-from typing import Optional, Any
+from typing import Any, Optional
 
 from fastapi import FastAPI
 from fastapi_jwt_auth import AuthJWT  # type: ignore
@@ -9,15 +9,15 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse
 
 from antarest.core.config import Config
-from antarest.core.interfaces.eventbus import IEventBus, DummyEventBusService
+from antarest.core.interfaces.eventbus import DummyEventBusService, IEventBus
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.ldap import LdapService
 from antarest.login.repository import (
-    UserRepository,
+    BotRepository,
     GroupRepository,
     RoleRepository,
-    BotRepository,
     UserLdapRepository,
+    UserRepository,
 )
 from antarest.login.service import LoginService
 from antarest.login.web import create_login_api

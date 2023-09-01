@@ -1,8 +1,16 @@
 from enum import Enum
-from typing import Optional, Any
+from typing import Any, Optional
 
 from pydantic import BaseModel
-from sqlalchemy import Column, String, Integer, Boolean, DateTime, ForeignKey, Sequence  # type: ignore
+from sqlalchemy import (  # type: ignore
+    Boolean,
+    Column,
+    DateTime,
+    ForeignKey,
+    Integer,
+    Sequence,
+    String,
+)
 from sqlalchemy.orm import relationship  # type: ignore
 
 from antarest.core.persistence import Base

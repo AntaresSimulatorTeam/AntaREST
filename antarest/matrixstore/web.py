@@ -2,25 +2,22 @@ import logging
 from pathlib import Path
 from typing import Any, List, Optional
 
-from fastapi import APIRouter, Depends, Body, File, UploadFile
+from fastapi import APIRouter, Body, Depends, File, UploadFile
 from starlette.requests import Request
 from starlette.responses import FileResponse
 
 from antarest.core.config import Config
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.jwt import JWTUser
-from antarest.core.requests import (
-    UserHasNotPermissionError,
-    RequestParameters,
-)
+from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.matrixstore.model import (
-    MatrixDataSetUpdateDTO,
-    MatrixInfoDTO,
     MatrixData,
-    MatrixDTO,
     MatrixDataSetDTO,
+    MatrixDataSetUpdateDTO,
+    MatrixDTO,
+    MatrixInfoDTO,
 )
 from antarest.matrixstore.service import MatrixService
 

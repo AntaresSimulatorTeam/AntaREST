@@ -5,6 +5,7 @@ from typing import List, Tuple, cast
 
 import numpy as np
 import pandas as pd
+
 from antarest.matrixstore.matrix_editor import (
     MatrixEditInstruction,
     MatrixSlice,

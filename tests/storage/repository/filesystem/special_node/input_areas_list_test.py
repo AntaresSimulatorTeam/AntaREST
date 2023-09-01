@@ -2,8 +2,8 @@ from pathlib import Path
 from unittest.mock import Mock
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
     Area,
+    FileStudyTreeConfig,
 )
 from antarest.study.storage.rawstudy.model.filesystem.root.input.areas.list import (
     InputAreasList,

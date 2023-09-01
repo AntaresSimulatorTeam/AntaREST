@@ -2,8 +2,9 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Any, Awaitable, Callable, List, Optional
 
-from antarest.core.model import PermissionInfo
 from pydantic import BaseModel
+
+from antarest.core.model import PermissionInfo
 
 
 class EventType(str, Enum):

@@ -18,6 +18,8 @@ from antareslauncher.main_option_parser import (
     ParserParameters,
 )
 from antareslauncher.study_dto import StudyDTO
+from filelock import FileLock
+
 from antarest.core.config import Config, SlurmConfig
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
@@ -38,7 +40,6 @@ from antarest.launcher.model import (
 )
 from antarest.study.storage.rawstudy.io.reader import IniReader
 from antarest.study.storage.rawstudy.io.writer.ini_writer import IniWriter
-from filelock import FileLock
 
 logger = logging.getLogger(__name__)
 logging.getLogger("paramiko").setLevel("WARN")

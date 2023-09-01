@@ -1,4 +1,4 @@
-from typing import Optional, List
+from typing import List, Optional
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
@@ -6,9 +6,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
 from antarest.study.storage.rawstudy.model.filesystem.context import (
     ContextServer,
 )
-from antarest.study.storage.rawstudy.model.filesystem.inode import (
-    INode,
-)
+from antarest.study.storage.rawstudy.model.filesystem.inode import INode
 
 
 class InputAreasList(INode[List[str], List[str], List[str]]):

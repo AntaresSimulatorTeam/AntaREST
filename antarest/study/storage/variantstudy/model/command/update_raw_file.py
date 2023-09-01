@@ -1,5 +1,5 @@
 import base64
-from typing import List, Any, Tuple, Dict
+from typing import Any, Dict, List, Tuple
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
@@ -9,12 +9,12 @@ from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import (
     RawFileNode,
 )
 from antarest.study.storage.variantstudy.model.command.common import (
-    CommandOutput,
     CommandName,
+    CommandOutput,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import (
-    ICommand,
     MATCH_SIGNATURE_SEPARATOR,
+    ICommand,
 )
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 

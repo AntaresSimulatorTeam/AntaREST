@@ -3,8 +3,8 @@ import logging
 import random
 import threading
 import time
-from typing import Awaitable, Callable, Dict, List, Optional
 import uuid
+from typing import Awaitable, Callable, Dict, List, Optional
 
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.eventbus.business.interfaces import IEventBusBackend

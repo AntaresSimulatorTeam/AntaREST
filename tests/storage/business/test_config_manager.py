@@ -3,8 +3,8 @@ from unittest.mock import Mock
 
 from antarest.study.business.thematic_trimming_management import (
     FIELDS_INFO,
-    ThematicTrimmingManager,
     ThematicTrimmingFormFields,
+    ThematicTrimmingManager,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,

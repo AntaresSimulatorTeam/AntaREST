@@ -9,6 +9,9 @@ from pathlib import Path
 from typing import Callable, List, Optional, Tuple, cast
 from uuid import uuid4
 
+from fastapi import HTTPException
+from filelock import FileLock
+
 from antarest.core.config import Config
 from antarest.core.exceptions import (
     CommandNotFoundError,
@@ -29,11 +32,7 @@ from antarest.core.interfaces.eventbus import (
     IEventBus,
 )
 from antarest.core.jwt import DEFAULT_ADMIN_USER
-from antarest.core.model import (
-    JSON,
-    PermissionInfo,
-    StudyPermissionType,
-)
+from antarest.core.model import JSON, PermissionInfo, StudyPermissionType
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.tasks.model import (
     CustomTaskEventMessages,
@@ -100,8 +99,6 @@ from antarest.study.storage.variantstudy.repository import (
 from antarest.study.storage.variantstudy.variant_command_generator import (
     VariantCommandGenerator,
 )
-from fastapi import HTTPException
-from filelock import FileLock
 
 logger = logging.getLogger(__name__)
 

@@ -7,10 +7,10 @@ from zipfile import ZipFile
 import pytest
 
 from antarest.study.business.timeseries_config_management import (
+    SeasonCorrelation,
     TimeSeriesConfigManager,
     TSFormFields,
     TSFormFieldsForType,
-    SeasonCorrelation,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy

@@ -5,6 +5,15 @@ import logging
 import pathlib
 from typing import Any, List
 
+from fastapi import APIRouter, Body, Depends, File, HTTPException
+from fastapi.params import Param
+from starlette.responses import (
+    JSONResponse,
+    PlainTextResponse,
+    Response,
+    StreamingResponse,
+)
+
 from antarest.core.config import Config
 from antarest.core.jwt import JWTUser
 from antarest.core.model import SUB_JSON
@@ -14,14 +23,6 @@ from antarest.core.utils.utils import sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.study.service import StudyService
-from fastapi import APIRouter, Body, Depends, File, HTTPException
-from fastapi.params import Param
-from starlette.responses import (
-    JSONResponse,
-    PlainTextResponse,
-    Response,
-    StreamingResponse,
-)
 
 logger = logging.getLogger(__name__)
 

@@ -3,9 +3,9 @@ Python module that is dedicated to printing application version and dependencies
 """
 import os
 import subprocess
+import sys
 from pathlib import Path
 from typing import Dict
-import sys
 
 from pydantic import BaseModel
 

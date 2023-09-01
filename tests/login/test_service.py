@@ -4,30 +4,24 @@ from unittest.mock import Mock
 import pytest
 from fastapi import HTTPException
 
-from antarest.core.jwt import JWTUser, JWTGroup
-from antarest.core.requests import (
-    RequestParameters,
-    UserHasNotPermissionError,
-)
+from antarest.core.jwt import JWTGroup, JWTUser
+from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.login.ldap import LdapService
 from antarest.login.model import (
-    User,
-    Password,
-    RoleType,
-    Group,
-    Role,
     Bot,
     BotCreateDTO,
+    BotRoleCreateDTO,
+    Group,
     Identity,
+    Password,
+    Role,
+    RoleCreationDTO,
+    RoleType,
+    User,
     UserCreateDTO,
     UserLdap,
-    RoleCreationDTO,
-    BotRoleCreateDTO,
 )
-from antarest.login.service import (
-    LoginService,
-    UserNotFoundError,
-)
+from antarest.login.service import LoginService, UserNotFoundError
 
 SADMIN = RequestParameters(
     user=JWTUser(

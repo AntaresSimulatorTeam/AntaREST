@@ -1,5 +1,7 @@
 from typing import Any, Dict, List, Tuple, cast
 
+from pydantic import validator
+
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     ENR_MODELLING,
@@ -17,7 +19,6 @@ from antarest.study.storage.variantstudy.model.command.icommand import (
     ICommand,
 )
 from antarest.study.storage.variantstudy.model.model import CommandDTO
-from pydantic import validator
 
 
 class CreateRenewablesCluster(ICommand):

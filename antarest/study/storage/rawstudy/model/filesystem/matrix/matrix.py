@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any, List, Optional, Union, cast
 
 import pandas as pd
+
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,

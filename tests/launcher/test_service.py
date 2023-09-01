@@ -3,10 +3,10 @@ import os
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Dict, Union, List, Literal
-from unittest.mock import Mock, patch, call
+from typing import Dict, List, Literal, Union
+from unittest.mock import Mock, call, patch
 from uuid import uuid4
-from zipfile import ZipFile, ZIP_DEFLATED
+from zipfile import ZIP_DEFLATED, ZipFile
 
 import pytest
 from sqlalchemy import create_engine
@@ -14,39 +14,39 @@ from sqlalchemy import create_engine
 from antarest.core.config import (
     Config,
     LauncherConfig,
-    SlurmConfig,
     LocalConfig,
+    SlurmConfig,
     StorageConfig,
 )
 from antarest.core.exceptions import StudyNotFoundError
 from antarest.core.filetransfer.model import (
-    FileDownloadTaskDTO,
-    FileDownloadDTO,
     FileDownload,
+    FileDownloadDTO,
+    FileDownloadTaskDTO,
 )
 from antarest.core.interfaces.eventbus import Event, EventType
-from antarest.core.jwt import JWTUser, DEFAULT_ADMIN_USER
+from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
 from antarest.core.model import PermissionInfo
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.dbmodel import Base
 from antarest.launcher.model import (
-    JobResult,
-    JobStatus,
     JobLog,
     JobLogType,
+    JobResult,
+    JobStatus,
     LogType,
 )
 from antarest.launcher.service import (
-    LauncherService,
+    EXECUTION_INFO_FILE,
+    LAUNCHER_PARAM_NAME_SUFFIX,
     ORPHAN_JOBS_VISIBILITY_THRESHOLD,
     JobNotFound,
-    LAUNCHER_PARAM_NAME_SUFFIX,
-    EXECUTION_INFO_FILE,
+    LauncherService,
 )
 from antarest.login.auth import Auth
 from antarest.login.model import User
-from antarest.study.model import StudyMetadataDTO, OwnerInfo, PublicMode, Study
+from antarest.study.model import OwnerInfo, PublicMode, Study, StudyMetadataDTO
 
 
 @pytest.mark.unit_test

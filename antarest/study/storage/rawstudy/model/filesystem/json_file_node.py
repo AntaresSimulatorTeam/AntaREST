@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from typing import Optional, Dict, Any, cast
+from typing import Any, Dict, Optional, cast
 
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.io.reader.ini_reader import IReader

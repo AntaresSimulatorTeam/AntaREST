@@ -2,8 +2,9 @@ import contextlib
 import time
 from typing import Callable
 
-from antarest.core.tasks.model import TaskDTO, TaskStatus
 from starlette.testclient import TestClient
+
+from antarest.core.tasks.model import TaskDTO, TaskStatus
 
 
 def wait_for(

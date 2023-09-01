@@ -1,5 +1,5 @@
 import logging
-from typing import Optional, List
+from typing import List, Optional
 
 from sqlalchemy import exists  # type: ignore
 
@@ -7,14 +7,7 @@ from antarest.core.config import Config
 from antarest.core.jwt import ADMIN_ID
 from antarest.core.roles import RoleType
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.login.model import (
-    User,
-    Password,
-    Group,
-    Role,
-    Bot,
-    UserLdap,
-)
+from antarest.login.model import Bot, Group, Password, Role, User, UserLdap
 
 logger = logging.getLogger(__name__)
 

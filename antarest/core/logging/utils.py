@@ -5,13 +5,14 @@ import uuid
 from contextvars import ContextVar, Token
 from typing import Any, Dict, Optional, Type
 
-from antarest.core.config import Config
 from starlette.middleware.base import (
     BaseHTTPMiddleware,
     RequestResponseEndpoint,
 )
 from starlette.requests import Request
 from starlette.responses import Response
+
+from antarest.core.config import Config
 
 _request: ContextVar[Optional[Request]] = ContextVar("_request", default=None)
 _request_id: ContextVar[Optional[str]] = ContextVar(

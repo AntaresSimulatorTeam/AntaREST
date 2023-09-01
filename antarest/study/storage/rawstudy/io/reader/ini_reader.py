@@ -3,7 +3,7 @@ import contextlib
 import re
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import List, Optional, Union, Any
+from typing import Any, List, Optional, Union
 
 from antarest.core.model import JSON, SUB_JSON
 

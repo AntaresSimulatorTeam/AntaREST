@@ -1,6 +1,9 @@
 import logging
 from http import HTTPStatus
-from typing import Any, Dict, List, Optional, Union, cast, Sequence
+from typing import Any, Dict, List, Optional, Sequence, Union, cast
+
+from fastapi import APIRouter, Body, Depends
+from fastapi.params import Body, Query
 
 from antarest.core.config import Config
 from antarest.core.jwt import JWTUser
@@ -73,8 +76,6 @@ from antarest.study.business.thematic_trimming_management import (
 from antarest.study.business.timeseries_config_management import TSFormFields
 from antarest.study.model import PatchArea, PatchCluster
 from antarest.study.service import StudyService
-from fastapi import APIRouter, Body, Depends
-from fastapi.params import Body, Query
 
 logger = logging.getLogger(__name__)
 

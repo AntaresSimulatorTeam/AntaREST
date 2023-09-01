@@ -1,5 +1,5 @@
-from http import HTTPStatus
 import time
+from http import HTTPStatus
 from pathlib import Path
 from unittest.mock import ANY
 

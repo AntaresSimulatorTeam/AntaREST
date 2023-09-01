@@ -6,8 +6,9 @@ from pathlib import Path
 from alembic import command
 from alembic.config import Config
 from alembic.util import CommandError
-from antarest.core.utils.utils import get_local_path
 from sqlalchemy.orm import declarative_base  # type: ignore
+
+from antarest.core.utils.utils import get_local_path
 
 logger = logging.getLogger(__name__)
 

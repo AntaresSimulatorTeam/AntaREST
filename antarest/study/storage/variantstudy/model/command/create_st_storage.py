@@ -2,6 +2,9 @@ import json
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 import numpy as np
+from pydantic import Extra, Field, validator
+from pydantic.fields import ModelField
+
 from antarest.core.model import JSON
 from antarest.matrixstore.model import MatrixData
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -28,8 +31,6 @@ from antarest.study.storage.variantstudy.model.command.icommand import (
     ICommand,
 )
 from antarest.study.storage.variantstudy.model.model import CommandDTO
-from pydantic import Field, validator, Extra
-from pydantic.fields import ModelField
 
 # noinspection SpellCheckingInspection
 _MATRIX_NAMES = (

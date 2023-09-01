@@ -9,6 +9,7 @@ from zipfile import ZipFile
 
 import pandas
 import pytest
+
 from antarest.study.storage.rawstudy.io.reader import MultipleSameKeysIniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,

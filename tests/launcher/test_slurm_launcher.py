@@ -10,6 +10,8 @@ import pytest
 from antareslauncher.data_repo.data_repo_tinydb import DataRepoTinydb
 from antareslauncher.main import MainParameters
 from antareslauncher.study_dto import StudyDTO
+from sqlalchemy import create_engine
+
 from antarest.core.config import Config, LauncherConfig, SlurmConfig
 from antarest.core.persistence import Base
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
@@ -24,7 +26,6 @@ from antarest.launcher.adapters.slurm_launcher.slurm_launcher import (
 )
 from antarest.launcher.model import JobStatus, LauncherParametersDTO
 from antarest.tools.admin_lib import clean_locks_from_config
-from sqlalchemy import create_engine
 
 
 @pytest.fixture

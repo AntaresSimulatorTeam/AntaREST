@@ -4,6 +4,7 @@ import pkgutil
 from unittest.mock import Mock
 
 import pytest
+
 from antarest.matrixstore.service import MatrixService
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (

@@ -1,13 +1,13 @@
 import logging
 from datetime import datetime
-from typing import Optional, List, cast
+from typing import List, Optional, cast
 
 from sqlalchemy.orm import with_polymorphic  # type: ignore
 
-from antarest.core.interfaces.cache import ICache, CacheConstants
+from antarest.core.interfaces.cache import CacheConstants, ICache
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.study.common.utils import get_study_information
-from antarest.study.model import Study, RawStudy, StudyAdditionalData
+from antarest.study.model import RawStudy, Study, StudyAdditionalData
 
 logger = logging.getLogger(__name__)
 

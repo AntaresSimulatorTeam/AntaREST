@@ -1,4 +1,4 @@
-from typing import Optional, Dict, List, Union
+from typing import Dict, List, Optional, Union
 
 from antarest.core.model import JSON
 from antarest.matrixstore.model import MatrixData
@@ -8,9 +8,9 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import (
-    TimeStep,
     BindingConstraintOperator,
     CommandOutput,
+    TimeStep,
 )
 
 

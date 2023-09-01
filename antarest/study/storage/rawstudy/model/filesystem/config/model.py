@@ -4,10 +4,10 @@ from pathlib import Path
 from typing import Dict, List, Optional, Set
 
 from pydantic import Extra
+from pydantic.main import BaseModel
 
 from antarest.core.model import JSON
 from antarest.core.utils.utils import DTO
-from pydantic.main import BaseModel
 
 from .st_storage import STStorageConfig
 

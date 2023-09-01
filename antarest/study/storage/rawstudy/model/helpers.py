@@ -1,4 +1,4 @@
-from typing import Optional, List, cast, Dict
+from typing import Dict, List, Optional, cast
 
 from antarest.core.model import JSON
 from antarest.core.utils.utils import assert_this

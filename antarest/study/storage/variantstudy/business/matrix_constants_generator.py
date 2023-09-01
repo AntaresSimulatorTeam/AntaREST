@@ -2,6 +2,8 @@ import tempfile
 from pathlib import Path
 from typing import Dict
 
+from filelock import FileLock
+
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.storage.variantstudy.business import matrix_constants
 from antarest.study.storage.variantstudy.business.matrix_constants.common import (
@@ -10,7 +12,6 @@ from antarest.study.storage.variantstudy.business.matrix_constants.common import
     NULL_MATRIX,
     NULL_SCENARIO_MATRIX,
 )
-from filelock import FileLock
 
 # TODO: put index into variable
 # fmt: off

@@ -10,6 +10,7 @@ from typing import Dict, List, Optional, Union
 from unittest.mock import Mock
 
 import pytest
+
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus
@@ -18,9 +19,9 @@ from antarest.core.tasks.model import (
     CustomTaskEventMessages,
     TaskDTO,
     TaskListFilter,
+    TaskResult,
     TaskStatus,
     TaskType,
-    TaskResult,
 )
 from antarest.core.tasks.service import ITaskService, Task
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware

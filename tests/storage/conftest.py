@@ -5,6 +5,7 @@ from typing import Callable, Dict, List, Optional, Union
 from unittest.mock import Mock
 
 import pytest
+
 from antarest.core.config import Config
 from antarest.core.filetransfer.model import FileDownload
 from antarest.core.filetransfer.repository import FileDownloadRepository

@@ -1,6 +1,8 @@
 import re
 
 import pytest
+from pydantic import ValidationError
+
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,
 )
@@ -23,7 +25,6 @@ from antarest.study.storage.variantstudy.model.command_context import (
     CommandContext,
 )
 from antarest.study.storage.variantstudy.model.model import CommandDTO
-from pydantic import ValidationError
 
 
 @pytest.fixture(name="recent_study")

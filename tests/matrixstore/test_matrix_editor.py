@@ -1,13 +1,13 @@
-from typing import Dict, Any
+from typing import Any, Dict
 
 import pytest
 from pydantic import ValidationError
 
 from antarest.matrixstore.matrix_editor import (
+    OPERATIONS,
+    MatrixEditInstruction,
     MatrixSlice,
     Operation,
-    MatrixEditInstruction,
-    OPERATIONS,
 )
 
 

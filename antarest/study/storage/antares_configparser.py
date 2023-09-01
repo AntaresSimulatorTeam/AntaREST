@@ -1,5 +1,5 @@
 import configparser
-from typing import Any, Dict, Union, Optional
+from typing import Any, Dict, Optional, Union
 
 
 def _convert_value(value: Any) -> str:

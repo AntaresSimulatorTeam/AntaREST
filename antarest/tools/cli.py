@@ -5,12 +5,8 @@ from typing import Optional
 import click
 
 from antarest.study.model import NEW_DEFAULT_STUDY_VERSION
-from antarest.tools.lib import (
-    generate_diff,
-    extract_commands,
-    generate_study,
-)
 from antarest.study.storage.study_upgrader import upgrade_study
+from antarest.tools.lib import extract_commands, generate_diff, generate_study
 
 
 @click.group(context_settings={"max_content_width": 120})

@@ -11,7 +11,7 @@ from antarest.core.exceptions import CannotScanInternalWorkspace
 from antarest.core.persistence import Base
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.login.model import Group
-from antarest.study.model import StudyFolder, DEFAULT_WORKSPACE_NAME
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, StudyFolder
 from antarest.study.storage.rawstudy.watcher import Watcher
 from tests.storage.conftest import SimpleSyncTaskService
 

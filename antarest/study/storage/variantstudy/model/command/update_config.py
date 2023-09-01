@@ -1,4 +1,4 @@
-from typing import Any, Union, List, Tuple, Dict
+from typing import Any, Dict, List, Tuple, Union
 
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -9,12 +9,12 @@ from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import (
     IniFileNode,
 )
 from antarest.study.storage.variantstudy.model.command.common import (
-    CommandOutput,
     CommandName,
+    CommandOutput,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import (
-    ICommand,
     MATCH_SIGNATURE_SEPARATOR,
+    ICommand,
 )
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 

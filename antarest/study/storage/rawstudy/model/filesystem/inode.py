@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import List, Optional, Dict, TypeVar, Generic, Any, Tuple
+from typing import Any, Dict, Generic, List, Optional, Tuple, TypeVar
 
 from antarest.core.exceptions import (
     ShouldNotHappenException,

@@ -1,7 +1,7 @@
 import shutil
-from abc import abstractmethod, ABC
+from abc import ABC, abstractmethod
 from http import HTTPStatus
-from typing import List, Optional, Tuple, Union, Dict
+from typing import Dict, List, Optional, Tuple, Union
 
 from fastapi import HTTPException
 
@@ -12,10 +12,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
 from antarest.study.storage.rawstudy.model.filesystem.context import (
     ContextServer,
 )
-from antarest.study.storage.rawstudy.model.filesystem.inode import (
-    INode,
-    TREE,
-)
+from antarest.study.storage.rawstudy.model.filesystem.inode import TREE, INode
 
 
 class FilterError(Exception):

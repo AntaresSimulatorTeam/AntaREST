@@ -1,5 +1,5 @@
 from contextvars import ContextVar, Token
-from typing import Dict, Optional, Union, Any, Type
+from typing import Any, Dict, Optional, Type, Union
 
 from sqlalchemy import create_engine  # type: ignore
 from sqlalchemy.engine import Engine  # type: ignore

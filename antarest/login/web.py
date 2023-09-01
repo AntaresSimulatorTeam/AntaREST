@@ -1,36 +1,33 @@
 import json
 import logging
 from datetime import timedelta
-from typing import Any, Optional, List, Union, Tuple
+from typing import Any, List, Optional, Tuple, Union
 
-from fastapi import Depends, APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi_jwt_auth import AuthJWT  # type: ignore
 from markupsafe import escape
 from pydantic import BaseModel
 
 from antarest.core.config import Config
-from antarest.core.jwt import JWTUser, JWTGroup
-from antarest.core.requests import (
-    RequestParameters,
-    UserHasNotPermissionError,
-)
+from antarest.core.jwt import JWTGroup, JWTUser
+from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.roles import RoleType
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.login.model import (
-    User,
-    Group,
     BotCreateDTO,
-    UserCreateDTO,
-    RoleCreationDTO,
-    UserInfo,
-    GroupDTO,
-    CredentialsDTO,
     BotDTO,
     BotIdentityDTO,
-    RoleDetailDTO,
+    CredentialsDTO,
+    Group,
     GroupDetailDTO,
+    GroupDTO,
     IdentityDTO,
+    RoleCreationDTO,
+    RoleDetailDTO,
+    User,
+    UserCreateDTO,
+    UserInfo,
 )
 from antarest.login.service import LoginService
 

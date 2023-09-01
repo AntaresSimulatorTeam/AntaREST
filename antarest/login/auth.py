@@ -1,7 +1,7 @@
 import json
 import logging
 from datetime import timedelta
-from typing import Dict, Any, Callable, Tuple, Union, Optional, Coroutine
+from typing import Any, Callable, Coroutine, Dict, Optional, Tuple, Union
 
 from fastapi import Depends
 from fastapi_jwt_auth import AuthJWT  # type: ignore
@@ -10,7 +10,7 @@ from ratelimit.types import Scope  # type: ignore
 from starlette.requests import Request
 
 from antarest.core.config import Config
-from antarest.core.jwt import JWTUser, DEFAULT_ADMIN_USER
+from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
 
 logger = logging.getLogger(__name__)
 

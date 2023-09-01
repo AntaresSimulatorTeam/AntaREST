@@ -2,10 +2,11 @@ import http
 
 import numpy as np
 import pytest
+from starlette.testclient import TestClient
+
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,
 )
-from starlette.testclient import TestClient
 
 
 # noinspection SpellCheckingInspection

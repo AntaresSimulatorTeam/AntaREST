@@ -2,6 +2,9 @@ import json
 import logging
 from typing import Any, List, Optional, Union
 
+from fastapi import APIRouter, Depends, File, UploadFile
+from starlette.responses import Response
+
 from antarest.core.config import Config
 from antarest.core.jwt import JWTUser
 from antarest.core.model import JSON, StudyPermissionType
@@ -14,8 +17,6 @@ from antarest.study.business.xpansion_management import (
     XpansionSettingsDTO,
 )
 from antarest.study.service import StudyService
-from fastapi import APIRouter, Depends, File, UploadFile
-from starlette.responses import Response
 
 logger = logging.getLogger(__name__)
 

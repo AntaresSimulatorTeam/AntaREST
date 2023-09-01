@@ -1,6 +1,8 @@
 from unittest import IsolatedAsyncioTestCase
 from unittest.mock import MagicMock, call
 
+from starlette.websockets import WebSocket
+
 from antarest.core.jwt import JWTUser
 from antarest.core.model import PermissionInfo
 from antarest.eventbus.web import (
@@ -8,7 +10,6 @@ from antarest.eventbus.web import (
     WebsocketMessage,
     WebsocketMessageAction,
 )
-from starlette.websockets import WebSocket
 
 
 class AsyncMock(MagicMock):

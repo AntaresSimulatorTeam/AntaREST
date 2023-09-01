@@ -6,10 +6,10 @@ from antarest.study.common.default_values import (
     NodalOptimization,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    ENR_MODELLING,
     Area,
     FileStudyTreeConfig,
     transform_name_to_id,
-    ENR_MODELLING,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import (

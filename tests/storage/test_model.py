@@ -1,12 +1,12 @@
 from pathlib import Path
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfigDTO,
-    FileStudyTreeConfig,
     Area,
-    DistrictSet,
-    Simulation,
     BindingConstraintDTO,
+    DistrictSet,
+    FileStudyTreeConfig,
+    FileStudyTreeConfigDTO,
+    Simulation,
 )
 
 

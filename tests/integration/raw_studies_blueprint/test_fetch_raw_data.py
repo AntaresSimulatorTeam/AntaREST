@@ -5,9 +5,10 @@ import shutil
 from urllib.parse import urlencode
 
 import pytest
+from starlette.testclient import TestClient
+
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.study.model import RawStudy, Study
-from starlette.testclient import TestClient
 from tests.integration.raw_studies_blueprint.assets import ASSETS_DIR
 
 

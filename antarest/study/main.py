@@ -5,24 +5,18 @@ from fastapi import FastAPI
 from antarest.core.config import Config
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.interfaces.cache import ICache
-from antarest.core.interfaces.eventbus import IEventBus, DummyEventBusService
+from antarest.core.interfaces.eventbus import DummyEventBusService, IEventBus
 from antarest.core.tasks.service import ITaskService
 from antarest.login.service import LoginService
 from antarest.matrixstore.service import ISimpleMatrixService
-from antarest.matrixstore.uri_resolver_service import (
-    UriResolverService,
-)
-from antarest.study.repository import (
-    StudyMetadataRepository,
-)
+from antarest.matrixstore.uri_resolver_service import UriResolverService
+from antarest.study.repository import StudyMetadataRepository
 from antarest.study.service import StudyService
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.factory import (
     StudyFactory,
 )
-from antarest.study.storage.rawstudy.raw_study_service import (
-    RawStudyService,
-)
+from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
     GeneratorMatrixConstants,
 )

@@ -2,6 +2,7 @@ from typing import List, Tuple
 
 import pandas as pd
 import pytest
+
 from antarest.matrixstore.matrix_editor import (
     MatrixEditInstruction,
     MatrixSlice,
@@ -9,14 +10,14 @@ from antarest.matrixstore.matrix_editor import (
 )
 from antarest.matrixstore.model import MatrixData
 from antarest.study.business.matrix_management import (
+    MatrixEditError,
+    MatrixIndexError,
+    MatrixManagerError,
+    MatrixUpdateError,
     group_by_slices,
     merge_edit_instructions,
     update_matrix_content_with_coordinates,
     update_matrix_content_with_slices,
-    MatrixIndexError,
-    MatrixManagerError,
-    MatrixEditError,
-    MatrixUpdateError,
 )
 
 

@@ -5,6 +5,8 @@ from typing import List, Optional
 
 import numpy as np
 import pytest
+from sqlalchemy import create_engine  # type: ignore
+
 from antarest.core.model import PublicMode
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group, User
@@ -30,7 +32,6 @@ from antarest.study.storage.variantstudy.model.command.create_st_storage import 
 from antarest.study.storage.variantstudy.model.command_context import (
     CommandContext,
 )
-from sqlalchemy import create_engine  # type: ignore
 from tests.helpers import with_db_context
 
 

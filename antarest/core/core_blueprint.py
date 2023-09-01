@@ -1,6 +1,9 @@
 import logging
 from typing import Any
 
+from fastapi import APIRouter, Depends
+from pydantic import BaseModel
+
 from antarest.core.config import Config
 from antarest.core.jwt import JWTUser
 from antarest.core.requests import UserHasNotPermissionError
@@ -11,8 +14,6 @@ from antarest.core.version_info import (
     get_dependencies,
 )
 from antarest.login.auth import Auth
-from fastapi import APIRouter, Depends
-from pydantic import BaseModel
 
 
 class StatusDTO(BaseModel):

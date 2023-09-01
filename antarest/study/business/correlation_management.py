@@ -7,6 +7,8 @@ from typing import Dict, List, Sequence
 
 import numpy as np
 import numpy.typing as npt
+from pydantic import conlist, validator
+
 from antarest.core.exceptions import AreaNotFound
 from antarest.study.business.area_management import AreaInfoDTO
 from antarest.study.business.utils import (
@@ -19,7 +21,6 @@ from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.update_config import (
     UpdateConfig,
 )
-from pydantic import conlist, validator
 
 
 class AreaCoefficientItem(FormFieldsBaseModel):

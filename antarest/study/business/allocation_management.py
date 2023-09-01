@@ -1,14 +1,10 @@
-from typing import List, Dict
+from typing import Dict, List
 
 import numpy
 import numpy as np
-from pydantic import root_validator
-from pydantic import validator, conlist
+from pydantic import conlist, root_validator, validator
 
-from antarest.core.exceptions import (
-    AllocationDataNotFound,
-    AreaNotFound,
-)
+from antarest.core.exceptions import AllocationDataNotFound, AreaNotFound
 from antarest.study.business.area_management import AreaInfoDTO
 from antarest.study.business.utils import (
     FormFieldsBaseModel,

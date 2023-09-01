@@ -1,4 +1,4 @@
-from typing import Dict, Any
+from typing import Any, Dict
 
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
     FolderNode,

@@ -5,6 +5,7 @@ from unittest.mock import Mock
 
 import numpy as np
 import pytest
+
 from antarest.matrixstore.service import MatrixService
 from antarest.matrixstore.uri_resolver_service import UriResolverService
 from antarest.study.repository import StudyMetadataRepository

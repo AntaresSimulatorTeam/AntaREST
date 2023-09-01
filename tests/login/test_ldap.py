@@ -3,10 +3,10 @@ import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from unittest.mock import Mock, call
 
-from antarest.core.config import Config, SecurityConfig, ExternalAuthConfig
+from antarest.core.config import Config, ExternalAuthConfig, SecurityConfig
 from antarest.core.roles import RoleType
-from antarest.login.ldap import ExternalUser, LdapService, AuthDTO
-from antarest.login.model import UserLdap, Role, Group
+from antarest.login.ldap import AuthDTO, ExternalUser, LdapService
+from antarest.login.model import Group, Role, UserLdap
 
 
 class MockServerHandler(BaseHTTPRequestHandler):

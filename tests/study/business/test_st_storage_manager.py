@@ -7,6 +7,9 @@ from unittest.mock import Mock
 
 import numpy as np
 import pytest
+from pydantic import ValidationError
+from sqlalchemy.orm.session import Session  # type: ignore
+
 from antarest.core.exceptions import (
     STStorageConfigNotFoundError,
     STStorageFieldsNotFoundError,
@@ -33,8 +36,6 @@ from antarest.study.storage.variantstudy.model.command_context import (
 from antarest.study.storage.variantstudy.variant_study_service import (
     VariantStudyService,
 )
-from pydantic import ValidationError
-from sqlalchemy.orm.session import Session  # type: ignore
 
 # noinspection SpellCheckingInspection
 LIST_INI = """

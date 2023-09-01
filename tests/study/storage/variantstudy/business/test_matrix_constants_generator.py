@@ -1,4 +1,5 @@
 import numpy as np
+
 from antarest.matrixstore.service import SimpleMatrixService
 from antarest.study.storage.variantstudy.business import matrix_constants
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (

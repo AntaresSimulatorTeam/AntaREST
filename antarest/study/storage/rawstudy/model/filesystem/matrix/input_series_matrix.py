@@ -4,6 +4,8 @@ from typing import Any, List, Optional, Union, cast
 
 import numpy as np
 import pandas as pd
+from numpy import typing as npt
+from pandas.errors import EmptyDataError
 
 from antarest.core.model import JSON
 from antarest.core.utils.utils import StopWatch
@@ -17,8 +19,6 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import (
     MatrixFrequency,
     MatrixNode,
 )
-from numpy import typing as npt
-from pandas.errors import EmptyDataError
 
 logger = logging.getLogger(__name__)
 

@@ -1,4 +1,6 @@
-from typing import Any, Dict, Tuple, List
+from typing import Any, Dict, List, Tuple
+
+from pydantic import Field
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
@@ -10,11 +12,9 @@ from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import (
-    ICommand,
     MATCH_SIGNATURE_SEPARATOR,
+    ICommand,
 )
-from pydantic import Field
-
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 # minimum required version.

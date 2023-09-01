@@ -4,21 +4,18 @@ from unittest.mock import Mock
 import pytest
 
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
-from antarest.core.exceptions import (
-    StudyNotFoundError,
-    VariantGenerationError,
-)
+from antarest.core.exceptions import StudyNotFoundError, VariantGenerationError
 from antarest.core.interfaces.cache import CacheConstants
 from antarest.core.jwt import JWTUser
 from antarest.core.model import PublicMode
 from antarest.core.requests import RequestParameters
-from antarest.core.tasks.model import TaskDTO, TaskStatus, TaskResult
+from antarest.core.tasks.model import TaskDTO, TaskResult, TaskStatus
 from antarest.login.model import User
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, StudyAdditionalData
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.dbmodel import (
-    VariantStudy,
     CommandBlock,
+    VariantStudy,
 )
 from antarest.study.storage.variantstudy.repository import (
     VariantStudyRepository,

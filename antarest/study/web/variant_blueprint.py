@@ -1,6 +1,8 @@
 import logging
 from typing import List, Optional, Union
 
+from fastapi import APIRouter, Body, Depends
+
 from antarest.core.config import Config
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.jwt import JWTUser
@@ -18,7 +20,6 @@ from antarest.study.storage.variantstudy.model.model import (
     CommandDTO,
     VariantTreeDTO,
 )
-from fastapi import APIRouter, Body, Depends
 
 logger = logging.getLogger(__name__)
 

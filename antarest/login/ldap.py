@@ -1,16 +1,16 @@
 import logging
 from dataclasses import dataclass
-from typing import List, Optional, Dict
+from typing import Dict, List, Optional
 
 import requests
 
 from antarest.core.config import Config
 from antarest.core.model import JSON
-from antarest.login.model import UserLdap, Group, Role, GroupDTO
+from antarest.login.model import Group, GroupDTO, Role, UserLdap
 from antarest.login.repository import (
-    UserLdapRepository,
-    RoleRepository,
     GroupRepository,
+    RoleRepository,
+    UserLdapRepository,
 )
 
 logger = logging.getLogger(__name__)

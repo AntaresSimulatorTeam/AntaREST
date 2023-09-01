@@ -4,6 +4,9 @@ import operator
 from typing import Any, Dict, List, Mapping, MutableMapping, Sequence
 
 import numpy as np
+from pydantic import BaseModel, Extra, Field, root_validator, validator
+from typing_extensions import Literal
+
 from antarest.core.exceptions import (
     STStorageConfigNotFoundError,
     STStorageFieldsNotFoundError,
@@ -29,8 +32,6 @@ from antarest.study.storage.variantstudy.model.command.remove_st_storage import 
 from antarest.study.storage.variantstudy.model.command.update_config import (
     UpdateConfig,
 )
-from pydantic import BaseModel, Extra, Field, root_validator, validator
-from typing_extensions import Literal
 
 _HOURS_IN_YEAR = 8760
 

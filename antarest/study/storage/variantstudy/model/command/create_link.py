@@ -1,5 +1,7 @@
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
+from pydantic import root_validator, validator
+
 from antarest.core.model import JSON
 from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
@@ -25,7 +27,6 @@ from antarest.study.storage.variantstudy.model.command.icommand import (
     ICommand,
 )
 from antarest.study.storage.variantstudy.model.model import CommandDTO
-from pydantic import root_validator, validator
 
 
 class LinkAlreadyExistError(Exception):

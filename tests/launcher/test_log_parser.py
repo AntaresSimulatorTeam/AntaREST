@@ -3,6 +3,7 @@ import sys
 from typing import List, Union
 
 import pytest
+
 from antarest.launcher.adapters.log_parser import LaunchProgressDTO
 from tests.launcher.assets import ASSETS_DIR
 

@@ -2,9 +2,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from antarest.study.storage.variantstudy.business.utils import (
-    AliasDecoder,
-)
+from antarest.study.storage.variantstudy.business.utils import AliasDecoder
 
 
 @pytest.mark.unit_test

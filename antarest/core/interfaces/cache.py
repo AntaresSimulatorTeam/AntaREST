@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from enum import Enum
-from typing import Optional, List
+from typing import List, Optional
 
 from antarest.core.model import JSON
 

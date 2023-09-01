@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import List, Callable, Dict
+from typing import Callable, Dict, List
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,

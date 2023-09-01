@@ -1,12 +1,12 @@
-from http import HTTPStatus
-from http.client import HTTPException
-from pathlib import Path
-from typing import NamedTuple, Callable
 import logging
 import re
 import shutil
 import tempfile
 import time
+from http import HTTPStatus
+from http.client import HTTPException
+from pathlib import Path
+from typing import Callable, NamedTuple
 
 from antarest.core.exceptions import StudyValidationError
 

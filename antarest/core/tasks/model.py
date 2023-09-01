@@ -1,10 +1,18 @@
 import uuid
 from datetime import datetime
 from enum import Enum
-from typing import Optional, List, Any
+from typing import Any, List, Optional
 
 from pydantic import BaseModel, Extra
-from sqlalchemy import Column, String, Integer, Boolean, DateTime, ForeignKey, Sequence  # type: ignore
+from sqlalchemy import (  # type: ignore
+    Boolean,
+    Column,
+    DateTime,
+    ForeignKey,
+    Integer,
+    Sequence,
+    String,
+)
 from sqlalchemy.orm import relationship  # type: ignore
 
 from antarest.core.persistence import Base

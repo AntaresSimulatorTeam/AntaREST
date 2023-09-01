@@ -1,9 +1,10 @@
 import contextlib
 
 import pytest
-from antarest.dbmodel import Base
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+
+from antarest.dbmodel import Base
 
 
 @pytest.fixture(scope="function", name="db_engine")

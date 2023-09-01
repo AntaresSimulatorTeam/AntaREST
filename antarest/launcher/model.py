@@ -1,9 +1,17 @@
 import enum
 from datetime import datetime
-from typing import Any, Optional, List, Dict, Union
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel
-from sqlalchemy import Integer, Column, Enum, String, DateTime, Sequence, ForeignKey  # type: ignore
+from sqlalchemy import (  # type: ignore
+    Column,
+    DateTime,
+    Enum,
+    ForeignKey,
+    Integer,
+    Sequence,
+    String,
+)
 from sqlalchemy.orm import relationship  # type: ignore
 
 from antarest.core.persistence import Base
