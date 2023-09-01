@@ -2,6 +2,9 @@ import json
 import logging
 from typing import Any, List, Optional, Union
 
+from fastapi import APIRouter, Depends, File, UploadFile
+from starlette.responses import Response
+
 from antarest.core.config import Config
 from antarest.core.jwt import JWTUser
 from antarest.core.model import JSON, StudyPermissionType
@@ -14,15 +17,11 @@ from antarest.study.business.xpansion_management import (
     XpansionSettingsDTO,
 )
 from antarest.study.service import StudyService
-from fastapi import APIRouter, Depends, File, UploadFile
-from starlette.responses import Response
 
 logger = logging.getLogger(__name__)
 
 
-def create_xpansion_routes(
-    study_service: StudyService, config: Config
-) -> APIRouter:
+def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRouter:
     """
     Endpoint implementation for xpansion studies management
     Args:
@@ -51,9 +50,7 @@ def create_xpansion_routes(
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
-        study_service.create_xpansion_configuration(
-            uuid=uuid, zipped_config=file, params=params
-        )
+        study_service.create_xpansion_configuration(uuid=uuid, zipped_config=file, params=params)
 
     @bp.delete(
         "/studies/{uuid}/extensions/xpansion",
@@ -104,9 +101,7 @@ def create_xpansion_routes(
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
-        return study_service.update_xpansion_settings(
-            uuid, xpansion_settings_dto, params
-        )
+        return study_service.update_xpansion_settings(uuid, xpansion_settings_dto, params)
 
     @bp.put(
         "/studies/{uuid}/extensions/xpansion/settings/additional-constraints",
@@ -123,9 +118,7 @@ def create_xpansion_routes(
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
-        study_service.update_xpansion_constraints_settings(
-            uuid, filename, params
-        )
+        study_service.update_xpansion_constraints_settings(uuid, filename, params)
 
     @bp.post(
         "/studies/{uuid}/extensions/xpansion/candidates",
@@ -142,9 +135,7 @@ def create_xpansion_routes(
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
-        return study_service.add_candidate(
-            uuid, xpansion_candidate_dto, params
-        )
+        return study_service.add_candidate(uuid, xpansion_candidate_dto, params)
 
     @bp.get(
         "/studies/{uuid}/extensions/xpansion/candidates/{candidate_name}",
@@ -191,9 +182,7 @@ def create_xpansion_routes(
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
-        return study_service.update_xpansion_candidate(
-            uuid, candidate_name, xpansion_candidate_dto, params
-        )
+        return study_service.update_xpansion_candidate(uuid, candidate_name, xpansion_candidate_dto, params)
 
     @bp.delete(
         "/studies/{uuid}/extensions/xpansion/candidates/{candidate_name}",
@@ -210,9 +199,7 @@ def create_xpansion_routes(
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
-        return study_service.delete_xpansion_candidate(
-            uuid, candidate_name, params
-        )
+        return study_service.delete_xpansion_candidate(uuid, candidate_name, params)
 
     @bp.post(
         "/studies/{uuid}/extensions/xpansion/resources/{resource_type}",
@@ -234,9 +221,7 @@ def create_xpansion_routes(
             StudyPermissionType.WRITE,
             RequestParameters(user=current_user),
         )
-        return study_service.xpansion_manager.add_resource(
-            study, resource_type, [file]
-        )
+        return study_service.xpansion_manager.add_resource(study, resource_type, [file])
 
     @bp.delete(
         "/studies/{uuid}/extensions/xpansion/resources/{resource_type}/{filename}",
@@ -258,9 +243,7 @@ def create_xpansion_routes(
             StudyPermissionType.WRITE,
             RequestParameters(user=current_user),
         )
-        return study_service.xpansion_manager.delete_resource(
-            study, resource_type, filename
-        )
+        return study_service.xpansion_manager.delete_resource(study, resource_type, filename)
 
     @bp.get(
         "/studies/{uuid}/extensions/xpansion/resources/{resource_type}/{filename}",
@@ -282,9 +265,7 @@ def create_xpansion_routes(
             StudyPermissionType.READ,
             RequestParameters(user=current_user),
         )
-        output: Union[
-            JSON, bytes, str
-        ] = study_service.xpansion_manager.get_resource_content(
+        output: Union[JSON, bytes, str] = study_service.xpansion_manager.get_resource_content(
             study, resource_type, filename
         )
 
@@ -325,8 +306,6 @@ def create_xpansion_routes(
         )
         if resource_type is None:
             return study_service.xpansion_manager.list_root_files(study)
-        return study_service.xpansion_manager.list_resources(
-            study, resource_type
-        )
+        return study_service.xpansion_manager.list_resources(study, resource_type)
 
     return bp

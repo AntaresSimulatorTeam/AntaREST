@@ -9,6 +9,9 @@ from typing import List, Optional, Sequence, Tuple, Union
 from zipfile import ZipFile
 
 import numpy as np
+from fastapi import UploadFile
+from numpy import typing as npt
+
 from antarest.core.config import Config
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
@@ -31,22 +34,14 @@ from antarest.matrixstore.model import (
     MatrixDTO,
     MatrixInfoDTO,
 )
-from antarest.matrixstore.repository import (
-    MatrixContentRepository,
-    MatrixDataSetRepository,
-    MatrixRepository,
-)
-from fastapi import UploadFile
-from numpy import typing as npt
+from antarest.matrixstore.repository import MatrixContentRepository, MatrixDataSetRepository, MatrixRepository
 
 logger = logging.getLogger(__name__)
 
 
 class ISimpleMatrixService(ABC):
     @abstractmethod
-    def create(
-        self, data: Union[List[List[MatrixData]], npt.NDArray[np.float64]]
-    ) -> str:
+    def create(self, data: Union[List[List[MatrixData]], npt.NDArray[np.float64]]) -> str:
         raise NotImplementedError()
 
     @abstractmethod
@@ -67,9 +62,7 @@ class SimpleMatrixService(ISimpleMatrixService):
         self.bucket_dir = bucket_dir
         self.content_repo = MatrixContentRepository(bucket_dir)
 
-    def create(
-        self, data: Union[List[List[MatrixData]], npt.NDArray[np.float64]]
-    ) -> str:
+    def create(self, data: Union[List[List[MatrixData]], npt.NDArray[np.float64]]) -> str:
         return self.content_repo.save(data)
 
     def get(self, matrix_id: str) -> MatrixDTO:
@@ -118,15 +111,11 @@ class MatrixService(ISimpleMatrixService):
             created_at=datetime.fromtimestamp(dto.created_at),
         )
 
-        content = MatrixContent(
-            data=dto.data, index=dto.index, columns=dto.columns
-        )
+        content = MatrixContent(data=dto.data, index=dto.index, columns=dto.columns)
 
         return matrix, content
 
-    def create(
-        self, data: Union[List[List[MatrixData]], npt.NDArray[np.float64]]
-    ) -> str:
+    def create(self, data: Union[List[List[MatrixData]], npt.NDArray[np.float64]]) -> str:
         """
         Creates a new matrix object with the specified data.
 
@@ -150,11 +139,7 @@ class MatrixService(ISimpleMatrixService):
             unreferenced matrices to avoid leaving unused files lying around.
         """
         matrix_id = self.matrix_content_repository.save(data)
-        shape = (
-            data.shape
-            if isinstance(data, np.ndarray)
-            else (len(data), len(data[0]) if data else 0)
-        )
+        shape = data.shape if isinstance(data, np.ndarray) else (len(data), len(data[0]) if data else 0)
         with db():
             matrix = Matrix(
                 id=matrix_id,
@@ -165,16 +150,12 @@ class MatrixService(ISimpleMatrixService):
             self.repo.save(matrix)
         return matrix_id
 
-    def create_by_importation(
-        self, file: UploadFile, json: bool = False
-    ) -> List[MatrixInfoDTO]:
+    def create_by_importation(self, file: UploadFile, json: bool = False) -> List[MatrixInfoDTO]:
         with file.file as f:
             if file.content_type == "application/zip":
                 input_zip = ZipFile(BytesIO(f.read()))
                 files = {
-                    info.filename: input_zip.read(info.filename)
-                    for info in input_zip.infolist()
-                    if not info.is_dir()
+                    info.filename: input_zip.read(info.filename) for info in input_zip.infolist() if not info.is_dir()
                 }
                 matrix_info: List[MatrixInfoDTO] = []
                 for name in files:
@@ -185,9 +166,7 @@ class MatrixService(ISimpleMatrixService):
                         ]
                     ):
                         matrix_id = self._file_importation(files[name], json)
-                        matrix_info.append(
-                            MatrixInfoDTO(id=matrix_id, name=name)
-                        )
+                        matrix_info.append(MatrixInfoDTO(id=matrix_id, name=name))
                 return matrix_info
             else:
                 matrix_id = self._file_importation(f.read(), json)
@@ -207,9 +186,7 @@ class MatrixService(ISimpleMatrixService):
         if is_json:
             return self.create(MatrixContent.parse_raw(file).data)
         # noinspection PyTypeChecker
-        matrix = np.loadtxt(
-            BytesIO(file), delimiter="\t", dtype=np.float64, ndmin=2
-        )
+        matrix = np.loadtxt(BytesIO(file), delimiter="\t", dtype=np.float64, ndmin=2)
         return self.create(matrix)
 
     def get_dataset(
@@ -223,9 +200,7 @@ class MatrixService(ISimpleMatrixService):
         if dataset is None:
             raise MatrixDataSetNotFound()
 
-        MatrixService.check_access_permission(
-            dataset, params.user, raise_error=True
-        )
+        MatrixService.check_access_permission(dataset, params.user, raise_error=True)
         return dataset
 
     def create_dataset(
@@ -237,10 +212,7 @@ class MatrixService(ISimpleMatrixService):
         if not params.user:
             raise UserHasNotPermissionError()
 
-        groups = [
-            self.user_service.get_group(group_id, params)
-            for group_id in dataset_info.groups
-        ]
+        groups = [self.user_service.get_group(group_id, params) for group_id in dataset_info.groups]
         dataset = MatrixDataSet(
             name=dataset_info.name,
             public=dataset_info.public,
@@ -267,13 +239,8 @@ class MatrixService(ISimpleMatrixService):
         dataset = self.repo_dataset.get(dataset_id)
         if dataset is None:
             raise MatrixDataSetNotFound()
-        MatrixService.check_access_permission(
-            dataset, params.user, write=True, raise_error=True
-        )
-        groups = [
-            self.user_service.get_group(group_id, params)
-            for group_id in dataset_info.groups
-        ]
+        MatrixService.check_access_permission(dataset, params.user, write=True, raise_error=True)
+        groups = [self.user_service.get_group(group_id, params) for group_id in dataset_info.groups]
         updated_dataset = MatrixDataSet(
             id=dataset_id,
             name=dataset_info.name,
@@ -304,22 +271,13 @@ class MatrixService(ISimpleMatrixService):
         if not user:
             raise UserHasNotPermissionError()
 
-        datasets = self.repo_dataset.query(
-            dataset_name, user.impersonator if filter_own else None
-        )
+        datasets = self.repo_dataset.query(dataset_name, user.impersonator if filter_own else None)
         return [
             dataset.to_dto()
             for dataset in datasets
             if dataset.public
             or user.is_or_impersonate(dataset.owner_id)
-            or len(
-                [
-                    group
-                    for group in dataset.groups
-                    if group.id in [jwtgroup.id for jwtgroup in user.groups]
-                ]
-            )
-            > 0
+            or len([group for group in dataset.groups if group.id in [jwtgroup.id for jwtgroup in user.groups]]) > 0
         ]
 
     def delete_dataset(self, id: str, params: RequestParameters) -> str:
@@ -331,9 +289,7 @@ class MatrixService(ISimpleMatrixService):
         if dataset is None:
             raise MatrixDataSetNotFound()
 
-        MatrixService.check_access_permission(
-            dataset, params.user, write=True, raise_error=True
-        )
+        MatrixService.check_access_permission(dataset, params.user, write=True, raise_error=True)
         self.repo_dataset.delete(id)
         return id
 
@@ -372,9 +328,7 @@ class MatrixService(ISimpleMatrixService):
         Returns:
             bool: `True` if the matrix object exists in both repositories, `False` otherwise.
         """
-        return self.matrix_content_repository.exists(
-            matrix_id
-        ) and self.repo.exists(matrix_id)
+        return self.matrix_content_repository.exists(matrix_id) and self.repo.exists(matrix_id)
 
     def delete(self, matrix_id: str) -> None:
         """
@@ -416,12 +370,8 @@ class MatrixService(ISimpleMatrixService):
             raise UserHasNotPermissionError()
         return access
 
-    def create_matrix_files(
-        self, matrix_ids: Sequence[str], export_path: Path
-    ) -> str:
-        with tempfile.TemporaryDirectory(
-            dir=self.config.storage.tmp_dir
-        ) as tmpdir:
+    def create_matrix_files(self, matrix_ids: Sequence[str], export_path: Path) -> str:
+        with tempfile.TemporaryDirectory(dir=self.config.storage.tmp_dir) as tmpdir:
             stopwatch = StopWatch()
             for mid in matrix_ids:
                 mtx = self.get(mid)
@@ -433,11 +383,7 @@ class MatrixService(ISimpleMatrixService):
                 # noinspection PyTypeChecker
                 np.savetxt(filepath, array, delimiter="\t", fmt="%.18f")
             zip_dir(Path(tmpdir), export_path)
-            stopwatch.log_elapsed(
-                lambda x: logger.info(
-                    f"Matrix dataset exported (zipped mode) in {x}s"
-                )
-            )
+            stopwatch.log_elapsed(lambda x: logger.info(f"Matrix dataset exported (zipped mode) in {x}s"))
         return str(export_path)
 
     def download_dataset(
@@ -456,9 +402,7 @@ class MatrixService(ISimpleMatrixService):
         dataset = self.repo_dataset.get(dataset_id)
         if dataset is None:
             raise MatrixDataSetNotFound()
-        MatrixService.check_access_permission(
-            dataset, params.user, raise_error=True
-        )
+        MatrixService.check_access_permission(dataset, params.user, raise_error=True)
 
         return self.download_matrix_list(
             [mtx_info.matrix_id for mtx_info in dataset.matrices],
@@ -484,9 +428,7 @@ class MatrixService(ISimpleMatrixService):
 
         def export_task(notifier: TaskUpdateNotifier) -> TaskResult:
             try:
-                self.create_matrix_files(
-                    matrix_ids=matrix_list, export_path=export_path
-                )
+                self.create_matrix_files(matrix_ids=matrix_list, export_path=export_path)
                 self.file_transfer_manager.set_ready(export_id)
                 return TaskResult(
                     success=True,
@@ -505,9 +447,7 @@ class MatrixService(ISimpleMatrixService):
             request_params=params,
         )
 
-        return FileDownloadTaskDTO(
-            file=export_file_download.to_dto(), task=task_id
-        )
+        return FileDownloadTaskDTO(file=export_file_download.to_dto(), task=task_id)
 
     def download_matrix(
         self,

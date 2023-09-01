@@ -4,7 +4,7 @@ from http.client import HTTPException
 from typing import Optional
 
 from pydantic import BaseModel
-from sqlalchemy import Column, String, Integer, DateTime, Boolean  # type: ignore
+from sqlalchemy import Boolean, Column, DateTime, Integer, String  # type: ignore
 
 from antarest.core.persistence import Base
 
@@ -64,9 +64,7 @@ class FileDownload(Base):  # type: ignore
             name=self.name,
             filename=self.filename,
             ready=self.ready,
-            expiration_date=str(self.expiration_date)
-            if self.expiration_date is not None
-            else None,
+            expiration_date=str(self.expiration_date) if self.expiration_date is not None else None,
             failed=self.failed or False,
             error_message=self.error_message or "",
         )

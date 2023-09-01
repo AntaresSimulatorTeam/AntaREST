@@ -1,4 +1,4 @@
-from typing import Optional, List
+from typing import Optional
 
 from antarest.core.configdata.model import ConfigData, ConfigDataAppKeys
 from antarest.core.configdata.repository import ConfigDataRepository

@@ -6,21 +6,11 @@ import pytest
 
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.matrixstore.uri_resolver_service import UriResolverService
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
-)
-from antarest.study.storage.rawstudy.model.filesystem.context import (
-    ContextServer,
-)
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import (
-    MatrixFrequency,
-)
-from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import (
-    AreaOutputSeriesMatrix,
-)
-from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.common import (
-    area,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
+from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import AreaOutputSeriesMatrix
+from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.common import area
 
 # noinspection SpellCheckingInspection
 MC_ALL_TRUE = {
@@ -101,9 +91,7 @@ class TestOutputSimulationAreaItem:
 
         # check the result
         value: AreaOutputSeriesMatrix
-        actual_obj = {
-            key: {"freq": value.freq} for key, value in actual.items()
-        }
+        actual_obj = {key: {"freq": value.freq} for key, value in actual.items()}
         assert actual_obj == expected
 
         new_config = FileStudyTreeConfig(
@@ -122,15 +110,11 @@ class TestOutputSimulationAreaItem:
         )
         new_actual = new_node.build()
         # check the result
-        actual_obj = {
-            key: {"freq": value.freq} for key, value in new_actual.items()
-        }
+        actual_obj = {key: {"freq": value.freq} for key, value in new_actual.items()}
         expected["details-STstorage-annual"] = {"freq": MatrixFrequency.ANNUAL}
         expected["details-STstorage-daily"] = {"freq": MatrixFrequency.DAILY}
         expected["details-STstorage-hourly"] = {"freq": MatrixFrequency.HOURLY}
-        expected["details-STstorage-monthly"] = {
-            "freq": MatrixFrequency.MONTHLY
-        }
+        expected["details-STstorage-monthly"] = {"freq": MatrixFrequency.MONTHLY}
         expected["details-STstorage-weekly"] = {"freq": MatrixFrequency.WEEKLY}
 
         assert actual_obj == expected

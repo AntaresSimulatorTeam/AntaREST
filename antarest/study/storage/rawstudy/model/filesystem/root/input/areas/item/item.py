@@ -1,16 +1,10 @@
-from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
-    FolderNode,
-)
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
 from antarest.study.storage.rawstudy.model.filesystem.root.input.areas.item.adequacy_patch import (
     InputAreasAdequacyPatch,
 )
-from antarest.study.storage.rawstudy.model.filesystem.root.input.areas.item.optimization import (
-    InputAreasOptimization,
-)
-from antarest.study.storage.rawstudy.model.filesystem.root.input.areas.item.ui import (
-    InputAreasUi,
-)
+from antarest.study.storage.rawstudy.model.filesystem.root.input.areas.item.optimization import InputAreasOptimization
+from antarest.study.storage.rawstudy.model.filesystem.root.input.areas.item.ui import InputAreasUi
 
 
 class InputAreasItem(FolderNode):

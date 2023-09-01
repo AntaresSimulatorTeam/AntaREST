@@ -1,33 +1,17 @@
-from typing import Union, List, Any, Tuple, Dict
+from typing import Any, Dict, List, Tuple, Union
 
 from pydantic import validator
 
 from antarest.core.model import JSON
 from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
-    ChildNotFoundError,
-)
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import (
-    MatrixNode,
-)
-from antarest.study.storage.variantstudy.business.utils import (
-    validate_matrix,
-    strip_matrix_protocol,
-    AliasDecoder,
-)
-from antarest.study.storage.variantstudy.model.command.common import (
-    CommandOutput,
-    CommandName,
-)
-from antarest.study.storage.variantstudy.model.command.icommand import (
-    ICommand,
-    MATCH_SIGNATURE_SEPARATOR,
-)
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import ChildNotFoundError
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
+from antarest.study.storage.variantstudy.business.utils import AliasDecoder, strip_matrix_protocol, validate_matrix
+from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
+from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
@@ -35,18 +19,12 @@ class ReplaceMatrix(ICommand):
     target: str
     matrix: Union[List[List[MatrixData]], str]
 
-    _validate_matrix = validator(
-        "matrix", each_item=True, always=True, allow_reuse=True
-    )(validate_matrix)
+    _validate_matrix = validator("matrix", each_item=True, always=True, allow_reuse=True)(validate_matrix)
 
     def __init__(self, **data: Any) -> None:
-        super().__init__(
-            command_name=CommandName.REPLACE_MATRIX, version=1, **data
-        )
+        super().__init__(command_name=CommandName.REPLACE_MATRIX, version=1, **data)
 
-    def _apply_config(
-        self, study_data: FileStudyTreeConfig
-    ) -> Tuple[CommandOutput, Dict[str, Any]]:
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         return (
             CommandOutput(
                 status=True,
@@ -96,9 +74,7 @@ class ReplaceMatrix(ICommand):
         )
 
     def match_signature(self) -> str:
-        return str(
-            self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.target
-        )
+        return str(self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.target)
 
     def match(self, other: ICommand, equal: bool = False) -> bool:
         if not isinstance(other, ReplaceMatrix):

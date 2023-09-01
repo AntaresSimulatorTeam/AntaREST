@@ -2,34 +2,22 @@ import logging
 from pathlib import Path
 from typing import Any, List, Optional
 
-from fastapi import APIRouter, Depends, Body, File, UploadFile
-from starlette.requests import Request
+from fastapi import APIRouter, Body, Depends, File, UploadFile
 from starlette.responses import FileResponse
 
 from antarest.core.config import Config
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.jwt import JWTUser
-from antarest.core.requests import (
-    UserHasNotPermissionError,
-    RequestParameters,
-)
+from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
-from antarest.matrixstore.model import (
-    MatrixDataSetUpdateDTO,
-    MatrixInfoDTO,
-    MatrixData,
-    MatrixDTO,
-    MatrixDataSetDTO,
-)
+from antarest.matrixstore.model import MatrixData, MatrixDataSetDTO, MatrixDataSetUpdateDTO, MatrixDTO, MatrixInfoDTO
 from antarest.matrixstore.service import MatrixService
 
 logger = logging.getLogger(__name__)
 
 
-def create_matrix_api(
-    service: MatrixService, ftm: FileTransferManager, config: Config
-) -> APIRouter:
+def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: Config) -> APIRouter:
     """
     Endpoints login implementation
     Args:
@@ -44,13 +32,9 @@ def create_matrix_api(
 
     auth = Auth(config)
 
-    @bp.post(
-        "/matrix", tags=[APITag.matrix], description="Upload a new matrix"
-    )
+    @bp.post("/matrix", tags=[APITag.matrix], description="Upload a new matrix")
     def create(
-        matrix: List[List[MatrixData]] = Body(
-            description="matrix dto", default=[]
-        ),
+        matrix: List[List[MatrixData]] = Body(description="matrix dto", default=[]),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(f"Creating new matrix", extra={"user": current_user.id})
@@ -69,9 +53,7 @@ def create_matrix_api(
         file: UploadFile = File(...),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
-        logger.info(
-            f"Importing new matrix dataset", extra={"user": current_user.id}
-        )
+        logger.info("Importing new matrix dataset", extra={"user": current_user.id})
         if current_user.id is not None:
             return service.create_by_importation(file, json)
         raise UserHasNotPermissionError()
@@ -83,9 +65,7 @@ def create_matrix_api(
             return service.get(id)
         raise UserHasNotPermissionError()
 
-    @bp.post(
-        "/matrixdataset", tags=[APITag.matrix], response_model=MatrixDataSetDTO
-    )
+    @bp.post("/matrixdataset", tags=[APITag.matrix], response_model=MatrixDataSetDTO)
     def create_dataset(
         metadata: MatrixDataSetUpdateDTO = Body(...),
         matrices: List[MatrixInfoDTO] = Body(...),
@@ -96,9 +76,7 @@ def create_matrix_api(
             extra={"user": user.id},
         )
         request_params = RequestParameters(user=user)
-        return service.create_dataset(
-            metadata, matrices, request_params
-        ).to_dto()
+        return service.create_dataset(metadata, matrices, request_params).to_dto()
 
     @bp.put(
         "/matrixdataset/{id}/metadata",
@@ -110,9 +88,7 @@ def create_matrix_api(
         metadata: MatrixDataSetUpdateDTO,
         user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
-        logger.info(
-            f"Updating matrix dataset metadata {id}", extra={"user": user.id}
-        )
+        logger.info(f"Updating matrix dataset metadata {id}", extra={"user": user.id})
         request_params = RequestParameters(user=user)
         return service.update_dataset(id, metadata, request_params).to_dto()
 
@@ -126,9 +102,7 @@ def create_matrix_api(
         filter_own: bool = False,
         user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
-        logger.info(
-            f"Searching matrix dataset metadata", extra={"user": user.id}
-        )
+        logger.info("Searching matrix dataset metadata", extra={"user": user.id})
         request_params = RequestParameters(user=user)
         return service.list(name, filter_own, request_params)
 
@@ -166,9 +140,7 @@ def create_matrix_api(
         service.download_matrix(matrix_id, tmp_export_file, params)
         return FileResponse(
             tmp_export_file,
-            headers={
-                "Content-Disposition": f'attachment; filename="matrix-{matrix_id}.txt'
-            },
+            headers={"Content-Disposition": f'attachment; filename="matrix-{matrix_id}.txt'},
             media_type="text/plain",
         )
 
@@ -177,9 +149,7 @@ def create_matrix_api(
         id: str,
         user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
-        logger.info(
-            f"Removing matrix dataset metadata {id}", extra={"user": user.id}
-        )
+        logger.info(f"Removing matrix dataset metadata {id}", extra={"user": user.id})
         request_params = RequestParameters(user=user)
         service.delete_dataset(id, request_params)
 

@@ -2,16 +2,9 @@ import time
 from pathlib import Path
 from unittest import mock
 
-from antarest.core.cache.business.local_chache import (
-    LocalCache,
-    LocalCacheElement,
-)
+from antarest.core.cache.business.local_chache import LocalCache, LocalCacheElement
 from antarest.core.config import CacheConfig
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
-    Area,
-    FileStudyTreeConfigDTO,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfigDTO
 
 
 @mock.patch("time.time", mock.MagicMock(return_value=12345))
@@ -36,9 +29,7 @@ def test_lifecycle():
     id = "some_id"
     duration = 3600
     timeout = int(time.time()) + duration
-    cache_element = LocalCacheElement(
-        duration=duration, data=config.dict(), timeout=timeout
-    )
+    cache_element = LocalCacheElement(duration=duration, data=config.dict(), timeout=timeout)
 
     # PUT
     cache.put(id=id, data=config.dict(), duration=duration)

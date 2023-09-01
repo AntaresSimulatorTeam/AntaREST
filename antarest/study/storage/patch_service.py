@@ -1,20 +1,11 @@
 import logging
 from pathlib import Path
-from typing import Union, Optional
+from typing import Optional, Union
 
-from pydantic import ValidationError
-
-from antarest.study.model import (
-    Patch,
-    PatchOutputs,
-    RawStudy,
-    StudyAdditionalData,
-)
+from antarest.study.model import Patch, PatchOutputs, RawStudy, StudyAdditionalData
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.model.dbmodel import (
-    VariantStudy,
-)
+from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 
 logger = logging.getLogger(__name__)
 
@@ -23,9 +14,7 @@ class PatchService:
     def __init__(self, repository: Optional[StudyMetadataRepository] = None):
         self.repository = repository
 
-    def get(
-        self, study: Union[RawStudy, VariantStudy], get_from_file: bool = False
-    ) -> Patch:
+    def get(self, study: Union[RawStudy, VariantStudy], get_from_file: bool = False) -> Patch:
         if not get_from_file:
             # the `study.additional_data.patch` field is optional
             if patch_data := study.additional_data.patch:
@@ -60,9 +49,7 @@ class PatchService:
 
     def save(self, study: Union[RawStudy, VariantStudy], patch: Patch) -> None:
         if self.repository:
-            study.additional_data = (
-                study.additional_data or StudyAdditionalData()
-            )
+            study.additional_data = study.additional_data or StudyAdditionalData()
             study.additional_data.patch = patch.json()
             self.repository.save(study)
 

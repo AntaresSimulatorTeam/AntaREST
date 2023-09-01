@@ -9,7 +9,7 @@ from antarest.core.interfaces.service import IService
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.requests import RequestParameters
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.study.model import Study, RawStudy
+from antarest.study.model import RawStudy, Study
 from antarest.study.service import StudyService
 from antarest.study.storage.utils import is_managed
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
@@ -36,15 +36,10 @@ class AutoArchiveService(IService):
                 for study in studies
                 if is_managed(study)
                 and (study.last_access or study.updated_at)
-                < now
-                - datetime.timedelta(
-                    days=self.config.storage.auto_archive_threshold_days
-                )
+                < now - datetime.timedelta(days=self.config.storage.auto_archive_threshold_days)
                 and (isinstance(study, VariantStudy) or not study.archived)
             ]
-        for study_id, is_raw_study in study_ids_to_archive[
-            0 : self.max_parallel
-        ]:
+        for study_id, is_raw_study in study_ids_to_archive[0 : self.max_parallel]:
             try:
                 if is_raw_study:
                     logger.info(

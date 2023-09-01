@@ -4,6 +4,9 @@ from pathlib import Path
 from typing import List, Tuple
 from zipfile import ZipFile
 
+from fastapi import FastAPI
+from starlette.testclient import TestClient
+
 from antarest.study.storage.rawstudy.io.reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.matrix.constants import (
     default_4_fixed_hourly,
@@ -11,13 +14,8 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.constants import (
     default_scenario_daily,
     default_scenario_hourly,
 )
-from antarest.study.storage.variantstudy.model.command.common import (
-    CommandName,
-)
-from antarest.study.storage.variantstudy.model.model import (
-    CommandDTO,
-    GenerationResultInfoDTO,
-)
+from antarest.study.storage.variantstudy.model.command.common import CommandName
+from antarest.study.storage.variantstudy.model.model import CommandDTO, GenerationResultInfoDTO
 from antarest.tools.lib import (
     COMMAND_FILE,
     MATRIX_STORE_DIR,
@@ -27,8 +25,6 @@ from antarest.tools.lib import (
     generate_study,
     parse_commands,
 )
-from fastapi import FastAPI
-from starlette.testclient import TestClient
 
 test_dir: Path = Path(__file__).parent
 
@@ -47,28 +43,20 @@ def generate_study_with_server(
     commands: List[CommandDTO],
     matrices_dir: Path,
 ) -> Tuple[GenerationResultInfoDTO, str]:
-    res = client.post(
-        "/v1/login", json={"username": "admin", "password": "admin"}
-    )
+    res = client.post("/v1/login", json={"username": "admin", "password": "admin"})
     admin_credentials = res.json()
     base_study_res = client.post(
         f"/v1/studies?name=foo&version={study_version}",
-        headers={
-            "Authorization": f'Bearer {admin_credentials["access_token"]}'
-        },
+        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
     )
     base_study_id = base_study_res.json()
     res = client.post(
         f"/v1/studies/{base_study_id}/variants?name={urllib.parse.quote_plus(name)}",
-        headers={
-            "Authorization": f'Bearer {admin_credentials["access_token"]}'
-        },
+        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
     )
     variant_id = res.json()
     assert res.status_code == 200
-    generator = RemoteVariantGenerator(
-        variant_id, session=client, token=admin_credentials["access_token"]
-    )
+    generator = RemoteVariantGenerator(variant_id, session=client, token=admin_credentials["access_token"])
     return generator.apply_commands(commands, matrices_dir), variant_id
 
 
@@ -77,9 +65,7 @@ def test_variant_manager(app: FastAPI, tmp_path: str):
     commands = parse_commands(test_dir / "assets" / "commands1.json")
     matrix_dir = Path(tmp_path) / "empty_matrix_store"
     matrix_dir.mkdir(parents=True, exist_ok=True)
-    res, study_id = generate_study_with_server(
-        client, "test", "720", commands, matrix_dir
-    )
+    res, study_id = generate_study_with_server(client, "test", "720", commands, matrix_dir)
     assert res is not None and res.success
 
 
@@ -97,18 +83,12 @@ def test_parse_commands(tmp_path: str, app: FastAPI):
     client = TestClient(app, raise_server_exceptions=False)
 
     extract_commands(study_path, output_dir)
-    commands = [
-        CommandDTO(
-            action=CommandName.REMOVE_DISTRICT.value, args={"id": "all areas"}
-        )
-    ] + parse_commands(output_dir / COMMAND_FILE)
-    res, study_id = generate_study_with_server(
-        client, name, version, commands, output_dir / MATRIX_STORE_DIR
+    commands = [CommandDTO(action=CommandName.REMOVE_DISTRICT.value, args={"id": "all areas"})] + parse_commands(
+        output_dir / COMMAND_FILE
     )
+    res, study_id = generate_study_with_server(client, name, version, commands, output_dir / MATRIX_STORE_DIR)
     assert res is not None and res.success
-    generated_study_path = (
-        Path(tmp_path) / "internal_workspace" / study_id / "snapshot"
-    )
+    generated_study_path = Path(tmp_path) / "internal_workspace" / study_id / "snapshot"
     assert generated_study_path.exists() and generated_study_path.is_dir()
 
     single_column_empty_items = [
@@ -180,9 +160,7 @@ def test_parse_commands(tmp_path: str, app: FastAPI):
         f"input{os.sep}misc-gen{os.sep}miscgen-hub n.txt",
     ]
     single_column_empty_data = generate_csv_string(default_scenario_hourly)
-    single_column_daily_empty_data = generate_csv_string(
-        default_scenario_daily
-    )
+    single_column_daily_empty_data = generate_csv_string(default_scenario_daily)
     fixed_4_columns_empty_data = generate_csv_string(default_4_fixed_hourly)
     fixed_8_columns_empty_data = generate_csv_string(default_8_fixed_hourly)
     for root, dirs, files in os.walk(study_path):
@@ -196,23 +174,13 @@ def test_parse_commands(tmp_path: str, app: FastAPI):
             ]:
                 continue
             elif f"{rel_path}{os.sep}{item}" in single_column_empty_items:
-                assert (
-                    generated_study_path / rel_path / item
-                ).read_text() == single_column_empty_data
-            elif (
-                f"{rel_path}{os.sep}{item}" in single_column_daily_empty_items
-            ):
-                assert (
-                    generated_study_path / rel_path / item
-                ).read_text() == single_column_daily_empty_data
+                assert (generated_study_path / rel_path / item).read_text() == single_column_empty_data
+            elif f"{rel_path}{os.sep}{item}" in single_column_daily_empty_items:
+                assert (generated_study_path / rel_path / item).read_text() == single_column_daily_empty_data
             elif f"{rel_path}{os.sep}{item}" in fixed_4_cols_empty_items:
-                assert (
-                    generated_study_path / rel_path / item
-                ).read_text() == fixed_4_columns_empty_data
+                assert (generated_study_path / rel_path / item).read_text() == fixed_4_columns_empty_data
             elif f"{rel_path}{os.sep}{item}" in fixed_8_cols_empty_items:
-                assert (
-                    generated_study_path / rel_path / item
-                ).read_text() == fixed_8_columns_empty_data
+                assert (generated_study_path / rel_path / item).read_text() == fixed_8_columns_empty_data
             else:
                 actual = (study_path / rel_path / item).read_text()
                 expected = (generated_study_path / rel_path / item).read_text()
@@ -235,20 +203,14 @@ def test_diff_local(tmp_path: Path):
             zip_output.extractall(path=tmp_path)
         extract_commands(Path(tmp_path) / study, Path(export_path) / study)
 
-    res = generate_study(
-        base_study_commands, None, str(Path(export_path) / "base_generated")
-    )
+    res = generate_study(base_study_commands, None, str(Path(export_path) / "base_generated"))
     res = generate_study(
         variant_study_commands,
         None,
         str(Path(export_path) / "variant_generated"),
     )
-    generate_diff(
-        base_study_commands, variant_study_commands, output_study_commands
-    )
-    res = generate_study(
-        output_study_commands, None, output=str(output_study_path)
-    )
+    generate_diff(base_study_commands, variant_study_commands, output_study_commands)
+    res = generate_study(output_study_commands, None, output=str(output_study_path))
     assert res.success
 
     assert output_study_path.exists() and output_study_path.is_dir()

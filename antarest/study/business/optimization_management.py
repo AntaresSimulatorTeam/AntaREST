@@ -1,20 +1,12 @@
-from enum import Enum
 from typing import Any, Dict, List, Optional, Union, cast
 
 from pydantic.types import StrictBool
 
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
-from antarest.study.business.utils import (
-    GENERAL_DATA_PATH,
-    FieldInfo,
-    FormFieldsBaseModel,
-    execute_or_add_commands,
-)
+from antarest.study.business.utils import GENERAL_DATA_PATH, FieldInfo, FormFieldsBaseModel, execute_or_add_commands
 from antarest.study.model import Study
 from antarest.study.storage.storage_service import StudyStorageService
-from antarest.study.storage.variantstudy.model.command.update_config import (
-    UpdateConfig,
-)
+from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 
 
 class LegacyTransmissionCapacities(EnumIgnoreCase):
@@ -135,19 +127,11 @@ class OptimizationManager:
             target_name = path.split("/")[-1]
             is_in_version = start_ver <= study_ver
 
-            return (
-                parent.get(target_name, field_info["default_value"])
-                if is_in_version
-                else None
-            )
+            return parent.get(target_name, field_info["default_value"]) if is_in_version else None
 
-        return OptimizationFormFields.construct(
-            **{name: get_value(info) for name, info in FIELDS_INFO.items()}
-        )
+        return OptimizationFormFields.construct(**{name: get_value(info) for name, info in FIELDS_INFO.items()})
 
-    def set_field_values(
-        self, study: Study, field_values: OptimizationFormFields
-    ) -> None:
+    def set_field_values(self, study: Study, field_values: OptimizationFormFields) -> None:
         """
         Set optimization config from the webapp form
         """
@@ -167,6 +151,4 @@ class OptimizationManager:
 
         if commands:
             file_study = self.storage_service.get_storage(study).get_raw(study)
-            execute_or_add_commands(
-                study, file_study, commands, self.storage_service
-            )
+            execute_or_add_commands(study, file_study, commands, self.storage_service)

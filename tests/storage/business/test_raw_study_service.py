@@ -6,26 +6,17 @@ import time
 from pathlib import Path
 from typing import Callable
 from unittest.mock import Mock
-from zipfile import ZipFile, ZIP_DEFLATED
+from zipfile import ZIP_DEFLATED, ZipFile
 
 import pytest
 
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
-from antarest.core.exceptions import (
-    StudyNotFoundError,
-    StudyDeletionNotAllowed,
-)
+from antarest.core.exceptions import StudyDeletionNotAllowed, StudyNotFoundError
 from antarest.core.interfaces.cache import CacheConstants
 from antarest.core.model import PublicMode
-from antarest.study.model import (
-    DEFAULT_WORKSPACE_NAME,
-    RawStudy,
-    StudyAdditionalData,
-)
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, StudyAdditionalData
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.raw_study_service import (
-    RawStudyService,
-)
+from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.utils import get_default_workspace_path
 
 
@@ -80,9 +71,7 @@ def test_get(tmp_path: str, project_path) -> None:
         patch_service=Mock(),
     )
 
-    metadata = RawStudy(
-        id="study2.py", workspace=DEFAULT_WORKSPACE_NAME, path=str(path_study)
-    )
+    metadata = RawStudy(id="study2.py", workspace=DEFAULT_WORKSPACE_NAME, path=str(path_study))
     output = study_service.get(metadata=metadata, url=sub_route, depth=2)
 
     assert output == data
@@ -112,9 +101,7 @@ def test_get_cache(tmp_path: str) -> None:
     cache = Mock()
     cache.get.return_value = None
 
-    metadata = RawStudy(
-        id="study2.py", workspace=DEFAULT_WORKSPACE_NAME, path=str(path_study)
-    )
+    metadata = RawStudy(id="study2.py", workspace=DEFAULT_WORKSPACE_NAME, path=str(path_study))
     study_service = RawStudyService(
         config=Mock(),
         cache=cache,
@@ -179,9 +166,7 @@ def test_assert_study_exist(tmp_path: str, project_path) -> None:
         patch_service=Mock(),
     )
 
-    metadata = RawStudy(
-        id=study_name, workspace=DEFAULT_WORKSPACE_NAME, path=str(path_study2)
-    )
+    metadata = RawStudy(id=study_name, workspace=DEFAULT_WORKSPACE_NAME, path=str(path_study2))
     study_service._check_study_exists(metadata)
 
 
@@ -208,9 +193,7 @@ def test_assert_study_not_exist(tmp_path: str, project_path) -> None:
         patch_service=Mock(),
     )
 
-    metadata = RawStudy(
-        id=study_name, workspace=DEFAULT_WORKSPACE_NAME, path=str(path_study2)
-    )
+    metadata = RawStudy(id=study_name, workspace=DEFAULT_WORKSPACE_NAME, path=str(path_study2))
     with pytest.raises(StudyNotFoundError):
         study_service._check_study_exists(metadata)
 
@@ -293,18 +276,12 @@ def test_create_study_versions(tmp_path: str, project_path) -> None:
     path_study = path_studies / md613.id
     general_data_file = path_study / "settings" / "generaldata.ini"
     general_data = general_data_file.read_text()
-    assert (
-        re.search("^filtering = false", general_data, flags=re.MULTILINE)
-        is not None
-    )
+    assert re.search("^filtering = false", general_data, flags=re.MULTILINE) is not None
 
     path_study = path_studies / md700.id
     general_data_file = path_study / "settings" / "generaldata.ini"
     general_data = general_data_file.read_text()
-    assert (
-        re.search("^link-type = local", general_data, flags=re.MULTILINE)
-        is not None
-    )
+    assert re.search("^link-type = local", general_data, flags=re.MULTILINE) is not None
     assert (
         re.search(
             "^initial-reservoir-levels = cold start",
@@ -317,18 +294,8 @@ def test_create_study_versions(tmp_path: str, project_path) -> None:
     path_study = path_studies / md710.id
     general_data_file = path_study / "settings" / "generaldata.ini"
     general_data = general_data_file.read_text()
-    assert (
-        re.search(
-            "^thematic-trimming = false", general_data, flags=re.MULTILINE
-        )
-        is not None
-    )
-    assert (
-        re.search(
-            "^geographic-trimming = false", general_data, flags=re.MULTILINE
-        )
-        is not None
-    )
+    assert re.search("^thematic-trimming = false", general_data, flags=re.MULTILINE) is not None
+    assert re.search("^geographic-trimming = false", general_data, flags=re.MULTILINE) is not None
 
     path_study = path_studies / md720.id
     general_data_file = path_study / "settings" / "generaldata.ini"
@@ -345,16 +312,8 @@ def test_create_study_versions(tmp_path: str, project_path) -> None:
     path_study = path_studies / md803.id
     general_data_file = path_study / "settings" / "generaldata.ini"
     general_data = general_data_file.read_text()
-    assert (
-        re.search(
-            "^custom-ts-numbers = false", general_data, flags=re.MULTILINE
-        )
-        is None
-    )
-    assert (
-        re.search("^custom-scenario = false", general_data, flags=re.MULTILINE)
-        is not None
-    )
+    assert re.search("^custom-ts-numbers = false", general_data, flags=re.MULTILINE) is None
+    assert re.search("^custom-scenario = false", general_data, flags=re.MULTILINE) is not None
     assert (
         re.search(
             "^include-exportstructure = false",
@@ -504,9 +463,7 @@ def test_zipped_output(tmp_path: Path) -> None:
     (study_path / "study.antares").touch()
     cache = Mock()
     study_service = RawStudyService(
-        config=build_config(
-            tmp_path, workspace_name="foo", allow_deletion=False
-        ),
+        config=build_config(tmp_path, workspace_name="foo", allow_deletion=False),
         cache=cache,
         study_factory=Mock(),
         path_resources=Path(),
@@ -539,9 +496,7 @@ timestamp = 1599488150
 
     study_service.unarchive_study_output(md, expected_output_name, False)
     assert (study_path / "output" / expected_output_name).exists()
-    assert not (
-        study_path / "output" / (expected_output_name + ".zip")
-    ).exists()
+    assert not (study_path / "output" / (expected_output_name + ".zip")).exists()
     study_service.delete_output(md, output_name)
     assert not (study_path / "output" / expected_output_name).exists()
 
@@ -549,16 +504,12 @@ timestamp = 1599488150
     study_service.unarchive_study_output(md, expected_output_name, True)
     assert (study_path / "output" / (expected_output_name + ".zip")).exists()
     os.unlink(study_path / "output" / (expected_output_name + ".zip"))
-    assert not (
-        study_path / "output" / (expected_output_name + ".zip")
-    ).exists()
+    assert not (study_path / "output" / (expected_output_name + ".zip")).exists()
     study_service.archive_study_output(md, expected_output_name)
     assert not (study_path / "output" / expected_output_name).exists()
     assert (study_path / "output" / (expected_output_name + ".zip")).exists()
     study_service.delete_output(md, output_name)
-    assert not (
-        study_path / "output" / (expected_output_name + ".zip")
-    ).exists()
+    assert not (study_path / "output" / (expected_output_name + ".zip")).exists()
 
 
 @pytest.mark.unit_test
@@ -571,9 +522,7 @@ def test_delete_study(tmp_path: Path) -> None:
     cache = Mock()
 
     study_service = RawStudyService(
-        config=build_config(
-            tmp_path, workspace_name="foo", allow_deletion=False
-        ),
+        config=build_config(tmp_path, workspace_name="foo", allow_deletion=False),
         cache=cache,
         study_factory=Mock(),
         path_resources=Path(),
@@ -592,9 +541,7 @@ def test_delete_study(tmp_path: Path) -> None:
         patch_service=Mock(),
     )
 
-    md = RawStudy(
-        id=name, workspace=DEFAULT_WORKSPACE_NAME, path=str(study_path)
-    )
+    md = RawStudy(id=name, workspace=DEFAULT_WORKSPACE_NAME, path=str(study_path))
     study_service.delete(md)
     cache.invalidate_all.assert_called_once_with(
         [
@@ -612,9 +559,7 @@ def test_initialize_additional_data(tmp_path: Path) -> None:
     study_path.mkdir()
     (study_path / "study.antares").touch()
 
-    study_additional_data = StudyAdditionalData(
-        horizon=10, author="foo", patch="bar"
-    )
+    study_additional_data = StudyAdditionalData(horizon=10, author="foo", patch="bar")
 
     cache = Mock()
 
@@ -632,9 +577,7 @@ def test_initialize_additional_data(tmp_path: Path) -> None:
 
     assert not study_service.initialize_additional_data(raw_study)
 
-    study_service._read_additional_data_from_files = Mock(
-        return_value=study_additional_data
-    )
+    study_service._read_additional_data_from_files = Mock(return_value=study_additional_data)
     assert study_service.initialize_additional_data(raw_study)
 
 
@@ -646,9 +589,7 @@ def test_check_and_update_study_version_in_database(tmp_path: Path) -> None:
     study_antares = study_path / "study.antares"
     study_antares.touch()
 
-    raw_study = RawStudy(
-        id=name, workspace="foo", path=str(study_path), version="100"
-    )
+    raw_study = RawStudy(id=name, workspace="foo", path=str(study_path), version="100")
 
     file_study_tree = Mock()
     file_study_tree.get.return_value = {"version": 100}
@@ -668,9 +609,7 @@ def test_check_and_update_study_version_in_database(tmp_path: Path) -> None:
 
     assert raw_study.version == "100"
 
-    raw_study = RawStudy(
-        id=name, workspace="foo", path=str(study_path), version="100"
-    )
+    raw_study = RawStudy(id=name, workspace="foo", path=str(study_path), version="100")
 
     file_study_tree = Mock()
     file_study_tree.get.return_value = {"version": 42}
@@ -690,9 +629,7 @@ def test_check_and_update_study_version_in_database(tmp_path: Path) -> None:
 
     assert raw_study.version == "42"
 
-    raw_study = RawStudy(
-        id=name, workspace="foo", path=str(study_path), version="100"
-    )
+    raw_study = RawStudy(id=name, workspace="foo", path=str(study_path), version="100")
 
     study_factory = Mock()
     study_factory.create_from_config.side_effect = FileNotFoundError()
@@ -726,9 +663,7 @@ def test_update_name_and_version_from_raw(tmp_path: Path) -> None:
     )
     study_factory = Mock()
     study_tree_mock = Mock()
-    study_factory.create_from_fs.return_value = FileStudy(
-        Mock(), study_tree_mock
-    )
+    study_factory.create_from_fs.return_value = FileStudy(Mock(), study_tree_mock)
 
     study_service = RawStudyService(
         config=build_config(tmp_path, workspace_name="foo"),

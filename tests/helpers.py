@@ -21,9 +21,7 @@ def with_db_context(f: Callable[..., Any]) -> Callable[..., Any]:
 
 def _assert_dict(a: Dict[str, Any], b: Dict[str, Any]) -> None:
     if a.keys() != b.keys():
-        raise AssertionError(
-            f"study level has not the same keys {a.keys()} != {b.keys()}"
-        )
+        raise AssertionError(f"study level has not the same keys {a.keys()} != {b.keys()}")
     for k, v in a.items():
         assert_study(v, b[k])
 
@@ -59,12 +57,7 @@ def assert_study(a: SUB_JSON, b: SUB_JSON) -> None:
         _assert_dict(a, b)
     elif isinstance(a, list) and isinstance(b, list):
         _assert_list(a, b)
-    elif (
-        isinstance(a, str)
-        and isinstance(b, str)
-        and "studyfile://" in a
-        and "studyfile://" in b
-    ):
+    elif isinstance(a, str) and isinstance(b, str) and "studyfile://" in a and "studyfile://" in b:
         _assert_pointer_path(a, b)
     elif isinstance(a, np.ndarray) and isinstance(b, np.ndarray):
         _assert_array(a, b)
@@ -76,9 +69,7 @@ def assert_study(a: SUB_JSON, b: SUB_JSON) -> None:
         _assert_others(a, b)
 
 
-def auto_retry_assert(
-    predicate: Callable[..., bool], timeout: int = 2, delay: float = 0.2
-) -> None:
+def auto_retry_assert(predicate: Callable[..., bool], timeout: int = 2, delay: float = 0.2) -> None:
     threshold = datetime.now(timezone.utc) + timedelta(seconds=timeout)
     while datetime.now(timezone.utc) < threshold:
         if predicate():

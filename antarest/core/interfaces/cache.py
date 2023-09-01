@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from enum import Enum
-from typing import Optional, List
+from typing import List, Optional
 
 from antarest.core.model import JSON
 
@@ -21,9 +21,7 @@ class ICache:
         pass
 
     @abstractmethod
-    def get(
-        self, id: str, refresh_timeout: Optional[int] = None
-    ) -> Optional[JSON]:
+    def get(self, id: str, refresh_timeout: Optional[int] = None) -> Optional[JSON]:
         pass
 
     @abstractmethod

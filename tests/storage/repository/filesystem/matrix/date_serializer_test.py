@@ -1,14 +1,13 @@
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 
 from antarest.study.storage.rawstudy.model.filesystem.matrix.date_serializer import (
-    DailyMatrixSerializer,
-    MonthlyMatrixSerializer,
-    HourlyMatrixSerializer,
-    WeeklyMatrixSerializer,
     AnnualMatrixSerializer,
+    DailyMatrixSerializer,
+    HourlyMatrixSerializer,
+    MonthlyMatrixSerializer,
+    WeeklyMatrixSerializer,
     rename_unnamed,
 )
 
@@ -30,9 +29,7 @@ DE	hourly				01_solar	02_wind_on
     serializer = HourlyMatrixSerializer(area="de")
     date, body = serializer.extract_date(df)
 
-    pd.testing.assert_index_equal(
-        date, pd.Index(["01/01 00:00", "01/01 01:00"])
-    )
+    pd.testing.assert_index_equal(date, pd.Index(["01/01 00:00", "01/01 01:00"]))
 
     rename_unnamed(body)
     expected = pd.DataFrame(

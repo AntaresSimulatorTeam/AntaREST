@@ -1,28 +1,12 @@
-from unittest.mock import Mock
-
 import pytest
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, scoped_session  # type: ignore
+from sqlalchemy.orm import scoped_session, sessionmaker  # type: ignore
 
 from antarest.core.config import Config, SecurityConfig
 from antarest.core.persistence import Base
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
-from antarest.login.model import (
-    User,
-    RoleType,
-    Password,
-    Group,
-    Role,
-    Bot,
-    UserLdap,
-)
-from antarest.login.repository import (
-    UserRepository,
-    GroupRepository,
-    RoleRepository,
-    BotRepository,
-    UserLdapRepository,
-)
+from antarest.login.model import Bot, Group, Password, Role, RoleType, User, UserLdap
+from antarest.login.repository import BotRepository, GroupRepository, RoleRepository, UserLdapRepository, UserRepository
 
 
 @pytest.mark.unit_test
@@ -154,9 +138,7 @@ def test_roles():
     with db():
         repo = RoleRepository()
 
-        a = Role(
-            type=RoleType.ADMIN, identity=User(id=0), group=Group(id="group")
-        )
+        a = Role(type=RoleType.ADMIN, identity=User(id=0), group=Group(id="group"))
 
         a = repo.save(a)
         assert a == repo.get(user=0, group="group")

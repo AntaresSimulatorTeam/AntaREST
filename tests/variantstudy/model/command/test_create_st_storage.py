@@ -4,34 +4,20 @@ import numpy as np
 import pytest
 from pydantic import ValidationError
 
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    transform_name_to_id,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.study_upgrader import upgrade_study
-from antarest.study.storage.variantstudy.business.utils import (
-    strip_matrix_protocol,
-)
-from antarest.study.storage.variantstudy.model.command.common import (
-    CommandName,
-)
-from antarest.study.storage.variantstudy.model.command.create_area import (
-    CreateArea,
-)
+from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol
+from antarest.study.storage.variantstudy.model.command.common import CommandName
+from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_st_storage import (
     REQUIRED_VERSION,
     CreateSTStorage,
     STStorageConfig,
 )
-from antarest.study.storage.variantstudy.model.command.replace_matrix import (
-    ReplaceMatrix,
-)
-from antarest.study.storage.variantstudy.model.command.update_config import (
-    UpdateConfig,
-)
-from antarest.study.storage.variantstudy.model.command_context import (
-    CommandContext,
-)
+from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
+from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
+from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
@@ -99,18 +85,15 @@ class TestCreateSTStorage:
         assert cmd.parameters == STStorageConfig(**expected_parameters)
 
         # check the matrices links
-        # fmt: off
+
         constants = command_context.generator_matrix_constants
         assert cmd.pmax_injection != constants.get_st_storage_pmax_injection()
         assert cmd.pmax_withdrawal == constants.get_st_storage_pmax_withdrawal()
         assert cmd.lower_rule_curve == constants.get_st_storage_lower_rule_curve()
         assert cmd.upper_rule_curve == constants.get_st_storage_upper_rule_curve()
         assert cmd.inflows != constants.get_st_storage_inflows()
-        # fmt: on
 
-    def test_init__invalid_storage_name(
-        self, recent_study: FileStudy, command_context: CommandContext
-    ):
+    def test_init__invalid_storage_name(self, recent_study: FileStudy, command_context: CommandContext):
         # When we apply the config for a new ST Storage with a bad name
         with pytest.raises(ValidationError) as ctx:
             parameters = {**PARAMETERS, "name": "?%$$"}  # bad name
@@ -129,9 +112,7 @@ class TestCreateSTStorage:
         ]
 
     # noinspection SpellCheckingInspection
-    def test_init__invalid_matrix_values(
-        self, command_context: CommandContext
-    ):
+    def test_init__invalid_matrix_values(self, command_context: CommandContext):
         array = np.random.rand(8760, 1)  # OK
         array[10] = 25  # BAD
         with pytest.raises(ValidationError) as ctx:
@@ -211,9 +192,7 @@ class TestCreateSTStorage:
             },
         ]
 
-    def test_apply_config__invalid_version(
-        self, empty_study: FileStudy, command_context: CommandContext
-    ):
+    def test_apply_config__invalid_version(self, empty_study: FileStudy, command_context: CommandContext):
         # Given an old study in version 720
         # When we apply the config to add a new ST Storage
         create_st_storage = CreateSTStorage(
@@ -231,9 +210,7 @@ class TestCreateSTStorage:
             flags=re.IGNORECASE,
         )
 
-    def test_apply_config__missing_area(
-        self, recent_study: FileStudy, command_context: CommandContext
-    ):
+    def test_apply_config__missing_area(self, recent_study: FileStudy, command_context: CommandContext):
         # Given a study without "unknown area" area
         # When we apply the config to add a new ST Storage
         create_st_storage = CreateSTStorage(
@@ -251,9 +228,7 @@ class TestCreateSTStorage:
             flags=re.IGNORECASE,
         )
 
-    def test_apply_config__duplicate_storage(
-        self, recent_study: FileStudy, command_context: CommandContext
-    ):
+    def test_apply_config__duplicate_storage(self, recent_study: FileStudy, command_context: CommandContext):
         # First, prepare a new Area
         create_area = CreateArea(
             area_name="Area FR",
@@ -287,9 +262,7 @@ class TestCreateSTStorage:
             flags=re.IGNORECASE,
         )
 
-    def test_apply_config__nominal_case(
-        self, recent_study: FileStudy, command_context: CommandContext
-    ):
+    def test_apply_config__nominal_case(self, recent_study: FileStudy, command_context: CommandContext):
         # First, prepare a new Area
         create_area = CreateArea(
             area_name="Area FR",
@@ -314,9 +287,7 @@ class TestCreateSTStorage:
         )
 
     # noinspection SpellCheckingInspection
-    def test_apply__nominal_case(
-        self, recent_study: FileStudy, command_context: CommandContext
-    ):
+    def test_apply__nominal_case(self, recent_study: FileStudy, command_context: CommandContext):
         # First, prepare a new Area
         create_area = CreateArea(
             area_name="Area FR",
@@ -338,9 +309,7 @@ class TestCreateSTStorage:
         assert command_output.status
 
         # check the config
-        config = recent_study.tree.get(
-            ["input", "st-storage", "clusters", cmd.area_id, "list"]
-        )
+        config = recent_study.tree.get(["input", "st-storage", "clusters", cmd.area_id, "list"])
         expected = {
             "storage1": {
                 "efficiency": 0.94,
@@ -356,9 +325,7 @@ class TestCreateSTStorage:
         assert config == expected
 
         # check the matrices references
-        config = recent_study.tree.get(
-            ["input", "st-storage", "series", cmd.area_id]
-        )
+        config = recent_study.tree.get(["input", "st-storage", "series", cmd.area_id])
         constants = command_context.generator_matrix_constants
         service = command_context.matrix_service
         pmax_injection_id = service.create(pmax_injection)
@@ -374,13 +341,9 @@ class TestCreateSTStorage:
         }
         assert config == expected
 
-    def test_apply__invalid_apply_config(
-        self, empty_study: FileStudy, command_context: CommandContext
-    ):
+    def test_apply__invalid_apply_config(self, empty_study: FileStudy, command_context: CommandContext):
         # First, prepare a new Area
-        create_area = CreateArea(
-            area_name="Area FR", command_context=command_context
-        )
+        create_area = CreateArea(area_name="Area FR", command_context=command_context)
         create_area.apply(empty_study)
 
         # Then, apply the command to create a new ST Storage
@@ -412,21 +375,11 @@ class TestCreateSTStorage:
             args={
                 "area_id": "area_fr",
                 "parameters": expected_parameters,
-                "pmax_injection": strip_matrix_protocol(
-                    constants.get_st_storage_pmax_withdrawal()
-                ),
-                "pmax_withdrawal": strip_matrix_protocol(
-                    constants.get_st_storage_pmax_withdrawal()
-                ),
-                "lower_rule_curve": strip_matrix_protocol(
-                    constants.get_st_storage_lower_rule_curve()
-                ),
-                "upper_rule_curve": strip_matrix_protocol(
-                    constants.get_st_storage_upper_rule_curve()
-                ),
-                "inflows": strip_matrix_protocol(
-                    constants.get_st_storage_inflows()
-                ),
+                "pmax_injection": strip_matrix_protocol(constants.get_st_storage_pmax_withdrawal()),
+                "pmax_withdrawal": strip_matrix_protocol(constants.get_st_storage_pmax_withdrawal()),
+                "lower_rule_curve": strip_matrix_protocol(constants.get_st_storage_lower_rule_curve()),
+                "upper_rule_curve": strip_matrix_protocol(constants.get_st_storage_upper_rule_curve()),
+                "inflows": strip_matrix_protocol(constants.get_st_storage_inflows()),
             },
         )
 
@@ -456,9 +409,7 @@ class TestCreateSTStorage:
             area_id=area_id,
             parameters=STStorageConfig(**parameters),
         )
-        light_equal = (
-            area_id == cmd1.area_id and parameters["name"] == cmd1.storage_name
-        )
+        light_equal = area_id == cmd1.area_id and parameters["name"] == cmd1.storage_name
         assert cmd1.match(cmd2, equal=False) == light_equal
         deep_equal = area_id == cmd1.area_id and parameters == PARAMETERS
         assert cmd1.match(cmd2, equal=True) == deep_equal

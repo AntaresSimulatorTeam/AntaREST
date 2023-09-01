@@ -1,12 +1,12 @@
 from pathlib import Path
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfigDTO,
-    FileStudyTreeConfig,
     Area,
-    DistrictSet,
-    Simulation,
     BindingConstraintDTO,
+    DistrictSet,
+    FileStudyTreeConfig,
+    FileStudyTreeConfigDTO,
+    Simulation,
 )
 
 
@@ -47,7 +47,5 @@ def test_file_study_tree_config_dto():
         enr_modelling="aggregated",
     )
     config_dto = FileStudyTreeConfigDTO.from_build_config(config)
-    assert sorted(list(config_dto.dict().keys()) + ["cache"]) == sorted(
-        list(config.__dict__.keys())
-    )
+    assert sorted(list(config_dto.dict().keys()) + ["cache"]) == sorted(list(config.__dict__.keys()))
     assert config_dto.to_build_config() == config

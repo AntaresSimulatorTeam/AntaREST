@@ -10,9 +10,7 @@ from antarest.study.common.studystorage import IStudyStorageService
 from antarest.study.model import RawStudy, Study
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
-from antarest.study.storage.variantstudy.variant_study_service import (
-    VariantStudyService,
-)
+from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 
 
 class StudyStorageService:
@@ -42,9 +40,7 @@ class StudyStorageService:
         self.raw_study_service = raw_study_service
         self.variant_study_service = variant_study_service
 
-    def get_storage(
-        self, study: Study
-    ) -> IStudyStorageService[Union[RawStudy, VariantStudy]]:
+    def get_storage(self, study: Study) -> IStudyStorageService[Union[RawStudy, VariantStudy]]:
         """
         Get the appropriate study storage service based on the type of study.
 

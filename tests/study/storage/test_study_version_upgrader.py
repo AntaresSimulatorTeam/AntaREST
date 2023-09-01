@@ -4,10 +4,8 @@ import pytest
 
 from antarest.core.exceptions import StudyValidationError
 from antarest.study.storage.study_upgrader import (
-    InvalidUpgrade,
     UPGRADE_METHODS,
-)
-from antarest.study.storage.study_upgrader import (
+    InvalidUpgrade,
     can_upgrade_version,
     find_next_version,
     get_current_version,

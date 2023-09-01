@@ -1,4 +1,4 @@
-from antarest.core.jwt import JWTUser, JWTGroup
+from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.roles import RoleType
 from antarest.login.model import Group, User
 

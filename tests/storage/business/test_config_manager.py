@@ -3,28 +3,18 @@ from unittest.mock import Mock
 
 from antarest.study.business.thematic_trimming_management import (
     FIELDS_INFO,
-    ThematicTrimmingManager,
     ThematicTrimmingFormFields,
+    ThematicTrimmingManager,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import (
-    FileStudyTree,
-)
+from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.storage_service import StudyStorageService
-from antarest.study.storage.variantstudy.model.command.update_config import (
-    UpdateConfig,
-)
-from antarest.study.storage.variantstudy.model.command_context import (
-    CommandContext,
-)
+from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
+from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
-from antarest.study.storage.variantstudy.variant_study_service import (
-    VariantStudyService,
-)
+from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 
 
 def test_thematic_trimming_config():
@@ -32,13 +22,9 @@ def test_thematic_trimming_config():
     command_factory_mock = Mock()
     command_factory_mock.command_context = command_context
     raw_study_service = Mock(spec=RawStudyService)
-    variant_study_service = Mock(
-        spec=VariantStudyService, command_factory=command_factory_mock
-    )
+    variant_study_service = Mock(spec=VariantStudyService, command_factory=command_factory_mock)
     thematic_trimming_manager = ThematicTrimmingManager(
-        storage_service=StudyStorageService(
-            raw_study_service, variant_study_service
-        ),
+        storage_service=StudyStorageService(raw_study_service, variant_study_service),
     )
 
     study = VariantStudy(version="820")
@@ -51,9 +37,7 @@ def test_thematic_trimming_config():
         sets={},
     )
     file_tree_mock = Mock(spec=FileStudyTree, context=Mock(), config=config)
-    variant_study_service.get_raw.return_value = FileStudy(
-        config=config, tree=file_tree_mock
-    )
+    variant_study_service.get_raw.return_value = FileStudy(config=config, tree=file_tree_mock)
     file_tree_mock.get.side_effect = [
         {},
         {"variables selection": {"select_var -": ["AVL DTG"]}},

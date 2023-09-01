@@ -5,16 +5,17 @@ from enum import Enum
 from http import HTTPStatus
 from typing import List, Optional
 
+from fastapi import Depends, FastAPI, HTTPException, Query
+from fastapi_jwt_auth import AuthJWT  # type: ignore
+from pydantic import BaseModel
+from starlette.websockets import WebSocket, WebSocketDisconnect
+
 from antarest.core.config import Config
 from antarest.core.interfaces.eventbus import Event, IEventBus
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
 from antarest.core.model import PermissionInfo, StudyPermissionType
 from antarest.core.permissions import check_permission
 from antarest.login.auth import Auth
-from fastapi import Depends, FastAPI, HTTPException, Query
-from fastapi_jwt_auth import AuthJWT  # type: ignore
-from pydantic import BaseModel
-from starlette.websockets import WebSocket, WebSocketDisconnect
 
 logger = logging.getLogger(__name__)
 
@@ -44,21 +45,15 @@ class ConnectionManager:
         await websocket.accept()
         self.active_connections.append((WebsocketConnection(websocket, user)))
 
-    def _get_connection(
-        self, websocket: WebSocket
-    ) -> Optional[WebsocketConnection]:
+    def _get_connection(self, websocket: WebSocket) -> Optional[WebsocketConnection]:
         for connection in self.active_connections:
             if connection.websocket == websocket:
                 return connection
-        logger.warning(
-            f"Failed to remove websocket connection f{websocket}. Not found in active connections."
-        )
+        logger.warning(f"Failed to remove websocket connection f{websocket}. Not found in active connections.")
         return None
 
     def disconnect(self, websocket: WebSocket) -> None:
-        connection_to_remove: Optional[
-            WebsocketConnection
-        ] = self._get_connection(websocket)
+        connection_to_remove: Optional[WebsocketConnection] = self._get_connection(websocket)
         if connection_to_remove is not None:
             self.active_connections.remove(connection_to_remove)
 
@@ -75,31 +70,23 @@ class ConnectionManager:
             if ws_message.payload in connection.channel_subscriptions:
                 connection.channel_subscriptions.remove(ws_message.payload)
 
-    async def broadcast(
-        self, message: str, permissions: PermissionInfo, channel: str
-    ) -> None:
+    async def broadcast(self, message: str, permissions: PermissionInfo, channel: str) -> None:
         for connection in self.active_connections:
             # if is subscribed to chanel and has permission, send message to websocket
-            if (
-                not channel or channel in connection.channel_subscriptions
-            ) and check_permission(
+            if (not channel or channel in connection.channel_subscriptions) and check_permission(
                 connection.user, permissions, StudyPermissionType.READ
             ):
                 await connection.websocket.send_text(message)
 
 
-def configure_websockets(
-    application: FastAPI, config: Config, event_bus: IEventBus
-) -> None:
+def configure_websockets(application: FastAPI, config: Config, event_bus: IEventBus) -> None:
     manager = ConnectionManager()
 
     async def send_event_to_ws(event: Event) -> None:
         event_data = event.dict()
         del event_data["permissions"]
         del event_data["channel"]
-        await manager.broadcast(
-            json.dumps(event_data), event.permissions, event.channel
-        )
+        await manager.broadcast(json.dumps(event_data), event.permissions, event.channel)
 
     @application.websocket("/ws")
     async def connect(

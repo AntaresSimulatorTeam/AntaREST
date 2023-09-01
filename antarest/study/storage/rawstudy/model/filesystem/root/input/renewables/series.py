@@ -1,19 +1,9 @@
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
-)
-from antarest.study.storage.rawstudy.model.filesystem.context import (
-    ContextServer,
-)
-from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
-    FolderNode,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
-from antarest.study.storage.rawstudy.model.filesystem.matrix.constants import (
-    default_scenario_hourly,
-)
-from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import (
-    InputSeriesMatrix,
-)
+from antarest.study.storage.rawstudy.model.filesystem.matrix.constants import default_scenario_hourly
+from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 
 
 class ClusteredRenewableSeries(FolderNode):
@@ -41,9 +31,7 @@ class ClusteredRenewableClusterSeries(FolderNode):
 
     def build(self) -> TREE:
         children: TREE = {
-            renewable: ClusteredRenewableSeries(
-                self.context, self.config.next_file(renewable)
-            )
+            renewable: ClusteredRenewableSeries(self.context, self.config.next_file(renewable))
             for renewable in self.config.get_renewable_names(self.area)
         }
         return children
@@ -52,8 +40,6 @@ class ClusteredRenewableClusterSeries(FolderNode):
 class ClusteredRenewableAreaSeries(FolderNode):
     def build(self) -> TREE:
         return {
-            area: ClusteredRenewableClusterSeries(
-                self.context, self.config.next_file(area), area
-            )
+            area: ClusteredRenewableClusterSeries(self.context, self.config.next_file(area), area)
             for area in self.config.area_names()
         }

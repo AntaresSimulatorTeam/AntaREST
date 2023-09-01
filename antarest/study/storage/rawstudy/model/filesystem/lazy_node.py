@@ -2,21 +2,12 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Optional, List, Generic, Union, cast, Tuple, Any, Dict
+from typing import Any, Dict, Generic, List, Optional, Tuple, Union, cast
 from zipfile import ZipFile
 
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
-)
-from antarest.study.storage.rawstudy.model.filesystem.context import (
-    ContextServer,
-)
-from antarest.study.storage.rawstudy.model.filesystem.inode import (
-    INode,
-    S,
-    G,
-    V,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
+from antarest.study.storage.rawstudy.model.filesystem.inode import G, INode, S, V
 
 
 @dataclass
@@ -53,9 +44,7 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
     def file_exists(self) -> bool:
         if self.config.zip_path:
             str_zipped_path = str(self.config.zip_path)
-            inside_zip_path = str(self.config.path)[
-                len(str_zipped_path[:-4]) + 1 :
-            ]
+            inside_zip_path = str(self.config.path)[len(str_zipped_path[:-4]) + 1 :]
             str_inside_zip_path = str(inside_zip_path).replace("\\", "/")
             if str_zipped_path not in LazyNode.ZIP_FILELIST_CACHE:
                 with ZipFile(file=self.config.zip_path) as zip_file:
@@ -63,10 +52,7 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
                         value=zip_file.namelist(),
                         expiration_date=datetime.utcnow() + timedelta(hours=2),
                     )
-            return (
-                str_inside_zip_path
-                in LazyNode.ZIP_FILELIST_CACHE[str_zipped_path].value
-            )
+            return str_inside_zip_path in LazyNode.ZIP_FILELIST_CACHE[str_zipped_path].value
         else:
             return self.config.path.exists()
 
@@ -125,9 +111,7 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
         path = self.config.path.parent / (self.config.path.name + ".link")
         return path
 
-    def save(
-        self, data: Union[str, bytes, S], url: Optional[List[str]] = None
-    ) -> None:
+    def save(self, data: Union[str, bytes, S], url: Optional[List[str]] = None) -> None:
         self._assert_not_in_zipped_file()
         self._assert_url_end(url)
 

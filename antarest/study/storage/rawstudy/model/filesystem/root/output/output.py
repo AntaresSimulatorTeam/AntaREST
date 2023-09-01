@@ -1,13 +1,7 @@
-from antarest.study.storage.rawstudy.model.filesystem.bucket_node import (
-    BucketNode,
-)
-from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
-    FolderNode,
-)
+from antarest.study.storage.rawstudy.model.filesystem.bucket_node import BucketNode
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
-from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.simulation import (
-    OutputSimulation,
-)
+from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.simulation import OutputSimulation
 
 
 class Output(FolderNode):
@@ -21,7 +15,5 @@ class Output(FolderNode):
             for i, s in self.config.outputs.items()
         }
 
-        children["logs"] = BucketNode(
-            self.context, self.config.next_file("logs")
-        )
+        children["logs"] = BucketNode(self.context, self.config.next_file("logs"))
         return children

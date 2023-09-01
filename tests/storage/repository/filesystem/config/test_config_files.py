@@ -1,31 +1,27 @@
 from pathlib import Path
-from typing import Dict, Any
+from typing import Any, Dict
 from zipfile import ZipFile
 
 import pytest
 
 from antarest.study.storage.rawstudy.model.filesystem.config.files import (
-    build,
-    _parse_outputs,
-    _parse_thermal,
-    _parse_sets,
     _parse_links,
+    _parse_outputs,
+    _parse_sets,
     _parse_st_storage,
+    _parse_thermal,
+    build,
 )
-
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
     Area,
+    BindingConstraintDTO,
+    Cluster,
+    DistrictSet,
+    FileStudyTreeConfig,
     Link,
     Simulation,
-    DistrictSet,
-    Cluster,
-    BindingConstraintDTO,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
-    STStorageConfig,
-    STStorageGroup,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import STStorageConfig, STStorageGroup
 from tests.storage.business.assets import ASSETS_DIR
 
 
@@ -78,9 +74,7 @@ def test_parse_bindings(tmp_path: Path) -> None:
     [bindB]
     id = bindB
     """
-    (
-        study_path / "input/bindingconstraints/bindingconstraints.ini"
-    ).write_text(content)
+    (study_path / "input/bindingconstraints/bindingconstraints.ini").write_text(content)
 
     config = FileStudyTreeConfig(
         study_path=study_path,
@@ -201,9 +195,7 @@ def test_parse_outputs(tmp_path: Path) -> None:
         ),
     ],
 )
-def test_parse_outputs__nominal(
-    tmp_path: Path, assets_name: str, expected: Dict[str, Any]
-) -> None:
+def test_parse_outputs__nominal(tmp_path: Path, assets_name: str, expected: Dict[str, Any]) -> None:
     """
     This test decompresses a zipped study (stored in the `assets` directory)
     into a temporary directory and executes the parsing of the outputs.
@@ -227,9 +219,7 @@ output = true
 """
     (study_path / "input/areas/sets.ini").write_text(content)
 
-    assert _parse_sets(study_path) == {
-        "hello": DistrictSet(areas=["a", "b"], output=True, inverted_set=False)
-    }
+    assert _parse_sets(study_path) == {"hello": DistrictSet(areas=["a", "b"], output=True, inverted_set=False)}
 
 
 def test_parse_area(tmp_path: Path) -> None:
@@ -313,9 +303,7 @@ initialleveloptim = False
 
 def test_parse_st_storage(tmp_path: Path) -> None:
     study_path = build_empty_files(tmp_path)
-    study_path.joinpath("study.antares").write_text(
-        "[antares] \n version = 860"
-    )
+    study_path.joinpath("study.antares").write_text("[antares] \n version = 860")
     config_dir = study_path.joinpath("input", "st-storage", "clusters", "fr")
     config_dir.mkdir(parents=True)
     config_dir.joinpath("list.ini").write_text(ST_STORAGE_LIST_INI)
@@ -346,9 +334,7 @@ def test_parse_st_storage(tmp_path: Path) -> None:
     ]
 
     # With a study version anterior to 860, it should always return an empty list
-    study_path.joinpath("study.antares").write_text(
-        "[antares] \n version = 850"
-    )
+    study_path.joinpath("study.antares").write_text("[antares] \n version = 850")
     assert _parse_st_storage(study_path, "fr") == []
 
 

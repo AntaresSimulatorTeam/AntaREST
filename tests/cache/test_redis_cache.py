@@ -2,15 +2,8 @@ import json
 from pathlib import Path
 from unittest.mock import Mock
 
-from antarest.core.cache.business.redis_cache import (
-    RedisCache,
-    RedisCacheElement,
-)
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
-    Area,
-    FileStudyTreeConfigDTO,
-)
+from antarest.core.cache.business.redis_cache import RedisCache, RedisCacheElement
+from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfigDTO
 
 
 def test_lifecycle():
@@ -35,9 +28,7 @@ def test_lifecycle():
     id = "some_id"
     redis_key = f"cache:{id}"
     duration = 3600
-    cache_element = RedisCacheElement(
-        duration=duration, data=config.dict()
-    ).json()
+    cache_element = RedisCacheElement(duration=duration, data=config.dict()).json()
 
     # GET
     redis_client.get.return_value = cache_element
@@ -48,9 +39,7 @@ def test_lifecycle():
 
     # PUT
     duration = 7200
-    cache_element = RedisCacheElement(
-        duration=duration, data=config.dict()
-    ).json()
+    cache_element = RedisCacheElement(duration=duration, data=config.dict()).json()
     cache.put(id=id, data=config.dict(), duration=duration)
     redis_client.set.assert_called_once_with(redis_key, cache_element)
     redis_client.expire.assert_called_with(redis_key, duration)

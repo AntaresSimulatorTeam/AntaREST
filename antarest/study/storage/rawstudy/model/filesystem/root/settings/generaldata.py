@@ -1,19 +1,11 @@
 from copy import deepcopy
-from typing import Dict, Any
+from typing import Any, Dict
 
 from antarest.study.storage.rawstudy.io.reader import MultipleSameKeysIniReader
-from antarest.study.storage.rawstudy.io.writer.ini_writer import (
-    IniWriter,
-)
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
-)
-from antarest.study.storage.rawstudy.model.filesystem.context import (
-    ContextServer,
-)
-from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import (
-    IniFileNode,
-)
+from antarest.study.storage.rawstudy.io.writer.ini_writer import IniWriter
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
+from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 
 DUPLICATE_KEYS = [
     "playlist_year_weight",
@@ -139,7 +131,6 @@ class GeneralData(IniFileNode):
         if config.version >= 840:
             del optimization["include-split-exported-mps"]
         if config.version >= 850:
-            # fmt: off
             adequacy = types["adequacy patch"]
             adequacy["price-taking-order"] = str
             adequacy["include-hurdle-cost-csr"] = bool
@@ -147,7 +138,7 @@ class GeneralData(IniFileNode):
             adequacy["threshold-initiate-curtailment-sharing-rule"] = float
             adequacy["threshold-display-local-matching-rule-violations"] = float
             adequacy["threshold-csr-variable-bounds-relaxation"] = int
-            # fmt: on
+
         if config.version >= 860:
             types["adequacy patch"]["enable-first-step "] = bool
 

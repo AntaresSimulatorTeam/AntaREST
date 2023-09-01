@@ -1,8 +1,8 @@
 from enum import Enum
-from typing import Optional, Any
+from typing import Any, Optional
 
 from pydantic import BaseModel
-from sqlalchemy import Column, String, Integer, Boolean, DateTime, ForeignKey, Sequence  # type: ignore
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, Sequence, String  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
 
 from antarest.core.persistence import Base
@@ -22,11 +22,7 @@ class ConfigData(Base):  # type: ignore
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, ConfigData):
             return False
-        return bool(
-            other.key == self.key
-            and other.value == self.value
-            and other.owner == self.owner
-        )
+        return bool(other.key == self.key and other.value == self.value and other.owner == self.owner)
 
     def __repr__(self) -> str:
         return f"key={self.key}, value={self.value}, owner={self.owner}"

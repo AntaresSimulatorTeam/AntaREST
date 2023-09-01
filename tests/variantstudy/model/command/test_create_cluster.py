@@ -1,39 +1,21 @@
 import configparser
 
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    transform_name_to_id,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.business.command_reverter import (
-    CommandReverter,
-)
-from antarest.study.storage.variantstudy.model.command.create_area import (
-    CreateArea,
-)
-from antarest.study.storage.variantstudy.model.command.create_cluster import (
-    CreateCluster,
-)
-from antarest.study.storage.variantstudy.model.command.remove_cluster import (
-    RemoveCluster,
-)
-from antarest.study.storage.variantstudy.model.command.replace_matrix import (
-    ReplaceMatrix,
-)
-from antarest.study.storage.variantstudy.model.command.update_config import (
-    UpdateConfig,
-)
-from antarest.study.storage.variantstudy.model.command_context import (
-    CommandContext,
-)
+from antarest.study.storage.variantstudy.business.command_reverter import CommandReverter
+from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
+from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
+from antarest.study.storage.variantstudy.model.command.remove_cluster import RemoveCluster
+from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
+from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
+from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
 class TestCreateCluster:
     def test_validation(self, empty_study: FileStudy):
         pass
 
-    def test_apply(
-        self, empty_study: FileStudy, command_context: CommandContext
-    ):
+    def test_apply(self, empty_study: FileStudy, command_context: CommandContext):
         study_path = empty_study.config.study_path
         area_name = "Area"
         area_id = transform_name_to_id(area_name, lower=True)
@@ -70,47 +52,16 @@ class TestCreateCluster:
         assert output.status
 
         clusters = configparser.ConfigParser()
-        clusters.read(
-            study_path
-            / "input"
-            / "thermal"
-            / "clusters"
-            / area_id
-            / "list.ini"
-        )
+        clusters.read(study_path / "input" / "thermal" / "clusters" / area_id / "list.ini")
         assert str(clusters[cluster_name]["name"]) == cluster_name
         assert str(clusters[cluster_name]["group"]) == parameters["group"]
-        assert int(clusters[cluster_name]["unitcount"]) == int(
-            parameters["unitcount"]
-        )
-        assert float(clusters[cluster_name]["nominalcapacity"]) == float(
-            parameters["nominalcapacity"]
-        )
-        assert float(clusters[cluster_name]["marginal-cost"]) == float(
-            parameters["marginal-cost"]
-        )
-        assert float(clusters[cluster_name]["market-bid-cost"]) == float(
-            parameters["market-bid-cost"]
-        )
+        assert int(clusters[cluster_name]["unitcount"]) == int(parameters["unitcount"])
+        assert float(clusters[cluster_name]["nominalcapacity"]) == float(parameters["nominalcapacity"])
+        assert float(clusters[cluster_name]["marginal-cost"]) == float(parameters["marginal-cost"])
+        assert float(clusters[cluster_name]["market-bid-cost"]) == float(parameters["market-bid-cost"])
 
-        assert (
-            study_path
-            / "input"
-            / "thermal"
-            / "prepro"
-            / area_id
-            / cluster_id
-            / "data.txt.link"
-        ).exists()
-        assert (
-            study_path
-            / "input"
-            / "thermal"
-            / "prepro"
-            / area_id
-            / cluster_id
-            / "modulation.txt.link"
-        ).exists()
+        assert (study_path / "input" / "thermal" / "prepro" / area_id / cluster_id / "data.txt.link").exists()
+        assert (study_path / "input" / "thermal" / "prepro" / area_id / cluster_id / "modulation.txt.link").exists()
 
         output = CreateCluster.parse_obj(
             {
@@ -162,9 +113,7 @@ def test_match(command_context: CommandContext):
         modulation=[[0]],
         command_context=command_context,
     )
-    other_other = RemoveCluster(
-        area_id="id", cluster_id="id", command_context=command_context
-    )
+    other_other = RemoveCluster(area_id="id", cluster_id="id", command_context=command_context)
     assert base.match(other_match)
     assert not base.match(other_not_match)
     assert not base.match(other_other)

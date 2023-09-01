@@ -1,5 +1,3 @@
-import dataclasses
-import json
 from unittest.mock import Mock
 
 from antarest.core.interfaces.eventbus import Event, EventType

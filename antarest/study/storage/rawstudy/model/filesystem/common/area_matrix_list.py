@@ -1,18 +1,10 @@
 from typing import Any, Callable, Dict, Optional
 
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
-)
-from antarest.study.storage.rawstudy.model.filesystem.context import (
-    ContextServer,
-)
-from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
-    FolderNode,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE, INode
-from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import (
-    InputSeriesMatrix,
-)
+from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 
 
 class AreaMatrixList(FolderNode):
@@ -85,9 +77,7 @@ class HydroMatrixList(FolderNode):
         context: ContextServer,
         config: FileStudyTreeConfig,
         area: str,
-        matrix_class: Callable[
-            [ContextServer, FileStudyTreeConfig], INode[Any, Any, Any]
-        ],
+        matrix_class: Callable[[ContextServer, FileStudyTreeConfig], INode[Any, Any, Any]],
     ):
         super().__init__(context, config)
         self.area = area
@@ -95,12 +85,8 @@ class HydroMatrixList(FolderNode):
 
     def build(self) -> TREE:
         children: TREE = {
-            "ror": self.matrix_class(
-                self.context, self.config.next_file("ror.txt")
-            ),
-            "storage": self.matrix_class(
-                self.context, self.config.next_file("storage.txt")
-            ),
+            "ror": self.matrix_class(self.context, self.config.next_file("ror.txt")),
+            "storage": self.matrix_class(self.context, self.config.next_file("storage.txt")),
         }
         return children
 
@@ -111,9 +97,7 @@ class ThermalMatrixList(FolderNode):
         context: ContextServer,
         config: FileStudyTreeConfig,
         area: str,
-        matrix_class: Callable[
-            [ContextServer, FileStudyTreeConfig], INode[Any, Any, Any]
-        ],
+        matrix_class: Callable[[ContextServer, FileStudyTreeConfig], INode[Any, Any, Any]],
     ):
         super().__init__(context, config)
         self.area = area
@@ -121,9 +105,7 @@ class ThermalMatrixList(FolderNode):
 
     def build(self) -> TREE:
         children: TREE = {
-            thermal_cluster: self.matrix_class(
-                self.context, self.config.next_file(f"{thermal_cluster}.txt")
-            )
+            thermal_cluster: self.matrix_class(self.context, self.config.next_file(f"{thermal_cluster}.txt"))
             for thermal_cluster in self.config.get_thermal_names(self.area)
         }
         return children
@@ -146,9 +128,7 @@ class AreaMultipleMatrixList(FolderNode):
             ],
             INode[Any, Any, Any],
         ],
-        matrix_class: Callable[
-            [ContextServer, FileStudyTreeConfig], INode[Any, Any, Any]
-        ],
+        matrix_class: Callable[[ContextServer, FileStudyTreeConfig], INode[Any, Any, Any]],
     ):
         super().__init__(context, config)
         self.klass = klass

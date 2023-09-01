@@ -1,34 +1,20 @@
-from typing import Optional, Dict, List, Union
+from typing import Dict, List, Optional, Union
 
 from antarest.core.model import JSON
 from antarest.matrixstore.model import MatrixData
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    BindingConstraintDTO,
-    FileStudyTreeConfig,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import BindingConstraintDTO, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.model.command.common import (
-    TimeStep,
-    BindingConstraintOperator,
-    CommandOutput,
-)
+from antarest.study.storage.variantstudy.model.command.common import BindingConstraintOperator, CommandOutput, TimeStep
 
 
-def cluster_does_not_exist(
-    study_data: FileStudy, area: str, thermal_id: str
-) -> bool:
+def cluster_does_not_exist(study_data: FileStudy, area: str, thermal_id: str) -> bool:
     return area not in study_data.config.areas or thermal_id not in [
         thermal.id for thermal in study_data.config.areas[area].thermals
     ]
 
 
-def link_does_not_exist(
-    study_data: FileStudy, area_1: str, area_2: str
-) -> bool:
-    return (
-        area_1 not in study_data.config.areas
-        or area_2 not in study_data.config.areas[area_1].links
-    )
+def link_does_not_exist(study_data: FileStudy, area_1: str, area_2: str) -> bool:
+    return area_1 not in study_data.config.areas or area_2 not in study_data.config.areas[area_1].links
 
 
 def apply_binding_constraint(
@@ -55,13 +41,9 @@ def apply_binding_constraint(
     }
     if study_data.config.version >= 830:
         if filter_year_by_year:
-            binding_constraints[str(new_key)][
-                "filter-year-by-year"
-            ] = filter_year_by_year
+            binding_constraints[str(new_key)]["filter-year-by-year"] = filter_year_by_year
         if filter_synthesis:
-            binding_constraints[str(new_key)][
-                "filter-synthesis"
-            ] = filter_synthesis
+            binding_constraints[str(new_key)]["filter-synthesis"] = filter_synthesis
     if comments is not None:
         binding_constraints[str(new_key)]["comments"] = comments
 
@@ -88,9 +70,7 @@ def apply_binding_constraint(
         binding_constraints[str(new_key)][link_or_thermal] = "%".join(
             [str(coeff_val) for coeff_val in coeffs[link_or_thermal]]
         )
-    parse_bindings_coeffs_and_save_into_config(
-        bd_id, study_data.config, coeffs
-    )
+    parse_bindings_coeffs_and_save_into_config(bd_id, study_data.config, coeffs)
     study_data.tree.save(
         binding_constraints,
         ["input", "bindingconstraints", "bindingconstraints"],
@@ -116,11 +96,7 @@ def parse_bindings_coeffs_and_save_into_config(
             elif "." in k:
                 clusters_set.add(k)
                 areas_set.add(k.split(".")[0])
-        study_data_config.bindings.append(
-            BindingConstraintDTO(
-                id=bd_id, areas=areas_set, clusters=clusters_set
-            )
-        )
+        study_data_config.bindings.append(BindingConstraintDTO(id=bd_id, areas=areas_set, clusters=clusters_set))
 
 
 def remove_area_cluster_from_binding_constraints(

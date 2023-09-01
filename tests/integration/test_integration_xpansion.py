@@ -1,17 +1,16 @@
 import io
 from pathlib import Path
 
-from antarest.study.business.area_management import AreaType
-from antarest.study.business.xpansion_management import XpansionCandidateDTO
 from fastapi import FastAPI
 from starlette.testclient import TestClient
+
+from antarest.study.business.area_management import AreaType
+from antarest.study.business.xpansion_management import XpansionCandidateDTO
 
 
 def test_integration_xpansion(app: FastAPI, tmp_path: Path):
     client = TestClient(app, raise_server_exceptions=False)
-    res = client.post(
-        "/v1/login", json={"username": "admin", "password": "admin"}
-    )
+    res = client.post("/v1/login", json={"username": "admin", "password": "admin"})
     admin_credentials = res.json()
     headers = {"Authorization": f'Bearer {admin_credentials["access_token"]}'}
 
@@ -77,9 +76,7 @@ def test_integration_xpansion(app: FastAPI, tmp_path: Path):
     )
     assert res.status_code == 200
 
-    assert (
-        tmp_path / "internal_workspace" / study_id / "user" / "expansion"
-    ).exists()
+    assert (tmp_path / "internal_workspace" / study_id / "user" / "expansion").exists()
 
     res = client.get(
         f"{xpansion_base_url}/settings",
@@ -159,13 +156,7 @@ def test_integration_xpansion(app: FastAPI, tmp_path: Path):
     )
     assert res.status_code == 200
     assert (
-        tmp_path
-        / "internal_workspace"
-        / study_id
-        / "user"
-        / "expansion"
-        / "constraints"
-        / filename_constraints1
+        tmp_path / "internal_workspace" / study_id / "user" / "expansion" / "constraints" / filename_constraints1
     ).open().read() == content_constraints1
 
     files = {
@@ -259,9 +250,7 @@ def test_integration_xpansion(app: FastAPI, tmp_path: Path):
         "annual-cost-per-mw": 1,
         "max-investment": 1.0,
     }
-    res = client.post(
-        f"{xpansion_base_url}/candidates", headers=headers, json=candidate1
-    )
+    res = client.post(f"{xpansion_base_url}/candidates", headers=headers, json=candidate1)
     assert res.status_code == 200
 
     candidate2 = {
@@ -270,9 +259,7 @@ def test_integration_xpansion(app: FastAPI, tmp_path: Path):
         "annual-cost-per-mw": 1,
         "max-investment": 1.0,
     }
-    res = client.post(
-        f"{xpansion_base_url}/candidates", headers=headers, json=candidate2
-    )
+    res = client.post(f"{xpansion_base_url}/candidates", headers=headers, json=candidate2)
     assert res.status_code == 404
 
     candidate3 = {
@@ -281,9 +268,7 @@ def test_integration_xpansion(app: FastAPI, tmp_path: Path):
         "annual-cost-per-mw": 1,
         "max-investment": 1.0,
     }
-    res = client.post(
-        f"{xpansion_base_url}/candidates", headers=headers, json=candidate3
-    )
+    res = client.post(f"{xpansion_base_url}/candidates", headers=headers, json=candidate3)
     assert res.status_code == 404
 
     filename_capa1 = "filename_capa1.txt"
@@ -306,13 +291,7 @@ def test_integration_xpansion(app: FastAPI, tmp_path: Path):
     )
     assert res.status_code == 200
     assert (
-        tmp_path
-        / "internal_workspace"
-        / study_id
-        / "user"
-        / "expansion"
-        / "capa"
-        / filename_capa1
+        tmp_path / "internal_workspace" / study_id / "user" / "expansion" / "capa" / filename_capa1
     ).open().read() == content_capa1
 
     res = client.post(
@@ -376,9 +355,7 @@ def test_integration_xpansion(app: FastAPI, tmp_path: Path):
         "max-investment": 1.0,
         "link-profile": filename_capa1,
     }
-    res = client.post(
-        f"{xpansion_base_url}/candidates", headers=headers, json=candidate4
-    )
+    res = client.post(f"{xpansion_base_url}/candidates", headers=headers, json=candidate4)
     assert res.status_code == 200
 
     res = client.get(
@@ -386,9 +363,7 @@ def test_integration_xpansion(app: FastAPI, tmp_path: Path):
         headers=headers,
     )
     assert res.status_code == 200
-    assert res.json() == XpansionCandidateDTO.parse_obj(candidate1).dict(
-        by_alias=True
-    )
+    assert res.json() == XpansionCandidateDTO.parse_obj(candidate1).dict(by_alias=True)
 
     res = client.get(
         f"{xpansion_base_url}/candidates",
@@ -431,6 +406,4 @@ def test_integration_xpansion(app: FastAPI, tmp_path: Path):
     )
     assert res.status_code == 200
 
-    assert not (
-        tmp_path / "internal_workspace" / study_id / "user" / "expansion"
-    ).exists()
+    assert not (tmp_path / "internal_workspace" / study_id / "user" / "expansion").exists()

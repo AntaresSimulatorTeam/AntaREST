@@ -6,6 +6,9 @@ from unittest.mock import Mock
 from zipfile import ZipFile
 
 import pytest
+from fastapi import UploadFile
+from pandas.errors import ParserError
+
 from antarest.core.model import JSON
 from antarest.study.business.xpansion_management import (
     FileCurrentlyUsedInSettings,
@@ -20,37 +23,21 @@ from antarest.study.business.xpansion_management import (
 from antarest.study.model import RawStudy
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
-    ChildNotFoundError,
-)
-from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import (
-    FileStudyTree,
-)
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import ChildNotFoundError
+from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.storage_service import StudyStorageService
-from antarest.study.storage.variantstudy.model.command.create_area import (
-    CreateArea,
-)
-from antarest.study.storage.variantstudy.model.command.create_link import (
-    CreateLink,
-)
-from antarest.study.storage.variantstudy.model.command_context import (
-    CommandContext,
-)
-from antarest.study.storage.variantstudy.variant_study_service import (
-    VariantStudyService,
-)
-from fastapi import UploadFile
-from pandas.errors import ParserError
+from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
+from antarest.study.storage.variantstudy.model.command.create_link import CreateLink
+from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 
 
 def make_empty_study(tmpdir: Path, version: int) -> FileStudy:
     cur_dir: Path = Path(__file__).parent
     study_path = Path(tmpdir / str(uuid.uuid4()))
     os.mkdir(study_path)
-    with ZipFile(
-        cur_dir / "assets" / f"empty_study_{version}.zip"
-    ) as zip_output:
+    with ZipFile(cur_dir / "assets" / f"empty_study_{version}.zip") as zip_output:
         zip_output.extractall(path=study_path)
     config = build(study_path, "1")
     return FileStudy(config, FileStudyTree(Mock(), config))
@@ -60,9 +47,7 @@ def make_xpansion_manager(empty_study):
     raw_study_service = Mock(spec=RawStudyService)
     variant_study_service = Mock(spec=VariantStudyService)
     xpansion_manager = XpansionManager(
-        study_storage_service=StudyStorageService(
-            raw_study_service, variant_study_service
-        ),
+        study_storage_service=StudyStorageService(raw_study_service, variant_study_service),
     )
     raw_study_service.get_raw.return_value = empty_study
     raw_study_service.cache = Mock()
@@ -72,15 +57,11 @@ def make_xpansion_manager(empty_study):
 def make_areas(empty_study):
     CreateArea(
         area_name="area1",
-        command_context=Mock(
-            spec=CommandContext, generator_matrix_constants=Mock()
-        ),
+        command_context=Mock(spec=CommandContext, generator_matrix_constants=Mock()),
     )._apply_config(empty_study.config)
     CreateArea(
         area_name="area2",
-        command_context=Mock(
-            spec=CommandContext, generator_matrix_constants=Mock()
-        ),
+        command_context=Mock(spec=CommandContext, generator_matrix_constants=Mock()),
     )._apply_config(empty_study.config)
 
 
@@ -88,9 +69,7 @@ def make_link(empty_study):
     CreateLink(
         area1="area1",
         area2="area2",
-        command_context=Mock(
-            spec=CommandContext, generator_matrix_constants=Mock()
-        ),
+        command_context=Mock(spec=CommandContext, generator_matrix_constants=Mock()),
     )._apply_config(empty_study.config)
 
 
@@ -145,16 +124,12 @@ def make_link_and_areas(empty_study):
         ),
     ],
 )
-def test_create_configuration(
-    tmp_path: Path, version: int, expected_output: JSON
-):
+def test_create_configuration(tmp_path: Path, version: int, expected_output: JSON):
     """
     Test the creation of a configuration.
     """
     empty_study = make_empty_study(tmp_path, version)
-    study = RawStudy(
-        id="1", path=empty_study.config.study_path, version=version
-    )
+    study = RawStudy(id="1", path=empty_study.config.study_path, version=version)
     xpansion_manager = make_xpansion_manager(empty_study)
 
     with pytest.raises(ChildNotFoundError):
@@ -162,10 +137,7 @@ def test_create_configuration(
 
     xpansion_manager.create_xpansion_configuration(study)
 
-    assert (
-        empty_study.tree.get(["user", "expansion"], expanded=True, depth=9)
-        == expected_output
-    )
+    assert empty_study.tree.get(["user", "expansion"], expanded=True, depth=9) == expected_output
 
 
 @pytest.mark.unit_test
@@ -238,17 +210,13 @@ def test_delete_xpansion_configuration(tmp_path: Path):
     ],
 )
 @pytest.mark.unit_test
-def test_get_xpansion_settings(
-    tmp_path: Path, version: int, expected_output: JSON
-):
+def test_get_xpansion_settings(tmp_path: Path, version: int, expected_output: JSON):
     """
     Test the retrieval of the xpansion settings.
     """
 
     empty_study = make_empty_study(tmp_path, version)
-    study = RawStudy(
-        id="1", path=empty_study.config.study_path, version=version
-    )
+    study = RawStudy(id="1", path=empty_study.config.study_path, version=version)
     xpansion_manager = make_xpansion_manager(empty_study)
 
     xpansion_manager.create_xpansion_configuration(study)
@@ -282,9 +250,7 @@ def test_xpansion_sensitivity_settings(tmp_path: Path):
             "ampl.solve_bounds_frequency": None,
             "relative_gap": 1e-12,
             "solver": "Cbc",
-            "sensitivity_config": XpansionSensitivitySettingsDTO(
-                epsilon=0.1, capex=False
-            ),
+            "sensitivity_config": XpansionSensitivitySettingsDTO(epsilon=0.1, capex=False),
         }
     )
     xpansion_manager.update_xpansion_settings(study, expected_settings)
@@ -368,16 +334,12 @@ def test_add_candidate(tmp_path: Path):
 
     candidates = {"1": new_candidate.dict(by_alias=True, exclude_none=True)}
 
-    assert (
-        empty_study.tree.get(["user", "expansion", "candidates"]) == candidates
-    )
+    assert empty_study.tree.get(["user", "expansion", "candidates"]) == candidates
 
     xpansion_manager.add_candidate(study, new_candidate2)
     candidates["2"] = new_candidate2.dict(by_alias=True, exclude_none=True)
 
-    assert (
-        empty_study.tree.get(["user", "expansion", "candidates"]) == candidates
-    )
+    assert empty_study.tree.get(["user", "expansion", "candidates"]) == candidates
 
 
 @pytest.mark.unit_test
@@ -412,14 +374,8 @@ def test_get_candidate(tmp_path: Path):
     xpansion_manager.add_candidate(study, new_candidate)
     xpansion_manager.add_candidate(study, new_candidate2)
 
-    assert (
-        xpansion_manager.get_candidate(study, new_candidate.name)
-        == new_candidate
-    )
-    assert (
-        xpansion_manager.get_candidate(study, new_candidate2.name)
-        == new_candidate2
-    )
+    assert xpansion_manager.get_candidate(study, new_candidate.name) == new_candidate
+    assert xpansion_manager.get_candidate(study, new_candidate2.name) == new_candidate2
 
 
 @pytest.mark.unit_test
@@ -489,16 +445,9 @@ def test_update_candidates(tmp_path: Path):
             "max-investment": 1,
         }
     )
-    xpansion_manager.update_candidate(
-        study, new_candidate.name, new_candidate2
-    )
+    xpansion_manager.update_candidate(study, new_candidate.name, new_candidate2)
 
-    assert (
-        xpansion_manager.get_candidate(
-            study, candidate_name=new_candidate.name
-        )
-        == new_candidate2
-    )
+    assert xpansion_manager.get_candidate(study, candidate_name=new_candidate.name) == new_candidate2
 
 
 @pytest.mark.unit_test
@@ -545,35 +494,19 @@ def test_update_constraints(tmp_path: Path):
     xpansion_manager.create_xpansion_configuration(study)
 
     with pytest.raises(XpansionFileNotFoundError):
-        xpansion_manager.update_xpansion_constraints_settings(
-            study=study, constraints_file_name="non_existent_file"
-        )
+        xpansion_manager.update_xpansion_constraints_settings(study=study, constraints_file_name="non_existent_file")
 
     with pytest.raises(XpansionFileNotFoundError):
-        xpansion_manager.update_xpansion_constraints_settings(
-            study=study, constraints_file_name="non_existent_file"
-        )
+        xpansion_manager.update_xpansion_constraints_settings(study=study, constraints_file_name="non_existent_file")
 
-    empty_study.tree.save(
-        {"user": {"expansion": {"constraints": {"constraints.txt": b"0"}}}}
-    )
+    empty_study.tree.save({"user": {"expansion": {"constraints": {"constraints.txt": b"0"}}}})
 
-    xpansion_manager.update_xpansion_constraints_settings(
-        study=study, constraints_file_name="constraints.txt"
-    )
+    xpansion_manager.update_xpansion_constraints_settings(study=study, constraints_file_name="constraints.txt")
 
-    assert (
-        xpansion_manager.get_xpansion_settings(study).additional_constraints
-        == "constraints.txt"
-    )
+    assert xpansion_manager.get_xpansion_settings(study).additional_constraints == "constraints.txt"
 
-    xpansion_manager.update_xpansion_constraints_settings(
-        study=study, constraints_file_name=None
-    )
-    assert (
-        xpansion_manager.get_xpansion_settings(study).additional_constraints
-        is None
-    )
+    xpansion_manager.update_xpansion_constraints_settings(study=study, constraints_file_name=None)
+    assert xpansion_manager.get_xpansion_settings(study).additional_constraints is None
 
 
 @pytest.mark.unit_test
@@ -595,9 +528,7 @@ def test_add_resources(tmp_path: Path):
         UploadFile(filename=filename2, file=StringIO(content2)),
     ]
 
-    xpansion_manager.add_resource(
-        study, XpansionResourceFileType.CONSTRAINTS, upload_file_list
-    )
+    xpansion_manager.add_resource(study, XpansionResourceFileType.CONSTRAINTS, upload_file_list)
 
     xpansion_manager.add_resource(
         study,
@@ -605,19 +536,11 @@ def test_add_resources(tmp_path: Path):
         [UploadFile(filename=filename3, file=StringIO(content3))],
     )
 
-    assert filename1 in empty_study.tree.get(
-        ["user", "expansion", "constraints"]
-    )
-    assert content1.encode() == empty_study.tree.get(
-        ["user", "expansion", "constraints", filename1]
-    )
+    assert filename1 in empty_study.tree.get(["user", "expansion", "constraints"])
+    assert content1.encode() == empty_study.tree.get(["user", "expansion", "constraints", filename1])
 
-    assert filename2 in empty_study.tree.get(
-        ["user", "expansion", "constraints"]
-    )
-    assert content2.encode() == empty_study.tree.get(
-        ["user", "expansion", "constraints", filename2]
-    )
+    assert filename2 in empty_study.tree.get(["user", "expansion", "constraints"])
+    assert content2.encode() == empty_study.tree.get(["user", "expansion", "constraints", filename2])
 
     assert filename3 in empty_study.tree.get(["user", "expansion", "weights"])
     assert {
@@ -630,14 +553,10 @@ def test_add_resources(tmp_path: Path):
     settings.yearly_weights = filename3
     xpansion_manager.update_xpansion_settings(study, settings)
     with pytest.raises(FileCurrentlyUsedInSettings):
-        xpansion_manager.delete_resource(
-            study, XpansionResourceFileType.WEIGHTS, filename3
-        )
+        xpansion_manager.delete_resource(study, XpansionResourceFileType.WEIGHTS, filename3)
     settings.yearly_weights = None
     xpansion_manager.update_xpansion_settings(study, settings)
-    xpansion_manager.delete_resource(
-        study, XpansionResourceFileType.WEIGHTS, filename3
-    )
+    xpansion_manager.delete_resource(study, XpansionResourceFileType.WEIGHTS, filename3)
 
 
 @pytest.mark.unit_test
@@ -649,13 +568,7 @@ def test_list_root_resources(tmp_path: Path):
     constraints_file_content = b"0"
     constraints_file_name = "unknownfile.txt"
 
-    empty_study.tree.save(
-        {
-            "user": {
-                "expansion": {constraints_file_name: constraints_file_content}
-            }
-        }
-    )
+    empty_study.tree.save({"user": {"expansion": {constraints_file_name: constraints_file_content}}})
     assert [constraints_file_name] == xpansion_manager.list_root_files(study)
 
 
@@ -669,22 +582,10 @@ def test_get_single_constraints(tmp_path: Path):
     constraints_file_content = b"0"
     constraints_file_name = "constraints.txt"
 
-    empty_study.tree.save(
-        {
-            "user": {
-                "expansion": {
-                    "constraints": {
-                        constraints_file_name: constraints_file_content
-                    }
-                }
-            }
-        }
-    )
+    empty_study.tree.save({"user": {"expansion": {"constraints": {constraints_file_name: constraints_file_content}}}})
 
     assert (
-        xpansion_manager.get_resource_content(
-            study, XpansionResourceFileType.CONSTRAINTS, constraints_file_name
-        )
+        xpansion_manager.get_resource_content(study, XpansionResourceFileType.CONSTRAINTS, constraints_file_name)
         == constraints_file_content
     )
 
@@ -706,13 +607,9 @@ def test_get_all_constraints(tmp_path: Path):
         UploadFile(filename=filename2, file=StringIO(content2)),
     ]
 
-    xpansion_manager.add_resource(
-        study, XpansionResourceFileType.CONSTRAINTS, upload_file_list
-    )
+    xpansion_manager.add_resource(study, XpansionResourceFileType.CONSTRAINTS, upload_file_list)
 
-    assert xpansion_manager.list_resources(
-        study, XpansionResourceFileType.CONSTRAINTS
-    ) == [
+    assert xpansion_manager.list_resources(study, XpansionResourceFileType.CONSTRAINTS) == [
         filename1,
         filename2,
     ]
@@ -735,9 +632,7 @@ def test_add_capa(tmp_path: Path):
         UploadFile(filename=filename2, file=StringIO(content2)),
     ]
 
-    xpansion_manager.add_resource(
-        study, XpansionResourceFileType.CAPACITIES, upload_file_list
-    )
+    xpansion_manager.add_resource(study, XpansionResourceFileType.CAPACITIES, upload_file_list)
 
     assert filename1 in empty_study.tree.get(["user", "expansion", "capa"])
     assert {
@@ -771,13 +666,9 @@ def test_delete_capa(tmp_path: Path):
         UploadFile(filename=filename2, file=StringIO(content2)),
     ]
 
-    xpansion_manager.add_resource(
-        study, XpansionResourceFileType.CAPACITIES, upload_file_list
-    )
+    xpansion_manager.add_resource(study, XpansionResourceFileType.CAPACITIES, upload_file_list)
 
-    xpansion_manager.delete_resource(
-        study, XpansionResourceFileType.CAPACITIES, filename1
-    )
+    xpansion_manager.delete_resource(study, XpansionResourceFileType.CAPACITIES, filename1)
 
     assert filename1 not in empty_study.tree.get(["user", "expansion", "capa"])
 
@@ -801,21 +692,15 @@ def test_get_single_capa(tmp_path: Path):
         UploadFile(filename=filename2, file=StringIO(content2)),
     ]
 
-    xpansion_manager.add_resource(
-        study, XpansionResourceFileType.CAPACITIES, upload_file_list
-    )
+    xpansion_manager.add_resource(study, XpansionResourceFileType.CAPACITIES, upload_file_list)
 
-    assert xpansion_manager.get_resource_content(
-        study, XpansionResourceFileType.CAPACITIES, filename1
-    ) == {
+    assert xpansion_manager.get_resource_content(study, XpansionResourceFileType.CAPACITIES, filename1) == {
         "columns": [0],
         "data": [[0.0]],
         "index": [0],
     }
     with pytest.raises(ParserError):
-        xpansion_manager.get_resource_content(
-            study, XpansionResourceFileType.CAPACITIES, filename2
-        )
+        xpansion_manager.get_resource_content(study, XpansionResourceFileType.CAPACITIES, filename2)
 
 
 @pytest.mark.unit_test
@@ -835,10 +720,6 @@ def test_get_all_capa(tmp_path: Path):
         UploadFile(filename=filename2, file=StringIO(content2)),
     ]
 
-    xpansion_manager.add_resource(
-        study, XpansionResourceFileType.CAPACITIES, upload_file_list
-    )
+    xpansion_manager.add_resource(study, XpansionResourceFileType.CAPACITIES, upload_file_list)
 
-    assert xpansion_manager.list_resources(
-        study, XpansionResourceFileType.CAPACITIES
-    ) == [filename1, filename2]
+    assert xpansion_manager.list_resources(study, XpansionResourceFileType.CAPACITIES) == [filename1, filename2]

@@ -13,15 +13,7 @@ from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.persistence import Base
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
-from antarest.core.tasks.model import (
-    TaskDTO,
-    TaskJob,
-    TaskJobLog,
-    TaskListFilter,
-    TaskResult,
-    TaskStatus,
-    TaskType,
-)
+from antarest.core.tasks.model import TaskDTO, TaskJob, TaskJobLog, TaskListFilter, TaskResult, TaskStatus, TaskType
 from antarest.core.tasks.repository import TaskJobRepository
 from antarest.core.tasks.service import TaskJobService
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
@@ -47,9 +39,7 @@ def test_service() -> None:
     task = TaskJob(id="a", name="b", status=2, creation_date=creation_date)
     repo_mock.list.return_value = [task]
     repo_mock.get_or_raise.return_value = task
-    service = TaskJobService(
-        config=Config(), repository=repo_mock, event_bus=Mock()
-    )
+    service = TaskJobService(config=Config(), repository=repo_mock, event_bus=Mock())
     repo_mock.save.assert_called_with(
         TaskJob(
             id="a",
@@ -269,9 +259,7 @@ def test_service() -> None:
 
 
 class DummyWorker(AbstractWorker):
-    def __init__(
-        self, event_bus: IEventBus, accept: List[str], tmp_path: Path
-    ):
+    def __init__(self, event_bus: IEventBus, accept: List[str], tmp_path: Path):
         super().__init__("test", event_bus, accept)
         self.tmp_path = tmp_path
 
@@ -289,13 +277,7 @@ def test_worker_tasks(tmp_path: Path):
     repo_mock.list.return_value = []
     event_bus = EventBusService(LocalEventBus())
     service = TaskJobService(
-        config=Config(
-            tasks=TaskConfig(
-                remote_workers=[
-                    RemoteWorkerConfig(name="test", queues=["test"])
-                ]
-            )
-        ),
+        config=Config(tasks=TaskConfig(remote_workers=[RemoteWorkerConfig(name="test", queues=["test"])])),
         repository=repo_mock,
         event_bus=event_bus,
     )
@@ -397,15 +379,11 @@ def test_repository():
         result = task_repository.list(TaskListFilter(name="fo"))
         assert len(result) == 1
 
-        result = task_repository.list(
-            TaskListFilter(name="fo", status=[TaskStatus.RUNNING])
-        )
+        result = task_repository.list(TaskListFilter(name="fo", status=[TaskStatus.RUNNING]))
         assert len(result) == 0
         new_task.status = TaskStatus.RUNNING.value
         task_repository.save(new_task)
-        result = task_repository.list(
-            TaskListFilter(name="fo", status=[TaskStatus.RUNNING])
-        )
+        result = task_repository.list(TaskListFilter(name="fo", status=[TaskStatus.RUNNING]))
         assert len(result) == 1
 
         new_task.completion_date = datetime.datetime.utcnow()
@@ -413,18 +391,14 @@ def test_repository():
         result = task_repository.list(
             TaskListFilter(
                 name="fo",
-                from_completion_date_utc=(
-                    new_task.completion_date + datetime.timedelta(seconds=1)
-                ).timestamp(),
+                from_completion_date_utc=(new_task.completion_date + datetime.timedelta(seconds=1)).timestamp(),
             )
         )
         assert len(result) == 0
         result = task_repository.list(
             TaskListFilter(
                 name="fo",
-                from_completion_date_utc=(
-                    new_task.completion_date - datetime.timedelta(seconds=1)
-                ).timestamp(),
+                from_completion_date_utc=(new_task.completion_date - datetime.timedelta(seconds=1)).timestamp(),
             )
         )
         assert len(result) == 1
@@ -436,24 +410,10 @@ def test_repository():
         assert len(new_task.logs) == 2
         assert new_task.logs[0].message == "hello"
 
-        assert (
-            len(
-                db.session.query(TaskJobLog)
-                .where(TaskJobLog.task_id == new_task.id)
-                .all()
-            )
-            == 2
-        )
+        assert len(db.session.query(TaskJobLog).where(TaskJobLog.task_id == new_task.id).all()) == 2
 
         task_repository.delete(new_task.id)
-        assert (
-            len(
-                db.session.query(TaskJobLog)
-                .where(TaskJobLog.task_id == new_task.id)
-                .all()
-            )
-            == 0
-        )
+        assert len(db.session.query(TaskJobLog).where(TaskJobLog.task_id == new_task.id).all()) == 0
         assert task_repository.get(new_task.id) is None
 
 
@@ -470,16 +430,12 @@ def test_cancel():
 
     repo_mock = Mock(spec=TaskJobRepository)
     repo_mock.list.return_value = []
-    service = TaskJobService(
-        config=Config(), repository=repo_mock, event_bus=Mock()
-    )
+    service = TaskJobService(config=Config(), repository=repo_mock, event_bus=Mock())
 
     with pytest.raises(UserHasNotPermissionError):
         service.cancel_task("a", RequestParameters())
 
-    service.cancel_task(
-        "b", RequestParameters(user=DEFAULT_ADMIN_USER), dispatch=True
-    )
+    service.cancel_task("b", RequestParameters(user=DEFAULT_ADMIN_USER), dispatch=True)
     # noinspection PyUnresolvedReferences
     service.event_bus.push.assert_called_with(
         Event(
@@ -494,8 +450,6 @@ def test_cancel():
     repo_mock.list.return_value = [task]
     repo_mock.get_or_raise.return_value = task
     service.tasks["a"] = Mock()
-    service.cancel_task(
-        "a", RequestParameters(user=DEFAULT_ADMIN_USER), dispatch=True
-    )
+    service.cancel_task("a", RequestParameters(user=DEFAULT_ADMIN_USER), dispatch=True)
     task.status = TaskStatus.CANCELLED.value
     repo_mock.save.assert_called_with(task)

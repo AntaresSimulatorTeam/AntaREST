@@ -4,16 +4,12 @@ from antarest.core.model import JSON
 from antarest.matrixstore.model import MatrixData
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
-    MATRIX_PROTOCOL_PREFIX,
-)
+from antarest.study.storage.variantstudy.business.matrix_constants_generator import MATRIX_PROTOCOL_PREFIX
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
-def validate_matrix(
-    matrix: Union[List[List[MatrixData]], str], values: Dict[str, Any]
-) -> str:
+def validate_matrix(matrix: Union[List[List[MatrixData]], str], values: Dict[str, Any]) -> str:
     """
     Validates the matrix, stores the matrix array in the matrices repository,
     and returns a reference to the stored array.
@@ -33,7 +29,7 @@ def validate_matrix(
         TypeError: If the provided matrix is neither a matrix nor a link to a matrix.
         ValueError: If the matrix ID does not exist.
     """
-    # fmt: off
+
     matrix_service: ISimpleMatrixService = values["command_context"].matrix_service
     if isinstance(matrix, list):
         return MATRIX_PROTOCOL_PREFIX + matrix_service.create(data=matrix)
@@ -44,7 +40,6 @@ def validate_matrix(
             raise ValueError(f"Matrix with id {matrix} does not exist")
     else:
         raise TypeError(f"The data {matrix} is neither a matrix nor a link to a matrix")
-    # fmt: on
 
 
 def get_or_create_section(json_ini: JSON, section: str) -> JSON:
@@ -56,20 +51,13 @@ def get_or_create_section(json_ini: JSON, section: str) -> JSON:
 
 def remove_none_args(command_dto: CommandDTO) -> CommandDTO:
     if isinstance(command_dto.args, list):
-        command_dto.args = [
-            {k: v for k, v in args.items() if v is not None}
-            for args in command_dto.args
-        ]
+        command_dto.args = [{k: v for k, v in args.items() if v is not None} for args in command_dto.args]
     else:
-        command_dto.args = {
-            k: v for k, v in command_dto.args.items() if v is not None
-        }
+        command_dto.args = {k: v for k, v in command_dto.args.items() if v is not None}
     return command_dto
 
 
-def strip_matrix_protocol(
-    matrix_uri: Union[List[List[float]], str, None]
-) -> str:
+def strip_matrix_protocol(matrix_uri: Union[List[List[float]], str, None]) -> str:
     assert isinstance(matrix_uri, str)
     if matrix_uri.startswith(MATRIX_PROTOCOL_PREFIX):
         return matrix_uri[len(MATRIX_PROTOCOL_PREFIX) :]
@@ -103,23 +91,15 @@ def transform_command_to_dto(
     if len(commands) <= 1:
         return [command.to_dto() for command in commands]
     commands_dto: List[CommandDTO] = []
-    ref_commands_dto = (
-        ref_commands
-        if ref_commands is not None
-        else [command.to_dto() for command in commands]
-    )
+    ref_commands_dto = ref_commands if ref_commands is not None else [command.to_dto() for command in commands]
     prev_command = commands[0]
     cur_dto_index = 0
     cur_dto = ref_commands_dto[cur_dto_index]
-    cur_dto_arg_count = (
-        1 if isinstance(cur_dto.args, dict) else len(cur_dto.args)
-    )
+    cur_dto_arg_count = 1 if isinstance(cur_dto.args, dict) else len(cur_dto.args)
     cur_command_args_batch = [prev_command.to_dto().args]
     for command in commands[1:]:
         cur_dto_arg_count -= 1
-        if command.command_name == prev_command.command_name and (
-            cur_dto_arg_count > 0 or force_aggregate
-        ):
+        if command.command_name == prev_command.command_name and (cur_dto_arg_count > 0 or force_aggregate):
             cur_command_args_batch.append(command.to_dto().args)
         else:
             commands_dto.append(
@@ -131,13 +111,7 @@ def transform_command_to_dto(
             cur_command_args_batch = [command.to_dto().args]
             cur_dto_index += 1
             cur_dto = ref_commands_dto[cur_dto_index]
-            cur_dto_arg_count = (
-                1 if isinstance(cur_dto.args, dict) else len(cur_dto.args)
-            )
+            cur_dto_arg_count = 1 if isinstance(cur_dto.args, dict) else len(cur_dto.args)
             prev_command = command
-    commands_dto.append(
-        CommandDTO(
-            action=prev_command.command_name.value, args=cur_command_args_batch
-        )
-    )
+    commands_dto.append(CommandDTO(action=prev_command.command_name.value, args=cur_command_args_batch))
     return commands_dto

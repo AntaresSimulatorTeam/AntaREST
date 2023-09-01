@@ -5,46 +5,30 @@ import time
 from datetime import datetime
 from pathlib import Path
 from threading import Thread
-from typing import Optional, IO, List
+from typing import IO, List, Optional
 from uuid import uuid4
 from zipfile import ZipFile
 
 from antarest.core.config import Config
-from antarest.core.exceptions import (
-    StudyDeletionNotAllowed,
-)
+from antarest.core.exceptions import StudyDeletionNotAllowed
 from antarest.core.interfaces.cache import ICache
 from antarest.core.model import PublicMode
 from antarest.core.requests import RequestParameters
 from antarest.core.utils.utils import extract_zip
-from antarest.study.model import (
-    RawStudy,
-    DEFAULT_WORKSPACE_NAME,
-    Study,
-    Patch,
-    StudyAdditionalData,
-)
-from antarest.study.storage.abstract_storage_service import (
-    AbstractStorageService,
-)
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, Patch, RawStudy, Study, StudyAdditionalData
+from antarest.study.storage.abstract_storage_service import AbstractStorageService
 from antarest.study.storage.patch_service import PatchService
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfigDTO,
-    FileStudyTreeConfig,
-)
-from antarest.study.storage.rawstudy.model.filesystem.factory import (
-    StudyFactory,
-    FileStudy,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, FileStudyTreeConfigDTO
+from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
 from antarest.study.storage.utils import (
-    update_antares_info,
-    get_default_workspace_path,
-    fix_study_root,
-    is_managed,
-    remove_from_cache,
     create_new_empty_study,
     export_study_flat,
+    fix_study_root,
+    get_default_workspace_path,
+    is_managed,
+    remove_from_cache,
+    update_antares_info,
 )
 
 logger = logging.getLogger(__name__)
@@ -79,9 +63,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         )
         self.cleanup_thread.start()
 
-    def update_from_raw_meta(
-        self, metadata: RawStudy, fallback_on_default: Optional[bool] = False
-    ) -> None:
+    def update_from_raw_meta(self, metadata: RawStudy, fallback_on_default: Optional[bool] = False) -> None:
         """
         Update metadata from study raw metadata
         Args:
@@ -94,16 +76,10 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             raw_meta = study.tree.get(["study", "antares"])
             metadata.name = raw_meta["caption"]
             metadata.version = raw_meta["version"]
-            metadata.created_at = datetime.utcfromtimestamp(
-                raw_meta["created"]
-            )
-            metadata.updated_at = datetime.utcfromtimestamp(
-                raw_meta["lastsave"]
-            )
+            metadata.created_at = datetime.utcfromtimestamp(raw_meta["created"])
+            metadata.updated_at = datetime.utcfromtimestamp(raw_meta["lastsave"])
 
-            metadata.additional_data = self._read_additional_data_from_files(
-                study
-            )
+            metadata.additional_data = self._read_additional_data_from_files(study)
 
         except Exception as e:
             logger.error(
@@ -118,22 +94,13 @@ class RawStudyService(AbstractStorageService[RawStudy]):
                 metadata.updated_at = metadata.updated_at or datetime.utcnow()
                 if not metadata.additional_data:
                     metadata.additional_data = StudyAdditionalData()
-                metadata.additional_data.patch = (
-                    metadata.additional_data.patch or Patch().json()
-                )
-                metadata.additional_data.horizon = (
-                    metadata.additional_data.horizon
-                )
-                metadata.additional_data.author = (
-                    metadata.additional_data.author or "Unknown"
-                )
+                metadata.additional_data.patch = metadata.additional_data.patch or Patch().json()
+                metadata.additional_data.author = metadata.additional_data.author or "Unknown"
 
             else:
                 raise e
 
-    def update_name_and_version_from_raw_meta(
-        self, metadata: RawStudy
-    ) -> bool:
+    def update_name_and_version_from_raw_meta(self, metadata: RawStudy) -> bool:
         """
         Update name from study raw metadata
         Args:
@@ -145,10 +112,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             study = self.study_factory.create_from_fs(path, study_id="")
             raw_meta = study.tree.get(["study", "antares"])
             version_as_string = str(raw_meta["version"])
-            if (
-                metadata.name != raw_meta["caption"]
-                or metadata.version != version_as_string
-            ):
+            if metadata.name != raw_meta["caption"] or metadata.version != version_as_string:
                 logger.info(
                     f"Updating name/version for study {metadata.id} ({metadata.name}) to {raw_meta['caption']}/{version_as_string}"
                 )
@@ -199,13 +163,9 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         """
         self._check_study_exists(metadata)
         study_path = self.get_study_path(metadata)
-        return self.study_factory.create_from_fs(
-            study_path, metadata.id, output_dir, use_cache=use_cache
-        )
+        return self.study_factory.create_from_fs(study_path, metadata.id, output_dir, use_cache=use_cache)
 
-    def get_synthesis(
-        self, metadata: RawStudy, params: Optional[RequestParameters] = None
-    ) -> FileStudyTreeConfigDTO:
+    def get_synthesis(self, metadata: RawStudy, params: Optional[RequestParameters] = None) -> FileStudyTreeConfigDTO:
         self._check_study_exists(metadata)
         study_path = self.get_study_path(metadata)
         study = self.study_factory.create_from_fs(study_path, metadata.id)
@@ -293,9 +253,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         if not with_outputs and output.exists():
             shutil.rmtree(output)
 
-        study = self.study_factory.create_from_fs(
-            dest_path, study_id=dest_study.id
-        )
+        study = self.study_factory.create_from_fs(dest_path, study_id=dest_study.id)
         update_antares_info(dest_study, study.tree, update_author=False)
 
         del study.tree
@@ -403,9 +361,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         study = self.study_factory.create_from_fs(path, metadata.id)
         return study.tree.check_errors(study.tree.get())
 
-    def set_reference_output(
-        self, study: RawStudy, output_id: str, status: bool
-    ) -> None:
+    def set_reference_output(self, study: RawStudy, output_id: str, status: bool) -> None:
         self.patch_service.set_reference_output(study, output_id, status)
         remove_from_cache(self.cache, study.id)
 
@@ -446,9 +402,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
                 self.get_study_path(raw_study),
                 study_id=raw_study.id,
             )
-            raw_study.additional_data = self._read_additional_data_from_files(
-                study
-            )
+            raw_study.additional_data = self._read_additional_data_from_files(study)
             return True
         except Exception as e:
             logger.error(
@@ -457,9 +411,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             )
             return False
 
-    def check_and_update_study_version_in_database(
-        self, study: RawStudy
-    ) -> None:
+    def check_and_update_study_version_in_database(self, study: RawStudy) -> None:
         try:
             study_path = self.get_study_path(study)
             if study_path:
@@ -471,9 +423,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
                 )
                 raw_study = self.study_factory.create_from_config(config)
                 file_metadata = raw_study.get(url=["study", "antares"])
-                study_version = str(
-                    file_metadata.get("version", study.version)
-                )
+                study_version = str(file_metadata.get("version", study.version))
                 if study_version != study.version:
                     logger.warning(
                         f"Study version in file ({study_version}) is different from the one stored in db ({study.version}), returning file version"
@@ -489,16 +439,11 @@ class RawStudyService(AbstractStorageService[RawStudy]):
     @staticmethod
     def cleanup_lazynode_zipfilelist_cache() -> None:
         while True:
-            logger.info(
-                f"Cleaning lazy node zipfilelist cache ({len(LazyNode.ZIP_FILELIST_CACHE)} items)"
-            )
+            logger.info(f"Cleaning lazy node zipfilelist cache ({len(LazyNode.ZIP_FILELIST_CACHE)} items)")
             LazyNode.ZIP_FILELIST_CACHE = {
                 key: LazyNode.ZIP_FILELIST_CACHE[key]
                 for key in LazyNode.ZIP_FILELIST_CACHE
-                if LazyNode.ZIP_FILELIST_CACHE[key].expiration_date
-                < datetime.utcnow()
+                if LazyNode.ZIP_FILELIST_CACHE[key].expiration_date < datetime.utcnow()
             }
-            logger.info(
-                f"Cleaned lazy node zipfilelist cache ({len(LazyNode.ZIP_FILELIST_CACHE)} items)"
-            )
+            logger.info(f"Cleaned lazy node zipfilelist cache ({len(LazyNode.ZIP_FILELIST_CACHE)} items)")
             time.sleep(600)

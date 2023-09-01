@@ -7,11 +7,7 @@ from antarest.core.config import Config
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.tasks.service import ITaskService
 from antarest.login.service import LoginService
-from antarest.matrixstore.repository import (
-    MatrixRepository,
-    MatrixContentRepository,
-    MatrixDataSetRepository,
-)
+from antarest.matrixstore.repository import MatrixContentRepository, MatrixDataSetRepository, MatrixRepository
 from antarest.matrixstore.service import MatrixService
 from antarest.matrixstore.web import create_matrix_api
 
@@ -54,8 +50,6 @@ def build_matrix_service(
         )
 
     if application:
-        application.include_router(
-            create_matrix_api(service, file_transfer_manager, config)
-        )
+        application.include_router(create_matrix_api(service, file_transfer_manager, config))
 
     return service

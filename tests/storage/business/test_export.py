@@ -105,17 +105,13 @@ def test_export_flat(tmp_path: Path):
 
     study = RawStudy(id="id", path=root)
 
-    study_service.export_study_flat(
-        study, tmp_path / "copy_with_output", outputs=True
-    )
+    study_service.export_study_flat(study, tmp_path / "copy_with_output", outputs=True)
 
     copy_with_output_hash = dirhash(tmp_path / "copy_with_output", "md5")
 
     assert root_hash == copy_with_output_hash
 
-    study_service.export_study_flat(
-        study, tmp_path / "copy_without_output", outputs=False
-    )
+    study_service.export_study_flat(study, tmp_path / "copy_without_output", outputs=False)
 
     copy_without_output_hash = dirhash(tmp_path / "copy_without_output", "md5")
 

@@ -1,2 +1,1 @@
-from . import v7
-from . import v8
+from . import v7, v8

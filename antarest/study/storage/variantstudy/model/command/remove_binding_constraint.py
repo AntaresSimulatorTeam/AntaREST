@@ -1,18 +1,10 @@
-from typing import Any, List, Tuple, Dict
+from typing import Any, Dict, List, Tuple
 
 from antarest.core.model import JSON
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.model.command.common import (
-    CommandOutput,
-    CommandName,
-)
-from antarest.study.storage.variantstudy.model.command.icommand import (
-    ICommand,
-    MATCH_SIGNATURE_SEPARATOR,
-)
+from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
+from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
@@ -26,37 +18,19 @@ class RemoveBindingConstraint(ICommand):
             **data,
         )
 
-    def _apply_config(
-        self, study_data: FileStudyTreeConfig
-    ) -> Tuple[CommandOutput, Dict[str, Any]]:
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         if self.id not in [bind.id for bind in study_data.bindings]:
             return (
-                CommandOutput(
-                    status=False, message="Binding constraint not found"
-                ),
+                CommandOutput(status=False, message="Binding constraint not found"),
                 dict(),
             )
-        study_data.bindings.remove(
-            next(
-                iter(
-                    [
-                        bind
-                        for bind in study_data.bindings
-                        if bind.id == self.id
-                    ]
-                )
-            )
-        )
+        study_data.bindings.remove(next(iter([bind for bind in study_data.bindings if bind.id == self.id])))
         return CommandOutput(status=True), dict()
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
         if self.id not in [bind.id for bind in study_data.config.bindings]:
-            return CommandOutput(
-                status=False, message="Binding constraint not found"
-            )
-        binding_constraints = study_data.tree.get(
-            ["input", "bindingconstraints", "bindingconstraints"]
-        )
+            return CommandOutput(status=False, message="Binding constraint not found")
+        binding_constraints = study_data.tree.get(["input", "bindingconstraints", "bindingconstraints"])
         new_binding_constraints: JSON = {}
         index = 0
         for bd in binding_constraints:
@@ -81,9 +55,7 @@ class RemoveBindingConstraint(ICommand):
         )
 
     def match_signature(self) -> str:
-        return str(
-            self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.id
-        )
+        return str(self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.id)
 
     def match(self, other: ICommand, equal: bool = False) -> bool:
         if not isinstance(other, RemoveBindingConstraint):

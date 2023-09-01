@@ -1,7 +1,23 @@
 [tool.black]
 target-version = ["py38"]
-line-length = 79
+line-length = 120
 exclude = "(antares-?launcher/*|alembic/*)"
 
 [tool.coverage.run]
 omit = ["antarest/tools/cli.py", "antarest/tools/admin.py"]
+
+[tool.isort]
+profile = "black"
+line_length = 120
+src_paths = ["antarest", "tests"]
+skip_gitignore = true
+extend_skip_glob = [
+    "alembic/*",
+    "conf/*",
+    "docs/*",
+    "examples/*",
+    "extra-hooks/*",
+    "resources/*",
+    "scripts/*",
+    "webapp/*",
+]

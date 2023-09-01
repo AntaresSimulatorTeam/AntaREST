@@ -6,8 +6,9 @@ from pathlib import Path
 from alembic import command
 from alembic.config import Config
 from alembic.util import CommandError
-from antarest.core.utils.utils import get_local_path
 from sqlalchemy.orm import declarative_base  # type: ignore
+
+from antarest.core.utils.utils import get_local_path
 
 logger = logging.getLogger(__name__)
 
@@ -18,9 +19,7 @@ def upgrade_db(config_file: Path) -> None:
     os.environ.setdefault("ANTAREST_CONF", str(config_file))
     alembic_cfg = Config(str(get_local_path() / "alembic.ini"))
     alembic_cfg.stdout = StringIO()
-    alembic_cfg.set_main_option(
-        "script_location", str(get_local_path() / "alembic")
-    )
+    alembic_cfg.set_main_option("script_location", str(get_local_path() / "alembic"))
     try:
         command.current(alembic_cfg)
         current_version_output = alembic_cfg.stdout.getvalue()

@@ -4,38 +4,22 @@ from unittest.mock import Mock
 import pytest
 
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
-from antarest.core.exceptions import (
-    StudyNotFoundError,
-    VariantGenerationError,
-)
+from antarest.core.exceptions import StudyNotFoundError, VariantGenerationError
 from antarest.core.interfaces.cache import CacheConstants
 from antarest.core.jwt import JWTUser
 from antarest.core.model import PublicMode
 from antarest.core.requests import RequestParameters
-from antarest.core.tasks.model import TaskDTO, TaskStatus, TaskResult
+from antarest.core.tasks.model import TaskDTO, TaskResult, TaskStatus
 from antarest.login.model import User
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, StudyAdditionalData
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.model.dbmodel import (
-    VariantStudy,
-    CommandBlock,
-)
-from antarest.study.storage.variantstudy.repository import (
-    VariantStudyRepository,
-)
-from antarest.study.storage.variantstudy.variant_study_service import (
-    VariantStudyService,
-)
+from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy
+from antarest.study.storage.variantstudy.repository import VariantStudyRepository
+from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 
 
 def build_config(study_path: Path):
-    return Config(
-        storage=StorageConfig(
-            workspaces={
-                DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=study_path)
-            }
-        )
-    )
+    return Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=study_path)}))
 
 
 @pytest.mark.unit_test
@@ -80,9 +64,7 @@ def test_get(tmp_path: str, project_path) -> None:
         patch_service=Mock(),
     )
 
-    metadata = VariantStudy(
-        id="study2.py", path=str(path_study), generation_task="1"
-    )
+    metadata = VariantStudy(id="study2.py", path=str(path_study), generation_task="1")
     study_service.exists = Mock()
     study_service.exists.return_value = False
 
@@ -110,9 +92,7 @@ def test_get(tmp_path: str, project_path) -> None:
             yield t
 
     study_service.task_service.status_task.side_effect = task_status()
-    with pytest.raises(
-        VariantGenerationError, match=f"Error while generating study2.py"
-    ):
+    with pytest.raises(VariantGenerationError, match=f"Error while generating study2.py"):
         study_service.get(metadata=metadata, url=sub_route, depth=2)
     study_service.task_service.await_task.assert_called()
 
@@ -388,9 +368,7 @@ def test_initialize_additional_data(tmp_path: Path) -> None:
 
     md = VariantStudy(id=name, path=str(study_path))
 
-    additional_data = StudyAdditionalData(
-        horizon=2050, patch="{}", author="Zoro"
-    )
+    additional_data = StudyAdditionalData(horizon=2050, patch="{}", author="Zoro")
 
     study_factory = Mock()
     study_factory.create_from_fs.return_value = md
@@ -407,9 +385,7 @@ def test_initialize_additional_data(tmp_path: Path) -> None:
         patch_service=Mock(),
     )
 
-    variant_study_service._read_additional_data_from_files = Mock(
-        return_value=additional_data
-    )
+    variant_study_service._read_additional_data_from_files = Mock(return_value=additional_data)
 
     variant_study_service.exists = Mock(return_value=False)
 
@@ -420,8 +396,6 @@ def test_initialize_additional_data(tmp_path: Path) -> None:
     assert variant_study_service.initialize_additional_data(md)
     assert md.additional_data == additional_data
 
-    variant_study_service._read_additional_data_from_files.side_effect = (
-        FileNotFoundError()
-    )
+    variant_study_service._read_additional_data_from_files.side_effect = FileNotFoundError()
 
     assert not variant_study_service.initialize_additional_data(md)

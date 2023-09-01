@@ -17,9 +17,7 @@ def build_eventbus(
     redis_client: Optional[Redis] = None,  # type: ignore
 ) -> EventBusService:
     eventbus = EventBusService(
-        RedisEventBus(redis_client)
-        if redis_client is not None
-        else LocalEventBus(),
+        RedisEventBus(redis_client) if redis_client is not None else LocalEventBus(),
         autostart,
     )
 

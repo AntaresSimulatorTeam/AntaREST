@@ -5,6 +5,8 @@ from typing import List, Optional
 
 import numpy as np
 import pytest
+from sqlalchemy import create_engine  # type: ignore
+
 from antarest.core.model import PublicMode
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group, User
@@ -12,25 +14,13 @@ from antarest.matrixstore.service import SimpleMatrixService
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import RawStudy, StudyAdditionalData
 from antarest.study.storage.patch_service import PatchService
-from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
-    STStorageConfig,
-    STStorageGroup,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import STStorageConfig, STStorageGroup
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.storage_service import StudyStorageService
-from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
-    GeneratorMatrixConstants,
-)
-from antarest.study.storage.variantstudy.model.command.create_area import (
-    CreateArea,
-)
-from antarest.study.storage.variantstudy.model.command.create_st_storage import (
-    CreateSTStorage,
-)
-from antarest.study.storage.variantstudy.model.command_context import (
-    CommandContext,
-)
-from sqlalchemy import create_engine  # type: ignore
+from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
+from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
+from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
+from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from tests.helpers import with_db_context
 
 
@@ -224,15 +214,10 @@ class TestRawStudyService:
         if outputs:
             # If `outputs` is True the filtering can occurs
             if output_filter is None:
-                expected_filter = {
-                    f.replace(".zip", "") for f in my_solver_outputs
-                }
+                expected_filter = {f.replace(".zip", "") for f in my_solver_outputs}
             else:
                 expected_filter = set(output_filter)
-            expected = {
-                f"output/{output_name}/simulation.log"
-                for output_name in expected_filter
-            }
+            expected = {f"output/{output_name}/simulation.log" for output_name in expected_filter}
             assert res_outputs == expected
         else:
             # If `outputs` is False, no output must be exported

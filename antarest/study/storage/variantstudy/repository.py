@@ -1,14 +1,9 @@
-from datetime import datetime
 from typing import List
 
 from antarest.core.interfaces.cache import ICache
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.utils import assert_this
 from antarest.study.repository import StudyMetadataRepository
-from antarest.study.storage.variantstudy.model.dbmodel import (
-    VariantStudy,
-    CommandBlock,
-)
+from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy
 
 
 class VariantStudyRepository(StudyMetadataRepository):
@@ -20,11 +15,7 @@ class VariantStudyRepository(StudyMetadataRepository):
         super().__init__(cache_service)
 
     def get_children(self, parent_id: str) -> List[VariantStudy]:
-        studies: List[VariantStudy] = (
-            db.session.query(VariantStudy)
-            .filter(VariantStudy.parent_id == parent_id)
-            .all()
-        )
+        studies: List[VariantStudy] = db.session.query(VariantStudy).filter(VariantStudy.parent_id == parent_id).all()
         return studies
 
     def get_all_commandblocks(self) -> List[CommandBlock]:

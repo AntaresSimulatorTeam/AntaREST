@@ -1,15 +1,9 @@
-from typing import List, Tuple, Dict, Any, cast
+from typing import Any, Dict, List, Tuple
 
 from antarest.core.utils.dict import merge_deep
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.model.command.common import (
-    CommandOutput,
-    CommandName,
-)
-
+from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -18,9 +12,7 @@ class UpdateScenarioBuilder(ICommand):
     data: Dict[str, Any]
 
     def __init__(self, **data: Any) -> None:
-        super().__init__(
-            command_name=CommandName.UPDATE_SCENARIO_BUILDER, version=1, **data
-        )
+        super().__init__(command_name=CommandName.UPDATE_SCENARIO_BUILDER, version=1, **data)
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
         def remove_rand_values(obj: Dict[str, Any]) -> Dict[str, Any]:
@@ -38,9 +30,7 @@ class UpdateScenarioBuilder(ICommand):
         study_data.tree.save(new_config, url)
         return CommandOutput(status=True)
 
-    def _apply_config(
-        self, study_data: FileStudyTreeConfig
-    ) -> Tuple[CommandOutput, Dict[str, Any]]:
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         return CommandOutput(status=True), {}
 
     def to_dto(self) -> CommandDTO:

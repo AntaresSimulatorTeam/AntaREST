@@ -11,17 +11,10 @@ from antarest.core.requests import RequestParameters
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group, User
 from antarest.study.model import Study
-from antarest.study.storage.abstract_storage_service import (
-    AbstractStorageService,
-)
+from antarest.study.storage.abstract_storage_service import AbstractStorageService
 from antarest.study.storage.patch_service import PatchService
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfigDTO,
-)
-from antarest.study.storage.rawstudy.model.filesystem.factory import (
-    FileStudy,
-    StudyFactory,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
+from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from tests.helpers import with_db_context
 
 
@@ -38,9 +31,7 @@ class MyStorageService(AbstractStorageService):
         raise NotImplementedError
 
     # noinspection SpellCheckingInspection
-    def copy(
-        self, src_meta: Study, dest_name: str, with_outputs: bool = False
-    ) -> Study:
+    def copy(self, src_meta: Study, dest_name: str, with_outputs: bool = False) -> Study:
         raise NotImplementedError
 
     def get_raw(
@@ -51,9 +42,7 @@ class MyStorageService(AbstractStorageService):
     ) -> FileStudy:
         raise NotImplementedError
 
-    def set_reference_output(
-        self, metadata: Study, output_id: str, status: bool
-    ) -> None:
+    def set_reference_output(self, metadata: Study, output_id: str, status: bool) -> None:
         raise NotImplementedError
 
     def delete(self, metadata: Study) -> None:
@@ -75,9 +64,7 @@ class MyStorageService(AbstractStorageService):
     ) -> None:
         raise NotImplementedError
 
-    def get_synthesis(
-        self, metadata: Study, params: Optional[RequestParameters] = None
-    ) -> FileStudyTreeConfigDTO:
+    def get_synthesis(self, metadata: Study, params: Optional[RequestParameters] = None) -> FileStudyTreeConfigDTO:
         raise NotImplementedError
 
     def initialize_additional_data(self, study: Study) -> bool:
@@ -155,9 +142,7 @@ class TestAbstractStorageService:
         assert actual == target_path
 
         ## Check the call to export_study_flat
-        assert service.export_study_flat.mock_calls == [
-            call(metadata, TmpCopy(tmp_path), True)
-        ]
+        assert service.export_study_flat.mock_calls == [call(metadata, TmpCopy(tmp_path), True)]
 
         ## Check that the ZIP file exist and is valid
         with zipfile.ZipFile(target_path) as zf:

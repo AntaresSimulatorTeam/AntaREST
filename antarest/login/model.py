@@ -4,11 +4,10 @@ from typing import Any, List, Optional
 
 import bcrypt
 from pydantic.main import BaseModel
-from sqlalchemy import Column, Integer, Sequence, String, ForeignKey, Enum, Boolean  # type: ignore
+from sqlalchemy import Boolean, Column, Enum, ForeignKey, Integer, Sequence, String  # type: ignore
 from sqlalchemy.ext.hybrid import hybrid_property  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
 
-from antarest.core.model import JSON
 from antarest.core.persistence import Base
 from antarest.core.roles import RoleType
 
@@ -92,11 +91,7 @@ class Password:
     """
 
     def __init__(self, pwd: str):
-        self._pwd: bytes = (
-            pwd.encode()
-            if "$2b" in pwd
-            else bcrypt.hashpw(pwd.encode(), bcrypt.gensalt())
-        )
+        self._pwd: bytes = pwd.encode() if "$2b" in pwd else bcrypt.hashpw(pwd.encode(), bcrypt.gensalt())
 
     def get(self) -> str:
         return self._pwd.decode()
@@ -214,9 +209,7 @@ class Bot(Identity):
         ForeignKey("identities.id"),
         primary_key=True,
     )
-    owner = Column(
-        Integer, ForeignKey("identities.id", name="bots_owner_fkey")
-    )
+    owner = Column(Integer, ForeignKey("identities.id", name="bots_owner_fkey"))
     is_author = Column(Boolean(), default=True)
 
     def get_impersonator(self) -> int:
@@ -279,9 +272,7 @@ class Role(Base):  # type: ignore
     __tablename__ = "roles"
 
     type = Column(Enum(RoleType))
-    identity_id = Column(
-        Integer, ForeignKey("identities.id"), primary_key=True
-    )
+    identity_id = Column(Integer, ForeignKey("identities.id"), primary_key=True)
     group_id = Column(String(36), ForeignKey("groups.id"), primary_key=True)
     identity = relationship("Identity")
     group = relationship("Group")

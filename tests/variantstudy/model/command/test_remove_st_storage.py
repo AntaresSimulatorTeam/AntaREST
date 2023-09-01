@@ -1,29 +1,17 @@
 import re
 
 import pytest
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    transform_name_to_id,
-)
+from pydantic import ValidationError
+
+from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.study_upgrader import upgrade_study
-from antarest.study.storage.variantstudy.model.command.common import (
-    CommandName,
-)
-from antarest.study.storage.variantstudy.model.command.create_area import (
-    CreateArea,
-)
-from antarest.study.storage.variantstudy.model.command.create_st_storage import (
-    CreateSTStorage,
-)
-from antarest.study.storage.variantstudy.model.command.remove_st_storage import (
-    REQUIRED_VERSION,
-    RemoveSTStorage,
-)
-from antarest.study.storage.variantstudy.model.command_context import (
-    CommandContext,
-)
+from antarest.study.storage.variantstudy.model.command.common import CommandName
+from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
+from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
+from antarest.study.storage.variantstudy.model.command.remove_st_storage import REQUIRED_VERSION, RemoveSTStorage
+from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.model import CommandDTO
-from pydantic import ValidationError
 
 
 @pytest.fixture(name="recent_study")
@@ -72,9 +60,7 @@ class TestRemoveSTStorage:
         assert cmd.area_id == "area_fr"
         assert cmd.storage_id == "storage_1"
 
-    def test_init__invalid_storage_id(
-        self, recent_study: FileStudy, command_context: CommandContext
-    ):
+    def test_init__invalid_storage_id(self, recent_study: FileStudy, command_context: CommandContext):
         # When we apply the config for a new ST Storage with a bad name
         with pytest.raises(ValidationError) as ctx:
             RemoveSTStorage(
@@ -91,9 +77,7 @@ class TestRemoveSTStorage:
             }
         ]
 
-    def test_apply_config__invalid_version(
-        self, empty_study: FileStudy, command_context: CommandContext
-    ):
+    def test_apply_config__invalid_version(self, empty_study: FileStudy, command_context: CommandContext):
         # Given an old study in version 720
         # When we apply the config to add a new ST Storage
         remove_st_storage = RemoveSTStorage(
@@ -111,9 +95,7 @@ class TestRemoveSTStorage:
             flags=re.IGNORECASE,
         )
 
-    def test_apply_config__missing_area(
-        self, recent_study: FileStudy, command_context: CommandContext
-    ):
+    def test_apply_config__missing_area(self, recent_study: FileStudy, command_context: CommandContext):
         # Given a study without "unknown area" area
         # When we apply the config to add a new ST Storage
         remove_st_storage = RemoveSTStorage(
@@ -131,9 +113,7 @@ class TestRemoveSTStorage:
             flags=re.IGNORECASE,
         )
 
-    def test_apply_config__missing_storage(
-        self, recent_study: FileStudy, command_context: CommandContext
-    ):
+    def test_apply_config__missing_storage(self, recent_study: FileStudy, command_context: CommandContext):
         # First, prepare a new Area
         create_area = CreateArea(
             command_context=command_context,
@@ -157,9 +137,7 @@ class TestRemoveSTStorage:
             flags=re.IGNORECASE,
         )
 
-    def test_apply_config__nominal_case(
-        self, recent_study: FileStudy, command_context: CommandContext
-    ):
+    def test_apply_config__nominal_case(self, recent_study: FileStudy, command_context: CommandContext):
         # First, prepare a new Area
         create_area = CreateArea(
             area_name="Area FR",

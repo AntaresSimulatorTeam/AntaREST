@@ -1,21 +1,15 @@
-from typing import Dict, Any
+from typing import Any, Dict
 
 import pytest
 from pydantic import ValidationError
 
-from antarest.matrixstore.matrix_editor import (
-    MatrixSlice,
-    Operation,
-    MatrixEditInstruction,
-    OPERATIONS,
-)
+from antarest.matrixstore.matrix_editor import OPERATIONS, MatrixEditInstruction, MatrixSlice, Operation
 
 
 class TestMatrixSlice:
     @pytest.mark.parametrize(
         "kwargs, expected",
         [
-            # fmt: off
             pytest.param(
                 {"column_from": "5", "column_to": "8", "row_from": "0", "row_to": "8760"},
                 {"column_from": 5, "column_to": 8, "row_from": 0, "row_to": 8760},
@@ -72,12 +66,9 @@ class TestMatrixSlice:
                 id="row_from-is-negative-BAD",
                 marks=pytest.mark.xfail(reason="negative value", raises=ValidationError, strict=True),
             ),
-            # fmt: on
         ],
     )
-    def test_init(
-        self, kwargs: Dict[str, Any], expected: Dict[str, Any]
-    ) -> None:
+    def test_init(self, kwargs: Dict[str, Any], expected: Dict[str, Any]) -> None:
         obj = MatrixSlice(**kwargs)
         assert obj.dict(by_alias=False) == expected
 
@@ -86,7 +77,6 @@ class TestOperation:
     @pytest.mark.parametrize(
         "kwargs, expected",
         [
-            # fmt: off
             pytest.param(
                 {"operation": "=", "value": "120"},
                 {"operation": "=", "value": 120.0},
@@ -103,12 +93,9 @@ class TestOperation:
                 id="operation-unknown",
                 marks=pytest.mark.xfail(reason="unknown operation", raises=ValidationError, strict=True),
             ),
-            # fmt: on
         ],
     )
-    def test_init(
-        self, kwargs: Dict[str, Any], expected: Dict[str, Any]
-    ) -> None:
+    def test_init(self, kwargs: Dict[str, Any], expected: Dict[str, Any]) -> None:
         obj = Operation(**kwargs)
         assert obj.dict(by_alias=False) == expected
 
@@ -135,7 +122,6 @@ class TestMatrixEditInstruction:
     @pytest.mark.parametrize(
         "kwargs, expected",
         [
-            # fmt: off
             pytest.param(
                 {
                     "operation": {"operation": "=", "value": 120.0},
@@ -202,11 +188,8 @@ class TestMatrixEditInstruction:
                 id="coordinates-negative-row-BAD",
                 marks=pytest.mark.xfail(reason="negative value", raises=ValidationError, strict=True),
             ),
-            # fmt: on
         ],
     )
-    def test_init(
-        self, kwargs: Dict[str, Any], expected: Dict[str, Any]
-    ) -> None:
+    def test_init(self, kwargs: Dict[str, Any], expected: Dict[str, Any]) -> None:
         obj = MatrixEditInstruction(**kwargs)
         assert obj.dict(by_alias=False) == expected

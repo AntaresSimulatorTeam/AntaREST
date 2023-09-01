@@ -2,14 +2,11 @@ from typing import Optional
 
 import pytest
 
+from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.model import SUB_JSON
-from antarest.core.jwt import JWTUser, JWTGroup
-from antarest.core.requests import (
-    RequestParameters,
-)
+from antarest.core.requests import RequestParameters
 from antarest.core.roles import RoleType
 from antarest.study.service import StudyService
-from tests.storage.integration.data.de_details_hourly import de_details_hourly
 
 ADMIN = JWTUser(
     id=1,
@@ -28,14 +25,10 @@ def assert_with_errors(
     url = url[len("/v1/studies/") :]
     uuid, url = url.split("/raw?path=")
     params = RequestParameters(user=ADMIN)
-    res = storage_service.edit_study(
-        uuid=uuid, url=url, new=new, params=params
-    )
+    res = storage_service.edit_study(uuid=uuid, url=url, new=new, params=params)
     assert res == new
 
-    res = storage_service.get(
-        uuid=uuid, url=url, depth=-1, formatted=True, params=params
-    )
+    res = storage_service.get(uuid=uuid, url=url, depth=-1, formatted=True, params=params)
     if expected is not None:
         assert res == expected
     else:
@@ -412,9 +405,7 @@ def test_sta_mini_study_antares(storage_service, url: str, new: SUB_JSON):
         ),
     ],
 )
-def test_sta_mini_input(
-    storage_service, url: str, new: SUB_JSON, expected: Optional[SUB_JSON]
-):
+def test_sta_mini_input(storage_service, url: str, new: SUB_JSON, expected: Optional[SUB_JSON]):
     assert_with_errors(
         storage_service=storage_service,
         url=url,

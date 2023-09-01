@@ -1,14 +1,8 @@
-from typing import Optional, List
+from typing import List, Optional
 
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
-)
-from antarest.study.storage.rawstudy.model.filesystem.context import (
-    ContextServer,
-)
-from antarest.study.storage.rawstudy.model.filesystem.inode import (
-    INode,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
+from antarest.study.storage.rawstudy.model.filesystem.inode import INode
 
 
 class InputAreasList(INode[List[str], List[str], List[str]]):
@@ -61,11 +55,6 @@ class InputAreasList(INode[List[str], List[str], List[str]]):
         raising: bool = False,
     ) -> List[str]:
         errors = []
-        if any(
-            a not in data
-            for a in [area.name for area in self.config.areas.values()]
-        ):
-            errors.append(
-                f"list.txt should have {self.config.area_names()} nodes but given {data}"
-            )
+        if any(a not in data for a in [area.name for area in self.config.areas.values()]):
+            errors.append(f"list.txt should have {self.config.area_names()} nodes but given {data}")
         return errors

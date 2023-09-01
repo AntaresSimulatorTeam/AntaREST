@@ -1,31 +1,21 @@
-from typing import List, Optional, Dict, Union, Any, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from pydantic import validator
 
 from antarest.core.model import JSON
 from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.business.utils import (
-    validate_matrix,
-    strip_matrix_protocol,
-)
-from antarest.study.storage.variantstudy.business.utils_binding_constraint import (
-    apply_binding_constraint,
-)
+from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol, validate_matrix
+from antarest.study.storage.variantstudy.business.utils_binding_constraint import apply_binding_constraint
 from antarest.study.storage.variantstudy.model.command.common import (
-    CommandOutput,
-    TimeStep,
     BindingConstraintOperator,
     CommandName,
+    CommandOutput,
+    TimeStep,
 )
-from antarest.study.storage.variantstudy.model.command.icommand import (
-    ICommand,
-    MATCH_SIGNATURE_SEPARATOR,
-)
+from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
@@ -55,15 +45,11 @@ class UpdateBindingConstraint(ICommand):
             return validate_matrix(v, values)
         return None
 
-    def _apply_config(
-        self, study_data: FileStudyTreeConfig
-    ) -> Tuple[CommandOutput, Dict[str, Any]]:
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         return CommandOutput(status=True), {}
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
-        binding_constraints = study_data.tree.get(
-            ["input", "bindingconstraints", "bindingconstraints"]
-        )
+        binding_constraints = study_data.tree.get(["input", "bindingconstraints", "bindingconstraints"])
 
         binding: Optional[JSON] = None
         new_key: Optional[str] = None
@@ -113,9 +99,7 @@ class UpdateBindingConstraint(ICommand):
         )
 
     def match_signature(self) -> str:
-        return str(
-            self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.id
-        )
+        return str(self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.id)
 
     def match(self, other: ICommand, equal: bool = False) -> bool:
         if not isinstance(other, UpdateBindingConstraint):

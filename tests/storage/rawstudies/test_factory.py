@@ -3,18 +3,10 @@ from unittest.mock import Mock
 
 from antarest.core.interfaces.cache import CacheConstants
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfigDTO,
-)
-from antarest.study.storage.rawstudy.model.filesystem.context import (
-    ContextServer,
-)
-from antarest.study.storage.rawstudy.model.filesystem.factory import (
-    StudyFactory,
-)
-from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import (
-    FileStudyTree,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
+from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
+from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
+from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 
 
 def test_renewable_subtree():
@@ -30,9 +22,7 @@ def test_renewable_subtree():
         "la_rochelle": {"series": "matrixfile://series.txt"},
         "oleron": {"series": "matrixfile://series.txt"},
     }
-    clusters = tree.get(
-        ["input", "renewables", "clusters", "area", "list"], depth=3
-    )
+    clusters = tree.get(["input", "renewables", "clusters", "area", "list"], depth=3)
     assert clusters == {
         "la_rochelle": {
             "name": "la_rochelle",
@@ -63,12 +53,8 @@ def test_factory_cache():
     cache.get.return_value = None
     study = factory.create_from_fs(path, study_id)
     assert study.config == config
-    cache.put.assert_called_once_with(
-        cache_id, FileStudyTreeConfigDTO.from_build_config(config).dict()
-    )
+    cache.put.assert_called_once_with(cache_id, FileStudyTreeConfigDTO.from_build_config(config).dict())
 
-    cache.get.return_value = FileStudyTreeConfigDTO.from_build_config(
-        config
-    ).dict()
+    cache.get.return_value = FileStudyTreeConfigDTO.from_build_config(config).dict()
     study = factory.create_from_fs(path, study_id)
     assert study.config == config

@@ -1,12 +1,6 @@
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
-)
-from antarest.study.storage.rawstudy.model.filesystem.context import (
-    ContextServer,
-)
-from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
-    FolderNode,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.common.link import (
     OutputSimulationLinkItem,
@@ -53,8 +47,6 @@ class OutputSimulationLinks(FolderNode):
         children: TREE = {}
 
         for area in self.config.area_names():
-            children[area] = _OutputSimulationModeMcAllLinksBis(
-                self.context, self.config, area, self.mc_all
-            )
+            children[area] = _OutputSimulationModeMcAllLinksBis(self.context, self.config, area, self.mc_all)
 
         return children

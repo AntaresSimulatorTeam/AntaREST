@@ -3,27 +3,15 @@ from unittest.mock import Mock
 import pytest
 
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.business.command_extractor import (
-    CommandExtractor,
-)
-from antarest.study.storage.variantstudy.business.command_reverter import (
-    CommandReverter,
-)
-from antarest.study.storage.variantstudy.model.command.remove_area import (
-    RemoveArea,
-)
-from antarest.study.storage.variantstudy.model.command.update_comments import (
-    UpdateComments,
-)
-from antarest.study.storage.variantstudy.model.command_context import (
-    CommandContext,
-)
+from antarest.study.storage.variantstudy.business.command_extractor import CommandExtractor
+from antarest.study.storage.variantstudy.business.command_reverter import CommandReverter
+from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
+from antarest.study.storage.variantstudy.model.command.update_comments import UpdateComments
+from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
 @pytest.mark.unit_test
-def test_update_comments(
-    empty_study: FileStudy, command_context: CommandContext
-):
+def test_update_comments(empty_study: FileStudy, command_context: CommandContext):
     study_path = empty_study.config.study_path
     comments = "comments"
 
@@ -42,12 +30,8 @@ def test_update_comments(
 
 def test_match(command_context: CommandContext):
     base = UpdateComments(comments="comments", command_context=command_context)
-    other_match = UpdateComments(
-        comments="comments", command_context=command_context
-    )
-    other_not_match = UpdateComments(
-        comments="other_comments", command_context=command_context
-    )
+    other_match = UpdateComments(comments="comments", command_context=command_context)
+    other_not_match = UpdateComments(comments="other_comments", command_context=command_context)
     other_other = RemoveArea(id="id", command_context=command_context)
     assert base.match(other_match)
     assert not base.match(other_not_match, equal=True)
@@ -61,15 +45,11 @@ def test_revert(
 ):
     mock_command_extractor = Mock(spec=CommandExtractor)
     mock_command_extractor.command_context = command_context
-    mock_command_extractor.generate_update_comments.side_effect = (
-        lambda x: CommandExtractor.generate_update_comments(
-            mock_command_extractor, x
-        )
+    mock_command_extractor.generate_update_comments.side_effect = lambda x: CommandExtractor.generate_update_comments(
+        mock_command_extractor, x
     )
 
-    base_command = UpdateComments(
-        comments="comments", command_context=command_context
-    )
+    base_command = UpdateComments(comments="comments", command_context=command_context)
 
     object.__setattr__(
         base_command,
@@ -78,9 +58,7 @@ def test_revert(
     )
 
     CommandReverter().revert(base_command, [], empty_study)
-    mock_command_extractor.generate_update_comments.assert_called_with(
-        empty_study.tree
-    )
+    mock_command_extractor.generate_update_comments.assert_called_with(empty_study.tree)
     assert CommandReverter().revert(
         base_command,
         [UpdateComments(comments="comments", command_context=command_context)],
@@ -101,7 +79,5 @@ def test_revert(
 
 def test_create_diff(command_context: CommandContext):
     base = UpdateComments(comments="comments", command_context=command_context)
-    other_match = UpdateComments(
-        comments="comments", command_context=command_context
-    )
+    other_match = UpdateComments(comments="comments", command_context=command_context)
     assert base.create_diff(other_match) == [other_match]

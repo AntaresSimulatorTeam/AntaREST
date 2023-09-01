@@ -44,12 +44,7 @@ from antarest.study.model import (
     TimeSeriesData,
 )
 from antarest.study.repository import StudyMetadataRepository
-from antarest.study.service import (
-    MAX_MISSING_STUDY_TIMEOUT,
-    StudyService,
-    StudyUpgraderTask,
-    UserHasNotPermissionError,
-)
+from antarest.study.service import MAX_MISSING_STUDY_TIMEOUT, StudyService, StudyUpgraderTask, UserHasNotPermissionError
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
@@ -59,31 +54,17 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Simulation,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import (
-    IniFileNode,
-)
+from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode
-from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import (
-    InputSeriesMatrix,
-)
-from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import (
-    RawFileNode,
-)
-from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import (
-    FileStudyTree,
-)
+from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
+from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
+from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.utils import assert_permission, study_matcher
-from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
-    GeneratorMatrixConstants,
-)
-from antarest.study.storage.variantstudy.model.command_context import (
-    CommandContext,
-)
+from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
+from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
-from antarest.study.storage.variantstudy.variant_study_service import (
-    VariantStudyService,
-)
+from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 from antarest.worker.archive_worker import ArchiveTaskArgs
 from tests.helpers import with_db_context
 
@@ -124,9 +105,7 @@ def study_to_dto(study: Study) -> StudyMetadataDTO:
         owner=OwnerInfo(id=study.owner.id, name=study.owner.name)
         if study.owner is not None
         else OwnerInfo(name="Unknown"),
-        groups=[
-            GroupDTO(id=group.id, name=group.name) for group in study.groups
-        ],
+        groups=[GroupDTO(id=group.id, name=group.name) for group in study.groups],
         public_mode=study.public_mode or PublicMode.NONE,
         horizon=study.additional_data.horizon,
         scenario=None,
@@ -189,39 +168,27 @@ def test_study_listing() -> None:
     cache = Mock(spec=ICache)
     cache.get.return_value = None
 
-    config = Config(
-        storage=StorageConfig(
-            workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}
-        )
-    )
-    service = build_study_service(
-        raw_study_service, repository, config, cache_service=cache
-    )
+    config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
+    service = build_study_service(raw_study_service, repository, config, cache_service=cache)
 
     studies = service.get_studies_information(
         managed=False,
         name=None,
         workspace=None,
         folder=None,
-        params=RequestParameters(
-            user=JWTUser(id=2, impersonator=2, type="users")
-        ),
+        params=RequestParameters(user=JWTUser(id=2, impersonator=2, type="users")),
     )
 
     expected_result = {e.id: e for e in map(lambda x: study_to_dto(x), [a, c])}
     assert expected_result == studies
-    cache.get.return_value = {
-        e.id: e for e in map(lambda x: study_to_dto(x), [a, b, c])
-    }
+    cache.get.return_value = {e.id: e for e in map(lambda x: study_to_dto(x), [a, b, c])}
 
     studies = service.get_studies_information(
         managed=False,
         name=None,
         workspace=None,
         folder=None,
-        params=RequestParameters(
-            user=JWTUser(id=2, impersonator=2, type="users")
-        ),
+        params=RequestParameters(user=JWTUser(id=2, impersonator=2, type="users")),
     )
 
     assert expected_result == studies
@@ -233,9 +200,7 @@ def test_study_listing() -> None:
         name=None,
         workspace=None,
         folder=None,
-        params=RequestParameters(
-            user=JWTUser(id=2, impersonator=2, type="users")
-        ),
+        params=RequestParameters(user=JWTUser(id=2, impersonator=2, type="users")),
     )
 
     expected_result = {e.id: e for e in map(lambda x: study_to_dto(x), [a])}
@@ -268,23 +233,13 @@ def test_sync_studies_from_disk() -> None:
         created_at=now,
         missing=datetime.utcnow() - timedelta(MAX_MISSING_STUDY_TIMEOUT - 1),
     )
-    fc = StudyFolder(
-        path=Path("c"), workspace=DEFAULT_WORKSPACE_NAME, groups=[]
-    )
-    fe = StudyFolder(
-        path=Path("e"), workspace=DEFAULT_WORKSPACE_NAME, groups=[]
-    )
-    ff = StudyFolder(
-        path=Path("f"), workspace=DEFAULT_WORKSPACE_NAME, groups=[]
-    )
+    fc = StudyFolder(path=Path("c"), workspace=DEFAULT_WORKSPACE_NAME, groups=[])
+    fe = StudyFolder(path=Path("e"), workspace=DEFAULT_WORKSPACE_NAME, groups=[])
+    ff = StudyFolder(path=Path("f"), workspace=DEFAULT_WORKSPACE_NAME, groups=[])
 
     repository = Mock()
     repository.get_all_raw.side_effect = [[ma, mb, mc, md, me]]
-    config = Config(
-        storage=StorageConfig(
-            workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}
-        )
-    )
+    config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
     service = build_study_service(Mock(), repository, config)
 
     service.sync_studies_on_disk([fa, fc, fe, ff])
@@ -333,23 +288,13 @@ def test_partial_sync_studies_from_disk() -> None:
         created_at=now,
         missing=datetime.utcnow() - timedelta(MAX_MISSING_STUDY_TIMEOUT - 1),
     )
-    fc = StudyFolder(
-        path=Path("directory/c"), workspace=DEFAULT_WORKSPACE_NAME, groups=[]
-    )
-    fe = StudyFolder(
-        path=Path("directory/e"), workspace=DEFAULT_WORKSPACE_NAME, groups=[]
-    )
-    ff = StudyFolder(
-        path=Path("directory/f"), workspace=DEFAULT_WORKSPACE_NAME, groups=[]
-    )
+    fc = StudyFolder(path=Path("directory/c"), workspace=DEFAULT_WORKSPACE_NAME, groups=[])
+    fe = StudyFolder(path=Path("directory/e"), workspace=DEFAULT_WORKSPACE_NAME, groups=[])
+    ff = StudyFolder(path=Path("directory/f"), workspace=DEFAULT_WORKSPACE_NAME, groups=[])
 
     repository = Mock()
     repository.get_all_raw.side_effect = [[ma, mb, mc, md, me]]
-    config = Config(
-        storage=StorageConfig(
-            workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}
-        )
-    )
+    config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
     service = build_study_service(Mock(), repository, config)
 
     service.sync_studies_on_disk([fc, fe, ff], directory=Path("directory"))
@@ -376,11 +321,7 @@ def test_remove_duplicate() -> None:
 
     repository = Mock()
     repository.get_all.return_value = [ma, mb]
-    config = Config(
-        storage=StorageConfig(
-            workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}
-        )
-    )
+    config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
     service = build_study_service(Mock(), repository, config)
 
     service.remove_duplicates()
@@ -425,14 +366,8 @@ def test_create_study() -> None:
         }
     }
     study_service.create.return_value = expected
-    config = Config(
-        storage=StorageConfig(
-            workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}
-        )
-    )
-    service = build_study_service(
-        study_service, repository, config, user_service=user_service
-    )
+    config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
+    service = build_study_service(study_service, repository, config, user_service=user_service)
 
     with pytest.raises(UserHasNotPermissionError):
         service.create_study(
@@ -451,9 +386,7 @@ def test_create_study() -> None:
                 id=0,
                 impersonator=0,
                 type="users",
-                groups=[
-                    JWTGroup(id="my-group", name="group", role=RoleType.WRITER)
-                ],
+                groups=[JWTGroup(id="my-group", name="group", role=RoleType.WRITER)],
             )
         ),
     )
@@ -499,11 +432,7 @@ def test_save_metadata() -> None:
         owner=user,
         groups=[group],
     )
-    config = Config(
-        storage=StorageConfig(
-            workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}
-        )
-    )
+    config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
     service = build_study_service(study_service, repository, config)
 
     service.user_service.get_user.return_value = user
@@ -573,11 +502,7 @@ def test_download_output() -> None:
     study = Mock()
 
     repository.get.return_value = input_study
-    config = Config(
-        storage=StorageConfig(
-            workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}
-        )
-    )
+    config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
     service = build_study_service(study_service, repository, config)
 
     res_study = {"columns": [["H. VAL", "Euro/MWh"]], "data": [[0.5]]}
@@ -585,9 +510,7 @@ def test_download_output() -> None:
         "columns": [["some cluster", "Euro/MWh"]],
         "data": [[0.8]],
     }
-    study_service.get_raw.return_value = FileStudy(
-        config=file_config, tree=study
-    )
+    study_service.get_raw.return_value = FileStudy(config=file_config, tree=study)
     output_config = {
         "general": {
             "first-month-in-year": "january",
@@ -624,9 +547,7 @@ def test_download_output() -> None:
                 data={
                     1: [
                         TimeSerie(name="H. VAL", unit="Euro/MWh", data=[0.5]),
-                        TimeSerie(
-                            name="some cluster", unit="Euro/MWh", data=[0.8]
-                        ),
+                        TimeSerie(name="some cluster", unit="Euro/MWh", data=[0.8]),
                     ]
                 },
             )
@@ -653,9 +574,7 @@ def test_download_output() -> None:
         owner=None,
         expiration_date=datetime.utcnow(),
     )
-    service.file_transfer_manager.request_download.return_value = (
-        export_file_download
-    )
+    service.file_transfer_manager.request_download.return_value = export_file_download
     task_id = "task-id"
     service.task_service.add_task.return_value = task_id
 
@@ -668,9 +587,7 @@ def test_download_output() -> None:
         params=RequestParameters(JWTUser(id=0, impersonator=0, type="users")),
     )
 
-    res_file_download = FileDownloadTaskDTO(
-        file=export_file_download.to_dto(), task=task_id
-    )
+    res_file_download = FileDownloadTaskDTO(file=export_file_download.to_dto(), task=task_id)
     assert result == res_file_download
 
     # LINK TYPE
@@ -687,9 +604,7 @@ def test_download_output() -> None:
             TimeSeriesData(
                 name="east^west",
                 type=StudyDownloadType.LINK,
-                data={
-                    1: [TimeSerie(name="H. VAL", unit="Euro/MWh", data=[0.5])]
-                },
+                data={1: [TimeSerie(name="H. VAL", unit="Euro/MWh", data=[0.5])]},
             )
         ],
         warnings=[],
@@ -722,9 +637,7 @@ def test_download_output() -> None:
                 data={
                     1: [
                         TimeSerie(name="H. VAL", unit="Euro/MWh", data=[0.5]),
-                        TimeSerie(
-                            name="some cluster", unit="Euro/MWh", data=[0.8]
-                        ),
+                        TimeSerie(name="some cluster", unit="Euro/MWh", data=[0.8]),
                     ]
                 },
             )
@@ -756,37 +669,21 @@ def test_change_owner() -> None:
     user_service = Mock()
     study_service = Mock(spec=RawStudyService)
     study_service.get_raw.return_value = mock_file_study
-    config = Config(
-        storage=StorageConfig(
-            workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}
-        )
-    )
-    service = build_study_service(
-        study_service, repository, config, user_service=user_service
-    )
-    service.storage_service.variant_study_service.command_factory.command_context = Mock(
-        spec=CommandContext
-    )
+    config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
+    service = build_study_service(study_service, repository, config, user_service=user_service)
+    service.storage_service.variant_study_service.command_factory.command_context = Mock(spec=CommandContext)
 
     study = RawStudy(id=uuid, owner=alice)
     repository.get.return_value = study
     user_service.get_user.return_value = bob
     service._edit_study_using_command = Mock()
 
-    service.change_owner(
-        uuid, 2, RequestParameters(JWTUser(id=2, impersonator=2, type="users"))
-    )
-    user_service.get_user.assert_called_once_with(
-        2, RequestParameters(JWTUser(id=2, impersonator=2, type="users"))
-    )
-    repository.save.assert_called_with(
-        RawStudy(id=uuid, owner=bob, last_access=ANY)
-    )
+    service.change_owner(uuid, 2, RequestParameters(JWTUser(id=2, impersonator=2, type="users")))
+    user_service.get_user.assert_called_once_with(2, RequestParameters(JWTUser(id=2, impersonator=2, type="users")))
+    repository.save.assert_called_with(RawStudy(id=uuid, owner=bob, last_access=ANY))
     repository.save.assert_called_with(RawStudy(id=uuid, owner=bob))
 
-    service._edit_study_using_command.assert_called_once_with(
-        study=study, url="study/antares/author", data="Bob"
-    )
+    service._edit_study_using_command.assert_called_once_with(study=study, url="study/antares/author", data="Bob")
 
     with pytest.raises(UserHasNotPermissionError):
         service.change_owner(
@@ -807,14 +704,8 @@ def test_manage_group() -> None:
 
     repository = Mock()
     user_service = Mock()
-    config = Config(
-        storage=StorageConfig(
-            workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}
-        )
-    )
-    service = build_study_service(
-        Mock(), repository, config, user_service=user_service
-    )
+    config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
+    service = build_study_service(Mock(), repository, config, user_service=user_service)
 
     repository.get.return_value = Study(id=uuid, owner=alice, groups=[group_a])
 
@@ -829,54 +720,34 @@ def test_manage_group() -> None:
     service.add_group(
         uuid,
         "b",
-        RequestParameters(
-            JWTUser(id=2, impersonator=2, type="users", groups=[group_a_admin])
-        ),
+        RequestParameters(JWTUser(id=2, impersonator=2, type="users", groups=[group_a_admin])),
     )
 
     user_service.get_group.assert_called_once_with(
         "b",
-        RequestParameters(
-            JWTUser(id=2, impersonator=2, type="users", groups=[group_a_admin])
-        ),
+        RequestParameters(JWTUser(id=2, impersonator=2, type="users", groups=[group_a_admin])),
     )
-    repository.save.assert_called_with(
-        Study(id=uuid, owner=alice, groups=[group_a, group_b])
-    )
+    repository.save.assert_called_with(Study(id=uuid, owner=alice, groups=[group_a, group_b]))
 
-    repository.get.return_value = Study(
-        id=uuid, owner=alice, groups=[group_a, group_b]
-    )
+    repository.get.return_value = Study(id=uuid, owner=alice, groups=[group_a, group_b])
     service.add_group(
         uuid,
         "b",
-        RequestParameters(
-            JWTUser(id=2, impersonator=2, type="users", groups=[group_a_admin])
-        ),
+        RequestParameters(JWTUser(id=2, impersonator=2, type="users", groups=[group_a_admin])),
     )
     user_service.get_group.assert_called_with(
         "b",
-        RequestParameters(
-            JWTUser(id=2, impersonator=2, type="users", groups=[group_a_admin])
-        ),
+        RequestParameters(JWTUser(id=2, impersonator=2, type="users", groups=[group_a_admin])),
     )
-    repository.save.assert_called_with(
-        Study(id=uuid, owner=alice, groups=[group_a, group_b])
-    )
+    repository.save.assert_called_with(Study(id=uuid, owner=alice, groups=[group_a, group_b]))
 
-    repository.get.return_value = Study(
-        id=uuid, owner=alice, groups=[group_a, group_b]
-    )
+    repository.get.return_value = Study(id=uuid, owner=alice, groups=[group_a, group_b])
     service.remove_group(
         uuid,
         "a",
-        RequestParameters(
-            JWTUser(id=2, impersonator=2, type="users", groups=[group_a_admin])
-        ),
+        RequestParameters(JWTUser(id=2, impersonator=2, type="users", groups=[group_a_admin])),
     )
-    repository.save.assert_called_with(
-        Study(id=uuid, owner=alice, groups=[group_b])
-    )
+    repository.save.assert_called_with(Study(id=uuid, owner=alice, groups=[group_b]))
 
 
 # noinspection PyArgumentList
@@ -887,14 +758,8 @@ def test_set_public_mode() -> None:
 
     repository = Mock()
     user_service = Mock()
-    config = Config(
-        storage=StorageConfig(
-            workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}
-        )
-    )
-    service = build_study_service(
-        Mock(), repository, config, user_service=user_service
-    )
+    config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
+    service = build_study_service(Mock(), repository, config, user_service=user_service)
 
     repository.get.return_value = Study(id=uuid)
 
@@ -908,13 +773,9 @@ def test_set_public_mode() -> None:
     service.set_public_mode(
         uuid,
         PublicMode.FULL,
-        RequestParameters(
-            JWTUser(id=2, impersonator=2, type="users", groups=[group_admin])
-        ),
+        RequestParameters(JWTUser(id=2, impersonator=2, type="users", groups=[group_admin])),
     )
-    repository.save.assert_called_with(
-        Study(id=uuid, public_mode=PublicMode.FULL)
-    )
+    repository.save.assert_called_with(Study(id=uuid, public_mode=PublicMode.FULL))
 
 
 # noinspection PyArgumentList
@@ -926,11 +787,7 @@ def test_check_errors():
     study = RawStudy(id="hello world")
     repo = Mock()
     repo.get.return_value = study
-    config = Config(
-        storage=StorageConfig(
-            workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}
-        )
-    )
+    config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
     service = build_study_service(study_service, repo, config)
 
     assert ["Hello", "World"] == service.check_errors("hello world")
@@ -953,14 +810,10 @@ def test_study_match() -> None:
         StudyMetadataDTO.construct(id="1", workspace="hello")
     )
     assert study_matcher(name="f", folder=None, workspace="hello")(
-        StudyMetadataDTO.construct(
-            id="1", name="foo", folder="abc/de", workspace="hello"
-        )
+        StudyMetadataDTO.construct(id="1", name="foo", folder="abc/de", workspace="hello")
     )
     assert not study_matcher(name="foob", folder=None, workspace="hell")(
-        StudyMetadataDTO.construct(
-            id="1", name="foo", folder="abc/de", workspace="hello"
-        )
+        StudyMetadataDTO.construct(id="1", name="foo", folder="abc/de", workspace="hello")
     )
 
 
@@ -978,11 +831,7 @@ def test_assert_permission() -> None:
     wrong = User(id=2)
 
     repository = Mock()
-    config = Config(
-        storage=StorageConfig(
-            workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}
-        )
-    )
+    config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
     service = build_study_service(Mock(), repository, config)
 
     # wrong owner
@@ -990,41 +839,29 @@ def test_assert_permission() -> None:
     study = service.get_study(uuid)
     with pytest.raises(UserHasNotPermissionError):
         assert_permission(jwt, study, StudyPermissionType.READ)
-    assert not assert_permission(
-        jwt, study, StudyPermissionType.READ, raising=False
-    )
+    assert not assert_permission(jwt, study, StudyPermissionType.READ, raising=False)
 
     # good owner
     study = Study(id=uuid, owner=good)
-    assert assert_permission(
-        jwt, study, StudyPermissionType.MANAGE_PERMISSIONS
-    )
+    assert assert_permission(jwt, study, StudyPermissionType.MANAGE_PERMISSIONS)
 
     # wrong group
     study = Study(id=uuid, owner=wrong, groups=[Group(id="wrong")])
     with pytest.raises(UserHasNotPermissionError):
         assert_permission(jwt, study, StudyPermissionType.READ)
-    assert not assert_permission(
-        jwt, study, StudyPermissionType.READ, raising=False
-    )
+    assert not assert_permission(jwt, study, StudyPermissionType.READ, raising=False)
 
     # good group
     study = Study(id=uuid, owner=wrong, groups=[Group(id="my-group")])
-    assert assert_permission(
-        jwt, study, StudyPermissionType.MANAGE_PERMISSIONS
-    )
+    assert assert_permission(jwt, study, StudyPermissionType.MANAGE_PERMISSIONS)
 
     # super admin can do whatever he wants..
     study = Study(id=uuid)
-    assert assert_permission(
-        admin, study, StudyPermissionType.MANAGE_PERMISSIONS
-    )
+    assert assert_permission(admin, study, StudyPermissionType.MANAGE_PERMISSIONS)
 
     # when study found in workspace without group
     study = Study(id=uuid, public_mode=PublicMode.FULL)
-    assert not assert_permission(
-        jwt, study, StudyPermissionType.MANAGE_PERMISSIONS, raising=False
-    )
+    assert not assert_permission(jwt, study, StudyPermissionType.MANAGE_PERMISSIONS, raising=False)
     assert assert_permission(jwt, study, StudyPermissionType.DELETE)
     assert assert_permission(jwt, study, StudyPermissionType.READ)
     assert assert_permission(jwt, study, StudyPermissionType.WRITE)
@@ -1032,9 +869,7 @@ def test_assert_permission() -> None:
 
     # some group roles
     study = Study(id=uuid, owner=wrong, groups=[Group(id="my-group-2")])
-    assert not assert_permission(
-        jwt_2, study, StudyPermissionType.WRITE, raising=False
-    )
+    assert not assert_permission(jwt_2, study, StudyPermissionType.WRITE, raising=False)
     assert assert_permission(jwt_2, study, StudyPermissionType.READ)
 
 
@@ -1058,9 +893,7 @@ def test_delete_study_calls_callback(tmp_path: Path):
     service = build_study_service(Mock(), repository_mock, Mock())
     callback = Mock()
     service.add_on_deletion_callback(callback)
-    service.storage_service.variant_study_service.has_children.return_value = (
-        False
-    )
+    service.storage_service.variant_study_service.has_children.return_value = False
 
     service.delete_study(
         study_uuid,
@@ -1076,9 +909,7 @@ def test_delete_with_prefetch(tmp_path: Path):
     study_uuid = "my_study"
 
     study_metadata_repository = Mock()
-    raw_study_service = RawStudyService(
-        Config(), Mock(), Mock(), Mock(), Mock()
-    )
+    raw_study_service = RawStudyService(Config(), Mock(), Mock(), Mock(), Mock())
     variant_study_repository = Mock()
     variant_study_service = VariantStudyService(
         Mock(),
@@ -1162,9 +993,7 @@ def test_delete_with_prefetch(tmp_path: Path):
 # noinspection PyArgumentList
 def test_delete_recursively(tmp_path: Path):
     study_metadata_repository = Mock()
-    raw_study_service = RawStudyService(
-        Config(), Mock(), Mock(), Mock(), Mock()
-    )
+    raw_study_service = RawStudyService(Config(), Mock(), Mock(), Mock(), Mock())
     variant_study_repository = Mock()
     variant_study_service = VariantStudyService(
         Mock(),
@@ -1214,9 +1043,7 @@ def test_delete_recursively(tmp_path: Path):
 
     v1 = VariantStudy(id="variant_1", path=create_study_fs_mock(variant=True))
     v2 = VariantStudy(id="variant_2", path=create_study_fs_mock(variant=True))
-    v3 = VariantStudy(
-        id="sub_variant_1", path=create_study_fs_mock(variant=True)
-    )
+    v3 = VariantStudy(id="sub_variant_1", path=create_study_fs_mock(variant=True))
 
     study_metadata_repository.get.side_effect = [study_mock, v3, v1, v2]
     variant_study_repository.get_children.side_effect = [
@@ -1305,13 +1132,9 @@ def test_create_command(
         patch_service=Mock(spec=PatchService),
     )
 
-    service.storage_service.variant_study_service.command_factory.command_context = (
-        command_context
-    )
+    service.storage_service.variant_study_service.command_factory.command_context = command_context
 
-    command = service._create_edit_study_command(
-        tree_node=tree_node, url=url, data=data
-    )
+    command = service._create_edit_study_command(tree_node=tree_node, url=url, data=data)
 
     assert command.command_name.value == expected_name
 
@@ -1524,9 +1347,7 @@ def test_get_save_logs(tmp_path: Path):
     study_mock.name = "my_study"
     study_mock.to_json_summary.return_value = {"id": "my_study", "name": "foo"}
     service.repository.get.return_value = study_mock
-    file_study_config = FileStudyTreeConfig(
-        tmp_path, tmp_path, "study_id", 0, zip_path=None
-    )
+    file_study_config = FileStudyTreeConfig(tmp_path, tmp_path, "study_id", 0, zip_path=None)
     output_config = Mock()
     file_study_config.outputs = {"output_id": output_config}
     output_config.get_file.return_value = "output_id"
@@ -1657,9 +1478,7 @@ def test_task_upgrade_study(tmp_path: Path):
 
 @with_db_context
 @patch("antarest.study.service.upgrade_study")
-@pytest.mark.parametrize(
-    "workspace", ["other_workspace", DEFAULT_WORKSPACE_NAME]
-)
+@pytest.mark.parametrize("workspace", ["other_workspace", DEFAULT_WORKSPACE_NAME])
 def test_upgrade_study__raw_study__nominal(
     upgrade_study_mock: Mock,
     tmp_path: Path,
@@ -1840,9 +1659,7 @@ def test_upgrade_study__variant_study__nominal(
 
 @with_db_context
 @patch("antarest.study.service.upgrade_study")
-def test_upgrade_study__raw_study__failed(
-    upgrade_study_mock: Mock, tmp_path: Path
-):
+def test_upgrade_study__raw_study__failed(upgrade_study_mock: Mock, tmp_path: Path):
     study_id = str(uuid.uuid4())
     study_name = "my_study"
     target_version = "800"

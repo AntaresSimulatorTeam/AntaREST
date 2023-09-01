@@ -2,13 +2,12 @@ import contextlib
 import time
 from typing import Callable
 
-from antarest.core.tasks.model import TaskDTO, TaskStatus
 from starlette.testclient import TestClient
 
+from antarest.core.tasks.model import TaskDTO, TaskStatus
 
-def wait_for(
-    predicate: Callable[[], bool], timeout: float = 10, sleep_time: float = 1
-) -> None:
+
+def wait_for(predicate: Callable[[], bool], timeout: float = 10, sleep_time: float = 1) -> None:
     end = time.time() + timeout
     while time.time() < end:
         with contextlib.suppress(Exception):

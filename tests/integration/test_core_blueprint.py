@@ -48,15 +48,11 @@ class TestKillWorker:
     def test_kill_worker__nominal_case(self, app: FastAPI):
         client = TestClient(app, raise_server_exceptions=False)
         # login as "admin"
-        res = client.post(
-            "/v1/login", json={"username": "admin", "password": "admin"}
-        )
+        res = client.post("/v1/login", json={"username": "admin", "password": "admin"})
         res.raise_for_status()
         credentials = res.json()
         admin_access_token = credentials["access_token"]
         # kill the worker
-        res = client.get(
-            "/kill", headers={"Authorization": f"Bearer {admin_access_token}"}
-        )
+        res = client.get("/kill", headers={"Authorization": f"Bearer {admin_access_token}"})
         assert res.status_code == 500, res.json()
         assert not res.content

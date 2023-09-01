@@ -3,82 +3,32 @@ from typing import List
 from antarest.core.model import JSON
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.storage.patch_service import PatchService
-from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
-    GeneratorMatrixConstants,
-)
-from antarest.study.storage.variantstudy.model.command.common import (
-    CommandName,
-)
-from antarest.study.storage.variantstudy.model.command.create_area import (
-    CreateArea,
-)
-from antarest.study.storage.variantstudy.model.command.create_binding_constraint import (
-    CreateBindingConstraint,
-)
-from antarest.study.storage.variantstudy.model.command.create_cluster import (
-    CreateCluster,
-)
-from antarest.study.storage.variantstudy.model.command.create_district import (
-    CreateDistrict,
-)
-from antarest.study.storage.variantstudy.model.command.create_link import (
-    CreateLink,
-)
-from antarest.study.storage.variantstudy.model.command.create_renewables_cluster import (
-    CreateRenewablesCluster,
-)
-from antarest.study.storage.variantstudy.model.command.create_st_storage import (
-    CreateSTStorage,
-)
+from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
+from antarest.study.storage.variantstudy.model.command.common import CommandName
+from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
+from antarest.study.storage.variantstudy.model.command.create_binding_constraint import CreateBindingConstraint
+from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
+from antarest.study.storage.variantstudy.model.command.create_district import CreateDistrict
+from antarest.study.storage.variantstudy.model.command.create_link import CreateLink
+from antarest.study.storage.variantstudy.model.command.create_renewables_cluster import CreateRenewablesCluster
+from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
-from antarest.study.storage.variantstudy.model.command.remove_area import (
-    RemoveArea,
-)
-from antarest.study.storage.variantstudy.model.command.remove_binding_constraint import (
-    RemoveBindingConstraint,
-)
-from antarest.study.storage.variantstudy.model.command.remove_cluster import (
-    RemoveCluster,
-)
-from antarest.study.storage.variantstudy.model.command.remove_district import (
-    RemoveDistrict,
-)
-from antarest.study.storage.variantstudy.model.command.remove_link import (
-    RemoveLink,
-)
-from antarest.study.storage.variantstudy.model.command.remove_renewables_cluster import (
-    RemoveRenewablesCluster,
-)
-from antarest.study.storage.variantstudy.model.command.remove_st_storage import (
-    RemoveSTStorage,
-)
-from antarest.study.storage.variantstudy.model.command.replace_matrix import (
-    ReplaceMatrix,
-)
-from antarest.study.storage.variantstudy.model.command.update_binding_constraint import (
-    UpdateBindingConstraint,
-)
-from antarest.study.storage.variantstudy.model.command.update_comments import (
-    UpdateComments,
-)
-from antarest.study.storage.variantstudy.model.command.update_config import (
-    UpdateConfig,
-)
-from antarest.study.storage.variantstudy.model.command.update_district import (
-    UpdateDistrict,
-)
-from antarest.study.storage.variantstudy.model.command.update_playlist import (
-    UpdatePlaylist,
-)
-from antarest.study.storage.variantstudy.model.command.update_raw_file import (
-    UpdateRawFile,
-)
-from antarest.study.storage.variantstudy.model.command.update_scenario_builder import (
-    UpdateScenarioBuilder,
-)
-from antarest.study.storage.variantstudy.model.command_context import (
-    CommandContext,
-)
+from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
+from antarest.study.storage.variantstudy.model.command.remove_binding_constraint import RemoveBindingConstraint
+from antarest.study.storage.variantstudy.model.command.remove_cluster import RemoveCluster
+from antarest.study.storage.variantstudy.model.command.remove_district import RemoveDistrict
+from antarest.study.storage.variantstudy.model.command.remove_link import RemoveLink
+from antarest.study.storage.variantstudy.model.command.remove_renewables_cluster import RemoveRenewablesCluster
+from antarest.study.storage.variantstudy.model.command.remove_st_storage import RemoveSTStorage
+from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
+from antarest.study.storage.variantstudy.model.command.update_binding_constraint import UpdateBindingConstraint
+from antarest.study.storage.variantstudy.model.command.update_comments import UpdateComments
+from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
+from antarest.study.storage.variantstudy.model.command.update_district import UpdateDistrict
+from antarest.study.storage.variantstudy.model.command.update_playlist import UpdatePlaylist
+from antarest.study.storage.variantstudy.model.command.update_raw_file import UpdateRawFile
+from antarest.study.storage.variantstudy.model.command.update_scenario_builder import UpdateScenarioBuilder
+from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 COMMAND_MAPPING = {
@@ -151,10 +101,7 @@ class CommandFactory:
         if isinstance(args, dict):
             return [self._to_single_command(command_dto.action, args)]
         elif isinstance(args, list):
-            return [
-                self._to_single_command(command_dto.action, argument)
-                for argument in args
-            ]
+            return [self._to_single_command(command_dto.action, argument) for argument in args]
         raise NotImplementedError()
 
     def to_commands(self, cmd_dto_list: List[CommandDTO]) -> List[ICommand]:

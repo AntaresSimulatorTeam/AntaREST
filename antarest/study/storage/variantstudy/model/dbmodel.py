@@ -2,13 +2,11 @@ import json
 import uuid
 from dataclasses import dataclass
 
-from sqlalchemy import Column, String, ForeignKey, DateTime, Table, Integer  # type: ignore
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Table  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
 
 from antarest.core.persistence import Base
-from antarest.study.model import (
-    Study,
-)
+from antarest.study.model import Study
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
@@ -57,9 +55,7 @@ class CommandBlock(Base):  # type: ignore
     args = Column(String())
 
     def to_dto(self) -> CommandDTO:
-        return CommandDTO(
-            id=self.id, action=self.command, args=json.loads(self.args)
-        )
+        return CommandDTO(id=self.id, action=self.command, args=json.loads(self.args))
 
 
 @dataclass

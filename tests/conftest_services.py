@@ -10,38 +10,24 @@ from typing import Dict, List, Optional, Union
 from unittest.mock import Mock
 
 import pytest
+
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus
 from antarest.core.requests import RequestParameters
-from antarest.core.tasks.model import (
-    CustomTaskEventMessages,
-    TaskDTO,
-    TaskListFilter,
-    TaskStatus,
-    TaskType,
-    TaskResult,
-)
+from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskListFilter, TaskResult, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskService, Task
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.matrixstore.service import SimpleMatrixService
 from antarest.matrixstore.uri_resolver_service import UriResolverService
 from antarest.study.storage.patch_service import PatchService
-from antarest.study.storage.rawstudy.model.filesystem.factory import (
-    StudyFactory,
-)
+from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.storage_service import StudyStorageService
-from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
-    GeneratorMatrixConstants,
-)
+from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
-from antarest.study.storage.variantstudy.repository import (
-    VariantStudyRepository,
-)
-from antarest.study.storage.variantstudy.variant_study_service import (
-    VariantStudyService,
-)
+from antarest.study.storage.variantstudy.repository import VariantStudyRepository
+from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 
 __all__ = (
     "bucket_dir_fixture",
@@ -106,14 +92,10 @@ class SynchTaskService(ITaskService):
             logs=None,
         )
 
-    def list_tasks(
-        self, task_filter: TaskListFilter, request_params: RequestParameters
-    ) -> List[TaskDTO]:
+    def list_tasks(self, task_filter: TaskListFilter, request_params: RequestParameters) -> List[TaskDTO]:
         return []
 
-    def await_task(
-        self, task_id: str, timeout_sec: Optional[int] = None
-    ) -> None:
+    def await_task(self, task_id: str, timeout_sec: Optional[int] = None) -> None:
         pass
 
 

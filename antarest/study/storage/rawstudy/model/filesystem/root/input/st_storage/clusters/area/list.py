@@ -1,12 +1,6 @@
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
-)
-from antarest.study.storage.rawstudy.model.filesystem.context import (
-    ContextServer,
-)
-from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import (
-    IniFileNode,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
+from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 
 
 class InputSTStorageAreaList(IniFileNode):
@@ -26,8 +20,5 @@ class InputSTStorageAreaList(IniFileNode):
         # - an initial_level_optim (bool, default = False)
         # - a withdrawal nominal capacity (double > 0)
         # - an injection nominal capacity (double > 0)
-        types = {
-            st_storage_id: dict
-            for st_storage_id in config.get_st_storage_ids(area)
-        }
+        types = {st_storage_id: dict for st_storage_id in config.get_st_storage_ids(area)}
         super().__init__(context, config, types)

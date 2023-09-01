@@ -1,22 +1,16 @@
 from contextvars import ContextVar, Token
-from typing import Dict, Optional, Union, Any, Type
+from typing import Any, Dict, Optional, Type, Union
 
 from sqlalchemy import create_engine  # type: ignore
 from sqlalchemy.engine import Engine  # type: ignore
 from sqlalchemy.engine.url import URL  # type: ignore
 from sqlalchemy.orm import Session, sessionmaker  # type: ignore
-from starlette.middleware.base import (
-    BaseHTTPMiddleware,
-    RequestResponseEndpoint,
-)
+from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response
 from starlette.types import ASGIApp
 
-from antarest.core.utils.fastapi_sqlalchemy.exceptions import (
-    MissingSessionError,
-    SessionNotInitialisedError,
-)
+from antarest.core.utils.fastapi_sqlalchemy.exceptions import MissingSessionError, SessionNotInitialisedError
 
 _Session: sessionmaker = None
 _session: ContextVar[Optional[Session]] = ContextVar("_session", default=None)
@@ -40,18 +34,14 @@ class DBSessionMiddleware(BaseHTTPMiddleware):
 
         session_args = session_args or {}
         if not custom_engine and not db_url:
-            raise ValueError(
-                "You need to pass a db_url or a custom_engine parameter."
-            )
+            raise ValueError("You need to pass a db_url or a custom_engine parameter.")
         if not custom_engine:
             engine = create_engine(db_url, **engine_args)
         else:
             engine = custom_engine
         _Session = sessionmaker(bind=engine, **session_args)
 
-    async def dispatch(
-        self, request: Request, call_next: RequestResponseEndpoint
-    ) -> Response:
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         with db(commit_on_exit=self.commit_on_exit):
             response = await call_next(request)
         return response

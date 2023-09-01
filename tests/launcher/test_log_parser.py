@@ -3,6 +3,7 @@ import sys
 from typing import List, Union
 
 import pytest
+
 from antarest.launcher.adapters.log_parser import LaunchProgressDTO
 from tests.launcher.assets import ASSETS_DIR
 
@@ -103,7 +104,6 @@ def test_parse_log_lines__non_regression_test(filename: str) -> None:
         with history_path.open(mode="w", encoding="utf-8") as fd:
             fd.write(json.dumps(dto.history, ensure_ascii=False, indent=True))
         print(
-            f"\nWARNING: check the result in '{history_path.relative_to(ASSETS_DIR)}'"
-            f" and commit the file in Git",
+            f"\nWARNING: check the result in '{history_path.relative_to(ASSETS_DIR)}' and commit the file in Git",
             file=sys.stderr,
         )

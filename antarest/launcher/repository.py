@@ -1,11 +1,10 @@
-import datetime
 import logging
-from typing import Optional, List
+from typing import List, Optional
 
 from sqlalchemy import exists  # type: ignore
 
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.launcher.model import JobResult, JobLogType, JobLog
+from antarest.launcher.model import JobResult
 from antarest.study.model import Study
 
 logger = logging.getLogger(__name__)
@@ -31,9 +30,7 @@ class JobResultRepository:
         job: JobResult = db.session.query(JobResult).get(id)
         return job
 
-    def get_all(
-        self, filter_orphan: bool = False, latest: Optional[int] = None
-    ) -> List[JobResult]:
+    def get_all(self, filter_orphan: bool = False, latest: Optional[int] = None) -> List[JobResult]:
         logger.debug("Retrieving all JobResults")
         query = db.session.query(JobResult)
         if filter_orphan:
@@ -45,19 +42,13 @@ class JobResultRepository:
         return job_results
 
     def get_running(self) -> List[JobResult]:
-        query = db.session.query(JobResult).where(
-            JobResult.completion_date == None
-        )
+        query = db.session.query(JobResult).where(JobResult.completion_date == None)
         job_results: List[JobResult] = query.all()
         return job_results
 
     def find_by_study(self, study_id: str) -> List[JobResult]:
         logger.debug(f"Retrieving JobResults from study {study_id}")
-        job_results: List[JobResult] = (
-            db.session.query(JobResult)
-            .filter(JobResult.study_id == study_id)
-            .all()
-        )
+        job_results: List[JobResult] = db.session.query(JobResult).filter(JobResult.study_id == study_id).all()
         return job_results
 
     def delete(self, id: str) -> None:
@@ -68,11 +59,7 @@ class JobResultRepository:
 
     def delete_by_study_id(self, study_id: str) -> None:
         logger.debug(f"Deleting JobResults from_study {study_id}")
-        jobs = (
-            db.session.query(JobResult)
-            .filter(JobResult.study_id == study_id)
-            .all()
-        )
+        jobs = db.session.query(JobResult).filter(JobResult.study_id == study_id).all()
         for job in jobs:
             db.session.delete(job)
         db.session.commit()

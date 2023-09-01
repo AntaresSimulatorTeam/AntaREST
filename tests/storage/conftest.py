@@ -5,19 +5,14 @@ from typing import Callable, Dict, List, Optional, Union
 from unittest.mock import Mock
 
 import pytest
+
 from antarest.core.config import Config
 from antarest.core.filetransfer.model import FileDownload
 from antarest.core.filetransfer.repository import FileDownloadRepository
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.model import JSON
 from antarest.core.requests import RequestParameters
-from antarest.core.tasks.model import (
-    CustomTaskEventMessages,
-    TaskDTO,
-    TaskListFilter,
-    TaskStatus,
-    TaskType,
-)
+from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskListFilter, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskService, Task
 
 
@@ -31,9 +26,7 @@ def ini_cleaner() -> Callable[[str], str]:
 
 
 @pytest.fixture
-def clean_ini_writer(
-    ini_cleaner: Callable[[str], str]
-) -> Callable[[Path, str], None]:
+def clean_ini_writer(ini_cleaner: Callable[[str], str]) -> Callable[[Path, str], None]:
     def write_clean_ini(path: Path, txt: str) -> None:
         clean_ini = ini_cleaner(txt)
         path.write_text(clean_ini)
@@ -151,9 +144,7 @@ def lite_jsonschema() -> JSON:
                                 "$id": {"type": "string"},
                                 "matrice1.txt": {
                                     "type": "string",
-                                    "rte-metadata": {
-                                        "filename": "matrice1.txt"
-                                    },
+                                    "rte-metadata": {"filename": "matrice1.txt"},
                                 },
                                 "file4.ini": {
                                     "type": "object",
@@ -188,9 +179,7 @@ def lite_jsondata() -> JSON:
         "folder1": {
             "file2": file_content,
             "matrice1.txt": "file/root1/folder1/matrice1.txt",
-            "folder2": {
-                "matrice2.txt": "file/root1/folder1/folder2/matrice2.txt"
-            },
+            "folder2": {"matrice2.txt": "file/root1/folder1/folder2/matrice2.txt"},
         },
         "folder3": {
             "file3.ini": file_content,
@@ -314,14 +303,10 @@ class SimpleSyncTaskService(ITaskService):
             logs=None,
         )
 
-    def list_tasks(
-        self, task_filter: TaskListFilter, request_params: RequestParameters
-    ) -> List[TaskDTO]:
+    def list_tasks(self, task_filter: TaskListFilter, request_params: RequestParameters) -> List[TaskDTO]:
         return []
 
-    def await_task(
-        self, task_id: str, timeout_sec: Optional[int] = None
-    ) -> None:
+    def await_task(self, task_id: str, timeout_sec: Optional[int] = None) -> None:
         pass
 
 

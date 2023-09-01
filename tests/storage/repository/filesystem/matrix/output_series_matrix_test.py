@@ -3,18 +3,10 @@ from unittest.mock import Mock
 
 import pandas as pd
 
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
-)
-from antarest.study.storage.rawstudy.model.filesystem.matrix.head_writer import (
-    AreaHeadWriter,
-)
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import (
-    MatrixFrequency,
-)
-from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import (
-    OutputSeriesMatrix,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.matrix.head_writer import AreaHeadWriter
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
+from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import OutputSeriesMatrix
 
 MATRIX_DAILY_DATA = """\
 DE	area	va	hourly
@@ -31,12 +23,8 @@ DE\thourly\t\t\t\t01_solar\t02_wind_on
 
 def test_get(tmp_path: Path):
     file = tmp_path / "matrix-daily.txt"
-    file.write_text(
-        "\n\n\n\nmock\tfile\ndummy\tdummy\ndummy\tdummy\ndummy\tdummy"
-    )
-    config = FileStudyTreeConfig(
-        study_path=file, path=file, study_id="id", version=-1
-    )
+    file.write_text("\n\n\n\nmock\tfile\ndummy\tdummy\ndummy\tdummy\ndummy\tdummy")
+    config = FileStudyTreeConfig(study_path=file, path=file, study_id="id", version=-1)
 
     serializer = Mock()
     serializer.extract_date.return_value = (
@@ -69,9 +57,7 @@ def test_get(tmp_path: Path):
 
 def test_save(tmp_path: Path):
     file = tmp_path / "matrix-daily.txt"
-    config = FileStudyTreeConfig(
-        study_path=file, path=file, study_id="id", version=-1
-    )
+    config = FileStudyTreeConfig(study_path=file, path=file, study_id="id", version=-1)
 
     serializer = Mock()
     serializer.build_date.return_value = pd.DataFrame(

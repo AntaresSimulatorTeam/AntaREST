@@ -2,8 +2,9 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Any, Awaitable, Callable, List, Optional
 
-from antarest.core.model import PermissionInfo
 from pydantic import BaseModel
+
+from antarest.core.model import PermissionInfo
 
 
 class EventType(str, Enum):
@@ -18,9 +19,7 @@ class EventType(str, Enum):
     STUDY_JOB_STATUS_UPDATE = "STUDY_JOB_STATUS_UPDATE"
     STUDY_JOB_CANCEL_REQUEST = "STUDY_JOB_CANCEL_REQUEST"
     STUDY_JOB_CANCELLED = "STUDY_JOB_CANCELLED"
-    STUDY_VARIANT_GENERATION_COMMAND_RESULT = (
-        "STUDY_VARIANT_GENERATION_COMMAND_RESULT"
-    )
+    STUDY_VARIANT_GENERATION_COMMAND_RESULT = "STUDY_VARIANT_GENERATION_COMMAND_RESULT"
     TASK_ADDED = "TASK_ADDED"
     TASK_RUNNING = "TASK_RUNNING"
     TASK_COMPLETED = "TASK_COMPLETED"
@@ -130,9 +129,7 @@ class DummyEventBusService(IEventBus):
         # Noop
         pass
 
-    def add_queue_consumer(
-        self, listener: Callable[[Event], Awaitable[None]], queue: str
-    ) -> str:
+    def add_queue_consumer(self, listener: Callable[[Event], Awaitable[None]], queue: str) -> str:
         return ""
 
     def remove_queue_consumer(self, listener_id: str) -> None:

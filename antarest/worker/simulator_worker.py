@@ -3,7 +3,7 @@ import subprocess
 import threading
 import time
 from pathlib import Path
-from typing import cast, IO
+from typing import IO, cast
 
 from pydantic import BaseModel
 
@@ -15,11 +15,8 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.launcher.adapters.log_manager import LogTailManager
 from antarest.matrixstore.service import MatrixService
 from antarest.matrixstore.uri_resolver_service import UriResolverService
-from antarest.study.storage.rawstudy.model.filesystem.factory import (
-    StudyFactory,
-)
+from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
 from antarest.worker.worker import AbstractWorker, WorkerTaskCommand
-
 
 logger = logging.getLogger(__name__)
 
@@ -64,18 +61,12 @@ class SimulatorWorker(AbstractWorker):
             return self.execute_timeseries_generation_task(task_info)
         elif task_info.task_type == GENERATE_KIRSHOFF_CONSTRAINTS_TASK_NAME:
             return self.execute_kirshoff_constraint_generation_task(task_info)
-        raise NotImplementedError(
-            f"{task_info.task_type} is not implemented by this worker"
-        )
+        raise NotImplementedError(f"{task_info.task_type} is not implemented by this worker")
 
-    def execute_kirshoff_constraint_generation_task(
-        self, task_info: WorkerTaskCommand
-    ) -> TaskResult:
+    def execute_kirshoff_constraint_generation_task(self, task_info: WorkerTaskCommand) -> TaskResult:
         raise NotImplementedError
 
-    def execute_timeseries_generation_task(
-        self, task_info: WorkerTaskCommand
-    ) -> TaskResult:
+    def execute_timeseries_generation_task(self, task_info: WorkerTaskCommand) -> TaskResult:
         result = TaskResult(success=True, message="", return_value="")
         task = GenerateTimeseriesTaskArgs.parse_obj(task_info.task_args)
         binary = (
@@ -83,9 +74,7 @@ class SimulatorWorker(AbstractWorker):
             if task.study_version in self.binaries
             else list(self.binaries.values())[0]
         )
-        file_study = self.study_factory.create_from_fs(
-            Path(task.study_path), task.study_id, use_cache=False
-        )
+        file_study = self.study_factory.create_from_fs(Path(task.study_path), task.study_id, use_cache=False)
         if task.managed:
             with db():
                 file_study.tree.denormalize()

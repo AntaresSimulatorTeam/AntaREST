@@ -1,10 +1,10 @@
 import uuid
 from datetime import datetime
 from enum import Enum
-from typing import Optional, List, Any
+from typing import Any, List, Optional
 
 from pydantic import BaseModel, Extra
-from sqlalchemy import Column, String, Integer, Boolean, DateTime, ForeignKey, Sequence  # type: ignore
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, Sequence, String  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
 
 from antarest.core.persistence import Base
@@ -98,11 +98,7 @@ class TaskJobLog(Base):  # type: ignore
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, TaskJobLog):
             return False
-        return bool(
-            other.id == self.id
-            and other.message == self.message
-            and other.task_id == self.task_id
-        )
+        return bool(other.id == self.id and other.message == self.message and other.task_id == self.task_id)
 
     def __repr__(self) -> str:
         return f"id={self.id}, message={self.message}, task_id={self.task_id}"
@@ -122,9 +118,7 @@ class TaskJob(Base):  # type: ignore
     result_msg = Column(String(), nullable=True)
     result = Column(String(), nullable=True)
     result_status = Column(Boolean(), nullable=True)
-    logs = relationship(
-        TaskJobLog, uselist=True, cascade="all, delete, delete-orphan"
-    )
+    logs = relationship(TaskJobLog, uselist=True, cascade="all, delete, delete-orphan")
     # this is not a foreign key to prevent the need to delete the job history if the user is deleted
     owner_id = Column(Integer(), nullable=True)
     type = Column(String(), nullable=True)
@@ -135,9 +129,7 @@ class TaskJob(Base):  # type: ignore
             id=self.id,
             owner=self.owner_id,
             creation_date_utc=str(self.creation_date),
-            completion_date_utc=str(self.completion_date)
-            if self.completion_date
-            else None,
+            completion_date_utc=str(self.completion_date) if self.completion_date else None,
             name=self.name,
             status=TaskStatus(self.status),
             result=TaskResult(
@@ -147,11 +139,7 @@ class TaskJob(Base):  # type: ignore
             )
             if self.completion_date
             else None,
-            logs=sorted(
-                [log.to_dto() for log in self.logs], key=lambda l: l.id
-            )
-            if with_logs
-            else None,
+            logs=sorted([log.to_dto() for log in self.logs], key=lambda l: l.id) if with_logs else None,
             type=self.type,
             ref_id=self.ref_id,
         )
@@ -172,4 +160,14 @@ class TaskJob(Base):  # type: ignore
         )
 
     def __repr__(self) -> str:
-        return f"id={self.id}, logs={self.logs}, owner_id={self.owner_id}, creation_date={self.creation_date}, completion_date={self.completion_date}, name={self.name}, status={self.status}, result_msg={self.result_msg}, result_status={self.result_status}"
+        return (
+            f"id={self.id},"
+            f" logs={self.logs},"
+            f" owner_id={self.owner_id},"
+            f" creation_date={self.creation_date},"
+            f" completion_date={self.completion_date},"
+            f" name={self.name},"
+            f" status={self.status},"
+            f" result_msg={self.result_msg},"
+            f" result_status={self.result_status}"
+        )

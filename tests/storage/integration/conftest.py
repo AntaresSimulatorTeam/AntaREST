@@ -7,24 +7,14 @@ import pytest
 from sqlalchemy import create_engine
 
 from antarest.core.cache.business.local_chache import LocalCache
-from antarest.core.config import (
-    Config,
-    SecurityConfig,
-    StorageConfig,
-    WorkspaceConfig,
-    CacheConfig,
-)
+from antarest.core.config import CacheConfig, Config, SecurityConfig, StorageConfig, WorkspaceConfig
 from antarest.core.tasks.service import ITaskService
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.dbmodel import Base
 from antarest.login.model import User
 from antarest.matrixstore.service import SimpleMatrixService
 from antarest.study.main import build_study_service
-from antarest.study.model import (
-    DEFAULT_WORKSPACE_NAME,
-    RawStudy,
-    StudyAdditionalData,
-)
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, StudyAdditionalData
 from antarest.study.service import StudyService
 
 
@@ -39,9 +29,7 @@ def sta_mini_zip_path(project_path: Path) -> Path:
 
 
 @pytest.fixture
-def storage_service(
-    tmp_path: Path, project_path: Path, sta_mini_zip_path: Path
-) -> StudyService:
+def storage_service(tmp_path: Path, project_path: Path, sta_mini_zip_path: Path) -> StudyService:
     engine = create_engine("sqlite:///:memory:", echo=False)
     Base.metadata.create_all(engine)
     # noinspection SpellCheckingInspection
@@ -66,9 +54,7 @@ def storage_service(
         created_at=datetime.datetime.fromtimestamp(1480683452),
         updated_at=datetime.datetime.fromtimestamp(1602678639),
         version=700,
-        additional_data=StudyAdditionalData(
-            author="Andrea SGATTONI", horizon=2030
-        ),
+        additional_data=StudyAdditionalData(author="Andrea SGATTONI", horizon=2030),
     )
     repo = Mock()
     # noinspection PyArgumentList
@@ -91,11 +77,7 @@ def storage_service(
         resources_path=path_resources,
         security=SecurityConfig(disabled=True),
         cache=CacheConfig(),
-        storage=StorageConfig(
-            workspaces={
-                DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=path_studies)
-            }
-        ),
+        storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=path_studies)}),
     )
 
     task_service_mock = Mock(spec=ITaskService)

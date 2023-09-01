@@ -2,48 +2,28 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from antarest.core.exceptions import (
-    AreaNotFound,
-    DistrictAlreadyExist,
-    DistrictNotFound,
-)
+from antarest.core.exceptions import AreaNotFound, DistrictAlreadyExist, DistrictNotFound
 from antarest.study.business.district_manager import (
+    DistrictCreationDTO,
     DistrictInfoDTO,
     DistrictManager,
-    DistrictCreationDTO,
     DistrictUpdateDTO,
 )
 from antarest.study.model import Study
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    DistrictSet,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import DistrictSet
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import (
-    FileStudyTree,
-)
+from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
-from antarest.study.storage.variantstudy.model.command.create_district import (
-    CreateDistrict,
-)
-from antarest.study.storage.variantstudy.model.command.remove_district import (
-    RemoveDistrict,
-)
-from antarest.study.storage.variantstudy.model.command.update_district import (
-    UpdateDistrict,
-)
-from antarest.study.storage.variantstudy.model.command_context import (
-    CommandContext,
-)
-from antarest.study.storage.variantstudy.variant_study_service import (
-    VariantStudyService,
-)
+from antarest.study.storage.variantstudy.model.command.create_district import CreateDistrict
+from antarest.study.storage.variantstudy.model.command.remove_district import RemoveDistrict
+from antarest.study.storage.variantstudy.model.command.update_district import UpdateDistrict
+from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 
 # noinspection SpellCheckingInspection
-EXECUTE_OR_ADD_COMMANDS = (
-    "antarest.study.business.district_manager.execute_or_add_commands"
-)
+EXECUTE_OR_ADD_COMMANDS = "antarest.study.business.district_manager.execute_or_add_commands"
 
 
 def _check_execute_or_add_commands(patched_func, expected_cls):
@@ -74,16 +54,12 @@ class TestDistrictManager:
         sets = {
             "d1": DistrictSet(name="D1", areas=[], output=True),
             "d2": DistrictSet(name="D2", areas=["n1", "n2"], output=True),
-            "d3": DistrictSet(
-                name="D2", areas=["n1", "n2", "n3"], output=False
-            ),
+            "d3": DistrictSet(name="D2", areas=["n1", "n2", "n3"], output=False),
         }
 
         # mocks
         file_study_tree = Mock(spec=FileStudyTree)
-        file_study_tree.get.return_value = {
-            "comments": "dummy"
-        }  # same comment for all nodes
+        file_study_tree.get.return_value = {"comments": "dummy"}  # same comment for all nodes
         file_study = Mock(
             spec=FileStudy,
             config=Mock(areas=areas, sets=sets),
@@ -122,9 +98,7 @@ class TestDistrictManager:
         ]
         assert actual == expected
 
-    def test_create_district__district_already_exist(
-        self, study_storage_service: StudyStorageService
-    ):
+    def test_create_district__district_already_exist(self, study_storage_service: StudyStorageService):
         # prepare data
         areas = dict.fromkeys(["n1", "n2", "n3"])
         sets = {
@@ -144,15 +118,11 @@ class TestDistrictManager:
         # run
         manager = DistrictManager(study_storage_service)
         study = Mock(spec=Study)
-        dto = DistrictCreationDTO(
-            name="d1", output=True, comments="", areas=[]
-        )
+        dto = DistrictCreationDTO(name="d1", output=True, comments="", areas=[])
         with pytest.raises(DistrictAlreadyExist):
             manager.create_district(study, dto)
 
-    def test_create_district__area_not_found(
-        self, study_storage_service: StudyStorageService
-    ):
+    def test_create_district__area_not_found(self, study_storage_service: StudyStorageService):
         # prepare data
         areas = dict.fromkeys(["n1", "n2", "n3"])
         sets = {}
@@ -179,15 +149,11 @@ class TestDistrictManager:
         with pytest.raises(AreaNotFound, match=r"MISSING"):
             manager.create_district(study, dto)
 
-    def test_create_district__nominal(
-        self, study_storage_service: StudyStorageService
-    ):
+    def test_create_district__nominal(self, study_storage_service: StudyStorageService):
         # prepare data
         areas = dict.fromkeys(["n1", "n2", "n3"])
         sets = {
-            "all areas": DistrictSet(
-                name="All areas", areas=["n1", "n2", "n3"], output=False
-            ),
+            "all areas": DistrictSet(name="All areas", areas=["n1", "n2", "n3"], output=False),
         }
 
         # mocks
@@ -222,9 +188,7 @@ class TestDistrictManager:
         assert actual == expected
         _check_execute_or_add_commands(exe, CreateDistrict)
 
-    def test_update_district__district_not_found(
-        self, study_storage_service: StudyStorageService
-    ):
+    def test_update_district__district_not_found(self, study_storage_service: StudyStorageService):
         # prepare data
         areas = dict.fromkeys(["n1", "n2", "n3"])
         sets = {}
@@ -246,15 +210,11 @@ class TestDistrictManager:
         with pytest.raises(DistrictNotFound, match="MISSING"):
             manager.update_district(study, "MISSING", dto)
 
-    def test_update_district__area_not_found(
-        self, study_storage_service: StudyStorageService
-    ):
+    def test_update_district__area_not_found(self, study_storage_service: StudyStorageService):
         # prepare data
         areas = dict.fromkeys(["n1", "n2", "n3"])
         sets = {
-            "d1": DistrictSet(
-                name="D1", areas=["n1", "n2", "n3"], output=False
-            ),
+            "d1": DistrictSet(name="D1", areas=["n1", "n2", "n3"], output=False),
         }
 
         # mocks
@@ -278,15 +238,11 @@ class TestDistrictManager:
         with pytest.raises(AreaNotFound, match=r"MISSING"):
             manager.update_district(study, "d1", dto)
 
-    def test_update_district__nominal(
-        self, study_storage_service: StudyStorageService
-    ):
+    def test_update_district__nominal(self, study_storage_service: StudyStorageService):
         # prepare data
         areas = dict.fromkeys(["n1", "n2", "n3"])
         sets = {
-            "d1": DistrictSet(
-                name="D1", areas=["n1", "n2", "n3"], output=False
-            ),
+            "d1": DistrictSet(name="D1", areas=["n1", "n2", "n3"], output=False),
         }
 
         # mocks
@@ -311,9 +267,7 @@ class TestDistrictManager:
             manager.update_district(study, "d1", dto)
         _check_execute_or_add_commands(exe, UpdateDistrict)
 
-    def test_remove_district__district_not_found(
-        self, study_storage_service: StudyStorageService
-    ):
+    def test_remove_district__district_not_found(self, study_storage_service: StudyStorageService):
         # prepare data
         areas = dict.fromkeys(["n1", "n2", "n3"])
         sets = {}
@@ -334,15 +288,11 @@ class TestDistrictManager:
         with pytest.raises(DistrictNotFound, match="MISSING"):
             manager.remove_district(study, district_id="MISSING")
 
-    def test_remove_district__nominal(
-        self, study_storage_service: StudyStorageService
-    ):
+    def test_remove_district__nominal(self, study_storage_service: StudyStorageService):
         # prepare data
         areas = dict.fromkeys(["n1", "n2", "n3"])
         sets = {
-            "d1": DistrictSet(
-                name="D1", areas=["n1", "n2", "n3"], output=False
-            ),
+            "d1": DistrictSet(name="D1", areas=["n1", "n2", "n3"], output=False),
         }
 
         # mocks

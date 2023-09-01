@@ -3,8 +3,6 @@ from pathlib import Path
 from typing import List
 from unittest.mock import MagicMock
 
-import pytest
-
 from antarest.core.config import Config
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.model import PermissionInfo, PublicMode
@@ -15,9 +13,7 @@ from tests.helpers import auto_retry_assert
 
 
 class DummyWorker(AbstractWorker):
-    def __init__(
-        self, event_bus: IEventBus, accept: List[str], tmp_path: Path
-    ):
+    def __init__(self, event_bus: IEventBus, accept: List[str], tmp_path: Path):
         super().__init__("test", event_bus, accept)
         self.tmp_path = tmp_path
 

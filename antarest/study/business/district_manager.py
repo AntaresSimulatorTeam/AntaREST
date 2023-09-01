@@ -2,27 +2,14 @@ from typing import List
 
 from pydantic import BaseModel
 
-from antarest.core.exceptions import (
-    AreaNotFound,
-    DistrictAlreadyExist,
-    DistrictNotFound,
-)
+from antarest.core.exceptions import AreaNotFound, DistrictAlreadyExist, DistrictNotFound
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import Study
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    transform_name_to_id,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.storage_service import StudyStorageService
-from antarest.study.storage.variantstudy.model.command.create_district import (
-    CreateDistrict,
-    DistrictBaseFilter,
-)
-from antarest.study.storage.variantstudy.model.command.remove_district import (
-    RemoveDistrict,
-)
-from antarest.study.storage.variantstudy.model.command.update_district import (
-    UpdateDistrict,
-)
+from antarest.study.storage.variantstudy.model.command.create_district import CreateDistrict, DistrictBaseFilter
+from antarest.study.storage.variantstudy.model.command.remove_district import RemoveDistrict
+from antarest.study.storage.variantstudy.model.command.update_district import UpdateDistrict
 
 
 class DistrictUpdateDTO(BaseModel):
@@ -76,9 +63,7 @@ class DistrictManager:
                 name=district.name,
                 areas=district.get_areas(all_areas),
                 output=district.output,
-                comments=file_study.tree.get(
-                    ["input", "areas", "sets", district_id]
-                ).get("comments", ""),
+                comments=file_study.tree.get(["input", "areas", "sets", district_id]).get("comments", ""),
             )
             for district_id, district in file_study.config.sets.items()
         ]
@@ -118,9 +103,7 @@ class DistrictManager:
             filter_items=areas,
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
         )
-        execute_or_add_commands(
-            study, file_study, [command], self.storage_service
-        )
+        execute_or_add_commands(study, file_study, [command], self.storage_service)
         return DistrictInfoDTO(
             id=district_id,
             name=dto.name,
@@ -165,9 +148,7 @@ class DistrictManager:
             comments=dto.comments,
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
         )
-        execute_or_add_commands(
-            study, file_study, [command], self.storage_service
-        )
+        execute_or_add_commands(study, file_study, [command], self.storage_service)
 
     def remove_district(
         self,
@@ -191,6 +172,4 @@ class DistrictManager:
             id=district_id,
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
         )
-        execute_or_add_commands(
-            study, file_study, [command], self.storage_service
-        )
+        execute_or_add_commands(study, file_study, [command], self.storage_service)

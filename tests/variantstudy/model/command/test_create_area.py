@@ -3,25 +3,13 @@ from unittest.mock import Mock
 
 import pytest
 
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    ENR_MODELLING,
-    transform_name_to_id,
-    ENR_MODELLING,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import ENR_MODELLING, transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.business.command_reverter import (
-    CommandReverter,
-)
-from antarest.study.storage.variantstudy.model.command.create_area import (
-    CreateArea,
-)
+from antarest.study.storage.variantstudy.business.command_reverter import CommandReverter
+from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
-from antarest.study.storage.variantstudy.model.command.remove_area import (
-    RemoveArea,
-)
-from antarest.study.storage.variantstudy.model.command_context import (
-    CommandContext,
-)
+from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
+from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
 class TestCreateArea:
@@ -50,7 +38,6 @@ class TestCreateArea:
         )
         output = create_area_command.apply(study_data=empty_study)
 
-        # fmt: off
         # Areas
         assert area_id in empty_study.config.areas
 
@@ -151,7 +138,6 @@ class TestCreateArea:
 
         # thermal/areas ini file
         assert (study_path / "input" / "thermal" / "areas.ini").exists()
-        # fmt: on
 
         assert output.status
 
@@ -167,12 +153,11 @@ class TestCreateArea:
 
 
 def test_match(command_context: CommandContext):
-    # fmt: off
     base = CreateArea(area_name="foo", command_context=command_context)
     other_match = CreateArea(area_name="foo", command_context=command_context)
     other_not_match = CreateArea(area_name="bar", command_context=command_context)
     other_other = RemoveArea(id="id", command_context=command_context)
-    # fmt: on
+
     assert base.match(other_match)
     assert not base.match(other_not_match)
     assert not base.match(other_other)

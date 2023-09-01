@@ -1,4 +1,4 @@
-from typing import Dict, Any
+from typing import Any, Dict
 
 from pydantic import BaseModel, Extra, Field, root_validator
 
@@ -102,9 +102,7 @@ class STStorageConfig(BaseModel):
             The updated values.
         """
         # Avoid circular imports
-        from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-            transform_name_to_id,
-        )
+        from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 
         if values.get("id") or not values.get("name"):
             return values
@@ -112,7 +110,5 @@ class STStorageConfig(BaseModel):
         if storage_id := transform_name_to_id(storage_name):
             values["id"] = storage_id
         else:
-            raise ValueError(
-                f"Invalid short term storage name '{storage_name}'."
-            )
+            raise ValueError(f"Invalid short term storage name '{storage_name}'.")
         return values

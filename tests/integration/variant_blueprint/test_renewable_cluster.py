@@ -2,10 +2,9 @@ import http
 
 import numpy as np
 import pytest
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    transform_name_to_id,
-)
 from starlette.testclient import TestClient
+
+from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 
 
 # noinspection SpellCheckingInspection
@@ -151,10 +150,7 @@ class TestRenewableCluster:
         )
         res.raise_for_status()
         matrix_fr1 = res.json()
-        assert (
-            np.array(matrix_fr1["data"], dtype=np.float64).all()
-            == values_fr1.all()
-        )
+        assert np.array(matrix_fr1["data"], dtype=np.float64).all() == values_fr1.all()
 
         res = client.get(
             f"/v1/studies/{study_id}/raw?path=input/renewables/series/{area_fr_id}/{cluster_fr2_id}/series",
@@ -162,10 +158,7 @@ class TestRenewableCluster:
         )
         res.raise_for_status()
         matrix_fr2 = res.json()
-        assert (
-            np.array(matrix_fr2["data"], dtype=np.float64).all()
-            == values_fr2.all()
-        )
+        assert np.array(matrix_fr2["data"], dtype=np.float64).all() == values_fr2.all()
 
         # =================================
         #  Create Renewable Clusters in IT
@@ -216,10 +209,7 @@ class TestRenewableCluster:
         )
         res.raise_for_status()
         matrix_it1 = res.json()
-        assert (
-            np.array(matrix_it1["data"]).all()
-            == np.zeros(shape=(8760, 1)).all()
-        )
+        assert np.array(matrix_it1["data"]).all() == np.zeros(shape=(8760, 1)).all()
 
         # ===========================
         #  Renewable Cluster Removal
@@ -311,7 +301,4 @@ class TestRenewableCluster:
         )
         assert res.status_code == http.HTTPStatus.INTERNAL_SERVER_ERROR
         result = res.json()
-        assert (
-            "'la_rochelle' not a child of ClusteredRenewableClusterSeries"
-            in result["description"]
-        )
+        assert "'la_rochelle' not a child of ClusteredRenewableClusterSeries" in result["description"]

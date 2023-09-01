@@ -11,23 +11,23 @@ from fastapi_jwt_auth import AuthJWT
 from starlette.testclient import TestClient
 
 from antarest.core.config import Config, SecurityConfig
-from antarest.core.jwt import JWTUser, JWTGroup
+from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.requests import RequestParameters
 from antarest.login.main import build_login
 from antarest.login.model import (
-    User,
-    RoleType,
-    Password,
-    Group,
-    Role,
-    BotCreateDTO,
     Bot,
-    UserCreateDTO,
-    IdentityDTO,
+    BotCreateDTO,
     BotRoleCreateDTO,
-    RoleDetailDTO,
-    UserInfo,
+    Group,
     GroupDTO,
+    IdentityDTO,
+    Password,
+    Role,
+    RoleDetailDTO,
+    RoleType,
+    User,
+    UserCreateDTO,
+    UserInfo,
 )
 from antarest.main import JwtSettings
 
@@ -73,11 +73,7 @@ def create_auth_token(
     type: TokenType = TokenType.ACCESS,
 ) -> Dict[str, str]:
     jwt_manager = AuthJWT()
-    create_token = (
-        jwt_manager.create_access_token
-        if type == TokenType.ACCESS
-        else jwt_manager.create_refresh_token
-    )
+    create_token = jwt_manager.create_access_token if type == TokenType.ACCESS else jwt_manager.create_refresh_token
     token = create_token(
         expires_time=expires_delta,
         subject=JWTUser(
@@ -87,9 +83,7 @@ def create_auth_token(
             groups=[JWTGroup(id="group", name="group", role=RoleType.ADMIN)],
         ).json(),
     )
-    return {
-        "Authorization": f"Bearer {token if isinstance(token, str) else token.decode()}"
-    }
+    return {"Authorization": f"Bearer {token if isinstance(token, str) else token.decode()}"}
 
 
 @pytest.mark.unit_test
@@ -113,15 +107,11 @@ def test_auth_needed() -> None:
 @pytest.mark.unit_test
 def test_auth() -> None:
     service = Mock()
-    service.authenticate.return_value = JWTUser(
-        id=0, type="user", impersonator=0
-    )
+    service.authenticate.return_value = JWTUser(id=0, type="user", impersonator=0)
 
     app = create_app(service)
     client = TestClient(app)
-    res = client.post(
-        "/v1/login", json={"username": "admin", "password": "admin"}
-    )
+    res = client.post("/v1/login", json={"username": "admin", "password": "admin"})
 
     assert res.status_code == 200
     assert res.json()["access_token"]
@@ -136,9 +126,7 @@ def test_auth_fail() -> None:
 
     app = create_app(service)
     client = TestClient(app, raise_server_exceptions=False)
-    res = client.post(
-        "/v1/login", json={"username": "admin", "password": "admin"}
-    )
+    res = client.post("/v1/login", json={"username": "admin", "password": "admin"})
 
     assert res.status_code == 401
 
@@ -207,15 +195,11 @@ def test_user_id() -> None:
 @pytest.mark.unit_test
 def test_user_id_with_details() -> None:
     service = Mock()
-    service.get_user_info.return_value = IdentityDTO(
-        id=1, name="user", roles=[]
-    )
+    service.get_user_info.return_value = IdentityDTO(id=1, name="user", roles=[])
 
     app = create_app(service)
     client = TestClient(app)
-    res = client.get(
-        "/v1/users/1?details=true", headers=create_auth_token(app)
-    )
+    res = client.get("/v1/users/1?details=true", headers=create_auth_token(app))
     assert res.status_code == 200
     assert res.json() == IdentityDTO(id=1, name="user", roles=[]).dict()
 
@@ -274,9 +258,7 @@ def test_user_delete() -> None:
 @pytest.mark.unit_test
 def test_group() -> None:
     service = Mock()
-    service.get_all_groups.return_value = [
-        GroupDTO(id="my-group", name="group")
-    ]
+    service.get_all_groups.return_value = [GroupDTO(id="my-group", name="group")]
 
     app = create_app(service)
     client = TestClient(app)
@@ -342,9 +324,7 @@ def test_role() -> None:
     client = TestClient(app)
     res = client.get("/v1/roles/group/g", headers=create_auth_token(app))
     assert res.status_code == 200
-    assert [RoleDetailDTO.parse_obj(el) for el in res.json()] == [
-        role.to_dto()
-    ]
+    assert [RoleDetailDTO.parse_obj(el) for el in res.json()] == [role.to_dto()]
 
 
 @pytest.mark.unit_test
@@ -409,9 +389,7 @@ def test_bot_create() -> None:
     print(create.json())
     app = create_app(service)
     client = TestClient(app)
-    res = client.post(
-        "/v1/bots", headers=create_auth_token(app), json=create.dict()
-    )
+    res = client.post("/v1/bots", headers=create_auth_token(app), json=create.dict())
 
     assert res.status_code == 200
     assert len(res.json().split(".")) == 3

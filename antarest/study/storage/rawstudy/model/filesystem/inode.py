@@ -1,15 +1,10 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import List, Optional, Dict, TypeVar, Generic, Any, Tuple
+from typing import Any, Dict, Generic, List, Optional, Tuple, TypeVar
 
-from antarest.core.exceptions import (
-    ShouldNotHappenException,
-    WritingInsideZippedFileException,
-)
+from antarest.core.exceptions import ShouldNotHappenException, WritingInsideZippedFileException
 from antarest.core.utils.utils import extract_file_to_tmp_dir
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 
 G = TypeVar("G")
 S = TypeVar("S")
@@ -86,9 +81,7 @@ class INode(ABC, Generic[G, S, V]):
         raise NotImplementedError()
 
     @abstractmethod
-    def check_errors(
-        self, data: V, url: Optional[List[str]] = None, raising: bool = False
-    ) -> List[str]:
+    def check_errors(self, data: V, url: Optional[List[str]] = None, raising: bool = False) -> List[str]:
         """
         List inconsistency error between data and study configuration.
         Args:
@@ -130,9 +123,7 @@ class INode(ABC, Generic[G, S, V]):
         """
         url = url or []
         if len(url) > 0:
-            raise ValueError(
-                f"url should be fully resolved when arrives on {self.__class__.__name__}"
-            )
+            raise ValueError(f"url should be fully resolved when arrives on {self.__class__.__name__}")
 
     def _extract_file_to_tmp_dir(
         self,
@@ -147,22 +138,16 @@ class INode(ABC, Generic[G, S, V]):
         """
         if self.config.zip_path is None:
             raise ShouldNotHappenException()
-        inside_zip_path = str(self.config.path)[
-            len(str(self.config.zip_path)[:-4]) + 1 :
-        ]
+        inside_zip_path = str(self.config.path)[len(str(self.config.zip_path)[:-4]) + 1 :]
         if self.config.zip_path:
-            return extract_file_to_tmp_dir(
-                self.config.zip_path, Path(inside_zip_path)
-            )
+            return extract_file_to_tmp_dir(self.config.zip_path, Path(inside_zip_path))
         else:
             raise ShouldNotHappenException()
 
     def _assert_not_in_zipped_file(self) -> None:
         """Prevents writing inside a zip file"""
         if self.config.zip_path:
-            raise WritingInsideZippedFileException(
-                "Trying to save inside a zipped file"
-            )
+            raise WritingInsideZippedFileException("Trying to save inside a zipped file")
 
 
 TREE = Dict[str, INode[Any, Any, Any]]

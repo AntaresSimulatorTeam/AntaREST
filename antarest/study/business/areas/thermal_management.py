@@ -1,20 +1,13 @@
-from enum import Enum
 from pathlib import PurePosixPath
 from typing import Any, Dict, List, Optional, cast
 
 from pydantic import StrictBool, StrictStr
 
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
-from antarest.study.business.utils import (
-    FieldInfo,
-    FormFieldsBaseModel,
-    execute_or_add_commands,
-)
+from antarest.study.business.utils import FieldInfo, FormFieldsBaseModel, execute_or_add_commands
 from antarest.study.model import Study
 from antarest.study.storage.storage_service import StudyStorageService
-from antarest.study.storage.variantstudy.model.command.update_config import (
-    UpdateConfig,
-)
+from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 
 
 class TimeSeriesGenerationOption(EnumIgnoreCase):
@@ -225,13 +218,9 @@ class ThermalManager:
     def __init__(self, storage_service: StudyStorageService):
         self.storage_service = storage_service
 
-    def get_field_values(
-        self, study: Study, area_id: str, cluster_id: str
-    ) -> ThermalFormFields:
+    def get_field_values(self, study: Study, area_id: str, cluster_id: str) -> ThermalFormFields:
         file_study = self.storage_service.get_storage(study).get_raw(study)
-        thermal_config = file_study.tree.get(
-            format_path(THERMAL_PATH, area_id, cluster_id).split("/")
-        )
+        thermal_config = file_study.tree.get(format_path(THERMAL_PATH, area_id, cluster_id).split("/"))
 
         def get_value(field_info: FieldInfo) -> Any:
             target_name = PurePosixPath(field_info["path"]).name
@@ -240,15 +229,9 @@ class ThermalManager:
             end_ver = cast(int, field_info.get("end_version", study_ver))
             is_in_version = start_ver <= study_ver <= end_ver
 
-            return (
-                thermal_config.get(target_name, field_info["default_value"])
-                if is_in_version
-                else None
-            )
+            return thermal_config.get(target_name, field_info["default_value"]) if is_in_version else None
 
-        return ThermalFormFields.construct(
-            **{name: get_value(info) for name, info in FIELDS_INFO.items()}
-        )
+        return ThermalFormFields.construct(**{name: get_value(info) for name, info in FIELDS_INFO.items()})
 
     def set_field_values(
         self,
@@ -273,6 +256,4 @@ class ThermalManager:
 
         if commands:
             file_study = self.storage_service.get_storage(study).get_raw(study)
-            execute_or_add_commands(
-                study, file_study, commands, self.storage_service
-            )
+            execute_or_add_commands(study, file_study, commands, self.storage_service)

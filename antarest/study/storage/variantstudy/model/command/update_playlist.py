@@ -1,15 +1,9 @@
-from typing import List, Tuple, Dict, Any, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
-from antarest.study.storage.variantstudy.model.command.common import (
-    CommandOutput,
-    CommandName,
-)
-
+from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -21,9 +15,7 @@ class UpdatePlaylist(ICommand):
     reverse: bool = False
 
     def __init__(self, **data: Any) -> None:
-        super().__init__(
-            command_name=CommandName.UPDATE_PLAYLIST, version=1, **data
-        )
+        super().__init__(command_name=CommandName.UPDATE_PLAYLIST, version=1, **data)
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
         FileStudyHelpers.set_playlist(
@@ -35,9 +27,7 @@ class UpdatePlaylist(ICommand):
         )
         return CommandOutput(status=True)
 
-    def _apply_config(
-        self, study_data: FileStudyTreeConfig
-    ) -> Tuple[CommandOutput, Dict[str, Any]]:
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         return CommandOutput(status=True), {}
 
     def to_dto(self) -> CommandDTO:

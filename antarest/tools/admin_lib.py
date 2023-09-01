@@ -3,9 +3,7 @@ from pathlib import Path
 
 from antarest.core.config import Config
 from antarest.core.utils.utils import get_local_path
-from antarest.launcher.adapters.slurm_launcher.slurm_launcher import (
-    WORKSPACE_LOCK_FILE_NAME,
-)
+from antarest.launcher.adapters.slurm_launcher.slurm_launcher import WORKSPACE_LOCK_FILE_NAME
 
 logger = logging.getLogger(__name__)
 
@@ -23,9 +21,7 @@ def clean_locks_from_config(config: Config) -> None:
             for workspace in slurm_workspace.iterdir():
                 lock_file = workspace / WORKSPACE_LOCK_FILE_NAME
                 if lock_file.exists():
-                    logger.info(
-                        f"Removing slurm workspace lock file {lock_file}"
-                    )
+                    logger.info(f"Removing slurm workspace lock file {lock_file}")
                     lock_file.unlink()
 
 

@@ -3,39 +3,19 @@ from typing import Any, Dict, List, Optional, TypedDict, Union
 from pydantic import StrictFloat
 from pydantic.types import StrictBool, StrictInt, StrictStr
 
-from antarest.study.business.areas.properties_management import (
-    AdequacyPatchMode,
-)
-from antarest.study.business.areas.renewable_management import (
-    TimeSeriesInterpretation,
-)
-from antarest.study.business.areas.thermal_management import (
-    LawOption,
-    TimeSeriesGenerationOption,
-)
-from antarest.study.business.binding_constraint_management import (
-    BindingConstraintManager,
-)
+from antarest.study.business.areas.properties_management import AdequacyPatchMode
+from antarest.study.business.areas.renewable_management import TimeSeriesInterpretation
+from antarest.study.business.areas.thermal_management import LawOption, TimeSeriesGenerationOption
+from antarest.study.business.binding_constraint_management import BindingConstraintManager
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
-from antarest.study.business.utils import (
-    FormFieldsBaseModel,
-    execute_or_add_commands,
-)
-from antarest.study.common.default_values import (
-    FilteringOptions,
-    LinkProperties,
-    NodalOptimization,
-)
+from antarest.study.business.utils import FormFieldsBaseModel, execute_or_add_commands
+from antarest.study.common.default_values import FilteringOptions, LinkProperties, NodalOptimization
 from antarest.study.model import RawStudy
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
-from antarest.study.storage.variantstudy.model.command.update_binding_constraint import (
-    UpdateBindingConstraint,
-)
-from antarest.study.storage.variantstudy.model.command.update_config import (
-    UpdateConfig,
-)
+from antarest.study.storage.variantstudy.model.command.update_binding_constraint import UpdateBindingConstraint
+from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 
 
 class TableTemplateType(EnumIgnoreCase):
@@ -387,9 +367,7 @@ ColumnsModelTypes = Union[
 ]
 
 
-def _get_glob_object(
-    file_study: FileStudy, table_type: TableTemplateType
-) -> Dict[str, Any]:
+def _get_glob_object(file_study: FileStudy, table_type: TableTemplateType) -> Dict[str, Any]:
     """
     Retrieves the fields of an object according to its type (area, link, thermal cluster...).
 
@@ -405,9 +383,7 @@ def _get_glob_object(
     """
     # sourcery skip: extract-method
     if table_type == TableTemplateType.AREA:
-        info_map: Dict[str, Any] = file_study.tree.get(
-            url=AREA_PATH.format(area="*").split("/"), depth=3
-        )
+        info_map: Dict[str, Any] = file_study.tree.get(url=AREA_PATH.format(area="*").split("/"), depth=3)
         area_ids = list(file_study.config.areas)
         # If there is only one ID in the `area_ids`, the result returned from
         # the `file_study.tree.get` call will be a single object.
@@ -426,13 +402,9 @@ def _get_glob_object(
     if table_type == TableTemplateType.LINK:
         return file_study.tree.get(LINK_GLOB_PATH.format(area1="*").split("/"))
     if table_type == TableTemplateType.CLUSTER:
-        return file_study.tree.get(
-            CLUSTER_GLOB_PATH.format(area="*").split("/")
-        )
+        return file_study.tree.get(CLUSTER_GLOB_PATH.format(area="*").split("/"))
     if table_type == TableTemplateType.RENEWABLE:
-        return file_study.tree.get(
-            RENEWABLE_GLOB_PATH.format(area="*").split("/")
-        )
+        return file_study.tree.get(RENEWABLE_GLOB_PATH.format(area="*").split("/"))
     if table_type == TableTemplateType.BINDING_CONSTRAINT:
         return file_study.tree.get(BINDING_CONSTRAINT_PATH.split("/"))
 
@@ -456,9 +428,7 @@ class TableModeManager:
 
         def get_column_value(col: str, data: Dict[str, Any]) -> Any:
             f_info = fields_info[col]
-            relative_path = TableModeManager.__get_relative_path(
-                f_info["path"], table_type
-            )
+            relative_path = TableModeManager.__get_relative_path(f_info["path"], table_type)
             return TableModeManager.__get_value(
                 relative_path,
                 data,
@@ -500,46 +470,27 @@ class TableModeManager:
         bindings_by_id = None
 
         for key, columns in data.items():
-            path_vars = TableModeManager.__get_path_vars_from_key(
-                table_type, key
-            )
+            path_vars = TableModeManager.__get_path_vars_from_key(table_type, key)
 
             if table_type == TableTemplateType.BINDING_CONSTRAINT:
-                file_study = self.storage_service.get_storage(study).get_raw(
-                    study
-                )
+                file_study = self.storage_service.get_storage(study).get_raw(study)
                 bindings_by_id = bindings_by_id or {
-                    binding["id"]: binding
-                    for binding in _get_glob_object(
-                        file_study, table_type
-                    ).values()
+                    binding["id"]: binding for binding in _get_glob_object(file_study, table_type).values()
                 }
                 binding_id = path_vars["id"]
                 current_binding = bindings_by_id.get(binding_id, None)
 
                 if current_binding:
                     col_values = columns.dict(exclude_none=True)
-                    current_binding_dto = (
-                        BindingConstraintManager.process_constraint(
-                            current_binding
-                        )
-                    )
+                    current_binding_dto = BindingConstraintManager.process_constraint(current_binding)
 
                     commands.append(
                         UpdateBindingConstraint(
                             id=binding_id,
-                            enabled=col_values.get(
-                                "enabled", current_binding_dto.enabled
-                            ),
-                            time_step=col_values.get(
-                                "type", current_binding_dto.time_step
-                            ),
-                            operator=col_values.get(
-                                "operator", current_binding_dto.operator
-                            ),
-                            coeffs=BindingConstraintManager.constraints_to_coeffs(
-                                current_binding_dto
-                            ),
+                            enabled=col_values.get("enabled", current_binding_dto.enabled),
+                            time_step=col_values.get("type", current_binding_dto.time_step),
+                            operator=col_values.get("operator", current_binding_dto.operator),
+                            coeffs=BindingConstraintManager.constraints_to_coeffs(current_binding_dto),
                             command_context=self.storage_service.variant_study_service.command_factory.command_context,
                         )
                     )
@@ -548,9 +499,7 @@ class TableModeManager:
                     if val is not None:
                         commands.append(
                             UpdateConfig(
-                                target=TableModeManager.__get_column_path(
-                                    table_type, path_vars, col
-                                ),
+                                target=TableModeManager.__get_column_path(table_type, path_vars, col),
                                 data=val,
                                 command_context=self.storage_service.variant_study_service.command_factory.command_context,
                             )
@@ -558,18 +507,12 @@ class TableModeManager:
 
         if commands:
             file_study = self.storage_service.get_storage(study).get_raw(study)
-            execute_or_add_commands(
-                study, file_study, commands, self.storage_service
-            )
+            execute_or_add_commands(study, file_study, commands, self.storage_service)
 
     @staticmethod
-    def __get_value(
-        path: List[str], data: Dict[str, Any], default_value: Any
-    ) -> Any:
+    def __get_value(path: List[str], data: Dict[str, Any], default_value: Any) -> Any:
         if len(path):
-            return TableModeManager.__get_value(
-                path[1:], data.get(path[0], {}), default_value
-            )
+            return TableModeManager.__get_value(path[1:], data.get(path[0], {}), default_value)
         return data if data != {} else default_value
 
     @staticmethod
@@ -609,16 +552,12 @@ class TableModeManager:
         if table_type == TableTemplateType.AREA:
             return path.format(area=path_vars["id"])
         if table_type == TableTemplateType.LINK:
-            return path.format(
-                area1=path_vars["area1"], area2=path_vars["area2"]
-            )
+            return path.format(area1=path_vars["area1"], area2=path_vars["area2"])
         if table_type in [
             TableTemplateType.CLUSTER,
             TableTemplateType.RENEWABLE,
         ]:
-            return path.format(
-                area=path_vars["area"], cluster=path_vars["cluster"]
-            )
+            return path.format(area=path_vars["area"], cluster=path_vars["cluster"])
 
         return path
 

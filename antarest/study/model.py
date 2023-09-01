@@ -5,22 +5,14 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+from pydantic import BaseModel
+from sqlalchemy import Boolean, Column, DateTime, Enum, ForeignKey, Integer, String, Table  # type: ignore
+from sqlalchemy.orm import relationship  # type: ignore
+
 from antarest.core.exceptions import ShouldNotHappenException
 from antarest.core.model import PublicMode
 from antarest.core.persistence import Base
 from antarest.login.model import Group, GroupDTO, Identity
-from pydantic import BaseModel
-from sqlalchemy import (  # type: ignore
-    Boolean,
-    Column,
-    DateTime,
-    Enum,
-    ForeignKey,
-    Integer,
-    String,
-    Table,
-)
-from sqlalchemy.orm import relationship  # type: ignore
 
 DEFAULT_WORKSPACE_NAME = "default"
 
@@ -82,11 +74,7 @@ class StudyAdditionalData(Base):  # type:ignore
             return False
         if not isinstance(other, StudyAdditionalData):
             return False
-        return bool(
-            other.author == self.author
-            and other.horizon == self.horizon
-            and other.patch == self.patch
-        )
+        return bool(other.author == self.author and other.horizon == self.horizon and other.patch == self.patch)
 
 
 @dataclass
@@ -112,9 +100,7 @@ class Study(Base):  # type: ignore
     last_access = Column(DateTime)
     path = Column(String())
     folder = Column(String, nullable=True)
-    parent_id = Column(
-        String(36), ForeignKey("study.id", name="fk_study_study_id")
-    )
+    parent_id = Column(String(36), ForeignKey("study.id", name="fk_study_study_id"))
     public_mode = Column(Enum(PublicMode), default=PublicMode.NONE)
     owner_id = Column(Integer, ForeignKey(Identity.id), nullable=True)
     archived = Column(Boolean(), default=False)

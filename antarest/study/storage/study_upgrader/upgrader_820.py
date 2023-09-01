@@ -3,8 +3,8 @@ from pathlib import Path
 from typing import cast
 
 import numpy as np
-import pandas
 import numpy.typing as npt
+import pandas
 
 
 def upgrade_820(study_path: Path) -> None:

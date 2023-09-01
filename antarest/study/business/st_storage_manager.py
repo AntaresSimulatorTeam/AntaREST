@@ -4,33 +4,21 @@ import operator
 from typing import Any, Dict, List, Mapping, MutableMapping, Sequence
 
 import numpy as np
+from pydantic import BaseModel, Extra, Field, root_validator, validator
+from typing_extensions import Literal
+
 from antarest.core.exceptions import (
     STStorageConfigNotFoundError,
     STStorageFieldsNotFoundError,
     STStorageMatrixNotFoundError,
 )
-from antarest.study.business.utils import (
-    AllOptionalMetaclass,
-    FormFieldsBaseModel,
-    execute_or_add_commands,
-)
+from antarest.study.business.utils import AllOptionalMetaclass, FormFieldsBaseModel, execute_or_add_commands
 from antarest.study.model import Study
-from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
-    STStorageConfig,
-    STStorageGroup,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import STStorageConfig, STStorageGroup
 from antarest.study.storage.storage_service import StudyStorageService
-from antarest.study.storage.variantstudy.model.command.create_st_storage import (
-    CreateSTStorage,
-)
-from antarest.study.storage.variantstudy.model.command.remove_st_storage import (
-    RemoveSTStorage,
-)
-from antarest.study.storage.variantstudy.model.command.update_config import (
-    UpdateConfig,
-)
-from pydantic import BaseModel, Extra, Field, root_validator, validator
-from typing_extensions import Literal
+from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
+from antarest.study.storage.variantstudy.model.command.remove_st_storage import RemoveSTStorage
+from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 
 _HOURS_IN_YEAR = 8760
 
@@ -145,9 +133,7 @@ class StorageOutput(StorageInput):
             )
 
     @classmethod
-    def from_config(
-        cls, storage_id: str, config: Mapping[str, Any]
-    ) -> "StorageOutput":
+    def from_config(cls, storage_id: str, config: Mapping[str, Any]) -> "StorageOutput":
         storage = STStorageConfig(**config, id=storage_id)
         values = storage.dict(by_alias=False)
         return cls(**values)
@@ -179,9 +165,7 @@ class STStorageMatrix(BaseModel):
     columns: List[int]
 
     @validator("data")
-    def validate_time_series(
-        cls, data: List[List[float]]
-    ) -> List[List[float]]:
+    def validate_time_series(cls, data: List[List[float]]) -> List[List[float]]:
         """
         Validator to check the integrity of the time series data.
 
@@ -193,9 +177,7 @@ class STStorageMatrix(BaseModel):
         if array.size == 0:
             raise ValueError("time series must not be empty")
         if array.shape != (_HOURS_IN_YEAR, 1):
-            raise ValueError(
-                f"time series must have shape ({_HOURS_IN_YEAR}, 1)"
-            )
+            raise ValueError(f"time series must have shape ({_HOURS_IN_YEAR}, 1)")
         if np.any(np.isnan(array)):
             raise ValueError("time series must not contain NaN values")
         return data
@@ -241,9 +223,7 @@ class STStorageMatrices(BaseModel):
         return matrix
 
     @root_validator()
-    def validate_rule_curve(
-        cls, values: MutableMapping[str, STStorageMatrix]
-    ) -> MutableMapping[str, STStorageMatrix]:
+    def validate_rule_curve(cls, values: MutableMapping[str, STStorageMatrix]) -> MutableMapping[str, STStorageMatrix]:
         """
         Validator to ensure 'lower_rule_curve' values are less than
         or equal to 'upper_rule_curve' values.
@@ -255,10 +235,7 @@ class STStorageMatrices(BaseModel):
             upper_array = np.array(upper_rule_curve.data, dtype=np.float64)
             # noinspection PyUnresolvedReferences
             if (lower_array > upper_array).any():
-                raise ValueError(
-                    "Each 'lower_rule_curve' value must be lower"
-                    " or equal to each 'upper_rule_curve'"
-                )
+                raise ValueError("Each 'lower_rule_curve' value must be lower" " or equal to each 'upper_rule_curve'")
         return values
 
 
@@ -277,9 +254,7 @@ STStorageTimeSeries = Literal[
 
 
 STORAGE_LIST_PATH = "input/st-storage/clusters/{area_id}/list/{storage_id}"
-STORAGE_SERIES_PATH = (
-    "input/st-storage/series/{area_id}/{storage_id}/{ts_name}"
-)
+STORAGE_SERIES_PATH = "input/st-storage/series/{area_id}/{storage_id}/{ts_name}"
 
 
 class STStorageManager:
@@ -338,27 +313,21 @@ class STStorageManager:
         Returns:
             The list of forms used to display the short-term storages.
         """
-        # fmt: off
+
         file_study = self.storage_service.get_storage(study).get_raw(study)
         path = STORAGE_LIST_PATH.format(area_id=area_id, storage_id="")[:-1]
         try:
             config = file_study.tree.get(path.split("/"), depth=3)
         except KeyError:
             raise STStorageConfigNotFoundError(study.id, area_id) from None
-        # fmt: on
+
         # Sort STStorageConfig by groups and then by name
         order_by = operator.attrgetter("group", "name")
         all_configs = sorted(
-            (
-                STStorageConfig(id=storage_id, **options)
-                for storage_id, options in config.items()
-            ),
+            (STStorageConfig(id=storage_id, **options) for storage_id, options in config.items()),
             key=order_by,
         )
-        return tuple(
-            StorageOutput(**config.dict(by_alias=False))
-            for config in all_configs
-        )
+        return tuple(StorageOutput(**config.dict(by_alias=False)) for config in all_configs)
 
     def get_storage(
         self,
@@ -377,7 +346,7 @@ class STStorageManager:
         Returns:
             Form used to display and edit a short-term storage.
         """
-        # fmt: off
+
         file_study = self.storage_service.get_storage(study).get_raw(study)
         path = STORAGE_LIST_PATH.format(area_id=area_id, storage_id=storage_id)
         try:
@@ -438,9 +407,7 @@ class STStorageManager:
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
         )
         file_study = self.storage_service.get_storage(study).get_raw(study)
-        execute_or_add_commands(
-            study, file_study, [command], self.storage_service
-        )
+        execute_or_add_commands(study, file_study, [command], self.storage_service)
 
         values = new_config.dict(by_alias=False)
         return StorageOutput(**values)
@@ -452,16 +419,14 @@ class STStorageManager:
         storage_ids: Sequence[str],
     ) -> None:
         """
-        Delete short-term storage configuration form the given study and area_id.
+        Delete short-term storage configurations form the given study and area_id.
 
         Args:
             study: The study object.
             area_id: The area ID of the short-term storage.
             storage_ids: IDs list of short-term storages to remove.
         """
-        command_context = (
-            self.storage_service.variant_study_service.command_factory.command_context
-        )
+        command_context = self.storage_service.variant_study_service.command_factory.command_context
         for storage_id in storage_ids:
             command = RemoveSTStorage(
                 area_id=area_id,
@@ -469,9 +434,7 @@ class STStorageManager:
                 command_context=command_context,
             )
             file_study = self.storage_service.get_storage(study).get_raw(study)
-            execute_or_add_commands(
-                study, file_study, [command], self.storage_service
-            )
+            execute_or_add_commands(study, file_study, [command], self.storage_service)
 
     def get_matrix(
         self,
@@ -502,17 +465,13 @@ class STStorageManager:
         storage_id: str,
         ts_name: STStorageTimeSeries,
     ) -> MutableMapping[str, Any]:
-        # fmt: off
         file_study = self.storage_service.get_storage(study).get_raw(study)
         path = STORAGE_SERIES_PATH.format(area_id=area_id, storage_id=storage_id, ts_name=ts_name)
         try:
             matrix = file_study.tree.get(path.split("/"), depth=1)
         except KeyError:
-            raise STStorageMatrixNotFoundError(
-                study.id, area_id, storage_id, ts_name
-            ) from None
+            raise STStorageMatrixNotFoundError(study.id, area_id, storage_id, ts_name) from None
         return matrix
-        # fmt: on
 
     def update_matrix(
         self,
@@ -533,9 +492,7 @@ class STStorageManager:
             ts: Matrix of the time series to update.
         """
         matrix_object = ts.dict()
-        self._save_matrix_obj(
-            study, area_id, storage_id, ts_name, matrix_object
-        )
+        self._save_matrix_obj(study, area_id, storage_id, ts_name, matrix_object)
 
     def _save_matrix_obj(
         self,
@@ -545,16 +502,12 @@ class STStorageManager:
         ts_name: STStorageTimeSeries,
         matrix_obj: Dict[str, Any],
     ) -> None:
-        # fmt: off
         file_study = self.storage_service.get_storage(study).get_raw(study)
         path = STORAGE_SERIES_PATH.format(area_id=area_id, storage_id=storage_id, ts_name=ts_name)
         try:
             file_study.tree.save(matrix_obj, path.split("/"))
         except KeyError:
-            raise STStorageMatrixNotFoundError(
-                study.id, area_id, storage_id, ts_name
-            ) from None
-        # fmt: on
+            raise STStorageMatrixNotFoundError(study.id, area_id, storage_id, ts_name) from None
 
     def validate_matrices(
         self,
@@ -585,9 +538,7 @@ class STStorageManager:
             bool: True if validation is successful.
         """
         # Create a partial function to retrieve matrix objects
-        get_matrix_obj = functools.partial(
-            self._get_matrix_obj, study, area_id, storage_id
-        )
+        get_matrix_obj = functools.partial(self._get_matrix_obj, study, area_id, storage_id)
 
         # Validate matrices by constructing the `STStorageMatrices` object
         # noinspection SpellCheckingInspection

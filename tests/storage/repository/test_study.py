@@ -1,19 +1,14 @@
 from datetime import datetime
 
+from sqlalchemy.orm import scoped_session, sessionmaker  # type: ignore
+
 from antarest.core.cache.business.local_chache import LocalCache
 from antarest.core.interfaces.cache import CacheConstants
 from antarest.login.model import Group, User
 from antarest.study.common.utils import get_study_information
-from antarest.study.model import (
-    DEFAULT_WORKSPACE_NAME,
-    PublicMode,
-    RawStudy,
-    Study,
-    StudyContentStatus,
-)
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, PublicMode, RawStudy, Study, StudyContentStatus
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
-from sqlalchemy.orm import scoped_session, sessionmaker  # type: ignore
 from tests.helpers import with_db_context
 
 

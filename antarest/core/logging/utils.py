@@ -5,18 +5,14 @@ import uuid
 from contextvars import ContextVar, Token
 from typing import Any, Dict, Optional, Type
 
-from antarest.core.config import Config
-from starlette.middleware.base import (
-    BaseHTTPMiddleware,
-    RequestResponseEndpoint,
-)
+from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response
 
+from antarest.core.config import Config
+
 _request: ContextVar[Optional[Request]] = ContextVar("_request", default=None)
-_request_id: ContextVar[Optional[str]] = ContextVar(
-    "_request_id", default=None
-)
+_request_id: ContextVar[Optional[str]] = ContextVar("_request_id", default=None)
 
 logger = logging.getLogger(__name__)
 
@@ -51,9 +47,7 @@ class CustomDefaultFormatter(logging.Formatter):
         return super().format(record)
 
 
-def configure_logger(
-    config: Config, handler_cls: str = "logging.FileHandler"
-) -> None:
+def configure_logger(config: Config, handler_cls: str = "logging.FileHandler") -> None:
     """
     Set up the logging configuration based on the input `config` object
     and an optional `handler_cls` argument.
@@ -161,9 +155,7 @@ def configure_logger(
 
 
 class LoggingMiddleware(BaseHTTPMiddleware):
-    async def dispatch(
-        self, request: Request, call_next: RequestResponseEndpoint
-    ) -> Response:
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         with RequestContext(request):
             response = await call_next(request)
         return response

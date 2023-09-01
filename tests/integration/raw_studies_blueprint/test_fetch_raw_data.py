@@ -5,9 +5,10 @@ import shutil
 from urllib.parse import urlencode
 
 import pytest
+from starlette.testclient import TestClient
+
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.study.model import RawStudy, Study
-from starlette.testclient import TestClient
 from tests.integration.raw_studies_blueprint.assets import ASSETS_DIR
 
 
@@ -77,9 +78,7 @@ class TestFetchRawData:
         user_folder_dir = study_dir.joinpath("user/unknown")
         for file_path in user_folder_dir.glob("*.*"):
             rel_path = file_path.relative_to(study_dir)
-            query_string = urlencode(
-                {"path": f"/{rel_path.as_posix()}", "depth": 1}
-            )
+            query_string = urlencode({"path": f"/{rel_path.as_posix()}", "depth": 1})
             res = client.get(
                 f"/v1/studies/{study_id}/raw?{query_string}",
                 headers={"Authorization": f"Bearer {user_access_token}"},
@@ -93,9 +92,7 @@ class TestFetchRawData:
         user_folder_dir = study_dir.joinpath("user/bad")
         for file_path in user_folder_dir.glob("*.*"):
             rel_path = file_path.relative_to(study_dir)
-            query_string = urlencode(
-                {"path": f"/{rel_path.as_posix()}", "depth": 1}
-            )
+            query_string = urlencode({"path": f"/{rel_path.as_posix()}", "depth": 1})
             res = client.get(
                 f"/v1/studies/{study_id}/raw?{query_string}",
                 headers={"Authorization": f"Bearer {user_access_token}"},

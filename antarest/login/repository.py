@@ -1,5 +1,5 @@
 import logging
-from typing import Optional, List
+from typing import List, Optional
 
 from sqlalchemy import exists  # type: ignore
 
@@ -7,14 +7,7 @@ from antarest.core.config import Config
 from antarest.core.jwt import ADMIN_ID
 from antarest.core.roles import RoleType
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.login.model import (
-    User,
-    Password,
-    Group,
-    Role,
-    Bot,
-    UserLdap,
-)
+from antarest.login.model import Bot, Group, Password, Role, User, UserLdap
 
 logger = logging.getLogger(__name__)
 
@@ -117,9 +110,7 @@ class UserLdapRepository:
     """
 
     def save(self, user_ldap: UserLdap) -> UserLdap:
-        res = db.session.query(
-            exists().where(UserLdap.id == user_ldap.id)
-        ).scalar()
+        res = db.session.query(exists().where(UserLdap.id == user_ldap.id)).scalar()
         if res:
             db.session.merge(user_ldap)
         else:
@@ -134,17 +125,11 @@ class UserLdapRepository:
         return user_ldap
 
     def get_by_name(self, name: str) -> Optional[UserLdap]:
-        user: UserLdap = (
-            db.session.query(UserLdap).filter_by(name=name).first()
-        )
+        user: UserLdap = db.session.query(UserLdap).filter_by(name=name).first()
         return user
 
     def get_by_external_id(self, external_id: str) -> Optional[UserLdap]:
-        user: UserLdap = (
-            db.session.query(UserLdap)
-            .filter_by(external_id=external_id)
-            .first()
-        )
+        user: UserLdap = db.session.query(UserLdap).filter_by(external_id=external_id).first()
         return user
 
     def get_all(self) -> List[UserLdap]:
@@ -195,9 +180,7 @@ class BotRepository:
         return bots
 
     def get_by_name_and_owner(self, owner: int, name: str) -> Optional[Bot]:
-        bot: Bot = (
-            db.session.query(Bot).filter_by(owner=owner, name=name).first()
-        )
+        bot: Bot = db.session.query(Bot).filter_by(owner=owner, name=name).first()
         return bot
 
     def exists(self, id: int) -> bool:
@@ -236,15 +219,11 @@ class RoleRepository:
         return role
 
     def get_all_by_user(self, user: int) -> List[Role]:
-        roles: List[Role] = (
-            db.session.query(Role).filter_by(identity_id=user).all()
-        )
+        roles: List[Role] = db.session.query(Role).filter_by(identity_id=user).all()
         return roles
 
     def get_all_by_group(self, group: str) -> List[Role]:
-        roles: List[Role] = (
-            db.session.query(Role).filter_by(group_id=group).all()
-        )
+        roles: List[Role] = db.session.query(Role).filter_by(group_id=group).all()
         return roles
 
     def delete(self, user: int, group: str) -> None:

@@ -1,30 +1,18 @@
-from typing import Optional, List, Dict, Callable, Any
+from typing import Any, Callable, Dict, List, Optional
 
 from antarest.core.model import JSON, SUB_JSON
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
-)
-from antarest.study.storage.rawstudy.model.filesystem.context import (
-    ContextServer,
-)
-from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
-    FolderNode,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE, INode
-from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import (
-    RawFileNode,
-)
+from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
 
 
 class RegisteredFile:
     def __init__(
         self,
         key: str,
-        node: Optional[
-            Callable[
-                [ContextServer, FileStudyTreeConfig], INode[Any, Any, Any]
-            ]
-        ],
+        node: Optional[Callable[[ContextServer, FileStudyTreeConfig], INode[Any, Any, Any]]],
         filename: str = "",
     ):
         self.key = key
@@ -46,9 +34,7 @@ class BucketNode(FolderNode):
     ):
         super().__init__(context, config)
         self.registered_files: List[RegisteredFile] = registered_files or []
-        self.default_file_node: Callable[
-            ..., INode[Any, Any, Any]
-        ] = default_file_node
+        self.default_file_node: Callable[..., INode[Any, Any, Any]] = default_file_node
 
     def _get_registered_file(self, key: str) -> Optional[RegisteredFile]:
         for registered_file in self.registered_files:
@@ -56,9 +42,7 @@ class BucketNode(FolderNode):
                 return registered_file
         return None
 
-    def _get_registered_file_from_filename(
-        self, filename: str
-    ) -> Optional[RegisteredFile]:
+    def _get_registered_file_from_filename(self, filename: str) -> Optional[RegisteredFile]:
         for registered_file in self.registered_files:
             if registered_file.filename == filename:
                 return registered_file
@@ -83,13 +67,9 @@ class BucketNode(FolderNode):
                 registered_file = self._get_registered_file(key)
                 if registered_file:
                     node = registered_file.node or self.default_file_node
-                    node(self.context, self.config.next_file(key)).save(
-                        data, url[1:]
-                    )
+                    node(self.context, self.config.next_file(key)).save(data, url[1:])
                 else:
-                    BucketNode(self.context, self.config.next_file(key)).save(
-                        data, url[1:]
-                    )
+                    BucketNode(self.context, self.config.next_file(key)).save(data, url[1:])
             else:
                 self._save(data, key)
 
@@ -103,9 +83,7 @@ class BucketNode(FolderNode):
 
             node(self.context, self.config.next_file(filename)).save(data)
         elif isinstance(data, (str, bytes)):
-            self.default_file_node(
-                self.context, self.config.next_file(key)
-            ).save(data)
+            self.default_file_node(self.context, self.config.next_file(key)).save(data)
         elif isinstance(data, dict):
             BucketNode(self.context, self.config.next_file(key)).save(data)
 
@@ -115,22 +93,14 @@ class BucketNode(FolderNode):
 
         children: TREE = {}
         for item in sorted(self.config.path.iterdir()):
-            registered_file = self._get_registered_file_from_filename(
-                item.name
-            )
+            registered_file = self._get_registered_file_from_filename(item.name)
             if registered_file:
                 node = registered_file.node or self.default_file_node
-                children[registered_file.key] = node(
-                    self.context, self.config.next_file(item.name)
-                )
+                children[registered_file.key] = node(self.context, self.config.next_file(item.name))
             elif item.is_file():
-                children[item.name] = self.default_file_node(
-                    self.context, self.config.next_file(item.name)
-                )
+                children[item.name] = self.default_file_node(self.context, self.config.next_file(item.name))
             else:
-                children[item.name] = BucketNode(
-                    self.context, self.config.next_file(item.name)
-                )
+                children[item.name] = BucketNode(self.context, self.config.next_file(item.name))
 
         return children
 

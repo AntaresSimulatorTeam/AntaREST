@@ -10,12 +10,7 @@ from sqlalchemy import and_, exists  # type: ignore
 from sqlalchemy.orm import aliased  # type: ignore
 
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.matrixstore.model import (
-    Matrix,
-    MatrixContent,
-    MatrixData,
-    MatrixDataSet,
-)
+from antarest.matrixstore.model import Matrix, MatrixContent, MatrixData, MatrixDataSet
 
 logger = logging.getLogger(__name__)
 
@@ -26,18 +21,14 @@ class MatrixDataSetRepository:
     """
 
     def save(self, matrix_user_metadata: MatrixDataSet) -> MatrixDataSet:
-        res: bool = db.session.query(
-            exists().where(MatrixDataSet.id == matrix_user_metadata.id)
-        ).scalar()
+        res: bool = db.session.query(exists().where(MatrixDataSet.id == matrix_user_metadata.id)).scalar()
         if res:
             matrix_user_metadata = db.session.merge(matrix_user_metadata)
         else:
             db.session.add(matrix_user_metadata)
         db.session.commit()
 
-        logger.debug(
-            f"Matrix dataset {matrix_user_metadata.id} for user {matrix_user_metadata.owner_id} saved"
-        )
+        logger.debug(f"Matrix dataset {matrix_user_metadata.id} for user {matrix_user_metadata.owner_id} saved")
         return matrix_user_metadata
 
     def get(self, id: str) -> Optional[MatrixDataSet]:
@@ -45,9 +36,7 @@ class MatrixDataSetRepository:
         return matrix
 
     def get_all_datasets(self) -> List[MatrixDataSet]:
-        matrix_datasets: List[MatrixDataSet] = db.session.query(
-            MatrixDataSet
-        ).all()
+        matrix_datasets: List[MatrixDataSet] = db.session.query(MatrixDataSet).all()
         return matrix_datasets
 
     def query(
@@ -99,9 +88,7 @@ class MatrixRepository:
         return matrix
 
     def exists(self, matrix_hash: str) -> bool:
-        res: bool = db.session.query(
-            exists().where(Matrix.id == matrix_hash)
-        ).scalar()
+        res: bool = db.session.query(exists().where(Matrix.id == matrix_hash)).scalar()
         return res
 
     def delete(self, matrix_hash: str) -> None:
@@ -109,9 +96,7 @@ class MatrixRepository:
             db.session.delete(g)
             db.session.commit()
         else:
-            logger.warning(
-                f"Trying to delete matrix {matrix_hash}, but was not found in database!"
-            )
+            logger.warning(f"Trying to delete matrix {matrix_hash}, but was not found in database!")
         logger.debug(f"Matrix {matrix_hash} deleted")
 
 
@@ -142,14 +127,13 @@ class MatrixContentRepository:
         Returns:
             The matrix content or `None` if the file is not found.
         """
-        # fmt: off
+
         matrix_file = self.bucket_dir.joinpath(f"{matrix_hash}.tsv")
         matrix = np.loadtxt(matrix_file, delimiter="\t", dtype=np.float64, ndmin=2)
         data = matrix.tolist()
         index = list(range(matrix.shape[0]))
         columns = list(range(matrix.shape[1]))
         return MatrixContent.construct(data=data, columns=columns, index=index)
-        # fmt: on
 
     def exists(self, matrix_hash: str) -> bool:
         """
@@ -164,9 +148,7 @@ class MatrixContentRepository:
         matrix_file = self.bucket_dir.joinpath(f"{matrix_hash}.tsv")
         return matrix_file.exists()
 
-    def save(
-        self, content: Union[List[List[MatrixData]], npt.NDArray[np.float64]]
-    ) -> str:
+    def save(self, content: Union[List[List[MatrixData]], npt.NDArray[np.float64]]) -> str:
         """
         Saves the content of a matrix as a TSV file in the bucket directory
         and returns its SHA256 hash.
@@ -198,11 +180,7 @@ class MatrixContentRepository:
         #    of the floating point numbers which can introduce rounding errors.
         # However, this method is still a good approach to calculate a hash value
         # for a non-mutable NumPy Array.
-        matrix = (
-            content
-            if isinstance(content, np.ndarray)
-            else np.array(content, dtype=np.float64)
-        )
+        matrix = content if isinstance(content, np.ndarray) else np.array(content, dtype=np.float64)
         matrix_hash = hashlib.sha256(matrix.data).hexdigest()
         matrix_file = self.bucket_dir.joinpath(f"{matrix_hash}.tsv")
         # Avoid having to save the matrix again (that's the whole point of using a hash).

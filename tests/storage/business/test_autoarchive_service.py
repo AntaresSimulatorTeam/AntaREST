@@ -1,6 +1,6 @@
 import datetime
 from pathlib import Path
-from unittest.mock import Mock, call
+from unittest.mock import Mock
 
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
 from antarest.core.exceptions import TaskAlreadyRunning
@@ -17,11 +17,7 @@ def test_auto_archival(tmp_path: Path):
     workspace_path = tmp_path / "workspace_test"
     auto_archive_service = AutoArchiveService(
         Mock(),
-        Config(
-            storage=StorageConfig(
-                workspaces={"test": WorkspaceConfig(path=workspace_path)}
-            )
-        ),
+        Config(storage=StorageConfig(workspaces={"test": WorkspaceConfig(path=workspace_path)})),
     )
 
     now = datetime.datetime.now()
@@ -53,12 +49,8 @@ def test_auto_archival(tmp_path: Path):
         VariantStudy(id="e", updated_at=now - datetime.timedelta(days=61)),
     ]
     auto_archive_service.study_service.storage_service = Mock()
-    auto_archive_service.study_service.storage_service.variant_study_service = (
-        Mock()
-    )
-    auto_archive_service.study_service.archive.return_value = (
-        TaskAlreadyRunning
-    )
+    auto_archive_service.study_service.storage_service.variant_study_service = Mock()
+    auto_archive_service.study_service.archive.return_value = TaskAlreadyRunning
     auto_archive_service.study_service.get_study.return_value = VariantStudy(
         id="e", updated_at=now - datetime.timedelta(days=61)
     )

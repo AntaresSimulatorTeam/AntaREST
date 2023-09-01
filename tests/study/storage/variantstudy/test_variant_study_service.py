@@ -5,6 +5,8 @@ from unittest.mock import Mock
 
 import numpy as np
 import pytest
+from sqlalchemy import create_engine  # type: ignore
+
 from antarest.core.model import PublicMode
 from antarest.core.requests import RequestParameters
 from antarest.core.utils.fastapi_sqlalchemy import db
@@ -13,28 +15,14 @@ from antarest.matrixstore.service import SimpleMatrixService
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import RawStudy, StudyAdditionalData
 from antarest.study.storage.patch_service import PatchService
-from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
-    STStorageConfig,
-    STStorageGroup,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import STStorageConfig, STStorageGroup
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.storage_service import StudyStorageService
-from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
-    GeneratorMatrixConstants,
-)
-from antarest.study.storage.variantstudy.model.command.create_area import (
-    CreateArea,
-)
-from antarest.study.storage.variantstudy.model.command.create_st_storage import (
-    CreateSTStorage,
-)
-from antarest.study.storage.variantstudy.model.command_context import (
-    CommandContext,
-)
-from antarest.study.storage.variantstudy.variant_study_service import (
-    VariantStudyService,
-)
-from sqlalchemy import create_engine  # type: ignore
+from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
+from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
+from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
+from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 from tests.helpers import with_db_context
 
 # noinspection SpellCheckingInspection
@@ -169,9 +157,7 @@ class TestVariantStudyService:
             "My Variant Study",
             params=Mock(
                 spec=RequestParameters,
-                user=Mock(
-                    impersonator=user.id, is_site_admin=Mock(return_value=True)
-                ),
+                user=Mock(impersonator=user.id, is_site_admin=Mock(return_value=True)),
             ),
         )
 
@@ -234,13 +220,8 @@ class TestVariantStudyService:
         ## Collect the resulting files
         workspaces = variant_study_service.config.storage.workspaces
         internal_studies_dir: Path = workspaces["default"].path
-        snapshot_dir = internal_studies_dir.joinpath(
-            variant_study.snapshot.id, "snapshot"
-        )
-        res_study_files = {
-            study_file.relative_to(snapshot_dir).as_posix()
-            for study_file in snapshot_dir.rglob("*.*")
-        }
+        snapshot_dir = internal_studies_dir.joinpath(variant_study.snapshot.id, "snapshot")
+        res_study_files = {study_file.relative_to(snapshot_dir).as_posix() for study_file in snapshot_dir.rglob("*.*")}
 
         if denormalize:
             expected = {f.replace(".link", "") for f in EXPECTED_DENORMALIZED}

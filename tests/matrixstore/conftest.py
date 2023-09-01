@@ -2,11 +2,7 @@ import unittest.mock
 
 import pytest
 
-from antarest.matrixstore.repository import (
-    MatrixContentRepository,
-    MatrixDataSetRepository,
-    MatrixRepository,
-)
+from antarest.matrixstore.repository import MatrixContentRepository, MatrixDataSetRepository, MatrixRepository
 from antarest.matrixstore.service import MatrixService
 
 
@@ -26,9 +22,7 @@ def content_repo_fixture(tmp_path) -> MatrixContentRepository:
 
 
 @pytest.fixture(name="matrix_service")
-def matrix_service_fixture(
-    matrix_repo, dataset_repo, content_repo
-) -> MatrixService:
+def matrix_service_fixture(matrix_repo, dataset_repo, content_repo) -> MatrixService:
     yield MatrixService(
         repo=matrix_repo,
         repo_dataset=dataset_repo,

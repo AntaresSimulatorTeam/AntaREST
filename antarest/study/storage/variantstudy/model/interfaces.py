@@ -1,19 +1,15 @@
 import abc
 from abc import abstractmethod
-from typing import List, Tuple, Optional
+from typing import List, Optional, Tuple
 
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import (
-    FileStudyTree,
-)
+from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 
 
 class ICommandExtractor(abc.ABC):
     @abstractmethod
-    def extract_area(
-        self, study: FileStudy, area_id: str
-    ) -> Tuple[List["ICommand"], List["ICommand"]]:  # type: ignore
+    def extract_area(self, study: FileStudy, area_id: str) -> Tuple[List["ICommand"], List["ICommand"]]:  # type: ignore
         raise NotImplementedError()
 
     @abstractmethod
@@ -27,9 +23,7 @@ class ICommandExtractor(abc.ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def extract_cluster(
-        self, study: FileStudy, area_id: str, thermal_id: str
-    ) -> List["ICommand"]:  # type: ignore
+    def extract_cluster(self, study: FileStudy, area_id: str, thermal_id: str) -> List["ICommand"]:  # type: ignore
         raise NotImplementedError()
 
     @abstractmethod
@@ -39,15 +33,11 @@ class ICommandExtractor(abc.ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def extract_hydro(
-        self, study: FileStudy, area_id: str
-    ) -> List["ICommand"]:  # type: ignore
+    def extract_hydro(self, study: FileStudy, area_id: str) -> List["ICommand"]:  # type: ignore
         raise NotImplementedError()
 
     @abstractmethod
-    def extract_district(
-        self, study: FileStudy, district_id: str
-    ) -> List["ICommand"]:  # type: ignore
+    def extract_district(self, study: FileStudy, district_id: str) -> List["ICommand"]:  # type: ignore
         raise NotImplementedError()
 
     @abstractmethod

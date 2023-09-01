@@ -1,6 +1,6 @@
 from pathlib import Path
 from unittest.mock import Mock
-from zipfile import ZipFile, ZIP_DEFLATED
+from zipfile import ZIP_DEFLATED, ZipFile
 
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
 from antarest.worker.archive_worker import ArchiveWorker
@@ -13,13 +13,7 @@ def test_archive_worker_action(tmp_path: Path):
         Mock(),
         "foo",
         tmp_path,
-        Config(
-            storage=StorageConfig(
-                workspaces={
-                    "foo": WorkspaceConfig(path=workspace_server_mount_point)
-                }
-            )
-        ),
+        Config(storage=StorageConfig(workspaces={"foo": WorkspaceConfig(path=workspace_server_mount_point)})),
     )
 
     zipname = "somezip.zip"

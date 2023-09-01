@@ -1,27 +1,24 @@
 import contextlib
 import functools
 import io
+import json
 import logging
 import os
-import json
 import tempfile
 import zipfile
 from json import JSONDecodeError
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Union, cast
 
+from filelock import FileLock
+
 from antarest.core.model import JSON, SUB_JSON
 from antarest.study.storage.rawstudy.io.reader import IniReader
 from antarest.study.storage.rawstudy.io.reader.ini_reader import IReader
 from antarest.study.storage.rawstudy.io.writer.ini_writer import IniWriter
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
-)
-from antarest.study.storage.rawstudy.model.filesystem.context import (
-    ContextServer,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode
-from filelock import FileLock
 
 
 class IniFileNodeWarning(UserWarning):
@@ -96,15 +93,9 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
         url = url or []
 
         if self.config.zip_path:
-            with zipfile.ZipFile(
-                self.config.zip_path, mode="r"
-            ) as zipped_folder:
-                inside_zip_path = self.config.path.relative_to(
-                    self.config.zip_path.with_suffix("")
-                ).as_posix()
-                with io.TextIOWrapper(
-                    zipped_folder.open(inside_zip_path)
-                ) as f:
+            with zipfile.ZipFile(self.config.zip_path, mode="r") as zipped_folder:
+                inside_zip_path = self.config.path.relative_to(self.config.zip_path.with_suffix("")).as_posix()
+                with io.TextIOWrapper(zipped_folder.open(inside_zip_path)) as f:
                     data = self.reader.read(f)
         else:
             data = self.reader.read(self.path)
@@ -218,8 +209,7 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
                 except KeyError:
                     raise IniFileNodeWarning(
                         self.config,
-                        f"Cannot delete key: Key '{key_name}'"
-                        f" not found in section [{section_name}]",
+                        f"Cannot delete key: Key '{key_name}' not found in section [{section_name}]",
                     ) from None
 
         self.writer.write(data, self.path)
@@ -238,9 +228,7 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
                     raise ValueError(msg)
                 errors.append(msg)
             else:
-                self._validate_param(
-                    section, params, data[section], errors, raising
-                )
+                self._validate_param(section, params, data[section], errors, raising)
 
         return errors
 

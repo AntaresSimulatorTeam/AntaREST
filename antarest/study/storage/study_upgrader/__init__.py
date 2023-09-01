@@ -1,12 +1,12 @@
-from http import HTTPStatus
-from http.client import HTTPException
-from pathlib import Path
-from typing import NamedTuple, Callable
 import logging
 import re
 import shutil
 import tempfile
 import time
+from http import HTTPStatus
+from http.client import HTTPException
+from pathlib import Path
+from typing import Callable, NamedTuple
 
 from antarest.core.exceptions import StudyValidationError
 
@@ -67,11 +67,7 @@ def find_next_version(from_version: str) -> str:
 
 
 def upgrade_study(study_path: Path, target_version: str) -> None:
-    tmp_dir = Path(
-        tempfile.mkdtemp(
-            suffix=".upgrade.tmp", prefix="~", dir=study_path.parent
-        )
-    )
+    tmp_dir = Path(tempfile.mkdtemp(suffix=".upgrade.tmp", prefix="~", dir=study_path.parent))
     shutil.copytree(study_path, tmp_dir, dirs_exist_ok=True)
     try:
         src_version = get_current_version(tmp_dir)
@@ -86,11 +82,7 @@ def upgrade_study(study_path: Path, target_version: str) -> None:
         logger.error(f"Unhandled exception : {e}", exc_info=True)
         raise
     else:
-        backup_dir = Path(
-            tempfile.mkdtemp(
-                suffix=".backup.tmp", prefix="~", dir=study_path.parent
-            )
-        )
+        backup_dir = Path(tempfile.mkdtemp(suffix=".backup.tmp", prefix="~", dir=study_path.parent))
         backup_dir.rmdir()
         study_path.rename(backup_dir)
         tmp_dir.rename(study_path)
@@ -136,21 +128,15 @@ def can_upgrade_version(from_version: str, to_version: str) -> None:
         InvalidUpgrade: If the upgrade is not possible.
     """
     if from_version == to_version:
-        raise InvalidUpgrade(
-            f"Your study is already in version '{to_version}'"
-        )
+        raise InvalidUpgrade(f"Your study is already in version '{to_version}'")
 
     sources = [u.old for u in UPGRADE_METHODS]
     if from_version not in sources:
-        raise InvalidUpgrade(
-            f"Version '{from_version}' unknown: possible versions are {', '.join(sources)}"
-        )
+        raise InvalidUpgrade(f"Version '{from_version}' unknown: possible versions are {', '.join(sources)}")
 
     targets = [u.new for u in UPGRADE_METHODS]
     if to_version not in targets:
-        raise InvalidUpgrade(
-            f"Version '{to_version}' unknown: possible versions are {', '.join(targets)}"
-        )
+        raise InvalidUpgrade(f"Version '{to_version}' unknown: possible versions are {', '.join(targets)}")
 
     curr_version = from_version
     for src, dst in zip(sources, targets):
@@ -185,9 +171,7 @@ def _update_study_antares_file(target_version: str, study_path: Path) -> None:
     file.write_text(content, encoding="utf-8")
 
 
-def _do_upgrade(
-    study_path: Path, src_version: str, target_version: str
-) -> None:
+def _do_upgrade(study_path: Path, src_version: str, target_version: str) -> None:
     _update_study_antares_file(target_version, study_path)
     curr_version = src_version
     for old, new, method in UPGRADE_METHODS:

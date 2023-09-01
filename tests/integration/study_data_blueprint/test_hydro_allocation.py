@@ -164,9 +164,7 @@ class TestHydroAllocation:
         }
         assert actual == expected
 
-    def test_create_area(
-        self, client: TestClient, user_access_token: str, study_id: str
-    ):
+    def test_create_area(self, client: TestClient, user_access_token: str, study_id: str):
         """
         Given a study, when an area is created, the hydraulic allocation
         column for this area must be updated with the following values:
@@ -201,9 +199,7 @@ class TestHydroAllocation:
         }
         assert actual == expected
 
-    def test_delete_area(
-        self, client: TestClient, user_access_token: str, study_id: str
-    ):
+    def test_delete_area(self, client: TestClient, user_access_token: str, study_id: str):
         """
         Given a study, when an area is deleted, the hydraulic allocation
         column for this area must be removed.
