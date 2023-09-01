@@ -1,16 +1,11 @@
-from typing import Optional, Dict, Any, List, Union
-from pydantic import Field, validator
+from typing import Any, Dict, List, Optional
 
-from antarest.study.business.utils import (
-    FormFieldsBaseModel,
-    execute_or_add_commands,
-    FieldInfo,
-)
+from pydantic import Field
+
+from antarest.study.business.utils import FieldInfo, FormFieldsBaseModel, execute_or_add_commands
 from antarest.study.model import Study
 from antarest.study.storage.storage_service import StudyStorageService
-from antarest.study.storage.variantstudy.model.command.update_config import (
-    UpdateConfig,
-)
+from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 
 
 class ManagementOptionsFormFields(FormFieldsBaseModel):
@@ -86,9 +81,7 @@ class HydroManager:
     def __init__(self, storage_service: StudyStorageService) -> None:
         self.storage_service = storage_service
 
-    def get_field_values(
-        self, study: Study, area_id: str
-    ) -> ManagementOptionsFormFields:
+    def get_field_values(self, study: Study, area_id: str) -> ManagementOptionsFormFields:
         """
         Get management options for a given area
         """
@@ -98,13 +91,9 @@ class HydroManager:
         def get_value(field_info: FieldInfo) -> Any:
             path = field_info["path"]
             target_name = path.split("/")[-1]
-            return hydro_config.get(target_name, {}).get(
-                area_id, field_info["default_value"]
-            )
+            return hydro_config.get(target_name, {}).get(area_id, field_info["default_value"])
 
-        return ManagementOptionsFormFields.construct(
-            **{name: get_value(info) for name, info in FIELDS_INFO.items()}
-        )
+        return ManagementOptionsFormFields.construct(**{name: get_value(info) for name, info in FIELDS_INFO.items()})
 
     def set_field_values(
         self,
@@ -131,6 +120,4 @@ class HydroManager:
 
         if len(commands) > 0:
             file_study = self.storage_service.get_storage(study).get_raw(study)
-            execute_or_add_commands(
-                study, file_study, commands, self.storage_service
-            )
+            execute_or_add_commands(study, file_study, commands, self.storage_service)

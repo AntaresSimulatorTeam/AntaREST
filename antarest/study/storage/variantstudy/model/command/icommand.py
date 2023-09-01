@@ -1,28 +1,18 @@
 import logging
 from abc import ABC, abstractmethod
-from typing import List, Tuple, Dict, Any
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, Tuple
 
 from pydantic import BaseModel
 
 from antarest.core.utils.utils import assert_this
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.model.command.common import (
-    CommandOutput,
-    CommandName,
-)
-from antarest.study.storage.variantstudy.model.command_context import (
-    CommandContext,
-)
+from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
+from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 if TYPE_CHECKING:  # False at runtime, for mypy
-    from antarest.study.storage.variantstudy.business.command_extractor import (
-        CommandExtractor,
-    )
+    from antarest.study.storage.variantstudy.business.command_extractor import CommandExtractor
 
 MATCH_SIGNATURE_SEPARATOR = "%"
 logger = logging.getLogger(__name__)
@@ -38,9 +28,7 @@ class ICommand(ABC, BaseModel):
         raise NotImplementedError()
 
     @abstractmethod
-    def _apply_config(
-        self, study_data: FileStudyTreeConfig
-    ) -> Tuple[CommandOutput, Dict[str, Any]]:
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         raise NotImplementedError()
 
     def apply_config(self, study_data: FileStudyTreeConfig) -> CommandOutput:
@@ -55,10 +43,7 @@ class ICommand(ABC, BaseModel):
                 f"Failed to execute variant command {self.command_name}",
                 exc_info=e,
             )
-            message = (
-                f"Unexpected exception occurred when trying"
-                f" to apply command {self.command_name}: {e}"
-            )
+            message = f"Unexpected exception occurred when trying to apply command {self.command_name}: {e}"
             return CommandOutput(status=False, message=message)
 
     @abstractmethod
@@ -95,9 +80,7 @@ class ICommand(ABC, BaseModel):
         raise NotImplementedError()
 
     def get_command_extractor(self) -> "CommandExtractor":
-        from antarest.study.storage.variantstudy.business.command_extractor import (
-            CommandExtractor,
-        )
+        from antarest.study.storage.variantstudy.business.command_extractor import CommandExtractor
 
         return CommandExtractor(
             self.command_context.matrix_service,

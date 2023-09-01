@@ -1,18 +1,12 @@
 import zipfile
 from pathlib import Path
-from unittest.mock import patch, Mock
+from unittest.mock import Mock, patch
 
 import pytest
 
-from antarest.study.storage.rawstudy.model.filesystem.config.exceptions import (
-    SimulationParsingError,
-)
-from antarest.study.storage.rawstudy.model.filesystem.config.files import (
-    parse_simulation_zip,
-)
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    Simulation,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.exceptions import SimulationParsingError
+from antarest.study.storage.rawstudy.model.filesystem.config.files import parse_simulation_zip
+from antarest.study.storage.rawstudy.model.filesystem.config.model import Simulation
 
 PARSE_SIMULATION_NAME = "antarest.study.storage.rawstudy.model.filesystem.config.files.parse_simulation"
 
@@ -26,9 +20,7 @@ class TestParseSimulationZip:
             "checkIntegrity.txt",
         ]
         zip_path = tmp_path.joinpath("dummy.zip")
-        with zipfile.ZipFile(
-            zip_path, mode="w", compression=zipfile.ZIP_DEFLATED
-        ) as zf:
+        with zipfile.ZipFile(zip_path, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
             for name in archived_files:
                 zf.writestr(name, b"dummy data")
 
@@ -52,9 +44,7 @@ class TestParseSimulationZip:
         # check the result
         assert actual.archived is True
 
-    def test_parse_simulation_zip__missing_required_files(
-        self, tmp_path: Path
-    ):
+    def test_parse_simulation_zip__missing_required_files(self, tmp_path: Path):
         # prepare a ZIP file with the following files
         archived_files = [
             # "about-the-study/parameters.ini",  # <- required
@@ -62,9 +52,7 @@ class TestParseSimulationZip:
             "checkIntegrity.txt",  # optional
         ]
         zip_path = tmp_path.joinpath("dummy.zip")
-        with zipfile.ZipFile(
-            zip_path, mode="w", compression=zipfile.ZIP_DEFLATED
-        ) as zf:
+        with zipfile.ZipFile(zip_path, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
             for name in archived_files:
                 zf.writestr(name, b"dummy data")
 

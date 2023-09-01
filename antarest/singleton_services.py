@@ -26,9 +26,7 @@ class SingletonServices:
         self.services_list = self._init(config_file, services_list)
 
     @staticmethod
-    def _init(
-        config_file: Path, services_list: List[Module]
-    ) -> Dict[Module, IService]:
+    def _init(config_file: Path, services_list: List[Module]) -> Dict[Module, IService]:
         res = get_local_path() / "resources"
         config = Config.from_yaml_file(res=res, file=config_file)
         init_db(config_file, config, False, None)
@@ -47,9 +45,7 @@ class SingletonServices:
         services: Dict[Module, IService] = {}
 
         if Module.WATCHER in services_list:
-            watcher = create_watcher(
-                config=config, application=None, study_service=study_service
-            )
+            watcher = create_watcher(config=config, application=None, study_service=study_service)
             services[Module.WATCHER] = watcher
 
         if Module.MATRIX_GC in services_list:
@@ -66,9 +62,7 @@ class SingletonServices:
             services[Module.ARCHIVE_WORKER] = worker
 
         if Module.SIMULATOR_WORKER in services_list:
-            worker = create_simulator_worker(
-                config, matrix_service=matrix_service, event_bus=event_bus
-            )
+            worker = create_simulator_worker(config, matrix_service=matrix_service, event_bus=event_bus)
             services[Module.SIMULATOR_WORKER] = worker
 
         if Module.AUTO_ARCHIVER in services_list:

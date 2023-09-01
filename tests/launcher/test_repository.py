@@ -6,8 +6,8 @@ import pytest
 from sqlalchemy import create_engine
 
 from antarest.core.persistence import Base
-from antarest.core.utils.fastapi_sqlalchemy import db, DBSessionMiddleware
-from antarest.launcher.model import JobResult, JobStatus, JobLog, JobLogType
+from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
+from antarest.launcher.model import JobLog, JobLogType, JobResult, JobStatus
 from antarest.launcher.repository import JobResultRepository
 from antarest.study.model import RawStudy
 from antarest.study.repository import StudyMetadataRepository
@@ -146,21 +146,12 @@ def test_logs():
         )
 
         repo.save(a)
-        a.logs.append(
-            JobLog(job_id=uuid, message="a", log_type=str(JobLogType.BEFORE))
-        )
+        a.logs.append(JobLog(job_id=uuid, message="a", log_type=str(JobLogType.BEFORE)))
         repo.save(a)
         job_log_id = a.logs[0].id
-        a.logs.append(
-            JobLog(job_id=uuid, message="b", log_type=str(JobLogType.BEFORE))
-        )
-        a.logs.append(
-            JobLog(job_id=uuid, message="c", log_type=str(JobLogType.AFTER))
-        )
+        a.logs.append(JobLog(job_id=uuid, message="b", log_type=str(JobLogType.BEFORE)))
+        a.logs.append(JobLog(job_id=uuid, message="c", log_type=str(JobLogType.AFTER)))
         b = repo.save(a)
         c = repo.get(uuid)
         assert b.logs == c.logs
-        assert (
-            repr(b.logs[0])
-            == f"id={job_log_id}, message=a, log_type=JobLogType.BEFORE, job_id={uuid}"
-        )
+        assert repr(b.logs[0]) == f"id={job_log_id}, message=a, log_type=JobLogType.BEFORE, job_id={uuid}"

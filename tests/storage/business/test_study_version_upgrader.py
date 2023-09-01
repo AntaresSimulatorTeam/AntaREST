@@ -10,19 +10,10 @@ from zipfile import ZipFile
 import pandas
 import pytest
 
-
 from antarest.study.storage.rawstudy.io.reader import MultipleSameKeysIniReader
-from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata import (
-    DUPLICATE_KEYS,
-)
-from antarest.study.storage.study_upgrader import (
-    upgrade_study,
-    InvalidUpgrade,
-    UPGRADE_METHODS,
-)
-from antarest.study.storage.study_upgrader.upgrader_840 import (
-    MAPPING_TRANSMISSION_CAPACITIES,
-)
+from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata import DUPLICATE_KEYS
+from antarest.study.storage.study_upgrader import UPGRADE_METHODS, InvalidUpgrade, upgrade_study
+from antarest.study.storage.study_upgrader.upgrader_840 import MAPPING_TRANSMISSION_CAPACITIES
 
 
 def test_end_to_end_upgrades(tmp_path: Path):
@@ -30,9 +21,7 @@ def test_end_to_end_upgrades(tmp_path: Path):
     path_study = cur_dir / "assets" / "little_study_700.zip"
     with ZipFile(path_study) as zip_output:
         zip_output.extractall(path=tmp_path)
-    tmp_dir_before_upgrade = tempfile.mkdtemp(
-        suffix=".before_upgrade.tmp", prefix="~", dir=cur_dir / "assets"
-    )
+    tmp_dir_before_upgrade = tempfile.mkdtemp(suffix=".before_upgrade.tmp", prefix="~", dir=cur_dir / "assets")
     shutil.copytree(tmp_path, tmp_dir_before_upgrade, dirs_exist_ok=True)
     old_values = get_old_settings_values(tmp_path)
     old_areas_values = get_old_area_values(tmp_path)
@@ -58,9 +47,7 @@ def test_fails_because_of_versions_asked(tmp_path: Path):
         match=f"Version '600' unknown: possible versions are {', '.join([u[1] for u in UPGRADE_METHODS])}",
     ):
         upgrade_study(tmp_path, "600")
-    with pytest.raises(
-        InvalidUpgrade, match="Your study is already in version '720'"
-    ):
+    with pytest.raises(InvalidUpgrade, match="Your study is already in version '720'"):
         upgrade_study(tmp_path, "720")
     with pytest.raises(
         InvalidUpgrade,
@@ -79,9 +66,7 @@ def test_fallback_if_study_input_broken(tmp_path):
     path_study = cur_dir / "assets" / "broken_study_720.zip"
     with ZipFile(path_study) as zip_output:
         zip_output.extractall(path=tmp_path)
-    tmp_dir_before_upgrade = tempfile.mkdtemp(
-        suffix=".before_upgrade.tmp", prefix="~", dir=cur_dir / "assets"
-    )
+    tmp_dir_before_upgrade = tempfile.mkdtemp(suffix=".before_upgrade.tmp", prefix="~", dir=cur_dir / "assets")
     shutil.copytree(tmp_path, tmp_dir_before_upgrade, dirs_exist_ok=True)
     with pytest.raises(
         expected_exception=pandas.errors.EmptyDataError,
@@ -92,9 +77,7 @@ def test_fallback_if_study_input_broken(tmp_path):
     shutil.rmtree(tmp_dir_before_upgrade)
 
 
-def assert_study_antares_file_is_updated(
-    tmp_path: Path, target_version: str
-) -> None:
+def assert_study_antares_file_is_updated(tmp_path: Path, target_version: str) -> None:
     lines = (tmp_path / "study.antares").read_text(encoding="utf-8")
     assert re.search(r"version\s*=\s*(\d+)", lines)[1] == target_version
 
@@ -111,34 +94,19 @@ def assert_settings_are_updated(tmp_path: Path, old_values: List[str]) -> None:
     assert general["custom-scenario"] == old_values[1]
     assert general["geographic-trimming"] is False
     assert optimization["include-exportstructure"] is False
-    assert (
-        optimization["include-unfeasible-problem-behavior"] == "error-verbose"
-    )
-    assert (
-        other_preferences["hydro-heuristic-policy"]
-        == "accommodate rule curves"
-    )
+    assert optimization["include-unfeasible-problem-behavior"] == "error-verbose"
+    assert other_preferences["hydro-heuristic-policy"] == "accommodate rule curves"
     assert other_preferences["renewable-generation-modelling"] == "aggregated"
     assert adequacy_patch["include-adq-patch"] is False
-    assert adequacy_patch[
-        "set-to-null-ntc-between-physical-out-for-first-step"
-    ]
-    assert adequacy_patch[
-        "set-to-null-ntc-from-physical-out-to-physical-in-for-first-step"
-    ]
-    assert (
-        optimization["transmission-capacities"]
-        == MAPPING_TRANSMISSION_CAPACITIES[old_values[2]]
-    )
+    assert adequacy_patch["set-to-null-ntc-between-physical-out-for-first-step"]
+    assert adequacy_patch["set-to-null-ntc-from-physical-out-to-physical-in-for-first-step"]
+    assert optimization["transmission-capacities"] == MAPPING_TRANSMISSION_CAPACITIES[old_values[2]]
     assert "include-split-exported-mps" not in optimization
     assert adequacy_patch["price-taking-order"] == "DENS"
     assert adequacy_patch["include-hurdle-cost-csr"] is False
     assert adequacy_patch["check-csr-cost-function"] is False
     assert adequacy_patch["threshold-initiate-curtailment-sharing-rule"] == 0.0
-    assert (
-        adequacy_patch["threshold-display-local-matching-rule-violations"]
-        == 0.0
-    )
+    assert adequacy_patch["threshold-display-local-matching-rule-violations"] == 0.0
     assert adequacy_patch["threshold-csr-variable-bounds-relaxation"] == 3
 
 
@@ -178,36 +146,20 @@ def assert_inputs_are_updated(tmp_path: Path, dico: dict) -> None:
         if len(all_txt) > 0:
             for txt in all_txt:
                 path_txt = Path(txt)
-                old_txt = str(
-                    Path(path_txt.parent.name).joinpath(path_txt.stem)
-                ).replace("_parameters", "")
+                old_txt = str(Path(path_txt.parent.name).joinpath(path_txt.stem)).replace("_parameters", "")
                 df = pandas.read_csv(txt, sep="\t", header=None)
-                assert (
-                    df.values.all() == dico[old_txt].iloc[:, 2:8].values.all()
-                )
+                assert df.values.all() == dico[old_txt].iloc[:, 2:8].values.all()
         capacities = glob.glob(str(folder_path / "capacities" / "*"))
         for direction_txt in capacities:
-            df_capacities = pandas.read_csv(
-                direction_txt, sep="\t", header=None
-            )
+            df_capacities = pandas.read_csv(direction_txt, sep="\t", header=None)
             direction_path = Path(direction_txt)
-            old_txt = str(
-                Path(direction_path.parent.parent.name).joinpath(
-                    direction_path.name
-                )
-            )
+            old_txt = str(Path(direction_path.parent.parent.name).joinpath(direction_path.name))
             if "indirect" in old_txt:
                 new_txt = old_txt.replace("_indirect.txt", "")
-                assert (
-                    df_capacities[0].values.all()
-                    == dico[new_txt].iloc[:, 0].values.all()
-                )
+                assert df_capacities[0].values.all() == dico[new_txt].iloc[:, 0].values.all()
             else:
                 new_txt = old_txt.replace("_direct.txt", "")
-                assert (
-                    df_capacities[0].values.all()
-                    == dico[new_txt].iloc[:, 1].values.all()
-                )
+                assert df_capacities[0].values.all() == dico[new_txt].iloc[:, 1].values.all()
     areas = glob.glob(str(tmp_path / "input" / "areas" / "*"))
     for folder in areas:
         folder_path = Path(folder)
@@ -219,11 +171,7 @@ def assert_inputs_are_updated(tmp_path: Path, dico: dict) -> None:
 
 def are_same_dir(dir1, dir2) -> bool:
     dirs_cmp = filecmp.dircmp(dir1, dir2)
-    if (
-        len(dirs_cmp.left_only) > 0
-        or len(dirs_cmp.right_only) > 0
-        or len(dirs_cmp.funny_files) > 0
-    ):
+    if len(dirs_cmp.left_only) > 0 or len(dirs_cmp.right_only) > 0 or len(dirs_cmp.funny_files) > 0:
         return False
     for common_dir in dirs_cmp.common_dirs:
         path_dir1 = Path(dir1)

@@ -4,34 +4,18 @@ from unittest.mock import Mock, patch
 import pytest
 
 from antarest.study.storage.rawstudy.io.reader import MultipleSameKeysIniReader
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    transform_name_to_id,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
-    ChildNotFoundError,
-)
-from antarest.study.storage.variantstudy.business.command_reverter import (
-    CommandReverter,
-)
-from antarest.study.storage.variantstudy.model.command.create_area import (
-    CreateArea,
-)
-from antarest.study.storage.variantstudy.model.command.remove_area import (
-    RemoveArea,
-)
-from antarest.study.storage.variantstudy.model.command.update_config import (
-    UpdateConfig,
-)
-from antarest.study.storage.variantstudy.model.command_context import (
-    CommandContext,
-)
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import ChildNotFoundError
+from antarest.study.storage.variantstudy.business.command_reverter import CommandReverter
+from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
+from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
+from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
+from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
 @pytest.mark.unit_test
-def test_update_config(
-    empty_study: FileStudy, command_context: CommandContext
-):
+def test_update_config(empty_study: FileStudy, command_context: CommandContext):
     study_path = empty_study.config.study_path
     area1 = "Area1"
     area1_id = transform_name_to_id(area1)
@@ -50,9 +34,7 @@ def test_update_config(
     )
     output = update_settings_command.apply(empty_study)
     assert output.status
-    generaldata = MultipleSameKeysIniReader().read(
-        study_path / "settings/generaldata.ini"
-    )
+    generaldata = MultipleSameKeysIniReader().read(study_path / "settings/generaldata.ini")
     assert generaldata["optimization"]["simplex-range"] == "day"
     assert generaldata["optimization"]["transmission-capacities"]
 
@@ -63,9 +45,7 @@ def test_update_config(
     )
     output = update_settings_command.apply(empty_study)
     assert output.status
-    area_config = MultipleSameKeysIniReader().read(
-        study_path / f"input/areas/{area1_id}/optimization.ini"
-    )
+    area_config = MultipleSameKeysIniReader().read(study_path / f"input/areas/{area1_id}/optimization.ini")
     assert not area_config["nodal optimization"]["other-dispatchable-power"]
 
     # test UpdateConfig with byte object which is necessary with the API PUT /v1/studies/{uuid}/raw
@@ -90,15 +70,9 @@ def test_update_config(
 
 
 def test_match(command_context: CommandContext):
-    base = UpdateConfig(
-        target="foo", data="bar", command_context=command_context
-    )
-    other_match = UpdateConfig(
-        target="foo", data="bar", command_context=command_context
-    )
-    other_not_match = UpdateConfig(
-        target="hello", data="bar", command_context=command_context
-    )
+    base = UpdateConfig(target="foo", data="bar", command_context=command_context)
+    other_match = UpdateConfig(target="foo", data="bar", command_context=command_context)
+    other_not_match = UpdateConfig(target="hello", data="bar", command_context=command_context)
     other_other = RemoveArea(id="id", command_context=command_context)
     assert base.match(other_match)
     assert not base.match(other_not_match)
@@ -106,13 +80,9 @@ def test_match(command_context: CommandContext):
     assert base.match_signature() == "update_config%foo"
 
 
-@patch(
-    "antarest.study.storage.variantstudy.business.command_extractor.CommandExtractor.generate_update_config"
-)
+@patch("antarest.study.storage.variantstudy.business.command_extractor.CommandExtractor.generate_update_config")
 def test_revert(mock_generate_update_config, command_context: CommandContext):
-    base = UpdateConfig(
-        target="foo", data="bar", command_context=command_context
-    )
+    base = UpdateConfig(target="foo", data="bar", command_context=command_context)
     study = FileStudy(config=Mock(), tree=Mock())
     mock_generate_update_config.side_effect = ChildNotFoundError("")
     res = CommandReverter().revert(base, [], study)
@@ -121,22 +91,12 @@ def test_revert(mock_generate_update_config, command_context: CommandContext):
 
     assert CommandReverter().revert(
         base,
-        [
-            UpdateConfig(
-                target="foo", data="baz", command_context=command_context
-            )
-        ],
+        [UpdateConfig(target="foo", data="baz", command_context=command_context)],
         study,
-    ) == [
-        UpdateConfig(target="foo", data="baz", command_context=command_context)
-    ]
+    ) == [UpdateConfig(target="foo", data="baz", command_context=command_context)]
 
 
 def test_create_diff(command_context: CommandContext):
-    base = UpdateConfig(
-        target="foo", data="bar", command_context=command_context
-    )
-    other_match = UpdateConfig(
-        target="foo", data="baz", command_context=command_context
-    )
+    base = UpdateConfig(target="foo", data="bar", command_context=command_context)
+    other_match = UpdateConfig(target="foo", data="baz", command_context=command_context)
     assert base.create_diff(other_match) == [other_match]

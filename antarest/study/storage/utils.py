@@ -7,19 +7,15 @@ import time
 from datetime import datetime, timedelta
 from math import ceil
 from pathlib import Path
-from time import strptime
 from typing import Callable, List, Optional, Union, cast
 from uuid import uuid4
 from zipfile import ZipFile
 
 from antarest.core.config import Config
-from antarest.core.exceptions import (
-    StudyValidationError,
-    UnsupportedStudyVersion,
-)
+from antarest.core.exceptions import StudyValidationError, UnsupportedStudyVersion
 from antarest.core.interfaces.cache import CacheConstants, ICache
 from antarest.core.jwt import JWTUser
-from antarest.core.model import PermissionInfo, PublicMode, StudyPermissionType
+from antarest.core.model import PermissionInfo, StudyPermissionType
 from antarest.core.permissions import check_permission
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.utils.utils import StopWatch
@@ -33,13 +29,8 @@ from antarest.study.model import (
 )
 from antarest.study.storage.rawstudy.io.reader import IniReader
 from antarest.study.storage.rawstudy.io.writer.ini_writer import IniWriter
-from antarest.study.storage.rawstudy.model.filesystem.factory import (
-    FileStudy,
-    StudyFactory,
-)
-from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import (
-    FileStudyTree,
-)
+from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
+from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
 
 logger = logging.getLogger(__name__)
@@ -129,9 +120,7 @@ def find_single_output_path(all_output_path: Path) -> Path:
     return all_output_path
 
 
-def extract_output_name(
-    path_output: Path, new_suffix_name: Optional[str] = None
-) -> str:
+def extract_output_name(path_output: Path, new_suffix_name: Optional[str] = None) -> str:
     ini_reader = IniReader()
     is_output_archived = path_output.suffix == ".zip"
     if is_output_archived:
@@ -139,24 +128,16 @@ def extract_output_name(
         s = StopWatch()
         with ZipFile(path_output, "r") as zip_obj:
             zip_obj.extract("info.antares-output", temp_dir.name)
-            info_antares_output = ini_reader.read(
-                Path(temp_dir.name) / "info.antares-output"
-            )
-        s.log_elapsed(
-            lambda x: logger.info(f"info.antares_output has been read in {x}s")
-        )
+            info_antares_output = ini_reader.read(Path(temp_dir.name) / "info.antares-output")
+        s.log_elapsed(lambda x: logger.info(f"info.antares_output has been read in {x}s"))
         temp_dir.cleanup()
 
     else:
-        info_antares_output = ini_reader.read(
-            path_output / "info.antares-output"
-        )
+        info_antares_output = ini_reader.read(path_output / "info.antares-output")
 
     general_info = info_antares_output["general"]
 
-    date = datetime.fromtimestamp(int(general_info["timestamp"])).strftime(
-        "%Y%m%d-%H%M"
-    )
+    date = datetime.fromtimestamp(int(general_info["timestamp"])).strftime("%Y%m%d-%H%M")
 
     mode = "eco" if general_info["mode"] == "Economy" else "adq"
     suffix_name = general_info["name"] if general_info["name"] else ""
@@ -165,23 +146,16 @@ def extract_output_name(
         general_info["name"] = suffix_name
         if not is_output_archived:
             ini_writer = IniWriter()
-            ini_writer.write(
-                info_antares_output, path_output / "info.antares-output"
-            )
+            ini_writer.write(info_antares_output, path_output / "info.antares-output")
         else:
-            logger.warning(
-                "Could not rewrite the new name inside the output: the output is archived"
-            )
+            logger.warning("Could not rewrite the new name inside the output: the output is archived")
 
     name = f"-{suffix_name}" if suffix_name else ""
     return f"{date}{mode}{name}"
 
 
 def is_managed(study: Study) -> bool:
-    return (
-        not hasattr(study, "workspace")
-        or study.workspace == DEFAULT_WORKSPACE_NAME
-    )
+    return not hasattr(study, "workspace") or study.workspace == DEFAULT_WORKSPACE_NAME
 
 
 def remove_from_cache(cache: ICache, root_id: str) -> None:
@@ -193,12 +167,8 @@ def remove_from_cache(cache: ICache, root_id: str) -> None:
     )
 
 
-def create_new_empty_study(
-    version: str, path_study: Path, path_resources: Path
-) -> None:
-    version_template: Optional[str] = STUDY_REFERENCE_TEMPLATES.get(
-        version, None
-    )
+def create_new_empty_study(version: str, path_study: Path, path_resources: Path) -> None:
+    version_template: Optional[str] = STUDY_REFERENCE_TEMPLATES.get(version, None)
     if version_template is None:
         raise UnsupportedStudyVersion(version)
 
@@ -216,9 +186,7 @@ def study_matcher(
             return False
         if workspace and study.workspace != workspace:
             return False
-        if folder and (
-            not study.folder or not study.folder.startswith(folder)
-        ):
+        if folder and (not study.folder or not study.folder.startswith(folder)):
             return False
         return True
 
@@ -323,18 +291,10 @@ def get_start_date(
                 break
         target_year += 1
 
-    start_offset_days = timedelta(
-        days=(0 if output_id is None else start_offset - 1)
-    )
-    start_date = (
-        datetime(target_year, starting_month_index, 1) + start_offset_days
-    )
+    start_offset_days = timedelta(days=(0 if output_id is None else start_offset - 1))
+    start_date = datetime(target_year, starting_month_index, 1) + start_offset_days
     # base case is DAILY
-    steps = (
-        MATRIX_INPUT_DAYS_COUNT
-        if output_id is None
-        else end - start_offset + 1
-    )
+    steps = MATRIX_INPUT_DAYS_COUNT if output_id is None else end - start_offset + 1
     if level == StudyDownloadLevelDTO.HOURLY:
         steps = steps * 24
     elif level == StudyDownloadLevelDTO.ANNUAL:
@@ -378,11 +338,7 @@ def export_study_flat(
 
     output_src_path = output_src_path or path_study / "output"
     output_dest_path = dest / "output"
-    ignore_patterns = (
-        lambda directory, contents: ["output"]
-        if str(directory) == str(path_study)
-        else []
-    )
+    ignore_patterns = lambda directory, contents: ["output"] if str(directory) == str(path_study) else []
 
     shutil.copytree(src=path_study, dst=dest, ignore=ignore_patterns)
 

@@ -1,7 +1,7 @@
 import json
 import logging
 from datetime import timedelta
-from typing import Dict, Any, Callable, Tuple, Union, Optional, Coroutine
+from typing import Any, Callable, Coroutine, Dict, Optional, Tuple, Union
 
 from fastapi import Depends
 from fastapi_jwt_auth import AuthJWT  # type: ignore
@@ -10,7 +10,7 @@ from ratelimit.types import Scope  # type: ignore
 from starlette.requests import Request
 
 from antarest.core.config import Config
-from antarest.core.jwt import JWTUser, DEFAULT_ADMIN_USER
+from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
 
 logger = logging.getLogger(__name__)
 
@@ -27,9 +27,7 @@ class Auth:
         self,
         config: Config,
         verify: Callable[[], None] = AuthJWT().jwt_required,  # Test only
-        get_identity: Callable[
-            [], Dict[str, Any]
-        ] = AuthJWT().get_raw_jwt,  # Test only
+        get_identity: Callable[[], Dict[str, Any]] = AuthJWT().get_raw_jwt,  # Test only
     ):
         self.disabled = config.security.disabled
         self.verify = verify
@@ -60,9 +58,7 @@ class Auth:
         return user
 
     @staticmethod
-    def get_user_from_token(
-        token: str, jwt_manager: AuthJWT
-    ) -> Optional[JWTUser]:
+    def get_user_from_token(token: str, jwt_manager: AuthJWT) -> Optional[JWTUser]:
         try:
             token_data = jwt_manager._verified_token(token)
             return JWTUser.parse_obj(json.loads(token_data["sub"]))
@@ -74,12 +70,8 @@ class Auth:
 class JwtSettings(BaseModel):
     authjwt_secret_key: str
     authjwt_token_location: Tuple[str, ...]
-    authjwt_access_token_expires: Union[
-        int, timedelta
-    ] = Auth.ACCESS_TOKEN_DURATION
-    authjwt_refresh_token_expires: Union[
-        int, timedelta
-    ] = Auth.REFRESH_TOKEN_DURATION
+    authjwt_access_token_expires: Union[int, timedelta] = Auth.ACCESS_TOKEN_DURATION
+    authjwt_refresh_token_expires: Union[int, timedelta] = Auth.REFRESH_TOKEN_DURATION
     authjwt_denylist_enabled: bool = True
     authjwt_denylist_token_checks: Any = {"access", "refresh"}
     authjwt_cookie_csrf_protect: bool = True

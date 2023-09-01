@@ -2,21 +2,14 @@ import logging
 from pathlib import Path
 from typing import Any, List, Optional, Union, cast
 
-import numpy as np
 import pandas as pd
+from pandas.errors import EmptyDataError
+
 from antarest.core.model import JSON
 from antarest.core.utils.utils import StopWatch
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
-)
-from antarest.study.storage.rawstudy.model.filesystem.context import (
-    ContextServer,
-)
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import (
-    MatrixFrequency,
-    MatrixNode,
-)
-from pandas.errors import EmptyDataError
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency, MatrixNode
 
 logger = logging.getLogger(__name__)
 
@@ -101,11 +94,7 @@ class InputSeriesMatrix(MatrixNode):
 
         errors = []
         if not self.config.path.exists():
-            errors.append(
-                f"Input Series Matrix f{self.config.path} not exists"
-            )
+            errors.append(f"Input Series Matrix f{self.config.path} not exists")
         if self.nb_columns and len(data) != self.nb_columns:
-            errors.append(
-                f"{self.config.path}: Data was wrong size. expected {self.nb_columns} get {len(data)}"
-            )
+            errors.append(f"{self.config.path}: Data was wrong size. expected {self.nb_columns} get {len(data)}")
         return errors

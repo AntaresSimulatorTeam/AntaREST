@@ -6,37 +6,22 @@ import pytest
 
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.matrixstore.uri_resolver_service import UriResolverService
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    Area,
-    FileStudyTreeConfig,
-)
-from antarest.study.storage.rawstudy.model.filesystem.context import (
-    ContextServer,
-)
-from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import (
-    InputSeriesMatrix,
-)
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import (
-    MatrixFrequency,
-)
-from antarest.study.storage.rawstudy.model.filesystem.root.input.hydro.common.capacity import (
-    capacity,
-)
-
+from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
+from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
+from antarest.study.storage.rawstudy.model.filesystem.root.input.hydro.common.capacity import capacity
 
 # noinspection SpellCheckingInspection
 BEFORE_650 = {
-    # fmt: off
     "maxpower_en": {"default_empty": [[]], "freq": MatrixFrequency.HOURLY, "nb_columns": None},
     "maxpower_fr": {"default_empty": [[]], "freq": MatrixFrequency.HOURLY, "nb_columns": None},
     "reservoir_en": {"default_empty": [[]], "freq": MatrixFrequency.DAILY, "nb_columns": None},
     "reservoir_fr": {"default_empty": [[]], "freq": MatrixFrequency.DAILY, "nb_columns": None},
-    # fmt: on
 }
 
 # noinspection SpellCheckingInspection
 AFTER_650 = {
-    # fmt: off
     "creditmodulations_en": {"default_empty": [[]], "freq": MatrixFrequency.HOURLY, "nb_columns": None},
     "creditmodulations_fr": {"default_empty": [[]], "freq": MatrixFrequency.HOURLY, "nb_columns": None},
     "inflowPattern_en": {"default_empty": [[]], "freq": MatrixFrequency.HOURLY, "nb_columns": None},
@@ -47,7 +32,6 @@ AFTER_650 = {
     "reservoir_fr": {"default_empty": [[]], "freq": MatrixFrequency.DAILY, "nb_columns": None},
     "waterValues_en": {"default_empty": [[]], "freq": MatrixFrequency.DAILY, "nb_columns": None},
     "waterValues_fr": {"default_empty": [[]], "freq": MatrixFrequency.DAILY, "nb_columns": None},
-    # fmt: on
 }
 
 

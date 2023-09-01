@@ -2,21 +2,18 @@ from typing import List, Tuple
 
 import pandas as pd
 import pytest
-from antarest.matrixstore.matrix_editor import (
-    MatrixEditInstruction,
-    MatrixSlice,
-    Operation,
-)
+
+from antarest.matrixstore.matrix_editor import MatrixEditInstruction, MatrixSlice, Operation
 from antarest.matrixstore.model import MatrixData
 from antarest.study.business.matrix_management import (
+    MatrixEditError,
+    MatrixIndexError,
+    MatrixManagerError,
+    MatrixUpdateError,
     group_by_slices,
     merge_edit_instructions,
     update_matrix_content_with_coordinates,
     update_matrix_content_with_slices,
-    MatrixIndexError,
-    MatrixManagerError,
-    MatrixEditError,
-    MatrixUpdateError,
 )
 
 
@@ -41,9 +38,7 @@ class TestMatrixEditError:
 
 class TestMatrixUpdateError:
     def test_init(self):
-        error = MatrixUpdateError(
-            operation=Operation(operation="=", value=798), reason="foo"
-        )
+        error = MatrixUpdateError(operation=Operation(operation="=", value=798), reason="foo")
         assert "foo" in str(error)
         assert "=" in str(error)
         assert "798" in str(error)
@@ -152,13 +147,9 @@ def test_update_matrix_content_with_slices(
 ) -> None:
     matrix_data = pd.DataFrame([[-1] * 5] * 5, dtype=float)
 
-    output_matrix = update_matrix_content_with_slices(
-        matrix_data=matrix_data, slices=slices, operation=operation
-    )
+    output_matrix = update_matrix_content_with_slices(matrix_data=matrix_data, slices=slices, operation=operation)
 
-    assert output_matrix.equals(
-        pd.DataFrame(expected_result).astype(matrix_data.dtypes)
-    )
+    assert output_matrix.equals(pd.DataFrame(expected_result).astype(matrix_data.dtypes))
 
 
 def test_update_matrix_content_with_slices__out_of_bounds() -> None:
@@ -269,13 +260,9 @@ def test_update_matrix_content_with_coordinates(
 ) -> None:
     matrix_data = pd.DataFrame([[-1] * 5] * 5, dtype=float)
 
-    output_matrix = update_matrix_content_with_coordinates(
-        df=matrix_data, coordinates=coords, operation=operation
-    )
+    output_matrix = update_matrix_content_with_coordinates(df=matrix_data, coordinates=coords, operation=operation)
 
-    assert output_matrix.equals(
-        pd.DataFrame(expected_result).astype(matrix_data.dtypes)
-    )
+    assert output_matrix.equals(pd.DataFrame(expected_result).astype(matrix_data.dtypes))
 
 
 def test_update_matrix_content_with_coordinates__out_of_bounds() -> None:
@@ -293,7 +280,6 @@ class TestGroupBySlices:
         "cells, expected",
         [
             # Each tuple contains the (row, col) coordinates of a cell.
-            # fmt: off
             pytest.param([], [], id="empty-cells-list"),
             pytest.param(
                 [(3, 7)],
@@ -323,9 +309,14 @@ class TestGroupBySlices:
             pytest.param(
                 [
                     # +----col-axis-------->
-                    (0, 0), (0, 1), (0, 2),
-                    (1, 0), (1, 2),
-                    (2, 0), (2, 1), (2, 2),
+                    (0, 0),
+                    (0, 1),
+                    (0, 2),
+                    (1, 0),
+                    (1, 2),
+                    (2, 0),
+                    (2, 1),
+                    (2, 2),
                 ],
                 [
                     ((0, 1), (0, 1)),
@@ -335,7 +326,6 @@ class TestGroupBySlices:
                 ],
                 id="square-with-centered-hole",
             ),
-            # fmt: on
         ],
     )
     def test_group_by_slices(
@@ -374,7 +364,6 @@ class TestMergeEditInstructions:
         )
         actual = merge_edit_instructions([instr1, instr2, instr3])
         assert actual == [
-            # fmt: off
             MEI(
                 coordinates=[(1, 0)],
                 operation=Operation(operation="/", value=314.0),
@@ -387,7 +376,6 @@ class TestMergeEditInstructions:
                 coordinates=[(0, 1)],
                 operation=Operation(operation="=", value=628.0),
             ),
-            # fmt: on
         ]
 
     def test_merge_edit_instructions__slice_created(self) -> None:
@@ -396,25 +384,19 @@ class TestMergeEditInstructions:
         instr2 = MEI(coordinates=[(1, 0), (2, 0)], operation=op)
         actual = merge_edit_instructions([instr1, instr2])
         assert actual == [
-            # fmt: off
             MEI(
                 slices=[MatrixSlice(row_from=0, row_to=2, column_from=0, column_to=0)],
                 operation=op,
             )
-            # fmt: on
         ]
 
     def test_merge_edit_instructions__big_column(self) -> None:
         op = Operation(operation="=", value=314)
-        instructions = [
-            MEI(coordinates=[(row, 0)], operation=op) for row in range(8760)
-        ]
+        instructions = [MEI(coordinates=[(row, 0)], operation=op) for row in range(8760)]
         actual = merge_edit_instructions(instructions)
         assert actual == [
-            # fmt: off
             MEI(
                 slices=[MatrixSlice(row_from=0, row_to=8759, column_from=0, column_to=0)],
                 operation=op,
             )
-            # fmt: on
         ]

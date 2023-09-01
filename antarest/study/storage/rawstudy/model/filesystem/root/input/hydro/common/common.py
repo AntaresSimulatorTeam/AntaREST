@@ -1,9 +1,4 @@
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
-)
-from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
-    FolderNode,
-)
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
 from antarest.study.storage.rawstudy.model.filesystem.root.input.hydro.common.capacity.capacity import (
     InputHydroCommonCapacity,
@@ -12,9 +7,5 @@ from antarest.study.storage.rawstudy.model.filesystem.root.input.hydro.common.ca
 
 class InputHydroCommon(FolderNode):
     def build(self) -> TREE:
-        children: TREE = {
-            "capacity": InputHydroCommonCapacity(
-                self.context, self.config.next_file("capacity")
-            )
-        }
+        children: TREE = {"capacity": InputHydroCommonCapacity(self.context, self.config.next_file("capacity"))}
         return children

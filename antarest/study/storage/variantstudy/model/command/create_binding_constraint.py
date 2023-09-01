@@ -1,32 +1,23 @@
-from typing import Dict, List, Union, Any, Optional, cast, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 from pydantic import validator
 
 from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    transform_name_to_id,
-    FileStudyTreeConfig,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.business.utils import (
-    validate_matrix,
-    strip_matrix_protocol,
-)
+from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol, validate_matrix
 from antarest.study.storage.variantstudy.business.utils_binding_constraint import (
     apply_binding_constraint,
     parse_bindings_coeffs_and_save_into_config,
 )
 from antarest.study.storage.variantstudy.model.command.common import (
-    CommandOutput,
-    CommandName,
     BindingConstraintOperator,
+    CommandName,
+    CommandOutput,
     TimeStep,
 )
-from antarest.study.storage.variantstudy.model.command.icommand import (
-    ICommand,
-    MATCH_SIGNATURE_SEPARATOR,
-)
+from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
@@ -53,27 +44,19 @@ class CreateBindingConstraint(ICommand):
         cls, v: Optional[Union[List[List[MatrixData]], str]], values: Any
     ) -> Optional[Union[List[List[MatrixData]], str]]:
         if v is None:
-            v = values[
-                "command_context"
-            ].generator_matrix_constants.get_null_matrix()
+            v = values["command_context"].generator_matrix_constants.get_null_matrix()
             return v
         else:
             return validate_matrix(v, values)
 
-    def _apply_config(
-        self, study_data_config: FileStudyTreeConfig
-    ) -> Tuple[CommandOutput, Dict[str, Any]]:
+    def _apply_config(self, study_data_config: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         bd_id = transform_name_to_id(self.name)
-        parse_bindings_coeffs_and_save_into_config(
-            bd_id, study_data_config, self.coeffs
-        )
+        parse_bindings_coeffs_and_save_into_config(bd_id, study_data_config, self.coeffs)
         return CommandOutput(status=True), {}
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
         assert_this(isinstance(self.values, str))
-        binding_constraints = study_data.tree.get(
-            ["input", "bindingconstraints", "bindingconstraints"]
-        )
+        binding_constraints = study_data.tree.get(["input", "bindingconstraints", "bindingconstraints"])
         new_key = len(binding_constraints.keys())
         bd_id = transform_name_to_id(self.name)
         return apply_binding_constraint(
@@ -109,9 +92,7 @@ class CreateBindingConstraint(ICommand):
         )
 
     def match_signature(self) -> str:
-        return str(
-            self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.name
-        )
+        return str(self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.name)
 
     def match(self, other: ICommand, equal: bool = False) -> bool:
         if not isinstance(other, CreateBindingConstraint):
@@ -131,9 +112,7 @@ class CreateBindingConstraint(ICommand):
 
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:
         other = cast(CreateBindingConstraint, other)
-        from antarest.study.storage.variantstudy.model.command.update_binding_constraint import (
-            UpdateBindingConstraint,
-        )
+        from antarest.study.storage.variantstudy.model.command.update_binding_constraint import UpdateBindingConstraint
 
         bd_id = transform_name_to_id(self.name)
         return [
@@ -143,9 +122,7 @@ class CreateBindingConstraint(ICommand):
                 time_step=other.time_step,
                 operator=other.operator,
                 coeffs=other.coeffs,
-                values=strip_matrix_protocol(other.values)
-                if self.values != other.values
-                else None,
+                values=strip_matrix_protocol(other.values) if self.values != other.values else None,
                 filter_year_by_year=other.filter_year_by_year,
                 filter_synthesis=other.filter_synthesis,
                 comments=other.comments,

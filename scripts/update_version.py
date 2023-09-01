@@ -78,17 +78,11 @@ def parse_changelog(change_log: str) -> typing.Generator[Token, None, None]:
             raise NotImplementedError(kind, mo.group())
 
 
-def update_changelog(
-    change_log: str, new_version: str, new_date: str
-) -> typing.Generator[Token, None, None]:
+def update_changelog(change_log: str, new_version: str, new_date: str) -> typing.Generator[Token, None, None]:
     title_found = False
     new_title = f"v{new_version} ({new_date})"
     for token in parse_changelog(change_log):
-        if (
-            not title_found
-            and isinstance(token, TitleToken)
-            and token.level == 2
-        ):
+        if not title_found and isinstance(token, TitleToken) and token.level == 2:
             title_found = True
             if token.text != new_title:
                 yield TitleToken(kind=token.kind, text=new_title)
@@ -192,9 +186,7 @@ when a new version is completed in the `master` branch or `hotfix` branch.
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        prog="upgrade_version", description=DESCRIPTION
-    )
+    parser = argparse.ArgumentParser(prog="upgrade_version", description=DESCRIPTION)
     parser.add_argument(
         "--version",
         dest="new_version",

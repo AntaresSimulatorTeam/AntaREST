@@ -9,10 +9,7 @@ from typing import Any, Dict, List, Optional, Tuple, cast
 
 from antarest.core.model import JSON
 from antarest.core.utils.utils import extract_file_to_tmp_dir
-from antarest.study.storage.rawstudy.io.reader import (
-    IniReader,
-    MultipleSameKeysIniReader,
-)
+from antarest.study.storage.rawstudy.io.reader import IniReader, MultipleSameKeysIniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.exceptions import (
     SimulationParsingError,
     XpansionParsingError,
@@ -27,9 +24,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Simulation,
     transform_name_to_id,
 )
-from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata import (
-    DUPLICATE_KEYS,
-)
+from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata import DUPLICATE_KEYS
 
 logger = logging.getLogger(__name__)
 
@@ -44,9 +39,7 @@ class FileTypeNotSupportedException(Exception):
     pass
 
 
-def build(
-    study_path: Path, study_id: str, output_path: Optional[Path] = None
-) -> "FileStudyTreeConfig":
+def build(study_path: Path, study_id: str, output_path: Optional[Path] = None) -> "FileStudyTreeConfig":
     """
     Extract data from filesystem to build config study.
     Args:
@@ -89,18 +82,14 @@ def _extract_data_from_file(
     tmp_dir = None
     try:
         if root.suffix == ".zip":
-            output_data_path, tmp_dir = extract_file_to_tmp_dir(
-                root, inside_root_path
-            )
+            output_data_path, tmp_dir = extract_file_to_tmp_dir(root, inside_root_path)
         else:
             output_data_path = root / inside_root_path
 
         if file_type == FileType.TXT:
             output_data: Any = output_data_path.read_text().split("\n")
         elif file_type == FileType.MULTI_INI:
-            output_data = MultipleSameKeysIniReader(multi_ini_keys).read(
-                output_data_path
-            )
+            output_data = MultipleSameKeysIniReader(multi_ini_keys).read(output_data_path)
         elif file_type == FileType.SIMPLE_INI:
             output_data = IniReader().read(output_data_path)
         else:
@@ -131,25 +120,16 @@ def _parse_parameters(path: Path) -> Tuple[bool, List[str], str]:
 
     store_new_set: bool = general.get("output", {}).get("storenewset", False)
     archive_input_series: List[str] = [
-        e.strip()
-        for e in general.get("output", {})
-        .get("archives", "")
-        .strip()
-        .split(",")
-        if e.strip()
+        e.strip() for e in general.get("output", {}).get("archives", "").strip().split(",") if e.strip()
     ]
-    enr_modelling: str = general.get("other preferences", {}).get(
-        "renewable-generation-modelling", "aggregated"
-    )
+    enr_modelling: str = general.get("other preferences", {}).get("renewable-generation-modelling", "aggregated")
     return store_new_set, archive_input_series, enr_modelling
 
 
 def _parse_bindings(root: Path) -> List[BindingConstraintDTO]:
     bindings = _extract_data_from_file(
         root=root,
-        inside_root_path=Path(
-            "input/bindingconstraints/bindingconstraints.ini"
-        ),
+        inside_root_path=Path("input/bindingconstraints/bindingconstraints.ini"),
         file_type=FileType.SIMPLE_INI,
     )
     output_list = []
@@ -166,11 +146,7 @@ def _parse_bindings(root: Path) -> List[BindingConstraintDTO]:
                 cluster_set.add(key)
                 area_set.add(key.split(".", 1)[0])
 
-        output_list.append(
-            BindingConstraintDTO(
-                id=bind["id"], areas=area_set, clusters=cluster_set
-            )
-        )
+        output_list.append(BindingConstraintDTO(id=bind["id"], areas=area_set, clusters=cluster_set))
 
     return output_list
 
@@ -184,11 +160,7 @@ def _parse_sets(root: Path) -> Dict[str, DistrictSet]:
     )
     return {
         transform_name_to_id(name): DistrictSet(
-            areas=item.get(
-                "-"
-                if item.get("apply-filter", "remove-all") == "add-all"
-                else "+"
-            ),
+            areas=item.get("-" if item.get("apply-filter", "remove-all") == "add-all" else "+"),
             name=item.get("caption"),
             inverted_set=item.get("apply-filter", "remove-all") == "add-all",
             output=item.get("output", True),
@@ -223,9 +195,7 @@ def _parse_outputs(output_path: Path) -> Dict[str, Simulation]:
                     if simulation := parse_simulation_zip(path):
                         sims[path.stem] = simulation
             elif (path / "about-the-study/parameters.ini").exists():
-                if simulation := parse_simulation(
-                    path, canonical_name=path_name
-                ):
+                if simulation := parse_simulation(path, canonical_name=path_name):
                     sims[path_name] = simulation
         except SimulationParsingError as exc:
             logger.warning(str(exc), exc_info=True)
@@ -236,9 +206,7 @@ def parse_simulation_zip(path: Path) -> Simulation:
     xpansion_path = "expansion/out.json"
     ini_path = "about-the-study/parameters.ini"
     integrity_path = "checkIntegrity.txt"
-    with tempfile.TemporaryDirectory(
-        dir=path.parent, prefix=f"~{path.stem}-", suffix=".tmp"
-    ) as output_dir:
+    with tempfile.TemporaryDirectory(dir=path.parent, prefix=f"~{path.stem}-", suffix=".tmp") as output_dir:
         try:
             with zipfile.ZipFile(path) as zf:
                 try:
@@ -254,9 +222,7 @@ def parse_simulation_zip(path: Path) -> Simulation:
                     zf.extract(integrity_path, output_dir)
         except zipfile.BadZipFile as exc:
             raise SimulationParsingError(path, f"Bad ZIP file: {exc}") from exc
-        simulation = parse_simulation(
-            Path(output_dir), canonical_name=path.stem
-        )
+        simulation = parse_simulation(Path(output_dir), canonical_name=path.stem)
         simulation.archived = True
         return simulation
 
@@ -270,13 +236,9 @@ def _parse_xpansion_version(path: Path) -> str:
     except FileNotFoundError:
         return ""
     except json.JSONDecodeError as exc:
-        raise XpansionParsingError(
-            xpansion_json, f"invalid JSON format: {exc}"
-        ) from exc
+        raise XpansionParsingError(xpansion_json, f"invalid JSON format: {exc}") from exc
     except KeyError as exc:
-        raise XpansionParsingError(
-            xpansion_json, f"key '{exc}' not found in JSON object"
-        ) from exc
+        raise XpansionParsingError(xpansion_json, f"key '{exc}' not found in JSON object") from exc
 
 
 _regex_eco_adq = re.compile("^([0-9]{8}-[0-9]{4})(eco|adq)-?(.*)")
@@ -339,14 +301,8 @@ def get_playlist(config: JSON) -> Optional[Dict[int, float]]:
         year_weight_elements = year_weight.split(",")
         weights[int(year_weight_elements[0])] = float(year_weight_elements[1])
     if playlist_reset:
-        return {
-            year + 1: weights.get(year, 1)
-            for year in range(nb_years)
-            if year not in removed
-        }
-    return {
-        year + 1: weights.get(year, 1) for year in added if year not in removed
-    }
+        return {year + 1: weights.get(year, 1) for year in range(nb_years) if year not in removed}
+    return {year + 1: weights.get(year, 1) for year in added if year not in removed}
 
 
 def parse_area(root: Path, area: str) -> "Area":
@@ -381,9 +337,7 @@ def _parse_renewables(root: Path, area: str) -> List[Cluster]:
     try:
         list_ini = _extract_data_from_file(
             root=root,
-            inside_root_path=Path(
-                f"input/renewables/clusters/{area}/list.ini"
-            ),
+            inside_root_path=Path(f"input/renewables/clusters/{area}/list.ini"),
             file_type=FileType.SIMPLE_INI,
         )
         return [
@@ -404,10 +358,7 @@ def _parse_links(root: Path, area: str) -> Dict[str, Link]:
         inside_root_path=Path(f"input/links/{area}/properties.ini"),
         file_type=FileType.SIMPLE_INI,
     )
-    return {
-        link: Link.from_json(properties_ini[link])
-        for link in list(properties_ini.keys())
-    }
+    return {link: Link.from_json(properties_ini[link]) for link in list(properties_ini.keys())}
 
 
 def _parse_filters_synthesis(root: Path, area: str) -> List[str]:

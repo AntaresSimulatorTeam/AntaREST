@@ -1,4 +1,4 @@
-from typing import Sequence, Any
+from typing import Any, Sequence
 from unittest.mock import patch
 
 import pytest

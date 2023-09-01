@@ -1,5 +1,5 @@
 import configparser
-from typing import Any, Dict, Union, Optional
+from typing import Any, Dict, Optional, Union
 
 
 def _convert_value(value: Any) -> str:
@@ -50,9 +50,7 @@ class AntaresConfigParser(configparser.RawConfigParser):
 
     def __init__(self, *args, **kwargs) -> None:  # type: ignore
         super().__init__(*args, **kwargs)
-        self._proxies[self.default_section] = AntaresSectionProxy(
-            self, self.default_section
-        )
+        self._proxies[self.default_section] = AntaresSectionProxy(self, self.default_section)
 
     def add_section(self, section: str) -> None:
         super().add_section(section)

@@ -5,16 +5,11 @@ from pathlib import Path
 from typing import Any, List, Optional, Union, cast
 
 import pandas as pd
+
 from antarest.core.model import JSON
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
-)
-from antarest.study.storage.rawstudy.model.filesystem.context import (
-    ContextServer,
-)
-from antarest.study.storage.rawstudy.model.filesystem.exceptions import (
-    DenormalizationException,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
+from antarest.study.storage.rawstudy.model.filesystem.exceptions import DenormalizationException
 from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
 
 logger = logging.getLogger(__name__)
@@ -72,9 +67,7 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
         if "data" in matrix:
             data = cast(List[List[float]], matrix["data"])
             uuid = self.context.matrix.create(data)
-            self.get_link_path().write_text(
-                self.context.resolver.build_matrix_uri(uuid)
-            )
+            self.get_link_path().write_text(self.context.resolver.build_matrix_uri(uuid))
             self.config.path.unlink()
 
     def denormalize(self) -> None:
@@ -91,9 +84,7 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
         uuid = self.get_link_path().read_text()
         matrix = self.context.resolver.resolve(uuid)
         if not matrix or not isinstance(matrix, dict):
-            raise DenormalizationException(
-                f"Failed to retrieve original matrix for {self.config.path}"
-            )
+            raise DenormalizationException(f"Failed to retrieve original matrix for {self.config.path}")
 
         self.dump(matrix)
         self.get_link_path().unlink()

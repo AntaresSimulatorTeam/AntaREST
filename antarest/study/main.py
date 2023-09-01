@@ -5,41 +5,25 @@ from fastapi import FastAPI
 from antarest.core.config import Config
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.interfaces.cache import ICache
-from antarest.core.interfaces.eventbus import IEventBus, DummyEventBusService
+from antarest.core.interfaces.eventbus import DummyEventBusService, IEventBus
 from antarest.core.tasks.service import ITaskService
 from antarest.login.service import LoginService
 from antarest.matrixstore.service import ISimpleMatrixService
-from antarest.matrixstore.uri_resolver_service import (
-    UriResolverService,
-)
-from antarest.study.repository import (
-    StudyMetadataRepository,
-)
+from antarest.matrixstore.uri_resolver_service import UriResolverService
+from antarest.study.repository import StudyMetadataRepository
 from antarest.study.service import StudyService
 from antarest.study.storage.patch_service import PatchService
-from antarest.study.storage.rawstudy.model.filesystem.factory import (
-    StudyFactory,
-)
-from antarest.study.storage.rawstudy.raw_study_service import (
-    RawStudyService,
-)
-from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
-    GeneratorMatrixConstants,
-)
+from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
+from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
+from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
-from antarest.study.storage.variantstudy.repository import (
-    VariantStudyRepository,
-)
-from antarest.study.storage.variantstudy.variant_study_service import (
-    VariantStudyService,
-)
+from antarest.study.storage.variantstudy.repository import VariantStudyRepository
+from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 from antarest.study.web.raw_studies_blueprint import create_raw_study_routes
 from antarest.study.web.studies_blueprint import create_study_routes
 from antarest.study.web.study_data_blueprint import create_study_data_routes
 from antarest.study.web.variant_blueprint import create_study_variant_routes
-from antarest.study.web.xpansion_studies_blueprint import (
-    create_xpansion_routes,
-)
+from antarest.study.web.xpansion_studies_blueprint import create_xpansion_routes
 
 
 def build_study_service(
@@ -82,9 +66,7 @@ def build_study_service(
     path_resources = config.resources_path
 
     resolver = UriResolverService(matrix_service=matrix_service)
-    study_factory = StudyFactory(
-        matrix=matrix_service, resolver=resolver, cache=cache
-    )
+    study_factory = StudyFactory(matrix=matrix_service, resolver=resolver, cache=cache)
     metadata_repository = metadata_repository or StudyMetadataRepository(cache)
     variant_repository = variant_repository or VariantStudyRepository(cache)
 
@@ -98,10 +80,7 @@ def build_study_service(
         cache=cache,
     )
 
-    generator_matrix_constants = (
-        generator_matrix_constants
-        or GeneratorMatrixConstants(matrix_service=matrix_service)
-    )
+    generator_matrix_constants = generator_matrix_constants or GeneratorMatrixConstants(matrix_service=matrix_service)
     command_factory = CommandFactory(
         generator_matrix_constants=generator_matrix_constants,
         matrix_service=matrix_service,
@@ -132,23 +111,15 @@ def build_study_service(
     )
 
     if application:
-        application.include_router(
-            create_study_routes(study_service, file_transfer_manager, config)
-        )
-        application.include_router(
-            create_raw_study_routes(study_service, config)
-        )
-        application.include_router(
-            create_study_data_routes(study_service, config)
-        )
+        application.include_router(create_study_routes(study_service, file_transfer_manager, config))
+        application.include_router(create_raw_study_routes(study_service, config))
+        application.include_router(create_study_data_routes(study_service, config))
         application.include_router(
             create_study_variant_routes(
                 study_service=study_service,
                 config=config,
             )
         )
-        application.include_router(
-            create_xpansion_routes(study_service, config)
-        )
+        application.include_router(create_xpansion_routes(study_service, config))
 
     return study_service

@@ -3,16 +3,8 @@ from antarest.study.storage.rawstudy.model.filesystem.common.area_matrix_list im
     AreaMultipleMatrixList,
     ThermalMatrixList,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
-)
-from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
-    FolderNode,
-)
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
-from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import (
-    RawFileNode,
-)
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.ts_numbers.ts_numbers_data import (
     TsNumbersVector,
 )

@@ -1,11 +1,10 @@
 """
 Python module that is dedicated to printing application version and dependencies information
 """
-import os
 import subprocess
+import sys
 from pathlib import Path
 from typing import Dict
-import sys
 
 from pydantic import BaseModel
 
@@ -86,14 +85,9 @@ def get_dependencies() -> Dict[str, str]:
         # when trying to obtain the list of installed packages using `pip freeze`.
         return {}
 
-    # fmt: off
     args = [sys.executable, "-m", "pip", "freeze"]
     output = subprocess.check_output(args, encoding="utf-8")
-    lines = (
-        line
-        for line in output.splitlines(keepends=False)
-        if "==" in line
-    )
+    lines = (line for line in output.splitlines(keepends=False) if "==" in line)
     # noinspection PyTypeChecker
     packages = dict(line.split("==", 1) for line in lines)
     # AntaREST is not a dependency of AntaREST

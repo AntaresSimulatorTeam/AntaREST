@@ -6,18 +6,14 @@ import tempfile
 import threading
 import time
 from pathlib import Path
-from typing import IO, Callable, Dict, Optional, Tuple, cast, List
+from typing import IO, Callable, Dict, Optional, Tuple, cast
 from uuid import UUID
 
 from antarest.core.config import Config
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus
 from antarest.core.requests import RequestParameters
-from antarest.launcher.adapters.abstractlauncher import (
-    AbstractLauncher,
-    LauncherCallbacks,
-    LauncherInitException,
-)
+from antarest.launcher.adapters.abstractlauncher import AbstractLauncher, LauncherCallbacks, LauncherInitException
 from antarest.launcher.adapters.log_manager import LogTailManager
 from antarest.launcher.model import JobStatus, LauncherParametersDTO, LogType
 
@@ -40,9 +36,7 @@ class LocalLauncher(AbstractLauncher):
         if self.config.launcher.local is None:
             raise LauncherInitException("Missing parameter 'launcher.local'")
         self.tmpdir = config.storage.tmp_dir
-        self.job_id_to_study_id: Dict[  # type: ignore
-            str, Tuple[str, Path, subprocess.Popen]
-        ] = {}
+        self.job_id_to_study_id: Dict[str, Tuple[str, Path, subprocess.Popen]] = {}  # type: ignore
         self.logs: Dict[str, str] = {}
 
     def _select_best_binary(self, version: str) -> Path:
@@ -109,14 +103,10 @@ class LocalLauncher(AbstractLauncher):
                 del self.logs[str(uuid)]
             return end
 
-        tmp_path = tempfile.mkdtemp(
-            prefix="local_launch_", dir=str(self.tmpdir)
-        )
+        tmp_path = tempfile.mkdtemp(prefix="local_launch_", dir=str(self.tmpdir))
         export_path = Path(tmp_path) / "export"
         try:
-            self.callbacks.export_study(
-                str(uuid), study_uuid, export_path, launcher_parameters
-            )
+            self.callbacks.export_study(str(uuid), study_uuid, export_path, launcher_parameters)
 
             args = [
                 str(antares_solver_path),
@@ -158,18 +148,13 @@ class LocalLauncher(AbstractLauncher):
                 time.sleep(1)
 
             if launcher_parameters is not None and (
-                launcher_parameters.post_processing
-                or launcher_parameters.adequacy_patch is not None
+                launcher_parameters.post_processing or launcher_parameters.adequacy_patch is not None
             ):
-                subprocess.run(
-                    ["Rscript", "post-processing.R"], cwd=export_path
-                )
+                subprocess.run(["Rscript", "post-processing.R"], cwd=export_path)
 
             output_id: Optional[str] = None
             try:
-                output_id = self.callbacks.import_output(
-                    str(uuid), export_path / "output", {}
-                )
+                output_id = self.callbacks.import_output(str(uuid), export_path / "output", {})
             except Exception as e:
                 logger.error(
                     f"Failed to import output for study {study_uuid} located at {export_path}",
@@ -178,16 +163,12 @@ class LocalLauncher(AbstractLauncher):
             del self.job_id_to_study_id[str(uuid)]
             self.callbacks.update_status(
                 str(uuid),
-                JobStatus.FAILED
-                if process.returncode != 0 or not output_id
-                else JobStatus.SUCCESS,
+                JobStatus.FAILED if process.returncode != 0 or not output_id else JobStatus.SUCCESS,
                 None,
                 output_id,
             )
         except Exception as e:
-            logger.error(
-                f"Unexpected error happened during launch {uuid}", exc_info=e
-            )
+            logger.error(f"Unexpected error happened during launch {uuid}", exc_info=e)
             self.callbacks.update_status(
                 str(uuid),
                 JobStatus.FAILED,
@@ -218,9 +199,7 @@ class LocalLauncher(AbstractLauncher):
 
     def kill_job(self, job_id: str) -> None:
         if job_id in self.job_id_to_study_id:
-            return self.job_id_to_study_id[job_id][2].send_signal(
-                signal.SIGTERM
-            )
+            return self.job_id_to_study_id[job_id][2].send_signal(signal.SIGTERM)
         else:
             self.callbacks.update_status(
                 job_id,

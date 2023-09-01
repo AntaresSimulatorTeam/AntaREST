@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from antarest.core.config import Config
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.interfaces.cache import ICache
-from antarest.core.interfaces.eventbus import IEventBus, DummyEventBusService
+from antarest.core.interfaces.eventbus import DummyEventBusService, IEventBus
 from antarest.core.tasks.service import ITaskService
 from antarest.launcher.repository import JobResultRepository
 from antarest.launcher.service import LauncherService
@@ -38,8 +38,6 @@ def build_launcher(
         )
 
     if service_launcher and application:
-        application.include_router(
-            create_launcher_api(service_launcher, config)
-        )
+        application.include_router(create_launcher_api(service_launcher, config))
 
     return service_launcher

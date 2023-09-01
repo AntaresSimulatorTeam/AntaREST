@@ -1,19 +1,12 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import TypeVar, Generic, List, Union, Optional, IO
+from typing import IO, Generic, List, Optional, TypeVar, Union
 
 from antarest.core.exceptions import StudyNotFoundError
 from antarest.core.model import JSON
 from antarest.core.requests import RequestParameters
-from antarest.study.model import (
-    Study,
-    StudySimResultDTO,
-    StudyMetadataDTO,
-    StudyMetadataPatchDTO,
-)
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfigDTO,
-)
+from antarest.study.model import Study, StudyMetadataDTO, StudyMetadataPatchDTO, StudySimResultDTO
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 T = TypeVar("T", bound=Study)
@@ -66,9 +59,7 @@ class IStudyStorageService(ABC, Generic[T]):
         raise NotImplementedError()
 
     @abstractmethod
-    def copy(
-        self, src_meta: T, dest_name: str, with_outputs: bool = False
-    ) -> T:
+    def copy(self, src_meta: T, dest_name: str, with_outputs: bool = False) -> T:
         """
         Copy study to a new destination
         Args:
@@ -82,9 +73,7 @@ class IStudyStorageService(ABC, Generic[T]):
         raise NotImplementedError()
 
     @abstractmethod
-    def patch_update_study_metadata(
-        self, study: T, metadata: StudyMetadataPatchDTO
-    ) -> StudyMetadataDTO:
+    def patch_update_study_metadata(self, study: T, metadata: StudyMetadataPatchDTO) -> StudyMetadataDTO:
         """
         Update patch study metadata
         Args:
@@ -147,9 +136,7 @@ class IStudyStorageService(ABC, Generic[T]):
         raise NotImplementedError()
 
     @abstractmethod
-    def set_reference_output(
-        self, metadata: T, output_id: str, status: bool
-    ) -> None:
+    def set_reference_output(self, metadata: T, output_id: str, status: bool) -> None:
         """
         Set an output to the reference output of a study
         Args:
@@ -210,14 +197,10 @@ class IStudyStorageService(ABC, Generic[T]):
 
         """
         if not self.exists(metadata):
-            raise StudyNotFoundError(
-                f"Study with the uuid {metadata.id} does not exist."
-            )
+            raise StudyNotFoundError(f"Study with the uuid {metadata.id} does not exist.")
 
     @abstractmethod
-    def export_study(
-        self, metadata: T, target: Path, outputs: bool = True
-    ) -> Path:
+    def export_study(self, metadata: T, target: Path, outputs: bool = True) -> Path:
         """
         Export and compresses study inside zip
         Args:
@@ -268,9 +251,7 @@ class IStudyStorageService(ABC, Generic[T]):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_synthesis(
-        self, metadata: T, params: Optional[RequestParameters] = None
-    ) -> FileStudyTreeConfigDTO:
+    def get_synthesis(self, metadata: T, params: Optional[RequestParameters] = None) -> FileStudyTreeConfigDTO:
         """
         Return study synthesis
         Args:
@@ -290,7 +271,5 @@ class IStudyStorageService(ABC, Generic[T]):
         raise NotImplementedError()
 
     @abstractmethod
-    def unarchive_study_output(
-        self, study: T, output_id: str, keep_src_zip: bool
-    ) -> bool:
+    def unarchive_study_output(self, study: T, output_id: str, keep_src_zip: bool) -> bool:
         raise NotImplementedError()

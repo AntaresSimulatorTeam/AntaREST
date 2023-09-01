@@ -5,15 +5,14 @@ from unittest.mock import Mock, call
 from uuid import uuid4
 
 import pytest
+from sqlalchemy import create_engine
+
 from antarest.core.config import Config, LauncherConfig, LocalConfig
 from antarest.core.persistence import Base
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.launcher.adapters.abstractlauncher import LauncherInitException
-from antarest.launcher.adapters.local_launcher.local_launcher import (
-    LocalLauncher,
-)
+from antarest.launcher.adapters.local_launcher.local_launcher import LocalLauncher
 from antarest.launcher.model import JobStatus, LauncherParametersDTO
-from sqlalchemy import create_engine
 
 
 @pytest.mark.unit_test
@@ -39,9 +38,7 @@ def test_compute(tmp_path: Path):
         custom_engine=engine,
         session_args={"autocommit": False, "autoflush": False},
     )
-    local_launcher = LocalLauncher(
-        Config(), callbacks=Mock(), event_bus=Mock(), cache=Mock()
-    )
+    local_launcher = LocalLauncher(Config(), callbacks=Mock(), event_bus=Mock(), cache=Mock())
 
     # prepare a dummy executable to simulate Antares Solver
     if os.name == "nt":
@@ -71,9 +68,7 @@ def test_compute(tmp_path: Path):
         solver_path.chmod(0o775)
 
     uuid = uuid4()
-    local_launcher.job_id_to_study_id = {
-        str(uuid): ("study-id", tmp_path / "run", Mock())
-    }
+    local_launcher.job_id_to_study_id = {str(uuid): ("study-id", tmp_path / "run", Mock())}
     local_launcher.callbacks.import_output.return_value = "some output"
     launcher_parameters = LauncherParametersDTO(
         adequacy_patch=None,

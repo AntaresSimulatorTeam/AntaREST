@@ -11,7 +11,7 @@ from antarest.core.exceptions import CannotScanInternalWorkspace
 from antarest.core.persistence import Base
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.login.model import Group
-from antarest.study.model import StudyFolder, DEFAULT_WORKSPACE_NAME
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, StudyFolder
 from antarest.study.storage.rawstudy.watcher import Watcher
 from tests.storage.conftest import SimpleSyncTaskService
 
@@ -20,9 +20,7 @@ def build_config(root: Path) -> Config:
     return Config(
         storage=StorageConfig(
             workspaces={
-                DEFAULT_WORKSPACE_NAME: WorkspaceConfig(
-                    path=root / DEFAULT_WORKSPACE_NAME, groups=["toto"]
-                ),
+                DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=root / DEFAULT_WORKSPACE_NAME, groups=["toto"]),
                 "diese": WorkspaceConfig(
                     path=root / "diese",
                     groups=["tata"],
@@ -85,9 +83,7 @@ def test_scan(tmp_path: Path):
     (f / "study.antares").touch()
 
     service = Mock()
-    watcher = Watcher(
-        build_config(tmp_path), service, task_service=SimpleSyncTaskService()
-    )
+    watcher = Watcher(build_config(tmp_path), service, task_service=SimpleSyncTaskService())
 
     watcher.scan()
 
@@ -124,14 +120,10 @@ def test_partial_scan(tmp_path: Path):
     (c / "study.antares").touch()
 
     service = Mock()
-    watcher = Watcher(
-        build_config(tmp_path), service, task_service=SimpleSyncTaskService()
-    )
+    watcher = Watcher(build_config(tmp_path), service, task_service=SimpleSyncTaskService())
 
     with pytest.raises(CannotScanInternalWorkspace):
-        watcher.scan(
-            workspace_name="default", workspace_directory_path=default
-        )
+        watcher.scan(workspace_name="default", workspace_directory_path=default)
 
     watcher.scan(workspace_name="test", workspace_directory_path=default)
 

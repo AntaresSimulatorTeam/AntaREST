@@ -3,7 +3,7 @@ from typing import Optional
 from fastapi import FastAPI
 
 from antarest.core.config import Config
-from antarest.core.interfaces.eventbus import IEventBus, DummyEventBusService
+from antarest.core.interfaces.eventbus import DummyEventBusService, IEventBus
 from antarest.core.tasks.repository import TaskJobRepository
 from antarest.core.tasks.service import ITaskService, TaskJobService
 from antarest.core.tasks.web import create_tasks_api

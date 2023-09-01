@@ -1,5 +1,5 @@
 import logging
-from typing import List, Dict, Optional
+from typing import Dict, List, Optional
 
 from antarest.core.interfaces.eventbus import Event
 from antarest.eventbus.business.interfaces import IEventBusBackend

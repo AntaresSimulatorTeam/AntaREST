@@ -1,20 +1,11 @@
 from pathlib import Path
-from typing import Optional, List
+from typing import List, Optional
 from zipfile import ZipFile
 
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
-)
-from antarest.study.storage.rawstudy.model.filesystem.context import (
-    ContextServer,
-)
-from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
-    FolderNode,
-)
-from antarest.study.storage.rawstudy.model.filesystem.inode import (
-    TREE,
-    INode,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
+from antarest.study.storage.rawstudy.model.filesystem.inode import TREE, INode
 
 
 class TestSubNode(INode[int, int, int]):
@@ -51,9 +42,7 @@ class TestSubNode(INode[int, int, int]):
     def delete(self, url: Optional[List[str]] = None) -> None:
         pass
 
-    def check_errors(
-        self, data: int, url: Optional[List[str]] = None, raising: bool = False
-    ) -> List[str]:
+    def check_errors(self, data: int, url: Optional[List[str]] = None, raising: bool = False) -> List[str]:
         return []
 
 

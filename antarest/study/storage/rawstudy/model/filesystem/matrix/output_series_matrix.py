@@ -6,15 +6,9 @@ import pandas as pd
 from pandas import DataFrame
 
 from antarest.core.model import JSON
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
-)
-from antarest.study.storage.rawstudy.model.filesystem.context import (
-    ContextServer,
-)
-from antarest.study.storage.rawstudy.model.filesystem.folder_node import (
-    ChildNotFoundError,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import ChildNotFoundError
 from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
 from antarest.study.storage.rawstudy.model.filesystem.matrix.date_serializer import (
     FactoryDateSerializer,
@@ -26,16 +20,12 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.head_writer import 
     HeadWriter,
     LinkHeadWriter,
 )
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import (
-    MatrixFrequency,
-)
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 
 logger = logging.getLogger(__name__)
 
 
-class OutputSeriesMatrix(
-    LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON]
-):
+class OutputSeriesMatrix(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON]):
     """
     Generic node to handle output matrix behavior.
     Node needs a DateSerializer and a HeadWriter to work
@@ -128,9 +118,7 @@ class OutputSeriesMatrix(
 
         errors = []
         if not self.config.path.exists():
-            errors.append(
-                f"Output Series Matrix f{self.config.path} not exists"
-            )
+            errors.append(f"Output Series Matrix f{self.config.path} not exists")
         return errors
 
     def load(
@@ -162,9 +150,7 @@ class OutputSeriesMatrix(
                 f"Output file '{self.config.path.name}' not found in study {self.config.study_id}"
             ) from e
 
-    def dump(
-        self, data: Union[bytes, JSON], url: Optional[List[str]] = None
-    ) -> None:
+    def dump(self, data: Union[bytes, JSON], url: Optional[List[str]] = None) -> None:
         if isinstance(data, bytes):
             self.config.path.parent.mkdir(exist_ok=True, parents=True)
             self.config.path.write_bytes(data)

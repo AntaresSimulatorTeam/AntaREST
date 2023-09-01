@@ -1,17 +1,13 @@
 import logging
 from dataclasses import dataclass
-from typing import List, Optional, Dict
+from typing import Dict, List, Optional
 
 import requests
 
 from antarest.core.config import Config
 from antarest.core.model import JSON
-from antarest.login.model import UserLdap, Group, Role, GroupDTO
-from antarest.login.repository import (
-    UserLdapRepository,
-    RoleRepository,
-    GroupRepository,
-)
+from antarest.login.model import Group, Role, UserLdap
+from antarest.login.repository import GroupRepository, RoleRepository, UserLdapRepository
 
 logger = logging.getLogger(__name__)
 
@@ -80,9 +76,7 @@ class LdapService:
         self.users = users
         self.groups = groups
         self.roles = roles
-        self.default_role_sync = (
-            config.security.external_auth.default_group_role
-        )
+        self.default_role_sync = config.security.external_auth.default_group_role
 
     def _fetch(self, name: str, password: str) -> Optional[ExternalUser]:
         """
@@ -146,9 +140,7 @@ class LdapService:
             for group in mapped_groups
             if group.id not in [role.group_id for role in existing_roles]
         ]
-        logger.info(
-            f"Saving new groups from external user {grouprole_to_add} from received {user.groups}"
-        )
+        logger.info(f"Saving new groups from external user {grouprole_to_add} from received {user.groups}")
         for group_id, group_name in grouprole_to_add:
             logger.info(
                 "Adding user %s role %s to group %s (%s) following ldap sync",

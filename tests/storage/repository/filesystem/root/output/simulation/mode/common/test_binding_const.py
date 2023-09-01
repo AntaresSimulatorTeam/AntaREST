@@ -6,21 +6,13 @@ import pytest
 
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.matrixstore.uri_resolver_service import UriResolverService
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
-)
-from antarest.study.storage.rawstudy.model.filesystem.context import (
-    ContextServer,
-)
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import (
-    MatrixFrequency,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import (
     BindingConstraintOutputSeriesMatrix,
 )
-from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.common import (
-    binding_const,
-)
+from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.common import binding_const
 
 # noinspection SpellCheckingInspection
 NOMINAL_CASE = {
@@ -64,7 +56,5 @@ class TestOutputSimulationBindingConstraintItem:
 
         # check the result
         value: BindingConstraintOutputSeriesMatrix
-        actual_obj = {
-            key: {"freq": value.freq} for key, value in actual.items()
-        }
+        actual_obj = {key: {"freq": value.freq} for key, value in actual.items()}
         assert actual_obj == expected

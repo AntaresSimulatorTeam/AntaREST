@@ -4,7 +4,7 @@ from fastapi import FastAPI
 
 from antarest.core.config import Config
 from antarest.core.interfaces.cache import ICache
-from antarest.core.interfaces.eventbus import IEventBus, DummyEventBusService
+from antarest.core.interfaces.eventbus import DummyEventBusService, IEventBus
 from antarest.core.maintenance.repository import MaintenanceRepository
 from antarest.core.maintenance.service import MaintenanceService
 from antarest.core.maintenance.web import create_maintenance_api

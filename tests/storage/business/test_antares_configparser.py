@@ -2,10 +2,7 @@ import textwrap
 from pathlib import Path
 from typing import cast
 
-from antarest.study.storage.antares_configparser import (
-    AntaresConfigParser,
-    AntaresSectionProxy,
-)
+from antarest.study.storage.antares_configparser import AntaresConfigParser, AntaresSectionProxy
 
 
 def test_configparser(tmp_path: Path):

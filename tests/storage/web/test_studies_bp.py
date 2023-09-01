@@ -7,17 +7,13 @@ from pathlib import Path
 from unittest.mock import Mock, call
 
 import pytest
-from antarest.core.config import (
-    Config,
-    SecurityConfig,
-    StorageConfig,
-    WorkspaceConfig,
-)
+from fastapi import FastAPI
+from markupsafe import Markup
+from starlette.testclient import TestClient
+
+from antarest.core.config import Config, SecurityConfig, StorageConfig, WorkspaceConfig
 from antarest.core.exceptions import UrlNotMatchJsonDataError
-from antarest.core.filetransfer.model import (
-    FileDownloadDTO,
-    FileDownloadTaskDTO,
-)
+from antarest.core.filetransfer.model import FileDownloadDTO, FileDownloadTaskDTO
 from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.requests import RequestParameters
 from antarest.core.roles import RoleType
@@ -39,9 +35,6 @@ from antarest.study.model import (
     TimeSerie,
     TimeSeriesData,
 )
-from fastapi import FastAPI
-from markupsafe import Markup
-from starlette.testclient import TestClient
 from tests.storage.conftest import SimpleFileTransferManager
 
 ADMIN = JWTUser(
@@ -55,9 +48,7 @@ PARAMS = RequestParameters(user=ADMIN)
 CONFIG = Config(
     resources_path=Path(),
     security=SecurityConfig(disabled=True),
-    storage=StorageConfig(
-        workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=Path())}
-    ),
+    storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=Path())}),
 )
 
 
@@ -80,9 +71,7 @@ def test_server() -> None:
     client = TestClient(app)
     client.get("/v1/studies/study1/raw?path=settings/general/params")
 
-    mock_service.get.assert_called_once_with(
-        "study1", "settings/general/params", 3, True, PARAMS
-    )
+    mock_service.get.assert_called_once_with("study1", "settings/general/params", 3, True, PARAMS)
 
 
 @pytest.mark.unit_test
@@ -131,9 +120,7 @@ def test_server_with_parameters() -> None:
     parameters = RequestParameters(user=ADMIN)
 
     assert result.status_code == HTTPStatus.OK
-    mock_storage_service.get.assert_called_once_with(
-        "study1", "/", 4, True, parameters
-    )
+    mock_storage_service.get.assert_called_once_with("study1", "/", 4, True, parameters)
 
     result = client.get("/v1/studies/study2/raw?depth=WRONG_TYPE")
     assert result.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
@@ -142,9 +129,7 @@ def test_server_with_parameters() -> None:
     assert result.status_code == HTTPStatus.OK
 
     excepted_parameters = RequestParameters(user=ADMIN)
-    mock_storage_service.get.assert_called_with(
-        "study2", "/", 3, True, excepted_parameters
-    )
+    mock_storage_service.get.assert_called_with("study2", "/", 3, True, excepted_parameters)
 
 
 @pytest.mark.unit_test
@@ -174,9 +159,7 @@ def test_create_study(tmp_path: str, project_path) -> None:
 
     assert result_right.status_code == HTTPStatus.CREATED
     assert result_right.json() == "my-uuid"
-    storage_service.create_study.assert_called_once_with(
-        "study2", "", [], PARAMS
-    )
+    storage_service.create_study.assert_called_once_with("study2", "", [], PARAMS)
 
 
 @pytest.mark.unit_test
@@ -300,9 +283,7 @@ def test_list_studies(tmp_path: str) -> None:
     client = TestClient(app)
     result = client.get("/v1/studies")
 
-    assert {
-        k: StudyMetadataDTO.parse_obj(v) for k, v in result.json().items()
-    } == studies
+    assert {k: StudyMetadataDTO.parse_obj(v) for k, v in result.json().items()} == studies
 
 
 def test_study_metadata(tmp_path: str) -> None:
@@ -369,12 +350,8 @@ def test_export_files(tmp_path: Path) -> None:
     client = TestClient(app)
     result = client.get("/v1/studies/name/export", stream=True)
 
-    assert (
-        FileDownloadTaskDTO.parse_obj(result.json()).json() == expected.json()
-    )
-    mock_storage_service.export_study.assert_called_once_with(
-        "name", PARAMS, True
-    )
+    assert FileDownloadTaskDTO.parse_obj(result.json()).json() == expected.json()
+    mock_storage_service.export_study.assert_called_once_with("name", PARAMS, True)
 
 
 @pytest.mark.unit_test
@@ -434,9 +411,7 @@ def test_delete_study() -> None:
     study_uuid = "8319b5f8-2a35-4984-9ace-2ab072bd6eef"
     client.delete(f"/v1/studies/{study_uuid}")
 
-    mock_storage_service.delete_study.assert_called_once_with(
-        study_uuid, False, PARAMS
-    )
+    mock_storage_service.delete_study.assert_called_once_with(study_uuid, False, PARAMS)
 
 
 @pytest.mark.unit_test
@@ -456,13 +431,9 @@ def test_edit_study() -> None:
         matrix_service=Mock(spec=MatrixService),
     )
     client = TestClient(app)
-    client.post(
-        "/v1/studies/my-uuid/raw?path=url/to/change", json={"Hello": "World"}
-    )
+    client.post("/v1/studies/my-uuid/raw?path=url/to/change", json={"Hello": "World"})
 
-    mock_storage_service.edit_study.assert_called_once_with(
-        "my-uuid", "url/to/change", {"Hello": "World"}, PARAMS
-    )
+    mock_storage_service.edit_study.assert_called_once_with("my-uuid", "url/to/change", {"Hello": "World"}, PARAMS)
 
 
 # @pytest.mark.unit_test
@@ -553,9 +524,7 @@ def test_output_download(tmp_path: Path) -> None:
         app,
         cache=Mock(),
         task_service=Mock(),
-        file_transfer_manager=SimpleFileTransferManager(
-            Config(storage=StorageConfig(tmp_dir=tmp_path))
-        ),
+        file_transfer_manager=SimpleFileTransferManager(Config(storage=StorageConfig(tmp_dir=tmp_path))),
         study_service=mock_service,
         config=CONFIG,
         user_service=Mock(),
@@ -591,9 +560,7 @@ def test_output_whole_download(tmp_path: Path) -> None:
         app,
         cache=Mock(),
         task_service=Mock(),
-        file_transfer_manager=SimpleFileTransferManager(
-            Config(storage=StorageConfig(tmp_dir=tmp_path))
-        ),
+        file_transfer_manager=SimpleFileTransferManager(Config(storage=StorageConfig(tmp_dir=tmp_path))),
         study_service=mock_service,
         config=CONFIG,
         user_service=Mock(),
@@ -625,9 +592,7 @@ def test_sim_reference() -> None:
     )
     client = TestClient(app, raise_server_exceptions=False)
     res = client.put(f"/v1/studies/{study_id}/outputs/{output_id}/reference")
-    mock_service.set_sim_reference.assert_called_once_with(
-        study_id, output_id, True, PARAMS
-    )
+    mock_service.set_sim_reference.assert_called_once_with(study_id, output_id, True, PARAMS)
     assert res.status_code == HTTPStatus.OK
     assert res.json() == ""
 

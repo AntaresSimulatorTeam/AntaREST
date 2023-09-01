@@ -69,8 +69,7 @@ class MatrixSlice(BaseModel):
                 row_to = values["row_to"] = values["row_from"]
             if not (0 <= row_from <= row_to):
                 raise ValueError(
-                    f"Invalid row range: {row_from}..{row_to}."
-                    f" 'row_from' must be less than or equal to 'row_to'."
+                    f"Invalid row range: {row_from}..{row_to}. 'row_from' must be less than or equal to 'row_to'."
                 )
         return values
 
@@ -125,9 +124,7 @@ class Operation(BaseModel):
         """
         if isinstance(other, Operation):
             # noinspection PyTypeChecker
-            return (self.operation, self.value).__le__(
-                (other.operation, other.value)
-            )
+            return (self.operation, self.value).__le__((other.operation, other.value))
         return NotImplemented  # pragma: no cover
 
 
@@ -174,18 +171,16 @@ class MatrixEditInstruction(BaseModel):
         """
         slices = values.get("slices")
         coordinates = values.get("coordinates")
-        # fmt: off
+
         if slices is None and coordinates is None:
             raise ValueError("At least 'slices' or 'coordinates' must be defined.")
         if slices is not None and coordinates is not None:
             raise ValueError("Only 'slices' or 'coordinates' could be defined, but not both.")
-        # fmt: on
+
         return values
 
     @validator("coordinates")
-    def validate_coordinates(
-        cls, coordinates: Optional[List[Tuple[int, int]]]
-    ) -> Optional[List[Tuple[int, int]]]:
+    def validate_coordinates(cls, coordinates: Optional[List[Tuple[int, int]]]) -> Optional[List[Tuple[int, int]]]:
         """
         Validates the `coordinates` field.
 
@@ -202,18 +197,15 @@ class MatrixEditInstruction(BaseModel):
             return None
         for coordinate in coordinates:
             if coordinate[0] < 0 or coordinate[1] < 0:
-                raise ValueError(
-                    f"Invalid coordinate {coordinate}: "
-                    f" values must be greater than or equal to 0."
-                )
+                raise ValueError(f"Invalid coordinate {coordinate}:  values must be greater than or equal to 0.")
         return coordinates
 
     def __str__(self) -> str:
         """Returns a string representation used in error messages."""
-        # fmt: off
+
         if self.slices:
             return f"slices={self.slices}, operation={self.operation}"
         elif self.coordinates:
             return f"coordinates={self.coordinates}, operation={self.operation}"
-        # fmt: on
+
         raise NotImplementedError

@@ -4,22 +4,13 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
-from antarest.core.interfaces.cache import ICache, CacheConstants
+from antarest.core.interfaces.cache import CacheConstants, ICache
 from antarest.matrixstore.service import ISimpleMatrixService
-from antarest.matrixstore.uri_resolver_service import (
-    UriResolverService,
-)
+from antarest.matrixstore.uri_resolver_service import UriResolverService
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
-    FileStudyTreeConfigDTO,
-)
-from antarest.study.storage.rawstudy.model.filesystem.context import (
-    ContextServer,
-)
-from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import (
-    FileStudyTree,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, FileStudyTreeConfigDTO
+from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
+from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 
 logger = logging.getLogger(__name__)
 
@@ -56,9 +47,7 @@ class StudyFactory:
             from_cache = self.cache.get(cache_id)
             if from_cache is not None:
                 logger.info(f"Study {study_id} read from cache")
-                config = FileStudyTreeConfigDTO.parse_obj(
-                    from_cache
-                ).to_build_config()
+                config = FileStudyTreeConfigDTO.parse_obj(from_cache).to_build_config()
                 return FileStudy(config, FileStudyTree(self.context, config))
         start_time = time.time()
         config = build(path, study_id, output_path)

@@ -15,31 +15,17 @@ from antarest.core.exceptions import StudyNotFoundError
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.interfaces.cache import ICache
-from antarest.core.interfaces.eventbus import (
-    Event,
-    EventChannelDirectory,
-    EventType,
-    IEventBus,
-)
+from antarest.core.interfaces.eventbus import Event, EventChannelDirectory, EventType, IEventBus
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
 from antarest.core.model import PermissionInfo, PublicMode, StudyPermissionType
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.tasks.model import TaskResult, TaskType
 from antarest.core.tasks.service import ITaskService, TaskUpdateNotifier
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.utils import (
-    StopWatch,
-    concat_files,
-    concat_files_to_str,
-    is_zip,
-    read_in_zip,
-    zip_dir,
-)
+from antarest.core.utils.utils import StopWatch, concat_files, concat_files_to_str, is_zip, read_in_zip, zip_dir
 from antarest.launcher.adapters.abstractlauncher import LauncherCallbacks
 from antarest.launcher.adapters.factory_launcher import FactoryLauncher
-from antarest.launcher.extensions.adequacy_patch.extension import (
-    AdequacyPatchExtension,
-)
+from antarest.launcher.extensions.adequacy_patch.extension import AdequacyPatchExtension
 from antarest.launcher.extensions.interface import ILauncherExtension
 from antarest.launcher.model import (
     JobLog,
@@ -52,11 +38,7 @@ from antarest.launcher.model import (
 )
 from antarest.launcher.repository import JobResultRepository
 from antarest.study.service import StudyService
-from antarest.study.storage.utils import (
-    assert_permission,
-    extract_output_name,
-    find_single_output_path,
-)
+from antarest.study.storage.utils import assert_permission, extract_output_name, find_single_output_path
 
 logger = logging.getLogger(__name__)
 
@@ -101,12 +83,8 @@ class LauncherService:
             LauncherCallbacks(
                 update_status=self.update,
                 export_study=self._export_study,
-                append_before_log=lambda jobid, message: self.append_log(
-                    jobid, message, JobLogType.BEFORE
-                ),
-                append_after_log=lambda jobid, message: self.append_log(
-                    jobid, message, JobLogType.AFTER
-                ),
+                append_before_log=lambda jobid, message: self.append_log(jobid, message, JobLogType.BEFORE),
+                append_after_log=lambda jobid, message: self.append_log(jobid, message, JobLogType.AFTER),
                 import_output=self._import_output,
             ),
             event_bus,
@@ -115,9 +93,7 @@ class LauncherService:
         self.extensions = self._init_extensions()
 
     def _init_extensions(self) -> Dict[str, ILauncherExtension]:
-        adequacy_patch_ext = AdequacyPatchExtension(
-            self.study_service, self.config
-        )
+        adequacy_patch_ext = AdequacyPatchExtension(self.study_service, self.config)
         return {adequacy_patch_ext.get_name(): adequacy_patch_ext}
 
     def get_launchers(self) -> List[str]:
@@ -131,13 +107,8 @@ class LauncherService:
         launcher_params: LauncherParametersDTO,
     ) -> None:
         for ext in self.extensions:
-            if (
-                launcher_params is not None
-                and launcher_params.__getattribute__(ext) is not None
-            ):
-                logger.info(
-                    f"Applying extension {ext} after_export_flat_hook on job {job_id}"
-                )
+            if launcher_params is not None and launcher_params.__getattribute__(ext) is not None:
+                logger.info(f"Applying extension {ext} after_export_flat_hook on job {job_id}")
                 with db():
                     self.extensions[ext].after_export_flat_hook(
                         job_id,
@@ -154,13 +125,8 @@ class LauncherService:
         launcher_opts: LauncherParametersDTO,
     ) -> None:
         for ext in self.extensions:
-            if (
-                launcher_opts is not None
-                and getattr(launcher_opts, ext, None) is not None
-            ):
-                logger.info(
-                    f"Applying extension {ext} before_import_hook on job {job_id}"
-                )
+            if launcher_opts is not None and getattr(launcher_opts, ext, None) is not None:
+                logger.info(f"Applying extension {ext} before_import_hook on job {job_id}")
                 self.extensions[ext].before_import_hook(
                     job_id,
                     study_id,
@@ -176,9 +142,7 @@ class LauncherService:
         output_id: Optional[str],
     ) -> None:
         with db():
-            logger.info(
-                f"Setting study with job id {job_uuid} status to {status}"
-            )
+            logger.info(f"Setting study with job id {job_uuid} status to {status}")
             job_result = self.job_result_repository.get(job_uuid)
             if job_result is not None:
                 job_result.job_status = status
@@ -190,22 +154,15 @@ class LauncherService:
                 self.job_result_repository.save(job_result)
                 self.event_bus.push(
                     Event(
-                        type=EventType.STUDY_JOB_COMPLETED
-                        if final_status
-                        else EventType.STUDY_JOB_STATUS_UPDATE,
+                        type=EventType.STUDY_JOB_COMPLETED if final_status else EventType.STUDY_JOB_STATUS_UPDATE,
                         payload=job_result.to_dto().dict(),
-                        permissions=PermissionInfo(
-                            public_mode=PublicMode.READ
-                        ),
-                        channel=EventChannelDirectory.JOB_STATUS
-                        + job_result.id,
+                        permissions=PermissionInfo(public_mode=PublicMode.READ),
+                        channel=EventChannelDirectory.JOB_STATUS + job_result.id,
                     )
                 )
             logger.info(f"Study status set")
 
-    def append_log(
-        self, job_id: str, message: str, log_type: JobLogType
-    ) -> None:
+    def append_log(self, job_id: str, message: str, log_type: JobLogType) -> None:
         try:
             with db():
                 job_result = self.job_result_repository.get(job_id)
@@ -241,12 +198,8 @@ class LauncherService:
         study_version: Optional[str] = None,
     ) -> str:
         job_uuid = self._generate_new_id()
-        logger.info(
-            f"New study launch (study={study_uuid}, job_id={job_uuid})"
-        )
-        study_info = self.study_service.get_study_information(
-            uuid=study_uuid, params=params
-        )
+        logger.info(f"New study launch (study={study_uuid}, job_id={job_uuid})")
+        study_info = self.study_service.get_study_information(uuid=study_uuid, params=params)
         solver_version = study_version or study_info.version
 
         self._assert_launcher_is_initialized(launcher)
@@ -260,9 +213,7 @@ class LauncherService:
             study_id=study_uuid,
             job_status=JobStatus.PENDING,
             launcher=launcher,
-            launcher_params=launcher_parameters.json()
-            if launcher_parameters
-            else None,
+            launcher_params=launcher_parameters.json() if launcher_parameters else None,
         )
         self.job_result_repository.save(job_status)
 
@@ -318,21 +269,14 @@ class LauncherService:
 
         return job_status
 
-    def _filter_from_user_permission(
-        self, job_results: List[JobResult], user: Optional[JWTUser]
-    ) -> List[JobResult]:
+    def _filter_from_user_permission(self, job_results: List[JobResult], user: Optional[JWTUser]) -> List[JobResult]:
         if not user:
             return []
 
-        orphan_visibility_threshold = datetime.utcnow() - timedelta(
-            days=ORPHAN_JOBS_VISIBILITY_THRESHOLD
-        )
+        orphan_visibility_threshold = datetime.utcnow() - timedelta(days=ORPHAN_JOBS_VISIBILITY_THRESHOLD)
         allowed_job_results = []
         studies = {
-            study.id: study
-            for study in self.study_service.repository.get_list(
-                [job.study_id for job in job_results]
-            )
+            study.id: study for study in self.study_service.repository.get_list([job.study_id for job in job_results])
         }
         for job_result in job_results:
             if job_result.study_id in studies:
@@ -349,9 +293,7 @@ class LauncherService:
                 allowed_job_results.append(job_result)
         return allowed_job_results
 
-    def get_result(
-        self, job_uuid: UUID, params: RequestParameters
-    ) -> JobResult:
+    def get_result(self, job_uuid: UUID, params: RequestParameters) -> JobResult:
         job_result = self.job_result_repository.get(str(job_uuid))
 
         try:
@@ -390,28 +332,16 @@ class LauncherService:
         if study_uid is not None:
             job_results = self.job_result_repository.find_by_study(study_uid)
         else:
-            job_results = self.job_result_repository.get_all(
-                filter_orphan=filter_orphans, latest=latest
-            )
+            job_results = self.job_result_repository.get_all(filter_orphan=filter_orphans, latest=latest)
 
-        return self._filter_from_user_permission(
-            job_results=job_results, user=params.user
-        )
+        return self._filter_from_user_permission(job_results=job_results, user=params.user)
 
     @staticmethod
-    def sort_log(
-        log: JobLog, logs: Dict[JobLogType, List[str]]
-    ) -> Dict[JobLogType, List[str]]:
-        logs[
-            JobLogType.AFTER
-            if log.log_type == str(JobLogType.AFTER)
-            else JobLogType.BEFORE
-        ].append(log.message)
+    def sort_log(log: JobLog, logs: Dict[JobLogType, List[str]]) -> Dict[JobLogType, List[str]]:
+        logs[JobLogType.AFTER if log.log_type == str(JobLogType.AFTER) else JobLogType.BEFORE].append(log.message)
         return logs
 
-    def get_log(
-        self, job_id: str, log_type: LogType, params: RequestParameters
-    ) -> Optional[str]:
+    def get_log(self, job_id: str, log_type: LogType, params: RequestParameters) -> Optional[str]:
         job_result = self.job_result_repository.get(str(job_id))
         if job_result:
             if job_result.output_id:
@@ -427,23 +357,14 @@ class LauncherService:
                 )
             else:
                 self._assert_launcher_is_initialized(job_result.launcher)
-                launcher_logs = str(
-                    self.launchers[job_result.launcher].get_log(
-                        job_id, log_type
-                    )
-                    or ""
-                )
+                launcher_logs = str(self.launchers[job_result.launcher].get_log(job_id, log_type) or "")
             if log_type == LogType.STDOUT:
                 app_logs: Dict[JobLogType, List[str]] = functools.reduce(
                     lambda logs, log: LauncherService.sort_log(log, logs),
                     job_result.logs or [],
                     {JobLogType.BEFORE: [], JobLogType.AFTER: []},
                 )
-                return "\n".join(
-                    app_logs[JobLogType.BEFORE]
-                    + [launcher_logs]
-                    + app_logs[JobLogType.AFTER]
-                )
+                return "\n".join(app_logs[JobLogType.BEFORE] + [launcher_logs] + app_logs[JobLogType.AFTER])
             return launcher_logs
 
         raise JobNotFound()
@@ -455,9 +376,7 @@ class LauncherService:
         target_path: Path,
         launcher_params: LauncherParametersDTO,
     ) -> None:
-        self.append_log(
-            job_id, f"Extracting study {study_id}", JobLogType.BEFORE
-        )
+        self.append_log(job_id, f"Extracting study {study_id}", JobLogType.BEFORE)
         with db():
             self.study_service.export_study_flat(
                 study_id,
@@ -470,9 +389,7 @@ class LauncherService:
                 else None,
             )
         self.append_log(job_id, "Study extracted", JobLogType.BEFORE)
-        self._after_export_flat_hooks(
-            job_id, study_id, target_path, launcher_params
-        )
+        self._after_export_flat_hooks(job_id, study_id, target_path, launcher_params)
 
     def _get_job_output_fallback_path(self, job_id: str) -> Path:
         return self.config.storage.tmp_dir / f"output_{job_id}"
@@ -484,9 +401,7 @@ class LauncherService:
         output_suffix_name: Optional[str] = None,
     ) -> Optional[str]:
         # Temporary import the output in a tmp space if the study can not be found
-        logger.info(
-            f"Trying to import output in fallback tmp space for job {job_id}"
-        )
+        logger.info(f"Trying to import output in fallback tmp space for job {job_id}")
         output_name: Optional[str] = None
         job_output_path = self._get_job_output_fallback_path(job_id)
 
@@ -498,46 +413,30 @@ class LauncherService:
                 shutil.copytree(output_path, imported_output_path)
                 imported_output_path.rename(Path(job_output_path, output_name))
             else:
-                shutil.copy(
-                    output_path, job_output_path / f"{output_name}.zip"
-                )
+                shutil.copy(output_path, job_output_path / f"{output_name}.zip")
 
         except Exception as e:
-            logger.error(
-                "Failed to import output in fallback mode", exc_info=e
-            )
+            logger.error("Failed to import output in fallback mode", exc_info=e)
             shutil.rmtree(job_output_path, ignore_errors=True)
         return output_name
 
-    def _save_solver_stats_file(
-        self, job_result: JobResult, measurement_file: Optional[Path]
-    ) -> None:
+    def _save_solver_stats_file(self, job_result: JobResult, measurement_file: Optional[Path]) -> None:
         if measurement_file and measurement_file.exists():
-            job_result.solver_stats = measurement_file.read_text(
-                encoding="utf-8"
-            )
+            job_result.solver_stats = measurement_file.read_text(encoding="utf-8")
             self.job_result_repository.save(job_result)
 
-    def _save_solver_stats(
-        self, job_result: JobResult, output_path: Path
-    ) -> None:
+    def _save_solver_stats(self, job_result: JobResult, output_path: Path) -> None:
         try:
             if is_zip(output_path):
                 read_in_zip(
                     output_path,
                     Path(EXECUTION_INFO_FILE),
-                    lambda stat_file: self._save_solver_stats_file(
-                        job_result, stat_file
-                    ),
+                    lambda stat_file: self._save_solver_stats_file(job_result, stat_file),
                 )
             else:
-                self._save_solver_stats_file(
-                    job_result, output_path / EXECUTION_INFO_FILE
-                )
+                self._save_solver_stats_file(job_result, output_path / EXECUTION_INFO_FILE)
         except Exception as e:
-            logger.error(
-                "Failed to save solver performance measurements", exc_info=e
-            )
+            logger.error("Failed to save solver performance measurements", exc_info=e)
 
     def _import_output(
         self,
@@ -553,9 +452,7 @@ class LauncherService:
                 raise JobNotFound()
 
             study_id = job_result.study_id
-            job_launch_params = LauncherParametersDTO.parse_raw(
-                job_result.launcher_params or "{}"
-            )
+            job_launch_params = LauncherParametersDTO.parse_raw(job_result.launcher_params or "{}")
 
             # this now can be a zip file instead of a directory !
             output_true_path = find_single_output_path(output_path)
@@ -588,17 +485,9 @@ class LauncherService:
             stopwatch = StopWatch()
             if not output_is_zipped and job_launch_params.archive_output:
                 logger.info("Re zipping output for transfer")
-                zip_path = (
-                    output_true_path.parent / f"{output_true_path.name}.zip"
-                )
-                zip_dir(
-                    output_true_path, zip_path=zip_path
-                )  # TODO: remove source dir ?
-                stopwatch.log_elapsed(
-                    lambda x: logger.info(
-                        f"Zipped output for job {job_id} in {x}s"
-                    )
-                )
+                zip_path = output_true_path.parent / f"{output_true_path.name}.zip"
+                zip_dir(output_true_path, zip_path=zip_path)
+                stopwatch.log_elapsed(lambda x: logger.info(f"Zipped output for job {job_id} in {x}s"))
 
             final_output_path = zip_path or output_true_path
             with db():
@@ -633,9 +522,7 @@ class LauncherService:
                         os.unlink(zip_path)
         raise JobNotFound()
 
-    def _download_fallback_output(
-        self, job_id: str, params: RequestParameters
-    ) -> FileDownloadTaskDTO:
+    def _download_fallback_output(self, job_id: str, params: RequestParameters) -> FileDownloadTaskDTO:
         output_path = self._get_job_output_fallback_path(job_id)
         if output_path.exists():
             logger.info(f"Exporting {job_id} fallback output")
@@ -667,15 +554,11 @@ class LauncherService:
                 request_params=params,
             )
 
-            return FileDownloadTaskDTO(
-                file=export_file_download.to_dto(), task=task_id
-            )
+            return FileDownloadTaskDTO(file=export_file_download.to_dto(), task=task_id)
 
         raise FileNotFoundError()
 
-    def download_output(
-        self, job_id: str, params: RequestParameters
-    ) -> FileDownloadTaskDTO:
+    def download_output(self, job_id: str, params: RequestParameters) -> FileDownloadTaskDTO:
         logger.info(f"Downloading output for job {job_id}")
         job_result = self.job_result_repository.get(job_id)
         if job_result and job_result.output_id:
@@ -707,26 +590,16 @@ class LauncherService:
             slurm_used_cpus = functools.reduce(
                 lambda count, j: count
                 + (
-                    LauncherParametersDTO.parse_raw(
-                        j.launcher_params or "{}"
-                    ).nb_cpu
+                    LauncherParametersDTO.parse_raw(j.launcher_params or "{}").nb_cpu
                     or self.config.launcher.slurm.default_n_cpu  # type: ignore
                 ),
                 slurm_running_jobs,
                 0,
             )
-            load["slurm"] = (
-                float(slurm_used_cpus) / self.config.launcher.slurm.max_cores
-            )
+            load["slurm"] = float(slurm_used_cpus) / self.config.launcher.slurm.max_cores
         if self.config.launcher.local:
             local_used_cpus = functools.reduce(
-                lambda count, j: count
-                + (
-                    LauncherParametersDTO.parse_raw(
-                        j.launcher_params or "{}"
-                    ).nb_cpu
-                    or 1
-                ),
+                lambda count, j: count + (LauncherParametersDTO.parse_raw(j.launcher_params or "{}").nb_cpu or 1),
                 local_running_jobs,
                 0,
             )
@@ -752,16 +625,12 @@ class LauncherService:
         default_config = self.config.launcher.default
         versions_map = {
             "local": sorted(local_config.binaries) if local_config else [],
-            "slurm": sorted(slurm_config.antares_versions_on_remote_server)
-            if slurm_config
-            else [],
+            "slurm": sorted(slurm_config.antares_versions_on_remote_server) if slurm_config else [],
         }
         versions_map["default"] = versions_map[default_config]
         return versions_map[solver]
 
-    def get_launch_progress(
-        self, job_id: str, params: RequestParameters
-    ) -> float:
+    def get_launch_progress(self, job_id: str, params: RequestParameters) -> float:
         job_result = self.job_result_repository.get(job_id)
         if not job_result:
             raise JobNotFound()
@@ -774,7 +643,5 @@ class LauncherService:
             permission_type=StudyPermissionType.READ,
         )
 
-        launch_progress_json = self.launchers[launcher].cache.get(
-            id=f"Launch_Progress_{job_id}"
-        ) or {"progress": 0}
+        launch_progress_json = self.launchers[launcher].cache.get(id=f"Launch_Progress_{job_id}") or {"progress": 0}
         return launch_progress_json.get("progress", 0)

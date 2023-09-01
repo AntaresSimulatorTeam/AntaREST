@@ -1,10 +1,7 @@
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple
 
 from antarest.core.model import JSON
-from antarest.study.common.default_values import (
-    FilteringOptions,
-    NodalOptimization,
-)
+from antarest.study.common.default_values import FilteringOptions, NodalOptimization
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     ENR_MODELLING,
     Area,
@@ -12,17 +9,9 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.business.utils import (
-    get_or_create_section,
-)
-from antarest.study.storage.variantstudy.model.command.common import (
-    CommandName,
-    CommandOutput,
-)
-from antarest.study.storage.variantstudy.model.command.icommand import (
-    MATCH_SIGNATURE_SEPARATOR,
-    ICommand,
-)
+from antarest.study.storage.variantstudy.business.utils import get_or_create_section
+from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
+from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
@@ -52,9 +41,7 @@ class CreateArea(ICommand):
             **data,
         )
 
-    def _apply_config(
-        self, study_data: FileStudyTreeConfig
-    ) -> Tuple[CommandOutput, Dict[str, Any]]:
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         if self.command_context.generator_matrix_constants is None:
             raise ValueError()
 
@@ -78,9 +65,7 @@ class CreateArea(ICommand):
             filters_year=[],
         )
         return (
-            CommandOutput(
-                status=True, message=f"Area '{self.area_name}' created"
-            ),
+            CommandOutput(status=True, message=f"Area '{self.area_name}' created"),
             {"area_id": area_id},
         )
 
@@ -91,19 +76,15 @@ class CreateArea(ICommand):
         area_id = data["area_id"]
         version = study_data.config.version
 
-        # fmt: off
         hydro_config = study_data.tree.get(["input", "hydro", "hydro"])
         get_or_create_section(hydro_config, "inter-daily-breakdown")[area_id] = 1
         get_or_create_section(hydro_config, "intra-daily-modulation")[area_id] = 24
         get_or_create_section(hydro_config, "inter-monthly-breakdown")[area_id] = 1
-        # fmt: on
 
         new_area_data: JSON = {
             "input": {
                 "areas": {
-                    "list": [
-                        area.name for area in study_data.config.areas.values()
-                    ],
+                    "list": [area.name for area in study_data.config.areas.values()],
                     area_id: {
                         "optimization": {
                             "nodal optimization": {
@@ -151,9 +132,7 @@ class CreateArea(ICommand):
                     "prepro": {
                         area_id: {
                             "energy": self.command_context.generator_matrix_constants.get_null_matrix(),
-                            "prepro": {
-                                "prepro": {"intermonthly-correlation": 0.5}
-                            },
+                            "prepro": {"prepro": {"intermonthly-correlation": 0.5}},
                         },
                     },
                     "series": {
@@ -181,9 +160,7 @@ class CreateArea(ICommand):
                 "misc-gen": {
                     f"miscgen-{area_id}": self.command_context.generator_matrix_constants.get_default_miscgen()
                 },
-                "reserves": {
-                    area_id: self.command_context.generator_matrix_constants.get_default_reserves()
-                },
+                "reserves": {area_id: self.command_context.generator_matrix_constants.get_default_reserves()},
                 "solar": {
                     "prepro": {
                         area_id: {
@@ -225,34 +202,28 @@ class CreateArea(ICommand):
         }
 
         # Ensure the "annual" key exists in the hydro correlation configuration to avoid incorrect setup
-        # fmt: off
+
         new_correlation = study_data.tree.get(["input", "hydro", "prepro", "correlation"])
         new_correlation.setdefault("annual", {})
         new_area_data["input"]["hydro"]["prepro"]["correlation"] = new_correlation
-        # fmt: on
 
         if version > 650:
-            # fmt: off
             get_or_create_section(hydro_config, "initialize reservoir date")[area_id] = 0
             get_or_create_section(hydro_config, "leeway low")[area_id] = 1
             get_or_create_section(hydro_config, "leeway up")[area_id] = 1
             get_or_create_section(hydro_config, "pumping efficiency")[area_id] = 1
 
-            new_area_data["input"]["hydro"]["common"]["capacity"][f"creditmodulations_{area_id}"] = (
-                self.command_context.generator_matrix_constants.get_hydro_credit_modulations()
-            )
-            new_area_data["input"]["hydro"]["common"]["capacity"][f"inflowPattern_{area_id}"] = (
-                self.command_context.generator_matrix_constants.get_hydro_inflow_pattern()
-            )
-            new_area_data["input"]["hydro"]["common"]["capacity"][f"waterValues_{area_id}"] = (
-                self.command_context.generator_matrix_constants.get_null_matrix()
-            )
-            # fmt: on
+            new_area_data["input"]["hydro"]["common"]["capacity"][
+                f"creditmodulations_{area_id}"
+            ] = self.command_context.generator_matrix_constants.get_hydro_credit_modulations()
+            new_area_data["input"]["hydro"]["common"]["capacity"][
+                f"inflowPattern_{area_id}"
+            ] = self.command_context.generator_matrix_constants.get_hydro_inflow_pattern()
+            new_area_data["input"]["hydro"]["common"]["capacity"][
+                f"waterValues_{area_id}"
+            ] = self.command_context.generator_matrix_constants.get_null_matrix()
 
-        if (
-            version >= 810
-            and study_data.config.enr_modelling == ENR_MODELLING.CLUSTERS.value
-        ):
+        if version >= 810 and study_data.config.enr_modelling == ENR_MODELLING.CLUSTERS.value:
             new_area_data["input"]["renewables"] = {
                 "clusters": {area_id: {"list": {}}},
             }
@@ -284,11 +255,7 @@ class CreateArea(ICommand):
         )
 
     def match_signature(self) -> str:
-        return str(
-            self.command_name.value
-            + MATCH_SIGNATURE_SEPARATOR
-            + self.area_name
-        )
+        return str(self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.area_name)
 
     def match(self, other: ICommand, equal: bool = False) -> bool:
         if not isinstance(other, CreateArea):

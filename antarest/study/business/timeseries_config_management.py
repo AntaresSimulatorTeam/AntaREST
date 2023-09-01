@@ -1,24 +1,15 @@
-from enum import Enum
 from typing import Dict, List, Optional
 
 from pydantic import StrictBool, StrictInt, root_validator, validator
 
 from antarest.core.model import JSON
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
-from antarest.study.business.utils import (
-    GENERAL_DATA_PATH,
-    FormFieldsBaseModel,
-    execute_or_add_commands,
-)
+from antarest.study.business.utils import GENERAL_DATA_PATH, FormFieldsBaseModel, execute_or_add_commands
 from antarest.study.model import Study
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    ENR_MODELLING,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import ENR_MODELLING
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.storage_service import StudyStorageService
-from antarest.study.storage.variantstudy.model.command.update_config import (
-    UpdateConfig,
-)
+from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 
 
 class TSType(EnumIgnoreCase):
@@ -64,9 +55,7 @@ class TSFormFields(FormFieldsBaseModel):
         def has_type(ts_type: TSType) -> bool:
             return values.get(ts_type.value, None) is not None
 
-        if has_type(TSType.RENEWABLES) and (
-            has_type(TSType.WIND) or has_type(TSType.SOLAR)
-        ):
+        if has_type(TSType.RENEWABLES) and (has_type(TSType.WIND) or has_type(TSType.SOLAR)):
             raise ValueError(
                 f"'{TSType.RENEWABLES}' type cannot be defined with '{TSType.WIND}' and '{TSType.SOLAR}' types"
             )
@@ -75,9 +64,7 @@ class TSFormFields(FormFieldsBaseModel):
     @validator("thermal")
     def thermal_validation(cls, v: TSFormFieldsForType) -> TSFormFieldsForType:
         if v.season_correlation is not None:
-            raise ValueError(
-                "season_correlation is not allowed for 'thermal' type"
-            )
+            raise ValueError("season_correlation is not allowed for 'thermal' type")
         return v
 
 
@@ -113,9 +100,7 @@ class TimeSeriesConfigManager:
 
         return TSFormFields.construct(**fields)  # type: ignore
 
-    def set_field_values(
-        self, study: Study, field_values: TSFormFields
-    ) -> None:
+    def set_field_values(self, study: Study, field_values: TSFormFields) -> None:
         """
         Set Time Series config from the webapp form
         """
@@ -123,9 +108,7 @@ class TimeSeriesConfigManager:
 
         for ts_type, values in field_values:
             if values is not None:
-                self.__set_field_values_for_type(
-                    study, file_study, TSType(ts_type), values
-                )
+                self.__set_field_values_for_type(study, file_study, TSType(ts_type), values)
 
     def __set_field_values_for_type(
         self,
@@ -140,11 +123,7 @@ class TimeSeriesConfigManager:
         for field, path in PATH_BY_TS_STR_FIELD.items():
             field_val = values[field]
             if field_val is not None:
-                commands.append(
-                    self.__set_ts_types_str(
-                        file_study, path, {ts_type: field_val}
-                    )
-                )
+                commands.append(self.__set_ts_types_str(file_study, path, {ts_type: field_val}))
 
         if field_values.number is not None:
             commands.append(
@@ -174,13 +153,9 @@ class TimeSeriesConfigManager:
             )
 
         if len(commands) > 0:
-            execute_or_add_commands(
-                study, file_study, commands, self.storage_service
-            )
+            execute_or_add_commands(study, file_study, commands, self.storage_service)
 
-    def __set_ts_types_str(
-        self, file_study: FileStudy, path: str, values: Dict[TSType, bool]
-    ) -> UpdateConfig:
+    def __set_ts_types_str(self, file_study: FileStudy, path: str, values: Dict[TSType, bool]) -> UpdateConfig:
         """
         Set string value with the format: "[ts_type_1], [ts_type_2]"
         """
@@ -194,19 +169,13 @@ class TimeSeriesConfigManager:
         target_value = parent_target.get(path_arr[-1], "")
         current_values = [v.strip() for v in target_value.split(",")]
         new_types = {
-            **{
-                ts_type: True
-                for ts_type in TSType
-                if ts_type in current_values
-            },
+            **{ts_type: True for ts_type in TSType if ts_type in current_values},
             **values,
         }
 
         return UpdateConfig(
             target=path,
-            data=", ".join(
-                [ts_type for ts_type in new_types if new_types[ts_type]]
-            ),
+            data=", ".join([ts_type for ts_type in new_types if new_types[ts_type]]),
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
         )
 
@@ -224,9 +193,7 @@ class TimeSeriesConfigManager:
         input_ = general_data.get("input", {})
         output = general_data.get("output", {})
 
-        is_aggregated = (
-            file_study.config.enr_modelling == ENR_MODELLING.AGGREGATED.value
-        )
+        is_aggregated = file_study.config.enr_modelling == ENR_MODELLING.AGGREGATED.value
 
         if ts_type == TSType.RENEWABLES and is_aggregated:
             return None
@@ -238,31 +205,21 @@ class TimeSeriesConfigManager:
             return None
 
         is_special_type = ts_type == TSType.RENEWABLES or ts_type == TSType.NTC
-        stochastic_ts_status = TimeSeriesConfigManager.__has_ts_type_in_str(
-            general.get("generate", ""), ts_type
-        )
-        intra_modal = TimeSeriesConfigManager.__has_ts_type_in_str(
-            general.get("intra-modal", ""), ts_type
-        )
-        inter_modal = TimeSeriesConfigManager.__has_ts_type_in_str(
-            general.get("inter-modal", ""), ts_type
-        )
+        stochastic_ts_status = TimeSeriesConfigManager.__has_ts_type_in_str(general.get("generate", ""), ts_type)
+        intra_modal = TimeSeriesConfigManager.__has_ts_type_in_str(general.get("intra-modal", ""), ts_type)
+        inter_modal = TimeSeriesConfigManager.__has_ts_type_in_str(general.get("inter-modal", ""), ts_type)
 
         if is_special_type:
             return TSFormFieldsForType.construct(
                 stochastic_ts_status=stochastic_ts_status,
                 intra_modal=intra_modal,
-                inter_modal=inter_modal
-                if ts_type == TSType.RENEWABLES
-                else None,
+                inter_modal=inter_modal if ts_type == TSType.RENEWABLES else None,
             )
 
         return TSFormFieldsForType.construct(
             stochastic_ts_status=stochastic_ts_status,
             number=general.get(f"nbtimeseries{ts_type}", 1),
-            refresh=TimeSeriesConfigManager.__has_ts_type_in_str(
-                general.get("refreshtimeseries", ""), ts_type
-            ),
+            refresh=TimeSeriesConfigManager.__has_ts_type_in_str(general.get("refreshtimeseries", ""), ts_type),
             refresh_interval=general.get(f"refreshinterval{ts_type}", 100),
             season_correlation=None
             if ts_type == TSType.THERMAL
@@ -277,12 +234,8 @@ class TimeSeriesConfigManager:
                 ]
             )
             or SeasonCorrelation.ANNUAL,
-            store_in_input=TimeSeriesConfigManager.__has_ts_type_in_str(
-                input_.get("import", ""), ts_type
-            ),
-            store_in_output=TimeSeriesConfigManager.__has_ts_type_in_str(
-                output.get("archives", ""), ts_type
-            ),
+            store_in_input=TimeSeriesConfigManager.__has_ts_type_in_str(input_.get("import", ""), ts_type),
+            store_in_output=TimeSeriesConfigManager.__has_ts_type_in_str(output.get("archives", ""), ts_type),
             intra_modal=intra_modal,
             inter_modal=inter_modal,
         )

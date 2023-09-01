@@ -11,14 +11,8 @@ from antarest.core.interfaces.cache import ICache
 logger = logging.getLogger(__name__)
 
 
-def build_cache(
-    config: Config, redis_client: Optional[Redis] = None  # type: ignore
-) -> ICache:
-    cache = (
-        RedisCache(redis_client)
-        if redis_client is not None
-        else LocalCache(config=config.cache)
-    )
+def build_cache(config: Config, redis_client: Optional[Redis] = None) -> ICache:  # type: ignore
+    cache = RedisCache(redis_client) if redis_client is not None else LocalCache(config=config.cache)
     logger.info("Redis cache" if config.redis is not None else "Local cache")
     cache.start()
     return cache

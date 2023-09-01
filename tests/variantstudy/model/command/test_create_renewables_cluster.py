@@ -1,37 +1,20 @@
 import configparser
 
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    transform_name_to_id,
-    ENR_MODELLING,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import ENR_MODELLING, transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.business.command_reverter import (
-    CommandReverter,
-)
-from antarest.study.storage.variantstudy.model.command.create_area import (
-    CreateArea,
-)
-from antarest.study.storage.variantstudy.model.command.create_renewables_cluster import (
-    CreateRenewablesCluster,
-)
-from antarest.study.storage.variantstudy.model.command.remove_renewables_cluster import (
-    RemoveRenewablesCluster,
-)
-from antarest.study.storage.variantstudy.model.command.update_config import (
-    UpdateConfig,
-)
-from antarest.study.storage.variantstudy.model.command_context import (
-    CommandContext,
-)
+from antarest.study.storage.variantstudy.business.command_reverter import CommandReverter
+from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
+from antarest.study.storage.variantstudy.model.command.create_renewables_cluster import CreateRenewablesCluster
+from antarest.study.storage.variantstudy.model.command.remove_renewables_cluster import RemoveRenewablesCluster
+from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
+from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
 class TestCreateRenewablesCluster:
     def test_validation(self, empty_study: FileStudy):
         pass
 
-    def test_apply(
-        self, empty_study: FileStudy, command_context: CommandContext
-    ):
+    def test_apply(self, empty_study: FileStudy, command_context: CommandContext):
         empty_study.config.enr_modelling = ENR_MODELLING.CLUSTERS.value
         study_path = empty_study.config.study_path
         area_name = "Area"
@@ -64,19 +47,9 @@ class TestCreateRenewablesCluster:
         assert output.status
 
         clusters = configparser.ConfigParser()
-        clusters.read(
-            study_path
-            / "input"
-            / "renewables"
-            / "clusters"
-            / area_id
-            / "list.ini"
-        )
+        clusters.read(study_path / "input" / "renewables" / "clusters" / area_id / "list.ini")
         assert str(clusters[cluster_name]["name"]) == cluster_name
-        assert (
-            str(clusters[cluster_name]["ts-interpretation"])
-            == parameters["ts-interpretation"]
-        )
+        assert str(clusters[cluster_name]["ts-interpretation"]) == parameters["ts-interpretation"]
 
         output = CreateRenewablesCluster.parse_obj(
             {
@@ -118,9 +91,7 @@ def test_match(command_context: CommandContext):
         parameters={},
         command_context=command_context,
     )
-    other_other = RemoveRenewablesCluster(
-        area_id="id", cluster_id="id", command_context=command_context
-    )
+    other_other = RemoveRenewablesCluster(area_id="id", cluster_id="id", command_context=command_context)
     assert base.match(other_match)
     assert not base.match(other_not_match)
     assert not base.match(other_other)

@@ -6,19 +6,10 @@ from unittest.mock import Mock
 
 import pytest
 
-from antarest.core.exceptions import (
-    BadZipBinary,
-    StudyValidationError,
-)
-from antarest.study.model import (
-    DEFAULT_WORKSPACE_NAME,
-    RawStudy,
-    StudyAdditionalData,
-)
+from antarest.core.exceptions import BadZipBinary, StudyValidationError
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, StudyAdditionalData
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.raw_study_service import (
-    RawStudyService,
-)
+from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.utils import fix_study_root
 
 
@@ -55,9 +46,7 @@ def test_import_study(tmp_path: Path) -> None:
     study_service.get.return_value = data
     study_service.get_study_path.return_value = tmp_path / "other-study"
 
-    filepath_zip = shutil.make_archive(
-        str(study_path.absolute()), "zip", study_path
-    )
+    filepath_zip = shutil.make_archive(str(study_path.absolute()), "zip", study_path)
     shutil.rmtree(study_path)
 
     path_zip = Path(filepath_zip)

@@ -9,13 +9,13 @@ from zipfile import ZipFile
 import pytest
 
 from antarest.study.model import (
+    ExportFormat,
+    MatrixAggregationResultDTO,
     MatrixIndex,
     StudyDownloadLevelDTO,
-    ExportFormat,
-    TimeSeriesData,
     StudyDownloadType,
     TimeSerie,
-    MatrixAggregationResultDTO,
+    TimeSeriesData,
 )
 from antarest.study.storage.study_download_utils import StudyDownloader
 from antarest.study.storage.utils import get_start_date
@@ -35,9 +35,7 @@ def test_output_downloads_export(tmp_path: Path):
                     ],
                     "2": [
                         TimeSerie(name="A", unit="", data=[10, 11, 12, 13]),
-                        TimeSerie(
-                            name="B", unit="", data=[14, None, None, 15]
-                        ),
+                        TimeSerie(name="B", unit="", data=[14, None, None, 15]),
                     ],
                 },
             ),
@@ -62,14 +60,8 @@ def test_output_downloads_export(tmp_path: Path):
     StudyDownloader.export(matrix, ExportFormat.ZIP, zip_file)
     with ZipFile(zip_file) as zip_input:
         assert zip_input.namelist() == ["a1.csv", "a2.csv"]
-        assert (
-            md5(zip_input.read("a1.csv")).hexdigest()
-            == "e183e79f2184d6f6dacb8ad215cb056c"
-        )
-        assert (
-            md5(zip_input.read("a2.csv")).hexdigest()
-            == "c007db83f2769e6128e0f8c6b04d43eb"
-        )
+        assert md5(zip_input.read("a1.csv")).hexdigest() == "e183e79f2184d6f6dacb8ad215cb056c"
+        assert md5(zip_input.read("a2.csv")).hexdigest() == "c007db83f2769e6128e0f8c6b04d43eb"
 
     tar_file = tmp_path / "output.tar.gz"
     StudyDownloader.export(matrix, ExportFormat.TAR_GZ, tar_file)
@@ -222,9 +214,7 @@ def test_output_downloads_export(tmp_path: Path):
         ),
     ],
 )
-def test_create_matrix_index(
-    config: Dict[str, Any], level: StudyDownloadLevelDTO, expected: MatrixIndex
-):
+def test_create_matrix_index(config: Dict[str, Any], level: StudyDownloadLevelDTO, expected: MatrixIndex):
     config_mock = Mock()
     config_mock.archived = False
     output_id = "some output"

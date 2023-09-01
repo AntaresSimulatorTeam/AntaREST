@@ -1,28 +1,19 @@
 import logging
 from typing import List, Optional, Union
 
-from fastapi import APIRouter, Depends, Body
+from fastapi import APIRouter, Body, Depends
 
 from antarest.core.config import Config
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.jwt import JWTUser
-from antarest.core.requests import (
-    RequestParameters,
-)
+from antarest.core.requests import RequestParameters
 from antarest.core.tasks.model import TaskDTO
 from antarest.core.utils.utils import sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.study.model import StudyMetadataDTO
 from antarest.study.service import StudyService
-from antarest.study.storage.storage_service import StudyStorageService
-from antarest.study.storage.variantstudy.model.model import (
-    CommandDTO,
-    VariantTreeDTO,
-)
-from antarest.study.storage.variantstudy.variant_study_service import (
-    VariantStudyService,
-)
+from antarest.study.storage.variantstudy.model.model import CommandDTO, VariantTreeDTO
 
 logger = logging.getLogger(__name__)
 
@@ -66,9 +57,7 @@ def create_study_variant_routes(
             extra={"user": current_user.id},
         )
 
-        output = variant_study_service.create_variant_study(
-            uuid=sanitized_uuid, name=name, params=params
-        )
+        output = variant_study_service.create_variant_study(uuid=sanitized_uuid, name=name, params=params)
         return output or ""
 
     @bp.get(
@@ -92,9 +81,7 @@ def create_study_variant_routes(
         )
         params = RequestParameters(user=current_user)
         sanitized_uuid = sanitize_uuid(uuid)
-        return variant_study_service.get_all_variants_children(
-            sanitized_uuid, params
-        )
+        return variant_study_service.get_all_variants_children(sanitized_uuid, params)
 
     @bp.get(
         "/studies/{uuid}/parents",
@@ -121,9 +108,7 @@ def create_study_variant_routes(
         return (
             variant_study_service.get_variants_parents(sanitized_uuid, params)
             if not direct
-            else variant_study_service.get_direct_parent(
-                sanitized_uuid, params
-            )
+            else variant_study_service.get_direct_parent(sanitized_uuid, params)
         )
 
     @bp.get(
@@ -165,9 +150,7 @@ def create_study_variant_routes(
         )
         params = RequestParameters(user=current_user)
         sanitized_uuid = sanitize_uuid(uuid)
-        return variant_study_service.export_commands_matrices(
-            sanitized_uuid, params
-        )
+        return variant_study_service.export_commands_matrices(sanitized_uuid, params)
 
     @bp.post(
         "/studies/{uuid}/commands",
@@ -213,9 +196,7 @@ def create_study_variant_routes(
         )
         params = RequestParameters(user=current_user)
         sanitized_uuid = sanitize_uuid(uuid)
-        return variant_study_service.replace_commands(
-            sanitized_uuid, commands, params
-        )
+        return variant_study_service.replace_commands(sanitized_uuid, commands, params)
 
     @bp.post(
         "/studies/{uuid}/command",
@@ -238,9 +219,7 @@ def create_study_variant_routes(
         )
         params = RequestParameters(user=current_user)
         sanitized_uuid = sanitize_uuid(uuid)
-        return variant_study_service.append_command(
-            sanitized_uuid, command, params
-        )
+        return variant_study_service.append_command(sanitized_uuid, command, params)
 
     @bp.get(
         "/studies/{uuid}/commands/{cid}",
@@ -265,9 +244,7 @@ def create_study_variant_routes(
         params = RequestParameters(user=current_user)
         sanitized_uuid = sanitize_uuid(uuid)
         sanitized_cid = sanitize_uuid(cid)
-        return variant_study_service.get_command(
-            sanitized_uuid, sanitized_cid, params
-        )
+        return variant_study_service.get_command(sanitized_uuid, sanitized_cid, params)
 
     @bp.put(
         "/studies/{uuid}/commands/{cid}/move",
@@ -287,9 +264,7 @@ def create_study_variant_routes(
         params = RequestParameters(user=current_user)
         sanitized_uuid = sanitize_uuid(uuid)
         sanitized_cid = sanitize_uuid(cid)
-        variant_study_service.move_command(
-            sanitized_uuid, sanitized_cid, index, params
-        )
+        variant_study_service.move_command(sanitized_uuid, sanitized_cid, index, params)
 
     @bp.put(
         "/studies/{uuid}/commands/{cid}",
@@ -309,9 +284,7 @@ def create_study_variant_routes(
         params = RequestParameters(user=current_user)
         sanitized_uuid = sanitize_uuid(uuid)
         sanitized_cid = sanitize_uuid(cid)
-        variant_study_service.update_command(
-            sanitized_uuid, sanitized_cid, command, params
-        )
+        variant_study_service.update_command(sanitized_uuid, sanitized_cid, command, params)
 
     @bp.delete(
         "/studies/{uuid}/commands/{cid}",
@@ -330,9 +303,7 @@ def create_study_variant_routes(
         params = RequestParameters(user=current_user)
         sanitized_uuid = sanitize_uuid(uuid)
         sanitized_cid = sanitize_uuid(cid)
-        variant_study_service.remove_command(
-            sanitized_uuid, sanitized_cid, params
-        )
+        variant_study_service.remove_command(sanitized_uuid, sanitized_cid, params)
 
     @bp.delete(
         "/studies/{uuid}/commands",
@@ -369,9 +340,7 @@ def create_study_variant_routes(
         )
         params = RequestParameters(user=current_user)
         sanitized_uuid = sanitize_uuid(uuid)
-        return variant_study_service.generate(
-            sanitized_uuid, denormalize, from_scratch, params
-        )
+        return variant_study_service.generate(sanitized_uuid, denormalize, from_scratch, params)
 
     @bp.get(
         "/studies/{uuid}/task",
@@ -385,9 +354,7 @@ def create_study_variant_routes(
     ) -> TaskDTO:
         request_params = RequestParameters(user=current_user)
         sanitized_uuid = sanitize_uuid(uuid)
-        return variant_study_service.get_study_task(
-            sanitized_uuid, request_params
-        )
+        return variant_study_service.get_study_task(sanitized_uuid, request_params)
 
     @bp.post(
         "/studies/{uuid}/freeze",

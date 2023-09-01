@@ -1,16 +1,10 @@
 from pathlib import Path
-from zipfile import ZipFile, ZIP_DEFLATED
+from zipfile import ZIP_DEFLATED, ZipFile
 
 import pytest
 
 from antarest.core.exceptions import ShouldNotHappenException
-from antarest.core.utils.utils import (
-    retry,
-    concat_files,
-    suppress_exception,
-    concat_files_to_str,
-    read_in_zip,
-)
+from antarest.core.utils.utils import concat_files, concat_files_to_str, read_in_zip, retry, suppress_exception
 
 
 def test_retry():
@@ -54,9 +48,7 @@ def test_read_in_zip(tmp_path: Path):
         read_in_zip(
             zip_file,
             Path(file),
-            lambda p: expected_results.append(
-                p.read_text(encoding="utf-8") if p else None
-            ),
+            lambda p: expected_results.append(p.read_text(encoding="utf-8") if p else None),
         )
 
     assert expected_results[0] == "0\n1"

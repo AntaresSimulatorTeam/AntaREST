@@ -11,13 +11,7 @@ from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.jwt import JWTUser
 from antarest.core.requests import RequestParameters
 from antarest.core.utils.web import APITag
-from antarest.launcher.model import (
-    JobCreationDTO,
-    JobResultDTO,
-    LauncherEnginesDTO,
-    LauncherParametersDTO,
-    LogType,
-)
+from antarest.launcher.model import JobCreationDTO, JobResultDTO, LauncherEnginesDTO, LauncherParametersDTO, LogType
 from antarest.launcher.service import LauncherService
 from antarest.login.auth import Auth
 
@@ -61,9 +55,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
             f"Launching study {study_id} with options {launcher_parameters}",
             extra={"user": current_user.id},
         )
-        selected_launcher = (
-            launcher if launcher is not None else config.launcher.default
-        )
+        selected_launcher = launcher if launcher is not None else config.launcher.default
 
         params = RequestParameters(user=current_user)
         return JobCreationDTO(
@@ -93,10 +85,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
-        return [
-            job.to_dto()
-            for job in service.get_jobs(study, params, filter_orphans, latest)
-        ]
+        return [job.to_dto() for job in service.get_jobs(study, params, filter_orphans, latest)]
 
     @bp.get(
         "/launcher/jobs/{job_id}/logs",
@@ -108,9 +97,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         log_type: LogType = LogType.STDOUT,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
-        logger.info(
-            f"Fetching logs for job {job_id}", extra={"user": current_user.id}
-        )
+        logger.info(f"Fetching logs for job {job_id}", extra={"user": current_user.id})
         params = RequestParameters(user=current_user)
         return service.get_log(job_id, log_type, params)
 
@@ -154,12 +141,8 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         summary="Retrieve job info from job id",
         response_model=JobResultDTO,
     )
-    def get_result(
-        job_id: UUID, current_user: JWTUser = Depends(auth.get_current_user)
-    ) -> Any:
-        logger.info(
-            f"Fetching job info {job_id}", extra={"user": current_user.id}
-        )
+    def get_result(job_id: UUID, current_user: JWTUser = Depends(auth.get_current_user)) -> Any:
+        logger.info(f"Fetching job info {job_id}", extra={"user": current_user.id})
         params = RequestParameters(user=current_user)
         return service.get_result(job_id, params).to_dto()
 
@@ -169,9 +152,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         summary="Retrieve job progress from job id",
         response_model=int,
     )
-    def get_progress(
-        job_id: str, current_user: JWTUser = Depends(auth.get_current_user)
-    ) -> Any:
+    def get_progress(job_id: str, current_user: JWTUser = Depends(auth.get_current_user)) -> Any:
         logger.info(
             f"Fetching job progress of job {job_id}",
             extra={"user": current_user.id},
@@ -185,9 +166,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         summary="Remove job",
         response_model=JobResultDTO,
     )
-    def remove_result(
-        job_id: str, current_user: JWTUser = Depends(auth.get_current_user)
-    ) -> Any:
+    def remove_result(job_id: str, current_user: JWTUser = Depends(auth.get_current_user)) -> Any:
         logger.info(f"Removing job {job_id}", extra={"user": current_user.id})
         params = RequestParameters(user=current_user)
         service.remove_job(job_id, params)
@@ -246,9 +225,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         Args:
         - `solver`: name of the configuration to read: "default", "slurm" or "local".
         """
-        logger.info(
-            f"Fetching the list of solver versions for the '{solver}' configuration"
-        )
+        logger.info(f"Fetching the list of solver versions for the '{solver}' configuration")
         if solver not in {"default", "slurm", "local"}:
             raise UnknownSolverConfig(solver)
         return service.get_solver_versions(solver)

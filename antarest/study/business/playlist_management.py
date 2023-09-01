@@ -1,18 +1,13 @@
-from typing import Dict, Union, List
+from typing import Dict, List, Union
 
 from pydantic.types import StrictBool, StrictFloat, StrictInt
 
 from antarest.study.business.general_management import FIELDS_INFO
-from antarest.study.business.utils import (
-    FormFieldsBaseModel,
-    execute_or_add_commands,
-)
+from antarest.study.business.utils import FormFieldsBaseModel, execute_or_add_commands
 from antarest.study.model import RawStudy
 from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
 from antarest.study.storage.storage_service import StudyStorageService
-from antarest.study.storage.variantstudy.model.command.update_playlist import (
-    UpdatePlaylist,
-)
+from antarest.study.storage.variantstudy.model.command.update_playlist import UpdatePlaylist
 
 DEFAULT_WEIGHT = 1
 
@@ -32,9 +27,7 @@ class PlaylistManager:
     ) -> Dict[int, PlaylistColumns]:
         file_study = self.storage_service.get_storage(study).get_raw(study)
         playlist = FileStudyHelpers.get_playlist(file_study) or {}
-        nb_years = file_study.tree.get(
-            FIELDS_INFO["nb_years"]["path"].split("/")
-        ) or len(playlist)
+        nb_years = file_study.tree.get(FIELDS_INFO["nb_years"]["path"].split("/")) or len(playlist)
 
         return {
             year: PlaylistColumns.construct(
@@ -56,15 +49,9 @@ class PlaylistManager:
         for year, col in data.items():
             years_by_bool[col.status].append(year - 1)
 
-        active_playlists = [
-            year for year, col in data.items() if col.status is True
-        ]
+        active_playlists = [year for year, col in data.items() if col.status is True]
 
-        weights = {
-            year: col.weight
-            for year, col in data.items()
-            if col.weight != DEFAULT_WEIGHT
-        }
+        weights = {year: col.weight for year, col in data.items() if col.weight != DEFAULT_WEIGHT}
 
         execute_or_add_commands(
             study,

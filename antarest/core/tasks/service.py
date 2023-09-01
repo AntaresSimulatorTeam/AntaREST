@@ -9,19 +9,10 @@ from typing import Awaitable, Callable, Dict, List, Optional, Union
 from fastapi import HTTPException
 
 from antarest.core.config import Config
-from antarest.core.interfaces.eventbus import (
-    Event,
-    EventChannelDirectory,
-    EventType,
-    IEventBus,
-)
+from antarest.core.interfaces.eventbus import Event, EventChannelDirectory, EventType, IEventBus
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.model import PermissionInfo, PublicMode
-from antarest.core.requests import (
-    MustBeAuthenticatedError,
-    RequestParameters,
-    UserHasNotPermissionError,
-)
+from antarest.core.requests import MustBeAuthenticatedError, RequestParameters, UserHasNotPermissionError
 from antarest.core.tasks.model import (
     CustomTaskEventMessages,
     TaskDTO,
@@ -79,15 +70,11 @@ class ITaskService(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def list_tasks(
-        self, task_filter: TaskListFilter, request_params: RequestParameters
-    ) -> List[TaskDTO]:
+    def list_tasks(self, task_filter: TaskListFilter, request_params: RequestParameters) -> List[TaskDTO]:
         raise NotImplementedError()
 
     @abstractmethod
-    def await_task(
-        self, task_id: str, timeout_sec: Optional[int] = None
-    ) -> None:
+    def await_task(self, task_id: str, timeout_sec: Optional[int] = None) -> None:
         raise NotImplementedError()
 
 
@@ -110,12 +97,8 @@ class TaskJobService(ITaskService):
         self.repo = repository
         self.event_bus = event_bus
         self.tasks: Dict[str, Future[None]] = {}
-        self.threadpool = ThreadPoolExecutor(
-            max_workers=config.tasks.max_workers, thread_name_prefix="taskjob_"
-        )
-        self.event_bus.add_listener(
-            self.create_task_event_callback(), [EventType.TASK_CANCEL_REQUEST]
-        )
+        self.threadpool = ThreadPoolExecutor(max_workers=config.tasks.max_workers, thread_name_prefix="taskjob_")
+        self.event_bus.add_listener(self.create_task_event_callback(), [EventType.TASK_CANCEL_REQUEST])
         self.remote_workers = config.tasks.remote_workers
         # set the status of previously running job to FAILED due to server restart
         self._fix_running_status()
@@ -177,9 +160,7 @@ class TaskJobService(ITaskService):
         request_params: RequestParameters,
     ) -> Optional[str]:
         if not self.check_remote_worker_for_queue(task_queue):
-            logger.warning(
-                f"Failed to find configured remote worker for task queue {task_queue}"
-            )
+            logger.warning(f"Failed to find configured remote worker for task queue {task_queue}")
             return None
 
         task = self._create_task(name, task_type, ref_id, request_params)
@@ -242,14 +223,10 @@ class TaskJobService(ITaskService):
                     if custom_event_messages is not None
                     else f"Task {task.id} added",
                 ).dict(),
-                permissions=PermissionInfo(
-                    owner=request_params.user.impersonator
-                ),
+                permissions=PermissionInfo(owner=request_params.user.impersonator),
             )
         )
-        future = self.threadpool.submit(
-            self._run_task, action, task.id, custom_event_messages
-        )
+        future = self.threadpool.submit(self._run_task, action, task.id, custom_event_messages)
         self.tasks[task.id] = future
 
     def create_task_event_callback(self) -> Callable[[Event], Awaitable[None]]:
@@ -258,14 +235,9 @@ class TaskJobService(ITaskService):
 
         return task_event_callback
 
-    def cancel_task(
-        self, task_id: str, params: RequestParameters, dispatch: bool = False
-    ) -> None:
+    def cancel_task(self, task_id: str, params: RequestParameters, dispatch: bool = False) -> None:
         task = self.repo.get_or_raise(task_id)
-        if params.user and (
-            params.user.is_site_admin()
-            or task.owner_id == params.user.impersonator
-        ):
+        if params.user and (params.user.is_site_admin() or task.owner_id == params.user.impersonator):
             self._cancel_task(task_id, dispatch)
         else:
             raise UserHasNotPermissionError()
@@ -302,38 +274,21 @@ class TaskJobService(ITaskService):
                 detail=f"Failed to retrieve task {task_id} in db",
             )
 
-    def list_tasks(
-        self, task_filter: TaskListFilter, request_params: RequestParameters
-    ) -> List[TaskDTO]:
-        return [
-            task.to_dto()
-            for task in self.list_db_tasks(task_filter, request_params)
-        ]
+    def list_tasks(self, task_filter: TaskListFilter, request_params: RequestParameters) -> List[TaskDTO]:
+        return [task.to_dto() for task in self.list_db_tasks(task_filter, request_params)]
 
-    def list_db_tasks(
-        self, task_filter: TaskListFilter, request_params: RequestParameters
-    ) -> List[TaskJob]:
+    def list_db_tasks(self, task_filter: TaskListFilter, request_params: RequestParameters) -> List[TaskJob]:
         if not request_params.user:
             raise MustBeAuthenticatedError()
-        user = (
-            None
-            if request_params.user.is_site_admin()
-            else request_params.user.impersonator
-        )
+        user = None if request_params.user.is_site_admin() else request_params.user.impersonator
         return self.repo.list(task_filter, user)
 
-    def await_task(
-        self, task_id: str, timeout_sec: Optional[int] = None
-    ) -> None:
+    def await_task(self, task_id: str, timeout_sec: Optional[int] = None) -> None:
         logger.info(f"Awaiting task {task_id}")
         if task_id in self.tasks:
-            self.tasks[task_id].result(
-                timeout_sec or DEFAULT_AWAIT_MAX_TIMEOUT
-            )
+            self.tasks[task_id].result(timeout_sec or DEFAULT_AWAIT_MAX_TIMEOUT)
         else:
-            logger.warning(
-                f"Task {task_id} not handled by this worker, will poll for task completion from db"
-            )
+            logger.warning(f"Task {task_id} not handled by this worker, will poll for task completion from db")
             end = time.time() + (timeout_sec or DEFAULT_AWAIT_MAX_TIMEOUT)
             while time.time() < end:
                 with db():
@@ -378,18 +333,14 @@ class TaskJobService(ITaskService):
             with db():
                 self._update_task_status(
                     task_id,
-                    TaskStatus.COMPLETED
-                    if result.success
-                    else TaskStatus.FAILED,
+                    TaskStatus.COMPLETED if result.success else TaskStatus.FAILED,
                     result.success,
                     result.message,
                     result.return_value,
                 )
             self.event_bus.push(
                 Event(
-                    type=EventType.TASK_COMPLETED
-                    if result.success
-                    else EventType.TASK_FAILED,
+                    type=EventType.TASK_COMPLETED if result.success else EventType.TASK_FAILED,
                     payload=TaskEventPayload(
                         id=task_id,
                         message=custom_event_messages.end
@@ -410,17 +361,11 @@ class TaskJobService(ITaskService):
                     False,
                     f"{err_msg}\nSee the logs for detailed information and the error traceback.",
                 )
-            message = (
-                err_msg
-                if custom_event_messages is None
-                else custom_event_messages.end
-            )
+            message = err_msg if custom_event_messages is None else custom_event_messages.end
             self.event_bus.push(
                 Event(
                     type=EventType.TASK_FAILED,
-                    payload=TaskEventPayload(
-                        id=task_id, message=message
-                    ).dict(),
+                    payload=TaskEventPayload(id=task_id, message=message).dict(),
                     permissions=PermissionInfo(public_mode=PublicMode.READ),
                     channel=EventChannelDirectory.TASK + task_id,
                 )
@@ -438,9 +383,7 @@ class TaskJobService(ITaskService):
     def _fix_running_status(self) -> None:
         with db():
             previous_tasks = self.list_db_tasks(
-                TaskListFilter(
-                    status=[TaskStatus.RUNNING, TaskStatus.PENDING]
-                ),
+                TaskListFilter(status=[TaskStatus.RUNNING, TaskStatus.PENDING]),
                 request_params=RequestParameters(user=DEFAULT_ADMIN_USER),
             )
             for task in previous_tasks:

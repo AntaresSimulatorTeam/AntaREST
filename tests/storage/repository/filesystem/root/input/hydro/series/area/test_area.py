@@ -6,27 +6,16 @@ import pytest
 
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.matrixstore.uri_resolver_service import UriResolverService
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
-)
-from antarest.study.storage.rawstudy.model.filesystem.context import (
-    ContextServer,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.matrix.constants import (
-    default_scenario_monthly,
-    default_scenario_hourly,
     default_scenario_daily,
+    default_scenario_hourly,
+    default_scenario_monthly,
 )
-from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import (
-    InputSeriesMatrix,
-)
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import (
-    MatrixFrequency,
-)
-from antarest.study.storage.rawstudy.model.filesystem.root.input.hydro.series.area import (
-    area,
-)
-
+from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
+from antarest.study.storage.rawstudy.model.filesystem.root.input.hydro.series.area import area
 
 BEFORE_650 = {
     "mod": {

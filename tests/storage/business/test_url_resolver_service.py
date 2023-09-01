@@ -2,9 +2,7 @@ import os
 from unittest.mock import Mock
 
 from antarest.matrixstore.model import MatrixDTO
-from antarest.matrixstore.uri_resolver_service import (
-    UriResolverService,
-)
+from antarest.matrixstore.uri_resolver_service import UriResolverService
 
 MOCK_MATRIX_JSON = {
     "index": ["1", "2"],
@@ -35,7 +33,4 @@ def test_resolve_matrix():
     assert MOCK_MATRIX_JSON == resolver.resolve("matrix://my-id")
     matrix_service.get.assert_called_once_with("my-id")
 
-    assert (
-        f"1.000000\t2.000000{os.linesep}3.000000\t4.000000{os.linesep}"
-        == resolver.resolve("matrix://my-id", False)
-    )
+    assert f"1.000000\t2.000000{os.linesep}3.000000\t4.000000{os.linesep}" == resolver.resolve("matrix://my-id", False)

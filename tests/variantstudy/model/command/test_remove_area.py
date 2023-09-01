@@ -1,43 +1,19 @@
 import pytest
 
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    transform_name_to_id,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.study_upgrader import upgrade_study
-from antarest.study.storage.variantstudy.model.command.common import (
-    TimeStep,
-    BindingConstraintOperator,
-)
-from antarest.study.storage.variantstudy.model.command.create_area import (
-    CreateArea,
-)
-from antarest.study.storage.variantstudy.model.command.create_binding_constraint import (
-    CreateBindingConstraint,
-)
-from antarest.study.storage.variantstudy.model.command.create_cluster import (
-    CreateCluster,
-)
-from antarest.study.storage.variantstudy.model.command.create_district import (
-    CreateDistrict,
-    DistrictBaseFilter,
-)
-from antarest.study.storage.variantstudy.model.command.create_link import (
-    CreateLink,
-)
+from antarest.study.storage.variantstudy.model.command.common import BindingConstraintOperator, TimeStep
+from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
+from antarest.study.storage.variantstudy.model.command.create_binding_constraint import CreateBindingConstraint
+from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
+from antarest.study.storage.variantstudy.model.command.create_district import CreateDistrict, DistrictBaseFilter
+from antarest.study.storage.variantstudy.model.command.create_link import CreateLink
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
-from antarest.study.storage.variantstudy.model.command.remove_area import (
-    RemoveArea,
-)
-from antarest.study.storage.variantstudy.model.command.remove_district import (
-    RemoveDistrict,
-)
-from antarest.study.storage.variantstudy.model.command.remove_link import (
-    RemoveLink,
-)
-from antarest.study.storage.variantstudy.model.command_context import (
-    CommandContext,
-)
+from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
+from antarest.study.storage.variantstudy.model.command.remove_district import RemoveDistrict
+from antarest.study.storage.variantstudy.model.command.remove_link import RemoveLink
+from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
 class TestRemoveArea:
@@ -194,9 +170,7 @@ def test_match(command_context: CommandContext):
     base = RemoveArea(id="foo", command_context=command_context)
     other_match = RemoveArea(id="foo", command_context=command_context)
     other_not_match = RemoveArea(id="bar", command_context=command_context)
-    other_other = RemoveLink(
-        area1="id", area2="id2", command_context=command_context
-    )
+    other_other = RemoveLink(area1="id", area2="id2", command_context=command_context)
     assert base.match(other_match)
     assert not base.match(other_not_match)
     assert not base.match(other_other)

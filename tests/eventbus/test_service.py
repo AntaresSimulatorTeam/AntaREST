@@ -13,13 +13,9 @@ def test_service_factory():
     redis_client = Mock()
     event_bus = build_eventbus(MagicMock(), config, autostart=False)
     assert event_bus.backend.__class__.__name__ == "LocalEventBus"
-    config = Config(
-        redis=RedisConfig(host="localhost"), eventbus=EventBusConfig()
-    )
+    config = Config(redis=RedisConfig(host="localhost"), eventbus=EventBusConfig())
 
-    event_bus = build_eventbus(
-        MagicMock(), config, autostart=False, redis_client=redis_client
-    )
+    event_bus = build_eventbus(MagicMock(), config, autostart=False, redis_client=redis_client)
     assert event_bus.backend.__class__.__name__ == "RedisEventBus"
 
 
@@ -36,9 +32,7 @@ def test_lifecycle():
         return _append_to_bucket
 
     lid1 = event_bus.add_listener(append_to_bucket(test_bucket))
-    lid2 = event_bus.add_listener(
-        append_to_bucket(test_bucket), [EventType.STUDY_CREATED]
-    )
+    lid2 = event_bus.add_listener(append_to_bucket(test_bucket), [EventType.STUDY_CREATED])
     event_bus.push(
         Event(
             type=EventType.STUDY_JOB_STARTED,
@@ -69,9 +63,7 @@ def test_lifecycle():
 
     queue_name = "some work job"
     event_bus.add_queue_consumer(append_to_bucket(test_bucket), queue_name)
-    event_bus.add_queue_consumer(
-        lambda event: test_bucket.append(event), queue_name
-    )
+    event_bus.add_queue_consumer(lambda event: test_bucket.append(event), queue_name)
     event_bus.queue(
         Event(
             type=EventType.WORKER_TASK,

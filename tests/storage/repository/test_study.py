@@ -8,15 +8,9 @@ from antarest.core.cache.business.local_chache import LocalCache
 from antarest.core.interfaces.cache import CacheConstants
 from antarest.core.persistence import Base
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
-from antarest.login.model import User, Group
+from antarest.login.model import Group, User
 from antarest.study.common.utils import get_study_information
-from antarest.study.model import (
-    Study,
-    RawStudy,
-    DEFAULT_WORKSPACE_NAME,
-    StudyContentStatus,
-    PublicMode,
-)
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, PublicMode, RawStudy, Study, StudyContentStatus
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from tests.conftest import with_db_context
@@ -96,9 +90,7 @@ def test_cyclelife():
 
 def test_study_inheritance():
     engine = create_engine("sqlite:///:memory:", echo=True)
-    sess = scoped_session(
-        sessionmaker(autocommit=False, autoflush=False, bind=engine)
-    )
+    sess = scoped_session(sessionmaker(autocommit=False, autoflush=False, bind=engine))
 
     user = User(id=0, name="admin")
     group = Group(id="my-group", name="group")

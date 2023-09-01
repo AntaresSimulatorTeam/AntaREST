@@ -96,9 +96,7 @@ def test_delete() -> None:
 
     app = create_app(service)
     client = TestClient(app)
-    res = client.delete(
-        "/v1/matrixdataset/123", headers=create_auth_token(app)
-    )
+    res = client.delete("/v1/matrixdataset/123", headers=create_auth_token(app))
     assert res.status_code == 200
 
 

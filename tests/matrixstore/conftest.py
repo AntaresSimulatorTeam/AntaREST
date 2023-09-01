@@ -1,15 +1,12 @@
 import unittest.mock
 
 import pytest
+from sqlalchemy import create_engine
+
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.dbmodel import Base
-from antarest.matrixstore.repository import (
-    MatrixContentRepository,
-    MatrixDataSetRepository,
-    MatrixRepository,
-)
+from antarest.matrixstore.repository import MatrixContentRepository, MatrixDataSetRepository, MatrixRepository
 from antarest.matrixstore.service import MatrixService
-from sqlalchemy import create_engine
 
 
 @pytest.fixture(name="db_engine")
@@ -45,9 +42,7 @@ def content_repo_fixture(tmp_path) -> MatrixContentRepository:
 
 
 @pytest.fixture(name="matrix_service")
-def matrix_service_fixture(
-    matrix_repo, dataset_repo, content_repo
-) -> MatrixService:
+def matrix_service_fixture(matrix_repo, dataset_repo, content_repo) -> MatrixService:
     yield MatrixService(
         repo=matrix_repo,
         repo_dataset=dataset_repo,

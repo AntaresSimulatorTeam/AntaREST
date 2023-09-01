@@ -1,24 +1,22 @@
 from pathlib import Path
-from typing import cast, Any, Mapping
-from unittest.mock import Mock
+from typing import cast
 from zipfile import ZipFile
 
 import jinja2
 import pytest
+from fastapi import FastAPI
+from sqlalchemy import create_engine
+from starlette.testclient import TestClient
+
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.dbmodel import Base
 from antarest.main import fastapi_app
 from antarest.study.storage.rawstudy.watcher import Watcher
-from fastapi import FastAPI
-from sqlalchemy import create_engine
-from starlette.testclient import TestClient
 from tests.integration.assets import ASSETS_DIR
 
-# fmt: off
 HERE = Path(__file__).parent.resolve()
 PROJECT_DIR = next(iter(p for p in HERE.parents if p.joinpath("antarest").exists()))
 RESOURCES_DIR = PROJECT_DIR.joinpath("resources")
-# fmt: on
 
 
 @pytest.fixture(name="app")

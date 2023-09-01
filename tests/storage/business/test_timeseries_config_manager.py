@@ -7,34 +7,26 @@ from zipfile import ZipFile
 import pytest
 
 from antarest.study.business.timeseries_config_management import (
+    SeasonCorrelation,
     TimeSeriesConfigManager,
     TSFormFields,
     TSFormFieldsForType,
-    SeasonCorrelation,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import (
-    FileStudyTree,
-)
+from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.storage_service import StudyStorageService
-from antarest.study.storage.variantstudy.model.command_context import (
-    CommandContext,
-)
+from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
-from antarest.study.storage.variantstudy.variant_study_service import (
-    VariantStudyService,
-)
+from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 
 
 def get_file_study(version: int, tmpdir: Path) -> FileStudy:
     cur_dir: Path = Path(__file__).parent
     study_path = Path(tmpdir / str(uuid.uuid4()))
     os.mkdir(study_path)
-    with ZipFile(
-        cur_dir / "assets" / f"empty_study_{version}.zip"
-    ) as zip_output:
+    with ZipFile(cur_dir / "assets" / f"empty_study_{version}.zip") as zip_output:
         zip_output.extractall(path=study_path)
     config = build(study_path, "1")
     return FileStudy(config, FileStudyTree(Mock(), config))
@@ -56,9 +48,7 @@ def test_ts_field_values(file_study_820: FileStudy, file_study_720: FileStudy):
 
     raw_study_service = Mock(spec=RawStudyService)
 
-    variant_study_service = Mock(
-        spec=VariantStudyService, command_factory=command_factory_mock
-    )
+    variant_study_service = Mock(spec=VariantStudyService, command_factory=command_factory_mock)
     variant_study_service.get_raw.return_value = file_study_820
 
     config_manager = TimeSeriesConfigManager(

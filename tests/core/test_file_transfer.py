@@ -3,17 +3,17 @@ from pathlib import Path
 from unittest.mock import Mock
 
 import pytest
-from fastapi import FastAPI, Depends
+from fastapi import Depends, FastAPI
 from sqlalchemy import create_engine
 from starlette.testclient import TestClient
 
 from antarest.core.config import Config, StorageConfig
 from antarest.core.filetransfer.repository import FileDownloadRepository
 from antarest.core.filetransfer.service import FileTransferManager
-from antarest.core.interfaces.eventbus import EventType, Event
+from antarest.core.interfaces.eventbus import Event, EventType
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.model import PermissionInfo, PublicMode
-from antarest.core.requests import RequestParameters, MustBeAuthenticatedError
+from antarest.core.requests import MustBeAuthenticatedError, RequestParameters
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
 from antarest.dbmodel import Base
 
@@ -59,18 +59,12 @@ def test_lifecycle(tmp_path: Path):
         with pytest.raises(MustBeAuthenticatedError):
             ftm.list_downloads(params=RequestParameters())
 
-        downloads = ftm.list_downloads(
-            params=RequestParameters(user=DEFAULT_ADMIN_USER)
-        )
+        downloads = ftm.list_downloads(params=RequestParameters(user=DEFAULT_ADMIN_USER))
         assert len(downloads) == 0
 
         # creation
-        filedownload = ftm.request_download(
-            "some file", "some name", DEFAULT_ADMIN_USER
-        )
-        downloads = ftm.list_downloads(
-            params=RequestParameters(user=DEFAULT_ADMIN_USER)
-        )
+        filedownload = ftm.request_download("some file", "some name", DEFAULT_ADMIN_USER)
+        downloads = ftm.list_downloads(params=RequestParameters(user=DEFAULT_ADMIN_USER))
         assert len(downloads) == 1
 
         # fail and remove
@@ -79,9 +73,7 @@ def test_lifecycle(tmp_path: Path):
             Event(
                 type=EventType.DOWNLOAD_FAILED,
                 payload=filedownload.to_dto(),
-                permissions=PermissionInfo(
-                    owner=1, groups=[], public_mode=PublicMode.NONE
-                ),
+                permissions=PermissionInfo(owner=1, groups=[], public_mode=PublicMode.NONE),
                 channel="",
             )
         )
@@ -91,26 +83,16 @@ def test_lifecycle(tmp_path: Path):
             Event(
                 type=EventType.DOWNLOAD_EXPIRED,
                 payload=filedownload_id,
-                permissions=PermissionInfo(
-                    owner=1, groups=[], public_mode=PublicMode.NONE
-                ),
+                permissions=PermissionInfo(owner=1, groups=[], public_mode=PublicMode.NONE),
                 channel="",
             )
         )
 
         # expiration
-        filedownload = ftm.request_download(
-            "some file", "some name", DEFAULT_ADMIN_USER
-        )
-        downloads = ftm.list_downloads(
-            params=RequestParameters(user=DEFAULT_ADMIN_USER)
-        )
+        filedownload = ftm.request_download("some file", "some name", DEFAULT_ADMIN_USER)
+        downloads = ftm.list_downloads(params=RequestParameters(user=DEFAULT_ADMIN_USER))
         assert len(downloads) == 1
-        filedownload.expiration_date = datetime.datetime.now(
-            datetime.timezone.utc
-        ) - datetime.timedelta(seconds=5)
+        filedownload.expiration_date = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(seconds=5)
         ftm.repository.save(filedownload)
-        downloads = ftm.list_downloads(
-            params=RequestParameters(user=DEFAULT_ADMIN_USER)
-        )
+        downloads = ftm.list_downloads(params=RequestParameters(user=DEFAULT_ADMIN_USER))
         assert len(downloads) == 0

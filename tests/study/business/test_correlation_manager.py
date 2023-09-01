@@ -5,6 +5,9 @@ from unittest.mock import Mock, patch
 
 import numpy as np
 import pytest
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
 from antarest.core.exceptions import AreaNotFound
 from antarest.core.model import PublicMode
 from antarest.dbmodel import Base
@@ -18,26 +21,14 @@ from antarest.study.business.correlation_management import (
 )
 from antarest.study.model import RawStudy, Study, StudyContentStatus
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import (
-    FileStudyTree,
-)
+from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
-from antarest.study.storage.variantstudy.model.command.common import (
-    CommandName,
-)
-from antarest.study.storage.variantstudy.model.command.update_config import (
-    UpdateConfig,
-)
-from antarest.study.storage.variantstudy.model.command_context import (
-    CommandContext,
-)
-from antarest.study.storage.variantstudy.variant_study_service import (
-    VariantStudyService,
-)
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from antarest.study.storage.variantstudy.model.command.common import CommandName
+from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
+from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 
 
 class TestCorrelationField:
@@ -85,9 +76,7 @@ class TestCorrelationFormFields:
     @pytest.mark.parametrize("coefficient", [-101, 101, np.nan])
     def test_validation__coefficients_invalid_values(self, coefficient):
         """coefficients must be between -100 and 100"""
-        with pytest.raises(
-            ValueError, match="between -100 and 100|must not contain NaN"
-        ):
+        with pytest.raises(ValueError, match="between -100 and 100|must not contain NaN"):
             CorrelationFormFields(
                 correlation=[
                     {"area_id": "NORTH", "coefficient": coefficient},
@@ -114,14 +103,13 @@ class TestCorrelationMatrix:
 
     def test_validation__coefficients_non_empty_array(self):
         """Check that the coefficients matrix is a non-empty array"""
-        # fmt: off
+
         with pytest.raises(ValueError, match="must not be empty"):
             CorrelationMatrix(
                 index=[],
                 columns=[],
                 data=[],
             )
-        # fmt: off
 
     def test_validation__coefficients_array_shape(self):
         """Check that the coefficients matrix is an array of shape 2×1"""
@@ -135,7 +123,7 @@ class TestCorrelationMatrix:
     @pytest.mark.parametrize("coefficient", [-1.1, 1.1, np.nan])
     def test_validation__coefficients_invalid_value(self, coefficient):
         """Check that all coefficients matrix has positive or nul coefficients"""
-        # fmt: off
+
         with pytest.raises(ValueError, match="between -1 and 1|must not contain NaN"):
             CorrelationMatrix(
                 index=["fr", "de"],
@@ -145,7 +133,6 @@ class TestCorrelationMatrix:
                     [0.2, 0],
                 ],
             )
-        # fmt: on
 
     def test_validation__matrix_not_symmetric(self):
         """Check that the correlation matrix is not symmetric"""
@@ -173,9 +160,7 @@ def db_session_fixture(db_engine):
 
 
 # noinspection SpellCheckingInspection
-EXECUTE_OR_ADD_COMMANDS = (
-    "antarest.study.business.correlation_management.execute_or_add_commands"
-)
+EXECUTE_OR_ADD_COMMANDS = "antarest.study.business.correlation_management.execute_or_add_commands"
 
 
 class TestCorrelationManager:
@@ -191,11 +176,7 @@ class TestCorrelationManager:
                     command_context=Mock(spec=CommandContext),
                 ),
             ),
-            get_storage=Mock(
-                return_value=Mock(
-                    spec=RawStudyService, get_raw=Mock(spec=FileStudy)
-                )
-            ),
+            get_storage=Mock(return_value=Mock(spec=RawStudyService, get_raw=Mock(spec=FileStudy))),
         )
 
     # noinspection PyArgumentList
@@ -221,9 +202,7 @@ class TestCorrelationManager:
         db_session.commit()
         return raw_study.id
 
-    def test_get_correlation_matrix__nominal_case(
-        self, db_session, study_storage_service, study_uuid
-    ):
+    def test_get_correlation_matrix__nominal_case(self, db_session, study_storage_service, study_uuid):
         # The study must be fetched from the database
         study: RawStudy = db_session.query(Study).get(study_uuid)
 
@@ -253,9 +232,7 @@ class TestCorrelationManager:
         manager = CorrelationManager(study_storage_service)
 
         # run
-        matrix = manager.get_correlation_matrix(
-            all_areas=all_areas, study=study, columns=[]
-        )
+        matrix = manager.get_correlation_matrix(all_areas=all_areas, study=study, columns=[])
 
         # Check
         assert matrix == CorrelationMatrix(
@@ -269,9 +246,7 @@ class TestCorrelationManager:
             ],
         )
 
-    def test_get_field_values__nominal_case(
-        self, db_session, study_storage_service, study_uuid
-    ):
+    def test_get_field_values__nominal_case(self, db_session, study_storage_service, study_uuid):
         # The study must be fetched from the database
         study: RawStudy = db_session.query(Study).get(study_uuid)
 
@@ -294,9 +269,7 @@ class TestCorrelationManager:
         ]
         area_id = "s"  # South
         manager = CorrelationManager(study_storage_service)
-        fields = manager.get_correlation_form_fields(
-            all_areas=all_areas, study=study, area_id=area_id
-        )
+        fields = manager.get_correlation_form_fields(all_areas=all_areas, study=study, area_id=area_id)
         assert fields == CorrelationFormFields(
             correlation=[
                 AreaCoefficientItem(area_id="s", coefficient=100.0),
@@ -304,9 +277,7 @@ class TestCorrelationManager:
             ]
         )
 
-    def test_set_field_values__nominal_case(
-        self, db_session, study_storage_service, study_uuid
-    ):
+    def test_set_field_values__nominal_case(self, db_session, study_storage_service, study_uuid):
         # The study must be fetched from the database
         study: RawStudy = db_session.query(Study).get(study_uuid)
 
@@ -354,9 +325,7 @@ class TestCorrelationManager:
         assert cmd.target == "input/hydro/prepro/correlation/annual"
         assert cmd.data == {"e%s": 0.3, "n%s": 0.4}
 
-    def test_set_field_values__area_not_found(
-        self, db_session, study_storage_service, study_uuid
-    ):
+    def test_set_field_values__area_not_found(self, db_session, study_storage_service, study_uuid):
         # The study must be fetched from the database
         study: RawStudy = db_session.query(Study).get(study_uuid)
 
@@ -387,9 +356,7 @@ class TestCorrelationManager:
                     area_id=area_id,
                     data=CorrelationFormFields(
                         correlation=[
-                            AreaCoefficientItem(
-                                area_id="UNKNOWN", coefficient=3.14
-                            ),
+                            AreaCoefficientItem(area_id="UNKNOWN", coefficient=3.14),
                         ]
                     ),
                 )
