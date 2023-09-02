@@ -78,8 +78,12 @@ def get_dependencies() -> Dict[str, str]:
         subprocess.CalledProcessError:
             If the `pip freeze` command fails for some reason.
     """
-    python_name = Path(sys.executable).with_suffix("").name
-    if python_name.lower() != "python":
+    # Standard Python executable names on various platforms:
+    # - On Windows, it's typically "python.exe" (sometimes "python3.exe"),
+    # - On Linux and macOS, it's usually "python" or "python3".
+    # Other implementations include Jython ("jython"), IronPython ("ipy"), and PyPy ("pypy").
+    python_name = Path(sys.executable).with_suffix("").name.lower()
+    if not any(python_name.startswith(p) for p in {"python", "jython", "ipy", "pypy"}):
         # Due to PyInstaller renaming the executable to "AntaresWebServer",
         # accessing the "python" executable becomes impossible, resulting in complications
         # when trying to obtain the list of installed packages using `pip freeze`.
