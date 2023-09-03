@@ -1452,7 +1452,7 @@ def test_area_management(app: FastAPI):
         table_mode_url,
         headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
         params={
-            "table_type": TableTemplateType.AREA,
+            "table_type": TableTemplateType.AREA.value,
             "columns": ",".join(FIELDS_INFO_BY_TYPE[TableTemplateType.AREA]),
         },
     )
@@ -1488,7 +1488,7 @@ def test_area_management(app: FastAPI):
         table_mode_url,
         headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
         params={
-            "table_type": TableTemplateType.AREA,
+            "table_type": TableTemplateType.AREA.value,
         },
         json={
             "area 1": {
@@ -1509,7 +1509,7 @@ def test_area_management(app: FastAPI):
         table_mode_url,
         headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
         params={
-            "table_type": TableTemplateType.AREA,
+            "table_type": TableTemplateType.AREA.value,
             "columns": ",".join(list(FIELDS_INFO_BY_TYPE[TableTemplateType.AREA])),
         },
     )
@@ -1547,7 +1547,7 @@ def test_area_management(app: FastAPI):
         table_mode_url,
         headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
         params={
-            "table_type": TableTemplateType.LINK,
+            "table_type": TableTemplateType.LINK.value,
             "columns": ",".join(FIELDS_INFO_BY_TYPE[TableTemplateType.LINK]),
         },
     )
@@ -1571,7 +1571,7 @@ def test_area_management(app: FastAPI):
         table_mode_url,
         headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
         params={
-            "table_type": TableTemplateType.LINK,
+            "table_type": TableTemplateType.LINK.value,
         },
         json={
             "area 1 / area 2": {
@@ -1586,7 +1586,7 @@ def test_area_management(app: FastAPI):
         table_mode_url,
         headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
         params={
-            "table_type": TableTemplateType.LINK,
+            "table_type": TableTemplateType.LINK.value,
             "columns": ",".join(FIELDS_INFO_BY_TYPE[TableTemplateType.LINK]),
         },
     )
@@ -1612,7 +1612,7 @@ def test_area_management(app: FastAPI):
         table_mode_url,
         headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
         params={
-            "table_type": TableTemplateType.CLUSTER,
+            "table_type": TableTemplateType.CLUSTER.value,
             "columns": ",".join(FIELDS_INFO_BY_TYPE[TableTemplateType.CLUSTER]),
         },
     )
@@ -1668,7 +1668,7 @@ def test_area_management(app: FastAPI):
         table_mode_url,
         headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
         params={
-            "table_type": TableTemplateType.CLUSTER,
+            "table_type": TableTemplateType.CLUSTER.value,
         },
         json={
             "area 1 / cluster 1": {
@@ -1687,7 +1687,7 @@ def test_area_management(app: FastAPI):
         table_mode_url,
         headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
         params={
-            "table_type": TableTemplateType.CLUSTER,
+            "table_type": TableTemplateType.CLUSTER.value,
             "columns": ",".join(FIELDS_INFO_BY_TYPE[TableTemplateType.CLUSTER]),
         },
     )
@@ -1745,7 +1745,7 @@ def test_area_management(app: FastAPI):
         table_mode_url,
         headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
         params={
-            "table_type": TableTemplateType.RENEWABLE,
+            "table_type": TableTemplateType.RENEWABLE.value,
             "columns": ",".join(FIELDS_INFO_BY_TYPE[TableTemplateType.RENEWABLE]),
         },
     )
@@ -1771,7 +1771,7 @@ def test_area_management(app: FastAPI):
         table_mode_url,
         headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
         params={
-            "table_type": TableTemplateType.RENEWABLE,
+            "table_type": TableTemplateType.RENEWABLE.value,
         },
         json={
             "area 1 / cluster renewable 1": {
@@ -1788,7 +1788,7 @@ def test_area_management(app: FastAPI):
         table_mode_url,
         headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
         params={
-            "table_type": TableTemplateType.RENEWABLE,
+            "table_type": TableTemplateType.RENEWABLE.value,
             "columns": ",".join(FIELDS_INFO_BY_TYPE[TableTemplateType.RENEWABLE]),
         },
     )
@@ -1816,7 +1816,7 @@ def test_area_management(app: FastAPI):
         table_mode_url,
         headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
         params={
-            "table_type": TableTemplateType.BINDING_CONSTRAINT,
+            "table_type": TableTemplateType.BINDING_CONSTRAINT.value,
             "columns": ",".join(FIELDS_INFO_BY_TYPE[TableTemplateType.BINDING_CONSTRAINT]),
         },
     )
@@ -1838,7 +1838,7 @@ def test_area_management(app: FastAPI):
         table_mode_url,
         headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
         params={
-            "table_type": TableTemplateType.BINDING_CONSTRAINT,
+            "table_type": TableTemplateType.BINDING_CONSTRAINT.value,
         },
         json={
             "binding constraint 1": {
@@ -1855,7 +1855,7 @@ def test_area_management(app: FastAPI):
         table_mode_url,
         headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
         params={
-            "table_type": TableTemplateType.BINDING_CONSTRAINT,
+            "table_type": TableTemplateType.BINDING_CONSTRAINT.value,
             "columns": ",".join(FIELDS_INFO_BY_TYPE[TableTemplateType.BINDING_CONSTRAINT]),
         },
     )
