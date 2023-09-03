@@ -137,7 +137,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/areas/{area_id}/ui",
         tags=[APITag.study_data],
         summary="Update area information",
-        response_model=AreaInfoDTO,
+        response_model=None,
     )
     def update_area_ui(
         uuid: str,
