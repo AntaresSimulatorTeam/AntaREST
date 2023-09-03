@@ -76,7 +76,8 @@ def test_integration_xpansion(app: FastAPI, tmp_path: Path):
     )
     assert res.status_code == 200
 
-    assert (tmp_path / "internal_workspace" / study_id / "user" / "expansion").exists()
+    expansion_path = tmp_path / "internal_workspace" / study_id / "user" / "expansion"
+    assert expansion_path.exists()
 
     res = client.get(
         f"{xpansion_base_url}/settings",
@@ -145,7 +146,7 @@ def test_integration_xpansion(app: FastAPI, tmp_path: Path):
     files = {
         "file": (
             filename_constraints1,
-            io.StringIO(content_constraints1),
+            io.BytesIO(content_constraints1.encode("utf-8")),
             "image/jpeg",
         )
     }
@@ -155,14 +156,13 @@ def test_integration_xpansion(app: FastAPI, tmp_path: Path):
         files=files,
     )
     assert res.status_code == 200
-    assert (
-        tmp_path / "internal_workspace" / study_id / "user" / "expansion" / "constraints" / filename_constraints1
-    ).open().read() == content_constraints1
+    actual_path = expansion_path / "constraints" / filename_constraints1
+    assert actual_path.read_text() == content_constraints1
 
     files = {
         "file": (
             filename_constraints1,
-            io.StringIO(content_constraints1),
+            io.BytesIO(content_constraints1.encode("utf-8")),
             "image/jpeg",
         ),
     }
@@ -177,7 +177,7 @@ def test_integration_xpansion(app: FastAPI, tmp_path: Path):
     files = {
         "file": (
             filename_constraints2,
-            io.StringIO(content_constraints2),
+            io.BytesIO(content_constraints2.encode("utf-8")),
             "image/jpeg",
         ),
     }
@@ -191,7 +191,7 @@ def test_integration_xpansion(app: FastAPI, tmp_path: Path):
     files = {
         "file": (
             filename_constraints3,
-            io.StringIO(content_constraints3),
+            io.BytesIO(content_constraints3.encode("utf-8")),
             "image/jpeg",
         ),
     }
@@ -280,7 +280,7 @@ def test_integration_xpansion(app: FastAPI, tmp_path: Path):
     files = {
         "file": (
             filename_capa1,
-            io.StringIO(content_capa1),
+            io.BytesIO(content_capa1.encode("utf-8")),
             "txt/csv",
         )
     }
@@ -290,9 +290,8 @@ def test_integration_xpansion(app: FastAPI, tmp_path: Path):
         files=files,
     )
     assert res.status_code == 200
-    assert (
-        tmp_path / "internal_workspace" / study_id / "user" / "expansion" / "capa" / filename_capa1
-    ).open().read() == content_capa1
+    actual_path = expansion_path / "capa" / filename_capa1
+    assert actual_path.read_text() == content_capa1
 
     res = client.post(
         f"{xpansion_base_url}/resources/capacities",
@@ -304,7 +303,7 @@ def test_integration_xpansion(app: FastAPI, tmp_path: Path):
     files = {
         "file": (
             filename_capa2,
-            io.StringIO(content_capa2),
+            io.BytesIO(content_capa2.encode("utf-8")),
             "txt/csv",
         )
     }
@@ -318,7 +317,7 @@ def test_integration_xpansion(app: FastAPI, tmp_path: Path):
     files = {
         "file": (
             filename_capa3,
-            io.StringIO(content_capa3),
+            io.BytesIO(content_capa3.encode("utf-8")),
             "txt/csv",
         )
     }
@@ -406,4 +405,4 @@ def test_integration_xpansion(app: FastAPI, tmp_path: Path):
     )
     assert res.status_code == 200
 
-    assert not (tmp_path / "internal_workspace" / study_id / "user" / "expansion").exists()
+    assert not expansion_path.exists()
