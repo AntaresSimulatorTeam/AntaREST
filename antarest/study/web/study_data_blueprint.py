@@ -284,6 +284,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         tags=[APITag.study_data],
         summary="Remove layer",
         status_code=HTTPStatus.NO_CONTENT,
+        response_model=None,
     )
     def remove_layer(
         uuid: str,
@@ -1659,6 +1660,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         tags=[APITag.study_data],
         summary="Remove short-term storages from an area",
         status_code=HTTPStatus.NO_CONTENT,
+        response_model=None,
     )
     def delete_st_storages(
         uuid: str,

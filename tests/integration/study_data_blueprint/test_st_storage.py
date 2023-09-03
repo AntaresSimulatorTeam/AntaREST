@@ -239,7 +239,7 @@ class TestSTStorage:
             json=[siemens_battery_id],
         )
         assert res.status_code == 204, res.json()
-        assert res.text == "null"
+        assert res.text in {"", "null"}  # Old FastAPI versions return 'null'.
 
         # deletion of short-term storages with empty list
         res = client.delete(
@@ -248,7 +248,7 @@ class TestSTStorage:
             json=[],
         )
         assert res.status_code == 204, res.json()
-        assert res.text == "null"
+        assert res.text in {"", "null"}  # Old FastAPI versions return 'null'.
 
         # deletion of short-term storages with multiple IDs
         res = client.post(
@@ -275,7 +275,7 @@ class TestSTStorage:
             json=[siemens_battery_id1, siemens_battery_id2],
         )
         assert res.status_code == 204, res.json()
-        assert res.text == "null"
+        assert res.text in {"", "null"}  # Old FastAPI versions return 'null'.
 
         # Check the removal
         res = client.get(
