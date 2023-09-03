@@ -25,4 +25,5 @@ redis~=4.1.2
 requests~=2.27.1
 SQLAlchemy~=1.4.46
 starlette~=0.17.1
+typing_extensions~=4.7.1
 uvicorn[standard]~=0.15.0
