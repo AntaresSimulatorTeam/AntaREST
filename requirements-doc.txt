@@ -1,5 +1,2 @@
 mkdocs
 mkdocs-material
-sphinx
-myst-parser
-
