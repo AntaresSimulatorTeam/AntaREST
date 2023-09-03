@@ -2,6 +2,8 @@ from pathlib import Path
 
 from setuptools import setup, find_packages
 
+excluded_dirs = {"alembic", "conf", "docs", "examples", "resources", "scripts", "tests", "venv", "webapp"}
+
 setup(
     name="AntaREST",
     version="2.15.0",
@@ -11,7 +13,7 @@ setup(
     author="RTE, Antares Web Team",
     author_email="andrea.sgattoni@rte-france.com",
     url="https://github.com/AntaresSimulatorTeam/api-iso-antares",
-    packages=find_packages(),
+    packages=find_packages(exclude=excluded_dirs),
     license="Apache Software License",
     platforms=[
         "linux-x86_64",
