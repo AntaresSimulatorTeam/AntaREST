@@ -1,4 +1,5 @@
 import json
+import multiprocessing
 import os
 import time
 from datetime import datetime, timedelta
@@ -385,12 +386,14 @@ def test_service_get_jobs_from_database():
         ),
     ],
 )
-def test_service_get_solver_versions(
+def test_service_get_solver_versions_nb_core(
     config: Dict[str, Union[str, List[str]]],
     solver: Literal["default", "local", "slurm", "unknown"],
     expected: List[str],
 ) -> None:
     # Prepare the configuration
+    # the default server version from the configuration file.
+    # the default server is initialised to local
     default = config.get("default", "local")
     local = LocalConfig(binaries={k: Path(f"solver-{k}.exe") for k in config.get("local", [])})
     slurm = SlurmConfig(antares_versions_on_remote_server=config.get("slurm", []))
@@ -413,9 +416,18 @@ def test_service_get_solver_versions(
 
     # Fetch the solver versions
     actual = launcher_service.get_solver_versions(solver)
-
-    # Check the result
     assert actual == expected
+
+    # Fetch the solver(launcher) nb_cores
+    nb_core = launcher_service.get_nb_cores(solver)
+    if solver in ("local", "default"):
+        max_cpu = multiprocessing.cpu_count()
+        default = max(1, max_cpu - 2)
+        nb_cores_expected = {"default": default, "max": max_cpu, "min": 1}
+    else:
+        nb_cores_expected = {"min": 1, "default": 22, "max": 24}
+    # Check the result
+    assert nb_core == nb_cores_expected
 
 
 @pytest.mark.unit_test

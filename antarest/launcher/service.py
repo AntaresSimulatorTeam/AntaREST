@@ -10,7 +10,7 @@ from uuid import UUID, uuid4
 
 from fastapi import HTTPException
 
-from antarest.core.config import Config
+from antarest.core.config import Config, LauncherConfig
 from antarest.core.exceptions import StudyNotFoundError
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
@@ -98,6 +98,15 @@ class LauncherService:
 
     def get_launchers(self) -> List[str]:
         return list(self.launchers.keys())
+
+    @staticmethod
+    def get_nb_cores(launcher: str) -> Dict[str, int]:
+        """
+        Retrieving Min, Default, and Max Core Count.
+        Args:
+            launcher:  name of the configuration : "default", "slurm" or "local".
+        """
+        return LauncherConfig.get_nb_cores(launcher)
 
     def _after_export_flat_hooks(
         self,

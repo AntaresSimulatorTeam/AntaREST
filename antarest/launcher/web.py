@@ -230,4 +230,40 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
             raise UnknownSolverConfig(solver)
         return service.get_solver_versions(solver)
 
+    @bp.get(
+        "/launcher/nbcores",
+        tags=[APITag.launcher],
+        summary="Retrieving Min, Default, and Max Core Count",
+        response_model=Dict[str, int],
+    )
+    def get_nb_cores(
+        launcher: str = Query(
+            "default",
+            examples={
+                "Default solver": {
+                    "description": "Min, Default, and Max Core Count",
+                    "value": "default",
+                },
+                "SLURM solver": {
+                    "description": "Min, Default, and Max Core Count",
+                    "value": "slurm",
+                },
+                "Local solver": {
+                    "description": "Min, Default, and Max Core Count",
+                    "value": "local",
+                },
+            },
+        )
+    ) -> Dict[str, int]:
+        """
+        Retrieving Min, Default, and Max Core Count.
+
+        Args:
+        - `launcher`: name of the configuration to read: "default", "slurm" or "local".
+        """
+        logger.info(f"Fetching the list of solver versions for the '{launcher}' configuration")
+        if launcher not in {"default", "slurm", "local"}:
+            raise UnknownSolverConfig(launcher)
+        return service.get_nb_cores(launcher)
+
     return bp
