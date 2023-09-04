@@ -6,7 +6,13 @@ import webbrowser
 from multiprocessing import Process
 from pathlib import Path
 
-import requests
+try:
+    # `httpx` is a modern alternative to the `requests` library
+    import httpx as requests
+except ImportError:
+    # noinspection PyUnresolvedReferences, PyPackageRequirements
+    import requests
+
 import uvicorn  # type: ignore
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QAction, QApplication, QMenu, QSystemTrayIcon

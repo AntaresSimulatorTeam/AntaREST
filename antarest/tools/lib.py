@@ -8,8 +8,17 @@ from typing import List, Optional, Set, Union
 from zipfile import ZipFile
 
 import numpy as np
-import requests
-from requests import Session
+
+try:
+    # The HTTPX equivalent of `requests.Session` is `httpx.Client`.
+    import httpx as requests
+    from httpx import Client as Session
+except ImportError:
+    # noinspection PyUnresolvedReferences, PyPackageRequirements
+    import requests
+
+    # noinspection PyUnresolvedReferences,PyPackageRequirements
+    from requests import Session
 
 from antarest.core.cache.business.local_chache import LocalCache
 from antarest.core.config import CacheConfig
@@ -48,7 +57,7 @@ class RemoteVariantGenerator(IVariantGenerator):
         session: Optional[Session] = None,
     ):
         self.study_id = study_id
-        self.session = session or requests.session()
+        self.session = session or Session()
         # TODO fix this
         self.session.verify = False
         self.host = host
