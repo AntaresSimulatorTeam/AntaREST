@@ -1,3 +1,5 @@
+import io
+import json
 import zipfile
 from pathlib import Path
 from typing import List, Optional
@@ -52,12 +54,28 @@ def assert_url_content(url: str, tmp_dir: Path, sta_mini_zip_path: Path) -> byte
         metadata_repository=repo,
         config=config,
     )
+
+    # Simulate the download of data using a streamed request
     client = TestClient(app)
-    res = client.get(url, stream=True)
-    download_filepath = ftm.fetch_download(
-        FileDownloadTaskDTO.parse_obj(res.json()).file.id,
-        RequestParameters(user=DEFAULT_ADMIN_USER),
-    ).path
+    if client.stream is False:
+        # `TestClient` is based on `Requests` (old way before AntaREST-v2.15)
+        # noinspection PyArgumentList
+        res = client.get(url, stream=True)
+        res.raise_for_status()
+        result = res.json()
+    else:
+        # `TestClient` is based on `httpx` (new way since AntaREST-v2.15)
+        data = io.BytesIO()
+        # noinspection PyCallingNonCallable
+        with client.stream("GET", url) as res:
+            for chunk in res.iter_bytes():
+                data.write(chunk)
+        res.raise_for_status()
+        result = json.loads(data.getvalue())
+
+    download_task = FileDownloadTaskDTO(**result)
+    parameters = RequestParameters(user=DEFAULT_ADMIN_USER)
+    download_filepath = ftm.fetch_download(download_task.file.id, parameters).path
     with open(download_filepath, "rb") as fh:
         return fh.read()
 

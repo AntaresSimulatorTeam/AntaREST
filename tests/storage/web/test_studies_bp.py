@@ -1,4 +1,5 @@
 import io
+import json
 import shutil
 import uuid
 from datetime import datetime
@@ -347,10 +348,27 @@ def test_export_files(tmp_path: Path) -> None:
         user_service=Mock(),
         matrix_service=Mock(spec=MatrixService),
     )
-    client = TestClient(app)
-    result = client.get("/v1/studies/name/export", stream=True)
 
-    assert FileDownloadTaskDTO.parse_obj(result.json()).json() == expected.json()
+    # Simulate the download of data using a streamed request
+    client = TestClient(app)
+    if client.stream is False:
+        # `TestClient` is based on `Requests` (old way before AntaREST-v2.15)
+        # noinspection PyArgumentList
+        res = client.get("/v1/studies/name/export", stream=True)
+        res.raise_for_status()
+        result = res.json()
+    else:
+        # `TestClient` is based on `httpx` (new way since AntaREST-v2.15)
+        data = io.BytesIO()
+        # noinspection PyCallingNonCallable
+        with client.stream("GET", "/v1/studies/name/export") as res:
+            for chunk in res.iter_bytes():
+                data.write(chunk)
+        res.raise_for_status()
+        result = json.loads(data.getvalue())
+
+    assert FileDownloadTaskDTO(**result).json() == expected.json()
+
     mock_storage_service.export_study.assert_called_once_with("name", PARAMS, True)
 
 
