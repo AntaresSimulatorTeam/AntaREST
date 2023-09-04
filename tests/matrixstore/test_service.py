@@ -1,12 +1,14 @@
 import datetime
 import io
 import time
+import typing as t
 from unittest.mock import ANY, Mock
 from zipfile import ZIP_DEFLATED, ZipFile
 
 import numpy as np
 import pytest
 from fastapi import UploadFile
+from starlette.datastructures import Headers
 
 from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
@@ -345,6 +347,17 @@ def test_dataset_lifecycle():
     dataset_repo.delete.assert_called_once()
 
 
+def _create_upload_file(filename: str, file: t.IO = None, content_type: str = "") -> UploadFile:
+    if hasattr(UploadFile, "content_type"):
+        # `content_type` attribute was replace by a read-ony property in starlette-v0.24.
+        headers = Headers(headers={"content-type": content_type})
+        # noinspection PyTypeChecker,PyArgumentList
+        return UploadFile(filename=filename, file=file, headers=headers)
+    else:
+        # noinspection PyTypeChecker,PyArgumentList
+        return UploadFile(filename=filename, file=file, content_type=content_type)
+
+
 def test_import():
     # Init Mock
     repo_content = Mock()
@@ -354,9 +367,9 @@ def test_import():
     matrix_content = str.encode(file_str)
 
     # Expected
-    id = "123"
-    exp_matrix_info = [MatrixInfoDTO(id="123", name="matrix.txt")]
-    exp_matrix = Matrix(id=id, width=5, height=2)
+    matrix_id = "123"
+    exp_matrix_info = [MatrixInfoDTO(id=matrix_id, name="matrix.txt")]
+    exp_matrix = Matrix(id=matrix_id, width=5, height=2)
     # Test
     service = MatrixService(
         repo=repo,
@@ -368,16 +381,16 @@ def test_import():
         user_service=Mock(),
     )
     service.repo.get.return_value = None
-    service.matrix_content_repository.save.return_value = id
+    service.matrix_content_repository.save.return_value = matrix_id
     service.repo.save.return_value = exp_matrix
 
     # CSV importation
-    zip_file = UploadFile(
+    matrix_file = _create_upload_file(
         filename="matrix.txt",
         file=io.BytesIO(matrix_content),
         content_type="test/plain",
     )
-    matrix = service.create_by_importation(zip_file)
+    matrix = service.create_by_importation(matrix_file)
     assert matrix[0].name == exp_matrix_info[0].name
     assert matrix[0].id is not None
 
@@ -387,6 +400,10 @@ def test_import():
         output_data.writestr("matrix.txt", file_str)
 
     zip_content.seek(0)
-    zip_file = UploadFile(filename="Matrix.zip", file=zip_content, content_type="application/zip")
+    zip_file = _create_upload_file(
+        filename="Matrix.zip",
+        file=zip_content,
+        content_type="application/zip",
+    )
     matrix = service.create_by_importation(zip_file)
     assert matrix == exp_matrix_info
