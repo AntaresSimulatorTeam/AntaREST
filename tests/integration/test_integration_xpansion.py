@@ -7,9 +7,7 @@ from antarest.study.business.area_management import AreaType
 from antarest.study.business.xpansion_management import XpansionCandidateDTO
 
 
-def test_integration_xpansion(
-    client: TestClient, tmp_path: Path, admin_access_token: str
-):
+def test_integration_xpansion(client: TestClient, tmp_path: Path, admin_access_token: str):
     headers = {"Authorization": f"Bearer {admin_access_token}"}
 
     created = client.post(
