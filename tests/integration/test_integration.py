@@ -1,9 +1,7 @@
-import time
 from http import HTTPStatus
 from pathlib import Path
 from unittest.mock import ANY
 
-from fastapi import FastAPI
 from starlette.testclient import TestClient
 
 from antarest.core.model import PublicMode
@@ -33,58 +31,33 @@ from antarest.study.storage.variantstudy.model.command.common import CommandName
 from tests.integration.utils import wait_for
 
 
-def init_test(app: FastAPI):
-    client = TestClient(app, raise_server_exceptions=False)
-
-    res = client.post("/v1/login", json={"username": "admin", "password": "admin"})
-    admin_credentials = res.json()
-
-    # check default study presence
-    study_count = 0
-    countdown = 10
-    while study_count == 0 or countdown > 0:
-        res = client.get(
-            "/v1/studies",
-            headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-        )
-        time.sleep(1)
-        studies_info = res.json()
-        study_count = len(studies_info)
-        countdown -= 1
-
-    return client, admin_credentials
-
-
-def test_main(app: FastAPI):
-    client, admin_credentials = init_test(app)
+def test_main(client: TestClient, admin_access_token: str, study_id: str):
+    admin_headers = {"Authorization": f"Bearer {admin_access_token}"}
 
     # create some new users
     # TODO check for bad username or empty password
     client.post(
         "/v1/users",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+        headers=admin_headers,
         json={"name": "George", "password": "mypass"},
     )
     client.post(
         "/v1/users",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+        headers=admin_headers,
         json={"name": "Fred", "password": "mypass"},
     )
     client.post(
         "/v1/users",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+        headers=admin_headers,
         json={"name": "Harry", "password": "mypass"},
     )
-    res = client.get(
-        "/v1/users",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res = client.get("/v1/users", headers=admin_headers)
     assert len(res.json()) == 4
 
     # reject user with existing name creation
     res = client.post(
         "/v1/users",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+        headers=admin_headers,
         json={"name": "George", "password": "mypass"},
     )
     assert res.status_code == 400
@@ -289,10 +262,7 @@ def test_main(app: FastAPI):
     assert len(res.json()) == 3
     assert filter(lambda s: s["id"] == copied.json(), res.json().values()).__next__()["folder"] == "foo/bar"
 
-    res = client.post(
-        "/v1/studies/_invalidate_cache_listing",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res = client.post("/v1/studies/_invalidate_cache_listing", headers=admin_headers)
     assert res.status_code == 200
 
     # Study delete
@@ -317,22 +287,19 @@ def test_main(app: FastAPI):
     # play with groups
     client.post(
         "/v1/groups",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+        headers=admin_headers,
         json={"name": "Weasley"},
     )
-    res = client.get(
-        "/v1/groups",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res = client.get("/v1/groups", headers=admin_headers)
     group_id = res.json()[1]["id"]
     client.post(
         "/v1/roles",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+        headers=admin_headers,
         json={"type": 40, "group_id": group_id, "identity_id": 3},
     )
     client.post(
         "/v1/roles",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+        headers=admin_headers,
         json={"type": 30, "group_id": group_id, "identity_id": 2},
     )
     # reset login to update credentials
@@ -397,25 +364,20 @@ def test_main(app: FastAPI):
     assert new_meta.json()["horizon"] == "2035"
 
 
-def test_matrix(app: FastAPI):
-    client = TestClient(app, raise_server_exceptions=False)
-    res = client.post("/v1/login", json={"username": "admin", "password": "admin"})
-    admin_credentials = res.json()
+def test_matrix(client: TestClient, admin_access_token: str, study_id: str):
+    admin_headers = {"Authorization": f"Bearer {admin_access_token}"}
 
     matrix = [[1, 2], [3, 4]]
 
     res = client.post(
         "/v1/matrix",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+        headers=admin_headers,
         json=matrix,
     )
 
     assert res.status_code == 200
 
-    res = client.get(
-        f"/v1/matrix/{res.json()}",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res = client.get(f"/v1/matrix/{res.json()}", headers=admin_headers)
 
     assert res.status_code == 200
     stored = res.json()
@@ -424,10 +386,7 @@ def test_matrix(app: FastAPI):
 
     matrix_id = stored["id"]
 
-    res = client.get(
-        f"/v1/matrix/{matrix_id}/download",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res = client.get(f"/v1/matrix/{matrix_id}/download", headers=admin_headers)
     assert res.status_code == 200
 
     res = client.post(
@@ -440,47 +399,30 @@ def test_matrix(app: FastAPI):
             },
             "matrices": [{"id": matrix_id, "name": "mymatrix"}],
         },
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+        headers=admin_headers,
     )
     assert res.status_code == 200
 
-    res = client.get(
-        "/v1/matrixdataset/_search?name=myda",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res = client.get("/v1/matrixdataset/_search?name=myda", headers=admin_headers)
     results = res.json()
     assert len(results) == 1
     assert len(results[0]["matrices"]) == 1
     assert results[0]["matrices"][0]["id"] == matrix_id
 
     dataset_id = results[0]["id"]
-    res = client.get(
-        f"/v1/matrixdataset/{dataset_id}/download",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res = client.get(f"/v1/matrixdataset/{dataset_id}/download", headers=admin_headers)
     assert res.status_code == 200
 
-    res = client.delete(
-        f"/v1/matrixdataset/{dataset_id}",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res = client.delete(f"/v1/matrixdataset/{dataset_id}", headers=admin_headers)
     assert res.status_code == 200
 
 
-def test_area_management(app: FastAPI):
-    client = TestClient(app, raise_server_exceptions=False)
-    res = client.post("/v1/login", json={"username": "admin", "password": "admin"})
-    admin_credentials = res.json()
+def test_area_management(client: TestClient, admin_access_token: str, study_id: str):
+    admin_headers = {"Authorization": f"Bearer {admin_access_token}"}
 
-    created = client.post(
-        "/v1/studies?name=foo",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    created = client.post("/v1/studies?name=foo", headers=admin_headers)
     study_id = created.json()
-    res_areas = client.get(
-        f"/v1/studies/{study_id}/areas",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res_areas = client.get(f"/v1/studies/{study_id}/areas", headers=admin_headers)
     assert res_areas.json() == [
         {
             "id": "all areas",
@@ -494,7 +436,7 @@ def test_area_management(app: FastAPI):
 
     res = client.post(
         f"/v1/studies/{study_id}/areas",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+        headers=admin_headers,
         json={
             "name": "area 1",
             "type": AreaType.AREA.value,
@@ -503,7 +445,7 @@ def test_area_management(app: FastAPI):
     )
     res = client.post(
         f"/v1/studies/{study_id}/areas",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+        headers=admin_headers,
         json={
             "name": "area 1",
             "type": AreaType.AREA.value,
@@ -518,7 +460,7 @@ def test_area_management(app: FastAPI):
 
     client.post(
         f"/v1/studies/{study_id}/areas",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+        headers=admin_headers,
         json={
             "name": "area 2",
             "type": AreaType.AREA.value,
@@ -528,7 +470,7 @@ def test_area_management(app: FastAPI):
 
     client.post(
         f"/v1/studies/{study_id}/commands",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+        headers=admin_headers,
         json=[
             {
                 "action": CommandName.CREATE_THERMAL_CLUSTER.value,
@@ -543,7 +485,7 @@ def test_area_management(app: FastAPI):
 
     client.post(
         f"/v1/studies/{study_id}/commands",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+        headers=admin_headers,
         json=[
             {
                 "action": CommandName.CREATE_THERMAL_CLUSTER.value,
@@ -558,7 +500,7 @@ def test_area_management(app: FastAPI):
 
     client.post(
         f"/v1/studies/{study_id}/commands",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+        headers=admin_headers,
         json=[
             {
                 "action": CommandName.CREATE_RENEWABLES_CLUSTER.value,
@@ -573,7 +515,7 @@ def test_area_management(app: FastAPI):
 
     client.post(
         f"/v1/studies/{study_id}/commands",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+        headers=admin_headers,
         json=[
             {
                 "action": CommandName.CREATE_RENEWABLES_CLUSTER.value,
@@ -588,7 +530,7 @@ def test_area_management(app: FastAPI):
 
     client.post(
         f"/v1/studies/{study_id}/commands",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+        headers=admin_headers,
         json=[
             {
                 "action": CommandName.CREATE_BINDING_CONSTRAINT.value,
@@ -605,7 +547,7 @@ def test_area_management(app: FastAPI):
 
     client.post(
         f"/v1/studies/{study_id}/commands",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+        headers=admin_headers,
         json=[
             {
                 "action": CommandName.CREATE_BINDING_CONSTRAINT.value,
@@ -620,10 +562,7 @@ def test_area_management(app: FastAPI):
         ],
     )
 
-    res_areas = client.get(
-        f"/v1/studies/{study_id}/areas",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res_areas = client.get(f"/v1/studies/{study_id}/areas", headers=admin_headers)
     assert res_areas.json() == [
         {
             "id": "area 1",
@@ -689,16 +628,13 @@ def test_area_management(app: FastAPI):
 
     client.post(
         f"/v1/studies/{study_id}/links",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+        headers=admin_headers,
         json={
             "area1": "area 1",
             "area2": "area 2",
         },
     )
-    res_links = client.get(
-        f"/v1/studies/{study_id}/links?with_ui=true",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res_links = client.get(f"/v1/studies/{study_id}/links?with_ui=true", headers=admin_headers)
     assert res_links.json() == [
         {
             "area1": "area 1",
@@ -709,108 +645,64 @@ def test_area_management(app: FastAPI):
 
     # -- `layers` integration tests
 
-    res = client.get(
-        f"/v1/studies/{study_id}/layers",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res = client.get(f"/v1/studies/{study_id}/layers", headers=admin_headers)
     assert res.json() == [LayerInfoDTO(id="0", name="All", areas=["area 1", "area 2"]).dict()]
 
-    res = client.post(
-        f"/v1/studies/{study_id}/layers?name=test",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res = client.post(f"/v1/studies/{study_id}/layers?name=test", headers=admin_headers)
     assert res.json() == "1"
 
-    res = client.get(
-        f"/v1/studies/{study_id}/layers",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res = client.get(f"/v1/studies/{study_id}/layers", headers=admin_headers)
     assert res.json() == [
         LayerInfoDTO(id="0", name="All", areas=["area 1", "area 2"]).dict(),
         LayerInfoDTO(id="1", name="test", areas=[]).dict(),
     ]
 
-    res = client.put(
-        f"/v1/studies/{study_id}/layers/1?name=test2",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
-    res = client.put(
-        f"/v1/studies/{study_id}/layers/1",
-        json=["area 1"],
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
-    res = client.put(
-        f"/v1/studies/{study_id}/layers/1",
-        json=["area 2"],
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
-    res = client.get(
-        f"/v1/studies/{study_id}/layers",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res = client.put(f"/v1/studies/{study_id}/layers/1?name=test2", headers=admin_headers)
+    res = client.put(f"/v1/studies/{study_id}/layers/1", json=["area 1"], headers=admin_headers)
+    res = client.put(f"/v1/studies/{study_id}/layers/1", json=["area 2"], headers=admin_headers)
+    res = client.get(f"/v1/studies/{study_id}/layers", headers=admin_headers)
     assert res.json() == [
         LayerInfoDTO(id="0", name="All", areas=["area 1", "area 2"]).dict(),
         LayerInfoDTO(id="1", name="test2", areas=["area 2"]).dict(),
     ]
 
     # Delete the layer '1' that has 1 area
-    res = client.delete(
-        f"/v1/studies/{study_id}/layers/1",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res = client.delete(f"/v1/studies/{study_id}/layers/1", headers=admin_headers)
     assert res.status_code == HTTPStatus.NO_CONTENT
 
     # Ensure the layer is deleted
-    res = client.get(
-        f"/v1/studies/{study_id}/layers",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res = client.get(f"/v1/studies/{study_id}/layers", headers=admin_headers)
     assert res.json() == [
         LayerInfoDTO(id="0", name="All", areas=["area 1", "area 2"]).dict(),
     ]
 
     # Create the layer again without areas
-    res = client.post(
-        f"/v1/studies/{study_id}/layers?name=test2",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res = client.post(f"/v1/studies/{study_id}/layers?name=test2", headers=admin_headers)
     assert res.json() == "1"
 
     # Delete the layer with no areas
-    res = client.delete(
-        f"/v1/studies/{study_id}/layers/1",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res = client.delete(f"/v1/studies/{study_id}/layers/1", headers=admin_headers)
     assert res.status_code == HTTPStatus.NO_CONTENT
 
     # Ensure the layer is deleted
-    res = client.get(
-        f"/v1/studies/{study_id}/layers",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res = client.get(f"/v1/studies/{study_id}/layers", headers=admin_headers)
     assert res.json() == [
         LayerInfoDTO(id="0", name="All", areas=["area 1", "area 2"]).dict(),
     ]
 
     # Try to delete a non-existing layer
-    res = client.delete(
-        f"/v1/studies/{study_id}/layers/1",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res = client.delete(f"/v1/studies/{study_id}/layers/1", headers=admin_headers)
     assert res.status_code == HTTPStatus.NOT_FOUND
 
     # Try to delete the layer 'All'
-    res = client.delete(
-        f"/v1/studies/{study_id}/layers/0",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res = client.delete(f"/v1/studies/{study_id}/layers/0", headers=admin_headers)
     assert res.status_code == HTTPStatus.BAD_REQUEST
 
     # -- `district` integration tests
 
     res = client.post(
         f"/v1/studies/{study_id}/districts",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+        headers=admin_headers,
         json={
             "name": "District 1",
             "output": True,
@@ -829,7 +721,7 @@ def test_area_management(app: FastAPI):
 
     res = client.put(
         f"/v1/studies/{study_id}/districts/district%201",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+        headers=admin_headers,
         json={
             "name": "District 1",
             "output": True,
@@ -839,10 +731,7 @@ def test_area_management(app: FastAPI):
     )
     assert res.status_code == 200
 
-    res = client.get(
-        f"/v1/studies/{study_id}/districts",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res = client.get(f"/v1/studies/{study_id}/districts", headers=admin_headers)
     assert res.status_code == 200
     actual = res.json()
     actual[0]["areas"].sort()
@@ -864,18 +753,12 @@ def test_area_management(app: FastAPI):
         },
     ]
 
-    res = client.delete(
-        f"/v1/studies/{study_id}/districts/district%201",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res = client.delete(f"/v1/studies/{study_id}/districts/district%201", headers=admin_headers)
     assert res.status_code == 200
 
     # Optimization form
 
-    res_optimization_config = client.get(
-        f"/v1/studies/{study_id}/config/optimization/form",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res_optimization_config = client.get(f"/v1/studies/{study_id}/config/optimization/form", headers=admin_headers)
     res_optimization_config_json = res_optimization_config.json()
     assert res_optimization_config_json == {
         "bindingConstraints": True,
@@ -894,17 +777,14 @@ def test_area_management(app: FastAPI):
 
     client.put(
         f"/v1/studies/{study_id}/config/optimization/form",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+        headers=admin_headers,
         json={
             "strategicReserve": False,
             "unfeasibleProblemBehavior": UnfeasibleProblemBehavior.WARNING_VERBOSE.value,
             "simplexOptimizationRange": SimplexOptimizationRange.DAY.value,
         },
     )
-    res_optimization_config = client.get(
-        f"/v1/studies/{study_id}/config/optimization/form",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res_optimization_config = client.get(f"/v1/studies/{study_id}/config/optimization/form", headers=admin_headers)
     res_optimization_config_json = res_optimization_config.json()
     assert res_optimization_config_json == {
         "bindingConstraints": True,
@@ -923,10 +803,7 @@ def test_area_management(app: FastAPI):
 
     # Adequacy patch form
 
-    res_adequacy_patch_config = client.get(
-        f"/v1/studies/{study_id}/config/adequacypatch/form",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res_adequacy_patch_config = client.get(f"/v1/studies/{study_id}/config/adequacypatch/form", headers=admin_headers)
     res_adequacy_patch_config_json = res_adequacy_patch_config.json()
     assert res_adequacy_patch_config_json == {
         "enableAdequacyPatch": False,
@@ -942,17 +819,14 @@ def test_area_management(app: FastAPI):
 
     client.put(
         f"/v1/studies/{study_id}/config/adequacypatch/form",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+        headers=admin_headers,
         json={
             "ntcBetweenPhysicalAreasOutAdequacyPatch": False,
             "priceTakingOrder": PriceTakingOrder.LOAD.value,
             "thresholdDisplayLocalMatchingRuleViolations": 1.1,
         },
     )
-    res_adequacy_patch_config = client.get(
-        f"/v1/studies/{study_id}/config/adequacypatch/form",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res_adequacy_patch_config = client.get(f"/v1/studies/{study_id}/config/adequacypatch/form", headers=admin_headers)
     res_adequacy_patch_config_json = res_adequacy_patch_config.json()
     assert res_adequacy_patch_config_json == {
         "enableAdequacyPatch": False,
@@ -968,10 +842,7 @@ def test_area_management(app: FastAPI):
 
     # General form
 
-    res_general_config = client.get(
-        f"/v1/studies/{study_id}/config/general/form",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res_general_config = client.get(f"/v1/studies/{study_id}/config/general/form", headers=admin_headers)
     res_general_config_json = res_general_config.json()
     assert res_general_config_json == {
         "mode": "Economy",
@@ -994,7 +865,7 @@ def test_area_management(app: FastAPI):
 
     client.put(
         f"/v1/studies/{study_id}/config/general/form",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+        headers=admin_headers,
         json={
             "mode": Mode.ADEQUACY.value,
             "firstDay": 2,
@@ -1002,10 +873,7 @@ def test_area_management(app: FastAPI):
             "leapYear": True,
         },
     )
-    res_general_config = client.get(
-        f"/v1/studies/{study_id}/config/general/form",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res_general_config = client.get(f"/v1/studies/{study_id}/config/general/form", headers=admin_headers)
     res_general_config_json = res_general_config.json()
     assert res_general_config_json == {
         "mode": Mode.ADEQUACY.value,
@@ -1029,8 +897,7 @@ def test_area_management(app: FastAPI):
     # Thematic trimming form
 
     res_thematic_trimming_config = client.get(
-        f"/v1/studies/{study_id}/config/thematictrimming/form",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+        f"/v1/studies/{study_id}/config/thematictrimming/form", headers=admin_headers
     )
     res_thematic_trimming_config_json = res_thematic_trimming_config.json()
     assert res_thematic_trimming_config_json == {
@@ -1101,7 +968,7 @@ def test_area_management(app: FastAPI):
 
     client.put(
         f"/v1/studies/{study_id}/config/thematictrimming/form",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+        headers=admin_headers,
         json={
             "ovCost": False,
             "opCost": True,
@@ -1169,8 +1036,7 @@ def test_area_management(app: FastAPI):
         },
     )
     res_thematic_trimming_config = client.get(
-        f"/v1/studies/{study_id}/config/thematictrimming/form",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+        f"/v1/studies/{study_id}/config/thematictrimming/form", headers=admin_headers
     )
     res_thematic_trimming_config_json = res_thematic_trimming_config.json()
     assert res_thematic_trimming_config_json == {
@@ -1241,10 +1107,7 @@ def test_area_management(app: FastAPI):
 
     # Properties form
 
-    res_properties_config = client.get(
-        f"/v1/studies/{study_id}/areas/area 1/properties/form",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res_properties_config = client.get(f"/v1/studies/{study_id}/areas/area 1/properties/form", headers=admin_headers)
     res_properties_config_json = res_properties_config.json()
     res_properties_config_json["filterSynthesis"] = set(res_properties_config_json["filterSynthesis"])
     res_properties_config_json["filterByYear"] = set(res_properties_config_json["filterByYear"])
@@ -1264,7 +1127,7 @@ def test_area_management(app: FastAPI):
 
     client.put(
         f"/v1/studies/{study_id}/areas/area 1/properties/form",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+        headers=admin_headers,
         json={
             "color": "123,108,96",
             "posX": 3.4,
@@ -1279,10 +1142,7 @@ def test_area_management(app: FastAPI):
             "adequacyPatchMode": AdequacyPatchMode.INSIDE.value,
         },
     )
-    res_properties_config = client.get(
-        f"/v1/studies/{study_id}/areas/area 1/properties/form",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res_properties_config = client.get(f"/v1/studies/{study_id}/areas/area 1/properties/form", headers=admin_headers)
     res_properties_config_json = res_properties_config.json()
     res_properties_config_json["filterSynthesis"] = set(res_properties_config_json["filterSynthesis"])
     res_properties_config_json["filterByYear"] = set(res_properties_config_json["filterByYear"])
@@ -1304,7 +1164,7 @@ def test_area_management(app: FastAPI):
 
     res_hydro_config = client.put(
         f"/v1/studies/{study_id}/areas/area 1/hydro/form",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+        headers=admin_headers,
         json={
             "interDailyBreakdown": 8,
             "intraDailyModulation": 7,
@@ -1314,10 +1174,7 @@ def test_area_management(app: FastAPI):
     )
     assert res_hydro_config.status_code == 200
 
-    res_hydro_config = client.get(
-        f"/v1/studies/{study_id}/areas/area 1/hydro/form",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res_hydro_config = client.get(f"/v1/studies/{study_id}/areas/area 1/hydro/form", headers=admin_headers)
     res_hydro_config_json = res_hydro_config.json()
 
     assert res_hydro_config_json == {
@@ -1340,10 +1197,7 @@ def test_area_management(app: FastAPI):
 
     # Time-series form
 
-    res_ts_config = client.get(
-        f"/v1/studies/{study_id}/config/timeseries/form",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res_ts_config = client.get(f"/v1/studies/{study_id}/config/timeseries/form", headers=admin_headers)
     res_ts_config_json = res_ts_config.json()
     assert res_ts_config_json == {
         "load": {
@@ -1387,7 +1241,7 @@ def test_area_management(app: FastAPI):
     }
     res_ts_config = client.put(
         f"/v1/studies/{study_id}/config/timeseries/form",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+        headers=admin_headers,
         json={
             "thermal": {"stochasticTsStatus": True},
             "load": {
@@ -1397,10 +1251,7 @@ def test_area_management(app: FastAPI):
             },
         },
     )
-    res_ts_config = client.get(
-        f"/v1/studies/{study_id}/config/timeseries/form",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res_ts_config = client.get(f"/v1/studies/{study_id}/config/timeseries/form", headers=admin_headers)
     res_ts_config_json = res_ts_config.json()
     assert res_ts_config_json == {
         "load": {
@@ -1451,7 +1302,7 @@ def test_area_management(app: FastAPI):
 
     res_table_data = client.get(
         table_mode_url,
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+        headers=admin_headers,
         params={
             "table_type": TableTemplateType.AREA.value,
             "columns": ",".join(FIELDS_INFO_BY_TYPE[TableTemplateType.AREA]),
@@ -1487,7 +1338,7 @@ def test_area_management(app: FastAPI):
 
     client.put(
         table_mode_url,
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+        headers=admin_headers,
         params={
             "table_type": TableTemplateType.AREA.value,
         },
@@ -1508,7 +1359,7 @@ def test_area_management(app: FastAPI):
     )
     res_table_data = client.get(
         table_mode_url,
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+        headers=admin_headers,
         params={
             "table_type": TableTemplateType.AREA.value,
             "columns": ",".join(list(FIELDS_INFO_BY_TYPE[TableTemplateType.AREA])),
@@ -1546,7 +1397,7 @@ def test_area_management(app: FastAPI):
 
     res_table_data = client.get(
         table_mode_url,
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+        headers=admin_headers,
         params={
             "table_type": TableTemplateType.LINK.value,
             "columns": ",".join(FIELDS_INFO_BY_TYPE[TableTemplateType.LINK]),
@@ -1570,7 +1421,7 @@ def test_area_management(app: FastAPI):
 
     client.put(
         table_mode_url,
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+        headers=admin_headers,
         params={
             "table_type": TableTemplateType.LINK.value,
         },
@@ -1585,7 +1436,7 @@ def test_area_management(app: FastAPI):
     )
     res_table_data = client.get(
         table_mode_url,
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+        headers=admin_headers,
         params={
             "table_type": TableTemplateType.LINK.value,
             "columns": ",".join(FIELDS_INFO_BY_TYPE[TableTemplateType.LINK]),
@@ -1611,7 +1462,7 @@ def test_area_management(app: FastAPI):
 
     res_table_data = client.get(
         table_mode_url,
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+        headers=admin_headers,
         params={
             "table_type": TableTemplateType.CLUSTER.value,
             "columns": ",".join(FIELDS_INFO_BY_TYPE[TableTemplateType.CLUSTER]),
@@ -1667,7 +1518,7 @@ def test_area_management(app: FastAPI):
 
     client.put(
         table_mode_url,
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+        headers=admin_headers,
         params={
             "table_type": TableTemplateType.CLUSTER.value,
         },
@@ -1686,7 +1537,7 @@ def test_area_management(app: FastAPI):
     )
     res_table_data = client.get(
         table_mode_url,
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+        headers=admin_headers,
         params={
             "table_type": TableTemplateType.CLUSTER.value,
             "columns": ",".join(FIELDS_INFO_BY_TYPE[TableTemplateType.CLUSTER]),
@@ -1744,7 +1595,7 @@ def test_area_management(app: FastAPI):
 
     res_table_data = client.get(
         table_mode_url,
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+        headers=admin_headers,
         params={
             "table_type": TableTemplateType.RENEWABLE.value,
             "columns": ",".join(FIELDS_INFO_BY_TYPE[TableTemplateType.RENEWABLE]),
@@ -1770,7 +1621,7 @@ def test_area_management(app: FastAPI):
 
     client.put(
         table_mode_url,
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+        headers=admin_headers,
         params={
             "table_type": TableTemplateType.RENEWABLE.value,
         },
@@ -1787,7 +1638,7 @@ def test_area_management(app: FastAPI):
     )
     res_table_data = client.get(
         table_mode_url,
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+        headers=admin_headers,
         params={
             "table_type": TableTemplateType.RENEWABLE.value,
             "columns": ",".join(FIELDS_INFO_BY_TYPE[TableTemplateType.RENEWABLE]),
@@ -1815,7 +1666,7 @@ def test_area_management(app: FastAPI):
 
     res_table_data = client.get(
         table_mode_url,
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+        headers=admin_headers,
         params={
             "table_type": TableTemplateType.BINDING_CONSTRAINT.value,
             "columns": ",".join(FIELDS_INFO_BY_TYPE[TableTemplateType.BINDING_CONSTRAINT]),
@@ -1837,7 +1688,7 @@ def test_area_management(app: FastAPI):
 
     client.put(
         table_mode_url,
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+        headers=admin_headers,
         params={
             "table_type": TableTemplateType.BINDING_CONSTRAINT.value,
         },
@@ -1854,7 +1705,7 @@ def test_area_management(app: FastAPI):
     )
     res_table_data = client.get(
         table_mode_url,
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+        headers=admin_headers,
         params={
             "table_type": TableTemplateType.BINDING_CONSTRAINT.value,
             "columns": ",".join(FIELDS_INFO_BY_TYPE[TableTemplateType.BINDING_CONSTRAINT]),
@@ -1874,10 +1725,7 @@ def test_area_management(app: FastAPI):
         },
     }
 
-    res = client.get(
-        f"/v1/studies/{study_id}/bindingconstraints/binding constraint 1",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res = client.get(f"/v1/studies/{study_id}/bindingconstraints/binding constraint 1", headers=admin_headers)
     binding_constraint_1 = res.json()
     assert res.status_code == 200
 
@@ -1892,7 +1740,7 @@ def test_area_management(app: FastAPI):
 
     res_renewable_config = client.put(
         f"/v1/studies/{study_id}/areas/area 1/clusters/renewable/cluster renewable 1/form",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+        headers=admin_headers,
         json={
             "name": "cluster renewable 1 renamed",
             "tsInterpretation": TimeSeriesInterpretation.PRODUCTION_FACTOR.value,
@@ -1904,8 +1752,7 @@ def test_area_management(app: FastAPI):
     assert res_renewable_config.status_code == 200
 
     res_renewable_config = client.get(
-        f"/v1/studies/{study_id}/areas/area 1/clusters/renewable/cluster renewable 1/form",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+        f"/v1/studies/{study_id}/areas/area 1/clusters/renewable/cluster renewable 1/form", headers=admin_headers
     )
     res_renewable_config_json = res_renewable_config.json()
 
@@ -1922,7 +1769,7 @@ def test_area_management(app: FastAPI):
 
     res_thermal_config = client.put(
         f"/v1/studies/{study_id}/areas/area 1/clusters/thermal/cluster 1/form",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+        headers=admin_headers,
         json={
             "group": "Lignite",
             "name": "cluster 1 renamed",
@@ -1962,8 +1809,7 @@ def test_area_management(app: FastAPI):
     assert res_thermal_config.status_code == 200
 
     res_thermal_config = client.get(
-        f"/v1/studies/{study_id}/areas/area 1/clusters/thermal/cluster 1/form",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+        f"/v1/studies/{study_id}/areas/area 1/clusters/thermal/cluster 1/form", headers=admin_headers
     )
     res_thermal_config_json = res_thermal_config.json()
 
@@ -2005,31 +1851,22 @@ def test_area_management(app: FastAPI):
 
     # Links
 
-    client.delete(
-        f"/v1/studies/{study_id}/links/area%201/area%202",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
-    res_links = client.get(
-        f"/v1/studies/{study_id}/links",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    client.delete(f"/v1/studies/{study_id}/links/area%201/area%202", headers=admin_headers)
+    res_links = client.get(f"/v1/studies/{study_id}/links", headers=admin_headers)
     assert res_links.json() == []
 
     res = client.put(
         f"/v1/studies/{study_id}/areas/area%201/ui",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+        headers=admin_headers,
         json={"x": 100, "y": 100, "color_rgb": [255, 0, 100]},
     )
     res = client.put(
         f"/v1/studies/{study_id}/areas/area%202/ui?layer=1",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+        headers=admin_headers,
         json={"x": 105, "y": 105, "color_rgb": [255, 10, 100]},
     )
     assert res.status_code == 200
-    res_ui = client.get(
-        f"/v1/studies/{study_id}/areas?ui=true",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res_ui = client.get(f"/v1/studies/{study_id}/areas?ui=true", headers=admin_headers)
     assert res_ui.json() == {
         "area 1": {
             "ui": {
@@ -2059,15 +1896,9 @@ def test_area_management(app: FastAPI):
         },
     }
 
-    result = client.delete(
-        f"/v1/studies/{study_id}/areas/area%201",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    result = client.delete(f"/v1/studies/{study_id}/areas/area%201", headers=admin_headers)
     assert result.status_code == 200
-    res_areas = client.get(
-        f"/v1/studies/{study_id}/areas",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res_areas = client.get(f"/v1/studies/{study_id}/areas", headers=admin_headers)
     assert res_areas.json() == [
         {
             "id": "area 2",
@@ -2106,101 +1937,62 @@ def test_area_management(app: FastAPI):
     ]
 
 
-def test_archive(app: FastAPI, tmp_path: Path):
-    client, admin_credentials = init_test(app)
+def test_archive(client: TestClient, admin_access_token: str, study_id: str, tmp_path: Path):
+    admin_headers = {"Authorization": f"Bearer {admin_access_token}"}
 
-    study_res = client.post(
-        "/v1/studies?name=foo",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    study_res = client.post("/v1/studies?name=foo", headers=admin_headers)
     study_id = study_res.json()
 
-    res = client.put(
-        f"/v1/studies/{study_id}/archive",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res = client.put(f"/v1/studies/{study_id}/archive", headers=admin_headers)
     assert res.status_code == 200
     task_id = res.json()
     wait_for(
         lambda: client.get(
             f"/v1/tasks/{task_id}",
-            headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+            headers=admin_headers,
         ).json()["status"]
         == 3
     )
 
-    res = client.get(
-        f"/v1/studies/{study_id}",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res = client.get(f"/v1/studies/{study_id}", headers=admin_headers)
     assert res.json()["archived"]
     assert (tmp_path / "archive_dir" / f"{study_id}.zip").exists()
 
-    res = client.put(
-        f"/v1/studies/{study_id}/unarchive",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res = client.put(f"/v1/studies/{study_id}/unarchive", headers=admin_headers)
 
     task_id = res.json()
     wait_for(
         lambda: client.get(
             f"/v1/tasks/{task_id}",
-            headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+            headers=admin_headers,
         ).json()["status"]
         == 3
     )
 
-    res = client.get(
-        f"/v1/studies/{study_id}",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res = client.get(f"/v1/studies/{study_id}", headers=admin_headers)
     assert not res.json()["archived"]
     assert not (tmp_path / "archive_dir" / f"{study_id}.zip").exists()
 
 
-def test_variant_manager(app: FastAPI):
-    client = TestClient(app, raise_server_exceptions=False)
+def test_variant_manager(client: TestClient, admin_access_token: str, study_id: str):
+    admin_headers = {"Authorization": f"Bearer {admin_access_token}"}
 
-    res = client.post("/v1/login", json={"username": "admin", "password": "admin"})
-    admin_credentials = res.json()
-
-    base_study_res = client.post(
-        "/v1/studies?name=foo",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    base_study_res = client.post("/v1/studies?name=foo", headers=admin_headers)
 
     base_study_id = base_study_res.json()
 
-    res = client.post(
-        f"/v1/studies/{base_study_id}/variants?name=foo",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res = client.post(f"/v1/studies/{base_study_id}/variants?name=foo", headers=admin_headers)
     variant_id = res.json()
 
-    client.post(
-        f"/v1/launcher/run/{variant_id}",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    client.post(f"/v1/launcher/run/{variant_id}", headers=admin_headers)
 
-    res = client.get(
-        f"v1/studies/{variant_id}/synthesis",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res = client.get(f"v1/studies/{variant_id}/synthesis", headers=admin_headers)
 
     assert variant_id in res.json()["output_path"]
 
-    client.post(
-        f"/v1/studies/{variant_id}/variants?name=bar",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
-    client.post(
-        f"/v1/studies/{variant_id}/variants?name=baz",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
-    res = client.get(
-        f"/v1/studies/{base_study_id}/variants",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    client.post(f"/v1/studies/{variant_id}/variants?name=bar", headers=admin_headers)
+    client.post(f"/v1/studies/{variant_id}/variants?name=baz", headers=admin_headers)
+    res = client.get(f"/v1/studies/{base_study_id}/variants", headers=admin_headers)
     children = res.json()
     assert children["node"]["name"] == "foo"
     assert len(children["children"]) == 1
@@ -2215,7 +2007,7 @@ def test_variant_manager(app: FastAPI):
 
     client.post(
         "/v1/users",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+        headers=admin_headers,
         json={"name": "George", "password": "mypass"},
     )
     res = client.post("/v1/login", json={"username": "George", "password": "mypass"})
@@ -2231,30 +2023,18 @@ def test_variant_manager(app: FastAPI):
         headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
     )
     variant_id = res.json()
-    res = client.get(
-        f"/v1/studies/{variant_id}/commands",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res = client.get(f"/v1/studies/{variant_id}/commands", headers=admin_headers)
     assert len(res.json()) == 0
-    res = client.post(
-        f"/v1/studies/{base_study_id}/variants?name=foo",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res = client.post(f"/v1/studies/{base_study_id}/variants?name=foo", headers=admin_headers)
     variant_id = res.json()
-    res = client.get(
-        f"/v1/studies/{variant_id}/commands",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res = client.get(f"/v1/studies/{variant_id}/commands", headers=admin_headers)
     assert len(res.json()) == 1
     command = res.json()[0]
     assert command["action"] == "update_config"
     assert command["args"]["target"] == "study"
     assert command["args"]["data"]["antares"]["author"] == "admin"
 
-    res = client.get(
-        f"/v1/studies/{variant_id}/parents",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res = client.get(f"/v1/studies/{variant_id}/parents", headers=admin_headers)
     assert len(res.json()) == 1
     assert res.json()[0]["id"] == base_study_id
     assert res.status_code == 200
@@ -2267,7 +2047,7 @@ def test_variant_manager(app: FastAPI):
                 "args": {"area_name": "testZone", "metadata": {}},
             }
         ],
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+        headers=admin_headers,
     )
     assert res.status_code == 200
     assert len(res.json()) == 1
@@ -2280,7 +2060,7 @@ def test_variant_manager(app: FastAPI):
                 "args": {"area_name": "testZone2", "metadata": {}},
             }
         ],
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+        headers=admin_headers,
     )
     assert res.status_code == 200
 
@@ -2290,7 +2070,7 @@ def test_variant_manager(app: FastAPI):
             "action": "create_area",
             "args": {"area_name": "testZone3", "metadata": {}},
         },
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+        headers=admin_headers,
     )
     assert res.status_code == 200
 
@@ -2301,14 +2081,11 @@ def test_variant_manager(app: FastAPI):
             "action": "create_area",
             "args": {"area_name": "testZone4", "metadata": {}},
         },
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+        headers=admin_headers,
     )
     assert res.status_code == 200
 
-    res = client.get(
-        f"/v1/studies/{variant_id}/commands",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res = client.get(f"/v1/studies/{variant_id}/commands", headers=admin_headers)
     assert len(res.json()) == 4
     assert res.status_code == 200
 
@@ -2324,111 +2101,68 @@ def test_variant_manager(app: FastAPI):
                 "args": {"area_name": "testZoneReplace1", "metadata": {}},
             },
         ],
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+        headers=admin_headers,
     )
     assert res.status_code == 200
 
-    res = client.get(
-        f"/v1/studies/{variant_id}/commands",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res = client.get(f"/v1/studies/{variant_id}/commands", headers=admin_headers)
     assert len(res.json()) == 2
     assert res.status_code == 200
 
     command_id = res.json()[1]["id"]
 
-    res = client.put(
-        f"/v1/studies/{variant_id}/commands/{command_id}/move?index=0",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res = client.put(f"/v1/studies/{variant_id}/commands/{command_id}/move?index=0", headers=admin_headers)
     assert res.status_code == 200
 
-    res = client.get(
-        f"/v1/studies/{variant_id}/commands",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res = client.get(f"/v1/studies/{variant_id}/commands", headers=admin_headers)
     assert res.json()[0]["id"] == command_id
     assert res.status_code == 200
 
-    res = client.delete(
-        f"/v1/studies/{variant_id}/commands/{command_id}",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res = client.delete(f"/v1/studies/{variant_id}/commands/{command_id}", headers=admin_headers)
 
     assert res.status_code == 200
 
-    res = client.put(
-        f"/v1/studies/{variant_id}/generate",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res = client.put(f"/v1/studies/{variant_id}/generate", headers=admin_headers)
     assert res.status_code == 200
 
-    res = client.get(
-        f"/v1/tasks/{res.json()}?wait_for_completion=true",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res = client.get(f"/v1/tasks/{res.json()}?wait_for_completion=true", headers=admin_headers)
     assert res.status_code == 200
     task_result = TaskDTO.parse_obj(res.json())
     assert task_result.status == TaskStatus.COMPLETED
     assert task_result.result.success
 
-    res = client.get(
-        f"/v1/studies/{variant_id}",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res = client.get(f"/v1/studies/{variant_id}", headers=admin_headers)
     assert res.status_code == 200
 
-    res = client.post(
-        f"/v1/studies/{variant_id}/freeze?name=bar",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res = client.post(f"/v1/studies/{variant_id}/freeze?name=bar", headers=admin_headers)
     assert res.status_code == 500
 
     new_study_id = "newid"
 
-    res = client.get(
-        f"/v1/studies/{new_study_id}",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res = client.get(f"/v1/studies/{new_study_id}", headers=admin_headers)
     assert res.status_code == 404
 
-    res = client.delete(
-        f"/v1/studies/{variant_id}/commands",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res = client.delete(f"/v1/studies/{variant_id}/commands", headers=admin_headers)
     assert res.status_code == 200
 
-    res = client.get(
-        f"/v1/studies/{variant_id}/commands",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res = client.get(f"/v1/studies/{variant_id}/commands", headers=admin_headers)
     assert res.status_code == 200
     assert len(res.json()) == 0
 
-    res = client.delete(
-        f"/v1/studies/{variant_id}",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res = client.delete(f"/v1/studies/{variant_id}", headers=admin_headers)
     assert res.status_code == 200
 
-    res = client.get(
-        f"/v1/studies/{variant_id}",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res = client.get(f"/v1/studies/{variant_id}", headers=admin_headers)
     assert res.status_code == 404
 
 
-def test_maintenance(app: FastAPI):
-    client = TestClient(app, raise_server_exceptions=False)
-
-    # Get admin credentials
-    res = client.post("/v1/login", json={"username": "admin", "password": "admin"})
-    admin_credentials = res.json()
+def test_maintenance(client: TestClient, admin_access_token: str, study_id: str):
+    admin_headers = {"Authorization": f"Bearer {admin_access_token}"}
 
     # Create non admin user
     res = client.post(
         "/v1/users",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+        headers=admin_headers,
         json={"name": "user", "password": "user"},
     )
     assert res.status_code == 200
@@ -2441,13 +2175,13 @@ def test_maintenance(app: FastAPI):
         # Set maintenance mode
         result = client.post(
             f"/v1/core/maintenance?maintenance={'true' if value else 'false'}",
-            headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+            headers=admin_headers,
         )
         assert result.status_code == 200
 
         result = client.get(
             "/v1/core/maintenance",
-            headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+            headers=admin_headers,
         )
         assert result.status_code == 200
         assert result.json() == value
@@ -2466,37 +2200,28 @@ def test_maintenance(app: FastAPI):
     message = "Hey"
     res = client.post(
         "/v1/core/maintenance/message",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+        headers=admin_headers,
         json=message,
     )
     assert res.status_code == 200
 
     # Set message info when not admin
-    res = client.get(
-        "/v1/core/maintenance/message",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res = client.get("/v1/core/maintenance/message", headers=admin_headers)
     assert res.status_code == 200
     assert res.json() == message
 
 
-def test_binding_constraint_manager(app: FastAPI):
-    client = TestClient(app, raise_server_exceptions=False)
-    res = client.post("/v1/login", json={"username": "admin", "password": "admin"})
-    admin_credentials = res.json()
-    headers = {"Authorization": f'Bearer {admin_credentials["access_token"]}'}
+def test_binding_constraint_manager(client: TestClient, admin_access_token: str, study_id: str):
+    admin_headers = {"Authorization": f"Bearer {admin_access_token}"}
 
-    created = client.post(
-        "/v1/studies?name=foo",
-        headers=headers,
-    )
+    created = client.post("/v1/studies?name=foo", headers=admin_headers)
     study_id = created.json()
 
     area1_name = "area1"
     area2_name = "area2"
     res = client.post(
         f"/v1/studies/{study_id}/areas",
-        headers=headers,
+        headers=admin_headers,
         json={
             "name": area1_name,
             "type": AreaType.AREA.value,
@@ -2507,7 +2232,7 @@ def test_binding_constraint_manager(app: FastAPI):
 
     res = client.post(
         f"/v1/studies/{study_id}/areas",
-        headers=headers,
+        headers=admin_headers,
         json={
             "name": area2_name,
             "type": AreaType.AREA.value,
@@ -2518,7 +2243,7 @@ def test_binding_constraint_manager(app: FastAPI):
 
     res = client.post(
         f"/v1/studies/{study_id}/links",
-        headers=headers,
+        headers=admin_headers,
         json={
             "area1": area1_name,
             "area2": area2_name,
@@ -2527,10 +2252,7 @@ def test_binding_constraint_manager(app: FastAPI):
     assert res.status_code == 200
 
     # Create Variant
-    res = client.post(
-        f"/v1/studies/{study_id}/variants?name=foo",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res = client.post(f"/v1/studies/{study_id}/variants?name=foo", headers=admin_headers)
     variant_id = res.json()
 
     # Create Binding constraints
@@ -2549,7 +2271,7 @@ def test_binding_constraint_manager(app: FastAPI):
                 },
             }
         ],
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+        headers=admin_headers,
     )
     assert res.status_code == 200
 
@@ -2568,15 +2290,12 @@ def test_binding_constraint_manager(app: FastAPI):
                 },
             }
         ],
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+        headers=admin_headers,
     )
     assert res.status_code == 200
 
     # Get Binding Constraint list
-    res = client.get(
-        f"/v1/studies/{variant_id}/bindingconstraints",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res = client.get(f"/v1/studies/{variant_id}/bindingconstraints", headers=admin_headers)
     binding_constraints_list = res.json()
     assert res.status_code == 200
     assert len(binding_constraints_list) == 2
@@ -2590,15 +2309,12 @@ def test_binding_constraint_manager(app: FastAPI):
     res = client.put(
         f"v1/studies/{variant_id}/bindingconstraints/{binding_constraint_id}",
         json={"key": "comments", "value": new_comment},
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+        headers=admin_headers,
     )
     assert res.status_code == 200
 
     # Get Binding Constraint
-    res = client.get(
-        f"/v1/studies/{variant_id}/bindingconstraints/{binding_constraint_id}",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res = client.get(f"/v1/studies/{variant_id}/bindingconstraints/{binding_constraint_id}", headers=admin_headers)
     binding_constraint = res.json()
     comments = binding_constraint["comments"]
     assert res.status_code == 200
@@ -2612,15 +2328,12 @@ def test_binding_constraint_manager(app: FastAPI):
             "offset": 2,
             "data": {"area1": area1_name, "area2": area2_name},
         },
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+        headers=admin_headers,
     )
     assert res.status_code == 200
 
     # Get Binding Constraint
-    res = client.get(
-        f"/v1/studies/{variant_id}/bindingconstraints/{binding_constraint_id}",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res = client.get(f"/v1/studies/{variant_id}/bindingconstraints/{binding_constraint_id}", headers=admin_headers)
     binding_constraint = res.json()
     constraints = binding_constraint["constraints"]
     assert res.status_code == 200
@@ -2639,15 +2352,12 @@ def test_binding_constraint_manager(app: FastAPI):
             "id": f"{area1_name}%{area2_name}",
             "weight": 3,
         },
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+        headers=admin_headers,
     )
     assert res.status_code == 200
 
     # Get Binding Constraint
-    res = client.get(
-        f"/v1/studies/{variant_id}/bindingconstraints/{binding_constraint_id}",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res = client.get(f"/v1/studies/{variant_id}/bindingconstraints/{binding_constraint_id}", headers=admin_headers)
     binding_constraint = res.json()
     constraints = binding_constraint["constraints"]
     assert res.status_code == 200
@@ -2662,23 +2372,19 @@ def test_binding_constraint_manager(app: FastAPI):
     # Remove Constraint term
     res = client.delete(
         f"/v1/studies/{variant_id}/bindingconstraints/{binding_constraint_id}/term/{area1_name}%{area2_name}",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
+        headers=admin_headers,
     )
     assert res.status_code == 200
 
     # Get Binding Constraint
-    res = client.get(
-        f"/v1/studies/{variant_id}/bindingconstraints/{binding_constraint_id}",
-        headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
-    )
+    res = client.get(f"/v1/studies/{variant_id}/bindingconstraints/{binding_constraint_id}", headers=admin_headers)
     binding_constraint = res.json()
     constraints = binding_constraint["constraints"]
     assert res.status_code == 200
     assert constraints is None
 
 
-def test_copy(app: FastAPI, admin_access_token: str, study_id: str) -> None:
-    client, _ = init_test(app)
+def test_copy(client: TestClient, admin_access_token: str, study_id: str) -> None:
     admin_headers = {"Authorization": f"Bearer {admin_access_token}"}
 
     # Copy a study with admin user who belongs to a group
