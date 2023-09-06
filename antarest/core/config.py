@@ -17,6 +17,10 @@ logger = logging.getLogger(__name__)
 
 
 class LauncherConfNotAvailableException(HTTPException):
+    """
+    This exception  is raised in order to  detect errors from conf.py
+    """
+
     def __init__(self, msg_error: str):
         super(LauncherConfNotAvailableException, self).__init__(HTTPStatus.BAD_REQUEST, msg_error)
 
@@ -187,9 +191,9 @@ class NbCoresConfig:
         Retrieves the number of cores parameters, returning a dictionary containing the values "min"
         (minimum allowed value), "defaultValue" (default value), and "max" (maximum allowed value)
         Args:
-            default:
-            max_cpu:
-            min_cpu:
+            default: default number of core cpu
+            max_cpu: minimum number of core cpu
+            min_cpu: maximum number of core cpu
         Returns: Dict of core config
         """
         NbCoresConfig.__validate_nb_cores(min_cpu=min_cpu, max_cpu=max_cpu, default=default)
