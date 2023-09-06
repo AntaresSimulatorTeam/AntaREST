@@ -27,7 +27,8 @@ def wait_task_completion(
     end_time = time.time() + timeout
     while time.time() < end_time:
         time.sleep(0.1)
-        res = client.get(
+        res = client.request(
+            "GET",
             f"/v1/tasks/{task_id}",
             headers={"Authorization": f"Bearer {access_token}"},
             json={"wait_for_completion": True},

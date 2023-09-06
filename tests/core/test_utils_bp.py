@@ -39,5 +39,5 @@ def test_server_health() -> None:
     app = FastAPI(title=__name__)
     app.include_router(create_utils_routes(Config()))
     client = TestClient(app)
-    result = client.get("/health", stream=True)
+    result = client.get("/health")
     assert result.json() == {"status": "available"}

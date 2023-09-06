@@ -79,9 +79,10 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
 
     @bp.put(
         "/studies/{uuid}/comments",
-        status_code=HTTPStatus.NO_CONTENT.value,
+        status_code=HTTPStatus.NO_CONTENT,
         tags=[APITag.study_raw_data],
         summary="Update comments",
+        response_model=None,
     )
     def edit_comments(
         uuid: str,
