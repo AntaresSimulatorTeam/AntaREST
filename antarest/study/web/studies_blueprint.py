@@ -127,11 +127,7 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         zip_binary = io.BytesIO(study)
 
         params = RequestParameters(user=current_user)
-        group_ids = (
-            groups.split(",")
-            if groups
-            else [group.id for group in current_user.groups]
-        )
+        group_ids = groups.split(",") if groups else [group.id for group in current_user.groups]
 
         uuid = study_service.import_study(zip_binary, group_ids, params)
 

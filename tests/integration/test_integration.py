@@ -2411,9 +2411,7 @@ def test_import(client: TestClient, admin_access_token: str, study_id: str) -> N
         headers=admin_headers,
         json={"name": "George", "password": "mypass"},
     )
-    res = client.post(
-        "/v1/login", json={"username": "George", "password": "mypass"}
-    )
+    res = client.post("/v1/login", json={"username": "George", "password": "mypass"})
     george_credentials = res.json()
 
     # George imports a study
