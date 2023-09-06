@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import IO, Generic, List, Optional, TypeVar, Union
+from typing import IO, Generic, List, Optional, TypeVar, Union, Sequence
 
 from antarest.core.exceptions import StudyNotFoundError
 from antarest.core.model import JSON
@@ -59,12 +59,13 @@ class IStudyStorageService(ABC, Generic[T]):
         raise NotImplementedError()
 
     @abstractmethod
-    def copy(self, src_meta: T, dest_name: str, groups: List[str], with_outputs: bool = False) -> T:
+    def copy(self, src_meta: T, dest_name: str, groups: Sequence[str], with_outputs: bool = False) -> T:
         """
         Copy study to a new destination
         Args:
             src_meta: source study
-            dest_meta: destination study
+            dest_name: destination study
+            groups: Specifies the groups to which your  study will be assigned
             with_outputs: indicate either to copy the output or not
 
         Returns: destination study

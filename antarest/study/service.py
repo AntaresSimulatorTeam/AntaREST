@@ -823,7 +823,7 @@ class StudyService:
             with_outputs: indicate if outputs should be copied too
             use_task: indicate if the task job service should be used
 
-        Returns:
+        Returns: Task ID
 
         """
         src_study = self.get_study(src_uuid)

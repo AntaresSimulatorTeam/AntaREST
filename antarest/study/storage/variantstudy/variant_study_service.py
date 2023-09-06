@@ -6,7 +6,7 @@ import tempfile
 from datetime import datetime
 from functools import reduce
 from pathlib import Path
-from typing import Callable, List, Optional, Tuple, cast
+from typing import Callable, List, Optional, Tuple, cast, Sequence
 from uuid import uuid4
 
 from fastapi import HTTPException
@@ -906,7 +906,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         self,
         src_meta: VariantStudy,
         dst_name: str,
-        groups: List[str],
+        groups: Sequence[str],
         with_outputs: bool = False,
     ) -> VariantStudy:
         """

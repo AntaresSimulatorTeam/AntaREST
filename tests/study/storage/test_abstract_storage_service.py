@@ -1,7 +1,7 @@
 import datetime
 import zipfile
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Sequence
 from unittest.mock import Mock, call
 
 from antarest.core.config import Config, StorageConfig
@@ -31,7 +31,7 @@ class MyStorageService(AbstractStorageService):
         raise NotImplementedError
 
     # noinspection SpellCheckingInspection
-    def copy(self, src_meta: Study, dest_name: str, groups: List[str], with_outputs: bool = False) -> Study:
+    def copy(self, src_meta: Study, dest_name: str, groups: Sequence[str], with_outputs: bool = False) -> Study:
         raise NotImplementedError
 
     def get_raw(

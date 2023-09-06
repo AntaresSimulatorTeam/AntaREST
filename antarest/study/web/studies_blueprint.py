@@ -173,17 +173,19 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> str:
         """
-        This entry point allows you to copy a study to a given path.
-        You can for instance copy a non-managed study to a managed workspace.
+        This endpoint enables you to duplicate a study and place it in a specified location.
+        You can, for instance, copy a non-managed study to a managed workspace.
+
         Args:
-            uuid: The study's id you want to copy
-            dest: The destination workspace
-            with_outputs: Should we also copy the outputs of the study (Default value: False)
-            groups: The groups your study will belong to (Default value: current_user groups)
-            use_task: Should that copy trigger a task. Recommended and default value: True
-            current_user: Current authenticated user.
+        - `uuid`: The identifier of the study you wish to duplicate.
+        - `dest`: The destination workspace where the study will be copied.
+        - `with_outputs`: Indicates whether the study's outputs should also be duplicated. (Default value: False)
+        - `groups`: Specifies the groups to which your duplicated study will be assigned. (Default value: Current user's groups)
+        - `use_task`: Determines whether this duplication operation should trigger a task. It is recommended and set as the default value: True.
+        - `current_user`: Currently authenticated user.
+
         Returns:
-            The id of the copied study
+        - The ID of the duplicated study.
         """
         logger.info(
             f"Copying study {uuid} into new study '{dest}'",

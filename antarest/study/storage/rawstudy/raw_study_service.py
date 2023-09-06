@@ -5,7 +5,7 @@ import time
 from datetime import datetime
 from pathlib import Path
 from threading import Thread
-from typing import IO, List, Optional
+from typing import IO, List, Optional, Sequence
 from uuid import uuid4
 from zipfile import ZipFile
 
@@ -208,7 +208,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         self,
         src_meta: RawStudy,
         dest_name: str,
-        groups: List[str],
+        groups: Sequence[str],
         with_outputs: bool = False,
     ) -> RawStudy:
         """
