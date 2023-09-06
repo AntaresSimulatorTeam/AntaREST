@@ -30,10 +30,8 @@ Then perform the following steps:
 3. Install dependencies to build, test or develop the back end:
 
    ```shell
-   python -m pip install --upgrade pip
+   python3 -m pip install --upgrade pip
    pip install -e .                     # to install in development mode (editable)
-   pip install -r requirements.txt      # production requirements
-   pip install -r requirements-test.txt # production and unit tests requirements
    pip install -r requirements-dev.txt  # production, unit tests and development requirements
    ```
 
@@ -45,25 +43,12 @@ Then perform the following steps:
    npm run build
    cd ..
    ```
-   
-   Alternatively, for local usage in Desktop mode, use:
-
-   ```shell
-   bash scripts/build-front.sh
-   ```
 
 5. Run the application
 
    ```shell
-   python antarest/main.py -c resources/application.yaml --auto-upgrade-db --no-front
+   python3 antarest/main.py -c resources/application.yaml --auto-upgrade-db --no-front
    ```
-   
-   Alternatively, for local usage in Desktop mode, use:
-
-   ```shell
-   python antarest/main.py -c resources/application.yaml --auto-upgrade-db
-   ```
-
 
 ## Deploy
 
