@@ -19,7 +19,7 @@ git clone https://github.com/AntaresSimulatorTeam/AntaREST.git
 cd AntaREST
 ```
 
-Install back dependencies
+Install back-end dependencies
 
 ```shell script
 python -m pip install --upgrade pip
@@ -27,13 +27,24 @@ pip install pydantic --no-binary pydantic
 pip install -r requirements.txt  # use requirements-dev.txt if building a single binary with pyinstaller 
 ```
 
-Build front
+Install the front-end dependencies:
 
 ```shell script
 cd webapp
 npm install
 cd ..
+```
+
+Then build the front-end application:
+ - for use with pyinstaller:
+```shell
 NODE_OPTIONS="--max-old-space-size=8192" ./scripts/build-front.sh
+```
+ - for other uses (docker deployement, ...):
+```shell
+cd webapp
+npm run build
+cd ..
 ```
 
 
@@ -43,21 +54,21 @@ Linux system:
 
 ```shell script
 git log -1 HEAD --format=%H > ./resources/commit_id
-pyinstaller -F antarest/main.py -n server --additional-hooks-dir extra-hooks --add-data resources:resources
+pyinstaller AntaresWebLinux.spec
 ```
 
 Windows system:
 
 ```shell script
 git log -1 HEAD --format=%H > .\resources\commit_id
-pyinstaller -F api_iso_antares\main.py -n server --additional-hooks-dir extra-hooks --add-data ".\resources;.\resources"
+pyinstaller AntaresWebWin.spec
 ```
 
 You can test the build is ok using:
 
 ```shell script
-dist/server -v       # Linux based system
-dist\server.exe -v   # Windows system
+dist/AntaresWeb/AntaresWebServer -v       # Linux based system
+dist\AntaresWeb\AntaresWebServer.exe -v   # Windows system
 ```
 
 ### Using docker
@@ -65,68 +76,51 @@ dist\server.exe -v   # Windows system
 To build the docker image, use the following command:
 
 ```shell script
-docker build --tag antarest -f docker/Dockerfile .
+docker build --tag antarest .
 ```
 
-## Start the API
+## Run the API
 
-### Using builded binary with pyinstaller
+### Using binary built with pyinstaller
 
 ```shell script
-dist/server -s $STUDIES_ABSOLUTE_PATH         # Linux based system
-dist\server.exe -s %STUDIES_ABSOLUTE_PATH%    # Windows system
+dist/AntaresWeb/AntaresWebServer -c </path/to/config.yaml>  # Linux based system
+dist\AntaresWeb\AntaresWebServer.exe -c </path/to/config.yaml>    # Windows system
 ```
-
-* $STUDIES_ABSOLUTE_PATH is the path of the ANTARES studies folders you wish to manipulate
 
 ### Using docker image
 
+You may run the back-end with default configuration using the following command:
 ```shell script
 docker run \
   -p 80:5000 \
-  -e GUNICORN_WORKERS=4 \
-  -v $STUDIES_ABSOLUTE_PATH:/studies \
+  -e GUNICORN_WORKERS=1 \
   antarest
 ```
 
-* Setting the environment variable GUNICORN_WORKERS to *ALL_AVAILABLE* will make GUNICORN use 2 * nb_cpu +1 workers
-    * https://docs.gunicorn.org/en/stable/design.html#how-many-workers
-    * ALL_AVAILABLE is also the default value of GUNICORN_WORKERS if you do not set it
-* $STUDIES_ABSOLUTE_PATH is the path of the ANTARES studies folders you wish to manipulate
-    * If you do not mount */studies* to a host path, the docker image will use the current path as the studies path
-* An exemple is available in this repo in the *script* folder
+However, for a complete deployment including the front-end application, and the use of an external database
+and an external REDIS instance, please refer to the deployement instructions on [readthedocs website](https://antares-web.readthedocs.io/en/latest)
+
 
 ### Using python directly
 
-#### Using the dev wsgi server of Flask
+#### Using uvicorn
 
 ```shell script
-pip install -r ./requirements.txt
-export PYTHONPATH=$PYTHONPATH:.
-python ./api_iso_antares/main.py -s $STUDIES_ABSOLUTE_PATH
+pip install -e .
+
+python ./antarest/main.py -c resources/application.yaml
 ```
 
-* $STUDIES_ABSOLUTE_PATH is the path of the ANTARES studies folders you wish to manipulate
-* An exemple is available in this repo in the *script* folder
-
-#### Using gunicorn wsgi server
+#### Using gunicorn wsgi server with uvicorn workers
 
 ```shell script
-pip install -r ./requirements.txt
-export PYTHONPATH=$PYTHONPATH:.
+pip install -e .
 
-export ANTAREST_CONF=$ANTAREST_CONF_YAML_PATH
+export ANTAREST_CONF=resources/application.yaml
 export GUNICORN_WORKERS=4
-
-gunicorn --config "$YOUR_GUNICORN_CONFIG" antarest.wsgi:app
+gunicorn --config conf/gunicorn.py --worker-class=uvicorn.workers.UvicornWorker antarest.wsgi:app
 ```
-
-* $YOUR_GUNICORN_CONFIG is the path of a gunicorn server configuration file
-    * An example is available in this repo in the *conf* folder
-* Setting the environment variable GUNICORN_WORKERS to *ALL_AVAILABLE* will make GUNICORN use 2 * nb_cpu +1 workers
-    * https://docs.gunicorn.org/en/stable/design.html#how-many-workers
-    * ALL_AVAILABLE is also the default value of GUNICORN_WORKERS if you do not set it
-* An exemple is available in this repo in the *script* folder
 
 ## Examples
 
