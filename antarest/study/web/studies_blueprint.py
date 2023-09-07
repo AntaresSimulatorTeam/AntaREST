@@ -192,7 +192,7 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
             extra={"user": current_user.id},
         )
         source_uuid = uuid
-        group_ids = groups.split(",") if groups else [group.id for group in current_user.groups]
+        group_ids = frozenset([groups.split(",")]) if groups else [group.id for group in current_user.groups]
         source_uuid_sanitized = sanitize_uuid(source_uuid)
         destination_name_sanitized = escape(dest)
 

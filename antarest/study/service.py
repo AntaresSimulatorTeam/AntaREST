@@ -1892,7 +1892,7 @@ class StudyService:
 
         """
         if not owner:
-            raise UserHasNotPermissionError
+            raise UserHasNotPermissionError(f"{JWTUser} valid for authentication")
 
         if isinstance(study, RawStudy):
             study.content_status = content_status
@@ -1902,7 +1902,7 @@ class StudyService:
         for gid in group_ids:
             group = next(filter(lambda g: g.id == gid, owner.groups), None)
             if group is None or not group.role.is_higher_or_equals(RoleType.WRITER) and not owner.is_site_admin():
-                raise UserHasNotPermissionError()
+                raise UserHasNotPermissionError(f"Permission denied for {gid}")
             groups.append(Group(id=group.id, name=group.name))
         study.groups = groups
 
