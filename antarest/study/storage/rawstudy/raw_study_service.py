@@ -215,11 +215,11 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         Copy study to a new destination
         Args:
             src_meta: source study
-            dest_name: destination study
-            groups: groups to assign to the destination study
-            with_outputs: indicate weither to copy the output or not
+            dest_name: The name of the destination study.
+            groups: The groups to which the destination study will be assigned.
+            with_outputs: Indicates whether the study outputs should be copied. (Specify 'True' to copy, 'False' to exclude.)
 
-        Returns: destination study
+        Returns: The destination study.
 
         """
         self._check_study_exists(src_meta)
