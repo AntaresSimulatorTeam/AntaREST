@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from http import HTTPStatus
 from pathlib import Path
 from time import time
-from typing import IO, Any, Callable, Dict, List, Optional, Tuple, Union, cast
+from typing import IO, Any, Callable, Dict, List, Optional, Sequence, Tuple, Union, cast
 from uuid import uuid4
 
 import numpy as np
@@ -820,11 +820,11 @@ class StudyService:
             dest_study_name: destination study
             group_ids: group to attach on new study
             params: request parameters
-            with_outputs: indicate if outputs should be copied too
+            with_outputs: Indicates whether the study's outputs should also be duplicated.
             use_task: indicate if the task job service should be used
 
-        Returns: Task ID
-
+        Returns:
+            The unique identifier of the task copying the study.
         """
         src_study = self.get_study(src_uuid)
         assert_permission(params.user, src_study, StudyPermissionType.READ)
@@ -1877,22 +1877,28 @@ class StudyService:
         self,
         study: Study,
         owner: Optional[JWTUser] = None,
-        group_ids: List[str] = list(),
+        group_ids: Sequence[str] = (),
         content_status: StudyContentStatus = StudyContentStatus.VALID,
     ) -> None:
         """
-        Create new study with owner, group or content_status.
+        Create or update a study with specified attributes.
+
+        This function is responsible for creating a new study or updating an existing one
+        with the provided information.
+
         Args:
-            study: study to save
-            owner: new owner
-            group_ids: groups to attach
-            content_status: new content_status
+            study: The study to be saved or updated.
+            owner: The owner of the study (current authenticated user).
+            group_ids: The list of group IDs to associate with the study.
+            content_status: The new content status for the study.
 
-        Returns:
-
+        Raises:
+            UserHasNotPermissionError:
+                If the owner is not specified or has invalid authentication,
+                or if permission is denied for any of the specified group IDs.
         """
         if not owner:
-            raise UserHasNotPermissionError(f"{JWTUser} invalid for authentication")
+            raise UserHasNotPermissionError("owner is not specified or has invalid authentication")
 
         if isinstance(study, RawStudy):
             study.content_status = content_status
@@ -1902,7 +1908,7 @@ class StudyService:
         for gid in group_ids:
             group = next(filter(lambda g: g.id == gid, owner.groups), None)
             if group is None or not group.role.is_higher_or_equals(RoleType.WRITER) and not owner.is_site_admin():
-                raise UserHasNotPermissionError(f"Permission denied for {gid}")
+                raise UserHasNotPermissionError(f"Permission denied for group ID: {gid}")
             groups.append(Group(id=group.id, name=group.name))
         study.groups = groups
 

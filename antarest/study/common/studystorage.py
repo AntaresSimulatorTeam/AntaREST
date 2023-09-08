@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import IO, Generic, List, Optional, TypeVar, Union, Sequence
+from typing import IO, Generic, List, Optional, Sequence, TypeVar, Union
 
 from antarest.core.exceptions import StudyNotFoundError
 from antarest.core.model import JSON
@@ -61,15 +61,16 @@ class IStudyStorageService(ABC, Generic[T]):
     @abstractmethod
     def copy(self, src_meta: T, dest_name: str, groups: Sequence[str], with_outputs: bool = False) -> T:
         """
-        Copy study to a new destination
+        Create a new study by copying a reference study.
+
         Args:
-            src_meta: source study
-            dest_name: destination study
-            groups: Specifies the groups to which your  study will be assigned
-            with_outputs: indicate either to copy the output or not
+            src_meta: The source study that you want to copy.
+            dest_name: The name for the destination study.
+            groups: A list of groups to assign to the destination study.
+            with_outputs: Indicates whether to copy the outputs as well.
 
-        Returns: destination study
-
+        Returns:
+            The newly created study.
         """
         raise NotImplementedError()
 
@@ -129,10 +130,12 @@ class IStudyStorageService(ABC, Generic[T]):
     def get_study_sim_result(self, metadata: T) -> List[StudySimResultDTO]:
         """
         Get global result information
-        Args:
-            study: study
-        Returns: study output data
 
+        Args:
+            metadata: study
+
+        Returns:
+            study output data
         """
         raise NotImplementedError()
 
@@ -140,13 +143,11 @@ class IStudyStorageService(ABC, Generic[T]):
     def set_reference_output(self, metadata: T, output_id: str, status: bool) -> None:
         """
         Set an output to the reference output of a study
+
         Args:
             metadata: study
-            output_id: the id of output to set the reference status
-            status: true to set it as reference, false to unset it
-
-        Returns:
-
+            output_id: the id of output to set the reference status.
+            status: true to set it as reference, false to unset it.
         """
         raise NotImplementedError()
 
@@ -203,14 +204,15 @@ class IStudyStorageService(ABC, Generic[T]):
     @abstractmethod
     def export_study(self, metadata: T, target: Path, outputs: bool = True) -> Path:
         """
-        Export and compresses study inside zip
+        Export and compress a study to a ZIP file.
+
         Args:
-            metadata: study
-            target: path of the file to export to
-            outputs: ask to integrated output folder inside exportation
+            metadata: The study metadata.
+            target: The path of the ZIP file to export to.
+            outputs: Whether to include the output folder inside the exportation.
 
-        Returns: zip file with study files compressed inside
-
+        Returns:
+            Path: The path to the created ZIP file containing the study files.
         """
         raise NotImplementedError()
 

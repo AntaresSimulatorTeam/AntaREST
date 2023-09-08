@@ -30,8 +30,8 @@ class RequestParameters:
 
 
 class UserHasNotPermissionError(HTTPException):
-    def __init__(self, msg: Optional[str] = None) -> None:
-        super().__init__(status_code=403, detail=msg if msg else "Permission denied")
+    def __init__(self, msg: str = "Permission denied") -> None:
+        super().__init__(status_code=403, detail=msg)
 
 
 class MustBeAuthenticatedError(HTTPException):

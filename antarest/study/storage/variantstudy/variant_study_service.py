@@ -6,7 +6,7 @@ import tempfile
 from datetime import datetime
 from functools import reduce
 from pathlib import Path
-from typing import Callable, List, Optional, Tuple, cast, Sequence
+from typing import Callable, List, Optional, Sequence, Tuple, cast
 from uuid import uuid4
 
 from fastapi import HTTPException
@@ -905,18 +905,21 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
     def copy(
         self,
         src_meta: VariantStudy,
-        dst_name: str,
+        dest_name: str,
         groups: Sequence[str],
         with_outputs: bool = False,
     ) -> VariantStudy:
         """
-        Copy study to a new destination
+        Create a new variant study by copying a reference study.
+
         Args:
-            src_meta: source study
-            dst_name: destination study
-            groups: groups to assign to the destination study
-            with_outputs: indicate either to copy the output or not
-        Returns: destination study
+            src_meta: The source study that you want to copy.
+            dest_name: The name for the destination study.
+            groups: A list of groups to assign to the destination study.
+            with_outputs: Indicates whether to copy the outputs as well.
+
+        Returns:
+            The newly created study.
         """
         new_id = str(uuid4())
         study_path = str(get_default_workspace_path(self.config) / new_id)
@@ -932,7 +935,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         # noinspection PyArgumentList
         dst_meta = VariantStudy(
             id=new_id,
-            name=dst_name,
+            name=dest_name,
             parent_id=src_meta.parent_id,
             path=study_path,
             public_mode=PublicMode.NONE if groups else PublicMode.READ,

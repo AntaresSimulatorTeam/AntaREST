@@ -212,15 +212,16 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         with_outputs: bool = False,
     ) -> RawStudy:
         """
-        Copy study to a new destination
+        Create a new RAW study by copying a reference study.
+
         Args:
-            src_meta: source study
-            dest_name: The name of the destination study.
-            groups: The groups to which the destination study will be assigned.
-            with_outputs: Indicates whether the study outputs should be copied. (Specify 'True' to copy, 'False' to exclude.)
+            src_meta: The source study that you want to copy.
+            dest_name: The name for the destination study.
+            groups: A list of groups to assign to the destination study.
+            with_outputs: Indicates whether to copy the outputs as well.
 
-        Returns: The destination study.
-
+        Returns:
+            The newly created study.
         """
         self._check_study_exists(src_meta)
 
