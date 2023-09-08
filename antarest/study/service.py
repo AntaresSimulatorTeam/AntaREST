@@ -1892,7 +1892,7 @@ class StudyService:
 
         """
         if not owner:
-            raise UserHasNotPermissionError(f"{JWTUser} valid for authentication")
+            raise UserHasNotPermissionError(f"{JWTUser} invalid for authentication")
 
         if isinstance(study, RawStudy):
             study.content_status = content_status
