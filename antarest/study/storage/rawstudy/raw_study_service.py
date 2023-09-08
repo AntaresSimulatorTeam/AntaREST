@@ -5,7 +5,7 @@ import time
 from datetime import datetime
 from pathlib import Path
 from threading import Thread
-from typing import IO, List, Optional
+from typing import IO, List, Optional, Sequence
 from uuid import uuid4
 from zipfile import ZipFile
 
@@ -208,17 +208,20 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         self,
         src_meta: RawStudy,
         dest_name: str,
+        groups: Sequence[str],
         with_outputs: bool = False,
     ) -> RawStudy:
         """
-        Copy study to a new destination
+        Create a new RAW study by copying a reference study.
+
         Args:
-            src_meta: source study
-            dest_meta: destination study
-            with_outputs: indicate weither to copy the output or not
+            src_meta: The source study that you want to copy.
+            dest_name: The name for the destination study.
+            groups: A list of groups to assign to the destination study.
+            with_outputs: Indicates whether to copy the outputs as well.
 
-        Returns: destination study
-
+        Returns:
+            The newly created study.
         """
         self._check_study_exists(src_meta)
 
@@ -240,8 +243,8 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             updated_at=datetime.utcnow(),
             version=src_meta.version,
             additional_data=additional_data,
-            public_mode=PublicMode.NONE,
-            groups=src_meta.groups,
+            public_mode=PublicMode.NONE if groups else PublicMode.READ,
+            groups=groups,
         )
 
         src_path = self.get_study_path(src_meta)

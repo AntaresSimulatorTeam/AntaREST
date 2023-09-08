@@ -171,13 +171,30 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         groups: str = "",
         use_task: bool = True,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    ) -> str:
+        """
+        This endpoint enables you to duplicate a study and place it in a specified location.
+        You can, for instance, copy a non-managed study to a managed workspace.
+
+        Args:
+        - `uuid`: The identifier of the study you wish to duplicate.
+        - `dest`: The destination workspace where the study will be copied.
+        - `with_outputs`: Indicates whether the study's outputs should also be duplicated.
+        - `groups`: Specifies the groups to which your duplicated study will be assigned.
+        - `use_task`: Determines whether this duplication operation should trigger a task.
+          It is recommended and set as the default value: True.
+
+        Returns:
+        - The unique identifier of the task copying the study.
+        """
         logger.info(
             f"Copying study {uuid} into new study '{dest}'",
             extra={"user": current_user.id},
         )
         source_uuid = uuid
-        group_ids = groups.split(",") if groups else []
+        group_ids = groups.split(",") if groups else [group.id for group in current_user.groups]
+        group_ids = list(set(group_ids))  # avoid duplicates
+        group_ids = [sanitize_uuid(gid) for gid in group_ids]
         source_uuid_sanitized = sanitize_uuid(source_uuid)
         destination_name_sanitized = escape(dest)
 
@@ -227,6 +244,7 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         logger.info(f"Creating new study '{name}'", extra={"user": current_user.id})
         name_sanitized = escape(name)
         group_ids = groups.split(",") if groups else []
+        group_ids = list(set(group_ids))  # avoid duplicates
         group_ids = [sanitize_uuid(gid) for gid in group_ids]
 
         params = RequestParameters(user=current_user)

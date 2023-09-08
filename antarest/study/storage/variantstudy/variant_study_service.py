@@ -6,7 +6,7 @@ import tempfile
 from datetime import datetime
 from functools import reduce
 from pathlib import Path
-from typing import Callable, List, Optional, Tuple, cast
+from typing import Callable, List, Optional, Sequence, Tuple, cast
 from uuid import uuid4
 
 from fastapi import HTTPException
@@ -27,7 +27,7 @@ from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import Event, EventChannelDirectory, EventType, IEventBus
 from antarest.core.jwt import DEFAULT_ADMIN_USER
-from antarest.core.model import JSON, PermissionInfo, StudyPermissionType
+from antarest.core.model import JSON, PermissionInfo, PublicMode, StudyPermissionType
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskResult, TaskType
 from antarest.core.tasks.service import ITaskService, TaskUpdateNotifier, noop_notifier
@@ -905,16 +905,21 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
     def copy(
         self,
         src_meta: VariantStudy,
-        dst_name: str,
+        dest_name: str,
+        groups: Sequence[str],
         with_outputs: bool = False,
     ) -> VariantStudy:
         """
-        Copy study to a new destination
+        Create a new variant study by copying a reference study.
+
         Args:
-            src_meta: source study
-            dst_name: destination study
-            with_outputs: indicate either to copy the output or not
-        Returns: destination study
+            src_meta: The source study that you want to copy.
+            dest_name: The name for the destination study.
+            groups: A list of groups to assign to the destination study.
+            with_outputs: Indicates whether to copy the outputs as well.
+
+        Returns:
+            The newly created study.
         """
         new_id = str(uuid4())
         study_path = str(get_default_workspace_path(self.config) / new_id)
@@ -930,14 +935,14 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         # noinspection PyArgumentList
         dst_meta = VariantStudy(
             id=new_id,
-            name=dst_name,
+            name=dest_name,
             parent_id=src_meta.parent_id,
             path=study_path,
-            public_mode=src_meta.public_mode,
+            public_mode=PublicMode.NONE if groups else PublicMode.READ,
             created_at=datetime.utcnow(),
             updated_at=datetime.utcnow(),
             version=src_meta.version,
-            groups=src_meta.groups,  # Create inherit_group boolean
+            groups=groups,
             snapshot=None,
             additional_data=additional_data,
         )
