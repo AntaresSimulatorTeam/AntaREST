@@ -1017,23 +1017,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     )
     def get_correlation_matrix(
         uuid: str,
-        columns: Optional[str] = Query(
-            None,
-            examples={
-                "all areas": {
-                    "description": "get the correlation matrix for all areas (by default)",
-                    "value": "",
-                },
-                "single area": {
-                    "description": "get the correlation column for a single area",
-                    "value": "north",
-                },
-                "selected areas": {
-                    "description": "get the correlation columns for a selected list of areas",
-                    "value": "north,east",
-                },
-            },
-        ),  # type: ignore
+        columns: str = Query("", examples=["", "north", "north,east"]),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> CorrelationMatrix:
         """
@@ -1058,11 +1042,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
             study_service.get_all_areas(uuid, area_type=AreaType.AREA, ui=False, params=params),
         )
         manager = CorrelationManager(study_service.storage_service)
-        return manager.get_correlation_matrix(
-            all_areas,
-            study,
-            columns.split(",") if columns else [],
-        )
+        cols = columns.split(",") if columns else []
+        return manager.get_correlation_matrix(all_areas, study, cols)
 
     @bp.put(
         path="/studies/{uuid}/areas/hydro/correlation/matrix",
