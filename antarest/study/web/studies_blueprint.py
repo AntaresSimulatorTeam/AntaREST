@@ -113,15 +113,14 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> str:
         """
-        This entry point allows you to import a study from your computer to the Antares Web server.
+        Upload and import a study from your computer to the Antares Web server.
 
         Args:
-            study: Your study zipped or its corresponding bytes
-            current_user: Current authenticated user.
-            groups: The groups your study will belong to (Default value: current_user groups)
+        - `study`: The study file in ZIP format or its corresponding bytes.
+        - `groups`: The groups your study will belong to (Default: current user's groups).
 
         Returns:
-            The id of the imported study on the AntaresWeb server
+        - The ID of the imported study.
         """
         logger.info("Importing new study", extra={"user": current_user.id})
         zip_binary = io.BytesIO(study)
@@ -146,18 +145,17 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> str:
         """
-        This entry point allows you to upgrade a study to the target version
-        or the next version if the target version is not specified.
+        Upgrade a study to the target version or the next version if the target
+        version is not specified.
 
         This method starts an upgrade task in the task manager.
 
         Args:
-            uuid: UUID of the study to upgrade.
-            target_version: target study version, or "" to upgrade to the next version.
-            current_user: Current authenticated user.
+        - `uuid`: UUID of the study to upgrade.
+        - `target_version`: target study version, or "" to upgrade to the next version.
 
         Returns:
-            Upgrade task ID.
+        - The unique identifier of the task upgrading the study.
         """
         msg = (
             f"Upgrade study {uuid} to the version {target_version}"
