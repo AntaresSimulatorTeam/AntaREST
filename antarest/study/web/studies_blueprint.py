@@ -111,12 +111,23 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         study: bytes = File(...),
         groups: str = "",
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    ) -> str:
+        """
+        Upload and import a study from your computer to the Antares Web server.
+
+        Args:
+        - `study`: The study file in ZIP format or its corresponding bytes.
+        - `groups`: The groups your study will belong to (Default: current user's groups).
+
+        Returns:
+        - The ID of the imported study.
+        """
         logger.info("Importing new study", extra={"user": current_user.id})
         zip_binary = io.BytesIO(study)
 
         params = RequestParameters(user=current_user)
-        group_ids = groups.split(",") if groups else []
+        group_ids = groups.split(",") if groups else [group.id for group in current_user.groups]
+        group_ids = [sanitize_uuid(gid) for gid in set(group_ids)]  # sanitize and avoid duplicates
 
         uuid = study_service.import_study(zip_binary, group_ids, params)
 
@@ -134,18 +145,17 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> str:
         """
-        This entry point allows you to upgrade a study to the target version
-        or the next version if the target version is not specified.
+        Upgrade a study to the target version or the next version if the target
+        version is not specified.
 
         This method starts an upgrade task in the task manager.
 
         Args:
-            uuid: UUID of the study to upgrade.
-            target_version: target study version, or "" to upgrade to the next version.
-            current_user: Current authenticated user.
+        - `uuid`: UUID of the study to upgrade.
+        - `target_version`: target study version, or "" to upgrade to the next version.
 
         Returns:
-            Upgrade task ID.
+        - The unique identifier of the task upgrading the study.
         """
         msg = (
             f"Upgrade study {uuid} to the version {target_version}"
@@ -193,8 +203,7 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         )
         source_uuid = uuid
         group_ids = groups.split(",") if groups else [group.id for group in current_user.groups]
-        group_ids = list(set(group_ids))  # avoid duplicates
-        group_ids = [sanitize_uuid(gid) for gid in group_ids]
+        group_ids = [sanitize_uuid(gid) for gid in set(group_ids)]  # sanitize and avoid duplicates
         source_uuid_sanitized = sanitize_uuid(source_uuid)
         destination_name_sanitized = escape(dest)
 
@@ -244,8 +253,7 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         logger.info(f"Creating new study '{name}'", extra={"user": current_user.id})
         name_sanitized = escape(name)
         group_ids = groups.split(",") if groups else []
-        group_ids = list(set(group_ids))  # avoid duplicates
-        group_ids = [sanitize_uuid(gid) for gid in group_ids]
+        group_ids = [sanitize_uuid(gid) for gid in set(group_ids)]  # sanitize and avoid duplicates
 
         params = RequestParameters(user=current_user)
         uuid = study_service.create_study(name_sanitized, version, group_ids, params)

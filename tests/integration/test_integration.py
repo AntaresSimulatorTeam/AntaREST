@@ -1,3 +1,4 @@
+import io
 from http import HTTPStatus
 from pathlib import Path
 from unittest.mock import ANY
@@ -28,6 +29,7 @@ from antarest.study.business.table_mode_management import (
 )
 from antarest.study.model import MatrixIndex, StudyDownloadLevelDTO
 from antarest.study.storage.variantstudy.model.command.common import CommandName
+from tests.integration.assets import ASSETS_DIR
 from tests.integration.utils import wait_for
 
 
@@ -2314,7 +2316,10 @@ def test_binding_constraint_manager(client: TestClient, admin_access_token: str,
     assert res.status_code == 200
 
     # Get Binding Constraint
-    res = client.get(f"/v1/studies/{variant_id}/bindingconstraints/{binding_constraint_id}", headers=admin_headers)
+    res = client.get(
+        f"/v1/studies/{variant_id}/bindingconstraints/{binding_constraint_id}",
+        headers=admin_headers,
+    )
     binding_constraint = res.json()
     comments = binding_constraint["comments"]
     assert res.status_code == 200
@@ -2333,7 +2338,10 @@ def test_binding_constraint_manager(client: TestClient, admin_access_token: str,
     assert res.status_code == 200
 
     # Get Binding Constraint
-    res = client.get(f"/v1/studies/{variant_id}/bindingconstraints/{binding_constraint_id}", headers=admin_headers)
+    res = client.get(
+        f"/v1/studies/{variant_id}/bindingconstraints/{binding_constraint_id}",
+        headers=admin_headers,
+    )
     binding_constraint = res.json()
     constraints = binding_constraint["constraints"]
     assert res.status_code == 200
@@ -2357,7 +2365,10 @@ def test_binding_constraint_manager(client: TestClient, admin_access_token: str,
     assert res.status_code == 200
 
     # Get Binding Constraint
-    res = client.get(f"/v1/studies/{variant_id}/bindingconstraints/{binding_constraint_id}", headers=admin_headers)
+    res = client.get(
+        f"/v1/studies/{variant_id}/bindingconstraints/{binding_constraint_id}",
+        headers=admin_headers,
+    )
     binding_constraint = res.json()
     constraints = binding_constraint["constraints"]
     assert res.status_code == 200
@@ -2377,11 +2388,50 @@ def test_binding_constraint_manager(client: TestClient, admin_access_token: str,
     assert res.status_code == 200
 
     # Get Binding Constraint
-    res = client.get(f"/v1/studies/{variant_id}/bindingconstraints/{binding_constraint_id}", headers=admin_headers)
+    res = client.get(
+        f"/v1/studies/{variant_id}/bindingconstraints/{binding_constraint_id}",
+        headers=admin_headers,
+    )
     binding_constraint = res.json()
     constraints = binding_constraint["constraints"]
     assert res.status_code == 200
     assert constraints is None
+
+
+def test_import(client: TestClient, admin_access_token: str, study_id: str) -> None:
+    admin_headers = {"Authorization": f"Bearer {admin_access_token}"}
+
+    study_path = ASSETS_DIR / "STA-mini.zip"
+
+    # Admin who belongs to a group imports a study
+    uuid = client.post(
+        "/v1/studies/_import",
+        files={"study": io.BytesIO(study_path.read_bytes())},
+        headers=admin_headers,
+    ).json()
+    res = client.get(f"v1/studies/{uuid}", headers=admin_headers).json()
+    assert res["groups"] == [{"id": "admin", "name": "admin"}]
+    assert res["public_mode"] == PublicMode.NONE
+
+    # Create user George who belongs to no group
+    client.post(
+        "/v1/users",
+        headers=admin_headers,
+        json={"name": "George", "password": "mypass"},
+    )
+    res = client.post("/v1/login", json={"username": "George", "password": "mypass"})
+    george_credentials = res.json()
+
+    # George imports a study
+    georges_headers = {"Authorization": f'Bearer {george_credentials["access_token"]}'}
+    uuid = client.post(
+        "/v1/studies/_import",
+        files={"study": io.BytesIO(study_path.read_bytes())},
+        headers=georges_headers,
+    ).json()
+    res = client.get(f"v1/studies/{uuid}", headers=georges_headers).json()
+    assert res["groups"] == []
+    assert res["public_mode"] == PublicMode.READ
 
 
 def test_copy(client: TestClient, admin_access_token: str, study_id: str) -> None:
