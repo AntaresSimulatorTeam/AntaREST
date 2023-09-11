@@ -128,6 +128,7 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
 
         params = RequestParameters(user=current_user)
         group_ids = groups.split(",") if groups else [group.id for group in current_user.groups]
+        group_ids = [sanitize_uuid(gid) for gid in set(group_ids)]  # sanitize and avoid duplicates
 
         uuid = study_service.import_study(zip_binary, group_ids, params)
 
@@ -204,8 +205,7 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         )
         source_uuid = uuid
         group_ids = groups.split(",") if groups else [group.id for group in current_user.groups]
-        group_ids = list(set(group_ids))  # avoid duplicates
-        group_ids = [sanitize_uuid(gid) for gid in group_ids]
+        group_ids = [sanitize_uuid(gid) for gid in set(group_ids)]  # sanitize and avoid duplicates
         source_uuid_sanitized = sanitize_uuid(source_uuid)
         destination_name_sanitized = escape(dest)
 
@@ -255,8 +255,7 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         logger.info(f"Creating new study '{name}'", extra={"user": current_user.id})
         name_sanitized = escape(name)
         group_ids = groups.split(",") if groups else []
-        group_ids = list(set(group_ids))  # avoid duplicates
-        group_ids = [sanitize_uuid(gid) for gid in group_ids]
+        group_ids = [sanitize_uuid(gid) for gid in set(group_ids)]  # sanitize and avoid duplicates
 
         params = RequestParameters(user=current_user)
         uuid = study_service.create_study(name_sanitized, version, group_ids, params)

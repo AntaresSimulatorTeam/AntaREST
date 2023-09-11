@@ -1,5 +1,4 @@
 import io
-import time
 from http import HTTPStatus
 from pathlib import Path
 from unittest.mock import ANY
@@ -2317,7 +2316,10 @@ def test_binding_constraint_manager(client: TestClient, admin_access_token: str,
     assert res.status_code == 200
 
     # Get Binding Constraint
-    res = client.get(f"/v1/studies/{variant_id}/bindingconstraints/{binding_constraint_id}", headers=admin_headers)
+    res = client.get(
+        f"/v1/studies/{variant_id}/bindingconstraints/{binding_constraint_id}",
+        headers=admin_headers,
+    )
     binding_constraint = res.json()
     comments = binding_constraint["comments"]
     assert res.status_code == 200
@@ -2336,7 +2338,10 @@ def test_binding_constraint_manager(client: TestClient, admin_access_token: str,
     assert res.status_code == 200
 
     # Get Binding Constraint
-    res = client.get(f"/v1/studies/{variant_id}/bindingconstraints/{binding_constraint_id}", headers=admin_headers)
+    res = client.get(
+        f"/v1/studies/{variant_id}/bindingconstraints/{binding_constraint_id}",
+        headers=admin_headers,
+    )
     binding_constraint = res.json()
     constraints = binding_constraint["constraints"]
     assert res.status_code == 200
@@ -2360,7 +2365,10 @@ def test_binding_constraint_manager(client: TestClient, admin_access_token: str,
     assert res.status_code == 200
 
     # Get Binding Constraint
-    res = client.get(f"/v1/studies/{variant_id}/bindingconstraints/{binding_constraint_id}", headers=admin_headers)
+    res = client.get(
+        f"/v1/studies/{variant_id}/bindingconstraints/{binding_constraint_id}",
+        headers=admin_headers,
+    )
     binding_constraint = res.json()
     constraints = binding_constraint["constraints"]
     assert res.status_code == 200
@@ -2380,7 +2388,10 @@ def test_binding_constraint_manager(client: TestClient, admin_access_token: str,
     assert res.status_code == 200
 
     # Get Binding Constraint
-    res = client.get(f"/v1/studies/{variant_id}/bindingconstraints/{binding_constraint_id}", headers=admin_headers)
+    res = client.get(
+        f"/v1/studies/{variant_id}/bindingconstraints/{binding_constraint_id}",
+        headers=admin_headers,
+    )
     binding_constraint = res.json()
     constraints = binding_constraint["constraints"]
     assert res.status_code == 200
@@ -2396,12 +2407,9 @@ def test_import(client: TestClient, admin_access_token: str, study_id: str) -> N
     uuid = client.post(
         "/v1/studies/_import",
         files={"study": io.BytesIO(study_path.read_bytes())},
-        headers=admin_headers
+        headers=admin_headers,
     ).json()
-    res = client.get(
-        f"v1/studies/{uuid}",
-        headers=admin_headers
-    ).json()
+    res = client.get(f"v1/studies/{uuid}", headers=admin_headers).json()
     assert res["groups"] == [{"id": "admin", "name": "admin"}]
     assert res["public_mode"] == PublicMode.NONE
 
@@ -2415,18 +2423,13 @@ def test_import(client: TestClient, admin_access_token: str, study_id: str) -> N
     george_credentials = res.json()
 
     # George imports a study
-    georges_headers = {
-        "Authorization": f'Bearer {george_credentials["access_token"]}'
-    }
+    georges_headers = {"Authorization": f'Bearer {george_credentials["access_token"]}'}
     uuid = client.post(
         "/v1/studies/_import",
         files={"study": io.BytesIO(study_path.read_bytes())},
-        headers=georges_headers
+        headers=georges_headers,
     ).json()
-    res = client.get(
-        f"v1/studies/{uuid}",
-        headers=georges_headers
-    ).json()
+    res = client.get(f"v1/studies/{uuid}", headers=georges_headers).json()
     assert res["groups"] == []
     assert res["public_mode"] == PublicMode.READ
 
