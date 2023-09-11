@@ -57,9 +57,20 @@ class RemoteVariantGenerator(IVariantGenerator):
         session: Optional[Session] = None,
     ):
         self.study_id = study_id
-        self.session = session or Session()
-        # TODO fix this
-        self.session.verify = False
+
+        # todo: find the correct way to handle certificates.
+        #  By default, Requests/Httpx verifies SSL certificates for HTTPS requests.
+        #  When verify is set to `False`, requests will accept any TLS certificate presented
+        #  by the server,and will ignore hostname mismatches and/or expired certificates,
+        #  which will make your application vulnerable to man-in-the-middle (MitM) attacks.
+        #  Setting verify to False may be useful during local development or testing.
+        if Session.__name__ == "Client":
+            # noinspection PyArgumentList
+            self.session = session or Session(verify=False)
+        else:
+            self.session = session or Session()
+            self.session.verify = False
+
         self.host = host
         if session is None and host is None:
             raise ValueError("Missing either session or host")
