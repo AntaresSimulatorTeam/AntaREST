@@ -106,7 +106,7 @@ class LauncherService:
         Args:
             launcher:  name of the configuration : "default", "slurm" or "local".
         """
-        return LauncherConfig.get_nb_cores(launcher)
+        return LauncherConfig().get_nb_cores(launcher).to_json()
 
     def _after_export_flat_hooks(
         self,

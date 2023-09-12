@@ -386,7 +386,7 @@ def test_service_get_jobs_from_database():
         ),
     ],
 )
-def test_service_get_solver_versions_nb_core(
+def test_service_get_solver_versions(
     config: Dict[str, Union[str, List[str]]],
     solver: Literal["default", "local", "slurm", "unknown"],
     expected: List[str],
@@ -418,14 +418,134 @@ def test_service_get_solver_versions_nb_core(
     actual = launcher_service.get_solver_versions(solver)
     assert actual == expected
 
-    # Fetch the solver(launcher) nb_cores
-    nb_core = launcher_service.get_nb_cores(solver)
-    if solver in ("local", "default"):
+
+@pytest.mark.unit_test
+@pytest.mark.parametrize(
+    "config, launcher, expected",
+    [
+        pytest.param(
+            {
+                "default": "local",
+                "local": [],
+                "slurm": [],
+            },
+            "default",
+            [],
+            id="empty-config",
+        ),
+        pytest.param(
+            {
+                "default": "local",
+                "local": ["456", "123", "798"],
+            },
+            "default",
+            ["123", "456", "798"],
+            id="local-config-default",
+        ),
+        pytest.param(
+            {
+                "default": "local",
+                "local": ["456", "123", "798"],
+            },
+            "slurm",
+            [],
+            id="local-config-slurm",
+        ),
+        pytest.param(
+            {
+                "default": "local",
+                "local": ["456", "123", "798"],
+            },
+            "unknown",
+            [],
+            id="local-config-unknown",
+            marks=pytest.mark.xfail(
+                reason="Unknown solver configuration: 'unknown'",
+                raises=KeyError,
+                strict=True,
+            ),
+        ),
+        pytest.param(
+            {
+                "default": "slurm",
+                "slurm": ["258", "147", "369"],
+            },
+            "default",
+            ["147", "258", "369"],
+            id="slurm-config-default",
+        ),
+        pytest.param(
+            {
+                "default": "slurm",
+                "slurm": ["258", "147", "369"],
+            },
+            "local",
+            [],
+            id="slurm-config-local",
+        ),
+        pytest.param(
+            {
+                "default": "slurm",
+                "slurm": ["258", "147", "369"],
+            },
+            "unknown",
+            [],
+            id="slurm-config-unknown",
+            marks=pytest.mark.xfail(
+                reason="Unknown solver configuration: 'unknown'",
+                raises=KeyError,
+                strict=True,
+            ),
+        ),
+        pytest.param(
+            {
+                "default": "slurm",
+                "local": ["456", "123", "798"],
+                "slurm": ["258", "147", "369"],
+            },
+            "local",
+            ["123", "456", "798"],
+            id="local+slurm-config-local",
+        ),
+    ],
+)
+def test_service_nb_core(
+    config: Dict[str, Union[str, List[str]]],
+    launcher: Literal["default", "local", "slurm", "unknown"],
+    expected: List[str],
+) -> None:
+    # Prepare the configuration
+    # the default server version from the configuration file.
+    # the default server is initialised to local
+    # Test nb core of a launcher
+    default = config.get("default", "local")
+    local = LocalConfig(binaries={k: Path(f"solver-{k}.exe") for k in config.get("local", [])})
+    slurm = SlurmConfig(antares_versions_on_remote_server=config.get("slurm", []))
+    launcher_config = LauncherConfig(
+        default=default,
+        local=local if local else None,
+        slurm=slurm if slurm else None,
+    )
+    config = Config(launcher=launcher_config)
+    launcher_service = LauncherService(
+        config=config,
+        study_service=Mock(),
+        job_result_repository=Mock(),
+        factory_launcher=Mock(),
+        event_bus=Mock(),
+        file_transfer_manager=Mock(),
+        task_service=Mock(),
+        cache=Mock(),
+    )
+    # Fetch the launcher(launcher) nb_cores
+    launcher_service.get_solver_versions(launcher)
+    nb_core = launcher_service.config.launcher.get_nb_cores(launcher).to_json()
+    if launcher in ("local", "default"):
         max_cpu = multiprocessing.cpu_count()
         default = max(1, max_cpu - 2)
-        nb_cores_expected = {"default": default, "max": max_cpu, "min": 1}
+        nb_cores_expected = {"defaultValue": default, "max": max_cpu, "min": 1}
     else:
-        nb_cores_expected = {"min": 1, "default": 22, "max": 24}
+        nb_cores_expected = {"min": 1, "defaultValue": 22, "max": 24}
     # Check the result
     assert nb_core == nb_cores_expected
 

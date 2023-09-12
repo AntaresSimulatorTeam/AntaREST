@@ -1,6 +1,5 @@
 import logging
 import multiprocessing
-import os
 import tempfile
 from dataclasses import dataclass, field
 from http import HTTPStatus
@@ -14,15 +13,6 @@ from antarest.core.model import JSON
 from antarest.core.roles import RoleType
 
 logger = logging.getLogger(__name__)
-
-
-class LauncherConfNotAvailableException(HTTPException):
-    """
-    This exception  is raised in order to  detect errors from conf.py
-    """
-
-    def __init__(self, msg_error: str):
-        super(LauncherConfNotAvailableException, self).__init__(HTTPStatus.BAD_REQUEST, msg_error)
 
 
 @dataclass(frozen=True)
@@ -160,6 +150,18 @@ class StorageConfig:
         )
 
 
+class InvalidConfigurationError(Exception):
+    """
+    Check if configuration launcher is available
+    """
+
+    def __init__(self, launcher) -> None:
+        msg = f"""
+        The configuration: {launcher} is not available
+        """
+        super().__init__(msg)
+
+
 @dataclass(frozen=True)
 class NbCoresConfig:
     """
@@ -170,41 +172,29 @@ class NbCoresConfig:
     default: int = 22
     max: int = 24
 
-    @staticmethod
-    def from_dict(data: JSON) -> "NBCoresConfig":
+    @classmethod
+    def from_dict(cls, data: JSON) -> "NbCoresConfig":
         """
         Creates an instance of NBCoresConfig from a data dictionary
         Args:
             data: Parse config from dict.
-
         Returns: object NbCoresConfig
-
         """
-        NbCoresConfig.__validate_nb_cores(
-            min_cpu=data.get("min", None), max_cpu=data.get("max", None), default=data.get("default", None)
-        )
-        return NbCoresConfig(min=data.get("min", None), max=data.get("max", None), default=data.get("default", None))
+        return cls(min=data["min"], max=data["max"], default=data["defaultValue"])
 
-    @staticmethod
-    def to_json(min_cpu, max_cpu, default) -> Dict[str, int]:
+    def to_json(self) -> Dict[str, int]:
         """
         Retrieves the number of cores parameters, returning a dictionary containing the values "min"
         (minimum allowed value), "defaultValue" (default value), and "max" (maximum allowed value)
-        Args:
-            default: default number of core cpu
-            max_cpu: minimum number of core cpu
-            min_cpu: maximum number of core cpu
         Returns: Dict of core config
         """
-        NbCoresConfig.__validate_nb_cores(min_cpu=min_cpu, max_cpu=max_cpu, default=default)
-        return {"min": min_cpu, "default": default, "max": max_cpu}
+        return {"min": self.min, "defaultValue": self.default, "max": self.max}
 
-    @staticmethod
-    def __post__(self) -> None:
-        raise NotImplementedError()
+    def __post_init__(self) -> None:
+        """validation of cpu configuration"""
+        self.__validate_nb_cores(self.min, self.default, self.max)
 
-    @staticmethod
-    def __validate_nb_cores(min_cpu: int, default: int, max_cpu: int) -> None:
+    def __validate_nb_cores(self, min_cpu: int, default: int, max_cpu: int) -> None:
         """
         Validates the number of cores parameters, raising an exception if they are
         invalid (i.e., if 1 ≤ min ≤ default ≤ max is false)
@@ -212,15 +202,13 @@ class NbCoresConfig:
             min_cpu: min cpu
             default: default cpu
             max_cpu: max cpu
-        Returns:
         """
         msg = ""
-        if min_cpu > 1 or min_cpu == 0 or min_cpu > max_cpu:
+        if not (1 <= min_cpu <= default <= max_cpu):
             msg = f"value min_cpu:{min_cpu} must be equal to 1"
-        elif default > max_cpu or default < 1:
             msg = f"{msg} {default}  must be less than max_cpu:{max_cpu} or greater than 1"
         if msg:
-            raise LauncherConfNotAvailableException(msg)
+            raise ValueError(msg)
 
 
 @dataclass(frozen=True)
@@ -228,33 +216,35 @@ class LocalConfig:
     """Sub config object dedicated to launcher module (local)"""
 
     binaries: Dict[str, Path] = field(default_factory=dict)
-    enable_nb_core_detection: bool = True
-    nb_cores: object = NbCoresConfig()
+    enable_nb_core_detection: bool = False
+    nb_cores: NbCoresConfig = NbCoresConfig()
 
-    @staticmethod
-    def from_dict(data: JSON) -> Optional["LocalConfig"]:
-        return LocalConfig(
+    @classmethod
+    def from_dict(cls, data: JSON) -> Optional["LocalConfig"]:
+        """
+        Creates an instance of NBCoresConfig from a data dictionary
+        Args:
+            data: Parse config from dict.
+        Returns: object NbCoresConfig
+        """
+        if data["enable_nb_cores_detection"]:
+            cpu = cls._autodetect_nb_cores()
+        return cls(
             binaries={str(v): Path(p) for v, p in data["binaries"].items()},
+            enable_nb_core_detection=data["enable_nb_cores_detection"],
+            nb_cores=NbCoresConfig(min=cpu["min"], default=cpu["default"], max=cpu["max"]),
         )
 
-    @staticmethod
-    def _autodetect_nb_cores() -> object:
+    @classmethod
+    def _autodetect_nb_cores(cls) -> Dict[str, int]:
         """
         Automatically detects the number of cores available on the user's machine
-        Returns: the number of cores configuration for a given solver: "local"
+        Returns: Instance of NbCoresConfig
         """
-        min_cpu = 1
-        info_data = Config.from_yaml_to_dict()
-        enable_nb_core_detection = info_data["launcher"]["local"]["enable_nb_cores_detection"]
-        if enable_nb_core_detection:
-            max_cpu = multiprocessing.cpu_count()
-        else:
-            raise (
-                LauncherConfNotAvailableException("Automatically detects the number of cores available is not active")
-            )
+        min_cpu = cls.nb_cores.min
+        max_cpu = multiprocessing.cpu_count()
         default = max(min_cpu, max_cpu - 2)
-        LocalConfig.nb_cores = NbCoresConfig(min=min_cpu, max=max_cpu, default=default)
-        return NbCoresConfig().to_json(min_cpu=min_cpu, max_cpu=max_cpu, default=default)
+        return {"min": min_cpu, "max": max_cpu, "default": default}
 
 
 @dataclass(frozen=True)
@@ -278,35 +268,38 @@ class SlurmConfig:
     max_cores: int = 64
     antares_versions_on_remote_server: List[str] = field(default_factory=list)
     enable_nb_core_detection: bool = False
-    nb_cores: object = NbCoresConfig()
+    nb_cores: NbCoresConfig = NbCoresConfig()
 
-    @staticmethod
-    def from_dict(data: JSON) -> "SlurmConfig":
-        if "nb_cores" in data:
-            nb_cores = NbCoresConfig.from_dict(data["nb_cores"])
-        else:
-            nb_cores = NbCoresConfig(min=1, default=data["default_n_cpu"], max=24)
-        return SlurmConfig(
-            local_workspace=Path(data.get("local_workspace")) if data.get("local_workspace") else None,
-            username=data.get("username"),
-            hostname=data.get("hostname"),
-            port=data.get("port"),
-            private_key_file=data.get("private_key_file", None),
-            key_password=data.get("key_password", None),
-            password=data.get("password", None),
-            default_wait_time=data.get("default_wait_time"),
-            default_time_limit=data.get("default_time_limit"),
-            default_n_cpu=data.get("default_n_cpu"),
-            default_json_db_name=data.get("default_json_db_name"),
-            slurm_script_path=data.get("slurm_script_path"),
-            antares_versions_on_remote_server=data.get("antares_versions_on_remote_server"),
+    @classmethod
+    def from_dict(cls, data: JSON) -> "SlurmConfig":
+        """
+        Creates an instance of SlurmConfig from a data dictionary
+        Args:
+             data: Parse config from dict.
+        Returns: object SlurmConfig
+        """
+        nb_cores = NbCoresConfig()
+        return cls(
+            local_workspace=Path(data["local_workspace"]),
+            username=data["username"],
+            hostname=data["hostname"],
+            port=data["port"],
+            private_key_file=data["private_key_file"],
+            key_password=data["key_password"],
+            password=data["password"],
+            default_wait_time=data["default_wait_time"],
+            default_time_limit=data["default_time_limit"],
+            default_n_cpu=data["default_n_cpu"],
+            default_json_db_name=data["default_json_db_name"],
+            slurm_script_path=data["slurm_script_path"],
+            antares_versions_on_remote_server=data["antares_versions_on_remote_server"],
             max_cores=data.get("max_cores", 64),
             nb_cores=nb_cores,
             enable_nb_core_detection=data.get("enable_nb_cores_detection", False),
         )
 
     @staticmethod
-    def _autodetect_nb_cores() -> object:
+    def _autodetect_nb_cores() -> Dict[str, int]:
         raise NotImplementedError()
 
 
@@ -321,8 +314,8 @@ class LauncherConfig:
     slurm: Optional[SlurmConfig] = SlurmConfig()
     batch_size: int = 9999
 
-    @staticmethod
-    def from_dict(data: JSON) -> "LauncherConfig":
+    @classmethod
+    def from_dict(cls, data: JSON) -> "LauncherConfig":
         local: Optional[LocalConfig] = None
         if "local" in data:
             local = LocalConfig.from_dict(data["local"])
@@ -331,37 +324,35 @@ class LauncherConfig:
         if "slurm" in data:
             slurm = SlurmConfig.from_dict(data["slurm"])
 
-        return LauncherConfig(
+        return cls(
             default=data.get("default", "local"),
             local=local,
             slurm=slurm,
             batch_size=data.get("batch_size", 9999),
         )
 
-    @staticmethod
-    def get_nb_cores(launcher: str) -> Union[object, Dict[str, int]]:
+    def get_nb_cores(self, launcher: str) -> "NbCoresConfig":
         """
         This method retrieves the number of cores configuration for a given
         launcher: "local," "slurm," or "default."
         Args:
             launcher: type of launcher local or slurm or default
-
         Returns: min, max, default of cpu configuration
-
         """
-        info_data = Config.from_yaml_to_dict()
-        if launcher == "default":
-            launcher = info_data["launcher"]["default"]
+        here = Path(__file__).parent.resolve()
+        project_path = next(iter(p for p in here.parents if p.joinpath("antarest").exists()))
+        file = project_path / "resources/application.yaml"
+        info_data = Config.from_yaml_file(file).launcher
 
+        if launcher == "default":
+            launcher = info_data.default
         if launcher == "slurm":
-            enable_nb_core_detection = info_data["launcher"]["slurm"]["enable_nb_cores_detection"]
-            if enable_nb_core_detection:
-                return SlurmConfig._autodetect_nb_cores()
-            min_cpu = info_data["launcher"]["slurm"]["nb_cores"]["min"]
-            max_cpu = info_data["launcher"]["slurm"]["nb_cores"]["max"]
-            default = info_data["launcher"]["slurm"]["nb_cores"]["default"]
-            return NbCoresConfig.to_json(min_cpu=min_cpu, max_cpu=max_cpu, default=default)
-        return LocalConfig._autodetect_nb_cores()
+            cpu = LauncherConfig.slurm.nb_cores
+        if launcher == "local":
+            cpu = info_data.local.nb_cores
+        elif launcher not in ("slurm", "local"):
+            raise InvalidConfigurationError("launcher")
+        return cpu
 
 
 @dataclass(frozen=True)
@@ -542,12 +533,3 @@ class Config:
         """
         data = yaml.safe_load(open(file))
         return Config.from_dict(data, res)
-
-    @staticmethod
-    def from_yaml_to_dict():
-        """Convert yaml file to dictionary"""
-        here = Path(__file__).parent.resolve()
-        project_path = next(iter(p for p in here.parents if p.joinpath("antarest").exists()))
-        file = project_path / "resources/application.yaml"
-        data = yaml.safe_load(open(file))
-        return data

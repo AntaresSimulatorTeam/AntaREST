@@ -47,13 +47,6 @@ launcher:
     binaries:
       700: path/to/700
     enable_nb_cores_detection: True
-
-  slurm:
-    enable_nb_cores_detection: False
-    nb_cores:
-      min: 1
-      default: 22
-      max: 24
 #
 #    local_workspace: path/to/workspace
 #    username: username

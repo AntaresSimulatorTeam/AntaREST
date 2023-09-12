@@ -128,19 +128,6 @@ def test_get_solver_versions() -> None:
 
 
 @pytest.mark.unit_test
-def test_get_launcher_nbcores() -> None:
-    service = Mock()
-    output = {"min": 1, "default": 18, "max": 20}
-    service.get_nb_cores.return_value = output
-
-    app = create_app(service)
-    client = TestClient(app)
-    res = client.get("/v1/launcher/nbcores")
-    res.raise_for_status()
-    assert res.json() == output
-
-
-@pytest.mark.unit_test
 @pytest.mark.parametrize(
     "solver, status_code, expected",
     [

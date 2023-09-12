@@ -6,7 +6,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query
 from fastapi.exceptions import HTTPException
 
-from antarest.core.config import Config
+from antarest.core.config import Config, InvalidConfigurationError
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.jwt import JWTUser
 from antarest.core.requests import RequestParameters
@@ -240,15 +240,15 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         launcher: str = Query(
             "default",
             examples={
-                "Default solver": {
+                "Default launcher": {
                     "description": "Min, Default, and Max Core Count",
                     "value": "default",
                 },
-                "SLURM solver": {
+                "SLURM launcher": {
                     "description": "Min, Default, and Max Core Count",
                     "value": "slurm",
                 },
-                "Local solver": {
+                "Local launcher": {
                     "description": "Min, Default, and Max Core Count",
                     "value": "local",
                 },
@@ -257,13 +257,15 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
     ) -> Dict[str, int]:
         """
         Retrieving Min, Default, and Max Core Count.
-
         Args:
         - `launcher`: name of the configuration to read: "default", "slurm" or "local".
         """
-        logger.info(f"Fetching the list of solver versions for the '{launcher}' configuration")
+        logger.info(f"Fetching the number of cpu for the '{launcher}' configuration")
         if launcher not in {"default", "slurm", "local"}:
             raise UnknownSolverConfig(launcher)
-        return service.get_nb_cores(launcher)
+        try:
+            return service.config.launcher.get_nb_cores(launcher).to_json()
+        except InvalidConfigurationError:
+            raise UnknownSolverConfig(launcher)
 
     return bp
