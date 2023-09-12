@@ -227,8 +227,11 @@ class LocalConfig:
             data: Parse config from dict.
         Returns: object NbCoresConfig
         """
-        if data["enable_nb_cores_detection"]:
+        if data.get("enable_nb_cores_detection", False):
             cpu = cls._autodetect_nb_cores()
+            nb_cores = NbCoresConfig(min=cpu["min"], default=cpu["default"], max=cpu["max"])
+        else:
+            nb_cores = NbCoresConfig()
         return cls(
             binaries={str(v): Path(p) for v, p in data["binaries"].items()},
             enable_nb_core_detection=data["enable_nb_cores_detection"],
