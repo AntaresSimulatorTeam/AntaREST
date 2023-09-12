@@ -192,11 +192,11 @@ class TestRawStudyService:
         # Run the export
         target_path = tmp_path / raw_study_path.with_suffix(".exported").name
         raw_study_service.export_study_flat(
-            raw_study,
+            Path(raw_study.path),
             target_path,
             outputs=outputs,
             output_list_filter=output_filter,
-            denormalize=denormalize,
+            # fixme: denormalize=denormalize,
         )
 
         # Collect the resulting files
