@@ -21,10 +21,16 @@ class TimeSeriesGenerationOption(EnumIgnoreCase):
     FORCE_NO_GENERATION = "force no generation"
     FORCE_GENERATION = "force generation"
 
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}.{self.name}"
+
 
 class LawOption(EnumIgnoreCase):
     UNIFORM = "uniform"
     GEOMETRIC = "geometric"
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}.{self.name}"
 
 
 class ThermalClusterGroup(EnumIgnoreCase):
@@ -38,6 +44,9 @@ class ThermalClusterGroup(EnumIgnoreCase):
     OTHER2 = "Other 2"
     OTHER3 = "Other 3"
     OTHER4 = "Other 4"
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}.{self.name}"
 
     @classmethod
     def _missing_(cls, value: object) -> t.Optional["ThermalClusterGroup"]:
