@@ -4,6 +4,91 @@ Antares Web Changelog
 v2.15.0 (unreleased)
 --------------------
 
+### Features
+
+* **business:** add xpansion batch size back office [`#1485`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1485)
+* **commands:** add ST-Storage commands [`#1630`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1630)
+* **matrix:** improve unexpected exception error message [`#1635`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1635)
+* **matrix:** improve matrix read/write using NumPy [`#1452`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1452) — was introduced in v2.14.2
+* **model:** handle 8.6 study model and study upgrader [`#1489`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1489)
+* **service:** assign to a copied study all groups of the user [`#1721`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1721)
+* **service:** set the user's name as author in `study.antares` when creating a study [`#1632`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1632)
+* **st-storage:** add ST Storage API endpoints [`#1697`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1697)
+* **ui-common:** add `GroupedDataTable` used in the new design for listing clusters (thermal / renewables) and ST Storage [`#1633`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1633)
+* **ui-config:** enable undo/redo in adequacy patch form [`#1543`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1543)
+* **ui-i18n:** add missing adequacy patch translations [`#1680`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1680) — was introduced in v2.14.5
+* **ui-map:** add map zoom buttons [`#1518`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1518)
+* **ui-study:** enhance study upgrade dialog [`#1687`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1687)
+
+
+### Bug Fixes
+
+* **api:** correct API endpoints and CLI tools [`#1726`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1726)
+* **api:** add missing `use_leeway` field and validation rules [`#1650`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1650)
+* **api:** standardize `areas_ui` to dict format for single area case [`#1557`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1557)
+* **build:** fix pyinstaller build  [`#1551`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1551) — was resolved in v2.14.2
+* **docs:** update README, removing obsolete instructions [`#1552`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1552)
+* **export:** ZIP outputs are now uncompressed before export [`#1656`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1656)
+* **filesystem:** correct the handling of default matrices in `InputSeriesMatrix` node [`#1608`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1608)
+* **launcher:** fixing launcher versions display and API endpoint for solver versions [`#1671`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1671)
+* **log-parser:** simplify parsing and make it accurate [`#1682`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1682)
+* **model:** wrong frequency for `hydro energy credits` matrices [`#1708`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1708)
+* **packaging:** update the packaging script to use Antares Solver v8.6.1 [`#1652`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1652)
+* **service:** set public mode to `NONE` and assign user groups to the study during import [`#1619`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1619)
+* **service:** set public mode to `NONE` and assign user groups to the study during copying [`#1620`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1620)
+* **st-storage:** allow DELETE endpoint to accept multiple IDs as parameters [`#1716`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1716)
+* **st-storage:** update "group" parameter values for Short-Term Storage [`#1665`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1665)
+* **st-storage:** fixing archived study configuration reading for short-term storages [`#1673`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1673)
+* **st-storage:** replace inflow.txt by inflows.txt according to the changing doc [`#1618`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1618)
+* **storage:** fix INI file writing anomaly in Antares study update [`#1542`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1542)
+* **table-mode:** issue to read area information in the case where the study has only one area [`#1690`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1690) — was resolved in v2.14.5
+* **table-mode:** fixes the reading of UI information in the case where the study has only one area  [`#1674`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1674)
+* **ui-api:** resolve Area deletion & Layers/Districts UI modification issues [`#1677`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1677)
+* **ui-common:** prevent null values for string cells in HandsonTable component [`#1689`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1689)
+* **variant:** fixed TS deletion of renewable clusters and short-term storage [`#1693`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1693)
+* **variant:** enhance `VariantCommandsExtractor` for Renewable Clusters and Short-Term Storage [`#1688`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1688)
+* **web:** change API response_model to avoid ValidationError [`#1526`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1526)
+* **worker:** archive worker must be kept alive for processing [`#1558`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1558) — was resolved in v2.14.2
+* **xpansion:** correct field names and types in Xpansion settings [`#1684`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1684)
+
+
+### Documentation
+
+* correct and improve the "Variant Manager" documentation [`#1637`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1637)
+
+
+### Tests
+
+* improve fixtures in unit tests for better reuse [`#1638`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1638)
+* **api:** simplify initialization of the database in unit tests [`#1540`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1540)
+
+
+### Refactoring
+
+* refactoring of unit tests and Model improvement [`#1647`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1647)
+* **api-model:** improve `transform_name_to_id` implementation for more efficiency [`#1546`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1546)
+* **command:** rename "cluster" as "thermal cluster" [`#1639`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1639)
+* **command:** improve implementation of area management [`#1636`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1636)
+* **variant:** enhance implementation of variant commands [`#1539`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1539)
+
+
+### Styles
+
+* **ui:** correct spelling mistake in webapp code [`#1570`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1570)
+
+
+### Build System
+
+* specify the node versions supported  [`#1553`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1553)
+* **launcher:** use Antares-Launcher v1.3.0 which preserve the "output" directory required by the `--step=sensitivity` Xpansion option [`#1606`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1606)
+
+
+### Continuous Integration
+
+* upgrade mypy to v1.4.1 and Black to v23.7.0 for improved typing and formatting [`#1685`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1685)
+
+
+
 
 v2.14.6 (2023-09-01)
 --------------------
