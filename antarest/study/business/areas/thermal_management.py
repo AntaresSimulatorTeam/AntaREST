@@ -16,6 +16,11 @@ from antarest.study.storage.variantstudy.model.command.update_config import Upda
 
 
 class TimeSeriesGenerationOption(EnumIgnoreCase):
+    """
+    Options related to time series generation.
+    The option `USE_GLOBAL_PARAMETER` is used by default.
+    """
+
     USE_GLOBAL_PARAMETER = "use global parameter"
     FORCE_NO_GENERATION = "force no generation"
     FORCE_GENERATION = "force generation"
@@ -25,6 +30,11 @@ class TimeSeriesGenerationOption(EnumIgnoreCase):
 
 
 class LawOption(EnumIgnoreCase):
+    """
+    Law options used for series generation.
+    The UNIFORM `law` is used by default.
+    """
+
     UNIFORM = "uniform"
     GEOMETRIC = "geometric"
 
@@ -33,6 +43,11 @@ class LawOption(EnumIgnoreCase):
 
 
 class ThermalClusterGroup(EnumIgnoreCase):
+    """
+    Thermal cluster groups.
+    The group `OTHER1` is used by default.
+    """
+
     NUCLEAR = "Nuclear"
     LIGNITE = "Lignite"
     HARD_COAL = "Hard Coal"
@@ -109,6 +124,7 @@ class ThermalClusterConfig(BaseModel):
         Check and set the ID for a thermal cluster.
         The ID is automatically set based on the 'name' field if not provided.
         """
+
         # Avoid circular imports
         from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 
@@ -210,13 +226,11 @@ class ThermalClusterOutput(ThermalClusterInput):
         Create a ThermalClusterOutput instance from a cluster ID and a configuration.
 
         Args:
-            cls (Type[ThermalClusterOutput]): The class to instantiate.
-            cluster_id (str): The ID of the cluster.
-            config (Mapping[str, t.Any]): The configuration of the cluster.
-            study_version (str): The version of the study.
+            cluster_id: The ID of the cluster.
+            config: The configuration of the cluster.
 
         Returns:
-            ThermalClusterOutput: The created instance.
+            The created instance.
         """
 
         cluster = ThermalClusterConfig(id=cluster_id, **config)
@@ -225,13 +239,28 @@ class ThermalClusterOutput(ThermalClusterInput):
 
 
 class ThermalManager:
+    """
+    A class used in the `StudyService` to implement endpoints related to Thermal Clusters.
+
+    This class provides methods to interact with and manage thermal clusters within a study.
+    It allows for creating, retrieving, updating, and deleting thermal clusters.
+
+    Attributes:
+        storage_service: The service for accessing study storage.
+    """
+
     def __init__(self, storage_service: StudyStorageService):
+        """
+        Initializes an instance with the service for accessing study storage.
+        """
+
         self.storage_service = storage_service
 
     def _get_file_study(self, study: Study) -> FileStudy:
         """
         Helper function to get raw study data.
         """
+
         return self.storage_service.get_storage(study).get_raw(study)
 
     def get_cluster(self, study: Study, area_id: str, cluster_id: str) -> ThermalClusterOutput:
@@ -239,12 +268,12 @@ class ThermalManager:
         Get a cluster by ID.
 
         Args:
-            study (Study): The study to get the cluster from.
-            area_id (str): The ID of the area where the cluster is located.
-            cluster_id (str): The ID of the cluster to retrieve.
+            study: The study to get the cluster from.
+            area_id: The ID of the area where the cluster is located.
+            cluster_id: The ID of the cluster to retrieve.
 
         Returns:
-            ThermalClusterOutput: The cluster with the specified ID.
+            The cluster with the specified ID.
 
         Raises:
             ClusterNotFound: If the specified cluster does not exist.
@@ -267,14 +296,14 @@ class ThermalManager:
         Get all clusters for an area.
 
         Args:
-            study (Study): The study where the clusters will be retrieved from.
-            area_id (str): The ID of the area where the clusters will be retrieved from.
+            study: The study where the clusters will be retrieved from.
+            area_id: The ID of the area where the clusters will be retrieved from.
 
         Returns:
-            t.Sequence[ThermalClusterOutput]: A sequence of all clusters for the specified area.
+            A sequence of all clusters for the specified area.
 
         Raises:
-            ClusterConfigNotFound: If the specified area does not have any clusters.
+            If the specified area does not have any clusters.
         """
 
         file_study = self._get_file_study(study)
@@ -290,12 +319,12 @@ class ThermalManager:
         Create a new cluster.
 
         Args:
-            study (Study): The study where the cluster will be created.
-            area_id (str): The ID of the area where the cluster will be created.
-            cluster_data (ThermalClusterInput): The data for the new cluster.
+            study: The study where the cluster will be created.
+            area_id: The ID of the area where the cluster will be created.
+            cluster_data: The data for the new cluster.
 
         Returns:
-            ThermalClusterOutput: The created cluster.
+            The created cluster.
         """
 
         file_study = self._get_file_study(study)
@@ -322,19 +351,21 @@ class ThermalManager:
         cluster_data: ThermalClusterInput,
     ) -> ThermalClusterOutput:
         """
-        Update a cluster with the given cluster_id in the given area_id of the given study with the provided cluster_data.
+        Update a cluster with the given `cluster_id` in the given area of the given study
+        with the provided cluster data (form fields).
 
         Args:
-        - study (Study): The study containing the area and cluster to update.
-        - area_id (str): The ID of the area containing the cluster to update.
-        - cluster_id (str): The ID of the cluster to update.
-        - cluster_data (ThermalClusterInput): The new data to update the cluster with.
+            study: The study containing the area and cluster to update.
+            area_id: The ID of the area containing the cluster to update.
+            cluster_id: The ID of the cluster to update.
+            cluster_data: The new data to update the cluster with.
 
         Returns:
-        - ThermalClusterOutput: The updated cluster.
+            The updated cluster.
 
         Raises:
-        - ClusterNotFound: If the provided cluster_id does not match the ID of the cluster in the provided cluster_data.
+            ClusterNotFound: If the provided `cluster_id` does not match the ID of the cluster
+            in the provided cluster_data.
         """
 
         file_study = self._get_file_study(study)
@@ -364,9 +395,9 @@ class ThermalManager:
         Delete the clusters with the given IDs in the given area of the given study.
 
         Args:
-        - study (Study): The study containing the area and clusters to delete.
-        - area_id (str): The ID of the area containing the clusters to delete.
-        - cluster_ids (t.Sequence[str]): The IDs of the clusters to delete.
+            study: The study containing the area and clusters to delete.
+            area_id: The ID of the area containing the clusters to delete.
+            cluster_ids: The IDs of the clusters to delete.
         """
 
         file_study = self._get_file_study(study)
