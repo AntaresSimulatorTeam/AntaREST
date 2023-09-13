@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, Mapping, Sequence
+import typing as t
 
 from pydantic import BaseModel, Extra, Field, root_validator
 
@@ -90,7 +90,7 @@ class ThermalClusterConfig(BaseModel):
     op5: float = Field(0, ge=0)
 
     @root_validator(pre=True)
-    def check_id(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    def check_id(cls, values: t.MutableMapping[str, t.Any]) -> t.MutableMapping[str, t.Any]:
         """
         Check and set the ID for a thermal cluster.
         The ID is automatically set based on the 'name' field if not provided.
@@ -188,14 +188,14 @@ class ThermalClusterOutput(ThermalClusterInput):
     id: str = Field(regex=r"[a-zA-Z0-9_(),& -]+")
 
     @classmethod
-    def from_config(cls, cluster_id: str, config: Mapping[str, Any]) -> "ThermalClusterOutput":
+    def from_config(cls, cluster_id: str, config: t.Mapping[str, t.Any]) -> "ThermalClusterOutput":
         """
         Create a ThermalClusterOutput instance from a cluster ID and a configuration.
 
         Args:
             cls (Type[ThermalClusterOutput]): The class to instantiate.
             cluster_id (str): The ID of the cluster.
-            config (Mapping[str, Any]): The configuration of the cluster.
+            config (Mapping[str, t.Any]): The configuration of the cluster.
             study_version (str): The version of the study.
 
         Returns:
@@ -245,7 +245,7 @@ class ThermalManager:
         self,
         study: Study,
         area_id: str,
-    ) -> Sequence[ThermalClusterOutput]:
+    ) -> t.Sequence[ThermalClusterOutput]:
         """
         Get all clusters for an area.
 
@@ -254,7 +254,7 @@ class ThermalManager:
             area_id (str): The ID of the area where the clusters will be retrieved from.
 
         Returns:
-            Sequence[ThermalClusterOutput]: A sequence of all clusters for the specified area.
+            t.Sequence[ThermalClusterOutput]: A sequence of all clusters for the specified area.
 
         Raises:
             ClusterConfigNotFound: If the specified area does not have any clusters.
@@ -342,14 +342,14 @@ class ThermalManager:
 
         return self.get_cluster(study, area_id, cluster_id)
 
-    def delete_clusters(self, study: Study, area_id: str, cluster_ids: Sequence[str]) -> None:
+    def delete_clusters(self, study: Study, area_id: str, cluster_ids: t.Sequence[str]) -> None:
         """
         Delete the clusters with the given IDs in the given area of the given study.
 
         Args:
         - study (Study): The study containing the area and clusters to delete.
         - area_id (str): The ID of the area containing the clusters to delete.
-        - cluster_ids (Sequence[str]): The IDs of the clusters to delete.
+        - cluster_ids (t.Sequence[str]): The IDs of the clusters to delete.
         """
 
         file_study = self._get_file_study(study)
