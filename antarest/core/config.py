@@ -235,7 +235,7 @@ class LocalConfig:
         return cls(
             binaries={str(v): Path(p) for v, p in data["binaries"].items()},
             enable_nb_core_detection=data["enable_nb_cores_detection"],
-            nb_cores=NbCoresConfig(min=cpu["min"], default=cpu["default"], max=cpu["max"]),
+            nb_cores=nb_cores,
         )
 
     @classmethod
