@@ -34,10 +34,16 @@ class ThermalClusterGroup(EnumIgnoreCase):
     GAS = "Gas"
     OIL = "Oil"
     MIXED_FUEL = "Mixed Fuel"
-    OTHER1 = "Other" or "Other 1"
+    OTHER1 = "Other 1"
     OTHER2 = "Other 2"
     OTHER3 = "Other 3"
     OTHER4 = "Other 4"
+
+    @classmethod
+    def _missing_(cls, value: object) -> t.Optional["ThermalClusterGroup"]:
+        if isinstance(value, str) and value.upper() == "OTHER":
+            return cls.OTHER1
+        return t.cast(t.Optional["ThermalClusterGroup"], super()._missing_(value))
 
 
 _CLUSTER_PATH = "input/thermal/clusters/{area_id}/list/{cluster_id}"
