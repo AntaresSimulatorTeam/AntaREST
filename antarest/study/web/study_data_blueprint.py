@@ -104,7 +104,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     @bp.post(
         "/studies/{uuid}/areas",
         tags=[APITag.study_data],
-        summary="Create a new area/cluster",
+        summary="Create a new area",
         response_model=AreaInfoDTO,
     )
     def create_area(
@@ -435,8 +435,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
 
         Args:
         - `uuid`: The UUID of the study.
-        - `path`: The path of the matrix to update.
-        - `matrix_edit_instructions`: A list of edit instructions to be applied to the matrix.
+        - `path`: the path of the matrix to update.
+        - `matrix_edit_instructions`: a list of edit instructions to be applied to the matrix.
 
         Permissions:
         - User must have WRITE permission on the study.
@@ -933,7 +933,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         Get the hydraulic allocation matrix for all areas.
 
         Parameters:
-        - `uuid`: the study UUID.
+        - `uuid`: The study UUID.
 
         Returns the data frame matrix, where:
         - the rows are the areas,
@@ -963,7 +963,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         Get the form fields used for the allocation form.
 
         Parameters:
-        - `uuid`: the study UUID,
+        - `uuid`: The study UUID,
         - `area_id`: the area ID.
 
         Returns the allocation form fields.
@@ -1001,7 +1001,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         Update the hydraulic allocation of a given area.
 
         Parameters:
-        - `uuid`: the study UUID,
+        - `uuid`: The study UUID,
         - `area_id`: the area ID.
 
         Returns the updated allocation form fields.
@@ -1046,15 +1046,15 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
 
         Parameters:
         - `uuid`: The UUID of the study.
-        - `columns`: A filter on the area identifiers:
+        - `columns`: a filter on the area identifiers:
           - Use no parameter to select all areas.
           - Use an area identifier to select a single area.
           - Use a comma-separated list of areas to select those areas.
 
         Returns the hydraulic/load/solar/wind correlation matrix with the following attributes:
-        - `index`: A list of all study areas.
-        - `columns`: A list of selected production areas.
-        - `data`: A 2D-array matrix of correlation coefficients with values in the range of -1 to 1.
+        - `index`: a list of all study areas.
+        - `columns`: a list of selected production areas.
+        - `data`: a 2D-array matrix of correlation coefficients with values in the range of -1 to 1.
         """
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
@@ -1098,9 +1098,9 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
 
         Parameters:
         - `uuid`: The UUID of the study.
-        - `index`: A list of all study areas.
-        - `columns`: A list of selected production areas.
-        - `data`: A 2D-array matrix of correlation coefficients with values in the range of -1 to 1.
+        - `index`: a list of all study areas.
+        - `columns`: a list of selected production areas.
+        - `data`: a 2D-array matrix of correlation coefficients with values in the range of -1 to 1.
 
         Returns the hydraulic/load/solar/wind correlation matrix updated
         """
@@ -1336,7 +1336,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     @bp.get(
         path="/studies/{uuid}/areas/{area_id}/clusters/thermal",
         tags=[APITag.study_data],
-        summary="Get clusters for a given area",
+        summary="Get thermal clusters for a given area",
         response_model=Sequence[ThermalClusterOutput],
     )
     def get_thermal_clusters(
@@ -1344,6 +1344,15 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         area_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Sequence[ThermalClusterOutput]:
+        """
+        Retrieve the list of thermal clusters for a specified area.
+
+        Args:
+        - `uuid`: The UUID of the study.
+        - `area_id`: the area ID.
+
+        Returns: The list thermal clusters.
+        """
         logger.info(
             "Getting thermal clusters for study %s and area %s",
             uuid,
@@ -1366,6 +1375,16 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         cluster_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> ThermalClusterOutput:
+        """
+        Retrieve the thermal clusters for a specified area.
+
+        Args:
+        - `uuid`: The UUID of the study.
+        - `area_id`: the area ID.
+        - `cluster_id`: the cluster ID.
+
+        Returns: The properties of the thermal clusters.
+        """
         logger.info(
             "Getting thermal cluster values for study %s and cluster %s",
             uuid,
@@ -1379,7 +1398,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     @bp.post(
         path="/studies/{uuid}/areas/{area_id}/clusters/thermal",
         tags=[APITag.study_data],
-        summary="Create a new thermal cluster for a given area, return the created cluster",
+        summary="Create a new thermal cluster for a given area",
         status_code=HTTPStatus.CREATED,
         response_model=ThermalClusterOutput,
     )
@@ -1389,6 +1408,17 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         cluster_data: ThermalClusterCreation,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> ThermalClusterOutput:
+        """
+        Create a new thermal cluster for a specified area.
+
+        Args:
+        - `uuid`: The UUID of the study.
+        - `area_id`: the area ID.
+        - `cluster_data`: the properties used for creation:
+          "name" and "group".
+
+        Returns: The properties of the newly-created thermal clusters.
+        """
         logger.info(
             "Creating thermal cluster for study %s and area %s",
             uuid,
@@ -1401,7 +1431,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     @bp.patch(
         path="/studies/{uuid}/areas/{area_id}/clusters/thermal/{cluster_id}",
         tags=[APITag.study_data],
-        summary="Update thermal cluster for a given area, return the updated cluster",
+        summary="Update thermal cluster for a given area",
         response_model=ThermalClusterOutput,
     )
     def update_thermal_cluster(
@@ -1411,6 +1441,16 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         cluster_data: ThermalClusterInput,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> ThermalClusterOutput:
+        """
+        Update the properties of a thermal cluster for a specified area.
+
+        Args:
+        - `uuid`: The UUID of the study.
+        - `area_id`: the area ID.
+        - `cluster_data`: the properties used for updating.
+
+        Returns: The properties of the updated thermal clusters.
+        """
         logger.info(
             "Updating thermal cluster for study %s and cluster %s",
             uuid,
@@ -1424,7 +1464,9 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     @bp.delete(
         path="/studies/{uuid}/areas/{area_id}/clusters/thermal",
         tags=[APITag.study_data],
-        summary="Delete thermal clusters for a given area",
+        summary="Remove thermal clusters for a given area",
+        status_code=HTTPStatus.NO_CONTENT,
+        response_model=None,
     )
     def delete_thermal_clusters(
         uuid: str,
@@ -1432,6 +1474,15 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         cluster_ids: Sequence[str],
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
+        """
+        Remove one or several thermal cluster(s) from a specified area.
+        This endpoint removes the properties and time series of each thermal clusters.
+
+        Args:
+        - `uuid`: The UUID of the study.
+        - `area_id`: the area ID.
+        - `cluster_ids`: list of thermal cluster IDs to remove.
+       """
         logger.info(
             "Deleting thermal clusters for study %s and area %s",
             uuid,
@@ -1460,19 +1511,19 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
 
         Args:
         - `uuid`: The UUID of the study.
-        - `area_id`: The area ID of the study.
-        - `storage_id`: The storage ID of the study.
+        - `area_id`: the area ID.
+        - `storage_id`: the storage ID of the study.
 
         Returns: One storage with the following attributes:
-        - `id`: The storage ID of the study.
-        - `name`: The name of the  storage.
-        - `group`: The group of the  storage.
-        - `injectionNominalCapacity`: The injection Nominal Capacity of the  storage.
-        - `withdrawalNominalCapacity`: The withdrawal Nominal Capacity of the  storage.
-        - `reservoirCapacity`: The reservoir capacity of the  storage.
-        - `efficiency`: The efficiency of the  storage.
-        - `initialLevel`: The initial Level of the  storage.
-        - `initialLevelOptim`: The initial Level Optim of the  storage.
+        - `id`: the storage ID of the study.
+        - `name`: the name of the  storage.
+        - `group`: the group of the  storage.
+        - `injectionNominalCapacity`: the injection Nominal Capacity of the  storage.
+        - `withdrawalNominalCapacity`: the withdrawal Nominal Capacity of the  storage.
+        - `reservoirCapacity`: the reservoir capacity of the  storage.
+        - `efficiency`: the efficiency of the  storage.
+        - `initialLevel`: the initial Level of the  storage.
+        - `initialLevelOptim`: the initial Level Optim of the  storage.
 
         Permissions:
           The user must have READ permission on the study.
@@ -1501,18 +1552,18 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
 
         Args:
         - `uuid`: The UUID of the study.
-        - `area_id`: The area ID.
+        - `area_id`: the area ID.
 
         Returns: A list of storages with the following attributes:
-        - `id`: The storage ID of the study.
-        - `name`: The name of the  storage.
-        - `group`: The group of the  storage.
-        - `injectionNominalCapacity`: The injection Nominal Capacity of the  storage.
-        - `withdrawalNominalCapacity`: The withdrawal Nominal Capacity of the  storage.
-        - `reservoirCapacity`: The reservoir capacity of the  storage.
-        - `efficiency`: The efficiency of the  storage.
-        - `initialLevel`: The initial Level of the  storage.
-        - `initialLevelOptim`: The initial Level Optim of the  storage.
+        - `id`: the storage ID of the study.
+        - `name`: the name of the  storage.
+        - `group`: the group of the  storage.
+        - `injectionNominalCapacity`: the injection Nominal Capacity of the  storage.
+        - `withdrawalNominalCapacity`: the withdrawal Nominal Capacity of the  storage.
+        - `reservoirCapacity`: the reservoir capacity of the  storage.
+        - `efficiency`: the efficiency of the  storage.
+        - `initialLevel`: the initial Level of the  storage.
+        - `initialLevelOptim`: the initial Level Optim of the  storage.
 
         Permissions:
           The user must have READ permission on the study.
@@ -1543,14 +1594,14 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
 
         Args:
         - `uuid`: The UUID of the study.
-        - `area_id`: The area ID.
-        - `storage_id`: The ID of the short-term storage.
-        - `ts_name`: The name of the time series to retrieve.
+        - `area_id`: the area ID.
+        - `storage_id`: the ID of the short-term storage.
+        - `ts_name`: the name of the time series to retrieve.
 
         Returns: The time series matrix with the following attributes:
-        - `index`: A list of 0-indexed time series lines (8760 lines).
-        - `columns`: A list of 0-indexed time series columns (1 column).
-        - `data`: A 2D-array matrix representing the time series.
+        - `index`: a list of 0-indexed time series lines (8760 lines).
+        - `columns`: a list of 0-indexed time series columns (1 column).
+        - `data`: a 2D-array matrix representing the time series.
 
         Permissions:
         - User must have READ permission on the study.
@@ -1581,10 +1632,10 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
 
         Args:
         - `uuid`: The UUID of the study.
-        - `area_id`: The area ID.
-        - `storage_id`: The ID of the short-term storage.
-        - `ts_name`: The name of the time series to retrieve.
-        - `ts`: The time series matrix to update.
+        - `area_id`: the area ID.
+        - `storage_id`: the ID of the short-term storage.
+        - `ts_name`: the name of the time series to retrieve.
+        - `ts`: the time series matrix to update.
 
         Permissions:
         - User must have WRITE permission on the study.
@@ -1613,8 +1664,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
 
         Args:
         - `uuid`: The UUID of the study.
-        - `area_id`: The area ID.
-        - `storage_id`: The ID of the short-term storage.
+        - `area_id`: the area ID.
+        - `storage_id`: the ID of the short-term storage.
 
         Permissions:
         - User must have READ permission on the study.
@@ -1656,15 +1707,15 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
           - `initialLevelOptim`: The initial Level Optim of the updated storage
 
         Returns: New storage with the following attributes:
-        - `id`: The storage ID of the study.
-        - `name`: The name of the  storage.
-        - `group`: The group of the  storage.
-        - `injectionNominalCapacity`: The injection Nominal Capacity of the  storage.
-        - `withdrawalNominalCapacity`: The withdrawal Nominal Capacity of the  storage.
-        - `reservoirCapacity`: The reservoir capacity of the  storage.
-        - `efficiency`: The efficiency of the  storage.
-        - `initialLevel`: The initial Level of the  storage.
-        - `initialLevelOptim`: The initial Level Optim of the  storage.
+        - `id`: the storage ID of the study.
+        - `name`: the name of the  storage.
+        - `group`: the group of the  storage.
+        - `injectionNominalCapacity`: the injection Nominal Capacity of the  storage.
+        - `withdrawalNominalCapacity`: the withdrawal Nominal Capacity of the  storage.
+        - `reservoirCapacity`: the reservoir capacity of the  storage.
+        - `efficiency`: the efficiency of the  storage.
+        - `initialLevel`: the initial Level of the  storage.
+        - `initialLevelOptim`: the initial Level Optim of the  storage.
 
         Permissions:
         - User must have READ/WRITE permission on the study.
@@ -1695,28 +1746,28 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
 
         Args:
         - `uuid`: The UUID of the study.
-        - `area_id`: The area ID.
-        - `storage_id`: The storage id of the study that we want to update.
-        - `form`: The characteristic of the storage that we can update:
-          - `name`: The name of the updated storage.
-          - `group`: The group of the updated storage.
-          - `injectionNominalCapacity`: The injection Nominal Capacity of the updated storage.
-          - `withdrawalNominalCapacity`: The withdrawal Nominal Capacity of the updated storage.
+        - `area_id`: the area ID.
+        - `storage_id`: the storage id of the study that we want to update.
+        - `form`: the characteristic of the storage that we can update:
+          - `name`: the name of the updated storage.
+          - `group`: the group of the updated storage.
+          - `injectionNominalCapacity`: the injection Nominal Capacity of the updated storage.
+          - `withdrawalNominalCapacity`: the withdrawal Nominal Capacity of the updated storage.
           - `reservoirCapacity`:  The reservoir capacity of the updated storage.
-          - `efficiency`: The efficiency of the updated storage
-          - `initialLevel`: The initial Level of the updated storage
-          - `initialLevelOptim`: The initial Level Optim of the updated storage
+          - `efficiency`: the efficiency of the updated storage
+          - `initialLevel`: the initial Level of the updated storage
+          - `initialLevelOptim`: the initial Level Optim of the updated storage
 
         Returns: The updated storage with the following attributes:
-        - `name`: The name of the updated storage.
-        - `group`: The group of the updated storage.
-        - `injectionNominalCapacity`: The injection Nominal Capacity of the updated storage.
-        - `withdrawalNominalCapacity`: The withdrawal Nominal Capacity of the updated storage.
+        - `name`: the name of the updated storage.
+        - `group`: the group of the updated storage.
+        - `injectionNominalCapacity`: the injection Nominal Capacity of the updated storage.
+        - `withdrawalNominalCapacity`: the withdrawal Nominal Capacity of the updated storage.
         - `reservoirCapacity`:  The reservoir capacity of the updated storage.
-        - `efficiency`: The efficiency of the updated storage
-        - `initialLevel`: The initial Level of the updated storage
-        - `initialLevelOptim`: The initial Level Optim of the updated storage
-        - `id`: The storage ID of the study that we want to update.
+        - `efficiency`: the efficiency of the updated storage
+        - `initialLevel`: the initial Level of the updated storage
+        - `initialLevelOptim`: the initial Level Optim of the updated storage
+        - `id`: the storage ID of the study that we want to update.
 
         Permissions:
         - User must have READ/WRITE permission on the study.
@@ -1735,7 +1786,6 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         tags=[APITag.study_data],
         summary="Remove short-term storages from an area",
         status_code=HTTPStatus.NO_CONTENT,
-        response_model=None,
     )
     def delete_st_storages(
         uuid: str,
@@ -1748,8 +1798,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
 
         Args:
         - `uuid`: The UUID of the study.
-        - `area_id`: The area ID.
-        - `storage_ids`: List of IDs of the storages to remove from the area.
+        - `area_id`: the area ID.
+        - `storage_ids`: ist of IDs of the storages to remove from the area.
 
         Permissions:
         - User must have DELETED permission on the study.
