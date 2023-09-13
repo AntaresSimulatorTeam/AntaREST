@@ -2,9 +2,8 @@
 /* eslint-disable camelcase */
 import Box from "@mui/material/Box";
 import AddIcon from "@mui/icons-material/Add";
-import { Button, IconButton, Tooltip } from "@mui/material";
+import { Button, Tooltip } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
-import VisibilityIcon from "@mui/icons-material/Visibility";
 import MaterialReactTable, {
   MRT_Row,
   MRT_RowSelectionState,
@@ -14,7 +13,7 @@ import MaterialReactTable, {
   type MRT_ColumnDef,
 } from "material-react-table";
 import { useTranslation } from "react-i18next";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import CreateRowDialog from "./CreateRowDialog";
 import ConfirmationDialog from "../dialogs/ConfirmationDialog";
@@ -25,7 +24,7 @@ export interface GroupedDataTableProps<TData extends TRow> {
   data: TData[];
   columns: MRT_ColumnDef<TData>[];
   groups: string[];
-  onCreate?: (values: TData) => void;
+  onCreate?: (values: TData) => Promise<TData>;
   onDelete?: (ids: string[]) => void;
 }
 
@@ -44,6 +43,10 @@ function GroupedDataTable<TData extends TRow>({
   const [tableData, setTableData] = useState(data);
   const [rowSelection, setRowSelection] = useState<MRT_RowSelectionState>({});
 
+  useEffect(() => {
+    setTableData(data);
+  }, [data]);
+
   const isAnyRowSelected = useMemo(
     () => Object.values(rowSelection).some((value) => value),
     [rowSelection],
@@ -58,10 +61,10 @@ function GroupedDataTable<TData extends TRow>({
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleCreateRow = (values: TData) => {
+  const handleCreateRow = async (values: TData) => {
     if (onCreate) {
-      onCreate(values);
-      setTableData((prevTableData) => [...prevTableData, values]);
+      const newRow = await onCreate(values);
+      setTableData((prevTableData) => [...prevTableData, newRow]);
     }
   };
 
@@ -99,14 +102,20 @@ function GroupedDataTable<TData extends TRow>({
         columns={columns}
         initialState={{
           grouping: ["group"],
-          density: "comfortable",
+          density: "compact",
           expanded: true,
         }}
         enableGrouping
         enableRowSelection
+        enableColumnDragging={false}
+        enableColumnActions={false}
         positionToolbarAlertBanner="none"
         enableBottomToolbar={false}
         enableRowActions
+        enableStickyFooter
+        enableStickyHeader
+        enablePagination={false}
+        muiTableContainerProps={{ sx: { maxHeight: 550 } }}
         onRowSelectionChange={setRowSelection}
         state={{ rowSelection }}
         renderTopToolbarCustomActions={() => (
@@ -144,14 +153,43 @@ function GroupedDataTable<TData extends TRow>({
         )}
         renderRowActions={({ row }) => (
           <Tooltip title={t("global.view")}>
-            <IconButton size="small" onClick={() => handleRowClick(row)}>
-              <VisibilityIcon />
-            </IconButton>
+            <Box
+              sx={{
+                cursor: "pointer",
+                "&:hover": {
+                  color: "primary.main",
+                  textDecoration: "underline",
+                },
+              }}
+              onClick={() => handleRowClick(row)}
+            >
+              {row.original.name}
+            </Box>
           </Tooltip>
         )}
         displayColumnDefOptions={{
           "mrt-row-actions": {
-            header: "", // hide header
+            header: "", // hide "Actions" column header
+            size: 50,
+            muiTableBodyCellProps: {
+              align: "left",
+            },
+          },
+        }}
+        muiTableHeadCellProps={{
+          align: "right",
+        }}
+        muiTableBodyCellProps={{
+          align: "right",
+        }}
+        muiTableFooterCellProps={{
+          align: "right",
+        }}
+        muiTableProps={{
+          sx: {
+            "& .MuiTableCell-root": {
+              borderBottom: "1px solid rgba(224, 224, 224, 0.3)",
+            },
           },
         }}
       />

@@ -1,78 +1,17 @@
-import { FieldValues } from "react-hook-form";
+/* eslint-disable camelcase */
+import { MRT_AggregationFn } from "material-react-table";
 import {
   Area,
   Cluster,
   StudyMetadata,
 } from "../../../../../../../common/types";
 import client from "../../../../../../../services/api/client";
-import { getStudyData } from "../../../../../../../services/api/study";
-
-export interface ThermalType extends FieldValues {
-  name: string;
-  group: string;
-  enabled?: boolean;
-  unitcount?: number;
-  nominalcapacity?: number;
-  "gen-ts"?: string;
-  "min-stable-power"?: number;
-  "min-up-time"?: number;
-  "min-down-time"?: number;
-  "must-run"?: boolean;
-  spinning?: number;
-  co2?: number;
-  "volatility.forced"?: number;
-  "volatility.planned"?: number;
-  "law.forced"?: string;
-  "law.planned"?: string;
-  "marginal-cost"?: number;
-  "spread-cost"?: number;
-  "fixed-cost"?: number;
-  "startup-cost"?: number;
-  "market-bid-cost"?: number;
-}
-
-export const noDataValues: Partial<ThermalType> = {
-  name: "",
-  group: "",
-  enabled: true,
-  unitcount: 0,
-  nominalcapacity: 0,
-  "gen-ts": "use global parameter",
-  "min-stable-power": 0,
-  "min-up-time": 1,
-  "min-down-time": 1,
-  "must-run": false,
-  spinning: 0,
-  co2: 0,
-  "volatility.forced": 0,
-  "volatility.planned": 0,
-  "law.forced": "uniform",
-  "law.planned": "uniform",
-  "marginal-cost": 0,
-  "spread-cost": 0,
-  "fixed-cost": 0,
-  "startup-cost": 0,
-  "market-bid-cost": 0,
-};
-
-export async function getDefaultValues(
-  studyId: string,
-  area: string,
-  cluster: Cluster["id"],
-): Promise<ThermalType> {
-  const pathPrefix = `input/thermal/clusters/${area}/list/${cluster}`;
-  const data: ThermalType = await getStudyData(studyId, pathPrefix, 3);
-  Object.keys(noDataValues).forEach((item) => {
-    data[item] = data[item] !== undefined ? data[item] : noDataValues[item];
-  });
-  return data;
-}
 
 ////////////////////////////////////////////////////////////////
 // Enums
 ////////////////////////////////////////////////////////////////
 
-enum ClusterGroup {
+export enum ThermalClusterGroup {
   Gas = "Gas",
   HardCoal = "Hard Coal",
   Lignite = "Lignite",
@@ -100,9 +39,8 @@ enum LawOption {
 // Types
 ////////////////////////////////////////////////////////////////
 
-interface PollutantFields {
+interface ThermalClusterPollutants {
   co2: number;
-  // For study versions >= 860
   so2: number;
   nh3: number;
   nox: number;
@@ -117,12 +55,15 @@ interface PollutantFields {
   op5: number;
 }
 
-export interface ThermalFormFields extends PollutantFields {
+export interface ThermalCluster extends ThermalClusterPollutants {
+  id: string;
   name: string;
   group: string;
   enabled: boolean;
   unitCount: number;
   nominalCapacity: number;
+  installedCapacity: number;
+  enabledCapacity: number;
   mustRun: boolean;
   minStablePower: number;
   spinning: number;
@@ -144,10 +85,10 @@ export interface ThermalFormFields extends PollutantFields {
 // Constants
 ////////////////////////////////////////////////////////////////
 
-export const CLUSTER_GROUP_OPTIONS = Object.values(ClusterGroup);
+export const CLUSTER_GROUP_OPTIONS = Object.values(ThermalClusterGroup);
 export const TS_GENERATION_OPTIONS = Object.values(TimeSeriesGenerationOption);
 export const TS_LAW_OPTIONS = Object.values(LawOption);
-export const POLLUTANT_NAMES: Array<keyof PollutantFields> = [
+export const POLLUTANT_NAMES: Array<keyof ThermalClusterPollutants> = [
   "co2",
   "so2",
   "nh3",
@@ -167,28 +108,103 @@ export const POLLUTANT_NAMES: Array<keyof PollutantFields> = [
 // Functions
 ////////////////////////////////////////////////////////////////
 
-function makeRequestURL(
+const CLUSTERS_URL = (
   studyId: StudyMetadata["id"],
-  areaId: Area["name"],
-  clusterId: Cluster["id"],
-): string {
-  return `/v1/studies/${studyId}/areas/${areaId}/clusters/thermal/${clusterId}/form`;
-}
+  areaId: Area["name"]
+): string => `/v1/studies/${studyId}/areas/${areaId}/clusters/thermal`;
 
-export async function getThermalFormFields(
+const CLUSTER_URL = (
   studyId: StudyMetadata["id"],
   areaId: Area["name"],
-  clusterId: Cluster["id"],
-): Promise<ThermalFormFields> {
-  const res = await client.get(makeRequestURL(studyId, areaId, clusterId));
+  clusterId: Cluster["id"]
+): string => `${CLUSTERS_URL(studyId, areaId)}/${clusterId}`;
+
+async function makeRequest<T>(
+  method: "get" | "post" | "patch" | "delete",
+  url: string,
+  data?: Partial<ThermalCluster> | { data: Array<Cluster["id"]> }
+): Promise<T> {
+  const res = await client[method]<T>(url, data);
   return res.data;
 }
 
-export function setThermalFormFields(
+export async function getThermalClusters(
+  studyId: StudyMetadata["id"],
+  areaId: Area["name"]
+): Promise<ThermalCluster[]> {
+  return makeRequest<ThermalCluster[]>("get", CLUSTERS_URL(studyId, areaId));
+}
+
+export async function getThermalCluster(
+  studyId: StudyMetadata["id"],
+  areaId: Area["name"],
+  clusterId: Cluster["id"]
+): Promise<ThermalCluster> {
+  return makeRequest<ThermalCluster>(
+    "get",
+    CLUSTER_URL(studyId, areaId, clusterId)
+  );
+}
+
+export async function updateThermalCluster(
   studyId: StudyMetadata["id"],
   areaId: Area["name"],
   clusterId: Cluster["id"],
-  values: Partial<ThermalFormFields>,
-): Promise<void> {
-  return client.put(makeRequestURL(studyId, areaId, clusterId), values);
+  data: Partial<ThermalCluster>
+): Promise<ThermalCluster> {
+  return makeRequest<ThermalCluster>(
+    "patch",
+    CLUSTER_URL(studyId, areaId, clusterId),
+    data
+  );
 }
+
+export async function createThermalCluster(
+  studyId: StudyMetadata["id"],
+  areaId: Area["name"],
+  data: Partial<ThermalCluster>
+): Promise<ThermalCluster> {
+  return makeRequest<ThermalCluster>(
+    "post",
+    CLUSTERS_URL(studyId, areaId),
+    data
+  );
+}
+
+export function deleteThermalClusters(
+  studyId: StudyMetadata["id"],
+  areaId: Area["name"],
+  clusterIds: Array<Cluster["id"]>
+): Promise<void> {
+  return makeRequest<void>("delete", CLUSTERS_URL(studyId, areaId), {
+    data: clusterIds,
+  });
+}
+
+/**
+ * Custom aggregation function summing the values of each row,
+ * to display enabled and installed capacity in the same cell.
+ * @param colHeader - the column header
+ * @param rows - the column rows to aggregate
+ * @returns a string with the sum of enabled and installed capacity.
+ * @example "100/200"
+ * @see https://www.material-react-table.com/docs/guides/aggregation-and-grouping#custom-aggregation-functions
+ */
+export const capacityAggregationFn: MRT_AggregationFn<ThermalCluster> = (
+  colHeader,
+  rows
+) => {
+  const { enabledCapacitySum, installedCapacitySum } = rows.reduce(
+    (
+      acc: { enabledCapacitySum: number; installedCapacitySum: number },
+      row
+    ) => {
+      acc.enabledCapacitySum += row.original.enabledCapacity ?? 0;
+      acc.installedCapacitySum += row.original.installedCapacity ?? 0;
+      return acc;
+    },
+    { enabledCapacitySum: 0, installedCapacitySum: 0 }
+  );
+
+  return `${enabledCapacitySum}/${installedCapacitySum}`;
+};

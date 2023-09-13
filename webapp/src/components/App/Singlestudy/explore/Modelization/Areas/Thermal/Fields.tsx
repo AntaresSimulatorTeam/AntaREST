@@ -10,14 +10,14 @@ import { useFormContextPlus } from "../../../../../../common/Form";
 import {
   CLUSTER_GROUP_OPTIONS,
   POLLUTANT_NAMES,
-  ThermalFormFields,
+  ThermalCluster,
   TS_GENERATION_OPTIONS,
   TS_LAW_OPTIONS,
 } from "./utils";
 
 function Fields() {
   const [t] = useTranslation();
-  const { control } = useFormContextPlus<ThermalFormFields>();
+  const { control } = useFormContextPlus<ThermalCluster>();
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const studyVersion = Number(study.version);
 

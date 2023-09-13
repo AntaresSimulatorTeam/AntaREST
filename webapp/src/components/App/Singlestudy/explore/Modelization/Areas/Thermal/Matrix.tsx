@@ -25,7 +25,7 @@ interface Props {
   cluster: Cluster["id"];
 }
 
-function ThermalMatrixView(props: Props) {
+function Matrix(props: Props) {
   const [t] = useTranslation();
   const { study, area, cluster } = props;
   const [value, setValue] = React.useState(0);
@@ -116,4 +116,4 @@ function ThermalMatrixView(props: Props) {
   );
 }
 
-export default ThermalMatrixView;
+export default Matrix;
