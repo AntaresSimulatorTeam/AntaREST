@@ -1,41 +1,19 @@
 import json
-from typing import (
-    Any,
-    Dict,
-    Mapping,
-    Sequence,
-)
+from typing import Any, Dict, Mapping, Sequence
 
-from pydantic import (
-    BaseModel,
-    Extra,
-    Field,
-    root_validator,
-)
+from pydantic import BaseModel, Extra, Field, root_validator
+
 from antarest.core.exceptions import ClusterConfigNotFound, ClusterNotFound
 from antarest.core.utils.string import to_camel_case
-
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
-from antarest.study.business.utils import (
-    AllOptionalMetaclass,
-    execute_or_add_commands,
-)
-
+from antarest.study.business.utils import AllOptionalMetaclass, execute_or_add_commands
 from antarest.study.model import Study
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    transform_name_to_id,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.storage_service import StudyStorageService
-from antarest.study.storage.variantstudy.model.command.create_cluster import (
-    CreateCluster,
-)
-from antarest.study.storage.variantstudy.model.command.remove_cluster import (
-    RemoveCluster,
-)
-from antarest.study.storage.variantstudy.model.command.update_config import (
-    UpdateConfig,
-)
+from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
+from antarest.study.storage.variantstudy.model.command.remove_cluster import RemoveCluster
+from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 
 
 class TimeSeriesGenerationOption(EnumIgnoreCase):

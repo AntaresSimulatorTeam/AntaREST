@@ -12,46 +12,21 @@ from antarest.core.requests import RequestParameters
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.matrixstore.matrix_editor import MatrixEditInstruction
-from antarest.study.business.adequacy_patch_management import (
-    AdequacyPatchFormFields,
+from antarest.study.business.adequacy_patch_management import AdequacyPatchFormFields
+from antarest.study.business.advanced_parameters_management import AdvancedParamsFormFields
+from antarest.study.business.allocation_management import AllocationFormFields, AllocationMatrix
+from antarest.study.business.area_management import AreaCreationDTO, AreaInfoDTO, AreaType, AreaUI, LayerInfoDTO
+from antarest.study.business.areas.hydro_management import ManagementOptionsFormFields
+from antarest.study.business.areas.properties_management import PropertiesFormFields
+from antarest.study.business.areas.renewable_management import RenewableFormFields
+from antarest.study.business.areas.thermal_management import (
+    ThermalClusterCreation,
+    ThermalClusterInput,
+    ThermalClusterOutput,
 )
-from antarest.study.business.advanced_parameters_management import (
-    AdvancedParamsFormFields,
-)
-from antarest.study.business.allocation_management import (
-    AllocationFormFields,
-    AllocationMatrix,
-)
-from antarest.study.business.area_management import (
-    AreaCreationDTO,
-    AreaInfoDTO,
-    AreaType,
-    AreaUI,
-    LayerInfoDTO,
-)
-from antarest.study.business.areas.hydro_management import (
-    ManagementOptionsFormFields,
-)
-from antarest.study.business.areas.properties_management import (
-    PropertiesFormFields,
-)
-from antarest.study.business.areas.renewable_management import (
-    RenewableFormFields,
-)
-from antarest.study.business.binding_constraint_management import (
-    ConstraintTermDTO,
-    UpdateBindingConstProps,
-)
-from antarest.study.business.correlation_management import (
-    CorrelationFormFields,
-    CorrelationManager,
-    CorrelationMatrix,
-)
-from antarest.study.business.district_manager import (
-    DistrictCreationDTO,
-    DistrictInfoDTO,
-    DistrictUpdateDTO,
-)
+from antarest.study.business.binding_constraint_management import ConstraintTermDTO, UpdateBindingConstProps
+from antarest.study.business.correlation_management import CorrelationFormFields, CorrelationManager, CorrelationMatrix
+from antarest.study.business.district_manager import DistrictCreationDTO, DistrictInfoDTO, DistrictUpdateDTO
 from antarest.study.business.general_management import GeneralFormFields
 from antarest.study.business.link_management import LinkInfoDTO
 from antarest.study.business.optimization_management import OptimizationFormFields
@@ -63,18 +38,8 @@ from antarest.study.business.st_storage_manager import (
     STStorageMatrix,
     STStorageTimeSeries,
 )
-from antarest.study.business.table_mode_management import (
-    ColumnsModelTypes,
-    TableTemplateType,
-)
-from antarest.study.business.thematic_trimming_management import (
-    ThematicTrimmingFormFields,
-)
-from antarest.study.business.areas.thermal_management import (
-    ThermalClusterCreation,
-    ThermalClusterInput,
-    ThermalClusterOutput,
-)
+from antarest.study.business.table_mode_management import ColumnsModelTypes, TableTemplateType
+from antarest.study.business.thematic_trimming_management import ThematicTrimmingFormFields
 from antarest.study.business.timeseries_config_management import TSFormFields
 from antarest.study.model import PatchArea, PatchCluster
 from antarest.study.service import StudyService
