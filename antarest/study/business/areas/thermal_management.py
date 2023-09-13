@@ -8,7 +8,6 @@ from antarest.core.utils.string import to_camel_case
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.utils import AllOptionalMetaclass, execute_or_add_commands
 from antarest.study.model import Study
-from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
@@ -110,13 +109,16 @@ class ThermalClusterConfig(BaseModel):
         Check and set the ID for a thermal cluster.
         The ID is automatically set based on the 'name' field if not provided.
         """
+        # Avoid circular imports
+        from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
+
         if values.get("id") or not values.get("name"):
             return values
-        cluster_name = values["name"]
-        if cluster_id := transform_name_to_id(cluster_name):
-            values["id"] = cluster_id
+        name = values["name"]
+        if storage_id := transform_name_to_id(name):
+            values["id"] = storage_id
         else:
-            raise ValueError(f"Invalid short term storage name '{cluster_name}'.")
+            raise ValueError(f"Invalid name '{name}'.")
         return values
 
 
