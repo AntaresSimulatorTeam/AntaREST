@@ -12,17 +12,46 @@ from antarest.core.requests import RequestParameters
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.matrixstore.matrix_editor import MatrixEditInstruction
-from antarest.study.business.adequacy_patch_management import AdequacyPatchFormFields
-from antarest.study.business.advanced_parameters_management import AdvancedParamsFormFields
-from antarest.study.business.allocation_management import AllocationFormFields, AllocationMatrix
-from antarest.study.business.area_management import AreaCreationDTO, AreaInfoDTO, AreaType, AreaUI, LayerInfoDTO
-from antarest.study.business.areas.hydro_management import ManagementOptionsFormFields
-from antarest.study.business.areas.properties_management import PropertiesFormFields
-from antarest.study.business.areas.renewable_management import RenewableFormFields
-from antarest.study.business.areas.thermal_management import ThermalFormFields
-from antarest.study.business.binding_constraint_management import ConstraintTermDTO, UpdateBindingConstProps
-from antarest.study.business.correlation_management import CorrelationFormFields, CorrelationManager, CorrelationMatrix
-from antarest.study.business.district_manager import DistrictCreationDTO, DistrictInfoDTO, DistrictUpdateDTO
+from antarest.study.business.adequacy_patch_management import (
+    AdequacyPatchFormFields,
+)
+from antarest.study.business.advanced_parameters_management import (
+    AdvancedParamsFormFields,
+)
+from antarest.study.business.allocation_management import (
+    AllocationFormFields,
+    AllocationMatrix,
+)
+from antarest.study.business.area_management import (
+    AreaCreationDTO,
+    AreaInfoDTO,
+    AreaType,
+    AreaUI,
+    LayerInfoDTO,
+)
+from antarest.study.business.areas.hydro_management import (
+    ManagementOptionsFormFields,
+)
+from antarest.study.business.areas.properties_management import (
+    PropertiesFormFields,
+)
+from antarest.study.business.areas.renewable_management import (
+    RenewableFormFields,
+)
+from antarest.study.business.binding_constraint_management import (
+    ConstraintTermDTO,
+    UpdateBindingConstProps,
+)
+from antarest.study.business.correlation_management import (
+    CorrelationFormFields,
+    CorrelationManager,
+    CorrelationMatrix,
+)
+from antarest.study.business.district_manager import (
+    DistrictCreationDTO,
+    DistrictInfoDTO,
+    DistrictUpdateDTO,
+)
 from antarest.study.business.general_management import GeneralFormFields
 from antarest.study.business.link_management import LinkInfoDTO
 from antarest.study.business.optimization_management import OptimizationFormFields
@@ -34,8 +63,18 @@ from antarest.study.business.st_storage_manager import (
     STStorageMatrix,
     STStorageTimeSeries,
 )
-from antarest.study.business.table_mode_management import ColumnsModelTypes, TableTemplateType
-from antarest.study.business.thematic_trimming_management import ThematicTrimmingFormFields
+from antarest.study.business.table_mode_management import (
+    ColumnsModelTypes,
+    TableTemplateType,
+)
+from antarest.study.business.thematic_trimming_management import (
+    ThematicTrimmingFormFields,
+)
+from antarest.study.business.areas.thermal_management import (
+    ThermalClusterCreation,
+    ThermalClusterInput,
+    ThermalClusterOutput,
+)
 from antarest.study.business.timeseries_config_management import TSFormFields
 from antarest.study.model import PatchArea, PatchCluster
 from antarest.study.service import StudyService
@@ -1330,50 +1369,114 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         study_service.renewable_manager.set_field_values(study, area_id, cluster_id, form_fields)
 
     @bp.get(
-        path="/studies/{uuid}/areas/{area_id}/clusters/thermal/{cluster_id}/form",
+        path="/studies/{uuid}/areas/{area_id}/clusters/thermal",
         tags=[APITag.study_data],
-        summary="Get thermal options for a given cluster",
-        response_model=ThermalFormFields,
-        response_model_exclude_none=True,
+        summary="Get clusters for a given area",
+        response_model=Sequence[ThermalClusterOutput],
     )
-    def get_thermal_form_values(
+    def get_thermal_clusters(
+        uuid: str,
+        area_id: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Sequence[ThermalClusterOutput]:
+        logger.info(
+            "Getting thermal clusters for study %s and area %s",
+            uuid,
+            area_id,
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
+        return study_service.thermal_manager.get_clusters(study, area_id)
+
+    @bp.get(
+        path="/studies/{uuid}/areas/{area_id}/clusters/thermal/{cluster_id}",
+        tags=[APITag.study_data],
+        summary="Get thermal configuration for a given cluster",
+        response_model=ThermalClusterOutput,
+    )
+    def get_thermal_cluster(
         uuid: str,
         area_id: str,
         cluster_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> ThermalFormFields:
+    ) -> ThermalClusterOutput:
         logger.info(
-            "Getting thermal form values for study %s and cluster %s",
+            "Getting thermal cluster values for study %s and cluster %s",
             uuid,
             cluster_id,
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
-        return study_service.thermal_manager.get_field_values(study, area_id, cluster_id)
+        return study_service.thermal_manager.get_cluster(study, area_id, cluster_id)
 
-    @bp.put(
-        path="/studies/{uuid}/areas/{area_id}/clusters/thermal/{cluster_id}/form",
+    @bp.post(
+        path="/studies/{uuid}/areas/{area_id}/clusters/thermal",
         tags=[APITag.study_data],
-        summary="Set thermal form values for a given cluster",
+        summary="Create a new thermal cluster for a given area, return the created cluster",
+        status_code=HTTPStatus.CREATED,
+        response_model=ThermalClusterOutput,
     )
-    def set_thermal_form_values(
+    def create_thermal_cluster(
+        uuid: str,
+        area_id: str,
+        cluster_data: ThermalClusterCreation,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> ThermalClusterOutput:
+        logger.info(
+            "Creating thermal cluster for study %s and area %s",
+            uuid,
+            extra={"user": current_user.id},
+        )
+        request_params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, request_params)
+        return study_service.thermal_manager.create_cluster(study, area_id, cluster_data)
+
+    @bp.patch(
+        path="/studies/{uuid}/areas/{area_id}/clusters/thermal/{cluster_id}",
+        tags=[APITag.study_data],
+        summary="Update thermal cluster for a given area, return the updated cluster",
+        response_model=ThermalClusterOutput,
+    )
+    def update_thermal_cluster(
         uuid: str,
         area_id: str,
         cluster_id: str,
-        form_fields: ThermalFormFields,
+        cluster_data: ThermalClusterInput,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> None:
+    ) -> ThermalClusterOutput:
         logger.info(
-            "Setting thermal form values for study %s and cluster %s",
+            "Updating thermal cluster for study %s and cluster %s",
             uuid,
             cluster_id,
             extra={"user": current_user.id},
         )
         request_params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, request_params)
+        return study_service.thermal_manager.update_cluster(study, area_id, cluster_id, cluster_data)
 
-        study_service.thermal_manager.set_field_values(study, area_id, cluster_id, form_fields)
+    @bp.delete(
+        path="/studies/{uuid}/areas/{area_id}/clusters/thermal",
+        tags=[APITag.study_data],
+        summary="Delete thermal clusters for a given area",
+    )
+    def delete_thermal_clusters(
+        uuid: str,
+        area_id: str,
+        cluster_ids: Sequence[str],
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> None:
+        logger.info(
+            "Deleting thermal clusters for study %s and area %s",
+            uuid,
+            area_id,
+            cluster_ids,
+            extra={"user": current_user.id},
+        )
+        request_params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(uuid, StudyPermissionType.DELETE, request_params)
+        study_service.thermal_manager.delete_clusters(study, area_id, cluster_ids)
 
     @bp.get(
         path="/studies/{uuid}/areas/{area_id}/storages/{storage_id}",
