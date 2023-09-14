@@ -78,7 +78,7 @@ class StorageForm(FormBaseModel):
     )
 
     @validator("name")
-    def validate_password_length(cls, value):
+    def validate_name_st_storage(cls, value):
         """
         Check if the field (name) is valid
         :param value:
