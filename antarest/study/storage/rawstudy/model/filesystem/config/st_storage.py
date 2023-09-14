@@ -48,7 +48,7 @@ class STStorageConfig(BaseModel):
     )
     name: str = Field(
         description="Short-term storage name",
-        regex=r"[a-zA-Z0-9_(),& -]+",
+        regex=r"^(?![0-9]+$).*",
     )
     group: STStorageGroup = Field(
         STStorageGroup.OTHER1,

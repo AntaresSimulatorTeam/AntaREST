@@ -1,7 +1,8 @@
 import functools
 import json
 import operator
-from typing import Any, Dict, List, Mapping, MutableMapping, Sequence
+import re
+from typing import Any, Dict, List, Mapping, MutableMapping, Sequence, Optional
 
 import numpy as np
 from pydantic import BaseModel, Extra, Field, root_validator, validator
@@ -33,18 +34,68 @@ class FormBaseModel(FormFieldsBaseModel):
         allow_population_by_field_name = True
 
 
-class StorageCreation(FormBaseModel):
+class StorageForm(FormBaseModel):
     """
-    Model representing the form used to create a new short-term storage entry.
+    Model representing the form used to create/edit a new short-term storage entry.
     """
 
     name: str = Field(
         description="Name of the storage.",
-        regex=r"[a-zA-Z0-9_(),& -]+",
     )
     group: STStorageGroup = Field(
+        STStorageGroup.OTHER1,
         description="Energy storage system group.",
     )
+    injection_nominal_capacity: float = Field(
+        0,
+        description="Injection nominal capacity (MW)",
+        ge=0,
+    )
+    withdrawal_nominal_capacity: float = Field(
+        0,
+        description="Withdrawal nominal capacity (MW)",
+        ge=0,
+    )
+    reservoir_capacity: float = Field(
+        0,
+        description="Reservoir capacity (MWh)",
+        ge=0,
+    )
+    efficiency: float = Field(
+        0,
+        description="Efficiency of the storage system",
+        ge=0,
+        le=1,
+    )
+    initial_level: float = Field(
+        0,
+        description="Initial level of the storage system",
+        ge=0,
+    )
+    initial_level_optim: bool = Field(
+        False,
+        description="Flag indicating if the initial level is optimized",
+    )
+
+    @validator("name")
+    def validate_password_length(cls, value):
+        """
+        Check if the field (name) is valid
+        :param value:
+        :return: value if is correct or raise an exception
+        """
+        pattern = r"^(?![0-9]+$).*"
+        if len(value) < 1 or value is None or not re.match(pattern, value):
+            raise ValueError(f"The field name: {value} is not valid")
+        return value
+
+
+class StorageUpdate(StorageForm, metaclass=AllOptionalMetaclass):
+    """set fields as optional"""
+
+
+class StorageCreation(StorageUpdate):
+    """set value's fields as optional"""
 
     class Config:
         @staticmethod
@@ -52,6 +103,12 @@ class StorageCreation(FormBaseModel):
             schema["example"] = StorageCreation(
                 name="Siemens Battery",
                 group=STStorageGroup.BATTERY,
+                injection_nominal_capacity=0,
+                withdrawal_nominal_capacity=0,
+                reservoir_capacity=0,
+                efficiency=0,
+                initial_level=0,
+                initial_level_optim=False,
             )
 
     @property
@@ -60,50 +117,22 @@ class StorageCreation(FormBaseModel):
         return STStorageConfig(**values)
 
 
-class StorageUpdate(StorageCreation, metaclass=AllOptionalMetaclass):
-    """set name, group as optional fields"""
-
-
 class StorageInput(StorageUpdate):
     """
     Model representing the form used to edit existing short-term storage details.
     """
 
-    injection_nominal_capacity: float = Field(
-        description="Injection nominal capacity (MW)",
-        ge=0,
-    )
-    withdrawal_nominal_capacity: float = Field(
-        description="Withdrawal nominal capacity (MW)",
-        ge=0,
-    )
-    reservoir_capacity: float = Field(
-        description="Reservoir capacity (MWh)",
-        ge=0,
-    )
-    efficiency: float = Field(
-        description="Efficiency of the storage system",
-        ge=0,
-        le=1,
-    )
-    initial_level: float = Field(
-        description="Initial level of the storage system",
-        ge=0,
-    )
-    initial_level_optim: bool = Field(
-        description="Flag indicating if the initial level is optimized",
-    )
-
     class Config:
         @staticmethod
         def schema_extra(schema: MutableMapping[str, Any]) -> None:
-            schema["example"] = StorageInput(
+            schema["example"] = StorageCreation(
                 name="Siemens Battery",
                 group=STStorageGroup.BATTERY,
                 injection_nominal_capacity=150,
                 withdrawal_nominal_capacity=150,
                 reservoir_capacity=600,
                 efficiency=0.94,
+                initial_level=0.5,
                 initial_level_optim=True,
             )
 

@@ -67,7 +67,16 @@ class TestSTStorage:
         res = client.post(
             f"/v1/studies/{study_id}/areas/{area_id}/storages",
             headers={"Authorization": f"Bearer {user_access_token}"},
-            json={"name": siemens_battery, "group": "Battery"},
+            json={
+                "name": siemens_battery,
+                "group": "Battery",
+                "initialLevel": 0.0,
+                "initialLevelOptim": False,
+                "injectionNominalCapacity": 0.0,
+                "reservoirCapacity": 0.0,
+                "withdrawalNominalCapacity": 0.0,
+                "efficiency": 1.0,
+            },
         )
         assert res.status_code == 200, res.json()
         siemens_battery_id = res.json()["id"]
@@ -214,6 +223,21 @@ class TestSTStorage:
             "withdrawalNominalCapacity": 0.0,
             "reservoirCapacity": 0,
         }
+        # Check the put with the wrong efficiency
+        res = client.patch(
+            f"/v1/studies/{study_id}/areas/{area_id}/storages/{siemens_battery_id}",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+            json={
+                "efficiency": 2.0,
+                "initialLevel": 0.0,
+                "initialLevelOptim": True,
+                "injectionNominalCapacity": 2450,
+                "name": "New Siemens Battery",
+                "reservoirCapacity": 2500,
+                "withdrawalNominalCapacity": 2350,
+            },
+        )
+        assert res.status_code == 422, res.json()
 
         res = client.get(
             f"/v1/studies/{study_id}/areas/{area_id}/storages/{siemens_battery_id}",
@@ -256,7 +280,16 @@ class TestSTStorage:
         res = client.post(
             f"/v1/studies/{study_id}/areas/{area_id}/storages",
             headers={"Authorization": f"Bearer {user_access_token}"},
-            json={"name": siemens_battery, "group": "Battery"},
+            json={
+                "name": siemens_battery,
+                "group": "Battery",
+                "initialLevel": 0.0,
+                "initialLevelOptim": False,
+                "injectionNominalCapacity": 0.0,
+                "reservoirCapacity": 0.0,
+                "withdrawalNominalCapacity": 0.0,
+                "efficiency": 1.0,
+            },
         )
         assert res.status_code == 200, res.json()
         siemens_battery_id1 = res.json()["id"]
@@ -266,7 +299,16 @@ class TestSTStorage:
         res = client.post(
             f"/v1/studies/{study_id}/areas/{area_id}/storages",
             headers={"Authorization": f"Bearer {user_access_token}"},
-            json={"name": siemens_battery_del, "group": "Battery"},
+            json={
+                "name": siemens_battery_del,
+                "group": "Battery",
+                "initialLevel": 0.0,
+                "initialLevelOptim": False,
+                "injectionNominalCapacity": 0.0,
+                "reservoirCapacity": 0.0,
+                "withdrawalNominalCapacity": 0.0,
+                "efficiency": 1.0,
+            },
         )
         assert res.status_code == 200, res.json()
         siemens_battery_id2 = res.json()["id"]
@@ -361,7 +403,16 @@ class TestSTStorage:
         res = client.post(
             f"/v1/studies/{study_id}/areas/{bad_area_id}/storages",
             headers={"Authorization": f"Bearer {user_access_token}"},
-            json={"name": siemens_battery, "group": "Battery"},
+            json={
+                "name": siemens_battery,
+                "group": "Battery",
+                "initialLevel": 0.0,
+                "initialLevelOptim": False,
+                "injectionNominalCapacity": 0.0,
+                "reservoirCapacity": 0.0,
+                "withdrawalNominalCapacity": 0.0,
+                "efficiency": 1.0,
+            },
         )
         assert res.status_code == 500, res.json()
         obj = res.json()
@@ -440,19 +491,3 @@ class TestSTStorage:
         obj = res.json()
         description = obj["description"]
         assert bad_study_id in description
-
-        # Check the put with the wrong efficiency
-        res = client.patch(
-            f"/v1/studies/{bad_study_id}/areas/{area_id}/storages/{siemens_battery_id}",
-            headers={"Authorization": f"Bearer {user_access_token}"},
-            json={
-                "efficiency": 2.0,
-                "initialLevel": 0.0,
-                "initialLevelOptim": True,
-                "injectionNominalCapacity": 2450,
-                "name": "New Siemens Battery",
-                "reservoirCapacity": 2500,
-                "withdrawalNominalCapacity": 2350,
-            },
-        )
-        assert res.status_code == 422, res.json()
