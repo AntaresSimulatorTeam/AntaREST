@@ -187,6 +187,7 @@ class MatrixService(ISimpleMatrixService):
             return self.create(MatrixContent.parse_raw(file).data)
         # noinspection PyTypeChecker
         matrix = np.loadtxt(BytesIO(file), delimiter="\t", dtype=np.float64, ndmin=2)
+        matrix = matrix.reshape((1, 0)) if matrix.size == 0 else matrix
         return self.create(matrix)
 
     def get_dataset(
@@ -380,8 +381,13 @@ class MatrixService(ISimpleMatrixService):
                 name = f"matrix-{mtx.id}.txt"
                 filepath = f"{tmpdir}/{name}"
                 array = np.array(mtx.data, dtype=np.float64)
-                # noinspection PyTypeChecker
-                np.savetxt(filepath, array, delimiter="\t", fmt="%.18f")
+                if array.size == 0:
+                    # If the array or dataframe is empty, create an empty file instead of
+                    # traditional saving to avoid unwanted line breaks.
+                    open(filepath, mode="wb").close()
+                else:
+                    # noinspection PyTypeChecker
+                    np.savetxt(filepath, array, delimiter="\t", fmt="%.18f")
             zip_dir(Path(tmpdir), export_path)
             stopwatch.log_elapsed(lambda x: logger.info(f"Matrix dataset exported (zipped mode) in {x}s"))
         return str(export_path)
@@ -467,5 +473,10 @@ class MatrixService(ISimpleMatrixService):
             raise UserHasNotPermissionError()
         if matrix := self.get(matrix_id):
             array = np.array(matrix.data, dtype=np.float64)
-            # noinspection PyTypeChecker
-            np.savetxt(filepath, array, delimiter="\t", fmt="%.18f")
+            if array.size == 0:
+                # If the array or dataframe is empty, create an empty file instead of
+                # traditional saving to avoid unwanted line breaks.
+                open(filepath, mode="wb").close()
+            else:
+                # noinspection PyTypeChecker
+                np.savetxt(filepath, array, delimiter="\t", fmt="%.18f")

@@ -77,6 +77,7 @@ class RemoteVariantGenerator(IVariantGenerator):
         matrix_dataset: List[str] = []
         for matrix_file in matrices_dir.iterdir():
             matrix = np.loadtxt(matrix_file, delimiter="\t", dtype=np.float64, ndmin=2)
+            matrix = matrix.reshape((1, 0)) if matrix.size == 0 else matrix
             matrix_data = matrix.tolist()
             res = self.session.post(self.build_url("/v1/matrix"), json=matrix_data)
             res.raise_for_status()

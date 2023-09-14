@@ -1378,6 +1378,7 @@ class StudyService:
             if isinstance(data, bytes):
                 # noinspection PyTypeChecker
                 matrix = np.loadtxt(io.BytesIO(data), delimiter="\t", dtype=np.float64, ndmin=2)
+                matrix = matrix.reshape((1, 0)) if matrix.size == 0 else matrix
                 return ReplaceMatrix(
                     target=url,
                     matrix=matrix.tolist(),
