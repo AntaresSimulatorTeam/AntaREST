@@ -198,7 +198,7 @@
   "study.timeLimitHelper": "Limite de temps en heures (max: {{max}}h)",
   "study.nbCpu": "Nombre de coeurs",
   "study.clusterLoad": "Charge du cluster",
-  "study.synthesis": "Synthesis",
+  "study.synthesis": "Synthèse",
   "study.level": "Niveau",
   "study.years": "Années",
   "study.type": "Type",
