@@ -1,5 +1,6 @@
-import multiprocessing
 import pytest
+
+import multiprocessing
 from starlette.testclient import TestClient
 
 
