@@ -78,10 +78,10 @@ class StorageForm(FormBaseModel):
     )
 
     @validator("name")
-    def validate_name_st_storage(cls, value):
+    def validate_name_st_storage(cls, value: str) -> str:
         """
         Check if the field (name) is valid
-        :param value:
+        :param value: name of st storage
         :return: value if is correct or raise an exception
         """
         pattern = r"^(?![0-9]+$).*"
