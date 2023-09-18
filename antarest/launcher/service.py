@@ -1,11 +1,12 @@
 import functools
+import json
 import logging
 import os
 import shutil
 from datetime import datetime, timedelta, timezone
 from http import HTTPStatus
 from pathlib import Path
-from typing import Dict, List, Optional, cast
+from typing import Dict, List, Optional
 from uuid import UUID, uuid4
 
 from fastapi import HTTPException
@@ -449,26 +450,25 @@ class LauncherService:
     ) -> Optional[str]:
         logger.info(f"Importing output for job {job_id}")
         study_id: Optional[str] = None
+
+        # Open a database session
         with db():
             job_result = self.job_result_repository.get(job_id)
             if not job_result:
                 raise JobNotFound()
 
             study_id = job_result.study_id
-            job_launch_params = LauncherParametersDTO.parse_raw(job_result.launcher_params or "{}")
 
-            # this now can be a zip file instead of a directory !
+            # Parse launcher parameters from job result
+            obj = json.loads(job_result.launcher_params or "{}")
+            job_launch_params = LauncherParametersDTO(**obj)
+
+            # Find and check if the output is zipped or not
             output_true_path = find_single_output_path(output_path)
-            output_is_zipped = is_zip(output_true_path)
-            output_suffix = cast(
-                Optional[str],
-                getattr(
-                    job_launch_params,
-                    LAUNCHER_PARAM_NAME_SUFFIX,
-                    None,
-                ),
-            )
+            output_is_zipped = output_true_path.suffix == ".zip"
+            output_suffix: str = job_launch_params.output_suffix or ""
 
+            # Execute pre-import hooks and save solver statistics
             self._before_import_hooks(
                 job_id,
                 job_result.study_id,
@@ -476,6 +476,8 @@ class LauncherService:
                 job_launch_params,
             )
             self._save_solver_stats(job_result, output_true_path)
+
+            # If there are additional logs and the output is not zipped, concatenate them
             if additional_logs and not output_is_zipped:
                 for log_name, log_paths in additional_logs.items():
                     concat_files(
@@ -483,9 +485,12 @@ class LauncherService:
                         output_true_path / log_name,
                     )
 
+        # If study_id is available
         if study_id:
             zip_path: Optional[Path] = None
             stopwatch = StopWatch()
+
+            # If the output is not zipped but needs to be archived
             if not output_is_zipped and job_launch_params.archive_output:
                 logger.info("Re zipping output for transfer")
                 zip_path = output_true_path.parent / f"{output_true_path.name}.zip"
@@ -493,8 +498,11 @@ class LauncherService:
                 stopwatch.log_elapsed(lambda x: logger.info(f"Zipped output for job {job_id} in {x}s"))
 
             final_output_path = zip_path or output_true_path
+
+            # Open a database session
             with db():
                 try:
+                    # If there are additional logs and the output is zipped, save the logs
                     if additional_logs and output_is_zipped:
                         for log_name, log_paths in additional_logs.items():
                             log_type = LogType.from_filename(log_name)
@@ -507,6 +515,8 @@ class LauncherService:
                                 log_suffix,
                                 concat_files_to_str(log_paths),
                             )
+
+                    # Import the output into the study
                     return self.study_service.import_output(
                         study_id,
                         final_output_path,
@@ -515,6 +525,7 @@ class LauncherService:
                         job_launch_params.auto_unzip,
                     )
                 except StudyNotFoundError:
+                    # If study is not found, fallback to importing output in `tmp_dir` directory
                     return self._import_fallback_output(
                         job_id,
                         final_output_path,
@@ -523,6 +534,8 @@ class LauncherService:
                 finally:
                     if zip_path:
                         os.unlink(zip_path)
+
+        # If study_id is not available, raise JobNotFound exception
         raise JobNotFound()
 
     def _download_fallback_output(self, job_id: str, params: RequestParameters) -> FileDownloadTaskDTO:
