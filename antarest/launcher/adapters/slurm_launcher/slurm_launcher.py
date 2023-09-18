@@ -231,6 +231,12 @@ class SlurmLauncher(AbstractLauncher):
                 if log_path
             }
 
+        # todo: We must consider the following scenarios:
+        #  1. Antares Launcher retrieve the entire study which contains the `output` directory or ZIP archive.
+        #     This scenario is the classic way to retrieve results.
+        #  2. Antares Launcher retrieve only the archived results.
+        #     This new scenario will be the recommended way to reduce file transfer size and time.
+
         # The following callback is actually calling:
         # `antarest.launcher.service.LauncherService._import_output`
         return self.callbacks.import_output(
