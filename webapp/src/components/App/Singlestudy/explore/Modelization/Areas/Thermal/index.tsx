@@ -176,15 +176,13 @@ function Thermal() {
   }
 
   return (
-    <Box sx={{ width: 1, p: 2, overflow: "auto" }}>
-      <GroupedDataTable
-        data={clustersWithCapacity}
-        columns={columns}
-        groups={groups}
-        onCreate={handleCreateRow}
-        onDelete={handleDeleteSelection}
-      />
-    </Box>
+    <GroupedDataTable
+      data={clustersWithCapacity}
+      columns={columns}
+      groups={groups}
+      onCreate={handleCreateRow}
+      onDelete={handleDeleteSelection}
+    />
   );
 }
 

@@ -115,7 +115,6 @@ function GroupedDataTable<TData extends TRow>({
         enableStickyFooter
         enableStickyHeader
         enablePagination={false}
-        muiTableContainerProps={{ sx: { maxHeight: 550 } }}
         onRowSelectionChange={setRowSelection}
         state={{ rowSelection }}
         renderTopToolbarCustomActions={() => (
@@ -181,15 +180,19 @@ function GroupedDataTable<TData extends TRow>({
         }}
         muiTableBodyCellProps={{
           align: "right",
+          sx: {
+            borderBottom: "1px solid rgba(224, 224, 224, 0.3)",
+          },
         }}
         muiTableFooterCellProps={{
           align: "right",
         }}
-        muiTableProps={{
+        muiTablePaperProps={{
           sx: {
-            "& .MuiTableCell-root": {
-              borderBottom: "1px solid rgba(224, 224, 224, 0.3)",
-            },
+            width: 1,
+            display: "flex",
+            flexDirection: "column",
+            overflow: "auto",
           },
         }}
       />
