@@ -9,6 +9,9 @@ from antarest.core.model import PublicMode
 from antarest.core.tasks.model import TaskDTO, TaskStatus
 from antarest.study.business.adequacy_patch_management import PriceTakingOrder
 from antarest.study.business.area_management import AreaType, LayerInfoDTO
+from antarest.study.business.areas.properties_management import AdequacyPatchMode
+from antarest.study.business.areas.renewable_management import TimeSeriesInterpretation
+from antarest.study.business.areas.thermal_management import LawOption, TimeSeriesGenerationOption
 from antarest.study.business.general_management import Mode
 from antarest.study.business.optimization_management import (
     SimplexOptimizationRange,
@@ -17,14 +20,10 @@ from antarest.study.business.optimization_management import (
 )
 from antarest.study.business.table_mode_management import (
     FIELDS_INFO_BY_TYPE,
-    AdequacyPatchMode,
     AssetType,
     BindingConstraintOperator,
     BindingConstraintType,
-    LawOption,
     TableTemplateType,
-    TimeSeriesGenerationOption,
-    TimeSeriesInterpretation,
     TransmissionCapacity,
 )
 from antarest.study.model import MatrixIndex, StudyDownloadLevelDTO
@@ -33,7 +32,7 @@ from tests.integration.assets import ASSETS_DIR
 from tests.integration.utils import wait_for
 
 
-def test_main(client: TestClient, admin_access_token: str, study_id: str):
+def test_main(client: TestClient, admin_access_token: str, study_id: str) -> None:
     admin_headers = {"Authorization": f"Bearer {admin_access_token}"}
 
     # create some new users
@@ -366,7 +365,7 @@ def test_main(client: TestClient, admin_access_token: str, study_id: str):
     assert new_meta.json()["horizon"] == "2035"
 
 
-def test_matrix(client: TestClient, admin_access_token: str, study_id: str):
+def test_matrix(client: TestClient, admin_access_token: str, study_id: str) -> None:
     admin_headers = {"Authorization": f"Bearer {admin_access_token}"}
 
     matrix = [[1, 2], [3, 4]]
@@ -419,7 +418,7 @@ def test_matrix(client: TestClient, admin_access_token: str, study_id: str):
     assert res.status_code == 200
 
 
-def test_area_management(client: TestClient, admin_access_token: str, study_id: str):
+def test_area_management(client: TestClient, admin_access_token: str, study_id: str) -> None:
     admin_headers = {"Authorization": f"Bearer {admin_access_token}"}
 
     created = client.post("/v1/studies?name=foo", headers=admin_headers)
@@ -965,7 +964,7 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
         "renw3": True,
         "renw4": True,
         "dens": True,
-        "profit": True,
+        "profitByPlant": True,
     }
 
     client.put(
@@ -1034,7 +1033,7 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
             "renw3": True,
             "renw4": True,
             "dens": True,
-            "profit": True,
+            "profitByPlant": True,
         },
     )
     res_thematic_trimming_config = client.get(
@@ -1104,7 +1103,7 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
         "renw3": True,
         "renw4": True,
         "dens": True,
-        "profit": True,
+        "profitByPlant": True,
     }
 
     # Properties form
@@ -1939,7 +1938,7 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
     ]
 
 
-def test_archive(client: TestClient, admin_access_token: str, study_id: str, tmp_path: Path):
+def test_archive(client: TestClient, admin_access_token: str, study_id: str, tmp_path: Path) -> None:
     admin_headers = {"Authorization": f"Bearer {admin_access_token}"}
 
     study_res = client.post("/v1/studies?name=foo", headers=admin_headers)
@@ -1976,7 +1975,7 @@ def test_archive(client: TestClient, admin_access_token: str, study_id: str, tmp
     assert not (tmp_path / "archive_dir" / f"{study_id}.zip").exists()
 
 
-def test_variant_manager(client: TestClient, admin_access_token: str, study_id: str):
+def test_variant_manager(client: TestClient, admin_access_token: str, study_id: str) -> None:
     admin_headers = {"Authorization": f"Bearer {admin_access_token}"}
 
     base_study_res = client.post("/v1/studies?name=foo", headers=admin_headers)
@@ -2131,7 +2130,7 @@ def test_variant_manager(client: TestClient, admin_access_token: str, study_id: 
     assert res.status_code == 200
     task_result = TaskDTO.parse_obj(res.json())
     assert task_result.status == TaskStatus.COMPLETED
-    assert task_result.result.success
+    assert task_result.result.success  # type: ignore
 
     res = client.get(f"/v1/studies/{variant_id}", headers=admin_headers)
     assert res.status_code == 200
@@ -2158,7 +2157,7 @@ def test_variant_manager(client: TestClient, admin_access_token: str, study_id: 
     assert res.status_code == 404
 
 
-def test_maintenance(client: TestClient, admin_access_token: str, study_id: str):
+def test_maintenance(client: TestClient, admin_access_token: str, study_id: str) -> None:
     admin_headers = {"Authorization": f"Bearer {admin_access_token}"}
 
     # Create non admin user
@@ -2213,7 +2212,7 @@ def test_maintenance(client: TestClient, admin_access_token: str, study_id: str)
     assert res.json() == message
 
 
-def test_binding_constraint_manager(client: TestClient, admin_access_token: str, study_id: str):
+def test_binding_constraint_manager(client: TestClient, admin_access_token: str, study_id: str) -> None:
     admin_headers = {"Authorization": f"Bearer {admin_access_token}"}
 
     created = client.post("/v1/studies?name=foo", headers=admin_headers)
