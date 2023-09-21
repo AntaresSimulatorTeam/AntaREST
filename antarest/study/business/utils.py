@@ -66,6 +66,8 @@ class FormFieldsBaseModel(BaseModel):
     class Config:
         alias_generator = to_camel_case
         extra = Extra.forbid
+        validate_assignment = True
+        allow_population_by_field_name = True
 
 
 class FieldInfo(TypedDict, total=False):
@@ -108,7 +110,7 @@ class AllOptionalMetaclass(pydantic.main.ModelMetaclass):
     ) -> Any:
         annotations = namespaces.get("__annotations__", {})
         for base in bases:
-            annotations.update(base.__annotations__)
+            annotations.update(getattr(base, "__annotations__", {}))
         for field, field_type in annotations.items():
             if not field.startswith("__"):
                 # Optional fields are correctly handled
