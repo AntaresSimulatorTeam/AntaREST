@@ -28,7 +28,7 @@ def test_thematic_trimming_config() -> None:
         storage_service=StudyStorageService(raw_study_service, variant_study_service),
     )
 
-    study = VariantStudy(version="820")
+    study = VariantStudy()
     config = FileStudyTreeConfig(
         study_path=Path("somepath"),
         path=Path("somepath"),
@@ -52,36 +52,37 @@ def test_thematic_trimming_config() -> None:
         {"variables selection": {"selected_vars_reset": False, "select_var +": ["CONG. FEE (ALG.)"]}},
     ]
 
+    study.version = config.version = 700
     actual = thematic_trimming_manager.get_field_values(study)
-    fields_info = get_fields_info(config.version)
+    fields_info = get_fields_info(study.version)
     expected = ThematicTrimmingFormFields(**dict.fromkeys(fields_info, True))
     assert actual == expected
 
-    config.version = 800
+    study.version = config.version = 800
     actual = thematic_trimming_manager.get_field_values(study)
-    fields_info = get_fields_info(config.version)
-    expected = ThematicTrimmingFormFields(**dict.fromkeys(fields_info, True))
-    expected.avl_dtg = False
-    assert actual == expected
-
-    config.version = 820
-    actual = thematic_trimming_manager.get_field_values(study)
-    fields_info = get_fields_info(config.version)
+    fields_info = get_fields_info(study.version)
     expected = ThematicTrimmingFormFields(**dict.fromkeys(fields_info, True))
     expected.avl_dtg = False
     assert actual == expected
 
-    config.version = 830
+    study.version = config.version = 820
     actual = thematic_trimming_manager.get_field_values(study)
-    fields_info = get_fields_info(config.version)
+    fields_info = get_fields_info(study.version)
+    expected = ThematicTrimmingFormFields(**dict.fromkeys(fields_info, True))
+    expected.avl_dtg = False
+    assert actual == expected
+
+    study.version = config.version = 830
+    actual = thematic_trimming_manager.get_field_values(study)
+    fields_info = get_fields_info(study.version)
     expected = ThematicTrimmingFormFields(**dict.fromkeys(fields_info, True))
     expected.dens = False
     expected.profit_by_plant = False
     assert actual == expected
 
-    config.version = 840
+    study.version = config.version = 840
     actual = thematic_trimming_manager.get_field_values(study)
-    fields_info = get_fields_info(config.version)
+    fields_info = get_fields_info(study.version)
     expected = ThematicTrimmingFormFields(**dict.fromkeys(fields_info, False))
     expected.cong_fee_alg = True
     assert actual == expected
