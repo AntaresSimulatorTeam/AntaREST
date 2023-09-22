@@ -5,6 +5,7 @@ from antarest.study.business.thematic_trimming_management import (
     FIELDS_INFO,
     ThematicTrimmingFormFields,
     ThematicTrimmingManager,
+    get_fields_info,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -17,7 +18,7 @@ from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 
 
-def test_thematic_trimming_config():
+def test_thematic_trimming_config() -> None:
     command_context = CommandContext.construct()
     command_factory_mock = Mock()
     command_factory_mock.command_context = command_context
@@ -27,7 +28,7 @@ def test_thematic_trimming_config():
         storage_service=StudyStorageService(raw_study_service, variant_study_service),
     )
 
-    study = VariantStudy(version="820")
+    study = VariantStudy()
     config = FileStudyTreeConfig(
         study_path=Path("somepath"),
         path=Path("somepath"),
@@ -39,44 +40,55 @@ def test_thematic_trimming_config():
     file_tree_mock = Mock(spec=FileStudyTree, context=Mock(), config=config)
     variant_study_service.get_raw.return_value = FileStudy(config=config, tree=file_tree_mock)
     file_tree_mock.get.side_effect = [
+        # For study version < 800:
         {},
+        # For study version >= 800:
         {"variables selection": {"select_var -": ["AVL DTG"]}},
+        # For study version >= 820:
         {"variables selection": {"select_var -": ["AVL DTG"]}},
-        {
-            "variables selection": {
-                "selected_vars_reset": False,
-                "select_var +": ["CONG. FEE (ALG.)"],
-            }
-        },
+        # For study version >= 830:
+        {"variables selection": {"selected_vars_reset": True, "select_var -": ["DENS", "Profit by plant"]}},
+        # For study version >= 840:
+        {"variables selection": {"selected_vars_reset": False, "select_var +": ["CONG. FEE (ALG.)"]}},
     ]
 
-    def get_expected(value=True) -> ThematicTrimmingFormFields:
-        return ThematicTrimmingFormFields.construct(
-            **{
-                field_name: value
-                for field_name in [
-                    name
-                    for name, info in FIELDS_INFO.items()
-                    if info.get("start_version", -1) <= config.version  # type: ignore
-                ]
-            }
-        )
+    study.version = config.version = 700
+    actual = thematic_trimming_manager.get_field_values(study)
+    fields_info = get_fields_info(study.version)
+    expected = ThematicTrimmingFormFields(**dict.fromkeys(fields_info, True))
+    assert actual == expected
 
-    assert thematic_trimming_manager.get_field_values(study) == get_expected()
+    study.version = config.version = 800
+    actual = thematic_trimming_manager.get_field_values(study)
+    fields_info = get_fields_info(study.version)
+    expected = ThematicTrimmingFormFields(**dict.fromkeys(fields_info, True))
+    expected.avl_dtg = False
+    assert actual == expected
 
-    config.version = 800
-    expected = get_expected().copy(update={"avl_dtg": False})
-    assert thematic_trimming_manager.get_field_values(study) == expected
+    study.version = config.version = 820
+    actual = thematic_trimming_manager.get_field_values(study)
+    fields_info = get_fields_info(study.version)
+    expected = ThematicTrimmingFormFields(**dict.fromkeys(fields_info, True))
+    expected.avl_dtg = False
+    assert actual == expected
 
-    config.version = 820
-    expected = get_expected().copy(update={"avl_dtg": False})
-    assert thematic_trimming_manager.get_field_values(study) == expected
+    study.version = config.version = 830
+    actual = thematic_trimming_manager.get_field_values(study)
+    fields_info = get_fields_info(study.version)
+    expected = ThematicTrimmingFormFields(**dict.fromkeys(fields_info, True))
+    expected.dens = False
+    expected.profit_by_plant = False
+    assert actual == expected
 
-    config.version = 840
-    expected = get_expected(False).copy(update={"cong_fee_alg": True})
-    assert thematic_trimming_manager.get_field_values(study) == expected
+    study.version = config.version = 840
+    actual = thematic_trimming_manager.get_field_values(study)
+    fields_info = get_fields_info(study.version)
+    expected = ThematicTrimmingFormFields(**dict.fromkeys(fields_info, False))
+    expected.cong_fee_alg = True
+    assert actual == expected
 
-    new_config = get_expected().copy(update={"coal": False})
+    new_config = ThematicTrimmingFormFields(**dict.fromkeys(fields_info, True))
+    new_config.coal = False
     thematic_trimming_manager.set_field_values(study, new_config)
     assert variant_study_service.append_commands.called_with(
         UpdateConfig(
@@ -86,7 +98,8 @@ def test_thematic_trimming_config():
         )
     )
 
-    new_config = get_expected(False).copy(update={"renw_1": True})
+    new_config = ThematicTrimmingFormFields(**dict.fromkeys(fields_info, False))
+    new_config.renw_1 = True
     thematic_trimming_manager.set_field_values(study, new_config)
     assert variant_study_service.append_commands.called_with(
         UpdateConfig(

@@ -67,7 +67,7 @@ export interface ThematicTrimmingFormFields {
   renw4?: boolean;
   // For study versions >= 830
   dens?: boolean;
-  profit?: boolean;
+  profitByPlant?: boolean;
 }
 
 const keysMap: Record<keyof ThematicTrimmingFormFields, string> = {
@@ -135,7 +135,7 @@ const keysMap: Record<keyof ThematicTrimmingFormFields, string> = {
   renw4: "RENW. 4",
   // Study version >= 830
   dens: "DENS",
-  profit: "Profit",
+  profitByPlant: "Profit by plant",
 };
 
 // Allow to support all study versions by using directly the server config
