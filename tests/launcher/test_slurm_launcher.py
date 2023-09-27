@@ -420,6 +420,7 @@ def test_kill_job(
     slurm_launcher.kill_job(job_id=launch_id)
 
     launcher_arguments = Namespace(
+        antares_version=0,
         check_queue=False,
         job_id_to_kill=42,
         json_ssh_config=None,
