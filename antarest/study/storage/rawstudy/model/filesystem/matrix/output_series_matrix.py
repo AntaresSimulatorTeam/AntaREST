@@ -98,15 +98,16 @@ class OutputSeriesMatrix(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON])
         matrix = pd.concat([time, matrix], axis=1)
 
         head = self.head_writer.build(var=df.columns.size, end=df.index.size)
-        self.config.path.write_text(head)
-
-        matrix.to_csv(
-            open(self.config.path, "a", newline="\n"),
-            sep="\t",
-            index=False,
-            header=False,
-            line_terminator="\n",
-        )
+        with self.config.path.open(mode="w", newline="\n") as fd:
+            fd.write(head)
+            if not matrix.empty:
+                matrix.to_csv(
+                    fd,
+                    sep="\t",
+                    header=False,
+                    index=False,
+                    float_format="%.6f",
+                )
 
     def check_errors(
         self,

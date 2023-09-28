@@ -1,12 +1,13 @@
 import contextlib
+import io
+import json
 import logging
 import tempfile
+import zipfile
 from abc import ABC, abstractmethod
 from datetime import datetime, timezone
-from io import BytesIO
 from pathlib import Path
 from typing import List, Optional, Sequence, Tuple, Union
-from zipfile import ZipFile
 
 import numpy as np
 from fastapi import UploadFile
@@ -35,6 +36,18 @@ from antarest.matrixstore.model import (
     MatrixInfoDTO,
 )
 from antarest.matrixstore.repository import MatrixContentRepository, MatrixDataSetRepository, MatrixRepository
+
+# List of files to exclude from ZIP archives
+EXCLUDED_FILES = {
+    "__MACOSX",
+    ".DS_Store",
+    "._.DS_Store",
+    "Thumbs.db",
+    "desktop.ini",
+    "$RECYCLE.BIN",
+    "System Volume Information",
+    "RECYCLER",
+}
 
 logger = logging.getLogger(__name__)
 
@@ -150,29 +163,42 @@ class MatrixService(ISimpleMatrixService):
             self.repo.save(matrix)
         return matrix_id
 
-    def create_by_importation(self, file: UploadFile, json: bool = False) -> List[MatrixInfoDTO]:
+    def create_by_importation(self, file: UploadFile, is_json: bool = False) -> List[MatrixInfoDTO]:
+        """
+        Imports a matrix from a TSV or JSON file or a collection of matrices from a ZIP file.
+
+        TSV-formatted files are expected to contain only matrix data without any header.
+
+        JSON-formatted files are expected to contain the following attributes:
+
+        - `index`: The list of row labels.
+        - `columns`: The list of column labels.
+        - `data`: The matrix data as a nested list of floats.
+
+        Args:
+            file: The file to import (TSV, JSON or ZIP).
+            is_json: Flag indicating if the file is JSON-encoded.
+
+        Returns:
+            A list of `MatrixInfoDTO` objects containing the SHA256 hash of the imported matrices.
+        """
         with file.file as f:
             if file.content_type == "application/zip":
-                input_zip = ZipFile(BytesIO(f.read()))
-                files = {
-                    info.filename: input_zip.read(info.filename) for info in input_zip.infolist() if not info.is_dir()
-                }
+                with contextlib.closing(f):
+                    buffer = io.BytesIO(f.read())
                 matrix_info: List[MatrixInfoDTO] = []
-                for name in files:
-                    if all(
-                        [
-                            not name.startswith("__MACOSX/"),
-                            not name.startswith(".DS_Store"),
-                        ]
-                    ):
-                        matrix_id = self._file_importation(files[name], json)
-                        matrix_info.append(MatrixInfoDTO(id=matrix_id, name=name))
+                with zipfile.ZipFile(buffer) as zf:
+                    for info in zf.infolist():
+                        if info.is_dir() or info.filename in EXCLUDED_FILES:
+                            continue
+                        matrix_id = self._file_importation(zf.read(info.filename), is_json=is_json)
+                        matrix_info.append(MatrixInfoDTO(id=matrix_id, name=info.filename))
                 return matrix_info
             else:
-                matrix_id = self._file_importation(f.read(), json)
+                matrix_id = self._file_importation(f.read(), is_json=is_json)
                 return [MatrixInfoDTO(id=matrix_id, name=file.filename)]
 
-    def _file_importation(self, file: bytes, is_json: bool = False) -> str:
+    def _file_importation(self, file: bytes, *, is_json: bool = False) -> str:
         """
         Imports a matrix from a TSV or JSON file in bytes format.
 
@@ -184,9 +210,12 @@ class MatrixService(ISimpleMatrixService):
             A SHA256 hash that identifies the imported matrix.
         """
         if is_json:
-            return self.create(MatrixContent.parse_raw(file).data)
+            obj = json.loads(file)
+            content = MatrixContent(**obj)
+            return self.create(content.data)
         # noinspection PyTypeChecker
-        matrix = np.loadtxt(BytesIO(file), delimiter="\t", dtype=np.float64, ndmin=2)
+        matrix = np.loadtxt(io.BytesIO(file), delimiter="\t", dtype=np.float64, ndmin=2)
+        matrix = matrix.reshape((1, 0)) if matrix.size == 0 else matrix
         return self.create(matrix)
 
     def get_dataset(
@@ -380,8 +409,13 @@ class MatrixService(ISimpleMatrixService):
                 name = f"matrix-{mtx.id}.txt"
                 filepath = f"{tmpdir}/{name}"
                 array = np.array(mtx.data, dtype=np.float64)
-                # noinspection PyTypeChecker
-                np.savetxt(filepath, array, delimiter="\t", fmt="%.18f")
+                if array.size == 0:
+                    # If the array or dataframe is empty, create an empty file instead of
+                    # traditional saving to avoid unwanted line breaks.
+                    open(filepath, mode="wb").close()
+                else:
+                    # noinspection PyTypeChecker
+                    np.savetxt(filepath, array, delimiter="\t", fmt="%.18f")
             zip_dir(Path(tmpdir), export_path)
             stopwatch.log_elapsed(lambda x: logger.info(f"Matrix dataset exported (zipped mode) in {x}s"))
         return str(export_path)
@@ -467,5 +501,10 @@ class MatrixService(ISimpleMatrixService):
             raise UserHasNotPermissionError()
         if matrix := self.get(matrix_id):
             array = np.array(matrix.data, dtype=np.float64)
-            # noinspection PyTypeChecker
-            np.savetxt(filepath, array, delimiter="\t", fmt="%.18f")
+            if array.size == 0:
+                # If the array or dataframe is empty, create an empty file instead of
+                # traditional saving to avoid unwanted line breaks.
+                open(filepath, mode="wb").close()
+            else:
+                # noinspection PyTypeChecker
+                np.savetxt(filepath, array, delimiter="\t", fmt="%.18f")

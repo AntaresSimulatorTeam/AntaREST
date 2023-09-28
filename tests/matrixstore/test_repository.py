@@ -1,9 +1,10 @@
+import typing as t
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
 
 import numpy as np
 import pytest
+from numpy import typing as npt
 
 from antarest.core.config import Config, SecurityConfig
 from antarest.core.utils.fastapi_sqlalchemy import db
@@ -12,16 +13,15 @@ from antarest.login.repository import GroupRepository, UserRepository
 from antarest.matrixstore.model import Matrix, MatrixContent, MatrixDataSet, MatrixDataSetRelation
 from antarest.matrixstore.repository import MatrixContentRepository, MatrixDataSetRepository, MatrixRepository
 
+ArrayData = t.Union[t.List[t.List[float]], npt.NDArray[np.float64]]
+
 
 class TestMatrixRepository:
-    def test_db_lifecycle(self):
+    def test_db_lifecycle(self) -> None:
         with db():
             # sourcery skip: extract-method
             repo = MatrixRepository()
-            m = Matrix(
-                id="hello",
-                created_at=datetime.now(),
-            )
+            m = Matrix(id="hello", created_at=datetime.now())
             repo.save(m)
             assert m.id
             assert m == repo.get(m.id)
@@ -29,11 +29,11 @@ class TestMatrixRepository:
             repo.delete(m.id)
             assert repo.get(m.id) is None
 
-    def test_bucket_lifecycle(self, tmp_path: Path):
+    def test_bucket_lifecycle(self, tmp_path: Path) -> None:
         repo = MatrixContentRepository(tmp_path)
 
-        a = [[1, 2], [3, 4]]
-        b = [[5, 6], [7, 8]]
+        a: ArrayData = [[1, 2], [3, 4]]
+        b: ArrayData = [[5, 6], [7, 8]]
 
         matrix_content_a = MatrixContent(data=a, index=[0, 1], columns=[0, 1])
         matrix_content_b = MatrixContent(data=b, index=[0, 1], columns=[0, 1])
@@ -51,7 +51,7 @@ class TestMatrixRepository:
         with pytest.raises(FileNotFoundError):
             repo.get(aid)
 
-    def test_dataset(self):
+    def test_dataset(self) -> None:
         with db():
             # sourcery skip: extract-duplicate-method, extract-method
             repo = MatrixRepository()
@@ -66,15 +66,9 @@ class TestMatrixRepository:
 
             dataset_repo = MatrixDataSetRepository()
 
-            m1 = Matrix(
-                id="hello",
-                created_at=datetime.now(),
-            )
+            m1 = Matrix(id="hello", created_at=datetime.now())
             repo.save(m1)
-            m2 = Matrix(
-                id="world",
-                created_at=datetime.now(),
-            )
+            m2 = Matrix(id="world", created_at=datetime.now())
             repo.save(m2)
 
             dataset = MatrixDataSet(
@@ -94,7 +88,7 @@ class TestMatrixRepository:
             dataset.matrices.append(matrix_relation)
 
             dataset = dataset_repo.save(dataset)
-            dataset_query_result: Optional[MatrixDataSet] = dataset_repo.get(dataset.id)
+            dataset_query_result = dataset_repo.get(dataset.id)
             assert dataset_query_result is not None
             assert dataset_query_result.name == "some name"
             assert len(dataset_query_result.matrices) == 2
@@ -106,12 +100,12 @@ class TestMatrixRepository:
                 updated_at=datetime.now(),
             )
             dataset_repo.save(dataset_update)
-            dataset_query_result: Optional[MatrixDataSet] = dataset_repo.get(dataset.id)
+            dataset_query_result = dataset_repo.get(dataset.id)
             assert dataset_query_result is not None
             assert dataset_query_result.name == "some name change"
             assert dataset_query_result.owner_id == user.id
 
-    def test_datastore_query(self):
+    def test_datastore_query(self) -> None:
         # sourcery skip: extract-duplicate-method
         with db():
             user_repo = UserRepository(Config(security=SecurityConfig()))
@@ -121,15 +115,9 @@ class TestMatrixRepository:
             user2 = user_repo.save(User(name="hello", password=Password("world")))
 
             repo = MatrixRepository()
-            m1 = Matrix(
-                id="hello",
-                created_at=datetime.now(),
-            )
+            m1 = Matrix(id="hello", created_at=datetime.now())
             repo.save(m1)
-            m2 = Matrix(
-                id="world",
-                created_at=datetime.now(),
-            )
+            m2 = Matrix(id="world", created_at=datetime.now())
             repo.save(m2)
 
             dataset_repo = MatrixDataSetRepository()
@@ -176,14 +164,19 @@ class TestMatrixRepository:
             assert repo.get(m1.id) is not None
             assert (
                 len(
-                    db.session.query(MatrixDataSetRelation).filter(MatrixDataSetRelation.dataset_id == dataset.id).all()
+                    # fmt: off
+                    db.session
+                    .query(MatrixDataSetRelation)
+                    .filter(MatrixDataSetRelation.dataset_id == dataset.id)
+                    .all()
+                    # fmt: on
                 )
                 == 0
             )
 
 
 class TestMatrixContentRepository:
-    def test_save(self, matrix_content_repo: MatrixContentRepository):
+    def test_save(self, matrix_content_repo: MatrixContentRepository) -> None:
         """
         Saves the content of a matrix as a TSV file in the directory
         and returns its SHA256 hash.
@@ -192,6 +185,7 @@ class TestMatrixContentRepository:
         bucket_dir = matrix_content_repo.bucket_dir
 
         # when the data is saved in the repo
+        data: ArrayData
         data = [[1, 2, 3], [4, 5, 6]]
         matrix_hash = matrix_content_repo.save(data)
         # then a TSV file is created in the repo directory
@@ -224,12 +218,37 @@ class TestMatrixContentRepository:
         other_matrix_file = bucket_dir.joinpath(f"{other_matrix_hash}.tsv")
         assert set(matrix_files) == {matrix_file, other_matrix_file}
 
-    def test_get(self, matrix_content_repo):
+    def test_save_and_retrieve_empty_matrix(self, matrix_content_repo: MatrixContentRepository) -> None:
+        """
+        Test saving and retrieving empty matrices as TSV files.
+        Il all cases the file must be empty.
+        """
+        bucket_dir = matrix_content_repo.bucket_dir
+
+        # Test with an empty matrix
+        empty_array: ArrayData = []
+        matrix_hash = matrix_content_repo.save(empty_array)
+        matrix_file = bucket_dir.joinpath(f"{matrix_hash}.tsv")
+        retrieved_matrix = matrix_content_repo.get(matrix_hash)
+
+        assert not matrix_file.read_bytes()
+        assert retrieved_matrix.data == [[]]
+
+        # Test with an empty 2D array
+        empty_2d_array: ArrayData = [[]]
+        matrix_hash = matrix_content_repo.save(empty_2d_array)
+        matrix_file = bucket_dir.joinpath(f"{matrix_hash}.tsv")
+        retrieved_matrix = matrix_content_repo.get(matrix_hash)
+
+        assert not matrix_file.read_bytes()
+        assert retrieved_matrix.data == [[]]
+
+    def test_get(self, matrix_content_repo: MatrixContentRepository) -> None:
         """
         Retrieves the content of a matrix with a given SHA256 hash.
         """
         # when the data is saved in the repo
-        data = [[1, 2, 3], [4, 5, 6]]
+        data: ArrayData = [[1, 2, 3], [4, 5, 6]]
         matrix_hash = matrix_content_repo.save(data)
         # then the saved matrix object can be retrieved
         content = matrix_content_repo.get(matrix_hash)
@@ -243,12 +262,12 @@ class TestMatrixContentRepository:
             missing_hash = "8b1a9953c4611296a827abf8c47804d7e6c49c6b"
             matrix_content_repo.get(missing_hash)
 
-    def test_exists(self, matrix_content_repo):
+    def test_exists(self, matrix_content_repo: MatrixContentRepository) -> None:
         """
         Checks if a matrix with a given SHA256 hash exists in the directory.
         """
         # when the data is saved in the repo
-        data = [[1, 2, 3], [4, 5, 6]]
+        data: ArrayData = [[1, 2, 3], [4, 5, 6]]
         matrix_hash = matrix_content_repo.save(data)
         # then the saved matrix object exists
         assert matrix_content_repo.exists(matrix_hash)
@@ -258,12 +277,12 @@ class TestMatrixContentRepository:
         missing_hash = "8b1a9953c4611296a827abf8c47804d7e6c49c6b"
         assert not matrix_content_repo.exists(missing_hash)
 
-    def test_delete(self, matrix_content_repo):
+    def test_delete(self, matrix_content_repo: MatrixContentRepository) -> None:
         """
         Deletes the tsv file containing the content of a matrix with a given SHA256 hash.
         """
         # when the data is saved in the repo
-        data = [[1, 2, 3], [4, 5, 6]]
+        data: ArrayData = [[1, 2, 3], [4, 5, 6]]
         matrix_hash = matrix_content_repo.save(data)
         # then the saved matrix object can be deleted
         matrix_content_repo.delete(matrix_hash)
