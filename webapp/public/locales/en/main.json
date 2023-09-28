@@ -644,6 +644,7 @@
   "xpansion.amplPresolve": "Ampl presolve",
   "xpansion.amplSolverBoundsFrequency": "Ampl solve bounds frequency",
   "xpansion.relativeGap": "Relative gap",
+  "xpansion.batchSize": "Batch size",
   "xpansion.solver": "Solver",
   "xpansion.timeLimit": "Time limit (in hours)",
   "xpansion.logLevel": "Log level",
