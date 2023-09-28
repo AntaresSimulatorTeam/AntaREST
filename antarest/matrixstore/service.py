@@ -1,4 +1,5 @@
 import contextlib
+import json
 import logging
 import tempfile
 from abc import ABC, abstractmethod
@@ -184,7 +185,9 @@ class MatrixService(ISimpleMatrixService):
             A SHA256 hash that identifies the imported matrix.
         """
         if is_json:
-            return self.create(MatrixContent.parse_raw(file).data)
+            obj = json.loads(file)
+            content = MatrixContent(**obj)
+            return self.create(content.data)
         # noinspection PyTypeChecker
         matrix = np.loadtxt(BytesIO(file), delimiter="\t", dtype=np.float64, ndmin=2)
         matrix = matrix.reshape((1, 0)) if matrix.size == 0 else matrix

@@ -1,9 +1,10 @@
 import datetime
 import io
+import json
 import time
 import typing as t
 from unittest.mock import ANY, Mock
-from zipfile import ZIP_DEFLATED, ZipFile
+import zipfile
 
 import numpy as np
 import pytest
@@ -26,12 +27,14 @@ from antarest.matrixstore.model import (
 )
 from antarest.matrixstore.service import MatrixService
 
+MatrixType = t.List[t.List[float]]
+
 
 class TestMatrixService:
-    def test_create__nominal_case(self, matrix_service: MatrixService):
+    def test_create__nominal_case(self, matrix_service: MatrixService) -> None:
         """Creates a new matrix object with the specified data."""
         # when a matrix is created (inserted) in the service
-        data = [[1, 2, 3], [4, 5, 6]]
+        data: MatrixType = [[1, 2, 3], [4, 5, 6]]
         matrix_id = matrix_service.create(data)
 
         # A "real" hash value is calculated
@@ -52,7 +55,7 @@ class TestMatrixService:
         now = datetime.datetime.utcnow()
         assert now - datetime.timedelta(seconds=1) <= obj.created_at <= now
 
-    def test_create__from_numpy_array(self, matrix_service: MatrixService):
+    def test_create__from_numpy_array(self, matrix_service: MatrixService) -> None:
         """Creates a new matrix object with the specified data."""
         # when a matrix is created (inserted) in the service
         data = np.array([[1, 2, 3], [4, 5, 6]], dtype=np.float64)
@@ -76,13 +79,13 @@ class TestMatrixService:
         now = datetime.datetime.utcnow()
         assert now - datetime.timedelta(seconds=1) <= obj.created_at <= now
 
-    def test_create__side_effect(self, matrix_service: MatrixService):
+    def test_create__side_effect(self, matrix_service: MatrixService) -> None:
         """Creates a new matrix object with the specified data, but fail during saving."""
         # if the matrix can't be created in the service
         matrix_repo = matrix_service.repo
         matrix_repo.save = Mock(side_effect=Exception("database error"))
         with pytest.raises(Exception, match="database error"):
-            data = [[1, 2, 3], [4, 5, 6]]
+            data: MatrixType = [[1, 2, 3], [4, 5, 6]]
             matrix_service.create(data)
 
         # the associated matrix file must not be deleted
@@ -94,10 +97,10 @@ class TestMatrixService:
         with db():
             assert not db.session.query(Matrix).count()
 
-    def test_get(self, matrix_service):
+    def test_get(self, matrix_service: MatrixService) -> None:
         """Get a matrix object from the database and the matrix content repository."""
         # when a matrix is created (inserted) in the service
-        data = [[1, 2, 3], [4, 5, 6]]
+        data: MatrixType = [[1, 2, 3], [4, 5, 6]]
         matrix_id = matrix_service.create(data)
 
         # nominal_case: we can retrieve the matrix and its content
@@ -120,10 +123,10 @@ class TestMatrixService:
             obj = matrix_service.get(missing_hash)
         assert obj is None
 
-    def test_exists(self, matrix_service):
+    def test_exists(self, matrix_service: MatrixService) -> None:
         """Test the exists method."""
         # when a matrix is created (inserted) in the service
-        data = [[1, 2, 3], [4, 5, 6]]
+        data: MatrixType = [[1, 2, 3], [4, 5, 6]]
         matrix_id = matrix_service.create(data)
 
         # nominal_case: we can retrieve the matrix and its content
@@ -132,10 +135,10 @@ class TestMatrixService:
             missing_hash = "8b1a9953c4611296a827abf8c47804d7e6c49c6b"
             assert not matrix_service.exists(missing_hash)
 
-    def test_delete__nominal_case(self, matrix_service: MatrixService):
+    def test_delete__nominal_case(self, matrix_service: MatrixService) -> None:
         """Delete a matrix object from the matrix content repository and the database."""
         # when a matrix is created (inserted) in the service
-        data = [[1, 2, 3], [4, 5, 6]]
+        data: MatrixType = [[1, 2, 3], [4, 5, 6]]
         matrix_id = matrix_service.create(data)
 
         # When the matrix id deleted
@@ -151,7 +154,7 @@ class TestMatrixService:
         with db():
             assert not db.session.query(Matrix).count()
 
-    def test_delete__missing(self, matrix_service: MatrixService):
+    def test_delete__missing(self, matrix_service: MatrixService) -> None:
         """Delete a matrix object from the matrix content repository and the database."""
         # When the matrix id deleted
         with db():
@@ -167,8 +170,139 @@ class TestMatrixService:
         with db():
             assert not db.session.query(Matrix).count()
 
+    @pytest.mark.parametrize(
+        "data",
+        [
+            pytest.param([[1, 2, 3], [4, 5, 6]], id="classic-array"),
+            pytest.param([[]], id="2D-empty-array"),
+        ],
+    )
+    @pytest.mark.parametrize("content_type", ["application/json", "text/plain"])
+    def test_create_by_importation__nominal_case(
+        self,
+        matrix_service: MatrixService,
+        data: MatrixType,
+        content_type: str,
+    ) -> None:
+        """
+        Create a new matrix by importing a file.
+        The file is either a JSON file or a CSV file.
+        """
+        # Prepare the matrix data to import
+        matrix = np.array(data, dtype=np.float64)
+        if content_type == "application/json":
+            # JSON format of the array using the dataframe format
+            index = list(range(matrix.shape[0]))
+            columns = list(range(matrix.shape[1]))
+            content = json.dumps({"index": index, "columns": columns, "data": matrix.tolist()})
+            buffer = io.BytesIO(content.encode("utf-8"))
+            filename = "matrix.json"
+            json_format = True
+        else:
+            # CSV format of the array (without header)
+            buffer = io.BytesIO()
+            np.savetxt(buffer, matrix, delimiter="\t")
+            buffer.seek(0)
+            filename = "matrix.txt"
+            json_format = False
 
-def test_dataset_lifecycle():
+        # Prepare a UploadFile object using the buffer
+        upload_file = _create_upload_file(filename=filename, file=buffer, content_type=content_type)
+
+        # when a matrix is created (inserted) in the service
+        info_list: t.Sequence[MatrixInfoDTO] = matrix_service.create_by_importation(upload_file, json=json_format)
+
+        # Then, check the list of created matrices
+        assert len(info_list) == 1
+        info = info_list[0]
+
+        # A "real" hash value is calculated
+        assert info.id, "ID can't be empty"
+
+        # The matrix is saved in the content repository as a TSV file
+        bucket_dir = matrix_service.matrix_content_repository.bucket_dir
+        content_path = bucket_dir.joinpath(f"{info.id}.tsv")
+        actual = np.loadtxt(content_path)
+        assert actual.all() == matrix.all()
+
+        # A matrix object is stored in the database
+        with db():
+            obj = matrix_service.repo.get(info.id)
+        assert obj is not None, f"Missing Matrix object {info.id}"
+        assert obj.width == matrix.shape[1]
+        assert obj.height == matrix.shape[0]
+        now = datetime.datetime.utcnow()
+        assert now - datetime.timedelta(seconds=1) <= obj.created_at <= now
+
+    @pytest.mark.parametrize("content_type", ["application/json", "text/plain"])
+    def test_create_by_importation__zip_file(self, matrix_service: MatrixService, content_type: str) -> None:
+        """
+        Create a ZIP file with several matrices, using either a JSON format or a CSV format.
+        All matrices of the ZIP file use the same format.
+        Check that the matrices are correctly imported.
+        """
+        # Prepare the matrix data to import
+        data_list: t.List[MatrixType] = [
+            [[1, 2, 3], [4, 5, 6]],
+            [[7, 8, 9, 10, 11], [17, 18, 19, 20, 21], [27, 28, 29, 30, 31]],
+            [[]],
+        ]
+        matrix_list: t.List[np.ndarray] = [np.array(data, dtype=np.float64) for data in data_list]
+        if content_type == "application/json":
+            # JSON format of the array using the dataframe format
+            index_list = [list(range(matrix.shape[0])) for matrix in matrix_list]
+            columns_list = [list(range(matrix.shape[1])) for matrix in matrix_list]
+            data_list = [matrix.tolist() for matrix in matrix_list]
+            content_list = [
+                json.dumps({"index": index, "columns": columns, "data": data}).encode("utf-8")
+                for index, columns, data in zip(index_list, columns_list, data_list)
+            ]
+            json_format = True
+        else:
+            # CSV format of the array (without header)
+            content_list = []
+            for matrix in matrix_list:
+                buffer = io.BytesIO()
+                np.savetxt(buffer, matrix, delimiter="\t")
+                content_list.append(buffer.getvalue())
+            json_format = False
+
+        buffer = io.BytesIO()
+        with zipfile.ZipFile(buffer, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
+            for i, content in enumerate(content_list):
+                suffix = {True: "json", False: "txt"}[json_format]
+                zf.writestr(f"matrix-{i:1d}.{suffix}", content)
+        buffer.seek(0)
+
+        # Prepare a UploadFile object using the buffer
+        upload_file = _create_upload_file(filename="matrices.zip", file=buffer, content_type="application/zip")
+
+        # When matrices are created (inserted) in the service
+        info_list: t.Sequence[MatrixInfoDTO] = matrix_service.create_by_importation(upload_file, json=json_format)
+
+        # Then, check the list of created matrices
+        assert len(info_list) == len(data_list)
+        for info, matrix in zip(info_list, matrix_list):
+            # A "real" hash value is calculated
+            assert info.id, "ID can't be empty"
+
+            # The matrix is saved in the content repository as a TSV file
+            bucket_dir = matrix_service.matrix_content_repository.bucket_dir
+            content_path = bucket_dir.joinpath(f"{info.id}.tsv")
+            actual = np.loadtxt(content_path)
+            assert actual.all() == matrix.all()
+
+            # A matrix object is stored in the database
+            with db():
+                obj = matrix_service.repo.get(info.id)
+            assert obj is not None, f"Missing Matrix object {info.id}"
+            assert obj.width == (matrix.shape[1] if matrix.size else 0)
+            assert obj.height == matrix.shape[0]
+            now = datetime.datetime.utcnow()
+            assert now - datetime.timedelta(seconds=1) <= obj.created_at <= now
+
+
+def test_dataset_lifecycle() -> None:
     content = Mock()
     repo = Mock()
     dataset_repo = Mock()
@@ -347,7 +481,7 @@ def test_dataset_lifecycle():
     dataset_repo.delete.assert_called_once()
 
 
-def _create_upload_file(filename: str, file: t.IO = None, content_type: str = "") -> UploadFile:
+def _create_upload_file(filename: str, file: io.BytesIO, content_type: str = "") -> UploadFile:
     if hasattr(UploadFile, "content_type"):
         # `content_type` attribute was replace by a read-ony property in starlette-v0.24.
         headers = Headers(headers={"content-type": content_type})
@@ -356,54 +490,3 @@ def _create_upload_file(filename: str, file: t.IO = None, content_type: str = ""
     else:
         # noinspection PyTypeChecker,PyArgumentList
         return UploadFile(filename=filename, file=file, content_type=content_type)
-
-
-def test_import():
-    # Init Mock
-    repo_content = Mock()
-    repo = Mock()
-
-    file_str = "1\t2\t3\t4\t5\n6\t7\t8\t9\t10"
-    matrix_content = str.encode(file_str)
-
-    # Expected
-    matrix_id = "123"
-    exp_matrix_info = [MatrixInfoDTO(id=matrix_id, name="matrix.txt")]
-    exp_matrix = Matrix(id=matrix_id, width=5, height=2)
-    # Test
-    service = MatrixService(
-        repo=repo,
-        repo_dataset=Mock(),
-        matrix_content_repository=repo_content,
-        file_transfer_manager=Mock(),
-        task_service=Mock(),
-        config=Mock(),
-        user_service=Mock(),
-    )
-    service.repo.get.return_value = None
-    service.matrix_content_repository.save.return_value = matrix_id
-    service.repo.save.return_value = exp_matrix
-
-    # CSV importation
-    matrix_file = _create_upload_file(
-        filename="matrix.txt",
-        file=io.BytesIO(matrix_content),
-        content_type="test/plain",
-    )
-    matrix = service.create_by_importation(matrix_file)
-    assert matrix[0].name == exp_matrix_info[0].name
-    assert matrix[0].id is not None
-
-    # Zip importation
-    zip_content = io.BytesIO()
-    with ZipFile(zip_content, "w", ZIP_DEFLATED) as output_data:
-        output_data.writestr("matrix.txt", file_str)
-
-    zip_content.seek(0)
-    zip_file = _create_upload_file(
-        filename="Matrix.zip",
-        file=zip_content,
-        content_type="application/zip",
-    )
-    matrix = service.create_by_importation(zip_file)
-    assert matrix == exp_matrix_info
