@@ -3,8 +3,8 @@ import io
 import json
 import time
 import typing as t
-from unittest.mock import ANY, Mock
 import zipfile
+from unittest.mock import ANY, Mock
 
 import numpy as np
 import pytest
@@ -186,7 +186,7 @@ class TestMatrixService:
     ) -> None:
         """
         Create a new matrix by importing a file.
-        The file is either a JSON file or a CSV file.
+        The file is either a JSON file or a TSV file.
         """
         # Prepare the matrix data to import
         matrix = np.array(data, dtype=np.float64)
@@ -199,7 +199,7 @@ class TestMatrixService:
             filename = "matrix.json"
             json_format = True
         else:
-            # CSV format of the array (without header)
+            # TSV format of the array (without header)
             buffer = io.BytesIO()
             np.savetxt(buffer, matrix, delimiter="\t")
             buffer.seek(0)
@@ -210,7 +210,7 @@ class TestMatrixService:
         upload_file = _create_upload_file(filename=filename, file=buffer, content_type=content_type)
 
         # when a matrix is created (inserted) in the service
-        info_list: t.Sequence[MatrixInfoDTO] = matrix_service.create_by_importation(upload_file, json=json_format)
+        info_list: t.Sequence[MatrixInfoDTO] = matrix_service.create_by_importation(upload_file, is_json=json_format)
 
         # Then, check the list of created matrices
         assert len(info_list) == 1
@@ -237,7 +237,7 @@ class TestMatrixService:
     @pytest.mark.parametrize("content_type", ["application/json", "text/plain"])
     def test_create_by_importation__zip_file(self, matrix_service: MatrixService, content_type: str) -> None:
         """
-        Create a ZIP file with several matrices, using either a JSON format or a CSV format.
+        Create a ZIP file with several matrices, using either a JSON format or a TSV format.
         All matrices of the ZIP file use the same format.
         Check that the matrices are correctly imported.
         """
@@ -259,7 +259,7 @@ class TestMatrixService:
             ]
             json_format = True
         else:
-            # CSV format of the array (without header)
+            # TSV format of the array (without header)
             content_list = []
             for matrix in matrix_list:
                 buffer = io.BytesIO()
@@ -278,7 +278,7 @@ class TestMatrixService:
         upload_file = _create_upload_file(filename="matrices.zip", file=buffer, content_type="application/zip")
 
         # When matrices are created (inserted) in the service
-        info_list: t.Sequence[MatrixInfoDTO] = matrix_service.create_by_importation(upload_file, json=json_format)
+        info_list: t.Sequence[MatrixInfoDTO] = matrix_service.create_by_importation(upload_file, is_json=json_format)
 
         # Then, check the list of created matrices
         assert len(info_list) == len(data_list)
