@@ -31,7 +31,7 @@ jobs:
           node-version: 18.16.1
 
       - name: 💚 Install dependencies
-        run: npm install
+        run: npm install --legacy-peer-deps
         working-directory: webapp
 
       - name: 💚 Build webapp
