@@ -5,6 +5,7 @@ on:
     branches:
       - "master"
       - "hotfix/**"
+      - "release/2.15"
 
 jobs:
   binary:
