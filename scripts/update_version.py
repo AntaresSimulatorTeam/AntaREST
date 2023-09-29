@@ -7,17 +7,15 @@ import argparse
 import datetime
 import pathlib
 import re
-import typing
+import typing as t
 
 try:
     from antarest import __version__
 except ImportError:
     __version__ = "(unknown): use the virtualenv's Python to get the actual version number."
 
-# fmt: off
 HERE = pathlib.Path(__file__).parent.resolve()
 PROJECT_DIR = next(iter(p for p in HERE.parents if p.joinpath("antarest").exists()))
-# fmt: on
 
 TOKENS = [
     ("H1", r"^([^\n]+)\n={3,}$"),
@@ -64,7 +62,7 @@ class TitleToken(Token):
             return "#" * self.level + " " + title
 
 
-def parse_changelog(change_log: str) -> typing.Generator[Token, None, None]:
+def parse_changelog(change_log: str) -> t.Generator[Token, None, None]:
     for mo in re.finditer(ANY_TOKEN_RE, change_log, flags=re.MULTILINE):
         kind = mo.lastgroup
         if kind in {"H1", "H2", "H3", "H4"} and mo.lastindex is not None:
@@ -78,18 +76,31 @@ def parse_changelog(change_log: str) -> typing.Generator[Token, None, None]:
             raise NotImplementedError(kind, mo.group())
 
 
-def update_changelog(change_log: str, new_version: str, new_date: str) -> typing.Generator[Token, None, None]:
-    title_found = False
+def update_changelog(change_log: str, new_version: str, new_date: str) -> t.Generator[Token, None, None]:
     new_title = f"v{new_version} ({new_date})"
+
+    first_release_found = False
     for token in parse_changelog(change_log):
-        if not title_found and isinstance(token, TitleToken) and token.level == 2:
-            title_found = True
-            if token.text != new_title:
+        if first_release_found:
+            yield token
+            continue
+
+        is_release_title = isinstance(token, TitleToken) and token.level == 2
+        if is_release_title:
+            first_release_found = True
+            if token.text.split()[0] == new_title.split()[0]:
+                # Update the release date
+                yield TitleToken(kind=token.kind, text=new_title)
+            else:
+                # Insert a new release title before the current one
                 yield TitleToken(kind=token.kind, text=new_title)
                 yield NewlineToken()
                 yield NewlineToken()
                 yield NewlineToken()
-        yield token
+                yield token
+
+        else:
+            yield token
 
 
 def upgrade_version(new_version: str, new_date: str) -> None:
@@ -181,7 +192,7 @@ Upgrade the version number and release date of AntaREST.
 
 Use this script to update the version number and release date of the AntaREST application.
 It is designed to be executed before releasing the application on GitHub, specifically
-when a new version is completed in the `master` branch or `hotfix` branch.
+when a new version is completed in the `release` or `hotfix` branch.
 """
 
 
@@ -204,7 +215,7 @@ def main() -> None:
         help=f"new release date, using the format '{date_type.regex.pattern}'",
         metavar="ISO_DATE",
     )
-    version_type = RegexType(regex=r"\d+(?:\.\d+)+")
+    version_type = RegexType(regex=r"v?\d+(?:\.\d+)+")
     parser.add_argument(
         "new_version",
         type=version_type,
@@ -213,6 +224,7 @@ def main() -> None:
     )
 
     args = parser.parse_args()
+    args.new_version = args.new_version.lstrip("v")
     upgrade_version(args.new_version, args.new_date)
 
 
