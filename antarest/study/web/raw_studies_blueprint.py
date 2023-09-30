@@ -136,7 +136,18 @@ def create_raw_study_routes(
                 # because it's better to avoid raising an exception.
                 return Response(content=output, media_type="application/octet-stream")
 
-        return JSONResponse(content=output)
+        # We want to allow `NaN`, `+Infinity`, and `-Infinity` values in the JSON response
+        # even though they are not standard JSON values because they are supported in JavaScript.
+        # Additionally, we cannot use `orjson` because, despite its superior performance, it converts
+        # `NaN` and other values to `null`, even when using a custom encoder.
+        json_response = json.dumps(
+            output,
+            ensure_ascii=False,
+            allow_nan=True,
+            indent=None,
+            separators=(",", ":"),
+        ).encode("utf-8")
+        return Response(content=json_response, media_type="application/json")
 
     @bp.post(
         "/studies/{uuid}/raw",
