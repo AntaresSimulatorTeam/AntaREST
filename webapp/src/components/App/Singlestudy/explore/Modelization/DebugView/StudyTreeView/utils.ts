@@ -15,10 +15,10 @@ export const getStudyParams = (
   path: string,
   itemkey: string
 ): StudyParams | undefined => {
-  if (typeof data !== "object") {
+  if (typeof data === "string") {
     const tmp = data.split("://");
     if (tmp && tmp.length > 0) {
-      if (tmp[0] === "json") {
+      if (tmp[0] === "json" || tmp[1].endsWith(".json")) {
         return {
           type: "json",
           data: `${path}/${itemkey}`,

@@ -40,7 +40,7 @@ function StudyFileView(props: PropTypes) {
     setLoaded(false);
     try {
       const res = await getStudyData(study, url);
-      if (typeof res === "object") {
+      if (Array.isArray(res)) {
         setData(res.join("\n"));
       } else {
         setData(res);
