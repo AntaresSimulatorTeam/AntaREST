@@ -5,13 +5,14 @@ import time
 from datetime import datetime
 from pathlib import Path
 from threading import Thread
-from typing import IO, List, Optional
+from typing import IO, List, Optional, Sequence
 from uuid import uuid4
 from zipfile import ZipFile
 
 from antarest.core.config import Config
 from antarest.core.exceptions import StudyDeletionNotAllowed
 from antarest.core.interfaces.cache import ICache
+from antarest.core.model import PublicMode
 from antarest.core.requests import RequestParameters
 from antarest.core.utils.utils import extract_zip
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, Patch, RawStudy, Study, StudyAdditionalData
@@ -172,12 +173,20 @@ class RawStudyService(AbstractStorageService[RawStudy]):
 
     def create(self, metadata: RawStudy) -> RawStudy:
         """
-        Create empty new study
+        Create a new empty study based on the given metadata.
+
         Args:
-            metadata: study information
+            metadata: An instance containing study information, eg.:
 
-        Returns: new study information
+                - id: The study UUID.
+                - name: The name of the study.
+                - version: The version of the study template to be used.
+                - path: The full path of the study directory in the "default" workspace.
+                - author: The author's name (if provided) or "Unknown" if missing.
+                - ...
 
+        Returns:
+            An updated `RawStudy` instance with the path to the newly created study.
         """
         path_study = Path(metadata.path)
         path_study.mkdir()
@@ -189,7 +198,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         )
 
         study = self.study_factory.create_from_fs(path_study, metadata.id)
-        update_antares_info(metadata, study.tree)
+        update_antares_info(metadata, study.tree, update_author=True)
 
         metadata.path = str(path_study)
 
@@ -199,17 +208,20 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         self,
         src_meta: RawStudy,
         dest_name: str,
+        groups: Sequence[str],
         with_outputs: bool = False,
     ) -> RawStudy:
         """
-        Copy study to a new destination
+        Create a new RAW study by copying a reference study.
+
         Args:
-            src_meta: source study
-            dest_meta: destination study
-            with_outputs: indicate weither to copy the output or not
+            src_meta: The source study that you want to copy.
+            dest_name: The name for the destination study.
+            groups: A list of groups to assign to the destination study.
+            with_outputs: Indicates whether to copy the outputs as well.
 
-        Returns: destination study
-
+        Returns:
+            The newly created study.
         """
         self._check_study_exists(src_meta)
 
@@ -231,6 +243,8 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             updated_at=datetime.utcnow(),
             version=src_meta.version,
             additional_data=additional_data,
+            public_mode=PublicMode.NONE if groups else PublicMode.READ,
+            groups=groups,
         )
 
         src_path = self.get_study_path(src_meta)
@@ -243,7 +257,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             shutil.rmtree(output)
 
         study = self.study_factory.create_from_fs(dest_path, study_id=dest_study.id)
-        update_antares_info(dest_study, study.tree)
+        update_antares_info(dest_study, study.tree, update_author=False)
 
         del study.tree
         return dest_study
@@ -312,7 +326,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
     def export_study_flat(
         self,
         metadata: RawStudy,
-        dest: Path,
+        dst_path: Path,
         outputs: bool = True,
         output_list_filter: Optional[List[str]] = None,
         denormalize: bool = True,
@@ -324,7 +338,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         try:
             export_study_flat(
                 path_study,
-                dest,
+                dst_path,
                 self.study_factory,
                 outputs,
                 output_list_filter,

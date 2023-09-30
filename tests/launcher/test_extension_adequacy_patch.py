@@ -5,7 +5,7 @@ import pytest
 
 from antarest.core.config import Config, StorageConfig
 from antarest.launcher.extensions.adequacy_patch.extension import AdequacyPatchExtension
-from tests.conftest import with_db_context
+from tests.helpers import with_db_context
 
 
 @with_db_context

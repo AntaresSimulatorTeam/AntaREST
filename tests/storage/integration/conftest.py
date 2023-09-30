@@ -30,11 +30,11 @@ def sta_mini_zip_path(project_path: Path) -> Path:
 
 @pytest.fixture
 def storage_service(tmp_path: Path, project_path: Path, sta_mini_zip_path: Path) -> StudyService:
-    engine = create_engine("sqlite:///:memory:", echo=True)
+    engine = create_engine("sqlite:///:memory:", echo=False)
     Base.metadata.create_all(engine)
-    # noinspection PyTypeChecker,SpellCheckingInspection
+    # noinspection SpellCheckingInspection
     DBSessionMiddleware(
-        Mock(),
+        None,
         custom_engine=engine,
         session_args={"autocommit": False, "autoflush": False},
     )

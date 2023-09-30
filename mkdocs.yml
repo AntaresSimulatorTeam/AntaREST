@@ -42,6 +42,7 @@ nav:
   - 'Develop':
       - 'Introduction': 'architecture/0-introduction.md'
       - 'Database management': 'architecture/1-database.md'
+      - 'Add a new Study version': 'architecture/2-add-new-antares-version.md'
       - 'Roadmap': 'architecture/5-roadmap.md'
   - 'Antares ecosystem': 'https://antares-doc.readthedocs.io'
   - 'Changelog': 'CHANGELOG.md'
@@ -74,4 +75,4 @@ markdown_extensions:
   - pymdownx.superfences
   - pymdownx.tabbed
 
-copyright: Copyright &copy; 2007 - 2021 RTE
+copyright: Copyright &copy; 2007 - 2023 RTE

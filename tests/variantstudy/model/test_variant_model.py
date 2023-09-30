@@ -18,6 +18,7 @@ from antarest.study.storage.variantstudy.model.model import CommandDTO, Generati
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
 from antarest.study.storage.variantstudy.variant_study_service import SNAPSHOT_RELATIVE_PATH, VariantStudyService
 
+# noinspection SpellCheckingInspection
 SADMIN = RequestParameters(
     user=JWTUser(
         id=0,
@@ -28,15 +29,16 @@ SADMIN = RequestParameters(
 )
 
 
-def test_commands_service(tmp_path: Path, command_factory: CommandFactory) -> VariantStudyService:
+def test_commands_service(tmp_path: Path, command_factory: CommandFactory):
     engine = create_engine(
         "sqlite:///:memory:",
-        echo=True,
+        echo=False,
         connect_args={"check_same_thread": False},
     )
     Base.metadata.create_all(engine)
+    # noinspection SpellCheckingInspection
     DBSessionMiddleware(
-        Mock(),
+        None,
         custom_engine=engine,
         session_args={"autocommit": False, "autoflush": False},
     )
@@ -54,8 +56,10 @@ def test_commands_service(tmp_path: Path, command_factory: CommandFactory) -> Va
     )
 
     with db():
+        # sourcery skip: extract-method, inline-variable
         # Save a study
         origin_id = "origin-id"
+        # noinspection PyArgumentList
         origin_study = RawStudy(
             id=origin_id,
             name="my-study",
@@ -65,8 +69,8 @@ def test_commands_service(tmp_path: Path, command_factory: CommandFactory) -> Va
 
         # Create un new variant
         name = "my-variant"
-        saved_id = service.create_variant_study(origin_id, name, SADMIN)
-
+        variant_study = service.create_variant_study(origin_id, name, SADMIN)
+        saved_id = variant_study.id
         study = repository.get(saved_id)
         assert study.id == saved_id
         assert study.parent_id == origin_id
@@ -95,9 +99,13 @@ def test_commands_service(tmp_path: Path, command_factory: CommandFactory) -> Va
         assert len(commands) == 3
 
         # Update command
+        # note: we use a matrix reference to simplify tests
         command_5 = CommandDTO(
             action="replace_matrix",
-            args={"target": "some/matrix/path", "matrix": [[0]]},
+            args={
+                "target": "some/matrix/path",
+                "matrix": "matrix://739aa4b6-79ff-4388-8fed-f0d285bfc69f",
+            },
         )
         service.update_command(
             study_id=saved_id,
@@ -107,7 +115,7 @@ def test_commands_service(tmp_path: Path, command_factory: CommandFactory) -> Va
         )
         commands = service.get_commands(saved_id, SADMIN)
         assert commands[2].action == "replace_matrix"
-        assert commands[2].args["matrix"] == "matrix_id"
+        assert commands[2].args["matrix"] == "matrix://739aa4b6-79ff-4388-8fed-f0d285bfc69f"
 
         # Move command
         service.move_command(
@@ -133,12 +141,13 @@ def test_commands_service(tmp_path: Path, command_factory: CommandFactory) -> Va
 def test_smart_generation(tmp_path: Path, command_factory: CommandFactory) -> None:
     engine = create_engine(
         "sqlite:///:memory:",
-        echo=True,
+        echo=False,
         connect_args={"check_same_thread": False},
     )
     Base.metadata.create_all(engine)
+    # noinspection SpellCheckingInspection
     DBSessionMiddleware(
-        Mock(),
+        None,
         custom_engine=engine,
         session_args={"autocommit": False, "autoflush": False},
     )
@@ -162,20 +171,22 @@ def test_smart_generation(tmp_path: Path, command_factory: CommandFactory) -> No
         GenerationResultInfoDTO(success=True, details=[]),
     ]
 
+    # noinspection PyUnusedLocal
     def export_flat(
         metadata: VariantStudy,
-        dest: Path,
+        dst_path: Path,
         outputs: bool = True,
         denormalize: bool = True,
     ) -> None:
-        dest.mkdir(parents=True)
-        (dest / "user").mkdir()
-        (dest / "user" / "some_unmanaged_config").touch()
+        dst_path.mkdir(parents=True)
+        (dst_path / "user").mkdir()
+        (dst_path / "user" / "some_unmanaged_config").touch()
 
     service.raw_study_service.export_study_flat.side_effect = export_flat
 
     with db():
         origin_id = "base-study"
+        # noinspection PyArgumentList
         origin_study = RawStudy(
             id=origin_id,
             name="my-study",
@@ -186,7 +197,8 @@ def test_smart_generation(tmp_path: Path, command_factory: CommandFactory) -> No
         )
         repository.save(origin_study)
 
-        variant_id = service.create_variant_study(origin_id, "my variant", SADMIN)
+        variant_study = service.create_variant_study(origin_id, "my variant", SADMIN)
+        variant_id = variant_study.id
         assert service._get_variant_study(variant_id, SADMIN).folder == "some_place"
         unmanaged_user_config_path = tmp_path / variant_id / SNAPSHOT_RELATIVE_PATH / "user" / "some_unmanaged_config"
         assert not unmanaged_user_config_path.exists()

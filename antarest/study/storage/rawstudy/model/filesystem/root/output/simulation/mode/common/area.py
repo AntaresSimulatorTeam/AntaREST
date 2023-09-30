@@ -66,6 +66,19 @@ class OutputSimulationAreaItem(FolderNode):
                     self.area,
                 )
 
+            # add condition len(self.config.get_short_term_storage_names(self.area)) > 0 to
+            # has_short_term_storage boolean
+            # todo get the config related to this output (now this may fail if input has changed since the launch)
+
+            has_short_term_storage = self.config.version >= 860
+            if has_short_term_storage:
+                children[f"details-STstorage-{freq}"] = AreaOutputSeriesMatrix(
+                    self.context,
+                    self.config.next_file(f"details-STstorage-{freq}.txt"),
+                    freq,
+                    self.area,
+                )
+
         return {
             child: children[child]
             for child in children

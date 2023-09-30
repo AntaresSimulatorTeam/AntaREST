@@ -1,8 +1,9 @@
-import os
+import io
+import json
+import zipfile
 from pathlib import Path
 from typing import List, Optional
 from unittest.mock import Mock
-from zipfile import ZipFile
 
 import pytest
 from fastapi import FastAPI
@@ -23,7 +24,7 @@ from tests.storage.conftest import SimpleFileTransferManager, SimpleSyncTaskServ
 def assert_url_content(url: str, tmp_dir: Path, sta_mini_zip_path: Path) -> bytes:
     path_studies = tmp_dir / "studies"
 
-    with ZipFile(sta_mini_zip_path) as zip_output:
+    with zipfile.ZipFile(sta_mini_zip_path) as zip_output:
         zip_output.extractall(path=path_studies)
 
     config = Config(
@@ -53,36 +54,48 @@ def assert_url_content(url: str, tmp_dir: Path, sta_mini_zip_path: Path) -> byte
         metadata_repository=repo,
         config=config,
     )
+
+    # Simulate the download of data using a streamed request
     client = TestClient(app)
-    res = client.get(url, stream=True)
-    download_filepath = ftm.fetch_download(
-        FileDownloadTaskDTO.parse_obj(res.json()).file.id,
-        RequestParameters(user=DEFAULT_ADMIN_USER),
-    ).path
+    if client.stream is False:
+        # `TestClient` is based on `Requests` (old way before AntaREST-v2.15)
+        # noinspection PyArgumentList
+        res = client.get(url, stream=True)
+        res.raise_for_status()
+        result = res.json()
+    else:
+        # `TestClient` is based on `httpx` (new way since AntaREST-v2.15)
+        data = io.BytesIO()
+        # noinspection PyCallingNonCallable
+        with client.stream("GET", url) as res:
+            for chunk in res.iter_bytes():
+                data.write(chunk)
+        res.raise_for_status()
+        result = json.loads(data.getvalue())
+
+    download_task = FileDownloadTaskDTO(**result)
+    parameters = RequestParameters(user=DEFAULT_ADMIN_USER)
+    download_filepath = ftm.fetch_download(download_task.file.id, parameters).path
     with open(download_filepath, "rb") as fh:
         return fh.read()
 
 
-def assert_data(data: bytes):
-    assert len(data) > 0 and b"<!DOCTYPE HTML PUBLIC" not in data
-
-
-def test_exporter_file(tmp_path: Path, sta_mini_zip_path: Path):
+def test_exporter_file(tmp_path: Path, sta_mini_zip_path: Path) -> None:
     data = assert_url_content(
         url="/v1/studies/STA-mini/export",
         tmp_dir=tmp_path,
         sta_mini_zip_path=sta_mini_zip_path,
     )
-    assert_data(data)
+    assert data and b"<!DOCTYPE HTML PUBLIC" not in data
 
 
-def test_exporter_file_no_output(tmp_path: Path, sta_mini_zip_path: Path):
+def test_exporter_file_no_output(tmp_path: Path, sta_mini_zip_path: Path) -> None:
     data = assert_url_content(
         url="/v1/studies/STA-mini/export?no-output",
         tmp_dir=tmp_path,
         sta_mini_zip_path=sta_mini_zip_path,
     )
-    assert_data(data)
+    assert data and b"<!DOCTYPE HTML PUBLIC" not in data
 
 
 @pytest.mark.parametrize("outputs", [True, False, "prout"])
@@ -94,14 +107,14 @@ def test_export_flat(
     outputs: bool,
     output_list: Optional[List[str]],
     denormalize: bool,
-):
+) -> None:
     path_studies = tmp_path / "studies"
     path_studies.mkdir(exist_ok=True)
 
     export_path = tmp_path / "exports"
     export_path.mkdir()
 
-    with ZipFile(sta_mini_zip_path) as zip_output:
+    with zipfile.ZipFile(sta_mini_zip_path) as zip_output:
         zip_output.extractall(path=path_studies)
 
     export_study_flat(
@@ -116,13 +129,13 @@ def test_export_flat(
     export_output_path = export_path / "STA-mini-export" / "output"
     if outputs:
         assert export_output_path.exists()
-        if output_list is not None:
-            if len(output_list) == 0:
-                assert len(os.listdir(export_output_path)) == 0
-            else:
-                for item in output_list:
-                    assert (export_output_path / item).exists()
+        files = set(export_output_path.iterdir())
+        if output_list is None:
+            assert len(files) == 5
+        elif len(output_list) == 0:
+            assert not files
         else:
-            assert len(os.listdir(export_output_path)) == 5
+            expected = {export_output_path / item for item in output_list}
+            assert files == expected
     else:
         assert not export_output_path.exists()

@@ -2,7 +2,9 @@ import logging
 from pathlib import Path
 from typing import Any, List, Optional, Union, cast
 
+import numpy as np
 import pandas as pd
+from numpy import typing as npt
 from pandas.errors import EmptyDataError
 
 from antarest.core.model import JSON
@@ -25,12 +27,17 @@ class InputSeriesMatrix(MatrixNode):
         config: FileStudyTreeConfig,
         freq: MatrixFrequency = MatrixFrequency.HOURLY,
         nb_columns: Optional[int] = None,
-        default_empty: Optional[List[List[float]]] = None,
+        default_empty: Optional[npt.NDArray[np.float64]] = None,
     ):
         super().__init__(context=context, config=config, freq=freq)
         self.nb_columns = nb_columns
-        # Ensure that the matrix is a 2D matrix by setting it to [[]] if not provided
-        self.default_empty = default_empty or [[]]
+        if default_empty is None:
+            # Ensure that the matrix is a 2D matrix
+            self.default_empty = np.empty((1, 0), dtype=np.float64)
+        else:
+            # Clone the template value and make it writable
+            self.default_empty = np.copy(default_empty)
+            self.default_empty.flags.writeable = True
 
     def parse(
         self,
@@ -39,21 +46,19 @@ class InputSeriesMatrix(MatrixNode):
         return_dataframe: bool = False,
     ) -> Union[JSON, pd.DataFrame]:
         file_path = file_path or self.config.path
-
-        stopwatch = StopWatch()
-
-        link_path = self.get_link_path()
-        if link_path.exists():
-            link = link_path.read_text()
-            matrix_json = self.context.resolver.resolve(link)
-            matrix_json = cast(JSON, matrix_json)
-            matrix: pd.DataFrame = pd.DataFrame(
-                data=matrix_json["data"],
-                columns=matrix_json["columns"],
-                index=matrix_json["index"],
-            )
-        else:
-            try:
+        try:
+            # sourcery skip: extract-method
+            stopwatch = StopWatch()
+            if self.get_link_path().exists():
+                link = self.get_link_path().read_text()
+                matrix_json = self.context.resolver.resolve(link)
+                matrix_json = cast(JSON, matrix_json)
+                matrix: pd.DataFrame = pd.DataFrame(
+                    data=matrix_json["data"],
+                    columns=matrix_json["columns"],
+                    index=matrix_json["index"],
+                )
+            else:
                 matrix = pd.read_csv(
                     file_path,
                     sep="\t",
@@ -61,28 +66,19 @@ class InputSeriesMatrix(MatrixNode):
                     header=None,
                     float_precision="legacy",
                 )
-            except (FileNotFoundError, EmptyDataError):
-                # Return an empty matrix if the CSV file is not found or empty.
-                # Save the empty matrix as a CSV file for subsequent user modification.
-                logger.warning(f"Empty file found when parsing {file_path}")
-                df = pd.DataFrame(data=self.default_empty, dtype=float)
-                df.to_csv(file_path, sep="\t", index=False, header=False)
-                if return_dataframe:
-                    return df
-                return {
-                    "data": df.values.tolist(),
-                    "columns": df.columns.tolist(),
-                    "index": df.index.tolist(),
-                }
+            stopwatch.log_elapsed(lambda x: logger.info(f"Matrix parsed in {x}s"))
+            matrix.dropna(how="any", axis=1, inplace=True)
+            if return_dataframe:
+                return matrix
 
-        stopwatch.log_elapsed(lambda x: logger.info(f"Matrix parsed in {x}s"))
-        matrix.dropna(how="any", axis=1, inplace=True)
-        if return_dataframe:
-            return matrix
+            data = cast(JSON, matrix.to_dict(orient="split"))
+            stopwatch.log_elapsed(lambda x: logger.info(f"Matrix to dict in {x}s"))
 
-        data = cast(JSON, matrix.to_dict(orient="split"))
-        stopwatch.log_elapsed(lambda x: logger.info(f"Matrix to dict in {x}s"))
-        return data
+            return data
+        except EmptyDataError:
+            logger.warning(f"Empty file found when parsing {file_path}")
+            matrix = pd.DataFrame(self.default_empty)
+            return matrix if return_dataframe else cast(JSON, matrix.to_dict(orient="split"))
 
     def check_errors(
         self,

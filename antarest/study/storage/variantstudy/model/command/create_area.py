@@ -9,7 +9,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.business.utils import get_or_create_section
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
 from antarest.study.storage.variantstudy.model.model import CommandDTO
@@ -53,7 +52,7 @@ class CreateArea(ICommand):
                     status=False,
                     message=f"Area '{self.area_name}' already exists and could not be created",
                 ),
-                dict(),
+                {},
             )
 
         study_data.areas[area_id] = Area(
@@ -77,9 +76,10 @@ class CreateArea(ICommand):
         version = study_data.config.version
 
         hydro_config = study_data.tree.get(["input", "hydro", "hydro"])
-        get_or_create_section(hydro_config, "inter-daily-breakdown")[area_id] = 1
-        get_or_create_section(hydro_config, "intra-daily-modulation")[area_id] = 24
-        get_or_create_section(hydro_config, "inter-monthly-breakdown")[area_id] = 1
+        hydro_config.setdefault("inter-daily-breakdown", {})[area_id] = 1
+        hydro_config.setdefault("inter-daily-breakdown", {})[area_id] = 1
+        hydro_config.setdefault("intra-daily-modulation", {})[area_id] = 24
+        hydro_config.setdefault("inter-monthly-breakdown", {})[area_id] = 1
 
         new_area_data: JSON = {
             "input": {
@@ -208,10 +208,10 @@ class CreateArea(ICommand):
         new_area_data["input"]["hydro"]["prepro"]["correlation"] = new_correlation
 
         if version > 650:
-            get_or_create_section(hydro_config, "initialize reservoir date")[area_id] = 0
-            get_or_create_section(hydro_config, "leeway low")[area_id] = 1
-            get_or_create_section(hydro_config, "leeway up")[area_id] = 1
-            get_or_create_section(hydro_config, "pumping efficiency")[area_id] = 1
+            hydro_config.setdefault("initialize reservoir date", {})[area_id] = 0
+            hydro_config.setdefault("leeway low", {})[area_id] = 1
+            hydro_config.setdefault("leeway up", {})[area_id] = 1
+            hydro_config.setdefault("pumping efficiency", {})[area_id] = 1
 
             new_area_data["input"]["hydro"]["common"]["capacity"][
                 f"creditmodulations_{area_id}"
@@ -232,6 +232,12 @@ class CreateArea(ICommand):
             new_area_data["input"]["areas"][area_id]["adequacy_patch"] = {
                 "adequacy-patch": {"adequacy-patch-mode": "outside"}
             }
+
+        if version >= 860:
+            new_area_data["input"]["st-storage"] = {"clusters": {area_id: {"list": {}}}}
+            new_area_data["input"]["hydro"]["series"][area_id][
+                "mingen"
+            ] = self.command_context.generator_matrix_constants.get_null_matrix()
 
         new_area_data["input"]["hydro"]["hydro"] = hydro_config
 

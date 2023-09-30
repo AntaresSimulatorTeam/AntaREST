@@ -1,7 +1,7 @@
 import hashlib
 import logging
+import typing as t
 from pathlib import Path
-from typing import List, Optional, Union
 
 import numpy as np
 from filelock import FileLock
@@ -31,19 +31,19 @@ class MatrixDataSetRepository:
         logger.debug(f"Matrix dataset {matrix_user_metadata.id} for user {matrix_user_metadata.owner_id} saved")
         return matrix_user_metadata
 
-    def get(self, id: str) -> Optional[MatrixDataSet]:
+    def get(self, id: str) -> t.Optional[MatrixDataSet]:
         matrix: MatrixDataSet = db.session.query(MatrixDataSet).get(id)
         return matrix
 
-    def get_all_datasets(self) -> List[MatrixDataSet]:
-        matrix_datasets: List[MatrixDataSet] = db.session.query(MatrixDataSet).all()
+    def get_all_datasets(self) -> t.List[MatrixDataSet]:
+        matrix_datasets: t.List[MatrixDataSet] = db.session.query(MatrixDataSet).all()
         return matrix_datasets
 
     def query(
         self,
-        name: Optional[str],
-        owner: Optional[int] = None,
-    ) -> List[MatrixDataSet]:
+        name: t.Optional[str],
+        owner: t.Optional[int] = None,
+    ) -> t.List[MatrixDataSet]:
         """
         Query a list of MatrixUserMetadata by searching for each one separately if a set of filter match
 
@@ -59,7 +59,7 @@ class MatrixDataSetRepository:
             query = query.filter(MatrixDataSet.name.ilike(f"%{name}%"))  # type: ignore
         if owner is not None:
             query = query.filter(MatrixDataSet.owner_id == owner)
-        datasets: List[MatrixDataSet] = query.distinct().all()
+        datasets: t.List[MatrixDataSet] = query.distinct().all()
         return datasets
 
     def delete(self, dataset_id: str) -> None:
@@ -83,7 +83,7 @@ class MatrixRepository:
         logger.debug(f"Matrix {matrix.id} saved")
         return matrix
 
-    def get(self, matrix_hash: str) -> Optional[Matrix]:
+    def get(self, matrix_hash: str) -> t.Optional[Matrix]:
         matrix: Matrix = db.session.query(Matrix).get(matrix_hash)
         return matrix
 
@@ -130,6 +130,7 @@ class MatrixContentRepository:
 
         matrix_file = self.bucket_dir.joinpath(f"{matrix_hash}.tsv")
         matrix = np.loadtxt(matrix_file, delimiter="\t", dtype=np.float64, ndmin=2)
+        matrix = matrix.reshape((1, 0)) if matrix.size == 0 else matrix
         data = matrix.tolist()
         index = list(range(matrix.shape[0]))
         columns = list(range(matrix.shape[1]))
@@ -148,7 +149,7 @@ class MatrixContentRepository:
         matrix_file = self.bucket_dir.joinpath(f"{matrix_hash}.tsv")
         return matrix_file.exists()
 
-    def save(self, content: Union[List[List[MatrixData]], npt.NDArray[np.float64]]) -> str:
+    def save(self, content: t.Union[t.List[t.List[MatrixData]], npt.NDArray[np.float64]]) -> str:
         """
         Saves the content of a matrix as a TSV file in the bucket directory
         and returns its SHA256 hash.
@@ -188,8 +189,12 @@ class MatrixContentRepository:
             # Ensure exclusive access to the matrix file between multiple processes (or threads).
             lock_file = matrix_file.with_suffix(".tsv.lock")
             with FileLock(lock_file, timeout=15):
-                # noinspection PyTypeChecker
-                np.savetxt(matrix_file, matrix, delimiter="\t", fmt="%.18g")
+                if matrix.size == 0:
+                    # If the array or dataframe is empty, create an empty file instead of
+                    # traditional saving to avoid unwanted line breaks.
+                    open(matrix_file, mode="wb").close()
+                else:
+                    np.savetxt(matrix_file, matrix, delimiter="\t", fmt="%.18f")
 
             # IMPORTANT: Deleting the lock file under Linux can make locking unreliable.
             # See https://github.com/tox-dev/py-filelock/issues/31

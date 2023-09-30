@@ -17,7 +17,7 @@ class TestVersionInfo:
         assert "fastapi" in dependencies
         assert all(
             # match at least one number. eg: "pywin32 == 306"
-            re.fullmatch(r"\d+(?:\.\d+)*", ver)
+            re.fullmatch(r"\d+(?:\.\d+)*(?:\.post\d+)?", ver)
             for ver in dependencies.values()
         )
 

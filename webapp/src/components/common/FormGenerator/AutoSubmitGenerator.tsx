@@ -22,11 +22,11 @@ export default function AutoSubmitGeneratorForm<T extends FieldValues>(
 ) {
   const { saveField, jsonTemplate } = props;
 
-  const formatedJsonTemplate: IFormGenerator<T> = useMemo(
+  const formattedJsonTemplate: IFormGenerator<T> = useMemo(
     () =>
       jsonTemplate.map((fieldset) => {
         const { fields, ...otherProps } = fieldset;
-        const formatedFields: IFieldsetType<T>["fields"] = fields.map(
+        const formattedFields: IFieldsetType<T>["fields"] = fields.map(
           (field) => ({
             ...field,
             rules: (name, path, required, defaultValues) => ({
@@ -36,10 +36,10 @@ export default function AutoSubmitGeneratorForm<T extends FieldValues>(
           })
         );
 
-        return { fields: formatedFields, ...otherProps };
+        return { fields: formattedFields, ...otherProps };
       }),
     [jsonTemplate, saveField]
   );
 
-  return <FormGenerator jsonTemplate={formatedJsonTemplate} />;
+  return <FormGenerator jsonTemplate={formattedJsonTemplate} />;
 }

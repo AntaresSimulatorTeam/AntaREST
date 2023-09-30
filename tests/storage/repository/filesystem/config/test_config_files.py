@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Any, Dict
 from zipfile import ZipFile
 
 import pytest
@@ -7,6 +8,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.files import (
     _parse_links,
     _parse_outputs,
     _parse_sets,
+    _parse_st_storage,
     _parse_thermal,
     build,
 )
@@ -19,6 +21,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Link,
     Simulation,
 )
+from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import STStorageConfig, STStorageGroup
 from tests.storage.business.assets import ASSETS_DIR
 
 
@@ -40,7 +43,7 @@ def build_empty_files(tmp: Path) -> Path:
     return study_path
 
 
-def test_parse_output_parmeters(tmp_path) -> None:
+def test_parse_output_parameters(tmp_path: Path) -> None:
     study = build_empty_files(tmp_path)
     content = """
     [output]
@@ -192,7 +195,7 @@ def test_parse_outputs(tmp_path: Path) -> None:
         ),
     ],
 )
-def test_parse_outputs__nominal(tmp_path: Path, assets_name: str, expected: dict) -> None:
+def test_parse_outputs__nominal(tmp_path: Path, assets_name: str, expected: Dict[str, Any]) -> None:
     """
     This test decompresses a zipped study (stored in the `assets` directory)
     into a temporary directory and executes the parsing of the outputs.
@@ -272,6 +275,71 @@ def test_parse_thermal(tmp_path: Path) -> None:
         Cluster(id="t2", name="t2", enabled=False),
         Cluster(id="t3", name="t3", enabled=True),
     ]
+
+
+# noinspection SpellCheckingInspection
+ST_STORAGE_LIST_INI = """\
+[siemens battery]
+name = Siemens Battery
+group = Battery
+injectionnominalcapacity = 150.0
+withdrawalnominalcapacity = 150.0
+reservoircapacity = 600.0
+efficiency = 0.94
+initiallevel = 0
+initialleveloptim = True
+
+[grand maison]
+name = Grand'Maison
+group = PSP_closed
+injectionnominalcapacity = 1500.0
+withdrawalnominalcapacity = 1800.0
+reservoircapacity = 20000.0
+efficiency = 0.78
+initiallevel = 10000.0
+initialleveloptim = False
+"""
+
+
+def test_parse_st_storage(tmp_path: Path) -> None:
+    study_path = build_empty_files(tmp_path)
+    study_path.joinpath("study.antares").write_text("[antares] \n version = 860")
+    config_dir = study_path.joinpath("input", "st-storage", "clusters", "fr")
+    config_dir.mkdir(parents=True)
+    config_dir.joinpath("list.ini").write_text(ST_STORAGE_LIST_INI)
+    # noinspection SpellCheckingInspection
+    assert _parse_st_storage(study_path, "fr") == [
+        STStorageConfig(
+            id="siemens battery",
+            name="Siemens Battery",
+            group=STStorageGroup.BATTERY,
+            injection_nominal_capacity=150.0,
+            withdrawal_nominal_capacity=150.0,
+            reservoir_capacity=600.0,
+            efficiency=0.94,
+            initial_level=0.0,
+            initial_level_optim=True,
+        ),
+        STStorageConfig(
+            id="grand maison",
+            name="Grand'Maison",
+            group=STStorageGroup.PSP_CLOSED,
+            injection_nominal_capacity=1500.0,
+            withdrawal_nominal_capacity=1800.0,
+            reservoir_capacity=20000.0,
+            efficiency=0.78,
+            initial_level=10000.0,
+            initial_level_optim=False,
+        ),
+    ]
+
+    # With a study version anterior to 860, it should always return an empty list
+    study_path.joinpath("study.antares").write_text("[antares] \n version = 850")
+    assert _parse_st_storage(study_path, "fr") == []
+
+
+def test_parse_st_storage_with_no_file(tmp_path: Path) -> None:
+    assert _parse_st_storage(tmp_path, "") == []
 
 
 def test_parse_links(tmp_path: Path) -> None:

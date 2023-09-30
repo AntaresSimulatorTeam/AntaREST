@@ -1,7 +1,6 @@
-import { useState } from "react";
 import { Box, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import { LoadingButton } from "@mui/lab";
+import LoginIcon from "@mui/icons-material/Login";
 import { login } from "../../redux/ducks/auth";
 import logo from "../../assets/logo.png";
 import topRightBackground from "../../assets/top-right-background.png";
@@ -30,7 +29,6 @@ interface Props {
 
 function LoginWrapper(props: Props) {
   const { children } = props;
-  const [loginError, setLoginError] = useState("");
   const { t } = useTranslation();
   const user = useAppSelector(getAuthUser);
   const dispatch = useAppDispatch();
@@ -62,18 +60,8 @@ function LoginWrapper(props: Props) {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = async (data: SubmitHandlerPlus<FormValues>) => {
-    const { values } = data;
-
-    setLoginError("");
-
-    try {
-      await dispatch(login(values)).unwrap();
-    } catch (err) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      setLoginError((err as any).data?.message || t("login.error"));
-      throw err;
-    }
+  const handleSubmit = ({ values }: SubmitHandlerPlus<FormValues>) => {
+    return dispatch(login(values)).unwrap();
   };
 
   ////////////////////////////////////////////////////////////////
@@ -150,47 +138,43 @@ function LoginWrapper(props: Props) {
                   </Typography>
                 </Box>
                 <Box width="70%" my={2}>
-                  <Form onSubmit={handleSubmit} hideSubmitButton disableLoader>
-                    {({ control, formState: { isDirty, isSubmitting } }) => (
+                  <Form
+                    onSubmit={handleSubmit}
+                    submitButtonText={t("global.connexion")}
+                    submitButtonIcon={<LoginIcon />}
+                    sx={{
+                      ".Form__Footer": {
+                        justifyContent: "center",
+                      },
+                    }}
+                  >
+                    {({ control }) => (
                       <>
                         <StringFE
                           name="username"
-                          sx={{ my: 3 }}
                           label="NNI"
                           variant="filled"
+                          size="small"
+                          sx={{ mb: 2 }}
                           fullWidth
                           control={control}
                           rules={{ required: t("form.field.required") }}
                         />
                         <PasswordFE
                           name="password"
-                          variant="filled"
                           label={t("global.password")}
-                          inputProps={{ autoComplete: "current-password" }}
+                          variant="filled"
+                          size="small"
+                          inputProps={{
+                            // https://web.dev/sign-in-form-best-practices/#current-password
+                            autoComplete: "current-password",
+                            id: "current-password",
+                          }}
+                          sx={{ mb: 3 }}
                           fullWidth
                           control={control}
                           rules={{ required: t("form.field.required") }}
                         />
-                        {loginError && (
-                          <Box
-                            mt={2}
-                            color="error.main"
-                            mb={4}
-                            sx={{ fontSize: "0.9rem" }}
-                          >
-                            {loginError}
-                          </Box>
-                        )}
-                        <Box display="flex" justifyContent="center" mt={6}>
-                          <LoadingButton
-                            type="submit"
-                            variant="contained"
-                            loading={isSubmitting}
-                            disabled={!isDirty || isSubmitting}
-                          >
-                            {t("global.connexion")}
-                          </LoadingButton>
-                        </Box>
                       </>
                     )}
                   </Form>

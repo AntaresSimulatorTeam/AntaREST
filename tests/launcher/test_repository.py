@@ -11,7 +11,7 @@ from antarest.launcher.model import JobLog, JobLogType, JobResult, JobStatus
 from antarest.launcher.repository import JobResultRepository
 from antarest.study.model import RawStudy
 from antarest.study.repository import StudyMetadataRepository
-from tests.conftest import with_db_context
+from tests.helpers import with_db_context
 
 
 @pytest.mark.unit_test
@@ -94,10 +94,11 @@ def test_job_result() -> None:
 
 @pytest.mark.unit_test
 def test_update_object():
-    engine = create_engine("sqlite:///:memory:", echo=True)
+    engine = create_engine("sqlite:///:memory:", echo=False)
     Base.metadata.create_all(engine)
+    # noinspection SpellCheckingInspection
     DBSessionMiddleware(
-        Mock(),
+        None,
         custom_engine=engine,
         session_args={"autocommit": False, "autoflush": False},
     )
@@ -126,10 +127,11 @@ def test_update_object():
 
 
 def test_logs():
-    engine = create_engine("sqlite:///:memory:", echo=True)
+    engine = create_engine("sqlite:///:memory:", echo=False)
     Base.metadata.create_all(engine)
+    # noinspection SpellCheckingInspection
     DBSessionMiddleware(
-        Mock(),
+        None,
         custom_engine=engine,
         session_args={"autocommit": False, "autoflush": False},
     )

@@ -1,16 +1,12 @@
-import contextlib
 import datetime
 import uuid
 from unittest.mock import Mock, patch
 
 import numpy as np
 import pytest
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 
 from antarest.core.exceptions import AreaNotFound
 from antarest.core.model import PublicMode
-from antarest.dbmodel import Base
 from antarest.login.model import Group, User
 from antarest.study.business.area_management import AreaInfoDTO, AreaType
 from antarest.study.business.correlation_management import (
@@ -142,21 +138,6 @@ class TestCorrelationMatrix:
                 columns=["fr", "de"],
                 data=[[0.1, 0.2], [0.3, 0.4]],
             )
-
-
-@pytest.fixture(scope="function", name="db_engine")
-def db_engine_fixture():
-    engine = create_engine("sqlite:///:memory:")
-    Base.metadata.create_all(engine)
-    yield engine
-    engine.dispose()
-
-
-@pytest.fixture(scope="function", name="db_session")
-def db_session_fixture(db_engine):
-    make_session = sessionmaker(bind=db_engine)
-    with contextlib.closing(make_session()) as session:
-        yield session
 
 
 # noinspection SpellCheckingInspection

@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
 import datetime
-import sys
 import uuid
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Union
@@ -12,29 +10,23 @@ from antarest.core.config import Config
 from antarest.core.filetransfer.model import FileDownload
 from antarest.core.filetransfer.repository import FileDownloadRepository
 from antarest.core.filetransfer.service import FileTransferManager
+from antarest.core.model import JSON
 from antarest.core.requests import RequestParameters
 from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskListFilter, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskService, Task
-
-project_dir: Path = Path(__file__).parent.parent.parent
-sys.path.insert(0, str(project_dir))
-
-from antarest.core.model import JSON
 
 
 @pytest.fixture
 def ini_cleaner() -> Callable[[str], str]:
     def cleaner(txt: str) -> str:
-        txt_splitted = txt.split("\n")
-        txt_splitted_clean = map(lambda line: line.strip(), txt_splitted)
-        txt_splitted_filtered = filter(lambda line: line, txt_splitted_clean)
-        return "\n".join(txt_splitted_filtered)
+        lines = filter(None, map(str.strip, txt.splitlines(keepends=False)))
+        return "\n".join(lines)
 
     return cleaner
 
 
 @pytest.fixture
-def clean_ini_writer(ini_cleaner: Callable[[str], str]) -> Callable[[str], str]:
+def clean_ini_writer(ini_cleaner: Callable[[str], str]) -> Callable[[Path, str], None]:
     def write_clean_ini(path: Path, txt: str) -> None:
         clean_ini = ini_cleaner(txt)
         path.write_text(clean_ini)
@@ -44,11 +36,10 @@ def clean_ini_writer(ini_cleaner: Callable[[str], str]) -> Callable[[str], str]:
 
 @pytest.fixture
 def test_json_data() -> JSON:
-    json_data = {
+    return {
         "part1": {"key_int": 1, "key_str": "value1"},
         "part2": {"key_bool": True, "key_bool2": False},
     }
-    return json_data
 
 
 @pytest.fixture
@@ -272,12 +263,6 @@ def lite_path(tmp_path: Path) -> Path:
 
 
 class SimpleSyncTaskService(ITaskService):
-    def _create_notifier(self):
-        def notifier(message: str):
-            pass
-
-        return notifier
-
     def add_worker_task(
         self,
         task_type: TaskType,
@@ -298,7 +283,7 @@ class SimpleSyncTaskService(ITaskService):
         custom_event_messages: Optional[CustomTaskEventMessages],
         request_params: RequestParameters,
     ) -> str:
-        action(self._create_notifier())
+        action(lambda message: None)
         return str(uuid.uuid4())
 
     def status_task(
@@ -311,8 +296,8 @@ class SimpleSyncTaskService(ITaskService):
             id=task_id,
             name="mock",
             owner=None,
-            task_status=TaskStatus.COMPLETED,
-            creation_date_utc=datetime.datetime.timestamp(),
+            status=TaskStatus.COMPLETED,
+            creation_date_utc=datetime.datetime.now().isoformat(" "),
             completion_date_utc=None,
             result=None,
             logs=None,
@@ -326,8 +311,8 @@ class SimpleSyncTaskService(ITaskService):
 
 
 class FileDownloadRepositoryMock(FileDownloadRepository):
-    def __init__(self):
-        self.downloads = {}
+    def __init__(self) -> None:
+        self.downloads: Dict[str, FileDownload] = {}
 
     def add(self, download: FileDownload) -> None:
         self.downloads[download.id] = download
@@ -339,7 +324,7 @@ class FileDownloadRepositoryMock(FileDownloadRepository):
         self.downloads[download.id] = download
 
     def get_all(self, owner: Optional[int] = None) -> List[FileDownload]:
-        return list(self.downloads.items())
+        return list(self.downloads.values())
 
 
 class SimpleFileTransferManager(FileTransferManager):

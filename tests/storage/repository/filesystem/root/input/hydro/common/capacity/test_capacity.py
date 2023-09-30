@@ -14,8 +14,8 @@ from antarest.study.storage.rawstudy.model.filesystem.root.input.hydro.common.ca
 
 # noinspection SpellCheckingInspection
 BEFORE_650 = {
-    "maxpower_en": {"default_empty": [[]], "freq": MatrixFrequency.HOURLY, "nb_columns": None},
-    "maxpower_fr": {"default_empty": [[]], "freq": MatrixFrequency.HOURLY, "nb_columns": None},
+    "maxpower_en": {"default_empty": [[]], "freq": MatrixFrequency.DAILY, "nb_columns": None},
+    "maxpower_fr": {"default_empty": [[]], "freq": MatrixFrequency.DAILY, "nb_columns": None},
     "reservoir_en": {"default_empty": [[]], "freq": MatrixFrequency.DAILY, "nb_columns": None},
     "reservoir_fr": {"default_empty": [[]], "freq": MatrixFrequency.DAILY, "nb_columns": None},
 }
@@ -26,8 +26,8 @@ AFTER_650 = {
     "creditmodulations_fr": {"default_empty": [[]], "freq": MatrixFrequency.HOURLY, "nb_columns": None},
     "inflowPattern_en": {"default_empty": [[]], "freq": MatrixFrequency.HOURLY, "nb_columns": None},
     "inflowPattern_fr": {"default_empty": [[]], "freq": MatrixFrequency.HOURLY, "nb_columns": None},
-    "maxpower_en": {"default_empty": [[]], "freq": MatrixFrequency.HOURLY, "nb_columns": None},
-    "maxpower_fr": {"default_empty": [[]], "freq": MatrixFrequency.HOURLY, "nb_columns": None},
+    "maxpower_en": {"default_empty": [[]], "freq": MatrixFrequency.DAILY, "nb_columns": None},
+    "maxpower_fr": {"default_empty": [[]], "freq": MatrixFrequency.DAILY, "nb_columns": None},
     "reservoir_en": {"default_empty": [[]], "freq": MatrixFrequency.DAILY, "nb_columns": None},
     "reservoir_fr": {"default_empty": [[]], "freq": MatrixFrequency.DAILY, "nb_columns": None},
     "waterValues_en": {"default_empty": [[]], "freq": MatrixFrequency.DAILY, "nb_columns": None},
@@ -81,7 +81,7 @@ class TestInputHydroCommonCapacity:
         value: InputSeriesMatrix
         actual_obj = {
             key: {
-                "default_empty": value.default_empty,
+                "default_empty": value.default_empty.tolist(),
                 "freq": value.freq,
                 "nb_columns": value.nb_columns,
             }

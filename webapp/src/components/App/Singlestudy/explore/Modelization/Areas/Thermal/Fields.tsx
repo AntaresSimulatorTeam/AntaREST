@@ -1,4 +1,6 @@
 import { useTranslation } from "react-i18next";
+import { useOutletContext } from "react-router";
+import { StudyMetadata } from "../../../../../../../common/types";
 import NumberFE from "../../../../../../common/fieldEditors/NumberFE";
 import SelectFE from "../../../../../../common/fieldEditors/SelectFE";
 import StringFE from "../../../../../../common/fieldEditors/StringFE";
@@ -7,6 +9,7 @@ import Fieldset from "../../../../../../common/Fieldset";
 import { useFormContextPlus } from "../../../../../../common/Form";
 import {
   CLUSTER_GROUP_OPTIONS,
+  POLLUTANT_NAMES,
   ThermalFormFields,
   TS_GENERATION_OPTIONS,
   TS_LAW_OPTIONS,
@@ -15,6 +18,8 @@ import {
 function Fields() {
   const [t] = useTranslation();
   const { control } = useFormContextPlus<ThermalFormFields>();
+  const { study } = useOutletContext<{ study: StudyMetadata }>();
+  const studyVersion = Number(study.version);
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -88,11 +93,25 @@ function Fields() {
           name="minDownTime"
           control={control}
         />
-        <NumberFE
-          label={t("study.modelization.clusters.co2")}
-          name="co2"
-          control={control}
-        />
+      </Fieldset>
+      <Fieldset legend={t("study.modelization.clusters.thermal.pollutants")}>
+        {POLLUTANT_NAMES.map(
+          (name) =>
+            (name === "co2" || studyVersion >= 860) && (
+              <NumberFE
+                key={name}
+                label={t(`study.modelization.clusters.thermal.${name}`)}
+                name={name}
+                control={control}
+                rules={{
+                  min: {
+                    value: 0,
+                    message: t("form.field.minValue", [0]),
+                  },
+                }}
+              />
+            )
+        )}
       </Fieldset>
       <Fieldset legend={t("study.modelization.clusters.operatingCosts")}>
         <NumberFE

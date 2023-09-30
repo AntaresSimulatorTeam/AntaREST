@@ -46,13 +46,13 @@ function StudyMatrixView(props: PropTypes) {
   const [toggleView, setToggleView] = useState(true);
   const [openImportDialog, setOpenImportDialog] = useState(false);
   const [isEditable, setEditable] = useState(true);
-  const [formatedPath, setFormatedPath] = useState("");
+  const [formattedPath, setFormattedPath] = useState("");
 
   const { data: matrixIndex } = usePromiseWithSnackbarError(
-    () => getStudyMatrixIndex(study, formatedPath),
+    () => getStudyMatrixIndex(study, formattedPath),
     {
       errorMessage: t("matrix.error.failedToRetrieveIndex"),
-      deps: [study, formatedPath],
+      deps: [study, formattedPath],
     }
   );
 
@@ -88,7 +88,7 @@ function StudyMatrixView(props: PropTypes) {
     if (source !== "loadData" && source !== "updateData") {
       try {
         if (change.length > 0) {
-          await editMatrix(study, formatedPath, change);
+          await editMatrix(study, formattedPath, change);
           enqueueSnackbar(t("matrix.success.matrixUpdate"), {
             variant: "success",
           });
@@ -101,7 +101,7 @@ function StudyMatrixView(props: PropTypes) {
 
   const handleImport = async (file: File) => {
     try {
-      await importFile(file, study, formatedPath);
+      await importFile(file, study, formattedPath);
     } catch (e) {
       logErr("Failed to import file", file, e);
       enqueueErrorSnackbar(t("variants.error.import"), e as AxiosError);
@@ -116,7 +116,7 @@ function StudyMatrixView(props: PropTypes) {
   useEffect(() => {
     const urlParts = url.split("/");
     const tmpUrl = urlParts.filter((item) => item);
-    setFormatedPath(tmpUrl.join("/"));
+    setFormattedPath(tmpUrl.join("/"));
     if (tmpUrl.length > 0) {
       setEditable(!filterOut.includes(tmpUrl[0]));
     }

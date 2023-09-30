@@ -13,6 +13,7 @@ import pytest
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
 from antarest.core.exceptions import StudyDeletionNotAllowed, StudyNotFoundError
 from antarest.core.interfaces.cache import CacheConstants
+from antarest.core.model import PublicMode
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, StudyAdditionalData
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
@@ -198,16 +199,14 @@ def test_assert_study_not_exist(tmp_path: str, project_path) -> None:
 
 
 @pytest.mark.unit_test
-def test_create_study(tmp_path: str, project_path) -> None:
-    path_studies = Path(tmp_path)
-
+def test_create(tmp_path: Path, project_path: Path) -> None:
     study = Mock()
     data = {"antares": {"caption": None}}
     study.get.return_value = data
 
     study_factory = Mock()
     study_factory.create_from_fs.return_value = FileStudy(Mock(), study)
-    config = build_config(path_studies)
+    config = build_config(tmp_path)
     study_service = RawStudyService(
         config=config,
         cache=Mock(),
@@ -223,11 +222,12 @@ def test_create_study(tmp_path: str, project_path) -> None:
         version="720",
         created_at=datetime.datetime.now(),
         updated_at=datetime.datetime.now(),
+        additional_data=StudyAdditionalData(author="john.doe"),
     )
     md = study_service.create(metadata)
 
-    assert md.path == f"{tmp_path}{os.sep}study1"
-    path_study = path_studies / md.id
+    assert md.path == str(tmp_path / "study1")
+    path_study = tmp_path / md.id
     assert path_study.exists()
 
     path_study_antares_infos = path_study / "study.antares"
@@ -261,6 +261,7 @@ def test_create_study_versions(tmp_path: str, project_path) -> None:
             version=version,
             created_at=datetime.datetime.now(),
             updated_at=datetime.datetime.now(),
+            additional_data=StudyAdditionalData(author="john.doe"),
         )
         return study_service.create(metadata)
 
@@ -434,16 +435,20 @@ def test_copy_study(
         path_resources=Path(),
         patch_service=Mock(),
     )
+    groups = ["fake_group_1", "fake_group_2"]
 
     src_md = RawStudy(
         id=source_name,
         workspace=DEFAULT_WORKSPACE_NAME,
         path=str(path_study),
         additional_data=StudyAdditionalData(),
+        groups=groups,
     )
-    md = study_service.copy(src_md, "dest_name")
+    md = study_service.copy(src_md, "dst_name", groups)
     md_id = md.id
     assert str(md.path) == f"{tmp_path}{os.sep}{md_id}"
+    assert md.public_mode == PublicMode.NONE
+    assert md.groups == groups
     study.get.assert_called_once_with(["study"])
 
 

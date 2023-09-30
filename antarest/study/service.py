@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from http import HTTPStatus
 from pathlib import Path
 from time import time
-from typing import IO, Any, Callable, Dict, List, Optional, Tuple, Union, cast
+from typing import IO, Any, Callable, Dict, List, Optional, Sequence, Tuple, Union, cast
 from uuid import uuid4
 
 import numpy as np
@@ -59,6 +59,7 @@ from antarest.study.business.matrix_management import MatrixManager, MatrixManag
 from antarest.study.business.optimization_management import OptimizationManager
 from antarest.study.business.playlist_management import PlaylistManager
 from antarest.study.business.scenario_builder_management import ScenarioBuilderManager
+from antarest.study.business.st_storage_manager import STStorageManager
 from antarest.study.business.table_mode_management import TableModeManager
 from antarest.study.business.thematic_trimming_management import ThematicTrimmingManager
 from antarest.study.business.timeseries_config_management import TimeSeriesConfigManager
@@ -236,6 +237,7 @@ class StudyService:
         self.properties_manager = PropertiesManager(self.storage_service)
         self.renewable_manager = RenewableManager(self.storage_service)
         self.thermal_manager = ThermalManager(self.storage_service)
+        self.st_storage_manager = STStorageManager(self.storage_service)
         self.ts_config_manager = TimeSeriesConfigManager(self.storage_service)
         self.table_mode_manager = TableModeManager(self.storage_service)
         self.playlist_manager = PlaylistManager(self.storage_service)
@@ -595,18 +597,23 @@ class StudyService:
         params: RequestParameters,
     ) -> str:
         """
-        Create empty study
+        Creates a study with the specified study name, version, group IDs, and user parameters.
+
         Args:
-            study_name: study name to set
-            version: version number of the study to create
-            group_ids: group to link to study
-            params: request parameters
+            study_name: The name of the study to create.
+            version: The version number of the study to choose the template for creation.
+            group_ids: A possibly empty list of user group IDs to associate with the study.
+            params:
+                The parameters of the HTTP request for creation, used to determine
+                the currently logged-in user (ID and name).
 
-        Returns: new study uuid
-
+        Returns:
+            str: The ID of the newly created study.
         """
         sid = str(uuid4())
         study_path = str(get_default_workspace_path(self.config) / sid)
+
+        author = self.get_user_name(params)
 
         raw = RawStudy(
             id=sid,
@@ -616,7 +623,7 @@ class StudyService:
             created_at=datetime.utcnow(),
             updated_at=datetime.utcnow(),
             version=version or NEW_DEFAULT_STUDY_VERSION,
-            additional_data=StudyAdditionalData(),
+            additional_data=StudyAdditionalData(author=author),
         )
 
         raw = self.storage_service.raw_study_service.create(raw)
@@ -631,6 +638,18 @@ class StudyService:
 
         logger.info("study %s created by user %s", raw.id, params.get_user_id())
         return str(raw.id)
+
+    def get_user_name(self, params: RequestParameters) -> str:
+        """
+        Args: params : Request parameters
+
+        Returns: The user's name
+        """
+        author = "Unknown"
+        if params.user:
+            if curr_user := self.user_service.get_user(params.user.id, params):
+                author = curr_user.to_dto().name
+        return author
 
     def get_study_synthesis(self, study_id: str, params: RequestParameters) -> FileStudyTreeConfigDTO:
         """
@@ -794,18 +813,18 @@ class StudyService:
         with_outputs: bool = False,
     ) -> str:
         """
-        Copy study to an other location.
+        Copy study to another location.
 
         Args:
             src_uuid: source study
             dest_study_name: destination study
             group_ids: group to attach on new study
             params: request parameters
-            with_outputs: indicate if outputs should be copied too
+            with_outputs: Indicates whether the study's outputs should also be duplicated.
             use_task: indicate if the task job service should be used
 
         Returns:
-
+            The unique identifier of the task copying the study.
         """
         src_study = self.get_study(src_uuid)
         assert_permission(params.user, src_study, StudyPermissionType.READ)
@@ -816,6 +835,7 @@ class StudyService:
             study = self.storage_service.get_storage(origin_study).copy(
                 origin_study,
                 dest_study_name,
+                group_ids,
                 with_outputs,
             )
             self._save_study(study, params.user, group_ids)
@@ -1269,6 +1289,8 @@ class StudyService:
             workspace=DEFAULT_WORKSPACE_NAME,
             path=path,
             additional_data=StudyAdditionalData(),
+            public_mode=PublicMode.NONE if group_ids else PublicMode.READ,
+            groups=group_ids,
         )
         study = self.storage_service.raw_study_service.import_study(study, stream)
         study.updated_at = datetime.utcnow()
@@ -1356,6 +1378,7 @@ class StudyService:
             if isinstance(data, bytes):
                 # noinspection PyTypeChecker
                 matrix = np.loadtxt(io.BytesIO(data), delimiter="\t", dtype=np.float64, ndmin=2)
+                matrix = matrix.reshape((1, 0)) if matrix.size == 0 else matrix
                 return ReplaceMatrix(
                     target=url,
                     matrix=matrix.tolist(),
@@ -1429,7 +1452,7 @@ class StudyService:
             self._assert_study_unarchived(study)
             parsed_commands: List[ICommand] = []
             for command in commands:
-                parsed_commands.extend(self.storage_service.variant_study_service.command_factory.to_icommand(command))
+                parsed_commands.extend(self.storage_service.variant_study_service.command_factory.to_command(command))
             execute_or_add_commands(
                 study,
                 file_study,
@@ -1856,35 +1879,40 @@ class StudyService:
         self,
         study: Study,
         owner: Optional[JWTUser] = None,
-        group_ids: List[str] = list(),
+        group_ids: Sequence[str] = (),
         content_status: StudyContentStatus = StudyContentStatus.VALID,
     ) -> None:
         """
-        Create new study with owner, group or content_status.
+        Create or update a study with specified attributes.
+
+        This function is responsible for creating a new study or updating an existing one
+        with the provided information.
+
         Args:
-            study: study to save
-            owner: new owner
-            group_ids: groups to attach
-            content_status: new content_status
+            study: The study to be saved or updated.
+            owner: The owner of the study (current authenticated user).
+            group_ids: The list of group IDs to associate with the study.
+            content_status: The new content status for the study.
 
-        Returns:
-
+        Raises:
+            UserHasNotPermissionError:
+                If the owner is not specified or has invalid authentication,
+                or if permission is denied for any of the specified group IDs.
         """
         if not owner:
-            raise UserHasNotPermissionError
+            raise UserHasNotPermissionError("owner is not specified or has invalid authentication")
 
         if isinstance(study, RawStudy):
             study.content_status = content_status
 
-        if owner:
-            study.owner = self.user_service.get_user(owner.impersonator, params=RequestParameters(user=owner))
-            groups = []
-            for gid in group_ids:
-                group = next(filter(lambda g: g.id == gid, owner.groups), None)
-                if group is None or not group.role.is_higher_or_equals(RoleType.WRITER) and not owner.is_site_admin():
-                    raise UserHasNotPermissionError()
-                groups.append(Group(id=group.id, name=group.name))
-            study.groups = groups
+        study.owner = self.user_service.get_user(owner.impersonator, params=RequestParameters(user=owner))
+        groups = []
+        for gid in group_ids:
+            group = next(filter(lambda g: g.id == gid, owner.groups), None)
+            if group is None or not group.role.is_higher_or_equals(RoleType.WRITER) and not owner.is_site_admin():
+                raise UserHasNotPermissionError(f"Permission denied for group ID: {gid}")
+            groups.append(Group(id=group.id, name=group.name))
+        study.groups = groups
 
         self.repository.save(study)
 

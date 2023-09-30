@@ -37,6 +37,7 @@ function Properties() {
           defaultValues: () => getPropertiesFormFields(study.id, currentAreaId),
         }}
         onSubmit={handleSubmit}
+        enableUndoRedo
       >
         <Fields />
       </Form>

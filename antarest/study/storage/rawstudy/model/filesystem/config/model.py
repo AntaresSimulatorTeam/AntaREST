@@ -1,11 +1,15 @@
+import re
 from enum import Enum
 from pathlib import Path
 from typing import Dict, List, Optional, Set
 
+from pydantic import Extra
 from pydantic.main import BaseModel
 
 from antarest.core.model import JSON
 from antarest.core.utils.utils import DTO
+
+from .st_storage import STStorageConfig
 
 
 class ENR_MODELLING(Enum):
@@ -48,12 +52,17 @@ class Area(BaseModel):
     Object linked to /input/<area>/optimization.ini information
     """
 
+    class Config:
+        extra = Extra.forbid
+
     name: str
     links: Dict[str, Link]
     thermals: List[Cluster]
     renewables: List[Cluster]
     filters_synthesis: List[str]
     filters_year: List[str]
+    # since v8.6
+    st_storages: List[STStorageConfig] = []
 
 
 class DistrictSet(BaseModel):
@@ -130,14 +139,14 @@ class FileStudyTreeConfig(DTO):
         self.study_id = study_id
         self.version = version
         self.output_path = output_path
-        self.areas = areas or dict()
-        self.sets = sets or dict()
-        self.outputs = outputs or dict()
-        self.bindings = bindings or list()
+        self.areas = areas or {}
+        self.sets = sets or {}
+        self.outputs = outputs or {}
+        self.bindings = bindings or []
         self.store_new_set = store_new_set
-        self.archive_input_series = archive_input_series or list()
+        self.archive_input_series = archive_input_series or []
         self.enr_modelling = enr_modelling
-        self.cache = cache or dict()
+        self.cache = cache or {}
         self.zip_path = zip_path
 
     def next_file(self, name: str, is_output: bool = False) -> "FileStudyTreeConfig":
@@ -195,6 +204,9 @@ class FileStudyTreeConfig(DTO):
             [thermal.id for thermal in self.areas[area].thermals if not only_enabled or thermal.enabled],
         )
 
+    def get_st_storage_ids(self, area: str) -> List[str]:
+        return self.cache.get(f"%st-storage%{area}", [s.id for s in self.areas[area].st_storages])
+
     def get_renewable_names(
         self,
         area: str,
@@ -228,34 +240,24 @@ class FileStudyTreeConfig(DTO):
         return self.areas[area].filters_year
 
 
-def transform_name_to_id(name: str, lower: bool = True) -> str:
-    """This transformation was taken from the cpp Antares Simulator.."""
-    duppl = False
-    study_id = ""
-    for c in name:
-        if (
-            (c >= "a" and c <= "z")
-            or (c >= "A" and c <= "Z")
-            or (c >= "0" and c <= "9")
-            or c == "_"
-            or c == "-"
-            or c == "("
-            or c == ")"
-            or c == ","
-            or c == "&"
-            or c == " "
-        ):
-            study_id += c
-            duppl = False
-        else:
-            if not duppl:
-                study_id += " "
-                duppl = True
+# Invalid chars was taken from Antares Simulator (C++).
+_sub_invalid_chars = re.compile(r"[^a-zA-Z0-9_(),& -]+").sub
 
-    study_id_stripped = study_id.strip()
-    if lower:
-        return study_id_stripped.lower()
-    return study_id_stripped
+
+def transform_name_to_id(name: str, lower: bool = True) -> str:
+    """
+    Transform a name into an identifier by replacing consecutive
+    invalid characters by a single white space, and then whitespaces
+    are striped from both ends.
+
+    Valid characters are `[a-zA-Z0-9_(),& -]` (including space).
+
+    Args:
+        name: The name to convert.
+        lower: The flag used to turn the identifier in lower case.
+    """
+    valid_id = _sub_invalid_chars(" ", name).strip()
+    return valid_id.lower() if lower else valid_id
 
 
 class FileStudyTreeConfigDTO(BaseModel):

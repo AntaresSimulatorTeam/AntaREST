@@ -31,6 +31,7 @@ function Optimization() {
       key={study.id}
       config={{ defaultValues: () => getOptimizationFormFields(study.id) }}
       onSubmit={handleSubmit}
+      enableUndoRedo
     >
       <Fields study={study} />
     </Form>

@@ -1,6 +1,6 @@
 import logging
 from http import HTTPStatus
-from typing import Any, Dict, List, Optional, Union, cast
+from typing import Any, Dict, List, Optional, Sequence, Union, cast
 
 from fastapi import APIRouter, Body, Depends
 from fastapi.params import Body, Query
@@ -27,6 +27,13 @@ from antarest.study.business.general_management import GeneralFormFields
 from antarest.study.business.link_management import LinkInfoDTO
 from antarest.study.business.optimization_management import OptimizationFormFields
 from antarest.study.business.playlist_management import PlaylistColumns
+from antarest.study.business.st_storage_manager import (
+    StorageCreation,
+    StorageInput,
+    StorageOutput,
+    STStorageMatrix,
+    STStorageTimeSeries,
+)
 from antarest.study.business.table_mode_management import ColumnsModelTypes, TableTemplateType
 from antarest.study.business.thematic_trimming_management import ThematicTrimmingFormFields
 from antarest.study.business.timeseries_config_management import TSFormFields
@@ -130,7 +137,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/areas/{area_id}/ui",
         tags=[APITag.study_data],
         summary="Update area information",
-        response_model=AreaInfoDTO,
+        response_model=None,
     )
     def update_area_ui(
         uuid: str,
@@ -266,7 +273,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
-        study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
         if name:
             study_service.areas.update_layer_name(study, layer_id, name)
         if areas:
@@ -276,6 +283,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/layers/{layer_id}",
         tags=[APITag.study_data],
         summary="Remove layer",
+        status_code=HTTPStatus.NO_CONTENT,
+        response_model=None,
     )
     def remove_layer(
         uuid: str,
@@ -287,7 +296,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
-        study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
+        study = study_service.check_study_access(uuid, StudyPermissionType.DELETE, params)
         study_service.areas.remove_layer(study, layer_id)
 
     @bp.get(
@@ -343,7 +352,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
-        study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
         study_service.district_manager.update_district(study, district_id, dto)
 
     @bp.delete(
@@ -361,7 +370,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
-        study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
         study_service.district_manager.remove_district(study, district_id)
 
     @bp.get(
@@ -846,7 +855,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
-        study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
         return study_service.binding_constraint_manager.update_binding_constraint(study, binding_constraint_id, data)
 
     @bp.post(
@@ -1365,5 +1374,317 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, request_params)
 
         study_service.thermal_manager.set_field_values(study, area_id, cluster_id, form_fields)
+
+    @bp.get(
+        path="/studies/{uuid}/areas/{area_id}/storages/{storage_id}",
+        tags=[APITag.study_data],
+        summary="Get the short-term storage properties",
+        response_model=StorageOutput,
+    )
+    def get_st_storage(
+        uuid: str,
+        area_id: str,
+        storage_id: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> StorageOutput:
+        """
+        Retrieve the storages by given uuid and area id of a study.
+
+        Args:
+        - `uuid`: The UUID of the study.
+        - `area_id`: The area ID of the study.
+        - `storage_id`: The storage ID of the study.
+
+        Returns: One storage with the following attributes:
+        - `id`: The storage ID of the study.
+        - `name`: The name of the  storage.
+        - `group`: The group of the  storage.
+        - `injectionNominalCapacity`: The injection Nominal Capacity of the  storage.
+        - `withdrawalNominalCapacity`: The withdrawal Nominal Capacity of the  storage.
+        - `reservoirCapacity`: The reservoir capacity of the  storage.
+        - `efficiency`: The efficiency of the  storage.
+        - `initialLevel`: The initial Level of the  storage.
+        - `initialLevelOptim`: The initial Level Optim of the  storage.
+
+        Permissions:
+          The user must have READ permission on the study.
+        """
+        logger.info(
+            f"Getting values for study {uuid} and short term storage {storage_id}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
+        return study_service.st_storage_manager.get_storage(study, area_id, storage_id)
+
+    @bp.get(
+        path="/studies/{uuid}/areas/{area_id}/storages",
+        tags=[APITag.study_data],
+        summary="Get the list of short-term storage properties",
+        response_model=Sequence[StorageOutput],
+    )
+    def get_st_storages(
+        uuid: str,
+        area_id: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Sequence[StorageOutput]:
+        """
+        Retrieve the short-term storages by given uuid and area ID of a study.
+
+        Args:
+        - `uuid`: The UUID of the study.
+        - `area_id`: The area ID.
+
+        Returns: A list of storages with the following attributes:
+        - `id`: The storage ID of the study.
+        - `name`: The name of the  storage.
+        - `group`: The group of the  storage.
+        - `injectionNominalCapacity`: The injection Nominal Capacity of the  storage.
+        - `withdrawalNominalCapacity`: The withdrawal Nominal Capacity of the  storage.
+        - `reservoirCapacity`: The reservoir capacity of the  storage.
+        - `efficiency`: The efficiency of the  storage.
+        - `initialLevel`: The initial Level of the  storage.
+        - `initialLevelOptim`: The initial Level Optim of the  storage.
+
+        Permissions:
+          The user must have READ permission on the study.
+        """
+        logger.info(
+            f"Getting storages for study {uuid} in a given area {area_id}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
+        return study_service.st_storage_manager.get_storages(study, area_id)
+
+    @bp.get(
+        path="/studies/{uuid}/areas/{area_id}/storages/{storage_id}/series/{ts_name}",
+        tags=[APITag.study_data],
+        summary="Get a short-term storage time series",
+        response_model=STStorageMatrix,
+    )
+    def get_st_storage_matrix(
+        uuid: str,
+        area_id: str,
+        storage_id: str,
+        ts_name: STStorageTimeSeries,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> STStorageMatrix:
+        """
+        Retrieve the matrix of the specified time series for the given short-term storage.
+
+        Args:
+        - `uuid`: The UUID of the study.
+        - `area_id`: The area ID.
+        - `storage_id`: The ID of the short-term storage.
+        - `ts_name`: The name of the time series to retrieve.
+
+        Returns: The time series matrix with the following attributes:
+        - `index`: A list of 0-indexed time series lines (8760 lines).
+        - `columns`: A list of 0-indexed time series columns (1 column).
+        - `data`: A 2D-array matrix representing the time series.
+
+        Permissions:
+        - User must have READ permission on the study.
+        """
+        logger.info(
+            f"Retrieving time series for study {uuid} and short-term storage {storage_id}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
+        return study_service.st_storage_manager.get_matrix(study, area_id, storage_id, ts_name)
+
+    @bp.put(
+        path="/studies/{uuid}/areas/{area_id}/storages/{storage_id}/series/{ts_name}",
+        tags=[APITag.study_data],
+        summary="Update a short-term storage time series",
+    )
+    def update_st_storage_matrix(
+        uuid: str,
+        area_id: str,
+        storage_id: str,
+        ts_name: STStorageTimeSeries,
+        ts: STStorageMatrix,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> None:
+        """
+        Update the matrix of the specified time series for the given short-term storage.
+
+        Args:
+        - `uuid`: The UUID of the study.
+        - `area_id`: The area ID.
+        - `storage_id`: The ID of the short-term storage.
+        - `ts_name`: The name of the time series to retrieve.
+        - `ts`: The time series matrix to update.
+
+        Permissions:
+        - User must have WRITE permission on the study.
+        """
+        logger.info(
+            f"Update time series for study {uuid} and short-term storage {storage_id}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
+        study_service.st_storage_manager.update_matrix(study, area_id, storage_id, ts_name, ts)
+
+    @bp.get(
+        path="/studies/{uuid}/areas/{area_id}/storages/{storage_id}/validate",
+        tags=[APITag.study_data],
+        summary="Validate all the short-term storage time series",
+    )
+    def validate_st_storage_matrices(
+        uuid: str,
+        area_id: str,
+        storage_id: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> bool:
+        """
+        Validate the consistency of all time series for the given short-term storage.
+
+        Args:
+        - `uuid`: The UUID of the study.
+        - `area_id`: The area ID.
+        - `storage_id`: The ID of the short-term storage.
+
+        Permissions:
+        - User must have READ permission on the study.
+        """
+        logger.info(
+            f"Validating time series for study {uuid} and short-term storage {storage_id}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
+        return study_service.st_storage_manager.validate_matrices(study, area_id, storage_id)
+
+    @bp.post(
+        path="/studies/{uuid}/areas/{area_id}/storages",
+        tags=[APITag.study_data],
+        summary="Create a new short-term storage in an area",
+        response_model=StorageOutput,
+    )
+    def create_st_storage(
+        uuid: str,
+        area_id: str,
+        form: StorageCreation,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> StorageOutput:
+        """
+        Create a new short-term storage in an area.
+
+        Args:
+        - `uuid`: The UUID of the study.
+        - `area_id`: The area ID.
+        - `form`: The name and the group(PSP_open, PSP_closed, Pondage, Battery, Other1, Other2, Other3, Other4, Other5)
+        of the storage that we want to create.
+
+        Returns: New storage with the following attributes:
+        - `id`: The storage ID of the study.
+        - `name`: The name of the  storage.
+        - `group`: The group of the  storage.
+        - `injectionNominalCapacity`: The injection Nominal Capacity of the  storage.
+        - `withdrawalNominalCapacity`: The withdrawal Nominal Capacity of the  storage.
+        - `reservoirCapacity`: The reservoir capacity of the  storage.
+        - `efficiency`: The efficiency of the  storage.
+        - `initialLevel`: The initial Level of the  storage.
+        - `initialLevelOptim`: The initial Level Optim of the  storage.
+
+        Permissions:
+        - User must have READ/WRITE permission on the study.
+        """
+
+        logger.info(
+            f"Create short-term storage from {area_id} for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
+        return study_service.st_storage_manager.create_storage(study, area_id, form)
+
+    @bp.patch(
+        path="/studies/{uuid}/areas/{area_id}/storages/{storage_id}",
+        tags=[APITag.study_data],
+        summary="Update the short-term storage properties",
+    )
+    def update_st_storage(
+        uuid: str,
+        area_id: str,
+        storage_id: str,
+        form: StorageInput,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> StorageOutput:
+        """
+        Update short-term storage of a study.
+
+        Args:
+        - `uuid`: The UUID of the study.
+        - `area_id`: The area ID.
+        - `storage_id`: The storage id of the study that we want to update.
+        - `form`: The characteristic of the storage that we can update:
+          - `name`: The name of the updated storage.
+          - `group`: The group of the updated storage.
+          - `injectionNominalCapacity`: The injection Nominal Capacity of the updated storage.
+          - `withdrawalNominalCapacity`: The withdrawal Nominal Capacity of the updated storage.
+          - `reservoirCapacity`:  The reservoir capacity of the updated storage.
+          - `efficiency`: The efficiency of the updated storage
+          - `initialLevel`: The initial Level of the updated storage
+          - `initialLevelOptim`: The initial Level Optim of the updated storage
+
+        Returns: The updated storage with the following attributes:
+        - `name`: The name of the updated storage.
+        - `group`: The group of the updated storage.
+        - `injectionNominalCapacity`: The injection Nominal Capacity of the updated storage.
+        - `withdrawalNominalCapacity`: The withdrawal Nominal Capacity of the updated storage.
+        - `reservoirCapacity`:  The reservoir capacity of the updated storage.
+        - `efficiency`: The efficiency of the updated storage
+        - `initialLevel`: The initial Level of the updated storage
+        - `initialLevelOptim`: The initial Level Optim of the updated storage
+        - `id`: The storage ID of the study that we want to update.
+
+        Permissions:
+        - User must have READ/WRITE permission on the study.
+        """
+
+        logger.info(
+            f"Update short-term storage {storage_id} from {area_id} for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
+        return study_service.st_storage_manager.update_storage(study, area_id, storage_id, form)
+
+    @bp.delete(
+        path="/studies/{uuid}/areas/{area_id}/storages",
+        tags=[APITag.study_data],
+        summary="Remove short-term storages from an area",
+        status_code=HTTPStatus.NO_CONTENT,
+        response_model=None,
+    )
+    def delete_st_storages(
+        uuid: str,
+        area_id: str,
+        storage_ids: Sequence[str],
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> None:
+        """
+        Delete short-term storages from an area.
+
+        Args:
+        - `uuid`: The UUID of the study.
+        - `area_id`: The area ID.
+        - `storage_ids`: List of IDs of the storages to remove from the area.
+
+        Permissions:
+        - User must have DELETED permission on the study.
+        """
+        logger.info(
+            f"Delete short-term storage ID's {storage_ids} from {area_id} for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(uuid, StudyPermissionType.DELETE, params)
+        study_service.st_storage_manager.delete_storages(study, area_id, storage_ids)
 
     return bp

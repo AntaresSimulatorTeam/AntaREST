@@ -111,34 +111,47 @@ class AreaManager:
         self.patch_service = PatchService(repository=repository)
 
     def get_all_areas(self, study: RawStudy, area_type: Optional[AreaType] = None) -> List[AreaInfoDTO]:
+        """
+        Retrieves all areas and districts of a raw study based on the area type.
+
+        Args:
+            study: The raw study object.
+            area_type: The type of area. Retrieves areas and districts if `None`.
+
+        Returns:
+            A list of area/district information.
+        """
         storage_service = self.storage_service.get_storage(study)
         file_study = storage_service.get_raw(study)
         metadata = self.patch_service.get(study)
         areas_metadata: Dict[str, PatchArea] = metadata.areas or {}
-        result = []
+        cfg_areas: Dict[str, Area] = file_study.config.areas
+        result: List[AreaInfoDTO] = []
+
         if area_type is None or area_type == AreaType.AREA:
-            for area_name, area in file_study.config.areas.items():
-                result.append(
-                    AreaInfoDTO(
-                        id=area_name,
-                        name=area.name,
-                        type=AreaType.AREA,
-                        metadata=areas_metadata.get(area_name, PatchArea()),
-                        thermals=self._get_clusters(file_study, area_name, metadata),
-                    )
+            result.extend(
+                AreaInfoDTO(
+                    id=area_id,
+                    name=area.name,
+                    type=AreaType.AREA,
+                    metadata=areas_metadata.get(area_id, PatchArea()),
+                    thermals=self._get_clusters(file_study, area_id, metadata),
                 )
+                for area_id, area in cfg_areas.items()
+            )
 
         if area_type is None or area_type == AreaType.DISTRICT:
-            for set_name in file_study.config.sets:
-                result.append(
-                    AreaInfoDTO(
-                        id=set_name,
-                        name=file_study.config.sets[set_name].name or set_name,
-                        type=AreaType.DISTRICT,
-                        set=file_study.config.sets[set_name].get_areas(list(file_study.config.areas.keys())),
-                        metadata=areas_metadata.get(set_name, PatchArea()),
-                    )
+            cfg_sets: Dict[str, DistrictSet] = file_study.config.sets
+            result.extend(
+                AreaInfoDTO(
+                    id=set_id,
+                    name=district.name or set_id,
+                    type=AreaType.DISTRICT,
+                    set=district.get_areas(list(cfg_areas)),
+                    metadata=areas_metadata.get(set_id, PatchArea()),
                 )
+                for set_id, district in cfg_sets.items()
+            )
 
         return result
 
@@ -189,8 +202,12 @@ class AreaManager:
         layers = file_study.tree.get(["layers", "layers", "layers"])
         if layer_id not in [str(layer) for layer in list(layers.keys())]:
             raise LayerNotFound
+        areas_ui = file_study.tree.get(["input", "areas", ",".join(file_study.config.areas), "ui"])
+        # standardizes 'areas_ui' to a dictionary format even if only one area exists.
+        cfg_areas = list(file_study.config.areas)
+        if len(cfg_areas) == 1:
+            areas_ui = {cfg_areas[0]: areas_ui}
 
-        areas_ui = file_study.tree.get(["input", "areas", ",".join(file_study.config.areas.keys()), "ui"])
         existing_areas = [
             area for area in areas_ui if "ui" in areas_ui[area] and layer_id in _get_area_layers(areas_ui, area)
         ]
@@ -274,15 +291,27 @@ class AreaManager:
         return str(new_id)
 
     def remove_layer(self, study: RawStudy, layer_id: str) -> None:
-        file_study = self.storage_service.get_storage(study).get_raw(study)
+        """
+        Remove a layer from a study.
+
+        Raises:
+            LayerNotAllowedToBeDeleted: If the layer ID is "0".
+            LayerNotFound: If the layer ID is not found.
+        """
         if layer_id == "0":
             raise LayerNotAllowedToBeDeleted
+
+        file_study = self.storage_service.get_storage(study).get_raw(study)
         layers = file_study.tree.get(["layers", "layers", "layers"])
-        # remove all areas from the layer since this info is stored in area data...
-        self.update_layer_areas(study, layer_id, [])
+
+        if layer_id not in layers:
+            raise LayerNotFound
+
+        del layers[layer_id]
+
         command = UpdateConfig(
-            target=f"layers/layers/layers",
-            data={str(layer): layers[layer] for layer in layers if str(layer) != layer_id},
+            target="layers/layers/layers",
+            data=layers,
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
         )
         execute_or_add_commands(study, file_study, [command], self.storage_service)

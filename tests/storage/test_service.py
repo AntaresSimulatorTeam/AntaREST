@@ -66,7 +66,7 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 from antarest.worker.archive_worker import ArchiveTaskArgs
-from tests.conftest import with_db_context
+from tests.helpers import with_db_context
 
 
 def build_study_service(
@@ -372,14 +372,14 @@ def test_create_study() -> None:
     with pytest.raises(UserHasNotPermissionError):
         service.create_study(
             "new-study",
-            720,
+            "720",
             ["my-group"],
             RequestParameters(JWTUser(id=0, impersonator=0, type="users")),
         )
 
     service.create_study(
         "new-study",
-        720,
+        "720",
         ["my-group"],
         RequestParameters(
             JWTUser(

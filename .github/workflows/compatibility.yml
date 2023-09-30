@@ -2,7 +2,7 @@ name: compatibility
 on:
   push:
     branches:
-      - 'compatibility'
+      - "compatibility"
 
 jobs:
   python-test:
@@ -11,11 +11,11 @@ jobs:
       max-parallel: 9
       matrix:
         os: [windows-latest, ubuntu-20.04, macOS-latest]
-        python-version: [ 3.8 ]
+        python-version: [3.8]
 
     steps:
       - name: Checkout github repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Set up Python
         uses: actions/setup-python@v1
         with:
@@ -33,13 +33,13 @@ jobs:
     strategy:
       max-parallel: 9
       matrix:
-        os: [ windows-latest, ubuntu-20.04, macOS-latest ]
-        node-version: [ 10.x, 14.x ]
+        os: [windows-latest, ubuntu-20.04, macOS-latest]
+        node-version: [18.16.1]
     steps:
       - name: Checkout github repo
-        uses: actions/checkout@v1
+        uses: actions/checkout@v3
       - name: Set up Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-version }}
       - name: Install dependencies
@@ -48,7 +48,3 @@ jobs:
       - name: Build
         run: npm run build
         working-directory: webapp
-#      - name: Run tests
-#        run: npm run test
-#        working-directory: webapp
-

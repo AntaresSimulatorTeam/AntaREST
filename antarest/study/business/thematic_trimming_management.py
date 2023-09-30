@@ -1,82 +1,92 @@
-from typing import Any, Dict, List, Optional, cast
+import typing as t
 
-from pydantic.types import StrictBool
-
-from antarest.study.business.utils import GENERAL_DATA_PATH, FieldInfo, FormFieldsBaseModel, execute_or_add_commands
+from antarest.study.business.utils import (
+    GENERAL_DATA_PATH,
+    AllOptionalMetaclass,
+    FieldInfo,
+    FormFieldsBaseModel,
+    execute_or_add_commands,
+)
 from antarest.study.model import Study
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 
 
-class ThematicTrimmingFormFields(FormFieldsBaseModel):
-    ov_cost: Optional[StrictBool]
-    op_cost: Optional[StrictBool]
-    mrg_price: Optional[StrictBool]
-    co2_emis: Optional[StrictBool]
-    dtg_by_plant: Optional[StrictBool]
-    balance: Optional[StrictBool]
-    row_bal: Optional[StrictBool]
-    psp: Optional[StrictBool]
-    misc_ndg: Optional[StrictBool]
-    load: Optional[StrictBool]
-    h_ror: Optional[StrictBool]
-    wind: Optional[StrictBool]
-    solar: Optional[StrictBool]
-    nuclear: Optional[StrictBool]
-    lignite: Optional[StrictBool]
-    coal: Optional[StrictBool]
-    gas: Optional[StrictBool]
-    oil: Optional[StrictBool]
-    mix_fuel: Optional[StrictBool]
-    misc_dtg: Optional[StrictBool]
-    h_stor: Optional[StrictBool]
-    h_pump: Optional[StrictBool]
-    h_lev: Optional[StrictBool]
-    h_infl: Optional[StrictBool]
-    h_ovfl: Optional[StrictBool]
-    h_val: Optional[StrictBool]
-    h_cost: Optional[StrictBool]
-    unsp_enrg: Optional[StrictBool]
-    spil_enrg: Optional[StrictBool]
-    lold: Optional[StrictBool]
-    lolp: Optional[StrictBool]
-    avl_dtg: Optional[StrictBool]
-    dtg_mrg: Optional[StrictBool]
-    max_mrg: Optional[StrictBool]
-    np_cost: Optional[StrictBool]
-    np_cost_by_plant: Optional[StrictBool]
-    nodu: Optional[StrictBool]
-    nodu_by_plant: Optional[StrictBool]
-    flow_lin: Optional[StrictBool]
-    ucap_lin: Optional[StrictBool]
-    loop_flow: Optional[StrictBool]
-    flow_quad: Optional[StrictBool]
-    cong_fee_alg: Optional[StrictBool]
-    cong_fee_abs: Optional[StrictBool]
-    marg_cost: Optional[StrictBool]
-    cong_prod_plus: Optional[StrictBool]
-    cong_prod_minus: Optional[StrictBool]
-    hurdle_cost: Optional[StrictBool]
+class ThematicTrimmingFormFields(FormFieldsBaseModel, metaclass=AllOptionalMetaclass):
+    """
+    This class manages the configuration of result filtering in a simulation.
+
+    This table allows the user to enable or disable specific variables before running a simulation.
+    """
+
+    ov_cost: bool
+    op_cost: bool
+    mrg_price: bool
+    co2_emis: bool
+    dtg_by_plant: bool
+    balance: bool
+    row_bal: bool
+    psp: bool
+    misc_ndg: bool
+    load: bool
+    h_ror: bool
+    wind: bool
+    solar: bool
+    nuclear: bool
+    lignite: bool
+    coal: bool
+    gas: bool
+    oil: bool
+    mix_fuel: bool
+    misc_dtg: bool
+    h_stor: bool
+    h_pump: bool
+    h_lev: bool
+    h_infl: bool
+    h_ovfl: bool
+    h_val: bool
+    h_cost: bool
+    unsp_enrg: bool
+    spil_enrg: bool
+    lold: bool
+    lolp: bool
+    avl_dtg: bool
+    dtg_mrg: bool
+    max_mrg: bool
+    np_cost: bool
+    np_cost_by_plant: bool
+    nodu: bool
+    nodu_by_plant: bool
+    flow_lin: bool
+    ucap_lin: bool
+    loop_flow: bool
+    flow_quad: bool
+    cong_fee_alg: bool
+    cong_fee_abs: bool
+    marg_cost: bool
+    cong_prod_plus: bool
+    cong_prod_minus: bool
+    hurdle_cost: bool
     # For study versions >= 810
-    res_generation_by_plant: Optional[StrictBool]
-    misc_dtg_2: Optional[StrictBool]
-    misc_dtg_3: Optional[StrictBool]
-    misc_dtg_4: Optional[StrictBool]
-    wind_offshore: Optional[StrictBool]
-    wind_onshore: Optional[StrictBool]
-    solar_concrt: Optional[StrictBool]
-    solar_pv: Optional[StrictBool]
-    solar_rooft: Optional[StrictBool]
-    renw_1: Optional[StrictBool]
-    renw_2: Optional[StrictBool]
-    renw_3: Optional[StrictBool]
-    renw_4: Optional[StrictBool]
+    res_generation_by_plant: bool
+    misc_dtg_2: bool
+    misc_dtg_3: bool
+    misc_dtg_4: bool
+    wind_offshore: bool
+    wind_onshore: bool
+    solar_concrt: bool
+    solar_pv: bool
+    solar_rooft: bool
+    renw_1: bool
+    renw_2: bool
+    renw_3: bool
+    renw_4: bool
     # For study versions >= 830
-    dens: Optional[StrictBool]
-    profit: Optional[StrictBool]
+    dens: bool
+    profit_by_plant: bool
 
 
-FIELDS_INFO: Dict[str, FieldInfo] = {
+FIELDS_INFO: t.Dict[str, FieldInfo] = {
     "ov_cost": {"path": "OV. COST", "default_value": True},
     "op_cost": {"path": "OP. COST", "default_value": True},
     "mrg_price": {"path": "MRG. PRICE", "default_value": True},
@@ -125,58 +135,26 @@ FIELDS_INFO: Dict[str, FieldInfo] = {
     "cong_prod_plus": {"path": "CONG. PROD +", "default_value": True},
     "cong_prod_minus": {"path": "CONG. PROD -", "default_value": True},
     "hurdle_cost": {"path": "HURDLE COST", "default_value": True},
-    "res_generation_by_plant": {
-        "path": "RES generation by plant",
-        "default_value": True,
-        "start_version": 810,
-    },
-    "misc_dtg_2": {
-        "path": "MISC. DTG 2",
-        "default_value": True,
-        "start_version": 810,
-    },
-    "misc_dtg_3": {
-        "path": "MISC. DTG 3",
-        "default_value": True,
-        "start_version": 810,
-    },
-    "misc_dtg_4": {
-        "path": "MISC. DTG 4",
-        "default_value": True,
-        "start_version": 810,
-    },
-    "wind_offshore": {
-        "path": "WIND OFFSHORE",
-        "default_value": True,
-        "start_version": 810,
-    },
-    "wind_onshore": {
-        "path": "WIND ONSHORE",
-        "default_value": True,
-        "start_version": 810,
-    },
-    "solar_concrt": {
-        "path": "SOLAR CONCRT.",
-        "default_value": True,
-        "start_version": 810,
-    },
-    "solar_pv": {
-        "path": "SOLAR PV",
-        "default_value": True,
-        "start_version": 810,
-    },
-    "solar_rooft": {
-        "path": "SOLAR ROOFT",
-        "default_value": True,
-        "start_version": 810,
-    },
+    "res_generation_by_plant": {"path": "RES generation by plant", "default_value": True, "start_version": 810},
+    "misc_dtg_2": {"path": "MISC. DTG 2", "default_value": True, "start_version": 810},
+    "misc_dtg_3": {"path": "MISC. DTG 3", "default_value": True, "start_version": 810},
+    "misc_dtg_4": {"path": "MISC. DTG 4", "default_value": True, "start_version": 810},
+    "wind_offshore": {"path": "WIND OFFSHORE", "default_value": True, "start_version": 810},
+    "wind_onshore": {"path": "WIND ONSHORE", "default_value": True, "start_version": 810},
+    "solar_concrt": {"path": "SOLAR CONCRT.", "default_value": True, "start_version": 810},
+    "solar_pv": {"path": "SOLAR PV", "default_value": True, "start_version": 810},
+    "solar_rooft": {"path": "SOLAR ROOFT", "default_value": True, "start_version": 810},
     "renw_1": {"path": "RENW. 1", "default_value": True, "start_version": 810},
     "renw_2": {"path": "RENW. 2", "default_value": True, "start_version": 810},
     "renw_3": {"path": "RENW. 3", "default_value": True, "start_version": 810},
     "renw_4": {"path": "RENW. 4", "default_value": True, "start_version": 810},
     "dens": {"path": "DENS", "default_value": True, "start_version": 830},
-    "profit": {"path": "Profit", "default_value": True, "start_version": 830},
+    "profit_by_plant": {"path": "Profit by plant", "default_value": True, "start_version": 830},
 }
+
+
+def get_fields_info(study_version: int) -> t.Mapping[str, FieldInfo]:
+    return {key: info for key, info in FIELDS_INFO.items() if (info.get("start_version") or -1) <= study_version}
 
 
 class ThematicTrimmingManager:
@@ -188,44 +166,35 @@ class ThematicTrimmingManager:
         Get Thematic Trimming field values for the webapp form
         """
         file_study = self.storage_service.get_storage(study).get_raw(study)
-        study_ver = file_study.config.version
         config = file_study.tree.get(GENERAL_DATA_PATH.split("/"))
-        trimming_config = config.get("variables selection", None)
-        selected_vars_reset = trimming_config.get("selected_vars_reset", True) if trimming_config else None
+        trimming_config = config.get("variables selection") or {}
+        exclude_vars = trimming_config.get("select_var -") or []
+        include_vars = trimming_config.get("select_var +") or []
+        selected_vars_reset = trimming_config.get("selected_vars_reset", True)
 
-        def get_value(field_info: FieldInfo) -> Any:
-            if study_ver < field_info.get("start_version", -1):  # type: ignore
-                return None
-
+        def get_value(field_info: FieldInfo) -> t.Any:
             if selected_vars_reset is None:
                 return field_info["default_value"]
-
             var_name = field_info["path"]
+            return var_name not in exclude_vars if selected_vars_reset else var_name in include_vars
 
-            return (
-                var_name not in trimming_config.get("select_var -", [])
-                if selected_vars_reset
-                else var_name in trimming_config.get("select_var +", [])
-            )
-
-        return ThematicTrimmingFormFields.construct(**{name: get_value(info) for name, info in FIELDS_INFO.items()})
+        fields_info = get_fields_info(int(study.version))
+        fields_values = {name: get_value(info) for name, info in fields_info.items()}
+        return ThematicTrimmingFormFields(**fields_values)
 
     def set_field_values(self, study: Study, field_values: ThematicTrimmingFormFields) -> None:
         """
         Set Thematic Trimming config from the webapp form
         """
         file_study = self.storage_service.get_storage(study).get_raw(study)
-        study_ver = file_study.config.version
         field_values_dict = field_values.dict()
 
-        keys_by_bool: Dict[bool, List[Any]] = {True: [], False: []}
-        for name, info in FIELDS_INFO.items():
-            start_ver = cast(int, info.get("start_version", 0))
+        keys_by_bool: t.Dict[bool, t.List[t.Any]] = {True: [], False: []}
+        fields_info = get_fields_info(int(study.version))
+        for name, info in fields_info.items():
+            keys_by_bool[field_values_dict[name]].append(info["path"])
 
-            if start_ver <= study_ver:
-                keys_by_bool[field_values_dict[name]].append(info["path"])
-
-        config_data: Dict[str, Any]
+        config_data: t.Dict[str, t.Any]
         if len(keys_by_bool[True]) > len(keys_by_bool[False]):
             config_data = {
                 "selected_vars_reset": True,

@@ -55,7 +55,7 @@ def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: 
     ) -> Any:
         logger.info("Importing new matrix dataset", extra={"user": current_user.id})
         if current_user.id is not None:
-            return service.create_by_importation(file, json)
+            return service.create_by_importation(file, is_json=json)
         raise UserHasNotPermissionError()
 
     @bp.get("/matrix/{id}", tags=[APITag.matrix], response_model=MatrixDTO)

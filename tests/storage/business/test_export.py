@@ -43,8 +43,8 @@ def test_export_file(tmp_path: Path, outputs: bool):
     (root / "test").mkdir()
     (root / "test/file.txt").write_text("Bonjour")
     (root / "file.txt").write_text("Hello, World")
-    (root / "output").mkdir()
-    (root / "output/file.txt").write_text("42")
+    (root / "output/results1").mkdir(parents=True)
+    (root / "output/results1/file.txt").write_text("42")
 
     export_path = tmp_path / "study.zip"
 
@@ -61,12 +61,11 @@ def test_export_file(tmp_path: Path, outputs: bool):
     study_tree = Mock()
     study_factory.create_from_fs.return_value = study_tree
 
-    study_service.export_study(study, export_path, outputs)
-    zipf = ZipFile(export_path)
-
-    assert "file.txt" in zipf.namelist()
-    assert "test/file.txt" in zipf.namelist()
-    assert ("output/file.txt" in zipf.namelist()) == outputs
+    study_service.export_study(study, export_path, outputs=outputs)
+    with ZipFile(export_path) as zipf:
+        assert "file.txt" in zipf.namelist()
+        assert "test/file.txt" in zipf.namelist()
+        assert ("output/results1/file.txt" in zipf.namelist()) == outputs
 
 
 @pytest.mark.unit_test
@@ -78,8 +77,8 @@ def test_export_flat(tmp_path: Path):
     (root / "test/output").mkdir()
     (root / "test/output/file.txt").write_text("Test")
     (root / "file.txt").write_text("Hello, World")
-    (root / "output").mkdir()
-    (root / "output/file.txt").write_text("42")
+    (root / "output/result1").mkdir(parents=True)
+    (root / "output/result1/file.txt").write_text("42")
 
     root_without_output = tmp_path / "folder-without-output"
     root_without_output.mkdir()

@@ -185,6 +185,16 @@ function SettingsForm(props: PropType) {
               }}
               optional
             />
+            <TextField
+              type="number"
+              label={t("xpansion.batchSize")}
+              variant="filled"
+              value={currentSettings.batch_size || ""}
+              onChange={(e) =>
+                handleChange("batch_size", parseInt(e.target.value, 10))
+              }
+              sx={{ mb: 1 }}
+            />
           </SelectFields>
           <TextField
             type="number"

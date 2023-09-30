@@ -2,14 +2,14 @@ name: main
 on:
   push:
     branches:
-      - '**'
+      - "**"
 
 jobs:
   python-lint:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout github repo (+ download lfs dependencies)
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
@@ -42,7 +42,7 @@ jobs:
 
     steps:
       - name: Checkout github repo (+ download lfs dependencies)
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
@@ -72,13 +72,13 @@ jobs:
         os: [ ubuntu-20.04 ]
     steps:
       - name: Checkout github repo
-        uses: actions/checkout@v1
+        uses: actions/checkout@v3
       - name: Set up Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v3
         with:
-          node-version: 14.x
+          node-version: 18.16.1
       - name: Install dependencies
-        run: npm install
+        run: npm install --legacy-peer-deps
         working-directory: webapp
       - name: Build
         run: npm run build
@@ -104,7 +104,7 @@ jobs:
     runs-on: ubuntu-20.04
     needs: [ python-test, npm-test ]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Download python coverage report
         uses: actions/download-artifact@v3
         with:

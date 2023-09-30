@@ -33,13 +33,23 @@ from antarest.study.storage.variantstudy.model.command.common import CommandName
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
-from tests.conftest import with_db_context
+from tests.helpers import with_db_context
 from tests.storage.business.assets import ASSETS_DIR
 
 
-@pytest.fixture
-def empty_study(tmp_path: Path) -> FileStudy:
-    study_id = str(uuid.uuid4())
+@pytest.fixture(name="empty_study")
+def empty_study_fixture(tmp_path: Path) -> FileStudy:
+    """
+    Fixture for preparing an empty study in the `tmp_path`
+    based on the "empty_study_810.zip" asset.
+
+    Args:
+        tmp_path: The temporary path provided by pytest.
+
+    Returns:
+        An instance of the `FileStudy` class representing the empty study.
+    """
+    study_id = "5c22caca-b100-47e7-bbea-8b1b97aa26d9"
     study_path = tmp_path.joinpath(study_id)
     study_path.mkdir()
     with ZipFile(ASSETS_DIR / "empty_study_810.zip") as zip_output:
@@ -48,9 +58,18 @@ def empty_study(tmp_path: Path) -> FileStudy:
     return FileStudy(config, FileStudyTree(Mock(), config))
 
 
-@pytest.fixture
-def matrix_service(tmp_path: Path) -> SimpleMatrixService:
-    matrix_path = tmp_path.joinpath("matrix_store")
+@pytest.fixture(name="matrix_service")
+def matrix_service_fixture(tmp_path: Path) -> SimpleMatrixService:
+    """
+    Fixture for creating a matrix service in the `tmp_path`.
+
+    Args:
+        tmp_path: The temporary path provided by pytest.
+
+    Returns:
+        An instance of the `SimpleMatrixService` class representing the matrix service.
+    """
+    matrix_path = tmp_path.joinpath("matrix-store")
     matrix_path.mkdir()
     return SimpleMatrixService(matrix_path)
 

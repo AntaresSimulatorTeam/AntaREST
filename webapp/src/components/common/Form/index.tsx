@@ -1,46 +1,51 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { FormEvent, useCallback, useEffect, useMemo, useRef } from "react";
+import { FormEvent, useEffect, useMemo, useRef } from "react";
 import {
-  BatchFieldArrayUpdate,
   DeepPartial,
   FieldPath,
   FieldValues,
   FormProvider,
   FormState,
-  Path,
   SubmitErrorHandler,
   useForm,
   useFormContext as useFormContextOriginal,
   UseFormProps,
-  UseFormSetValue,
-  UseFormUnregister,
 } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import * as RA from "ramda-adjunct";
 import {
   Box,
-  Button,
   CircularProgress,
+  Divider,
+  IconButton,
   setRef,
   SxProps,
   Theme,
+  Tooltip,
 } from "@mui/material";
+import SaveIcon from "@mui/icons-material/Save";
 import { useUpdateEffect } from "react-use";
 import * as R from "ramda";
 import clsx from "clsx";
+import { LoadingButton, LoadingButtonProps } from "@mui/lab";
+import UndoIcon from "@mui/icons-material/Undo";
+import RedoIcon from "@mui/icons-material/Redo";
+import axios from "axios";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import useDebounce from "../../../hooks/useDebounce";
-import { getDirtyValues, stringToPath, toAutoSubmitConfig } from "./utils";
+import {
+  ROOT_ERROR_KEY,
+  getDirtyValues,
+  stringToPath,
+  toAutoSubmitConfig,
+} from "./utils";
 import useDebouncedState from "../../../hooks/useDebouncedState";
 import usePrompt from "../../../hooks/usePrompt";
 import { mergeSxProp } from "../../../utils/muiUtils";
-import {
-  SubmitHandlerPlus,
-  UseFormRegisterPlus,
-  UseFormReturnPlus,
-} from "./types";
-import useAutoUpdateRef from "../../../hooks/useAutoUpdateRef";
+import { SubmitHandlerPlus, UseFormReturnPlus } from "./types";
 import FormContext from "./FormContext";
+import useFormApiPlus from "./useFormApiPlus";
+import useFormUndoRedo from "./useFormUndoRedo";
 
 export type AutoSubmitConfig = { enable: boolean; wait?: number };
 
@@ -58,10 +63,11 @@ export interface FormProps<
     | ((formApi: UseFormReturnPlus<TFieldValues, TContext>) => React.ReactNode)
     | React.ReactNode;
   submitButtonText?: string;
+  submitButtonIcon?: LoadingButtonProps["startIcon"];
   hideSubmitButton?: boolean;
   onStateChange?: (state: FormState<TFieldValues>) => void;
   autoSubmit?: boolean | AutoSubmitConfig;
-  disableLoader?: boolean;
+  enableUndoRedo?: boolean;
   sx?: SxProps<Theme>;
   apiRef?: React.Ref<UseFormReturnPlus<TFieldValues, TContext> | undefined>;
 }
@@ -79,10 +85,11 @@ function Form<TFieldValues extends FieldValues, TContext>(
     onSubmitError,
     children,
     submitButtonText,
+    submitButtonIcon,
     hideSubmitButton,
     onStateChange,
     autoSubmit,
-    disableLoader,
+    enableUndoRedo,
     className,
     sx,
     apiRef,
@@ -91,23 +98,25 @@ function Form<TFieldValues extends FieldValues, TContext>(
 
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { t } = useTranslation();
-  const submitRef = useRef<HTMLButtonElement>(null);
   const autoSubmitConfig = toAutoSubmitConfig(autoSubmit);
+  const [showAutoSubmitLoader, setShowAutoSubmitLoader] = useDebouncedState(
+    false,
+    750
+  );
   const fieldAutoSubmitListeners = useRef<
     Record<string, ((v: any) => any | Promise<any>) | undefined>
   >({});
-  const [showLoader, setShowLoader] = useDebouncedState(false, 750);
-  const lastSubmittedData = useRef<TFieldValues>();
-  const preventClose = useRef(false);
   const fieldsChangeDuringAutoSubmitting = useRef<FieldPath<TFieldValues>[]>(
     []
   );
+  const lastSubmittedData = useRef<TFieldValues>();
+  const preventClose = useRef(false);
   const contextValue = useMemo(
     () => ({ isAutoSubmitEnabled: autoSubmitConfig.enable }),
     [autoSubmitConfig.enable]
   );
 
-  const formApiOriginal = useForm<TFieldValues, TContext>({
+  const formApi = useForm<TFieldValues, TContext>({
     mode: "onChange",
     delayError: 750,
     ...config,
@@ -122,45 +131,59 @@ function Form<TFieldValues extends FieldValues, TContext>(
       : config?.defaultValues,
   });
 
-  const {
-    register,
-    unregister,
-    getValues,
-    setValue,
-    control,
-    handleSubmit,
-    formState,
-    reset,
-  } = formApiOriginal;
-
+  const { getValues, setValue, setError, handleSubmit, formState, reset } =
+    formApi;
   // * /!\ `formState` is a proxy
-  const { isSubmitting, isDirty, dirtyFields } = formState;
+  const { isSubmitting, isSubmitSuccessful, isDirty, dirtyFields, errors } =
+    formState;
   // Don't add `isValid` because we need to trigger fields validation.
   // In case we have invalid default value for example.
   const isSubmitAllowed = isDirty && !isSubmitting;
-  // To use it in form API wrapper functions without need to add the value in `useMemo`'s deps
-  const isSubmittingRef = useAutoUpdateRef(isSubmitting);
-  const isAutoSubmitEnabledRef = useAutoUpdateRef(autoSubmitConfig.enable);
+  const showSubmitButton = !hideSubmitButton && !autoSubmitConfig.enable;
+  const showFooter = showSubmitButton || enableUndoRedo;
+  const rootError = errors.root?.[ROOT_ERROR_KEY];
 
-  useUpdateEffect(() => {
-    setShowLoader(isSubmitting);
-    if (isSubmitting) {
-      setShowLoader.flush();
-    }
-  }, [isSubmitting]);
+  const formApiPlus = useFormApiPlus({
+    formApi,
+    isAutoSubmitEnabled: autoSubmitConfig.enable,
+    fieldAutoSubmitListeners,
+    fieldsChangeDuringAutoSubmitting,
+    // eslint-disable-next-line no-use-before-define
+    submit: () => requestSubmit(),
+  });
 
-  useUpdateEffect(
+  const { set, undo, redo, canUndo, canRedo } = useFormUndoRedo(formApiPlus);
+
+  // Auto Submit Loader
+  useEffect(
     () => {
-      onStateChange?.(formState);
+      if (autoSubmitConfig.enable) {
+        setShowAutoSubmitLoader(isSubmitting);
+        // Show the loader immediately when the form is submitting
+        if (isSubmitting) {
+          setShowAutoSubmitLoader.flush();
+        }
+      } else if (showAutoSubmitLoader) {
+        setShowAutoSubmitLoader(false);
+        setShowAutoSubmitLoader.flush();
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [isSubmitting, autoSubmitConfig.enable]
+  );
 
-      // It's recommended to reset inside useEffect after submission: https://react-hook-form.com/api/useform/reset
-      if (formState.isSubmitSuccessful) {
+  // Reset after successful submit.
+  // It's recommended to reset inside useEffect after submission: https://react-hook-form.com/api/useform/reset
+  useEffect(
+    () => {
+      if (isSubmitSuccessful && lastSubmittedData.current) {
         const valuesToSetAfterReset = getValues(
           fieldsChangeDuringAutoSubmitting.current
         );
 
         // Reset only dirty values make issue with `getValues` and `watch` which only return reset values
         reset(lastSubmittedData.current);
+        set(lastSubmittedData.current);
 
         fieldsChangeDuringAutoSubmitting.current.forEach((fieldName, index) => {
           setValue(fieldName, valuesToSetAfterReset[index], {
@@ -171,11 +194,11 @@ function Form<TFieldValues extends FieldValues, TContext>(
         fieldsChangeDuringAutoSubmitting.current = [];
       }
     },
-    // Entire `formState` must be put in the deps: https://react-hook-form.com/api/useform/formstate
-    [formState]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [isSubmitSuccessful]
   );
 
-  // Prevent browser close if a submit is pending (auto submit enabled)
+  // Prevent browser close if a submit is pending
   useEffect(() => {
     const listener = (event: BeforeUnloadEvent) => {
       if (preventClose.current) {
@@ -190,6 +213,10 @@ function Form<TFieldValues extends FieldValues, TContext>(
       window.removeEventListener("beforeunload", listener);
     };
   }, [t]);
+
+  useUpdateEffect(() => onStateChange?.(formState), [formState]);
+
+  useEffect(() => setRef(apiRef, formApiPlus));
 
   usePrompt(t("form.submit.inProgress"), preventClose.current);
 
@@ -224,8 +251,17 @@ function Form<TFieldValues extends FieldValues, TContext>(
       }
 
       return Promise.all(res)
-        .catch((error) => {
-          enqueueErrorSnackbar(t("form.submit.error"), error);
+        .catch((err) => {
+          enqueueErrorSnackbar(t("form.submit.error"), err);
+
+          // Any error under the `root` key are not persisted with each submission.
+          // They will be deleted automatically.
+          // cf. https://www.react-hook-form.com/api/useform/seterror/
+          setError(`root.${ROOT_ERROR_KEY}`, {
+            message: axios.isAxiosError(err)
+              ? err.response?.data.description
+              : err?.toString(),
+          });
         })
         .finally(() => {
           preventClose.current = false;
@@ -237,10 +273,14 @@ function Form<TFieldValues extends FieldValues, TContext>(
 
   const submitDebounced = useDebounce(submit, autoSubmitConfig.wait);
 
-  const requestSubmit = useCallback(() => {
+  const requestSubmit = () => {
     preventClose.current = true;
-    submitDebounced();
-  }, [submitDebounced]);
+    if (autoSubmitConfig.enable) {
+      submitDebounced();
+    } else {
+      submit();
+    }
+  };
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -248,113 +288,8 @@ function Form<TFieldValues extends FieldValues, TContext>(
 
   const handleFormSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    submit();
+    requestSubmit();
   };
-
-  ////////////////////////////////////////////////////////////////
-  // API
-  ////////////////////////////////////////////////////////////////
-
-  const formApiShared = useMemo(
-    () => {
-      if (!isAutoSubmitEnabledRef.current) {
-        return formApiOriginal;
-      }
-
-      const registerWrapper: UseFormRegisterPlus<TFieldValues> = (
-        name,
-        options
-      ) => {
-        if (options?.onAutoSubmit) {
-          fieldAutoSubmitListeners.current[name] = options.onAutoSubmit;
-        }
-
-        const newOptions: typeof options = {
-          ...options,
-          onChange: (event: unknown) => {
-            options?.onChange?.(event);
-            if (isAutoSubmitEnabledRef.current) {
-              if (
-                isSubmittingRef.current &&
-                !fieldsChangeDuringAutoSubmitting.current.includes(name)
-              ) {
-                fieldsChangeDuringAutoSubmitting.current.push(name);
-              }
-
-              requestSubmit();
-            }
-          },
-        };
-
-        return register(name, newOptions);
-      };
-
-      const unregisterWrapper: UseFormUnregister<TFieldValues> = (
-        name,
-        options
-      ) => {
-        if (name) {
-          const names = RA.ensureArray(name) as Path<TFieldValues>[];
-          names.forEach((n) => {
-            delete fieldAutoSubmitListeners.current[n];
-          });
-        }
-        return unregister(name, options);
-      };
-
-      const setValueWrapper: UseFormSetValue<TFieldValues> = (
-        name,
-        value,
-        options
-      ) => {
-        const newOptions: typeof options = {
-          shouldDirty: isAutoSubmitEnabledRef.current, // Option false by default
-          ...options,
-        };
-
-        if (isAutoSubmitEnabledRef.current && newOptions.shouldDirty) {
-          if (isSubmittingRef.current) {
-            fieldsChangeDuringAutoSubmitting.current.push(name);
-          }
-          // If it's a new value
-          if (value !== getValues(name)) {
-            requestSubmit();
-          }
-        }
-
-        setValue(name, value, newOptions);
-      };
-
-      // Mutate the `control` object.
-      // Spreading cannot be used because getters and setters would be removed.
-      (() => {
-        control.register = registerWrapper;
-        control.unregister = unregisterWrapper;
-
-        const updateFieldArrayOriginal =
-          control._updateFieldArray.bind(control);
-        const updateFieldArrayWrapper: BatchFieldArrayUpdate = (...args) => {
-          updateFieldArrayOriginal(...args);
-          if (isAutoSubmitEnabledRef.current) {
-            requestSubmit();
-          }
-        };
-        // Used by `useFieldArray` hook's methods (`append`, `remove`...)
-        control._updateFieldArray = updateFieldArrayWrapper;
-      })();
-
-      return {
-        ...formApiOriginal,
-        register: registerWrapper,
-        unregister: unregisterWrapper,
-        setValue: setValueWrapper,
-      };
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [formApiOriginal, requestSubmit]
-  );
-
-  useEffect(() => setRef(apiRef, formApiShared));
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -368,7 +303,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
       onSubmit={handleFormSubmit}
       className={clsx("Form", className)}
     >
-      {showLoader && !disableLoader && (
+      {showAutoSubmitLoader && (
         <Box
           sx={{
             position: "sticky",
@@ -384,20 +319,60 @@ function Form<TFieldValues extends FieldValues, TContext>(
       )}
       <FormContext.Provider value={contextValue}>
         {RA.isFunction(children) ? (
-          children(formApiShared)
+          children(formApiPlus)
         ) : (
-          <FormProvider {...formApiShared}>{children}</FormProvider>
+          <FormProvider {...formApiPlus}>{children}</FormProvider>
         )}
       </FormContext.Provider>
-      {!hideSubmitButton && !autoSubmitConfig.enable && (
-        <Button
-          type="submit"
-          variant="contained"
-          disabled={!isSubmitAllowed}
-          ref={submitRef}
-        >
-          {submitButtonText || t("global.save")}
-        </Button>
+      {rootError && (
+        <Box color="error.main" sx={{ fontSize: "0.9rem", mb: 2 }}>
+          {rootError.message || t("form.submit.error")}
+        </Box>
+      )}
+      {showFooter && (
+        <Box sx={{ display: "flex" }} className="Form__Footer">
+          {showSubmitButton && (
+            <>
+              <LoadingButton
+                type="submit"
+                variant="contained"
+                disabled={!isSubmitAllowed}
+                loading={isSubmitting}
+                loadingPosition="start"
+                startIcon={
+                  RA.isNotUndefined(submitButtonIcon) ? (
+                    submitButtonIcon
+                  ) : (
+                    <SaveIcon />
+                  )
+                }
+              >
+                {submitButtonText || t("global.save")}
+              </LoadingButton>
+              {enableUndoRedo && (
+                <Divider sx={{ mx: 2 }} orientation="vertical" flexItem />
+              )}
+            </>
+          )}
+          {enableUndoRedo && (
+            <>
+              <Tooltip title={t("global.undo")}>
+                <span>
+                  <IconButton onClick={undo} disabled={!canUndo}>
+                    <UndoIcon />
+                  </IconButton>
+                </span>
+              </Tooltip>
+              <Tooltip title={t("global.redo")}>
+                <span>
+                  <IconButton onClick={redo} disabled={!canRedo}>
+                    <RedoIcon />
+                  </IconButton>
+                </span>
+              </Tooltip>
+            </>
+          )}
+        </Box>
       )}
     </Box>
   );

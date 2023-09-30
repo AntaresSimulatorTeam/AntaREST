@@ -36,7 +36,7 @@ def reindex_table(config: Path) -> None:
     from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
     config_obj = get_config(config)
-    engine = sqlalchemy.create_engine(config_obj.db.db_admin_url, echo=True)
+    engine = sqlalchemy.create_engine(config_obj.db.db_admin_url, echo=False)
     connection = engine.raw_connection()
     connection.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
     cursor = connection.cursor()

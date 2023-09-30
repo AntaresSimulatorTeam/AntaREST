@@ -9,7 +9,7 @@ from antarest.core.requests import RequestParameters
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy
 from antarest.study.storage.auto_archive_service import AutoArchiveService
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
-from tests.conftest import with_db_context
+from tests.helpers import with_db_context
 
 
 @with_db_context

@@ -24,6 +24,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Simulation,
     transform_name_to_id,
 )
+from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import STStorageConfig
 from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata import DUPLICATE_KEYS
 
 logger = logging.getLogger(__name__)
@@ -35,41 +36,40 @@ class FileType(Enum):
     MULTI_INI = "multi_ini"
 
 
-class FileTypeNotSupportedException(Exception):
-    pass
-
-
 def build(study_path: Path, study_id: str, output_path: Optional[Path] = None) -> "FileStudyTreeConfig":
     """
-    Extract data from filesystem to build config study.
+    Extracts data from the filesystem to build a study config.
+
     Args:
-        study_path: study_path with files inside.
-        study_id: uuid of the study
-        output_path: output_path if not in study_path/output
+        study_path: Path to the study directory or ZIP file containing the study.
+        study_id: UUID of the study.
+        output_path: Optional path for the output directory.
+            If not provided, it will be set to `{study_path}/output`.
 
-    Returns: study config fill with data
-
+    Returns:
+        An instance of `FileStudyTreeConfig` filled with the study data.
     """
+    is_zip_file = study_path.suffix.lower() == ".zip"
+
+    # Study directory to use if the study is compressed
+    study_dir = study_path.with_suffix("") if is_zip_file else study_path
     (sns, asi, enr_modelling) = _parse_parameters(study_path)
 
-    study_path_without_zip_extension = study_path.parent / (
-        study_path.stem if study_path.suffix == ".zip" else study_path.name
-    )
-
+    outputs_dir: Path = output_path or study_path / "output"
     return FileStudyTreeConfig(
         study_path=study_path,
-        output_path=output_path or study_path / "output",
-        path=study_path_without_zip_extension,
+        output_path=outputs_dir,
+        path=study_dir,
         study_id=study_id,
         version=_parse_version(study_path),
         areas=_parse_areas(study_path),
         sets=_parse_sets(study_path),
-        outputs=_parse_outputs(output_path or study_path / "output"),
+        outputs=_parse_outputs(outputs_dir),
         bindings=_parse_bindings(study_path),
         store_new_set=sns,
         archive_input_series=asi,
         enr_modelling=enr_modelling,
-        zip_path=study_path if study_path.suffix == ".zip" else None,
+        zip_path=study_path if is_zip_file else None,
     )
 
 
@@ -79,26 +79,32 @@ def _extract_data_from_file(
     file_type: FileType,
     multi_ini_keys: Optional[List[str]] = None,
 ) -> Any:
+    """
+    Extract and process data from various types of files.
+    """
+
     tmp_dir = None
     try:
-        if root.suffix == ".zip":
+        if root.suffix.lower() == ".zip":
             output_data_path, tmp_dir = extract_file_to_tmp_dir(root, inside_root_path)
         else:
             output_data_path = root / inside_root_path
 
         if file_type == FileType.TXT:
-            output_data: Any = output_data_path.read_text().split("\n")
+            text = output_data_path.read_text(encoding="utf-8")
+            return text.splitlines(keepends=False)
         elif file_type == FileType.MULTI_INI:
-            output_data = MultipleSameKeysIniReader(multi_ini_keys).read(output_data_path)
+            multi_reader = MultipleSameKeysIniReader(multi_ini_keys)
+            return multi_reader.read(output_data_path)
         elif file_type == FileType.SIMPLE_INI:
-            output_data = IniReader().read(output_data_path)
-        else:
-            raise FileTypeNotSupportedException()
+            ini_reader = IniReader()
+            return ini_reader.read(output_data_path)
+        else:  # pragma: no cover
+            raise NotImplementedError(file_type)
+
     finally:
         if tmp_dir:
             tmp_dir.cleanup()
-
-    return output_data
 
 
 def _parse_version(path: Path) -> int:
@@ -314,6 +320,7 @@ def parse_area(root: Path, area: str) -> "Area":
         renewables=_parse_renewables(root, area_id),
         filters_synthesis=_parse_filters_synthesis(root, area_id),
         filters_year=_parse_filters_year(root, area_id),
+        st_storages=_parse_st_storage(root, area_id),
     )
 
 
@@ -331,6 +338,23 @@ def _parse_thermal(root: Path, area: str) -> List[Cluster]:
         )
         for key in list(list_ini.keys())
     ]
+
+
+def _parse_st_storage(root: Path, area: str) -> List[STStorageConfig]:
+    """
+    Parse the short-term storage INI file, return an empty list if missing.
+    """
+
+    # st_storage feature exists only since 8.6 version
+    if _parse_version(root) < 860:
+        return []
+
+    config_dict: Dict[str, Any] = _extract_data_from_file(
+        root=root,
+        inside_root_path=Path(f"input/st-storage/clusters/{area}/list.ini"),
+        file_type=FileType.SIMPLE_INI,
+    )
+    return [STStorageConfig(**values, id=storage_id) for storage_id, values in config_dict.items()]
 
 
 def _parse_renewables(root: Path, area: str) -> List[Cluster]:

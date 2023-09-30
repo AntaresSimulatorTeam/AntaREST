@@ -253,7 +253,7 @@ def test_copy_study() -> None:
         additional_data=StudyAdditionalData(),
     )
 
-    md = study_service.copy(src_md, "dest_name")
+    md = study_service.copy(src_md, "dst_name", [])
     assert len(src_md.commands) == len(md.commands)
 
 

@@ -15,7 +15,7 @@ class RemoveCluster(ICommand):
     cluster_id: str
 
     def __init__(self, **data: Any) -> None:
-        super().__init__(command_name=CommandName.REMOVE_CLUSTER, version=1, **data)
+        super().__init__(command_name=CommandName.REMOVE_THERMAL_CLUSTER, version=1, **data)
 
     def _remove_cluster(self, study_data: FileStudyTreeConfig) -> None:
         study_data.areas[self.area_id].thermals = [
@@ -125,7 +125,7 @@ class RemoveCluster(ICommand):
 
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
-            action=CommandName.REMOVE_CLUSTER.value,
+            action=CommandName.REMOVE_THERMAL_CLUSTER.value,
             args={"area_id": self.area_id, "cluster_id": self.cluster_id},
         )
 

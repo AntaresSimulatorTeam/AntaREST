@@ -58,22 +58,25 @@ def get_default_workspace_path(config: Config) -> Path:
     return get_workspace_path(config, DEFAULT_WORKSPACE_NAME)
 
 
-def update_antares_info(metadata: Study, studytree: FileStudyTree) -> None:
+def update_antares_info(metadata: Study, study_tree: FileStudyTree, *, update_author: bool) -> None:
     """
-    Update study.antares data
+    Update the "antares" information directly in the study tree.
+
     Args:
-        metadata: study information
-        studytree: study tree
-
-    Returns: none, update is directly apply on study_data
-
+        metadata: The study object extracted from the database.
+        study_tree: The study tree object.
+        update_author: Specifies whether the author should be modified or not.
+            The author's name should be updated when the study is created,
+            but it is not changed if the study is copied.
     """
-    study_data_info = studytree.get(["study"])
+    study_data_info = study_tree.get(["study"])
     study_data_info["antares"]["caption"] = metadata.name
     study_data_info["antares"]["created"] = metadata.created_at.timestamp()
     study_data_info["antares"]["lastsave"] = metadata.updated_at.timestamp()
     study_data_info["antares"]["version"] = metadata.version
-    studytree.save(study_data_info, ["study"])
+    if update_author:
+        study_data_info["antares"]["author"] = metadata.additional_data.author
+    study_tree.save(study_data_info, ["study"])
 
 
 def fix_study_root(study_path: Path) -> None:
@@ -140,7 +143,7 @@ def extract_output_name(path_output: Path, new_suffix_name: Optional[str] = None
     date = datetime.fromtimestamp(int(general_info["timestamp"])).strftime("%Y%m%d-%H%M")
 
     mode = "eco" if general_info["mode"] == "Economy" else "adq"
-    suffix_name = general_info["name"] if general_info["name"] else ""
+    suffix_name = general_info["name"] or ""
     if new_suffix_name:
         suffix_name = new_suffix_name
         general_info["name"] = suffix_name
@@ -342,26 +345,25 @@ def export_study_flat(
 
     shutil.copytree(src=path_study, dst=dest, ignore=ignore_patterns)
 
-    if outputs and output_src_path.is_dir():
-        if output_dest_path.is_dir():
-            shutil.rmtree(output_dest_path)
-        if output_list_filter is not None:
-            os.mkdir(output_dest_path)
-            for output in output_list_filter:
-                zip_path = output_src_path / f"{output}.zip"
-                if zip_path.exists():
-                    with ZipFile(zip_path) as zf:
-                        zf.extractall(output_dest_path / output)
-                else:
-                    shutil.copytree(
-                        src=output_src_path / output,
-                        dst=output_dest_path / output,
-                    )
-        else:
-            shutil.copytree(
-                src=output_src_path,
-                dst=output_dest_path,
+    if outputs and output_src_path.exists():
+        if output_list_filter is None:
+            # Retrieve all directories or ZIP files without duplicates
+            output_list_filter = list(
+                {f.with_suffix("").name for f in output_src_path.iterdir() if f.is_dir() or f.suffix == ".zip"}
             )
+        # Copy each folder or uncompress each ZIP file to the destination dir.
+        shutil.rmtree(output_dest_path, ignore_errors=True)
+        output_dest_path.mkdir()
+        for output in output_list_filter:
+            zip_path = output_src_path / f"{output}.zip"
+            if zip_path.exists():
+                with ZipFile(zip_path) as zf:
+                    zf.extractall(output_dest_path / output)
+            else:
+                shutil.copytree(
+                    src=output_src_path / output,
+                    dst=output_dest_path / output,
+                )
 
     stop_time = time.time()
     duration = "{:.3f}".format(stop_time - start_time)

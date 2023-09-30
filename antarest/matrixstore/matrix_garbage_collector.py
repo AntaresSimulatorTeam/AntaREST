@@ -57,9 +57,9 @@ class MatrixGarbageCollector(IService):
         logger.info("Getting all matrices used in variant studies")
         command_blocks: List[CommandBlock] = self.variant_study_service.repository.get_all_commandblocks()
 
-        def transform_to_icommand(command_dto: CommandDTO, study_ref: str) -> List[ICommand]:
+        def transform_to_command(command_dto: CommandDTO, study_ref: str) -> List[ICommand]:
             try:
-                return self.variant_study_service.command_factory.to_icommand(command_dto)
+                return self.variant_study_service.command_factory.to_command(command_dto)
             except Exception as e:
                 logger.warning(
                     f"Failed to parse command {command_dto} (from study {study_ref}) !",
@@ -67,9 +67,7 @@ class MatrixGarbageCollector(IService):
                 )
             return []
 
-        variant_study_commands = [
-            icommand for c in command_blocks for icommand in transform_to_icommand(c.to_dto(), c.study_id)
-        ]
+        variant_study_commands = [cmd for c in command_blocks for cmd in transform_to_command(c.to_dto(), c.study_id)]
         matrices = {matrix for command in variant_study_commands for matrix in command.get_inner_matrices()}
         return matrices
 
@@ -115,6 +113,6 @@ class MatrixGarbageCollector(IService):
                 with db():
                     self._clean_matrices()
             except Exception as e:
-                logger.error(f"Error while cleaning matrices", exc_info=e)
+                logger.error("Error while cleaning matrices", exc_info=e)
             logger.info(f"Sleeping for {self.sleeping_time}s")
             time.sleep(self.sleeping_time)

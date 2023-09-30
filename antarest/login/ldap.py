@@ -2,7 +2,12 @@ import logging
 from dataclasses import dataclass
 from typing import Dict, List, Optional
 
-import requests
+try:
+    # `httpx` is a modern alternative to the `requests` library
+    import httpx as requests
+except ImportError:
+    # noinspection PyUnresolvedReferences, PyPackageRequirements
+    import requests
 
 from antarest.core.config import Config
 from antarest.core.model import JSON

@@ -34,21 +34,18 @@ function Layers() {
     );
   }, [layersById]);
 
-  const defaultValues = useMemo(
-    () =>
-      areas.reduce((acc: Record<string, Record<string, boolean>>, area) => {
-        acc[area.id] = Object.values(layersById).reduce(
-          (acc2: Record<string, boolean>, layer) => {
-            acc2[layer.id] = !!layer.areas.includes(area.id);
-            return acc2;
-          },
-          {}
-        );
-        return acc;
-      }, {}),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [columns.length]
-  );
+  const defaultValues = useMemo(() => {
+    const layers = Object.values(layersById);
+
+    return areas.reduce((acc, area) => {
+      acc[area.id] = layers.reduce((acc2, layer) => {
+        acc2[layer.id] = layer.areas.includes(area.id);
+        return acc2;
+      }, {} as Record<string, boolean>);
+
+      return acc;
+    }, {} as Record<string, Record<string, boolean>>);
+  }, [areas, layersById]);
 
   ////////////////////////////////////////////////////////////////
   // Event handlers

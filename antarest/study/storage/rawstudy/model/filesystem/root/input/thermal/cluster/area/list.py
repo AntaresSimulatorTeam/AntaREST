@@ -18,4 +18,4 @@ class InputThermalClustersAreaList(IniFileNode):
             "market-bid-cost": float,
         }
         types = {ther: section for ther in config.get_thermal_names(area)}
-        IniFileNode.__init__(self, context, config, types)
+        super().__init__(context, config, types)

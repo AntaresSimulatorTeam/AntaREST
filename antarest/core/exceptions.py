@@ -8,6 +8,39 @@ class ShouldNotHappenException(Exception):
     pass
 
 
+class STStorageFieldsNotFoundError(HTTPException):
+    """Fields of the short-term storage are not found"""
+
+    def __init__(self, storage_id: str) -> None:
+        detail = f"Fields of storage '{storage_id}' not found"
+        super().__init__(HTTPStatus.NOT_FOUND, detail)
+
+    def __str__(self) -> str:
+        return self.detail
+
+
+class STStorageMatrixNotFoundError(HTTPException):
+    """Matrix of the short-term storage is not found"""
+
+    def __init__(self, study_id: str, area_id: str, storage_id: str, ts_name: str) -> None:
+        detail = f"Time series '{ts_name}' of storage '{storage_id}' not found"
+        super().__init__(HTTPStatus.NOT_FOUND, detail)
+
+    def __str__(self) -> str:
+        return self.detail
+
+
+class STStorageConfigNotFoundError(HTTPException):
+    """Configuration for short-term storage is not found"""
+
+    def __init__(self, study_id: str, area_id: str) -> None:
+        detail = f"The short-term storage configuration of area '{area_id}' not found:"
+        super().__init__(HTTPStatus.NOT_FOUND, detail)
+
+    def __str__(self) -> str:
+        return self.detail
+
+
 class UnknownModuleError(Exception):
     def __init__(self, message: str) -> None:
         super(UnknownModuleError, self).__init__(message)
@@ -163,12 +196,18 @@ class ConstraintIdNotFoundError(HTTPException):
 
 class LayerNotFound(HTTPException):
     def __init__(self) -> None:
-        super().__init__(HTTPStatus.NOT_FOUND)
+        super().__init__(
+            HTTPStatus.NOT_FOUND,
+            "Layer not found",
+        )
 
 
 class LayerNotAllowedToBeDeleted(HTTPException):
-    def __init__(self) -> None:
-        super().__init__(HTTPStatus.EXPECTATION_FAILED)
+    def __init__(self, layer_name: str = "All") -> None:
+        super().__init__(
+            HTTPStatus.BAD_REQUEST,
+            f"You cannot delete the layer: '{layer_name}'",
+        )
 
 
 class StudyOutputNotFoundError(Exception):

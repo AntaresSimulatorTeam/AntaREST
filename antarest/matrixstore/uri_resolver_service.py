@@ -11,7 +11,7 @@ class UriResolverService:
     def __init__(self, matrix_service: ISimpleMatrixService):
         self.matrix_service = matrix_service
 
-    def resolve(self, uri: str, formatted: bool = True) -> Optional[SUB_JSON]:
+    def resolve(self, uri: str, formatted: bool = True) -> SUB_JSON:
         res = UriResolverService._extract_uri_components(uri)
         if res:
             protocol, uuid = res
@@ -52,19 +52,17 @@ class UriResolverService:
                     index=data.index,
                     columns=data.columns,
                 )
-                if not df.empty:
-                    return (
-                        df.to_csv(
-                            None,
-                            sep="\t",
-                            header=False,
-                            index=False,
-                            float_format="%.6f",
-                        )
-                        or ""
-                    )
-                else:
+                if df.empty:
                     return ""
+                else:
+                    csv = df.to_csv(
+                        None,
+                        sep="\t",
+                        header=False,
+                        index=False,
+                        float_format="%.6f",
+                    )
+                    return csv or ""
         raise ValueError(f"id matrix {id} not found")
 
     def build_matrix_uri(self, id: str) -> str:

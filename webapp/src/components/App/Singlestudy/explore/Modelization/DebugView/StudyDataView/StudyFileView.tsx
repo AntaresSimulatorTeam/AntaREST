@@ -32,7 +32,7 @@ function StudyFileView(props: PropTypes) {
   const [data, setData] = useState<string>();
   const [loaded, setLoaded] = useState(false);
   const [isEditable, setEditable] = useState<boolean>(true);
-  const [formatedPath, setFormatedPath] = useState<string>("");
+  const [formattedPath, setFormattedPath] = useState<string>("");
   const [openImportDialog, setOpenImportDialog] = useState(false);
 
   const loadFileData = async () => {
@@ -40,7 +40,7 @@ function StudyFileView(props: PropTypes) {
     setLoaded(false);
     try {
       const res = await getStudyData(study, url);
-      if (typeof res === "object") {
+      if (Array.isArray(res)) {
         setData(res.join("\n"));
       } else {
         setData(res);
@@ -54,7 +54,7 @@ function StudyFileView(props: PropTypes) {
 
   const onImport = async (file: File) => {
     try {
-      await importFile(file, study, formatedPath);
+      await importFile(file, study, formattedPath);
     } catch (e) {
       logErr("Failed to import file", file, e);
       enqueueErrorSnackbar(t("studies.error.saveData"), e as AxiosError);
@@ -68,7 +68,7 @@ function StudyFileView(props: PropTypes) {
   useEffect(() => {
     const urlParts = url.split("/");
     const tmpUrl = urlParts.filter((item) => item);
-    setFormatedPath(tmpUrl.join("/"));
+    setFormattedPath(tmpUrl.join("/"));
     if (tmpUrl.length > 0) {
       setEditable(!filterOut.includes(tmpUrl[0]));
     }

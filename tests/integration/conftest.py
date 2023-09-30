@@ -27,6 +27,7 @@ def app_fixture(tmp_path: Path):
 
     engine = create_engine(db_url, echo=False)
     Base.metadata.create_all(engine)
+    # noinspection SpellCheckingInspection
     DBSessionMiddleware(
         None,
         custom_engine=engine,

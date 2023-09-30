@@ -85,9 +85,7 @@ function LinkForm(props: Props) {
     }
   };
 
-  const handleTypeAutoSubmit: AutoSubmitHandler<LinkFields, string> = (
-    value
-  ) => {
+  const handleTypeAutoSubmit: AutoSubmitHandler = (value) => {
     const defaultFilterSynthesis = defaultValues?.filterSynthesis
       ? (defaultValues?.filterSynthesis as Array<string>).filter(
           (elm) => elm !== ""
@@ -170,7 +168,7 @@ function LinkForm(props: Props) {
   const renderSelect = (
     filterName: string,
     options: Array<{ label: string; value: string }>,
-    onAutoSubmit?: AutoSubmitHandler<LinkFields, string>
+    onAutoSubmit?: AutoSubmitHandler
   ) => (
     <SelectFE
       name={filterName}

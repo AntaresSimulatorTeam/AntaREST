@@ -1,4 +1,5 @@
 import { AxiosError } from "axios";
+import { DebouncedFunc } from "lodash";
 import { RefObject, useEffect, useState } from "react";
 import { Graph, GraphLink, GraphNode } from "react-d3-graph";
 import { useTranslation } from "react-i18next";
@@ -27,10 +28,20 @@ interface Props {
   nodes: StudyMapNode[];
   graph: RefObject<Graph<StudyMapNode & GraphNode, LinkProperties & GraphLink>>;
   onNodePositionChange: (id: string, x: number, y: number) => void;
+  zoomLevel: number;
+  setZoomLevel: DebouncedFunc<(zoom: number) => void>;
 }
 
-function MapGraph(props: Props) {
-  const { height, width, links, nodes, graph, onNodePositionChange } = props;
+function MapGraph({
+  height,
+  width,
+  links,
+  nodes,
+  graph,
+  onNodePositionChange,
+  zoomLevel,
+  setZoomLevel,
+}: Props) {
   const [t] = useTranslation();
   const dispatch = useAppDispatch();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
@@ -123,6 +134,10 @@ function MapGraph(props: Props) {
     );
   };
 
+  const onZoomChange = (previousZoom: number, newZoom: number) => {
+    setZoomLevel(newZoom);
+  };
+
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
@@ -136,6 +151,7 @@ function MapGraph(props: Props) {
         links: mapNodes.length > 0 ? links : [],
       }}
       config={{
+        initialZoom: zoomLevel,
         height,
         width,
         highlightDegree: 0,
@@ -159,6 +175,7 @@ function MapGraph(props: Props) {
       onClickLink={handleOnClickLink}
       onClickGraph={handleGraphClick}
       onNodePositionChange={handleNodePositionChange}
+      onZoomChange={onZoomChange}
     />
   );
 }

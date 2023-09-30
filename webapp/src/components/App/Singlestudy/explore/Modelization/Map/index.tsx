@@ -1,13 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useOutletContext } from "react-router-dom";
-import { Fab } from "@mui/material";
 import AutoSizer from "react-virtualized-auto-sizer";
 import { useTranslation } from "react-i18next";
 import { Graph, GraphLink, GraphNode } from "react-d3-graph";
 import { AxiosError } from "axios";
 import * as R from "ramda";
 import * as RA from "ramda-adjunct";
-import SettingsIcon from "@mui/icons-material/Settings";
 import {
   LinkProperties,
   StudyMetadata,
@@ -18,8 +16,8 @@ import MapGraph from "./MapGraph";
 import Areas from "./Areas";
 import CreateAreaDialog from "./CreateAreaDialog";
 import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
-import { getUpdatedNode, NODE_COLOR } from "./utils";
-import { MapContainer, MapFooter } from "./style";
+import { getUpdatedNode, INITIAL_ZOOM, NODE_COLOR } from "./utils";
+import { MapContainer } from "./style";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 import {
   getCurrentLayer,
@@ -37,6 +35,8 @@ import {
 } from "../../../../../../redux/ducks/studyMaps";
 import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
 import MapHeader from "./MapHeader";
+import MapControlButtons from "./MapControlButtons";
+import useDebouncedState from "../../../../../../hooks/useDebouncedState";
 
 function Map() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -45,6 +45,7 @@ function Map() {
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [openDialog, setOpenDialog] = useState(false);
   const [openConfig, setOpenConfig] = useState(false);
+  const [zoomLevel, setZoomLevel] = useDebouncedState(INITIAL_ZOOM, 250);
   const previousNode = useRef<string>();
   const graphRef =
     useRef<Graph<GraphNode & StudyMapNode, GraphLink & LinkProperties>>(null);
@@ -144,6 +145,16 @@ function Map() {
     }
   };
 
+  const handleZoomIn = () => {
+    setZoomLevel(zoomLevel + 0.3);
+    setZoomLevel.flush();
+  };
+
+  const handleZoomOut = () => {
+    setZoomLevel(zoomLevel - 0.3);
+    setZoomLevel.flush();
+  };
+
   const handleClose = () => {
     setOpenDialog(false);
   };
@@ -180,20 +191,17 @@ function Map() {
                         nodes={mapNodes}
                         graph={graphRef}
                         onNodePositionChange={handlePositionChange}
+                        zoomLevel={zoomLevel}
+                        setZoomLevel={setZoomLevel}
                       />
                     )}
                   </AutoSizer>
-                  <MapFooter>
-                    <Fab
-                      size="small"
-                      color="default"
-                      onClick={() => {
-                        setOpenConfig(true);
-                      }}
-                    >
-                      <SettingsIcon />
-                    </Fab>
-                  </MapFooter>
+                  <MapControlButtons
+                    onZoomIn={handleZoomIn}
+                    onZoomOut={handleZoomOut}
+                    onOpenConfig={() => setOpenConfig(true)}
+                    zoomLevel={zoomLevel}
+                  />
                 </MapContainer>
               )
             }

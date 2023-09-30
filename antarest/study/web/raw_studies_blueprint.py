@@ -1,15 +1,17 @@
+import http
+import io
 import json
 import logging
-from http import HTTPStatus
+import pathlib
 from typing import Any, List
 
-from fastapi import APIRouter, Body, Depends, File
+from fastapi import APIRouter, Body, Depends, File, HTTPException
 from fastapi.params import Param
-from starlette.responses import Response
+from starlette.responses import JSONResponse, PlainTextResponse, Response, StreamingResponse
 
 from antarest.core.config import Config
 from antarest.core.jwt import JWTUser
-from antarest.core.model import JSON, SUB_JSON
+from antarest.core.model import SUB_JSON
 from antarest.core.requests import RequestParameters
 from antarest.core.swagger import get_path_examples
 from antarest.core.utils.utils import sanitize_uuid
@@ -18,6 +20,33 @@ from antarest.login.auth import Auth
 from antarest.study.service import StudyService
 
 logger = logging.getLogger(__name__)
+
+# noinspection SpellCheckingInspection
+
+CONTENT_TYPES = {
+    # (Portable Document Format)
+    ".pdf": ("application/pdf", None),
+    # (Microsoft Excel)
+    ".xlsx": ("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", None),
+    # (Microsoft Word)
+    ".docx": ("application/vnd.openxmlformats-officedocument.wordprocessingml.document", None),
+    # (Microsoft PowerPoint)
+    ".pptx": ("application/vnd.openxmlformats-officedocument.presentationml.presentation", None),
+    # (LibreOffice Writer)
+    ".odt": ("application/vnd.oasis.opendocument.text", None),
+    # (LibreOffice Calc)
+    ".ods": ("application/vnd.oasis.opendocument.spreadsheet", None),
+    # (LibreOffice Impress)
+    ".odp": ("application/vnd.oasis.opendocument.presentation", None),
+    # (Comma-Separated Values)
+    ".csv": ("text/csv", "utf-8"),
+    # (Tab-Separated Values)
+    ".tsv": ("text/tab-separated-values", "utf-8"),
+    # (Plain Text)
+    ".txt": ("text/plain", "utf-8"),
+    # (JSON)
+    ".json": ("application/json", "utf-8"),
+}
 
 
 def create_raw_study_routes(
@@ -39,8 +68,8 @@ def create_raw_study_routes(
     @bp.get(
         "/studies/{uuid}/raw",
         tags=[APITag.study_raw_data],
-        summary="Read data",
-        response_model=JSON,
+        summary="Retrieve Raw Data from Study: JSON, Text, or File Attachment",
+        response_model=None,
     )
     def get_study(
         uuid: str,
@@ -49,6 +78,19 @@ def create_raw_study_routes(
         formatted: bool = True,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
+        """
+        Fetches raw data from a study identified by a UUID, and returns the data
+        in different formats based on the file type, or as a JSON response.
+
+        Parameters:
+        - `uuid`: The UUID of the study.
+        - `path`: The path to the data to fetch.
+        - `depth`: The depth of the data to retrieve.
+        - `formatted`: A flag specifying whether the data should be returned in a formatted manner.
+
+        Returns the fetched data: a JSON object (in most cases), a plain text file
+        or a file attachment (Microsoft Office document, CSV/TSV file...).
+        """
         logger.info(
             f"Fetching data at {path} (depth={depth}) from study {uuid}",
             extra={"user": current_user.id},
@@ -57,26 +99,51 @@ def create_raw_study_routes(
         output = study_service.get(uuid, path, depth, formatted, parameters)
 
         if isinstance(output, bytes):
-            try:
-                # try to decode string
-                output = output.decode("utf-8")
-            except (AttributeError, UnicodeDecodeError):
-                pass
+            resource_path = pathlib.Path(path)
+            suffix = resource_path.suffix.lower()
+            content_type, encoding = CONTENT_TYPES.get(suffix, (None, None))
+            if content_type == "application/json":
+                # Use `JSONResponse` to ensure to return a valid JSON response
+                # that checks `NaN` and `Infinity` values.
+                try:
+                    output = json.loads(output)
+                    return JSONResponse(content=output)
+                except ValueError as exc:
+                    raise HTTPException(
+                        status_code=http.HTTPStatus.UNPROCESSABLE_ENTITY,
+                        detail=f"Invalid JSON configuration in path '{path}': {exc}",
+                    ) from None
+            elif encoding:
+                try:
+                    response = PlainTextResponse(output, media_type=content_type)
+                    response.charset = encoding
+                    return response
 
-        json_response = json.dumps(
-            output,
-            ensure_ascii=False,
-            allow_nan=True,
-            indent=None,
-            separators=(",", ":"),
-        ).encode("utf-8")
-        return Response(content=json_response, media_type="application/json")
+                except ValueError as exc:
+                    raise HTTPException(
+                        status_code=http.HTTPStatus.UNPROCESSABLE_ENTITY,
+                        detail=f"Invalid plain text configuration in path '{path}': {exc}",
+                    ) from None
+            elif content_type:
+                headers = {"Content-Disposition": f"attachment; filename='{resource_path.name}'"}
+                return StreamingResponse(
+                    io.BytesIO(output),
+                    media_type=content_type,
+                    headers=headers,
+                )
+            else:
+                # Unknown content types are considered binary,
+                # because it's better to avoid raising an exception.
+                return Response(content=output, media_type="application/octet-stream")
+
+        return JSONResponse(content=output)
 
     @bp.post(
         "/studies/{uuid}/raw",
-        status_code=HTTPStatus.NO_CONTENT,
+        status_code=http.HTTPStatus.NO_CONTENT,
         tags=[APITag.study_raw_data],
         summary="Update data by posting formatted data",
+        response_model=None,
     )
     def edit_study(
         uuid: str,
@@ -91,13 +158,13 @@ def create_raw_study_routes(
         path = sanitize_uuid(path)
         params = RequestParameters(user=current_user)
         study_service.edit_study(uuid, path, data, params)
-        return ""
 
     @bp.put(
         "/studies/{uuid}/raw",
-        status_code=HTTPStatus.NO_CONTENT,
+        status_code=http.HTTPStatus.NO_CONTENT,
         tags=[APITag.study_raw_data],
-        summary="Update data by posting a raw file",
+        summary="Update data by posting a Raw file",
+        response_model=None,
     )
     def replace_study_file(
         uuid: str,
@@ -112,9 +179,6 @@ def create_raw_study_routes(
         path = sanitize_uuid(path)
         params = RequestParameters(user=current_user)
         study_service.edit_study(uuid, path, file, params)
-        content = ""
-
-        return content
 
     @bp.get(
         "/studies/{uuid}/raw/validate",

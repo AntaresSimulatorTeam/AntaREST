@@ -17,7 +17,7 @@ from antarest.core.roles import RoleType
 from antarest.matrixstore.service import MatrixService
 from antarest.study.main import build_study_service
 from antarest.study.service import StudyService
-from tests.conftest import assert_study
+from tests.helpers import assert_study
 from tests.storage.integration.data.de_details_hourly import de_details_hourly
 from tests.storage.integration.data.de_fr_values_hourly import de_fr_values_hourly
 

@@ -118,7 +118,9 @@ def test_match(command_context: CommandContext):
     assert not base.match(other_not_match)
     assert not base.match(other_other)
     assert base.match_signature() == "create_cluster%foo%foo"
-    assert base.get_inner_matrices() == ["matrix_id", "matrix_id"]
+    # check the matrices links
+    matrix_id = command_context.matrix_service.create([[0]])
+    assert base.get_inner_matrices() == [matrix_id, matrix_id]
 
 
 def test_revert(command_context: CommandContext):

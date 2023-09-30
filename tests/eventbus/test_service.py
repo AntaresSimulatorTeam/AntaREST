@@ -5,7 +5,7 @@ from antarest.core.config import Config, EventBusConfig, RedisConfig
 from antarest.core.interfaces.eventbus import Event, EventType
 from antarest.core.model import PermissionInfo, PublicMode
 from antarest.eventbus.main import build_eventbus
-from tests.conftest import auto_retry_assert
+from tests.helpers import auto_retry_assert
 
 
 def test_service_factory():

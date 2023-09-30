@@ -13,7 +13,7 @@ from antarest.worker.simulator_worker import (
     SimulatorWorker,
 )
 from antarest.worker.worker import WorkerTaskCommand
-from tests.conftest import with_db_context
+from tests.helpers import with_db_context
 
 
 @with_db_context

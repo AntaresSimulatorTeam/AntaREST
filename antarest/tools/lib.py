@@ -8,8 +8,17 @@ from typing import List, Optional, Set, Union
 from zipfile import ZipFile
 
 import numpy as np
-import requests
-from requests import Session
+
+try:
+    # The HTTPX equivalent of `requests.Session` is `httpx.Client`.
+    import httpx as requests
+    from httpx import Client as Session
+except ImportError:
+    # noinspection PyUnresolvedReferences, PyPackageRequirements
+    import requests
+
+    # noinspection PyUnresolvedReferences,PyPackageRequirements
+    from requests import Session
 
 from antarest.core.cache.business.local_chache import LocalCache
 from antarest.core.config import CacheConfig
@@ -48,9 +57,20 @@ class RemoteVariantGenerator(IVariantGenerator):
         session: Optional[Session] = None,
     ):
         self.study_id = study_id
-        self.session = session or requests.session()
-        # TODO fix this
-        self.session.verify = False
+
+        # todo: find the correct way to handle certificates.
+        #  By default, Requests/Httpx verifies SSL certificates for HTTPS requests.
+        #  When verify is set to `False`, requests will accept any TLS certificate presented
+        #  by the server,and will ignore hostname mismatches and/or expired certificates,
+        #  which will make your application vulnerable to man-in-the-middle (MitM) attacks.
+        #  Setting verify to False may be useful during local development or testing.
+        if Session.__name__ == "Client":
+            # noinspection PyArgumentList
+            self.session = session or Session(verify=False)
+        else:
+            self.session = session or Session()
+            self.session.verify = False
+
         self.host = host
         if session is None and host is None:
             raise ValueError("Missing either session or host")
@@ -68,6 +88,7 @@ class RemoteVariantGenerator(IVariantGenerator):
         matrix_dataset: List[str] = []
         for matrix_file in matrices_dir.iterdir():
             matrix = np.loadtxt(matrix_file, delimiter="\t", dtype=np.float64, ndmin=2)
+            matrix = matrix.reshape((1, 0)) if matrix.size == 0 else matrix
             matrix_data = matrix.tolist()
             res = self.session.post(self.build_url("/v1/matrix"), json=matrix_data)
             res.raise_for_status()
@@ -136,7 +157,7 @@ class LocalVariantGenerator(IVariantGenerator):
 
         command_objs: List[List[ICommand]] = []
         logger.info("Parsing command objects")
-        command_objs.extend(command_factory.to_icommand(command_block) for command_block in commands)
+        command_objs.extend(command_factory.to_command(command_block) for command_block in commands)
         stopwatch.log_elapsed(lambda x: logger.info(f"Command objects parsed in {x}s"))
         result = generator.generate(command_objs, self.output_path, delete_on_failure=False)
         if result.success:

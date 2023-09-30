@@ -57,3 +57,5 @@ export function stringToPath(input: string): string[] {
     .split(/\.|\[/)
     .filter(Boolean);
 }
+
+export const ROOT_ERROR_KEY = "default";

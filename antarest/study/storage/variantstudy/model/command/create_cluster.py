@@ -25,7 +25,7 @@ class CreateCluster(ICommand):
     modulation: Optional[Union[List[List[MatrixData]], str]] = None
 
     def __init__(self, **data: Any) -> None:
-        super().__init__(command_name=CommandName.CREATE_CLUSTER, version=1, **data)
+        super().__init__(command_name=CommandName.CREATE_THERMAL_CLUSTER, version=1, **data)
 
     @validator("cluster_name")
     def validate_cluster_name(cls, val: str) -> str:
@@ -92,6 +92,8 @@ class CreateCluster(ICommand):
         cluster_id = data["cluster_id"]
 
         cluster_list_config = study_data.tree.get(["input", "thermal", "clusters", self.area_id, "list"])
+        # fixme: rigorously, the section name in the INI file is the cluster ID, not the cluster name
+        #  cluster_list_config[transform_name_to_id(self.cluster_name)] = self.parameters
         cluster_list_config[self.cluster_name] = self.parameters
 
         self.parameters["name"] = self.cluster_name
@@ -121,7 +123,7 @@ class CreateCluster(ICommand):
 
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
-            action=CommandName.CREATE_CLUSTER.value,
+            action=CommandName.CREATE_THERMAL_CLUSTER.value,
             args={
                 "area_id": self.area_id,
                 "cluster_name": self.cluster_name,

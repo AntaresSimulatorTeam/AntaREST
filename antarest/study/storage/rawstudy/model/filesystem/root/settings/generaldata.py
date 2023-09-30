@@ -139,6 +139,9 @@ class GeneralData(IniFileNode):
             adequacy["threshold-display-local-matching-rule-violations"] = float
             adequacy["threshold-csr-variable-bounds-relaxation"] = int
 
+        if config.version >= 860:
+            types["adequacy patch"]["enable-first-step "] = bool
+
         IniFileNode.__init__(
             self,
             context,
