@@ -1,7 +1,7 @@
 Antares Web Changelog
 =====================
 
-v2.15.0 (2023-09-29)
+v2.15.0 (2023-09-30)
 --------------------
 
 ### Features
@@ -100,6 +100,7 @@ v2.15.0 (2023-09-29)
 * **ui-api:** resolve Area deletion & Layers/Districts UI modification issues [`#1677`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1677)
 * **ui-common:** error with formState in Form [`121d4e5`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/121d4e5343a87f15f34a1a63108d6888232ffef4)
 * **ui-common:** prevent null values for string cells in HandsonTable component [`#1689`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1689)
+* **ui-debug**: issue to display json file in outputs [`#1747`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1747)
 * **ui-i18n:** add missing key [`685c487`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/685c487f0f73d8eb37b1594c5e46b283dd55d8d4)
 * **ui-i18n:** missing key [`7c8de2a`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/7c8de2a883e646d927b52e28baa0184a13146625)
 * **ui-map:** area persistence issue after deletion [`47d6bb6`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/47d6bb666aa3d98ff98724fccd6b8504f9d27d29)

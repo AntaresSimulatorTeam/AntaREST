@@ -9,7 +9,7 @@ from pathlib import Path
 
 __version__ = "2.15.0"
 __author__ = "RTE, Antares Web Team"
-__date__ = "2023-09-29"
+__date__ = "2023-09-30"
 # noinspection SpellCheckingInspection
 __credits__ = "(c) Réseau de Transport de l’Électricité (RTE)"
 
