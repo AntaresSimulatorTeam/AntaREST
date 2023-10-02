@@ -1,18 +1,13 @@
-import logging
 import multiprocessing
 import tempfile
-from dataclasses import dataclass, field
-from http import HTTPStatus
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Dict, List, Optional
 
 import yaml
-from fastapi import HTTPException
 
 from antarest.core.model import JSON
 from antarest.core.roles import RoleType
-
-logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -26,13 +21,16 @@ class ExternalAuthConfig:
     add_ext_groups: bool = False
     group_mapping: Dict[str, str] = field(default_factory=dict)
 
-    @staticmethod
-    def from_dict(data: JSON) -> "ExternalAuthConfig":
-        return ExternalAuthConfig(
-            url=data.get("url", None),
-            default_group_role=RoleType(data.get("default_group_role", RoleType.READER.value)),
-            add_ext_groups=data.get("add_ext_groups", False),
-            group_mapping=data.get("group_mapping", {}),
+    @classmethod
+    def from_dict(cls, data: JSON) -> "ExternalAuthConfig":
+        defaults = cls()
+        return cls(
+            url=data.get("url", defaults.url),
+            default_group_role=(
+                RoleType(data["default_group_role"]) if "default_group_role" in data else defaults.default_group_role
+            ),
+            add_ext_groups=data.get("add_ext_groups", defaults.add_ext_groups),
+            group_mapping=data.get("group_mapping", defaults.group_mapping),
         )
 
 
@@ -47,13 +45,18 @@ class SecurityConfig:
     disabled: bool = False
     external_auth: ExternalAuthConfig = ExternalAuthConfig()
 
-    @staticmethod
-    def from_dict(data: JSON) -> "SecurityConfig":
-        return SecurityConfig(
-            jwt_key=data.get("jwt", {}).get("key", ""),
-            admin_pwd=data.get("login", {}).get("admin", {}).get("pwd", ""),
-            disabled=data.get("disabled", False),
-            external_auth=ExternalAuthConfig.from_dict(data.get("external_auth", {})),
+    @classmethod
+    def from_dict(cls, data: JSON) -> "SecurityConfig":
+        defaults = cls()
+        return cls(
+            jwt_key=data.get("jwt", {}).get("key", defaults.jwt_key),
+            admin_pwd=data.get("login", {}).get("admin", {}).get("pwd", defaults.admin_pwd),
+            disabled=data.get("disabled", defaults.disabled),
+            external_auth=(
+                ExternalAuthConfig.from_dict(data["external_auth"])
+                if "external_auth" in data
+                else defaults.external_auth
+            ),
         )
 
 
@@ -68,13 +71,14 @@ class WorkspaceConfig:
     groups: List[str] = field(default_factory=lambda: [])
     path: Path = Path()
 
-    @staticmethod
-    def from_dict(data: JSON) -> "WorkspaceConfig":
-        return WorkspaceConfig(
-            path=Path(data["path"]),
-            groups=data.get("groups", []),
-            filter_in=data.get("filter_in", [".*"]),
-            filter_out=data.get("filter_out", []),
+    @classmethod
+    def from_dict(cls, data: JSON) -> "WorkspaceConfig":
+        defaults = cls()
+        return cls(
+            filter_in=data.get("filter_in", defaults.filter_in),
+            filter_out=data.get("filter_out", defaults.filter_out),
+            groups=data.get("groups", defaults.groups),
+            path=Path(data["path"]) if "path" in data else defaults.path,
         )
 
 
@@ -94,18 +98,19 @@ class DbConfig:
     pool_size: int = 5
     pool_use_lifo: bool = False
 
-    @staticmethod
-    def from_dict(data: JSON) -> "DbConfig":
-        return DbConfig(
-            db_admin_url=data.get("admin_url", None),
-            db_url=data.get("url", ""),
-            db_connect_timeout=data.get("db_connect_timeout", 10),
-            pool_recycle=data.get("pool_recycle", None),
-            pool_pre_ping=data.get("pool_pre_ping", False),
-            pool_use_null=data.get("pool_use_null", False),
-            pool_max_overflow=data.get("pool_max_overflow", 10),
-            pool_size=data.get("pool_size", 5),
-            pool_use_lifo=data.get("pool_use_lifo", False),
+    @classmethod
+    def from_dict(cls, data: JSON) -> "DbConfig":
+        defaults = cls()
+        return cls(
+            db_admin_url=data.get("admin_url", defaults.db_admin_url),
+            db_url=data.get("url", defaults.db_url),
+            db_connect_timeout=data.get("db_connect_timeout", defaults.db_connect_timeout),
+            pool_recycle=data.get("pool_recycle", defaults.pool_recycle),
+            pool_pre_ping=data.get("pool_pre_ping", defaults.pool_pre_ping),
+            pool_use_null=data.get("pool_use_null", defaults.pool_use_null),
+            pool_max_overflow=data.get("pool_max_overflow", defaults.pool_max_overflow),
+            pool_size=data.get("pool_size", defaults.pool_size),
+            pool_use_lifo=data.get("pool_use_lifo", defaults.pool_use_lifo),
         )
 
 
@@ -118,7 +123,7 @@ class StorageConfig:
     matrixstore: Path = Path("./matrixstore")
     archive_dir: Path = Path("./archives")
     tmp_dir: Path = Path(tempfile.gettempdir())
-    workspaces: Dict[str, WorkspaceConfig] = field(default_factory=lambda: {})
+    workspaces: Dict[str, WorkspaceConfig] = field(default_factory=dict)
     allow_deletion: bool = False
     watcher_lock: bool = True
     watcher_lock_delay: int = 10
@@ -130,36 +135,35 @@ class StorageConfig:
     auto_archive_sleeping_time: int = 3600
     auto_archive_max_parallel: int = 5
 
-    @staticmethod
-    def from_dict(data: JSON) -> "StorageConfig":
-        return StorageConfig(
-            tmp_dir=Path(data.get("tmp_dir", tempfile.gettempdir())),
-            matrixstore=Path(data["matrixstore"]),
-            workspaces={n: WorkspaceConfig.from_dict(w) for n, w in data["workspaces"].items()},
-            allow_deletion=data.get("allow_deletion", False),
-            archive_dir=Path(data["archive_dir"]),
-            watcher_lock=data.get("watcher_lock", True),
-            watcher_lock_delay=data.get("watcher_lock_delay", 10),
-            download_default_expiration_timeout_minutes=data.get("download_default_expiration_timeout_minutes", 1440),
-            matrix_gc_sleeping_time=data.get("matrix_gc_sleeping_time", 3600),
-            matrix_gc_dry_run=data.get("matrix_gc_dry_run", False),
-            auto_archive_threshold_days=data.get("auto_archive_threshold_days", 60),
-            auto_archive_dry_run=data.get("auto_archive_dry_run", False),
-            auto_archive_sleeping_time=data.get("auto_archive_sleeping_time", 3600),
-            auto_archive_max_parallel=data.get("auto_archive_max_parallel", 5),
+    @classmethod
+    def from_dict(cls, data: JSON) -> "StorageConfig":
+        defaults = cls()
+        workspaces = (
+            {key: WorkspaceConfig.from_dict(value) for key, value in data["workspaces"].items()}
+            if "workspaces" in data
+            else defaults.workspaces
         )
-
-
-class InvalidConfigurationError(Exception):
-    """
-    Check if configuration launcher is available
-    """
-
-    def __init__(self, launcher) -> None:
-        msg = f"""
-        The configuration: {launcher} is not available
-        """
-        super().__init__(msg)
+        return cls(
+            matrixstore=Path(data["matrixstore"]) if "matrixstore" in data else defaults.matrixstore,
+            archive_dir=Path(data["archive_dir"]) if "archive_dir" in data else defaults.archive_dir,
+            tmp_dir=Path(data["tmp_dir"]) if "tmp_dir" in data else defaults.tmp_dir,
+            workspaces=workspaces,
+            allow_deletion=data.get("allow_deletion", defaults.allow_deletion),
+            watcher_lock=data.get("watcher_lock", defaults.watcher_lock),
+            watcher_lock_delay=data.get("watcher_lock_delay", defaults.watcher_lock_delay),
+            download_default_expiration_timeout_minutes=(
+                data.get(
+                    "download_default_expiration_timeout_minutes",
+                    defaults.download_default_expiration_timeout_minutes,
+                )
+            ),
+            matrix_gc_sleeping_time=data.get("matrix_gc_sleeping_time", defaults.matrix_gc_sleeping_time),
+            matrix_gc_dry_run=data.get("matrix_gc_dry_run", defaults.matrix_gc_dry_run),
+            auto_archive_threshold_days=data.get("auto_archive_threshold_days", defaults.auto_archive_threshold_days),
+            auto_archive_dry_run=data.get("auto_archive_dry_run", defaults.auto_archive_dry_run),
+            auto_archive_sleeping_time=data.get("auto_archive_sleeping_time", defaults.auto_archive_sleeping_time),
+            auto_archive_max_parallel=data.get("auto_archive_max_parallel", defaults.auto_archive_max_parallel),
+        )
 
 
 @dataclass(frozen=True)
@@ -172,43 +176,23 @@ class NbCoresConfig:
     default: int = 22
     max: int = 24
 
-    @classmethod
-    def from_dict(cls, data: JSON) -> "NbCoresConfig":
-        """
-        Creates an instance of NBCoresConfig from a data dictionary
-        Args:
-            data: Parse config from dict.
-        Returns: object NbCoresConfig
-        """
-        return cls(min=data["min"], max=data["max"], default=data["defaultValue"])
-
     def to_json(self) -> Dict[str, int]:
         """
         Retrieves the number of cores parameters, returning a dictionary containing the values "min"
         (minimum allowed value), "defaultValue" (default value), and "max" (maximum allowed value)
-        Returns: Dict of core config
+
+        Returns:
+            A dictionary: `{"min": min, "defaultValue": default, "max": max}`.
+            Because ReactJs Material UI expects "min", "defaultValue" and "max" keys.
         """
         return {"min": self.min, "defaultValue": self.default, "max": self.max}
 
     def __post_init__(self) -> None:
-        """validation of cpu configuration"""
-        self.__validate_nb_cores(self.min, self.default, self.max)
-
-    def __validate_nb_cores(self, min_cpu: int, default: int, max_cpu: int) -> None:
-        """
-        Validates the number of cores parameters, raising an exception if they are
-        invalid (i.e., if 1 ≤ min ≤ default ≤ max is false)
-        Args:
-            min_cpu: min cpu
-            default: default cpu
-            max_cpu: max cpu
-        """
-        msg = ""
-        if not (1 <= min_cpu <= default <= max_cpu):
-            msg = f"value min_cpu:{min_cpu} must be equal to 1"
-            msg = f"{msg} {default}  must be less than max_cpu:{max_cpu} or greater than 1"
-        if msg:
-            raise ValueError(msg)
+        """validation of CPU configuration"""
+        if 1 <= self.min <= self.default <= self.max:
+            return
+        msg = f"Invalid configuration: 1 <= {self.min=} <= {self.default=} <= {self.max=}"
+        raise ValueError(msg)
 
 
 @dataclass(frozen=True)
@@ -216,26 +200,27 @@ class LocalConfig:
     """Sub config object dedicated to launcher module (local)"""
 
     binaries: Dict[str, Path] = field(default_factory=dict)
-    enable_nb_core_detection: bool = False
+    enable_nb_cores_detection: bool = True
     nb_cores: NbCoresConfig = NbCoresConfig()
 
     @classmethod
-    def from_dict(cls, data: JSON) -> Optional["LocalConfig"]:
+    def from_dict(cls, data: JSON) -> "LocalConfig":
         """
-        Creates an instance of NBCoresConfig from a data dictionary
+        Creates an instance of LocalConfig from a data dictionary
         Args:
             data: Parse config from dict.
         Returns: object NbCoresConfig
         """
-        if data.get("enable_nb_cores_detection", False):
-            cpu = cls._autodetect_nb_cores()
-            nb_cores = NbCoresConfig(min=cpu["min"], default=cpu["default"], max=cpu["max"])
-        else:
-            nb_cores = NbCoresConfig()
+        defaults = cls()
+        binaries = data.get("binaries", defaults.binaries)
+        enable_nb_cores_detection = data.get("enable_nb_cores_detection", defaults.enable_nb_cores_detection)
+        nb_cores = data.get("nb_cores", asdict(defaults.nb_cores))
+        if enable_nb_cores_detection:
+            nb_cores.update(cls._autodetect_nb_cores())
         return cls(
-            binaries={str(v): Path(p) for v, p in data["binaries"].items()},
-            enable_nb_core_detection=data["enable_nb_cores_detection"],
-            nb_cores=nb_cores,
+            binaries={str(v): Path(p) for v, p in binaries.items()},
+            enable_nb_cores_detection=enable_nb_cores_detection,
+            nb_cores=NbCoresConfig(**nb_cores),
         )
 
     @classmethod
@@ -265,45 +250,67 @@ class SlurmConfig:
     password: str = ""
     default_wait_time: int = 0
     default_time_limit: int = 0
-    default_n_cpu: int = 1
     default_json_db_name: str = ""
     slurm_script_path: str = ""
     max_cores: int = 64
     antares_versions_on_remote_server: List[str] = field(default_factory=list)
-    enable_nb_core_detection: bool = False
+    enable_nb_cores_detection: bool = False
     nb_cores: NbCoresConfig = NbCoresConfig()
 
     @classmethod
     def from_dict(cls, data: JSON) -> "SlurmConfig":
         """
         Creates an instance of SlurmConfig from a data dictionary
+
         Args:
-             data: Parse config from dict.
+             data: Parsed config from dict.
         Returns: object SlurmConfig
         """
-        nb_cores = NbCoresConfig()
+        defaults = cls()
+        enable_nb_cores_detection = data.get("enable_nb_cores_detection", defaults.enable_nb_cores_detection)
+        nb_cores = data.get("nb_cores", asdict(defaults.nb_cores))
+        if "default_n_cpu" in data:
+            # Use the old way to configure the NB cores for backward compatibility
+            nb_cores["default"] = int(data["default_n_cpu"])
+            nb_cores["min"] = min(nb_cores["min"], nb_cores["default"])
+            nb_cores["max"] = min(nb_cores["max"], nb_cores["default"])
+        if enable_nb_cores_detection:
+            nb_cores.update(cls._autodetect_nb_cores())
         return cls(
-            local_workspace=Path(data["local_workspace"]),
-            username=data["username"],
-            hostname=data["hostname"],
-            port=data["port"],
-            private_key_file=data["private_key_file"],
-            key_password=data["key_password"],
-            password=data["password"],
-            default_wait_time=data["default_wait_time"],
-            default_time_limit=data["default_time_limit"],
-            default_n_cpu=data["default_n_cpu"],
-            default_json_db_name=data["default_json_db_name"],
-            slurm_script_path=data["slurm_script_path"],
-            antares_versions_on_remote_server=data["antares_versions_on_remote_server"],
-            max_cores=data.get("max_cores", 64),
-            nb_cores=nb_cores,
-            enable_nb_core_detection=data.get("enable_nb_cores_detection", False),
+            local_workspace=Path(data.get("local_workspace", defaults.local_workspace)),
+            username=data.get("username", defaults.username),
+            hostname=data.get("hostname", defaults.hostname),
+            port=data.get("port", defaults.port),
+            private_key_file=data.get("private_key_file", defaults.private_key_file),
+            key_password=data.get("key_password", defaults.key_password),
+            password=data.get("password", defaults.password),
+            default_wait_time=data.get("default_wait_time", defaults.default_wait_time),
+            default_time_limit=data.get("default_time_limit", defaults.default_time_limit),
+            default_json_db_name=data.get("default_json_db_name", defaults.default_json_db_name),
+            slurm_script_path=data.get("slurm_script_path", defaults.slurm_script_path),
+            antares_versions_on_remote_server=data.get(
+                "antares_versions_on_remote_server",
+                defaults.antares_versions_on_remote_server,
+            ),
+            max_cores=data.get("max_cores", defaults.max_cores),
+            enable_nb_cores_detection=enable_nb_cores_detection,
+            nb_cores=NbCoresConfig(**nb_cores),
         )
 
-    @staticmethod
-    def _autodetect_nb_cores() -> Dict[str, int]:
-        raise NotImplementedError()
+    @classmethod
+    def _autodetect_nb_cores(cls) -> Dict[str, int]:
+        raise NotImplementedError("NB Cores auto-detection is not implemented for SLURM server")
+
+
+class InvalidConfigurationError(Exception):
+    """
+    Exception raised when an attempt is made to retrieve the number of cores
+    of a launcher that doesn't exist in the configuration.
+    """
+
+    def __init__(self, launcher: str):
+        msg = f"Configuration is not available for the '{launcher}' launcher"
+        super().__init__(msg)
 
 
 @dataclass(frozen=True)
@@ -313,49 +320,52 @@ class LauncherConfig:
     """
 
     default: str = "local"
-    local: Optional[LocalConfig] = LocalConfig()
-    slurm: Optional[SlurmConfig] = SlurmConfig()
+    local: Optional[LocalConfig] = None
+    slurm: Optional[SlurmConfig] = None
     batch_size: int = 9999
 
     @classmethod
     def from_dict(cls, data: JSON) -> "LauncherConfig":
-        local: Optional[LocalConfig] = None
-        if "local" in data:
-            local = LocalConfig.from_dict(data["local"])
-
-        slurm: Optional[SlurmConfig] = None
-        if "slurm" in data:
-            slurm = SlurmConfig.from_dict(data["slurm"])
-
+        defaults = cls()
+        default = data.get("default", cls.default)
+        local = LocalConfig.from_dict(data["local"]) if "local" in data else defaults.local
+        slurm = SlurmConfig.from_dict(data["slurm"]) if "slurm" in data else defaults.slurm
+        batch_size = data.get("batch_size", defaults.batch_size)
         return cls(
-            default=data.get("default", "local"),
+            default=default,
             local=local,
             slurm=slurm,
-            batch_size=data.get("batch_size", 9999),
+            batch_size=batch_size,
         )
+
+    def __post_init__(self) -> None:
+        possible = {"local", "slurm"}
+        if self.default in possible:
+            return
+        msg = f"Invalid configuration: {self.default=} must be one of {possible!r}"
+        raise ValueError(msg)
 
     def get_nb_cores(self, launcher: str) -> "NbCoresConfig":
         """
-        This method retrieves the number of cores configuration for a given
-        launcher: "local," "slurm," or "default."
-        Args:
-            launcher: type of launcher local or slurm or default
-        Returns: min, max, default of cpu configuration
-        """
-        here = Path(__file__).parent.resolve()
-        project_path = next(iter(p for p in here.parents if p.joinpath("antarest").exists()))
-        file = project_path / "resources/application.yaml"
-        info_data = Config.from_yaml_file(file).launcher
+        Retrieve the number of cores configuration for a given launcher: "local" or "slurm".
+        If "default" is specified, retrieve the configuration of the default launcher.
 
-        if launcher == "default":
-            launcher = info_data.default
-        if launcher == "slurm":
-            cpu = LauncherConfig.slurm.nb_cores
-        if launcher == "local":
-            cpu = info_data.local.nb_cores
-        elif launcher not in ("slurm", "local"):
-            raise InvalidConfigurationError("launcher")
-        return cpu
+        Args:
+            launcher: type of launcher "local", "slurm" or "default".
+
+        Returns:
+            Number of cores of the given launcher.
+
+        Raises:
+            InvalidConfigurationError: Exception raised when an attempt is made to retrieve
+                the number of cores of a launcher that doesn't exist in the configuration.
+        """
+        config_map = {"local": self.local, "slurm": self.slurm}
+        config_map["default"] = config_map[self.default]
+        launcher_config = config_map.get(launcher)
+        if launcher_config is None:
+            raise InvalidConfigurationError(launcher)
+        return launcher_config.nb_cores
 
 
 @dataclass(frozen=True)
@@ -368,14 +378,13 @@ class LoggingConfig:
     json: bool = False
     level: str = "INFO"
 
-    @staticmethod
-    def from_dict(data: JSON) -> "LoggingConfig":
-        logging_config: Dict[str, Any] = data or {}
-        logfile: Optional[str] = logging_config.get("logfile")
-        return LoggingConfig(
-            logfile=Path(logfile) if logfile is not None else None,
-            json=logging_config.get("json", False),
-            level=logging_config.get("level", "INFO"),
+    @classmethod
+    def from_dict(cls, data: JSON) -> "LoggingConfig":
+        defaults = cls()
+        return cls(
+            logfile=Path(data["logfile"]) if "logfile" in data else defaults.logfile,
+            json=data.get("json", defaults.json),
+            level=data.get("level", defaults.level),
         )
 
 
@@ -389,12 +398,13 @@ class RedisConfig:
     port: int = 6379
     password: Optional[str] = None
 
-    @staticmethod
-    def from_dict(data: JSON) -> "RedisConfig":
-        return RedisConfig(
-            host=data["host"],
-            port=data["port"],
-            password=data.get("password", None),
+    @classmethod
+    def from_dict(cls, data: JSON) -> "RedisConfig":
+        defaults = cls()
+        return cls(
+            host=data.get("host", defaults.host),
+            port=data.get("port", defaults.port),
+            password=data.get("password", defaults.password),
         )
 
 
@@ -405,9 +415,9 @@ class EventBusConfig:
     """
 
     # noinspection PyUnusedLocal
-    @staticmethod
-    def from_dict(data: JSON) -> "EventBusConfig":
-        return EventBusConfig()
+    @classmethod
+    def from_dict(cls, data: JSON) -> "EventBusConfig":
+        return cls()
 
 
 @dataclass(frozen=True)
@@ -418,10 +428,11 @@ class CacheConfig:
 
     checker_delay: float = 0.2  # in seconds
 
-    @staticmethod
-    def from_dict(data: JSON) -> "CacheConfig":
-        return CacheConfig(
-            checker_delay=float(data["checker_delay"]) if "checker_delay" in data else 0.2,
+    @classmethod
+    def from_dict(cls, data: JSON) -> "CacheConfig":
+        defaults = cls()
+        return cls(
+            checker_delay=data.get("checker_delay", defaults.checker_delay),
         )
 
 
@@ -430,9 +441,13 @@ class RemoteWorkerConfig:
     name: str
     queues: List[str] = field(default_factory=list)
 
-    @staticmethod
-    def from_dict(data: JSON) -> "RemoteWorkerConfig":
-        return RemoteWorkerConfig(name=data["name"], queues=data.get("queues", []))
+    @classmethod
+    def from_dict(cls, data: JSON) -> "RemoteWorkerConfig":
+        defaults = cls(name="")  # `name` is mandatory
+        return cls(
+            name=data["name"],
+            queues=data.get("queues", defaults.queues),
+        )
 
 
 @dataclass(frozen=True)
@@ -444,16 +459,17 @@ class TaskConfig:
     max_workers: int = 5
     remote_workers: List[RemoteWorkerConfig] = field(default_factory=list)
 
-    @staticmethod
-    def from_dict(data: JSON) -> "TaskConfig":
-        return TaskConfig(
-            max_workers=int(data["max_workers"]) if "max_workers" in data else 5,
-            remote_workers=list(
-                map(
-                    lambda x: RemoteWorkerConfig.from_dict(x),
-                    data.get("remote_workers", []),
-                )
-            ),
+    @classmethod
+    def from_dict(cls, data: JSON) -> "TaskConfig":
+        defaults = cls()
+        remote_workers = (
+            [RemoteWorkerConfig.from_dict(d) for d in data["remote_workers"]]
+            if "remote_workers" in data
+            else defaults.remote_workers
+        )
+        return cls(
+            max_workers=data.get("max_workers", defaults.max_workers),
+            remote_workers=remote_workers,
         )
 
 
@@ -466,11 +482,12 @@ class ServerConfig:
     worker_threadpool_size: int = 5
     services: List[str] = field(default_factory=list)
 
-    @staticmethod
-    def from_dict(data: JSON) -> "ServerConfig":
-        return ServerConfig(
-            worker_threadpool_size=int(data["worker_threadpool_size"]) if "worker_threadpool_size" in data else 5,
-            services=data.get("services", []),
+    @classmethod
+    def from_dict(cls, data: JSON) -> "ServerConfig":
+        defaults = cls()
+        return cls(
+            worker_threadpool_size=data.get("worker_threadpool_size", defaults.worker_threadpool_size),
+            services=data.get("services", defaults.services),
         )
 
 
@@ -494,36 +511,27 @@ class Config:
     tasks: TaskConfig = TaskConfig()
     root_path: str = ""
 
-    @staticmethod
-    def from_dict(data: JSON, res: Optional[Path] = None) -> "Config":
-        """
-        Parse config from dict.
-
-        Args:
-            data: dict struct to parse
-            res: resources path is not present in yaml file.
-
-        Returns:
-
-        """
-        return Config(
-            security=SecurityConfig.from_dict(data.get("security", {})),
-            storage=StorageConfig.from_dict(data["storage"]),
-            launcher=LauncherConfig.from_dict(data.get("launcher", {})),
-            db=DbConfig.from_dict(data["db"]) if "db" in data else DbConfig(),
-            logging=LoggingConfig.from_dict(data.get("logging", {})),
-            debug=data.get("debug", False),
-            resources_path=res or Path(),
-            root_path=data.get("root_path", ""),
-            redis=RedisConfig.from_dict(data["redis"]) if "redis" in data else None,
-            eventbus=EventBusConfig.from_dict(data["eventbus"]) if "eventbus" in data else EventBusConfig(),
-            cache=CacheConfig.from_dict(data["cache"]) if "cache" in data else CacheConfig(),
-            tasks=TaskConfig.from_dict(data["tasks"]) if "tasks" in data else TaskConfig(),
-            server=ServerConfig.from_dict(data["server"]) if "server" in data else ServerConfig(),
+    @classmethod
+    def from_dict(cls, data: JSON) -> "Config":
+        defaults = cls()
+        return cls(
+            server=ServerConfig.from_dict(data["server"]) if "server" in data else defaults.server,
+            security=SecurityConfig.from_dict(data["security"]) if "security" in data else defaults.security,
+            storage=StorageConfig.from_dict(data["storage"]) if "storage" in data else defaults.storage,
+            launcher=LauncherConfig.from_dict(data["launcher"]) if "launcher" in data else defaults.launcher,
+            db=DbConfig.from_dict(data["db"]) if "db" in data else defaults.db,
+            logging=LoggingConfig.from_dict(data["logging"]) if "logging" in data else defaults.logging,
+            debug=data.get("debug", defaults.debug),
+            resources_path=data["resources_path"] if "resources_path" in data else defaults.resources_path,
+            redis=RedisConfig.from_dict(data["redis"]) if "redis" in data else defaults.redis,
+            eventbus=EventBusConfig.from_dict(data["eventbus"]) if "eventbus" in data else defaults.eventbus,
+            cache=CacheConfig.from_dict(data["cache"]) if "cache" in data else defaults.cache,
+            tasks=TaskConfig.from_dict(data["tasks"]) if "tasks" in data else defaults.tasks,
+            root_path=data.get("root_path", defaults.root_path),
         )
 
-    @staticmethod
-    def from_yaml_file(file: Path, res: Optional[Path] = None) -> "Config":
+    @classmethod
+    def from_yaml_file(cls, file: Path, res: Optional[Path] = None) -> "Config":
         """
         Parse config from yaml file.
 
@@ -534,5 +542,8 @@ class Config:
         Returns:
 
         """
-        data = yaml.safe_load(open(file))
-        return Config.from_dict(data, res)
+        with open(file) as f:
+            data = yaml.safe_load(f)
+        if res is not None:
+            data["resources_path"] = res
+        return cls.from_dict(data)

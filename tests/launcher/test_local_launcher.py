@@ -1,18 +1,27 @@
 import os
 import textwrap
+import uuid
 from pathlib import Path
 from unittest.mock import Mock, call
-from uuid import uuid4
 
 import pytest
-from sqlalchemy import create_engine
 
 from antarest.core.config import Config, LauncherConfig, LocalConfig
-from antarest.core.persistence import Base
-from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.launcher.adapters.abstractlauncher import LauncherInitException
 from antarest.launcher.adapters.local_launcher.local_launcher import LocalLauncher
 from antarest.launcher.model import JobStatus, LauncherParametersDTO
+
+SOLVER_NAME = "solver.bat" if os.name == "nt" else "solver.sh"
+
+
+@pytest.fixture
+def launcher_config(tmp_path: Path) -> Config:
+    """
+    Fixture to create a launcher config with a local launcher.
+    """
+    solver_path = tmp_path.joinpath(SOLVER_NAME)
+    data = {"binaries": {"700": solver_path}, "enable_nb_cores_detection": True}
+    return Config(launcher=LauncherConfig(local=LocalConfig.from_dict(data)))
 
 
 @pytest.mark.unit_test
@@ -30,21 +39,12 @@ def test_local_launcher__launcher_init_exception():
 
 
 @pytest.mark.unit_test
-def test_compute(tmp_path: Path):
-    engine = create_engine("sqlite:///:memory:", echo=False)
-    Base.metadata.create_all(engine)
-    # noinspection SpellCheckingInspection
-    DBSessionMiddleware(
-        None,
-        custom_engine=engine,
-        session_args={"autocommit": False, "autoflush": False},
-    )
-    local_launcher = LocalLauncher(Config(), callbacks=Mock(), event_bus=Mock(), cache=Mock())
+def test_compute(tmp_path: Path, launcher_config: Config):
+    local_launcher = LocalLauncher(launcher_config, callbacks=Mock(), event_bus=Mock(), cache=Mock())
 
     # prepare a dummy executable to simulate Antares Solver
     if os.name == "nt":
-        solver_name = "solver.bat"
-        solver_path = tmp_path.joinpath(solver_name)
+        solver_path = tmp_path.joinpath(SOLVER_NAME)
         solver_path.write_text(
             textwrap.dedent(
                 """\
@@ -55,8 +55,7 @@ def test_compute(tmp_path: Path):
             )
         )
     else:
-        solver_name = "solver.sh"
-        solver_path = tmp_path.joinpath(solver_name)
+        solver_path = tmp_path.joinpath(SOLVER_NAME)
         solver_path.write_text(
             textwrap.dedent(
                 """\
@@ -68,8 +67,8 @@ def test_compute(tmp_path: Path):
         )
         solver_path.chmod(0o775)
 
-    uuid = uuid4()
-    local_launcher.job_id_to_study_id = {str(uuid): ("study-id", tmp_path / "run", Mock())}
+    study_id = uuid.uuid4()
+    local_launcher.job_id_to_study_id = {str(study_id): ("study-id", tmp_path / "run", Mock())}
     local_launcher.callbacks.import_output.return_value = "some output"
     launcher_parameters = LauncherParametersDTO(
         adequacy_patch=None,
@@ -86,15 +85,15 @@ def test_compute(tmp_path: Path):
     local_launcher._compute(
         antares_solver_path=solver_path,
         study_uuid="study-id",
-        uuid=uuid,
+        uuid=study_id,
         launcher_parameters=launcher_parameters,
     )
 
     # noinspection PyUnresolvedReferences
     local_launcher.callbacks.update_status.assert_has_calls(
         [
-            call(str(uuid), JobStatus.RUNNING, None, None),
-            call(str(uuid), JobStatus.SUCCESS, None, "some output"),
+            call(str(study_id), JobStatus.RUNNING, None, None),
+            call(str(study_id), JobStatus.SUCCESS, None, "some output"),
         ]
     )
 

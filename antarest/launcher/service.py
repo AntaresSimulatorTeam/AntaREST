@@ -1,4 +1,5 @@
 import functools
+import json
 import logging
 import os
 import shutil
@@ -10,7 +11,7 @@ from uuid import UUID, uuid4
 
 from fastapi import HTTPException
 
-from antarest.core.config import Config, LauncherConfig
+from antarest.core.config import Config, NbCoresConfig
 from antarest.core.exceptions import StudyNotFoundError
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
@@ -99,14 +100,20 @@ class LauncherService:
     def get_launchers(self) -> List[str]:
         return list(self.launchers.keys())
 
-    @staticmethod
-    def get_nb_cores(launcher: str) -> Dict[str, int]:
+    def get_nb_cores(self, launcher: str) -> NbCoresConfig:
         """
-        Retrieving Min, Default, and Max Core Count.
+        Retrieve the configuration of the launcher's nb of cores.
+
         Args:
-            launcher:  name of the configuration : "default", "slurm" or "local".
+            launcher: name of the launcher: "default", "slurm" or "local".
+
+        Returns:
+            Number of cores of the launcher
+
+        Raises:
+            InvalidConfigurationError: if the launcher configuration is not available
         """
-        return LauncherConfig().get_nb_cores(launcher).to_json()
+        return self.config.launcher.get_nb_cores(launcher)
 
     def _after_export_flat_hooks(
         self,
@@ -595,27 +602,31 @@ class LauncherService:
                 local_running_jobs.append(job)
             else:
                 logger.warning(f"Unknown job launcher {job.launcher}")
+
         load = {}
-        if self.config.launcher.slurm:
+
+        slurm_config = self.config.launcher.slurm
+        if slurm_config is not None:
             if from_cluster:
-                raise NotImplementedError
-            slurm_used_cpus = functools.reduce(
-                lambda count, j: count
-                + (
-                    LauncherParametersDTO.parse_raw(j.launcher_params or "{}").nb_cpu
-                    or self.config.launcher.slurm.default_n_cpu  # type: ignore
-                ),
-                slurm_running_jobs,
-                0,
-            )
-            load["slurm"] = float(slurm_used_cpus) / self.config.launcher.slurm.max_cores
-        if self.config.launcher.local:
-            local_used_cpus = functools.reduce(
-                lambda count, j: count + (LauncherParametersDTO.parse_raw(j.launcher_params or "{}").nb_cpu or 1),
-                local_running_jobs,
-                0,
-            )
-            load["local"] = float(local_used_cpus) / (os.cpu_count() or 1)
+                raise NotImplementedError("Cluster load not implemented yet")
+            default_cpu = slurm_config.nb_cores.default
+            slurm_used_cpus = 0
+            for job in slurm_running_jobs:
+                obj = json.loads(job.launcher_params) if job.launcher_params else {}
+                launch_params = LauncherParametersDTO(**obj)
+                slurm_used_cpus += launch_params.nb_cpu or default_cpu
+            load["slurm"] = slurm_used_cpus / slurm_config.max_cores
+
+        local_config = self.config.launcher.local
+        if local_config is not None:
+            default_cpu = local_config.nb_cores.default
+            local_used_cpus = 0
+            for job in local_running_jobs:
+                obj = json.loads(job.launcher_params) if job.launcher_params else {}
+                launch_params = LauncherParametersDTO(**obj)
+                local_used_cpus += launch_params.nb_cpu or default_cpu
+            load["local"] = local_used_cpus / local_config.nb_cores.max
+
         return load
 
     def get_solver_versions(self, solver: str) -> List[str]:

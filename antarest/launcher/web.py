@@ -230,8 +230,9 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
             raise UnknownSolverConfig(solver)
         return service.get_solver_versions(solver)
 
+    # noinspection SpellCheckingInspection
     @bp.get(
-        "/launcher/nbcores",
+        "/launcher/nbcores",  # We avoid "nb_cores" and "nb-cores" in endpoints
         tags=[APITag.launcher],
         summary="Retrieving Min, Default, and Max Core Count",
         response_model=Dict[str, int],
@@ -256,13 +257,18 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         )
     ) -> Dict[str, int]:
         """
-        Retrieving Min, Default, and Max Core Count.
+        Retrieve the numer of cores of the launcher.
+
         Args:
-        - `launcher`: name of the configuration to read: "default", "slurm" or "local".
+        - `launcher`: name of the configuration to read: "slurm" or "local".
+          If "default" is specified, retrieve the configuration of the default launcher.
+
+        Returns:
+        - "min": min number of cores
+        - "defaultValue": default number of cores
+        - "max": max number of cores
         """
-        logger.info(f"Fetching the number of cpu for the '{launcher}' configuration")
-        if launcher not in {"default", "slurm", "local"}:
-            raise UnknownSolverConfig(launcher)
+        logger.info(f"Fetching the number of cores for the '{launcher}' configuration")
         try:
             return service.config.launcher.get_nb_cores(launcher).to_json()
         except InvalidConfigurationError:
