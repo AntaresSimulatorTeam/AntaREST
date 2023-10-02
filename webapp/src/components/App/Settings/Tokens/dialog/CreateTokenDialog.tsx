@@ -55,11 +55,14 @@ function CreateTokenDialog(props: Props) {
 
       setTokenValueToDisplay(tokenValue);
 
-      enqueueSnackbar(t("settings.success.tokenCreation", [name]), {
+      enqueueSnackbar(t("settings.success.tokenCreation", { 0: name }), {
         variant: "success",
       });
     } catch (e) {
-      enqueueErrorSnackbar(t("settings.error.tokenSave", [name]), e as Error);
+      enqueueErrorSnackbar(
+        t("settings.error.tokenSave", { 0: name }),
+        e as Error,
+      );
       closeDialog();
     } finally {
       reloadFetchTokens();

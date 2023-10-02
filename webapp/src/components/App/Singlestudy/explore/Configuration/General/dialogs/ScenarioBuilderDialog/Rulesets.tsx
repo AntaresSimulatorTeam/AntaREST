@@ -53,7 +53,7 @@ function Rulesets() {
       throw new Error(
         t(
           "study.configuration.general.mcScenarioBuilder.error.ruleset.rename",
-          [activeRuleset],
+          { 0: activeRuleset },
         ),
         { cause: err },
       );
@@ -71,9 +71,9 @@ function Rulesets() {
       reloadConfig();
 
       throw new Error(
-        t("study.configuration.general.mcScenarioBuilder.error.ruleset.add", [
-          name,
-        ]),
+        t("study.configuration.general.mcScenarioBuilder.error.ruleset.add", {
+          0: name,
+        }),
         { cause: err },
       );
     });
@@ -93,7 +93,7 @@ function Rulesets() {
       enqueueErrorSnackbar(
         t(
           "study.configuration.general.mcScenarioBuilder.error.ruleset.delete",
-          [activeRuleset],
+          { 0: activeRuleset },
         ),
         err,
       );
@@ -113,7 +113,7 @@ function Rulesets() {
       enqueueErrorSnackbar(
         t(
           "study.configuration.general.mcScenarioBuilder.error.ruleset.duplicate",
-          [activeRuleset],
+          { 0: activeRuleset },
         ),
         err,
       );
@@ -221,7 +221,7 @@ function Rulesets() {
         >
           {t(
             "study.configuration.general.mcScenarioBuilder.dialog.delete.text",
-            [activeRuleset],
+            { 0: activeRuleset },
           )}
         </ConfirmationDialog>
       )}

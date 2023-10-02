@@ -138,9 +138,9 @@ function UpdateLayerDialog(props: Props) {
               open
             >
               <Typography sx={{ p: 3 }}>
-                {t("study.modelization.map.layers.delete.confirm", [
-                  layersById[getValues("layerId")].name,
-                ])}
+                {t("study.modelization.map.layers.delete.confirm", {
+                  0: layersById[getValues("layerId")].name,
+                })}
               </Typography>
             </ConfirmationDialog>
           )}

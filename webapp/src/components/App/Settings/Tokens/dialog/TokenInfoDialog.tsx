@@ -49,7 +49,7 @@ function TokenInfoDialog(props: Props) {
       titleIcon={InfoIcon}
     >
       <DialogContentText>
-        {t("settings.currentToken", [token.name])}
+        {t("settings.currentToken", { 0: token.name })}
       </DialogContentText>
       <Form config={{ defaultValues }} hideSubmitButton>
         {(formObj) => <TokenForm onlyPermissions readOnly {...formObj} />}

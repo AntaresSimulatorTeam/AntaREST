@@ -168,13 +168,13 @@ function Tokens() {
     mounted(deleteBot(token.id))
       .then(() => {
         dispatch({ type: TokenActionKind.DELETE, payload: token.id });
-        enqueueSnackbar(t("settings.success.tokenDelete", [token.name]), {
+        enqueueSnackbar(t("settings.success.tokenDelete", { 0: token.name }), {
           variant: "success",
         });
       })
       .catch((err) => {
         enqueueErrorSnackbar(
-          t("settings.error.tokenDelete", [token.name]),
+          t("settings.error.tokenDelete", { 0: token.name }),
           err,
         );
       })
@@ -281,7 +281,7 @@ function Tokens() {
           alert="warning"
           open
         >
-          {t("settings.question.deleteToken", [tokenToDelete.name])}
+          {t("settings.question.deleteToken", { 0: tokenToDelete.name })}
         </ConfirmationDialog>
       )}
       {tokenToDisplayInfo && (

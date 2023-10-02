@@ -78,7 +78,10 @@ function AddConstraintTermDialog(props: Props) {
         data = tmpValues.data as LinkCreationInfoDTO;
         if (!isOptionExist(options.links, data.area1, data.area2)) {
           enqueueSnackbar(
-            t("study.error.missingData", [t("study.area1"), t("study.area2")]),
+            t("study.error.missingData", {
+              0: t("study.area1"),
+              1: t("study.area2"),
+            }),
             { variant: "error" },
           );
           onCancel();
@@ -88,7 +91,10 @@ function AddConstraintTermDialog(props: Props) {
         data = tmpValues.data as ClusterElement;
         if (!isOptionExist(options.clusters, data.area, data.cluster)) {
           enqueueSnackbar(
-            t("study.error.missingData", [t("study.area"), t("study.cluster")]),
+            t("study.error.missingData", {
+              0: t("study.area"),
+              1: t("study.cluster"),
+            }),
             { variant: "error" },
           );
           onCancel();

@@ -81,7 +81,7 @@ function Fields() {
               rules={{
                 min: {
                   value: 0,
-                  message: t("form.field.minValue", [0]),
+                  message: t("form.field.minValue", { 0: 0 }),
                 },
               }}
             />
@@ -94,7 +94,7 @@ function Fields() {
               rules={{
                 min: {
                   value: 0,
-                  message: t("form.field.minValue", [0]),
+                  message: t("form.field.minValue", { 0: 0 }),
                 },
               }}
             />
@@ -107,7 +107,7 @@ function Fields() {
               rules={{
                 min: {
                   value: 0,
-                  message: t("form.field.minValue", [0]),
+                  message: t("form.field.minValue", { 0: 0 }),
                 },
               }}
             />

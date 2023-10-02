@@ -67,7 +67,7 @@ function UpdateGroupDialog(props: Props) {
     const groupName = name || group.name;
 
     const notifySuccess = R.once(() =>
-      enqueueSnackbar(t("settings.success.groupUpdate", [groupName]), {
+      enqueueSnackbar(t("settings.success.groupUpdate", { 0: groupName }), {
         variant: "success",
       }),
     );
@@ -79,7 +79,7 @@ function UpdateGroupDialog(props: Props) {
         notifySuccess();
       } catch (e) {
         enqueueErrorSnackbar(
-          t("settings.error.groupSave", [groupName]),
+          t("settings.error.groupSave", { 0: groupName }),
           e as Error,
         );
         throw e;
@@ -139,7 +139,7 @@ function UpdateGroupDialog(props: Props) {
         reloadFetchUsers();
 
         enqueueErrorSnackbar(
-          t("settings.error.groupRolesSave", [groupName]),
+          t("settings.error.groupRolesSave", { 0: groupName }),
           e as Error,
         );
       }

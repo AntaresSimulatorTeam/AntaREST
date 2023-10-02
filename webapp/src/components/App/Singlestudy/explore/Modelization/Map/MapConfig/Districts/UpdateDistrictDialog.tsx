@@ -149,9 +149,9 @@ function UpdateDistrictDialog(props: Props) {
               open
             >
               <Typography sx={{ p: 3 }}>
-                {t("study.modelization.map.districts.delete.confirm", [
-                  districtsById[getValues("districtId")].name,
-                ])}
+                {t("study.modelization.map.districts.delete.confirm", {
+                  0: districtsById[getValues("districtId")].name,
+                })}
               </Typography>
             </ConfirmationDialog>
           )}

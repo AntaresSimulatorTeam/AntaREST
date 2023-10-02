@@ -122,7 +122,7 @@ function UserForm(props: Props) {
               required: t("form.field.required") as string,
               minLength: {
                 value: PASSWORD_MIN_LENGTH,
-                message: t("form.field.minLength", [PASSWORD_MIN_LENGTH]),
+                message: t("form.field.minLength", { 0: PASSWORD_MIN_LENGTH }),
               },
             })}
           />

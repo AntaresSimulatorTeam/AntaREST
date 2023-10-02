@@ -184,9 +184,9 @@ function TableMode() {
           onCancel={closeDialog}
           open
         >
-          {t("study.modelization.tableMode.dialog.delete.text", [
-            templates.find((tp) => tp.id === dialog.templateId)?.name,
-          ])}
+          {t("study.modelization.tableMode.dialog.delete.text", {
+            0: templates.find((tp) => tp.id === dialog.templateId)?.name,
+          })}
         </ConfirmationDialog>
       )}
     </>

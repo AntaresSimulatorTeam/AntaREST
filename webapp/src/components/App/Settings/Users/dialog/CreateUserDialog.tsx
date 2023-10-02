@@ -39,12 +39,12 @@ function CreateUserDialog(props: Props) {
 
     try {
       newUser = await mounted(createUser(username, password));
-      enqueueSnackbar(t("settings.success.userCreation", [newUser.name]), {
+      enqueueSnackbar(t("settings.success.userCreation", { 0: newUser.name }), {
         variant: "success",
       });
     } catch (e) {
       enqueueErrorSnackbar(
-        t("settings.error.userSave", [username]),
+        t("settings.error.userSave", { 0: username }),
         e as Error,
       );
       throw e;
@@ -79,7 +79,7 @@ function CreateUserDialog(props: Props) {
       reloadFetchUsers();
 
       enqueueErrorSnackbar(
-        t("settings.error.userRolesSave", [newUser.name]),
+        t("settings.error.userRolesSave", { 0: newUser.name }),
         e as Error,
       );
     }

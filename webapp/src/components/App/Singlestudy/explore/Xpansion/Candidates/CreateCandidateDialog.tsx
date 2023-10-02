@@ -88,7 +88,7 @@ function CreateCandidateDialog(props: PropType) {
               rules={{
                 min: {
                   value: 1,
-                  message: t("form.field.minValue", [1]),
+                  message: t("form.field.minValue", { 0: 1 }),
                 },
               }}
               sx={{ mx: 0 }}

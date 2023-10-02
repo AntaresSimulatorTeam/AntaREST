@@ -103,9 +103,9 @@ function Table(props: Props) {
       reloadConfig();
 
       throw new Error(
-        t("study.configuration.general.mcScenarioBuilder.error.table", [
-          `${activeRuleset}.${symbol}`,
-        ]),
+        t("study.configuration.general.mcScenarioBuilder.error.table", {
+          0: `${activeRuleset}.${symbol}`,
+        }),
         { cause: err },
       );
     });

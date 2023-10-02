@@ -164,13 +164,13 @@ function Groups() {
     mounted(deleteGroup(group.id))
       .then(() => {
         dispatch({ type: GroupActionKind.DELETE, payload: group.id });
-        enqueueSnackbar(t("settings.success.groupDelete", [group.name]), {
+        enqueueSnackbar(t("settings.success.groupDelete", { 0: group.name }), {
           variant: "success",
         });
       })
       .catch((err) => {
         enqueueErrorSnackbar(
-          t("settings.error.groupDelete", [group.name]),
+          t("settings.error.groupDelete", { 0: group.name }),
           err,
         );
       })
@@ -264,7 +264,7 @@ function Groups() {
           alert="warning"
           open
         >
-          {t("settings.question.deleteGroup", [groupToDelete.name])}
+          {t("settings.question.deleteGroup", { 0: groupToDelete.name })}
         </ConfirmationDialog>
       )}
       {groupToEdit && (
