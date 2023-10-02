@@ -70,7 +70,7 @@ export default function BindingConstForm(props: Props) {
 
   const constraintsTerm = useMemo(
     () => fields.map((elm) => ({ ...elm, id: dataToId(elm.data) })),
-    [fields]
+    [fields],
   );
 
   const pathPrefix = `input/bindingconstraints/bindingconstraints`;
@@ -81,7 +81,7 @@ export default function BindingConstForm(props: Props) {
         label: t(`study.modelization.bindingConst.operator.${item}`),
         value: item.toLowerCase(),
       })),
-    [t]
+    [t],
   );
 
   const typeOptions = useMemo(
@@ -90,7 +90,7 @@ export default function BindingConstForm(props: Props) {
         label: t(`global.time.${item}`),
         value: item,
       })),
-    [t]
+    [t],
   );
 
   const [addConstraintTermDialog, setAddConstraintTermDialog] = useState(false);
@@ -114,21 +114,21 @@ export default function BindingConstForm(props: Props) {
         enqueueErrorSnackbar(t("study.error.updateUI"), error as AxiosError);
       }
     },
-    [bindingConst, enqueueErrorSnackbar, studyId, t]
+    [bindingConst, enqueueErrorSnackbar, studyId, t],
   );
 
   const saveValueFormGenerator = useCallback(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async (name: string, path: string, defaultValues: any, data: any) =>
       saveValue(name, data),
-    [saveValue]
+    [saveValue],
   );
 
   const saveContraintValue = useDebounce(
     async (
       index: number,
       prevConst: ConstraintType,
-      constraint: ConstraintWithNullableOffset
+      constraint: ConstraintWithNullableOffset,
     ) => {
       try {
         const tmpConst = prevConst;
@@ -151,11 +151,11 @@ export default function BindingConstForm(props: Props) {
       } catch (error) {
         enqueueErrorSnackbar(
           t("study.error.updateConstraintTerm"),
-          error as AxiosError
+          error as AxiosError,
         );
       }
     },
-    DEBOUNCE_DELAY
+    DEBOUNCE_DELAY,
   );
 
   const deleteTerm = useCallback(
@@ -167,13 +167,13 @@ export default function BindingConstForm(props: Props) {
       } catch (error) {
         enqueueErrorSnackbar(
           t("study.error.deleteConstraintTerm"),
-          error as AxiosError
+          error as AxiosError,
         );
       } finally {
         setTermToDelete(undefined);
       }
     },
-    [bindingConst, enqueueErrorSnackbar, constraintsTerm, remove, study.id, t]
+    [bindingConst, enqueueErrorSnackbar, constraintsTerm, remove, study.id, t],
   );
 
   const handleConstraintDeletion = useCallback(async () => {
@@ -290,7 +290,7 @@ export default function BindingConstForm(props: Props) {
         ],
       },
     ],
-    [optionOperator, pathPrefix, t, typeOptions]
+    [optionOperator, pathPrefix, t, typeOptions],
   );
 
   return (
@@ -368,7 +368,7 @@ export default function BindingConstForm(props: Props) {
                         constraintsTerm={constraintsTerm}
                       />
                     );
-                  }
+                  },
                 )}
               </ConstraintList>
               {addConstraintTermDialog && (
@@ -392,7 +392,7 @@ export default function BindingConstForm(props: Props) {
                   open
                 >
                   {t(
-                    "study.modelization.bindingConst.question.deleteConstraintTerm"
+                    "study.modelization.bindingConst.question.deleteConstraintTerm",
                   )}
                 </ConfirmationDialog>
               )}
@@ -405,7 +405,7 @@ export default function BindingConstForm(props: Props) {
                   open
                 >
                   {t(
-                    "study.modelization.bindingConst.question.deleteBindingConstraint"
+                    "study.modelization.bindingConst.question.deleteBindingConstraint",
                   )}
                 </ConfirmationDialog>
               )}

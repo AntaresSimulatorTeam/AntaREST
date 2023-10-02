@@ -49,7 +49,7 @@ export function getLinkPath(area1: string, area2: string): LinkPath {
 export async function getDefaultValues(
   studyId: string,
   area1: string,
-  area2: string
+  area2: string,
 ): Promise<LinkFields> {
   // Path
   const pathPrefix = `input/links/${area1.toLowerCase()}/properties/${area2.toLowerCase()}`;

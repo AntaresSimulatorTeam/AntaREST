@@ -22,7 +22,7 @@ function makeRequestURL(studyId: StudyMetadata["id"]): string {
 }
 
 export async function getScenarioBuilderConfig(
-  studyId: StudyMetadata["id"]
+  studyId: StudyMetadata["id"],
 ): Promise<ScenarioBuilderConfig> {
   const res = await client.get(makeRequestURL(studyId));
   return res.data;
@@ -30,7 +30,7 @@ export async function getScenarioBuilderConfig(
 
 export async function updateScenarioBuilderConfig(
   studyId: StudyMetadata["id"],
-  data: Partial<ScenarioBuilderConfig>
+  data: Partial<ScenarioBuilderConfig>,
 ): Promise<AxiosResponse<null, string>> {
   return client.put(makeRequestURL(studyId), data);
 }

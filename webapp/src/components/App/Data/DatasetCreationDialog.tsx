@@ -47,7 +47,7 @@ function DatasetCreationDialog(props: PropTypes) {
   const { open, onNewDataUpdate, onClose, data } = props;
   const [groupList, setGroupList] = useState<Array<GroupDTO>>([]);
   const [selectedGroupList, setSelectedGroupList] = useState<Array<GroupDTO>>(
-    []
+    [],
   );
   const [name, setName] = useState<string>("");
   const [isJson, setIsJson] = useState(false);
@@ -68,7 +68,7 @@ function DatasetCreationDialog(props: PropTypes) {
         currentFile,
         data,
         isJson,
-        setUploadProgress
+        setUploadProgress,
       );
       enqueueSnackbar(t(msg), { variant: "success" });
     } catch (e) {
@@ -105,7 +105,7 @@ function DatasetCreationDialog(props: PropTypes) {
       setSelectedGroupList(selectedGroupList.concat([item]));
     } else {
       setSelectedGroupList(
-        selectedGroupList.filter((elm) => item.id !== elm.id)
+        selectedGroupList.filter((elm) => item.id !== elm.id),
       );
     }
   };
@@ -277,7 +277,7 @@ function DatasetCreationDialog(props: PropTypes) {
             >
               {groupList.map((item) => {
                 const index = selectedGroupList.findIndex(
-                  (elm) => item.id === elm.id
+                  (elm) => item.id === elm.id,
                 );
                 if (index >= 0) {
                   return (

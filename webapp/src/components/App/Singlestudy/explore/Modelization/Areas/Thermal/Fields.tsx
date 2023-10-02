@@ -110,7 +110,7 @@ function Fields() {
                   },
                 }}
               />
-            )
+            ),
         )}
       </Fieldset>
       <Fieldset legend={t("study.modelization.clusters.operatingCosts")}>

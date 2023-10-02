@@ -64,7 +64,7 @@ function CreateGroupDialog(props: Props) {
               group_id: newGroup.id,
               type: perm.type,
               identity_id: perm.user.id,
-            })
+            }),
         );
 
         const res: RoleDetailsDTO[] = await mounted(Promise.all(promises));
@@ -83,7 +83,7 @@ function CreateGroupDialog(props: Props) {
 
       enqueueErrorSnackbar(
         t("settings.error.userRolesSave", [newGroup.name]),
-        e as Error
+        e as Error,
       );
     }
 

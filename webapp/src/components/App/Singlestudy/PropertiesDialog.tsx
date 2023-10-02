@@ -51,7 +51,7 @@ function PropertiesDialog(props: Props) {
       groups: study.groups.map((group) => group.id),
       tags: study.tags ? study.tags : [],
     }),
-    [study]
+    [study],
   );
 
   ////////////////////////////////////////////////////////////////
@@ -59,7 +59,7 @@ function PropertiesDialog(props: Props) {
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = async (
-    data: SubmitHandlerPlus<typeof defaultValues>
+    data: SubmitHandlerPlus<typeof defaultValues>,
   ) => {
     const { name, tags, groups, publicMode } = data.dirtyValues;
     const { id: studyId } = study;
@@ -86,11 +86,11 @@ function PropertiesDialog(props: Props) {
         const toAdd = R.difference(groups, defaultValues.groups);
 
         await Promise.all(
-          toDelete.map((id) => deleteStudyGroup(studyId, id as string))
+          toDelete.map((id) => deleteStudyGroup(studyId, id as string)),
         );
 
         await Promise.all(
-          toAdd.map((id) => addStudyGroup(studyId, id as string))
+          toAdd.map((id) => addStudyGroup(studyId, id as string)),
         );
       }
 
@@ -104,7 +104,7 @@ function PropertiesDialog(props: Props) {
               name: data.values.name,
               tags: data.values.tags,
             },
-          })
+          }),
         );
       }
 

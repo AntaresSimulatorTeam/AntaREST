@@ -72,7 +72,7 @@ function MapGraph({
           studyId: study.id,
           area1: sourceNode,
           area2: targetNode,
-        })
+        }),
       )
         .unwrap()
         .catch((err: AxiosError) => {
@@ -130,7 +130,7 @@ function MapGraph({
     return onNodePositionChange(
       id,
       x - width / INITIAL_ZOOM / 2 - 0,
-      -y + height / 2 + 0
+      -y + height / 2 + 0,
     );
   };
 

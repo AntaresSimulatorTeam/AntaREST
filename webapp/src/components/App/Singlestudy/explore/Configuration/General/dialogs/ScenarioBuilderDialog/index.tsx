@@ -44,7 +44,7 @@ function ScenarioBuilderDialog(props: Props) {
     try {
       const activeRuleset = await getStudyData<string>(
         study.id,
-        ACTIVE_SCENARIO_PATH
+        ACTIVE_SCENARIO_PATH,
       );
 
       if (!config[activeRuleset]) {
@@ -70,15 +70,15 @@ function ScenarioBuilderDialog(props: Props) {
           setActiveRuleset("");
           enqueueErrorSnackbar(
             t(
-              "study.configuration.general.mcScenarioBuilder.error.ruleset.changeActive"
+              "study.configuration.general.mcScenarioBuilder.error.ruleset.changeActive",
             ),
-            err
+            err,
           );
         });
       },
       studyId: study.id,
     }),
-    [activeRuleset, config, enqueueErrorSnackbar, res.reload, study.id, t]
+    [activeRuleset, config, enqueueErrorSnackbar, res.reload, study.id, t],
   );
 
   ////////////////////////////////////////////////////////////////
@@ -120,7 +120,7 @@ function ScenarioBuilderDialog(props: Props) {
                         key={name}
                         value={name}
                         label={t(
-                          `study.configuration.general.mcScenarioBuilder.tab.${name}`
+                          `study.configuration.general.mcScenarioBuilder.tab.${name}`,
                         )}
                       />
                     ))}

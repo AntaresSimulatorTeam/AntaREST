@@ -57,7 +57,7 @@ interface ClusterRootProps<T> {
     area: string,
     cluster: string,
     noDataValues: Partial<T>,
-    type: "thermals" | "renewables"
+    type: "thermals" | "renewables",
   ) => Promise<T>;
   noDataValues: Partial<T>;
   study: StudyMetadata;
@@ -81,7 +81,7 @@ function ClusterRoot<T extends FieldValues>(props: ClusterRootProps<T>) {
   } = props;
   const currentArea = useAppSelector(getCurrentAreaId);
   const clusterInitList = useAppSelector((state) =>
-    getCurrentClusters(type, study.id, state)
+    getCurrentClusters(type, study.id, state),
   );
   // TO DO: Replace this and Optimize to add/remove the right clusters
   const res = usePromise(
@@ -91,9 +91,9 @@ function ClusterRoot<T extends FieldValues>(props: ClusterRootProps<T>) {
         `input/${
           type === "thermals" ? "thermal" : type
         }/clusters/${currentArea}/list`,
-        3
+        3,
       ),
-    [study.id, currentArea, clusterInitList]
+    [study.id, currentArea, clusterInitList],
   );
 
   const { data: clusterData } = res;
@@ -116,9 +116,9 @@ function ClusterRoot<T extends FieldValues>(props: ClusterRootProps<T>) {
             {
               items: Array<ClusterElement>;
               isOpen: boolean;
-            }
+            },
           ]
-        >
+        >,
     );
     const clusterListObj: Clusters = R.fromPairs(clustersObj);
     return clusterListObj;

@@ -56,7 +56,7 @@ function GroupForm(props: UseFormReturnPlus) {
   const allowToAddPermission =
     selectedUser &&
     !getValues("permissions").some(
-      ({ user }: { user: UserDTO }) => user.id === selectedUser.id
+      ({ user }: { user: UserDTO }) => user.id === selectedUser.id,
     );
 
   const filteredAndSortedUsers = useMemo(() => {
@@ -66,8 +66,8 @@ function GroupForm(props: UseFormReturnPlus) {
     return sortByName(
       users.filter(
         (user) =>
-          !RESERVED_USER_NAMES.includes(user.name) && user.id !== authUser?.id
-      )
+          !RESERVED_USER_NAMES.includes(user.name) && user.id !== authUser?.id,
+      ),
     );
   }, [users, authUser]);
 

@@ -2,7 +2,7 @@ import { TaskDTO, TaskStatus } from "../../common/types";
 import client from "./client";
 
 export const getStudyRunningTasks = async (
-  sid: string
+  sid: string,
 ): Promise<Array<TaskDTO>> => {
   const res = await client.post("/v1/tasks", {
     ref_id: sid,
@@ -33,7 +33,7 @@ export const getAllMiscRunningTasks = async (): Promise<Array<TaskDTO>> => {
 
 export const getTask = async (
   id: string,
-  withLogs = false
+  withLogs = false,
 ): Promise<TaskDTO> => {
   const res = await client.get(`/v1/tasks/${id}?with_logs=${withLogs}`);
   return res.data;

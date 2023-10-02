@@ -7,5 +7,5 @@ export const isSearchMatching = R.curry(
     const format = R.o(R.toLower, deburr);
     const isMatching = R.o(R.includes(format(search)), format);
     return RA.ensureArray(values).find(isMatching);
-  }
+  },
 );

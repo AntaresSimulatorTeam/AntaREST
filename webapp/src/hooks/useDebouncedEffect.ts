@@ -24,7 +24,7 @@ const toParams = R.cond<
 
 function useDebouncedEffect(
   effect: VoidFunction,
-  params?: DepsOrWaitOrParams
+  params?: DepsOrWaitOrParams,
 ): void {
   const { deps, ...debounceParams } = toParams(params);
   const debouncedFn = useDebounce(effect, debounceParams);

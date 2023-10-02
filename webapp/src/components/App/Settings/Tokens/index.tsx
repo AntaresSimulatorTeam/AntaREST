@@ -78,7 +78,7 @@ const reducer = produce<BotDetailsDtoWithUser[], [TokenAction]>(
       case TokenActionKind.RESET:
         return payload as BotDetailsDtoWithUser[];
     }
-  }
+  },
 );
 
 /**
@@ -124,7 +124,7 @@ function Tokens() {
       const user = await getUser(authUser.id);
       return bots.map((bot) => ({ ...bot, user }));
     },
-    { errorMessage: t("settings.error.tokensError"), deps: [authUser] }
+    { errorMessage: t("settings.error.tokensError"), deps: [authUser] },
   );
 
   useUpdateEffect(() => {
@@ -175,7 +175,7 @@ function Tokens() {
       .catch((err) => {
         enqueueErrorSnackbar(
           t("settings.error.tokenDelete", [token.name]),
-          err
+          err,
         );
       })
       .finally(() => {

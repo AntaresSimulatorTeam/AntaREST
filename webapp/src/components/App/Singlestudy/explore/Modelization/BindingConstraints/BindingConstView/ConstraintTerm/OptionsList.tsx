@@ -57,9 +57,9 @@ export default function OptionsList(props: Props) {
                     area1: value1,
                     area2: elm.id,
                   }
-                : { area: value1, cluster: elm.id }
-            )
-          )
+                : { area: value1, cluster: elm.id },
+            ),
+          ),
       )
       .map((elm) => ({
         name: elm.name,
@@ -76,7 +76,7 @@ export default function OptionsList(props: Props) {
       }
       return "";
     },
-    [options, options1]
+    [options, options1],
   );
 
   ////////////////////////////////////////////////////////////////
@@ -101,7 +101,7 @@ export default function OptionsList(props: Props) {
       setValue1(value);
       setValue2(v2);
     },
-    [constraint.id, getFirstValue2, isLink, saveValue, setValue1, setValue2]
+    [constraint.id, getFirstValue2, isLink, saveValue, setValue1, setValue2],
   );
 
   const handleValue2 = useCallback(
@@ -120,7 +120,7 @@ export default function OptionsList(props: Props) {
             },
       });
     },
-    [constraint.id, isLink, saveValue, setValue2, value1]
+    [constraint.id, isLink, saveValue, setValue2, value1],
   );
 
   ////////////////////////////////////////////////////////////////

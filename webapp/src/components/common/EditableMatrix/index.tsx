@@ -60,7 +60,7 @@ function EditableMatrix(props: PropTypes) {
   const prependIndex = index.length > 0 && matrixTime;
   const [grid, setGrid] = useState<Array<CellType>>([]);
   const [formattedColumns, setFormattedColumns] = useState<ColumnSettings[]>(
-    []
+    [],
   );
   const hotTableComponent = useRef<HotTable>(null);
 
@@ -77,7 +77,7 @@ function EditableMatrix(props: PropTypes) {
     });
     if (onUpdate) {
       const edit = slice(
-        isChanged.filter((e) => e !== undefined) as CellChange[]
+        isChanged.filter((e) => e !== undefined) as CellChange[],
       );
       onUpdate(edit, source);
     }
@@ -94,7 +94,7 @@ function EditableMatrix(props: PropTypes) {
           0,
           prependIndex ? 1 : 0,
           hot.countRows() - 1,
-          hot.countCols() - (computStats ? cols : 0) - 1
+          hot.countCols() - (computStats ? cols : 0) - 1,
         );
       }
     }
@@ -126,7 +126,7 @@ function EditableMatrix(props: PropTypes) {
       }
       if (computStats) {
         tmpRow = tmpRow.concat(
-          computeStats(computStats, row) as (string | number)[]
+          computeStats(computStats, row) as (string | number)[],
         );
       }
       return tmpRow;

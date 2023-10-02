@@ -35,7 +35,7 @@ function TokenInfoDialog(props: Props) {
         type: role.type,
       })),
     }),
-    [token]
+    [token],
   );
 
   const { t } = useTranslation();

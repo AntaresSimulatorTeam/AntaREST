@@ -29,7 +29,7 @@ interface Params<TFieldValues extends FieldValues, TContext> {
 }
 
 function useFormApiPlus<TFieldValues extends FieldValues, TContext>(
-  params: Params<TFieldValues, TContext>
+  params: Params<TFieldValues, TContext>,
 ): UseFormReturnPlus<TFieldValues, TContext> {
   const {
     formApi,
@@ -47,7 +47,7 @@ function useFormApiPlus<TFieldValues extends FieldValues, TContext>(
   });
 
   const initialDefaultValues = useRef(
-    isLoading ? undefined : getDefaultValues()
+    isLoading ? undefined : getDefaultValues(),
   );
 
   // Prevent to add the values in `useMemo`'s deps
@@ -63,14 +63,14 @@ function useFormApiPlus<TFieldValues extends FieldValues, TContext>(
       initialDefaultValues.current = getDefaultValues();
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [isLoading]
+    [isLoading],
   );
 
   const formApiPlus = useMemo(
     () => {
       const registerWrapper: UseFormRegisterPlus<TFieldValues> = (
         name,
-        options
+        options,
       ) => {
         if (options?.onAutoSubmit) {
           fieldAutoSubmitListeners.current[name] = options.onAutoSubmit;
@@ -99,7 +99,7 @@ function useFormApiPlus<TFieldValues extends FieldValues, TContext>(
 
       const unregisterWrapper: UseFormUnregister<TFieldValues> = (
         name,
-        options
+        options,
       ) => {
         if (dataRef.current.isAutoSubmitEnabled) {
           const names = RA.ensureArray(name) as Path<TFieldValues>[];
@@ -113,7 +113,7 @@ function useFormApiPlus<TFieldValues extends FieldValues, TContext>(
       const setValueWrapper: UseFormSetValue<TFieldValues> = (
         name,
         value,
-        options
+        options,
       ) => {
         const newOptions: typeof options = {
           shouldDirty: true, // False by default
@@ -179,7 +179,7 @@ function useFormApiPlus<TFieldValues extends FieldValues, TContext>(
       };
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [formApi]
+    [formApi],
   );
 
   // `formState` is wrapped with a Proxy and updated in batch.

@@ -15,14 +15,14 @@ export interface UseStudySynthesisProps<T> {
 }
 
 export default function useStudySynthesis<T>(
-  props: UseStudySynthesisProps<T>
+  props: UseStudySynthesisProps<T>,
 ): Response<T> {
   const { studyId, selector } = props;
   const isSynthesisExist = useAppSelector(
-    (state) => !!getStudySynthesis(state, studyId)
+    (state) => !!getStudySynthesis(state, studyId),
   );
   const data = useAppSelector((state) =>
-    isSynthesisExist && selector ? selector(state, studyId) : undefined
+    isSynthesisExist && selector ? selector(state, studyId) : undefined,
   );
   const dispatch = useAppDispatch();
   const [status, setStatus] = useState(PromiseStatus.Idle);

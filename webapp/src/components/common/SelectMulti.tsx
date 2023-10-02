@@ -42,7 +42,7 @@ function SelectMulti(props: Props) {
         const element = list.find((item) =>
           typeof item.id === "string"
             ? item.id === value
-            : item.id.toString() === value
+            : item.id.toString() === value,
         );
         if (element) {
           return <Chip key={element.id} label={element.name} />;
@@ -59,8 +59,8 @@ function SelectMulti(props: Props) {
           list.find((item) =>
             typeof item.id === "string"
               ? item.id === elm
-              : item.id.toString() === elm
-          )?.name
+              : item.id.toString() === elm,
+          )?.name,
       )
       .join(", ");
 

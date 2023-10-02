@@ -33,7 +33,7 @@ interface PropType {
   deleteCandidate: (name: string | undefined) => Promise<void>;
   updateCandidate: (
     name: string | undefined,
-    value: XpansionCandidate | undefined
+    value: XpansionCandidate | undefined,
   ) => Promise<void>;
   onRead: (filename: string) => Promise<void>;
 }
@@ -168,7 +168,7 @@ function CandidateForm(props: PropType) {
             onChange={(e) =>
               handleChange(
                 "already-installed-capacity",
-                parseFloat(e.target.value)
+                parseFloat(e.target.value),
               )
             }
           />
@@ -330,7 +330,7 @@ function CandidateForm(props: PropType) {
                       onRead(
                         currentCandidate?.[
                           "direct-already-installed-link-profile"
-                        ] || ""
+                        ] || "",
                       )
                     }
                   />
@@ -361,7 +361,7 @@ function CandidateForm(props: PropType) {
                       onRead(
                         currentCandidate?.[
                           "indirect-already-installed-link-profile"
-                        ] || ""
+                        ] || "",
                       )
                     }
                   />
@@ -411,7 +411,8 @@ function CandidateForm(props: PropType) {
                   onClick={() =>
                     currentCandidate?.["already-installed-link-profile"] &&
                     onRead(
-                      currentCandidate?.["already-installed-link-profile"] || ""
+                      currentCandidate?.["already-installed-link-profile"] ||
+                        "",
                     )
                   }
                 />

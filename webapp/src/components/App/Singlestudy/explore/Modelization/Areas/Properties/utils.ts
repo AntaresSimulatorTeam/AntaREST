@@ -43,14 +43,14 @@ export const ADEQUACY_PATCH_OPTIONS = Object.values(AdequacyPatchMode);
 
 function makeRequestURL(
   studyId: StudyMetadata["id"],
-  areaId: Area["name"]
+  areaId: Area["name"],
 ): string {
   return `/v1/studies/${studyId}/areas/${areaId}/properties/form`;
 }
 
 export async function getPropertiesFormFields(
   studyId: StudyMetadata["id"],
-  areaId: Area["name"]
+  areaId: Area["name"],
 ): Promise<PropertiesFormFields> {
   const res = await client.get(makeRequestURL(studyId, areaId));
   return res.data;
@@ -59,7 +59,7 @@ export async function getPropertiesFormFields(
 export function setPropertiesFormFields(
   studyId: StudyMetadata["id"],
   areaId: Area["name"],
-  values: DeepPartial<PropertiesFormFields>
+  values: DeepPartial<PropertiesFormFields>,
 ): Promise<void> {
   return client.put(makeRequestURL(studyId, areaId), values);
 }

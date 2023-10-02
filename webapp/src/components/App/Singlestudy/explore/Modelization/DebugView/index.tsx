@@ -40,7 +40,7 @@ function DebugView() {
         setLoaded(true);
       }
     },
-    [enqueueErrorSnackbar, t]
+    [enqueueErrorSnackbar, t],
   );
 
   useEffect(() => {

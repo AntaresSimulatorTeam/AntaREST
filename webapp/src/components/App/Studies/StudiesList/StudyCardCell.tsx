@@ -66,7 +66,7 @@ const StudyCardCell = memo<Props>(
       !!(nextIsScrolling === prevIsScrolling || nextIsScrolling) &&
       areEqual(prevRest, nextRest)
     );
-  }
+  },
 );
 
 StudyCardCell.displayName = "StudyCardCell";

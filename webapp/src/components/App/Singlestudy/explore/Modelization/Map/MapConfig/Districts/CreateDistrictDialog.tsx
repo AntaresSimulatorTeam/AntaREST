@@ -34,9 +34,9 @@ function CreateDistrictDialog(props: Props) {
   const existingDistricts = useMemo(
     () =>
       Object.values(districtsById).map((district) =>
-        district.name.toLowerCase()
+        district.name.toLowerCase(),
       ),
-    [districtsById]
+    [districtsById],
   );
 
   ////////////////////////////////////////////////////////////////
@@ -52,7 +52,7 @@ function CreateDistrictDialog(props: Props) {
         name,
         output,
         comments,
-      })
+      }),
     )
       .unwrap()
       .then(onClose);

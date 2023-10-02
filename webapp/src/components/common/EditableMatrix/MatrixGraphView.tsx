@@ -65,7 +65,7 @@ export default function MatrixGraphView(props: PropTypes) {
             value={selectedColumns}
             onChange={(
               event: SelectChangeEvent<Array<number>>,
-              child: React.ReactNode
+              child: React.ReactNode,
             ) => handleChange(event)}
             sx={{
               "& .MuiSelect-select": {

@@ -36,7 +36,7 @@ function TableMode() {
       name: t(`study.modelization.tableMode.template.${tp.name}`),
     })),
     ...(storage.getItem(StorageKey.StudiesModelTableModeTemplates) || []).map(
-      (tp) => ({ ...tp, id: uuidv4() })
+      (tp) => ({ ...tp, id: uuidv4() }),
     ),
   ]);
 
@@ -64,7 +64,7 @@ function TableMode() {
       templates
         .filter((tp) => !DEFAULT_TABLE_TEMPLATE_IDS.includes(tp.id))
         // It is useless to keep template ids in local storage
-        .map(({ id, ...rest }) => rest)
+        .map(({ id, ...rest }) => rest),
     );
   }, [templates]);
 
@@ -84,7 +84,7 @@ function TableMode() {
 
   const handleDeleteTemplate = () => {
     setTemplates((templates) =>
-      templates.filter((tp) => tp.id !== dialog?.templateId)
+      templates.filter((tp) => tp.id !== dialog?.templateId),
     );
     closeDialog();
   };
@@ -106,7 +106,7 @@ function TableMode() {
                 setSelectedItem={({ id }) => setSelectedTemplateId(id)}
                 contextMenuContent={({ element, close }) => {
                   const isNotAllowed = DEFAULT_TABLE_TEMPLATE_IDS.includes(
-                    element.id
+                    element.id,
                   );
                   return (
                     <>

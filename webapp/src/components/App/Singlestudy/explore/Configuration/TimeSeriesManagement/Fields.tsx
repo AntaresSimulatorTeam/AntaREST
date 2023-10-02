@@ -78,13 +78,13 @@ function Fields() {
               const emptyDisplay = "-";
               const notApplicableDisplay = "n/a";
               const isReadyMadeStatusEnable = !getValues(
-                `${type}.stochasticTsStatus`
+                `${type}.stochasticTsStatus`,
               );
 
               const ifNotSpecialType = (
                 fn: (
-                  t: Exclude<TSType, TSType.Renewables | TSType.NTC>
-                ) => React.ReactNode
+                  t: Exclude<TSType, TSType.Renewables | TSType.NTC>,
+                ) => React.ReactNode,
               ) => {
                 return isSpecialType ? emptyDisplay : fn(type);
               };
@@ -100,7 +100,7 @@ function Fields() {
                       onChange={(_, checked) => {
                         setValue(
                           `${type}.stochasticTsStatus`,
-                          !checked as never
+                          !checked as never,
                         );
                       }}
                     />
@@ -154,7 +154,7 @@ function Fields() {
                         />
                       ) : (
                         notApplicableDisplay
-                      )
+                      ),
                     )}
                   </TableCell>
                   <TableCell align="center">

@@ -79,7 +79,7 @@ function AddConstraintTermDialog(props: Props) {
         if (!isOptionExist(options.links, data.area1, data.area2)) {
           enqueueSnackbar(
             t("study.error.missingData", [t("study.area1"), t("study.area2")]),
-            { variant: "error" }
+            { variant: "error" },
           );
           onCancel();
           return;
@@ -89,7 +89,7 @@ function AddConstraintTermDialog(props: Props) {
         if (!isOptionExist(options.clusters, data.area, data.cluster)) {
           enqueueSnackbar(
             t("study.error.missingData", [t("study.area"), t("study.cluster")]),
-            { variant: "error" }
+            { variant: "error" },
           );
           onCancel();
           return;
@@ -110,7 +110,7 @@ function AddConstraintTermDialog(props: Props) {
       await addConstraintTerm(
         studyId,
         bindingConstraint,
-        values.dirtyValues as ConstraintType
+        values.dirtyValues as ConstraintType,
       );
 
       // Add to current UX

@@ -45,7 +45,7 @@ function UpdateLayerDialog(props: Props) {
 
   const existingLayers = useMemo(
     () => Object.values(layersById).map((layer) => layer.name.toLowerCase()),
-    [layersById]
+    [layersById],
   );
 
   ////////////////////////////////////////////////////////////////
@@ -53,7 +53,7 @@ function UpdateLayerDialog(props: Props) {
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = async (
-    data: SubmitHandlerPlus<typeof defaultValues>
+    data: SubmitHandlerPlus<typeof defaultValues>,
   ) => {
     const { layerId, name } = data.values;
     if (layerId && name) {

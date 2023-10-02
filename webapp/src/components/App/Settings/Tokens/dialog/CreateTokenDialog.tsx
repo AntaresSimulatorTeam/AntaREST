@@ -46,11 +46,11 @@ function CreateTokenDialog(props: Props) {
         (perm: { group: GroupDTO; type: RoleType }) => ({
           group: perm.group.id,
           role: perm.type,
-        })
+        }),
       ) as BotCreateDTO["roles"];
 
       const tokenValue = await mounted(
-        createBot({ name, is_author: false, roles })
+        createBot({ name, is_author: false, roles }),
       );
 
       setTokenValueToDisplay(tokenValue);

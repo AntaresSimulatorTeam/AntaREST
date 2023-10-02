@@ -29,7 +29,7 @@ function BindingConstPropsView(props: Props) {
         return list.filter(
           (s) =>
             !bindingConstNameFilter ||
-            s.name.search(new RegExp(bindingConstNameFilter, "i")) !== -1
+            s.name.search(new RegExp(bindingConstNameFilter, "i")) !== -1,
         );
       }
       return [];

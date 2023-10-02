@@ -63,17 +63,17 @@ function ResultDetails() {
   const items = useAppSelector((state) =>
     itemType === OutputItemType.Areas
       ? getAreas(state, study.id)
-      : getLinks(state, study.id)
+      : getLinks(state, study.id),
   ) as Array<{ id: string; name: string; label?: string }>;
 
   const filteredItems = useMemo(() => {
     return items.filter((item) =>
-      isSearchMatching(searchValue, item.label || item.name)
+      isSearchMatching(searchValue, item.label || item.name),
     );
   }, [items, searchValue]);
 
   const selectedItem = filteredItems.find(
-    (item) => item.id === selectedItemId
+    (item) => item.id === selectedItemId,
   ) as (Area & { id: string }) | LinkElement | undefined;
 
   useEffect(
@@ -87,7 +87,7 @@ function ResultDetails() {
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [filteredItems]
+    [filteredItems],
   );
 
   const matrixRes = usePromise<MatrixType | null>(
@@ -117,7 +117,7 @@ function ResultDetails() {
       resetDataOnReload: true,
       resetErrorOnReload: true,
       deps: [study.id, output, selectedItem],
-    }
+    },
   );
 
   ////////////////////////////////////////////////////////////////
@@ -126,7 +126,7 @@ function ResultDetails() {
 
   const handleItemTypeChange: ToggleButtonGroupProps["onChange"] = (
     _,
-    value: OutputItemType
+    value: OutputItemType,
   ) => {
     setItemType(value);
   };

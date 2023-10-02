@@ -49,7 +49,7 @@ function UpdateDistrictDialog(props: Props) {
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = async (
-    data: SubmitHandlerPlus<typeof defaultValues>
+    data: SubmitHandlerPlus<typeof defaultValues>,
   ) => {
     const { districtId, output, comments } = data.values;
     dispatch(
@@ -58,7 +58,7 @@ function UpdateDistrictDialog(props: Props) {
         districtId,
         output,
         comments,
-      })
+      }),
     );
     onClose();
   };
@@ -98,11 +98,11 @@ function UpdateDistrictDialog(props: Props) {
               setValue("name", districtsById[e.target.value as string].name);
               setValue(
                 "output",
-                districtsById[e.target.value as string].output
+                districtsById[e.target.value as string].output,
               );
               setValue(
                 "comments",
-                districtsById[e.target.value as string].comments
+                districtsById[e.target.value as string].comments,
               );
             }}
           />

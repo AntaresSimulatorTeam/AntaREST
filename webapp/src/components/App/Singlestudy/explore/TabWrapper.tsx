@@ -25,7 +25,7 @@ export const StyledTab = styled(Tabs, {
           display: "none",
         },
       }),
-  })
+  }),
 );
 
 interface Props {
@@ -45,7 +45,7 @@ function TabWrapper(props: Props) {
   useEffect(() => {
     const getTabIndex = (): number => {
       const index = tabList.findIndex(
-        (tab) => location.pathname.substring(0, tab.path.length) === tab.path
+        (tab) => location.pathname.substring(0, tab.path.length) === tab.path,
       );
 
       if (index >= 0) {
@@ -83,7 +83,7 @@ function TabWrapper(props: Props) {
           justifyContent: "flex-start",
           alignItems: "center",
         },
-        sx
+        sx,
       )}
     >
       <StyledTab

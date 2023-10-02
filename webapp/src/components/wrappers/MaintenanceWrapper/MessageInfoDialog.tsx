@@ -39,7 +39,7 @@ function MessageInfoDialog() {
       } catch (e) {
         enqueueErrorSnackbar(
           t("maintenance.error.messageInfoError"),
-          e as AxiosError
+          e as AxiosError,
         );
       }
     };

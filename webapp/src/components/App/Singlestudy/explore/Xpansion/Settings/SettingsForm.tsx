@@ -44,7 +44,7 @@ function SettingsForm(props: PropType) {
   const handleObjectChange = (
     objectKey: keyof XpansionSettings,
     key: string,
-    value: string | number | boolean | string[]
+    value: string | number | boolean | string[],
   ) => {
     setSaveAllowed(true);
     setCurrentSettings((prevSettings) => ({
@@ -204,7 +204,7 @@ function SettingsForm(props: PropType) {
             onChange={(e) =>
               handleChange(
                 "timelimit",
-                Math.round(parseFloat(e.target.value) * 3600)
+                Math.round(parseFloat(e.target.value) * 3600),
               )
             }
             sx={{ mb: 1 }}
@@ -270,7 +270,7 @@ function SettingsForm(props: PropType) {
             onChange={(e) =>
               handleChange(
                 "ampl.solve_bounds_frequency",
-                parseFloat(e.target.value)
+                parseFloat(e.target.value),
               )
             }
             sx={{ mb: 1 }}
@@ -327,7 +327,7 @@ function SettingsForm(props: PropType) {
                 currentSettings["yearly-weights"] &&
                 onRead(
                   XpansionResourceType.weights,
-                  currentSettings["yearly-weights"] || ""
+                  currentSettings["yearly-weights"] || "",
                 )
               }
             />
@@ -351,7 +351,7 @@ function SettingsForm(props: PropType) {
                 currentSettings["additional-constraints"] &&
                 onRead(
                   XpansionResourceType.constraints,
-                  currentSettings["additional-constraints"] || ""
+                  currentSettings["additional-constraints"] || "",
                 )
               }
             />
@@ -381,7 +381,7 @@ function SettingsForm(props: PropType) {
               handleObjectChange(
                 "sensitivity_config",
                 "epsilon",
-                parseFloat(e.target.value)
+                parseFloat(e.target.value),
               )
             }
           />
@@ -401,7 +401,7 @@ function SettingsForm(props: PropType) {
               handleObjectChange(
                 "sensitivity_config",
                 "projection",
-                e.target.value as string[]
+                e.target.value as string[],
               )
             }
             variant="filled"

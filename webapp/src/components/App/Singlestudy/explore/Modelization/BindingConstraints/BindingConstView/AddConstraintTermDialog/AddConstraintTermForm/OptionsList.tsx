@@ -54,7 +54,7 @@ export default function OptionsList(props: Props) {
 
   useEffect(() => {
     unregister(
-      isLink ? ["data.area", "data.cluster"] : ["data.area1", "data.area2"]
+      isLink ? ["data.area", "data.cluster"] : ["data.area1", "data.area2"],
     );
     setValue(`data.${name1}`, "");
     setValue(`data.${name2}`, "");
@@ -63,7 +63,7 @@ export default function OptionsList(props: Props) {
 
   useEffect(() => {
     const index = linksOrClusters.findIndex(
-      (elm) => elm.element.id === watchSelect1
+      (elm) => elm.element.id === watchSelect1,
     );
     if (index >= 0) {
       setOptions2(
@@ -78,14 +78,14 @@ export default function OptionsList(props: Props) {
                         area1: watchSelect1,
                         area2: elm.id,
                       }
-                    : { area: watchSelect1, cluster: elm.id }
-                )
-              )
+                    : { area: watchSelect1, cluster: elm.id },
+                ),
+              ),
           )
           .map((elm) => ({
             label: elm.name,
             value: elm.id,
-          }))
+          })),
       );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

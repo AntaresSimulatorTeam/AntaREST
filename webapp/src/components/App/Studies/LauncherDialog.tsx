@@ -71,7 +71,7 @@ function LauncherDialog(props: Props) {
   const isMounted = useMountedState();
   const studyNames = useAppSelector(
     (state) => studyIds.map((sid) => getStudy(state, sid)?.name),
-    shallowEqual
+    shallowEqual,
   );
 
   const { data: load } = usePromiseWithSnackbarError(() => getLauncherLoad(), {
@@ -81,12 +81,12 @@ function LauncherDialog(props: Props) {
 
   const { data: outputList } = usePromiseWithSnackbarError(
     () => Promise.all(studyIds.map((sid) => getStudyOutputs(sid))),
-    { errorMessage: t("study.error.listOutputs"), deps: [studyIds] }
+    { errorMessage: t("study.error.listOutputs"), deps: [studyIds] },
   );
 
   const { data: launcherVersions = [] } = usePromiseWithSnackbarError(
     async () => convertVersions(await getLauncherVersions()),
-    { errorMessage: t("study.error.launcherVersions") }
+    { errorMessage: t("study.error.launcherVersions") },
   );
 
   ////////////////////////////////////////////////////////////////
@@ -97,7 +97,7 @@ function LauncherDialog(props: Props) {
     if (studyIds.length > 0) {
       setIsLaunching(true);
       Promise.all(
-        studyIds.map((sid) => launchStudy(sid, options, solverVersion))
+        studyIds.map((sid) => launchStudy(sid, options, solverVersion)),
       )
         .then(() => {
           enqueueSnackbar(
@@ -106,7 +106,7 @@ function LauncherDialog(props: Props) {
             }),
             {
               variant: "success",
-            }
+            },
           );
           onClose();
         })
@@ -123,7 +123,7 @@ function LauncherDialog(props: Props) {
 
   const handleChange = <T extends keyof LaunchOptions>(
     field: T,
-    value: LaunchOptions[T]
+    value: LaunchOptions[T],
   ) => {
     setOptions((prevOptions) => ({
       ...prevOptions,
@@ -133,7 +133,7 @@ function LauncherDialog(props: Props) {
 
   const handleObjectChange = <T extends keyof LaunchOptions>(
     field: T,
-    value: object
+    value: object,
   ) => {
     setOptions((prevOptions: LaunchOptions) => {
       return {
@@ -144,7 +144,7 @@ function LauncherDialog(props: Props) {
   };
 
   const handleOtherOptionsChange = (
-    optionChanges: Array<{ option: string; active: boolean }>
+    optionChanges: Array<{ option: string; active: boolean }>,
   ) => {
     setOptions((prevOptions) => {
       const { other_options: prevOtherOptions = "" } = prevOptions;
@@ -153,7 +153,7 @@ function LauncherDialog(props: Props) {
           acc[item.active ? "toAdd" : "toRemove"].push(item.option);
           return acc;
         },
-        { toAdd: [], toRemove: [] } as { toAdd: string[]; toRemove: string[] }
+        { toAdd: [], toRemove: [] } as { toAdd: string[]; toRemove: string[] },
       );
       return {
         ...prevOptions,
@@ -367,7 +367,7 @@ function LauncherDialog(props: Props) {
                   onChange={(e, checked) => {
                     handleChange(
                       "xpansion",
-                      checked ? { enabled: true } : undefined
+                      checked ? { enabled: true } : undefined,
                     );
                   }}
                 />
@@ -450,7 +450,7 @@ function LauncherDialog(props: Props) {
                   onChange={(e, checked) =>
                     handleChange(
                       "adequacy_patch",
-                      checked ? { legacy: true } : {}
+                      checked ? { legacy: true } : {},
                     )
                   }
                 />

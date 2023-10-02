@@ -46,7 +46,7 @@ function MatrixAssignDialog(props: Props) {
     {
       errorMessage: t("data.error.matrix"),
       deps: [currentMatrix],
-    }
+    },
   );
 
   useEffect(() => {

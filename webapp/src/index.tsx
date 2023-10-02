@@ -25,6 +25,6 @@ initConfig((config: Config) => {
       <Provider store={store}>
         <App />
       </Provider>
-    </StyledEngineProvider>
+    </StyledEngineProvider>,
   );
 });

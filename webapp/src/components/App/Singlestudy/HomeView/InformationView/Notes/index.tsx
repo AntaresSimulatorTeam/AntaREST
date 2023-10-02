@@ -116,7 +116,7 @@ export default function Notes(props: Props) {
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [editorState, setEditorState] = useState(() =>
-    EditorState.createEmpty()
+    EditorState.createEmpty(),
   );
   const [editionMode, setEditionMode] = useState<boolean>(false);
   const [content, setContent] = useState<string>("");
@@ -129,7 +129,7 @@ export default function Notes(props: Props) {
       try {
         await editComments(study.id, newContent);
         setEditorState(
-          EditorState.createWithContent(convertXMLToDraftJS(newContent))
+          EditorState.createWithContent(convertXMLToDraftJS(newContent)),
         );
         setContent(newContent);
         enqueueSnackbar(t("study.success.commentsSaved"), {
@@ -139,7 +139,7 @@ export default function Notes(props: Props) {
       } catch (e) {
         enqueueErrorSnackbar(
           t("study.error.commentsNotSaved"),
-          e as AxiosError
+          e as AxiosError,
         );
       }
     }
@@ -151,14 +151,14 @@ export default function Notes(props: Props) {
         try {
           const data = await getComments(study?.id);
           setEditorState(
-            EditorState.createWithContent(convertXMLToDraftJS(data))
+            EditorState.createWithContent(convertXMLToDraftJS(data)),
           );
           setContent(data);
         } catch (e) {
           setEditorState(
             EditorState.createWithContent(
-              ContentState.createFromText(t("study.error.fetchComments"))
-            )
+              ContentState.createFromText(t("study.error.fetchComments")),
+            ),
           );
         } finally {
           setLoaded(true);
@@ -175,14 +175,14 @@ export default function Notes(props: Props) {
         try {
           const tmpSynth = await getStudySynthesis(study.id);
           const areas = Object.keys(tmpSynth.areas).map(
-            (elm) => tmpSynth.areas[elm]
+            (elm) => tmpSynth.areas[elm],
           );
           const links = areas
             .map((elm) => Object.keys(elm.links).length)
             .reduce(
               (prevValue: number, currentValue: number) =>
                 prevValue + currentValue,
-              0
+              0,
             );
           setNbAreas(areas.length);
           setNbLinks(links);

@@ -33,7 +33,7 @@ function LaunchJobLogView(props: PropsType) {
       try {
         const logData = await getStudyJobLog(
           jobId,
-          errorLogs ? "STDERR" : "STDOUT"
+          errorLogs ? "STDERR" : "STDOUT",
         );
         setLogModalContent(logData);
       } catch (e) {

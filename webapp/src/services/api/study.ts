@@ -45,10 +45,10 @@ export const getStudyVersions = async (): Promise<Array<string>> => {
 export const getStudyData = async <T = any>(
   sid: string,
   path = "",
-  depth = 1
+  depth = 1,
 ): Promise<T> => {
   const res = await client.get(
-    `/v1/studies/${sid}/raw?path=${encodeURIComponent(path)}&depth=${depth}`
+    `/v1/studies/${sid}/raw?path=${encodeURIComponent(path)}&depth=${depth}`,
   );
   return res.data;
 };
@@ -69,14 +69,14 @@ export const getStudyMetadata = async (sid: string): Promise<StudyMetadata> => {
 };
 
 export const getStudyOutputs = async (
-  sid: string
+  sid: string,
 ): Promise<Array<StudyOutput>> => {
   const res = await client.get(`/v1/studies/${sid}/outputs`);
   return res.data;
 };
 
 export const getStudySynthesis = async (
-  sid: string
+  sid: string,
 ): Promise<FileStudyTreeConfigDTO> => {
   const res = await client.get(`/v1/studies/${sid}/synthesis`);
   return res.data;
@@ -87,7 +87,7 @@ export const downloadOutput = async (
   output: string,
   data: StudyOutputDownloadDTO,
   jsonFormat = false,
-  useTask = true
+  useTask = true,
 ): Promise<FileDownloadTask | MatrixAggregationResult> => {
   const restconfig = {
     headers: {
@@ -98,7 +98,7 @@ export const downloadOutput = async (
   const res = await client.post(
     `/v1/studies/${sid}/outputs/${output}/download?use_task=${useTask}`,
     data,
-    jsonFormat ? {} : restconfig
+    jsonFormat ? {} : restconfig,
   );
   return res.data;
 };
@@ -106,12 +106,14 @@ export const downloadOutput = async (
 export const createStudy = async (
   name: string,
   version: number,
-  groups?: Array<string>
+  groups?: Array<string>,
 ): Promise<string> => {
   const groupIds =
     groups && groups.length > 0 ? `&groups=${groups.join(",")}` : "";
   const res = await client.post(
-    `/v1/studies?name=${encodeURIComponent(name)}&version=${version}${groupIds}`
+    `/v1/studies?name=${encodeURIComponent(
+      name,
+    )}&version=${version}${groupIds}`,
   );
   return res.data;
 };
@@ -120,7 +122,7 @@ export const editStudy = async (
   data: object | string | boolean | number,
   sid: string,
   path = "",
-  depth = 1
+  depth = 1,
 ): Promise<void> => {
   let formattedData: unknown = data;
   if (isBoolean(data)) {
@@ -133,7 +135,7 @@ export const editStudy = async (
       headers: {
         "content-type": "application/json",
       },
-    }
+    },
   );
   return res.data;
 };
@@ -141,12 +143,12 @@ export const editStudy = async (
 export const copyStudy = async (
   sid: string,
   name: string,
-  withOutputs: boolean
+  withOutputs: boolean,
 ): Promise<void> => {
   const res = await client.post(
     `/v1/studies/${sid}/copy?dest=${encodeURIComponent(
-      name
-    )}&with_outputs=${withOutputs}`
+      name,
+    )}&with_outputs=${withOutputs}`,
   );
   return res.data;
 };
@@ -154,7 +156,7 @@ export const copyStudy = async (
 export const moveStudy = async (sid: string, folder: string): Promise<void> => {
   const folderWithId = trimCharsStart("/", `${folder.trim()}/${sid}`);
   await client.put(
-    `/v1/studies/${sid}/move?folder_dest=${encodeURIComponent(folderWithId)}`
+    `/v1/studies/${sid}/move?folder_dest=${encodeURIComponent(folderWithId)}`,
   );
 };
 
@@ -168,28 +170,28 @@ export const unarchiveStudy = async (sid: string): Promise<void> => {
 
 export const upgradeStudy = async (
   studyId: string,
-  targetVersion: string
+  targetVersion: string,
 ): Promise<void> => {
   await client.put(
     `/v1/studies/${studyId}/upgrade?target_version=${encodeURIComponent(
-      targetVersion
-    )}`
+      targetVersion,
+    )}`,
   );
 };
 
 export const deleteStudy = async (
   sid: string,
-  deleteAllChildren?: boolean
+  deleteAllChildren?: boolean,
 ): Promise<void> => {
   const res = await client.delete(
-    `/v1/studies/${sid}?children=${deleteAllChildren || false}`
+    `/v1/studies/${sid}?children=${deleteAllChildren || false}`,
   );
   return res.data;
 };
 
 export const editComments = async (
   sid: string,
-  newComments: string
+  newComments: string,
 ): Promise<void> => {
   const data = { comments: newComments };
   const res = await client.put(`/v1/studies/${sid}/comments`, data);
@@ -198,10 +200,10 @@ export const editComments = async (
 
 export const exportStudy = async (
   sid: string,
-  skipOutputs: boolean
+  skipOutputs: boolean,
 ): Promise<FileDownloadTask> => {
   const res = await client.get(
-    `/v1/studies/${sid}/export?no_output=${skipOutputs}`
+    `/v1/studies/${sid}/export?no_output=${skipOutputs}`,
   );
   return res.data;
 };
@@ -214,7 +216,7 @@ export const getExportUrl = (sid: string, skipOutputs = false): string =>
 
 export const exportOuput = async (
   sid: string,
-  output: string
+  output: string,
 ): Promise<FileDownloadTask> => {
   const res = await client.get(`/v1/studies/${sid}/outputs/${output}/export`);
   return res.data;
@@ -222,13 +224,13 @@ export const exportOuput = async (
 
 export const importStudy = async (
   file: File,
-  onProgress?: (progress: number) => void
+  onProgress?: (progress: number) => void,
 ): Promise<StudyMetadata["id"]> => {
   const options: AxiosRequestConfig = {};
   if (onProgress) {
     options.onUploadProgress = (progressEvent): void => {
       const percentCompleted = Math.round(
-        (progressEvent.loaded * 100) / (progressEvent.total || 1)
+        (progressEvent.loaded * 100) / (progressEvent.total || 1),
       );
       onProgress(percentCompleted);
     };
@@ -249,13 +251,13 @@ export const importFile = async (
   file: File,
   study: string,
   path: string,
-  onProgress?: (progress: number) => void
+  onProgress?: (progress: number) => void,
 ): Promise<string> => {
   const options: AxiosRequestConfig = {};
   if (onProgress) {
     options.onUploadProgress = (progressEvent): void => {
       const percentCompleted = Math.round(
-        (progressEvent.loaded * 100) / (progressEvent.total || 1)
+        (progressEvent.loaded * 100) / (progressEvent.total || 1),
       );
       onProgress(percentCompleted);
     };
@@ -271,7 +273,7 @@ export const importFile = async (
   const res = await client.put(
     `/v1/studies/${study}/raw?path=${encodeURIComponent(path)}`,
     formData,
-    restconfig
+    restconfig,
   );
   return res.data;
 };
@@ -279,12 +281,12 @@ export const importFile = async (
 export const launchStudy = async (
   sid: string,
   options: LaunchOptions = {},
-  version: string | undefined = undefined
+  version: string | undefined = undefined,
 ): Promise<string> => {
   const versionArg = version ? `?version=${version}` : "";
   const res = await client.post(
     `/v1/launcher/run/${sid}${versionArg}`,
-    options
+    options,
   );
   return res.data;
 };
@@ -324,7 +326,7 @@ export const mapLaunchJobDTO = (j: LaunchJobDTO): LaunchJob => ({
 export const getStudyJobs = async (
   sid?: string,
   filterOrphans = true,
-  latest = false
+  latest = false,
 ): Promise<LaunchJob[]> => {
   let query = sid
     ? `?study=${sid}&filter_orphans=${filterOrphans}`
@@ -339,10 +341,10 @@ export const getStudyJobs = async (
 
 export const getStudyJobLog = async (
   jid: string,
-  logType = "STDOUT"
+  logType = "STDOUT",
 ): Promise<string | undefined> => {
   const res = await client.get(
-    `/v1/launcher/jobs/${jid}/logs?log_type=${logType}`
+    `/v1/launcher/jobs/${jid}/logs?log_type=${logType}`,
   );
   return res.data;
 };
@@ -355,36 +357,36 @@ export const downloadJobOutput = async (jobId: string): Promise<any> => {
 
 export const unarchiveOutput = async (
   studyId: string,
-  outputId: string
+  outputId: string,
 ): Promise<string> => {
   const res = await client.post(
-    `/v1/studies/${studyId}/outputs/${encodeURIComponent(outputId)}/_unarchive`
+    `/v1/studies/${studyId}/outputs/${encodeURIComponent(outputId)}/_unarchive`,
   );
   return res.data;
 };
 
 export const archiveOutput = async (
   studyId: string,
-  outputId: string
+  outputId: string,
 ): Promise<string> => {
   const res = await client.post(
-    `/v1/studies/${studyId}/outputs/${encodeURIComponent(outputId)}/_archive`
+    `/v1/studies/${studyId}/outputs/${encodeURIComponent(outputId)}/_archive`,
   );
   return res.data;
 };
 
 export const deleteOutput = async (
   studyId: string,
-  outputId: string
+  outputId: string,
 ): Promise<void> => {
   await client.delete(
-    `/v1/studies/${studyId}/outputs/${encodeURIComponent(outputId)}`
+    `/v1/studies/${studyId}/outputs/${encodeURIComponent(outputId)}`,
   );
 };
 
 export const changeStudyOwner = async (
   studyId: string,
-  newOwner: number
+  newOwner: number,
 ): Promise<string | undefined> => {
   const res = await client.put(`/v1/studies/${studyId}/owner/${newOwner}`);
   return res.data;
@@ -392,7 +394,7 @@ export const changeStudyOwner = async (
 
 export const deleteStudyGroup = async (
   studyId: string,
-  groupId: string
+  groupId: string,
 ): Promise<void> => {
   const res = await client.delete(`/v1/studies/${studyId}/groups/${groupId}`);
   return res.data;
@@ -400,7 +402,7 @@ export const deleteStudyGroup = async (
 
 export const addStudyGroup = async (
   studyId: string,
-  groupId: string
+  groupId: string,
 ): Promise<void> => {
   const res = await client.put(`/v1/studies/${studyId}/groups/${groupId}`);
   return res.data;
@@ -408,17 +410,17 @@ export const addStudyGroup = async (
 
 export const changePublicMode = async (
   studyId: string,
-  publicMode: StudyPublicMode
+  publicMode: StudyPublicMode,
 ): Promise<string | undefined> => {
   const res = await client.put(
-    `/v1/studies/${studyId}/public_mode/${publicMode}`
+    `/v1/studies/${studyId}/public_mode/${publicMode}`,
   );
   return res.data;
 };
 
 export const renameStudy = async (
   studyId: string,
-  name: string
+  name: string,
 ): Promise<void> => {
   const res = await client.put(`/v1/studies/${studyId}`, {
     name,
@@ -428,7 +430,7 @@ export const renameStudy = async (
 
 export const updateStudyMetadata = async (
   studyId: string,
-  data: StudyMetadataPatchDTO
+  data: StudyMetadataPatchDTO,
 ): Promise<void> => {
   const res = await client.put(`/v1/studies/${studyId}`, data);
   return res.data;
@@ -445,10 +447,10 @@ export const getStudyLayers = async (uuid: string): Promise<StudyLayer[]> => {
 
 export async function createStudyLayer(
   studyId: StudyMetadata["id"],
-  layerName: StudyLayer["name"]
+  layerName: StudyLayer["name"],
 ): Promise<StudyLayer["id"]> {
   const res = await client.post(
-    `v1/studies/${studyId}/layers?name=${encodeURIComponent(layerName)}`
+    `v1/studies/${studyId}/layers?name=${encodeURIComponent(layerName)}`,
   );
   return res.data;
 }
@@ -457,25 +459,25 @@ export async function updateStudyLayer(
   studyId: StudyMetadata["id"],
   layerId: StudyLayer["id"],
   layerName: StudyLayer["name"],
-  areas?: StudyLayer["areas"]
+  areas?: StudyLayer["areas"],
 ): Promise<void> {
   await client.put(
     `v1/studies/${studyId}/layers/${layerId}?name=${encodeURIComponent(
-      layerName
+      layerName,
     )}`,
-    areas
+    areas,
   );
 }
 
 export async function deleteStudyLayer(
   studyId: StudyMetadata["id"],
-  layerId: StudyLayer["id"]
+  layerId: StudyLayer["id"],
 ): Promise<void> {
   await client.delete(`v1/studies/${studyId}/layers/${layerId}`);
 }
 
 export async function getStudyDistricts(
-  studyId: StudyMetadata["id"]
+  studyId: StudyMetadata["id"],
 ): Promise<StudyMapDistrict[]> {
   return (await client.get(`v1/studies/${studyId}/districts`)).data;
 }
@@ -484,7 +486,7 @@ export async function createStudyDistrict(
   studyId: StudyMetadata["id"],
   districtName: StudyMapDistrict["name"],
   output: StudyMapDistrict["output"],
-  comments: StudyMapDistrict["comments"]
+  comments: StudyMapDistrict["comments"],
 ): Promise<StudyMapDistrict> {
   return (
     await client.post(`v1/studies/${studyId}/districts`, {
@@ -501,7 +503,7 @@ export async function updateStudyDistrict(
   districtId: StudyMapDistrict["id"],
   output: StudyMapDistrict["output"],
   comments: StudyMapDistrict["comments"],
-  areas?: StudyMapDistrict["areas"]
+  areas?: StudyMapDistrict["areas"],
 ): Promise<void> {
   await client.put(`v1/studies/${studyId}/districts/${districtId}`, {
     output,
@@ -512,7 +514,7 @@ export async function updateStudyDistrict(
 
 export async function deleteStudyDistrict(
   studyId: StudyMetadata["id"],
-  districtId: StudyMapDistrict["id"]
+  districtId: StudyMapDistrict["id"],
 ): Promise<void> {
   await client.delete(`v1/studies/${studyId}/districts/${districtId}`);
 }

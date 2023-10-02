@@ -65,7 +65,7 @@ function makeRequestURL(studyId: StudyMetadata["id"]): string {
 }
 
 export async function getTimeSeriesFormFields(
-  studyId: StudyMetadata["id"]
+  studyId: StudyMetadata["id"],
 ): Promise<TSFormFields> {
   const res = await client.get(makeRequestURL(studyId));
   return res.data;
@@ -73,7 +73,7 @@ export async function getTimeSeriesFormFields(
 
 export function setTimeSeriesFormFields(
   studyId: StudyMetadata["id"],
-  values: DeepPartial<TSFormFields>
+  values: DeepPartial<TSFormFields>,
 ): Promise<void> {
   return client.put(makeRequestURL(studyId), values);
 }

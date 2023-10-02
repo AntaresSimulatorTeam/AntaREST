@@ -27,7 +27,7 @@ function TableRowGroup({
   const [openRow, setOpenRow] = useState(false);
   const columnResults = useMemo(
     () => calculateColumnResults(columns, items),
-    [columns, items]
+    [columns, items],
   );
 
   ////////////////////////////////////////////////////////////////

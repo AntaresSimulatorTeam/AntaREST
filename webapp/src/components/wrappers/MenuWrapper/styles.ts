@@ -117,7 +117,7 @@ const options = {
 
 export const NavDrawer = styled(
   Drawer,
-  options
+  options,
 )<{ extended?: boolean }>(({ extended }) => ({
   width: extended ? DRAWER_WIDTH_EXTENDED : DRAWER_WIDTH,
   flexShrink: 0,

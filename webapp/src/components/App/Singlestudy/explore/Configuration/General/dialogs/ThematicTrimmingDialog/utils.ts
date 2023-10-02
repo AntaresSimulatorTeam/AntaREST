@@ -140,7 +140,7 @@ const keysMap: Record<keyof ThematicTrimmingFormFields, string> = {
 
 // Allow to support all study versions by using directly the server config
 export function getFieldNames(
-  fields: ThematicTrimmingFormFields
+  fields: ThematicTrimmingFormFields,
 ): Array<[keyof ThematicTrimmingFormFields, string]> {
   return R.toPairs(R.pick(R.keys(fields), keysMap));
 }
@@ -150,7 +150,7 @@ function makeRequestURL(studyId: StudyMetadata["id"]): string {
 }
 
 export const getThematicTrimmingFormFields = async (
-  studyId: StudyMetadata["id"]
+  studyId: StudyMetadata["id"],
 ): Promise<ThematicTrimmingFormFields> => {
   const res = await client.get(makeRequestURL(studyId));
   return res.data;
@@ -158,7 +158,7 @@ export const getThematicTrimmingFormFields = async (
 
 export const setThematicTrimmingConfig = async (
   studyId: StudyMetadata["id"],
-  config: ThematicTrimmingFormFields
+  config: ThematicTrimmingFormFields,
 ): Promise<void> => {
   await client.put(makeRequestURL(studyId), config);
 };

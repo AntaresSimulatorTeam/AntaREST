@@ -99,7 +99,7 @@ const parseXMLToHTMLNode = (
   node: XMLElement,
   parent: XMLElement,
   prevListSeq: ListType | undefined,
-  isLastSon = false
+  isLastSon = false,
 ): NodeProcessResult => {
   const res: NodeProcessResult = { result: "" };
   if (node.type !== undefined) {
@@ -175,7 +175,7 @@ const parseXMLToHTMLNode = (
               node.elements[j],
               node,
               completeResult.listSeq,
-              j === node.elements.length - 1
+              j === node.elements.length - 1,
             );
             res.result += completeResult.result;
           }
@@ -200,7 +200,7 @@ const parseXMLToHTMLNode = (
         node.elements[i],
         node,
         completeResult.listSeq,
-        i === node.elements.length - 1
+        i === node.elements.length - 1,
       );
       res.result += completeResult.result;
     }
@@ -247,7 +247,7 @@ interface ParseHTMLToXMLActionList {
 const parseHTMLToXMLNode = (
   node: XMLElement,
   parent: XMLElement,
-  lastListSeq = 0
+  lastListSeq = 0,
 ): ParseHTMLToXMLNodeActions => {
   let action: ParseHTMLToXMLNodeActions = ParseHTMLToXMLNodeActions.NONE;
   const parseChild = (nodeElement: XMLElement): ParseHTMLToXMLNodeActions => {
@@ -261,7 +261,7 @@ const parseHTMLToXMLNode = (
         childAction = parseHTMLToXMLNode(
           nodeElement.elements[i],
           nodeElement,
-          i
+          i,
         );
         if (childAction !== ParseHTMLToXMLNodeActions.NONE) {
           actionList.push({
@@ -274,7 +274,7 @@ const parseHTMLToXMLNode = (
         if (nodeElement.elements !== undefined) {
           if (elm.action === ParseHTMLToXMLNodeActions.DELETE) {
             nodeElement.elements = nodeElement.elements.filter(
-              (item) => item !== elm.node
+              (item) => item !== elm.node,
             );
           } else if (
             elm.node.elements !== undefined &&
@@ -282,15 +282,15 @@ const parseHTMLToXMLNode = (
           ) {
             let newElements: Array<XMLElement> = [];
             const index = nodeElement.elements.findIndex(
-              (item) => item === elm.node
+              (item) => item === elm.node,
             );
             if (index !== undefined && index >= 0) {
               newElements = newElements.concat(
-                nodeElement.elements.slice(0, index)
+                nodeElement.elements.slice(0, index),
               );
               newElements = newElements.concat(elm.node.elements);
               newElements = newElements.concat(
-                nodeElement.elements.slice(index + 1)
+                nodeElement.elements.slice(index + 1),
               );
               node.elements = newElements;
 
@@ -307,7 +307,7 @@ const parseHTMLToXMLNode = (
 
   const checkForQuote = (
     data: string,
-    elements: Array<XMLElement>
+    elements: Array<XMLElement>,
   ): boolean => {
     const quoteList: Array<string> = data.split('"');
     if (quoteList.length > 1) {

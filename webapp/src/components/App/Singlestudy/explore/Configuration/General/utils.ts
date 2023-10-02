@@ -120,7 +120,7 @@ function makeRequestURL(studyId: StudyMetadata["id"]): string {
 }
 
 export async function getGeneralFormFields(
-  studyId: StudyMetadata["id"]
+  studyId: StudyMetadata["id"],
 ): Promise<GeneralFormFields> {
   const res = await client.get(makeRequestURL(studyId));
   return res.data;
@@ -128,7 +128,7 @@ export async function getGeneralFormFields(
 
 export function setGeneralFormFields(
   studyId: StudyMetadata["id"],
-  values: Partial<GeneralFormFields>
+  values: Partial<GeneralFormFields>,
 ): Promise<void> {
   return client.put(makeRequestURL(studyId), values);
 }
@@ -140,7 +140,7 @@ export const hasDayField = R.anyPass([
 ]);
 
 export const pickDayFields = (
-  values: GeneralFormFields
+  values: GeneralFormFields,
 ): Pick<GeneralFormFields, "firstDay" | "lastDay" | "leapYear"> => {
   return R.pickAll(["firstDay", "lastDay", "leapYear"], values);
 };

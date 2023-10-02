@@ -79,7 +79,7 @@ export default function CustomizedTreeView(props: Props) {
   const buildRecursiveTree = (
     tree: StudyTree,
     i = 0,
-    j = 0
+    j = 0,
   ): Array<React.ReactNode> => {
     const { drawOptions, name, attributes, children } = tree;
     const { id } = attributes;
@@ -158,7 +158,7 @@ export default function CustomizedTreeView(props: Props) {
           fill={verticalLineColor}
           stroke={verticalLineColor}
           strokeWidth={`${STROKE_WIDTH}`}
-        />
+        />,
       );
     }
     if (i > 0) {
@@ -175,7 +175,7 @@ export default function CustomizedTreeView(props: Props) {
           fill="transparent"
           stroke={color}
           strokeWidth={`${STROKE_WIDTH}`}
-        />
+        />,
       );
     }
 
@@ -191,7 +191,7 @@ export default function CustomizedTreeView(props: Props) {
             1;
         }
         return buildRecursiveTree(elm, i + 1, recursiveHeight);
-      })
+      }),
     );
     return res;
   };

@@ -16,7 +16,7 @@ interface PropTypes {
   deleteResource: (studyId: string, filename: string) => Promise<void>;
   fetchResourceContent: (
     studyId: string,
-    filename: string
+    filename: string,
   ) => Promise<MatrixType | string>;
   listResources: (studyId: string) => Promise<Array<string> | undefined>;
   errorMessages?: {
@@ -55,9 +55,9 @@ function FileList(props: PropTypes) {
     },
     {
       errorMessage: t(
-        errorMessages?.list || "xpansion.error.loadConfiguration"
+        errorMessages?.list || "xpansion.error.loadConfiguration",
       ),
-    }
+    },
   );
 
   const { data, reload } = res;
@@ -75,7 +75,7 @@ function FileList(props: PropTypes) {
       } catch (e) {
         enqueueErrorSnackbar(
           t(errorMessages?.add || "xpansion.error.addFile"),
-          e as AxiosError
+          e as AxiosError,
         );
       } finally {
         reload();
@@ -92,7 +92,7 @@ function FileList(props: PropTypes) {
     } catch (e) {
       enqueueErrorSnackbar(
         t(errorMessages?.fetchOne || "xpansion.error.getFile"),
-        e as AxiosError
+        e as AxiosError,
       );
     }
   };
@@ -106,7 +106,7 @@ function FileList(props: PropTypes) {
     } catch (e) {
       enqueueErrorSnackbar(
         t(errorMessages?.delete || "xpansion.error.deleteFile"),
-        e as AxiosError
+        e as AxiosError,
       );
     }
   };

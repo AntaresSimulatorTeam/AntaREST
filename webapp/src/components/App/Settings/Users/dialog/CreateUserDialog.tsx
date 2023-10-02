@@ -45,7 +45,7 @@ function CreateUserDialog(props: Props) {
     } catch (e) {
       enqueueErrorSnackbar(
         t("settings.error.userSave", [username]),
-        e as Error
+        e as Error,
       );
       throw e;
     }
@@ -60,7 +60,7 @@ function CreateUserDialog(props: Props) {
               group_id: perm.group.id,
               type: perm.type,
               identity_id: newUser.id,
-            })
+            }),
         );
 
         const res: RoleDetailsDTO[] = await mounted(Promise.all(promises));
@@ -80,7 +80,7 @@ function CreateUserDialog(props: Props) {
 
       enqueueErrorSnackbar(
         t("settings.error.userRolesSave", [newUser.name]),
-        e as Error
+        e as Error,
       );
     }
 

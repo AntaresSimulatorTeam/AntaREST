@@ -12,7 +12,7 @@ enum ActionType {
 }
 
 function useFormUndoRedo<TFieldValues extends FieldValues, TContext>(
-  api: UseFormReturnPlus<TFieldValues, TContext>
+  api: UseFormReturnPlus<TFieldValues, TContext>,
 ): Actions<TFieldValues> {
   const {
     setValues,
@@ -36,7 +36,7 @@ function useFormUndoRedo<TFieldValues extends FieldValues, TContext>(
       lastAction.current = "";
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [state.present]
+    [state.present],
   );
 
   const undoWrapper = useCallback(() => {
@@ -64,7 +64,7 @@ function useFormUndoRedo<TFieldValues extends FieldValues, TContext>(
       lastAction.current = ActionType.Set;
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [set]
+    [set],
   );
 
   return {

@@ -31,7 +31,7 @@ function useBlocker(blocker: Blocker, when = true): void {
       return unblock;
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [navigator, when]
+    [navigator, when],
   );
 }
 

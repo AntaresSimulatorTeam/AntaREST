@@ -40,7 +40,7 @@ function Fieldset(props: FieldsetProps) {
             },
           },
         },
-        sx
+        sx,
       )}
     >
       {legend && (

@@ -8,7 +8,7 @@ export interface UseAsyncAppSelectorCondProps<
   Response extends UseAsyncEntityStateResponse<
     Entity,
     Selected
-  > = UseAsyncEntityStateResponse<Entity, Selected>
+  > = UseAsyncEntityStateResponse<Entity, Selected>,
 > {
   response: Response;
   ifLoading?: () => React.ReactNode;
@@ -17,7 +17,7 @@ export interface UseAsyncAppSelectorCondProps<
 }
 
 function UseAsyncAppSelectorCond<Entity, Selected>(
-  props: UseAsyncAppSelectorCondProps<Entity, Selected>
+  props: UseAsyncAppSelectorCondProps<Entity, Selected>,
 ) {
   const { response, ifLoading, ifFailed, ifSucceeded } = props;
   const { status, value, error } = response;

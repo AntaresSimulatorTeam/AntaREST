@@ -113,7 +113,7 @@ export const setStudyScrollPosition = createAction<
 >(n("SET_SCROLL_POSITION"));
 
 export const setFavoriteStudies = createAction<StudiesState["favorites"]>(
-  n("SET_FAVORITES")
+  n("SET_FAVORITES"),
 );
 
 export const updateStudyFilters = createAction<
@@ -222,7 +222,7 @@ export const fetchStudyVersions = createAsyncThunk(
   n("FETCH_VERSIONS"),
   (_, { rejectWithValue }) => {
     return api.getStudyVersions().catch(rejectWithValue);
-  }
+  },
 );
 
 export const fetchStudies = createAsyncThunk<
@@ -251,8 +251,8 @@ export const toggleFavorite =
       setFavoriteStudies(
         isFav
           ? currentFavorites.filter((fav) => fav !== studyId)
-          : [...currentFavorites, studyId]
-      )
+          : [...currentFavorites, studyId],
+      ),
     );
   };
 

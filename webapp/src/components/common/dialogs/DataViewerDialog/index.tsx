@@ -55,7 +55,7 @@ function DataViewerDialog(props: Props) {
     {
       errorMessage: t("matrix.error.failedToRetrieveIndex"),
       deps: [studyId],
-    }
+    },
   );
 
   ////////////////////////////////////////////////////////////////

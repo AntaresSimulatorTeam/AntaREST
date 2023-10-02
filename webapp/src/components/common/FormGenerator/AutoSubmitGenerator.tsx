@@ -14,11 +14,11 @@ interface AutoSubmitGeneratorFormProps<T extends FieldValues> {
     name: IGeneratorField<T>["name"],
     path: string,
     defaultValues: any,
-    data: any
+    data: any,
   ) => void;
 }
 export default function AutoSubmitGeneratorForm<T extends FieldValues>(
-  props: AutoSubmitGeneratorFormProps<T>
+  props: AutoSubmitGeneratorFormProps<T>,
 ) {
   const { saveField, jsonTemplate } = props;
 
@@ -33,12 +33,12 @@ export default function AutoSubmitGeneratorForm<T extends FieldValues>(
               onAutoSubmit: R.curry(saveField)(name, path, defaultValues),
               required,
             }),
-          })
+          }),
         );
 
         return { fields: formattedFields, ...otherProps };
       }),
-    [jsonTemplate, saveField]
+    [jsonTemplate, saveField],
   );
 
   return <FormGenerator jsonTemplate={formattedJsonTemplate} />;

@@ -22,7 +22,7 @@ function Fields() {
         label: t(`global.time.${filter}`),
         value: filter,
       })),
-    [t]
+    [t],
   );
 
   return (

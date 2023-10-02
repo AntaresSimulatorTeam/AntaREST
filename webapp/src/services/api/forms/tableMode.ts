@@ -15,7 +15,7 @@ function makeRequestURL(studyId: StudyMetadata["id"]): string {
 export async function getTableData<T extends TableTemplateType>(
   studyId: StudyMetadata["id"],
   type: T,
-  columns: TableTemplateColumnsForType<T>
+  columns: TableTemplateColumnsForType<T>,
 ): Promise<TableData> {
   const res = await client.get(makeRequestURL(studyId), {
     params: {
@@ -29,7 +29,7 @@ export async function getTableData<T extends TableTemplateType>(
 export function setTableData(
   studyId: StudyMetadata["id"],
   type: TableTemplateType,
-  data: DeepPartial<TableData>
+  data: DeepPartial<TableData>,
 ): Promise<void> {
   return client.put(makeRequestURL(studyId), data, {
     params: {

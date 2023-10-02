@@ -26,11 +26,11 @@ const n = makeActionName("ui");
 ////////////////////////////////////////////////////////////////
 
 export const setMenuCollapse = createAction<UIState["menuCollapsed"]>(
-  n("SET_MENU_COLLAPSE")
+  n("SET_MENU_COLLAPSE"),
 );
 
 export const setCurrentPage = createAction<UIState["currentPage"]>(
-  n("SET_CURRENT_PAGE")
+  n("SET_CURRENT_PAGE"),
 );
 
 export const setWebSocketConnected = createAction<
@@ -42,15 +42,15 @@ export const incrementTaskNotifications = createAction<
 >(n("INCREMENT_TASK_NOTIFICATIONS"));
 
 export const resetTaskNotifications = createAction(
-  n("RESET_TASK_NOTIFICATIONS")
+  n("RESET_TASK_NOTIFICATIONS"),
 );
 
 export const setMessageInfo = createAction<UIState["messageInfo"]>(
-  n("SET_MESSAGE_INFO")
+  n("SET_MESSAGE_INFO"),
 );
 
 export const setMaintenanceMode = createAction<UIState["maintenanceMode"]>(
-  n("SET_MAINTENANCE_MODE")
+  n("SET_MAINTENANCE_MODE"),
 );
 
 ////////////////////////////////////////////////////////////////

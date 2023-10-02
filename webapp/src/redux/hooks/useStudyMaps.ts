@@ -23,7 +23,7 @@ export default function useStudyMaps<T>(props: Props<T>): Response<T> {
   const synthesisRes = useStudySynthesis({ studyId });
   const isMapsExist = useAppSelector((state) => !!getStudyMap(state, studyId));
   const data = useAppSelector((state) =>
-    isMapsExist && selector ? selector(state, studyId) : undefined
+    isMapsExist && selector ? selector(state, studyId) : undefined,
   );
   const dispatch = useAppDispatch();
   const [status, setStatus] = useState(PromiseStatus.Idle);

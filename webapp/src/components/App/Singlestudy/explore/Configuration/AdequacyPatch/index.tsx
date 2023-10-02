@@ -17,7 +17,7 @@ function AdequacyPatch() {
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = async (
-    data: SubmitHandlerPlus<AdequacyPatchFormFields>
+    data: SubmitHandlerPlus<AdequacyPatchFormFields>,
   ) => {
     return setAdequacyPatchFormFields(study.id, data.dirtyValues);
   };

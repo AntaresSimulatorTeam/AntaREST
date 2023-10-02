@@ -90,7 +90,7 @@ function BasicDialog(props: BasicDialogProps) {
         {...contentProps}
         sx={mergeSxProp(
           { display: "flex", flexDirection: "column" },
-          contentProps?.sx
+          contentProps?.sx,
         )}
       >
         {RA.isString(children) ? (

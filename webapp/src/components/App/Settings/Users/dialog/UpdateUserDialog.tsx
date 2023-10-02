@@ -46,7 +46,7 @@ function UpdateUserDialog(props: Props) {
         type: role.type,
       })),
     }),
-    [user]
+    [user],
   );
 
   ////////////////////////////////////////////////////////////////
@@ -67,7 +67,7 @@ function UpdateUserDialog(props: Props) {
             group_id: perm.group.id,
             type: perm.type,
             identity_id: user.id,
-          })
+          }),
       );
 
       const res = await mounted(Promise.all(promises));
@@ -90,7 +90,7 @@ function UpdateUserDialog(props: Props) {
 
       enqueueErrorSnackbar(
         t("settings.error.userRolesSave", [user.name]),
-        e as Error
+        e as Error,
       );
     }
 

@@ -66,7 +66,7 @@ function UserForm(props: Props) {
   const allowToAddPermission =
     selectedGroup &&
     !getValues("permissions").some(
-      ({ group }: { group: GroupDTO }) => group.id === selectedGroup.id
+      ({ group }: { group: GroupDTO }) => group.id === selectedGroup.id,
     );
 
   const filteredAndSortedGroups = useMemo(() => {
@@ -74,7 +74,7 @@ function UserForm(props: Props) {
       return [];
     }
     return sortByName(
-      groups.filter((group) => !RESERVED_GROUP_NAMES.includes(group.name))
+      groups.filter((group) => !RESERVED_GROUP_NAMES.includes(group.name)),
     );
   }, [groups]);
 

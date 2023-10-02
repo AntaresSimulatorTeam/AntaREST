@@ -23,7 +23,7 @@ export interface AsyncEntityState<T> extends EntityState<T> {
 
 export const makeActionName = R.curry(
   (reducerName: string, actionType: string) =>
-    `${packages.name}/${reducerName}/${actionType}`
+    `${packages.name}/${reducerName}/${actionType}`,
 );
 
 type ThunkAPI = { dispatch: AppDispatch; getState: () => AppState };
@@ -35,7 +35,7 @@ interface ThunkActionCreatorWithPayload<P, T = void>
 
 export function createThunk<P = void, T = void>(
   typePrefix: string,
-  payloadCreator: (arg: T, thunkAPI: ThunkAPI) => P
+  payloadCreator: (arg: T, thunkAPI: ThunkAPI) => P,
 ): ThunkActionCreatorWithPayload<P, T> {
   const actionCreator = createAction<T>(typePrefix);
 
@@ -56,7 +56,7 @@ const LINK_ID_SEPARATOR = " / ";
 
 export function makeLinkId(
   sourceId: LinkElement["area1"],
-  targetId: LinkElement["area2"]
+  targetId: LinkElement["area2"],
 ): string {
   return sourceId + LINK_ID_SEPARATOR + targetId;
 }

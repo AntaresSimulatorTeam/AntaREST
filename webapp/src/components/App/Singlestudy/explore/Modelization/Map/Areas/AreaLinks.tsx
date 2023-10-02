@@ -20,7 +20,7 @@ function AreaLinks() {
   const dispatch = useAppDispatch();
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const areaLinks = useAppSelector((state) =>
-    getCurrentAreaLinks(state, study.id)
+    getCurrentAreaLinks(state, study.id),
   );
 
   ////////////////////////////////////////////////////////////////

@@ -171,7 +171,7 @@ function Groups() {
       .catch((err) => {
         enqueueErrorSnackbar(
           t("settings.error.groupDelete", [group.name]),
-          err
+          err,
         );
       })
       .finally(() => {

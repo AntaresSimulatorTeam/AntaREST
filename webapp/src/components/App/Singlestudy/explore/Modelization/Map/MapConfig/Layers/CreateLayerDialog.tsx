@@ -32,7 +32,7 @@ function CreateLayerDialog(props: Props) {
 
   const existingLayers = useMemo(
     () => Object.values(layersById).map((layer) => layer.name.toLowerCase()),
-    [layersById]
+    [layersById],
   );
 
   ////////////////////////////////////////////////////////////////
@@ -42,7 +42,7 @@ function CreateLayerDialog(props: Props) {
   const handleSubmit = (data: SubmitHandlerPlus<typeof defaultValues>) => {
     try {
       dispatch(
-        createStudyMapLayer({ studyId: study.id, name: data.values.name })
+        createStudyMapLayer({ studyId: study.id, name: data.values.name }),
       );
     } catch (e) {
       enqueueErrorSnackbar(t("study.error.createLayer"), e as AxiosError);

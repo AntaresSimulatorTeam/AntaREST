@@ -63,7 +63,7 @@ function Fields(props: Props) {
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [firstDay]
+    [firstDay],
   );
 
   useEffect(
@@ -73,7 +73,7 @@ function Fields(props: Props) {
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [lastDay]
+    [lastDay],
   );
 
   ////////////////////////////////////////////////////////////////
@@ -82,7 +82,7 @@ function Fields(props: Props) {
 
   const handleDayValidation: Validate<number, GeneralFormFields> = (
     value,
-    formValues
+    formValues,
   ) => {
     if (value < 1 || Number.isNaN(value)) {
       return t("form.field.minValue", [1]);
@@ -102,7 +102,7 @@ function Fields(props: Props) {
 
   const handleNbYearsValidation: Validate<number, GeneralFormFields> = (
     value,
-    formValues
+    formValues,
   ) => {
     if (formValues.buildingMode === BuildingMode.Derated) {
       return value === 1

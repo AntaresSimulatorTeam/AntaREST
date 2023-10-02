@@ -127,11 +127,11 @@ export default function VerticalLinearStepper(props: Props) {
                     }}
                   >
                     {moment(convertUTCToLocalTime(job.creationDate)).format(
-                      "ddd, MMM D YYYY, HH:mm:ss"
+                      "ddd, MMM D YYYY, HH:mm:ss",
                     )}
                     {job.completionDate &&
                       ` => ${moment(
-                        convertUTCToLocalTime(job.completionDate)
+                        convertUTCToLocalTime(job.completionDate),
                       ).format("ddd, MMM D YYYY, HH:mm:ss")}`}
                   </Typography>
                 </StepLabelRow>

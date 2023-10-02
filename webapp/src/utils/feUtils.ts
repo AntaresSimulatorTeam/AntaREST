@@ -20,7 +20,7 @@ export interface FakeBlurEventHandler {
 }
 
 export function createFakeChangeEventHandler(
-  target: Target
+  target: Target,
 ): FakeChangeEventHandler {
   return {
     target,
@@ -29,7 +29,7 @@ export function createFakeChangeEventHandler(
 }
 
 export function createFakeBlurEventHandler(
-  target: Target
+  target: Target,
 ): FakeBlurEventHandler {
   return {
     target,
