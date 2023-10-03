@@ -51,7 +51,7 @@ function ScenarioPlaylistDialog(props: Props) {
     api.setDataAtRowProp(
       api.rowIndexMapper
         .getIndexesSequence()
-        .map((rowIndex) => [rowIndex, "weight", DEFAULT_WEIGHT])
+        .map((rowIndex) => [rowIndex, "weight", DEFAULT_WEIGHT]),
     );
   };
 
@@ -63,7 +63,7 @@ function ScenarioPlaylistDialog(props: Props) {
     this,
     row,
     column,
-    prop
+    prop,
   ) {
     if (prop === "weight") {
       // eslint-disable-next-line react/no-this-in-sfc
@@ -94,24 +94,24 @@ function ScenarioPlaylistDialog(props: Props) {
           <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1 }}>
             <Button color="secondary" onClick={handleUpdateStatus(R.T)}>
               {t(
-                "study.configuration.general.mcScenarioPlaylist.action.enableAll"
+                "study.configuration.general.mcScenarioPlaylist.action.enableAll",
               )}
             </Button>
             <Button color="secondary" onClick={handleUpdateStatus(R.F)}>
               {t(
-                "study.configuration.general.mcScenarioPlaylist.action.disableAll"
+                "study.configuration.general.mcScenarioPlaylist.action.disableAll",
               )}
             </Button>
             <Divider orientation="vertical" flexItem />
             <Button color="secondary" onClick={handleUpdateStatus(R.not)}>
               {t(
-                "study.configuration.general.mcScenarioPlaylist.action.reverse"
+                "study.configuration.general.mcScenarioPlaylist.action.reverse",
               )}
             </Button>
             <Divider orientation="vertical" flexItem />
             <Button color="secondary" onClick={handleResetWeights}>
               {t(
-                "study.configuration.general.mcScenarioPlaylist.action.resetWeights"
+                "study.configuration.general.mcScenarioPlaylist.action.resetWeights",
               )}
             </Button>
           </Box>

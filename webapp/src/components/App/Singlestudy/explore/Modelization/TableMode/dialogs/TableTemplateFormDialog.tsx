@@ -53,7 +53,7 @@ function TableTemplateFormDialog(props: TableTemplateFormDialogProps) {
               validate: (value) => {
                 const id = getValues("id");
                 const hasDuplicate = templates.find(
-                  (tp) => tp.id !== id && tp.name.trim() === value.trim()
+                  (tp) => tp.id !== id && tp.name.trim() === value.trim(),
                 );
                 if (hasDuplicate) {
                   return t("form.field.notAllowedValue") as string;

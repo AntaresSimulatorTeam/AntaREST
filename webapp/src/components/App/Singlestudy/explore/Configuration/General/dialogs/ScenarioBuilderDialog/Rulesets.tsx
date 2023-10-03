@@ -40,7 +40,7 @@ function Rulesets() {
   const handleRename = ({ values: { name } }: SubmitHandlerType) => {
     setOpenForm("");
     setConfig(
-      (prev) => RA.renameKeys({ [activeRuleset]: name }, prev) as typeof prev
+      (prev) => RA.renameKeys({ [activeRuleset]: name }, prev) as typeof prev,
     );
     setActiveRuleset(name);
 
@@ -53,9 +53,9 @@ function Rulesets() {
       throw new Error(
         t(
           "study.configuration.general.mcScenarioBuilder.error.ruleset.rename",
-          [activeRuleset]
+          { 0: activeRuleset },
         ),
-        { cause: err }
+        { cause: err },
       );
     });
   };
@@ -71,10 +71,10 @@ function Rulesets() {
       reloadConfig();
 
       throw new Error(
-        t("study.configuration.general.mcScenarioBuilder.error.ruleset.add", [
-          name,
-        ]),
-        { cause: err }
+        t("study.configuration.general.mcScenarioBuilder.error.ruleset.add", {
+          0: name,
+        }),
+        { cause: err },
       );
     });
   };
@@ -93,9 +93,9 @@ function Rulesets() {
       enqueueErrorSnackbar(
         t(
           "study.configuration.general.mcScenarioBuilder.error.ruleset.delete",
-          [activeRuleset]
+          { 0: activeRuleset },
         ),
-        err
+        err,
       );
     });
   };
@@ -113,9 +113,9 @@ function Rulesets() {
       enqueueErrorSnackbar(
         t(
           "study.configuration.general.mcScenarioBuilder.error.ruleset.duplicate",
-          [activeRuleset]
+          { 0: activeRuleset },
         ),
-        err
+        err,
       );
     });
   };
@@ -160,7 +160,7 @@ function Rulesets() {
                       return !Object.keys(config).find(
                         (ruleset) =>
                           v === ruleset &&
-                          (openForm === "add" || v !== activeRuleset)
+                          (openForm === "add" || v !== activeRuleset),
                       );
                     },
                   }}
@@ -221,7 +221,7 @@ function Rulesets() {
         >
           {t(
             "study.configuration.general.mcScenarioBuilder.dialog.delete.text",
-            [activeRuleset]
+            { 0: activeRuleset },
           )}
         </ConfirmationDialog>
       )}

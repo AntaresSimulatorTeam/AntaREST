@@ -69,7 +69,7 @@ function StudiesList(props: StudiesListProps) {
   const sortConf = useAppSelector(getStudiesSortConf);
   const folder = useAppSelector((state) => getStudyFilters(state).folder);
   const strictFolderFilter = useAppSelector(
-    (state) => getStudyFilters(state).strictFolder
+    (state) => getStudyFilters(state).strictFolder,
   );
   const [folderList, setFolderList] = useState(folder.split("/"));
   const dispatch = useAppDispatch();
@@ -117,7 +117,7 @@ function StudiesList(props: StudiesListProps) {
         order: "descend",
       },
     ],
-    [t]
+    [t],
   );
 
   ////////////////////////////////////////////////////////////////
@@ -128,7 +128,7 @@ function StudiesList(props: StudiesListProps) {
     (scrollProp: GridOnScrollProps) => {
       dispatch(setStudyScrollPosition(scrollProp.scrollTop));
     },
-    { wait: 400, trailing: true }
+    { wait: 400, trailing: true },
   );
 
   const handleToggleSelectStudy = useCallback((sid: string) => {

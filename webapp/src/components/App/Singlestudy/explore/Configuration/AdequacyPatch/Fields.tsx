@@ -33,14 +33,14 @@ function Fields() {
       >
         <SwitchFE
           label={t(
-            "study.configuration.adequacyPatch.ntcFromPhysicalAreasOutToPhysicalAreasInAdequacyPatch"
+            "study.configuration.adequacyPatch.ntcFromPhysicalAreasOutToPhysicalAreasInAdequacyPatch",
           )}
           name="ntcFromPhysicalAreasOutToPhysicalAreasInAdequacyPatch"
           control={control}
         />
         <SwitchFE
           label={t(
-            "study.configuration.adequacyPatch.ntcBetweenPhysicalAreasOutAdequacyPatch"
+            "study.configuration.adequacyPatch.ntcBetweenPhysicalAreasOutAdequacyPatch",
           )}
           name="ntcBetweenPhysicalAreasOutAdequacyPatch"
           control={control}
@@ -50,7 +50,7 @@ function Fields() {
         <>
           <Fieldset
             legend={t(
-              "study.configuration.adequacyPatch.legend.curtailmentSharing"
+              "study.configuration.adequacyPatch.legend.curtailmentSharing",
             )}
           >
             <SelectFE
@@ -61,7 +61,7 @@ function Fields() {
             />
             <SwitchFE
               label={t(
-                "study.configuration.adequacyPatch.includeHurdleCostCsr"
+                "study.configuration.adequacyPatch.includeHurdleCostCsr",
               )}
               name="includeHurdleCostCsr"
               control={control}
@@ -74,47 +74,47 @@ function Fields() {
           >
             <NumberFE
               label={t(
-                "study.configuration.adequacyPatch.thresholdInitiateCurtailmentSharingRule"
+                "study.configuration.adequacyPatch.thresholdInitiateCurtailmentSharingRule",
               )}
               name="thresholdInitiateCurtailmentSharingRule"
               control={control}
               rules={{
                 min: {
                   value: 0,
-                  message: t("form.field.minValue", [0]),
+                  message: t("form.field.minValue", { 0: 0 }),
                 },
               }}
             />
             <NumberFE
               label={t(
-                "study.configuration.adequacyPatch.thresholdDisplayLocalMatchingRuleViolations"
+                "study.configuration.adequacyPatch.thresholdDisplayLocalMatchingRuleViolations",
               )}
               name="thresholdDisplayLocalMatchingRuleViolations"
               control={control}
               rules={{
                 min: {
                   value: 0,
-                  message: t("form.field.minValue", [0]),
+                  message: t("form.field.minValue", { 0: 0 }),
                 },
               }}
             />
             <NumberFE
               label={t(
-                "study.configuration.adequacyPatch.thresholdCsrVariableBoundsRelaxation"
+                "study.configuration.adequacyPatch.thresholdCsrVariableBoundsRelaxation",
               )}
               name="thresholdCsrVariableBoundsRelaxation"
               control={control}
               rules={{
                 min: {
                   value: 0,
-                  message: t("form.field.minValue", [0]),
+                  message: t("form.field.minValue", { 0: 0 }),
                 },
               }}
             />
             <Fieldset.Break />
             <SwitchFE
               label={t(
-                "study.configuration.adequacyPatch.checkCsrCostFunction"
+                "study.configuration.adequacyPatch.checkCsrCostFunction",
               )}
               name="checkCsrCostFunction"
               control={control}

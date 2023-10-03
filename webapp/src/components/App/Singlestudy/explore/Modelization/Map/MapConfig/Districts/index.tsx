@@ -29,20 +29,26 @@ function Districts() {
 
   const columns = useMemo(
     () => Object.keys(districtsById).map((id) => id),
-    [districtsById]
+    [districtsById],
   );
 
   const defaultValues = useMemo(() => {
     const districts = Object.values(districtsById);
 
-    return areas.reduce((acc, area) => {
-      acc[area.id] = districts.reduce((acc2, district) => {
-        acc2[district.id] = district.areas.includes(area.id);
-        return acc2;
-      }, {} as Record<string, boolean>);
+    return areas.reduce(
+      (acc, area) => {
+        acc[area.id] = districts.reduce(
+          (acc2, district) => {
+            acc2[district.id] = district.areas.includes(area.id);
+            return acc2;
+          },
+          {} as Record<string, boolean>,
+        );
 
-      return acc;
-    }, {} as Record<string, Record<string, boolean>>);
+        return acc;
+      },
+      {} as Record<string, Record<string, boolean>>,
+    );
   }, [areas, districtsById]);
 
   ////////////////////////////////////////////////////////////////
@@ -60,7 +66,7 @@ function Districts() {
           areasByDistrict[districtId].push(areaId);
         } else {
           areasByDistrict[districtId] = areasByDistrict[districtId].filter(
-            (id) => id !== areaId
+            (id) => id !== areaId,
           );
         }
       });
@@ -74,7 +80,7 @@ function Districts() {
           output: districtsById[districtId].output,
           comments: districtsById[districtId].comments,
           areas: areasByDistrict[districtId],
-        })
+        }),
       ).unwrap();
     });
 

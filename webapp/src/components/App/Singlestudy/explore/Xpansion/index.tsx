@@ -25,7 +25,7 @@ function Xpansion() {
     {
       errorMessage: t("xpansion.error.loadConfiguration"),
       deps: [exist],
-    }
+    },
   );
 
   const tabList = useMemo(
@@ -51,7 +51,7 @@ function Xpansion() {
         path: `/studies/${study?.id}/explore/xpansion/capacities`,
       },
     ],
-    [study]
+    [study],
   );
 
   useEffect(() => {
@@ -74,7 +74,7 @@ function Xpansion() {
     } catch (e) {
       enqueueErrorSnackbar(
         t("xpansion.error.createConfiguration"),
-        e as AxiosError
+        e as AxiosError,
       );
     } finally {
       setExist(true);

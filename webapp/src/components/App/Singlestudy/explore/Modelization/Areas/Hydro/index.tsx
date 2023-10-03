@@ -52,7 +52,7 @@ function Hydro() {
         path: `/studies/${study?.id}/explore/modelization/area/hydro/ror`,
       },
     ],
-    [study]
+    [study],
   );
 
   ////////////////////////////////////////////////////////////////

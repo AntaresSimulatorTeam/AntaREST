@@ -10,7 +10,7 @@ import {
 } from "../../../common/types";
 
 export const formatDateFromIndex = (
-  index: Array<string | number>
+  index: Array<string | number>,
 ): Array<string> => {
   if (index.length === 0) {
     return [];
@@ -29,20 +29,20 @@ export const formatDateFromIndex = (
     if (index.length > 100) {
       const startDate = moment("01/01/2000 00:00:00", "DD/MM/YYYY hh:mm:ss");
       return index.map((e, i) =>
-        moment.utc(startDate).add(i, "h").format("YYYY/MM/DD HH:mm")
+        moment.utc(startDate).add(i, "h").format("YYYY/MM/DD HH:mm"),
       );
     }
     // weekly
     if (index.length > 12) {
       const startDate = moment(2005, "YYYY").week(sample as number);
       return index.map((e, i) =>
-        moment.utc(startDate).add(i, "w").format("YYYY/MM/DD HH:mm")
+        moment.utc(startDate).add(i, "w").format("YYYY/MM/DD HH:mm"),
       );
     }
     // monthly
     if (index.length > 1) {
       return index.map((e) =>
-        moment(_.padStart(String(e), 2, "0"), "MM").format("MM/DD HH:mm")
+        moment(_.padStart(String(e), 2, "0"), "MM").format("MM/DD HH:mm"),
       );
     }
   }
@@ -50,7 +50,7 @@ export const formatDateFromIndex = (
 };
 
 const convertLevelDate = (
-  levelDate: StudyOutputDownloadLevelDTO
+  levelDate: StudyOutputDownloadLevelDTO,
 ): DurationInputArg2 => {
   if (levelDate === StudyOutputDownloadLevelDTO.ANNUAL) {
     return "year";
@@ -69,7 +69,7 @@ const convertLevelDate = (
 
 export const createDateFromIndex = (
   indexDate: string | number,
-  matrixIndex: MatrixIndex
+  matrixIndex: MatrixIndex,
 ): string | number => {
   const date = moment
     .utc(matrixIndex.start_date)
@@ -77,7 +77,7 @@ export const createDateFromIndex = (
     .format(
       matrixIndex.level === StudyOutputDownloadLevelDTO.HOURLY
         ? "ddd DD MMM HH:mm"
-        : "ddd DD MMM"
+        : "ddd DD MMM",
     );
   return date;
 };
@@ -93,7 +93,7 @@ export const slice = (tab: CellChange[]): MatrixEditDTO[] => {
 
 export const computeStats = (
   statsType: string,
-  row: Array<number>
+  row: Array<number>,
 ): Array<number> => {
   if (statsType === MatrixStats.TOTAL) {
     return [
@@ -116,7 +116,7 @@ export const computeStats = (
 
         return newAgg;
       },
-      { min: row[0], max: row[0], total: 0 }
+      { min: row[0], max: row[0], total: 0 },
     );
     return [statsInfo.min, statsInfo.max, statsInfo.total / row.length];
   }

@@ -74,7 +74,7 @@ function LauncherHistory(props: Props) {
                   return newJob;
                 }
                 return j;
-              })
+              }),
             );
           }
         }
@@ -90,7 +90,7 @@ function LauncherHistory(props: Props) {
         }));
       }
     },
-    [study, studyJobs]
+    [study, studyJobs],
   );
 
   useEffect(() => {
@@ -106,14 +106,14 @@ function LauncherHistory(props: Props) {
               .map(async (item) => ({
                 id: item.id,
                 progress: await getProgress(item.id),
-              }))
+              })),
           );
 
           setStudyJobsProgress(
             jobProgress.reduce(
               (agg, cur) => ({ ...agg, [cur.id]: cur.progress }),
-              initJobProgress
-            )
+              initJobProgress,
+            ),
           );
 
           setStudyJobs(
@@ -131,12 +131,12 @@ function LauncherHistory(props: Props) {
               return moment(j1CompletionDate).isAfter(moment(j2CompletionDate))
                 ? -1
                 : 1;
-            })
+            }),
           );
         } catch (e) {
           enqueueErrorSnackbar(
             t("global.error.failedtoretrievejobs"),
-            e as AxiosError
+            e as AxiosError,
           );
         }
       };

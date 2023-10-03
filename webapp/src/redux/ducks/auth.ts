@@ -124,6 +124,6 @@ export default createReducer(initialState, (builder) => {
       isAnyOf(login.fulfilled, refresh.fulfilled),
       (draftState, action) => {
         draftState.user = action.payload;
-      }
+      },
     );
 });

@@ -36,12 +36,12 @@ function XpansionPropsView(props: PropsType) {
         return candidateList.filter(
           (item) =>
             !currentName ||
-            item.name.search(new RegExp(currentName, "i")) !== -1
+            item.name.search(new RegExp(currentName, "i")) !== -1,
         );
       }
       return [];
     },
-    [candidateList]
+    [candidateList],
   );
 
   useEffect(() => {

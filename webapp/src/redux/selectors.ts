@@ -55,7 +55,7 @@ export const getStudiesStatus = (state: AppState): StudiesState["status"] => {
 };
 
 export const getStudiesScrollPosition = (
-  state: AppState
+  state: AppState,
 ): StudiesState["scrollPosition"] => {
   return getStudiesState(state).scrollPosition;
 };
@@ -72,7 +72,7 @@ export const getStudyIds = studiesSelectors.selectIds;
 export const getStudy = studiesSelectors.selectById;
 
 export const getFavoriteStudyIds = (
-  state: AppState
+  state: AppState,
 ): StudiesState["favorites"] => {
   return getStudiesState(state).favorites;
 };
@@ -84,12 +84,12 @@ export const getFavoriteStudies = createSelector(
     return favoriteIds
       .map((favId) => studiesById[favId])
       .filter((item): item is StudyMetadata => !!item);
-  }
+  },
 );
 
 export const isStudyFavorite = (
   state: AppState,
-  id: StudyMetadata["id"]
+  id: StudyMetadata["id"],
 ): boolean => {
   return getFavoriteStudyIds(state).includes(id);
 };
@@ -109,31 +109,31 @@ export const getStudiesFilteredAndSorted = createSelector(
   (studies, filters, sortConf) => {
     const sorted = sortStudies(sortConf, studies);
     return filterStudies(filters, sorted);
-  }
+  },
 );
 
 export const getStudyIdsFilteredAndSorted = createSelector(
   getStudiesFilteredAndSorted,
-  (studies) => studies.map((study) => study.id)
+  (studies) => studies.map((study) => study.id),
 );
 
 export const getStudiesTree = createSelector(getStudies, buildStudyTree);
 
 export const getStudyVersions = (
-  state: AppState
+  state: AppState,
 ): StudiesState["versionList"] => {
   return getStudiesState(state).versionList;
 };
 
 export const getLatestStudyVersion = (
-  state: AppState
+  state: AppState,
 ): StudyMetadata["version"] | null => {
   return last(getStudyVersions(state)) ?? null;
 };
 
 export const getStudyVersionsFormatted = createSelector(
   getStudyVersions,
-  convertVersions
+  convertVersions,
 );
 
 export const getCurrentStudyId = (state: AppState): StudiesState["current"] => {
@@ -143,13 +143,13 @@ export const getCurrentStudyId = (state: AppState): StudiesState["current"] => {
 export const getCurrentStudy = createSelector(
   getStudiesById,
   getCurrentStudyId,
-  (studies, current) => studies[current]
+  (studies, current) => studies[current],
 );
 
 export const isCurrentStudyFavorite = createSelector(
   getFavoriteStudyIds,
   getCurrentStudyId,
-  (favorites, current) => favorites.includes(current)
+  (favorites, current) => favorites.includes(current),
 );
 
 ////////////////////////////////////////////////////////////////
@@ -194,7 +194,7 @@ export const getStudySynthesesState = (state: AppState): StudySynthesesState =>
   state.studySyntheses;
 
 const studySynthesesSelectors = studySynthesesAdapter.getSelectors(
-  getStudySynthesesState
+  getStudySynthesesState,
 );
 
 export const getStudySynthesisById = studySynthesesSelectors.selectEntities;
@@ -208,7 +208,7 @@ export const getStudySynthesis = studySynthesesSelectors.selectById;
 export const getCurrentStudySynthesis = createSelector(
   getStudySynthesisById,
   getCurrentStudyId,
-  (syntheses, currentStudyId) => syntheses[currentStudyId]
+  (syntheses, currentStudyId) => syntheses[currentStudyId],
 );
 
 export const getAreas = createSelector(getStudySynthesis, (synthesis) => {
@@ -223,10 +223,13 @@ export const getAreas = createSelector(getStudySynthesis, (synthesis) => {
 
 export const getAreasById = createSelector(getStudySynthesis, (synthesis) => {
   if (synthesis) {
-    return Object.keys(synthesis.areas).reduce((acc, id) => {
-      acc[id] = { ...synthesis.areas[id], id };
-      return acc;
-    }, {} as Record<string, Area & { id: string }>);
+    return Object.keys(synthesis.areas).reduce(
+      (acc, id) => {
+        acc[id] = { ...synthesis.areas[id], id };
+        return acc;
+      },
+      {} as Record<string, Area & { id: string }>,
+    );
   }
   return {};
 });
@@ -234,11 +237,11 @@ export const getAreasById = createSelector(getStudySynthesis, (synthesis) => {
 export const getArea = createSelector(
   getStudySynthesis,
   (state: AppState, studyId: StudyMetadata["id"], areaId: string) => areaId,
-  (synthesis, areaId) => synthesis?.areas[areaId]
+  (synthesis, areaId) => synthesis?.areas[areaId],
 );
 
 export const getCurrentAreaId = (
-  state: AppState
+  state: AppState,
 ): StudySynthesesState["currentArea"] => {
   return getStudySynthesesState(state).currentArea;
 };
@@ -252,7 +255,7 @@ export const getCurrentArea = createSelector(
         id: string;
       };
     }
-  }
+  },
 );
 
 export const getLinks = createSelector(getStudySynthesis, (synthesis) => {
@@ -277,7 +280,7 @@ export const getLinks = createSelector(getStudySynthesis, (synthesis) => {
 });
 
 export const getCurrentLinkId = (
-  state: AppState
+  state: AppState,
 ): StudySynthesesState["currentLink"] => {
   return getStudySynthesesState(state).currentLink;
 };
@@ -285,7 +288,7 @@ export const getCurrentLinkId = (
 export const getCurrentLink = createSelector(
   getLinks,
   getCurrentLinkId,
-  (links, linkId) => links.find((link) => link.name === linkId)
+  (links, linkId) => links.find((link) => link.name === linkId),
 );
 
 export const getCurrentAreaLinks = createSelector(
@@ -295,16 +298,16 @@ export const getCurrentAreaLinks = createSelector(
   (currStudySynthesis, links, currAreaId) => {
     if (currStudySynthesis && links && currAreaId) {
       const areaLinks = links.filter(
-        (link) => link.area1 === currAreaId || link.area2 === currAreaId
+        (link) => link.area1 === currAreaId || link.area2 === currAreaId,
       );
       return areaLinks;
     }
     return [];
-  }
+  },
 );
 
 export const getCurrentBindingConstId = (
-  state: AppState
+  state: AppState,
 ): StudySynthesesState["currentBindingConst"] => {
   return getStudySynthesesState(state).currentBindingConst;
 };
@@ -312,7 +315,7 @@ export const getCurrentBindingConstId = (
 export const getCurrentClusters = (
   type: "thermals" | "renewables",
   studyId: string,
-  state: AppState
+  state: AppState,
 ): Array<Cluster> => {
   const currentStudyState = getStudySynthesesState(state);
   const { currentArea } = currentStudyState;
@@ -322,7 +325,7 @@ export const getCurrentClusters = (
 };
 
 export const getBindingConst = createSelector(getStudySynthesis, (studyData) =>
-  studyData ? studyData.bindings || [] : []
+  studyData ? studyData.bindings || [] : [],
 );
 
 export const getLinksAndClusters = createSelector(
@@ -341,7 +344,7 @@ export const getLinksAndClusters = createSelector(
             (area2) => ({
               id: area2,
               name: synthesis.areas[area2].name,
-            })
+            }),
           ),
         });
         acc.clusters.push({
@@ -356,7 +359,7 @@ export const getLinksAndClusters = createSelector(
       return res;
     }
     return linksAndClusters;
-  }
+  },
 );
 
 export const getStudyOutput = createSelector(
@@ -366,7 +369,7 @@ export const getStudyOutput = createSelector(
     if (synthesis?.outputs[outputId]) {
       return { id: outputId, ...synthesis?.outputs[outputId] };
     }
-  }
+  },
 );
 
 ////////////////////////////////////////////////////////////////
@@ -391,17 +394,17 @@ export const getCurrentStudyMapNode = createSelector(
   getCurrentStudyId,
   getCurrentAreaId,
   (studyMapsById, currentStudyId, currentAreaId) =>
-    studyMapsById[currentStudyId]?.nodes[currentAreaId]
+    studyMapsById[currentStudyId]?.nodes[currentAreaId],
 );
 
 export const getStudyMapLayersById = (
-  state: AppState
+  state: AppState,
 ): StudyMapsState["layers"] => {
   return getStudyMapsState(state).layers;
 };
 
 export const getCurrentLayer = (
-  state: AppState
+  state: AppState,
 ): StudyMapsState["currentLayer"] => {
   return getStudyMapsState(state).currentLayer;
 };
@@ -413,7 +416,7 @@ export const getCurrentLayerAreas = createSelector(
     if (currentLayerId && studyMapLayersById[currentLayerId]) {
       return studyMapLayersById[currentLayerId].areas;
     }
-  }
+  },
 );
 
 export const getStudyMapNodes = createSelector(
@@ -427,12 +430,12 @@ export const getStudyMapNodes = createSelector(
         .filter(
           (areaId) =>
             currentLayerAreas.indexOf(areaId) !== -1 &&
-            nodeUIList.includes(areaId)
+            nodeUIList.includes(areaId),
         )
         .map((areaId) => studyMap?.nodes[areaId]);
     }
     return [];
-  }
+  },
 );
 
 export const getStudyMapLinks = createSelector(
@@ -451,7 +454,7 @@ export const getStudyMapLinks = createSelector(
         .filter(
           (areaId) =>
             currentLayerAreas.indexOf(areaId) !== -1 &&
-            areasUIList.includes(areaId)
+            areasUIList.includes(areaId),
         )
         .forEach((areaId) => {
           const area1 = {
@@ -462,7 +465,7 @@ export const getStudyMapLinks = createSelector(
             (link) =>
               Object.values(currentLayerAreas).includes(link) &&
               Object.keys(synthesis.areas).includes(link) &&
-              areasUIList.includes(link)
+              areasUIList.includes(link),
           );
           linkAreas2.forEach((areaId) => {
             if (linksUI) {
@@ -481,11 +484,11 @@ export const getStudyMapLinks = createSelector(
         });
     }
     return studyMapLinks;
-  }
+  },
 );
 
 export const getStudyMapDistrictsById = (
-  state: AppState
+  state: AppState,
 ): StudyMapsState["districts"] => {
   return getStudyMapsState(state).districts;
 };
@@ -497,19 +500,19 @@ export const getStudyMapDistrictsById = (
 const getUIState = (state: AppState): AppState["ui"] => state.ui;
 
 export const getWebSocketConnected = (
-  state: AppState
+  state: AppState,
 ): UIState["webSocketConnected"] => {
   return getUIState(state).webSocketConnected;
 };
 
 export const getTaskNotificationsCount = (
-  state: AppState
+  state: AppState,
 ): UIState["taskNotificationsCount"] => {
   return getUIState(state).taskNotificationsCount;
 };
 
 export const getMaintenanceMode = (
-  state: AppState
+  state: AppState,
 ): UIState["maintenanceMode"] => {
   return getUIState(state).maintenanceMode;
 };

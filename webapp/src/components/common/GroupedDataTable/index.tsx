@@ -46,12 +46,12 @@ function GroupedDataTable<TData extends TRow>({
 
   const isAnyRowSelected = useMemo(
     () => Object.values(rowSelection).some((value) => value),
-    [rowSelection]
+    [rowSelection],
   );
 
   const existingNames = useMemo(
     () => tableData.map((row) => row.name.toLowerCase()),
-    [tableData]
+    [tableData],
   );
 
   ////////////////////////////////////////////////////////////////
@@ -77,7 +77,7 @@ function GroupedDataTable<TData extends TRow>({
     const rowIdsToDelete = rowIndexes.map((index) => tableData[index].id);
     onDelete(rowIdsToDelete);
     setTableData((prevTableData) =>
-      prevTableData.filter((row) => !rowIdsToDelete.includes(row.id))
+      prevTableData.filter((row) => !rowIdsToDelete.includes(row.id)),
     );
     setRowSelection({});
     setConfirmDialogOpen(false);

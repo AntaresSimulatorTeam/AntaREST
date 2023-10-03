@@ -26,7 +26,7 @@ export const CommandList = [
 export const reorder = <T>(
   list: T[],
   startIndex: number,
-  endIndex: number
+  endIndex: number,
 ): T[] => {
   const result = Array.from(list);
   const [removed] = result.splice(startIndex, 1);
@@ -36,7 +36,7 @@ export const reorder = <T>(
 };
 
 export const fromCommandDTOToCommandItem = (
-  commands: Array<CommandDTO>
+  commands: Array<CommandDTO>,
 ): Array<CommandItem> => {
   const dtoItems: Array<CommandItem> = commands.map((elm) => ({
     id: elm?.id,
@@ -48,7 +48,7 @@ export const fromCommandDTOToCommandItem = (
 };
 
 export const fromCommandDTOToJsonCommand = (
-  commands: Array<CommandDTO>
+  commands: Array<CommandDTO>,
 ): Array<JsonCommandItem> => {
   const dtoItems: Array<JsonCommandItem> = commands.map((elm) => ({
     action: elm.action,
@@ -86,7 +86,7 @@ export const isTaskFinal = (task: TaskDTO): boolean =>
 export const updateCommandResults = (
   studyId: string,
   generationCommands: Array<CommandItem>,
-  commandResults: Array<CommandResultDTO>
+  commandResults: Array<CommandResultDTO>,
 ): { commands: Array<CommandItem>; index: number } => {
   const tmpCommands: Array<CommandItem> = generationCommands.concat([]);
   // eslint-disable-next-line no-plusplus
@@ -94,7 +94,7 @@ export const updateCommandResults = (
     const commandResult = commandResults[i];
     if (studyId === commandResult.study_id) {
       const index = tmpCommands.findIndex(
-        (item) => item.id === commandResult.id
+        (item) => item.id === commandResult.id,
       );
       tmpCommands[index] = { ...tmpCommands[index], results: commandResult };
     }

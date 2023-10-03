@@ -85,7 +85,7 @@ function MatrixInput({
     {
       errorMessage: t("data.error.matrix"),
       deps: [study, url],
-    }
+    },
   );
 
   const { data: matrixIndex } = usePromiseWithSnackbarError(
@@ -98,7 +98,7 @@ function MatrixInput({
     {
       errorMessage: t("matrix.error.failedToretrieveIndex"),
       deps: [study, url, fetchFn, matrixData],
-    }
+    },
   );
 
   /**
@@ -207,7 +207,7 @@ function MatrixInput({
                 onClick={() =>
                   handleDownload(
                     matrixData,
-                    `matrix_${study.id}_${url.replace("/", "_")}`
+                    `matrix_${study.id}_${url.replace("/", "_")}`,
                   )
                 }
               >

@@ -29,7 +29,7 @@ function Fields(props: Props) {
       <Fieldset legend={t("study.configuration.optimization.legend.general")}>
         <SelectFE
           label={t(
-            "study.configuration.optimization.unfeasibleProblemBehavior"
+            "study.configuration.optimization.unfeasibleProblemBehavior",
           )}
           options={UNFEASIBLE_PROBLEM_BEHAVIOR_OPTIONS}
           name="unfeasibleProblemBehavior"
@@ -76,7 +76,7 @@ function Fields(props: Props) {
       >
         <SwitchFE
           label={t(
-            "study.configuration.optimization.thermalClustersMinStablePower"
+            "study.configuration.optimization.thermalClustersMinStablePower",
           )}
           name="thermalClustersMinStablePower"
           control={control}

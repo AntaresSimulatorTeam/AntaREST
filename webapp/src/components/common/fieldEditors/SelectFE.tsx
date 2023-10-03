@@ -27,7 +27,7 @@ export interface SelectFEProps extends Omit<SelectProps, "labelId"> {
 
 function formatOptions(
   options: SelectFEProps["options"],
-  startCaseLabel: boolean
+  startCaseLabel: boolean,
 ): Array<OptionObj<{ id: string }>> {
   return options.map((opt) => ({
     ...(RA.isPlainObj(opt)
@@ -59,7 +59,7 @@ function SelectFE(props: SelectFEProps) {
   const optionsFormatted = useMemo(
     () => formatOptions(options, startCaseLabel),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [JSON.stringify(options)]
+    [JSON.stringify(options)],
   );
 
   return (

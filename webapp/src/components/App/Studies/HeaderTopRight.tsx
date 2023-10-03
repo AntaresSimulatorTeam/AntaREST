@@ -25,25 +25,25 @@ function HeaderRight() {
 
   const handleImport = async (
     file: File,
-    onUploadProgress: (progress: number) => void
+    onUploadProgress: (progress: number) => void,
   ): Promise<void> => {
     try {
       await dispatch(
         createStudy({
           file,
           onUploadProgress,
-        })
+        }),
       ).unwrap();
       enqueueSnackbar(
         t("studies.success.import", {
           uploadFile: file.name,
         }),
-        { variant: "success" }
+        { variant: "success" },
       );
     } catch (e) {
       enqueueErrorSnackbar(
         t("studies.error.import", { uploadFile: file.name }),
-        e as AxiosError
+        e as AxiosError,
       );
       throw e;
     }

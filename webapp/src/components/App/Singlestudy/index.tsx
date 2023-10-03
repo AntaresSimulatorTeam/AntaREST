@@ -63,7 +63,7 @@ function SingleStudy(props: Props) {
         path: `/studies/${studyId}/explore/results`,
       },
     ],
-    [studyId]
+    [studyId],
   );
 
   const updateStudyData = useCallback(async () => {
@@ -102,7 +102,7 @@ function SingleStudy(props: Props) {
           break;
       }
     },
-    [studyId, t, updateStudyData]
+    [studyId, t, updateStudyData],
   );
 
   useEffect(() => {

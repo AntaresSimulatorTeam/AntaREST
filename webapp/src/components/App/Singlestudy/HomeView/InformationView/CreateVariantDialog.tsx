@@ -41,7 +41,7 @@ function CreateVariantDialog(props: Props) {
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = async (
-    data: SubmitHandlerPlus<typeof defaultValues>
+    data: SubmitHandlerPlus<typeof defaultValues>,
   ) => {
     const { sourceId, name } = data.values;
 
@@ -54,7 +54,7 @@ function CreateVariantDialog(props: Props) {
     } catch (e) {
       enqueueErrorSnackbar(
         t("variants.error.variantCreation"),
-        e as AxiosError
+        e as AxiosError,
       );
     }
   };

@@ -23,7 +23,7 @@ function UpdateTemplateTableDialog(props: Props) {
 
   const handleSubmit = (data: SubmitHandlerPlus<typeof defaultValues>) => {
     setTemplates((templates) =>
-      templates.map((t) => (t.id === data.values.id ? data.values : t))
+      templates.map((t) => (t.id === data.values.id ? data.values : t)),
     );
 
     onCancel();

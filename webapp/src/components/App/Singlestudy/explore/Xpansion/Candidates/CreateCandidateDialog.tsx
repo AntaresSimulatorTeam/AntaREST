@@ -35,7 +35,7 @@ function CreateCandidateDialog(props: PropType) {
   const handleSubmit = (data: SubmitHandlerPlus<XpansionCandidate>) => {
     const values = R.omit(
       isToggled ? ["max-investment"] : ["unit-size", "max-units"],
-      data.values
+      data.values,
     );
 
     onSave(values);
@@ -88,7 +88,7 @@ function CreateCandidateDialog(props: PropType) {
               rules={{
                 min: {
                   value: 1,
-                  message: t("form.field.minValue", [1]),
+                  message: t("form.field.minValue", { 0: 1 }),
                 },
               }}
               sx={{ mx: 0 }}

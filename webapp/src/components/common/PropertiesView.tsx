@@ -37,7 +37,7 @@ function PropertiesView(props: PropsType) {
           pt: onSearchFilterChange ? 1 : 2,
           pb: 1,
         },
-        sx
+        sx,
       )}
     >
       {topContent}

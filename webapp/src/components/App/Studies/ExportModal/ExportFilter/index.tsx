@@ -43,7 +43,7 @@ function ExportFilterModal(props: PropTypes) {
   });
   const [areaList, setAreaList] = useState<{ [elm: string]: Area }>({});
   const [districtList, setDistrictList] = useState<{ [elm: string]: District }>(
-    {}
+    {},
   );
 
   const typeList: Array<string> = [
@@ -107,7 +107,7 @@ function ExportFilterModal(props: PropTypes) {
           data={year.map((elm) => elm.toString())}
           setValue={(value: Array<string> | string) =>
             setCurrentYear(
-              (value as Array<string>).map((elm) => parseInt(elm, 10))
+              (value as Array<string>).map((elm) => parseInt(elm, 10)),
             )
           }
           sx={{ width: "100%", mb: 2 }}

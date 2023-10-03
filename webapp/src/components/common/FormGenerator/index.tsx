@@ -32,7 +32,7 @@ export interface IGeneratorField<T extends FieldValues> {
     name: IGeneratorField<T>["name"],
     path: string,
     required?: boolean | string,
-    defaultValues?: FormState<T>["defaultValues"]
+    defaultValues?: FormState<T>["defaultValues"],
   ) =>
     | Omit<
         RegisterOptionsPlus<T, Path<T> & (string | undefined)>,
@@ -74,12 +74,12 @@ function formateFieldset<T extends FieldValues>(fieldset: IFieldsetType<T>) {
 }
 
 export default function FormGenerator<T extends FieldValues>(
-  props: FormGeneratorProps<T>
+  props: FormGeneratorProps<T>,
 ) {
   const { jsonTemplate } = props;
   const formattedTemplate = useMemo(
     () => jsonTemplate.map(formateFieldset),
-    [jsonTemplate]
+    [jsonTemplate],
   );
   const [t] = useTranslation();
   const {

@@ -35,7 +35,7 @@ localStorageMiddleware.startListening({
           favorites: storage.getItem(StorageKey.StudiesFavorites),
           filters: storage.getItem(StorageKey.StudiesFilters),
           sort: storage.getItem(StorageKey.StudiesSort),
-        })
+        }),
       );
 
       const menuCollapsed = storage.getItem(StorageKey.UIMenuCollapsed);

@@ -97,7 +97,7 @@ function NavHeader({
       } catch (e) {
         enqueueErrorSnackbar(
           t("studies.error.archive", { studyname: study.name }),
-          e as AxiosError
+          e as AxiosError,
         );
       } finally {
         handleClose();
@@ -112,7 +112,7 @@ function NavHeader({
       } catch (e) {
         enqueueErrorSnackbar(
           t("studies.error.unarchive", { studyname: study.name }),
-          e as AxiosError
+          e as AxiosError,
         );
       } finally {
         handleClose();

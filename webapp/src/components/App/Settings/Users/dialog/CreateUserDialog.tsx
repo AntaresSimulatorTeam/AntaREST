@@ -39,13 +39,13 @@ function CreateUserDialog(props: Props) {
 
     try {
       newUser = await mounted(createUser(username, password));
-      enqueueSnackbar(t("settings.success.userCreation", [newUser.name]), {
+      enqueueSnackbar(t("settings.success.userCreation", { 0: newUser.name }), {
         variant: "success",
       });
     } catch (e) {
       enqueueErrorSnackbar(
-        t("settings.error.userSave", [username]),
-        e as Error
+        t("settings.error.userSave", { 0: username }),
+        e as Error,
       );
       throw e;
     }
@@ -60,7 +60,7 @@ function CreateUserDialog(props: Props) {
               group_id: perm.group.id,
               type: perm.type,
               identity_id: newUser.id,
-            })
+            }),
         );
 
         const res: RoleDetailsDTO[] = await mounted(Promise.all(promises));
@@ -79,8 +79,8 @@ function CreateUserDialog(props: Props) {
       reloadFetchUsers();
 
       enqueueErrorSnackbar(
-        t("settings.error.userRolesSave", [newUser.name]),
-        e as Error
+        t("settings.error.userRolesSave", { 0: newUser.name }),
+        e as Error,
       );
     }
 

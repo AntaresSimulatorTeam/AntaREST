@@ -123,7 +123,7 @@ const SnackErrorMessage = forwardRef<HTMLDivElement, Props>(
         </Card>
       </Snackbar>
     );
-  }
+  },
 );
 
 SnackErrorMessage.displayName = "SnackErrorMessage";

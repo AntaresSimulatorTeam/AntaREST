@@ -11,7 +11,7 @@ export async function getDefaultValues<T extends FieldValues>(
   area: string,
   cluster: Cluster["id"],
   noDataValues: Partial<T>,
-  type: "thermals" | "renewables"
+  type: "thermals" | "renewables",
 ): Promise<T> {
   const pathType = type === "thermals" ? "thermal" : type;
   const pathPrefix = `input/${pathType}/clusters/${area}/list/${cluster}`;
@@ -34,7 +34,7 @@ export const saveField = R.curry(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     defaultValues: any,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    data: any
+    data: any,
   ): Promise<void> => {
     // TODO strange code that cause bug
     // if (data === (noDataValues as any)[name] || data === undefined) {
@@ -52,5 +52,5 @@ export const saveField = R.curry(
     //   return editStudy(edit, studyId, pathPrefix);
     // }
     return editStudy(data, studyId, path);
-  }
+  },
 );

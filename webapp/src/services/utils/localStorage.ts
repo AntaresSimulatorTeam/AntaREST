@@ -60,7 +60,7 @@ function getItem<T extends StorageKey>(key: T): TypeFromKey[T] | null {
 
 function setItem<T extends StorageKey>(
   key: T,
-  data: TypeFromKey[T] | ((prev: TypeFromKey[T] | null) => TypeFromKey[T])
+  data: TypeFromKey[T] | ((prev: TypeFromKey[T] | null) => TypeFromKey[T]),
 ): void {
   try {
     if (RA.isFunction(data)) {

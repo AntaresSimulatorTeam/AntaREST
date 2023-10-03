@@ -65,10 +65,10 @@ function LinkForm(props: Props) {
     t("study.modelization.links.matrix.columns.transCapaDirect"),
     t("study.modelization.links.matrix.columns.transCapaIndirect"),
     `${t(
-      "study.modelization.links.matrix.columns.hurdleCostsDirect"
+      "study.modelization.links.matrix.columns.hurdleCostsDirect",
     )} (${area1}->${area2})`,
     `${t(
-      "study.modelization.links.matrix.columns.hurdleCostsIndirect"
+      "study.modelization.links.matrix.columns.hurdleCostsIndirect",
     )} (${area2}->${area1})`,
     t("study.modelization.links.matrix.columns.impedances"),
     t("study.modelization.links.matrix.columns.loopFlow"),
@@ -88,12 +88,12 @@ function LinkForm(props: Props) {
   const handleTypeAutoSubmit: AutoSubmitHandler = (value) => {
     const defaultFilterSynthesis = defaultValues?.filterSynthesis
       ? (defaultValues?.filterSynthesis as Array<string>).filter(
-          (elm) => elm !== ""
+          (elm) => elm !== "",
         )
       : [];
     const defaultFilterByYear = defaultValues?.filterByYear
       ? (defaultValues?.filterByYear as Array<string>).filter(
-          (elm) => elm !== ""
+          (elm) => elm !== "",
         )
       : [];
 
@@ -168,7 +168,7 @@ function LinkForm(props: Props) {
   const renderSelect = (
     filterName: string,
     options: Array<{ label: string; value: string }>,
-    onAutoSubmit?: AutoSubmitHandler
+    onAutoSubmit?: AutoSubmitHandler,
   ) => (
     <SelectFE
       name={filterName}

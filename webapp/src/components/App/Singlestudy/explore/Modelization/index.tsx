@@ -36,7 +36,7 @@ function Modelization() {
         path: `/studies/${study?.id}/explore/modelization/tablemode`,
       },
     ],
-    [study?.id, t]
+    [study?.id, t],
   );
 
   return (

@@ -15,7 +15,7 @@ const updateMatrix = async (
   name: string,
   publicStatus: boolean,
   selectedGroupList: Array<GroupDTO>,
-  onNewDataUpdate: (newData: MatrixDataSetDTO) => void
+  onNewDataUpdate: (newData: MatrixDataSetDTO) => void,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): Promise<any> => {
   const matrixMetadata: MatrixDataSetUpdateDTO = {
@@ -37,7 +37,7 @@ const createMatrix = async (
   publicStatus: boolean,
   selectedGroupList: Array<GroupDTO>,
   matrices: Array<MatrixInfoDTO>,
-  onNewDataUpdate: (newData: MatrixDataSetDTO) => void
+  onNewDataUpdate: (newData: MatrixDataSetDTO) => void,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): Promise<any> => {
   const matrixMetadata: MatrixDataSetUpdateDTO = {
@@ -58,7 +58,7 @@ export const saveMatrix = async (
   file?: File,
   data?: MatrixDataSetDTO,
   json?: boolean,
-  onProgress?: (progress: number) => void
+  onProgress?: (progress: number) => void,
 ): Promise<string> => {
   if (!name.replace(/\s/g, "")) {
     throw Error("global.error.emptyName");
@@ -69,14 +69,14 @@ export const saveMatrix = async (
       const matrixInfos = await createMatrixByImportation(
         file,
         !!json,
-        onProgress
+        onProgress,
       );
       await createMatrix(
         name,
         publicStatus,
         selectedGroupList,
         matrixInfos,
-        onNewDataUpdate
+        onNewDataUpdate,
       );
     } else {
       throw Error("data.error.fileNotUploaded");
@@ -87,7 +87,7 @@ export const saveMatrix = async (
       name,
       publicStatus,
       selectedGroupList,
-      onNewDataUpdate
+      onNewDataUpdate,
     );
   }
 

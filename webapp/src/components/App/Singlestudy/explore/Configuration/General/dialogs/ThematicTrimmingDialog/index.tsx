@@ -42,7 +42,7 @@ function ThematicTrimmingDialog(props: Props) {
     };
 
   const handleSubmit = (
-    data: SubmitHandlerPlus<ThematicTrimmingFormFields>
+    data: SubmitHandlerPlus<ThematicTrimmingFormFields>,
   ) => {
     return setThematicTrimmingConfig(study.id, data.values);
   };

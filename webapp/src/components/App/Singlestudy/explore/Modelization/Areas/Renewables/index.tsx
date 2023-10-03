@@ -33,7 +33,7 @@ function Renewables() {
         study.id,
         areaId,
         clusterId,
-        dirtyValues
+        dirtyValues,
       );
     };
 
@@ -80,7 +80,7 @@ function Renewables() {
             <MatrixInput
               study={study}
               url={`input/renewables/series/${area}/${transformNameToId(
-                cluster
+                cluster,
               )}/series`}
               computStats={MatrixStats.NOCOL}
             />

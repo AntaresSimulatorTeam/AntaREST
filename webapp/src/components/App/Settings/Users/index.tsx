@@ -15,7 +15,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import { useMemo, useReducer, useState, ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import PersonIcon from "@mui/icons-material/Person";
-import produce from "immer";
+import { produce } from "immer";
 import { usePromise as usePromiseWrapper, useUpdateEffect } from "react-use";
 import { Action } from "redux";
 import { useSnackbar } from "notistack";
@@ -147,12 +147,15 @@ function Users() {
     mounted(deleteUser(user.id))
       .then(() => {
         dispatch({ type: UserActionKind.DELETE, payload: user.id });
-        enqueueSnackbar(t("settings.success.userDelete", [user.name]), {
+        enqueueSnackbar(t("settings.success.userDelete", { 0: user.name }), {
           variant: "success",
         });
       })
       .catch((err) => {
-        enqueueErrorSnackbar(t("settings.error.userDelete", [user.name]), err);
+        enqueueErrorSnackbar(
+          t("settings.error.userDelete", { 0: user.name }),
+          err,
+        );
       })
       .finally(() => {
         setUsersInLoading((prev) => prev.filter((u) => u !== user));
@@ -244,7 +247,7 @@ function Users() {
           alert="warning"
           open
         >
-          {t("settings.question.deleteUser", [userToDelete.name])}
+          {t("settings.question.deleteUser", { 0: userToDelete.name })}
         </ConfirmationDialog>
       )}
       {userToEdit && (

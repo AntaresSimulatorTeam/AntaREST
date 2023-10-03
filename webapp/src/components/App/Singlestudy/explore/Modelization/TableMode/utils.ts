@@ -75,7 +75,7 @@ export type TableTemplateColumnsForType<T extends TableTemplateType> = Array<
 >;
 
 export interface TableTemplate<
-  T extends TableTemplateType = TableTemplateType
+  T extends TableTemplateType = TableTemplateType,
 > {
   id: string;
   name: string;
@@ -90,7 +90,7 @@ export interface TableTemplate<
 export function createTableTemplate<T extends TableTemplateType>(
   name: string,
   type: T,
-  columns: TableTemplateColumnsForType<T>
+  columns: TableTemplateColumnsForType<T>,
 ): TableTemplate<T> {
   return { id: uuidv4(), name, type, columns, frozen: true };
 }
@@ -116,7 +116,7 @@ export const DEFAULT_TABLE_TEMPLATES: TableTemplate[] = [
 ];
 
 export const DEFAULT_TABLE_TEMPLATE_IDS = DEFAULT_TABLE_TEMPLATES.map(
-  (t) => t.id
+  (t) => t.id,
 );
 
 export function getTableColumnsForType(type: TableTemplateType): string[] {

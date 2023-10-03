@@ -47,11 +47,11 @@ function LogModal(props: Props) {
         }
       }
     },
-    [jobId, logDetail]
+    [jobId, logDetail],
   );
 
   const handleGlobalKeyDown = (
-    keyboardEvent: KeyboardEvent<HTMLDivElement>
+    keyboardEvent: KeyboardEvent<HTMLDivElement>,
   ) => {
     if (keyboardEvent.key === "a" && keyboardEvent.ctrlKey) {
       if (divRef.current) {
@@ -102,7 +102,7 @@ function LogModal(props: Props) {
     if (followLogs) {
       if (jobId) {
         const removeSubscription = sendWsSubscribeMessage(
-          WsChannel.JobLogs + jobId
+          WsChannel.JobLogs + jobId,
         );
         const removeMessageListener = addWsMessageListener(updateLog);
         return () => {

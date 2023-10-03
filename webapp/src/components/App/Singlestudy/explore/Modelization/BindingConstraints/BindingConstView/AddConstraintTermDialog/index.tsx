@@ -78,8 +78,11 @@ function AddConstraintTermDialog(props: Props) {
         data = tmpValues.data as LinkCreationInfoDTO;
         if (!isOptionExist(options.links, data.area1, data.area2)) {
           enqueueSnackbar(
-            t("study.error.missingData", [t("study.area1"), t("study.area2")]),
-            { variant: "error" }
+            t("study.error.missingData", {
+              0: t("study.area1"),
+              1: t("study.area2"),
+            }),
+            { variant: "error" },
           );
           onCancel();
           return;
@@ -88,8 +91,11 @@ function AddConstraintTermDialog(props: Props) {
         data = tmpValues.data as ClusterElement;
         if (!isOptionExist(options.clusters, data.area, data.cluster)) {
           enqueueSnackbar(
-            t("study.error.missingData", [t("study.area"), t("study.cluster")]),
-            { variant: "error" }
+            t("study.error.missingData", {
+              0: t("study.area"),
+              1: t("study.cluster"),
+            }),
+            { variant: "error" },
           );
           onCancel();
           return;
@@ -110,7 +116,7 @@ function AddConstraintTermDialog(props: Props) {
       await addConstraintTerm(
         studyId,
         bindingConstraint,
-        values.dirtyValues as ConstraintType
+        values.dirtyValues as ConstraintType,
       );
 
       // Add to current UX

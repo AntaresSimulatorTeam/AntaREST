@@ -15,7 +15,7 @@ function makeRequestURL(studyId: StudyMetadata["id"]): string {
 }
 
 export async function getPlaylist(
-  studyId: StudyMetadata["id"]
+  studyId: StudyMetadata["id"],
 ): Promise<PlaylistData> {
   const res = await client.get(makeRequestURL(studyId));
   return res.data;
@@ -23,7 +23,7 @@ export async function getPlaylist(
 
 export function setPlaylist(
   studyId: StudyMetadata["id"],
-  data: PlaylistData
+  data: PlaylistData,
 ): Promise<void> {
   return client.put(makeRequestURL(studyId), data);
 }

@@ -29,7 +29,7 @@ function Areas(props: Props) {
   const [searchValue, setSearchValue] = useState("");
   const currentArea = useAppSelector(getCurrentStudyMapNode);
   const currentLink = useAppSelector((state) =>
-    getCurrentLink(state, study.id)
+    getCurrentLink(state, study.id),
   );
 
   useEffect(() => {

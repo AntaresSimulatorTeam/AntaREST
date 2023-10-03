@@ -23,13 +23,13 @@ function HeaderBottom(props: PropTypes) {
   const users = useAppSelector((state) => {
     return getUsers(state)
       .filter((user) => filters.users.includes(user.id))
-      .map((user) => ({ id: user.id, name: user.name } as UserDTO));
+      .map((user) => ({ id: user.id, name: user.name }) as UserDTO);
   });
 
   const groups = useAppSelector((state) => {
     return getGroups(state)
       .filter((group) => filters.groups.includes(group.id))
-      .map((group) => ({ id: group.id, name: group.name } as GroupDTO));
+      .map((group) => ({ id: group.id, name: group.name }) as GroupDTO);
   });
 
   ////////////////////////////////////////////////////////////////
@@ -38,7 +38,7 @@ function HeaderBottom(props: PropTypes) {
 
   const setFilterValue = <T extends keyof StudyFilters>(
     string: T,
-    newValue: StudyFilters[T]
+    newValue: StudyFilters[T],
   ) => {
     dispatch(updateStudyFilters({ [string]: newValue }));
   };
@@ -51,7 +51,7 @@ function HeaderBottom(props: PropTypes) {
     (event: React.ChangeEvent<HTMLInputElement>) => {
       setFilterValue("inputValue", event.target.value);
     },
-    150
+    150,
   );
 
   ////////////////////////////////////////////////////////////////
@@ -121,7 +121,7 @@ function HeaderBottom(props: PropTypes) {
             onDelete={() => {
               setFilterValue(
                 "versions",
-                filters.versions.filter((ver) => ver !== version)
+                filters.versions.filter((ver) => ver !== version),
               );
             }}
             sx={{ mx: 1 }}
@@ -135,7 +135,7 @@ function HeaderBottom(props: PropTypes) {
             onDelete={() => {
               setFilterValue(
                 "users",
-                filters.users.filter((u) => u !== user.id)
+                filters.users.filter((u) => u !== user.id),
               );
             }}
             sx={{ mx: 1, bgcolor: purple[500] }}
@@ -150,7 +150,7 @@ function HeaderBottom(props: PropTypes) {
             onDelete={() => {
               setFilterValue(
                 "groups",
-                filters.groups.filter((gp) => gp !== group.id)
+                filters.groups.filter((gp) => gp !== group.id),
               );
             }}
             sx={{ mx: 1 }}
@@ -164,7 +164,7 @@ function HeaderBottom(props: PropTypes) {
             onDelete={() => {
               setFilterValue(
                 "tags",
-                tags.filter((t) => t !== tag)
+                tags.filter((t) => t !== tag),
               );
             }}
             sx={{ mx: 1, color: "black", bgcolor: indigo[300] }}

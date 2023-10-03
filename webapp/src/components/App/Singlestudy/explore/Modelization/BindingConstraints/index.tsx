@@ -22,11 +22,11 @@ import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
 function BindingConstraints() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const bindingConstraints = useAppSelector((state) =>
-    getBindingConst(state, study.id)
+    getBindingConst(state, study.id),
   );
   const res = usePromise(
     () => getBindingConstraintList(study.id),
-    [study.id, bindingConstraints]
+    [study.id, bindingConstraints],
   );
   const currentBindingConst = useAppSelector(getCurrentBindingConstId);
   const dispatch = useAppDispatch();

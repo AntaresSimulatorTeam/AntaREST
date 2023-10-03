@@ -17,7 +17,7 @@ function Optimization() {
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = async (
-    data: SubmitHandlerPlus<OptimizationFormFields>
+    data: SubmitHandlerPlus<OptimizationFormFields>,
   ) => {
     return setOptimizationFormFields(study.id, data.dirtyValues);
   };

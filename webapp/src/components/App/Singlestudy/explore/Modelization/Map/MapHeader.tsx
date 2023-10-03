@@ -73,10 +73,10 @@ function MapHeader(props: Props) {
         }}
       >
         <Typography sx={{ mx: 1 }}>{`${nodes.length} ${t(
-          "study.areas"
+          "study.areas",
         )}`}</Typography>
         <Typography sx={{ mx: 1 }}>{`${links.length} ${t(
-          "study.links"
+          "study.links",
         )}`}</Typography>
       </Box>
     </Box>

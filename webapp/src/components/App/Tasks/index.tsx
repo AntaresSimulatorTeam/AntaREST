@@ -107,8 +107,8 @@ function JobsListing() {
         allTasks.filter(
           (task) =>
             !task.completion_date_utc ||
-            moment.utc(task.completion_date_utc).isAfter(dateThreshold)
-        )
+            moment.utc(task.completion_date_utc).isAfter(dateThreshold),
+        ),
       );
 
       const initJobProgress: { [key: string]: number } = {};
@@ -118,20 +118,20 @@ function JobsListing() {
           .map(async (item) => ({
             id: item.id,
             progress: await getProgress(item.id),
-          }))
+          })),
       );
 
       setStudyJobsProgress(
         jobProgress.reduce(
           (agg, cur) => ({ ...agg, [cur.id]: cur.progress }),
-          initJobProgress
-        )
+          initJobProgress,
+        ),
       );
     } catch (e) {
       logError("woops", e);
       enqueueErrorSnackbar(
         t("global.error.failedtoretrievejobs"),
-        e as AxiosError
+        e as AxiosError,
       );
     } finally {
       setLoaded(true);
@@ -186,7 +186,7 @@ function JobsListing() {
       }
     },
     2000,
-    { leading: true }
+    { leading: true },
   );
 
   const killTask = (jobId: string) => {
@@ -213,7 +213,7 @@ function JobsListing() {
             setTasks(
               tasks
                 .filter((task) => task.id !== updatedTask.id)
-                .concat([updatedTask])
+                .concat([updatedTask]),
             );
           } catch (error) {
             logError(error);
@@ -223,7 +223,7 @@ function JobsListing() {
         setDownloads(
           (downloads || []).concat([
             convertFileDownloadDTO(ev.payload as FileDownloadDTO),
-          ])
+          ]),
         );
       } else if (ev.type === WSEvent.DOWNLOAD_READY) {
         setDownloads(
@@ -233,7 +233,7 @@ function JobsListing() {
               return convertFileDownloadDTO(fileDownload);
             }
             return d;
-          })
+          }),
         );
       } else if (
         ev.type === WSEvent.DOWNLOAD_READY ||
@@ -246,14 +246,14 @@ function JobsListing() {
               return convertFileDownloadDTO(fileDownload);
             }
             return d;
-          })
+          }),
         );
       } else if (ev.type === WSEvent.DOWNLOAD_EXPIRED) {
         setDownloads(
           (downloads || []).filter((d) => {
             const fileDownload = ev.payload as FileDownloadDTO;
             return d.id !== fileDownload.id;
-          })
+          }),
         );
       } else if (ev.type === WSEvent.LAUNCH_PROGRESS) {
         const message = ev.payload as LaunchJobProgressDTO;
@@ -391,7 +391,7 @@ function JobsListing() {
         type: TaskType.LAUNCH,
         status: job.status === "running" ? "running" : "",
       })),
-    [jobs, studyJobsProgress]
+    [jobs, studyJobsProgress],
   );
 
   const downloadsMemo = useMemo(
@@ -406,7 +406,7 @@ function JobsListing() {
         dateView: (
           <Box sx={{ color: grey[500], fontSize: "0.85rem" }}>
             {`(${t("downloads.expirationDate")} : ${convertUTCToLocalTime(
-              download.expirationDate
+              download.expirationDate,
             )})`}
           </Box>
         ),
@@ -457,7 +457,7 @@ function JobsListing() {
         type: TaskType.DOWNLOAD,
         status: !download.ready && !download.failed ? "running" : "",
       })),
-    [downloads]
+    [downloads],
   );
 
   const tasksMemo = useMemo(
@@ -538,7 +538,7 @@ function JobsListing() {
         type: task.type || TaskType.UNKNOWN,
         status: task.status === TaskStatus.RUNNING ? "running" : "",
       })),
-    [tasks]
+    [tasks],
   );
 
   const content = jobsMemo.concat(downloadsMemo.concat(tasksMemo));

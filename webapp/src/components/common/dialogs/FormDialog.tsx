@@ -14,7 +14,7 @@ type SuperType<TFieldValues extends FieldValues, TContext> = Omit<
 export interface FormDialogProps<
   TFieldValues extends FieldValues = FieldValues,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  TContext = any
+  TContext = any,
 > extends SuperType<TFieldValues, TContext> {
   cancelButtonText?: string;
   onCancel: VoidFunction;
@@ -23,7 +23,7 @@ export interface FormDialogProps<
 // TODO: `formState.isSubmitting` doesn't update when auto submit enabled
 
 function FormDialog<TFieldValues extends FieldValues, TContext>(
-  props: FormDialogProps<TFieldValues, TContext>
+  props: FormDialogProps<TFieldValues, TContext>,
 ) {
   const {
     config,

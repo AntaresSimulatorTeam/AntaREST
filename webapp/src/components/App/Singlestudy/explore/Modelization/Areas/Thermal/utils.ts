@@ -58,7 +58,7 @@ export const noDataValues: Partial<ThermalType> = {
 export async function getDefaultValues(
   studyId: string,
   area: string,
-  cluster: Cluster["id"]
+  cluster: Cluster["id"],
 ): Promise<ThermalType> {
   const pathPrefix = `input/thermal/clusters/${area}/list/${cluster}`;
   const data: ThermalType = await getStudyData(studyId, pathPrefix, 3);
@@ -170,7 +170,7 @@ export const POLLUTANT_NAMES: Array<keyof PollutantFields> = [
 function makeRequestURL(
   studyId: StudyMetadata["id"],
   areaId: Area["name"],
-  clusterId: Cluster["id"]
+  clusterId: Cluster["id"],
 ): string {
   return `/v1/studies/${studyId}/areas/${areaId}/clusters/thermal/${clusterId}/form`;
 }
@@ -178,7 +178,7 @@ function makeRequestURL(
 export async function getThermalFormFields(
   studyId: StudyMetadata["id"],
   areaId: Area["name"],
-  clusterId: Cluster["id"]
+  clusterId: Cluster["id"],
 ): Promise<ThermalFormFields> {
   const res = await client.get(makeRequestURL(studyId, areaId, clusterId));
   return res.data;
@@ -188,7 +188,7 @@ export function setThermalFormFields(
   studyId: StudyMetadata["id"],
   areaId: Area["name"],
   clusterId: Cluster["id"],
-  values: Partial<ThermalFormFields>
+  values: Partial<ThermalFormFields>,
 ): Promise<void> {
   return client.put(makeRequestURL(studyId, areaId, clusterId), values);
 }

@@ -44,9 +44,9 @@ function Table(props: Props) {
 
   const valuesFromConfig = R.path(
     [activeRuleset, symbol, rowType === "thermal" && areaId].filter(
-      Boolean
+      Boolean,
     ) as Path,
-    config
+    config,
   ) as TableData;
 
   const { data: areasOrLinksOrThermals = [] } = useStudySynthesis({
@@ -71,7 +71,7 @@ function Table(props: Props) {
         acc[String(index)] = "";
         return acc;
       },
-      {}
+      {},
     );
 
     return areasOrLinksOrThermals.reduce((acc: TableData, { id }) => {
@@ -103,10 +103,10 @@ function Table(props: Props) {
       reloadConfig();
 
       throw new Error(
-        t("study.configuration.general.mcScenarioBuilder.error.table", [
-          `${activeRuleset}.${symbol}`,
-        ]),
-        { cause: err }
+        t("study.configuration.general.mcScenarioBuilder.error.table", {
+          0: `${activeRuleset}.${symbol}`,
+        }),
+        { cause: err },
       );
     });
   };

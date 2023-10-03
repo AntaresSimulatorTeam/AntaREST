@@ -33,7 +33,7 @@ function toParams(value: DepsOrParams = {}): UsePromiseParams {
 
 function usePromise<T>(
   fn: () => Promise<T>,
-  params?: DepsOrParams
+  params?: DepsOrParams,
 ): UsePromiseResponse<T> {
   const { deps = [], resetDataOnReload, resetErrorOnReload } = toParams(params);
   const [data, setData] = useState<T>();
@@ -65,7 +65,7 @@ function usePromise<T>(
         });
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [reloadCount, ...deps]
+    [reloadCount, ...deps],
   );
 
   return {

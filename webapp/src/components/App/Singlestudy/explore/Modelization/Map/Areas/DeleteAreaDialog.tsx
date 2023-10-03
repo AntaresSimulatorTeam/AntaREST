@@ -43,13 +43,13 @@ function DeleteAreaDialog(props: Props) {
     if (currentArea && !currentLink) {
       try {
         await dispatch(
-          deleteStudyMapNode({ studyId: study.id, nodeId: currentArea.id })
+          deleteStudyMapNode({ studyId: study.id, nodeId: currentArea.id }),
         ).unwrap();
         dispatch(setCurrentArea(""));
       } catch (e) {
         enqueueErrorSnackbar(
           t("study.error.deleteAreaOrLink"),
-          e as AxiosError
+          e as AxiosError,
         );
       }
     }
@@ -57,13 +57,13 @@ function DeleteAreaDialog(props: Props) {
     if (currentLink && !currentArea) {
       try {
         await dispatch(
-          deleteStudyMapLink({ studyId: study.id, linkId: currentLink.id })
+          deleteStudyMapLink({ studyId: study.id, linkId: currentLink.id }),
         ).unwrap();
         dispatch(setCurrentLink(""));
       } catch (e) {
         enqueueErrorSnackbar(
           t("study.error.deleteAreaOrLink"),
-          e as AxiosError
+          e as AxiosError,
         );
       }
     }

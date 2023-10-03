@@ -66,7 +66,7 @@ function Candidates() {
                 .split(" - ")
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 .map((index: any) => transformNameToId(index))
-                .join(" - ")
+                .join(" - "),
           )[i];
         }
         return tempCandidates;
@@ -77,7 +77,7 @@ function Candidates() {
       errorMessage: t("xpansion.error.loadConfiguration"),
       resetDataOnReload: false,
       deps: [study],
-    }
+    },
   );
 
   const { data: capaLinks } = usePromiseWithSnackbarError(
@@ -94,7 +94,7 @@ function Candidates() {
       }
       return {};
     },
-    { errorMessage: t("xpansion.error.loadConfiguration"), deps: [study] }
+    { errorMessage: t("xpansion.error.loadConfiguration"), deps: [study] },
   );
 
   const deleteXpansion = async () => {
@@ -105,7 +105,7 @@ function Candidates() {
     } catch (e) {
       enqueueErrorSnackbar(
         t("xpansion.error.deleteConfiguration"),
-        e as AxiosError
+        e as AxiosError,
       );
     } finally {
       navigate("../../xpansion", { state: { exist: false } });
@@ -121,7 +121,7 @@ function Candidates() {
     } catch (e) {
       enqueueErrorSnackbar(
         t("xpansion.error.createCandidate"),
-        e as AxiosError
+        e as AxiosError,
       );
     } finally {
       reload();
@@ -137,7 +137,7 @@ function Candidates() {
       } catch (e) {
         enqueueErrorSnackbar(
           t("xpansion.error.deleteCandidate"),
-          e as AxiosError
+          e as AxiosError,
         );
       } finally {
         reload();
@@ -148,7 +148,7 @@ function Candidates() {
 
   const handleUpdateCandidate = async (
     name: string | undefined,
-    value: XpansionCandidate | undefined
+    value: XpansionCandidate | undefined,
   ) => {
     try {
       if (study && name && value) {
@@ -163,7 +163,7 @@ function Candidates() {
             "max-investments",
             "max-units",
             "unit-size",
-          ]) as XpansionCandidate
+          ]) as XpansionCandidate,
         );
         enqueueSnackbar(t("studies.success.saveData"), {
           variant: "success",
@@ -172,7 +172,7 @@ function Candidates() {
     } catch (e) {
       enqueueErrorSnackbar(
         t("xpansion.error.updateCandidate"),
-        e as AxiosError
+        e as AxiosError,
       );
     } finally {
       reload();

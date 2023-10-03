@@ -2,7 +2,7 @@ import * as RA from "ramda-adjunct";
 import { AutoSubmitConfig, FormProps } from ".";
 
 export function toAutoSubmitConfig(
-  value: FormProps["autoSubmit"]
+  value: FormProps["autoSubmit"],
 ): AutoSubmitConfig {
   return {
     wait: 500,
@@ -16,7 +16,7 @@ type UnknownArrayOrObject = unknown[] | Record<string, unknown>;
 // With little TS fixes.
 export function getDirtyValues(
   dirtyFields: UnknownArrayOrObject | true,
-  allValues: UnknownArrayOrObject
+  allValues: UnknownArrayOrObject,
 ): UnknownArrayOrObject {
   // NOTE: Recursive function.
 
@@ -44,9 +44,9 @@ export function getDirtyValues(
         key,
         getDirtyValues(
           dirtyFields[key] as UnknownArrayOrObject | true,
-          (allValues as Record<string, unknown>)[key] as UnknownArrayOrObject
+          (allValues as Record<string, unknown>)[key] as UnknownArrayOrObject,
         ),
-      ])
+      ]),
   );
 }
 

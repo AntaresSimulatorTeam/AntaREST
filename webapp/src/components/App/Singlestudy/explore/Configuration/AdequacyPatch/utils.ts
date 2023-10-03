@@ -43,7 +43,7 @@ function makeRequestURL(studyId: StudyMetadata["id"]): string {
 }
 
 export async function getAdequacyPatchFormFields(
-  studyId: StudyMetadata["id"]
+  studyId: StudyMetadata["id"],
 ): Promise<AdequacyPatchFormFields> {
   const res = await client.get(makeRequestURL(studyId));
   return res.data;
@@ -51,7 +51,7 @@ export async function getAdequacyPatchFormFields(
 
 export function setAdequacyPatchFormFields(
   studyId: StudyMetadata["id"],
-  values: Partial<AdequacyPatchFormFields>
+  values: Partial<AdequacyPatchFormFields>,
 ): Promise<void> {
   return client.put(makeRequestURL(studyId), values);
 }

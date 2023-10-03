@@ -77,7 +77,7 @@ function ListFE<TItem, TOption>(props: ListFEProps<TItem, TOption>) {
 
   const { t } = useTranslation();
   const [listItems, setListItems] = useState(() =>
-    makeListItems(value || defaultValue || [])
+    makeListItems(value || defaultValue || []),
   );
   const [selectedOption, setSelectedOption] = useState<TOption | null>(null);
   const droppableId = useId();
@@ -214,7 +214,7 @@ function ListFE<TItem, TOption>(props: ListFEProps<TItem, TOption>) {
                           edge="end"
                           onClick={() => {
                             setListItems(
-                              listItems.filter(({ id }) => id !== item.id)
+                              listItems.filter(({ id }) => id !== item.id),
                             );
                           }}
                         >
@@ -267,8 +267,8 @@ export default reactHookFormSupport({ defaultValue: [] as any })(ListFE) as <
   TFieldValues extends FieldValues = FieldValues,
   TFieldName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  TContext = any
+  TContext = any,
 >(
   props: ReactHookFormSupportProps<TFieldValues, TFieldName, TContext> &
-    ListFEProps<TItem, TOption>
+    ListFEProps<TItem, TOption>,
 ) => JSX.Element;

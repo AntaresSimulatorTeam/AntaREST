@@ -26,7 +26,7 @@ function OutputFilters<T extends FilterFieldValues>(props: Props<T>) {
         label: t(`global.time.${item}`),
         value: item,
       })),
-    [t]
+    [t],
   );
 
   const renderFilter = (filterName: keyof FilterFieldValues) => (

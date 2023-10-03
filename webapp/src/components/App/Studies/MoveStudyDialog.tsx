@@ -31,7 +31,7 @@ function MoveStudyDialog(props: Props) {
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = async (
-    data: SubmitHandlerPlus<typeof defaultValues>
+    data: SubmitHandlerPlus<typeof defaultValues>,
   ) => {
     const { folder } = data.values;
     try {
@@ -40,13 +40,13 @@ function MoveStudyDialog(props: Props) {
         t("studies.success.moveStudy", { study: study.name, folder }),
         {
           variant: "success",
-        }
+        },
       );
       onClose();
     } catch (e) {
       enqueueErrorSnackbar(
         t("studies.error.moveStudy", { study: study.name }),
-        e as Error
+        e as Error,
       );
     }
   };

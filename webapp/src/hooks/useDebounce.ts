@@ -24,7 +24,7 @@ const toParams = R.cond<[WaitOrParams | undefined], UseDebounceParams>([
 
 function useDebounce<T extends F.Function, U extends WaitOrParams>(
   fn: T,
-  params?: U
+  params?: U,
 ): U extends DebounceSettingsLeading
   ? DebouncedFuncLeading<T>
   : DebouncedFunc<T> {
@@ -38,7 +38,7 @@ function useDebounce<T extends F.Function, U extends WaitOrParams>(
   const debouncedFn = useMemo(
     () => debounce((...args) => fnRef.current(...args), wait, options),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [JSON.stringify(options), wait]
+    [JSON.stringify(options), wait],
   );
 
   useEffect(() => debouncedFn.cancel, [debouncedFn]);

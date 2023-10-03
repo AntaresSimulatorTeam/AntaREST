@@ -53,7 +53,7 @@ function LoginWrapper(props: Props) {
       errorMessage: t("login.error"),
       resetDataOnReload: false,
       deps: [user],
-    }
+    },
   );
 
   ////////////////////////////////////////////////////////////////

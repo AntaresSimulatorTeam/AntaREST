@@ -57,8 +57,8 @@ function CreateStudyDialog(props: Props) {
             createStudy({
               name,
               ...rest,
-            })
-          ).unwrap()
+            }),
+          ).unwrap(),
         );
 
         enqueueSnackbar(t("studies.success.createStudy", { studyname: name }), {
@@ -68,7 +68,7 @@ function CreateStudyDialog(props: Props) {
         logErr("Failed to create new study", name, e);
         enqueueErrorSnackbar(
           t("studies.error.createStudy", { studyname: name }),
-          e as AxiosError
+          e as AxiosError,
         );
       }
       onClose();

@@ -52,15 +52,15 @@ function Map() {
   const currentLayerId = useAppSelector(getCurrentLayer);
   const currentArea = useAppSelector(getCurrentStudyMapNode);
   const studyLinks = useAppSelector((state) =>
-    getStudyMapLinks(state, study.id)
+    getStudyMapLinks(state, study.id),
   );
   const mapLinks = useMemo(
     () =>
       R.map(
         RA.renameKeys({ area1: "source", area2: "target" }),
-        studyLinks || []
+        studyLinks || [],
       ) as unknown as LinkProperties[],
-    [studyLinks]
+    [studyLinks],
   );
   const mapNodesRes = useStudyMaps({
     studyId: study.id,

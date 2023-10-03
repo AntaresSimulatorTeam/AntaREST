@@ -54,7 +54,7 @@ function UpdateGroupDialog(props: Props) {
         type: user.role,
       })),
     }),
-    [group]
+    [group],
   );
 
   ////////////////////////////////////////////////////////////////
@@ -67,9 +67,9 @@ function UpdateGroupDialog(props: Props) {
     const groupName = name || group.name;
 
     const notifySuccess = R.once(() =>
-      enqueueSnackbar(t("settings.success.groupUpdate", [groupName]), {
+      enqueueSnackbar(t("settings.success.groupUpdate", { 0: groupName }), {
         variant: "success",
-      })
+      }),
     );
 
     if (groupName !== group.name) {
@@ -79,8 +79,8 @@ function UpdateGroupDialog(props: Props) {
         notifySuccess();
       } catch (e) {
         enqueueErrorSnackbar(
-          t("settings.error.groupSave", [groupName]),
-          e as Error
+          t("settings.error.groupSave", { 0: groupName }),
+          e as Error,
         );
         throw e;
       }
@@ -117,7 +117,7 @@ function UpdateGroupDialog(props: Props) {
               identity_id: role.user.id,
               type: role.type,
               group_id: group.id,
-            })
+            }),
           ),
         ];
 
@@ -128,7 +128,7 @@ function UpdateGroupDialog(props: Props) {
             id: identity.id,
             name: identity.name,
             role: type,
-          })
+          }),
         );
 
         editGroup({ id: group.id, name: groupName, users: newUserRoles });
@@ -139,8 +139,8 @@ function UpdateGroupDialog(props: Props) {
         reloadFetchUsers();
 
         enqueueErrorSnackbar(
-          t("settings.error.groupRolesSave", [groupName]),
-          e as Error
+          t("settings.error.groupRolesSave", { 0: groupName }),
+          e as Error,
         );
       }
     }

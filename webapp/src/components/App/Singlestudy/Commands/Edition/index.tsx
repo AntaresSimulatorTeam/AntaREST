@@ -154,7 +154,7 @@ function EditionView(props: Props) {
       const elm = await getCommand(studyId, commands[index].id as string);
       exportJson(
         { action: elm.action, args: elm.args },
-        `${elm.id}_command.json`
+        `${elm.id}_command.json`,
       );
     } catch (e) {
       enqueueErrorSnackbar(t("variants.error.export"), e as AxiosError);
@@ -169,7 +169,7 @@ function EditionView(props: Props) {
       }
       exportJson(
         fromCommandDTOToJsonCommand(items),
-        `${studyId}_commands.json`
+        `${studyId}_commands.json`,
       );
     } catch (e) {
       enqueueErrorSnackbar(t("variants.error.export"), e as AxiosError);
@@ -215,7 +215,7 @@ function EditionView(props: Props) {
     } catch (e) {
       enqueueErrorSnackbar(
         t("variants.error.launchGeneration"),
-        e as AxiosError
+        e as AxiosError,
       );
     }
   };
@@ -234,7 +234,7 @@ function EditionView(props: Props) {
       setCurrentCommandGenerationIndex(res.index);
       setCommands(res.commands);
     },
-    [studyId, commands]
+    [studyId, commands],
   );
 
   const listen = useCallback(
@@ -280,7 +280,7 @@ function EditionView(props: Props) {
           break;
       }
     },
-    [commands.length, doUpdateCommandResults, enqueueSnackbar, studyId, t]
+    [commands.length, doUpdateCommandResults, enqueueSnackbar, studyId, t],
   );
 
   const fetchTask = useCallback(async () => {
@@ -302,9 +302,9 @@ function EditionView(props: Props) {
         });
       },
       1000,
-      { trailing: false, leading: true }
+      { trailing: false, leading: true },
     ),
-    [enqueueSnackbar, t]
+    [enqueueSnackbar, t],
   );
 
   useEffect(() => {
@@ -338,7 +338,7 @@ function EditionView(props: Props) {
           const res = updateCommandResults(
             studyId,
             items,
-            task.logs.map((elm) => JSON.parse(elm.message) as CommandResultDTO)
+            task.logs.map((elm) => JSON.parse(elm.message) as CommandResultDTO),
           );
           items = res.commands;
           currentIndex = res.index;
@@ -422,7 +422,7 @@ function EditionView(props: Props) {
       setCommands((commandList) =>
         commandList
           .filter((item, idx) => idx !== index)
-          .map((item) => ({ ...item, results: undefined }))
+          .map((item) => ({ ...item, results: undefined })),
       );
       enqueueSnackbar(t("variants.success.delete"), {
         variant: "success",

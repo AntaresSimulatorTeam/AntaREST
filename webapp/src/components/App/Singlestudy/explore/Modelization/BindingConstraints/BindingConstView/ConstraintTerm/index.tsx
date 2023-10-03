@@ -66,7 +66,7 @@ export default function ConstraintItem(props: Props) {
         [name]: value === null ? value : pValue,
       });
     },
-    [constraint.id, saveValue]
+    [constraint.id, saveValue],
   );
 
   ////////////////////////////////////////////////////////////////

@@ -63,7 +63,7 @@ function Fields(props: Props) {
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [firstDay]
+    [firstDay],
   );
 
   useEffect(
@@ -73,7 +73,7 @@ function Fields(props: Props) {
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [lastDay]
+    [lastDay],
   );
 
   ////////////////////////////////////////////////////////////////
@@ -82,10 +82,10 @@ function Fields(props: Props) {
 
   const handleDayValidation: Validate<number, GeneralFormFields> = (
     value,
-    formValues
+    formValues,
   ) => {
     if (value < 1 || Number.isNaN(value)) {
-      return t("form.field.minValue", [1]);
+      return t("form.field.minValue", { 0: 1 });
     }
     if (formValues.firstDay > formValues.lastDay) {
       return false;
@@ -102,7 +102,7 @@ function Fields(props: Props) {
 
   const handleNbYearsValidation: Validate<number, GeneralFormFields> = (
     value,
-    formValues
+    formValues,
   ) => {
     if (formValues.buildingMode === BuildingMode.Derated) {
       return value === 1
@@ -110,9 +110,9 @@ function Fields(props: Props) {
         : t("study.configuration.general.nbYears.error.derated");
     }
     if (value < 1) {
-      return t("form.field.minValue", [1]);
+      return t("form.field.minValue", { 0: 1 });
     }
-    return value <= 50000 ? true : t("form.field.maxValue", [50000]);
+    return value <= 50000 ? true : t("form.field.maxValue", { 0: 50000 });
   };
 
   ////////////////////////////////////////////////////////////////

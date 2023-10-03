@@ -14,11 +14,11 @@ interface AutoSubmitGeneratorFormProps<T extends FieldValues> {
     name: IGeneratorField<T>["name"],
     path: string,
     defaultValues: any,
-    data: any
+    data: any,
   ) => void;
 }
 export default function AutoSubmitGeneratorForm<T extends FieldValues>(
-  props: AutoSubmitGeneratorFormProps<T>
+  props: AutoSubmitGeneratorFormProps<T>,
 ) {
   const { saveField, jsonTemplate } = props;
 
@@ -26,6 +26,9 @@ export default function AutoSubmitGeneratorForm<T extends FieldValues>(
     () =>
       jsonTemplate.map((fieldset) => {
         const { fields, ...otherProps } = fieldset;
+        // TODO Remove this component with the update of binding constraints form!!
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
         const formattedFields: IFieldsetType<T>["fields"] = fields.map(
           (field) => ({
             ...field,
@@ -33,12 +36,12 @@ export default function AutoSubmitGeneratorForm<T extends FieldValues>(
               onAutoSubmit: R.curry(saveField)(name, path, defaultValues),
               required,
             }),
-          })
+          }),
         );
 
         return { fields: formattedFields, ...otherProps };
       }),
-    [jsonTemplate, saveField]
+    [jsonTemplate, saveField],
   );
 
   return <FormGenerator jsonTemplate={formattedJsonTemplate} />;

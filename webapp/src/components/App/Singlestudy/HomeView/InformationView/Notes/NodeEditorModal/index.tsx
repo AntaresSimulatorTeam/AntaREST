@@ -26,7 +26,7 @@ function NoteEditorModal(props: Props) {
   const { open, onClose, content, onSave } = props;
 
   const [editorState, setEditorState] = useState(() =>
-    EditorState.createEmpty()
+    EditorState.createEmpty(),
   );
   const [initContent, setInitContent] = useState<string>("");
 
@@ -59,7 +59,7 @@ function NoteEditorModal(props: Props) {
   useEffect(() => {
     if (content !== undefined) {
       setEditorState(
-        EditorState.createWithContent(convertXMLToDraftJS(content))
+        EditorState.createWithContent(convertXMLToDraftJS(content)),
       );
       setInitContent(content);
     }

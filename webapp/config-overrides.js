@@ -19,7 +19,7 @@ module.exports = function override(config, env) {
     new webpack.ProvidePlugin({
       process: "process/browser",
       Buffer: ["buffer", "Buffer"],
-    })
+    }),
   );
   // eslint-disable-next-line no-param-reassign
   config.ignoreWarnings = [/Failed to parse source map/];

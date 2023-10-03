@@ -47,7 +47,7 @@ function Maintenance() {
       mode: await getMaintenanceMode(),
       message: await getMessageInfo(),
     }),
-    { errorMessage: t("maintenance.error.maintenanceError") }
+    { errorMessage: t("maintenance.error.maintenanceError") },
   );
 
   useUpdateEffect(() => {

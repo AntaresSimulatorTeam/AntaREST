@@ -45,7 +45,7 @@ export interface RenewableFormFields {
 
 export const CLUSTER_GROUP_OPTIONS = Object.values(ClusterGroup);
 export const TS_INTERPRETATION_OPTIONS = Object.values(
-  TimeSeriesInterpretation
+  TimeSeriesInterpretation,
 );
 
 ////////////////////////////////////////////////////////////////
@@ -55,7 +55,7 @@ export const TS_INTERPRETATION_OPTIONS = Object.values(
 function makeRequestURL(
   studyId: StudyMetadata["id"],
   areaId: Area["name"],
-  clusterId: Cluster["id"]
+  clusterId: Cluster["id"],
 ): string {
   return `/v1/studies/${studyId}/areas/${areaId}/clusters/renewable/${clusterId}/form`;
 }
@@ -63,7 +63,7 @@ function makeRequestURL(
 export async function getRenewableFormFields(
   studyId: StudyMetadata["id"],
   areaId: Area["name"],
-  clusterId: Cluster["id"]
+  clusterId: Cluster["id"],
 ): Promise<RenewableFormFields> {
   const res = await client.get(makeRequestURL(studyId, areaId, clusterId));
   return res.data;
@@ -73,7 +73,7 @@ export function updateRenewableFormFields(
   studyId: StudyMetadata["id"],
   areaId: Area["name"],
   clusterId: Cluster["id"],
-  values: Partial<RenewableFormFields>
+  values: Partial<RenewableFormFields>,
 ): Promise<void> {
   return client.put(makeRequestURL(studyId, areaId, clusterId), values);
 }

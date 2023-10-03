@@ -48,7 +48,7 @@ export interface AddItemDialogProps {
 
 export function performColumnOperation(
   operation: ColumnOperation,
-  values: number[]
+  values: number[],
 ): number {
   switch (operation) {
     case ColumnOperation.SUM:
@@ -64,7 +64,7 @@ export function performColumnOperation(
 
 export function calculateColumnResults(
   columns: Column[],
-  items: Item[]
+  items: Item[],
 ): ColumnResult {
   const columnResults: ColumnResult = {};
 
@@ -76,7 +76,7 @@ export function calculateColumnResults(
 
       columnResults[column.name] = performColumnOperation(
         column.operation,
-        values as number[]
+        values as number[],
       );
     }
   });

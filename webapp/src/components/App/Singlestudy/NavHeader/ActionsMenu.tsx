@@ -45,7 +45,7 @@ function ActionsMenu({ anchorEl, open, onClose, items }: Props) {
                 {t(item.key)}
               </ListItemText>
             </MenuItem>
-          )
+          ),
       )}
     </Menu>
   );

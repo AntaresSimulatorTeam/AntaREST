@@ -51,12 +51,12 @@ export type AutoSubmitConfig = { enable: boolean; wait?: number };
 
 export interface FormProps<
   TFieldValues extends FieldValues = FieldValues,
-  TContext = any
+  TContext = any,
 > extends Omit<React.HTMLAttributes<HTMLFormElement>, "onSubmit" | "children"> {
   config?: UseFormProps<TFieldValues, TContext>;
   onSubmit?: (
     data: SubmitHandlerPlus<TFieldValues>,
-    event?: React.BaseSyntheticEvent
+    event?: React.BaseSyntheticEvent,
   ) => void | Promise<any>;
   onSubmitError?: SubmitErrorHandler<TFieldValues>;
   children:
@@ -77,7 +77,7 @@ export function useFormContextPlus<TFieldValues extends FieldValues>() {
 }
 
 function Form<TFieldValues extends FieldValues, TContext>(
-  props: FormProps<TFieldValues, TContext>
+  props: FormProps<TFieldValues, TContext>,
 ) {
   const {
     config,
@@ -101,19 +101,19 @@ function Form<TFieldValues extends FieldValues, TContext>(
   const autoSubmitConfig = toAutoSubmitConfig(autoSubmit);
   const [showAutoSubmitLoader, setShowAutoSubmitLoader] = useDebouncedState(
     false,
-    750
+    750,
   );
   const fieldAutoSubmitListeners = useRef<
     Record<string, ((v: any) => any | Promise<any>) | undefined>
   >({});
   const fieldsChangeDuringAutoSubmitting = useRef<FieldPath<TFieldValues>[]>(
-    []
+    [],
   );
   const lastSubmittedData = useRef<TFieldValues>();
   const preventClose = useRef(false);
   const contextValue = useMemo(
     () => ({ isAutoSubmitEnabled: autoSubmitConfig.enable }),
-    [autoSubmitConfig.enable]
+    [autoSubmitConfig.enable],
   );
 
   const formApi = useForm<TFieldValues, TContext>({
@@ -169,7 +169,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [isSubmitting, autoSubmitConfig.enable]
+    [isSubmitting, autoSubmitConfig.enable],
   );
 
   // Reset after successful submit.
@@ -178,7 +178,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
     () => {
       if (isSubmitSuccessful && lastSubmittedData.current) {
         const valuesToSetAfterReset = getValues(
-          fieldsChangeDuringAutoSubmitting.current
+          fieldsChangeDuringAutoSubmitting.current,
         );
 
         // Reset only dirty values make issue with `getValues` and `watch` which only return reset values
@@ -195,7 +195,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [isSubmitSuccessful]
+    [isSubmitSuccessful],
   );
 
   // Prevent browser close if a submit is pending
@@ -242,7 +242,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
             .map((key) => {
               const listener = fieldAutoSubmitListeners.current[key];
               return listener?.(R.path(stringToPath(key), data));
-            })
+            }),
         );
       }
 

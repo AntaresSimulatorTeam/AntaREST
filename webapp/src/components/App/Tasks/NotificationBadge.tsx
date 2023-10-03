@@ -39,7 +39,7 @@ function NotificationBadge(props: Props) {
       }
       enqueueSnackbar(t(message), { variant: variantType || "info" });
     },
-    [dispatch, enqueueSnackbar, location.pathname, t]
+    [dispatch, enqueueSnackbar, location.pathname, t],
   );
 
   useEffect(() => {

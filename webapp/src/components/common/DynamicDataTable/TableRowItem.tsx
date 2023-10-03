@@ -20,7 +20,7 @@ function TableRowItem({ item, columns, selected, onClick }: Props) {
     (e: ChangeEvent<HTMLInputElement>) => {
       onClick(e, item.id);
     },
-    [item.id, onClick]
+    [item.id, onClick],
   );
 
   ////////////////////////////////////////////////////////////////

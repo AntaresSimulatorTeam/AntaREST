@@ -23,7 +23,7 @@ function Thermal(props: Props) {
   const filteredAreas = useMemo(
     () =>
       res.data?.filter(({ name }) => isSearchMatching(searchValue, name)) || [],
-    [res.data, searchValue]
+    [res.data, searchValue],
   );
 
   useEffect(() => {
