@@ -67,7 +67,7 @@ function BasicDialog(props: BasicDialogProps) {
     contentProps,
     ...dialogProps
   } = props;
-  const TitleIcon = titleIcon as SvgIconComponent;
+  const TitleIcon = titleIcon;
 
   return (
     <Dialog {...dialogProps}>

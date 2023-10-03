@@ -1,5 +1,5 @@
 import { Box } from "@mui/material";
-import { DeepPartial, FieldValues } from "react-hook-form";
+import { DefaultValues, FieldValues } from "react-hook-form";
 import { PropsWithChildren } from "react";
 import Form from "../../../../../../../common/Form";
 import { Cluster, StudyMetadata } from "../../../../../../../../common/types";
@@ -47,7 +47,7 @@ export default function ClusterView<T extends FieldValues>(
           <Form
             autoSubmit
             config={{
-              defaultValues: data as DeepPartial<T>,
+              defaultValues: data as DefaultValues<T>,
             }}
           >
             {children}

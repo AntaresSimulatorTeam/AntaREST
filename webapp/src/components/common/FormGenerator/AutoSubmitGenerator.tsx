@@ -26,6 +26,9 @@ export default function AutoSubmitGeneratorForm<T extends FieldValues>(
     () =>
       jsonTemplate.map((fieldset) => {
         const { fields, ...otherProps } = fieldset;
+        // TODO Remove this component with the update of binding constraints form!!
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
         const formattedFields: IFieldsetType<T>["fields"] = fields.map(
           (field) => ({
             ...field,

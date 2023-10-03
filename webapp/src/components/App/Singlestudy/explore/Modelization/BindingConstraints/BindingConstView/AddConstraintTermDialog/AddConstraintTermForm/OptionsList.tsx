@@ -94,7 +94,7 @@ export default function OptionsList(props: Props) {
   return (
     <>
       <SelectFE
-        name={`data.${name1}`}
+        name={`data.${name1}` as const}
         label={t(`study.${name1}`)}
         options={options1}
         control={control}
@@ -104,7 +104,7 @@ export default function OptionsList(props: Props) {
         sx={{ minWidth: "200px", height: "60px" }}
       />
       <SelectFE
-        name={`data.${name2}`}
+        name={`data.${name2}` as const}
         label={t(`study.${name2}`)}
         options={options2}
         control={control}

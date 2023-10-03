@@ -107,14 +107,14 @@ function Fields() {
                   </TableCell>
                   <TableCell align="center">
                     <SwitchFE
-                      name={`${type}.stochasticTsStatus`}
+                      name={`${type}.stochasticTsStatus` as const}
                       control={control}
                     />
                   </TableCell>
                   <TableCell align="center">
                     {ifNotSpecialType((t) => (
                       <NumberFE
-                        name={`${t}.number`}
+                        name={`${t}.number` as const}
                         control={control}
                         size="small"
                         fullWidth
@@ -125,7 +125,7 @@ function Fields() {
                   <TableCell align="center">
                     {ifNotSpecialType((t) => (
                       <CheckBoxFE
-                        name={`${t}.refresh`}
+                        name={`${t}.refresh` as const}
                         control={control}
                         disabled={isReadyMadeStatusEnable}
                       />
@@ -134,7 +134,7 @@ function Fields() {
                   <TableCell align="center">
                     {ifNotSpecialType((t) => (
                       <NumberFE
-                        name={`${t}.refreshInterval`}
+                        name={`${t}.refreshInterval` as const}
                         control={control}
                         size="small"
                         fullWidth
@@ -146,7 +146,7 @@ function Fields() {
                     {ifNotSpecialType((t) =>
                       t !== TSType.Thermal ? (
                         <SelectFE
-                          name={`${t}.seasonCorrelation`}
+                          name={`${t}.seasonCorrelation` as const}
                           options={SEASONAL_CORRELATION_OPTIONS}
                           control={control}
                           size="small"
@@ -160,7 +160,7 @@ function Fields() {
                   <TableCell align="center">
                     {ifNotSpecialType((t) => (
                       <CheckBoxFE
-                        name={`${t}.storeInInput`}
+                        name={`${t}.storeInInput` as const}
                         control={control}
                         disabled={isReadyMadeStatusEnable}
                       />
@@ -169,19 +169,22 @@ function Fields() {
                   <TableCell align="center">
                     {ifNotSpecialType((t) => (
                       <CheckBoxFE
-                        name={`${t}.storeInOutput`}
+                        name={`${t}.storeInOutput` as const}
                         control={control}
                         disabled={isReadyMadeStatusEnable}
                       />
                     ))}
                   </TableCell>
                   <TableCell align="center">
-                    <CheckBoxFE name={`${type}.intraModal`} control={control} />
+                    <CheckBoxFE
+                      name={`${type}.intraModal` as const}
+                      control={control}
+                    />
                   </TableCell>
                   <TableCell align="center">
                     {type !== TSType.NTC ? (
                       <CheckBoxFE
-                        name={`${type}.interModal`}
+                        name={`${type}.interModal` as const}
                         control={control}
                       />
                     ) : (
