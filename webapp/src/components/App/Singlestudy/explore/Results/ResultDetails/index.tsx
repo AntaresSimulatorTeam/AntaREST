@@ -32,10 +32,10 @@ import EditableMatrix from "../../../../../common/EditableMatrix";
 import PropertiesView from "../../../../../common/PropertiesView";
 import SplitLayoutView from "../../../../../common/SplitLayoutView";
 import ListElement from "../../common/ListElement";
-import SelectionDrawer, { SelectionDrawerProps } from "./SelectionDrawer";
 import {
   createPath,
   DataType,
+  MAX_YEAR,
   OutputItemType,
   SYNTHESIS_ITEMS,
   Timestep,
@@ -46,6 +46,9 @@ import UsePromiseCond, {
 import useStudySynthesis from "../../../../../../redux/hooks/useStudySynthesis";
 import { downloadMatrix } from "../../../../../../utils/matrixUtils";
 import ButtonBack from "../../../../../common/ButtonBack";
+import BooleanFE from "../../../../../common/fieldEditors/BooleanFE";
+import SelectFE from "../../../../../common/fieldEditors/SelectFE";
+import NumberFE from "../../../../../common/fieldEditors/NumberFE";
 
 function ResultDetails() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -60,7 +63,6 @@ function ResultDetails() {
   const [dataType, setDataType] = useState(DataType.General);
   const [timestep, setTimeStep] = useState(Timestep.Hourly);
   const [year, setYear] = useState(-1);
-  const [showFilter, setShowFilter] = useState(false);
   const [itemType, setItemType] = useState(OutputItemType.Areas);
   const [selectedItemId, setSelectedItemId] = useState("");
   const [searchValue, setSearchValue] = useState("");
@@ -86,6 +88,8 @@ function ResultDetails() {
     (item) => item.id === selectedItemId
   ) as (Area & { id: string }) | LinkElement | undefined;
 
+  const maxYear = output?.nbyears ?? MAX_YEAR;
+
   useEffect(
     () => {
       const isValidSelectedItem =
@@ -104,7 +108,7 @@ function ResultDetails() {
     async () => {
       if (output && selectedItem && !isSynthesis) {
         const path = createPath({
-          output: { ...output, id: outputId as string },
+          output,
           item: selectedItem,
           dataType,
           timestep,
@@ -126,7 +130,7 @@ function ResultDetails() {
     {
       resetDataOnReload: true,
       resetErrorOnReload: true,
-      deps: [study.id, output, selectedItem],
+      deps: [study.id, output, selectedItem, dataType, timestep, year],
     }
   );
 
@@ -155,16 +159,6 @@ function ResultDetails() {
     setItemType(value);
   };
 
-  const handleSelection: SelectionDrawerProps["onSelection"] = ({
-    dataType,
-    timestep,
-    year,
-  }) => {
-    setDataType(dataType);
-    setTimeStep(timestep);
-    setYear(year);
-  };
-
   const handleDownload = (matrixData: MatrixType, fileName: string): void => {
     downloadMatrix(matrixData, fileName);
   };
@@ -174,53 +168,53 @@ function ResultDetails() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <>
-      <SplitLayoutView
-        left={
-          <PropertiesView
-            topContent={
-              <Box
-                sx={{
-                  width: 1,
-                  px: 1,
-                }}
+    <SplitLayoutView
+      left={
+        <PropertiesView
+          topContent={
+            <Box
+              sx={{
+                width: 1,
+                px: 1,
+              }}
+            >
+              <ButtonBack onClick={() => navigate("..")} />
+            </Box>
+          }
+          mainContent={
+            <>
+              <ToggleButtonGroup
+                sx={{ p: 1 }}
+                value={itemType}
+                exclusive
+                size="small"
+                orientation="vertical"
+                fullWidth
+                onChange={handleItemTypeChange}
               >
-                <ButtonBack onClick={() => navigate("..")} />
-              </Box>
-            }
-            mainContent={
-              <>
-                <ToggleButtonGroup
-                  sx={{ p: 1 }}
-                  value={itemType}
-                  exclusive
-                  size="small"
-                  orientation="vertical"
-                  fullWidth
-                  onChange={handleItemTypeChange}
-                >
-                  <ToggleButton value={OutputItemType.Areas}>
-                    {t("study.areas")}
-                  </ToggleButton>
-                  <ToggleButton value={OutputItemType.Links}>
-                    {t("study.links")}
-                  </ToggleButton>
-                  <ToggleButton value={OutputItemType.Synthesis}>
-                    {t("study.synthesis")}
-                  </ToggleButton>
-                </ToggleButtonGroup>
-                <ListElement
-                  list={filteredItems}
-                  currentElement={selectedItemId}
-                  currentElementKeyToTest="id"
-                  setSelectedItem={(item) => setSelectedItemId(item.id)}
-                />
-              </>
-            }
-            onSearchFilterChange={setSearchValue}
-          />
-        }
-        right={
+                <ToggleButton value={OutputItemType.Areas}>
+                  {t("study.areas")}
+                </ToggleButton>
+                <ToggleButton value={OutputItemType.Links}>
+                  {t("study.links")}
+                </ToggleButton>
+                <ToggleButton value={OutputItemType.Synthesis}>
+                  {t("study.synthesis")}
+                </ToggleButton>
+              </ToggleButtonGroup>
+              <ListElement
+                list={filteredItems}
+                currentElement={selectedItemId}
+                currentElementKeyToTest="id"
+                setSelectedItem={(item) => setSelectedItemId(item.id)}
+              />
+            </>
+          }
+          onSearchFilterChange={setSearchValue}
+        />
+      }
+      right={
+        isSynthesis ? (
           <Box
             sx={{
               display: "flex",
@@ -230,115 +224,179 @@ function ResultDetails() {
               overflow: "auto",
             }}
           >
-            {isSynthesis ? (
-              <Paper
-                sx={{
-                  p: 2,
-                  overflow: "auto",
-                }}
-              >
-                <code style={{ whiteSpace: "pre" }}>{synthesis}</code>
-              </Paper>
-            ) : (
-              <>
+            <Paper
+              sx={{
+                p: 2,
+                overflow: "auto",
+              }}
+            >
+              <code style={{ whiteSpace: "pre" }}>{synthesis}</code>
+            </Paper>
+          </Box>
+        ) : (
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              height: 1,
+              width: 1,
+              gap: 1,
+            }}
+          >
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "flex-end",
+                gap: 2,
+                flexWrap: "wrap",
+              }}
+            >
+              {(
+                [
+                  [
+                    `${t("study.results.mc")}:`,
+                    () => (
+                      <>
+                        <BooleanFE
+                          value={year <= 0}
+                          trueText="Synthesis"
+                          falseText="Year by year"
+                          size="small"
+                          variant="outlined"
+                          onChange={(event) => {
+                            setYear(event?.target.value ? -1 : 1);
+                          }}
+                        />
+                        {year > 0 && (
+                          <NumberFE
+                            size="small"
+                            variant="outlined"
+                            value={year}
+                            sx={{ m: 0, ml: 1, width: 80 }}
+                            inputProps={{
+                              min: 1,
+                              max: maxYear,
+                            }}
+                            onChange={(event) => {
+                              setYear(Number(event.target.value));
+                            }}
+                          />
+                        )}
+                      </>
+                    ),
+                  ],
+                  [
+                    `${t("study.results.display")}:`,
+                    () => (
+                      <SelectFE
+                        value={dataType}
+                        options={[
+                          { value: DataType.General, label: "General values" },
+                          { value: DataType.Thermal, label: "Thermal plants" },
+                          { value: DataType.Renewable, label: "Ren. clusters" },
+                          { value: DataType.Record, label: "RecordYears" },
+                        ]}
+                        size="small"
+                        variant="outlined"
+                        onChange={(event) => {
+                          setDataType(event?.target.value as DataType);
+                        }}
+                      />
+                    ),
+                  ],
+                  [
+                    `${t("study.results.temporality")}:`,
+                    () => (
+                      <SelectFE
+                        value={timestep}
+                        options={[
+                          { value: Timestep.Hourly, label: "Hourly" },
+                          { value: Timestep.Daily, label: "Daily" },
+                          { value: Timestep.Weekly, label: "Weekly" },
+                          { value: Timestep.Monthly, label: "Monthly" },
+                          { value: Timestep.Annual, label: "Annual" },
+                        ]}
+                        size="small"
+                        variant="outlined"
+                        onChange={(event) => {
+                          setTimeStep(event?.target.value as Timestep);
+                        }}
+                      />
+                    ),
+                  ],
+                ] as const
+              ).map(([label, Field]) => (
                 <Box
+                  key={label}
                   sx={{
                     display: "flex",
                     alignItems: "center",
-                    justifyContent: "flex-end",
-                    gap: 4,
                   }}
                 >
-                  {[
-                    [
-                      `${t("study.results.mc")}:`,
-                      year > 0
-                        ? `${t("study.results.mc.year")} ${year}`
-                        : "all",
-                    ],
-                    [`${t("study.results.display")}:`, dataType],
-                    [`${t("study.results.temporality")}:`, timestep],
-                  ].map(([label, value]) => (
-                    <Box key={label}>
-                      <Box component="span" sx={{ opacity: 0.7, mr: 1 }}>
-                        {label}
-                      </Box>
-                      {value}
-                    </Box>
-                  ))}
-                  <Button
-                    variant="outlined"
-                    onClick={() => setShowFilter(true)}
-                    disabled={matrixRes.isLoading}
-                  >
-                    {t("global.change")}
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    color="primary"
-                    startIcon={<DownloadOutlinedIcon />}
-                    onClick={() =>
-                      matrixRes.data &&
-                      handleDownload(matrixRes.data, `matrix_${study.id}`)
-                    }
-                    disabled={matrixRes.isLoading}
-                  >
-                    {t("global.download")}
-                  </Button>
+                  <Box component="span" sx={{ opacity: 0.7, mr: 1 }}>
+                    {label}
+                  </Box>
+                  <Field />
                 </Box>
-                <Box sx={{ flex: 1 }}>
-                  <UsePromiseCond
-                    response={mergeResponses(outputRes, matrixRes)}
-                    ifPending={() => (
-                      <Skeleton sx={{ height: 1, transform: "none" }} />
+              ))}
+              <Button
+                size="small"
+                title={t("global.download")}
+                variant="outlined"
+                color="primary"
+                onClick={() =>
+                  matrixRes.data &&
+                  handleDownload(matrixRes.data, `matrix_${study.id}`)
+                }
+                disabled={matrixRes.isLoading}
+              >
+                <DownloadOutlinedIcon />
+              </Button>
+            </Box>
+            <Box sx={{ flex: 1 }}>
+              <UsePromiseCond
+                response={mergeResponses(outputRes, matrixRes)}
+                ifPending={() => (
+                  <Skeleton sx={{ height: 1, transform: "none" }} />
+                )}
+                ifResolved={([, matrix]) =>
+                  matrix && (
+                    <EditableMatrix
+                      matrix={matrix}
+                      matrixTime={false}
+                      readOnly
+                      toggleView
+                    />
+                  )
+                }
+                ifRejected={(err) => (
+                  <Box
+                    sx={{
+                      height: 1,
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      flexDirection: "column",
+                      gap: 1,
+                    }}
+                  >
+                    {axios.isAxiosError(err) && err.response?.status === 404 ? (
+                      <>
+                        <GridOffIcon sx={{ fontSize: "80px" }} />
+                        {t("study.results.noData")}
+                      </>
+                    ) : (
+                      t("data.error.matrix")
                     )}
-                    ifResolved={([, matrix]) =>
-                      matrix && (
-                        <EditableMatrix
-                          matrix={matrix}
-                          matrixTime={false}
-                          readOnly
-                          toggleView
-                        />
-                      )
-                    }
-                    ifRejected={(err) => (
-                      <Box
-                        sx={{
-                          height: 1,
-                          display: "flex",
-                          justifyContent: "center",
-                          alignItems: "center",
-                          flexDirection: "column",
-                          gap: 1,
-                        }}
-                      >
-                        {axios.isAxiosError(err) &&
-                        err.response?.status === 404 ? (
-                          <>
-                            <GridOffIcon sx={{ fontSize: "80px" }} />
-                            {t("study.results.noData")}
-                          </>
-                        ) : (
-                          t("data.error.matrix")
-                        )}
-                      </Box>
-                    )}
-                  />
-                </Box>
-              </>
-            )}
+                  </Box>
+                )}
+              />
+            </Box>
           </Box>
-        }
-      />
-      <SelectionDrawer
-        open={showFilter}
-        onClose={() => setShowFilter(false)}
-        values={{ dataType, timestep, year }}
-        maxYear={output?.nbyears}
-        onSelection={handleSelection}
-      />
-    </>
+        )
+      }
+    />
   );
 }
 
