@@ -1,6 +1,7 @@
 import {
   Box,
   Button,
+  Paper,
   Skeleton,
   ToggleButton,
   ToggleButtonGroup,
@@ -32,7 +33,13 @@ import PropertiesView from "../../../../../common/PropertiesView";
 import SplitLayoutView from "../../../../../common/SplitLayoutView";
 import ListElement from "../../common/ListElement";
 import SelectionDrawer, { SelectionDrawerProps } from "./SelectionDrawer";
-import { createPath, DataType, OutputItemType, Timestep } from "./utils";
+import {
+  createPath,
+  DataType,
+  OutputItemType,
+  SYNTHESIS_ITEMS,
+  Timestep,
+} from "./utils";
 import UsePromiseCond, {
   mergeResponses,
 } from "../../../../../common/utils/UsePromiseCond";
@@ -57,6 +64,7 @@ function ResultDetails() {
   const [itemType, setItemType] = useState(OutputItemType.Areas);
   const [selectedItemId, setSelectedItemId] = useState("");
   const [searchValue, setSearchValue] = useState("");
+  const isSynthesis = itemType === OutputItemType.Synthesis;
   const { t } = useTranslation();
   const navigate = useNavigate();
 
@@ -67,10 +75,12 @@ function ResultDetails() {
   ) as Array<{ id: string; name: string; label?: string }>;
 
   const filteredItems = useMemo(() => {
-    return items.filter((item) =>
-      isSearchMatching(searchValue, item.label || item.name)
-    );
-  }, [items, searchValue]);
+    return isSynthesis
+      ? SYNTHESIS_ITEMS
+      : items.filter((item) =>
+          isSearchMatching(searchValue, item.label || item.name)
+        );
+  }, [isSynthesis, items, searchValue]);
 
   const selectedItem = filteredItems.find(
     (item) => item.id === selectedItemId
@@ -92,7 +102,7 @@ function ResultDetails() {
 
   const matrixRes = usePromise<MatrixType | null>(
     async () => {
-      if (output && selectedItem) {
+      if (output && selectedItem && !isSynthesis) {
         const path = createPath({
           output: { ...output, id: outputId as string },
           item: selectedItem,
@@ -117,6 +127,20 @@ function ResultDetails() {
       resetDataOnReload: true,
       resetErrorOnReload: true,
       deps: [study.id, output, selectedItem],
+    }
+  );
+
+  const { data: synthesis } = usePromise<string>(
+    async () => {
+      if (outputId && selectedItem && isSynthesis) {
+        const path = `output/${outputId}/economy/mc-all/grid/${selectedItem.id}`;
+        const res = await getStudyData(study.id, path);
+        return res;
+      }
+      return null;
+    },
+    {
+      deps: [study.id, outputId, selectedItem],
     }
   );
 
@@ -171,6 +195,7 @@ function ResultDetails() {
                   value={itemType}
                   exclusive
                   size="small"
+                  orientation="vertical"
                   fullWidth
                   onChange={handleItemTypeChange}
                 >
@@ -179,6 +204,9 @@ function ResultDetails() {
                   </ToggleButton>
                   <ToggleButton value={OutputItemType.Links}>
                     {t("study.links")}
+                  </ToggleButton>
+                  <ToggleButton value={OutputItemType.Synthesis}>
+                    {t("study.synthesis")}
                   </ToggleButton>
                 </ToggleButtonGroup>
                 <ListElement
@@ -199,92 +227,107 @@ function ResultDetails() {
               flexDirection: "column",
               height: 1,
               width: 1,
-              gap: 1,
+              overflow: "auto",
             }}
           >
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "flex-end",
-                gap: 4,
-              }}
-            >
-              {[
-                [
-                  `${t("study.results.mc")}:`,
-                  year > 0 ? `${t("study.results.mc.year")} ${year}` : "all",
-                ],
-                [`${t("study.results.display")}:`, dataType],
-                [`${t("study.results.temporality")}:`, timestep],
-              ].map(([label, value]) => (
-                <Box key={label}>
-                  <Box component="span" sx={{ opacity: 0.7, mr: 1 }}>
-                    {label}
-                  </Box>
-                  {value}
-                </Box>
-              ))}
-              <Button
-                variant="outlined"
-                onClick={() => setShowFilter(true)}
-                disabled={matrixRes.isLoading}
+            {isSynthesis ? (
+              <Paper
+                sx={{
+                  p: 2,
+                  overflow: "auto",
+                }}
               >
-                {t("global.change")}
-              </Button>
-
-              <Button
-                variant="outlined"
-                color="primary"
-                startIcon={<DownloadOutlinedIcon />}
-                onClick={() =>
-                  matrixRes.data &&
-                  handleDownload(matrixRes.data, `matrix_${study.id}`)
-                }
-                disabled={matrixRes.isLoading}
-              >
-                {t("global.download")}
-              </Button>
-            </Box>
-            <Box sx={{ flex: 1 }}>
-              <UsePromiseCond
-                response={mergeResponses(outputRes, matrixRes)}
-                ifPending={() => (
-                  <Skeleton sx={{ height: 1, transform: "none" }} />
-                )}
-                ifResolved={([, matrix]) =>
-                  matrix && (
-                    <EditableMatrix
-                      matrix={matrix}
-                      matrixTime={false}
-                      readOnly
-                      toggleView
-                    />
-                  )
-                }
-                ifRejected={(err) => (
-                  <Box
-                    sx={{
-                      height: 1,
-                      display: "flex",
-                      justifyContent: "center",
-                      alignItems: "center",
-                      flexDirection: "column",
-                      gap: 1,
-                    }}
+                <code style={{ whiteSpace: "pre" }}>{synthesis}</code>
+              </Paper>
+            ) : (
+              <>
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "flex-end",
+                    gap: 4,
+                  }}
+                >
+                  {[
+                    [
+                      `${t("study.results.mc")}:`,
+                      year > 0
+                        ? `${t("study.results.mc.year")} ${year}`
+                        : "all",
+                    ],
+                    [`${t("study.results.display")}:`, dataType],
+                    [`${t("study.results.temporality")}:`, timestep],
+                  ].map(([label, value]) => (
+                    <Box key={label}>
+                      <Box component="span" sx={{ opacity: 0.7, mr: 1 }}>
+                        {label}
+                      </Box>
+                      {value}
+                    </Box>
+                  ))}
+                  <Button
+                    variant="outlined"
+                    onClick={() => setShowFilter(true)}
+                    disabled={matrixRes.isLoading}
                   >
-                    {axios.isAxiosError(err) && err.response?.status === 404 ? (
-                      <>
-                        <GridOffIcon sx={{ fontSize: "80px" }} />
-                        {t("study.results.noData")}
-                      </>
-                    ) : (
-                      t("data.error.matrix")
+                    {t("global.change")}
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    color="primary"
+                    startIcon={<DownloadOutlinedIcon />}
+                    onClick={() =>
+                      matrixRes.data &&
+                      handleDownload(matrixRes.data, `matrix_${study.id}`)
+                    }
+                    disabled={matrixRes.isLoading}
+                  >
+                    {t("global.download")}
+                  </Button>
+                </Box>
+                <Box sx={{ flex: 1 }}>
+                  <UsePromiseCond
+                    response={mergeResponses(outputRes, matrixRes)}
+                    ifPending={() => (
+                      <Skeleton sx={{ height: 1, transform: "none" }} />
                     )}
-                  </Box>
-                )}
-              />
-            </Box>
+                    ifResolved={([, matrix]) =>
+                      matrix && (
+                        <EditableMatrix
+                          matrix={matrix}
+                          matrixTime={false}
+                          readOnly
+                          toggleView
+                        />
+                      )
+                    }
+                    ifRejected={(err) => (
+                      <Box
+                        sx={{
+                          height: 1,
+                          display: "flex",
+                          justifyContent: "center",
+                          alignItems: "center",
+                          flexDirection: "column",
+                          gap: 1,
+                        }}
+                      >
+                        {axios.isAxiosError(err) &&
+                        err.response?.status === 404 ? (
+                          <>
+                            <GridOffIcon sx={{ fontSize: "80px" }} />
+                            {t("study.results.noData")}
+                          </>
+                        ) : (
+                          t("data.error.matrix")
+                        )}
+                      </Box>
+                    )}
+                  />
+                </Box>
+              </>
+            )}
           </Box>
         }
       />
