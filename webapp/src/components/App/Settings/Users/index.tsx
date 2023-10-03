@@ -15,7 +15,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import { useMemo, useReducer, useState, ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import PersonIcon from "@mui/icons-material/Person";
-import produce from "immer";
+import { produce } from "immer";
 import { usePromise as usePromiseWrapper, useUpdateEffect } from "react-use";
 import { Action } from "redux";
 import { useSnackbar } from "notistack";

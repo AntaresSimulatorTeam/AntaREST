@@ -10,7 +10,7 @@ import {
   Skeleton,
   Typography,
 } from "@mui/material";
-import produce from "immer";
+import { produce } from "immer";
 import { ReactNode, useMemo, useReducer, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { usePromise as usePromiseWrapper, useUpdateEffect } from "react-use";
