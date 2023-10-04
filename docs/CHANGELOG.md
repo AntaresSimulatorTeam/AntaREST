@@ -6,6 +6,7 @@ v2.15.1 (2023-10-04)
 
 ### Features
 
+* **ui-results:** move filters on top of matrices [`#1751`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1751)
 * **ui-outputs:** add outputs synthesis view [`#1737`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1737)
 
 
