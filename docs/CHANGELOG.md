@@ -1,6 +1,29 @@
 Antares Web Changelog
 =====================
 
+v2.15.1 (2023-10-05)
+--------------------
+
+### Features
+
+* **ui-results:** move filters on top of matrices [`#1751`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1751)
+* **ui-outputs:** add outputs synthesis view [`#1737`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1737)
+
+
+### Bug Fixes
+
+* **api:** allow `NaN`, `+Infinity`, and `-Infinity` values in JSON response [`7394248`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/7394248821ad5e2e8e5b51d389896c745740225d)
+* **ui-xpansion:** display issue in form [`#1754`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1754)
+* **raw:** impossible to see matrix containing NaN values [`#1714`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1714)
+* **raw:** allow NaN in matrices [`0cad1a9`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/0cad1a969fd14e81cf502aecb821df4b2d7abcb6)
+
+
+### Tests
+
+* **tests:** add a test to ensure GET `/raw` endpoint reads NaN values [`29b1f71`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/29b1f71856463542dcc0170fe97bc6832ec4a72a)
+
+
+
 v2.15.0 (2023-09-30)
 --------------------
 

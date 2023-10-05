@@ -1,6 +1,7 @@
 import {
   Box,
   Button,
+  Paper,
   Skeleton,
   ToggleButton,
   ToggleButtonGroup,
@@ -31,14 +32,23 @@ import EditableMatrix from "../../../../../common/EditableMatrix";
 import PropertiesView from "../../../../../common/PropertiesView";
 import SplitLayoutView from "../../../../../common/SplitLayoutView";
 import ListElement from "../../common/ListElement";
-import SelectionDrawer, { SelectionDrawerProps } from "./SelectionDrawer";
-import { createPath, DataType, OutputItemType, Timestep } from "./utils";
+import {
+  createPath,
+  DataType,
+  MAX_YEAR,
+  OutputItemType,
+  SYNTHESIS_ITEMS,
+  Timestep,
+} from "./utils";
 import UsePromiseCond, {
   mergeResponses,
 } from "../../../../../common/utils/UsePromiseCond";
 import useStudySynthesis from "../../../../../../redux/hooks/useStudySynthesis";
 import { downloadMatrix } from "../../../../../../utils/matrixUtils";
 import ButtonBack from "../../../../../common/ButtonBack";
+import BooleanFE from "../../../../../common/fieldEditors/BooleanFE";
+import SelectFE from "../../../../../common/fieldEditors/SelectFE";
+import NumberFE from "../../../../../common/fieldEditors/NumberFE";
 
 function ResultDetails() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -53,10 +63,10 @@ function ResultDetails() {
   const [dataType, setDataType] = useState(DataType.General);
   const [timestep, setTimeStep] = useState(Timestep.Hourly);
   const [year, setYear] = useState(-1);
-  const [showFilter, setShowFilter] = useState(false);
   const [itemType, setItemType] = useState(OutputItemType.Areas);
   const [selectedItemId, setSelectedItemId] = useState("");
   const [searchValue, setSearchValue] = useState("");
+  const isSynthesis = itemType === OutputItemType.Synthesis;
   const { t } = useTranslation();
   const navigate = useNavigate();
 
@@ -67,14 +77,18 @@ function ResultDetails() {
   ) as Array<{ id: string; name: string; label?: string }>;
 
   const filteredItems = useMemo(() => {
-    return items.filter((item) =>
-      isSearchMatching(searchValue, item.label || item.name)
-    );
-  }, [items, searchValue]);
+    return isSynthesis
+      ? SYNTHESIS_ITEMS
+      : items.filter((item) =>
+          isSearchMatching(searchValue, item.label || item.name)
+        );
+  }, [isSynthesis, items, searchValue]);
 
   const selectedItem = filteredItems.find(
     (item) => item.id === selectedItemId
   ) as (Area & { id: string }) | LinkElement | undefined;
+
+  const maxYear = output?.nbyears ?? MAX_YEAR;
 
   useEffect(
     () => {
@@ -92,9 +106,9 @@ function ResultDetails() {
 
   const matrixRes = usePromise<MatrixType | null>(
     async () => {
-      if (output && selectedItem) {
+      if (output && selectedItem && !isSynthesis) {
         const path = createPath({
-          output: { ...output, id: outputId as string },
+          output,
           item: selectedItem,
           dataType,
           timestep,
@@ -116,7 +130,21 @@ function ResultDetails() {
     {
       resetDataOnReload: true,
       resetErrorOnReload: true,
-      deps: [study.id, output, selectedItem],
+      deps: [study.id, output, selectedItem, dataType, timestep, year],
+    }
+  );
+
+  const { data: synthesis } = usePromise<string>(
+    async () => {
+      if (outputId && selectedItem && isSynthesis) {
+        const path = `output/${outputId}/economy/mc-all/grid/${selectedItem.id}`;
+        const res = await getStudyData(study.id, path);
+        return res;
+      }
+      return null;
+    },
+    {
+      deps: [study.id, outputId, selectedItem],
     }
   );
 
@@ -131,16 +159,6 @@ function ResultDetails() {
     setItemType(value);
   };
 
-  const handleSelection: SelectionDrawerProps["onSelection"] = ({
-    dataType,
-    timestep,
-    year,
-  }) => {
-    setDataType(dataType);
-    setTimeStep(timestep);
-    setYear(year);
-  };
-
   const handleDownload = (matrixData: MatrixType, fileName: string): void => {
     downloadMatrix(matrixData, fileName);
   };
@@ -150,49 +168,72 @@ function ResultDetails() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <>
-      <SplitLayoutView
-        left={
-          <PropertiesView
-            topContent={
-              <Box
-                sx={{
-                  width: 1,
-                  px: 1,
-                }}
+    <SplitLayoutView
+      left={
+        <PropertiesView
+          topContent={
+            <Box
+              sx={{
+                width: 1,
+                px: 1,
+              }}
+            >
+              <ButtonBack onClick={() => navigate("..")} />
+            </Box>
+          }
+          mainContent={
+            <>
+              <ToggleButtonGroup
+                sx={{ p: 1 }}
+                value={itemType}
+                exclusive
+                size="small"
+                orientation="vertical"
+                fullWidth
+                onChange={handleItemTypeChange}
               >
-                <ButtonBack onClick={() => navigate("..")} />
-              </Box>
-            }
-            mainContent={
-              <>
-                <ToggleButtonGroup
-                  sx={{ p: 1 }}
-                  value={itemType}
-                  exclusive
-                  size="small"
-                  fullWidth
-                  onChange={handleItemTypeChange}
-                >
-                  <ToggleButton value={OutputItemType.Areas}>
-                    {t("study.areas")}
-                  </ToggleButton>
-                  <ToggleButton value={OutputItemType.Links}>
-                    {t("study.links")}
-                  </ToggleButton>
-                </ToggleButtonGroup>
-                <ListElement
-                  list={filteredItems}
-                  currentElement={selectedItemId}
-                  currentElementKeyToTest="id"
-                  setSelectedItem={(item) => setSelectedItemId(item.id)}
-                />
-              </>
-            }
-            onSearchFilterChange={setSearchValue}
-          />
-        }
-        right={
+                <ToggleButton value={OutputItemType.Areas}>
+                  {t("study.areas")}
+                </ToggleButton>
+                <ToggleButton value={OutputItemType.Links}>
+                  {t("study.links")}
+                </ToggleButton>
+                <ToggleButton value={OutputItemType.Synthesis}>
+                  {t("study.synthesis")}
+                </ToggleButton>
+              </ToggleButtonGroup>
+              <ListElement
+                list={filteredItems}
+                currentElement={selectedItemId}
+                currentElementKeyToTest="id"
+                setSelectedItem={(item) => setSelectedItemId(item.id)}
+              />
+            </>
+          }
+          onSearchFilterChange={setSearchValue}
+        />
+      }
+      right={
+        isSynthesis ? (
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              height: 1,
+              width: 1,
+              overflow: "auto",
+            }}
+          >
+            <Paper
+              sx={{
+                p: 2,
+                overflow: "auto",
+              }}
+            >
+              <code style={{ whiteSpace: "pre" }}>{synthesis}</code>
+            </Paper>
+          </Box>
+        ) : (
           <Box
             sx={{
               display: "flex",
@@ -207,43 +248,110 @@ function ResultDetails() {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "flex-end",
-                gap: 4,
+                gap: 2,
+                flexWrap: "wrap",
               }}
             >
-              {[
+              {(
                 [
-                  `${t("study.results.mc")}:`,
-                  year > 0 ? `${t("study.results.mc.year")} ${year}` : "all",
-                ],
-                [`${t("study.results.display")}:`, dataType],
-                [`${t("study.results.temporality")}:`, timestep],
-              ].map(([label, value]) => (
-                <Box key={label}>
+                  [
+                    `${t("study.results.mc")}:`,
+                    () => (
+                      <>
+                        <BooleanFE
+                          value={year <= 0}
+                          trueText="Synthesis"
+                          falseText="Year by year"
+                          size="small"
+                          variant="outlined"
+                          onChange={(event) => {
+                            setYear(event?.target.value ? -1 : 1);
+                          }}
+                        />
+                        {year > 0 && (
+                          <NumberFE
+                            size="small"
+                            variant="outlined"
+                            value={year}
+                            sx={{ m: 0, ml: 1, width: 80 }}
+                            inputProps={{
+                              min: 1,
+                              max: maxYear,
+                            }}
+                            onChange={(event) => {
+                              setYear(Number(event.target.value));
+                            }}
+                          />
+                        )}
+                      </>
+                    ),
+                  ],
+                  [
+                    `${t("study.results.display")}:`,
+                    () => (
+                      <SelectFE
+                        value={dataType}
+                        options={[
+                          { value: DataType.General, label: "General values" },
+                          { value: DataType.Thermal, label: "Thermal plants" },
+                          { value: DataType.Renewable, label: "Ren. clusters" },
+                          { value: DataType.Record, label: "RecordYears" },
+                        ]}
+                        size="small"
+                        variant="outlined"
+                        onChange={(event) => {
+                          setDataType(event?.target.value as DataType);
+                        }}
+                      />
+                    ),
+                  ],
+                  [
+                    `${t("study.results.temporality")}:`,
+                    () => (
+                      <SelectFE
+                        value={timestep}
+                        options={[
+                          { value: Timestep.Hourly, label: "Hourly" },
+                          { value: Timestep.Daily, label: "Daily" },
+                          { value: Timestep.Weekly, label: "Weekly" },
+                          { value: Timestep.Monthly, label: "Monthly" },
+                          { value: Timestep.Annual, label: "Annual" },
+                        ]}
+                        size="small"
+                        variant="outlined"
+                        onChange={(event) => {
+                          setTimeStep(event?.target.value as Timestep);
+                        }}
+                      />
+                    ),
+                  ],
+                ] as const
+              ).map(([label, Field]) => (
+                <Box
+                  key={label}
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                  }}
+                >
                   <Box component="span" sx={{ opacity: 0.7, mr: 1 }}>
                     {label}
                   </Box>
-                  {value}
+                  <Field />
                 </Box>
               ))}
               <Button
-                variant="outlined"
-                onClick={() => setShowFilter(true)}
-                disabled={matrixRes.isLoading}
-              >
-                {t("global.change")}
-              </Button>
-
-              <Button
+                size="small"
+                title={t("global.download")}
                 variant="outlined"
                 color="primary"
-                startIcon={<DownloadOutlinedIcon />}
                 onClick={() =>
                   matrixRes.data &&
                   handleDownload(matrixRes.data, `matrix_${study.id}`)
                 }
                 disabled={matrixRes.isLoading}
               >
-                {t("global.download")}
+                <DownloadOutlinedIcon />
               </Button>
             </Box>
             <Box sx={{ flex: 1 }}>
@@ -286,16 +394,9 @@ function ResultDetails() {
               />
             </Box>
           </Box>
-        }
-      />
-      <SelectionDrawer
-        open={showFilter}
-        onClose={() => setShowFilter(false)}
-        values={{ dataType, timestep, year }}
-        maxYear={output?.nbyears}
-        onSelection={handleSelection}
-      />
-    </>
+        )
+      }
+    />
   );
 }
 

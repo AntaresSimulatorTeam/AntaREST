@@ -1,18 +1,14 @@
 import io
 from pathlib import Path
 
-from fastapi import FastAPI
 from starlette.testclient import TestClient
 
 from antarest.study.business.area_management import AreaType
 from antarest.study.business.xpansion_management import XpansionCandidateDTO
 
 
-def test_integration_xpansion(app: FastAPI, tmp_path: Path):
-    client = TestClient(app, raise_server_exceptions=False)
-    res = client.post("/v1/login", json={"username": "admin", "password": "admin"})
-    admin_credentials = res.json()
-    headers = {"Authorization": f'Bearer {admin_credentials["access_token"]}'}
+def test_integration_xpansion(client: TestClient, tmp_path: Path, admin_access_token: str):
+    headers = {"Authorization": f"Bearer {admin_access_token}"}
 
     created = client.post(
         "/v1/studies?name=foo",
