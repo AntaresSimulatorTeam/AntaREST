@@ -1,11 +1,10 @@
 import functools
 import json
 import operator
-import re
-from typing import Any, Dict, List, Mapping, MutableMapping, Sequence, Optional
+from typing import Any, Dict, List, Mapping, MutableMapping, Optional, Sequence
 
 import numpy as np
-from pydantic import BaseModel, Extra, Field, root_validator, validator
+from pydantic import BaseModel, Extra, root_validator, validator
 from typing_extensions import Literal
 
 from antarest.core.exceptions import (
@@ -13,9 +12,13 @@ from antarest.core.exceptions import (
     STStorageFieldsNotFoundError,
     STStorageMatrixNotFoundError,
 )
-from antarest.study.business.utils import AllOptionalMetaclass, FormFieldsBaseModel, execute_or_add_commands
+from antarest.study.business.utils import AllOptionalMetaclass, camel_case_model, execute_or_add_commands
 from antarest.study.model import Study
-from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import STStorageConfig, STStorageGroup
+from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
+    STStorageConfig,
+    STStorageGroup,
+    STStorageProperties,
+)
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
 from antarest.study.storage.variantstudy.model.command.remove_st_storage import RemoveSTStorage
@@ -24,108 +27,16 @@ from antarest.study.storage.variantstudy.model.command.update_config import Upda
 _HOURS_IN_YEAR = 8760
 
 
-class FormBaseModel(FormFieldsBaseModel):
+@camel_case_model
+class StorageInput(STStorageProperties, metaclass=AllOptionalMetaclass):
     """
-    A foundational model for all form-based models, providing common configurations.
-    """
-
-    class Config:
-        validate_assignment = True
-        allow_population_by_field_name = True
-
-
-class StorageForm(FormBaseModel):
-    """
-    Model representing the form used to create/edit a new short-term storage entry.
-    """
-
-    name: str = Field(
-        description="Name of the storage.",
-    )
-    group: STStorageGroup = Field(
-        STStorageGroup.OTHER1,
-        description="Energy storage system group.",
-    )
-    injection_nominal_capacity: float = Field(
-        0,
-        description="Injection nominal capacity (MW)",
-        ge=0,
-    )
-    withdrawal_nominal_capacity: float = Field(
-        0,
-        description="Withdrawal nominal capacity (MW)",
-        ge=0,
-    )
-    reservoir_capacity: float = Field(
-        0,
-        description="Reservoir capacity (MWh)",
-        ge=0,
-    )
-    efficiency: float = Field(
-        0,
-        description="Efficiency of the storage system",
-        ge=0,
-        le=1,
-    )
-    initial_level: float = Field(
-        0,
-        description="Initial level of the storage system",
-        ge=0,
-    )
-    initial_level_optim: bool = Field(
-        False,
-        description="Flag indicating if the initial level is optimized",
-    )
-
-    @validator("name")
-    def validate_name_st_storage(cls, value: str) -> str:
-        """
-        Check if the field (name) is valid
-        :param value: name of st storage
-        :return: value if is correct or raise an exception
-        """
-        pattern = r"^(?![0-9]+$).*"
-        if len(value) < 1 or value is None or not re.match(pattern, value):
-            raise ValueError(f"The field name: {value} is not valid")
-        return value
-
-
-class StorageUpdate(StorageForm, metaclass=AllOptionalMetaclass):
-    """set fields as optional"""
-
-
-class StorageCreation(StorageUpdate):
-    """set value's fields as optional"""
-
-    class Config:
-        @staticmethod
-        def schema_extra(schema: MutableMapping[str, Any]) -> None:
-            schema["example"] = StorageCreation(
-                name="Siemens Battery",
-                group=STStorageGroup.BATTERY,
-                injection_nominal_capacity=0,
-                withdrawal_nominal_capacity=0,
-                reservoir_capacity=0,
-                efficiency=0,
-                initial_level=0,
-                initial_level_optim=False,
-            )
-
-    @property
-    def to_config(self) -> STStorageConfig:
-        values = self.dict(by_alias=False)
-        return STStorageConfig(**values)
-
-
-class StorageInput(StorageUpdate):
-    """
-    Model representing the form used to edit existing short-term storage details.
+    Model representing the form used to EDIT an existing short-term storage.
     """
 
     class Config:
         @staticmethod
         def schema_extra(schema: MutableMapping[str, Any]) -> None:
-            schema["example"] = StorageCreation(
+            schema["example"] = StorageInput(
                 name="Siemens Battery",
                 group=STStorageGroup.BATTERY,
                 injection_nominal_capacity=150,
@@ -137,15 +48,32 @@ class StorageInput(StorageUpdate):
             )
 
 
-class StorageOutput(StorageInput):
+class StorageCreation(StorageInput):
+    """
+    Model representing the form used to CREATE a new short-term storage.
+    """
+
+    # noinspection Pydantic
+    @validator("name", pre=True)
+    def validate_name(cls, name: Optional[str]) -> str:
+        """
+        Validator to check if the name is not empty.
+        """
+        if not name:
+            raise ValueError("'name' must not be empty")
+        return name
+
+    @property
+    def to_config(self) -> STStorageConfig:
+        values = self.dict(by_alias=False, exclude_none=True)
+        return STStorageConfig(**values)
+
+
+@camel_case_model
+class StorageOutput(STStorageConfig):
     """
     Model representing the form used to display the details of a short-term storage entry.
     """
-
-    id: str = Field(
-        description="Short-term storage ID",
-        regex=r"[a-zA-Z0-9_(),& -]+",
-    )
 
     class Config:
         @staticmethod

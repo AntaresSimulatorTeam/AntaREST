@@ -30,22 +30,18 @@ class STStorageGroup(EnumIgnoreCase):
 
 
 # noinspection SpellCheckingInspection
-class STStorageConfig(BaseModel):
+class STStorageProperties(
+    BaseModel,
+    extra=Extra.forbid,
+    validate_assignment=True,
+    allow_population_by_field_name=True,
+):
     """
-    Manage the configuration files in the context of Short-Term Storage.
-    It provides a convenient way to read and write configuration data from/to an INI file format.
+    Properties of a short-term storage system read from the configuration files.
+
+    All aliases match the name of the corresponding field in the INI files.
     """
 
-    class Config:
-        extra = Extra.forbid
-        allow_population_by_field_name = True
-
-    # The `id` field is a calculated from the `name` if not provided.
-    # This value must be stored in the config cache.
-    id: str = Field(
-        description="Short-term storage ID",
-        regex=r"[a-zA-Z0-9_(),& -]+",
-    )
     name: str = Field(
         description="Short-term storage name",
         regex=r"[a-zA-Z0-9_(),& -]+",
@@ -88,6 +84,21 @@ class STStorageConfig(BaseModel):
         False,
         description="Flag indicating if the initial level is optimized",
         alias="initialleveloptim",
+    )
+
+
+# noinspection SpellCheckingInspection
+class STStorageConfig(STStorageProperties):
+    """
+    Manage the configuration files in the context of Short-Term Storage.
+    It provides a convenient way to read and write configuration data from/to an INI file format.
+    """
+
+    # The `id` field is a calculated from the `name` if not provided.
+    # This value must be stored in the config cache.
+    id: str = Field(
+        description="Short-term storage ID",
+        regex=r"[a-zA-Z0-9_(),& -]+",
     )
 
     @root_validator(pre=True)
