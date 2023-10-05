@@ -70,7 +70,7 @@ function CreateRowDialog<TData extends TRow>({
               validate: (v) => {
                 const regex = /[^a-zA-Z0-9_\-(),& ]+$/;
                 if (regex.test(v.trim())) {
-                  return t("form.field.specialChars", ["&()_,-"]);
+                  return t("form.field.specialChars", { 0: "&()_,-" });
                 }
                 if (v.trim().length <= 0) {
                   return t("form.field.required");

@@ -108,8 +108,7 @@ function ClusterRoot<T extends FieldValues>(props: ClusterRootProps<T>) {
         }))
       : [];
 
-    const clusterDataByGroup: Record<string, ClusterElement[]> =
-      byGroup(tmpData);
+    const clusterDataByGroup = byGroup(tmpData);
 
     const clustersObj = Object.keys(clusterDataByGroup).map(
       (group) =>

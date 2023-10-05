@@ -4,19 +4,18 @@ import Box from "@mui/material/Box";
 import AddIcon from "@mui/icons-material/Add";
 import { Button, Tooltip } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import MaterialReactTable, {
-  MRT_Row,
   MRT_RowSelectionState,
-  MRT_ToggleDensePaddingButton,
   MRT_ToggleFiltersButton,
   MRT_ToggleGlobalFilterButton,
   type MRT_ColumnDef,
 } from "material-react-table";
 import { useTranslation } from "react-i18next";
-import { useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useMemo, useState } from "react";
 import CreateRowDialog from "./CreateRowDialog";
 import ConfirmationDialog from "../dialogs/ConfirmationDialog";
+import { generateUniqueValue } from "./utils";
 
 export type TRow = { id: string; name: string; group: string };
 
@@ -36,19 +35,18 @@ function GroupedDataTable<TData extends TRow>({
   onDelete,
 }: GroupedDataTableProps<TData>) {
   const { t } = useTranslation();
-  const navigate = useNavigate();
-  const location = useLocation();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [tableData, setTableData] = useState(data);
   const [rowSelection, setRowSelection] = useState<MRT_RowSelectionState>({});
 
-  useEffect(() => {
-    setTableData(data);
-  }, [data]);
-
   const isAnyRowSelected = useMemo(
     () => Object.values(rowSelection).some((value) => value),
+    [rowSelection],
+  );
+
+  const isOneRowSelected = useMemo(
+    () => Object.values(rowSelection).filter((value) => value).length === 1,
     [rowSelection],
   );
 
@@ -77,7 +75,9 @@ function GroupedDataTable<TData extends TRow>({
       .map(Number)
       // ignore groups names
       .filter(Number.isInteger);
+
     const rowIdsToDelete = rowIndexes.map((index) => tableData[index].id);
+
     onDelete(rowIdsToDelete);
     setTableData((prevTableData) =>
       prevTableData.filter((row) => !rowIdsToDelete.includes(row.id)),
@@ -86,9 +86,30 @@ function GroupedDataTable<TData extends TRow>({
     setConfirmDialogOpen(false);
   };
 
-  const handleRowClick = (row: MRT_Row<TData>) => {
-    const clusterId = row.original.id;
-    navigate(`${location.pathname}/${clusterId}`);
+  const handleDuplicateRow = async () => {
+    const selectedIndex = Object.keys(rowSelection).find(
+      (key) => rowSelection[key],
+    );
+    const selectedRow = selectedIndex && tableData[+selectedIndex];
+
+    if (!selectedRow) {
+      return;
+    }
+
+    const name = generateUniqueValue("name", selectedRow.name, tableData);
+    const id = generateUniqueValue("id", name, tableData);
+
+    const duplicatedRow = {
+      ...selectedRow,
+      id,
+      name,
+    };
+
+    if (onCreate) {
+      const newRow = await onCreate(duplicatedRow);
+      setTableData((prevTableData) => [...prevTableData, newRow]);
+      setRowSelection({});
+    }
   };
 
   ////////////////////////////////////////////////////////////////
@@ -104,19 +125,38 @@ function GroupedDataTable<TData extends TRow>({
           grouping: ["group"],
           density: "compact",
           expanded: true,
+          columnPinning: { left: ["group"] },
         }}
+        enablePinning
+        enableExpanding
         enableGrouping
-        enableRowSelection
+        muiTableBodyRowProps={({ row: { id, groupingColumnId } }) => {
+          const handleRowClick = () => {
+            // prevent group rows to be selected
+            if (groupingColumnId === undefined) {
+              setRowSelection((prev) => ({
+                ...prev,
+                [id]: !prev[id],
+              }));
+            }
+          };
+
+          return {
+            onClick: handleRowClick,
+            selected: rowSelection[id],
+            sx: {
+              cursor: "pointer",
+            },
+          };
+        }}
+        state={{ rowSelection }}
         enableColumnDragging={false}
         enableColumnActions={false}
         positionToolbarAlertBanner="none"
         enableBottomToolbar={false}
-        enableRowActions
         enableStickyFooter
         enableStickyHeader
         enablePagination={false}
-        onRowSelectionChange={setRowSelection}
-        state={{ rowSelection }}
         renderTopToolbarCustomActions={() => (
           <Box sx={{ display: "flex", gap: 1 }}>
             {onCreate && (
@@ -129,13 +169,25 @@ function GroupedDataTable<TData extends TRow>({
                 {t("button.add")}
               </Button>
             )}
-            {isAnyRowSelected && onDelete && (
+            <Tooltip title={t("global.duplicate")}>
+              <Button
+                startIcon={<ContentCopyIcon />}
+                variant="outlined"
+                size="small"
+                onClick={handleDuplicateRow}
+                disabled={!isOneRowSelected}
+              >
+                {t("global.duplicate")}
+              </Button>
+            </Tooltip>
+            {onDelete && (
               <Tooltip title={t("global.delete")}>
                 <Button
                   startIcon={<DeleteIcon />}
                   variant="outlined"
                   size="small"
                   onClick={() => setConfirmDialogOpen(true)}
+                  disabled={!isAnyRowSelected}
                 >
                   {t("global.delete")}
                 </Button>
@@ -147,34 +199,8 @@ function GroupedDataTable<TData extends TRow>({
           <>
             <MRT_ToggleGlobalFilterButton table={table} />
             <MRT_ToggleFiltersButton table={table} />
-            <MRT_ToggleDensePaddingButton table={table} />
           </>
         )}
-        renderRowActions={({ row }) => (
-          <Tooltip title={t("global.view")}>
-            <Box
-              sx={{
-                cursor: "pointer",
-                "&:hover": {
-                  color: "primary.main",
-                  textDecoration: "underline",
-                },
-              }}
-              onClick={() => handleRowClick(row)}
-            >
-              {row.original.name}
-            </Box>
-          </Tooltip>
-        )}
-        displayColumnDefOptions={{
-          "mrt-row-actions": {
-            header: "", // hide "Actions" column header
-            size: 50,
-            muiTableBodyCellProps: {
-              align: "left",
-            },
-          },
-        }}
         muiTableHeadCellProps={{
           align: "right",
         }}

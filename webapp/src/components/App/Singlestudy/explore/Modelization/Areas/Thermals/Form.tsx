@@ -1,3 +1,4 @@
+import { useCallback } from "react";
 import { Box, Button } from "@mui/material";
 import { useParams, useOutletContext, useNavigate } from "react-router-dom";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
@@ -15,6 +16,7 @@ import {
 import { SubmitHandlerPlus } from "../../../../../../common/Form/types";
 import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../../redux/selectors";
+import useNavigateOnChange from "../../../../../../../hooks/useNavigateOnChange";
 
 function ThermalForm() {
   const { t } = useTranslation();
@@ -23,15 +25,20 @@ function ThermalForm() {
   const areaId = useAppSelector(getCurrentAreaId);
   const { clusterId = "" } = useParams();
 
+  useNavigateOnChange(areaId);
+
+  const defaultValues = useCallback(() => {
+    return getThermalCluster(study.id, areaId, clusterId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   ////////////////////////////////////////////////////////////////
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit =
-    (areaId: string, clusterId: string) =>
-    ({ dirtyValues }: SubmitHandlerPlus<ThermalCluster>) => {
-      return updateThermalCluster(study.id, areaId, clusterId, dirtyValues);
-    };
+  const handleSubmit = ({ dirtyValues }: SubmitHandlerPlus<ThermalCluster>) => {
+    return updateThermalCluster(study.id, areaId, clusterId, dirtyValues);
+  };
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -50,12 +57,8 @@ function ThermalForm() {
       </Button>
       <Form
         key={study.id + areaId}
-        config={{
-          defaultValues: () => {
-            return getThermalCluster(study.id, areaId, clusterId);
-          },
-        }}
-        onSubmit={handleSubmit(areaId, clusterId)}
+        config={{ defaultValues }}
+        onSubmit={handleSubmit}
         autoSubmit
       >
         <Fields />

@@ -108,21 +108,21 @@ export const POLLUTANT_NAMES: Array<keyof ThermalClusterPollutants> = [
 // Functions
 ////////////////////////////////////////////////////////////////
 
-const CLUSTERS_URL = (
-  studyId: StudyMetadata["id"],
-  areaId: Area["name"]
-): string => `/v1/studies/${studyId}/areas/${areaId}/clusters/thermal`;
-
-const CLUSTER_URL = (
+const getClustersUrl = (
   studyId: StudyMetadata["id"],
   areaId: Area["name"],
-  clusterId: Cluster["id"]
-): string => `${CLUSTERS_URL(studyId, areaId)}/${clusterId}`;
+): string => `/v1/studies/${studyId}/areas/${areaId}/clusters/thermal`;
+
+const getClusterUrl = (
+  studyId: StudyMetadata["id"],
+  areaId: Area["name"],
+  clusterId: Cluster["id"],
+): string => `${getClustersUrl(studyId, areaId)}/${clusterId}`;
 
 async function makeRequest<T>(
   method: "get" | "post" | "patch" | "delete",
   url: string,
-  data?: Partial<ThermalCluster> | { data: Array<Cluster["id"]> }
+  data?: Partial<ThermalCluster> | { data: Array<Cluster["id"]> },
 ): Promise<T> {
   const res = await client[method]<T>(url, data);
   return res.data;
@@ -130,19 +130,19 @@ async function makeRequest<T>(
 
 export async function getThermalClusters(
   studyId: StudyMetadata["id"],
-  areaId: Area["name"]
+  areaId: Area["name"],
 ): Promise<ThermalCluster[]> {
-  return makeRequest<ThermalCluster[]>("get", CLUSTERS_URL(studyId, areaId));
+  return makeRequest<ThermalCluster[]>("get", getClustersUrl(studyId, areaId));
 }
 
 export async function getThermalCluster(
   studyId: StudyMetadata["id"],
   areaId: Area["name"],
-  clusterId: Cluster["id"]
+  clusterId: Cluster["id"],
 ): Promise<ThermalCluster> {
   return makeRequest<ThermalCluster>(
     "get",
-    CLUSTER_URL(studyId, areaId, clusterId)
+    getClusterUrl(studyId, areaId, clusterId),
   );
 }
 
@@ -150,33 +150,33 @@ export async function updateThermalCluster(
   studyId: StudyMetadata["id"],
   areaId: Area["name"],
   clusterId: Cluster["id"],
-  data: Partial<ThermalCluster>
+  data: Partial<ThermalCluster>,
 ): Promise<ThermalCluster> {
   return makeRequest<ThermalCluster>(
     "patch",
-    CLUSTER_URL(studyId, areaId, clusterId),
-    data
+    getClusterUrl(studyId, areaId, clusterId),
+    data,
   );
 }
 
 export async function createThermalCluster(
   studyId: StudyMetadata["id"],
   areaId: Area["name"],
-  data: Partial<ThermalCluster>
+  data: Partial<ThermalCluster>,
 ): Promise<ThermalCluster> {
   return makeRequest<ThermalCluster>(
     "post",
-    CLUSTERS_URL(studyId, areaId),
-    data
+    getClustersUrl(studyId, areaId),
+    data,
   );
 }
 
 export function deleteThermalClusters(
   studyId: StudyMetadata["id"],
   areaId: Area["name"],
-  clusterIds: Array<Cluster["id"]>
+  clusterIds: Array<Cluster["id"]>,
 ): Promise<void> {
-  return makeRequest<void>("delete", CLUSTERS_URL(studyId, areaId), {
+  return makeRequest<void>("delete", getClustersUrl(studyId, areaId), {
     data: clusterIds,
   });
 }
@@ -192,19 +192,19 @@ export function deleteThermalClusters(
  */
 export const capacityAggregationFn: MRT_AggregationFn<ThermalCluster> = (
   colHeader,
-  rows
+  rows,
 ) => {
   const { enabledCapacitySum, installedCapacitySum } = rows.reduce(
     (
       acc: { enabledCapacitySum: number; installedCapacitySum: number },
-      row
+      row,
     ) => {
       acc.enabledCapacitySum += row.original.enabledCapacity ?? 0;
       acc.installedCapacitySum += row.original.installedCapacity ?? 0;
       return acc;
     },
-    { enabledCapacitySum: 0, installedCapacitySum: 0 }
+    { enabledCapacitySum: 0, installedCapacitySum: 0 },
   );
 
-  return `${enabledCapacitySum}/${installedCapacitySum}`;
+  return `${enabledCapacitySum} / ${installedCapacitySum}`;
 };
