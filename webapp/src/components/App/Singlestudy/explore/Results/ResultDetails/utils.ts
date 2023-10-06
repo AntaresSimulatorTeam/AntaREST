@@ -3,6 +3,7 @@ import { Area, LinkElement, Simulation } from "../../../../../../common/types";
 export enum OutputItemType {
   Areas = "areas",
   Links = "links",
+  Synthesis = "synthesis",
 }
 
 export enum DataType {
@@ -43,3 +44,26 @@ export function createPath(params: Params): string {
 
   return `output/${id}/${mode}/${periodFolder}/${itemType}/${itemFolder}/${dataType}-${timestep}`;
 }
+
+export const SYNTHESIS_ITEMS = [
+  {
+    id: "areas",
+    name: "Areas",
+    label: "Areas synthesis",
+  },
+  {
+    id: "links",
+    name: "Links",
+    label: "Links synthesis",
+  },
+  {
+    id: "digest",
+    name: "Digest",
+    label: "Digest",
+  },
+  {
+    id: "thermal",
+    name: "Thermal",
+    label: "Thermal synthesis",
+  },
+];
