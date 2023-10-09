@@ -110,8 +110,7 @@ class TestOutputSimulationAreaItem:
         )
         new_actual = new_node.build()
         # check the result
-        actual_obj = {key: {"freq": value.freq} for key, value in new_actual.items()
-        }
+        actual_obj = {key: {"freq": value.freq} for key, value in new_actual.items()}
         expected["details-STstorage-annual"] = {"freq": MatrixFrequency.ANNUAL}
         expected["details-STstorage-daily"] = {"freq": MatrixFrequency.DAILY}
         expected["details-STstorage-hourly"] = {"freq": MatrixFrequency.HOURLY}

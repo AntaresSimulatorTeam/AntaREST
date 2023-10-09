@@ -88,9 +88,7 @@ def apply_binding_constraint(
 def parse_bindings_coeffs_and_save_into_config(
     bd_id: str,
     study_data_config: FileStudyTreeConfig,
-    coeffs: Mapping[
-        str, Union[Literal["hourly", "daily", "weekly"], Sequence[float]]
-    ],
+    coeffs: Mapping[str, Union[Literal["hourly", "daily", "weekly"], Sequence[float]]],
 ) -> None:
     if bd_id not in [bind.id for bind in study_data_config.bindings]:
         areas_set = set()
@@ -105,7 +103,9 @@ def parse_bindings_coeffs_and_save_into_config(
             elif "." in k:
                 clusters_set.add(k)
                 areas_set.add(k.split(".")[0])
-        study_data_config.bindings.append(BindingConstraintDTO(id=bd_id, areas=areas_set, clusters=clusters_set, time_step=time_step))
+        study_data_config.bindings.append(
+            BindingConstraintDTO(id=bd_id, areas=areas_set, clusters=clusters_set, time_step=time_step)
+        )
 
 
 def remove_area_cluster_from_binding_constraints(
