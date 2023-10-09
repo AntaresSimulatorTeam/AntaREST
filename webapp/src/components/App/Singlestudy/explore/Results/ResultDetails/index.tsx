@@ -80,7 +80,7 @@ function ResultDetails() {
     return isSynthesis
       ? SYNTHESIS_ITEMS
       : items.filter((item) =>
-          isSearchMatching(searchValue, item.label || item.name)
+          isSearchMatching(searchValue, item.label || item.name),
         );
   }, [isSynthesis, items, searchValue]);
 
@@ -131,7 +131,7 @@ function ResultDetails() {
       resetDataOnReload: true,
       resetErrorOnReload: true,
       deps: [study.id, output, selectedItem, dataType, timestep, year],
-    }
+    },
   );
 
   const { data: synthesis } = usePromise<string>(
@@ -145,7 +145,7 @@ function ResultDetails() {
     },
     {
       deps: [study.id, outputId, selectedItem],
-    }
+    },
   );
 
   ////////////////////////////////////////////////////////////////
