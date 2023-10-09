@@ -1,10 +1,12 @@
-from typing import Dict, List, Optional, Union, Mapping, Literal, Sequence
+from typing import Dict, List, Literal, Mapping, Optional, Sequence, Union
 
 from antarest.core.model import JSON
 from antarest.matrixstore.model import MatrixData
-from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
+from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
+    BindingConstraintDTO,
+    BindingConstraintFrequency,
+)
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import BindingConstraintOperator, CommandOutput
 
