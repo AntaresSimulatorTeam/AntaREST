@@ -273,7 +273,7 @@ class SlurmConfig:
             # Use the old way to configure the NB cores for backward compatibility
             nb_cores["default"] = int(data["default_n_cpu"])
             nb_cores["min"] = min(nb_cores["min"], nb_cores["default"])
-            nb_cores["max"] = min(nb_cores["max"], nb_cores["default"])
+            nb_cores["max"] = max(nb_cores["max"], nb_cores["default"])
         if enable_nb_cores_detection:
             nb_cores.update(cls._autodetect_nb_cores())
         return cls(

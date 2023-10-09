@@ -174,7 +174,7 @@ class TestSlurmConfig:
                 "default_n_cpu": 15,
             }
         )
-        assert config.nb_cores == NbCoresConfig(min=1, default=15, max=15)
+        assert config.nb_cores == NbCoresConfig(min=1, default=15, max=24)
 
     def test_from_dict__auto_detect(self):
         with pytest.raises(NotImplementedError):
