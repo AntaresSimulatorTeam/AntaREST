@@ -646,11 +646,8 @@ class StudyService:
         Returns: The user's name
         """
         if params.user:
-            if params.user.type == "bots":
-                curr_user = self.user_service.get_user(params.user.impersonator, params)
-            else:
-                curr_user = self.user_service.get_user(params.user.id, params)
-            if curr_user:
+            user_id = params.user.impersonator if params.user.type == "bots" else params.user.id
+            if curr_user := self.user_service.get_user(user_id, params):
                 return curr_user.to_dto().name
         return "Unknown"
 
