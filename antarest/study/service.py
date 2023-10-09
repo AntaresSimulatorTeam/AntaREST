@@ -40,7 +40,7 @@ from antarest.core.tasks.service import ITaskService, TaskUpdateNotifier, noop_n
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch
 from antarest.login.model import Group
-from antarest.login.service import LoginService
+from antarest.login.service import LoginService, UserNotFoundError
 from antarest.matrixstore.matrix_editor import MatrixEditInstruction
 from antarest.study.business.adequacy_patch_management import AdequacyPatchManager
 from antarest.study.business.advanced_parameters_management import AdvancedParamsManager
@@ -647,8 +647,11 @@ class StudyService:
         """
         author = "Unknown"
         if params.user:
-            if curr_user := self.user_service.get_user(params.user.id, params):
-                author = curr_user.to_dto().name
+            if params.user.type == "bots":
+                curr_user = self.user_service.get_user(params.user.impersonator, params)
+            else:
+                curr_user = self.user_service.get_user(params.user.id, params)
+            author = curr_user.to_dto().name
         return author
 
     def get_study_synthesis(self, study_id: str, params: RequestParameters) -> FileStudyTreeConfigDTO:
