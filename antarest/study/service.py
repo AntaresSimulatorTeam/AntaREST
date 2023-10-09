@@ -641,9 +641,14 @@ class StudyService:
 
     def get_user_name(self, params: RequestParameters) -> str:
         """
-        Args: params : Request parameters
+        Retrieves the name of a user based on the provided request parameters.
 
-        Returns: The user's name
+        Args:
+            params: The request parameters which includes user information.
+
+        Returns:
+            Returns the user's name or, if the logged user is a "bot"
+            (i.e., an application's token), it returns the token's author name.
         """
         if params.user:
             user_id = params.user.impersonator if params.user.type == "bots" else params.user.id
