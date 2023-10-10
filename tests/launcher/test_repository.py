@@ -107,18 +107,10 @@ def test_update_object():
         repo = JobResultRepository()
         uuid = str(uuid4())
         a = JobResult(
-            id=uuid,
-            study_id="a",
-            job_status=JobStatus.SUCCESS,
-            msg="Hello, World!",
-            exit_code=0,
+            id=uuid, study_id="a", job_status=JobStatus.SUCCESS, msg="Hello, World!", exit_code=0, owner_name="admin"
         )
         b = JobResult(
-            id=uuid,
-            study_id="b",
-            job_status=JobStatus.FAILED,
-            msg="You failed !!",
-            exit_code=1,
+            id=uuid, study_id="b", job_status=JobStatus.FAILED, msg="You failed !!", exit_code=1, owner_name="admin"
         )
 
         c = repo.save(a)

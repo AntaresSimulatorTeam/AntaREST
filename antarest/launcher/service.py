@@ -230,6 +230,7 @@ class LauncherService:
             job_status=JobStatus.PENDING,
             launcher=launcher,
             launcher_params=launcher_parameters.json() if launcher_parameters else None,
+            owner_name=self.study_service.get_user_name(params),
         )
         self.job_result_repository.save(job_status)
 
@@ -272,6 +273,7 @@ class LauncherService:
             study_id=study_uuid,
             job_status=JobStatus.FAILED,
             launcher=launcher,
+            owner_name=self.study_service.get_user_name(params),
         )
         self.job_result_repository.save(job_status)
         self.event_bus.push(

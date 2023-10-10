@@ -8,6 +8,7 @@ from sqlalchemy.orm import relationship  # type: ignore
 
 from antarest.core.persistence import Base
 from antarest.core.utils.utils import DTO
+from antarest.login.model import Identity
 
 
 class XpansionParametersDTO(BaseModel):
@@ -79,6 +80,7 @@ class JobResultDTO(BaseModel):
     output_id: Optional[str]
     exit_code: Optional[int]
     solver_stats: Optional[str]
+    owner_name: str
 
 
 class JobLog(DTO, Base):  # type: ignore
@@ -121,6 +123,7 @@ class JobResult(DTO, Base):  # type: ignore
     exit_code = Column(Integer)
     solver_stats = Column(String(), nullable=True)
     logs = relationship(JobLog, uselist=True, cascade="all, delete, delete-orphan")
+    owner_name = Column(String(), ForeignKey(Identity.name), default="admin")
 
     def to_dto(self) -> JobResultDTO:
         return JobResultDTO(
@@ -135,6 +138,7 @@ class JobResult(DTO, Base):  # type: ignore
             output_id=self.output_id,
             exit_code=self.exit_code,
             solver_stats=self.solver_stats,
+            owner_name=self.owner_name,
         )
 
     def __eq__(self, o: Any) -> bool:
