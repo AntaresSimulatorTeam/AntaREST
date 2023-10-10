@@ -6,7 +6,8 @@ import time
 from glob import escape
 from pathlib import Path
 from typing import IO, Any, Callable, List, Optional, Tuple, TypeVar
-from zipfile import ZIP_DEFLATED, BadZipFile, ZipFile
+from zipfile import ZIP_DEFLATED, ZipFile
+from py7zr import SevenZipFile
 
 import redis
 
@@ -54,8 +55,12 @@ def extract_zip(stream: IO[bytes], dst: Path) -> None:
     try:
         with ZipFile(stream) as zip_output:
             zip_output.extractall(path=dst)
-    except BadZipFile:
-        raise BadZipBinary("Only zip file are allowed.")
+    except Exception as zip_error:
+        try:
+            with SevenZipFile(stream.read().decode("utf-8"), "r") as sevenzip_output:
+                sevenzip_output.extractall(dst)
+        except Exception as sevenzip_error:
+            raise BadZipBinary(f"Cannot extract archive: {zip_error}\n{sevenzip_error}") from sevenzip_error
 
 
 def get_default_config_path() -> Optional[Path]:

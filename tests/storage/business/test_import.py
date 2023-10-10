@@ -65,7 +65,7 @@ def test_import_study(tmp_path: Path) -> None:
     assert md.groups == ["fake_group_1", "fake_group_2"]
 
     shutil.rmtree(tmp_path / "other-study")
-    with pytest.raises(BadZipBinary):
+    with pytest.raises(BadZipBinary, match="Cannot extract archive: File is not a zip file"):
         study_service.import_study(md, io.BytesIO(b""))
 
 
