@@ -1,10 +1,11 @@
 from unittest.mock import Mock
 
 from antarest.study.storage.rawstudy.io.reader import IniReader
+from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.command_extractor import CommandExtractor
 from antarest.study.storage.variantstudy.business.command_reverter import CommandReverter
-from antarest.study.storage.variantstudy.model.command.common import BindingConstraintOperator, TimeStep
+from antarest.study.storage.variantstudy.model.command.common import BindingConstraintOperator
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import CreateBindingConstraint
 from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
@@ -56,7 +57,7 @@ def test_manage_binding_constraint(
 
     bind1_cmd = CreateBindingConstraint(
         name="BD 1",
-        time_step=TimeStep.HOURLY,
+        time_step=BindingConstraintFrequency.HOURLY,
         operator=BindingConstraintOperator.LESS,
         coeffs={"area1%area2": [800, 30]},
         comments="Hello",
@@ -68,7 +69,7 @@ def test_manage_binding_constraint(
     bind2_cmd = CreateBindingConstraint(
         name="BD 2",
         enabled=False,
-        time_step=TimeStep.DAILY,
+        time_step=BindingConstraintFrequency.DAILY,
         operator=BindingConstraintOperator.BOTH,
         coeffs={"area1.cluster": [50]},
         command_context=command_context,
@@ -104,7 +105,7 @@ def test_manage_binding_constraint(
     bind_update = UpdateBindingConstraint(
         id="bd 1",
         enabled=False,
-        time_step=TimeStep.WEEKLY,
+        time_step=BindingConstraintFrequency.WEEKLY,
         operator=BindingConstraintOperator.BOTH,
         coeffs={"area1%area2": [800, 30]},
         values=[[0]],
@@ -142,7 +143,7 @@ def test_match(command_context: CommandContext):
     base = CreateBindingConstraint(
         name="foo",
         enabled=False,
-        time_step=TimeStep.DAILY,
+        time_step=BindingConstraintFrequency.DAILY,
         operator=BindingConstraintOperator.BOTH,
         coeffs={"a": [0.3]},
         values=[[0]],
@@ -151,7 +152,7 @@ def test_match(command_context: CommandContext):
     other_match = CreateBindingConstraint(
         name="foo",
         enabled=False,
-        time_step=TimeStep.DAILY,
+        time_step=BindingConstraintFrequency.DAILY,
         operator=BindingConstraintOperator.BOTH,
         coeffs={"a": [0.3]},
         values=[[0]],
@@ -160,7 +161,7 @@ def test_match(command_context: CommandContext):
     other_not_match = CreateBindingConstraint(
         name="bar",
         enabled=False,
-        time_step=TimeStep.DAILY,
+        time_step=BindingConstraintFrequency.DAILY,
         operator=BindingConstraintOperator.BOTH,
         coeffs={"a": [0.3]},
         command_context=command_context,
@@ -177,7 +178,7 @@ def test_match(command_context: CommandContext):
     base = UpdateBindingConstraint(
         id="foo",
         enabled=False,
-        time_step=TimeStep.DAILY,
+        time_step=BindingConstraintFrequency.DAILY,
         operator=BindingConstraintOperator.BOTH,
         coeffs={"a": [0.3]},
         values=[[0]],
@@ -186,7 +187,7 @@ def test_match(command_context: CommandContext):
     other_match = UpdateBindingConstraint(
         id="foo",
         enabled=False,
-        time_step=TimeStep.DAILY,
+        time_step=BindingConstraintFrequency.DAILY,
         operator=BindingConstraintOperator.BOTH,
         coeffs={"a": [0.3]},
         values=[[0]],
@@ -195,7 +196,7 @@ def test_match(command_context: CommandContext):
     other_not_match = UpdateBindingConstraint(
         id="bar",
         enabled=False,
-        time_step=TimeStep.DAILY,
+        time_step=BindingConstraintFrequency.DAILY,
         operator=BindingConstraintOperator.BOTH,
         coeffs={"a": [0.3]},
         command_context=command_context,
@@ -224,7 +225,7 @@ def test_revert(command_context: CommandContext):
     base = CreateBindingConstraint(
         name="foo",
         enabled=False,
-        time_step=TimeStep.DAILY,
+        time_step=BindingConstraintFrequency.DAILY,
         operator=BindingConstraintOperator.BOTH,
         coeffs={"a": [0.3]},
         values=[[0]],
@@ -237,7 +238,7 @@ def test_revert(command_context: CommandContext):
     base = UpdateBindingConstraint(
         id="foo",
         enabled=False,
-        time_step=TimeStep.DAILY,
+        time_step=BindingConstraintFrequency.DAILY,
         operator=BindingConstraintOperator.BOTH,
         coeffs={"a": [0.3]},
         values=[[0]],
@@ -255,7 +256,7 @@ def test_revert(command_context: CommandContext):
             UpdateBindingConstraint(
                 id="foo",
                 enabled=True,
-                time_step=TimeStep.WEEKLY,
+                time_step=BindingConstraintFrequency.WEEKLY,
                 operator=BindingConstraintOperator.BOTH,
                 coeffs={"a": [0.3]},
                 values=[[0]],
@@ -264,7 +265,7 @@ def test_revert(command_context: CommandContext):
             UpdateBindingConstraint(
                 id="foo",
                 enabled=True,
-                time_step=TimeStep.HOURLY,
+                time_step=BindingConstraintFrequency.HOURLY,
                 operator=BindingConstraintOperator.BOTH,
                 coeffs={"a": [0.3]},
                 values=[[0]],
@@ -276,7 +277,7 @@ def test_revert(command_context: CommandContext):
         UpdateBindingConstraint(
             id="foo",
             enabled=True,
-            time_step=TimeStep.HOURLY,
+            time_step=BindingConstraintFrequency.HOURLY,
             operator=BindingConstraintOperator.BOTH,
             coeffs={"a": [0.3]},
             values=[[0]],
@@ -291,7 +292,7 @@ def test_revert(command_context: CommandContext):
             UpdateBindingConstraint(
                 id="foo",
                 enabled=True,
-                time_step=TimeStep.WEEKLY,
+                time_step=BindingConstraintFrequency.WEEKLY,
                 operator=BindingConstraintOperator.BOTH,
                 coeffs={"a": [0.3]},
                 values=[[0]],
@@ -300,7 +301,7 @@ def test_revert(command_context: CommandContext):
             CreateBindingConstraint(
                 name="foo",
                 enabled=True,
-                time_step=TimeStep.HOURLY,
+                time_step=BindingConstraintFrequency.HOURLY,
                 operator=BindingConstraintOperator.EQUAL,
                 coeffs={"a": [0.3]},
                 values=[[0]],
@@ -312,7 +313,7 @@ def test_revert(command_context: CommandContext):
         UpdateBindingConstraint(
             id="foo",
             enabled=True,
-            time_step=TimeStep.HOURLY,
+            time_step=BindingConstraintFrequency.HOURLY,
             operator=BindingConstraintOperator.EQUAL,
             coeffs={"a": [0.3]},
             values=matrix_id,
@@ -329,7 +330,7 @@ def test_create_diff(command_context: CommandContext):
     base = CreateBindingConstraint(
         name="foo",
         enabled=False,
-        time_step=TimeStep.DAILY,
+        time_step=BindingConstraintFrequency.DAILY,
         operator=BindingConstraintOperator.BOTH,
         coeffs={"a": [0.3]},
         values="a",
@@ -338,7 +339,7 @@ def test_create_diff(command_context: CommandContext):
     other_match = CreateBindingConstraint(
         name="foo",
         enabled=True,
-        time_step=TimeStep.HOURLY,
+        time_step=BindingConstraintFrequency.HOURLY,
         operator=BindingConstraintOperator.EQUAL,
         coeffs={"b": [0.3]},
         values="b",
@@ -348,7 +349,7 @@ def test_create_diff(command_context: CommandContext):
         UpdateBindingConstraint(
             id="foo",
             enabled=True,
-            time_step=TimeStep.HOURLY,
+            time_step=BindingConstraintFrequency.HOURLY,
             operator=BindingConstraintOperator.EQUAL,
             coeffs={"b": [0.3]},
             values="b",
@@ -359,7 +360,7 @@ def test_create_diff(command_context: CommandContext):
     base = UpdateBindingConstraint(
         id="foo",
         enabled=False,
-        time_step=TimeStep.DAILY,
+        time_step=BindingConstraintFrequency.DAILY,
         operator=BindingConstraintOperator.BOTH,
         coeffs={"a": [0.3]},
         values=[[0]],
@@ -368,7 +369,7 @@ def test_create_diff(command_context: CommandContext):
     other_match = UpdateBindingConstraint(
         id="foo",
         enabled=False,
-        time_step=TimeStep.DAILY,
+        time_step=BindingConstraintFrequency.DAILY,
         operator=BindingConstraintOperator.BOTH,
         coeffs={"a": [0.3]},
         values=[[0]],
