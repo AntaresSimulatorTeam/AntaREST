@@ -1,15 +1,15 @@
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
-from antarest.study.storage.rawstudy.model.filesystem.matrix.constants import (
-    default_binding_constraint_daily,
-    default_binding_constraint_hourly,
-    default_binding_constraint_weekly,
-)
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.root.input.bindingconstraints.bindingconstraints_ini import (
     BindingConstraintsIni,
+)
+from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series import (
+    default_binding_constraint_daily,
+    default_binding_constraint_hourly,
+    default_binding_constraint_weekly,
 )
 
 
