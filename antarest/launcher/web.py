@@ -6,7 +6,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query
 from fastapi.exceptions import HTTPException
 
-from antarest.core.config import Config
+from antarest.core.config import Config, InvalidConfigurationError
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.jwt import JWTUser
 from antarest.core.requests import RequestParameters
@@ -229,5 +229,49 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         if solver not in {"default", "slurm", "local"}:
             raise UnknownSolverConfig(solver)
         return service.get_solver_versions(solver)
+
+    # noinspection SpellCheckingInspection
+    @bp.get(
+        "/launcher/nbcores",  # We avoid "nb_cores" and "nb-cores" in endpoints
+        tags=[APITag.launcher],
+        summary="Retrieving Min, Default, and Max Core Count",
+        response_model=Dict[str, int],
+    )
+    def get_nb_cores(
+        launcher: str = Query(
+            "default",
+            examples={
+                "Default launcher": {
+                    "description": "Min, Default, and Max Core Count",
+                    "value": "default",
+                },
+                "SLURM launcher": {
+                    "description": "Min, Default, and Max Core Count",
+                    "value": "slurm",
+                },
+                "Local launcher": {
+                    "description": "Min, Default, and Max Core Count",
+                    "value": "local",
+                },
+            },
+        )
+    ) -> Dict[str, int]:
+        """
+        Retrieve the numer of cores of the launcher.
+
+        Args:
+        - `launcher`: name of the configuration to read: "slurm" or "local".
+          If "default" is specified, retrieve the configuration of the default launcher.
+
+        Returns:
+        - "min": min number of cores
+        - "defaultValue": default number of cores
+        - "max": max number of cores
+        """
+        logger.info(f"Fetching the number of cores for the '{launcher}' configuration")
+        try:
+            return service.config.launcher.get_nb_cores(launcher).to_json()
+        except InvalidConfigurationError:
+            raise UnknownSolverConfig(launcher)
 
     return bp

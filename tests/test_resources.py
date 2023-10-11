@@ -4,6 +4,8 @@ from typing import Sequence
 
 import pytest
 
+from antarest.core.config import Config
+
 HERE = pathlib.Path(__file__).parent.resolve()
 PROJECT_DIR = next(iter(p for p in HERE.parents if p.joinpath("antarest").exists()))
 RESOURCES_DIR = PROJECT_DIR.joinpath("resources")
@@ -84,3 +86,17 @@ def test_empty_study_zip(filename: str, expected_list: Sequence[str]):
     with zipfile.ZipFile(resource_path) as myzip:
         actual = sorted(myzip.namelist())
     assert actual == expected_list
+
+
+def test_resources_config():
+    """
+    Check that the "resources/config.yaml" file is valid.
+
+    The launcher section must be configured to use a local launcher
+    with NB Cores detection enabled.
+    """
+    config_path = RESOURCES_DIR.joinpath("deploy/config.yaml")
+    config = Config.from_yaml_file(config_path, res=RESOURCES_DIR)
+    assert config.launcher.default == "local"
+    assert config.launcher.local is not None
+    assert config.launcher.local.enable_nb_cores_detection is True

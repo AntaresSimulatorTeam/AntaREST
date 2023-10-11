@@ -29,9 +29,12 @@ storage:
 
 launcher:
   default: local
+
   local:
     binaries:
       700: path/to/700
+    enable_nb_cores_detection: true
+
 #  slurm:
 #    local_workspace: path/to/workspace
 #    username: username
@@ -42,7 +45,11 @@ launcher:
 #    password: password_is_optional_but_necessary_if_key_is_absent
 #    default_wait_time: 900
 #    default_time_limit: 172800
-#    default_n_cpu: 12
+#    enable_nb_cores_detection: False
+#    nb_cores:
+#        min: 1
+#        default: 22
+#        max: 24
 #    default_json_db_name: launcher_db.json
 #    slurm_script_path: /path/to/launchantares_v1.1.3.sh
 #    db_primary_key: name
