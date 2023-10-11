@@ -2267,33 +2267,27 @@ def test_import(client: TestClient, admin_access_token: str, study_id: str) -> N
     )
     assert len(res.json()) == 7
 
-    # test matrices import for .zip file
+    # test matrices import for .zip and .7z files
     matrices_zip_path = ASSETS_DIR / "matrices.zip"
-    res = client.post(
+    res_zip = client.post(
         "/v1/matrix/_import",
         headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
         files={"file": (matrices_zip_path.name, io.BytesIO(matrices_zip_path.read_bytes()), "application/zip")},
     )
-    assert res.status_code == 200
-    result = res.json()
-    assert len(result) == 2
-    assert result[0]["name"] == "fr.txt"
-    assert result[1]["name"] == "it.txt"
-
-    # test matrices import for .7z file
     matrices_seven_zip_path = ASSETS_DIR / "matrices.7z"
-    res = client.post(
+    res_seven_zip = client.post(
         "/v1/matrix/_import",
         headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
         files={
             "file": (matrices_seven_zip_path.name, io.BytesIO(matrices_seven_zip_path.read_bytes()), "application/zip")
         },
     )
-    assert res.status_code == 200
-    result = res.json()
-    assert len(result) == 2
-    assert result[0]["name"] == "fr.txt"
-    assert result[1]["name"] == "it.txt"
+    for res in [res_zip, res_seven_zip]:
+        assert res.status_code == 200
+        result = res.json()
+        assert len(result) == 2
+        assert result[0]["name"] == "fr.txt"
+        assert result[1]["name"] == "it.txt"
 
 
 def test_copy(client: TestClient, admin_access_token: str, study_id: str) -> None:
