@@ -117,3 +117,19 @@ class AllOptionalMetaclass(pydantic.main.ModelMetaclass):
                 annotations[field] = Optional[annotations[field]]
         namespaces["__annotations__"] = annotations
         return super().__new__(cls, name, bases, namespaces)
+
+
+def camel_case_model(model: Type[BaseModel]) -> Type[BaseModel]:
+    """
+    This decorator can be used to modify a model to use camel case aliases.
+
+    Args:
+        model: The pydantic model to modify.
+
+    Returns:
+        The modified model.
+    """
+    model.__config__.alias_generator = to_camel_case
+    for field_name, field in model.__fields__.items():
+        field.alias = to_camel_case(field_name)
+    return model

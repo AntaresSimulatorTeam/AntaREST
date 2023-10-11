@@ -1577,8 +1577,15 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         Args:
         - `uuid`: The UUID of the study.
         - `area_id`: The area ID.
-        - `form`: The name and the group(PSP_open, PSP_closed, Pondage, Battery, Other1, Other2, Other3, Other4, Other5)
-        of the storage that we want to create.
+        - `form`: The characteristic of the storage that we can update:
+          - `name`: The name of the updated storage.
+          - `group`: The group of the updated storage.
+          - `injectionNominalCapacity`: The injection Nominal Capacity of the updated storage.
+          - `withdrawalNominalCapacity`: The withdrawal Nominal Capacity of the updated storage.
+          - `reservoirCapacity`:  The reservoir capacity of the updated storage.
+          - `efficiency`: The efficiency of the updated storage
+          - `initialLevel`: The initial Level of the updated storage
+          - `initialLevelOptim`: The initial Level Optim of the updated storage
 
         Returns: New storage with the following attributes:
         - `id`: The storage ID of the study.
