@@ -1,3 +1,4 @@
+import io
 import logging
 import shutil
 import signal
@@ -6,7 +7,7 @@ import tempfile
 import threading
 import time
 from pathlib import Path
-from typing import IO, Callable, Dict, Optional, Tuple, cast
+from typing import Callable, Dict, Optional, Tuple, cast
 from uuid import UUID
 
 from antarest.core.config import Config
@@ -14,7 +15,7 @@ from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus
 from antarest.core.requests import RequestParameters
 from antarest.launcher.adapters.abstractlauncher import AbstractLauncher, LauncherCallbacks, LauncherInitException
-from antarest.launcher.adapters.log_manager import LogTailManager
+from antarest.launcher.adapters.log_manager import follow
 from antarest.launcher.model import JobStatus, LauncherParametersDTO, LogType
 
 logger = logging.getLogger(__name__)
@@ -133,8 +134,8 @@ class LocalLauncher(AbstractLauncher):
             )
 
             thread = threading.Thread(
-                target=lambda: LogTailManager.follow(
-                    cast(IO[str], process.stdout),
+                target=lambda: follow(
+                    cast(io.StringIO, process.stdout),
                     self.create_update_log(str(uuid)),
                     stop_reading_output,
                     None,

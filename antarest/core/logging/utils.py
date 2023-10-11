@@ -124,12 +124,14 @@ def configure_logger(config: Config, handler_cls: str = "logging.FileHandler") -
                 "filters": ["context"],
             }
         elif handler_cls == "logging.handlers.TimedRotatingFileHandler":
+            # 90 days = 3 months
+            # keep only 1 backup (0 means keep all)
             logging_config["handlers"]["default"] = {
                 "class": handler_cls,
                 "filename": config.logging.logfile,
-                "when": "D",  # D = day
-                "interval": 90,  # 90 days = 3 months
-                "backupCount": 1,  # keep only 1 backup (0 means keep all)
+                "when": "D",
+                "interval": 90,
+                "backupCount": 1,
                 "encoding": "utf-8",
                 "delay": False,
                 "utc": False,

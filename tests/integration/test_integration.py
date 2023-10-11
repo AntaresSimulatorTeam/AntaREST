@@ -529,7 +529,7 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
         ],
     )
 
-    client.post(
+    res = client.post(
         f"/v1/studies/{study_id}/commands",
         headers=admin_headers,
         json=[
@@ -545,8 +545,9 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
             }
         ],
     )
+    res.raise_for_status()
 
-    client.post(
+    res = client.post(
         f"/v1/studies/{study_id}/commands",
         headers=admin_headers,
         json=[
@@ -562,6 +563,7 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
             }
         ],
     )
+    res.raise_for_status()
 
     res_areas = client.get(f"/v1/studies/{study_id}/areas", headers=admin_headers)
     assert res_areas.json() == [

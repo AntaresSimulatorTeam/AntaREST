@@ -8,12 +8,6 @@ class CommandOutput:
     message: str = ""
 
 
-class TimeStep(Enum):
-    HOURLY = "hourly"
-    DAILY = "daily"
-    WEEKLY = "weekly"
-
-
 class BindingConstraintOperator(Enum):
     BOTH = "both"
     EQUAL = "equal"

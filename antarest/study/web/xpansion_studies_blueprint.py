@@ -162,7 +162,7 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
-        logger.info(f"Fetching study list", extra={"user": current_user.id})
+        logger.info("Fetching study list", extra={"user": current_user.id})
         params = RequestParameters(user=current_user)
         return study_service.get_candidates(uuid, params)
 

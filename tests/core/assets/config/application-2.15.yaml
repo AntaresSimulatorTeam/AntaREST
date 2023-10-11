@@ -1,0 +1,66 @@
+security:
+  disabled: false
+  jwt:
+    key: super-secret
+  login:
+    admin:
+      pwd: admin
+
+db:
+  url: "sqlite:////home/john/antares_data/database.db"
+
+storage:
+  tmp_dir: /tmp
+  matrixstore: /home/john/antares_data/matrices
+  archive_dir: /home/john/antares_data/archives
+  allow_deletion: false
+  workspaces:
+    default:
+      path: /home/john/antares_data/internal_studies/
+    studies:
+      path: /home/john/antares_data/studies/
+
+launcher:
+  default: slurm
+  local:
+    binaries:
+      850: /home/john/opt/antares-8.5.0-Ubuntu-20.04/antares-solver
+      860: /home/john/opt/antares-8.6.0-Ubuntu-20.04/antares-8.6-solver
+    enable_nb_cores_detection: True
+
+  slurm:
+    local_workspace: /home/john/antares_data/slurm_workspace
+
+    username: antares
+    hostname: slurm-prod-01
+
+    port: 22
+    private_key_file: /home/john/.ssh/id_rsa
+    key_password:
+    default_wait_time: 900
+    default_time_limit: 172800
+    enable_nb_cores_detection: False
+    nb_cores:
+        min: 1
+        default: 22
+        max: 24
+    default_json_db_name: launcher_db.json
+    slurm_script_path: /applis/antares/launchAntares.sh
+    db_primary_key: name
+    antares_versions_on_remote_server:
+      - '850'  # 8.5.1/antares-8.5-solver
+      - '860'  # 8.6.2/antares-8.6-solver
+      - '870'  # 8.7.0/antares-8.7-solver
+
+debug: false
+
+root_path: ""
+
+server:
+  worker_threadpool_size: 12
+  services:
+    - watcher
+    - matrix_gc
+
+logging:
+  level: INFO

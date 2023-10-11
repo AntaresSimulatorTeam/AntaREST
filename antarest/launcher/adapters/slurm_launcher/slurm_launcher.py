@@ -32,7 +32,6 @@ from antarest.study.storage.rawstudy.io.writer.ini_writer import IniWriter
 logger = logging.getLogger(__name__)
 logging.getLogger("paramiko").setLevel("WARN")
 
-MAX_NB_CPU = 24
 MAX_TIME_LIMIT = 864000
 MIN_TIME_LIMIT = 3600
 WORKSPACE_LOCK_FILE_NAME = ".lock"
@@ -153,7 +152,7 @@ class SlurmLauncher(AbstractLauncher):
         main_options_parameters = ParserParameters(
             default_wait_time=self.slurm_config.default_wait_time,
             default_time_limit=self.slurm_config.default_time_limit,
-            default_n_cpu=self.slurm_config.default_n_cpu,
+            default_n_cpu=self.slurm_config.nb_cores.default,
             studies_in_dir=str((Path(local_workspace or self.slurm_config.local_workspace) / STUDIES_INPUT_DIR_NAME)),
             log_dir=str((Path(self.slurm_config.local_workspace) / LOG_DIR_NAME)),
             finished_dir=str((Path(local_workspace or self.slurm_config.local_workspace) / STUDIES_OUTPUT_DIR_NAME)),
@@ -440,7 +439,7 @@ class SlurmLauncher(AbstractLauncher):
                 _override_solver_version(study_path, version)
 
                 append_log(launch_uuid, "Submitting study to slurm launcher")
-                launcher_args = self._check_and_apply_launcher_params(launcher_params)
+                launcher_args = self._apply_params(launcher_params)
                 self._call_launcher(launcher_args, self.launcher_params)
 
                 launch_success = self._check_if_study_is_in_launcher_db(launch_uuid)
@@ -481,23 +480,40 @@ class SlurmLauncher(AbstractLauncher):
         studies = self.data_repo_tinydb.get_list_of_studies()
         return any(s.name == job_id for s in studies)
 
-    def _check_and_apply_launcher_params(self, launcher_params: LauncherParametersDTO) -> argparse.Namespace:
+    def _apply_params(self, launcher_params: LauncherParametersDTO) -> argparse.Namespace:
+        """
+        Populate a `argparse.Namespace` object with the user parameters.
+
+        Args:
+            launcher_params:
+                Contains the launcher parameters selected by the user.
+                If a parameter is not provided (`None`), the default value should be retrieved
+                from the configuration.
+
+        Returns:
+            The `argparse.Namespace` object which is then passed to `antarestlauncher.main.run_with`,
+            to launch a simulation using Antares Launcher.
+        """
         if launcher_params:
             launcher_args = deepcopy(self.launcher_args)
-            other_options = []
+
             if launcher_params.other_options:
-                options = re.split("\\s+", launcher_params.other_options)
-                for opt in options:
-                    other_options.append(re.sub("[^a-zA-Z0-9_,-]", "", opt))
-            if launcher_params.xpansion is not None:
-                launcher_args.xpansion_mode = "r" if launcher_params.xpansion_r_version else "cpp"
+                options = launcher_params.other_options.split()
+                other_options = [re.sub("[^a-zA-Z0-9_,-]", "", opt) for opt in options]
+            else:
+                other_options = []
+
+            # launcher_params.xpansion can be an `XpansionParametersDTO`, a bool or `None`
+            if launcher_params.xpansion:  # not None and not False
+                launcher_args.xpansion_mode = {True: "r", False: "cpp"}[launcher_params.xpansion_r_version]
                 if (
                     isinstance(launcher_params.xpansion, XpansionParametersDTO)
                     and launcher_params.xpansion.sensitivity_mode
                 ):
                     other_options.append("xpansion_sensitivity")
+
             time_limit = launcher_params.time_limit
-            if time_limit and isinstance(time_limit, int):
+            if time_limit is not None:
                 if MIN_TIME_LIMIT > time_limit:
                     logger.warning(
                         f"Invalid slurm launcher time limit ({time_limit}),"
@@ -512,15 +528,23 @@ class SlurmLauncher(AbstractLauncher):
                     launcher_args.time_limit = MAX_TIME_LIMIT - 3600
                 else:
                     launcher_args.time_limit = time_limit
+
             post_processing = launcher_params.post_processing
-            if isinstance(post_processing, bool):
+            if post_processing is not None:
                 launcher_args.post_processing = post_processing
+
             nb_cpu = launcher_params.nb_cpu
-            if nb_cpu and isinstance(nb_cpu, int):
-                if 0 < nb_cpu <= MAX_NB_CPU:
+            if nb_cpu is not None:
+                nb_cores = self.slurm_config.nb_cores
+                if nb_cores.min <= nb_cpu <= nb_cores.max:
                     launcher_args.n_cpu = nb_cpu
                 else:
-                    logger.warning(f"Invalid slurm launcher nb_cpu ({nb_cpu}), should be between 1 and 24")
+                    logger.warning(
+                        f"Invalid slurm launcher nb_cpu ({nb_cpu}),"
+                        f" should be between {nb_cores.min} and {nb_cores.max}"
+                    )
+                    launcher_args.n_cpu = nb_cores.default
+
             if launcher_params.adequacy_patch is not None:  # the adequacy patch can be an empty object
                 launcher_args.post_processing = True
 

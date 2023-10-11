@@ -8,11 +8,16 @@ from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
 class RemoveLink(ICommand):
+    """
+    Command used to remove a link.
+    """
+
+    command_name: CommandName = CommandName.REMOVE_LINK
+    version: int = 1
+
+    # Properties of the `REMOVE_LINK` command:
     area1: str
     area2: str
-
-    def __init__(self, **data: Any) -> None:
-        super().__init__(command_name=CommandName.REMOVE_LINK, version=1, **data)
 
     def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         result = self._check_link_exists(study_data)

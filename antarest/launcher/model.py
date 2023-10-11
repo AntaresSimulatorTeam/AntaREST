@@ -17,14 +17,14 @@ class XpansionParametersDTO(BaseModel):
 
 
 class LauncherParametersDTO(BaseModel):
-    # Warning ! This class must be retrocompatible (that's the reason for the weird bool/XpansionParametersDTO union)
+    # Warning ! This class must be retro-compatible (that's the reason for the weird bool/XpansionParametersDTO union)
     # The reason is that it's stored in json format in database and deserialized using the latest class version
     # If compatibility is to be broken, an (alembic) data migration script should be added
     adequacy_patch: Optional[Dict[str, Any]] = None
     nb_cpu: Optional[int] = None
     post_processing: bool = False
-    time_limit: Optional[int] = None
-    xpansion: Union[bool, Optional[XpansionParametersDTO]] = None
+    time_limit: Optional[int] = None  # 3600 <= time_limit < 864000 (10 days)
+    xpansion: Union[XpansionParametersDTO, bool, None] = None
     xpansion_r_version: bool = False
     archive_output: bool = True
     auto_unzip: bool = True

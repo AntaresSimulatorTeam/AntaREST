@@ -80,7 +80,7 @@ class ITaskService(ABC):
 
 # noinspection PyUnusedLocal
 def noop_notifier(message: str) -> None:
-    pass
+    """This function is used in tasks when no notification is required."""
 
 
 DEFAULT_AWAIT_MAX_TIMEOUT = 172800
@@ -121,7 +121,7 @@ class TaskJobService(ITaskService):
 
             return _await_task_end
 
-        # todo: Is `logger_` parameter required? (consider refactoring)
+        # noinspection PyUnusedLocal
         def _send_worker_task(logger_: TaskUpdateNotifier) -> TaskResult:
             listener_id = self.event_bus.add_listener(
                 _create_awaiter(task_result_wrapper),
@@ -338,14 +338,18 @@ class TaskJobService(ITaskService):
                     result.message,
                     result.return_value,
                 )
+            event_type = {True: EventType.TASK_COMPLETED, False: EventType.TASK_FAILED}[result.success]
+            event_msg = {True: "completed", False: "failed"}[result.success]
             self.event_bus.push(
                 Event(
-                    type=EventType.TASK_COMPLETED if result.success else EventType.TASK_FAILED,
+                    type=event_type,
                     payload=TaskEventPayload(
                         id=task_id,
-                        message=custom_event_messages.end
-                        if custom_event_messages is not None
-                        else f'Task {task_id} {"completed" if result.success else "failed"}',
+                        message=(
+                            custom_event_messages.end
+                            if custom_event_messages is not None
+                            else f"Task {task_id} {event_msg}"
+                        ),
                     ).dict(),
                     permissions=PermissionInfo(public_mode=PublicMode.READ),
                     channel=EventChannelDirectory.TASK + task_id,
