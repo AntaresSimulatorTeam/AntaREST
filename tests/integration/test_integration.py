@@ -231,31 +231,6 @@ def test_main(client: TestClient, admin_access_token: str, study_id: str) -> Non
     )
     assert len(res.json()) == 4
 
-    # tests outputs import for .zip
-    output_path_zip = ASSETS_DIR / "output_adq.zip"
-    client.post(
-        f"/v1/studies/{study_id}/output",
-        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
-        files={"output": io.BytesIO(output_path_zip.read_bytes())},
-    )
-    res = client.get(
-        f"/v1/studies/{study_id}/outputs",
-        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
-    )
-    assert len(res.json()) == 5
-    # tests outputs import for .7z
-    output_path_seven_zip = ASSETS_DIR / "output_adq.7z"
-    client.post(
-        f"/v1/studies/{study_id}/output",
-        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
-        files={"output": io.BytesIO(output_path_seven_zip.read_bytes())},
-    )
-    res = client.get(
-        f"/v1/studies/{study_id}/outputs",
-        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
-    )
-    assert len(res.json()) == 6
-
     # study creation
     created = client.post(
         "/v1/studies?name=foo",
@@ -2265,6 +2240,60 @@ def test_import(client: TestClient, admin_access_token: str, study_id: str) -> N
         headers=admin_headers,
     )
     assert res.status_code == 201
+
+    # tests outputs import for .zip
+    output_path_zip = ASSETS_DIR / "output_adq.zip"
+    client.post(
+        f"/v1/studies/{study_id}/output",
+        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
+        files={"output": io.BytesIO(output_path_zip.read_bytes())},
+    )
+    res = client.get(
+        f"/v1/studies/{study_id}/outputs",
+        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
+    )
+    assert len(res.json()) == 6
+
+    # tests outputs import for .7z
+    output_path_seven_zip = ASSETS_DIR / "output_adq.7z"
+    client.post(
+        f"/v1/studies/{study_id}/output",
+        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
+        files={"output": io.BytesIO(output_path_seven_zip.read_bytes())},
+    )
+    res = client.get(
+        f"/v1/studies/{study_id}/outputs",
+        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
+    )
+    assert len(res.json()) == 7
+
+    # test matrices import for .zip file
+    matrices_zip_path = ASSETS_DIR / "matrices.zip"
+    res = client.post(
+        "/v1/matrix/_import",
+        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
+        files={"file": (matrices_zip_path.name, io.BytesIO(matrices_zip_path.read_bytes()), "application/zip")},
+    )
+    assert res.status_code == 200
+    result = res.json()
+    assert len(result) == 2
+    assert result[0]["name"] == "fr.txt"
+    assert result[1]["name"] == "it.txt"
+
+    # test matrices import for .7z file
+    matrices_seven_zip_path = ASSETS_DIR / "matrices.7z"
+    res = client.post(
+        "/v1/matrix/_import",
+        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
+        files={
+            "file": (matrices_seven_zip_path.name, io.BytesIO(matrices_seven_zip_path.read_bytes()), "application/zip")
+        },
+    )
+    assert res.status_code == 200
+    result = res.json()
+    assert len(result) == 2
+    assert result[0]["name"] == "fr.txt"
+    assert result[1]["name"] == "it.txt"
 
 
 def test_copy(client: TestClient, admin_access_token: str, study_id: str) -> None:
