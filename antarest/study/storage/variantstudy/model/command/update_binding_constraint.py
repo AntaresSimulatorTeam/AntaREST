@@ -1,6 +1,7 @@
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
-from pydantic import validator
+import numpy as np
+from pydantic import Field, validator
 
 from antarest.core.model import JSON
 from antarest.core.utils.utils import assert_this
@@ -18,32 +19,58 @@ from antarest.study.storage.variantstudy.model.command.common import (
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
+MatrixType = List[List[MatrixData]]
+
 
 class UpdateBindingConstraint(ICommand):
+    """
+    Command used to update a binding constraint.
+    """
+
+    command_name: CommandName = CommandName.UPDATE_BINDING_CONSTRAINT
+    version: int = 1
+
+    # Properties of the `UPDATE_BINDING_CONSTRAINT` command:
     id: str
     enabled: bool = True
     time_step: BindingConstraintFrequency
     operator: BindingConstraintOperator
     coeffs: Dict[str, List[float]]
-    values: Optional[Union[List[List[MatrixData]], str]] = None
+    values: Optional[Union[MatrixType, str]] = Field(None, description="2nd member matrix")
     filter_year_by_year: Optional[str] = None
     filter_synthesis: Optional[str] = None
     comments: Optional[str] = None
 
-    def __init__(self, **data: Any) -> None:
-        super().__init__(
-            command_name=CommandName.UPDATE_BINDING_CONSTRAINT,
-            version=1,
-            **data,
-        )
-
     @validator("values", always=True)
     def validate_series(
-        cls, v: Optional[Union[List[List[MatrixData]], str]], values: Any
-    ) -> Optional[Union[List[List[MatrixData]], str]]:
-        if v is not None:
+        cls,
+        v: Optional[Union[MatrixType, str]],
+        values: Dict[str, Any],
+    ) -> Optional[Union[MatrixType, str]]:
+        time_step = values["time_step"]
+        if v is None:
+            # The matrix is not updated
+            return None
+        if isinstance(v, str):
+            # Check the matrix link
             return validate_matrix(v, values)
-        return None
+        if isinstance(v, list):
+            shapes = {
+                BindingConstraintFrequency.HOURLY: (8760, 3),
+                BindingConstraintFrequency.DAILY: (365, 3),
+                BindingConstraintFrequency.WEEKLY: (52, 3),
+            }
+            # Check the matrix values and create the corresponding matrix link
+            array = np.array(v, dtype=np.float64)
+            if array.shape != shapes[time_step]:
+                raise ValueError(f"Invalid matrix shape {array.shape}, expected {shapes[time_step]}")
+            if np.isnan(array).any():
+                raise ValueError("Matrix values cannot contain NaN")
+            v = cast(MatrixType, array.tolist())
+            return validate_matrix(v, values)
+        # Invalid datatype
+        # pragma: no cover
+        raise TypeError(repr(v))
 
     def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         return CommandOutput(status=True), {}

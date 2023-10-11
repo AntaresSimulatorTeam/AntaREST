@@ -107,13 +107,14 @@ def test_manage_binding_constraint(
         "type": "daily",
     }
 
+    weekly_values = default_binding_constraint_weekly.tolist()
     bind_update = UpdateBindingConstraint(
         id="bd 1",
         enabled=False,
         time_step=BindingConstraintFrequency.WEEKLY,
         operator=BindingConstraintOperator.BOTH,
         coeffs={"area1%area2": [800, 30]},
-        values=[[0]],
+        values=weekly_values,
         command_context=command_context,
     )
     res = bind_update.apply(empty_study)
