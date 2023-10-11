@@ -80,7 +80,8 @@ def apply_binding_constraint(
         ["input", "bindingconstraints", "bindingconstraints"],
     )
     if values:
-        assert isinstance(values, str)
+        if not isinstance(values, str):  # pragma: no cover
+            raise TypeError(repr(values))
         study_data.tree.save(values, ["input", "bindingconstraints", bd_id])
     return CommandOutput(status=True)
 

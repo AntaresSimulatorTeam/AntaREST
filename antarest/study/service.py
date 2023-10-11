@@ -641,15 +641,20 @@ class StudyService:
 
     def get_user_name(self, params: RequestParameters) -> str:
         """
-        Args: params : Request parameters
+        Retrieves the name of a user based on the provided request parameters.
 
-        Returns: The user's name
+        Args:
+            params: The request parameters which includes user information.
+
+        Returns:
+            Returns the user's name or, if the logged user is a "bot"
+            (i.e., an application's token), it returns the token's author name.
         """
-        author = "Unknown"
         if params.user:
-            if curr_user := self.user_service.get_user(params.user.id, params):
-                author = curr_user.to_dto().name
-        return author
+            user_id = params.user.impersonator if params.user.type == "bots" else params.user.id
+            if curr_user := self.user_service.get_user(user_id, params):
+                return curr_user.to_dto().name
+        return "Unknown"
 
     def get_study_synthesis(self, study_id: str, params: RequestParameters) -> FileStudyTreeConfigDTO:
         """

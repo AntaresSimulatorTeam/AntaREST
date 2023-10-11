@@ -9,14 +9,15 @@ from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
 class RemoveBindingConstraint(ICommand):
-    id: str
+    """
+    Command used to remove a binding constraint.
+    """
 
-    def __init__(self, **data: Any) -> None:
-        super().__init__(
-            command_name=CommandName.REMOVE_BINDING_CONSTRAINT,
-            version=1,
-            **data,
-        )
+    command_name: CommandName = CommandName.REMOVE_BINDING_CONSTRAINT
+    version: int = 1
+
+    # Properties of the `REMOVE_BINDING_CONSTRAINT` command:
+    id: str
 
     def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         if self.id not in [bind.id for bind in study_data.bindings]:

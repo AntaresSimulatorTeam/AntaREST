@@ -31,7 +31,10 @@ class TestCommandFactory:
                 f".{name}",
                 package="antarest.study.storage.variantstudy.model.command",
             )
-        self.command_class_set = {command.__name__ for command in ICommand.__subclasses__()}
+        abstract_commands = {"AbstractBindingConstraintCommand"}
+        self.command_class_set = {
+            cmd.__name__ for cmd in ICommand.__subclasses__() if cmd.__name__ not in abstract_commands
+        }
 
     # noinspection SpellCheckingInspection
     @pytest.mark.parametrize(

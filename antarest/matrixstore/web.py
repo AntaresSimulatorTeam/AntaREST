@@ -37,7 +37,7 @@ def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: 
         matrix: List[List[MatrixData]] = Body(description="matrix dto", default=[]),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
-        logger.info(f"Creating new matrix", extra={"user": current_user.id})
+        logger.info("Creating new matrix", extra={"user": current_user.id})
         if current_user.id is not None:
             return service.create(matrix)
         raise UserHasNotPermissionError()
@@ -60,7 +60,7 @@ def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: 
 
     @bp.get("/matrix/{id}", tags=[APITag.matrix], response_model=MatrixDTO)
     def get(id: str, user: JWTUser = Depends(auth.get_current_user)) -> Any:
-        logger.info(f"Fetching matrix", extra={"user": user.id})
+        logger.info("Fetching matrix", extra={"user": user.id})
         if user.id is not None:
             return service.get(id)
         raise UserHasNotPermissionError()

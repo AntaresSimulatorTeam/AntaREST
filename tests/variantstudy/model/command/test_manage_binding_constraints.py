@@ -5,6 +5,11 @@ from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint 
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.command_extractor import CommandExtractor
 from antarest.study.storage.variantstudy.business.command_reverter import CommandReverter
+from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series import (
+    default_binding_constraint_daily,
+    default_binding_constraint_hourly,
+    default_binding_constraint_weekly,
+)
 from antarest.study.storage.variantstudy.model.command.common import BindingConstraintOperator
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import CreateBindingConstraint
@@ -102,13 +107,14 @@ def test_manage_binding_constraint(
         "type": "daily",
     }
 
+    weekly_values = default_binding_constraint_weekly.tolist()
     bind_update = UpdateBindingConstraint(
         id="bd 1",
         enabled=False,
         time_step=BindingConstraintFrequency.WEEKLY,
         operator=BindingConstraintOperator.BOTH,
         coeffs={"area1%area2": [800, 30]},
-        values=[[0]],
+        values=weekly_values,
         command_context=command_context,
     )
     res = bind_update.apply(empty_study)
@@ -140,13 +146,14 @@ def test_manage_binding_constraint(
 
 
 def test_match(command_context: CommandContext):
+    values = default_binding_constraint_daily.tolist()
     base = CreateBindingConstraint(
         name="foo",
         enabled=False,
         time_step=BindingConstraintFrequency.DAILY,
         operator=BindingConstraintOperator.BOTH,
         coeffs={"a": [0.3]},
-        values=[[0]],
+        values=values,
         command_context=command_context,
     )
     other_match = CreateBindingConstraint(
@@ -155,7 +162,7 @@ def test_match(command_context: CommandContext):
         time_step=BindingConstraintFrequency.DAILY,
         operator=BindingConstraintOperator.BOTH,
         coeffs={"a": [0.3]},
-        values=[[0]],
+        values=values,
         command_context=command_context,
     )
     other_not_match = CreateBindingConstraint(
@@ -172,7 +179,7 @@ def test_match(command_context: CommandContext):
     assert not base.match(other_other)
     assert base.match_signature() == "create_binding_constraint%foo"
     # check the matrices links
-    matrix_id = command_context.matrix_service.create([[0]])
+    matrix_id = command_context.matrix_service.create(values)
     assert base.get_inner_matrices() == [matrix_id]
 
     base = UpdateBindingConstraint(
@@ -181,7 +188,7 @@ def test_match(command_context: CommandContext):
         time_step=BindingConstraintFrequency.DAILY,
         operator=BindingConstraintOperator.BOTH,
         coeffs={"a": [0.3]},
-        values=[[0]],
+        values=values,
         command_context=command_context,
     )
     other_match = UpdateBindingConstraint(
@@ -190,7 +197,7 @@ def test_match(command_context: CommandContext):
         time_step=BindingConstraintFrequency.DAILY,
         operator=BindingConstraintOperator.BOTH,
         coeffs={"a": [0.3]},
-        values=[[0]],
+        values=values,
         command_context=command_context,
     )
     other_not_match = UpdateBindingConstraint(
@@ -207,7 +214,7 @@ def test_match(command_context: CommandContext):
     assert not base.match(other_other)
     assert base.match_signature() == "update_binding_constraint%foo"
     # check the matrices links
-    matrix_id = command_context.matrix_service.create([[0]])
+    matrix_id = command_context.matrix_service.create(values)
     assert base.get_inner_matrices() == [matrix_id]
 
     base = RemoveBindingConstraint(id="foo", command_context=command_context)
@@ -222,13 +229,16 @@ def test_match(command_context: CommandContext):
 
 
 def test_revert(command_context: CommandContext):
+    hourly_values = default_binding_constraint_hourly.tolist()
+    daily_values = default_binding_constraint_daily.tolist()
+    weekly_values = default_binding_constraint_weekly.tolist()
     base = CreateBindingConstraint(
         name="foo",
         enabled=False,
         time_step=BindingConstraintFrequency.DAILY,
         operator=BindingConstraintOperator.BOTH,
         coeffs={"a": [0.3]},
-        values=[[0]],
+        values=daily_values,
         command_context=command_context,
     )
     assert CommandReverter().revert(base, [], Mock(spec=FileStudy)) == [
@@ -241,7 +251,7 @@ def test_revert(command_context: CommandContext):
         time_step=BindingConstraintFrequency.DAILY,
         operator=BindingConstraintOperator.BOTH,
         coeffs={"a": [0.3]},
-        values=[[0]],
+        values=daily_values,
         command_context=command_context,
     )
     mock_command_extractor = Mock(spec=CommandExtractor)
@@ -259,7 +269,7 @@ def test_revert(command_context: CommandContext):
                 time_step=BindingConstraintFrequency.WEEKLY,
                 operator=BindingConstraintOperator.BOTH,
                 coeffs={"a": [0.3]},
-                values=[[0]],
+                values=weekly_values,
                 command_context=command_context,
             ),
             UpdateBindingConstraint(
@@ -268,7 +278,7 @@ def test_revert(command_context: CommandContext):
                 time_step=BindingConstraintFrequency.HOURLY,
                 operator=BindingConstraintOperator.BOTH,
                 coeffs={"a": [0.3]},
-                values=[[0]],
+                values=hourly_values,
                 command_context=command_context,
             ),
         ],
@@ -280,12 +290,12 @@ def test_revert(command_context: CommandContext):
             time_step=BindingConstraintFrequency.HOURLY,
             operator=BindingConstraintOperator.BOTH,
             coeffs={"a": [0.3]},
-            values=[[0]],
+            values=hourly_values,
             command_context=command_context,
         )
     ]
     # check the matrices links
-    matrix_id = command_context.matrix_service.create([[0]])
+    hourly_matrix_id = command_context.matrix_service.create(hourly_values)
     assert CommandReverter().revert(
         base,
         [
@@ -295,7 +305,7 @@ def test_revert(command_context: CommandContext):
                 time_step=BindingConstraintFrequency.WEEKLY,
                 operator=BindingConstraintOperator.BOTH,
                 coeffs={"a": [0.3]},
-                values=[[0]],
+                values=weekly_values,
                 command_context=command_context,
             ),
             CreateBindingConstraint(
@@ -304,7 +314,7 @@ def test_revert(command_context: CommandContext):
                 time_step=BindingConstraintFrequency.HOURLY,
                 operator=BindingConstraintOperator.EQUAL,
                 coeffs={"a": [0.3]},
-                values=[[0]],
+                values=hourly_values,
                 command_context=command_context,
             ),
         ],
@@ -316,7 +326,7 @@ def test_revert(command_context: CommandContext):
             time_step=BindingConstraintFrequency.HOURLY,
             operator=BindingConstraintOperator.EQUAL,
             coeffs={"a": [0.3]},
-            values=matrix_id,
+            values=hourly_matrix_id,
             comments=None,
             command_context=command_context,
         )
@@ -357,13 +367,14 @@ def test_create_diff(command_context: CommandContext):
         )
     ]
 
+    values = default_binding_constraint_daily.tolist()
     base = UpdateBindingConstraint(
         id="foo",
         enabled=False,
         time_step=BindingConstraintFrequency.DAILY,
         operator=BindingConstraintOperator.BOTH,
         coeffs={"a": [0.3]},
-        values=[[0]],
+        values=values,
         command_context=command_context,
     )
     other_match = UpdateBindingConstraint(
@@ -372,7 +383,7 @@ def test_create_diff(command_context: CommandContext):
         time_step=BindingConstraintFrequency.DAILY,
         operator=BindingConstraintOperator.BOTH,
         coeffs={"a": [0.3]},
-        values=[[0]],
+        values=values,
         command_context=command_context,
     )
     assert base.create_diff(other_match) == [other_match]

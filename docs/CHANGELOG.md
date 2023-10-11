@@ -1,6 +1,38 @@
 Antares Web Changelog
 =====================
 
+v2.15.2 (2023-10-11)
+--------------------
+
+### Hotfix
+
+*  **service:** user connected via tokens cannot create a study (#1757) ([f620197](https://github.com/AntaresSimulatorTeam/AntaREST/commit/f6201976a653db19739cbc42e91ea27ac790da10))
+
+
+### Features
+
+*  **binding-constraint:** handling binding constraints frequency in study configuration parsing (#1702) ([703351a](https://github.com/AntaresSimulatorTeam/AntaREST/commit/703351a6d8d4f70491e66c3c54a92c6d28cb92ea))
+   - add the binding constraint series in the matrix constants generator ([e00d58b](https://github.com/AntaresSimulatorTeam/AntaREST/commit/e00d58b203023363860cb0e849576e02ed97fd81))
+   - command `create_binding_constraint` can check the matrix shape ([68bf99f](https://github.com/AntaresSimulatorTeam/AntaREST/commit/68bf99f1170181f6111bc15c03ede27030f809d2))
+   - command `update_binding_constraint` can check the matrix shape ([c962f73](https://github.com/AntaresSimulatorTeam/AntaREST/commit/c962f7344c7ea07c7a8c7699b2af35f90f3b853c))
+   - add missing command docstring ([d277805](https://github.com/AntaresSimulatorTeam/AntaREST/commit/d277805c10d3f9c7134166e6d2f7170c7b752428))
+   - reduce code duplication ([b41d957](https://github.com/AntaresSimulatorTeam/AntaREST/commit/b41d957cffa6a8dde21a022f8b6c24c8de2559a2))
+   - correct `test_command_factory` unit test to ignore abstract commands ([789c2ad](https://github.com/AntaresSimulatorTeam/AntaREST/commit/789c2adfc3ef3999f3779a345e0730f2f9ad906a))
+*  **api:** add endpoint get_nb_cores (#1727) ([9cfa9f1](https://github.com/AntaresSimulatorTeam/AntaREST/commit/9cfa9f13d363ea4f73aa31ed760d525b091f04a4))
+*  **st-storage:** allow all parameters in endpoint for short term storage creation (#1736) ([853cf6b](https://github.com/AntaresSimulatorTeam/AntaREST/commit/853cf6ba48a23d39f247a0842afac440c4ea4570))
+
+
+### Chore
+
+*  **sonarcloud:** correct SonarCloud issues ([901d00d](https://github.com/AntaresSimulatorTeam/AntaREST/commit/901d00df558f7e79b728e2ce7406d1bdea69f839))
+
+
+### Contributors
+
+<a href="https://github.com/laurent-laporte-pro">laurent-laporte-pro</a>,
+<a href="https://github.com/MartinBelthle">MartinBelthle</a>
+
+
 v2.15.1 (2023-10-05)
 --------------------
 

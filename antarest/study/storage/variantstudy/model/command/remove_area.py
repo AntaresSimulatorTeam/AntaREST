@@ -17,10 +17,15 @@ logger = logging.getLogger(__name__)
 
 
 class RemoveArea(ICommand):
-    id: str
+    """
+    Command used to remove an area.
+    """
 
-    def __init__(self, **data: Any) -> None:
-        super().__init__(command_name=CommandName.REMOVE_AREA, version=1, **data)
+    command_name: CommandName = CommandName.REMOVE_AREA
+    version: int = 1
+
+    # Properties of the `REMOVE_AREA` command:
+    id: str
 
     def _remove_area_from_links_in_config(self, study_data_config: FileStudyTreeConfig) -> None:
         link_to_remove = [

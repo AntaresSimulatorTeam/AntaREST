@@ -1,8 +1,10 @@
+import contextlib
+import io
 import logging
 import time
 from pathlib import Path
 from threading import Thread
-from typing import IO, Callable, Dict, Optional
+from typing import Callable, Dict, Optional, cast
 
 logger = logging.getLogger(__name__)
 
@@ -11,7 +13,7 @@ class LogTailManager:
     BATCH_SIZE = 10
 
     def __init__(self, log_base_dir: Path) -> None:
-        logger.info(f"Initiating Log manager")
+        logger.info("Initiating Log manager")
         self.log_base_dir = log_base_dir
         self.tracked_logs: Dict[str, Thread] = {}
 
@@ -47,43 +49,6 @@ class LogTailManager:
         if log_path_key in self.tracked_logs:
             del self.tracked_logs[log_path_key]
 
-    @staticmethod
-    def follow(
-        io: IO[str],
-        handler: Callable[[str], None],
-        stop: Callable[[], bool],
-        log_file: Optional[str],
-    ) -> None:
-        line = ""
-        line_count = 0
-
-        while True:
-            if stop():
-                break
-            tmp = io.readline()
-            if not tmp:
-                if line:
-                    logger.debug(f"Calling handler for {log_file}")
-                    try:
-                        handler(line)
-                    except Exception as e:
-                        logger.error("Could not handle this log line", exc_info=e)
-                    line = ""
-                    line_count = 0
-                time.sleep(0.1)
-            else:
-                line += tmp
-                if line.endswith("\n"):
-                    line_count += 1
-                if line_count >= LogTailManager.BATCH_SIZE:
-                    logger.debug(f"Calling handler for {log_file}")
-                    try:
-                        handler(line)
-                    except Exception as e:
-                        logger.error("Could not handle this log line", exc_info=e)
-                    line = ""
-                    line_count = 0
-
     def _follow(
         self,
         log_file: Optional[Path],
@@ -97,4 +62,37 @@ class LogTailManager:
 
         with open(log_file, "r") as fh:
             logger.info(f"Scanning {log_file}")
-            LogTailManager.follow(fh, handler, stop, str(log_file))
+            follow(cast(io.StringIO, fh), handler, stop, str(log_file))
+
+
+def follow(
+    file: io.StringIO,
+    handler: Callable[[str], None],
+    stop: Callable[[], bool],
+    log_file: Optional[str],
+) -> None:
+    line = ""
+    line_count = 0
+
+    while True:
+        if stop():
+            break
+        tmp = file.readline()
+        if tmp:
+            line += tmp
+            if line.endswith("\n"):
+                line_count += 1
+            if line_count >= LogTailManager.BATCH_SIZE:
+                logger.debug(f"Calling handler for {log_file}")
+                with contextlib.suppress(Exception):
+                    handler(line)
+                line = ""
+                line_count = 0
+        else:
+            if line:
+                logger.debug(f"Calling handler for {log_file}")
+                with contextlib.suppress(Exception):
+                    handler(line)
+                line = ""
+                line_count = 0
+            time.sleep(0.1)

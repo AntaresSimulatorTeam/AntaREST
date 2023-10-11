@@ -13,7 +13,7 @@ class FileDownloadNotFound(HTTPException):
     def __init__(self) -> None:
         super().__init__(
             HTTPStatus.NOT_FOUND,
-            f"Requested download file was not found. It must have expired",
+            "Requested download file was not found. It must have expired",
         )
 
 
@@ -21,7 +21,7 @@ class FileDownloadNotReady(HTTPException):
     def __init__(self) -> None:
         super().__init__(
             HTTPStatus.NOT_ACCEPTABLE,
-            f"Requested file is not ready for download.",
+            "Requested file is not ready for download.",
         )
 
 
@@ -70,4 +70,11 @@ class FileDownload(Base):  # type: ignore
         )
 
     def __repr__(self) -> str:
-        return f"(id={self.id},name={self.name},filename={self.filename},path={self.path},ready={self.ready},expiration_date={self.expiration_date})"
+        return (
+            f"(id={self.id},"
+            f" name={self.name},"
+            f" filename={self.filename},"
+            f" path={self.path},"
+            f" ready={self.ready},"
+            f" expiration_date={self.expiration_date})"
+        )
