@@ -231,6 +231,31 @@ def test_main(client: TestClient, admin_access_token: str, study_id: str) -> Non
     )
     assert len(res.json()) == 4
 
+    # tests outputs import for .zip
+    output_path_zip = ASSETS_DIR / "output_adq.zip"
+    client.post(
+        f"/v1/studies/{study_id}/output",
+        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
+        files={"output": io.BytesIO(output_path_zip.read_bytes())},
+    )
+    res = client.get(
+        f"/v1/studies/{study_id}/outputs",
+        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
+    )
+    assert len(res.json()) == 5
+    # tests outputs import for .7z
+    output_path_seven_zip = ASSETS_DIR / "output_adq.7z"
+    client.post(
+        f"/v1/studies/{study_id}/output",
+        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
+        files={"output": io.BytesIO(output_path_seven_zip.read_bytes())},
+    )
+    res = client.get(
+        f"/v1/studies/{study_id}/outputs",
+        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
+    )
+    assert len(res.json()) == 6
+
     # study creation
     created = client.post(
         "/v1/studies?name=foo",
