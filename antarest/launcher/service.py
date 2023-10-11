@@ -176,7 +176,7 @@ class LauncherService:
                         channel=EventChannelDirectory.JOB_STATUS + job_result.id,
                     )
                 )
-            logger.info(f"Study status set")
+            logger.info("Study status set")
 
     def append_log(self, job_id: str, message: str, log_type: JobLogType) -> None:
         try:

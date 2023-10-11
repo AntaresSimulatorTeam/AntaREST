@@ -436,7 +436,7 @@ class XpansionManager:
         xpansion_candidate_dto: XpansionCandidateDTO,
         new_name: bool = False,
     ) -> None:
-        logger.info(f"Checking given candidate is correct")
+        logger.info("Checking given candidate is correct")
         self._assert_no_illegal_character_is_in_candidate_name(xpansion_candidate_dto.name)
         if new_name:
             self._assert_candidate_name_is_not_already_taken(candidates, xpansion_candidate_dto.name)

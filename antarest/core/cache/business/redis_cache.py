@@ -21,6 +21,7 @@ class RedisCache(ICache):
         self.redis = redis_client
 
     def start(self) -> None:
+        # Assuming the Redis service is already running; no need to start it here.
         pass
 
     def put(self, id: str, data: JSON, duration: int = 3600) -> None:

@@ -1,9 +1,10 @@
+import io
 import logging
 import subprocess
 import threading
 import time
 from pathlib import Path
-from typing import IO, cast
+from typing import cast
 
 from pydantic import BaseModel
 
@@ -12,7 +13,7 @@ from antarest.core.config import Config, LocalConfig
 from antarest.core.interfaces.eventbus import IEventBus
 from antarest.core.tasks.model import TaskResult
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.launcher.adapters.log_manager import LogTailManager
+from antarest.launcher.adapters.log_manager import follow
 from antarest.matrixstore.service import MatrixService
 from antarest.matrixstore.uri_resolver_service import UriResolverService
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
@@ -101,8 +102,8 @@ class SimulatorWorker(AbstractWorker):
                 encoding="utf-8",
             )
             thread = threading.Thread(
-                target=lambda: LogTailManager.follow(
-                    cast(IO[str], process.stdout),
+                target=lambda: follow(
+                    cast(io.StringIO, process.stdout),
                     append_output,
                     stop_reading,
                     None,

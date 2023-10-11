@@ -110,7 +110,7 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
         details: Optional[bool] = False,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
-        logger.info(f"Fetching users list", extra={"user": current_user.id})
+        logger.info("Fetching users list", extra={"user": current_user.id})
         params = RequestParameters(user=current_user)
         return service.get_all_users(params, details)
 
@@ -188,7 +188,7 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
         details: Optional[bool] = False,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
-        logger.info(f"Fetching groups list", extra={"user": current_user.id})
+        logger.info("Fetching groups list", extra={"user": current_user.id})
         params = RequestParameters(user=current_user)
         return service.get_all_groups(params, details)
 
