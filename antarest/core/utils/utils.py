@@ -7,9 +7,9 @@ from glob import escape
 from pathlib import Path
 from typing import IO, Any, Callable, List, Optional, Tuple, TypeVar
 from zipfile import ZIP_DEFLATED, ZipFile
-from py7zr import SevenZipFile
 
 import redis
+from py7zr import SevenZipFile
 
 from antarest.core.config import RedisConfig
 from antarest.core.exceptions import BadZipBinary, ShouldNotHappenException
@@ -46,21 +46,25 @@ def extract_zip(stream: IO[bytes], dst: Path) -> None:
     """
     Extract zip archive
     Args:
-        stream: zip file
+        stream: archive file (.zip or .7z)
         dst: destination path
-
-    Returns:
-
     """
+
+    # Read the first few bytes to identify the file format
+    file_format = stream.read(4)
+    stream.seek(0)  # Reset the stream position
+
     try:
-        with ZipFile(stream) as zip_output:
-            zip_output.extractall(path=dst)
-    except Exception as zip_error:
-        try:
-            with SevenZipFile(stream.read().decode("utf-8"), "r") as sevenzip_output:
+        if file_format[:2] == b"7z":  # .7z format
+            with SevenZipFile(stream, "r") as sevenzip_output:  # type: ignore
                 sevenzip_output.extractall(dst)
-        except Exception as sevenzip_error:
-            raise BadZipBinary(f"Cannot extract archive: {zip_error}\n{sevenzip_error}") from sevenzip_error
+        elif file_format == b"PK\x03\x04":  # .zip format
+            with ZipFile(stream) as zip_output:
+                zip_output.extractall(path=dst)
+        else:
+            raise BadZipBinary("Unsupported archive format")
+    except Exception as error:
+        raise BadZipBinary(f"Cannot extract archive: {error}") from error
 
 
 def get_default_config_path() -> Optional[Path]:
