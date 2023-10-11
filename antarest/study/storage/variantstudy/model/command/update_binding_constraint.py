@@ -1,28 +1,27 @@
-from typing import Any, Dict, List, Optional, Tuple, Union, cast
+from typing import Any, Dict, List, Optional, Tuple, Union
 
-import numpy as np
-from pydantic import Field, validator
+from pydantic import validator
 
 from antarest.core.model import JSON
-from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
-from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol, validate_matrix
+from antarest.study.storage.variantstudy.business.utils import validate_matrix
 from antarest.study.storage.variantstudy.business.utils_binding_constraint import apply_binding_constraint
-from antarest.study.storage.variantstudy.model.command.common import (
-    BindingConstraintOperator,
-    CommandName,
-    CommandOutput,
+from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
+from antarest.study.storage.variantstudy.model.command.create_binding_constraint import (
+    AbstractBindingConstraintCommand,
+    check_matrix_values,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
+__all__ = ("UpdateBindingConstraint",)
+
 MatrixType = List[List[MatrixData]]
 
 
-class UpdateBindingConstraint(ICommand):
+class UpdateBindingConstraint(AbstractBindingConstraintCommand):
     """
     Command used to update a binding constraint.
     """
@@ -32,14 +31,6 @@ class UpdateBindingConstraint(ICommand):
 
     # Properties of the `UPDATE_BINDING_CONSTRAINT` command:
     id: str
-    enabled: bool = True
-    time_step: BindingConstraintFrequency
-    operator: BindingConstraintOperator
-    coeffs: Dict[str, List[float]]
-    values: Optional[Union[MatrixType, str]] = Field(None, description="2nd member matrix")
-    filter_year_by_year: Optional[str] = None
-    filter_synthesis: Optional[str] = None
-    comments: Optional[str] = None
 
     @validator("values", always=True)
     def validate_series(
@@ -55,18 +46,7 @@ class UpdateBindingConstraint(ICommand):
             # Check the matrix link
             return validate_matrix(v, values)
         if isinstance(v, list):
-            shapes = {
-                BindingConstraintFrequency.HOURLY: (8760, 3),
-                BindingConstraintFrequency.DAILY: (365, 3),
-                BindingConstraintFrequency.WEEKLY: (52, 3),
-            }
-            # Check the matrix values and create the corresponding matrix link
-            array = np.array(v, dtype=np.float64)
-            if array.shape != shapes[time_step]:
-                raise ValueError(f"Invalid matrix shape {array.shape}, expected {shapes[time_step]}")
-            if np.isnan(array).any():
-                raise ValueError("Matrix values cannot contain NaN")
-            v = cast(MatrixType, array.tolist())
+            check_matrix_values(time_step, v)
             return validate_matrix(v, values)
         # Invalid datatype
         # pragma: no cover
@@ -108,22 +88,9 @@ class UpdateBindingConstraint(ICommand):
         )
 
     def to_dto(self) -> CommandDTO:
-        args = {
-            "id": self.id,
-            "enabled": self.enabled,
-            "time_step": self.time_step.value,
-            "operator": self.operator.value,
-            "coeffs": self.coeffs,
-            "comments": self.comments,
-            "filter_year_by_year": self.filter_year_by_year,
-            "filter_synthesis": self.filter_synthesis,
-        }
-        if self.values is not None:
-            args["values"] = strip_matrix_protocol(self.values)
-        return CommandDTO(
-            action=CommandName.UPDATE_BINDING_CONSTRAINT.value,
-            args=args,
-        )
+        dto = super().to_dto()
+        dto.args["id"] = self.id  # type: ignore
+        return dto
 
     def match_signature(self) -> str:
         return str(self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.id)
@@ -146,9 +113,3 @@ class UpdateBindingConstraint(ICommand):
 
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:
         return [other]
-
-    def get_inner_matrices(self) -> List[str]:
-        if self.values is not None:
-            assert_this(isinstance(self.values, str))
-            return [strip_matrix_protocol(self.values)]
-        return []
