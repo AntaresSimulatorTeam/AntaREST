@@ -1,4 +1,3 @@
-import json
 import re
 
 import numpy as np
@@ -8,6 +7,17 @@ from starlette.testclient import TestClient
 from antarest.core.tasks.model import TaskStatus
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from tests.integration.utils import wait_task_completion
+
+DEFAULT_PROPERTIES = {
+    # `name` field is required
+    "group": "Other1",
+    "injectionNominalCapacity": 0.0,
+    "withdrawalNominalCapacity": 0.0,
+    "reservoirCapacity": 0.0,
+    "efficiency": 1.0,
+    "initialLevel": 0.0,
+    "initialLevelOptim": False,
+}
 
 
 @pytest.mark.unit_test
@@ -61,28 +71,46 @@ class TestSTStorage:
         task = wait_task_completion(client, user_access_token, task_id)
         assert task.status == TaskStatus.COMPLETED, task
 
-        # creation with default values (only mandatory properties specified)
+        # =============================
+        #  SHORT-TERM STORAGE CREATION
+        # =============================
+
         area_id = transform_name_to_id("FR")
         siemens_battery = "Siemens Battery"
+
+        # Un attempt to create a short-term storage without name
+        # should raise a validation error (other properties are optional).
+        # Un attempt to create a short-term storage with an empty name
+        # or an invalid name should also raise a validation error.
+        attempts = [{}, {"name": ""}, {"name": "!??"}]
+        for attempt in attempts:
+            res = client.post(
+                f"/v1/studies/{study_id}/areas/{area_id}/storages",
+                headers={"Authorization": f"Bearer {user_access_token}"},
+                json=attempt,
+            )
+            assert res.status_code == 422, res.json()
+            assert res.json()["exception"] in {"ValidationError", "RequestValidationError"}, res.json()
+
+        # We can create a short-term storage with the following properties:
+        siemens_properties = {
+            **DEFAULT_PROPERTIES,
+            "name": siemens_battery,
+            "group": "Battery",
+            "injectionNominalCapacity": 1450,
+            "withdrawalNominalCapacity": 1350,
+            "reservoirCapacity": 1500,
+        }
         res = client.post(
             f"/v1/studies/{study_id}/areas/{area_id}/storages",
             headers={"Authorization": f"Bearer {user_access_token}"},
-            json={"name": siemens_battery, "group": "Battery"},
+            json=siemens_properties,
         )
         assert res.status_code == 200, res.json()
         siemens_battery_id = res.json()["id"]
         assert siemens_battery_id == transform_name_to_id(siemens_battery)
-        assert res.json() == {
-            "efficiency": 1.0,
-            "group": "Battery",
-            "id": siemens_battery_id,
-            "initialLevel": 0.0,
-            "initialLevelOptim": False,
-            "injectionNominalCapacity": 0.0,
-            "name": siemens_battery,
-            "reservoirCapacity": 0.0,
-            "withdrawalNominalCapacity": 0.0,
-        }
+        siemens_config = {**siemens_properties, "id": siemens_battery_id}
+        assert res.json() == siemens_config
 
         # reading the properties of a short-term storage
         res = client.get(
@@ -90,17 +118,11 @@ class TestSTStorage:
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code == 200, res.json()
-        assert res.json() == {
-            "efficiency": 1.0,
-            "group": "Battery",
-            "id": siemens_battery_id,
-            "initialLevel": 0.0,
-            "initialLevelOptim": False,
-            "injectionNominalCapacity": 0.0,
-            "name": siemens_battery,
-            "reservoirCapacity": 0.0,
-            "withdrawalNominalCapacity": 0.0,
-        }
+        assert res.json() == siemens_config
+
+        # =============================
+        #  SHORT-TERM STORAGE MATRICES
+        # =============================
 
         # updating the matrix of a short-term storage
         array = np.random.rand(8760, 1) * 1000
@@ -134,25 +156,17 @@ class TestSTStorage:
         assert res.status_code == 200, res.json()
         assert res.json() is True
 
+        # ==================================
+        #  SHORT-TERM STORAGE LIST / GROUPS
+        # ==================================
+
         # Reading the list of short-term storages
         res = client.get(
             f"/v1/studies/{study_id}/areas/{area_id}/storages",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code == 200, res.json()
-        assert res.json() == [
-            {
-                "efficiency": 1.0,
-                "group": "Battery",
-                "id": siemens_battery_id,
-                "initialLevel": 0.0,
-                "initialLevelOptim": False,
-                "injectionNominalCapacity": 0.0,
-                "name": siemens_battery,
-                "reservoirCapacity": 0.0,
-                "withdrawalNominalCapacity": 0.0,
-            }
-        ]
+        assert res.json() == [siemens_config]
 
         # updating properties
         res = client.patch(
@@ -164,34 +178,23 @@ class TestSTStorage:
             },
         )
         assert res.status_code == 200, res.json()
-        assert json.loads(res.text) == {
-            "id": siemens_battery_id,
+        siemens_config = {
+            **siemens_config,
             "name": "New Siemens Battery",
-            "group": "Battery",
-            "efficiency": 1.0,
-            "initialLevel": 0.0,
-            "initialLevelOptim": False,
-            "injectionNominalCapacity": 0.0,
-            "withdrawalNominalCapacity": 0.0,
             "reservoirCapacity": 2500,
         }
+        assert res.json() == siemens_config
 
         res = client.get(
             f"/v1/studies/{study_id}/areas/{area_id}/storages/{siemens_battery_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code == 200, res.json()
-        assert res.json() == {
-            "id": siemens_battery_id,
-            "name": "New Siemens Battery",
-            "group": "Battery",
-            "efficiency": 1.0,
-            "initialLevel": 0.0,
-            "initialLevelOptim": False,
-            "injectionNominalCapacity": 0.0,
-            "withdrawalNominalCapacity": 0.0,
-            "reservoirCapacity": 2500,
-        }
+        assert res.json() == siemens_config
+
+        # ===========================
+        #  SHORT-TERM STORAGE UPDATE
+        # ===========================
 
         # updating properties
         res = client.patch(
@@ -202,37 +205,38 @@ class TestSTStorage:
                 "reservoirCapacity": 0,
             },
         )
-        assert res.status_code == 200, res.json()
-        assert json.loads(res.text) == {
-            "id": siemens_battery_id,
-            "name": "New Siemens Battery",
-            "group": "Battery",
-            "efficiency": 1.0,
+        siemens_config = {
+            **siemens_config,
             "initialLevel": 5900,
-            "initialLevelOptim": False,
-            "injectionNominalCapacity": 0.0,
-            "withdrawalNominalCapacity": 0.0,
             "reservoirCapacity": 0,
         }
+        assert res.json() == siemens_config
 
+        # An attempt to update the `efficiency` property with an invalid value
+        # should raise a validation error.
+        # The `efficiency` property must be a float between 0 and 1.
+        bad_properties = {"efficiency": 2.0}
+        res = client.patch(
+            f"/v1/studies/{study_id}/areas/{area_id}/storages/{siemens_battery_id}",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+            json=bad_properties,
+        )
+        assert res.status_code == 422, res.json()
+        assert res.json()["exception"] == "ValidationError", res.json()
+
+        # The short-term storage properties should not have been updated.
         res = client.get(
             f"/v1/studies/{study_id}/areas/{area_id}/storages/{siemens_battery_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code == 200, res.json()
-        assert res.json() == {
-            "id": siemens_battery_id,
-            "name": "New Siemens Battery",
-            "group": "Battery",
-            "efficiency": 1.0,
-            "initialLevel": 5900,
-            "initialLevelOptim": False,
-            "injectionNominalCapacity": 0.0,
-            "withdrawalNominalCapacity": 0.0,
-            "reservoirCapacity": 0,
-        }
+        assert res.json() == siemens_config
 
-        # deletion of short-term storages
+        # =============================
+        #  SHORT-TERM STORAGE DELETION
+        # =============================
+
+        # To delete a short-term storage, we need to provide its ID.
         res = client.request(
             "DELETE",
             f"/v1/studies/{study_id}/areas/{area_id}/storages",
@@ -242,7 +246,7 @@ class TestSTStorage:
         assert res.status_code == 204, res.json()
         assert res.text in {"", "null"}  # Old FastAPI versions return 'null'.
 
-        # deletion of short-term storages with empty list
+        # If the short-term storage list is empty, the deletion should be a no-op.
         res = client.request(
             "DELETE",
             f"/v1/studies/{study_id}/areas/{area_id}/storages",
@@ -252,48 +256,79 @@ class TestSTStorage:
         assert res.status_code == 204, res.json()
         assert res.text in {"", "null"}  # Old FastAPI versions return 'null'.
 
-        # deletion of short-term storages with multiple IDs
+        # It's possible to delete multiple short-term storages at once.
+        # In the following example, we will create two short-term storages:
+        siemens_properties = {
+            "name": siemens_battery,
+            "group": "Battery",
+            "injectionNominalCapacity": 1450,
+            "withdrawalNominalCapacity": 1350,
+            "reservoirCapacity": 1500,
+            "efficiency": 0.90,
+            "initialLevel": 200,
+            "initialLevelOptim": False,
+        }
         res = client.post(
             f"/v1/studies/{study_id}/areas/{area_id}/storages",
             headers={"Authorization": f"Bearer {user_access_token}"},
-            json={"name": siemens_battery, "group": "Battery"},
+            json=siemens_properties,
         )
         assert res.status_code == 200, res.json()
-        siemens_battery_id1 = res.json()["id"]
+        siemens_battery_id = res.json()["id"]
 
-        siemens_battery_del = f"{siemens_battery}del"
-
+        # Create another short-term storage: "Grand'Maison"
+        grand_maison = "Grand'Maison"
+        grand_maison_properties = {
+            "name": grand_maison,
+            "group": "PSP_closed",
+            "injectionNominalCapacity": 1500,
+            "withdrawalNominalCapacity": 1800,
+            "reservoirCapacity": 20000,
+            "efficiency": 0.78,
+            "initialLevel": 10000,
+        }
         res = client.post(
             f"/v1/studies/{study_id}/areas/{area_id}/storages",
             headers={"Authorization": f"Bearer {user_access_token}"},
-            json={"name": siemens_battery_del, "group": "Battery"},
+            json=grand_maison_properties,
         )
         assert res.status_code == 200, res.json()
-        siemens_battery_id2 = res.json()["id"]
+        grand_maison_id = res.json()["id"]
 
+        # We can check that we have 2 short-term storages in the list.
+        # Reading the list of short-term storages
+        res = client.get(
+            f"/v1/studies/{study_id}/areas/{area_id}/storages",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+        )
+        assert res.status_code == 200, res.json()
+        siemens_config = {**DEFAULT_PROPERTIES, **siemens_properties, "id": siemens_battery_id}
+        grand_maison_config = {**DEFAULT_PROPERTIES, **grand_maison_properties, "id": grand_maison_id}
+        assert res.json() == [siemens_config, grand_maison_config]
+
+        # We can delete the two short-term storages at once.
         res = client.request(
             "DELETE",
             f"/v1/studies/{study_id}/areas/{area_id}/storages",
             headers={"Authorization": f"Bearer {user_access_token}"},
-            json=[siemens_battery_id1, siemens_battery_id2],
+            json=[siemens_battery_id, grand_maison_id],
         )
         assert res.status_code == 204, res.json()
         assert res.text in {"", "null"}  # Old FastAPI versions return 'null'.
 
-        # Check the removal
+        # The list of short-term storages should be empty.
         res = client.get(
-            f"/v1/studies/{study_id}/areas/{area_id}/storages/{siemens_battery_id}",
+            f"/v1/studies/{study_id}/areas/{area_id}/storages",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
-        obj = res.json()
-        description = obj["description"]
-        assert siemens_battery_id in description
-        assert re.search(r"fields of storage", description, flags=re.IGNORECASE)
-        assert re.search(r"not found", description, flags=re.IGNORECASE)
+        assert res.status_code == 200, res.json()
+        assert res.json() == []
 
-        assert res.status_code == 404, res.json()
+        # ===========================
+        #  SHORT-TERM STORAGE ERRORS
+        # ===========================
 
-        # Check delete with the wrong value of area_id
+        # Check delete with the wrong value of `area_id`
         bad_area_id = "bad_area"
         res = client.request(
             "DELETE",
@@ -311,7 +346,7 @@ class TestSTStorage:
             flags=re.IGNORECASE,
         )
 
-        # Check delete with the wrong value of study_id
+        # Check delete with the wrong value of `study_id`
         bad_study_id = "bad_study"
         res = client.request(
             "DELETE",
@@ -324,8 +359,7 @@ class TestSTStorage:
         assert res.status_code == 404, res.json()
         assert bad_study_id in description
 
-        # Check get with wrong area_id
-
+        # Check get with wrong `area_id`
         res = client.get(
             f"/v1/studies/{study_id}/areas/{bad_area_id}/storages/{siemens_battery_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
@@ -335,8 +369,7 @@ class TestSTStorage:
         assert bad_area_id in description
         assert res.status_code == 404, res.json()
 
-        # Check get with wrong study_id
-
+        # Check get with wrong `study_id`
         res = client.get(
             f"/v1/studies/{bad_study_id}/areas/{area_id}/storages/{siemens_battery_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
@@ -346,7 +379,7 @@ class TestSTStorage:
         assert res.status_code == 404, res.json()
         assert bad_study_id in description
 
-        # Check post with wrong study_id
+        # Check POST with wrong `study_id`
         res = client.post(
             f"/v1/studies/{bad_study_id}/areas/{area_id}/storages",
             headers={"Authorization": f"Bearer {user_access_token}"},
@@ -357,11 +390,20 @@ class TestSTStorage:
         assert res.status_code == 404, res.json()
         assert bad_study_id in description
 
-        # Check post with wrong area_id
+        # Check POST with wrong `area_id`
         res = client.post(
             f"/v1/studies/{study_id}/areas/{bad_area_id}/storages",
             headers={"Authorization": f"Bearer {user_access_token}"},
-            json={"name": siemens_battery, "group": "Battery"},
+            json={
+                "name": siemens_battery,
+                "group": "Battery",
+                "initialLevel": 0.0,
+                "initialLevelOptim": False,
+                "injectionNominalCapacity": 0.0,
+                "reservoirCapacity": 0.0,
+                "withdrawalNominalCapacity": 0.0,
+                "efficiency": 1.0,
+            },
         )
         assert res.status_code == 500, res.json()
         obj = res.json()
@@ -370,7 +412,7 @@ class TestSTStorage:
         assert re.search(r"Area ", description, flags=re.IGNORECASE)
         assert re.search(r"does not exist ", description, flags=re.IGNORECASE)
 
-        # Check post with wrong group
+        # Check POST with wrong `group`
         res = client.post(
             f"/v1/studies/{study_id}/areas/{bad_area_id}/storages",
             headers={"Authorization": f"Bearer {user_access_token}"},
@@ -381,7 +423,7 @@ class TestSTStorage:
         description = obj["description"]
         assert re.search(r"not a valid enumeration member", description, flags=re.IGNORECASE)
 
-        # Check the put with the wrong area_id
+        # Check PATCH with the wrong `area_id`
         res = client.patch(
             f"/v1/studies/{study_id}/areas/{bad_area_id}/storages/{siemens_battery_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
@@ -401,7 +443,7 @@ class TestSTStorage:
         assert bad_area_id in description
         assert re.search(r"not a child of ", description, flags=re.IGNORECASE)
 
-        # Check the put with the wrong siemens_battery_id
+        # Check PATCH with the wrong `siemens_battery_id`
         res = client.patch(
             f"/v1/studies/{study_id}/areas/{area_id}/storages/{siemens_battery_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
@@ -422,7 +464,7 @@ class TestSTStorage:
         assert re.search(r"fields of storage", description, flags=re.IGNORECASE)
         assert re.search(r"not found", description, flags=re.IGNORECASE)
 
-        # Check the put with the wrong study_id
+        # Check PATCH with the wrong `study_id`
         res = client.patch(
             f"/v1/studies/{bad_study_id}/areas/{area_id}/storages/{siemens_battery_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
@@ -440,19 +482,3 @@ class TestSTStorage:
         obj = res.json()
         description = obj["description"]
         assert bad_study_id in description
-
-        # Check the put with the wrong efficiency
-        res = client.patch(
-            f"/v1/studies/{bad_study_id}/areas/{area_id}/storages/{siemens_battery_id}",
-            headers={"Authorization": f"Bearer {user_access_token}"},
-            json={
-                "efficiency": 2.0,
-                "initialLevel": 0.0,
-                "initialLevelOptim": True,
-                "injectionNominalCapacity": 2450,
-                "name": "New Siemens Battery",
-                "reservoirCapacity": 2500,
-                "withdrawalNominalCapacity": 2350,
-            },
-        )
-        assert res.status_code == 422, res.json()
