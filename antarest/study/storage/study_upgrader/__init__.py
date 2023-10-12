@@ -84,7 +84,6 @@ def find_next_version(from_version: str) -> str:
 
 def upgrade_study(study_path: Path, target_version: str) -> None:
     tmp_dir = Path(tempfile.mkdtemp(suffix=".upgrade.tmp", prefix="~", dir=study_path.parent))
-    shutil.copytree(study_path, tmp_dir, dirs_exist_ok=True)
     try:
         src_version = get_current_version(study_path)
         files_to_upgrade = can_upgrade_version(src_version, target_version)
