@@ -152,8 +152,10 @@ def test_nominal_case_of_an_api_user(client: TestClient, admin_access_token: str
     # run the simulation
     launcher_options = {"nb_cpu": 18, "auto_unzip": True, "output_suffix": "launched_by_bot"}
     res = client.post(f"/v1/launcher/run/{variant_id}", json=launcher_options, headers=bot_headers)
-    res = client.get(f"/v1/launcher/jobs/{res.json()['job_id']}", headers=bot_headers)
-    assert res.json()["status"] in ["pending", "running"]
+    job_id = res.json()["job_id"]
+    res = client.get(f"/v1/launcher/jobs/{job_id}", headers=bot_headers)
+    status = res.json()["status"]
+    assert status in ["pending", "running"]
 
     # read a result
     res = client.get(f"/v1/studies/{study_id}/outputs", headers=bot_headers)
@@ -171,5 +173,10 @@ def test_nominal_case_of_an_api_user(client: TestClient, admin_access_token: str
     assert len(res.json()) == 4
 
     # delete variant
+    # For this test to pass on Windows, we have to wait for the simulation to finish (here it should fail)
+    while status != "failed":
+        res = client.get(f"/v1/launcher/jobs/{job_id}", headers=bot_headers)
+        status = res.json()["status"]
+
     res = client.delete(f"/v1/studies/{variant_id}", headers=bot_headers)
     assert res.status_code == 200
