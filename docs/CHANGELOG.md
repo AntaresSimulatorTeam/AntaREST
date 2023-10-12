@@ -1,8 +1,19 @@
 Antares Web Changelog
 =====================
 
-v2.15.3 (unreleased)
+v2.15.3 (2023-10-12)
 --------------------
+
+### Hotfix
+
+* **api-raw:** correct the `/studies/{uuid}/raw` endpoint to return "text/plain" content for matrices [`#1766`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1766)
+* **model:** error 500 in cluster list when area change [`0923c5e`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/0923c5e990521e1a4543ec7e07ea4cab51d46162)
+
+
+### Performance
+
+* **storage:** make study_upgrader much faster [`#1533`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1533)
+
 
 
 v2.15.2 (2023-10-11)
@@ -35,6 +46,7 @@ v2.15.2 (2023-10-11)
 
 <a href="https://github.com/laurent-laporte-pro">laurent-laporte-pro</a>,
 <a href="https://github.com/MartinBelthle">MartinBelthle</a>
+
 
 
 v2.15.1 (2023-10-05)
