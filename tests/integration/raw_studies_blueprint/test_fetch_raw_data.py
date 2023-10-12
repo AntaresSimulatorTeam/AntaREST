@@ -2,7 +2,7 @@ import http
 import json
 import pathlib
 import shutil
-from urllib.parse import urlencode
+from unittest.mock import ANY
 
 import numpy as np
 import pytest
@@ -54,9 +54,9 @@ class TestFetchRawData:
         user_folder_dir = study_dir.joinpath("user/folder")
         for file_path in user_folder_dir.glob("*.*"):
             rel_path = file_path.relative_to(study_dir).as_posix()
-            query_string = urlencode({"path": f"/{rel_path}", "depth": 1})
             res = client.get(
-                f"/v1/studies/{study_id}/raw?{query_string}",
+                f"/v1/studies/{study_id}/raw",
+                params={"path": f"/{rel_path}", "depth": 1},
                 headers=headers,
             )
             res.raise_for_status()
@@ -80,9 +80,9 @@ class TestFetchRawData:
         user_folder_dir = study_dir.joinpath("user/unknown")
         for file_path in user_folder_dir.glob("*.*"):
             rel_path = file_path.relative_to(study_dir)
-            query_string = urlencode({"path": f"/{rel_path.as_posix()}", "depth": 1})
             res = client.get(
-                f"/v1/studies/{study_id}/raw?{query_string}",
+                f"/v1/studies/{study_id}/raw",
+                params={"path": f"/{rel_path.as_posix()}", "depth": 1},
                 headers=headers,
             )
             res.raise_for_status()
@@ -90,22 +90,71 @@ class TestFetchRawData:
             expected = file_path.read_bytes()
             assert actual == expected
 
+        # If we ask for properties, we should have a JSON content
+        rel_path = "/input/links/de/properties/fr"
+        res = client.get(
+            f"/v1/studies/{study_id}/raw",
+            params={"path": f"/{rel_path}", "depth": 2},
+            headers=headers,
+        )
+        res.raise_for_status()
+        actual = res.json()
+        assert actual == {
+            "asset-type": "ac",
+            "colorb": 112,
+            "colorg": 112,
+            "colorr": 112,
+            "display-comments": True,
+            "filter-synthesis": "",
+            "filter-year-by-year": "hourly",
+            "hurdles-cost": True,
+            "link-style": "plain",
+            "link-width": 1,
+            "loop-flow": False,
+            "transmission-capacities": "enabled",
+            "use-phase-shifter": False,
+        }
+
+        # If we ask for a matrix, we should have a JSON content if formatted is True
+        rel_path = "/input/links/de/fr"
+        res = client.get(
+            f"/v1/studies/{study_id}/raw",
+            params={"path": f"/{rel_path}", "formatted": True},
+            headers=headers,
+        )
+        res.raise_for_status()
+        actual = res.json()
+        assert actual == {"index": ANY, "columns": ANY, "data": ANY}
+
+        # If we ask for a matrix, we should have a CSV content if formatted is False
+        rel_path = "/input/links/de/fr"
+        res = client.get(
+            f"/v1/studies/{study_id}/raw",
+            params={"path": f"/{rel_path}", "formatted": False},
+            headers=headers,
+        )
+        res.raise_for_status()
+        actual = res.text
+        actual_lines = actual.splitlines()
+        first_row = [float(x) for x in actual_lines[0].split("\t")]
+        assert first_row == [100000, 100000, 0.010000, 0.010000, 0, 0, 0, 0]
+
         # Some files can be corrupted
         user_folder_dir = study_dir.joinpath("user/bad")
         for file_path in user_folder_dir.glob("*.*"):
             rel_path = file_path.relative_to(study_dir)
-            query_string = urlencode({"path": f"/{rel_path.as_posix()}", "depth": 1})
             res = client.get(
-                f"/v1/studies/{study_id}/raw?{query_string}",
+                f"/v1/studies/{study_id}/raw",
+                params={"path": f"/{rel_path.as_posix()}", "depth": 1},
                 headers=headers,
             )
             assert res.status_code == http.HTTPStatus.UNPROCESSABLE_ENTITY
 
         # We can access to the configuration the classic way,
         # for instance, we can get the list of areas:
-        query_string = urlencode({"path": "/input/areas/list", "depth": 1})
         res = client.get(
-            f"/v1/studies/{study_id}/raw?{query_string}",
+            f"/v1/studies/{study_id}/raw",
+            params={"path": "/input/areas/list", "depth": 1},
             headers=headers,
         )
         res.raise_for_status()

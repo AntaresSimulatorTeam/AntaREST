@@ -19,6 +19,7 @@ import { AxiosError } from "axios";
 import { useSnackbar } from "notistack";
 import { FieldValues } from "react-hook-form";
 import { Add } from "@mui/icons-material";
+import { usePrevious } from "react-use";
 import {
   Header,
   ListContainer,
@@ -142,6 +143,10 @@ function ClusterRoot<T extends FieldValues>(props: ClusterRootProps<T>) {
     setCurrentCluster(undefined);
   }, [currentArea]);
 
+  // Little fix, but the component must be rewritten...
+  const prevCurrentArea = usePrevious(currentArea);
+  const isAreaChanged = prevCurrentArea !== currentArea;
+
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
@@ -184,7 +189,7 @@ function ClusterRoot<T extends FieldValues>(props: ClusterRootProps<T>) {
   // JSX
   ////////////////////////////////////////////////////////////////
 
-  return currentCluster === undefined ? (
+  return currentCluster === undefined || isAreaChanged ? (
     <Root>
       <Header>
         <Button

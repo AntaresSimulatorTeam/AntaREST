@@ -96,11 +96,16 @@ def create_raw_study_routes(
             extra={"user": current_user.id},
         )
         parameters = RequestParameters(user=current_user)
-        output = study_service.get(uuid, path, depth, formatted, parameters)
+
+        resource_path = pathlib.PurePosixPath(path)
+        output = study_service.get(uuid, str(resource_path), depth=depth, formatted=formatted, params=parameters)
 
         if isinstance(output, bytes):
-            resource_path = pathlib.Path(path)
-            suffix = resource_path.suffix.lower()
+            # Guess the suffix form the target data
+            parent_cfg = study_service.get(uuid, str(resource_path.parent), depth=2, formatted=True, params=parameters)
+            child = parent_cfg[resource_path.name]
+            suffix = pathlib.PurePosixPath(child).suffix
+
             content_type, encoding = CONTENT_TYPES.get(suffix, (None, None))
             if content_type == "application/json":
                 # Use `JSONResponse` to ensure to return a valid JSON response
