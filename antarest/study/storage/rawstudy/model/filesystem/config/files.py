@@ -27,7 +27,10 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Simulation,
     transform_name_to_id,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import STStorageConfig
+from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
+    STStorageConfigType,
+    create_st_storage_config,
+)
 from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata import DUPLICATE_KEYS
 
 logger = logging.getLogger(__name__)
@@ -349,13 +352,14 @@ def _parse_thermal(root: Path, area: str) -> List[Cluster]:
     ]
 
 
-def _parse_st_storage(root: Path, area: str) -> List[STStorageConfig]:
+def _parse_st_storage(root: Path, area: str) -> List[STStorageConfigType]:
     """
     Parse the short-term storage INI file, return an empty list if missing.
     """
 
     # st_storage feature exists only since 8.6 version
-    if _parse_version(root) < 860:
+    version = _parse_version(root)
+    if version < 860:
         return []
 
     config_dict: Dict[str, Any] = _extract_data_from_file(
@@ -363,7 +367,7 @@ def _parse_st_storage(root: Path, area: str) -> List[STStorageConfig]:
         inside_root_path=Path(f"input/st-storage/clusters/{area}/list.ini"),
         file_type=FileType.SIMPLE_INI,
     )
-    return [STStorageConfig(**values, id=storage_id) for storage_id, values in config_dict.items()]
+    return [create_st_storage_config(version, **values, id=storage_id) for storage_id, values in config_dict.items()]
 
 
 def _parse_renewables(root: Path, area: str) -> List[Cluster]:

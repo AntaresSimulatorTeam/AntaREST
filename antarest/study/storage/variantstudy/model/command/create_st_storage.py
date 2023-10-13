@@ -8,7 +8,7 @@ from pydantic.fields import ModelField
 from antarest.core.model import JSON
 from antarest.matrixstore.model import MatrixData
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import STStorageConfig
+from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import STStorageConfigType
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol, validate_matrix
@@ -50,7 +50,7 @@ class CreateSTStorage(ICommand):
     # ==================
 
     area_id: str = Field(description="Area ID", regex=r"[a-z0-9_(),& -]+")
-    parameters: STStorageConfig
+    parameters: STStorageConfigType
     pmax_injection: Optional[Union[MatrixType, str]] = Field(
         None,
         description="Charge capacity (modulation)",
