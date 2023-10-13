@@ -1482,7 +1482,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         - `uuid`: The UUID of the study.
         - `area_id`: the area ID.
         - `cluster_ids`: list of thermal cluster IDs to remove.
-       """
+        """
         logger.info(
             "Deleting thermal clusters for study %s and area %s",
             uuid,
