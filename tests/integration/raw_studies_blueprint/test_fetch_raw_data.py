@@ -167,3 +167,10 @@ class TestFetchRawData:
         )
         assert res.status_code == 200
         assert np.isnan(res.json()["data"][0]).any()
+
+        # asserts that the Debug view works properly
+        res = client.get(
+            f"/v1/studies/{study_id}/raw?path=&depth=-1",
+            headers=headers,
+        )
+        assert res.status_code == 200
