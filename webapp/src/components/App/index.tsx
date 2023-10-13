@@ -78,7 +78,7 @@ function App() {
                             <Route path="layers" element={<Layers />} />
                             <Route path="districts" element={<Districts />} />
                           </Route>
-                          <Route path="area" element={<Areas />}>
+                          <Route path="area/:areaId" element={<Areas />}>
                             <Route path="properties" element={<Properties />} />
                             <Route path="load" element={<Load />} />
                             <Route path="thermal" element={<Thermal />} />

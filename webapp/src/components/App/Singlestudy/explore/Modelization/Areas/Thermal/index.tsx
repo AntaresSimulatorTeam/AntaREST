@@ -20,7 +20,7 @@ import GroupedDataTable from "../../../../../../common/GroupedDataTable";
 import SimpleLoader from "../../../../../../common/loaders/SimpleLoader";
 import SimpleContent from "../../../../../../common/page/SimpleContent";
 
-function Thermals() {
+function Thermal() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const navigate = useNavigate();
   const location = useLocation();
@@ -246,4 +246,4 @@ function Thermals() {
   }
 }
 
-export default Thermals;
+export default Thermal;
