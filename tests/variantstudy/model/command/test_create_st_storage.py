@@ -106,7 +106,7 @@ class TestCreateSTStorage:
         assert ctx.value.errors() == [
             {
                 "loc": ("__root__",),
-                "msg": "Invalid short term storage name '?%$$'.",
+                "msg": "Invalid name '?%$$'.",
                 "type": "value_error",
             }
         ]

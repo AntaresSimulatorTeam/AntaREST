@@ -210,6 +210,7 @@ class TestSTStorage:
             "initialLevel": 5900,
             "reservoirCapacity": 0,
         }
+        assert res.status_code == 200, res.json()
         assert res.json() == siemens_config
 
         # An attempt to update the `efficiency` property with an invalid value

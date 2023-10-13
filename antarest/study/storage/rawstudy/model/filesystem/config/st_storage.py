@@ -1,8 +1,18 @@
-from typing import Any, Dict
+import typing as t
 
-from pydantic import BaseModel, Extra, Field, root_validator
+from pydantic import Field
 
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
+from antarest.study.storage.rawstudy.model.filesystem.config.cluser import BaseClusterProperties
+from antarest.study.storage.rawstudy.model.filesystem.config.section import SectionConfig
+
+__all__ = (
+    "STStorageGroup",
+    "STStorageProperties",
+    "STStorageConfig",
+    "STStorageConfigType",
+    "create_st_storage_config",
+)
 
 
 class STStorageGroup(EnumIgnoreCase):
@@ -30,22 +40,13 @@ class STStorageGroup(EnumIgnoreCase):
 
 
 # noinspection SpellCheckingInspection
-class STStorageProperties(
-    BaseModel,
-    extra=Extra.forbid,
-    validate_assignment=True,
-    allow_population_by_field_name=True,
-):
+class STStorageProperties(BaseClusterProperties):
     """
     Properties of a short-term storage system read from the configuration files.
 
     All aliases match the name of the corresponding field in the INI files.
     """
 
-    name: str = Field(
-        description="Short-term storage name",
-        regex=r"[a-zA-Z0-9_(),& -]+",
-    )
     group: STStorageGroup = Field(
         STStorageGroup.OTHER1,
         description="Energy storage system group",
@@ -88,38 +89,49 @@ class STStorageProperties(
 
 
 # noinspection SpellCheckingInspection
-class STStorageConfig(STStorageProperties):
+class STStorageConfig(STStorageProperties, SectionConfig):
     """
     Manage the configuration files in the context of Short-Term Storage.
     It provides a convenient way to read and write configuration data from/to an INI file format.
+
+    Usage:
+
+    >>> from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import STStorageConfig
+
+    >>> st = STStorageConfig(name="Storage 1", group="battery", injection_nominal_capacity=1500)
+    >>> st.id
+    'storage 1'
+    >>> st.group == STStorageGroup.BATTERY
+    True
+    >>> st.injection_nominal_capacity
+    1500.0
+    >>> st.injection_nominal_capacity = -897.32
+    Traceback (most recent call last):
+      ...
+    pydantic.error_wrappers.ValidationError: 1 validation error for STStorageConfig
+    injection_nominal_capacity
+      ensure this value is greater than or equal to 0 (type=value_error.number.not_ge; limit_value=0)
     """
 
-    # The `id` field is a calculated from the `name` if not provided.
-    # This value must be stored in the config cache.
-    id: str = Field(
-        description="Short-term storage ID",
-        regex=r"[a-zA-Z0-9_(),& -]+",
-    )
 
-    @root_validator(pre=True)
-    def calculate_storage_id(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Calculate the short-term storage ID based on the storage name, if not provided.
+STStorageConfigType = STStorageConfig
 
-        Args:
-            values: values used to construct the object.
 
-        Returns:
-            The updated values.
-        """
-        # Avoid circular imports
-        from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
+def create_st_storage_config(study_version: t.Union[str, int], **kwargs: t.Any) -> STStorageConfigType:
+    """
+    Factory method to create a short-term storage configuration model.
 
-        if values.get("id") or not values.get("name"):
-            return values
-        storage_name = values["name"]
-        if storage_id := transform_name_to_id(storage_name):
-            values["id"] = storage_id
-        else:
-            raise ValueError(f"Invalid short term storage name '{storage_name}'.")
-        return values
+    Args:
+        study_version: The version of the study.
+        **kwargs: The properties to be used to initialize the model.
+
+    Returns:
+        The short-term storage configuration model.
+
+    Raises:
+        ValueError: If the study version is not supported.
+    """
+    version = int(study_version)
+    if version < 860:
+        raise ValueError(f"Unsupported study version: {version}")
+    return STStorageConfig(**kwargs)
