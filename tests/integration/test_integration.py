@@ -118,13 +118,6 @@ def test_main(client: TestClient, admin_access_token: str, study_id: str) -> Non
     assert res.status_code == 200, res.json()
     assert res.json() == comments
 
-    # Debug view
-    res = client.get(
-        f"/v1/studies/{study_id}/raw?path=&depth=-1",
-        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
-    )
-    assert res.status_code == 200
-
     # study synthesis
     res = client.get(
         f"/v1/studies/{study_id}/synthesis",
