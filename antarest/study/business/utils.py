@@ -110,7 +110,8 @@ class AllOptionalMetaclass(pydantic.main.ModelMetaclass):
     ) -> Any:
         annotations = namespaces.get("__annotations__", {})
         for base in bases:
-            annotations.update(getattr(base, "__annotations__", {}))
+            for ancestor in reversed(base.__mro__):
+                annotations.update(getattr(ancestor, "__annotations__", {}))
         for field, field_type in annotations.items():
             if not field.startswith("__"):
                 # Optional fields are correctly handled
