@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Tuple, cast
 
-from pydantic import validator
+from pydantic import Extra, validator
 
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -59,25 +59,28 @@ class CreateRenewablesCluster(ICommand):
                 ),
                 {},
             )
+        area: Area = study_data.areas[self.area_id]
 
-        cluster_id = transform_name_to_id(self.cluster_name)
-        for cluster in study_data.areas[self.area_id].renewables:
-            if cluster.id == cluster_id:
-                return (
-                    CommandOutput(
-                        status=False,
-                        message=f"Renewable cluster '{cluster_id}' already exists in the area '{self.area_id}'.",
-                    ),
-                    {},
-                )
+        # Check if the cluster already exists in the area
+        version = study_data.version
+        cluster = create_renewable_config(version, name=self.cluster_name)
+        if any(cl.id == cluster.id for cl in area.renewables):
+            return (
+                CommandOutput(
+                    status=False,
+                    message=f"Renewable cluster '{cluster.id}' already exists in the area '{self.area_id}'.",
+                ),
+                {},
+            )
 
-        study_data.areas[self.area_id].renewables.append(Cluster(id=cluster_id, name=self.cluster_name))
+        area.renewables.append(cluster)
+
         return (
             CommandOutput(
                 status=True,
-                message=f"Renewable cluster '{cluster_id}' added to area '{self.area_id}'.",
+                message=f"Renewable cluster '{cluster.id}' added to area '{self.area_id}'.",
             ),
-            {"cluster_id": cluster_id},
+            {"cluster_id": cluster.id},
         )
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:

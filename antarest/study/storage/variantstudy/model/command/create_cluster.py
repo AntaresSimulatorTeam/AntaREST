@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
-from pydantic import validator
+from pydantic import Extra, validator
 
 from antarest.core.model import JSON
 from antarest.core.utils.utils import assert_this
@@ -77,21 +77,26 @@ class CreateCluster(ICommand):
                 ),
                 {},
             )
-        cluster_id = transform_name_to_id(self.cluster_name)
-        for cluster in study_data.areas[self.area_id].thermals:
-            if cluster.id == cluster_id:
-                return (
-                    CommandOutput(
-                        status=False,
-                        message=f"Thermal cluster '{cluster_id}' already exists in the area '{self.area_id}'.",
-                    ),
-                    {},
-                )
-        study_data.areas[self.area_id].thermals.append(Cluster(id=cluster_id, name=self.cluster_name))
+        area: Area = study_data.areas[self.area_id]
+
+        # Check if the cluster already exists in the area
+        version = study_data.version
+        cluster = create_thermal_config(version, name=self.cluster_name)
+        if any(cl.id == cluster.id for cl in area.thermals):
+            return (
+                CommandOutput(
+                    status=False,
+                    message=f"Thermal cluster '{cluster.id}' already exists in the area '{self.area_id}'.",
+                ),
+                {},
+            )
+
+        area.thermals.append(cluster)
+
         return (
             CommandOutput(
                 status=True,
-                message=f"Thermal cluster '{cluster_id}' added to area '{self.area_id}'.",
+                message=f"Thermal cluster '{cluster.id}' added to area '{self.area_id}'.",
             ),
             {"cluster_id": cluster.id},
         )
