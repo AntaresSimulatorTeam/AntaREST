@@ -1,5 +1,7 @@
 from typing import Any, Dict, List, Tuple
 
+from pydantic import Extra
+
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.utils_binding_constraint import (
@@ -10,12 +12,22 @@ from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIG
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
-class RemoveCluster(ICommand):
+class RemoveCluster(ICommand, extra=Extra.forbid):
+    """
+    Command used to remove a thermal cluster in an area.
+    """
+
+    # Overloaded parameters
+    # =====================
+
+    command_name = CommandName.REMOVE_THERMAL_CLUSTER
+    version = 1
+
+    # Command parameters
+    # ==================
+
     area_id: str
     cluster_id: str
-
-    def __init__(self, **data: Any) -> None:
-        super().__init__(command_name=CommandName.REMOVE_THERMAL_CLUSTER, version=1, **data)
 
     def _remove_cluster(self, study_data: FileStudyTreeConfig) -> None:
         study_data.areas[self.area_id].thermals = [

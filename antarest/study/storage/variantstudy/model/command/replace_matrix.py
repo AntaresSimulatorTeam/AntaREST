@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Tuple, Union
 
-from pydantic import validator
+from pydantic import Extra, validator
 
 from antarest.core.model import JSON
 from antarest.core.utils.utils import assert_this
@@ -15,14 +15,24 @@ from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIG
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
-class ReplaceMatrix(ICommand):
+class ReplaceMatrix(ICommand, extra=Extra.forbid):
+    """
+    Command used to replace a matrice in an area.
+    """
+
+    # Overloaded parameters
+    # =====================
+
+    command_name = CommandName.REPLACE_MATRIX
+    version = 1
+
+    # Command parameters
+    # ==================
+
     target: str
     matrix: Union[List[List[MatrixData]], str]
 
     _validate_matrix = validator("matrix", each_item=True, always=True, allow_reuse=True)(validate_matrix)
-
-    def __init__(self, **data: Any) -> None:
-        super().__init__(command_name=CommandName.REPLACE_MATRIX, version=1, **data)
 
     def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         return (

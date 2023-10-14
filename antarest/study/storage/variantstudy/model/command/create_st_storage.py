@@ -32,13 +32,10 @@ MatrixType = List[List[MatrixData]]
 
 
 # noinspection SpellCheckingInspection
-class CreateSTStorage(ICommand):
+class CreateSTStorage(ICommand, extra=Extra.forbid):
     """
     Command used to create a short-terme storage in an area.
     """
-
-    class Config:
-        extra = Extra.forbid
 
     # Overloaded parameters
     # =====================
@@ -165,7 +162,7 @@ class CreateSTStorage(ICommand):
             return (
                 CommandOutput(
                     status=False,
-                    message=(f"Invalid study version {version}, at least version {REQUIRED_VERSION} is required."),
+                    message=f"Invalid study version {version}, at least version {REQUIRED_VERSION} is required.",
                 ),
                 {},
             )
@@ -186,7 +183,7 @@ class CreateSTStorage(ICommand):
             return (
                 CommandOutput(
                     status=False,
-                    message=(f"Short-term storage '{self.storage_name}' already exists in the area '{self.area_id}'."),
+                    message=f"Short-term storage '{self.storage_name}' already exists in the area '{self.area_id}'.",
                 ),
                 {},
             )
@@ -197,7 +194,7 @@ class CreateSTStorage(ICommand):
         return (
             CommandOutput(
                 status=True,
-                message=(f"Short-term st_storage '{self.storage_name}' successfully added to area '{self.area_id}'."),
+                message=f"Short-term st_storage '{self.storage_name}' successfully added to area '{self.area_id}'.",
             ),
             {"storage_id": self.storage_id},
         )

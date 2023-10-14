@@ -1,5 +1,7 @@
 from typing import Any, Dict, List, Tuple
 
+from pydantic import Extra
+
 from antarest.core.model import JSON
 from antarest.study.common.default_values import FilteringOptions, NodalOptimization
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -30,15 +32,21 @@ def _generate_new_thermal_areas_ini(
     return new_areas
 
 
-class CreateArea(ICommand):
-    area_name: str
+class CreateArea(ICommand, extra=Extra.forbid):
+    """
+    Command used to create a new area in the study.
+    """
 
-    def __init__(self, **data: Any) -> None:
-        super().__init__(
-            command_name=CommandName.CREATE_AREA,
-            version=1,
-            **data,
-        )
+    # Overloaded parameters
+    # =====================
+
+    command_name = CommandName.CREATE_AREA
+    version = 1
+
+    # Command parameters
+    # ==================
+
+    area_name: str
 
     def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         if self.command_context.generator_matrix_constants is None:

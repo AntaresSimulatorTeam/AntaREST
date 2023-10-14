@@ -201,10 +201,8 @@ class CommandExtractor(ICommandExtractor):
         )
         create_cluster_command = CreateCluster if not renewables else CreateRenewablesCluster
 
-        cluster_name = next(
-            (cluster.name for cluster in cluster_list if cluster.id == cluster_id),
-            cluster_id,
-        )
+        selected_names = (cluster.name for cluster in cluster_list if cluster.id == cluster_id)  # type: ignore
+        cluster_name = next(selected_names, cluster_id)
 
         null_matrix_id = strip_matrix_protocol(self.generator_matrix_constants.get_null_matrix())
         study_commands: List[ICommand] = [

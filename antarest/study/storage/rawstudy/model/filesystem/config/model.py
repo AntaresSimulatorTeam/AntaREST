@@ -10,22 +10,14 @@ from antarest.core.model import JSON
 from antarest.core.utils.utils import DTO
 
 from .binding_constraint import BindingConstraintDTO
-from .st_storage import STStorageConfig
+from .renewable import RenewableConfigType
+from .st_storage import STStorageConfigType
+from .thermal import ThermalConfigType
 
 
 class ENR_MODELLING(Enum):
     AGGREGATED = "aggregated"
     CLUSTERS = "clusters"
-
-
-class Cluster(BaseModel):
-    """
-    Object linked to /input/thermal/clusters/<area>/list.ini
-    """
-
-    id: str
-    name: str
-    enabled: bool = True
 
 
 class Link(BaseModel):
@@ -58,12 +50,12 @@ class Area(BaseModel):
 
     name: str
     links: Dict[str, Link]
-    thermals: List[Cluster]
-    renewables: List[Cluster]
+    thermals: List[ThermalConfigType]
+    renewables: List[RenewableConfigType]
     filters_synthesis: List[str]
     filters_year: List[str]
     # since v8.6
-    st_storages: List[STStorageConfig] = []
+    st_storages: List[STStorageConfigType] = []
 
 
 class DistrictSet(BaseModel):
@@ -87,7 +79,7 @@ class DistrictSet(BaseModel):
 
 class Simulation(BaseModel):
     """
-    Object linked to /output/<simulation_name>/about-the-study/** informations
+    Object linked to /output/<simulation_name>/about-the-study/** information
     """
 
     name: str

@@ -16,13 +16,8 @@ from antarest.study.model import Patch, PatchArea, PatchCluster, RawStudy, Study
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    Area,
-    Cluster,
-    DistrictSet,
-    FileStudyTreeConfig,
-    Link,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, DistrictSet, FileStudyTreeConfig, Link
+from antarest.study.storage.rawstudy.model.filesystem.config.thermal import ThermalConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
@@ -259,7 +254,7 @@ def test_get_all_area():
                     "a2": Link(filters_synthesis=[], filters_year=[]),
                     "a3": Link(filters_synthesis=[], filters_year=[]),
                 },
-                thermals=[Cluster(id="a", name="a", enabled=True)],
+                thermals=[ThermalConfig(id="a", name="a", enabled=True)],
                 renewables=[],
                 filters_synthesis=[],
                 filters_year=[],
@@ -470,7 +465,7 @@ def test_update_clusters():
             "a1": Area(
                 name="a1",
                 links={},
-                thermals=[Cluster(id="a", name="a", enabled=True)],
+                thermals=[ThermalConfig(id="a", name="a", enabled=True)],
                 renewables=[],
                 filters_synthesis=[],
                 filters_year=[],

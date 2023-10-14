@@ -20,17 +20,21 @@ from antarest.study.storage.rawstudy.model.filesystem.config.exceptions import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
-    Cluster,
     DistrictSet,
     FileStudyTreeConfig,
     Link,
     Simulation,
     transform_name_to_id,
 )
+from antarest.study.storage.rawstudy.model.filesystem.config.renewable import (
+    RenewableConfigType,
+    create_renewable_config,
+)
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
     STStorageConfigType,
     create_st_storage_config,
 )
+from antarest.study.storage.rawstudy.model.filesystem.config.thermal import ThermalConfigType, create_thermal_config
 from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata import DUPLICATE_KEYS
 
 logger = logging.getLogger(__name__)
@@ -336,20 +340,44 @@ def parse_area(root: Path, area: str) -> "Area":
     )
 
 
-def _parse_thermal(root: Path, area: str) -> List[Cluster]:
-    list_ini = _extract_data_from_file(
+def _parse_thermal(root: Path, area: str) -> List[ThermalConfigType]:
+    """
+    Parse the thermal INI file, return an empty list if missing.
+    """
+    version = _parse_version(root)
+    relpath = Path(f"input/thermal/clusters/{area}/list.ini")
+    config_dict: Dict[str, Any] = _extract_data_from_file(
+        root=root, inside_root_path=relpath, file_type=FileType.SIMPLE_INI
+    )
+    config_list = []
+    for section, values in config_dict.items():
+        try:
+            config_list.append(create_thermal_config(version, **values, id=section))
+        except ValueError as exc:
+            config_path = root.joinpath(relpath)
+            logger.warning(f"Invalid thermal configuration: '{section}' in '{config_path}'", exc_info=exc)
+    return config_list
+
+
+def _parse_renewables(root: Path, area: str) -> List[RenewableConfigType]:
+    """
+    Parse the renewables INI file, return an empty list if missing.
+    """
+    version = _parse_version(root)
+    relpath = Path(f"input/renewables/clusters/{area}/list.ini")
+    config_dict: Dict[str, Any] = _extract_data_from_file(
         root=root,
-        inside_root_path=Path(f"input/thermal/clusters/{area}/list.ini"),
+        inside_root_path=relpath,
         file_type=FileType.SIMPLE_INI,
     )
-    return [
-        Cluster(
-            id=transform_name_to_id(key),
-            enabled=list_ini.get(key, {}).get("enabled", True),
-            name=list_ini.get(key, {}).get("name", key),
-        )
-        for key in list(list_ini.keys())
-    ]
+    config_list = []
+    for section, values in config_dict.items():
+        try:
+            config_list.append(create_renewable_config(version, **values, id=section))
+        except ValueError as exc:
+            config_path = root.joinpath(relpath)
+            logger.warning(f"Invalid renewable configuration: '{section}' in '{config_path}'", exc_info=exc)
+    return config_list
 
 
 def _parse_st_storage(root: Path, area: str) -> List[STStorageConfigType]:
@@ -362,31 +390,20 @@ def _parse_st_storage(root: Path, area: str) -> List[STStorageConfigType]:
     if version < 860:
         return []
 
+    relpath = Path(f"input/st-storage/clusters/{area}/list.ini")
     config_dict: Dict[str, Any] = _extract_data_from_file(
         root=root,
-        inside_root_path=Path(f"input/st-storage/clusters/{area}/list.ini"),
+        inside_root_path=relpath,
         file_type=FileType.SIMPLE_INI,
     )
-    return [create_st_storage_config(version, **values, id=storage_id) for storage_id, values in config_dict.items()]
-
-
-def _parse_renewables(root: Path, area: str) -> List[Cluster]:
-    try:
-        list_ini = _extract_data_from_file(
-            root=root,
-            inside_root_path=Path(f"input/renewables/clusters/{area}/list.ini"),
-            file_type=FileType.SIMPLE_INI,
-        )
-        return [
-            Cluster(
-                id=transform_name_to_id(key),
-                enabled=list_ini.get(key, {}).get("enabled", True),
-                name=list_ini.get(key, {}).get("name", None),
-            )
-            for key in list(list_ini.keys())
-        ]
-    except Exception:
-        return []
+    config_list = []
+    for section, values in config_dict.items():
+        try:
+            config_list.append(create_st_storage_config(version, **values, id=section))
+        except ValueError as exc:
+            config_path = root.joinpath(relpath)
+            logger.warning(f"Invalid short-term storage configuration: '{section}' in '{config_path}'", exc_info=exc)
+    return config_list
 
 
 def _parse_links(root: Path, area: str) -> Dict[str, Link]:
@@ -416,3 +433,15 @@ def _parse_filters_year(root: Path, area: str) -> List[str]:
     )
     filters: str = optimization["filtering"]["filter-year-by-year"]
     return Link.split(filters)
+
+
+def _check_build_on_solver_tests(test_dir: Path) -> None:
+    for antares_path in test_dir.rglob("study.antares"):
+        study_path = antares_path.parent
+        print(f"Checking '{study_path}'...")
+        build(study_path, "test")
+
+
+if __name__ == "__main__":
+    TEST_DIR = Path("~/Projects/antarest_data/studies/Antares_Simulator_Tests_NR").expanduser()
+    _check_build_on_solver_tests(TEST_DIR)

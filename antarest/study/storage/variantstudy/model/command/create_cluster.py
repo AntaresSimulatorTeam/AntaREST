@@ -1,15 +1,16 @@
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
-from pydantic import validator
+from pydantic import Extra, validator
 
 from antarest.core.model import JSON
 from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    Cluster,
+    Area,
     FileStudyTreeConfig,
     transform_name_to_id,
 )
+from antarest.study.storage.rawstudy.model.filesystem.config.thermal import create_thermal_config
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol, validate_matrix
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
@@ -92,7 +93,7 @@ class CreateCluster(ICommand):
                 status=True,
                 message=f"Thermal cluster '{cluster_id}' added to area '{self.area_id}'.",
             ),
-            {"cluster_id": cluster_id},
+            {"cluster_id": cluster.id},
         )
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
