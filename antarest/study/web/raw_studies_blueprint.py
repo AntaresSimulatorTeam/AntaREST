@@ -96,12 +96,11 @@ def create_raw_study_routes(
             extra={"user": current_user.id},
         )
         parameters = RequestParameters(user=current_user)
-
-        resource_path = pathlib.PurePosixPath(path)
-        output = study_service.get(uuid, str(resource_path), depth=depth, formatted=formatted, params=parameters)
+        output = study_service.get(uuid, path, depth=depth, formatted=formatted, params=parameters)
 
         if isinstance(output, bytes):
             # Guess the suffix form the target data
+            resource_path = pathlib.PurePosixPath(path)
             parent_cfg = study_service.get(uuid, str(resource_path.parent), depth=2, formatted=True, params=parameters)
             child = parent_cfg[resource_path.name]
             suffix = pathlib.PurePosixPath(child).suffix
