@@ -6,7 +6,6 @@ from unittest.mock import ANY
 from starlette.testclient import TestClient
 
 from antarest.core.model import PublicMode
-from antarest.core.tasks.model import TaskDTO, TaskStatus
 from antarest.study.business.adequacy_patch_management import PriceTakingOrder
 from antarest.study.business.area_management import AreaType, LayerInfoDTO
 from antarest.study.business.areas.properties_management import AdequacyPatchMode
@@ -104,17 +103,19 @@ def test_main(client: TestClient, admin_access_token: str, study_id: str) -> Non
     assert res.json()["description"] == "Not a year by year simulation"
 
     # Set new comments
-    client.put(
+    res = client.put(
         f"/v1/studies/{study_id}/comments",
         headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
         json={"comments": comments},
     )
+    assert res.status_code == 204, res.json()
 
     # Get comments
     res = client.get(
         f"/v1/studies/{study_id}/comments",
         headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
     )
+    assert res.status_code == 200, res.json()
     assert res.json() == comments
 
     # study synthesis
@@ -122,7 +123,7 @@ def test_main(client: TestClient, admin_access_token: str, study_id: str) -> Non
         f"/v1/studies/{study_id}/synthesis",
         headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
     )
-    assert res.status_code == 200
+    assert res.status_code == 200, res.json()
 
     # playlist
     res = client.post(
@@ -1975,188 +1976,6 @@ def test_archive(client: TestClient, admin_access_token: str, study_id: str, tmp
     res = client.get(f"/v1/studies/{study_id}", headers=admin_headers)
     assert not res.json()["archived"]
     assert not (tmp_path / "archive_dir" / f"{study_id}.zip").exists()
-
-
-def test_variant_manager(client: TestClient, admin_access_token: str, study_id: str) -> None:
-    admin_headers = {"Authorization": f"Bearer {admin_access_token}"}
-
-    base_study_res = client.post("/v1/studies?name=foo", headers=admin_headers)
-
-    base_study_id = base_study_res.json()
-
-    res = client.post(f"/v1/studies/{base_study_id}/variants?name=foo", headers=admin_headers)
-    variant_id = res.json()
-
-    client.post(f"/v1/launcher/run/{variant_id}", headers=admin_headers)
-
-    res = client.get(f"v1/studies/{variant_id}/synthesis", headers=admin_headers)
-
-    assert variant_id in res.json()["output_path"]
-
-    client.post(f"/v1/studies/{variant_id}/variants?name=bar", headers=admin_headers)
-    client.post(f"/v1/studies/{variant_id}/variants?name=baz", headers=admin_headers)
-    res = client.get(f"/v1/studies/{base_study_id}/variants", headers=admin_headers)
-    children = res.json()
-    assert children["node"]["name"] == "foo"
-    assert len(children["children"]) == 1
-    assert children["children"][0]["node"]["name"] == "foo"
-    assert len(children["children"][0]["children"]) == 2
-    assert children["children"][0]["children"][0]["node"]["name"] == "bar"
-    assert children["children"][0]["children"][1]["node"]["name"] == "baz"
-
-    # George creates a base study
-    # He creates a variant from this study : assert that no command is created
-    # The admin creates a variant from the same base study : assert that its author is admin (created via a command)
-
-    client.post(
-        "/v1/users",
-        headers=admin_headers,
-        json={"name": "George", "password": "mypass"},
-    )
-    res = client.post("/v1/login", json={"username": "George", "password": "mypass"})
-    george_credentials = res.json()
-    base_study_res = client.post(
-        "/v1/studies?name=foo",
-        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
-    )
-
-    base_study_id = base_study_res.json()
-    res = client.post(
-        f"/v1/studies/{base_study_id}/variants?name=foo_2",
-        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
-    )
-    variant_id = res.json()
-    res = client.get(f"/v1/studies/{variant_id}/commands", headers=admin_headers)
-    assert len(res.json()) == 0
-    res = client.post(f"/v1/studies/{base_study_id}/variants?name=foo", headers=admin_headers)
-    variant_id = res.json()
-    res = client.get(f"/v1/studies/{variant_id}/commands", headers=admin_headers)
-    assert len(res.json()) == 1
-    command = res.json()[0]
-    assert command["action"] == "update_config"
-    assert command["args"]["target"] == "study"
-    assert command["args"]["data"]["antares"]["author"] == "admin"
-
-    res = client.get(f"/v1/studies/{variant_id}/parents", headers=admin_headers)
-    assert len(res.json()) == 1
-    assert res.json()[0]["id"] == base_study_id
-    assert res.status_code == 200
-
-    res = client.post(
-        f"/v1/studies/{variant_id}/commands",
-        json=[
-            {
-                "action": "create_area",
-                "args": {"area_name": "testZone", "metadata": {}},
-            }
-        ],
-        headers=admin_headers,
-    )
-    assert res.status_code == 200
-    assert len(res.json()) == 1
-
-    res = client.post(
-        f"/v1/studies/{variant_id}/commands",
-        json=[
-            {
-                "action": "create_area",
-                "args": {"area_name": "testZone2", "metadata": {}},
-            }
-        ],
-        headers=admin_headers,
-    )
-    assert res.status_code == 200
-
-    res = client.post(
-        f"/v1/studies/{variant_id}/command",
-        json={
-            "action": "create_area",
-            "args": {"area_name": "testZone3", "metadata": {}},
-        },
-        headers=admin_headers,
-    )
-    assert res.status_code == 200
-
-    command_id = res.json()
-    res = client.put(
-        f"/v1/studies/{variant_id}/commands/{command_id}",
-        json={
-            "action": "create_area",
-            "args": {"area_name": "testZone4", "metadata": {}},
-        },
-        headers=admin_headers,
-    )
-    assert res.status_code == 200
-
-    res = client.get(f"/v1/studies/{variant_id}/commands", headers=admin_headers)
-    assert len(res.json()) == 4
-    assert res.status_code == 200
-
-    res = client.put(
-        f"/v1/studies/{variant_id}/commands",
-        json=[
-            {
-                "action": "create_area",
-                "args": {"area_name": "testZoneReplace1", "metadata": {}},
-            },
-            {
-                "action": "create_area",
-                "args": {"area_name": "testZoneReplace1", "metadata": {}},
-            },
-        ],
-        headers=admin_headers,
-    )
-    assert res.status_code == 200
-
-    res = client.get(f"/v1/studies/{variant_id}/commands", headers=admin_headers)
-    assert len(res.json()) == 2
-    assert res.status_code == 200
-
-    command_id = res.json()[1]["id"]
-
-    res = client.put(f"/v1/studies/{variant_id}/commands/{command_id}/move?index=0", headers=admin_headers)
-    assert res.status_code == 200
-
-    res = client.get(f"/v1/studies/{variant_id}/commands", headers=admin_headers)
-    assert res.json()[0]["id"] == command_id
-    assert res.status_code == 200
-
-    res = client.delete(f"/v1/studies/{variant_id}/commands/{command_id}", headers=admin_headers)
-
-    assert res.status_code == 200
-
-    res = client.put(f"/v1/studies/{variant_id}/generate", headers=admin_headers)
-    assert res.status_code == 200
-
-    res = client.get(f"/v1/tasks/{res.json()}?wait_for_completion=true", headers=admin_headers)
-    assert res.status_code == 200
-    task_result = TaskDTO.parse_obj(res.json())
-    assert task_result.status == TaskStatus.COMPLETED
-    assert task_result.result.success  # type: ignore
-
-    res = client.get(f"/v1/studies/{variant_id}", headers=admin_headers)
-    assert res.status_code == 200
-
-    res = client.post(f"/v1/studies/{variant_id}/freeze?name=bar", headers=admin_headers)
-    assert res.status_code == 500
-
-    new_study_id = "newid"
-
-    res = client.get(f"/v1/studies/{new_study_id}", headers=admin_headers)
-    assert res.status_code == 404
-
-    res = client.delete(f"/v1/studies/{variant_id}/commands", headers=admin_headers)
-    assert res.status_code == 200
-
-    res = client.get(f"/v1/studies/{variant_id}/commands", headers=admin_headers)
-    assert res.status_code == 200
-    assert len(res.json()) == 0
-
-    res = client.delete(f"/v1/studies/{variant_id}", headers=admin_headers)
-    assert res.status_code == 200
-
-    res = client.get(f"/v1/studies/{variant_id}", headers=admin_headers)
-    assert res.status_code == 404
 
 
 def test_maintenance(client: TestClient, admin_access_token: str, study_id: str) -> None:

@@ -4,6 +4,11 @@ Antares Web Changelog
 v2.15.4 (unreleased)
 --------------------
 
+### Tests
+
+* **commands:** refactored study variant command unit tests, improved coverage, and fixed deprecated attribute usage [`5244442`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/52444422ed5e3ef116f514e02b8454b1ae203104)
+
+
 
 v2.15.3 (2023-10-12)
 --------------------

@@ -18,20 +18,30 @@ from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
 class CreateCluster(ICommand):
+    """
+    Command used to create a thermal cluster in an area.
+    """
+
+    # Overloaded metadata
+    # ===================
+
+    command_name = CommandName.CREATE_THERMAL_CLUSTER
+    version = 1
+
+    # Command parameters
+    # ==================
+
     area_id: str
     cluster_name: str
     parameters: Dict[str, str]
     prepro: Optional[Union[List[List[MatrixData]], str]] = None
     modulation: Optional[Union[List[List[MatrixData]], str]] = None
 
-    def __init__(self, **data: Any) -> None:
-        super().__init__(command_name=CommandName.CREATE_THERMAL_CLUSTER, version=1, **data)
-
     @validator("cluster_name")
     def validate_cluster_name(cls, val: str) -> str:
         valid_name = transform_name_to_id(val, lower=False)
         if valid_name != val:
-            raise ValueError("Area name must only contains [a-zA-Z0-9],&,-,_,(,) characters")
+            raise ValueError("Cluster name must only contains [a-zA-Z0-9],&,-,_,(,) characters")
         return val
 
     @validator("prepro", always=True)
@@ -57,13 +67,14 @@ class CreateCluster(ICommand):
             return validate_matrix(v, values)
 
     def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
+        # Search the Area in the configuration
         if self.area_id not in study_data.areas:
             return (
                 CommandOutput(
                     status=False,
-                    message=f"Area '{self.area_id}' does not exist",
+                    message=f"Area '{self.area_id}' does not exist in the study configuration.",
                 ),
-                dict(),
+                {},
             )
         cluster_id = transform_name_to_id(self.cluster_name)
         for cluster in study_data.areas[self.area_id].thermals:
@@ -71,15 +82,15 @@ class CreateCluster(ICommand):
                 return (
                     CommandOutput(
                         status=False,
-                        message=f"Cluster '{self.cluster_name}' already exist",
+                        message=f"Thermal cluster '{cluster_id}' already exists in the area '{self.area_id}'.",
                     ),
-                    dict(),
+                    {},
                 )
         study_data.areas[self.area_id].thermals.append(Cluster(id=cluster_id, name=self.cluster_name))
         return (
             CommandOutput(
                 status=True,
-                message=f"Cluster '{self.cluster_name}' added to area '{self.area_id}'",
+                message=f"Thermal cluster '{cluster_id}' added to area '{self.area_id}'.",
             ),
             {"cluster_id": cluster_id},
         )
@@ -123,7 +134,7 @@ class CreateCluster(ICommand):
 
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
-            action=CommandName.CREATE_THERMAL_CLUSTER.value,
+            action=self.command_name.value,
             args={
                 "area_id": self.area_id,
                 "cluster_name": self.cluster_name,

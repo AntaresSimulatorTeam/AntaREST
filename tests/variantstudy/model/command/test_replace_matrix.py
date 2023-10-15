@@ -1,5 +1,7 @@
 from unittest.mock import Mock, patch
 
+import numpy as np
+
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.command_reverter import CommandReverter
@@ -69,18 +71,33 @@ def test_match(command_context: CommandContext):
 
 @patch("antarest.study.storage.variantstudy.business.command_extractor.CommandExtractor.generate_replace_matrix")
 def test_revert(mock_generate_replace_matrix, command_context: CommandContext):
-    base = ReplaceMatrix(target="foo", matrix=[[0]], command_context=command_context)
+    matrix_a = np.random.rand(5, 2).tolist()
+    base = ReplaceMatrix(target="foo", matrix=matrix_a, command_context=command_context)
     study = FileStudy(config=Mock(), tree=Mock())
     CommandReverter().revert(base, [], study)
     mock_generate_replace_matrix.assert_called_with(study.tree, ["foo"])
     assert CommandReverter().revert(
         base,
-        [ReplaceMatrix(target="foo", matrix="b", command_context=command_context)],
+        [
+            ReplaceMatrix(
+                target="foo",
+                matrix=matrix_a,
+                command_context=command_context,
+            )
+        ],
         study,
-    ) == [ReplaceMatrix(target="foo", matrix="b", command_context=command_context)]
+    ) == [
+        ReplaceMatrix(
+            target="foo",
+            matrix=matrix_a,
+            command_context=command_context,
+        )
+    ]
 
 
 def test_create_diff(command_context: CommandContext):
-    base = ReplaceMatrix(target="foo", matrix="c", command_context=command_context)
-    other_match = ReplaceMatrix(target="foo", matrix="b", command_context=command_context)
+    matrix_a = np.random.rand(5, 2).tolist()
+    base = ReplaceMatrix(target="foo", matrix=matrix_a, command_context=command_context)
+    matrix_b = np.random.rand(5, 2).tolist()
+    other_match = ReplaceMatrix(target="foo", matrix=matrix_b, command_context=command_context)
     assert base.create_diff(other_match) == [other_match]

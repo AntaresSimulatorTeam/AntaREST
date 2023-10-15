@@ -100,7 +100,7 @@ class DistrictManager:
             output=dto.output,
             comments=dto.comments,
             base_filter=DistrictBaseFilter.remove_all,
-            filter_items=areas,
+            filter_items=list(areas),
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
         )
         execute_or_add_commands(study, file_study, [command], self.storage_service)
