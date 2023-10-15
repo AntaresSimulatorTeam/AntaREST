@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
-from pydantic import Extra, validator
+from pydantic import validator
 
 from antarest.core.model import JSON
 from antarest.core.utils.utils import assert_this

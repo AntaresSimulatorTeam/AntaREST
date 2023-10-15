@@ -20,14 +20,24 @@ class DistrictBaseFilter(Enum):
 
 
 class CreateDistrict(ICommand):
+    """
+    Command used to create a district in a study.
+    """
+
+    # Overloaded metadata
+    # ===================
+
+    command_name = CommandName.CREATE_DISTRICT
+    version = 1
+
+    # Command parameters
+    # ==================
+
     name: str
     base_filter: Optional[DistrictBaseFilter] = None
     filter_items: Optional[List[str]] = None
     output: bool = True
     comments: str = ""
-
-    def __init__(self, **data: Any) -> None:
-        super().__init__(command_name=CommandName.CREATE_DISTRICT, version=1, **data)
 
     @validator("name")
     def validate_district_name(cls, val: str) -> str:

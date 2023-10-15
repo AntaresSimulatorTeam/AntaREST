@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Tuple, Union
 
-from pydantic import Extra, validator
+from pydantic import validator
 
 from antarest.core.model import JSON
 from antarest.core.utils.utils import assert_this
@@ -15,13 +15,13 @@ from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIG
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
-class ReplaceMatrix(ICommand, extra=Extra.forbid):
+class ReplaceMatrix(ICommand):
     """
     Command used to replace a matrice in an area.
     """
 
-    # Overloaded parameters
-    # =====================
+    # Overloaded metadata
+    # ===================
 
     command_name = CommandName.REPLACE_MATRIX
     version = 1

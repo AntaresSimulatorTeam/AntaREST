@@ -27,8 +27,14 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
     Command used to update a binding constraint.
     """
 
-    command_name: CommandName = CommandName.UPDATE_BINDING_CONSTRAINT
+    # Overloaded metadata
+    # ===================
+
+    command_name = CommandName.UPDATE_BINDING_CONSTRAINT
     version: int = 1
+
+    # Command parameters
+    # ==================
 
     # Properties of the `UPDATE_BINDING_CONSTRAINT` command:
     id: str

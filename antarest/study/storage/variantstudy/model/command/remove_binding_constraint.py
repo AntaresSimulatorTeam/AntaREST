@@ -13,7 +13,7 @@ class RemoveBindingConstraint(ICommand):
     Command used to remove a binding constraint.
     """
 
-    command_name: CommandName = CommandName.REMOVE_BINDING_CONSTRAINT
+    command_name = CommandName.REMOVE_BINDING_CONSTRAINT
     version: int = 1
 
     # Properties of the `REMOVE_BINDING_CONSTRAINT` command:

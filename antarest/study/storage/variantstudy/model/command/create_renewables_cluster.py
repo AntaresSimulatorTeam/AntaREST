@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Tuple, cast
 
-from pydantic import Extra, validator
+from pydantic import validator
 
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (

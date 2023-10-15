@@ -98,7 +98,7 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
     Command used to create a binding constraint.
     """
 
-    command_name: CommandName = CommandName.CREATE_BINDING_CONSTRAINT
+    command_name = CommandName.CREATE_BINDING_CONSTRAINT
     version: int = 1
 
     # Properties of the `CREATE_BINDING_CONSTRAINT` command:

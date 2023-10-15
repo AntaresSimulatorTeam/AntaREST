@@ -1,7 +1,5 @@
 from typing import Any, Dict, List, Tuple, Union
 
-from pydantic import Extra
-
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -11,13 +9,13 @@ from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIG
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
-class UpdateConfig(ICommand, extra=Extra.forbid):
+class UpdateConfig(ICommand):
     """
     Command used to create a thermal cluster in an area.
     """
 
-    # Overloaded parameters
-    # =====================
+    # Overloaded metadata
+    # ===================
 
     command_name = CommandName.UPDATE_CONFIG
     version = 1

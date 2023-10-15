@@ -17,14 +17,17 @@ class RemoveSTStorage(ICommand):
     Command used to remove a short-terme storage from an area.
     """
 
-    area_id: str = Field(description="Area ID", regex=r"[a-z0-9_(),& -]+")
-    storage_id: str = Field(
-        description="Short term storage ID",
-        regex=r"[a-z0-9_(),& -]+",
-    )
+    # Overloaded metadata
+    # ===================
 
-    def __init__(self, **data: Any) -> None:
-        super().__init__(command_name=CommandName.REMOVE_ST_STORAGE, version=1, **data)
+    command_name = CommandName.REMOVE_ST_STORAGE
+    version = 1
+
+    # Command parameters
+    # ==================
+
+    area_id: str = Field(description="Area ID", regex=r"[a-z0-9_(),& -]+")
+    storage_id: str = Field(description="Short term storage ID", regex=r"[a-z0-9_(),& -]+")
 
     def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         """
@@ -43,7 +46,7 @@ class RemoveSTStorage(ICommand):
             return (
                 CommandOutput(
                     status=False,
-                    message=(f"Invalid study version {version}, at least version {REQUIRED_VERSION} is required."),
+                    message=f"Invalid study version {version}, at least version {REQUIRED_VERSION} is required.",
                 ),
                 {},
             )
@@ -53,7 +56,7 @@ class RemoveSTStorage(ICommand):
             return (
                 CommandOutput(
                     status=False,
-                    message=(f"Area '{self.area_id}' does not exist in the study configuration."),
+                    message=f"Area '{self.area_id}' does not exist in the study configuration.",
                 ),
                 {},
             )
@@ -67,7 +70,7 @@ class RemoveSTStorage(ICommand):
             return (
                 CommandOutput(
                     status=False,
-                    message=(f"Short term storage '{self.storage_id}' does not exist in the area '{self.area_id}'."),
+                    message=f"Short term storage '{self.storage_id}' does not exist in the area '{self.area_id}'.",
                 ),
                 {},
             )
@@ -78,7 +81,7 @@ class RemoveSTStorage(ICommand):
         return (
             CommandOutput(
                 status=True,
-                message=(f"Short term storage '{self.storage_id}' removed from the area '{self.area_id}'."),
+                message=f"Short term storage '{self.storage_id}' removed from the area '{self.area_id}'.",
             ),
             {},
         )

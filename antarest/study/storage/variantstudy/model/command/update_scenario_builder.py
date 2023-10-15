@@ -9,10 +9,20 @@ from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
 class UpdateScenarioBuilder(ICommand):
-    data: Dict[str, Any]
+    """
+    Command used to update a scenario builder table.
+    """
 
-    def __init__(self, **data: Any) -> None:
-        super().__init__(command_name=CommandName.UPDATE_SCENARIO_BUILDER, version=1, **data)
+    # Overloaded metadata
+    # ===================
+
+    command_name = CommandName.UPDATE_SCENARIO_BUILDER
+    version = 1
+
+    # Command parameters
+    # ==================
+
+    data: Dict[str, Any]
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
         def remove_rand_values(obj: Dict[str, Any]) -> Dict[str, Any]:

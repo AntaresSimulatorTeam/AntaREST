@@ -2,7 +2,7 @@ import json
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 import numpy as np
-from pydantic import Extra, Field, validator
+from pydantic import Field, validator
 from pydantic.fields import ModelField
 
 from antarest.core.model import JSON
@@ -32,13 +32,13 @@ MatrixType = List[List[MatrixData]]
 
 
 # noinspection SpellCheckingInspection
-class CreateSTStorage(ICommand, extra=Extra.forbid):
+class CreateSTStorage(ICommand):
     """
     Command used to create a short-terme storage in an area.
     """
 
-    # Overloaded parameters
-    # =====================
+    # Overloaded metadata
+    # ===================
 
     command_name = CommandName.CREATE_ST_STORAGE
     version = 1

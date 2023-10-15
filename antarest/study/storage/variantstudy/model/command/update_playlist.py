@@ -9,13 +9,23 @@ from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
 class UpdatePlaylist(ICommand):
+    """
+    Command used to update a playlist.
+    """
+
+    # Overloaded metadata
+    # ===================
+
+    command_name = CommandName.UPDATE_PLAYLIST
+    version = 1
+
+    # Command parameters
+    # ==================
+
     active: bool
     items: Optional[List[int]] = None
     weights: Optional[Dict[int, float]] = None
     reverse: bool = False
-
-    def __init__(self, **data: Any) -> None:
-        super().__init__(command_name=CommandName.UPDATE_PLAYLIST, version=1, **data)
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
         FileStudyHelpers.set_playlist(
