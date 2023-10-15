@@ -1,4 +1,5 @@
 import http
+import itertools
 import json
 import pathlib
 import shutil
@@ -168,9 +169,11 @@ class TestFetchRawData:
         assert res.status_code == 200
         assert np.isnan(res.json()["data"][0]).any()
 
-        # asserts that the Debug view works properly
-        res = client.get(
-            f"/v1/studies/{study_id}/raw?path=&depth=-1",
-            headers=headers,
-        )
-        assert res.status_code == 200
+        # Iterate over all possible combinations of path and depth
+        for path, depth in itertools.product([None, "", "/"], [0, 1, 2]):
+            res = client.get(
+                f"/v1/studies/{study_id}/raw",
+                params={"path": path, "depth": depth},
+                headers=headers,
+            )
+            assert res.status_code == 200, f"Error for path={path} and depth={depth}"
