@@ -6,7 +6,18 @@ v2.15.4 (unreleased)
 
 ### Tests
 
-* **commands:** refactored study variant command unit tests, improved coverage, and fixed deprecated attribute usage [`5244442`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/52444422ed5e3ef116f514e02b8454b1ae203104)
+*  **commands:** refactored study variant command unit tests, improved coverage, and fixed deprecated attribute usage ([8bd0bdf](https://github.com/AntaresSimulatorTeam/AntaREST/commit/8bd0bdf93c1a9ef0ee12570cb7d398ba7212b2fe))
+
+
+### Bug Fixes
+
+*  **raw:** fix HTTP exception when going on debug view (#1769) ([afac2d6](https://github.com/AntaresSimulatorTeam/AntaREST/commit/afac2d67fc72e2a39557665a4123e99c9ca57a5f))
+
+
+### Contributors
+
+<a href="https://github.com/laurent-laporte-pro">laurent-laporte-pro</a>,
+<a href="https://github.com/MartinBelthle">MartinBelthle</a>
 
 
 
