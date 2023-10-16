@@ -123,6 +123,16 @@ def find_single_output_path(all_output_path: Path) -> Path:
     return all_output_path
 
 
+def retrieve_output_path(job_path: Path) -> Path:
+    inside_study_output_path = job_path / "output"
+    if job_path.exists() and len([file for file in os.listdir(str(job_path)) if ".zip" in file]) == 1:
+        return job_path / [file for file in os.listdir(str(job_path)) if ".zip" in file][0]
+    elif inside_study_output_path.exists() and len(os.listdir(inside_study_output_path)) == 1:
+        return inside_study_output_path / os.listdir(str(inside_study_output_path))[0]
+    else:
+        return Path()
+
+
 def extract_output_name(path_output: Path, new_suffix_name: t.Optional[str] = None) -> str:
     ini_reader = IniReader()
     is_output_archived = path_output.suffix == ".zip"
