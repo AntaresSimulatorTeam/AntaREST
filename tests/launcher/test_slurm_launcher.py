@@ -2,6 +2,7 @@ import os
 import shutil
 import textwrap
 import uuid
+import zipfile
 from argparse import Namespace
 from pathlib import Path
 from unittest.mock import ANY, Mock, patch
@@ -407,6 +408,18 @@ def test_import_study_output(launcher_config, tmp_path) -> None:
     slurm_launcher._import_study_output("1", "r")
     assert (output_dir / "results" / "something_else").exists()
     assert (output_dir / "results" / "something_else").read_text() == "world"
+
+    # asserts that a xpansion output zipped can be imported
+    xpansion_zip_dir = launcher_config.launcher.slurm.local_workspace / "OUTPUT" / "2"
+    xpansion_zip_dir.mkdir(parents=True)
+    (xpansion_zip_dir / "input" / "links").mkdir(parents=True)
+    xpansion_output_file = xpansion_zip_dir / "xpansion.zip"
+    with zipfile.ZipFile(xpansion_output_file, "w") as zipf:
+        zipf.write(xpansion_dir / "something_else", "some_file.txt")
+    slurm_launcher._import_study_output("2", "cpp")
+    assert (
+        launcher_config.launcher.slurm.local_workspace / "OUTPUT" / "2" / "output" / xpansion_output_file.name[:-4]
+    ).exists()
 
     log_dir = tmp_path / "logs"
     log_dir.mkdir()
