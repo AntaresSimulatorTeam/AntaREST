@@ -757,9 +757,9 @@ class TestLauncherService:
             ),
         ]
         with pytest.raises(JobNotFound):
-            launcher_service._import_output(job_id, output_path, {"out.log": [additional_log]})
+            launcher_service._import_output(job_id, tmp_path, {"out.log": [additional_log]})
 
-        launcher_service._import_output(job_id, output_path, {"out.log": [additional_log]})
+        launcher_service._import_output(job_id, tmp_path, {"out.log": [additional_log]})
         assert not launcher_service._get_job_output_fallback_path(job_id).exists()
         launcher_service.study_service.import_output.assert_called()
 
@@ -788,10 +788,10 @@ class TestLauncherService:
             StudyNotFoundError(""),
         ]
 
-        assert launcher_service._import_output(job_id, output_path, {"out.log": [additional_log]}) is None
+        assert launcher_service._import_output(job_id, tmp_path, {"out.log": [additional_log]}) is None
 
         (new_output_path / "info.antares-output").write_text(f"[general]\nmode=eco\nname=foo\ntimestamp={time.time()}")
-        output_name = launcher_service._import_output(job_id, output_path, {"out.log": [additional_log]})
+        output_name = launcher_service._import_output(job_id, tmp_path, {"out.log": [additional_log]})
         assert output_name is not None
         assert output_name.endswith("-hello")
         assert launcher_service._get_job_output_fallback_path(job_id).exists()

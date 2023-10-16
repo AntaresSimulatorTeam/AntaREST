@@ -39,7 +39,7 @@ from antarest.launcher.model import (
 )
 from antarest.launcher.repository import JobResultRepository
 from antarest.study.service import StudyService
-from antarest.study.storage.utils import assert_permission, extract_output_name, find_single_output_path
+from antarest.study.storage.utils import assert_permission, extract_output_name, retrieve_output_path
 
 logger = logging.getLogger(__name__)
 
@@ -498,7 +498,7 @@ class LauncherService:
             job_launch_params = LauncherParametersDTO.parse_raw(job_result.launcher_params or "{}")
 
             # this now can be a zip file instead of a directory !
-            output_true_path = find_single_output_path(output_path)
+            output_true_path = retrieve_output_path(output_path)
             output_is_zipped = is_zip(output_true_path)
             output_suffix = cast(
                 Optional[str],

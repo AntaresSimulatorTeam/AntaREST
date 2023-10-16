@@ -235,7 +235,7 @@ class SlurmLauncher(AbstractLauncher):
         # `antarest.launcher.service.LauncherService._import_output`
         return self.callbacks.import_output(
             job_id,
-            self.local_workspace / STUDIES_OUTPUT_DIR_NAME / job_id / "output",
+            self.local_workspace / STUDIES_OUTPUT_DIR_NAME / job_id,
             launcher_logs,
         )
 
