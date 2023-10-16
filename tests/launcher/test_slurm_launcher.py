@@ -382,7 +382,7 @@ def test_import_study_output(launcher_config, tmp_path) -> None:
 
     slurm_launcher.callbacks.import_output.assert_called_once_with(
         "1",
-        launcher_config.launcher.slurm.local_workspace / "OUTPUT" / "1" / "output",
+        launcher_config.launcher.slurm.local_workspace / "OUTPUT" / "1",
         {},
     )
     assert res == "output"
@@ -431,7 +431,7 @@ def test_import_study_output(launcher_config, tmp_path) -> None:
     slurm_launcher._import_study_output("1", None, str(log_dir))
     slurm_launcher.callbacks.import_output.assert_called_once_with(
         "1",
-        launcher_config.launcher.slurm.local_workspace / "OUTPUT" / "1" / "output",
+        launcher_config.launcher.slurm.local_workspace / "OUTPUT" / "1",
         {
             "antares-out.log": [log_info],
             "antares-err.log": [log_error],
