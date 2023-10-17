@@ -209,7 +209,7 @@ class SlurmLauncher(AbstractLauncher):
         xpansion_mode: Optional[str] = None,
         log_dir: Optional[str] = None,
     ) -> Optional[str]:
-        if xpansion_mode is not None:
+        if xpansion_mode:
             self._import_xpansion_result(job_id, xpansion_mode)
 
         launcher_logs: Dict[str, List[Path]] = {}
