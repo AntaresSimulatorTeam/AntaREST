@@ -296,7 +296,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
-        study = study_service.check_study_access(uuid, StudyPermissionType.DELETE, params)
+        study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
         study_service.areas.remove_layer(study, layer_id)
 
     @bp.get(
@@ -1691,7 +1691,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
-        study = study_service.check_study_access(uuid, StudyPermissionType.DELETE, params)
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
         study_service.st_storage_manager.delete_storages(study, area_id, storage_ids)
 
     return bp

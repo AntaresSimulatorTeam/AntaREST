@@ -28,7 +28,6 @@ class StudyPermissionType(str, enum.Enum):
     READ = "READ"
     RUN = "RUN"
     WRITE = "WRITE"
-    DELETE = "DELETE"
     MANAGE_PERMISSIONS = "MANAGE_PERMISSIONS"
 
 

@@ -1041,7 +1041,7 @@ class StudyService:
 
         """
         study = self.get_study(uuid)
-        assert_permission(params.user, study, StudyPermissionType.DELETE)
+        assert_permission(params.user, study, StudyPermissionType.WRITE)
 
         study_info = study.to_json_summary()
 
@@ -1791,7 +1791,7 @@ class StudyService:
     def archive(self, uuid: str, params: RequestParameters) -> str:
         logger.info(f"Archiving study {uuid}")
         study = self.get_study(uuid)
-        assert_permission(params.user, study, StudyPermissionType.DELETE)
+        assert_permission(params.user, study, StudyPermissionType.WRITE)
 
         self._assert_study_unarchived(study)
 
@@ -1849,7 +1849,7 @@ class StudyService:
         ):
             raise TaskAlreadyRunning()
 
-        assert_permission(params.user, study, StudyPermissionType.DELETE)
+        assert_permission(params.user, study, StudyPermissionType.WRITE)
 
         if not isinstance(study, RawStudy):
             raise StudyTypeUnsupported(study.id, study.type)
