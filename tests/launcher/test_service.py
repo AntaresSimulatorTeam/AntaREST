@@ -721,17 +721,15 @@ class TestLauncherService:
         )
 
         output_path = tmp_path / "output"
-        zipped_output_path = tmp_path / "zipped_output"
         os.mkdir(output_path)
-        os.mkdir(zipped_output_path)
         new_output_path = output_path / "new_output"
         os.mkdir(new_output_path)
         (new_output_path / "log").touch()
         (new_output_path / "data").touch()
         additional_log = tmp_path / "output.log"
         additional_log.write_text("some log")
-        new_output_zipped_path = zipped_output_path / "test.zip"
-        with ZipFile(new_output_zipped_path, "w", ZIP_DEFLATED) as output_data:
+        zipped_path = tmp_path / "test.zip"
+        with ZipFile(zipped_path, "w", ZIP_DEFLATED) as output_data:
             output_data.writestr("some output", "0\n1")
         job_id = "job_id"
         zipped_job_id = "zipped_job_id"
@@ -768,7 +766,7 @@ class TestLauncherService:
 
         launcher_service._import_output(
             zipped_job_id,
-            zipped_output_path,
+            zipped_path,
             {
                 "out.log": [additional_log],
                 "antares-out": [additional_log],

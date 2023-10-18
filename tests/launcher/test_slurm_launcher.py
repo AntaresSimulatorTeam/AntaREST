@@ -413,7 +413,9 @@ def test_import_study_output(launcher_config, tmp_path) -> None:
     xpansion_zip_dir = launcher_config.launcher.slurm.local_workspace / "OUTPUT" / "2"
     xpansion_zip_dir.mkdir(parents=True)
     (xpansion_zip_dir / "input" / "links").mkdir(parents=True)
-    xpansion_output_file = xpansion_zip_dir / "xpansion.zip"
+    xpansion_out_put_dir = xpansion_zip_dir / "output"
+    xpansion_out_put_dir.mkdir(parents=True)
+    xpansion_output_file = xpansion_out_put_dir / "xpansion.zip"
     with zipfile.ZipFile(xpansion_output_file, "w") as zipf:
         zipf.write(xpansion_dir / "something_else", "some_file.txt")
     slurm_launcher._import_study_output("2", "cpp")

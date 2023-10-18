@@ -3,6 +3,7 @@ import json
 import logging
 import os
 import shutil
+import zipfile
 from datetime import datetime, timedelta
 from http import HTTPStatus
 from pathlib import Path
@@ -522,6 +523,12 @@ class LauncherService:
                         log_paths,
                         output_true_path / log_name,
                     )
+            if additional_logs and output_is_zipped:
+                with zipfile.ZipFile(output_true_path, "a") as zf:
+                    for log_paths in additional_logs.values():
+                        for path in log_paths:
+                            dest_name = path.name[: path.name.rfind("-")] + ".log"
+                            zf.write(filename=path, arcname=dest_name)
 
         if study_id:
             zip_path: Optional[Path] = None
@@ -535,18 +542,6 @@ class LauncherService:
             final_output_path = zip_path or output_true_path
             with db():
                 try:
-                    if additional_logs and output_is_zipped:
-                        for log_name, log_paths in additional_logs.items():
-                            log_type = LogType.from_filename(log_name)
-                            log_suffix = log_name
-                            if log_type:
-                                log_suffix = log_type.to_suffix()
-                            self.study_service.save_logs(
-                                study_id,
-                                job_id,
-                                log_suffix,
-                                concat_files_to_str(log_paths),
-                            )
                     return self.study_service.import_output(
                         study_id,
                         final_output_path,
