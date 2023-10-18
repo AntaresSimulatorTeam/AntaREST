@@ -1,5 +1,5 @@
 import contextlib
-from typing import Any, Generator
+from typing import Generator
 
 import pytest
 from sqlalchemy import create_engine  # type: ignore

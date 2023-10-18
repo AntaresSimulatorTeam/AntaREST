@@ -34,7 +34,7 @@ from antarest.core.tasks.model import TaskStatus
 from antarest.core.utils.string import to_camel_case
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.renewable import RenewableProperties
-from integration.utils import wait_task_completion
+from tests.integration.utils import wait_task_completion
 
 DEFAULT_PROPERTIES = json.loads(RenewableProperties(name="Dummy").json())
 DEFAULT_PROPERTIES = {to_camel_case(k): v for k, v in DEFAULT_PROPERTIES.items() if k != "name"}
