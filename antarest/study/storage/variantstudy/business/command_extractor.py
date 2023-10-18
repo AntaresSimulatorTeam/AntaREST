@@ -200,8 +200,8 @@ class CommandExtractor(ICommandExtractor):
             create_cluster_command = CreateRenewablesCluster
         else:
             cluster_type = "thermal"  # w/o a final "s"
-            cluster_list = study.config.areas[area_id].thermals
-            create_cluster_command = CreateCluster
+            cluster_list = study.config.areas[area_id].thermals  # type: ignore
+            create_cluster_command = CreateCluster  # type: ignore
 
         cluster = next(iter(c for c in cluster_list if c.id == cluster_id))
 
