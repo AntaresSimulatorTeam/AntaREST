@@ -20,7 +20,7 @@ class ClusteredRenewableClusterConfig(IniFileNode):
             "nomialcapacity": 0,
             "ts-interpretation": str,
         }
-        types = {renewable: section for renewable in config.get_renewable_names(area)}
+        types = {cluster_id: section for cluster_id in config.get_renewable_ids(area)}
         IniFileNode.__init__(self, context, config, types)
 
 

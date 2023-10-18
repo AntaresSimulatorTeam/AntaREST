@@ -185,29 +185,22 @@ class FileStudyTreeConfig(DTO):
             [k for k, v in self.sets.items() if v.output or not only_output],
         )
 
-    def get_thermal_names(self, area: str, only_enabled: bool = False) -> List[str]:
-        return self.cache.get(
-            f"%thermal%{area}%{only_enabled}%{area}",
-            [thermal.id for thermal in self.areas[area].thermals if not only_enabled or thermal.enabled],
-        )
+    def get_thermal_ids(self, area: str) -> List[str]:
+        """
+        Returns a list of thermal cluster IDs for a given area.
+        Note that IDs may not be in lower case (but series IDs are).
+        """
+        return self.cache.get(f"%thermal%{area}%{area}", [th.id for th in self.areas[area].thermals])
+
+    def get_renewable_ids(self, area: str) -> List[str]:
+        """
+        Returns a list of renewable cluster IDs for a given area.
+        Note that IDs may not be in lower case (but series IDs are).
+        """
+        return self.cache.get(f"%renewable%{area}", [r.id for r in self.areas[area].renewables])
 
     def get_st_storage_ids(self, area: str) -> List[str]:
         return self.cache.get(f"%st-storage%{area}", [s.id for s in self.areas[area].st_storages])
-
-    def get_renewable_names(
-        self,
-        area: str,
-        only_enabled: bool = False,
-        section_name: bool = True,
-    ) -> List[str]:
-        return self.cache.get(
-            f"%renewable%{area}%{only_enabled}%{section_name}",
-            [
-                renewable.id if section_name else renewable.name
-                for renewable in self.areas[area].renewables
-                if not only_enabled or renewable.enabled
-            ],
-        )
 
     def get_links(self, area: str) -> List[str]:
         return self.cache.get(f"%links%{area}", list(self.areas[area].links.keys()))

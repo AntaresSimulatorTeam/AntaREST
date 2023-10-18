@@ -194,31 +194,30 @@ class CommandExtractor(ICommandExtractor):
 
     def _extract_cluster(self, study: FileStudy, area_id: str, cluster_id: str, renewables: bool) -> List[ICommand]:
         study_tree = study.tree
+        if renewables:
+            cluster_type = "renewables"  # with a final "s"
+            cluster_list = study.config.areas[area_id].renewables
+            create_cluster_command = CreateRenewablesCluster
+        else:
+            cluster_type = "thermal"  # w/o a final "s"
+            cluster_list = study.config.areas[area_id].thermals
+            create_cluster_command = CreateCluster
 
-        cluster_type = "renewables" if renewables else "thermal"
-        cluster_list = (
-            study.config.areas[area_id].thermals if not renewables else study.config.areas[area_id].renewables
-        )
-        create_cluster_command = CreateCluster if not renewables else CreateRenewablesCluster
-
-        selected_names = (cluster.name for cluster in cluster_list if cluster.id == cluster_id)  # type: ignore
-        cluster_name = next(selected_names, cluster_id)
+        cluster = next(iter(c for c in cluster_list if c.id == cluster_id))
 
         null_matrix_id = strip_matrix_protocol(self.generator_matrix_constants.get_null_matrix())
+        # Note that cluster IDs are case-insensitive, but series IDs are in lower case.
+        series_id = cluster_id.lower()
         study_commands: List[ICommand] = [
             create_cluster_command(
                 area_id=area_id,
-                cluster_name=cluster_name,
-                parameters={},
+                cluster_name=cluster.id,
+                parameters=cluster.dict(by_alias=True, exclude_defaults=True, exclude={"id"}),
                 command_context=self.command_context,
-            ),
-            self.generate_update_config(
-                study_tree,
-                ["input", cluster_type, "clusters", area_id, "list", cluster_name],
             ),
             self.generate_replace_matrix(
                 study_tree,
-                ["input", cluster_type, "series", area_id, cluster_id, "series"],
+                ["input", cluster_type, "series", area_id, series_id, "series"],
                 null_matrix_id,
             ),
         ]
@@ -227,12 +226,12 @@ class CommandExtractor(ICommandExtractor):
                 [
                     self.generate_replace_matrix(
                         study_tree,
-                        ["input", cluster_type, "prepro", area_id, cluster_id, "data"],
+                        ["input", cluster_type, "prepro", area_id, series_id, "data"],
                         null_matrix_id,
                     ),
                     self.generate_replace_matrix(
                         study_tree,
-                        ["input", cluster_type, "prepro", area_id, cluster_id, "modulation"],
+                        ["input", cluster_type, "prepro", area_id, series_id, "modulation"],
                         null_matrix_id,
                     ),
                 ]

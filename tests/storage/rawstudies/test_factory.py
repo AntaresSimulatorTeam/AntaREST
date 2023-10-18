@@ -13,7 +13,7 @@ def test_renewable_subtree():
     path = Path(__file__).parent / "samples/v810/sample1"
     context: ContextServer = Mock(specs=ContextServer)
     config = build(path, "")
-    assert config.get_renewable_names("area") == ["la_rochelle", "oleron"]
+    assert config.get_renewable_ids("area") == ["la_rochelle", "oleron"]
 
     tree = FileStudyTree(context, config)
     json_tree = tree.get([], depth=-1)
