@@ -85,24 +85,24 @@ class CreateRenewablesCluster(ICommand):
         if not output.status:
             return output
 
-        cluster_id = data["cluster_id"]
-
-        cluster_list_config = study_data.tree.get(["input", "renewables", "clusters", self.area_id, "list"])
         # default values
         if "ts-interpretation" not in self.parameters:
             self.parameters["ts-interpretation"] = "power-generation"
-        # fixme: rigorously, the section name in the INI file is the cluster ID, not the cluster name
-        #  cluster_list_config[transform_name_to_id(self.cluster_name)] = self.parameters
-        cluster_list_config[self.cluster_name] = self.parameters
+        self.parameters.setdefault("name", self.cluster_name)
 
-        self.parameters["name"] = self.cluster_name
+        cluster_id = data["cluster_id"]
+        config = study_data.tree.get(["input", "renewables", "clusters", self.area_id, "list"])
+        config[cluster_id] = self.parameters
+
+        # Series identifiers are in lower case.
+        series_id = cluster_id.lower()
         new_cluster_data: JSON = {
             "input": {
                 "renewables": {
-                    "clusters": {self.area_id: {"list": cluster_list_config}},
+                    "clusters": {self.area_id: {"list": config}},
                     "series": {
                         self.area_id: {
-                            cluster_id: {"series": self.command_context.generator_matrix_constants.get_null_matrix()}
+                            series_id: {"series": self.command_context.generator_matrix_constants.get_null_matrix()}
                         }
                     },
                 }

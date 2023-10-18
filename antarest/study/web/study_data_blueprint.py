@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional, Sequence, Union, cast
 
 from fastapi import APIRouter, Body, Depends
 from fastapi.params import Body, Query
+from starlette.responses import RedirectResponse
 
 from antarest.core.config import Config
 from antarest.core.jwt import JWTUser
@@ -1395,11 +1396,23 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
         return study_service.thermal_manager.get_cluster(study, area_id, cluster_id)
 
+    @bp.get(
+        path="/studies/{uuid}/areas/{area_id}/clusters/thermal/{cluster_id}/form",
+        tags=[APITag.study_data],
+        summary="Get thermal configuration for a given cluster (deprecated)",
+        response_class=RedirectResponse,
+    )
+    def redirect_get_thermal_cluster(
+        uuid: str,
+        area_id: str,
+        cluster_id: str,
+    ) -> str:
+        return f"/v1/studies/{uuid}/areas/{area_id}/clusters/thermal/{cluster_id}"
+
     @bp.post(
         path="/studies/{uuid}/areas/{area_id}/clusters/thermal",
         tags=[APITag.study_data],
         summary="Create a new thermal cluster for a given area",
-        status_code=HTTPStatus.CREATED,
         response_model=ThermalClusterOutput,
     )
     def create_thermal_cluster(
@@ -1420,8 +1433,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         Returns: The properties of the newly-created thermal clusters.
         """
         logger.info(
-            "Creating thermal cluster for study %s and area %s",
-            uuid,
+            f"Creating thermal cluster for study '{uuid}' and area '{area_id}'",
             extra={"user": current_user.id},
         )
         request_params = RequestParameters(user=current_user)
@@ -1452,14 +1464,28 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         Returns: The properties of the updated thermal clusters.
         """
         logger.info(
-            "Updating thermal cluster for study %s and cluster %s",
-            uuid,
-            cluster_id,
+            f"Updating thermal cluster for study '{uuid}' and cluster '{cluster_id}'",
             extra={"user": current_user.id},
         )
         request_params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, request_params)
         return study_service.thermal_manager.update_cluster(study, area_id, cluster_id, cluster_data)
+
+    @bp.put(
+        path="/studies/{uuid}/areas/{area_id}/clusters/thermal/{cluster_id}/form",
+        tags=[APITag.study_data],
+        summary="Get thermal configuration for a given cluster (deprecated)",
+        response_model=ThermalClusterOutput,
+    )
+    def redirect_update_thermal_cluster(
+        uuid: str,
+        area_id: str,
+        cluster_id: str,
+        cluster_data: ThermalClusterInput,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> ThermalClusterOutput:
+        # We cannot perform redirection, because we have a PUT, where a PATCH is required.
+        return update_thermal_cluster(uuid, area_id, cluster_id, cluster_data, current_user=current_user)
 
     @bp.delete(
         path="/studies/{uuid}/areas/{area_id}/clusters/thermal",
@@ -1484,10 +1510,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         - `cluster_ids`: list of thermal cluster IDs to remove.
         """
         logger.info(
-            "Deleting thermal clusters for study %s and area %s",
-            uuid,
-            area_id,
-            cluster_ids,
+            f"Deleting thermal clusters {cluster_ids!r} for study '{uuid}' and area '{area_id}'",
             extra={"user": current_user.id},
         )
         request_params = RequestParameters(user=current_user)

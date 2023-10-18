@@ -307,7 +307,7 @@ def test_parse_thermal(tmp_path: Path) -> None:
     expected = [
         ThermalConfig(id="t1", name="t1", enabled=True),
         ThermalConfig(id="t2", name="UPPER2", enabled=False),
-        ThermalConfig(id="upper3", name="UPPER3", enabled=True, nominal_capacity=456.5),
+        ThermalConfig(id="UPPER3", name="UPPER3", enabled=True, nominal_capacity=456.5),
     ]
     assert actual == expected
 
@@ -382,7 +382,7 @@ def test_parse_renewables(tmp_path: Path) -> None:
     expected = [
         RenewableConfig(id="t1", name="t1", enabled=True),
         RenewableConfig(id="t2", name="UPPER2", enabled=False),
-        RenewableConfig(id="upper3", name="UPPER3", enabled=True, nominal_capacity=456.5),
+        RenewableConfig(id="UPPER3", name="UPPER3", enabled=True, nominal_capacity=456.5),
     ]
     assert actual == expected
 

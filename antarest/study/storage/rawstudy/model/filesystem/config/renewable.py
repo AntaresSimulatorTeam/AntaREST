@@ -3,8 +3,8 @@ import typing as t
 from pydantic import Field
 
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
-from antarest.study.storage.rawstudy.model.filesystem.config.cluser import ClusterProperties
-from antarest.study.storage.rawstudy.model.filesystem.config.section import SectionConfig
+from antarest.study.storage.rawstudy.model.filesystem.config.cluster import ClusterProperties
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import IgnoreCaseIdentifier
 
 __all__ = (
     "TimeSeriesInterpretation",
@@ -62,7 +62,6 @@ class RenewableClusterGroup(EnumIgnoreCase):
             if any(value.upper() == group.value.upper() for group in cls):
                 return t.cast(RenewableClusterGroup, super()._missing_(value))
             # If a group is not found, return the default group ('OTHER1' by default).
-            # Note that 'OTHER' is an alias for 'OTHER1'.
             return cls.OTHER1
         return t.cast(t.Optional["RenewableClusterGroup"], super()._missing_(value))
 
@@ -84,7 +83,7 @@ class RenewableProperties(ClusterProperties):
     )
 
 
-class RenewableConfig(RenewableProperties, SectionConfig):
+class RenewableConfig(RenewableProperties, IgnoreCaseIdentifier):
     """
     Configuration of a renewable cluster.
 

@@ -8,11 +8,11 @@ import typing as t
 
 from pydantic import BaseModel, Extra, Field
 
-__all__ = ("BaseClusterProperties", "ClusterProperties")
+__all__ = ("ItemProperties", "ClusterProperties")
 
 
 @functools.total_ordering
-class BaseClusterProperties(
+class ItemProperties(
     BaseModel,
     extra=Extra.forbid,
     validate_assignment=True,
@@ -23,11 +23,11 @@ class BaseClusterProperties(
 
     Usage:
 
-    >>> from antarest.study.storage.rawstudy.model.filesystem.config.cluser import BaseClusterProperties
+    >>> from antarest.study.storage.rawstudy.model.filesystem.config.cluster import ItemProperties
 
-    >>> cl1 = BaseClusterProperties(name="cluster-01", group="group-A")
-    >>> cl2 = BaseClusterProperties(name="CLUSTER-01", group="Group-B")
-    >>> cl3 = BaseClusterProperties(name="cluster-02", group="GROUP-A")
+    >>> cl1 = ItemProperties(name="cluster-01", group="group-A")
+    >>> cl2 = ItemProperties(name="CLUSTER-01", group="Group-B")
+    >>> cl3 = ItemProperties(name="cluster-02", group="GROUP-A")
     >>> l = [cl1, cl2, cl3]
     >>> l.sort()
     >>> [(c.group, c.name) for c in l]
@@ -44,18 +44,18 @@ class BaseClusterProperties(
 
         This method may be used to sort and group clusters by `group` and `name`.
         """
-        if isinstance(other, BaseClusterProperties):
+        if isinstance(other, ItemProperties):
             return (self.group.upper(), self.name.upper()).__lt__((other.group.upper(), other.name.upper()))
         return NotImplemented
 
 
-class ClusterProperties(BaseClusterProperties):
+class ClusterProperties(ItemProperties):
     """
     Properties of a thermal or renewable cluster read from the configuration files.
 
     Usage:
 
-    >>> from antarest.study.storage.rawstudy.model.filesystem.config.cluser import ClusterProperties
+    >>> from antarest.study.storage.rawstudy.model.filesystem.config.cluster import ClusterProperties
 
     >>> cl1 = ClusterProperties(name="cluster-01", group="group-A", enabled=True, unit_count=2, nominal_capacity=100)
     >>> (cl1.installed_capacity, cl1.enabled_capacity)

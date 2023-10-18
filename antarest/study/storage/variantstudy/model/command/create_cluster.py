@@ -101,21 +101,22 @@ class CreateCluster(ICommand):
         if not output.status:
             return output
 
+        # default values
+        self.parameters.setdefault("name", self.cluster_name)
+
         cluster_id = data["cluster_id"]
+        config = study_data.tree.get(["input", "thermal", "clusters", self.area_id, "list"])
+        config[cluster_id] = self.parameters
 
-        cluster_list_config = study_data.tree.get(["input", "thermal", "clusters", self.area_id, "list"])
-        # fixme: rigorously, the section name in the INI file is the cluster ID, not the cluster name
-        #  cluster_list_config[transform_name_to_id(self.cluster_name)] = self.parameters
-        cluster_list_config[self.cluster_name] = self.parameters
-
-        self.parameters["name"] = self.cluster_name
+        # Series identifiers are in lower case.
+        series_id = cluster_id.lower()
         new_cluster_data: JSON = {
             "input": {
                 "thermal": {
-                    "clusters": {self.area_id: {"list": cluster_list_config}},
+                    "clusters": {self.area_id: {"list": config}},
                     "prepro": {
                         self.area_id: {
-                            cluster_id: {
+                            series_id: {
                                 "data": self.prepro,
                                 "modulation": self.modulation,
                             }
@@ -123,7 +124,7 @@ class CreateCluster(ICommand):
                     },
                     "series": {
                         self.area_id: {
-                            cluster_id: {"series": self.command_context.generator_matrix_constants.get_null_matrix()}
+                            series_id: {"series": self.command_context.generator_matrix_constants.get_null_matrix()}
                         }
                     },
                 }
@@ -172,12 +173,13 @@ class CreateCluster(ICommand):
         from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
         from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 
-        cluster_id = transform_name_to_id(self.cluster_name)
+        # Series identifiers are in lower case.
+        series_id = transform_name_to_id(self.cluster_name, lower=True)
         commands: List[ICommand] = []
         if self.prepro != other.prepro:
             commands.append(
                 ReplaceMatrix(
-                    target=f"input/thermal/prepro/{self.area_id}/{cluster_id}/data",
+                    target=f"input/thermal/prepro/{self.area_id}/{series_id}/data",
                     matrix=strip_matrix_protocol(other.prepro),
                     command_context=self.command_context,
                 )
@@ -185,7 +187,7 @@ class CreateCluster(ICommand):
         if self.modulation != other.modulation:
             commands.append(
                 ReplaceMatrix(
-                    target=f"input/thermal/prepro/{self.area_id}/{cluster_id}/modulation",
+                    target=f"input/thermal/prepro/{self.area_id}/{series_id}/modulation",
                     matrix=strip_matrix_protocol(other.modulation),
                     command_context=self.command_context,
                 )

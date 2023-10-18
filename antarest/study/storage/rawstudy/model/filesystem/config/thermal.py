@@ -3,8 +3,8 @@ import typing as t
 from pydantic import Field
 
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
-from antarest.study.storage.rawstudy.model.filesystem.config.cluser import ClusterProperties
-from antarest.study.storage.rawstudy.model.filesystem.config.section import SectionConfig
+from antarest.study.storage.rawstudy.model.filesystem.config.cluster import ClusterProperties
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import IgnoreCaseIdentifier
 
 __all__ = (
     "TimeSeriesGenerationOption",
@@ -257,7 +257,7 @@ class Thermal860Properties(ThermalProperties):
     )
 
 
-class ThermalConfig(ThermalProperties, SectionConfig):
+class ThermalConfig(ThermalProperties, IgnoreCaseIdentifier):
     """
     Thermal properties with section ID.
 
@@ -278,7 +278,7 @@ class ThermalConfig(ThermalProperties, SectionConfig):
     AttributeError: 'ThermalConfig' object has no attribute 'nh3'"""
 
 
-class Thermal860Config(Thermal860Properties, SectionConfig):
+class Thermal860Config(Thermal860Properties, IgnoreCaseIdentifier):
     """
     Thermal properties for study in version 8.6 or above.
 

@@ -13,21 +13,13 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 
 
 class TestRemoveCluster:
-    def test_validation(self, empty_study: FileStudy):
-        pass
-
     def test_apply(self, empty_study: FileStudy, command_context: CommandContext):
         area_name = "Area_name"
         area_id = transform_name_to_id(area_name)
-        cluster_name = "cluster_name"
-        cluster_id = transform_name_to_id(cluster_name)
+        cluster_name = "Cluster Name"
+        cluster_id = transform_name_to_id(cluster_name, lower=False)
 
-        CreateArea.parse_obj(
-            {
-                "area_name": area_name,
-                "command_context": command_context,
-            }
-        ).apply(empty_study)
+        CreateArea(area_name=area_name, command_context=command_context).apply(empty_study)
 
         ################################################################################################
         hash_before_cluster = dirhash(empty_study.config.study_path, "md5")
@@ -52,7 +44,7 @@ class TestRemoveCluster:
             time_step=BindingConstraintFrequency.HOURLY,
             operator=BindingConstraintOperator.LESS,
             coeffs={
-                f"{area_id}.{cluster_id}": [800, 30],
+                f"{area_id}.{cluster_id.lower()}": [800, 30],
             },
             comments="Hello",
             command_context=command_context,

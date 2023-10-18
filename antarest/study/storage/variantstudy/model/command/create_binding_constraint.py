@@ -139,7 +139,7 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
         binding_constraints = study_data.tree.get(["input", "bindingconstraints", "bindingconstraints"])
-        new_key = len(binding_constraints.keys())
+        new_key = len(binding_constraints)
         bd_id = transform_name_to_id(self.name)
         return apply_binding_constraint(
             study_data,

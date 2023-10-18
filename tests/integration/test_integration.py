@@ -10,7 +10,6 @@ from antarest.study.business.adequacy_patch_management import PriceTakingOrder
 from antarest.study.business.area_management import AreaType, LayerInfoDTO
 from antarest.study.business.areas.properties_management import AdequacyPatchMode
 from antarest.study.business.areas.renewable_management import TimeSeriesInterpretation
-from antarest.study.business.areas.thermal_management import LawOption, TimeSeriesGenerationOption
 from antarest.study.business.general_management import Mode
 from antarest.study.business.optimization_management import (
     SimplexOptimizationRange,
@@ -26,6 +25,7 @@ from antarest.study.business.table_mode_management import (
     TransmissionCapacity,
 )
 from antarest.study.model import MatrixIndex, StudyDownloadLevelDTO
+from antarest.study.storage.rawstudy.model.filesystem.config.thermal import LawOption, TimeSeriesGenerationOption
 from antarest.study.storage.variantstudy.model.command.common import CommandName
 from tests.integration.assets import ASSETS_DIR
 from tests.integration.utils import wait_for
@@ -1778,68 +1778,22 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
 
     # Thermal form
 
-    res_thermal_config = client.put(
-        f"/v1/studies/{study_id}/areas/area 1/clusters/thermal/cluster 1/form",
-        headers=admin_headers,
-        json={
-            "group": "Lignite",
-            "name": "cluster 1 renamed",
-            "unitCount": 3,
-            "enabled": False,
-            "nominalCapacity": 3,
-            "genTs": "use global parameter",
-            "minStablePower": 3,
-            "minUpTime": 3,
-            "minDownTime": 3,
-            "mustRun": False,
-            "spinning": 3,
-            "volatilityForced": 3,
-            "volatilityPlanned": 3,
-            "lawForced": "uniform",
-            "lawPlanned": "uniform",
-            "marginalCost": 3,
-            "spreadCost": 3,
-            "fixedCost": 3,
-            "startupCost": 3,
-            "marketBidCost": 3,
-            "co2": 3,
-            "so2": 2,
-            "nh3": 2,
-            "nox": 4,
-            "nmvoc": 5,
-            "pm25": 11.3,
-            "pm5": 7,
-            "pm10": 9,
-            "op1": 0.5,
-            "op2": 39,
-            "op3": 3,
-            "op4": 2.4,
-            "op5": 0,
-        },
-    )
-    assert res_thermal_config.status_code == 200
-
-    res_thermal_config = client.get(
-        f"/v1/studies/{study_id}/areas/area 1/clusters/thermal/cluster 1/form", headers=admin_headers
-    )
-    res_thermal_config_json = res_thermal_config.json()
-
-    assert res_thermal_config_json == {
+    obj = {
         "group": "Lignite",
         "name": "cluster 1 renamed",
         "unitCount": 3,
         "enabled": False,
         "nominalCapacity": 3,
-        "genTs": TimeSeriesGenerationOption.USE_GLOBAL_PARAMETER.value,
+        "genTs": "use global parameter",
         "minStablePower": 3,
         "minUpTime": 3,
         "minDownTime": 3,
         "mustRun": False,
         "spinning": 3,
-        "volatilityForced": 3,
-        "volatilityPlanned": 3,
-        "lawForced": LawOption.UNIFORM.value,
-        "lawPlanned": LawOption.UNIFORM.value,
+        "volatilityForced": 0.3,
+        "volatilityPlanned": 0.3,
+        "lawForced": "uniform",
+        "lawPlanned": "uniform",
         "marginalCost": 3,
         "spreadCost": 3,
         "fixedCost": 3,
@@ -1859,6 +1813,21 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
         "op4": 2.4,
         "op5": 0,
     }
+    res = client.put(
+        # This URL is deprecated, but we must check it for backward compatibility.
+        f"/v1/studies/{study_id}/areas/area 1/clusters/thermal/cluster 1/form",
+        headers=admin_headers,
+        json=obj,
+    )
+    assert res.status_code == 200, res.json()
+
+    res = client.get(
+        # This URL is deprecated, but we must check it for backward compatibility.
+        f"/v1/studies/{study_id}/areas/area 1/clusters/thermal/cluster 1/form",
+        headers=admin_headers,
+    )
+    assert res.status_code == 200, res.json()
+    assert res.json() == {"id": "cluster 1", **obj}
 
     # Links
 

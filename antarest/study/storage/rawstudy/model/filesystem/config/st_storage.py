@@ -3,8 +3,8 @@ import typing as t
 from pydantic import Field
 
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
-from antarest.study.storage.rawstudy.model.filesystem.config.cluser import BaseClusterProperties
-from antarest.study.storage.rawstudy.model.filesystem.config.section import SectionConfig
+from antarest.study.storage.rawstudy.model.filesystem.config.cluster import ItemProperties
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import LowerCaseIdentifier
 
 __all__ = (
     "STStorageGroup",
@@ -40,7 +40,7 @@ class STStorageGroup(EnumIgnoreCase):
 
 
 # noinspection SpellCheckingInspection
-class STStorageProperties(BaseClusterProperties):
+class STStorageProperties(ItemProperties):
     """
     Properties of a short-term storage system read from the configuration files.
 
@@ -89,7 +89,7 @@ class STStorageProperties(BaseClusterProperties):
 
 
 # noinspection SpellCheckingInspection
-class STStorageConfig(STStorageProperties, SectionConfig):
+class STStorageConfig(STStorageProperties, LowerCaseIdentifier):
     """
     Manage the configuration files in the context of Short-Term Storage.
     It provides a convenient way to read and write configuration data from/to an INI file format.

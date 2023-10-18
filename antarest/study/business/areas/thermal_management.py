@@ -1,241 +1,69 @@
 import json
 import typing as t
 
-from pydantic import BaseModel, Extra, Field, root_validator
+from pydantic import validator
 
 from antarest.core.exceptions import ClusterConfigNotFound, ClusterNotFound
-from antarest.core.utils.string import to_camel_case
-from antarest.study.business.enum_ignore_case import EnumIgnoreCase
-from antarest.study.business.utils import AllOptionalMetaclass, execute_or_add_commands
+from antarest.study.business.utils import AllOptionalMetaclass, camel_case_model, execute_or_add_commands
 from antarest.study.model import Study
+from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
+    Thermal860Config,
+    Thermal860Properties,
+    ThermalConfigType,
+    create_thermal_config,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
 from antarest.study.storage.variantstudy.model.command.remove_cluster import RemoveCluster
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 
-
-class TimeSeriesGenerationOption(EnumIgnoreCase):
-    """
-    Options related to time series generation.
-    The option `USE_GLOBAL_PARAMETER` is used by default.
-    """
-
-    USE_GLOBAL_PARAMETER = "use global parameter"
-    FORCE_NO_GENERATION = "force no generation"
-    FORCE_GENERATION = "force generation"
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}.{self.name}"
-
-
-class LawOption(EnumIgnoreCase):
-    """
-    Law options used for series generation.
-    The UNIFORM `law` is used by default.
-    """
-
-    UNIFORM = "uniform"
-    GEOMETRIC = "geometric"
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}.{self.name}"
-
-
-class ThermalClusterGroup(EnumIgnoreCase):
-    """
-    Thermal cluster groups.
-    The group `OTHER1` is used by default.
-    """
-
-    NUCLEAR = "Nuclear"
-    LIGNITE = "Lignite"
-    HARD_COAL = "Hard Coal"
-    GAS = "Gas"
-    OIL = "Oil"
-    MIXED_FUEL = "Mixed Fuel"
-    OTHER1 = "Other 1"
-    OTHER2 = "Other 2"
-    OTHER3 = "Other 3"
-    OTHER4 = "Other 4"
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}.{self.name}"
-
-    @classmethod
-    def _missing_(cls, value: object) -> t.Optional["ThermalClusterGroup"]:
-        if isinstance(value, str) and value.upper() == "OTHER":
-            return cls.OTHER1
-        return t.cast(t.Optional["ThermalClusterGroup"], super()._missing_(value))
-
-
 _CLUSTER_PATH = "input/thermal/clusters/{area_id}/list/{cluster_id}"
 _CLUSTERS_PATH = "input/thermal/clusters/{area_id}/list"
 
 
-class ThermalClusterConfig(BaseModel):
+@camel_case_model
+class ThermalClusterInput(Thermal860Properties, metaclass=AllOptionalMetaclass):
     """
-    Thermal cluster configuration model.
-    This model describes the configuration parameters for a thermal cluster.
+    Model representing the form used to EDIT an existing short-term storage.
     """
 
-    class Config:
-        extra = Extra.forbid
-        allow_population_by_field_name = True
 
-    id: str = Field(..., regex=r"[a-zA-Z0-9_(),& -]+")
-    name: str = Field(..., regex=r"[a-zA-Z0-9_(),& -]+")
-    group: ThermalClusterGroup = Field(ThermalClusterGroup.OTHER1)
-    unit_count: int = Field(1, ge=1, alias="unitcount")
-    enabled: bool = Field(True)
-    nominal_capacity: float = Field(0, ge=0, alias="nominalcapacity")
-    gen_ts: TimeSeriesGenerationOption = Field(TimeSeriesGenerationOption.USE_GLOBAL_PARAMETER, alias="gen-ts")
-    min_stable_power: float = Field(0, ge=0, alias="min-stable-power")
-    min_up_time: int = Field(1, ge=1, le=168, alias="min-up-time")
-    min_down_time: int = Field(1, ge=1, le=168, alias="min-down-time")
-    must_run: bool = Field(False, alias="must-run")
-    spinning: float = Field(0, ge=0, le=100)
-    volatility_forced: float = Field(0, ge=0, le=1, alias="volatility.forced")
-    volatility_planned: float = Field(0, ge=0, le=1, alias="volatility.planned")
-    law_forced: LawOption = Field(LawOption.UNIFORM, alias="law.forced")
-    law_planned: LawOption = Field(LawOption.UNIFORM, alias="law.planned")
-    marginal_cost: float = Field(0, ge=0, alias="marginal-cost")
-    spread_cost: float = Field(0, ge=0, alias="spread-cost")
-    fixed_cost: float = Field(0, ge=0, alias="fixed-cost")
-    startup_cost: float = Field(0, ge=0, alias="startup-cost")
-    market_bid_cost: float = Field(0, ge=0, alias="market-bid-cost")
-    co2: float = Field(0, ge=0)
-    so2: float = Field(0, ge=0)
-    nh3: float = Field(0, ge=0)
-    nox: float = Field(0, ge=0)
-    nmvoc: float = Field(0, ge=0)
-    pm25: float = Field(0, ge=0, alias="pm2_5")
-    pm10: float = Field(0, ge=0)
-    pm5: float = Field(0, ge=0)
-    op1: float = Field(0, ge=0)
-    op2: float = Field(0, ge=0)
-    op3: float = Field(0, ge=0)
-    op4: float = Field(0, ge=0)
-    op5: float = Field(0, ge=0)
+class ThermalClusterCreation(ThermalClusterInput):
+    """
+    Model representing the form used to CREATE a new short-term storage.
+    """
 
-    @root_validator(pre=True)
-    def check_id(cls, values: t.MutableMapping[str, t.Any]) -> t.MutableMapping[str, t.Any]:
+    # noinspection Pydantic
+    @validator("name", pre=True)
+    def validate_name(cls, name: t.Optional[str]) -> str:
         """
-        Check and set the ID for a thermal cluster.
-        The ID is automatically set based on the 'name' field if not provided.
+        Validator to check if the name is not empty.
         """
+        if not name:
+            raise ValueError("'name' must not be empty")
+        return name
 
-        # Avoid circular imports
-        from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
-
-        if values.get("id") or not values.get("name"):
-            return values
-        name = values["name"]
-        if storage_id := transform_name_to_id(name):
-            values["id"] = storage_id
-        else:
-            raise ValueError(f"Invalid name '{name}'.")
-        return values
+    def to_config(self, study_version: t.Union[str, int]) -> ThermalConfigType:
+        values = self.dict(by_alias=False, exclude_none=True)
+        return create_thermal_config(study_version=study_version, **values)
 
 
-class ThermalClusterConfigV860(ThermalClusterConfig):
+@camel_case_model
+class ThermalClusterOutput(Thermal860Config, metaclass=AllOptionalMetaclass):
     """
-    Thermal cluster configuration model for version >= 8.6, including pollutants.
-    This model describes the configuration parameters for a thermal cluster.
+    Model representing the form used to display the details of a short-term storage entry.
     """
 
-    so2: float = Field(0, ge=0)
-    nh3: float = Field(0, ge=0)
-    nox: float = Field(0, ge=0)
-    nmvoc: float = Field(0, ge=0)
-    pm25: float = Field(0, ge=0, alias="pm2_5")
-    pm10: float = Field(0, ge=0)
-    pm5: float = Field(0, ge=0)
-    op1: float = Field(0, ge=0)
-    op2: float = Field(0, ge=0)
-    op3: float = Field(0, ge=0)
-    op4: float = Field(0, ge=0)
-    op5: float = Field(0, ge=0)
 
-
-class ThermalClusterCreation(BaseModel):
-    """
-    Model for creating a thermal cluster.
-    This model describes the parameters needed to create a thermal cluster.
-    """
-
-    class Config:
-        extra = Extra.forbid
-        alias_generator = to_camel_case
-        validate_assignment = True
-        allow_population_by_field_name = True
-
-    name: str = Field(regex=r"[a-zA-Z0-9_(),& -]+")
-    group: ThermalClusterGroup = Field()
-
-
-class ThermalClusterInput(ThermalClusterCreation, metaclass=AllOptionalMetaclass):
-    """
-    Input model for thermal cluster.
-    This model describes the input parameters for a thermal cluster.
-    """
-
-    unit_count: int = Field(ge=1)
-    enabled: bool = Field()
-    nominal_capacity: float = Field(ge=0)
-    gen_ts: TimeSeriesGenerationOption = Field(TimeSeriesGenerationOption.USE_GLOBAL_PARAMETER)
-    min_stable_power: float = Field(ge=0)
-    min_up_time: int = Field(ge=1, le=168)
-    min_down_time: int = Field(ge=1, le=168)
-    must_run: bool = Field()
-    spinning: float = Field(ge=0, le=100)
-    volatility_forced: float = Field(ge=0, le=1)
-    volatility_planned: float = Field(ge=0, le=1)
-    law_forced: LawOption = Field()
-    law_planned: LawOption = Field()
-    marginal_cost: float = Field(ge=0)
-    spread_cost: float = Field(ge=0)
-    fixed_cost: float = Field(ge=0)
-    startup_cost: float = Field(ge=0)
-    market_bid_cost: float = Field(ge=0)
-    co2: float = Field(0, ge=0)
-    so2: float = Field(0, ge=0)
-    nh3: float = Field(0, ge=0)
-    nox: float = Field(0, ge=0)
-    nmvoc: float = Field(0, ge=0)
-    pm25: float = Field(0, ge=0)
-    pm10: float = Field(0, ge=0)
-    pm5: float = Field(0, ge=0)
-    op1: float = Field(0, ge=0)
-    op2: float = Field(0, ge=0)
-    op3: float = Field(0, ge=0)
-    op4: float = Field(0, ge=0)
-    op5: float = Field(0, ge=0)
-
-
-class ThermalClusterOutput(ThermalClusterInput):
-    """
-    Output model for thermal cluster
-    """
-
-    id: str = Field(regex=r"[a-zA-Z0-9_(),& -]+")
-
-    @classmethod
-    def from_config(cls, cluster_id: str, config: t.Mapping[str, t.Any]) -> "ThermalClusterOutput":
-        """
-        Create a ThermalClusterOutput instance from a cluster ID and a configuration.
-
-        Args:
-            cluster_id: The ID of the cluster.
-            config: The configuration of the cluster.
-
-        Returns:
-            The created instance.
-        """
-
-        cluster = ThermalClusterConfig(id=cluster_id, **config)
-        values = cluster.dict(by_alias=False)
-        return cls(**values)
+def create_thermal_output(
+    study_version: t.Union[str, int],
+    storage_id: str,
+    config: t.Mapping[str, t.Any],
+) -> "ThermalClusterOutput":
+    obj = create_thermal_config(study_version=study_version, **config, id=storage_id)
+    kwargs = obj.dict(by_alias=False)
+    return ThermalClusterOutput(**kwargs)
 
 
 class ThermalManager:
@@ -285,7 +113,8 @@ class ThermalManager:
             cluster = file_study.tree.get(path.split("/"), depth=1)
         except KeyError:
             raise ClusterNotFound(cluster_id)
-        return ThermalClusterOutput.from_config(cluster_id, cluster)
+        study_version = study.version
+        return create_thermal_output(study_version, cluster_id, cluster)
 
     def get_clusters(
         self,
@@ -312,7 +141,8 @@ class ThermalManager:
             clusters = file_study.tree.get(path.split("/"), depth=3)
         except KeyError:
             raise ClusterConfigNotFound(area_id)
-        return [ThermalClusterOutput.from_config(cluster_id, cluster) for cluster_id, cluster in clusters.items()]
+        study_version = study.version
+        return [create_thermal_output(study_version, cluster_id, cluster) for cluster_id, cluster in clusters.items()]
 
     def create_cluster(self, study: Study, area_id: str, cluster_data: ThermalClusterCreation) -> ThermalClusterOutput:
         """
@@ -328,11 +158,14 @@ class ThermalManager:
         """
 
         file_study = self._get_file_study(study)
-        cluster = cluster_data.dict(exclude_defaults=True)
+        study_version = study.version
+        cluster = cluster_data.to_config(study_version)
+        # NOTE: currently, in the `CreateCluster` class, there is a confusion
+        # between the cluster name and the cluster ID (which is a section name).
         command = CreateCluster(
             area_id=area_id,
-            cluster_name=cluster["name"],
-            parameters=cluster,
+            cluster_name=cluster.id,
+            parameters=cluster.dict(by_alias=True, exclude={"id"}),
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
         )
         execute_or_add_commands(
@@ -341,7 +174,8 @@ class ThermalManager:
             [command],
             self.storage_service,
         )
-        return self.get_cluster(study, area_id, cluster["name"])
+        output = self.get_cluster(study, area_id, cluster.id)
+        return output
 
     def update_cluster(
         self,
@@ -370,11 +204,15 @@ class ThermalManager:
 
         file_study = self._get_file_study(study)
         path = _CLUSTER_PATH.format(area_id=area_id, cluster_id=cluster_id)
-        existing_cluster = file_study.tree.get(path.split("/"), depth=1)
+        try:
+            cluster = file_study.tree.get(path.split("/"), depth=1)
+        except KeyError:
+            raise ClusterNotFound(cluster_id) from None
 
-        config = ThermalClusterConfig(**existing_cluster)
+        study_version = study.version
+        config = create_thermal_config(study_version, **cluster)
         updated_cluster = {**config.dict(exclude={"id"}), **cluster_data.dict(by_alias=False, exclude_none=True)}
-        new_config = ThermalClusterConfig(**updated_cluster)
+        new_config = create_thermal_config(study_version, **updated_cluster)
         new_data = json.loads(new_config.json(by_alias=True, exclude={"id"}))
 
         data = {

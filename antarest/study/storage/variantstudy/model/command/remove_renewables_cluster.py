@@ -83,9 +83,10 @@ class RemoveRenewablesCluster(ICommand):
         # BEFORE updating the configuration, as we need the configuration to do so.
         # Specifically, deleting the time series uses the list of renewable clusters from the configuration.
 
+        series_id = self.cluster_id.lower()
         paths = [
             ["input", "renewables", "clusters", self.area_id, "list", self.cluster_id],
-            ["input", "renewables", "series", self.area_id, self.cluster_id],
+            ["input", "renewables", "series", self.area_id, series_id],
         ]
         area: Area = study_data.config.areas[self.area_id]
         if len(area.renewables) == 1:
@@ -93,13 +94,16 @@ class RemoveRenewablesCluster(ICommand):
 
         for path in paths:
             study_data.tree.delete(path)
+
+        self._remove_cluster_from_binding_constraints(study_data)
+
         # Deleting the renewable cluster in the configuration must be done AFTER
         # deleting the files and folders.
         return self._apply_config(study_data.config)[0]
 
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
-            action=CommandName.REMOVE_RENEWABLES_CLUSTER.value,
+            action=self.command_name.value,
             args={"area_id": self.area_id, "cluster_id": self.cluster_id},
         )
 
@@ -122,3 +126,26 @@ class RemoveRenewablesCluster(ICommand):
 
     def get_inner_matrices(self) -> List[str]:
         return []
+
+    def _remove_cluster_from_binding_constraints(self, study_data: FileStudy) -> None:
+        config = study_data.tree.get(["input", "bindingconstraints", "bindingconstraints"])
+
+        # Binding constraints IDs to remove
+        ids_to_remove = set()
+
+        # Cluster IDs are stored in lower case in the binding contraints configuration file.
+        cluster_id = self.cluster_id.lower()
+        for bc_id, bc_props in config.items():
+            if f"{self.area_id}.{cluster_id}" in bc_props.keys():
+                ids_to_remove.add(bc_id)
+
+        for bc_id in ids_to_remove:
+            study_data.tree.delete(["input", "bindingconstraints", config[bc_id]["id"]])
+            bc = next(iter([bind for bind in study_data.config.bindings if bind.id == config[bc_id]["id"]]))
+            study_data.config.bindings.remove(bc)
+            del config[bc_id]
+
+        study_data.tree.save(
+            config,
+            ["input", "bindingconstraints", "bindingconstraints"],
+        )
