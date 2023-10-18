@@ -31,7 +31,7 @@ import XpansionSettings from "./Singlestudy/explore/Xpansion/Settings";
 import Capacities from "./Singlestudy/explore/Xpansion/Capacities";
 import Properties from "./Singlestudy/explore/Modelization/Areas/Properties";
 import Load from "./Singlestudy/explore/Modelization/Areas/Load";
-import Thermals from "./Singlestudy/explore/Modelization/Areas/Thermals";
+import Thermal from "./Singlestudy/explore/Modelization/Areas/Thermal";
 import Hydro from "./Singlestudy/explore/Modelization/Areas/Hydro";
 import MiscGen from "./Singlestudy/explore/Modelization/Areas/MiscGen";
 import Reserve from "./Singlestudy/explore/Modelization/Areas/Reserve";
@@ -53,7 +53,7 @@ import Districts from "./Singlestudy/explore/Modelization/Map/MapConfig/District
 import InflowStructure from "./Singlestudy/explore/Modelization/Areas/Hydro/InflowStructure";
 import Allocation from "./Singlestudy/explore/Modelization/Areas/Hydro/Allocation";
 import Correlation from "./Singlestudy/explore/Modelization/Areas/Hydro/Correlation";
-import ThermalForm from "./Singlestudy/explore/Modelization/Areas/Thermals/Form";
+import ThermalForm from "./Singlestudy/explore/Modelization/Areas/Thermal/Form";
 
 function App() {
   return (
@@ -81,7 +81,7 @@ function App() {
                           <Route path="area/:areaId" element={<Areas />}>
                             <Route path="properties" element={<Properties />} />
                             <Route path="load" element={<Load />} />
-                            <Route path="thermal" element={<Thermals />} />
+                            <Route path="thermal" element={<Thermal />} />
                             <Route
                               path="thermal/:clusterId"
                               element={<ThermalForm />}
