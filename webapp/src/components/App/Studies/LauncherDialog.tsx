@@ -31,6 +31,7 @@ import {
   LaunchOptions,
 } from "../../../common/types";
 import {
+  getLauncherCores,
   getLauncherLoad,
   getLauncherVersions,
   getStudyOutputs,
@@ -48,7 +49,6 @@ import { convertVersions } from "../../../services/utils";
 
 const LAUNCH_DURATION_MAX_HOURS = 240;
 const LAUNCH_LOAD_DEFAULT = 22;
-const LAUNCH_LOAD_SLIDER = { step: 1, min: 1, max: 24 };
 
 interface Props {
   open: boolean;
@@ -78,6 +78,13 @@ function LauncherDialog(props: Props) {
     errorMessage: t("study.error.launchLoad"),
     deps: [open],
   });
+
+  const { data: cores } = usePromiseWithSnackbarError(
+    () => getLauncherCores(),
+    {
+      errorMessage: t("study.error.launcherCores"),
+    },
+  );
 
   const { data: outputList } = usePromiseWithSnackbarError(
     () => Promise.all(studyIds.map((sid) => getStudyOutputs(sid))),
@@ -337,19 +344,21 @@ function LauncherDialog(props: Props) {
               />
             )}
           </Box>
-          <Slider
-            sx={{
-              width: "95%",
-              mx: 1,
-            }}
-            defaultValue={LAUNCH_LOAD_DEFAULT}
-            step={LAUNCH_LOAD_SLIDER.step}
-            min={LAUNCH_LOAD_SLIDER.min}
-            color="secondary"
-            max={LAUNCH_LOAD_SLIDER.max}
-            valueLabelDisplay="auto"
-            onChange={(event, val) => handleChange("nb_cpu", val as number)}
-          />
+          {cores && (
+            <Slider
+              sx={{
+                width: "95%",
+                mx: 1,
+              }}
+              defaultValue={cores.defaultValue}
+              step={1}
+              min={cores.min}
+              max={cores.max}
+              valueLabelDisplay="auto"
+              color="secondary"
+              onChange={(event, val) => handleChange("nb_cpu", val as number)}
+            />
+          )}
         </FormControl>
         <Typography sx={{ mt: 1 }}>Xpansion</Typography>
         <FormGroup

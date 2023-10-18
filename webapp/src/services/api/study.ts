@@ -301,6 +301,11 @@ export const getLauncherVersions = async (): Promise<Array<string>> => {
   return res.data;
 };
 
+export const getLauncherCores = async (): Promise<Record<string, number>> => {
+  const res = await client.get("/v1/launcher/nbcores");
+  return res.data;
+};
+
 export const getLauncherLoad = async (): Promise<LauncherLoadDTO> => {
   const res = await client.get("/v1/launcher/load");
   return res.data;
