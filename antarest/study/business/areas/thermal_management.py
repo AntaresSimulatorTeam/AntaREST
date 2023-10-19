@@ -25,13 +25,13 @@ _CLUSTERS_PATH = "input/thermal/clusters/{area_id}/list"
 @camel_case_model
 class ThermalClusterInput(Thermal860Properties, metaclass=AllOptionalMetaclass):
     """
-    Model representing the form used to EDIT an existing short-term storage.
+    Model representing the data structure required to edit an existing thermal cluster within a study.
     """
 
 
 class ThermalClusterCreation(ThermalClusterInput):
     """
-    Model representing the form used to CREATE a new short-term storage.
+    Model representing the data structure required to create a new thermal cluster within a study.
     """
 
     # noinspection Pydantic
@@ -41,7 +41,7 @@ class ThermalClusterCreation(ThermalClusterInput):
         Validator to check if the name is not empty.
         """
         if not name:
-            raise ValueError("'name' must not be empty")
+            raise ValueError("name must not be empty")
         return name
 
     def to_config(self, study_version: t.Union[str, int]) -> ThermalConfigType:
@@ -52,7 +52,7 @@ class ThermalClusterCreation(ThermalClusterInput):
 @camel_case_model
 class ThermalClusterOutput(Thermal860Config, metaclass=AllOptionalMetaclass):
     """
-    Model representing the form used to display the details of a short-term storage entry.
+    Model representing the output data structure to display the details of a thermal cluster within a study.
     """
 
 
@@ -68,10 +68,8 @@ def create_thermal_output(
 
 class ThermalManager:
     """
-    A class used in the `StudyService` to implement endpoints related to Thermal Clusters.
-
-    This class provides methods to interact with and manage thermal clusters within a study.
-    It allows for creating, retrieving, updating, and deleting thermal clusters.
+    Manager class implementing endpoints related to Thermal Clusters within a study.
+    Provides methods for creating, retrieving, updating, and deleting thermal clusters.
 
     Attributes:
         storage_service: The service for accessing study storage.
@@ -122,17 +120,17 @@ class ThermalManager:
         area_id: str,
     ) -> t.Sequence[ThermalClusterOutput]:
         """
-        Get all clusters for an area.
+        Retrieve all thermal clusters from a specified area within a study.
 
         Args:
-            study: The study where the clusters will be retrieved from.
-            area_id: The ID of the area where the clusters will be retrieved from.
+            study: Study from which to retrieve the clusters.
+            area_id: ID of the area containing the clusters.
 
         Returns:
-            A sequence of all clusters for the specified area.
+            A list of thermal clusters within the specified area.
 
         Raises:
-            If the specified area does not have any clusters.
+            ClusterConfigNotFound: If no clusters are found in the specified area.
         """
 
         file_study = self._get_file_study(study)
