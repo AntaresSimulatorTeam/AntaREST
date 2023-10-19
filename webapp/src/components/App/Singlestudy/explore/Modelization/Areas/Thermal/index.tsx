@@ -3,6 +3,7 @@ import { useMemo } from "react";
 import { MRT_ColumnDef } from "material-react-table";
 import { Box, Chip } from "@mui/material";
 import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { StudyMetadata } from "../../../../../../../common/types";
 import {
   ThermalClusterGroup,
@@ -15,13 +16,14 @@ import {
 } from "./utils";
 import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../../redux/selectors";
-import usePromise from "../../../../../../../hooks/usePromise";
 import GroupedDataTable from "../../../../../../common/GroupedDataTable";
 import SimpleLoader from "../../../../../../common/loaders/SimpleLoader";
 import SimpleContent from "../../../../../../common/page/SimpleContent";
+import usePromiseWithSnackbarError from "../../../../../../../hooks/usePromiseWithSnackbarError";
 
 function Thermal() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
+  const [t] = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const currentAreaId = useAppSelector(getCurrentAreaId);
@@ -33,9 +35,12 @@ function Thermal() {
     isRejected,
     isResolved,
     error,
-  } = usePromise(
+  } = usePromiseWithSnackbarError(
     () => getThermalClusters(study.id, currentAreaId),
-    [study.id, currentAreaId],
+    {
+      errorMessage: t("studies.error.retrieveData"),
+      deps: [study.id, currentAreaId],
+    },
   );
 
   /**
