@@ -123,7 +123,7 @@ class JobResult(DTO, Base):  # type: ignore
     exit_code = Column(Integer)
     solver_stats = Column(String(), nullable=True)
     logs = relationship(JobLog, uselist=True, cascade="all, delete, delete-orphan")
-    owner_name = Column(String(), ForeignKey(Identity.name), default="admin")
+    owner_name = Column(String(), ForeignKey(Identity.name), default="Unknown user")
 
     def to_dto(self) -> JobResultDTO:
         return JobResultDTO(
