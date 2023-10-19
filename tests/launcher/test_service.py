@@ -237,8 +237,8 @@ class TestLauncherService:
                 exit_code=0,
                 creation_date=now - timedelta(days=ORPHAN_JOBS_VISIBILITY_THRESHOLD + 1),
                 owner_name="admin",
-                )
-            ]
+            )
+        ]
         launcher_mock.get_result.return_value = None
         factory_launcher_mock = Mock()
         factory_launcher_mock.build_launcher.return_value = {"local": launcher_mock}
@@ -870,8 +870,10 @@ class TestLauncherService:
 
         launcher_service._save_solver_stats(job_result, zip_file)
         launcher_service.job_result_repository.save.assert_called_with(
-            JobResult(id=job_id, study_id=study_id, job_status=JobStatus.SUCCESS, solver_stats="0\n1", owner_name="admin")
+            JobResult(
+                id=job_id, study_id=study_id, job_status=JobStatus.SUCCESS, solver_stats="0\n1", owner_name="admin"
             )
+        )
 
     def test_get_load(self, tmp_path: Path) -> None:
         study_service = Mock()
