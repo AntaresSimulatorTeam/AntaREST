@@ -344,7 +344,7 @@ def test_main(client: TestClient, admin_access_token: str, study_id: str) -> Non
     )
     job_info = res.json()[0]
     assert job_info["id"] == job_id
-    assert job_info["owner_name"] == "Fred"
+    assert job_info["owner_id"] == 3  # Fred's id
 
     # update metadata
     res = client.put(

@@ -63,7 +63,7 @@ def test_result() -> None:
         job_status=JobStatus.SUCCESS,
         msg="hello world",
         exit_code=0,
-        owner_name="admin",
+        owner_id=1,
     )
 
     service = Mock()
@@ -88,7 +88,7 @@ def test_jobs() -> None:
         job_status=JobStatus.SUCCESS,
         msg="hello world",
         exit_code=0,
-        owner_name="admin",
+        owner_id=1,
     )
 
     service = Mock()

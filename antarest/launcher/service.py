@@ -224,13 +224,16 @@ class LauncherService:
             study=study_info,
             permission_type=StudyPermissionType.RUN,
         )
+        owner_id = 0
+        if params.user:
+            owner_id = params.user.impersonator if params.user.type == "bots" else params.user.id
         job_status = JobResult(
             id=job_uuid,
             study_id=study_uuid,
             job_status=JobStatus.PENDING,
             launcher=launcher,
             launcher_params=launcher_parameters.json() if launcher_parameters else None,
-            owner_name=self.study_service.get_user_name(params),
+            owner_id=owner_id,
         )
         self.job_result_repository.save(job_status)
 
@@ -268,12 +271,15 @@ class LauncherService:
 
         self.launchers[launcher].kill_job(job_id=job_id)
 
+        owner_id = 0
+        if params.user:
+            owner_id = params.user.impersonator if params.user.type == "bots" else params.user.id
         job_status = JobResult(
             id=str(job_id),
             study_id=study_uuid,
             job_status=JobStatus.FAILED,
             launcher=launcher,
-            owner_name=self.study_service.get_user_name(params),
+            owner_id=owner_id,
         )
         self.job_result_repository.save(job_status)
         self.event_bus.push(

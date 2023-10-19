@@ -77,7 +77,7 @@ class TestLauncherService:
             study_id="study_uuid",
             job_status=JobStatus.PENDING,
             launcher="local",
-            owner_name="fake_user",
+            owner_id=0,  # default value
             launcher_params=LauncherParametersDTO().json(),
         )
         repository = Mock()
@@ -129,7 +129,7 @@ class TestLauncherService:
             msg="Hello, World!",
             exit_code=0,
             launcher="local",
-            owner_name="admin",
+            owner_id=1,
         )
         factory_launcher_mock = Mock()
         factory_launcher_mock.build_launcher.return_value = {"local": launcher_mock}
@@ -166,7 +166,7 @@ class TestLauncherService:
             job_status=JobStatus.SUCCESS,
             msg="Hello, World!",
             exit_code=0,
-            owner_name="admin",
+            owner_id=1,
         )
         launcher_mock.get_result.return_value = None
         factory_launcher_mock = Mock()
@@ -205,7 +205,7 @@ class TestLauncherService:
                 job_status=JobStatus.SUCCESS,
                 msg="Hello, World!",
                 exit_code=0,
-                owner_name="admin",
+                owner_id=1,
             )
         ]
         returned_faked_execution_results = [
@@ -216,7 +216,7 @@ class TestLauncherService:
                 msg="Hello, World!",
                 exit_code=0,
                 creation_date=now,
-                owner_name="admin",
+                owner_id=1,
             ),
             JobResult(
                 id="2",
@@ -225,7 +225,7 @@ class TestLauncherService:
                 msg="Hello, World!",
                 exit_code=0,
                 creation_date=now,
-                owner_name="admin",
+                owner_id=1,
             ),
         ]
         all_faked_execution_results = returned_faked_execution_results + [
@@ -236,7 +236,7 @@ class TestLauncherService:
                 msg="Hello, World!",
                 exit_code=0,
                 creation_date=now - timedelta(days=ORPHAN_JOBS_VISIBILITY_THRESHOLD + 1),
-                owner_name="admin",
+                owner_id=1,
             )
         ]
         launcher_mock.get_result.return_value = None
@@ -556,7 +556,6 @@ class TestLauncherService:
     def test_service_kill_job(self, tmp_path: Path) -> None:
         study_service = Mock()
         study_service.get_study.return_value = Mock(spec=Study, groups=[], owner=None, public_mode=PublicMode.NONE)
-        study_service.get_user_name.return_value = "fake_user"
 
         launcher_service = LauncherService(
             config=Config(storage=StorageConfig(tmp_dir=tmp_path)),
@@ -574,7 +573,7 @@ class TestLauncherService:
         job_result_mock.id = job_id
         job_result_mock.study_id = "study_id"
         job_result_mock.launcher = launcher
-        job_result_mock.owner_name = "fake_user"
+        job_result_mock.owner_id = 36
         launcher_service.job_result_repository.get.return_value = job_result_mock
         launcher_service.launchers = {"slurm": Mock()}
 
@@ -832,7 +831,7 @@ class TestLauncherService:
 
         job_id = "job_id"
         study_id = "study_id"
-        job_result = JobResult(id=job_id, study_id=study_id, job_status=JobStatus.SUCCESS, owner_name="admin")
+        job_result = JobResult(id=job_id, study_id=study_id, job_status=JobStatus.SUCCESS, owner_id=1)
 
         output_path = tmp_path / "some-output"
         output_path.mkdir()
@@ -860,7 +859,7 @@ class TestLauncherService:
                 study_id=study_id,
                 job_status=JobStatus.SUCCESS,
                 solver_stats=expected_saved_stats,
-                owner_name="admin",
+                owner_id=1,
             )
         )
 
@@ -870,9 +869,7 @@ class TestLauncherService:
 
         launcher_service._save_solver_stats(job_result, zip_file)
         launcher_service.job_result_repository.save.assert_called_with(
-            JobResult(
-                id=job_id, study_id=study_id, job_status=JobStatus.SUCCESS, solver_stats="0\n1", owner_name="admin"
-            )
+            JobResult(id=job_id, study_id=study_id, job_status=JobStatus.SUCCESS, solver_stats="0\n1", owner_id=1)
         )
 
     def test_get_load(self, tmp_path: Path) -> None:
