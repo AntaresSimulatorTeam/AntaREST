@@ -1,4 +1,4 @@
-"""Add owner_name to JobResult
+"""Add owner_id to JobResult
 
 Revision ID: d495746853cc
 Revises: e65e0c04606b
