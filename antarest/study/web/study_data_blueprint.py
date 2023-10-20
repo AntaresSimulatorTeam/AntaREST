@@ -20,11 +20,8 @@ from antarest.study.business.area_management import AreaCreationDTO, AreaInfoDTO
 from antarest.study.business.areas.hydro_management import ManagementOptionsFormFields
 from antarest.study.business.areas.properties_management import PropertiesFormFields
 from antarest.study.business.areas.renewable_management import RenewableFormFields
-from antarest.study.business.areas.thermal_management import (
-    ThermalClusterCreation,
-    ThermalClusterInput,
-    ThermalClusterOutput,
-)
+from antarest.study.business.areas.st_storage_management import *
+from antarest.study.business.areas.thermal_management import *
 from antarest.study.business.binding_constraint_management import ConstraintTermDTO, UpdateBindingConstProps
 from antarest.study.business.correlation_management import CorrelationFormFields, CorrelationManager, CorrelationMatrix
 from antarest.study.business.district_manager import DistrictCreationDTO, DistrictInfoDTO, DistrictUpdateDTO
@@ -32,13 +29,6 @@ from antarest.study.business.general_management import GeneralFormFields
 from antarest.study.business.link_management import LinkInfoDTO
 from antarest.study.business.optimization_management import OptimizationFormFields
 from antarest.study.business.playlist_management import PlaylistColumns
-from antarest.study.business.st_storage_manager import (
-    StorageCreation,
-    StorageInput,
-    StorageOutput,
-    STStorageMatrix,
-    STStorageTimeSeries,
-)
 from antarest.study.business.table_mode_management import ColumnsModelTypes, TableTemplateType
 from antarest.study.business.thematic_trimming_management import ThematicTrimmingFormFields
 from antarest.study.business.timeseries_config_management import TSFormFields
@@ -1521,14 +1511,14 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/areas/{area_id}/storages/{storage_id}",
         tags=[APITag.study_data],
         summary="Get the short-term storage properties",
-        response_model=StorageOutput,
+        response_model=STStorageOutput,
     )
     def get_st_storage(
         uuid: str,
         area_id: str,
         storage_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> StorageOutput:
+    ) -> STStorageOutput:
         """
         Retrieve the storages by given uuid and area id of a study.
 
@@ -1563,13 +1553,13 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/areas/{area_id}/storages",
         tags=[APITag.study_data],
         summary="Get the list of short-term storage properties",
-        response_model=Sequence[StorageOutput],
+        response_model=Sequence[STStorageOutput],
     )
     def get_st_storages(
         uuid: str,
         area_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Sequence[StorageOutput]:
+    ) -> Sequence[STStorageOutput]:
         """
         Retrieve the short-term storages by given uuid and area ID of a study.
 
@@ -1705,14 +1695,14 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/areas/{area_id}/storages",
         tags=[APITag.study_data],
         summary="Create a new short-term storage in an area",
-        response_model=StorageOutput,
+        response_model=STStorageOutput,
     )
     def create_st_storage(
         uuid: str,
         area_id: str,
-        form: StorageCreation,
+        form: STStorageCreation,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> StorageOutput:
+    ) -> STStorageOutput:
         """
         Create a new short-term storage in an area.
 
@@ -1761,9 +1751,9 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         uuid: str,
         area_id: str,
         storage_id: str,
-        form: StorageInput,
+        form: STStorageInput,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> StorageOutput:
+    ) -> STStorageOutput:
         """
         Update short-term storage of a study.
 

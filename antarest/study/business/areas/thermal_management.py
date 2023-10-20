@@ -18,6 +18,13 @@ from antarest.study.storage.variantstudy.model.command.create_cluster import Cre
 from antarest.study.storage.variantstudy.model.command.remove_cluster import RemoveCluster
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 
+__all__ = (
+    "ThermalClusterInput",
+    "ThermalClusterCreation",
+    "ThermalClusterOutput",
+    "ThermalManager",
+)
+
 _CLUSTER_PATH = "input/thermal/clusters/{area_id}/list/{cluster_id}"
 _CLUSTERS_PATH = "input/thermal/clusters/{area_id}/list"
 
@@ -27,6 +34,19 @@ class ThermalClusterInput(Thermal860Properties, metaclass=AllOptionalMetaclass):
     """
     Model representing the data structure required to edit an existing thermal cluster within a study.
     """
+
+    class Config:
+        @staticmethod
+        def schema_extra(schema: t.MutableMapping[str, t.Any]) -> None:
+            schema["example"] = ThermalClusterInput(
+                group="Gas",
+                name="2 avail and must 1",
+                enabled=False,
+                unitCount=100,
+                nominalCapacity=1000.0,
+                genTs="use global parameter",
+                co2=7.0,
+            )
 
 
 class ThermalClusterCreation(ThermalClusterInput):
@@ -55,13 +75,27 @@ class ThermalClusterOutput(Thermal860Config, metaclass=AllOptionalMetaclass):
     Model representing the output data structure to display the details of a thermal cluster within a study.
     """
 
+    class Config:
+        @staticmethod
+        def schema_extra(schema: t.MutableMapping[str, t.Any]) -> None:
+            schema["example"] = ThermalClusterInput(
+                id="2 avail and must 1",
+                group="Gas",
+                name="2 avail and must 1",
+                enabled=False,
+                unitCount=100,
+                nominalCapacity=1000.0,
+                genTs="use global parameter",
+                co2=7.0,
+            )
+
 
 def create_thermal_output(
     study_version: t.Union[str, int],
-    storage_id: str,
+    cluster_id: str,
     config: t.Mapping[str, t.Any],
 ) -> "ThermalClusterOutput":
-    obj = create_thermal_config(study_version=study_version, **config, id=storage_id)
+    obj = create_thermal_config(study_version=study_version, **config, id=cluster_id)
     kwargs = obj.dict(by_alias=False)
     return ThermalClusterOutput(**kwargs)
 
@@ -200,31 +234,42 @@ class ThermalManager:
             in the provided cluster_data.
         """
 
+        study_version = study.version
         file_study = self._get_file_study(study)
         path = _CLUSTER_PATH.format(area_id=area_id, cluster_id=cluster_id)
         try:
-            cluster = file_study.tree.get(path.split("/"), depth=1)
+            values = file_study.tree.get(path.split("/"), depth=1)
         except KeyError:
             raise ClusterNotFound(cluster_id) from None
+        else:
+            old_config = create_thermal_config(study_version, **values)
 
-        study_version = study.version
-        config = create_thermal_config(study_version, **cluster)
-        updated_cluster = {**config.dict(exclude={"id"}), **cluster_data.dict(by_alias=False, exclude_none=True)}
-        new_config = create_thermal_config(study_version, **updated_cluster)
+        # Use Python values to synchronize Config and Form values
+        old_values = old_config.dict(exclude={"id"})
+        new_values = cluster_data.dict(by_alias=False, exclude_none=True)
+        updated = {**old_values, **new_values}
+        new_config = create_thermal_config(study_version, **updated, id=cluster_id)
         new_data = json.loads(new_config.json(by_alias=True, exclude={"id"}))
 
-        data = {
-            field.alias: new_data[field.alias]
-            for field_name, field in new_config.__fields__.items()
-            if field_name != "id"
-            and (field_name in updated_cluster or getattr(new_config, field_name) != field.get_default())
-        }
+        # Create the dict containing the old values (excluding defaults),
+        #  and the updated values (including defaults)
+        data: t.Dict[str, t.Any] = {}
+        for field_name, field in new_config.__fields__.items():
+            if field_name in {"id"}:
+                continue
+            value = getattr(new_config, field_name)
+            if field_name in new_values or value != field.get_default():
+                # use the JSON-converted value
+                data[field.alias] = new_data[field.alias]
 
+        # create the update config command with the modified data
         command_context = self.storage_service.variant_study_service.command_factory.command_context
         command = UpdateConfig(target=path, data=data, command_context=command_context)
+        file_study = self.storage_service.get_storage(study).get_raw(study)
         execute_or_add_commands(study, file_study, [command], self.storage_service)
 
-        return self.get_cluster(study, area_id, cluster_id)
+        values = new_config.dict(by_alias=False)
+        return ThermalClusterOutput(**values)
 
     def delete_clusters(self, study: Study, area_id: str, cluster_ids: t.Sequence[str]) -> None:
         """

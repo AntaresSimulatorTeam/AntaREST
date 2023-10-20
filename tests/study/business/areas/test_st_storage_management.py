@@ -17,7 +17,7 @@ from antarest.core.exceptions import (
 )
 from antarest.core.model import PublicMode
 from antarest.login.model import Group, User
-from antarest.study.business.st_storage_manager import STStorageManager
+from antarest.study.business.areas.st_storage_management import STStorageManager
 from antarest.study.model import RawStudy, Study, StudyContentStatus
 from antarest.study.storage.rawstudy.io.reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import STStorageGroup

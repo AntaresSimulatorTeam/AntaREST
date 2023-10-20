@@ -12,15 +12,15 @@ from antarest.core.exceptions import CommandApplicationError
 from antarest.core.model import PublicMode
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group, User
-from antarest.study.business.areas.thermal_management import ThermalManager, ThermalClusterCreation, ThermalClusterInput
-from antarest.study.model import RawStudy, StudyContentStatus, Study, StudyAdditionalData
+from antarest.study.business.areas.thermal_management import ThermalClusterCreation, ThermalClusterInput, ThermalManager
+from antarest.study.model import RawStudy, Study, StudyAdditionalData, StudyContentStatus
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
-    TimeSeriesGenerationOption,
-    ThermalClusterGroup,
     LawOption,
+    ThermalClusterGroup,
+    TimeSeriesGenerationOption,
 )
 from antarest.study.storage.storage_service import StudyStorageService
-from tests.study.business.assets import ASSETS_DIR
+from tests.study.business.areas.assets import ASSETS_DIR
 
 
 @pytest.fixture(name="zip_legacy_path")
@@ -364,7 +364,7 @@ class TestThermalManager:
             # Given the following arguments
             manager = ThermalManager(study_storage_service)
 
-            # When the clusters are deleted
+            # When some properties of the cluster are updated
             cluster_data = ThermalClusterInput(name="New name", nominalCapacity=2000)
             manager.update_cluster(study, area_id="north", cluster_id="2 avail and must 1", cluster_data=cluster_data)
 

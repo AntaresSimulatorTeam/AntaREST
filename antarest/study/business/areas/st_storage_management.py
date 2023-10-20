@@ -18,17 +18,26 @@ from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
     STStorageConfig,
     STStorageGroup,
     STStorageProperties,
+    create_st_storage_config,
 )
+from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
 from antarest.study.storage.variantstudy.model.command.remove_st_storage import RemoveSTStorage
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 
-_HOURS_IN_YEAR = 8760
+__all__ = (
+    "STStorageManager",
+    "STStorageCreation",
+    "STStorageInput",
+    "STStorageOutput",
+    "STStorageMatrix",
+    "STStorageTimeSeries",
+)
 
 
 @camel_case_model
-class StorageInput(STStorageProperties, metaclass=AllOptionalMetaclass):
+class STStorageInput(STStorageProperties, metaclass=AllOptionalMetaclass):
     """
     Model representing the form used to EDIT an existing short-term storage.
     """
@@ -36,7 +45,7 @@ class StorageInput(STStorageProperties, metaclass=AllOptionalMetaclass):
     class Config:
         @staticmethod
         def schema_extra(schema: MutableMapping[str, Any]) -> None:
-            schema["example"] = StorageInput(
+            schema["example"] = STStorageInput(
                 name="Siemens Battery",
                 group=STStorageGroup.BATTERY,
                 injection_nominal_capacity=150,
@@ -48,7 +57,7 @@ class StorageInput(STStorageProperties, metaclass=AllOptionalMetaclass):
             )
 
 
-class StorageCreation(StorageInput):
+class STStorageCreation(STStorageInput):
     """
     Model representing the form used to CREATE a new short-term storage.
     """
@@ -70,7 +79,7 @@ class StorageCreation(StorageInput):
 
 
 @camel_case_model
-class StorageOutput(STStorageConfig):
+class STStorageOutput(STStorageConfig):
     """
     Model representing the form used to display the details of a short-term storage entry.
     """
@@ -78,7 +87,7 @@ class StorageOutput(STStorageConfig):
     class Config:
         @staticmethod
         def schema_extra(schema: MutableMapping[str, Any]) -> None:
-            schema["example"] = StorageOutput(
+            schema["example"] = STStorageOutput(
                 id="siemens_battery",
                 name="Siemens Battery",
                 group=STStorageGroup.BATTERY,
@@ -90,7 +99,7 @@ class StorageOutput(STStorageConfig):
             )
 
     @classmethod
-    def from_config(cls, storage_id: str, config: Mapping[str, Any]) -> "StorageOutput":
+    def from_config(cls, storage_id: str, config: Mapping[str, Any]) -> "STStorageOutput":
         storage = STStorageConfig(**config, id=storage_id)
         values = storage.dict(by_alias=False)
         return cls(**values)
@@ -133,8 +142,8 @@ class STStorageMatrix(BaseModel):
         array = np.array(data)
         if array.size == 0:
             raise ValueError("time series must not be empty")
-        if array.shape != (_HOURS_IN_YEAR, 1):
-            raise ValueError(f"time series must have shape ({_HOURS_IN_YEAR}, 1)")
+        if array.shape != (8760, 1):
+            raise ValueError(f"time series must have shape ({8760}, 1)")
         if np.any(np.isnan(array)):
             raise ValueError("time series must not contain NaN values")
         return data
@@ -222,12 +231,19 @@ class STStorageManager:
     def __init__(self, storage_service: StudyStorageService):
         self.storage_service = storage_service
 
+    def _get_file_study(self, study: Study) -> FileStudy:
+        """
+        Helper function to get raw study data.
+        """
+
+        return self.storage_service.get_storage(study).get_raw(study)
+
     def create_storage(
         self,
         study: Study,
         area_id: str,
-        form: StorageCreation,
-    ) -> StorageOutput:
+        form: STStorageCreation,
+    ) -> STStorageOutput:
         """
         Create a new short-term storage configuration for the given `study`, `area_id`, and `form fields`.
 
@@ -245,7 +261,7 @@ class STStorageManager:
             parameters=storage,
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
         )
-        file_study = self.storage_service.get_storage(study).get_raw(study)
+        file_study = self._get_file_study(study)
         execute_or_add_commands(
             study,
             file_study,
@@ -259,7 +275,7 @@ class STStorageManager:
         self,
         study: Study,
         area_id: str,
-    ) -> Sequence[StorageOutput]:
+    ) -> Sequence[STStorageOutput]:
         """
         Get the list of short-term storage configurations for the given `study`, and `area_id`.
 
@@ -271,7 +287,7 @@ class STStorageManager:
             The list of forms used to display the short-term storages.
         """
 
-        file_study = self.storage_service.get_storage(study).get_raw(study)
+        file_study = self._get_file_study(study)
         path = STORAGE_LIST_PATH.format(area_id=area_id, storage_id="")[:-1]
         try:
             config = file_study.tree.get(path.split("/"), depth=3)
@@ -284,14 +300,14 @@ class STStorageManager:
             (STStorageConfig(id=storage_id, **options) for storage_id, options in config.items()),
             key=order_by,
         )
-        return tuple(StorageOutput(**config.dict(by_alias=False)) for config in all_configs)
+        return tuple(STStorageOutput(**config.dict(by_alias=False)) for config in all_configs)
 
     def get_storage(
         self,
         study: Study,
         area_id: str,
         storage_id: str,
-    ) -> StorageOutput:
+    ) -> STStorageOutput:
         """
         Get short-term storage configuration for the given `study`, `area_id`, and `storage_id`.
 
@@ -304,21 +320,21 @@ class STStorageManager:
             Form used to display and edit a short-term storage.
         """
 
-        file_study = self.storage_service.get_storage(study).get_raw(study)
+        file_study = self._get_file_study(study)
         path = STORAGE_LIST_PATH.format(area_id=area_id, storage_id=storage_id)
         try:
             config = file_study.tree.get(path.split("/"), depth=1)
         except KeyError:
             raise STStorageFieldsNotFoundError(storage_id) from None
-        return StorageOutput.from_config(storage_id, config)
+        return STStorageOutput.from_config(storage_id, config)
 
     def update_storage(
         self,
         study: Study,
         area_id: str,
         storage_id: str,
-        form: StorageInput,
-    ) -> StorageOutput:
+        form: STStorageInput,
+    ) -> STStorageOutput:
         """
         Set short-term storage configuration for the given `study`, `area_id`, and `storage_id`.
 
@@ -330,20 +346,21 @@ class STStorageManager:
         Returns:
             Updated form of short-term storage.
         """
-        file_study = self.storage_service.get_storage(study).get_raw(study)
+        study_version = study.version
+        file_study = self._get_file_study(study)
         path = STORAGE_LIST_PATH.format(area_id=area_id, storage_id=storage_id)
         try:
             values = file_study.tree.get(path.split("/"), depth=1)
         except KeyError:
             raise STStorageFieldsNotFoundError(storage_id) from None
         else:
-            old_config = STStorageConfig(**values)
+            old_config = create_st_storage_config(study_version, **values)
 
         # use Python values to synchronize Config and Form values
         old_values = old_config.dict(exclude={"id"})
         new_values = form.dict(by_alias=False, exclude_none=True)
         updated = {**old_values, **new_values}
-        new_config = STStorageConfig(**updated, id=storage_id)
+        new_config = create_st_storage_config(study_version, **updated, id=storage_id)
         new_data = json.loads(new_config.json(by_alias=True, exclude={"id"}))
 
         # create the dict containing the old values (excluding defaults),
@@ -358,16 +375,13 @@ class STStorageManager:
                 data[field.alias] = new_data[field.alias]
 
         # create the update config command with the modified data
-        command = UpdateConfig(
-            target=path,
-            data=data,
-            command_context=self.storage_service.variant_study_service.command_factory.command_context,
-        )
-        file_study = self.storage_service.get_storage(study).get_raw(study)
+        command_context = self.storage_service.variant_study_service.command_factory.command_context
+        command = UpdateConfig(target=path, data=data, command_context=command_context)
+        file_study = self._get_file_study(study)
         execute_or_add_commands(study, file_study, [command], self.storage_service)
 
         values = new_config.dict(by_alias=False)
-        return StorageOutput(**values)
+        return STStorageOutput(**values)
 
     def delete_storages(
         self,
@@ -390,7 +404,7 @@ class STStorageManager:
                 storage_id=storage_id,
                 command_context=command_context,
             )
-            file_study = self.storage_service.get_storage(study).get_raw(study)
+            file_study = self._get_file_study(study)
             execute_or_add_commands(study, file_study, [command], self.storage_service)
 
     def get_matrix(
@@ -422,7 +436,7 @@ class STStorageManager:
         storage_id: str,
         ts_name: STStorageTimeSeries,
     ) -> MutableMapping[str, Any]:
-        file_study = self.storage_service.get_storage(study).get_raw(study)
+        file_study = self._get_file_study(study)
         path = STORAGE_SERIES_PATH.format(area_id=area_id, storage_id=storage_id, ts_name=ts_name)
         try:
             matrix = file_study.tree.get(path.split("/"), depth=1)
@@ -459,7 +473,7 @@ class STStorageManager:
         ts_name: STStorageTimeSeries,
         matrix_obj: Dict[str, Any],
     ) -> None:
-        file_study = self.storage_service.get_storage(study).get_raw(study)
+        file_study = self._get_file_study(study)
         path = STORAGE_SERIES_PATH.format(area_id=area_id, storage_id=storage_id, ts_name=ts_name)
         try:
             file_study.tree.save(matrix_obj, path.split("/"))
