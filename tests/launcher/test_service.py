@@ -77,7 +77,6 @@ class TestLauncherService:
             study_id="study_uuid",
             job_status=JobStatus.PENDING,
             launcher="local",
-            owner_id=0,  # default value
             launcher_params=LauncherParametersDTO().json(),
         )
         repository = Mock()
@@ -110,7 +109,17 @@ class TestLauncherService:
         )
 
         assert job_id == str(uuid)
-        repository.save.assert_called_once_with(pending)
+
+        repository.save.assert_called_once()
+
+        # SQLAlchemy provides its own way to handle object comparison, which ensures
+        # that the comparison is based on the database identity of the objects.
+        # But, here, in that unit test, objects are not in a database session,
+        # so we need to compare them manually.
+        mock_call = repository.save.mock_calls[0]
+        actual_obj: JobResult = mock_call.args[0]
+        assert actual_obj.to_dto().dict() == pending.to_dto().dict()
+
         event_bus.push.assert_called_once_with(
             Event(
                 type=EventType.STUDY_JOB_STARTED,
@@ -831,13 +840,19 @@ class TestLauncherService:
 
         job_id = "job_id"
         study_id = "study_id"
-        job_result = JobResult(id=job_id, study_id=study_id, job_status=JobStatus.SUCCESS, owner_id=1)
+        job_result = JobResult(
+            id=job_id,
+            study_id=study_id,
+            job_status=JobStatus.SUCCESS,
+            owner_id=1,
+        )
 
         output_path = tmp_path / "some-output"
         output_path.mkdir()
 
         launcher_service._save_solver_stats(job_result, output_path)
-        launcher_service.job_result_repository.save.assert_not_called()
+        repository = launcher_service.job_result_repository
+        repository.save.assert_not_called()
 
         expected_saved_stats = """#item	duration_ms	NbOccurences
         mc_years	216328	1
@@ -853,24 +868,39 @@ class TestLauncherService:
         (output_path / EXECUTION_INFO_FILE).write_text(expected_saved_stats)
 
         launcher_service._save_solver_stats(job_result, output_path)
-        launcher_service.job_result_repository.save.assert_called_with(
-            JobResult(
-                id=job_id,
-                study_id=study_id,
-                job_status=JobStatus.SUCCESS,
-                solver_stats=expected_saved_stats,
-                owner_id=1,
-            )
+        assert repository.save.call_count == 1
+
+        # SQLAlchemy provides its own way to handle object comparison, which ensures
+        # that the comparison is based on the database identity of the objects.
+        # But, here, in that unit test, objects are not in a database session,
+        # so we need to compare them manually.
+        mock_call = repository.save.mock_calls[0]
+        actual_obj: JobResult = mock_call.args[0]
+        expected_obj = JobResult(
+            id=job_id,
+            study_id=study_id,
+            job_status=JobStatus.SUCCESS,
+            solver_stats=expected_saved_stats,
+            owner_id=1,
         )
+        assert actual_obj.to_dto().dict() == expected_obj.to_dto().dict()
 
         zip_file = tmp_path / "test.zip"
         with ZipFile(zip_file, "w", ZIP_DEFLATED) as output_data:
             output_data.writestr(EXECUTION_INFO_FILE, "0\n1")
 
         launcher_service._save_solver_stats(job_result, zip_file)
-        launcher_service.job_result_repository.save.assert_called_with(
-            JobResult(id=job_id, study_id=study_id, job_status=JobStatus.SUCCESS, solver_stats="0\n1", owner_id=1)
+        assert repository.save.call_count == 2
+        mock_call = repository.save.mock_calls[-1]
+        actual_obj: JobResult = mock_call.args[0]
+        expected_obj = JobResult(
+            id=job_id,
+            study_id=study_id,
+            job_status=JobStatus.SUCCESS,
+            solver_stats="0\n1",
+            owner_id=1,
         )
+        assert actual_obj.to_dto().dict() == expected_obj.to_dto().dict()
 
     def test_get_load(self, tmp_path: Path) -> None:
         study_service = Mock()

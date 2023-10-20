@@ -66,11 +66,16 @@ def test_main(client: TestClient, admin_access_token: str, study_id: str) -> Non
     # login with new user
     # TODO mock ldap connector and test user login
     res = client.post("/v1/login", json={"username": "George", "password": "mypass"})
+    res.raise_for_status()
     george_credentials = res.json()
+
     res = client.post("/v1/login", json={"username": "Fred", "password": "mypass"})
+    res.raise_for_status()
     fred_credentials = res.json()
+    fred_id = fred_credentials["user"]
+
     res = client.post("/v1/login", json={"username": "Harry", "password": "mypass"})
-    harry_credentials = res.json()
+    res.raise_for_status()
 
     # reject user creation from non admin
     res = client.post(
@@ -344,7 +349,7 @@ def test_main(client: TestClient, admin_access_token: str, study_id: str) -> Non
     )
     job_info = res.json()[0]
     assert job_info["id"] == job_id
-    assert job_info["owner_id"] == 3  # Fred's id
+    assert job_info["owner_id"] == fred_id
 
     # update metadata
     res = client.put(
