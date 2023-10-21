@@ -2,12 +2,12 @@
 
 set -e
 
-CURDIR=$(cd `dirname $0` && pwd)
-BASEDIR=`dirname $CURDIR`
+CUR_DIR=$(cd "$(dirname "$0")" && pwd)
+BASE_DIR=$(dirname "$CUR_DIR")
 
-cd $BASEDIR
+cd "$BASE_DIR"
 alembic upgrade head
 cd -
 
-export PYTHONPATH=$BASEDIR
-python3 $BASEDIR/antarest/tools/admin.py clean-locks -c $ANTAREST_CONF
+export PYTHONPATH=$BASE_DIR
+python3 "$BASE_DIR/antarest/tools/admin.py" clean-locks -c "$ANTAREST_CONF"
