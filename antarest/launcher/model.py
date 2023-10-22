@@ -51,7 +51,7 @@ class LogType(str, enum.Enum):
             return "out.log"
         elif self == LogType.STDERR:
             return "err.log"
-        else:
+        else:  # pragma: no cover
             return "out.log"
 
 
@@ -116,7 +116,7 @@ class JobLog(Base):  # type: ignore
     # So, implementing `__eq__` and `__ne__` is not necessary.
 
     def __str__(self) -> str:
-        return f"Job log #{self.job_id} {self.log_type}: '{self.message}'"
+        return f"Job log #{self.id} {self.log_type}: '{self.message}'"
 
     def __repr__(self) -> str:
         return (
