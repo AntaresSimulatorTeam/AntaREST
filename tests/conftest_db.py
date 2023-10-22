@@ -21,6 +21,7 @@ def db_engine_fixture() -> Generator[Engine, None, None]:
         An instance of the created SQLite database engine.
     """
     engine = create_engine("sqlite:///:memory:")
+    engine.execute("PRAGMA foreign_keys = ON")
     Base.metadata.create_all(engine)
     yield engine
     engine.dispose()
