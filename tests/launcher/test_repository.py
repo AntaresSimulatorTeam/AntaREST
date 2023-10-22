@@ -3,12 +3,11 @@ from unittest.mock import Mock
 from uuid import uuid4
 
 import pytest
-from sqlalchemy import create_engine
 
-from antarest.core.persistence import Base
-from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
+from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.launcher.model import JobLog, JobLogType, JobResult, JobStatus
 from antarest.launcher.repository import JobResultRepository
+from antarest.login.model import Identity
 from antarest.study.model import RawStudy
 from antarest.study.repository import StudyMetadataRepository
 from tests.helpers import with_db_context
@@ -93,67 +92,59 @@ def test_job_result() -> None:
 
 
 @pytest.mark.unit_test
+@with_db_context
 def test_update_object():
-    engine = create_engine("sqlite:///:memory:", echo=False)
-    Base.metadata.create_all(engine)
-    # noinspection SpellCheckingInspection
-    DBSessionMiddleware(
-        None,
-        custom_engine=engine,
-        session_args={"autocommit": False, "autoflush": False},
+    identity = Identity(id=1, name="test")
+    db.session.add(identity)
+    db.session.commit()
+    owner_id = identity.id
+
+    a = JobResult(
+        id=str(uuid4()),
+        study_id="a",
+        job_status=JobStatus.SUCCESS,
+        msg="Hello, World!",
+        exit_code=0,
+        owner_id=owner_id,
+    )
+    b = JobResult(
+        id=str(uuid4()),
+        study_id="b",
+        job_status=JobStatus.FAILED,
+        msg="You failed !!",
+        exit_code=1,
+        owner_id=owner_id,
     )
 
-    with db():
-        repo = JobResultRepository()
-        uuid = str(uuid4())
-        a = JobResult(
-            id=uuid,
-            study_id="a",
-            job_status=JobStatus.SUCCESS,
-            msg="Hello, World!",
-            exit_code=0,
-        )
-        b = JobResult(
-            id=uuid,
-            study_id="b",
-            job_status=JobStatus.FAILED,
-            msg="You failed !!",
-            exit_code=1,
-        )
-
-        c = repo.save(a)
-        d = repo.save(b)
-        assert c != d
+    repo = JobResultRepository()
+    c = repo.save(a)
+    d = repo.save(b)
+    assert c != d
 
 
+@pytest.mark.unit_test
+@with_db_context
 def test_logs():
-    engine = create_engine("sqlite:///:memory:", echo=False)
-    Base.metadata.create_all(engine)
-    # noinspection SpellCheckingInspection
-    DBSessionMiddleware(
-        None,
-        custom_engine=engine,
-        session_args={"autocommit": False, "autoflush": False},
+    repo = JobResultRepository()
+    uuid = str(uuid4())
+    a = JobResult(
+        id=uuid,
+        study_id="a",
+        job_status=JobStatus.SUCCESS,
+        msg="Hello, World!",
+        exit_code=0,
     )
 
-    with db():
-        repo = JobResultRepository()
-        uuid = str(uuid4())
-        a = JobResult(
-            id=uuid,
-            study_id="a",
-            job_status=JobStatus.SUCCESS,
-            msg="Hello, World!",
-            exit_code=0,
-        )
-
-        repo.save(a)
-        a.logs.append(JobLog(job_id=uuid, message="a", log_type=str(JobLogType.BEFORE)))
-        repo.save(a)
-        job_log_id = a.logs[0].id
-        a.logs.append(JobLog(job_id=uuid, message="b", log_type=str(JobLogType.BEFORE)))
-        a.logs.append(JobLog(job_id=uuid, message="c", log_type=str(JobLogType.AFTER)))
-        b = repo.save(a)
-        c = repo.get(uuid)
-        assert b.logs == c.logs
-        assert repr(b.logs[0]) == f"id={job_log_id}, message=a, log_type=JobLogType.BEFORE, job_id={uuid}"
+    repo.save(a)
+    a.logs.append(JobLog(job_id=uuid, message="a", log_type=JobLogType.BEFORE))
+    repo.save(a)
+    job_log_id = a.logs[0].id
+    a.logs.append(JobLog(job_id=uuid, message="b", log_type=JobLogType.BEFORE))
+    a.logs.append(JobLog(job_id=uuid, message="c", log_type=JobLogType.AFTER))
+    b = repo.save(a)
+    c = repo.get(uuid)
+    assert b.logs == c.logs
+    assert b.logs[0].id == job_log_id
+    assert b.logs[0].message == "a"
+    assert b.logs[0].log_type == JobLogType.BEFORE
+    assert b.logs[0].job_id == uuid

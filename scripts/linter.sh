@@ -1,7 +1,7 @@
 #!/bin/bash
 
-BASEDIR=$(dirname "$0")
-PROJECT_DIR=$BASEDIR/..
+BASE_DIR=$(dirname "$0")
+PROJECT_DIR=$BASE_DIR/..
 
 cd "$PROJECT_DIR" || exit
 

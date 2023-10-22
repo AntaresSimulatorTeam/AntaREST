@@ -1,13 +1,15 @@
 #!/bin/bash
 
-BASEDIR=$(dirname "$0")
-PROJECT_DIR=$BASEDIR/..
+set -e
 
-cd "$PROJECT_DIR" || exit
+BASE_DIR=$(dirname "$0")
+PROJECT_DIR=$BASE_DIR/..
+
+cd "$PROJECT_DIR"
 
 source ./venv/bin/activate
 export PYTHONPATH=$PYTHONPATH:.
 
-sh $BASEDIR/pre-start.sh
+sh "$BASE_DIR/pre-start.sh"
 
 python ./antarest/main.py -c ./resources/application.yaml
