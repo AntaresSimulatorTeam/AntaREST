@@ -284,21 +284,24 @@ class TaskJobService(ITaskService):
         return self.repo.list(task_filter, user)
 
     def await_task(self, task_id: str, timeout_sec: int = DEFAULT_AWAIT_MAX_TIMEOUT) -> None:
-        logger.info(f"Awaiting task {task_id}")
+        logger.info(f"Awaiting task '{task_id}'...")
         if task_id in self.tasks:
-            self.tasks[task_id].result(timeout_sec or DEFAULT_AWAIT_MAX_TIMEOUT)
+            self.tasks[task_id].result(timeout_sec)
         else:
-            logger.warning(f"Task {task_id} not handled by this worker, will poll for task completion from db")
-            end = time.time() + (timeout_sec or DEFAULT_AWAIT_MAX_TIMEOUT)
+            logger.warning(f"Task '{task_id}' not handled by this worker, will poll for task completion from db")
+            end = time.time() + timeout_sec
             while time.time() < end:
                 with db():
                     task = self.repo.get(task_id)
-                    if not task:
-                        logger.error(f"Awaited task {task_id} was not found")
-                        break
+                    if task is None:
+                        logger.error(f"Awaited task '{task_id}' was not found")
+                        return
                     if TaskStatus(task.status).is_final():
-                        break
-                    time.sleep(2)
+                        return
+                time.sleep(2)
+            logger.error(f"Timeout while awaiting task '{task_id}'")
+            with db():
+                self.repo.update_timeout(task_id, timeout_sec)
 
     def _run_task(
         self,
