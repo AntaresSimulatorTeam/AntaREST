@@ -960,16 +960,20 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
 
         return dst_meta
 
-    def _wait_for_generation(self, metadata: VariantStudy, timeout: int) -> bool:
-        task_id = self.generate_task(metadata)
-        self.task_service.await_task(task_id, timeout)
-        result = self.task_service.status_task(task_id, RequestParameters(DEFAULT_ADMIN_USER))
-        return (result.result is not None) and result.result.success
-
     def _safe_generation(self, metadata: VariantStudy, timeout: int = DEFAULT_AWAIT_MAX_TIMEOUT) -> None:
         try:
-            if not self.exists(metadata) and not self._wait_for_generation(metadata, timeout):
-                raise ValueError()
+            if self.exists(metadata):
+                # The study is already present on disk => nothing to do
+                return
+
+            task_id = self.generate_task(metadata)
+            self.task_service.await_task(task_id, timeout)
+            result = self.task_service.status_task(task_id, RequestParameters(DEFAULT_ADMIN_USER))
+            if result.result and result.result.success:
+                # OK, the study has been generated
+                return
+            raise ValueError("Fail to generate variant study")
+
         except Exception as e:
             logger.error(f"Fail to generate variant study {metadata.id}", exc_info=e)
             raise VariantGenerationError(f"Error while generating {metadata.id}") from None
