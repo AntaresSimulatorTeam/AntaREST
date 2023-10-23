@@ -36,7 +36,7 @@ export function createPath(params: Params): string {
   const { id, mode } = output;
   const isYearPeriod = year && year > 0;
   const periodFolder = isYearPeriod
-    ? `mc-ind/${Math.max(year, output.nbyears).toString().padStart(5, "0")}`
+    ? `mc-ind/${Math.min(year, output.nbyears).toString().padStart(5, "0")}`
     : "mc-all";
   const isLink = "area1" in item;
   const itemType = isLink ? OutputItemType.Links : OutputItemType.Areas;
