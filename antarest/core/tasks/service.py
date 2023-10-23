@@ -34,6 +34,9 @@ logger = logging.getLogger(__name__)
 TaskUpdateNotifier = Callable[[str], None]
 Task = Callable[[TaskUpdateNotifier], TaskResult]
 
+DEFAULT_AWAIT_MAX_TIMEOUT = 172800  # 48 hours
+"""Default timeout for `await_task` in seconds."""
+
 
 class ITaskService(ABC):
     @abstractmethod
@@ -74,16 +77,13 @@ class ITaskService(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def await_task(self, task_id: str, timeout_sec: Optional[int] = None) -> None:
+    def await_task(self, task_id: str, timeout_sec: int = DEFAULT_AWAIT_MAX_TIMEOUT) -> None:
         raise NotImplementedError()
 
 
 # noinspection PyUnusedLocal
 def noop_notifier(message: str) -> None:
     """This function is used in tasks when no notification is required."""
-
-
-DEFAULT_AWAIT_MAX_TIMEOUT = 172800
 
 
 class TaskJobService(ITaskService):
@@ -283,7 +283,7 @@ class TaskJobService(ITaskService):
         user = None if request_params.user.is_site_admin() else request_params.user.impersonator
         return self.repo.list(task_filter, user)
 
-    def await_task(self, task_id: str, timeout_sec: Optional[int] = None) -> None:
+    def await_task(self, task_id: str, timeout_sec: int = DEFAULT_AWAIT_MAX_TIMEOUT) -> None:
         logger.info(f"Awaiting task {task_id}")
         if task_id in self.tasks:
             self.tasks[task_id].result(timeout_sec or DEFAULT_AWAIT_MAX_TIMEOUT)

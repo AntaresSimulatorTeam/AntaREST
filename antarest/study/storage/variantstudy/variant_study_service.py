@@ -30,7 +30,7 @@ from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.model import JSON, PermissionInfo, PublicMode, StudyPermissionType
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskResult, TaskType
-from antarest.core.tasks.service import ITaskService, TaskUpdateNotifier, noop_notifier
+from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT, ITaskService, TaskUpdateNotifier, noop_notifier
 from antarest.core.utils.utils import assert_this, suppress_exception
 from antarest.matrixstore.service import MatrixService
 from antarest.study.model import RawStudy, Study, StudyAdditionalData, StudyMetadataDTO, StudySimResultDTO
@@ -483,7 +483,6 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             use_cache: indicate if cache should be used
 
         Returns: study data formatted in json
-
         """
         self._safe_generation(metadata, timeout=60)
         self.repository.refresh(metadata)
@@ -882,19 +881,19 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
 
     def create(self, study: VariantStudy) -> VariantStudy:
         """
-        Create empty new study
+        Create an empty new study.
         Args:
-            study: study information
-        Returns: new study information
+            study: Study information.
+        Returns: New study information.
         """
         raise NotImplementedError()
 
     def exists(self, metadata: VariantStudy) -> bool:
         """
-        Check study exist.
+        Check if study exists.
         Args:
-            metadata: study
-        Returns: true if study presents in disk, false else.
+            metadata: Study metadata.
+        Returns: `True` if the study is present on disk, `False` otherwise.
         """
         return (
             (metadata.snapshot is not None)
@@ -961,13 +960,13 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
 
         return dst_meta
 
-    def _wait_for_generation(self, metadata: VariantStudy, timeout: Optional[int] = None) -> bool:
+    def _wait_for_generation(self, metadata: VariantStudy, timeout: int) -> bool:
         task_id = self.generate_task(metadata)
         self.task_service.await_task(task_id, timeout)
         result = self.task_service.status_task(task_id, RequestParameters(DEFAULT_ADMIN_USER))
         return (result.result is not None) and result.result.success
 
-    def _safe_generation(self, metadata: VariantStudy, timeout: Optional[int] = None) -> None:
+    def _safe_generation(self, metadata: VariantStudy, timeout: int = DEFAULT_AWAIT_MAX_TIMEOUT) -> None:
         try:
             if not self.exists(metadata) and not self._wait_for_generation(metadata, timeout):
                 raise ValueError()
