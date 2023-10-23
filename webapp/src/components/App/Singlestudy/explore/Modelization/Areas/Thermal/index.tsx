@@ -47,7 +47,6 @@ function Thermal() {
    * Calculate the installed and enabled capacity for each thermal cluster.
    * - `installedCapacity` is calculated as the product of `unitCount` and `nominalCapacity`.
    * - `enabledCapacity` is the product of `unitCount` and `nominalCapacity` if the cluster is enabled, otherwise it's 0.
-   * @function
    * @returns {Array} - An array of cluster objects, each augmented with `installedCapacity` and `enabledCapacity`.
    */
   const clustersWithCapacity = useMemo(
@@ -63,7 +62,7 @@ function Thermal() {
 
   const { totalUnitCount, totalInstalledCapacity, totalEnabledCapacity } =
     useMemo(() => {
-      if (!clusters) {
+      if (!clustersWithCapacity) {
         return {
           totalUnitCount: 0,
           totalInstalledCapacity: 0,
@@ -71,7 +70,7 @@ function Thermal() {
         };
       }
 
-      return clusters.reduce(
+      return clustersWithCapacity.reduce(
         (acc, { unitCount, nominalCapacity, enabled }) => {
           acc.totalUnitCount += unitCount;
           acc.totalInstalledCapacity += unitCount * nominalCapacity;
@@ -84,7 +83,7 @@ function Thermal() {
           totalEnabledCapacity: 0,
         },
       );
-    }, [clusters]);
+    }, [clustersWithCapacity]);
 
   const columns = useMemo<MRT_ColumnDef<ThermalCluster>[]>(
     () => [

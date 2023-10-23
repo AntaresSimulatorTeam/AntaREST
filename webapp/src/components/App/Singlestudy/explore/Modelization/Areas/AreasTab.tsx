@@ -60,7 +60,7 @@ function AreasTab(props: Props) {
       });
     }
     return baseTabs;
-  }, [study, areaId, renewablesClustering]);
+  }, [study.id, areaId, renewablesClustering]);
 
   return (
     <Paper

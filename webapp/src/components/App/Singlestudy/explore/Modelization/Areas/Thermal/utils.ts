@@ -40,6 +40,7 @@ enum LawOption {
 ////////////////////////////////////////////////////////////////
 
 interface ThermalClusterPollutants {
+  // For study versions >= 860
   co2: number;
   so2: number;
   nh3: number;

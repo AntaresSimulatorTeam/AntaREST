@@ -16,7 +16,7 @@ import {
 import { SubmitHandlerPlus } from "../../../../../../common/Form/types";
 import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../../redux/selectors";
-import useNavigateOnChange from "../../../../../../../hooks/useNavigateOnChange";
+import useNavigateOnCondition from "../../../../../../../hooks/useNavigateOnCondition";
 
 function ThermalForm() {
   const { t } = useTranslation();
@@ -25,8 +25,12 @@ function ThermalForm() {
   const areaId = useAppSelector(getCurrentAreaId);
   const { clusterId = "" } = useParams();
 
-  useNavigateOnChange(areaId);
+  useNavigateOnCondition({
+    deps: [areaId],
+    to: "../thermal",
+  });
 
+  // prevent re-fetch while useNavigateOnCondition event occurs
   const defaultValues = useCallback(() => {
     return getThermalCluster(study.id, areaId, clusterId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -49,7 +53,7 @@ function ThermalForm() {
       <Button
         color="secondary"
         size="small"
-        onClick={() => navigate(-1)}
+        onClick={() => navigate("../thermal")}
         startIcon={<ArrowBackIcon color="secondary" />}
         sx={{ alignSelf: "flex-start", px: 0 }}
       >
