@@ -12,6 +12,7 @@ import {
   FormGroup,
   List,
   ListItem,
+  Skeleton,
   Slider,
   Stack,
   Switch,
@@ -46,6 +47,7 @@ import LinearProgressWithLabel from "../../common/LinearProgressWithLabel";
 import SelectSingle from "../../common/SelectSingle";
 import CheckBoxFE from "../../common/fieldEditors/CheckBoxFE";
 import { convertVersions } from "../../../services/utils";
+import UsePromiseCond from "../../common/utils/UsePromiseCond";
 
 const LAUNCH_DURATION_MAX_HOURS = 240;
 const LAUNCH_LOAD_DEFAULT = 22;
@@ -79,12 +81,9 @@ function LauncherDialog(props: Props) {
     deps: [open],
   });
 
-  const { data: cores } = usePromiseWithSnackbarError(
-    () => getLauncherCores(),
-    {
-      errorMessage: t("study.error.launcherCores"),
-    },
-  );
+  const cores = usePromiseWithSnackbarError(() => getLauncherCores(), {
+    errorMessage: t("study.error.launcherCores"),
+  });
 
   const { data: outputList } = usePromiseWithSnackbarError(
     () => Promise.all(studyIds.map((sid) => getStudyOutputs(sid))),
@@ -344,21 +343,26 @@ function LauncherDialog(props: Props) {
               />
             )}
           </Box>
-          {cores && (
-            <Slider
-              sx={{
-                width: "95%",
-                mx: 1,
-              }}
-              defaultValue={cores.defaultValue}
-              step={1}
-              min={cores.min}
-              max={cores.max}
-              valueLabelDisplay="auto"
-              color="secondary"
-              onChange={(event, val) => handleChange("nb_cpu", val as number)}
-            />
-          )}
+          <UsePromiseCond
+            response={cores}
+            ifResolved={(cores) => (
+              <Slider
+                sx={{
+                  width: "95%",
+                  mx: 1,
+                }}
+                defaultValue={cores.defaultValue}
+                step={1}
+                min={cores.min}
+                max={cores.max}
+                valueLabelDisplay="auto"
+                color="secondary"
+                onChange={(event, val) => handleChange("nb_cpu", val as number)}
+              />
+            )}
+            ifPending={() => <Skeleton />}
+            ifRejected={() => <Slider disabled />}
+          />
         </FormControl>
         <Typography sx={{ mt: 1 }}>Xpansion</Typography>
         <FormGroup
