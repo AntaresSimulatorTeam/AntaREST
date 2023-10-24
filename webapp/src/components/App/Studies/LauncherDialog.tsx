@@ -12,6 +12,7 @@ import {
   FormGroup,
   List,
   ListItem,
+  Skeleton,
   Slider,
   Stack,
   Switch,
@@ -31,6 +32,7 @@ import {
   LaunchOptions,
 } from "../../../common/types";
 import {
+  getLauncherCores,
   getLauncherLoad,
   getLauncherVersions,
   getStudyOutputs,
@@ -45,10 +47,10 @@ import LinearProgressWithLabel from "../../common/LinearProgressWithLabel";
 import SelectSingle from "../../common/SelectSingle";
 import CheckBoxFE from "../../common/fieldEditors/CheckBoxFE";
 import { convertVersions } from "../../../services/utils";
+import UsePromiseCond from "../../common/utils/UsePromiseCond";
 
 const LAUNCH_DURATION_MAX_HOURS = 240;
 const LAUNCH_LOAD_DEFAULT = 22;
-const LAUNCH_LOAD_SLIDER = { step: 1, min: 1, max: 24 };
 
 interface Props {
   open: boolean;
@@ -77,6 +79,10 @@ function LauncherDialog(props: Props) {
   const { data: load } = usePromiseWithSnackbarError(() => getLauncherLoad(), {
     errorMessage: t("study.error.launchLoad"),
     deps: [open],
+  });
+
+  const cores = usePromiseWithSnackbarError(() => getLauncherCores(), {
+    errorMessage: t("study.error.launcherCores"),
   });
 
   const { data: outputList } = usePromiseWithSnackbarError(
@@ -337,18 +343,25 @@ function LauncherDialog(props: Props) {
               />
             )}
           </Box>
-          <Slider
-            sx={{
-              width: "95%",
-              mx: 1,
-            }}
-            defaultValue={LAUNCH_LOAD_DEFAULT}
-            step={LAUNCH_LOAD_SLIDER.step}
-            min={LAUNCH_LOAD_SLIDER.min}
-            color="secondary"
-            max={LAUNCH_LOAD_SLIDER.max}
-            valueLabelDisplay="auto"
-            onChange={(event, val) => handleChange("nb_cpu", val as number)}
+          <UsePromiseCond
+            response={cores}
+            ifResolved={(cores) => (
+              <Slider
+                sx={{
+                  width: "95%",
+                  mx: 1,
+                }}
+                defaultValue={cores.defaultValue}
+                step={1}
+                min={cores.min}
+                max={cores.max}
+                valueLabelDisplay="auto"
+                color="secondary"
+                onChange={(event, val) => handleChange("nb_cpu", val as number)}
+              />
+            )}
+            ifPending={() => <Skeleton />}
+            ifRejected={() => <Slider disabled />}
           />
         </FormControl>
         <Typography sx={{ mt: 1 }}>Xpansion</Typography>
