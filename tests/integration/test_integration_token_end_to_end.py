@@ -1,4 +1,5 @@
 import io
+import typing as t
 from unittest.mock import ANY
 
 import numpy as np
@@ -6,9 +7,21 @@ from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskDTO, TaskStatus
 from tests.integration.assets import ASSETS_DIR
+from tests.integration.utils import wait_for
 
 
-def test_nominal_case_of_an_api_user(client: TestClient, admin_access_token: str, study_id: str) -> None:
+class CommandDict(t.TypedDict):
+    action: str
+    args: t.Dict[str, t.Any]
+
+
+def test_nominal_case_of_an_api_user(client: TestClient, admin_access_token: str) -> None:
+    """
+    Test the nominal case for an API user, which includes creating a **bot**, importing a study,
+    creating a variant, editing study configurations, creating thermal clusters, generating a variant,
+    running a simulation, and performing various other operations.
+    The test checks the success and status codes of the API endpoints.
+    """
     study_path = ASSETS_DIR / "STA-mini.zip"
 
     # create a bot
@@ -25,10 +38,10 @@ def test_nominal_case_of_an_api_user(client: TestClient, admin_access_token: str
         files={"study": io.BytesIO(study_path.read_bytes())},
         headers=bot_headers,
     )
-    uuid = res.json()
+    study_id = res.json()
 
     # create a variant from it
-    res = client.post(f"/v1/studies/{uuid}/variants?name=foo", headers=bot_headers)
+    res = client.post(f"/v1/studies/{study_id}/variants", headers=bot_headers, params={"name": "foo"})
     variant_id = res.json()
 
     # get the first area id of the study
@@ -37,10 +50,13 @@ def test_nominal_case_of_an_api_user(client: TestClient, admin_access_token: str
 
     # edit an area (for instance its geographic trimming attribute)
     res = client.put(
-        f"/v1/studies/{variant_id}/config/general/form", headers=bot_headers, json={"geographicTrimming": True}
+        f"/v1/studies/{variant_id}/config/general/form",
+        headers=bot_headers,
+        json={"geographicTrimming": True},
     )
     assert res.status_code == 200
-    command = [
+    commands: t.List[CommandDict]
+    commands = [
         {
             "action": "update_config",
             "args": {
@@ -49,7 +65,7 @@ def test_nominal_case_of_an_api_user(client: TestClient, admin_access_token: str
             },
         }
     ]
-    res = client.post(f"/v1/studies/{variant_id}/commands", headers=bot_headers, json=command)
+    res = client.post(f"/v1/studies/{variant_id}/commands", headers=bot_headers, json=commands)
     assert res.status_code == 200
 
     # modify its playlist (to do so, set its mcYears to more than the biggest year of the playlist)
@@ -59,7 +75,7 @@ def test_nominal_case_of_an_api_user(client: TestClient, admin_access_token: str
     assert res.status_code == 200
 
     # create a first simple thermal cluster
-    command = [
+    commands = [
         {
             "action": "create_cluster",
             "args": {
@@ -73,12 +89,12 @@ def test_nominal_case_of_an_api_user(client: TestClient, admin_access_token: str
             },
         }
     ]
-    res = client.post(f"/v1/studies/{variant_id}/commands", headers=bot_headers, json=command)
+    res = client.post(f"/v1/studies/{variant_id}/commands", headers=bot_headers, json=commands)
     assert res.status_code == 200
 
     # create a second thermal cluster with a lot of arguments
-    cluster_id = "newcluster"
-    command = [
+    cluster_id = "new_cluster"
+    commands = [
         {
             "action": "create_cluster",
             "args": {
@@ -101,7 +117,7 @@ def test_nominal_case_of_an_api_user(client: TestClient, admin_access_token: str
             },
         }
     ]
-    res = client.post(f"/v1/studies/{variant_id}/commands", headers=bot_headers, json=command)
+    res = client.post(f"/v1/studies/{variant_id}/commands", headers=bot_headers, json=commands)
     assert res.status_code == 200
     # add time_series matrix
     command_matrix = [
@@ -131,22 +147,31 @@ def test_nominal_case_of_an_api_user(client: TestClient, admin_access_token: str
     assert res.status_code == 200
 
     # edit existing cluster with only one argument
-    command = [
+    # noinspection SpellCheckingInspection
+    commands = [
         {
             "action": "update_config",
-            "args": {"target": f"input/thermal/clusters/{area_id}/list/{cluster_id}/nominalcapacity", "data": 300},
+            "args": {
+                "target": f"input/thermal/clusters/{area_id}/list/{cluster_id}/nominalcapacity",
+                "data": 300,
+            },
         }
     ]
-    res = client.post(f"/v1/studies/{variant_id}/commands", headers=bot_headers, json=command)
+    res = client.post(f"/v1/studies/{variant_id}/commands", headers=bot_headers, json=commands)
     assert res.status_code == 200
 
     # generate variant before running a simulation
     res = client.put(f"/v1/studies/{variant_id}/generate", headers=bot_headers)
     assert res.status_code == 200
-    res = client.get(f"/v1/tasks/{res.json()}?wait_for_completion=true", headers=bot_headers)
+    res = client.get(
+        f"/v1/tasks/{res.json()}",
+        headers=bot_headers,
+        params={"wait_for_completion": True},
+    )
     assert res.status_code == 200
-    task_result = TaskDTO.parse_obj(res.json())
+    task_result = TaskDTO(**res.json())
     assert task_result.status == TaskStatus.COMPLETED
+    assert task_result.result is not None
     assert task_result.result.success
 
     # run the simulation
@@ -162,8 +187,12 @@ def test_nominal_case_of_an_api_user(client: TestClient, admin_access_token: str
     assert len(res.json()) == 5
     first_output_name = res.json()[0]["name"]
     res = client.get(
-        f"/v1/studies/{study_id}/raw?path=output/{first_output_name}/economy/mc-all/areas/{area_id}/details-monthly&depth=3",
+        f"/v1/studies/{study_id}/raw",
         headers=bot_headers,
+        params={
+            "path": f"output/{first_output_name}/economy/mc-all/areas/{area_id}/details-monthly",
+            "depth": 3,
+        },
     )
     assert res.json() == {"index": ANY, "columns": ANY, "data": ANY}
 
@@ -174,9 +203,12 @@ def test_nominal_case_of_an_api_user(client: TestClient, admin_access_token: str
 
     # delete variant
     # For this test to pass on Windows, we have to wait for the simulation to finish (here it should fail)
-    while status != "failed":
-        res = client.get(f"/v1/launcher/jobs/{job_id}", headers=bot_headers)
-        status = res.json()["status"]
+    def callback() -> bool:
+        res_ = client.get(f"/v1/launcher/jobs/{job_id}", headers=bot_headers)
+        status_ = res_.json()["status"]
+        return bool(status_ != "failed")
+
+    wait_for(callback, timeout=5, sleep_time=0.2)
 
     res = client.delete(f"/v1/studies/{variant_id}", headers=bot_headers)
     assert res.status_code == 200
