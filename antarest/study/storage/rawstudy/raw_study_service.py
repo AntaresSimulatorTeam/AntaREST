@@ -5,7 +5,7 @@ import time
 from datetime import datetime
 from pathlib import Path
 from threading import Thread
-from typing import IO, List, Optional, Sequence
+from typing import BinaryIO, List, Optional, Sequence
 from uuid import uuid4
 from zipfile import ZipFile
 
@@ -298,7 +298,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             output_path.unlink(missing_ok=True)
         remove_from_cache(self.cache, metadata.id)
 
-    def import_study(self, metadata: RawStudy, stream: IO[bytes]) -> Study:
+    def import_study(self, metadata: RawStudy, stream: BinaryIO) -> Study:
         """
         Import study
         Args:

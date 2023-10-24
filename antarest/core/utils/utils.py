@@ -3,13 +3,13 @@ import os
 import shutil
 import tempfile
 import time
+import zipfile
 from glob import escape
 from pathlib import Path
-from typing import IO, Any, Callable, List, Optional, Tuple, TypeVar
-from zipfile import ZIP_DEFLATED, ZipFile
+from typing import Any, BinaryIO, Callable, List, Optional, Tuple, TypeVar
 
+import py7zr
 import redis
-from py7zr import SevenZipFile
 
 from antarest.core.config import RedisConfig
 from antarest.core.exceptions import BadZipBinary, ShouldNotHappenException
@@ -42,7 +42,7 @@ def sanitize_uuid(uuid: str) -> str:
     return str(escape(uuid))
 
 
-def extract_zip(stream: IO[bytes], dst: Path) -> None:
+def extract_zip(stream: BinaryIO, dst: Path) -> None:
     """
     Extract zip archive
     Args:
@@ -55,12 +55,12 @@ def extract_zip(stream: IO[bytes], dst: Path) -> None:
     stream.seek(0)  # Reset the stream position
 
     try:
-        if file_format[:2] == b"7z":  # .7z format
-            with SevenZipFile(stream, "r") as sevenzip_output:  # type: ignore
-                sevenzip_output.extractall(dst)
-        elif file_format == b"PK\x03\x04":  # .zip format
-            with ZipFile(stream) as zip_output:
-                zip_output.extractall(path=dst)
+        if file_format[:2] == b"7z":
+            with py7zr.SevenZipFile(stream, "r") as zf:
+                zf.extractall(dst)
+        elif file_format == b"PK\x03\x04":
+            with zipfile.ZipFile(stream) as zf:
+                zf.extractall(path=dst)
         else:
             raise BadZipBinary("Unsupported archive format")
     except Exception as error:
@@ -152,7 +152,7 @@ def concat_files_to_str(files: List[Path]) -> str:
 
 
 def zip_dir(dir_path: Path, zip_path: Path, remove_source_dir: bool = False) -> None:
-    with ZipFile(zip_path, mode="w", compression=ZIP_DEFLATED, compresslevel=2) as zipf:
+    with zipfile.ZipFile(zip_path, mode="w", compression=zipfile.ZIP_DEFLATED, compresslevel=2) as zipf:
         len_dir_path = len(str(dir_path))
         for root, _, files in os.walk(dir_path):
             for file in files:
@@ -163,7 +163,7 @@ def zip_dir(dir_path: Path, zip_path: Path, remove_source_dir: bool = False) -> 
 
 
 def unzip(dir_path: Path, zip_path: Path, remove_source_zip: bool = False) -> None:
-    with ZipFile(zip_path, mode="r") as zipf:
+    with zipfile.ZipFile(zip_path, mode="r") as zipf:
         zipf.extractall(dir_path)
     if remove_source_zip:
         zip_path.unlink()
@@ -177,7 +177,7 @@ def extract_file_to_tmp_dir(zip_path: Path, inside_zip_path: Path) -> Tuple[Path
     str_inside_zip_path = str(inside_zip_path).replace("\\", "/")
     tmp_dir = tempfile.TemporaryDirectory()
     try:
-        with ZipFile(zip_path) as zip_obj:
+        with zipfile.ZipFile(zip_path) as zip_obj:
             zip_obj.extract(str_inside_zip_path, tmp_dir.name)
     except Exception as e:
         logger.warning(

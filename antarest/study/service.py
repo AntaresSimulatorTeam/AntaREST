@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from http import HTTPStatus
 from pathlib import Path
 from time import time
-from typing import IO, Any, Callable, Dict, List, Optional, Sequence, Tuple, Union, cast
+from typing import Any, BinaryIO, Callable, Dict, List, Optional, Sequence, Tuple, Union, cast
 from uuid import uuid4
 
 import numpy as np
@@ -1272,7 +1272,7 @@ class StudyService:
 
     def import_study(
         self,
-        stream: IO[bytes],
+        stream: BinaryIO,
         group_ids: List[str],
         params: RequestParameters,
     ) -> str:
@@ -1321,7 +1321,7 @@ class StudyService:
     def import_output(
         self,
         uuid: str,
-        output: Union[IO[bytes], Path],
+        output: Union[BinaryIO, Path],
         params: RequestParameters,
         output_name_suffix: Optional[str] = None,
         auto_unzip: bool = True,

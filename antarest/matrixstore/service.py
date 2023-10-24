@@ -10,9 +10,9 @@ from pathlib import Path
 from typing import List, Optional, Sequence, Tuple, Union
 
 import numpy as np
+import py7zr
 from fastapi import UploadFile
 from numpy import typing as npt
-from py7zr import SevenZipFile
 
 from antarest.core.config import Config
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
@@ -198,7 +198,7 @@ class MatrixService(ISimpleMatrixService):
                             matrix_id = self._file_importation(zf.read(info.filename), is_json=is_json)
                             matrix_info.append(MatrixInfoDTO(id=matrix_id, name=info.filename))
                 else:
-                    with SevenZipFile(buffer, "r") as szf:
+                    with py7zr.SevenZipFile(buffer, "r") as szf:
                         for info in szf.list():
                             if info.is_directory or info.filename in EXCLUDED_FILES:  # type:ignore
                                 continue

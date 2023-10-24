@@ -3,14 +3,14 @@ import shutil
 import tempfile
 from abc import ABC
 from pathlib import Path
-from typing import IO, List, Optional, Union
+from typing import BinaryIO, List, Optional, Union
 from uuid import uuid4
 
 from antarest.core.config import Config
 from antarest.core.exceptions import BadOutputError, StudyOutputNotFoundError
 from antarest.core.interfaces.cache import CacheConstants, ICache
 from antarest.core.model import JSON
-from antarest.core.utils.utils import StopWatch, assert_this, extract_zip, unzip, zip_dir
+from antarest.core.utils.utils import StopWatch, extract_zip, unzip, zip_dir
 from antarest.study.common.studystorage import IStudyStorageService, T
 from antarest.study.common.utils import get_study_information
 from antarest.study.model import (
@@ -163,7 +163,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
     def import_output(
         self,
         metadata: T,
-        output: Union[IO[bytes], Path],
+        output: Union[BinaryIO, Path],
         output_name: Optional[str] = None,
     ) -> Optional[str]:
         """
@@ -178,7 +178,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         path_output = Path(metadata.path) / "output" / f"imported_output_{str(uuid4())}"
         study_id = metadata.id
         path_output.mkdir(parents=True)
-        output_full_name: Optional[str] = None
+        output_full_name: Optional[str]
         is_zipped = False
         stopwatch = StopWatch()
         try:
