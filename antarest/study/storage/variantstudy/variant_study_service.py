@@ -690,9 +690,11 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         )
         last_executed_command_index = (
             None
-            if is_parent_newer
-            or from_scratch
-            or (isinstance(parent_study, VariantStudy) and not self.exists(parent_study))
+            if (
+                is_parent_newer
+                or from_scratch
+                or (isinstance(parent_study, VariantStudy) and not self.exists(parent_study))
+            )
             else last_executed_command_index
         )
 
@@ -966,6 +968,8 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                 # The study is already present on disk => nothing to do
                 return
 
+            logger.info("🔹 Starting variant study generation...")
+            # Create and run the generation task in a thread pool.
             task_id = self.generate_task(metadata)
             self.task_service.await_task(task_id, timeout)
             result = self.task_service.status_task(task_id, RequestParameters(DEFAULT_ADMIN_USER))
@@ -975,8 +979,9 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             raise ValueError("Fail to generate variant study")
 
         except Exception as e:
-            logger.error(f"Fail to generate variant study {metadata.id}", exc_info=e)
-            raise VariantGenerationError(f"Error while generating {metadata.id}") from None
+            logger.error(f"⚡ Fail to generate variant study {metadata.id}", exc_info=e)
+            # raise VariantGenerationError(f"Error while generating {metadata.id}") from None
+            raise
 
     @staticmethod
     def _get_snapshot_last_executed_command_index(

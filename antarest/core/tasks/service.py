@@ -141,6 +141,7 @@ class TaskJobService(ITaskService):
                 task_type,
             )
             while not task_result_wrapper:
+                logger.info("💤 Sleeping 1 second...")
                 time.sleep(1)
             self.event_bus.remove_listener(listener_id)
             return task_result_wrapper[0]
@@ -284,9 +285,14 @@ class TaskJobService(ITaskService):
         return self.repo.list(task_filter, user)
 
     def await_task(self, task_id: str, timeout_sec: int = DEFAULT_AWAIT_MAX_TIMEOUT) -> None:
-        logger.info(f"Awaiting task '{task_id}'...")
         if task_id in self.tasks:
-            self.tasks[task_id].result(timeout_sec)
+            try:
+                logger.info(f"🤔 Awaiting task '{task_id}'...")
+                self.tasks[task_id].result(timeout_sec)
+                logger.info(f"📌 Task '{task_id}' done.")
+            except Exception as exc:
+                logger.critical(f"🤕 Task '{task_id}' failed: {exc}.")
+                raise
         else:
             logger.warning(f"Task '{task_id}' not handled by this worker, will poll for task completion from db")
             end = time.time() + timeout_sec
@@ -298,6 +304,7 @@ class TaskJobService(ITaskService):
                         return
                     if TaskStatus(task.status).is_final():
                         return
+                logger.info("💤 Sleeping 2 seconds...")
                 time.sleep(2)
             logger.error(f"Timeout while awaiting task '{task_id}'")
             with db():
