@@ -63,8 +63,6 @@ export interface ThermalCluster extends ThermalClusterPollutants {
   enabled: boolean;
   unitCount: number;
   nominalCapacity: number;
-  installedCapacity: number;
-  enabledCapacity: number;
   mustRun: boolean;
   minStablePower: number;
   spinning: number;
@@ -80,6 +78,11 @@ export interface ThermalCluster extends ThermalClusterPollutants {
   volatilityPlanned: number;
   lawForced: LawOption;
   lawPlanned: LawOption;
+}
+
+export interface ThermalClusterWithCapacity extends ThermalCluster {
+  enabledCapacity: number;
+  installedCapacity: number;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -164,8 +167,8 @@ export async function createThermalCluster(
   studyId: StudyMetadata["id"],
   areaId: Area["name"],
   data: Partial<ThermalCluster>,
-): Promise<ThermalCluster> {
-  return makeRequest<ThermalCluster>(
+): Promise<ThermalClusterWithCapacity> {
+  return makeRequest<ThermalClusterWithCapacity>(
     "post",
     getClustersUrl(studyId, areaId),
     data,
@@ -191,10 +194,9 @@ export function deleteThermalClusters(
  * @example "100/200"
  * @see https://www.material-react-table.com/docs/guides/aggregation-and-grouping#custom-aggregation-functions
  */
-export const capacityAggregationFn: MRT_AggregationFn<ThermalCluster> = (
-  colHeader,
-  rows,
-) => {
+export const capacityAggregationFn: MRT_AggregationFn<
+  ThermalClusterWithCapacity
+> = (colHeader, rows) => {
   const { enabledCapacitySum, installedCapacitySum } = rows.reduce(
     (
       acc: { enabledCapacitySum: number; installedCapacitySum: number },

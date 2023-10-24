@@ -7,12 +7,12 @@ import { useTranslation } from "react-i18next";
 import { StudyMetadata } from "../../../../../../../common/types";
 import {
   ThermalClusterGroup,
-  ThermalCluster,
   getThermalClusters,
   createThermalCluster,
   deleteThermalClusters,
   capacityAggregationFn,
   CLUSTER_GROUP_OPTIONS,
+  ThermalClusterWithCapacity,
 } from "./utils";
 import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../../redux/selectors";
@@ -85,7 +85,7 @@ function Thermal() {
       );
     }, [clustersWithCapacity]);
 
-  const columns = useMemo<MRT_ColumnDef<ThermalCluster>[]>(
+  const columns = useMemo<MRT_ColumnDef<ThermalClusterWithCapacity>[]>(
     () => [
       {
         accessorKey: "name",
@@ -217,7 +217,7 @@ function Thermal() {
     installedCapacity,
     enabledCapacity,
     ...cluster
-  }: ThermalCluster) => {
+  }: ThermalClusterWithCapacity) => {
     return createThermalCluster(study.id, currentAreaId, cluster);
   };
 
