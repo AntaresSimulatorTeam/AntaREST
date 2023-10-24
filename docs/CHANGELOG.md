@@ -1,7 +1,7 @@
 Antares Web Changelog
 =====================
 
-v2.15.4 (unreleased)
+v2.15.4 (2023-10-25)
 --------------------
 
 ### Tests
@@ -11,7 +11,9 @@ v2.15.4 (unreleased)
 
 ### Bug Fixes
 
-*  **raw:** fix HTTP exception when going on debug view (#1769) ([afac2d6](https://github.com/AntaresSimulatorTeam/AntaREST/commit/afac2d67fc72e2a39557665a4123e99c9ca57a5f))
+*  **results-ui:** display results for a specific year [`#1779`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1779)
+*  **ui-study:** remove popup to prevent close after variant creation [`#1773`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1773)
+*  **raw:** fix HTTP exception when going on debug view [`#1769`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1769)
 
 
 ### Contributors
