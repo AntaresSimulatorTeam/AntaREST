@@ -1,3 +1,4 @@
+import concurrent.futures
 import json
 import logging
 import re
@@ -21,6 +22,7 @@ from antarest.core.exceptions import (
     StudyNotFoundError,
     StudyTypeUnsupported,
     VariantGenerationError,
+    VariantGenerationTimeoutError,
     VariantStudyParentNotValid,
 )
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
@@ -818,7 +820,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         from_index: int = 0,
     ) -> Tuple[List[List[ICommand]], Callable[[int, bool, str], None]]:
         # Generate
-        commands: List[List[ICommand]] = self._to_icommand(variant_study, from_index)
+        commands: List[List[ICommand]] = self._to_commands(variant_study, from_index)
 
         def notify(command_index: int, command_result: bool, command_message: str) -> None:
             try:
@@ -845,7 +847,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
 
         return commands, notify
 
-    def _to_icommand(self, metadata: VariantStudy, from_index: int = 0) -> List[List[ICommand]]:
+    def _to_commands(self, metadata: VariantStudy, from_index: int = 0) -> List[List[ICommand]]:
         commands: List[List[ICommand]] = [
             self.command_factory.to_command(command_block.to_dto())
             for index, command_block in enumerate(metadata.commands)
@@ -976,12 +978,17 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             if result.result and result.result.success:
                 # OK, the study has been generated
                 return
-            raise ValueError("Fail to generate variant study")
+            raise ValueError("No task result or result failed")
+
+        except concurrent.futures.TimeoutError as e:
+            # Raise a REQUEST_TIMEOUT error (408)
+            logger.error(f"⚡ Timeout while generating variant study {metadata.id}", exc_info=e)
+            raise VariantGenerationTimeoutError(f"Timeout while generating {metadata.id}") from None
 
         except Exception as e:
+            # raise a EXPECTATION_FAILED error (417)
             logger.error(f"⚡ Fail to generate variant study {metadata.id}", exc_info=e)
-            # raise VariantGenerationError(f"Error while generating {metadata.id}") from None
-            raise
+            raise VariantGenerationError(f"Error while generating {metadata.id}") from None
 
     @staticmethod
     def _get_snapshot_last_executed_command_index(
