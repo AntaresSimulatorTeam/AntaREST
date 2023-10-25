@@ -3,16 +3,17 @@ from pathlib import Path
 from unittest.mock import ANY, Mock
 
 import numpy as np
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine  # type: ignore
 from sqlalchemy.engine.base import Engine  # type: ignore
 
 from antarest.core.cache.business.local_chache import LocalCache
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
-from antarest.core.jwt import JWTGroup, JWTUser
+from antarest.core.jwt import ADMIN_ID, JWTGroup, JWTUser
 from antarest.core.persistence import Base
 from antarest.core.requests import RequestParameters
 from antarest.core.roles import RoleType
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
+from antarest.login.model import Password, User
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, StudyAdditionalData
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
@@ -23,21 +24,21 @@ from antarest.study.storage.variantstudy.variant_study_service import SNAPSHOT_R
 # noinspection SpellCheckingInspection
 SADMIN = RequestParameters(
     user=JWTUser(
-        id=0,
-        impersonator=0,
+        id=ADMIN_ID,
+        impersonator=ADMIN_ID,
         type="users",
         groups=[JWTGroup(id="admin", name="admin", role=RoleType.ADMIN)],
     )
 )
 
 
-def test_commands_service(tmp_path: Path, db_engine: Engine, command_factory: CommandFactory):
-    # noinspection SpellCheckingInspection
-    DBSessionMiddleware(
-        None,
-        custom_engine=db_engine,
-        session_args={"autocommit": False, "autoflush": False},
-    )
+def test_commands_service(tmp_path: Path, command_factory: CommandFactory) -> None:
+    with db():
+        # Ensure the admin user is in database
+        admin_user = User(id=ADMIN_ID, name="admin", password=Password("admin"))
+        db.session.add(admin_user)
+        db.session.commit()
+
     repository = VariantStudyRepository(LocalCache())
     service = VariantStudyService(
         raw_study_service=Mock(),
@@ -51,27 +52,27 @@ def test_commands_service(tmp_path: Path, db_engine: Engine, command_factory: Co
         patch_service=Mock(),
     )
 
+    # Save a study
     with db():
-        # sourcery skip: extract-method, inline-variable
-        # Save a study
-        origin_id = "origin-id"
         # noinspection PyArgumentList
         origin_study = RawStudy(
-            id=origin_id,
             name="my-study",
             additional_data=StudyAdditionalData(),
         )
         repository.save(origin_study)
+        origin_id: str = origin_study.id
 
-        # Create un new variant
-        name = "my-variant"
-        variant_study = service.create_variant_study(origin_id, name, SADMIN)
+    # Create un new variant
+    with db():
+        variant_study = service.create_variant_study(origin_id, "my-variant", SADMIN)
         saved_id = variant_study.id
         study = repository.get(saved_id)
+        assert study is not None
         assert study.id == saved_id
         assert study.parent_id == origin_id
 
-        # Append command
+    # Append commands
+    with db():
         command_1 = CommandDTO(action="create_area", args={"area_name": "Yes"})
         service.append_command(saved_id, command_1, SADMIN)
         command_2 = CommandDTO(action="create_area", args={"area_name": "No"})
@@ -79,22 +80,26 @@ def test_commands_service(tmp_path: Path, db_engine: Engine, command_factory: Co
         commands = service.get_commands(saved_id, SADMIN)
         assert len(commands) == 2
 
-        # Append multiple commands
+    # Append multiple commands
+    with db():
         command_3 = CommandDTO(action="create_area", args={"area_name": "Maybe"})
         command_4 = CommandDTO(action="create_link", args={"area1": "No", "area2": "Yes"})
         service.append_commands(saved_id, [command_3, command_4], SADMIN)
         commands = service.get_commands(saved_id, SADMIN)
         assert len(commands) == 4
-
         # Get command
+        assert commands[0].id is not None
         assert commands[0] == service.get_command(saved_id, commands[0].id, SADMIN)
 
-        # Remove command
+    # Remove command
+    with db():
         service.remove_command(saved_id, commands[2].id, SADMIN)
         commands = service.get_commands(saved_id, SADMIN)
+        assert commands[2].id is not None
         assert len(commands) == 3
 
-        # Update command
+    # Update command
+    with db():
         prepro = np.random.rand(365, 6).tolist()
         prepro_id = command_factory.command_context.matrix_service.create(prepro)
         command_5 = CommandDTO(
@@ -111,10 +116,12 @@ def test_commands_service(tmp_path: Path, db_engine: Engine, command_factory: Co
             params=SADMIN,
         )
         commands = service.get_commands(saved_id, SADMIN)
+        assert commands[2].id is not None
         assert commands[2].action == "replace_matrix"
         assert commands[2].args["matrix"] == prepro_id
 
-        # Move command
+    # Move command
+    with db():
         service.move_command(
             study_id=saved_id,
             command_id=commands[2].id,
@@ -124,7 +131,8 @@ def test_commands_service(tmp_path: Path, db_engine: Engine, command_factory: Co
         commands = service.get_commands(saved_id, SADMIN)
         assert commands[0].action == "replace_matrix"
 
-        # Generate
+    # Generate
+    with db():
         service._generate_snapshot = Mock()
         service._read_additional_data_from_files = Mock()
         service._read_additional_data_from_files.return_value = StudyAdditionalData()
@@ -132,7 +140,9 @@ def test_commands_service(tmp_path: Path, db_engine: Engine, command_factory: Co
         service._generate_snapshot.return_value = expected_result
         results = service._generate(saved_id, SADMIN, False)
         assert results == expected_result
-        assert study.snapshot.id == study.id
+        study = repository.get(saved_id)
+        assert study is not None
+        assert study.snapshot.id == saved_id
 
 
 def test_smart_generation(tmp_path: Path, command_factory: CommandFactory) -> None:
