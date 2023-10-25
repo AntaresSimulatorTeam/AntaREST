@@ -124,7 +124,7 @@ The data which can be uploaded are either a single tsv file, or a zipped list of
 
 ![](../assets/media/img/userguide_dataset_creation.png)
 
-## User account & api tokens
+## User account and api tokens
 
 For normal user, the account section allows the creation of "api token".  
 These token can be used in scripts that will use the [API](#api-documentation).
