@@ -16,16 +16,22 @@ from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
 class CreateRenewablesCluster(ICommand):
+    """
+    Command used to create a renewable cluster in an area.
+    """
+
+    # Overloaded metadata
+    # ===================
+
+    command_name = CommandName.CREATE_RENEWABLES_CLUSTER
+    version = 1
+
+    # Command parameters
+    # ==================
+
     area_id: str
     cluster_name: str
     parameters: Dict[str, str]
-
-    def __init__(self, **data: Any) -> None:
-        super().__init__(
-            command_name=CommandName.CREATE_RENEWABLES_CLUSTER,
-            version=1,
-            **data,
-        )
 
     @validator("cluster_name")
     def validate_cluster_name(cls, val: str) -> str:
@@ -43,20 +49,33 @@ class CreateRenewablesCluster(ICommand):
             )
             return CommandOutput(status=False, message=message), {}
 
+        # Search the Area in the configuration
         if self.area_id not in study_data.areas:
-            message = f"Area '{self.area_id}' does not exist"
-            return CommandOutput(status=False, message=message), {}
+            return (
+                CommandOutput(
+                    status=False,
+                    message=f"Area '{self.area_id}' does not exist in the study configuration.",
+                ),
+                {},
+            )
 
         cluster_id = transform_name_to_id(self.cluster_name)
         for cluster in study_data.areas[self.area_id].renewables:
             if cluster.id == cluster_id:
-                message = f"Renewable cluster '{self.cluster_name}' already exist"
-                return CommandOutput(status=False, message=message), {}
+                return (
+                    CommandOutput(
+                        status=False,
+                        message=f"Renewable cluster '{cluster_id}' already exists in the area '{self.area_id}'.",
+                    ),
+                    {},
+                )
 
         study_data.areas[self.area_id].renewables.append(Cluster(id=cluster_id, name=self.cluster_name))
-        message = f"Renewable cluster '{self.cluster_name}' added to area '{self.area_id}'"
         return (
-            CommandOutput(status=True, message=message),
+            CommandOutput(
+                status=True,
+                message=f"Renewable cluster '{cluster_id}' added to area '{self.area_id}'.",
+            ),
             {"cluster_id": cluster_id},
         )
 
@@ -94,7 +113,7 @@ class CreateRenewablesCluster(ICommand):
 
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
-            action=CommandName.CREATE_RENEWABLES_CLUSTER.value,
+            action=self.command_name.value,
             args={
                 "area_id": self.area_id,
                 "cluster_name": self.cluster_name,

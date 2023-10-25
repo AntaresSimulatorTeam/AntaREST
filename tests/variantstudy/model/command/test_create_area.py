@@ -141,13 +141,7 @@ class TestCreateArea:
 
         assert output.status
 
-        create_area_command: ICommand = CreateArea.parse_obj(
-            {
-                "area_name": area_name,
-                "metadata": {},
-                "command_context": command_context,
-            }
-        )
+        create_area_command: ICommand = CreateArea(area_name=area_name, command_context=command_context, metadata={})
         output = create_area_command.apply(study_data=empty_study)
         assert not output.status
 

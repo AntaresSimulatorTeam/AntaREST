@@ -1,11 +1,14 @@
 import hashlib
+import typing as t
 import zipfile
 from pathlib import Path
 from unittest.mock import Mock
 
 import numpy as np
+import numpy.typing as npt
 import pytest
 
+from antarest.matrixstore.model import MatrixDTO
 from antarest.matrixstore.service import MatrixService
 from antarest.matrixstore.uri_resolver_service import UriResolverService
 from antarest.study.repository import StudyMetadataRepository
@@ -29,17 +32,50 @@ def matrix_service_fixture() -> MatrixService:
         An instance of the `SimpleMatrixService` class representing the matrix service.
     """
 
-    def create(data):
+    matrix_map: t.Dict[str, npt.NDArray[np.float64]] = {}
+
+    def create(data: t.Union[t.List[t.List[float]], npt.NDArray[np.float64]]) -> str:
         """
         This function calculates a unique ID for each matrix, without storing
         any data in the file system or the database.
         """
         matrix = data if isinstance(data, np.ndarray) else np.array(data, dtype=np.float64)
         matrix_hash = hashlib.sha256(matrix.data).hexdigest()
+        matrix_map[matrix_hash] = matrix
         return matrix_hash
+
+    def get(matrix_id: str) -> MatrixDTO:
+        """
+        This function retrieves the matrix from the map.
+        """
+        data = matrix_map[matrix_id]
+        return MatrixDTO(
+            id=matrix_id,
+            width=data.shape[1],
+            height=data.shape[0],
+            index=[str(i) for i in range(data.shape[0])],
+            columns=[str(i) for i in range(data.shape[1])],
+            data=data.tolist(),
+        )
+
+    def exists(matrix_id: str) -> bool:
+        """
+        This function checks if the matrix exists in the map.
+        """
+        return matrix_id in matrix_map
+
+    def delete(matrix_id: str) -> None:
+        """
+        This function deletes the matrix from the map.
+        """
+        del matrix_map[matrix_id]
 
     matrix_service = Mock(spec=MatrixService)
     matrix_service.create.side_effect = create
+    matrix_service.get.side_effect = get
+    matrix_service.exists.side_effect = exists
+    matrix_service.delete.side_effect = delete
+
     return matrix_service
 
 

@@ -585,7 +585,6 @@
   "studies.variant": "Variant",
   "variants.createNewVariant": "Create new variant",
   "variants.newVariant": "New variant",
-  "variants.error.variantCreation": "Failed to create variant",
   "variants.newCommand": "Add new command",
   "variants.commandActionLabel": "Select action",
   "variants.success.save": "Command updated successfully",

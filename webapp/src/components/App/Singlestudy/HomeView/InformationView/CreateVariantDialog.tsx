@@ -1,12 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
-import { AxiosError } from "axios";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
 import { GenericInfo, VariantTree } from "../../../../../common/types";
 import { createVariant } from "../../../../../services/api/variant";
 import { createListFromTree } from "../../../../../services/utils";
-import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
 import FormDialog from "../../../../common/dialogs/FormDialog";
 import StringFE from "../../../../common/fieldEditors/StringFE";
 import Fieldset from "../../../../common/Fieldset";
@@ -24,39 +22,28 @@ function CreateVariantDialog(props: Props) {
   const { parentId, open, tree, onClose } = props;
   const [t] = useTranslation();
   const navigate = useNavigate();
-  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [sourceList, setSourceList] = useState<Array<GenericInfo>>([]);
+  const defaultValues = { name: "", sourceId: parentId };
 
   useEffect(() => {
     setSourceList(createListFromTree(tree));
   }, [tree]);
 
-  const defaultValues = {
-    name: "",
-    sourceId: parentId,
-  };
-
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = async (
-    data: SubmitHandlerPlus<typeof defaultValues>,
-  ) => {
+  const handleSubmit = (data: SubmitHandlerPlus<typeof defaultValues>) => {
     const { sourceId, name } = data.values;
+    return createVariant(sourceId, name);
+  };
 
-    try {
-      if (sourceId) {
-        const variantId = await createVariant(sourceId, name);
-        onClose();
-        navigate(`/studies/${variantId}`);
-      }
-    } catch (e) {
-      enqueueErrorSnackbar(
-        t("variants.error.variantCreation"),
-        e as AxiosError,
-      );
-    }
+  const handleSubmitSuccessful = async (
+    data: SubmitHandlerPlus<typeof defaultValues>,
+    variantId: string
+  ) => {
+    onClose();
+    navigate(`/studies/${variantId}`);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -70,6 +57,7 @@ function CreateVariantDialog(props: Props) {
       open={open}
       onCancel={onClose}
       onSubmit={handleSubmit}
+      onSubmitSuccessful={handleSubmitSuccessful}
       config={{ defaultValues }}
     >
       {({ control }) => (

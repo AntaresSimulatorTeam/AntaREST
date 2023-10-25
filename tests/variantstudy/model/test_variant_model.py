@@ -2,7 +2,9 @@ import datetime
 from pathlib import Path
 from unittest.mock import ANY, Mock
 
+import numpy as np
 from sqlalchemy import create_engine
+from sqlalchemy.engine.base import Engine  # type: ignore
 
 from antarest.core.cache.business.local_chache import LocalCache
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
@@ -29,17 +31,11 @@ SADMIN = RequestParameters(
 )
 
 
-def test_commands_service(tmp_path: Path, command_factory: CommandFactory):
-    engine = create_engine(
-        "sqlite:///:memory:",
-        echo=False,
-        connect_args={"check_same_thread": False},
-    )
-    Base.metadata.create_all(engine)
+def test_commands_service(tmp_path: Path, db_engine: Engine, command_factory: CommandFactory):
     # noinspection SpellCheckingInspection
     DBSessionMiddleware(
         None,
-        custom_engine=engine,
+        custom_engine=db_engine,
         session_args={"autocommit": False, "autoflush": False},
     )
     repository = VariantStudyRepository(LocalCache())
@@ -99,12 +95,13 @@ def test_commands_service(tmp_path: Path, command_factory: CommandFactory):
         assert len(commands) == 3
 
         # Update command
-        # note: we use a matrix reference to simplify tests
+        prepro = np.random.rand(365, 6).tolist()
+        prepro_id = command_factory.command_context.matrix_service.create(prepro)
         command_5 = CommandDTO(
             action="replace_matrix",
             args={
                 "target": "some/matrix/path",
-                "matrix": "matrix://739aa4b6-79ff-4388-8fed-f0d285bfc69f",
+                "matrix": prepro_id,
             },
         )
         service.update_command(
@@ -115,7 +112,7 @@ def test_commands_service(tmp_path: Path, command_factory: CommandFactory):
         )
         commands = service.get_commands(saved_id, SADMIN)
         assert commands[2].action == "replace_matrix"
-        assert commands[2].args["matrix"] == "matrix://739aa4b6-79ff-4388-8fed-f0d285bfc69f"
+        assert commands[2].args["matrix"] == prepro_id
 
         # Move command
         service.move_command(

@@ -1,5 +1,6 @@
 import configparser
 
+import numpy as np
 import pytest
 from pydantic import ValidationError
 
@@ -234,14 +235,23 @@ def test_revert(command_context: CommandContext):
 
 
 def test_create_diff(command_context: CommandContext):
-    base = CreateLink(area1="foo", area2="bar", series="a", command_context=command_context)
+    series_a = np.random.rand(8760, 8).tolist()
+    base = CreateLink(
+        area1="foo",
+        area2="bar",
+        series=series_a,
+        command_context=command_context,
+    )
+
+    series_b = np.random.rand(8760, 8).tolist()
     other_match = CreateLink(
         area1="foo",
         area2="bar",
         parameters={"hurdles-cost": "true"},
-        series="b",
+        series=series_b,
         command_context=command_context,
     )
+
     assert base.create_diff(other_match) == [
         UpdateConfig(
             target=f"input/links/bar/properties/foo",
@@ -250,7 +260,7 @@ def test_create_diff(command_context: CommandContext):
         ),
         ReplaceMatrix(
             target=f"@links_series/bar/foo",
-            matrix="b",
+            matrix=series_b,
             command_context=command_context,
         ),
     ]

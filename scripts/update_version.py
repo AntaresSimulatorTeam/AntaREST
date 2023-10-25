@@ -148,7 +148,7 @@ def upgrade_version(new_version: str, new_date: str) -> None:
         if fullpath.is_file():
             print(f"- updating '{fullpath.relative_to(PROJECT_DIR)}'...")
             text = fullpath.read_text(encoding="utf-8")
-            patched = re.sub(search, replace, text, count=1)
+            patched = re.sub(search, replace, text, count=2)
             fullpath.write_text(patched, encoding="utf-8")
 
     # Patching release date

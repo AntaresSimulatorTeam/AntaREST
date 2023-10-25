@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Button } from "@mui/material";
 import { useId, useState } from "react";
 import { FieldValues, FormState } from "react-hook-form";
@@ -5,30 +6,37 @@ import { useTranslation } from "react-i18next";
 import BasicDialog, { BasicDialogProps } from "./BasicDialog";
 import Form, { FormProps } from "../Form";
 
-type SuperType<TFieldValues extends FieldValues, TContext> = Omit<
-  BasicDialogProps,
-  "onSubmit" | "children"
-> &
-  Omit<FormProps<TFieldValues, TContext>, "hideSubmitButton">;
+type SuperType<
+  TFieldValues extends FieldValues,
+  TContext,
+  SubmitReturnValue
+> = Omit<BasicDialogProps, "onSubmit" | "onInvalid" | "children"> &
+  Omit<
+    FormProps<TFieldValues, TContext, SubmitReturnValue>,
+    "hideSubmitButton"
+  >;
 
 export interface FormDialogProps<
   TFieldValues extends FieldValues = FieldValues,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   TContext = any,
-> extends SuperType<TFieldValues, TContext> {
+  SubmitReturnValue = any
+> extends SuperType<TFieldValues, TContext, SubmitReturnValue> {
   cancelButtonText?: string;
   onCancel: VoidFunction;
 }
 
 // TODO: `formState.isSubmitting` doesn't update when auto submit enabled
 
-function FormDialog<TFieldValues extends FieldValues, TContext>(
-  props: FormDialogProps<TFieldValues, TContext>,
-) {
+function FormDialog<
+  TFieldValues extends FieldValues,
+  TContext,
+  SubmitReturnValue
+>(props: FormDialogProps<TFieldValues, TContext, SubmitReturnValue>) {
   const {
     config,
     onSubmit,
-    onSubmitError,
+    onSubmitSuccessful,
+    onInvalid,
     children,
     autoSubmit,
     onStateChange,
@@ -42,7 +50,8 @@ function FormDialog<TFieldValues extends FieldValues, TContext>(
   const formProps = {
     config,
     onSubmit,
-    onSubmitError,
+    onSubmitSuccessful,
+    onInvalid,
     children,
     autoSubmit,
   };
