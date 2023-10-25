@@ -51,14 +51,22 @@ export type AutoSubmitConfig = { enable: boolean; wait?: number };
 
 export interface FormProps<
   TFieldValues extends FieldValues = FieldValues,
-  TContext = any
-> extends Omit<React.HTMLAttributes<HTMLFormElement>, "onSubmit" | "children"> {
+  TContext = any,
+  SubmitReturnValue = any
+> extends Omit<
+    React.HTMLAttributes<HTMLFormElement>,
+    "onSubmit" | "onInvalid" | "children"
+  > {
   config?: UseFormProps<TFieldValues, TContext>;
   onSubmit?: (
     data: SubmitHandlerPlus<TFieldValues>,
     event?: React.BaseSyntheticEvent
-  ) => void | Promise<any>;
-  onSubmitError?: SubmitErrorHandler<TFieldValues>;
+  ) => void | Promise<SubmitReturnValue>;
+  onSubmitSuccessful?: (
+    data: SubmitHandlerPlus<TFieldValues>,
+    submitResult: SubmitReturnValue
+  ) => void;
+  onInvalid?: SubmitErrorHandler<TFieldValues>;
   children:
     | ((formApi: UseFormReturnPlus<TFieldValues, TContext>) => React.ReactNode)
     | React.ReactNode;
@@ -82,7 +90,8 @@ function Form<TFieldValues extends FieldValues, TContext>(
   const {
     config,
     onSubmit,
-    onSubmitError,
+    onSubmitSuccessful,
+    onInvalid,
     children,
     submitButtonText,
     submitButtonIcon,
@@ -110,6 +119,8 @@ function Form<TFieldValues extends FieldValues, TContext>(
     []
   );
   const lastSubmittedData = useRef<TFieldValues>();
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  const submitSuccessfulCb = useRef(() => {});
   const preventClose = useRef(false);
   const contextValue = useMemo(
     () => ({ isAutoSubmitEnabled: autoSubmitConfig.enable }),
@@ -177,6 +188,8 @@ function Form<TFieldValues extends FieldValues, TContext>(
   useEffect(
     () => {
       if (isSubmitSuccessful && lastSubmittedData.current) {
+        submitSuccessfulCb.current();
+
         const valuesToSetAfterReset = getValues(
           fieldsChangeDuringAutoSubmitting.current
         );
@@ -232,11 +245,11 @@ function Form<TFieldValues extends FieldValues, TContext>(
         typeof data
       >;
 
-      const res = [];
+      const toResolve = [];
 
       if (autoSubmitConfig.enable) {
         const listeners = fieldAutoSubmitListeners.current;
-        res.push(
+        toResolve.push(
           ...Object.keys(listeners)
             .filter((key) => R.hasPath(stringToPath(key), dirtyValues))
             .map((key) => {
@@ -246,11 +259,19 @@ function Form<TFieldValues extends FieldValues, TContext>(
         );
       }
 
+      const dataArg = { values: data, dirtyValues };
+
       if (onSubmit) {
-        res.push(onSubmit({ values: data, dirtyValues }, event));
+        toResolve.push(onSubmit(dataArg, event));
       }
 
-      return Promise.all(res)
+      return Promise.all(toResolve)
+        .then((values) => {
+          submitSuccessfulCb.current = () => {
+            const onSubmitRes = onSubmit ? R.last(values) : undefined;
+            onSubmitSuccessful?.(dataArg, onSubmitRes);
+          };
+        })
         .catch((err) => {
           enqueueErrorSnackbar(t("form.submit.error"), err);
 
@@ -266,7 +287,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
         .finally(() => {
           preventClose.current = false;
         });
-    }, onSubmitError);
+    }, onInvalid);
 
     return callback();
   };

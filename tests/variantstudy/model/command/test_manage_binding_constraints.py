@@ -1,5 +1,7 @@
 from unittest.mock import Mock
 
+import numpy as np
+
 from antarest.study.storage.rawstudy.io.reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -337,22 +339,25 @@ def test_revert(command_context: CommandContext):
 
 
 def test_create_diff(command_context: CommandContext):
+    values_a = np.random.rand(365, 3).tolist()
     base = CreateBindingConstraint(
         name="foo",
         enabled=False,
         time_step=BindingConstraintFrequency.DAILY,
         operator=BindingConstraintOperator.BOTH,
         coeffs={"a": [0.3]},
-        values="a",
+        values=values_a,
         command_context=command_context,
     )
+
+    values_b = np.random.rand(8760, 3).tolist()
     other_match = CreateBindingConstraint(
         name="foo",
         enabled=True,
         time_step=BindingConstraintFrequency.HOURLY,
         operator=BindingConstraintOperator.EQUAL,
         coeffs={"b": [0.3]},
-        values="b",
+        values=values_b,
         command_context=command_context,
     )
     assert base.create_diff(other_match) == [
@@ -362,7 +367,7 @@ def test_create_diff(command_context: CommandContext):
             time_step=BindingConstraintFrequency.HOURLY,
             operator=BindingConstraintOperator.EQUAL,
             coeffs={"b": [0.3]},
-            values="b",
+            values=values_b,
             command_context=command_context,
         )
     ]

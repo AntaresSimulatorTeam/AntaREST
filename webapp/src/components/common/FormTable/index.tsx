@@ -23,7 +23,7 @@ export interface FormTableProps<
 > {
   defaultValues: DefaultValues<TFieldValues>;
   onSubmit?: FormProps<TFieldValues>["onSubmit"];
-  onSubmitError?: FormProps<TFieldValues>["onSubmitError"];
+  onInvalid?: FormProps<TFieldValues>["onInvalid"];
   formApiRef?: FormProps<TFieldValues>["apiRef"];
   sx?: SxProps<Theme>;
   tableProps?: Omit<TableProps, "data" | "columns" | "colHeaders"> & {
@@ -40,7 +40,7 @@ function FormTable<TFieldValues extends TableFieldValuesByRow>(
   const {
     defaultValues,
     onSubmit,
-    onSubmitError,
+    onInvalid,
     sx,
     formApiRef,
     tableProps = {},
@@ -83,7 +83,7 @@ function FormTable<TFieldValues extends TableFieldValuesByRow>(
     <Form
       config={{ defaultValues }}
       onSubmit={onSubmit}
-      onSubmitError={onSubmitError}
+      onInvalid={onInvalid}
       autoSubmit
       sx={mergeSxProp(
         {

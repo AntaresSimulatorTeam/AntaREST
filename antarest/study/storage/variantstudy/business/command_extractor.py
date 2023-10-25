@@ -313,14 +313,12 @@ class CommandExtractor(ICommandExtractor):
         study_config = study.config
         study_tree = study.tree
         district_config = study_config.sets[district_id]
+        base_filter = DistrictBaseFilter.add_all if district_config.inverted_set else DistrictBaseFilter.remove_all
         district_fetched_config = study_tree.get(["input", "areas", "sets", district_id])
         study_commands.append(
             CreateDistrict(
                 name=district_config.name,
-                metadata={},
-                base_filter=DistrictBaseFilter.add_all
-                if district_config.inverted_set
-                else DistrictBaseFilter.remove_all,
+                base_filter=base_filter,
                 filter_items=district_config.areas or [],
                 output=district_config.output,
                 comments=district_fetched_config.get("comments", None),
@@ -331,9 +329,11 @@ class CommandExtractor(ICommandExtractor):
 
     def extract_comments(self, study: FileStudy) -> List[ICommand]:
         study_tree = study.tree
+        content = cast(bytes, study_tree.get(["settings", "comments"]))
+        comments = content.decode("utf-8")
         return [
             UpdateComments(
-                comments=study_tree.get(["settings", "comments"]),
+                comments=comments,
                 command_context=self.command_context,
             )
         ]
@@ -392,8 +392,8 @@ class CommandExtractor(ICommandExtractor):
         self,
         study_tree: FileStudyTree,
     ) -> ICommand:
-        url = ["settings", "comments"]
-        comments = study_tree.get(url)
+        content = cast(bytes, study_tree.get(["settings", "comments"]))
+        comments = content.decode("utf-8")
         return UpdateComments(
             comments=comments,
             command_context=self.command_context,
@@ -444,8 +444,7 @@ class CommandExtractor(ICommandExtractor):
         district_config = study_config.sets[district_id]
         district_fetched_config = study_tree.get(["input", "areas", "sets", district_id])
         return UpdateDistrict(
-            name=district_config.name,
-            metadata={},
+            id=district_config.name,
             base_filter=DistrictBaseFilter.add_all if district_config.inverted_set else DistrictBaseFilter.remove_all,
             filter_items=district_config.areas or [],
             output=district_config.output,

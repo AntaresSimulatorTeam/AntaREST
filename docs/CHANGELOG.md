@@ -1,6 +1,28 @@
 Antares Web Changelog
 =====================
 
+v2.15.4 (2023-10-25)
+--------------------
+
+### Tests
+
+*  **commands:** refactored study variant command unit tests, improved coverage, and fixed deprecated attribute usage ([8bd0bdf](https://github.com/AntaresSimulatorTeam/AntaREST/commit/8bd0bdf93c1a9ef0ee12570cb7d398ba7212b2fe))
+
+
+### Bug Fixes
+
+*  **results-ui:** display results for a specific year [`#1779`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1779)
+*  **ui-study:** remove popup to prevent close after variant creation [`#1773`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1773)
+*  **raw:** fix HTTP exception when going on debug view [`#1769`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1769)
+
+
+### Contributors
+
+<a href="https://github.com/laurent-laporte-pro">laurent-laporte-pro</a>,
+<a href="https://github.com/MartinBelthle">MartinBelthle</a>
+
+
+
 v2.15.3 (2023-10-12)
 --------------------
 

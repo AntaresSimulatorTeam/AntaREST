@@ -1397,7 +1397,6 @@ class StudyService:
         elif isinstance(tree_node, RawFileNode):
             if url.split("/")[-1] == "comments":
                 return UpdateComments(
-                    target=url,
                     comments=data,
                     command_context=context,
                 )
