@@ -167,13 +167,18 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         output_name: Optional[str] = None,
     ) -> Optional[str]:
         """
-        Import additional output in an existing study
+        Import additional output in an existing study.
+
         Args:
             metadata: study
             output: new output (path or zipped data)
             output_name: optional suffix name to append to output name
 
-        Returns: output id
+        Returns:
+            Output identifier.
+
+        Raises:
+            BadArchiveContent: If the output archive is corrupted or in an unknown format.
         """
         path_output = Path(metadata.path) / "output" / f"imported_output_{str(uuid4())}"
         study_id = metadata.id

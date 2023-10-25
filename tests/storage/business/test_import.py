@@ -6,7 +6,8 @@ from unittest.mock import Mock
 
 import pytest
 
-from antarest.core.exceptions import BadZipBinary, StudyValidationError
+from antarest.core.exceptions import StudyValidationError
+from antarest.core.utils.utils import BadArchiveContent
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, StudyAdditionalData
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
@@ -65,7 +66,7 @@ def test_import_study(tmp_path: Path) -> None:
     assert md.groups == ["fake_group_1", "fake_group_2"]
 
     shutil.rmtree(tmp_path / "other-study")
-    with pytest.raises(BadZipBinary, match="Cannot extract archive: Unsupported archive format"):
+    with pytest.raises(BadArchiveContent, match="Unsupported archive format"):
         study_service.import_study(md, io.BytesIO(b""))
 
 

@@ -1277,15 +1277,18 @@ class StudyService:
         params: RequestParameters,
     ) -> str:
         """
-        Import zipped study.
+        Import a compressed study.
 
         Args:
-            stream: zip file
+            stream: binary content of the study compressed in ZIP or 7z format.
             group_ids: group to attach to study
             params: request parameters
 
-        Returns: new study uuid
+        Returns:
+            New study UUID.
 
+        Raises:
+            BadArchiveContent: If the archive is corrupted or in an unknown format.
         """
         sid = str(uuid4())
         path = str(get_default_workspace_path(self.config) / sid)

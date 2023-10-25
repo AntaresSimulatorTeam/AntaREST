@@ -12,7 +12,7 @@ import py7zr
 import redis
 
 from antarest.core.config import RedisConfig
-from antarest.core.exceptions import BadZipBinary, ShouldNotHappenException
+from antarest.core.exceptions import ShouldNotHappenException
 
 logger = logging.getLogger(__name__)
 
@@ -42,29 +42,47 @@ def sanitize_uuid(uuid: str) -> str:
     return str(escape(uuid))
 
 
-def extract_zip(stream: BinaryIO, dst: Path) -> None:
+class BadArchiveContent(Exception):
     """
-    Extract zip archive
+    Exception raised when the archive file is corrupted (or unknown).
+    """
+
+    def __init__(self, message: str = "Unsupported archive format") -> None:
+        super().__init__(message)
+
+
+def extract_zip(stream: BinaryIO, target_dir: Path) -> None:
+    """
+    Extract a ZIP archive to a given destination.
+
     Args:
-        stream: archive file (.zip or .7z)
-        dst: destination path
+        stream: The stream containing the archive.
+        target_dir: The directory where to extract the archive.
+
+    Raises:
+        BadArchiveContent: If the archive is corrupted or in an unknown format.
     """
 
     # Read the first few bytes to identify the file format
     file_format = stream.read(4)
-    stream.seek(0)  # Reset the stream position
+    stream.seek(0)
 
-    try:
-        if file_format[:2] == b"7z":
-            with py7zr.SevenZipFile(stream, "r") as zf:
-                zf.extractall(dst)
-        elif file_format == b"PK\x03\x04":
+    if file_format[:4] == b"PK\x03\x04":
+        try:
             with zipfile.ZipFile(stream) as zf:
-                zf.extractall(path=dst)
-        else:
-            raise BadZipBinary("Unsupported archive format")
-    except Exception as error:
-        raise BadZipBinary(f"Cannot extract archive: {error}") from error
+                zf.extractall(path=target_dir)
+        except zipfile.BadZipFile as error:
+            raise BadArchiveContent("Unsupported ZIP format") from error
+
+    elif file_format[:2] == b"7z":
+        try:
+            with py7zr.SevenZipFile(stream, "r") as zf:
+                zf.extractall(target_dir)
+        except py7zr.exceptions.Bad7zFile as error:
+            raise BadArchiveContent("Unsupported 7z format") from error
+
+    else:
+        raise BadArchiveContent
 
 
 def get_default_config_path() -> Optional[Path]:

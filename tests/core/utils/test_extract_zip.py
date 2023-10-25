@@ -1,11 +1,11 @@
 import io
-from pathlib import Path
 import zipfile
+from pathlib import Path
+
 import py7zr
 import pytest
 
-from antarest.core.exceptions import BadZipBinary
-from antarest.core.utils.utils import extract_zip
+from antarest.core.utils.utils import BadArchiveContent, extract_zip
 
 
 class TestExtractZip:
@@ -42,23 +42,23 @@ class TestExtractZip:
     def test_extract_zip__empty_file(self):
         stream = io.BytesIO(b"")
 
-        with pytest.raises(BadZipBinary):
+        with pytest.raises(BadArchiveContent):
             extract_zip(stream, Path("dummy/path"))
 
     def test_extract_zip__corrupted_zip(self):
         stream = io.BytesIO(b"PK\x03\x04 BLURP")
 
-        with pytest.raises(BadZipBinary):
+        with pytest.raises(BadArchiveContent):
             extract_zip(stream, Path("dummy/path"))
 
     def test_extract_zip__corrupted_7z(self):
         stream = io.BytesIO(b"7z BLURP")
 
-        with pytest.raises(BadZipBinary):
+        with pytest.raises(BadArchiveContent):
             extract_zip(stream, Path("dummy/path"))
 
     def test_extract_zip__unknown_format(self):
         stream = io.BytesIO(b"ZORRO")
 
-        with pytest.raises(BadZipBinary):
+        with pytest.raises(BadArchiveContent):
             extract_zip(stream, Path("dummy/path"))
