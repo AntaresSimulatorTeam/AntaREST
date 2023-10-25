@@ -114,14 +114,17 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> str:
         """
-        Upload and import a study from your computer to the Antares Web server.
+        Upload and import a compressed study from your computer to the Antares Web server.
 
         Args:
-        - `study`: The study file in ZIP format or its corresponding bytes.
+        - `study`: The binary content of the study file in ZIP or 7z format.
         - `groups`: The groups your study will belong to (Default: current user's groups).
 
         Returns:
         - The ID of the imported study.
+
+        Raises:
+        - 415 error if the archive is corrupted or in an unknown format.
         """
         logger.info("Importing new study", extra={"user": current_user.id})
         zip_binary = io.BytesIO(study)
