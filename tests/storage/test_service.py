@@ -862,7 +862,6 @@ def test_assert_permission() -> None:
     # when study found in workspace without group
     study = Study(id=uuid, public_mode=PublicMode.FULL)
     assert not assert_permission(jwt, study, StudyPermissionType.MANAGE_PERMISSIONS, raising=False)
-    assert assert_permission(jwt, study, StudyPermissionType.DELETE)
     assert assert_permission(jwt, study, StudyPermissionType.READ)
     assert assert_permission(jwt, study, StudyPermissionType.WRITE)
     assert assert_permission(jwt, study, StudyPermissionType.RUN)

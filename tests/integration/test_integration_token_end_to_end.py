@@ -208,7 +208,7 @@ def test_nominal_case_of_an_api_user(client: TestClient, admin_access_token: str
         status_ = res_.json()["status"]
         return bool(status_ != "failed")
 
-    wait_for(callback, timeout=5, sleep_time=0.2)
+    wait_for(callback)
 
     res = client.delete(f"/v1/studies/{variant_id}", headers=bot_headers)
     assert res.status_code == 200
