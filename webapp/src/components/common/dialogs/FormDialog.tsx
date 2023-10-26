@@ -9,7 +9,7 @@ import Form, { FormProps } from "../Form";
 type SuperType<
   TFieldValues extends FieldValues,
   TContext,
-  SubmitReturnValue
+  SubmitReturnValue,
 > = Omit<BasicDialogProps, "onSubmit" | "onInvalid" | "children"> &
   Omit<
     FormProps<TFieldValues, TContext, SubmitReturnValue>,
@@ -19,7 +19,7 @@ type SuperType<
 export interface FormDialogProps<
   TFieldValues extends FieldValues = FieldValues,
   TContext = any,
-  SubmitReturnValue = any
+  SubmitReturnValue = any,
 > extends SuperType<TFieldValues, TContext, SubmitReturnValue> {
   cancelButtonText?: string;
   onCancel: VoidFunction;
@@ -30,7 +30,7 @@ export interface FormDialogProps<
 function FormDialog<
   TFieldValues extends FieldValues,
   TContext,
-  SubmitReturnValue
+  SubmitReturnValue,
 >(props: FormDialogProps<TFieldValues, TContext, SubmitReturnValue>) {
   const {
     config,
