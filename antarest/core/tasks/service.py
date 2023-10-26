@@ -412,5 +412,6 @@ class TaskJobService(ITaskService):
         task.result_status = result
         task.result = command_result
         if status.is_final():
-            task.completion_date = datetime.datetime.now(datetime.timezone.utc)
+            # Do not use the `timezone.utc` timezone to preserve a naive datetime.
+            task.completion_date = datetime.datetime.utcnow()
         self.repo.save(task)
