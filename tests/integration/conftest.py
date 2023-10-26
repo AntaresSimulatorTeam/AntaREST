@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from typing import cast
 from zipfile import ZipFile
@@ -17,6 +18,8 @@ from tests.integration.assets import ASSETS_DIR
 HERE = Path(__file__).parent.resolve()
 PROJECT_DIR = next(iter(p for p in HERE.parents if p.joinpath("antarest").exists()))
 RESOURCES_DIR = PROJECT_DIR.joinpath("resources")
+
+RUN_ON_WINDOWS = os.name == "nt"
 
 
 @pytest.fixture(name="app")
@@ -58,6 +61,7 @@ def app_fixture(tmp_path: Path):
     template = template_env.get_template("config.template.yml")
 
     config_path = tmp_path / "config.yml"
+    launcher_name = "launcher_mock.bat" if RUN_ON_WINDOWS else "launcher_mock.sh"
     with open(config_path, "w") as fh:
         fh.write(
             template.render(
@@ -67,7 +71,7 @@ def app_fixture(tmp_path: Path):
                 matrix_dir=str(matrix_dir),
                 archive_dir=str(archive_dir),
                 tmp_dir=str(tmp_dir),
-                launcher_mock=ASSETS_DIR / "launcher_mock.sh",
+                launcher_mock=ASSETS_DIR / launcher_name,
             )
         )
 
