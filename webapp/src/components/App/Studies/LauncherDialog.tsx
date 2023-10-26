@@ -1,29 +1,22 @@
 import { useState } from "react";
 import {
-  Accordion,
-  AccordionDetails,
-  AccordionSummary,
   Box,
   Button,
   Checkbox,
   Divider,
-  FormControl,
   FormControlLabel,
   FormGroup,
   List,
   ListItem,
   Skeleton,
-  Slider,
   Stack,
   Switch,
   TextField,
   Typography,
-  useTheme,
 } from "@mui/material";
 import * as R from "ramda";
 import { useTranslation } from "react-i18next";
 import { useSnackbar } from "notistack";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { useMountedState } from "react-use";
 import { shallowEqual } from "react-redux";
 import {
@@ -33,7 +26,6 @@ import {
 } from "../../../common/types";
 import {
   getLauncherCores,
-  getLauncherLoad,
   getLauncherVersions,
   getStudyOutputs,
   launchStudy,
@@ -43,13 +35,11 @@ import BasicDialog from "../../common/dialogs/BasicDialog";
 import useAppSelector from "../../../redux/hooks/useAppSelector";
 import { getStudy } from "../../../redux/selectors";
 import usePromiseWithSnackbarError from "../../../hooks/usePromiseWithSnackbarError";
-import LinearProgressWithLabel from "../../common/LinearProgressWithLabel";
 import SelectSingle from "../../common/SelectSingle";
 import CheckBoxFE from "../../common/fieldEditors/CheckBoxFE";
 import { convertVersions } from "../../../services/utils";
 import UsePromiseCond from "../../common/utils/UsePromiseCond";
 
-const LAUNCH_DURATION_MAX_HOURS = 240;
 const LAUNCH_LOAD_DEFAULT = 22;
 
 interface Props {
@@ -63,7 +53,6 @@ function LauncherDialog(props: Props) {
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
-  const theme = useTheme();
   const [options, setOptions] = useState<LaunchOptions>({
     nb_cpu: LAUNCH_LOAD_DEFAULT,
     auto_unzip: true,
@@ -75,11 +64,6 @@ function LauncherDialog(props: Props) {
     (state) => studyIds.map((sid) => getStudy(state, sid)?.name),
     shallowEqual,
   );
-
-  const { data: load } = usePromiseWithSnackbarError(() => getLauncherLoad(), {
-    errorMessage: t("study.error.launchLoad"),
-    deps: [open],
-  });
 
   const cores = usePromiseWithSnackbarError(() => getLauncherCores(), {
     errorMessage: t("study.error.launcherCores"),
@@ -165,7 +149,8 @@ function LauncherDialog(props: Props) {
         ...prevOptions,
         other_options: R.without(toRemove, prevOtherOptions.split(/\s+/))
           .concat(toAdd)
-          .join(" "),
+          .join(" ")
+          .trim(),
       };
     });
   };
@@ -192,7 +177,7 @@ function LauncherDialog(props: Props) {
       open={open}
       onClose={onClose}
       contentProps={{
-        sx: { width: "500px", height: "500px", p: 0, overflow: "hidden" },
+        sx: { width: "600px", height: "550px", p: 0, overflow: "hidden" },
       }}
       actions={
         <>
@@ -213,65 +198,38 @@ function LauncherDialog(props: Props) {
     >
       <Box
         sx={{
-          minWidth: "100px",
-          width: "100%",
-          height: "100%",
+          width: 1,
+          height: 1,
           display: "flex",
           flexDirection: "column",
-          justifyContent: "flex-start",
-          alignItems: "flex-start",
           px: 2,
           boxSizing: "border-box",
           overflowY: "auto",
           overflowX: "hidden",
         }}
       >
-        <Divider
-          sx={{ width: "100%", height: "1px" }}
-          orientation="horizontal"
-        />
         <Box
           sx={{
             mb: 1,
-            width: "100%",
+            width: 1,
           }}
         >
-          <Box
-            sx={{
-              width: "100%",
-              maxHeight: "200px",
-              overflow: "auto",
-            }}
-          >
-            {studyNames.length === 1 ? (
-              <Typography variant="caption">{studyNames[0]}</Typography>
-            ) : (
-              <List>
-                {studyNames.map((name) => (
-                  <ListItem key={name}>
-                    <Typography variant="caption">{name}</Typography>
-                  </ListItem>
-                ))}
-              </List>
-            )}
-          </Box>
+          {studyNames.length === 1 ? (
+            <Typography variant="caption">{studyNames[0]}</Typography>
+          ) : (
+            <List>
+              {studyNames.map((name) => (
+                <ListItem key={name}>
+                  <Typography variant="caption">{name}</Typography>
+                </ListItem>
+              ))}
+            </List>
+          )}
         </Box>
-        <Divider
-          sx={{ width: "100%", height: "1px", mb: 1 }}
-          orientation="horizontal"
-        />
-        <Typography
+        <Box
           sx={{
-            fontSize: "1.1rem",
-            fontWeight: "bold",
-            mb: 2,
-          }}
-        >
-          Options
-        </Typography>
-        <FormControl
-          sx={{
-            width: "100%",
+            display: "flex",
+            gap: 2,
           }}
         >
           <TextField
@@ -285,21 +243,8 @@ function LauncherDialog(props: Props) {
             }
             InputLabelProps={{
               shrink: true,
-              sx: {
-                ".MuiInputLabel-root": {
-                  color: theme.palette.text.secondary,
-                },
-                ".Mui-focused": {},
-              },
             }}
           />
-        </FormControl>
-        <FormControl
-          sx={{
-            mt: 2,
-            width: "100%",
-          }}
-        >
           <TextField
             id="launcher-option-time-limit"
             label={t("study.timeLimit")}
@@ -314,56 +259,123 @@ function LauncherDialog(props: Props) {
             }
             InputLabelProps={{
               shrink: true,
-              sx: {
-                ".MuiInputLabel-root": {
-                  color: theme.palette.text.secondary,
-                },
-                ".Mui-focused": {},
-              },
             }}
             helperText={t("study.timeLimitHelper", {
-              max: LAUNCH_DURATION_MAX_HOURS,
+              max: 240,
             })}
           />
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "flex-end",
-              width: "100%",
-            }}
-          >
-            <Typography sx={{ mt: 1 }}>{t("study.nbCpu")}</Typography>
-            {load && (
-              <LinearProgressWithLabel
-                indicator={load.slurm * 100}
-                size="30%"
-                tooltip={t("study.clusterLoad")}
-                gradiant
-              />
-            )}
-          </Box>
           <UsePromiseCond
             response={cores}
             ifResolved={(cores) => (
-              <Slider
-                sx={{
-                  width: "95%",
-                  mx: 1,
-                }}
+              <TextField
+                id="nb-cpu"
+                label="Number of cores"
+                type="number"
+                variant="filled"
                 defaultValue={cores.defaultValue}
-                step={1}
-                min={cores.min}
-                max={cores.max}
-                valueLabelDisplay="auto"
-                color="secondary"
-                onChange={(event, val) => handleChange("nb_cpu", val as number)}
+                onChange={(e) =>
+                  handleChange("nb_cpu", parseInt(e.target.value, 10))
+                }
               />
             )}
             ifPending={() => <Skeleton />}
-            ifRejected={() => <Slider disabled />}
+            ifRejected={() => (
+              <TextField disabled variant="filled" size="small" />
+            )}
           />
-        </FormControl>
+        </Box>
+        <Divider
+          sx={{ width: 1, mt: 1, border: "0.5px solid", opacity: 0.6 }}
+          orientation="horizontal"
+        />
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 2,
+            width: 1,
+          }}
+        >
+          <Typography>Simulateur</Typography>
+          <SelectSingle
+            name={t("global.version")}
+            list={launcherVersions}
+            data={solverVersion}
+            setValue={setSolverVersion}
+            sx={{ width: 1, mt: 2 }}
+          />
+          <TextField
+            id="other-options"
+            label={t("study.otherOptions")}
+            type="text"
+            variant="filled"
+            value={options.other_options}
+            onChange={(e) => handleChange("other_options", e.target.value)}
+            sx={{
+              mt: 2,
+              width: 1,
+            }}
+            InputLabelProps={{
+              shrink: true,
+            }}
+          />
+        </Box>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+            width: 1,
+            mt: 1,
+          }}
+        >
+          <CheckBoxFE
+            label={t("launcher.xpress")}
+            value={!!options.other_options?.match("xpress")}
+            onChange={(e, checked) =>
+              handleOtherOptionsChange([{ option: "xpress", active: checked }])
+            }
+          />
+          <CheckBoxFE
+            label={t("launcher.autoUnzip")}
+            value={!!options.auto_unzip}
+            onChange={(e, checked) => handleChange("auto_unzip", checked)}
+          />
+        </Box>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+            width: 1,
+            mt: 1,
+          }}
+        >
+          <CheckBoxFE
+            label="Adequacy patch R"
+            value={!!options.adequacy_patch}
+            onChange={(e, checked) => {
+              handleChange(
+                "adequacy_patch",
+                checked ? { legacy: true } : undefined,
+              );
+              handleOtherOptionsChange([
+                { option: "adq_patch_rc", active: checked },
+              ]);
+            }}
+          />
+          <CheckBoxFE
+            label="Adequacy patch non linearized"
+            value={!!options.adequacy_patch?.legacy}
+            onChange={(e, checked) =>
+              handleChange("adequacy_patch", checked ? { legacy: true } : {})
+            }
+          />
+        </Box>
+        <Divider
+          sx={{ width: 1, my: 1, border: "0.5px solid", opacity: 0.6 }}
+          orientation="horizontal"
+        />
         <Typography sx={{ mt: 1 }}>Xpansion</Typography>
         <FormGroup
           sx={{
@@ -372,7 +384,13 @@ function LauncherDialog(props: Props) {
             width: "100%",
           }}
         >
-          <Box sx={{ display: "flex" }}>
+          <Box
+            sx={{
+              display: "flex",
+              gap: 2,
+              alignItems: "center",
+            }}
+          >
             <FormControlLabel
               control={
                 <Checkbox
@@ -387,9 +405,22 @@ function LauncherDialog(props: Props) {
               }
               label={t("study.xpansionMode") as string}
             />
+            <Box>
+              <Stack direction="row" spacing={1} alignItems="center">
+                <Typography>{t("launcher.xpansion.versionR")}</Typography>
+                <Switch
+                  checked={!options.xpansion_r_version}
+                  disabled={!options.xpansion}
+                  onChange={(e, checked) =>
+                    handleChange("xpansion_r_version", !checked)
+                  }
+                />
+                <Typography>{t("launcher.xpansion.versionCpp")}</Typography>
+              </Stack>
+            </Box>
           </Box>
           {outputList && outputList.length === 1 && (
-            <Box sx={{ display: "flex" }}>
+            <Box sx={{ display: "flex", gap: 2 }}>
               <FormControlLabel
                 control={
                   <Checkbox
@@ -421,131 +452,11 @@ function LauncherDialog(props: Props) {
               />
             </Box>
           )}
-          <Box>
-            <Stack direction="row" spacing={1} alignItems="center">
-              <Typography>{t("launcher.xpansion.versionR")}</Typography>
-              <Switch
-                checked={!options.xpansion_r_version}
-                disabled={!options.xpansion}
-                onChange={(e, checked) =>
-                  handleChange("xpansion_r_version", !checked)
-                }
-              />
-              <Typography>{t("launcher.xpansion.versionCpp")}</Typography>
-            </Stack>
-          </Box>
         </FormGroup>
-        <Typography sx={{ mt: 1 }}>Adequacy Patch</Typography>
-        <FormGroup
-          sx={{
-            mt: 1,
-            mx: 1,
-            width: "100%",
-          }}
-        >
-          <Box>
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={!!options.adequacy_patch}
-                  onChange={(e, checked) =>
-                    handleChange("adequacy_patch", checked ? {} : undefined)
-                  }
-                />
-              }
-              label="Adequacy patch"
-            />
-            <FormControlLabel
-              control={
-                <Checkbox
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  checked={!!(options.adequacy_patch as any)?.legacy}
-                  onChange={(e, checked) =>
-                    handleChange(
-                      "adequacy_patch",
-                      checked ? { legacy: true } : {},
-                    )
-                  }
-                />
-              }
-              label="Adequacy patch non linearized"
-            />
-          </Box>
-        </FormGroup>
-        <Accordion sx={{ mt: 2 }}>
-          <AccordionSummary
-            expandIcon={<ExpandMoreIcon />}
-            aria-controls="panel-advanced-parameters"
-            id="panel-advanced-parameters-header"
-          >
-            <Typography>{t("global.advancedParams")}</Typography>
-          </AccordionSummary>
-          <AccordionDetails>
-            <FormControl
-              sx={{
-                width: "100%",
-              }}
-            >
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={!!options.auto_unzip}
-                    onChange={(e, checked) =>
-                      handleChange("auto_unzip", checked)
-                    }
-                  />
-                }
-                label={t("launcher.autoUnzip")}
-              />
-            </FormControl>
-            <FormControl
-              sx={{
-                mt: 2,
-                width: "100%",
-              }}
-            >
-              <CheckBoxFE
-                label={t("launcher.xpress")}
-                value={!!options.other_options?.match("xpress")}
-                onChange={(e, checked) =>
-                  handleOtherOptionsChange([
-                    { option: "xpress", active: checked },
-                  ])
-                }
-              />
-            </FormControl>
-            <SelectSingle
-              name={t("global.version")}
-              list={launcherVersions}
-              data={solverVersion}
-              setValue={setSolverVersion}
-              sx={{ width: 1, mt: 2 }}
-            />
-            <FormControl
-              sx={{
-                mt: 2,
-                width: 1,
-              }}
-            >
-              <TextField
-                label={t("study.otherOptions")}
-                type="text"
-                variant="filled"
-                value={options.other_options}
-                onChange={(e) => handleChange("other_options", e.target.value)}
-                InputLabelProps={{
-                  shrink: true,
-                  sx: {
-                    ".MuiInputLabel-root": {
-                      color: theme.palette.text.secondary,
-                    },
-                    ".Mui-focused": {},
-                  },
-                }}
-              />
-            </FormControl>
-          </AccordionDetails>
-        </Accordion>
+        <Divider
+          sx={{ width: 1, my: 1, border: "0.5px solid", opacity: 0.6 }}
+          orientation="horizontal"
+        />
       </Box>
     </BasicDialog>
   );
