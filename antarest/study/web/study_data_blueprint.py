@@ -1504,7 +1504,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
             extra={"user": current_user.id},
         )
         request_params = RequestParameters(user=current_user)
-        study = study_service.check_study_access(uuid, StudyPermissionType.DELETE, request_params)
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, request_params)
         study_service.thermal_manager.delete_clusters(study, area_id, cluster_ids)
 
     @bp.get(
