@@ -52,7 +52,7 @@ export type AutoSubmitConfig = { enable: boolean; wait?: number };
 export interface FormProps<
   TFieldValues extends FieldValues = FieldValues,
   TContext = any,
-  SubmitReturnValue = any
+  SubmitReturnValue = any,
 > extends Omit<
     React.HTMLAttributes<HTMLFormElement>,
     "onSubmit" | "onInvalid" | "children"
@@ -60,11 +60,11 @@ export interface FormProps<
   config?: UseFormProps<TFieldValues, TContext>;
   onSubmit?: (
     data: SubmitHandlerPlus<TFieldValues>,
-    event?: React.BaseSyntheticEvent
+    event?: React.BaseSyntheticEvent,
   ) => void | Promise<SubmitReturnValue>;
   onSubmitSuccessful?: (
     data: SubmitHandlerPlus<TFieldValues>,
-    submitResult: SubmitReturnValue
+    submitResult: SubmitReturnValue,
   ) => void;
   onInvalid?: SubmitErrorHandler<TFieldValues>;
   children:

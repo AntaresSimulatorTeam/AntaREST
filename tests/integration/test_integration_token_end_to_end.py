@@ -6,6 +6,7 @@ import numpy as np
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskDTO, TaskStatus
+from antarest.launcher.model import JobResultDTO, JobStatus
 from tests.integration.assets import ASSETS_DIR
 from tests.integration.utils import wait_for
 
@@ -178,9 +179,21 @@ def test_nominal_case_of_an_api_user(client: TestClient, admin_access_token: str
     launcher_options = {"nb_cpu": 18, "auto_unzip": True, "output_suffix": "launched_by_bot"}
     res = client.post(f"/v1/launcher/run/{variant_id}", json=launcher_options, headers=bot_headers)
     job_id = res.json()["job_id"]
-    res = client.get(f"/v1/launcher/jobs/{job_id}", headers=bot_headers)
-    status = res.json()["status"]
-    assert status in ["pending", "running"]
+
+    # note: this list is used to collect job result for debugging purposes
+    job_results: t.List[JobResultDTO] = []
+
+    def wait_unit_finished() -> bool:
+        res_ = client.get(f"/v1/launcher/jobs/{job_id}", headers=bot_headers)
+        job_result_ = JobResultDTO(**res_.json())
+        job_results.append(job_result_)
+        return job_result_.status in {JobStatus.SUCCESS, JobStatus.FAILED}
+
+    wait_for(wait_unit_finished)
+
+    # The launching is simulated, and no output is generated, so we expect to have a failure
+    # since the job will not be able to get the outputs.
+    assert job_results[-1].status == JobStatus.FAILED
 
     # read a result
     res = client.get(f"/v1/studies/{study_id}/outputs", headers=bot_headers)
@@ -202,13 +215,5 @@ def test_nominal_case_of_an_api_user(client: TestClient, admin_access_token: str
     assert len(res.json()) == 4
 
     # delete variant
-    # For this test to pass on Windows, we have to wait for the simulation to finish (here it should fail)
-    def callback() -> bool:
-        res_ = client.get(f"/v1/launcher/jobs/{job_id}", headers=bot_headers)
-        status_ = res_.json()["status"]
-        return bool(status_ != "failed")
-
-    wait_for(callback)
-
     res = client.delete(f"/v1/studies/{variant_id}", headers=bot_headers)
     assert res.status_code == 200
