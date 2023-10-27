@@ -9,12 +9,20 @@ from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
 class UpdateComments(ICommand):
-    """Update the file contained at settings/comments.txt"""
+    """
+    Command used to update the comments of the study located in `settings/comments.txt`.
+    """
+
+    # Overloaded metadata
+    # ===================
+
+    command_name = CommandName.UPDATE_COMMENTS
+    version = 1
+
+    # Command parameters
+    # ==================
 
     comments: str
-
-    def __init__(self, **data: Any) -> None:
-        super().__init__(command_name=CommandName.UPDATE_COMMENTS, version=1, **data)
 
     def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         return (

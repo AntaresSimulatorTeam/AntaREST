@@ -19,15 +19,25 @@ class LinkAlreadyExistError(Exception):
 
 
 class CreateLink(ICommand):
+    """
+    Command used to create a link between two areas.
+    """
+
+    # Overloaded metadata
+    # ===================
+
+    command_name = CommandName.CREATE_LINK
+    version = 1
+
+    # Command parameters
+    # ==================
+
     area1: str
     area2: str
     parameters: Optional[Dict[str, str]] = None
     series: Optional[Union[List[List[MatrixData]], str]] = None
     direct: Optional[Union[List[List[MatrixData]], str]] = None
     indirect: Optional[Union[List[List[MatrixData]], str]] = None
-
-    def __init__(self, **data: Any) -> None:
-        super().__init__(command_name=CommandName.CREATE_LINK, version=1, **data)
 
     @validator("series", "direct", "indirect", always=True)
     def validate_series(

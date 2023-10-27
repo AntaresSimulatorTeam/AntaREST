@@ -1,14 +1,15 @@
 from typing import Any, Dict, List, Tuple, cast
 
-from pydantic import validator
+from pydantic import Extra, validator
 
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     ENR_MODELLING,
-    Cluster,
+    Area,
     FileStudyTreeConfig,
     transform_name_to_id,
 )
+from antarest.study.storage.rawstudy.model.filesystem.config.renewable import create_renewable_config
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
@@ -58,25 +59,28 @@ class CreateRenewablesCluster(ICommand):
                 ),
                 {},
             )
+        area: Area = study_data.areas[self.area_id]
 
-        cluster_id = transform_name_to_id(self.cluster_name)
-        for cluster in study_data.areas[self.area_id].renewables:
-            if cluster.id == cluster_id:
-                return (
-                    CommandOutput(
-                        status=False,
-                        message=f"Renewable cluster '{cluster_id}' already exists in the area '{self.area_id}'.",
-                    ),
-                    {},
-                )
+        # Check if the cluster already exists in the area
+        version = study_data.version
+        cluster = create_renewable_config(version, name=self.cluster_name)
+        if any(cl.id == cluster.id for cl in area.renewables):
+            return (
+                CommandOutput(
+                    status=False,
+                    message=f"Renewable cluster '{cluster.id}' already exists in the area '{self.area_id}'.",
+                ),
+                {},
+            )
 
-        study_data.areas[self.area_id].renewables.append(Cluster(id=cluster_id, name=self.cluster_name))
+        area.renewables.append(cluster)
+
         return (
             CommandOutput(
                 status=True,
-                message=f"Renewable cluster '{cluster_id}' added to area '{self.area_id}'.",
+                message=f"Renewable cluster '{cluster.id}' added to area '{self.area_id}'.",
             ),
-            {"cluster_id": cluster_id},
+            {"cluster_id": cluster.id},
         )
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
@@ -84,24 +88,24 @@ class CreateRenewablesCluster(ICommand):
         if not output.status:
             return output
 
-        cluster_id = data["cluster_id"]
-
-        cluster_list_config = study_data.tree.get(["input", "renewables", "clusters", self.area_id, "list"])
         # default values
         if "ts-interpretation" not in self.parameters:
             self.parameters["ts-interpretation"] = "power-generation"
-        # fixme: rigorously, the section name in the INI file is the cluster ID, not the cluster name
-        #  cluster_list_config[transform_name_to_id(self.cluster_name)] = self.parameters
-        cluster_list_config[self.cluster_name] = self.parameters
+        self.parameters.setdefault("name", self.cluster_name)
 
-        self.parameters["name"] = self.cluster_name
+        cluster_id = data["cluster_id"]
+        config = study_data.tree.get(["input", "renewables", "clusters", self.area_id, "list"])
+        config[cluster_id] = self.parameters
+
+        # Series identifiers are in lower case.
+        series_id = cluster_id.lower()
         new_cluster_data: JSON = {
             "input": {
                 "renewables": {
-                    "clusters": {self.area_id: {"list": cluster_list_config}},
+                    "clusters": {self.area_id: {"list": config}},
                     "series": {
                         self.area_id: {
-                            cluster_id: {"series": self.command_context.generator_matrix_constants.get_null_matrix()}
+                            series_id: {"series": self.command_context.generator_matrix_constants.get_null_matrix()}
                         }
                     },
                 }

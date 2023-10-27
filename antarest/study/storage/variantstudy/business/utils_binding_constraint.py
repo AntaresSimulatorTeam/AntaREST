@@ -11,16 +11,6 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import BindingConstraintOperator, CommandOutput
 
 
-def cluster_does_not_exist(study_data: FileStudy, area: str, thermal_id: str) -> bool:
-    return area not in study_data.config.areas or thermal_id not in [
-        thermal.id for thermal in study_data.config.areas[area].thermals
-    ]
-
-
-def link_does_not_exist(study_data: FileStudy, area_1: str, area_2: str) -> bool:
-    return area_1 not in study_data.config.areas or area_2 not in study_data.config.areas[area_1].links
-
-
 def apply_binding_constraint(
     study_data: FileStudy,
     binding_constraints: JSON,
@@ -51,28 +41,32 @@ def apply_binding_constraint(
     if comments is not None:
         binding_constraints[new_key]["comments"] = comments
 
-    for link_or_thermal in coeffs:
-        if "%" in link_or_thermal:
-            area_1, area_2 = link_or_thermal.split("%")
-            if link_does_not_exist(study_data, area_1, area_2):
+    for link_or_cluster in coeffs:
+        if "%" in link_or_cluster:
+            area_1, area_2 = link_or_cluster.split("%")
+            if area_1 not in study_data.config.areas or area_2 not in study_data.config.areas[area_1].links:
                 return CommandOutput(
                     status=False,
-                    message=f"Link {link_or_thermal} does not exist",
+                    message=f"Link '{link_or_cluster}' does not exist in binding constraint '{bd_id}'",
+                )
+        elif "." in link_or_cluster:
+            # Cluster IDs are stored in lower case in the binding constraints file.
+            area, cluster_id = link_or_cluster.split(".")
+            thermal_ids = {thermal.id.lower() for thermal in study_data.config.areas[area].thermals}
+            if area not in study_data.config.areas or cluster_id not in thermal_ids:
+                return CommandOutput(
+                    status=False,
+                    message=f"Cluster '{link_or_cluster}' does not exist in binding constraint '{bd_id}'",
                 )
         else:
-            area, thermal_id = link_or_thermal.split(".")
-            if cluster_does_not_exist(study_data, area, thermal_id):
-                return CommandOutput(
-                    status=False,
-                    message=f"Thermal cluster {link_or_thermal} does not exist",
-                )
+            raise NotImplementedError(f"Invalid link or thermal ID: {link_or_cluster}")
 
         # this is weird because Antares Simulator only accept int as offset
-        if len(coeffs[link_or_thermal]) == 2:
-            coeffs[link_or_thermal][1] = int(coeffs[link_or_thermal][1])
+        if len(coeffs[link_or_cluster]) == 2:
+            coeffs[link_or_cluster][1] = int(coeffs[link_or_cluster][1])
 
-        binding_constraints[new_key][link_or_thermal] = "%".join(
-            [str(coeff_val) for coeff_val in coeffs[link_or_thermal]]
+        binding_constraints[new_key][link_or_cluster] = "%".join(
+            [str(coeff_val) for coeff_val in coeffs[link_or_cluster]]
         )
     parse_bindings_coeffs_and_save_into_config(bd_id, study_data.config, coeffs)
     study_data.tree.save(
@@ -112,10 +106,13 @@ def parse_bindings_coeffs_and_save_into_config(
 def remove_area_cluster_from_binding_constraints(
     study_data_config: FileStudyTreeConfig,
     area_id: str,
-    cluster_id: Optional[str] = None,
+    cluster_id: str = "",
 ) -> None:
-    for binding in study_data_config.bindings:
-        if (cluster_id and f"{area_id}.{cluster_id}" in binding.clusters) or (
-            not cluster_id and area_id in binding.areas
-        ):
-            study_data_config.bindings.remove(binding)
+    if cluster_id:
+        # Cluster IDs are stored in lower case in the binding constraints file.
+        cluster_id = cluster_id.lower()
+        selection = [b for b in study_data_config.bindings if f"{area_id}.{cluster_id}" in b.clusters]
+    else:
+        selection = [b for b in study_data_config.bindings if area_id in b.areas]
+    for binding in selection:
+        study_data_config.bindings.remove(binding)

@@ -1,5 +1,7 @@
 from typing import Any, Dict, List, Tuple
 
+from pydantic import Field
+
 from antarest.core.model import JSON
 from antarest.study.common.default_values import FilteringOptions, NodalOptimization
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -31,14 +33,27 @@ def _generate_new_thermal_areas_ini(
 
 
 class CreateArea(ICommand):
+    """
+    Command used to create a new area in the study.
+    """
+
+    # Overloaded metadata
+    # ===================
+
+    command_name = CommandName.CREATE_AREA
+    version = 1
+
+    # Command parameters
+    # ==================
+
     area_name: str
 
-    def __init__(self, **data: Any) -> None:
-        super().__init__(
-            command_name=CommandName.CREATE_AREA,
-            version=1,
-            **data,
-        )
+    # The `metadata` attribute is added to ensure upward compatibility with previous versions.
+    # Ideally, this attribute should be of type `PatchArea`, but as it is not used,
+    # we choose to declare it as an empty dictionary.
+    # fixme: remove this attribute in the next version if it is not used by the "Script R" team,
+    #  or if we don't want to support this feature.
+    metadata: Dict[str, str] = Field(default_factory=dict, description="Area metadata: country and tag list")
 
     def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         if self.command_context.generator_matrix_constants is None:

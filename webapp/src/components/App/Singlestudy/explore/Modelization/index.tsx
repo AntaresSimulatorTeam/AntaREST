@@ -4,9 +4,12 @@ import { Box } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { StudyMetadata } from "../../../../../common/types";
 import TabWrapper from "../TabWrapper";
+import useAppSelector from "../../../../../redux/hooks/useAppSelector";
+import { getCurrentAreaId } from "../../../../../redux/selectors";
 
 function Modelization() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
+  const areaId = useAppSelector(getCurrentAreaId);
   const [t] = useTranslation();
 
   const tabList = useMemo(
@@ -17,7 +20,7 @@ function Modelization() {
       },
       {
         label: t("study.areas"),
-        path: `/studies/${study?.id}/explore/modelization/area`,
+        path: `/studies/${study?.id}/explore/modelization/area/${areaId}`,
       },
       {
         label: t("study.links"),
@@ -36,7 +39,7 @@ function Modelization() {
         path: `/studies/${study?.id}/explore/modelization/tablemode`,
       },
     ],
-    [study?.id, t],
+    [areaId, study?.id, t],
   );
 
   return (

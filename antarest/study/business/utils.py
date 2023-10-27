@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, MutableSequence, Optional, Sequence, Tuple, Type, TypedDict
+from typing import Any, Callable, Dict, MutableSequence, Optional, Sequence, Tuple, Type, TypedDict, TypeVar
 
 import pydantic
 from pydantic import BaseModel, Extra
@@ -110,7 +110,8 @@ class AllOptionalMetaclass(pydantic.main.ModelMetaclass):
     ) -> Any:
         annotations = namespaces.get("__annotations__", {})
         for base in bases:
-            annotations.update(getattr(base, "__annotations__", {}))
+            for ancestor in reversed(base.__mro__):
+                annotations.update(getattr(ancestor, "__annotations__", {}))
         for field, field_type in annotations.items():
             if not field.startswith("__"):
                 # Optional fields are correctly handled
@@ -119,7 +120,10 @@ class AllOptionalMetaclass(pydantic.main.ModelMetaclass):
         return super().__new__(cls, name, bases, namespaces)
 
 
-def camel_case_model(model: Type[BaseModel]) -> Type[BaseModel]:
+MODEL = TypeVar("MODEL", bound=Type[BaseModel])
+
+
+def camel_case_model(model: MODEL) -> MODEL:
     """
     This decorator can be used to modify a model to use camel case aliases.
 

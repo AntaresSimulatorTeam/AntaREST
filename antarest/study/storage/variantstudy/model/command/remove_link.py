@@ -12,8 +12,14 @@ class RemoveLink(ICommand):
     Command used to remove a link.
     """
 
-    command_name: CommandName = CommandName.REMOVE_LINK
+    # Overloaded metadata
+    # ===================
+
+    command_name = CommandName.REMOVE_LINK
     version: int = 1
+
+    # Command parameters
+    # ==================
 
     # Properties of the `REMOVE_LINK` command:
     area1: str

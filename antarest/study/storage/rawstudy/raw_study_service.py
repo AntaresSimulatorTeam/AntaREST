@@ -377,10 +377,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         return new_study_path
 
     def unarchive(self, study: RawStudy) -> None:
-        with open(
-            self.get_archive_path(study),
-            "rb",
-        ) as fh:
+        with open(self.get_archive_path(study), "rb") as fh:
             self.import_study(study, io.BytesIO(fh.read()))
 
     def get_archive_path(self, study: RawStudy) -> Path:

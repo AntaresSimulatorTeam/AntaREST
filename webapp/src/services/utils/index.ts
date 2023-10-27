@@ -247,7 +247,9 @@ export const sortByName = <T extends { name: string }>(list: T[]): T[] => {
   return sortByProp((v) => v.name, list);
 };
 
-// This should work better
+/**
+ * @deprecated This function is deprecated. Please use nameToId instead.
+ */
 export const transformNameToId = (name: string): string => {
   let duppl = false;
   let id = "";
@@ -282,6 +284,20 @@ export const transformNameToId = (name: string): string => {
   const idTrimmed = id.trim();
 
   return idTrimmed.toLowerCase();
+};
+
+/**
+ * Converts a name string to a valid ID string.
+ * Replacing any characters that are not alphanumeric or -_,()& with a space,
+ * trimming the resulting string, and converting it to lowercase.
+ * @param name The name string to convert to an ID.
+ * @returns The resulting ID string.
+ */
+export const nameToId = (name: string): string => {
+  return name
+    .replace(/[^a-zA-Z0-9_\-(),& ]+|\s+/g, " ")
+    .trim()
+    .toLowerCase();
 };
 
 export const removeEmptyFields = (

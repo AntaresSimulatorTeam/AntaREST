@@ -10,11 +10,21 @@ from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
 class UpdateConfig(ICommand):
+    """
+    Command used to create a thermal cluster in an area.
+    """
+
+    # Overloaded metadata
+    # ===================
+
+    command_name = CommandName.UPDATE_CONFIG
+    version = 1
+
+    # Command parameters
+    # ==================
+
     target: str
     data: Union[str, int, float, bool, JSON, None]
-
-    def __init__(self, **data: Any) -> None:
-        super().__init__(command_name=CommandName.UPDATE_CONFIG, version=1, **data)
 
     def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         return CommandOutput(status=True, message="ok"), dict()

@@ -210,6 +210,7 @@ class TestSTStorage:
             "initialLevel": 5900,
             "reservoirCapacity": 0,
         }
+        assert res.status_code == 200, res.json()
         assert res.json() == siemens_config
 
         # An attempt to update the `efficiency` property with an invalid value
@@ -414,7 +415,7 @@ class TestSTStorage:
 
         # Check POST with wrong `group`
         res = client.post(
-            f"/v1/studies/{study_id}/areas/{bad_area_id}/storages",
+            f"/v1/studies/{study_id}/areas/{area_id}/storages",
             headers={"Authorization": f"Bearer {user_access_token}"},
             json={"name": siemens_battery, "group": "GroupFoo"},
         )
@@ -443,9 +444,10 @@ class TestSTStorage:
         assert bad_area_id in description
         assert re.search(r"not a child of ", description, flags=re.IGNORECASE)
 
-        # Check PATCH with the wrong `siemens_battery_id`
+        # Check PATCH with the wrong `storage_id`
+        bad_storage_id = "bad_storage"
         res = client.patch(
-            f"/v1/studies/{study_id}/areas/{area_id}/storages/{siemens_battery_id}",
+            f"/v1/studies/{study_id}/areas/{area_id}/storages/{bad_storage_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
             json={
                 "efficiency": 1.0,
@@ -460,7 +462,7 @@ class TestSTStorage:
         assert res.status_code == 404, res.json()
         obj = res.json()
         description = obj["description"]
-        assert siemens_battery_id in description
+        assert bad_storage_id in description
         assert re.search(r"fields of storage", description, flags=re.IGNORECASE)
         assert re.search(r"not found", description, flags=re.IGNORECASE)
 

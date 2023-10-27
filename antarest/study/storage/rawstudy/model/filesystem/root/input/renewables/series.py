@@ -30,9 +30,11 @@ class ClusteredRenewableClusterSeries(FolderNode):
         self.area = area
 
     def build(self) -> TREE:
+        # Note that cluster IDs may not be in lower case, but series IDs are.
+        series_ids = map(str.lower, self.config.get_renewable_ids(self.area))
         children: TREE = {
-            renewable: ClusteredRenewableSeries(self.context, self.config.next_file(renewable))
-            for renewable in self.config.get_renewable_names(self.area)
+            series_id: ClusteredRenewableSeries(self.context, self.config.next_file(series_id))
+            for series_id in series_ids
         }
         return children
 

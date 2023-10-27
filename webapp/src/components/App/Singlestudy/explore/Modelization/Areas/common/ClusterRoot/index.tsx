@@ -107,7 +107,9 @@ function ClusterRoot<T extends FieldValues>(props: ClusterRootProps<T>) {
           group: clusterData[item].group ? clusterData[item].group : "*",
         }))
       : [];
+
     const clusterDataByGroup = byGroup(tmpData);
+
     const clustersObj = Object.keys(clusterDataByGroup).map(
       (group) =>
         [group, { items: clusterDataByGroup[group], isOpen: true }] as Readonly<
@@ -120,6 +122,7 @@ function ClusterRoot<T extends FieldValues>(props: ClusterRootProps<T>) {
           ]
         >,
     );
+
     const clusterListObj: Clusters = R.fromPairs(clustersObj);
     return clusterListObj;
   }, [clusterData]);

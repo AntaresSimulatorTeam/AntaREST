@@ -4,7 +4,6 @@ from pydantic import validator
 
 from antarest.core.model import JSON
 from antarest.matrixstore.model import MatrixData
-from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.utils import validate_matrix
@@ -27,8 +26,14 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
     Command used to update a binding constraint.
     """
 
-    command_name: CommandName = CommandName.UPDATE_BINDING_CONSTRAINT
+    # Overloaded metadata
+    # ===================
+
+    command_name = CommandName.UPDATE_BINDING_CONSTRAINT
     version: int = 1
+
+    # Command parameters
+    # ==================
 
     # Properties of the `UPDATE_BINDING_CONSTRAINT` command:
     id: str

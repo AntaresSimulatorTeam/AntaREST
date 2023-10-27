@@ -1,15 +1,16 @@
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
-from pydantic import validator
+from pydantic import Extra, validator
 
 from antarest.core.model import JSON
 from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    Cluster,
+    Area,
     FileStudyTreeConfig,
     transform_name_to_id,
 )
+from antarest.study.storage.rawstudy.model.filesystem.config.thermal import create_thermal_config
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol, validate_matrix
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
@@ -76,23 +77,28 @@ class CreateCluster(ICommand):
                 ),
                 {},
             )
-        cluster_id = transform_name_to_id(self.cluster_name)
-        for cluster in study_data.areas[self.area_id].thermals:
-            if cluster.id == cluster_id:
-                return (
-                    CommandOutput(
-                        status=False,
-                        message=f"Thermal cluster '{cluster_id}' already exists in the area '{self.area_id}'.",
-                    ),
-                    {},
-                )
-        study_data.areas[self.area_id].thermals.append(Cluster(id=cluster_id, name=self.cluster_name))
+        area: Area = study_data.areas[self.area_id]
+
+        # Check if the cluster already exists in the area
+        version = study_data.version
+        cluster = create_thermal_config(version, name=self.cluster_name)
+        if any(cl.id == cluster.id for cl in area.thermals):
+            return (
+                CommandOutput(
+                    status=False,
+                    message=f"Thermal cluster '{cluster.id}' already exists in the area '{self.area_id}'.",
+                ),
+                {},
+            )
+
+        area.thermals.append(cluster)
+
         return (
             CommandOutput(
                 status=True,
-                message=f"Thermal cluster '{cluster_id}' added to area '{self.area_id}'.",
+                message=f"Thermal cluster '{cluster.id}' added to area '{self.area_id}'.",
             ),
-            {"cluster_id": cluster_id},
+            {"cluster_id": cluster.id},
         )
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
@@ -100,21 +106,22 @@ class CreateCluster(ICommand):
         if not output.status:
             return output
 
+        # default values
+        self.parameters.setdefault("name", self.cluster_name)
+
         cluster_id = data["cluster_id"]
+        config = study_data.tree.get(["input", "thermal", "clusters", self.area_id, "list"])
+        config[cluster_id] = self.parameters
 
-        cluster_list_config = study_data.tree.get(["input", "thermal", "clusters", self.area_id, "list"])
-        # fixme: rigorously, the section name in the INI file is the cluster ID, not the cluster name
-        #  cluster_list_config[transform_name_to_id(self.cluster_name)] = self.parameters
-        cluster_list_config[self.cluster_name] = self.parameters
-
-        self.parameters["name"] = self.cluster_name
+        # Series identifiers are in lower case.
+        series_id = cluster_id.lower()
         new_cluster_data: JSON = {
             "input": {
                 "thermal": {
-                    "clusters": {self.area_id: {"list": cluster_list_config}},
+                    "clusters": {self.area_id: {"list": config}},
                     "prepro": {
                         self.area_id: {
-                            cluster_id: {
+                            series_id: {
                                 "data": self.prepro,
                                 "modulation": self.modulation,
                             }
@@ -122,7 +129,7 @@ class CreateCluster(ICommand):
                     },
                     "series": {
                         self.area_id: {
-                            cluster_id: {"series": self.command_context.generator_matrix_constants.get_null_matrix()}
+                            series_id: {"series": self.command_context.generator_matrix_constants.get_null_matrix()}
                         }
                     },
                 }
@@ -171,12 +178,13 @@ class CreateCluster(ICommand):
         from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
         from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 
-        cluster_id = transform_name_to_id(self.cluster_name)
+        # Series identifiers are in lower case.
+        series_id = transform_name_to_id(self.cluster_name, lower=True)
         commands: List[ICommand] = []
         if self.prepro != other.prepro:
             commands.append(
                 ReplaceMatrix(
-                    target=f"input/thermal/prepro/{self.area_id}/{cluster_id}/data",
+                    target=f"input/thermal/prepro/{self.area_id}/{series_id}/data",
                     matrix=strip_matrix_protocol(other.prepro),
                     command_context=self.command_context,
                 )
@@ -184,7 +192,7 @@ class CreateCluster(ICommand):
         if self.modulation != other.modulation:
             commands.append(
                 ReplaceMatrix(
-                    target=f"input/thermal/prepro/{self.area_id}/{cluster_id}/modulation",
+                    target=f"input/thermal/prepro/{self.area_id}/{series_id}/modulation",
                     matrix=strip_matrix_protocol(other.modulation),
                     command_context=self.command_context,
                 )
