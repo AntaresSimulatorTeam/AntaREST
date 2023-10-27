@@ -9,8 +9,6 @@ import {
   List,
   ListItem,
   Skeleton,
-  Stack,
-  Switch,
   TextField,
   Typography,
 } from "@mui/material";
@@ -65,9 +63,20 @@ function LauncherDialog(props: Props) {
     shallowEqual,
   );
 
-  const cores = usePromiseWithSnackbarError(() => getLauncherCores(), {
-    errorMessage: t("study.error.launcherCores"),
-  });
+  const cores = usePromiseWithSnackbarError(
+    () =>
+      getLauncherCores().then((cores) => {
+        setOptions((prevOptions) => {
+          return {
+            ...prevOptions,
+            nb_cpu: cores.defaultValue,
+          };
+        });
+      }),
+    {
+      errorMessage: t("study.error.launcherCores"),
+    },
+  );
 
   const { data: outputList } = usePromiseWithSnackbarError(
     () => Promise.all(studyIds.map((sid) => getStudyOutputs(sid))),
@@ -177,7 +186,7 @@ function LauncherDialog(props: Props) {
       open={open}
       onClose={onClose}
       contentProps={{
-        sx: { width: "600px", height: "550px", p: 0, overflow: "hidden" },
+        sx: { width: "600px", height: "500px", p: 0, overflow: "hidden" },
       }}
       actions={
         <>
@@ -229,6 +238,7 @@ function LauncherDialog(props: Props) {
         <Box
           sx={{
             display: "flex",
+            justifyContent: "space-between",
             gap: 2,
           }}
         >
@@ -244,48 +254,57 @@ function LauncherDialog(props: Props) {
             InputLabelProps={{
               shrink: true,
             }}
+            sx={{
+              width: "50%",
+            }}
           />
           <TextField
             id="launcher-option-time-limit"
             label={t("study.timeLimit")}
             type="number"
             variant="filled"
-            value={
-              (options.time_limit === undefined ? 172800 : options.time_limit) /
-              3600
-            }
+            value={(options.time_limit ?? 864000) / 3600} // 240 hours default
             onChange={(e) =>
               handleChange("time_limit", timeLimitParse(e.target.value))
             }
             InputLabelProps={{
               shrink: true,
             }}
-            helperText={t("study.timeLimitHelper", {
+            inputProps={{
+              min: 1,
               max: 240,
-            })}
+            }}
+            sx={{
+              minWidth: "125px",
+            }}
           />
           <UsePromiseCond
             response={cores}
-            ifResolved={(cores) => (
+            ifResolved={() => (
               <TextField
                 id="nb-cpu"
-                label="Number of cores"
+                label={t("study.nbCpu")}
                 type="number"
                 variant="filled"
-                defaultValue={cores.defaultValue}
+                value={options.nb_cpu}
                 onChange={(e) =>
                   handleChange("nb_cpu", parseInt(e.target.value, 10))
                 }
+                inputProps={{
+                  min: 1,
+                  max: 24,
+                }}
+                sx={{
+                  minWidth: "125px",
+                }}
               />
             )}
-            ifPending={() => <Skeleton />}
-            ifRejected={() => (
-              <TextField disabled variant="filled" size="small" />
-            )}
+            ifPending={() => <Skeleton width={125} height={60} />}
+            ifRejected={() => <Skeleton width={125} height={60} />}
           />
         </Box>
         <Divider
-          sx={{ width: 1, mt: 1, border: "0.5px solid", opacity: 0.6 }}
+          sx={{ width: 1, mt: 2, border: "0.5px solid", opacity: 0.7 }}
           orientation="horizontal"
         />
         <Box
@@ -373,10 +392,9 @@ function LauncherDialog(props: Props) {
           />
         </Box>
         <Divider
-          sx={{ width: 1, my: 1, border: "0.5px solid", opacity: 0.6 }}
+          sx={{ width: 1, my: 1, border: "0.5px solid", opacity: 0.7 }}
           orientation="horizontal"
         />
-        <Typography sx={{ mt: 1 }}>Xpansion</Typography>
         <FormGroup
           sx={{
             mt: 1,
@@ -387,10 +405,12 @@ function LauncherDialog(props: Props) {
           <Box
             sx={{
               display: "flex",
-              gap: 2,
+              gap: 5,
               alignItems: "center",
+              alignContent: "center",
             }}
           >
+            <Typography>Xpansion</Typography>
             <FormControlLabel
               control={
                 <Checkbox
@@ -405,19 +425,6 @@ function LauncherDialog(props: Props) {
               }
               label={t("study.xpansionMode") as string}
             />
-            <Box>
-              <Stack direction="row" spacing={1} alignItems="center">
-                <Typography>{t("launcher.xpansion.versionR")}</Typography>
-                <Switch
-                  checked={!options.xpansion_r_version}
-                  disabled={!options.xpansion}
-                  onChange={(e, checked) =>
-                    handleChange("xpansion_r_version", !checked)
-                  }
-                />
-                <Typography>{t("launcher.xpansion.versionCpp")}</Typography>
-              </Stack>
-            </Box>
           </Box>
           {outputList && outputList.length === 1 && (
             <Box sx={{ display: "flex", gap: 2 }}>
@@ -454,7 +461,7 @@ function LauncherDialog(props: Props) {
           )}
         </FormGroup>
         <Divider
-          sx={{ width: 1, my: 1, border: "0.5px solid", opacity: 0.6 }}
+          sx={{ width: 1, my: 1, border: "0.5px solid", opacity: 0.7 }}
           orientation="horizontal"
         />
       </Box>
