@@ -40,6 +40,7 @@ function CreateRowDialog<TData extends TRow>({
       id: nameToId(values.name),
       name: values.name.trim(),
     } as TData);
+
     onClose();
   };
 
@@ -68,9 +69,9 @@ function CreateRowDialog<TData extends TRow>({
             rules={{
               required: { value: true, message: t("form.field.required") },
               validate: (v) => {
-                const regex = /(?:[^a-zA-Z0-9_\-(),& ])+$/;
-                if (regex.test(v.trim())) {
-                  return t("form.field.specialChars", { 0: "&()_,-" });
+                const regex = /^[a-zA-Z0-9_\-() &]+$/;
+                if (!regex.test(v.trim())) {
+                  return t("form.field.specialChars", { 0: "&()_-" });
                 }
                 if (v.trim().length <= 0) {
                   return t("form.field.required");
