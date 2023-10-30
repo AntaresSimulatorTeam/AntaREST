@@ -127,7 +127,6 @@ export const updateStudiesSortConf = createAction<
 export const updateStudiesFromLocalStorage = createAction<
   O.Nullable<{
     favorites: StudiesState["favorites"];
-    filters: Partial<StudyFilters>;
     sort: Partial<StudiesSortConf>;
   }>
 >(n("UPDATE_FROM_LOCAL_STORAGE"));
@@ -263,9 +262,8 @@ export const toggleFavorite =
 export default createReducer(initialState, (builder) => {
   builder
     .addCase(updateStudiesFromLocalStorage, (draftState, action) => {
-      const { favorites, filters, sort } = action.payload;
+      const { favorites, sort } = action.payload;
       draftState.favorites = favorites || [];
-      Object.assign(draftState.filters, filters);
       Object.assign(draftState.sort, sort);
     })
     .addCase(createStudy.fulfilled, studiesAdapter.addOne)
