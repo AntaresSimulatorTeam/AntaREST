@@ -196,7 +196,7 @@
   "study.xpansionMode": "Mode Xpansion",
   "study.archiveOutputMode": "Mode archivé",
   "study.postProcessing": "Post-traitement",
-  "study.timeLimit": "Limite de temps",
+  "study.timeLimit": "Limite de temps (h)",
   "study.timeLimitHelper": "(heures) max: {{max}}h",
   "study.nbCpu": "Nombre de coeurs",
   "study.clusterLoad": "Charge du cluster",
