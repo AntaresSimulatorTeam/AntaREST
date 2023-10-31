@@ -35,6 +35,12 @@
         "ignoreRestSiblings": true
       }
     ],
+    "prettier/prettier": [
+      "error",
+      {
+        "trailingComma": "all"
+      }
+    ],
     "consistent-return": "off",
     "curly": ["error", "all"],
     "default-case": "off",
