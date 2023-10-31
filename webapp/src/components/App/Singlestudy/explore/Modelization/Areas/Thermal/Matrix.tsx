@@ -1,4 +1,3 @@
-/* eslint-disable react/jsx-props-no-spreading */
 import * as React from "react";
 import * as R from "ramda";
 import { styled } from "@mui/material";

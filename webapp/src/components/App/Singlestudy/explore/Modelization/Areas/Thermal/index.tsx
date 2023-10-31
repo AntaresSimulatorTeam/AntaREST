@@ -20,6 +20,7 @@ import GroupedDataTable from "../../../../../../common/GroupedDataTable";
 import SimpleLoader from "../../../../../../common/loaders/SimpleLoader";
 import SimpleContent from "../../../../../../common/page/SimpleContent";
 import usePromiseWithSnackbarError from "../../../../../../../hooks/usePromiseWithSnackbarError";
+import UsePromiseCond from "../../../../../../common/utils/UsePromiseCond";
 
 function Thermal() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -29,13 +30,7 @@ function Thermal() {
   const currentAreaId = useAppSelector(getCurrentAreaId);
   const groups = Object.values(ThermalClusterGroup);
 
-  const {
-    data: clusters,
-    isLoading,
-    isRejected,
-    isResolved,
-    error,
-  } = usePromiseWithSnackbarError(
+  const clusters = usePromiseWithSnackbarError(
     () => getThermalClusters(study.id, currentAreaId),
     {
       errorMessage: t("studies.error.retrieveData"),
@@ -51,7 +46,7 @@ function Thermal() {
    */
   const clustersWithCapacity = useMemo(
     () =>
-      clusters?.map((cluster) => {
+      clusters?.data?.map((cluster) => {
         const { unitCount, nominalCapacity, enabled } = cluster;
         const installedCapacity = unitCount * nominalCapacity;
         const enabledCapacity = enabled ? installedCapacity : 0;
@@ -229,25 +224,22 @@ function Thermal() {
   // JSX
   ////////////////////////////////////////////////////////////////
 
-  if (isLoading) {
-    return <SimpleLoader />;
-  }
-
-  if (isRejected) {
-    return <SimpleContent title={error?.toString()} />;
-  }
-
-  if (isResolved) {
-    return (
-      <GroupedDataTable
-        data={clustersWithCapacity}
-        columns={columns}
-        groups={groups}
-        onCreate={handleCreateRow}
-        onDelete={handleDeleteSelection}
-      />
-    );
-  }
+  return (
+    <UsePromiseCond
+      response={clusters}
+      ifPending={() => <SimpleLoader />}
+      ifResolved={() => (
+        <GroupedDataTable
+          data={clustersWithCapacity}
+          columns={columns}
+          groups={groups}
+          onCreate={handleCreateRow}
+          onDelete={handleDeleteSelection}
+        />
+      )}
+      ifRejected={(error) => <SimpleContent title={error?.toString()} />}
+    />
+  );
 }
 
 export default Thermal;

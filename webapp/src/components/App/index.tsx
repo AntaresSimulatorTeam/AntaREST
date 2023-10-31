@@ -53,6 +53,8 @@ import Districts from "./Singlestudy/explore/Modelization/Map/MapConfig/District
 import InflowStructure from "./Singlestudy/explore/Modelization/Areas/Hydro/InflowStructure";
 import Allocation from "./Singlestudy/explore/Modelization/Areas/Hydro/Allocation";
 import Correlation from "./Singlestudy/explore/Modelization/Areas/Hydro/Correlation";
+import Storages from "./Singlestudy/explore/Modelization/Areas/Storages";
+import StorageForm from "./Singlestudy/explore/Modelization/Areas/Storages/Form";
 import ThermalForm from "./Singlestudy/explore/Modelization/Areas/Thermal/Form";
 
 function App() {
@@ -85,6 +87,11 @@ function App() {
                             <Route
                               path="thermal/:clusterId"
                               element={<ThermalForm />}
+                            />
+                            <Route path="storages" element={<Storages />} />
+                            <Route
+                              path="storages/:storageId"
+                              element={<StorageForm />}
                             />
                             <Route
                               path="hydro"
