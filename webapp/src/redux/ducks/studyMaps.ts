@@ -182,17 +182,14 @@ export const fetchStudyMapLayers = createAsyncThunk<
   async (studyId, { dispatch, rejectWithValue }) => {
     try {
       const layers = await studyApi.getStudyLayers(studyId);
-      const studyMapLayers = layers.reduce(
-        (acc, { id, name, areas }) => {
-          acc[id] = {
-            id,
-            name,
-            areas,
-          };
-          return acc;
-        },
-        {} as StudyMapsState["layers"],
-      );
+      const studyMapLayers = layers.reduce((acc, { id, name, areas }) => {
+        acc[id] = {
+          id,
+          name,
+          areas,
+        };
+        return acc;
+      }, {} as StudyMapsState["layers"]);
       initStudyMapLayers(dispatch, studyMapLayers);
     } catch (err) {
       return rejectWithValue(err);
@@ -204,21 +201,18 @@ async function getLinks(
   studyId: StudyMap["studyId"],
 ): Promise<StudyMap["links"]> {
   const links = await studyDataApi.getAllLinks({ uuid: studyId, withUi: true });
-  return links.reduce(
-    (acc, link) => {
-      const [style, linecap] = makeLinkStyle(link.ui?.style);
-      const id = makeLinkId(link.area1, link.area2);
-      acc[id] = {
-        id,
-        color: `rgb(${link.ui?.color}`,
-        strokeDasharray: style,
-        strokeLinecap: linecap,
-        strokeWidth: link.ui?.width < 2 ? 2 : link.ui?.width,
-      };
-      return acc;
-    },
-    {} as StudyMap["links"],
-  );
+  return links.reduce((acc, link) => {
+    const [style, linecap] = makeLinkStyle(link.ui?.style);
+    const id = makeLinkId(link.area1, link.area2);
+    acc[id] = {
+      id,
+      color: `rgb(${link.ui?.color}`,
+      strokeDasharray: style,
+      strokeLinecap: linecap,
+      strokeWidth: link.ui?.width < 2 ? 2 : link.ui?.width,
+    };
+    return acc;
+  }, {} as StudyMap["links"]);
 }
 
 async function getNodes(
@@ -226,32 +220,29 @@ async function getNodes(
   studyId: StudyMap["studyId"],
 ): Promise<StudyMap["nodes"]> {
   const areaPositions = await studyApi.getAreaPositions(studyId);
-  return Object.keys(areaPositions).reduce(
-    (acc, areaId) => {
-      const {
-        ui,
-        layerColor = {},
-        layerX = {},
-        layerY = {},
-      } = areaPositions[areaId];
-      const rgb = [ui.color_r, ui.color_g, ui.color_b];
-      const area = getArea(state, studyId, areaId) as Area;
-      acc[areaId] = {
-        id: areaId,
-        name: area.name,
-        x: ui.x,
-        y: ui.y,
-        color: `rgb(${rgb.join(", ")})`,
-        rgbColor: rgb,
-        size: { width: getNodeWidth(areaId), height: NODE_HEIGHT },
-        layerX,
-        layerY,
-        layerColor,
-      };
-      return acc;
-    },
-    {} as StudyMap["nodes"],
-  );
+  return Object.keys(areaPositions).reduce((acc, areaId) => {
+    const {
+      ui,
+      layerColor = {},
+      layerX = {},
+      layerY = {},
+    } = areaPositions[areaId];
+    const rgb = [ui.color_r, ui.color_g, ui.color_b];
+    const area = getArea(state, studyId, areaId) as Area;
+    acc[areaId] = {
+      id: areaId,
+      name: area.name,
+      x: ui.x,
+      y: ui.y,
+      color: `rgb(${rgb.join(", ")})`,
+      rgbColor: rgb,
+      size: { width: getNodeWidth(areaId), height: NODE_HEIGHT },
+      layerX,
+      layerY,
+      layerColor,
+    };
+    return acc;
+  }, {} as StudyMap["nodes"]);
 }
 
 export const createStudyMap = createAsyncThunk<

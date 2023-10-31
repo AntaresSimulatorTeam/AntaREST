@@ -37,20 +37,14 @@ function Layers() {
   const defaultValues = useMemo(() => {
     const layers = Object.values(layersById);
 
-    return areas.reduce(
-      (acc, area) => {
-        acc[area.id] = layers.reduce(
-          (acc2, layer) => {
-            acc2[layer.id] = layer.areas.includes(area.id);
-            return acc2;
-          },
-          {} as Record<string, boolean>,
-        );
+    return areas.reduce((acc, area) => {
+      acc[area.id] = layers.reduce((acc2, layer) => {
+        acc2[layer.id] = layer.areas.includes(area.id);
+        return acc2;
+      }, {} as Record<string, boolean>);
 
-        return acc;
-      },
-      {} as Record<string, Record<string, boolean>>,
-    );
+      return acc;
+    }, {} as Record<string, Record<string, boolean>>);
   }, [areas, layersById]);
 
   ////////////////////////////////////////////////////////////////

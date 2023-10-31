@@ -35,20 +35,14 @@ function Districts() {
   const defaultValues = useMemo(() => {
     const districts = Object.values(districtsById);
 
-    return areas.reduce(
-      (acc, area) => {
-        acc[area.id] = districts.reduce(
-          (acc2, district) => {
-            acc2[district.id] = district.areas.includes(area.id);
-            return acc2;
-          },
-          {} as Record<string, boolean>,
-        );
+    return areas.reduce((acc, area) => {
+      acc[area.id] = districts.reduce((acc2, district) => {
+        acc2[district.id] = district.areas.includes(area.id);
+        return acc2;
+      }, {} as Record<string, boolean>);
 
-        return acc;
-      },
-      {} as Record<string, Record<string, boolean>>,
-    );
+      return acc;
+    }, {} as Record<string, Record<string, boolean>>);
   }, [areas, districtsById]);
 
   ////////////////////////////////////////////////////////////////

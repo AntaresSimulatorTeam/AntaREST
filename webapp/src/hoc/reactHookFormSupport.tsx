@@ -157,21 +157,15 @@ function reactHookFormSupport<TValue>(
           }
 
           if (RA.isPlainObj(validate)) {
-            return Object.keys(validate).reduce(
-              (acc, key) => {
-                acc[key] = (value, formValues) => {
-                  return (
-                    preValidate?.(value, formValues) &&
-                    validate[key](value, formValues)
-                  );
-                };
-                return acc;
-              },
-              {} as Record<
-                string,
-                Validate<FieldPathValue<TFieldValues, TFieldName>, TFieldValues>
-              >,
-            );
+            return Object.keys(validate).reduce((acc, key) => {
+              acc[key] = (value, formValues) => {
+                return (
+                  preValidate?.(value, formValues) &&
+                  validate[key](value, formValues)
+                );
+              };
+              return acc;
+            }, {} as Record<string, Validate<FieldPathValue<TFieldValues, TFieldName>, TFieldValues>>);
           }
 
           return preValidate;

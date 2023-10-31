@@ -23,13 +23,13 @@ function HeaderBottom(props: PropTypes) {
   const users = useAppSelector((state) => {
     return getUsers(state)
       .filter((user) => filters.users.includes(user.id))
-      .map((user) => ({ id: user.id, name: user.name }) as UserDTO);
+      .map((user) => ({ id: user.id, name: user.name } as UserDTO));
   });
 
   const groups = useAppSelector((state) => {
     return getGroups(state)
       .filter((group) => filters.groups.includes(group.id))
-      .map((group) => ({ id: group.id, name: group.name }) as GroupDTO);
+      .map((group) => ({ id: group.id, name: group.name } as GroupDTO));
   });
 
   ////////////////////////////////////////////////////////////////
