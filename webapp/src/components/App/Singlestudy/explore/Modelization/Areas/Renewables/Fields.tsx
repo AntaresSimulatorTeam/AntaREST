@@ -7,13 +7,13 @@ import Fieldset from "../../../../../../common/Fieldset";
 import { useFormContextPlus } from "../../../../../../common/Form";
 import {
   RENEWABLE_GROUPS,
-  RenewableFormFields,
+  RenewableCluster,
   TS_INTERPRETATION_OPTIONS,
 } from "./utils";
 
 function Fields() {
   const [t] = useTranslation();
-  const { control } = useFormContextPlus<RenewableFormFields>();
+  const { control } = useFormContextPlus<RenewableCluster>();
 
   ////////////////////////////////////////////////////////////////
   // JSX

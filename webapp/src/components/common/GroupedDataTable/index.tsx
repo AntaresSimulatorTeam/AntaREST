@@ -2,7 +2,7 @@
 /* eslint-disable camelcase */
 import Box from "@mui/material/Box";
 import AddIcon from "@mui/icons-material/Add";
-import { Button, Tooltip } from "@mui/material";
+import { Button } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import MaterialReactTable, {
@@ -169,29 +169,25 @@ function GroupedDataTable<TData extends TRow>({
                 {t("button.add")}
               </Button>
             )}
-            <Tooltip title={t("global.duplicate")}>
+            <Button
+              startIcon={<ContentCopyIcon />}
+              variant="outlined"
+              size="small"
+              onClick={handleDuplicateRow}
+              disabled={!isOneRowSelected}
+            >
+              {t("global.duplicate")}
+            </Button>
+            {onDelete && (
               <Button
-                startIcon={<ContentCopyIcon />}
+                startIcon={<DeleteIcon />}
                 variant="outlined"
                 size="small"
-                onClick={handleDuplicateRow}
-                disabled={!isOneRowSelected}
+                onClick={() => setConfirmDialogOpen(true)}
+                disabled={!isAnyRowSelected}
               >
-                {t("global.duplicate")}
+                {t("global.delete")}
               </Button>
-            </Tooltip>
-            {onDelete && (
-              <Tooltip title={t("global.delete")}>
-                <Button
-                  startIcon={<DeleteIcon />}
-                  variant="outlined"
-                  size="small"
-                  onClick={() => setConfirmDialogOpen(true)}
-                  disabled={!isAnyRowSelected}
-                >
-                  {t("global.delete")}
-                </Button>
-              </Tooltip>
             )}
           </Box>
         )}

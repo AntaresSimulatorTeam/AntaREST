@@ -4,7 +4,6 @@ import { useParams, useOutletContext, useNavigate } from "react-router-dom";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useTranslation } from "react-i18next";
 import { StudyMetadata } from "../../../../../../../common/types";
-import { nameToId } from "../../../../../../../services/utils";
 import Form from "../../../../../../common/Form";
 import Fields from "./Fields";
 import Matrix from "./Matrix";
@@ -17,6 +16,7 @@ import { SubmitHandlerPlus } from "../../../../../../common/Form/types";
 import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../../redux/selectors";
 import useNavigateOnCondition from "../../../../../../../hooks/useNavigateOnCondition";
+import { nameToId } from "../../../../../../../services/utils";
 
 function ThermalForm() {
   const { t } = useTranslation();
@@ -74,7 +74,11 @@ function ThermalForm() {
             height: "500px",
           }}
         >
-          <Matrix study={study} area={areaId} cluster={nameToId(clusterId)} />
+          <Matrix
+            study={study}
+            areaId={areaId}
+            clusterId={nameToId(clusterId)}
+          />
         </Box>
       </Form>
     </Box>

@@ -13,13 +13,12 @@ import MatrixInput from "../../../../../../common/MatrixInput";
 
 interface Props {
   study: StudyMetadata;
-  area: string;
-  cluster: Cluster["id"];
+  areaId: string;
+  clusterId: Cluster["id"];
 }
 
-function Matrix(props: Props) {
+function Matrix({ study, areaId, clusterId }: Props) {
   const [t] = useTranslation();
-  const { study, area, cluster } = props;
   const [value, setValue] = React.useState(0);
 
   const commonNames = [
@@ -41,6 +40,7 @@ function Matrix(props: Props) {
   const handleChange = (event: React.SyntheticEvent, newValue: number) => {
     setValue(newValue);
   };
+
   return (
     <Box
       width="100%"
@@ -51,7 +51,7 @@ function Matrix(props: Props) {
       alignItems="center"
     >
       <Tabs
-        sx={{ width: "98%", borderBottom: 1, borderColor: "divider" }}
+        sx={{ width: 1 }}
         value={value}
         onChange={handleChange}
         aria-label="basic tabs example"
@@ -73,7 +73,7 @@ function Matrix(props: Props) {
             () => (
               <MatrixInput
                 study={study}
-                url={`input/thermal/prepro/${area}/${cluster}/modulation`}
+                url={`input/thermal/prepro/${areaId}/${clusterId}/modulation`}
                 computStats={MatrixStats.NOCOL}
                 title={t("study.modelization.clusters.matrix.common")}
                 columnsNames={commonNames}
@@ -85,7 +85,7 @@ function Matrix(props: Props) {
             () => (
               <MatrixInput
                 study={study}
-                url={`input/thermal/prepro/${area}/${cluster}/data`}
+                url={`input/thermal/prepro/${areaId}/${clusterId}/data`}
                 computStats={MatrixStats.NOCOL}
                 title={t("study.modelization.clusters.matrix.tsGen")}
                 columnsNames={tsGenNames}
@@ -97,7 +97,7 @@ function Matrix(props: Props) {
             () => (
               <MatrixInput
                 study={study}
-                url={`input/thermal/series/${area}/${cluster}/series`}
+                url={`input/thermal/series/${areaId}/${clusterId}/series`}
                 computStats={MatrixStats.NOCOL}
                 title={t("study.modelization.clusters.matrix.timeSeries")}
               />

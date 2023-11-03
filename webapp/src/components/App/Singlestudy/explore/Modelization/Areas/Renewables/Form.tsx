@@ -6,29 +6,33 @@ import { useTranslation } from "react-i18next";
 import { StudyMetadata } from "../../../../../../../common/types";
 import Form from "../../../../../../common/Form";
 import Fields from "./Fields";
+import Matrix from "./Matrix";
+import {
+  RenewableCluster,
+  getRenewableCluster,
+  updateRenewableCluster,
+} from "./utils";
 import { SubmitHandlerPlus } from "../../../../../../common/Form/types";
 import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../../redux/selectors";
-import { Storage, getStorage, updateStorage } from "./utils";
-import Matrix from "./Matrix";
 import useNavigateOnCondition from "../../../../../../../hooks/useNavigateOnCondition";
 import { nameToId } from "../../../../../../../services/utils";
 
-function StorageForm() {
+function RenewablesForm() {
   const { t } = useTranslation();
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const navigate = useNavigate();
   const areaId = useAppSelector(getCurrentAreaId);
-  const { storageId = "" } = useParams();
+  const { clusterId = "" } = useParams();
 
   useNavigateOnCondition({
     deps: [areaId],
-    to: `../storages`,
+    to: "../renewables",
   });
 
   // prevent re-fetch while useNavigateOnCondition event occurs
   const defaultValues = useCallback(() => {
-    return getStorage(study.id, areaId, storageId);
+    return getRenewableCluster(study.id, areaId, clusterId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -36,8 +40,10 @@ function StorageForm() {
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = ({ dirtyValues }: SubmitHandlerPlus<Storage>) => {
-    return updateStorage(study.id, areaId, storageId, dirtyValues);
+  const handleSubmit = ({
+    dirtyValues,
+  }: SubmitHandlerPlus<RenewableCluster>) => {
+    return updateRenewableCluster(study.id, areaId, clusterId, dirtyValues);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -49,7 +55,7 @@ function StorageForm() {
       <Button
         color="secondary"
         size="small"
-        onClick={() => navigate("../storages")}
+        onClick={() => navigate("../renewables")}
         startIcon={<ArrowBackIcon color="secondary" />}
         sx={{ alignSelf: "flex-start", px: 0 }}
       >
@@ -57,9 +63,7 @@ function StorageForm() {
       </Button>
       <Form
         key={study.id + areaId}
-        config={{
-          defaultValues,
-        }}
+        config={{ defaultValues }}
         onSubmit={handleSubmit}
         autoSubmit
       >
@@ -75,7 +79,7 @@ function StorageForm() {
           <Matrix
             study={study}
             areaId={areaId}
-            storageId={nameToId(storageId)}
+            clusterId={nameToId(clusterId)}
           />
         </Box>
       </Form>
@@ -83,4 +87,4 @@ function StorageForm() {
   );
 }
 
-export default StorageForm;
+export default RenewablesForm;
