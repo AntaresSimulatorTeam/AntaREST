@@ -287,7 +287,7 @@ class TaskJobService(ITaskService):
     def await_task(self, task_id: str, timeout_sec: int = DEFAULT_AWAIT_MAX_TIMEOUT) -> None:
         if task_id in self.tasks:
             try:
-                logger.info(f"🤔 Awaiting task '{task_id}'...")
+                logger.info(f"🤔 Awaiting task '{task_id}' {timeout_sec}s...")
                 self.tasks[task_id].result(timeout_sec)
                 logger.info(f"📌 Task '{task_id}' done.")
             except Exception as exc:

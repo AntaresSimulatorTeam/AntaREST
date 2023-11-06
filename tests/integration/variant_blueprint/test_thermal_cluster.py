@@ -124,7 +124,7 @@ class TestThermalCluster:
         res = client.get(
             f"/v1/tasks/{task_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
-            params={"wait_for_completion": True},
+            params={"wait_for_completion": True, "timeout": 10},
         )
         assert res.status_code == http.HTTPStatus.OK, res.json()
         task = TaskDTO(**res.json())
@@ -144,4 +144,3 @@ class TestThermalCluster:
             "status": TaskStatus.COMPLETED,
             "type": "VARIANT_GENERATION",
         }
-
