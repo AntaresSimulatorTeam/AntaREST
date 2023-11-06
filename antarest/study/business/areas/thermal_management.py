@@ -78,7 +78,7 @@ class ThermalClusterOutput(Thermal860Config, metaclass=AllOptionalMetaclass):
     class Config:
         @staticmethod
         def schema_extra(schema: t.MutableMapping[str, t.Any]) -> None:
-            schema["example"] = ThermalClusterInput(
+            schema["example"] = ThermalClusterOutput(
                 id="2 avail and must 1",
                 group="Gas",
                 name="2 avail and must 1",
