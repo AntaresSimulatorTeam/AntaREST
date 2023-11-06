@@ -17,7 +17,7 @@ from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import Event, EventChannelDirectory, EventType, IEventBus
-from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
+from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTGroup, JWTUser
 from antarest.core.model import PermissionInfo, PublicMode, StudyPermissionType
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.tasks.model import TaskResult, TaskType
@@ -484,6 +484,13 @@ class LauncherService:
             job_result = self.job_result_repository.get(job_id)
             if not job_result:
                 raise JobNotFound()
+            # Recreates the user via its id
+            if owner_id := job_result.owner_id:
+                roles = self.study_service.user_service.roles.get_all_by_user(owner_id)
+                groups = [JWTGroup(id=role.group_id, name=role.group.name, role=role.type) for role in roles]
+                user_who_launched_the_study = JWTUser(id=owner_id, impersonator=owner_id, type="users", groups=groups)
+            else:
+                user_who_launched_the_study = DEFAULT_ADMIN_USER
 
             study_id = job_result.study_id
             job_launch_params = LauncherParametersDTO.parse_raw(job_result.launcher_params or "{}")
@@ -541,7 +548,7 @@ class LauncherService:
                     return self.study_service.import_output(
                         study_id,
                         final_output_path,
-                        RequestParameters(DEFAULT_ADMIN_USER),
+                        RequestParameters(user_who_launched_the_study),
                         output_suffix,
                         job_launch_params.auto_unzip,
                     )
