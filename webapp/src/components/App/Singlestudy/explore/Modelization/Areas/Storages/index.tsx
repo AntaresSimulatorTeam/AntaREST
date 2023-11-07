@@ -2,7 +2,7 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { MRT_ColumnDef } from "material-react-table";
-import { Box, Chip } from "@mui/material";
+import { Box, Chip, Tooltip } from "@mui/material";
 import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
 import { StudyMetadata } from "../../../../../../../common/types";
 import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
@@ -26,14 +26,13 @@ function Storages() {
   const [t] = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
-  const currentAreaId = useAppSelector(getCurrentAreaId);
-  const groups = Object.values(StorageGroup);
+  const areaId = useAppSelector(getCurrentAreaId);
 
   const storages = usePromiseWithSnackbarError(
-    () => getStorages(study.id, currentAreaId),
+    () => getStorages(study.id, areaId),
     {
       errorMessage: t("studies.error.retrieveData"),
-      deps: [study.id, currentAreaId],
+      deps: [study.id, areaId],
     },
   );
 
@@ -63,7 +62,13 @@ function Storages() {
     () => [
       {
         accessorKey: "name",
-        header: "Name",
+        header: t("global.name"),
+        muiTableHeadCellProps: {
+          align: "left",
+        },
+        muiTableBodyCellProps: {
+          align: "left",
+        },
         size: 100,
         Cell: ({ renderedCellValue, row }) => {
           const storageId = row.original.id;
@@ -85,10 +90,10 @@ function Storages() {
       },
       {
         accessorKey: "group",
-        header: "Group",
+        header: t("global.group"),
         size: 50,
         filterVariant: "select",
-        filterSelectOptions: STORAGE_GROUP_OPTIONS,
+        filterSelectOptions: STORAGE_GROUPS,
         muiTableHeadCellProps: {
           align: "left",
         },
@@ -101,8 +106,19 @@ function Storages() {
       },
       {
         accessorKey: "injectionNominalCapacity",
-        header: "Nominal capacity",
-        size: 50,
+        header: t("study.modelization.storages.injectionNominalCapacity"),
+        Header: ({ column }) => (
+          <Tooltip
+            title={t(
+              "study.modelization.storages.injectionNominalCapacity.info",
+            )}
+            placement="top"
+            arrow
+          >
+            <Box>{column.columnDef.header}</Box>
+          </Tooltip>
+        ),
+        size: 100,
         AggregatedCell: ({ cell }) => (
           <Box sx={{ color: "info.main", fontWeight: "bold" }}>
             {cell.getValue<number>()}
@@ -114,8 +130,19 @@ function Storages() {
       },
       {
         accessorKey: "withdrawalNominalCapacity",
-        header: "Withdrawal capacity",
-        size: 50,
+        header: t("study.modelization.storages.withdrawalNominalCapacity"),
+        Header: ({ column }) => (
+          <Tooltip
+            title={t(
+              "study.modelization.storages.withdrawalNominalCapacity.info",
+            )}
+            placement="top"
+            arrow
+          >
+            <Box>{column.columnDef.header}</Box>
+          </Tooltip>
+        ),
+        size: 100,
         aggregationFn: "sum",
         AggregatedCell: ({ cell }) => (
           <Box sx={{ color: "info.main", fontWeight: "bold" }}>
@@ -128,29 +155,38 @@ function Storages() {
       },
       {
         accessorKey: "reservoirCapacity",
-        header: "Reservoir capacity",
-        size: 50,
-        Cell: ({ cell }) => `${cell.getValue<number>() * 100} MWh`,
+        header: t("study.modelization.storages.reservoirCapacity"),
+        Header: ({ column }) => (
+          <Tooltip
+            title={t("study.modelization.storages.reservoirCapacity.info")}
+            placement="top"
+            arrow
+          >
+            <Box>{column.columnDef.header}</Box>
+          </Tooltip>
+        ),
+        size: 100,
+        Cell: ({ cell }) => `${cell.getValue<number>() * 100}`,
       },
       {
         accessorKey: "efficiency",
-        header: "Efficiency",
+        header: t("study.modelization.storages.efficiency"),
         size: 50,
-        Cell: ({ cell }) => `${cell.getValue<number>() * 100} %`,
+        Cell: ({ cell }) => `${cell.getValue<number>() * 100}`,
       },
       {
         accessorKey: "initialLevel",
-        header: "Initial Level",
+        header: t("study.modelization.storages.initialLevel"),
         size: 50,
       },
       {
         accessorKey: "initialLevelOptim",
-        header: "Initial Level Optim",
-        size: 50,
+        header: t("study.modelization.storages.initialLevelOptim"),
+        size: 180,
         filterVariant: "checkbox",
         Cell: ({ cell }) => (
           <Chip
-            label={cell.getValue<boolean>() ? "Yes" : "No"}
+            label={cell.getValue<boolean>() ? t("button.yes") : t("button.no")}
             color={cell.getValue<boolean>() ? "success" : "error"}
             size="small"
           />
@@ -160,6 +196,7 @@ function Storages() {
     [
       location.pathname,
       navigate,
+      t,
       totalInjectionNominalCapacity,
       totalWithdrawalNominalCapacity,
     ],
@@ -170,11 +207,11 @@ function Storages() {
   ////////////////////////////////////////////////////////////////
 
   const handleCreateRow = ({ id, ...storage }: Storage) => {
-    return createStorage(study.id, currentAreaId, storage);
+    return createStorage(study.id, areaId, storage);
   };
 
   const handleDeleteSelection = (ids: string[]) => {
-    return deleteStorages(study.id, currentAreaId, ids);
+    return deleteStorages(study.id, areaId, ids);
   };
 
   ////////////////////////////////////////////////////////////////

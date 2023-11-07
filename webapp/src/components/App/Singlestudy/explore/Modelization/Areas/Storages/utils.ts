@@ -5,21 +5,23 @@ import client from "../../../../../../../services/api/client";
 // Enums
 ////////////////////////////////////////////////////////////////
 
-export enum StorageGroup {
-  PspOpen = "PSP_open",
-  PspClosed = "PSP_closed",
-  Pondage = "Pondage",
-  Battery = "Battery",
-  Other1 = "Other1",
-  Other2 = "Other2",
-  Other3 = "Other3",
-  Other4 = "Other4",
-  Other5 = "Other5",
-}
+const StorageGroup = {
+  PspOpen: "PSP_open",
+  PspClosed: "PSP_closed",
+  Pondage: "Pondage",
+  Battery: "Battery",
+  Other1: "Other1",
+  Other2: "Other2",
+  Other3: "Other3",
+  Other4: "Other4",
+  Other5: "Other5",
+} as const;
 
 ////////////////////////////////////////////////////////////////
 // Types
 ////////////////////////////////////////////////////////////////
+
+export type StorageGroup = (typeof StorageGroup)[keyof typeof StorageGroup];
 
 export interface Storage {
   id: string;
@@ -37,7 +39,7 @@ export interface Storage {
 // Constants
 ////////////////////////////////////////////////////////////////
 
-export const STORAGE_GROUP_OPTIONS = Object.values(StorageGroup);
+export const STORAGE_GROUPS = [...Object.values(StorageGroup)];
 
 ////////////////////////////////////////////////////////////////
 // Functions

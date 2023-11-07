@@ -1,6 +1,5 @@
 import * as React from "react";
 import * as R from "ramda";
-import { styled } from "@mui/material";
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
 import Box from "@mui/material/Box";
@@ -11,12 +10,6 @@ import {
   StudyMetadata,
 } from "../../../../../../../common/types";
 import MatrixInput from "../../../../../../common/MatrixInput";
-
-export const StyledTab = styled(Tabs)({
-  width: "98%",
-  borderBottom: 1,
-  borderColor: "divider",
-});
 
 interface Props {
   study: StudyMetadata;
@@ -57,7 +50,8 @@ function Matrix(props: Props) {
       justifyContent="flex-start"
       alignItems="center"
     >
-      <StyledTab
+      <Tabs
+        sx={{ width: "98%", borderBottom: 1, borderColor: "divider" }}
         value={value}
         onChange={handleChange}
         aria-label="basic tabs example"
@@ -65,7 +59,7 @@ function Matrix(props: Props) {
         <Tab label={t("study.modelization.clusters.matrix.common")} />
         <Tab label={t("study.modelization.clusters.matrix.tsGen")} />
         <Tab label={t("study.modelization.clusters.matrix.timeSeries")} />
-      </StyledTab>
+      </Tabs>
       <Box
         sx={{
           display: "flex",

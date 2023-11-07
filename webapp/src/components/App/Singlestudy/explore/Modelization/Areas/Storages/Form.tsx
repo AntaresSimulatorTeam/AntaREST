@@ -11,7 +11,6 @@ import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../../redux/selectors";
 import { Storage, getStorage, updateStorage } from "./utils";
 import Matrix from "./Matrix";
-import { nameToId } from "../../../../../../../services/utils";
 import useNavigateOnCondition from "../../../../../../../hooks/useNavigateOnCondition";
 
 function StorageForm() {
@@ -72,11 +71,7 @@ function StorageForm() {
             height: "500px",
           }}
         >
-          <Matrix
-            study={study}
-            areaId={areaId}
-            storageId={nameToId(storageId)}
-          />
+          <Matrix study={study} areaId={areaId} storageId={storageId} />
         </Box>
       </Form>
     </Box>

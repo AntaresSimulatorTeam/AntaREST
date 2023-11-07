@@ -11,18 +11,18 @@ import client from "../../../../../../../services/api/client";
 // Enums
 ////////////////////////////////////////////////////////////////
 
-export enum ThermalClusterGroup {
-  Gas = "Gas",
-  HardCoal = "Hard Coal",
-  Lignite = "Lignite",
-  MixedFuel = "Mixed fuel",
-  Nuclear = "Nuclear",
-  Oil = "Oil",
-  Other = "Other",
-  Other2 = "Other 2",
-  Other3 = "Other 3",
-  Other4 = "Other 4",
-}
+const ThermalClusterGroup = {
+  Gas: "Gas",
+  HardCoal: "Hard Coal",
+  Lignite: "Lignite",
+  MixedFuel: "Mixed fuel",
+  Nuclear: "Nuclear",
+  Oil: "Oil",
+  Other: "Other",
+  Other2: "Other 2",
+  Other3: "Other 3",
+  Other4: "Other 4",
+} as const;
 
 enum TimeSeriesGenerationOption {
   UseGlobal = "use global parameter",
@@ -38,6 +38,12 @@ enum LawOption {
 ////////////////////////////////////////////////////////////////
 // Types
 ////////////////////////////////////////////////////////////////
+
+export type ThermalGroup =
+  (typeof ThermalClusterGroup)[keyof typeof ThermalClusterGroup];
+export type TimeSeriesGeneration =
+  (typeof TimeSeriesGenerationOption)[keyof typeof TimeSeriesGenerationOption];
+export type Law = (typeof LawOption)[keyof typeof LawOption];
 
 interface ThermalClusterPollutants {
   // For study versions >= 860
@@ -89,9 +95,11 @@ export interface ThermalClusterWithCapacity extends ThermalCluster {
 // Constants
 ////////////////////////////////////////////////////////////////
 
-export const CLUSTER_GROUP_OPTIONS = Object.values(ThermalClusterGroup);
-export const TS_GENERATION_OPTIONS = Object.values(TimeSeriesGenerationOption);
-export const TS_LAW_OPTIONS = Object.values(LawOption);
+export const THERMAL_GROUPS = [...Object.values(ThermalClusterGroup)];
+export const TS_GENERATION_OPTIONS = [
+  ...Object.values(TimeSeriesGenerationOption),
+];
+export const LAW_OPTIONS = [...Object.values(LawOption)];
 export const POLLUTANT_NAMES: Array<keyof ThermalClusterPollutants> = [
   "co2",
   "so2",

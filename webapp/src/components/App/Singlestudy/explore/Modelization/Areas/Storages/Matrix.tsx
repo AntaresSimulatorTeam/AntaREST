@@ -1,6 +1,5 @@
 import * as React from "react";
 import * as R from "ramda";
-import { styled } from "@mui/material";
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
 import Box from "@mui/material/Box";
@@ -9,12 +8,6 @@ import { MatrixStats, StudyMetadata } from "../../../../../../../common/types";
 import MatrixInput from "../../../../../../common/MatrixInput";
 import { Storage } from "./utils";
 import SplitLayoutView from "../../../../../../common/SplitLayoutView";
-
-export const StyledTab = styled(Tabs)({
-  width: "98%",
-  borderBottom: 1,
-  borderColor: "divider",
-});
 
 interface Props {
   study: StudyMetadata;
@@ -41,11 +34,19 @@ function Matrix({ study, areaId, storageId }: Props) {
         alignItems: "center",
       }}
     >
-      <StyledTab value={value} onChange={(_, v) => setValue(v)}>
+      <Tabs
+        sx={{
+          width: "98%",
+          borderBottom: 1,
+          borderColor: "divider",
+        }}
+        value={value}
+        onChange={(_, v) => setValue(v)}
+      >
         <Tab label={t("study.modelization.storages.capacities")} />
         <Tab label={t("study.modelization.storages.ruleCurves")} />
         <Tab label={t("study.modelization.storages.inflows")} />
-      </StyledTab>
+      </Tabs>
       <Box
         sx={{
           display: "flex",
