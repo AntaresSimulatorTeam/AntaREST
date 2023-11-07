@@ -54,6 +54,30 @@ class VariantStudyRepository(StudyMetadataRepository):
         )
         return studies
 
+    def get_ancestor_or_self_ids(self, variant_id: str) -> t.Sequence[str]:
+        """
+        Retrieve the list of ancestor variant identifiers, including the `variant_id`,
+        its parent, and all predecessors of the parent, up to and including the ID
+        of the root study (`RawStudy`).
+
+        Args:
+            variant_id: Unique identifier of the child variant.
+
+        Returns:
+            Ordered list of study identifiers.
+        """
+        # see: [Recursive Queries](https://www.postgresql.org/docs/current/queries-with.html#QUERIES-WITH-RECURSIVE)
+        top_q = self.session.query(Study.id, Study.parent_id)
+        top_q = top_q.filter(Study.id == variant_id)
+        top_q = top_q.cte("study_cte", recursive=True)
+
+        bot_q = self.session.query(Study.id, Study.parent_id)
+        bot_q = bot_q.join(top_q, Study.id == top_q.c.parent_id)
+
+        recursive_q = top_q.union_all(bot_q)
+        q = self.session.query(recursive_q)
+        return [r[0] for r in q]
+
     def get_all_command_blocks(self) -> t.List[CommandBlock]:
         """
         Get all command blocks.
