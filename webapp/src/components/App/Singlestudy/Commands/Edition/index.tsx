@@ -442,7 +442,7 @@ function EditionView(props: Props) {
         <Header>
           <Button color="primary" variant="outlined" onClick={onGeneration}>
             <BoltIcon sx={{ mr: 1 }} />
-            <Typography>Generate</Typography>
+            <Typography>{t("global.generate")}</Typography>
           </Button>
           <EditHeader>
             <Tooltip title={t("variants.commands.import")}>

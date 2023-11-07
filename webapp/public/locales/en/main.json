@@ -46,6 +46,7 @@
   "global.emptyString": "Empty string",
   "global.edit": "Edit",
   "global.download": "Download",
+  "global.generate": "Generate",
   "global.user": "User",
   "global.users": "Users",
   "global.tokens": "Tokens",
