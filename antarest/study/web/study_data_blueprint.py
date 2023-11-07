@@ -19,7 +19,11 @@ from antarest.study.business.allocation_management import AllocationFormFields, 
 from antarest.study.business.area_management import AreaCreationDTO, AreaInfoDTO, AreaType, AreaUI, LayerInfoDTO
 from antarest.study.business.areas.hydro_management import ManagementOptionsFormFields
 from antarest.study.business.areas.properties_management import PropertiesFormFields
-from antarest.study.business.areas.renewable_management import RenewableFormFields
+from antarest.study.business.areas.renewable_management import (
+    RenewableClusterOutput,
+    RenewableClusterCreation,
+    RenewableClusterInput,
+)
 from antarest.study.business.areas.st_storage_management import *
 from antarest.study.business.areas.thermal_management import *
 from antarest.study.business.binding_constraint_management import ConstraintTermDTO, UpdateBindingConstProps
@@ -1279,50 +1283,128 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         study_service.properties_manager.set_field_values(study, area_id, form_fields)
 
     @bp.get(
-        path="/studies/{uuid}/areas/{area_id}/clusters/renewable/{cluster_id}/form",
+        path="/studies/{uuid}/areas/{area_id}/clusters/renewable",
         tags=[APITag.study_data],
-        summary="Get renewable options for a given cluster",
-        response_model=RenewableFormFields,
-        response_model_exclude_none=True,
+        summary="Get all renewable clusters",
+        response_model=Sequence[RenewableClusterOutput],
     )
-    def get_renewable_form_values(
+    def get_renewable_clusters(
+        uuid: str,
+        area_id: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Sequence[RenewableClusterOutput]:
+        logger.info(
+            "Getting renewable clusters for study %s and area %s",
+            uuid,
+            area_id,
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
+        return study_service.renewable_manager.get_clusters(study, area_id)
+
+    @bp.get(
+        path="/studies/{uuid}/areas/{area_id}/clusters/renewable/{cluster_id}",
+        tags=[APITag.study_data],
+        summary="Get a single renewable cluster",
+        response_model=RenewableClusterOutput,
+    )
+    def get_renewable_cluster(
         uuid: str,
         area_id: str,
         cluster_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> RenewableFormFields:
+    ) -> RenewableClusterOutput:
         logger.info(
-            "Getting renewable form values for study %s and cluster %s",
+            "Getting renewable cluster values for study %s and cluster %s",
             uuid,
             cluster_id,
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
-        return study_service.renewable_manager.get_field_values(study, area_id, cluster_id)
+        return study_service.renewable_manager.get_cluster(study, area_id, cluster_id)
 
-    @bp.put(
-        path="/studies/{uuid}/areas/{area_id}/clusters/renewable/{cluster_id}/form",
+    @bp.post(
+        path="/studies/{uuid}/areas/{area_id}/clusters/renewable",
         tags=[APITag.study_data],
-        summary="Set renewable form values for a given cluster",
+        summary="Create a new renewable cluster",
+        response_model=RenewableClusterOutput,
     )
-    def set_renewable_form_values(
+    def create_renewable_cluster(
         uuid: str,
         area_id: str,
-        cluster_id: str,
-        form_fields: RenewableFormFields,
+        cluster_data: RenewableClusterCreation,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> None:
+    ) -> RenewableClusterOutput:
+        """
+        Create a new renewable cluster.
+
+        Args:
+        - `uuid`: The UUID of the study.
+        - `area_id`: the area ID.
+        - `cluster_data`: the properties used for creation:
+          "name" and "group".
+
+        Returns: The properties of the newly-created renewable clusters.
+        """
         logger.info(
-            "Setting renewable form values for study %s and cluster %s",
-            uuid,
-            cluster_id,
+            f"Creating renewable cluster for study '{uuid}' and area '{area_id}'",
             extra={"user": current_user.id},
         )
         request_params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, request_params)
+        return study_service.renewable_manager.create_cluster(study, area_id, cluster_data)
 
-        study_service.renewable_manager.set_field_values(study, area_id, cluster_id, form_fields)
+    @bp.patch(
+        path="/studies/{uuid}/areas/{area_id}/clusters/renewable/{cluster_id}",
+        tags=[APITag.study_data],
+        summary="Update a renewable cluster",
+        response_model=RenewableClusterOutput,
+    )
+    def update_renewable_cluster(
+        uuid: str,
+        area_id: str,
+        cluster_id: str,
+        cluster_data: RenewableClusterInput,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> RenewableClusterOutput:
+        logger.info(
+            f"Updating renewable cluster for study '{uuid}' and cluster '{cluster_id}'",
+            extra={"user": current_user.id},
+        )
+        request_params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, request_params)
+        return study_service.renewable_manager.update_cluster(study, area_id, cluster_id, cluster_data)
+
+    @bp.delete(
+        path="/studies/{uuid}/areas/{area_id}/clusters/renewable",
+        tags=[APITag.study_data],
+        summary="Remove renewable clusters",
+        status_code=HTTPStatus.NO_CONTENT,
+        response_model=None,
+    )
+    def delete_renewable_clusters(
+        uuid: str,
+        area_id: str,
+        cluster_ids: Sequence[str],
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> None:
+        """
+        Remove one or several renewable cluster(s) and it's time series.
+
+        Args:
+        - `uuid`: The UUID of the study.
+        - `area_id`: the area ID.
+        - `cluster_ids`: list of IDs to remove.
+        """
+        logger.info(
+            f"Deleting renewable clusters {cluster_ids!r} for study '{uuid}' and area '{area_id}'",
+            extra={"user": current_user.id},
+        )
+        request_params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, request_params)
+        study_service.renewable_manager.delete_clusters(study, area_id, cluster_ids)
 
     @bp.get(
         path="/studies/{uuid}/areas/{area_id}/clusters/thermal",

@@ -44,7 +44,6 @@ EXISTING_CLUSTERS = []
 
 
 @pytest.mark.unit_test
-@pytest.mark.skip(reason="Renewable endpoints are not developed")
 class TestRenewable:
     def test_lifecycle(
         self,
