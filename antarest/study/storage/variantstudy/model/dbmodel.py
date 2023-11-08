@@ -1,4 +1,6 @@
+import datetime
 import json
+import typing as t
 import uuid
 from dataclasses import dataclass
 
@@ -18,13 +20,13 @@ class VariantStudySnapshot(Base):  # type: ignore
 
     __tablename__ = "variant_study_snapshot"
 
-    id = Column(
+    id: str = Column(
         String(36),
         ForeignKey("variantstudy.id"),
         primary_key=True,
     )
-    created_at = Column(DateTime)
-    last_executed_command = Column(String(), nullable=True)
+    created_at: datetime.date = Column(DateTime)
+    last_executed_command: t.Optional[str] = Column(String(), nullable=True)
 
     __mapper_args__ = {
         "polymorphic_identity": "variant_study_snapshot",
@@ -42,17 +44,17 @@ class CommandBlock(Base):  # type: ignore
 
     __tablename__ = "commandblock"
 
-    id = Column(
+    id: str = Column(
         String(36),
         primary_key=True,
         default=lambda: str(uuid.uuid4()),
         unique=True,
     )
-    study_id = Column(String(36), ForeignKey("variantstudy.id"))
-    index = Column(Integer)
-    command = Column(String(255))
-    version = Column(Integer)
-    args = Column(String())
+    study_id: str = Column(String(36), ForeignKey("variantstudy.id"))
+    index: int = Column(Integer)
+    command: str = Column(String(255))
+    version: int = Column(Integer)
+    args: str = Column(String())
 
     def to_dto(self) -> CommandDTO:
         return CommandDTO(id=self.id, action=self.command, args=json.loads(self.args))
@@ -66,12 +68,12 @@ class VariantStudy(Study):
 
     __tablename__ = "variantstudy"
 
-    id = Column(
+    id: str = Column(
         String(36),
         ForeignKey("study.id"),
         primary_key=True,
     )
-    generation_task = Column(String(), nullable=True)
+    generation_task: t.Optional[str] = Column(String(), nullable=True)
 
     __mapper_args__ = {
         "polymorphic_identity": "variantstudy",
