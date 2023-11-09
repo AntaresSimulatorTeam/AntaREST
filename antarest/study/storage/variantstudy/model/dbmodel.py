@@ -3,6 +3,7 @@ import json
 import typing as t
 import uuid
 from dataclasses import dataclass
+from pathlib import Path
 
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Table  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
@@ -33,7 +34,7 @@ class VariantStudySnapshot(Base):  # type: ignore
     }
 
     def __str__(self) -> str:
-        return f"[Snapshot]: id={self.id}, created_at={self.created_at}"
+        return f"[Snapshot] id={self.id}, created_at={self.created_at}"
 
 
 @dataclass
@@ -92,3 +93,16 @@ class VariantStudy(Study):
 
     def __str__(self) -> str:
         return super().__str__() + f", snapshot={self.snapshot}"
+
+    @property
+    def snapshot_dir(self) -> Path:
+        """Get the path of the snapshot directory."""
+        return Path(self.path) / "snapshot"
+
+    def is_snapshot_recent(self) -> bool:
+        """Check if the snapshot exists and is up-to-date."""
+        return (
+            (self.snapshot is not None)
+            and (self.snapshot.created_at >= self.updated_at)
+            and (self.snapshot_dir / "study.antares").is_file()
+        )
