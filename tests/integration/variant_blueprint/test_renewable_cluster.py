@@ -87,14 +87,15 @@ class TestRenewableCluster:
 
         # Check the properties of the renewable clusters in the "FR" area
         res = client.get(
-            f"/v1/studies/{study_id}/areas/{area_fr_id}/clusters/renewable/{cluster_fr1_id}/form",
+            f"/v1/studies/{study_id}/areas/{area_fr_id}/clusters/renewable/{cluster_fr1_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         res.raise_for_status()
         properties = res.json()
         expected = {
             "enabled": True,
-            "group": "wind offshore",
+            "group": "Wind Offshore",
+            "id": "Oleron",
             "name": cluster_fr1,
             "nominalCapacity": 2500.0,
             "tsInterpretation": "power-generation",
@@ -103,14 +104,15 @@ class TestRenewableCluster:
         assert properties == expected
 
         res = client.get(
-            f"/v1/studies/{study_id}/areas/{area_fr_id}/clusters/renewable/{cluster_fr2_id}/form",
+            f"/v1/studies/{study_id}/areas/{area_fr_id}/clusters/renewable/{cluster_fr2_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         res.raise_for_status()
         properties = res.json()
         expected = {
             "enabled": False,
-            "group": "solar pv",
+            "group": "Solar PV",
+            "id": "La_Rochelle",
             "name": cluster_fr2,
             "nominalCapacity": 3500.0,
             "tsInterpretation": "power-generation",
@@ -189,14 +191,15 @@ class TestRenewableCluster:
         res.raise_for_status()
 
         res = client.get(
-            f"/v1/studies/{study_id}/areas/{area_it_id}/clusters/renewable/{cluster_it1_id}/form",
+            f"/v1/studies/{study_id}/areas/{area_it_id}/clusters/renewable/{cluster_it1_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         res.raise_for_status()
         properties = res.json()
         expected = {
             "enabled": True,
-            "group": "wind offshore",
+            "group": "Wind Offshore",
+            "id": "Ol ron",
             "name": cluster_it1,
             "nominalCapacity": 1000.0,
             "tsInterpretation": "production-factor",
