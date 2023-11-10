@@ -1,16 +1,17 @@
 import json
 import typing as t
+
 from pydantic import validator
 
 from antarest.core.exceptions import ClusterConfigNotFound, ClusterNotFound
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
-from antarest.study.business.utils import execute_or_add_commands, camel_case_model, AllOptionalMetaclass
+from antarest.study.business.utils import AllOptionalMetaclass, camel_case_model, execute_or_add_commands
 from antarest.study.model import Study
 from antarest.study.storage.rawstudy.model.filesystem.config.renewable import (
-    RenewableProperties,
-    RenewableConfigType,
-    create_renewable_config,
     RenewableConfig,
+    RenewableConfigType,
+    RenewableProperties,
+    create_renewable_config,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.storage_service import StudyStorageService

@@ -20,9 +20,9 @@ from antarest.study.business.area_management import AreaCreationDTO, AreaInfoDTO
 from antarest.study.business.areas.hydro_management import ManagementOptionsFormFields
 from antarest.study.business.areas.properties_management import PropertiesFormFields
 from antarest.study.business.areas.renewable_management import (
-    RenewableClusterOutput,
     RenewableClusterCreation,
     RenewableClusterInput,
+    RenewableClusterOutput,
 )
 from antarest.study.business.areas.st_storage_management import *
 from antarest.study.business.areas.thermal_management import *
