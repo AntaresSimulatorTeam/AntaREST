@@ -1,242 +1,154 @@
 import datetime
+import uuid
 from pathlib import Path
-from unittest.mock import ANY, Mock
 
-import numpy as np
-from sqlalchemy import create_engine
-from sqlalchemy.engine.base import Engine  # type: ignore
+import pytest
 
-from antarest.core.cache.business.local_chache import LocalCache
-from antarest.core.config import Config, StorageConfig, WorkspaceConfig
 from antarest.core.jwt import JWTGroup, JWTUser
-from antarest.core.persistence import Base
 from antarest.core.requests import RequestParameters
 from antarest.core.roles import RoleType
-from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
-from antarest.login.model import User
-from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, StudyAdditionalData
-from antarest.study.storage.variantstudy.command_factory import CommandFactory
-from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
+from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.login.model import Group, Role, User
+from antarest.study.model import RawStudy, StudyAdditionalData
+from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
+from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.model.model import CommandDTO, GenerationResultInfoDTO
-from antarest.study.storage.variantstudy.repository import VariantStudyRepository
-from antarest.study.storage.variantstudy.variant_study_service import SNAPSHOT_RELATIVE_PATH, VariantStudyService
-
-# noinspection SpellCheckingInspection
-SADMIN = RequestParameters(
-    user=JWTUser(
-        id=0,
-        impersonator=0,
-        type="users",
-        groups=[JWTGroup(id="admin", name="admin", role=RoleType.ADMIN)],
-    )
-)
+from antarest.study.storage.variantstudy.snapshot_generator import SnapshotGenerator
+from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
+from tests.helpers import with_db_context
 
 
-def test_commands_service(tmp_path: Path, db_engine: Engine, command_factory: CommandFactory):
-    # noinspection SpellCheckingInspection
-    DBSessionMiddleware(
-        None,
-        custom_engine=db_engine,
-        session_args={"autocommit": False, "autoflush": False},
-    )
-    repository = VariantStudyRepository(LocalCache())
-    service = VariantStudyService(
-        raw_study_service=Mock(),
-        cache=Mock(),
-        task_service=Mock(),
-        command_factory=command_factory,
-        study_factory=Mock(),
-        config=Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=tmp_path)})),
-        repository=repository,
-        event_bus=Mock(),
-        patch_service=Mock(),
-    )
-
-    with db():
-        # Add the admin user in the database
-        db.session.add(User(id=SADMIN.user.id))
-
-        # sourcery skip: extract-method, inline-variable
-        # Save a study
-        origin_id = "origin-id"
-        # noinspection PyArgumentList
-        origin_study = RawStudy(
-            id=origin_id,
-            name="my-study",
-            additional_data=StudyAdditionalData(),
+class TestVariantStudyService:
+    @pytest.fixture(name="jwt_user")
+    def jwt_user_fixture(self) -> JWTUser:
+        # Create a user in a "Writers" group:
+        jwt_user = JWTUser(
+            id=7,
+            impersonator=7,
+            type="users",
+            groups=[JWTGroup(id="writers", name="Writers", role=RoleType.WRITER)],
         )
-        repository.save(origin_study)
+        # Ensure the user is in database.
+        with db():
+            role = Role(
+                type=RoleType.WRITER,
+                identity=User(id=jwt_user.id, name="john.doe"),
+                group=Group(id="writers"),
+            )
+            db.session.add(role)
+            db.session.commit()
+        return jwt_user
+
+    @pytest.fixture(name="root_study_id")
+    def root_study_id_fixture(
+        self,
+        tmp_path: Path,
+        raw_study_service: RawStudyService,
+        variant_study_service: VariantStudyService,
+        jwt_user: JWTUser,
+    ) -> str:
+        # Prepare a RAW study in the temporary folder
+        study_dir = tmp_path / "my-study"
+        root_study_id = str(uuid.uuid4())
+        root_study = RawStudy(
+            id=root_study_id,
+            workspace="default",
+            path=str(study_dir),
+            version="860",
+            created_at=datetime.datetime.utcnow(),
+            updated_at=datetime.datetime.utcnow(),
+            additional_data=StudyAdditionalData(author="john.doe"),
+            owner_id=jwt_user.id,
+        )
+        root_study = raw_study_service.create(root_study)
+        with db():
+            # Save the root study in database
+            variant_study_service.repository.save(root_study)
+        return root_study_id
+
+    @with_db_context
+    def test_commands_service(
+        self,
+        root_study_id: str,
+        generator_matrix_constants: GeneratorMatrixConstants,
+        jwt_user: JWTUser,
+        variant_study_service: VariantStudyService,
+    ) -> None:
+        # Initialize the default matrix constants
+        # noinspection PyProtectedMember
+        generator_matrix_constants._init()
+
+        params = RequestParameters(user=jwt_user)
 
         # Create un new variant
-        name = "my-variant"
-        variant_study = service.create_variant_study(origin_id, name, SADMIN)
+        variant_study = variant_study_service.create_variant_study(root_study_id, "my-variant", params=params)
         saved_id = variant_study.id
-        study = repository.get(saved_id)
+        study = variant_study_service.repository.get(saved_id)
+        assert study is not None
         assert study.id == saved_id
-        assert study.parent_id == origin_id
+        assert study.parent_id == root_study_id
 
         # Append command
+        command_count = 0
         command_1 = CommandDTO(action="create_area", args={"area_name": "Yes"})
-        service.append_command(saved_id, command_1, SADMIN)
+        variant_study_service.append_command(saved_id, command_1, params=params)
+        command_count += 1
+
         command_2 = CommandDTO(action="create_area", args={"area_name": "No"})
-        service.append_command(saved_id, command_2, SADMIN)
-        commands = service.get_commands(saved_id, SADMIN)
-        assert len(commands) == 2
+        variant_study_service.append_command(saved_id, command_2, params=params)
+        command_count += 1
+
+        commands = variant_study_service.get_commands(saved_id, params=params)
+        assert len(commands) == command_count
 
         # Append multiple commands
         command_3 = CommandDTO(action="create_area", args={"area_name": "Maybe"})
-        command_4 = CommandDTO(action="create_link", args={"area1": "No", "area2": "Yes"})
-        service.append_commands(saved_id, [command_3, command_4], SADMIN)
-        commands = service.get_commands(saved_id, SADMIN)
-        assert len(commands) == 4
+        command_4 = CommandDTO(action="create_link", args={"area1": "no", "area2": "yes"})
+        variant_study_service.append_commands(saved_id, [command_3, command_4], params=params)
+        command_count += 2
+
+        commands = variant_study_service.get_commands(saved_id, params=params)
+        assert len(commands) == command_count
 
         # Get command
-        assert commands[0] == service.get_command(saved_id, commands[0].id, SADMIN)
+        assert commands[0] == variant_study_service.get_command(saved_id, commands[0].id, params=params)
 
-        # Remove command
-        service.remove_command(saved_id, commands[2].id, SADMIN)
-        commands = service.get_commands(saved_id, SADMIN)
-        assert len(commands) == 3
+        # Remove command (area "Maybe")
+        variant_study_service.remove_command(saved_id, commands[2].id, params=params)
+        command_count -= 1
 
-        # Update command
-        prepro = np.random.rand(365, 6).tolist()
-        prepro_id = command_factory.command_context.matrix_service.create(prepro)
+        # Create a thermal cluster in the area "Yes"
         command_5 = CommandDTO(
-            action="replace_matrix",
+            action="create_cluster",
             args={
-                "target": "some/matrix/path",
-                "matrix": prepro_id,
+                "area_id": "yes",
+                "cluster_name": "cl1",
+                "parameters": {"group": "Gas", "unitcount": 1, "nominalcapacity": 500},
             },
         )
-        service.update_command(
-            study_id=saved_id,
-            command_id=commands[2].id,
-            command=command_5,
-            params=SADMIN,
+        variant_study_service.append_command(saved_id, command_5, params=params)
+        command_count += 1
+
+        commands = variant_study_service.get_commands(saved_id, params=params)
+        assert len(commands) == command_count
+
+        # Generate using the SnapshotGenerator
+        generator = SnapshotGenerator(
+            cache=variant_study_service.cache,
+            raw_study_service=variant_study_service.raw_study_service,
+            command_factory=variant_study_service.command_factory,
+            study_factory=variant_study_service.study_factory,
+            patch_service=variant_study_service.patch_service,
+            repository=variant_study_service.repository,
         )
-        commands = service.get_commands(saved_id, SADMIN)
-        assert commands[2].action == "replace_matrix"
-        assert commands[2].args["matrix"] == prepro_id
-
-        # Move command
-        service.move_command(
-            study_id=saved_id,
-            command_id=commands[2].id,
-            new_index=0,
-            params=SADMIN,
-        )
-        commands = service.get_commands(saved_id, SADMIN)
-        assert commands[0].action == "replace_matrix"
-
-        # Generate
-        service._generate_snapshot = Mock()
-        service._read_additional_data_from_files = Mock()
-        service._read_additional_data_from_files.return_value = StudyAdditionalData()
-        expected_result = GenerationResultInfoDTO(success=True, details=[])
-        service._generate_snapshot.return_value = expected_result
-        results = service._generate(saved_id, SADMIN, False)
-        assert results == expected_result
-        assert study.snapshot.id == study.id
-
-
-def test_smart_generation(tmp_path: Path, command_factory: CommandFactory) -> None:
-    engine = create_engine(
-        "sqlite:///:memory:",
-        echo=False,
-        connect_args={"check_same_thread": False},
-    )
-    Base.metadata.create_all(engine)
-    # noinspection SpellCheckingInspection
-    DBSessionMiddleware(
-        None,
-        custom_engine=engine,
-        session_args={"autocommit": False, "autoflush": False},
-    )
-    repository = VariantStudyRepository(LocalCache())
-    service = VariantStudyService(
-        raw_study_service=Mock(),
-        cache=Mock(),
-        task_service=Mock(),
-        command_factory=command_factory,
-        study_factory=Mock(),
-        config=Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=tmp_path)})),
-        repository=repository,
-        event_bus=Mock(),
-        patch_service=Mock(),
-    )
-    service.generator = Mock()
-    service.generator.generate.side_effect = [
-        GenerationResultInfoDTO(success=True, details=[]),
-        GenerationResultInfoDTO(success=True, details=[]),
-        GenerationResultInfoDTO(success=True, details=[]),
-        GenerationResultInfoDTO(success=True, details=[]),
-    ]
-
-    # noinspection PyUnusedLocal
-    def export_flat(
-        metadata: VariantStudy,
-        dst_path: Path,
-        outputs: bool = True,
-        denormalize: bool = True,
-    ) -> None:
-        dst_path.mkdir(parents=True)
-        (dst_path / "user").mkdir()
-        (dst_path / "user" / "some_unmanaged_config").touch()
-
-    service.raw_study_service.export_study_flat.side_effect = export_flat
-
-    with db():
-        origin_id = "base-study"
-        # noinspection PyArgumentList
-        origin_study = RawStudy(
-            id=origin_id,
-            name="my-study",
-            folder=f"some_place/{origin_id}",
-            workspace=DEFAULT_WORKSPACE_NAME,
-            additional_data=StudyAdditionalData(),
-            updated_at=datetime.datetime(year=2000, month=1, day=1),
-        )
-        repository.save(origin_study)
-
-        variant_study = service.create_variant_study(origin_id, "my variant", SADMIN)
-        variant_id = variant_study.id
-        assert service._get_variant_study(variant_id, SADMIN).folder == "some_place"
-        unmanaged_user_config_path = tmp_path / variant_id / SNAPSHOT_RELATIVE_PATH / "user" / "some_unmanaged_config"
-        assert not unmanaged_user_config_path.exists()
-
-        service.append_command(
-            variant_id,
-            CommandDTO(action="create_area", args={"area_name": "a"}),
-            SADMIN,
-        )
-        service._read_additional_data_from_files = Mock()
-        service._read_additional_data_from_files.return_value = StudyAdditionalData()
-        service._generate(variant_id, SADMIN, False)
-        service.generator.generate.assert_called_with([ANY], ANY, ANY, notifier=ANY)
-
-        service._generate(variant_id, SADMIN, False)
-        service.generator.generate.assert_called_with([], ANY, ANY, notifier=ANY)
-
-        service.append_command(
-            variant_id,
-            CommandDTO(action="create_area", args={"area_name": "b"}),
-            SADMIN,
-        )
-        assert service._get_variant_study(variant_id, SADMIN).snapshot.last_executed_command is not None
-        service._generate(variant_id, SADMIN, False)
-        service.generator.generate.assert_called_with([ANY], ANY, ANY, notifier=ANY)
-
-        service.replace_commands(
-            variant_id,
-            [
-                CommandDTO(action="create_area", args={"area_name": "c"}),
-                CommandDTO(action="create_area", args={"area_name": "d"}),
+        results = generator.generate_snapshot(saved_id, jwt_user, denormalize=False)
+        assert results == GenerationResultInfoDTO(
+            success=True,
+            details=[
+                ("create_area", True, "Area 'Yes' created"),
+                ("create_area", True, "Area 'No' created"),
+                ("create_link", True, "Link between 'no' and 'yes' created"),
+                ("create_cluster", True, "Thermal cluster 'cl1' added to area 'yes'."),
             ],
-            SADMIN,
         )
-
-        assert unmanaged_user_config_path.exists()
-        unmanaged_user_config_path.write_text("hello")
-        service._generate(variant_id, SADMIN, False)
-        service.generator.generate.assert_called_with([ANY, ANY], ANY, ANY, notifier=ANY)
-        assert unmanaged_user_config_path.read_text() == "hello"
+        assert study.snapshot.id == study.id
