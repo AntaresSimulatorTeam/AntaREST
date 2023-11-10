@@ -79,6 +79,11 @@ class RemoveRenewablesCluster(ICommand):
         Returns:
             The output of the command execution.
         """
+        # Search the Area in the configuration
+        if self.area_id not in study_data.config.areas:
+            message = f"Area '{self.area_id}' does not exist in the study configuration."
+            return CommandOutput(status=False, message=message)
+
         # It is required to delete the files and folders that correspond to the renewable cluster
         # BEFORE updating the configuration, as we need the configuration to do so.
         # Specifically, deleting the time series uses the list of renewable clusters from the configuration.
