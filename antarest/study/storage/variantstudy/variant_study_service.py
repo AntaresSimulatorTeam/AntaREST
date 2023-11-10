@@ -3,7 +3,6 @@ import json
 import logging
 import re
 import shutil
-import tempfile
 from datetime import datetime
 from functools import reduce
 from pathlib import Path
@@ -21,6 +20,7 @@ from antarest.core.exceptions import (
     NoParentStudyError,
     StudyNotFoundError,
     StudyTypeUnsupported,
+    StudyValidationError,
     VariantGenerationError,
     VariantGenerationTimeoutError,
     VariantStudyParentNotValid,
@@ -51,7 +51,7 @@ from antarest.study.storage.utils import (
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
-from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy, VariantStudySnapshot
+from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy
 from antarest.study.storage.variantstudy.model.model import (
     CommandDTO,
     CommandResultDTO,
@@ -59,6 +59,7 @@ from antarest.study.storage.variantstudy.model.model import (
     VariantTreeDTO,
 )
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
+from antarest.study.storage.variantstudy.snapshot_generator import SnapshotGenerator
 from antarest.study.storage.variantstudy.variant_command_generator import VariantCommandGenerator
 
 logger = logging.getLogger(__name__)
@@ -342,11 +343,19 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         raw_study_accepted: bool = False,
     ) -> VariantStudy:
         """
-        Get variant study and check permissions
+        Get variant study (or RAW study if `raw_study_accepted` is `True`), and check READ permissions.
+
         Args:
-            study_id: study id
-            params: request parameters
-        Returns: None
+            study_id: The study identifier.
+            params: request parameters used for permission check.
+
+        Returns:
+            The variant study.
+
+        Raises:
+            StudyNotFoundError: If the study does not exist (HTTP status 404).
+            MustBeAuthenticatedError: If the user is not authenticated (HTTP status 403).
+            StudyTypeUnsupported: If the study is not a variant study (HTTP status 422).
         """
         study = self.repository.get(study_id)
 
@@ -597,11 +606,19 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             study_id = metadata.id
 
             def callback(notifier: TaskUpdateNotifier) -> TaskResult:
-                generate_result = self._generate(
-                    variant_study_id=study_id,
+                generator = SnapshotGenerator(
+                    cache=self.cache,
+                    raw_study_service=self.raw_study_service,
+                    command_factory=self.command_factory,
+                    study_factory=self.study_factory,
+                    patch_service=self.patch_service,
+                    repository=self.repository,
+                )
+                generate_result = generator.generate_snapshot(
+                    study_id,
+                    DEFAULT_ADMIN_USER,
                     denormalize=denormalize,
                     from_scratch=from_scratch,
-                    params=RequestParameters(DEFAULT_ADMIN_USER),
                     notifier=notifier,
                 )
                 return TaskResult(
@@ -652,136 +669,6 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             raise NoParentStudyError(variant_study_id)
 
         return self._generate_study_config(variant_study, variant_study, None)
-
-    def _generate(
-        self,
-        variant_study_id: str,
-        params: RequestParameters,
-        denormalize: bool = True,
-        from_scratch: bool = False,
-        notifier: TaskUpdateNotifier = noop_notifier,
-    ) -> GenerationResultInfoDTO:
-        logger.info(f"Generating variant study {variant_study_id}")
-
-        # Get variant study
-        variant_study = self._get_variant_study(variant_study_id, params)
-
-        # Get parent study
-        if variant_study.parent_id is None:
-            raise NoParentStudyError(variant_study_id)
-
-        parent_study = self.repository.get(variant_study.parent_id)
-        if parent_study is None:
-            raise StudyNotFoundError(variant_study.parent_id)
-
-        # Check parent study permission
-        assert_permission(params.user, parent_study, StudyPermissionType.READ)
-
-        # Remove from cache
-        remove_from_cache(self.cache, variant_study.id)
-
-        # Get snapshot directory
-        dst_path = self.get_study_path(variant_study)
-
-        # this indicates that the current snapshot is up-to-date,
-        # and we can only generate from the next command
-        last_executed_command_index = VariantStudyService._get_snapshot_last_executed_command_index(variant_study)
-
-        is_parent_newer = (
-            parent_study.updated_at > variant_study.snapshot.created_at if variant_study.snapshot else True
-        )
-        last_executed_command_index = (
-            None
-            if (
-                is_parent_newer
-                or from_scratch
-                or (isinstance(parent_study, VariantStudy) and not self.exists(parent_study))
-            )
-            else last_executed_command_index
-        )
-
-        variant_study.snapshot = None
-        self.repository.save(variant_study, update_modification_date=False)
-
-        unmanaged_user_config: Optional[Path] = None
-        if dst_path.is_dir():
-            # Remove snapshot directory if it exists and last snapshot is out of sync
-            if last_executed_command_index is None:
-                logger.info("Removing previous snapshot data")
-                if (dst_path / "user").exists():
-                    logger.info("Keeping previous unmanaged user config")
-                    tmp_dir = tempfile.TemporaryDirectory(dir=self.config.storage.tmp_dir)
-                    shutil.copytree(dst_path / "user", tmp_dir.name, dirs_exist_ok=True)
-                    unmanaged_user_config = Path(tmp_dir.name)
-                shutil.rmtree(dst_path)
-            else:
-                logger.info("Using previous snapshot data")
-        elif last_executed_command_index is not None:
-            # there is no snapshot so last_command_index should be None
-            logger.warning("Previous snapshot with last_executed_command found, but no data found")
-            last_executed_command_index = None
-
-        if last_executed_command_index is None:
-            # Copy parent study to destination
-            if isinstance(parent_study, VariantStudy):
-                self._safe_generation(parent_study)
-                self.export_study_flat(
-                    metadata=parent_study,
-                    dst_path=dst_path,
-                    outputs=False,
-                    denormalize=False,
-                )
-            else:
-                self.raw_study_service.export_study_flat(
-                    metadata=parent_study,
-                    dst_path=dst_path,
-                    outputs=False,
-                    denormalize=False,
-                )
-
-        command_start_index = last_executed_command_index + 1 if last_executed_command_index is not None else 0
-        logger.info(f"Generating study snapshot from command index {command_start_index}")
-        results = self._generate_snapshot(
-            variant_study=variant_study,
-            dst_path=dst_path,
-            notifier=notifier,
-            from_command_index=command_start_index,
-        )
-
-        if unmanaged_user_config:
-            logger.info("Restoring previous unmanaged user config")
-            if dst_path.exists():
-                if (dst_path / "user").exists():
-                    logger.warning("Existing unmanaged user config. It will be overwritten.")
-                    shutil.rmtree((dst_path / "user"))
-                shutil.copytree(unmanaged_user_config, dst_path / "user")
-            else:
-                logger.warning("Destination snapshot doesn't exist !")
-            shutil.rmtree(unmanaged_user_config, ignore_errors=True)
-
-        if results.success:
-            # sourcery skip: extract-method
-            last_command_index = len(variant_study.commands) - 1
-            # noinspection PyArgumentList
-            variant_study.snapshot = VariantStudySnapshot(
-                id=variant_study.id,
-                created_at=datetime.utcnow(),
-                last_executed_command=(
-                    variant_study.commands[last_command_index].id if last_command_index >= 0 else None
-                ),
-            )
-            study = self.study_factory.create_from_fs(
-                self.get_study_path(variant_study),
-                study_id=variant_study.id,
-                output_path=Path(variant_study.path) / OUTPUT_RELATIVE_PATH,
-            )
-            variant_study.additional_data = self._read_additional_data_from_files(study)
-            self.repository.save(variant_study)
-            logger.info(f"Saving new snapshot for study {variant_study.id}")
-            if denormalize:
-                logger.info(f"Denormalizing variant study {variant_study.id}")
-                study.tree.denormalize()
-        return results
 
     def _generate_study_config(
         self,
@@ -879,9 +766,27 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         return self.generator.generate(commands, dst_path, variant_study, notifier=notify)
 
     def get_study_task(self, study_id: str, params: RequestParameters) -> TaskDTO:
+        """
+        Get the generation task ID of a variant study.
+
+        Args:
+            study_id: The ID of the variant study.
+            params: The request parameters used to check permissions.
+
+        Returns:
+            The generation task ID.
+
+        Raises:
+            StudyNotFoundError: If the study does not exist (HTTP status 404).
+            MustBeAuthenticatedError: If the user is not authenticated (HTTP status 403).
+            StudyTypeUnsupported: If the study is not a variant study (HTTP status 422).
+            StudyValidationError: If the study has no generation task (HTTP status 422).
+        """
         variant_study = self._get_variant_study(study_id, params)
         task_id = variant_study.generation_task
-        return self.task_service.status_task(task_id=task_id, request_params=params, with_logs=True)
+        if task_id:
+            return self.task_service.status_task(task_id=task_id, request_params=params, with_logs=True)
+        raise StudyValidationError(f"Variant study '{study_id}' has no generation task")
 
     def create(self, study: VariantStudy) -> VariantStudy:
         """
@@ -894,9 +799,11 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
 
     def exists(self, metadata: VariantStudy) -> bool:
         """
-        Check if study exists.
+        Check if the study snapshot exists and is up-to-date.
+
         Args:
             metadata: Study metadata.
+
         Returns: `True` if the study is present on disk, `False` otherwise.
         """
         return (

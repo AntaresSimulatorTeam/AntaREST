@@ -1,6 +1,6 @@
 import typing as t
 
-from sqlalchemy.orm import Session  # type: ignore
+from sqlalchemy.orm import Session, joinedload, subqueryload  # type: ignore
 
 from antarest.core.interfaces.cache import ICache
 from antarest.core.utils.fastapi_sqlalchemy import db
@@ -87,3 +87,28 @@ class VariantStudyRepository(StudyMetadataRepository):
         """
         cmd_blocks: t.List[CommandBlock] = self.session.query(CommandBlock).all()
         return cmd_blocks
+
+    def find_variants(self, variant_ids: t.Sequence[str]) -> t.Sequence[VariantStudy]:
+        """
+        Find a list of variants by IDs
+
+        Args:
+            variant_ids: list of variant IDs.
+
+        Returns:
+            List of variants (and attached snapshot) ordered by IDs
+        """
+        # When we fetch the list of variants, we also need to fetch the associated snapshots,
+        # the list of commands, the additional data, etc.
+        # We use a SQL query with joins to fetch all these data efficiently.
+        q = (
+            self.session.query(VariantStudy)
+            .options(joinedload(VariantStudy.snapshot))
+            .options(joinedload(VariantStudy.commands))
+            .options(joinedload(VariantStudy.additional_data))
+            .options(joinedload(VariantStudy.owner))
+            .options(joinedload(VariantStudy.groups))
+            .filter(VariantStudy.id.in_(variant_ids))  # type: ignore
+        )
+        index = {id_: i for i, id_ in enumerate(variant_ids)}
+        return sorted(q, key=lambda v: index[v.id])
