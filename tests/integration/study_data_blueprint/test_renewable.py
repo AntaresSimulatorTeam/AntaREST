@@ -11,7 +11,6 @@ We should consider the following scenario parameters :
   - `StudyPermissionType.READ`: user/bot can only read properties/matrices,
   - `StudyPermissionType.RUN`: user/bot has no permission to manage clusters,
   - `StudyPermissionType.WRITE`: user/bot can manage cluster properties/matrices,
-  - `StudyPermissionType.DELETE`: user/bot has no permission to manage clusters,
   - `StudyPermissionType.MANAGE_PERMISSIONS`: user/bot has no permission to manage clusters.
 
 We should test the following end poins:
@@ -62,6 +61,23 @@ class TestRenewable:
         task = wait_task_completion(client, user_access_token, task_id)
         assert task.status == TaskStatus.COMPLETED, task
 
+        # =====================
+        #  General Data Update
+        # =====================
+
+        # Parameter 'renewable-generation-modelling' must be set to 'clusters' instead of 'aggregated'.
+        # The `enr_modelling` value must be set to "clusters" instead of "aggregated"
+        args = {
+            "target": "settings/generaldata/other preferences",
+            "data": {"renewable-generation-modelling": "clusters"},
+        }
+        res = client.post(
+            f"/v1/studies/{study_id}/commands",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+            json=[{"action": "update_config", "args": args}],
+        )
+        assert res.status_code == 200, res.json()
+
         # =============================
         #  RENEWABLE CLUSTER CREATION
         # =============================
@@ -99,9 +115,9 @@ class TestRenewable:
         )
         assert res.status_code == 200, res.json()
         fr_solar_pv_id = res.json()["id"]
-        assert fr_solar_pv_id == transform_name_to_id(fr_solar_pv)
+        assert fr_solar_pv_id == transform_name_to_id(fr_solar_pv, lower=False)
         # noinspection SpellCheckingInspection
-        fr_solar_pv_cfg = {**fr_solar_pv_props}
+        fr_solar_pv_cfg = {"id": fr_solar_pv_id, **fr_solar_pv_props}
         assert res.json() == fr_solar_pv_cfg
 
         # reading the properties of a renewable cluster
@@ -256,7 +272,7 @@ class TestRenewable:
         expected = [
             c
             for c in EXISTING_CLUSTERS
-            if transform_name_to_id(c["name"]) not in [other_cluster_id1, other_cluster_id2]
+            if transform_name_to_id(c["name"], lower=False) not in [other_cluster_id1, other_cluster_id2]
         ]
         assert res.json() == expected
 
