@@ -1325,6 +1325,19 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
         return study_service.renewable_manager.get_cluster(study, area_id, cluster_id)
 
+    @bp.get(
+        path="/studies/{uuid}/areas/{area_id}/clusters/renewable/{cluster_id}/form",
+        tags=[APITag.study_data],
+        summary="Get renewable configuration for a given cluster (deprecated)",
+        response_class=RedirectResponse,
+    )
+    def redirect_get_renewable_cluster(
+        uuid: str,
+        area_id: str,
+        cluster_id: str,
+    ) -> str:
+        return f"/v1/studies/{uuid}/areas/{area_id}/clusters/renewable/{cluster_id}"
+
     @bp.post(
         path="/studies/{uuid}/areas/{area_id}/clusters/renewable",
         tags=[APITag.study_data],
@@ -1376,6 +1389,22 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         request_params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, request_params)
         return study_service.renewable_manager.update_cluster(study, area_id, cluster_id, cluster_data)
+
+    @bp.put(
+        path="/studies/{uuid}/areas/{area_id}/clusters/renewable/{cluster_id}/form",
+        tags=[APITag.study_data],
+        summary="Get renewable configuration for a given cluster (deprecated)",
+        response_model=RenewableClusterOutput,
+    )
+    def redirect_update_renewable_cluster(
+        uuid: str,
+        area_id: str,
+        cluster_id: str,
+        cluster_data: RenewableClusterInput,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> RenewableClusterOutput:
+        # We cannot perform redirection, because we have a PUT, where a PATCH is required.
+        return update_renewable_cluster(uuid, area_id, cluster_id, cluster_data, current_user=current_user)
 
     @bp.delete(
         path="/studies/{uuid}/areas/{area_id}/clusters/renewable",
