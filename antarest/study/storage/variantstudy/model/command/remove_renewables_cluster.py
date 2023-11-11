@@ -1,10 +1,7 @@
-from typing import Any, Dict, List, Tuple
+import typing as t
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.business.utils_binding_constraint import (
-    remove_area_cluster_from_binding_constraints,
-)
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
 from antarest.study.storage.variantstudy.model.model import CommandDTO
@@ -27,7 +24,7 @@ class RemoveRenewablesCluster(ICommand):
     area_id: str
     cluster_id: str
 
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
         """
         Applies configuration changes to the study data: remove the renewable clusters from the storages list.
 
@@ -62,8 +59,6 @@ class RemoveRenewablesCluster(ICommand):
 
         # Remove the Renewable cluster from the configuration
         area.renewables.remove(renewable)
-
-        remove_area_cluster_from_binding_constraints(study_data, self.area_id, self.cluster_id)
 
         message = f"Renewable cluster '{self.cluster_id}' removed from the area '{self.area_id}'."
         return CommandOutput(status=True, message=message), {}
@@ -100,8 +95,6 @@ class RemoveRenewablesCluster(ICommand):
         for path in paths:
             study_data.tree.delete(path)
 
-        self._remove_cluster_from_binding_constraints(study_data)
-
         # Deleting the renewable cluster in the configuration must be done AFTER
         # deleting the files and folders.
         return self._apply_config(study_data.config)[0]
@@ -126,31 +119,8 @@ class RemoveRenewablesCluster(ICommand):
             return False
         return self.cluster_id == other.cluster_id and self.area_id == other.area_id
 
-    def _create_diff(self, other: "ICommand") -> List["ICommand"]:
+    def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
         return []
 
-    def get_inner_matrices(self) -> List[str]:
+    def get_inner_matrices(self) -> t.List[str]:
         return []
-
-    def _remove_cluster_from_binding_constraints(self, study_data: FileStudy) -> None:
-        config = study_data.tree.get(["input", "bindingconstraints", "bindingconstraints"])
-
-        # Binding constraints IDs to remove
-        ids_to_remove = set()
-
-        # Cluster IDs are stored in lower case in the binding contraints configuration file.
-        cluster_id = self.cluster_id.lower()
-        for bc_id, bc_props in config.items():
-            if f"{self.area_id}.{cluster_id}" in bc_props.keys():
-                ids_to_remove.add(bc_id)
-
-        for bc_id in ids_to_remove:
-            study_data.tree.delete(["input", "bindingconstraints", config[bc_id]["id"]])
-            bc = next(iter([bind for bind in study_data.config.bindings if bind.id == config[bc_id]["id"]]))
-            study_data.config.bindings.remove(bc)
-            del config[bc_id]
-
-        study_data.tree.save(
-            config,
-            ["input", "bindingconstraints", "bindingconstraints"],
-        )
