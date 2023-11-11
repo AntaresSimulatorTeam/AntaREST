@@ -43,6 +43,11 @@ class CreateRenewablesCluster(ICommand):
 
     def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         if study_data.enr_modelling != ENR_MODELLING.CLUSTERS.value:
+            # Since version 8.1 of the solver, we can use renewable clusters
+            # instead of "Load", "Wind" and "Solar" objects for modelling.
+            # When the "renewable-generation-modelling" parameter is set to "aggregated",
+            # it means that we want to ensure compatibility with previous versions.
+            # To use renewable clusters, the parameter must therefore be set to "clusters".
             message = (
                 f"Parameter 'renewable-generation-modelling'"
                 f" must be set to '{ENR_MODELLING.CLUSTERS.value}'"
