@@ -1,4 +1,5 @@
 import logging
+import os
 import re
 import shutil
 import tempfile
@@ -99,6 +100,7 @@ def upgrade_study(study_path: Path, target_version: str) -> None:
         raise
     else:
         _replace_safely_original_files(files_to_retrieve, study_path, tmp_dir)
+        shutil.rmtree(tmp_dir)
 
 
 def get_current_version(study_path: Path) -> str:
@@ -244,7 +246,10 @@ def _replace_safely_original_files(files_to_replace: List[Path], study_path: Pat
         original_path = study_path / path
         original_path.rename(backup_dir)
         (tmp_path / path).rename(original_path)
-        shutil.rmtree(backup_dir, ignore_errors=True)
+        if backup_dir.is_dir():
+            shutil.rmtree(backup_dir)
+        else:
+            os.remove(backup_dir)
 
 
 def _do_upgrade(study_path: Path, src_version: str, target_version: str) -> None:
