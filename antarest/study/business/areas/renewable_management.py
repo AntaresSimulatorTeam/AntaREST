@@ -50,7 +50,7 @@ class RenewableClusterInput(RenewableProperties, metaclass=AllOptionalMetaclass)
                 enabled=False,
                 unitCount=100,
                 nominalCapacity=1000.0,
-                tsIntrepretation="power-generation",
+                tsInterpretation="power-generation",
             )
 
 
@@ -83,14 +83,14 @@ class RenewableClusterOutput(RenewableConfig, metaclass=AllOptionalMetaclass):
     class Config:
         @staticmethod
         def schema_extra(schema: t.MutableMapping[str, t.Any]) -> None:
-            schema["example"] = RenewableClusterInput(
+            schema["example"] = RenewableClusterOutput(
                 id="2 avail and must 1",
                 group="Gas",
                 name="2 avail and must 1",
                 enabled=False,
                 unitCount=100,
                 nominalCapacity=1000.0,
-                tsIntrepretation="power-generation",
+                tsInterpretation="power-generation",
             )
 
 

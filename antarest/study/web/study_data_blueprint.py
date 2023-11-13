@@ -1330,6 +1330,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         tags=[APITag.study_data],
         summary="Get renewable configuration for a given cluster (deprecated)",
         response_class=RedirectResponse,
+        deprecated=True,
     )
     def redirect_get_renewable_cluster(
         uuid: str,
@@ -1395,6 +1396,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         tags=[APITag.study_data],
         summary="Get renewable configuration for a given cluster (deprecated)",
         response_model=RenewableClusterOutput,
+        deprecated=True,
     )
     def redirect_update_renewable_cluster(
         uuid: str,
@@ -1502,6 +1504,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         tags=[APITag.study_data],
         summary="Get thermal configuration for a given cluster (deprecated)",
         response_class=RedirectResponse,
+        deprecated=True,
     )
     def redirect_get_thermal_cluster(
         uuid: str,
@@ -1577,6 +1580,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         tags=[APITag.study_data],
         summary="Get thermal configuration for a given cluster (deprecated)",
         response_model=ThermalClusterOutput,
+        deprecated=True,
     )
     def redirect_update_thermal_cluster(
         uuid: str,
