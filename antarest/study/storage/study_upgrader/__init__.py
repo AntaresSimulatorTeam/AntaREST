@@ -1,5 +1,4 @@
 import logging
-import os
 import re
 import shutil
 import tempfile
@@ -84,23 +83,21 @@ def find_next_version(from_version: str) -> str:
 
 
 def upgrade_study(study_path: Path, target_version: str) -> None:
-    tmp_dir = Path(tempfile.mkdtemp(suffix=".upgrade.tmp", prefix="~", dir=study_path.parent))
-    try:
-        src_version = get_current_version(study_path)
-        files_to_upgrade = can_upgrade_version(src_version, target_version)
-        files_to_retrieve = _copies_only_necessary_files(files_to_upgrade, study_path, tmp_dir)
-        _do_upgrade(tmp_dir, src_version, target_version)
-    except (StudyValidationError, InvalidUpgrade) as e:
-        shutil.rmtree(tmp_dir)
-        logger.warning(str(e))
-        raise
-    except Exception as e:
-        shutil.rmtree(tmp_dir)
-        logger.error(f"Unhandled exception : {e}", exc_info=True)
-        raise
-    else:
-        _replace_safely_original_files(files_to_retrieve, study_path, tmp_dir)
-        shutil.rmtree(tmp_dir)
+    with tempfile.TemporaryDirectory(suffix=".upgrade.tmp", prefix="~", dir=study_path.parent) as path:
+        tmp_dir = Path(path)
+        try:
+            src_version = get_current_version(study_path)
+            files_to_upgrade = can_upgrade_version(src_version, target_version)
+            files_to_retrieve = _copies_only_necessary_files(files_to_upgrade, study_path, tmp_dir)
+            _do_upgrade(tmp_dir, src_version, target_version)
+        except (StudyValidationError, InvalidUpgrade) as e:
+            logger.warning(str(e))
+            raise
+        except Exception as e:
+            logger.error(f"Unhandled exception : {e}", exc_info=True)
+            raise
+        else:
+            _replace_safely_original_files(files_to_retrieve, study_path, tmp_dir)
 
 
 def get_current_version(study_path: Path) -> str:
@@ -249,7 +246,7 @@ def _replace_safely_original_files(files_to_replace: List[Path], study_path: Pat
         if backup_dir.is_dir():
             shutil.rmtree(backup_dir)
         else:
-            os.remove(backup_dir)
+            backup_dir.unlink()
 
 
 def _do_upgrade(study_path: Path, src_version: str, target_version: str) -> None:
