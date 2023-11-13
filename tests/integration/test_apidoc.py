@@ -16,3 +16,4 @@ def test_apidoc(client: TestClient) -> None:
         get_model_definitions(flat_models=flat_models, model_name_map=model_name_map)
     except Exception as e:
         logger.error("A pydantic model is invalid. Therefore the APIdoc page cannot be loaded.", exc_info=e)
+        assert False
