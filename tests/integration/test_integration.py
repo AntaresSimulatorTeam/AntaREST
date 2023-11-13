@@ -25,6 +25,7 @@ from antarest.study.business.table_mode_management import (
     TransmissionCapacity,
 )
 from antarest.study.model import MatrixIndex, StudyDownloadLevelDTO
+from antarest.study.storage.rawstudy.model.filesystem.config.renewable import RenewableClusterGroup
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import LawOption, TimeSeriesGenerationOption
 from antarest.study.storage.variantstudy.model.command.common import CommandName
 from tests.integration.assets import ASSETS_DIR
@@ -1749,32 +1750,34 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
 
     # Renewable form
 
-    res_renewable_config = client.put(
+    res = client.put(
         f"/v1/studies/{study_id}/areas/area 1/clusters/renewable/cluster renewable 1/form",
         headers=admin_headers,
         json={
             "name": "cluster renewable 1 renamed",
-            "tsInterpretation": TimeSeriesInterpretation.PRODUCTION_FACTOR.value,
+            "tsInterpretation": TimeSeriesInterpretation.PRODUCTION_FACTOR,
             "unitCount": 9,
             "enabled": False,
             "nominalCapacity": 3,
         },
     )
-    assert res_renewable_config.status_code == 200
+    assert res.status_code == 200, res.json()
 
-    res_renewable_config = client.get(
-        f"/v1/studies/{study_id}/areas/area 1/clusters/renewable/cluster renewable 1/form", headers=admin_headers
+    res = client.get(
+        f"/v1/studies/{study_id}/areas/area 1/clusters/renewable/cluster renewable 1/form",
+        headers=admin_headers,
     )
-    res_renewable_config_json = res_renewable_config.json()
-
-    assert res_renewable_config_json == {
-        "group": "",
-        "tsInterpretation": TimeSeriesInterpretation.PRODUCTION_FACTOR.value,
-        "name": "cluster renewable 1 renamed",
-        "unitCount": 9,
+    expected = {
         "enabled": False,
-        "nominalCapacity": 3,
+        "group": RenewableClusterGroup.OTHER1,  # Default group used when not specified.
+        "id": "cluster renewable 1",
+        "name": "cluster renewable 1 renamed",
+        "nominalCapacity": 3.0,
+        "tsInterpretation": TimeSeriesInterpretation.PRODUCTION_FACTOR,
+        "unitCount": 9,
     }
+    assert res.status_code == 200, res.json()
+    assert res.json() == expected
 
     # Thermal form
 

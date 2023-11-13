@@ -15,7 +15,6 @@ We should consider the following scenario parameters :
   - `StudyPermissionType.READ`: user/bot can only read properties/matrices,
   - `StudyPermissionType.RUN`: user/bot has no permission to manage clusters,
   - `StudyPermissionType.WRITE`: user/bot can manage cluster properties/matrices,
-  - `StudyPermissionType.DELETE`: user/bot has no permission to manage clusters,
   - `StudyPermissionType.MANAGE_PERMISSIONS`: user/bot has no permission to manage clusters.
 
 We should test the following end poins:
