@@ -2,10 +2,9 @@ import filecmp
 import glob
 import re
 import shutil
-import tempfile
+import zipfile
 from pathlib import Path
 from typing import List
-from zipfile import ZipFile
 
 import pandas
 import pytest
@@ -15,65 +14,73 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import transf
 from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata import DUPLICATE_KEYS
 from antarest.study.storage.study_upgrader import UPGRADE_METHODS, InvalidUpgrade, upgrade_study
 from antarest.study.storage.study_upgrader.upgrader_840 import MAPPING_TRANSMISSION_CAPACITIES
+from tests.storage.business.assets import ASSETS_DIR
 
 
 def test_end_to_end_upgrades(tmp_path: Path):
-    cur_dir: Path = Path(__file__).parent
-    path_study = cur_dir / "assets" / "little_study_700.zip"
-    with ZipFile(path_study) as zip_output:
-        zip_output.extractall(path=tmp_path)
-    tmp_dir_before_upgrade = tempfile.mkdtemp(suffix=".before_upgrade.tmp", prefix="~", dir=cur_dir / "assets")
-    shutil.copytree(tmp_path, tmp_dir_before_upgrade, dirs_exist_ok=True)
-    old_values = get_old_settings_values(tmp_path)
-    old_areas_values = get_old_area_values(tmp_path)
+    # Prepare a study to upgrade
+    path_study = ASSETS_DIR / "little_study_700.zip"
+    study_dir = tmp_path / "little_study_700"
+    with zipfile.ZipFile(path_study) as zip_output:
+        zip_output.extractall(path=study_dir)
+    # Backup the study before upgrade and read some values for later comparison
+    before_upgrade_dir = tmp_path / "backup"
+    shutil.copytree(study_dir, before_upgrade_dir, dirs_exist_ok=True)
+    old_values = get_old_settings_values(study_dir)
+    old_areas_values = get_old_area_values(study_dir)
     # Only checks if the study_upgrader can go from the first supported version to the last one
     target_version = "860"
-    upgrade_study(tmp_path, target_version)
-    assert_study_antares_file_is_updated(tmp_path, target_version)
-    assert_settings_are_updated(tmp_path, old_values)
-    assert_inputs_are_updated(tmp_path, old_areas_values)
-    assert (False, are_same_dir(tmp_path, tmp_dir_before_upgrade))
-    shutil.rmtree(tmp_dir_before_upgrade)
+    upgrade_study(study_dir, target_version)
+    assert_study_antares_file_is_updated(study_dir, target_version)
+    assert_settings_are_updated(study_dir, old_values)
+    assert_inputs_are_updated(study_dir, old_areas_values)
+    assert not are_same_dir(study_dir, before_upgrade_dir)
 
 
 def test_fails_because_of_versions_asked(tmp_path: Path):
-    cur_dir: Path = Path(__file__).parent
-    path_study = cur_dir / "assets" / "little_study_720.zip"
-    with ZipFile(path_study) as zip_output:
-        zip_output.extractall(path=tmp_path)
+    # Prepare a study to upgrade
+    path_study = ASSETS_DIR / "little_study_720.zip"
+    study_dir = tmp_path / "little_study_720"
+    with zipfile.ZipFile(path_study) as zip_output:
+        zip_output.extractall(path=study_dir)
+    # Try to upgrade with an unknown version
     with pytest.raises(
         InvalidUpgrade,
         match=f"Version '600' unknown: possible versions are {', '.join([u[1] for u in UPGRADE_METHODS])}",
     ):
-        upgrade_study(tmp_path, "600")
+        upgrade_study(study_dir, "600")
+    # Try to upgrade with the current version
     with pytest.raises(InvalidUpgrade, match="Your study is already in version '720'"):
-        upgrade_study(tmp_path, "720")
+        upgrade_study(study_dir, "720")
+    # Try to upgrade with an old version
     with pytest.raises(
         InvalidUpgrade,
         match="Impossible to upgrade from version '720' to version '710'",
     ):
-        upgrade_study(tmp_path, "710")
+        upgrade_study(study_dir, "710")
+    # Try to upgrade with a version that does not exist
     with pytest.raises(
         InvalidUpgrade,
         match=f"Version '820.rc' unknown: possible versions are {', '.join([u[1] for u in UPGRADE_METHODS])}",
     ):
-        upgrade_study(tmp_path, "820.rc")
+        upgrade_study(study_dir, "820.rc")
 
 
 def test_fallback_if_study_input_broken(tmp_path):
-    cur_dir: Path = Path(__file__).parent
-    path_study = cur_dir / "assets" / "broken_study_720.zip"
-    with ZipFile(path_study) as zip_output:
-        zip_output.extractall(path=tmp_path)
-    tmp_dir_before_upgrade = tempfile.mkdtemp(suffix=".before_upgrade.tmp", prefix="~", dir=cur_dir / "assets")
-    shutil.copytree(tmp_path, tmp_dir_before_upgrade, dirs_exist_ok=True)
+    # Prepare a study to upgrade
+    path_study = ASSETS_DIR / "broken_study_720.zip"
+    study_dir = tmp_path / "broken_study_720"
+    with zipfile.ZipFile(path_study) as zip_output:
+        zip_output.extractall(path=study_dir)
+    # Backup the study before upgrade and read some values for later comparison
+    before_upgrade_dir = tmp_path / "backup"
+    shutil.copytree(study_dir, before_upgrade_dir, dirs_exist_ok=True)
     with pytest.raises(
         expected_exception=pandas.errors.EmptyDataError,
         match="No columns to parse from file",
     ):
-        upgrade_study(tmp_path, "850")
-    assert are_same_dir(tmp_path, tmp_dir_before_upgrade)
-    shutil.rmtree(tmp_dir_before_upgrade)
+        upgrade_study(study_dir, "850")
+    assert are_same_dir(study_dir, before_upgrade_dir)
 
 
 def assert_study_antares_file_is_updated(tmp_path: Path, target_version: str) -> None:
