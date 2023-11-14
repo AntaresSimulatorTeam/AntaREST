@@ -34,6 +34,9 @@ logger = logging.getLogger(__name__)
 TaskUpdateNotifier = Callable[[str], None]
 Task = Callable[[TaskUpdateNotifier], TaskResult]
 
+DEFAULT_AWAIT_MAX_TIMEOUT = 172800  # 48 hours
+"""Default timeout for `await_task` in seconds."""
+
 
 class ITaskService(ABC):
     @abstractmethod
@@ -74,16 +77,13 @@ class ITaskService(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def await_task(self, task_id: str, timeout_sec: Optional[int] = None) -> None:
+    def await_task(self, task_id: str, timeout_sec: int = DEFAULT_AWAIT_MAX_TIMEOUT) -> None:
         raise NotImplementedError()
 
 
 # noinspection PyUnusedLocal
 def noop_notifier(message: str) -> None:
     """This function is used in tasks when no notification is required."""
-
-
-DEFAULT_AWAIT_MAX_TIMEOUT = 172800
 
 
 class TaskJobService(ITaskService):
@@ -141,6 +141,7 @@ class TaskJobService(ITaskService):
                 task_type,
             )
             while not task_result_wrapper:
+                logger.info("💤 Sleeping 1 second...")
                 time.sleep(1)
             self.event_bus.remove_listener(listener_id)
             return task_result_wrapper[0]
@@ -283,22 +284,31 @@ class TaskJobService(ITaskService):
         user = None if request_params.user.is_site_admin() else request_params.user.impersonator
         return self.repo.list(task_filter, user)
 
-    def await_task(self, task_id: str, timeout_sec: Optional[int] = None) -> None:
-        logger.info(f"Awaiting task {task_id}")
+    def await_task(self, task_id: str, timeout_sec: int = DEFAULT_AWAIT_MAX_TIMEOUT) -> None:
         if task_id in self.tasks:
-            self.tasks[task_id].result(timeout_sec or DEFAULT_AWAIT_MAX_TIMEOUT)
+            try:
+                logger.info(f"🤔 Awaiting task '{task_id}' {timeout_sec}s...")
+                self.tasks[task_id].result(timeout_sec)
+                logger.info(f"📌 Task '{task_id}' done.")
+            except Exception as exc:
+                logger.critical(f"🤕 Task '{task_id}' failed: {exc}.")
+                raise
         else:
-            logger.warning(f"Task {task_id} not handled by this worker, will poll for task completion from db")
-            end = time.time() + (timeout_sec or DEFAULT_AWAIT_MAX_TIMEOUT)
+            logger.warning(f"Task '{task_id}' not handled by this worker, will poll for task completion from db")
+            end = time.time() + timeout_sec
             while time.time() < end:
                 with db():
                     task = self.repo.get(task_id)
-                    if not task:
-                        logger.error(f"Awaited task {task_id} was not found")
-                        break
+                    if task is None:
+                        logger.error(f"Awaited task '{task_id}' was not found")
+                        return
                     if TaskStatus(task.status).is_final():
-                        break
-                    time.sleep(2)
+                        return
+                logger.info("💤 Sleeping 2 seconds...")
+                time.sleep(2)
+            logger.error(f"Timeout while awaiting task '{task_id}'")
+            with db():
+                self.repo.update_timeout(task_id, timeout_sec)
 
     def _run_task(
         self,

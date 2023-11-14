@@ -55,7 +55,7 @@ class MatrixGarbageCollector(IService):
 
     def _get_variant_studies_matrices(self) -> Set[str]:
         logger.info("Getting all matrices used in variant studies")
-        command_blocks: List[CommandBlock] = self.variant_study_service.repository.get_all_commandblocks()
+        command_blocks: List[CommandBlock] = self.variant_study_service.repository.get_all_command_blocks()
 
         def transform_to_command(command_dto: CommandDTO, study_ref: str) -> List[ICommand]:
             try:
