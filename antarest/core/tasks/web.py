@@ -45,7 +45,7 @@ def create_tasks_api(service: TaskJobService, config: Config) -> APIRouter:
         with_logs: bool = False,
         timeout: int = DEFAULT_AWAIT_MAX_TIMEOUT,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    ) -> TaskDTO:
         """
         Retrieve information about a specific task.
 
