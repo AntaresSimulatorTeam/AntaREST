@@ -13,6 +13,7 @@ from antarest.core.persistence import Base
 from antarest.core.requests import RequestParameters
 from antarest.core.roles import RoleType
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
+from antarest.login.model import User
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, StudyAdditionalData
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
@@ -52,6 +53,9 @@ def test_commands_service(tmp_path: Path, db_engine: Engine, command_factory: Co
     )
 
     with db():
+        # Add the admin user in the database
+        db.session.add(User(id=SADMIN.user.id))
+
         # sourcery skip: extract-method, inline-variable
         # Save a study
         origin_id = "origin-id"

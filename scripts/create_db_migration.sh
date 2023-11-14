@@ -1,10 +1,18 @@
 #!/bin/bash
+# This script creates a new database migration.
+#
+# usage:
+#
+# export ANTAREST_CONF=/path/to/application.yaml
+# bash ./scripts/create_db_migration.sh <name_of_your_migration>
 
-CURDIR=$(cd `dirname $0` && pwd)
-BASEDIR=`dirname $CURDIR`
+set -e
+
+CUR_DIR=$(cd "$(dirname "$0")" && pwd)
+BASE_DIR=$(dirname "$CUR_DIR")
 
 
-pushd $BASEDIR
+pushd "$BASE_DIR"
 
 if [ -n "$1" ] ; then
   alembic revision --autogenerate -m "$1"
@@ -13,6 +21,6 @@ else
 fi
 
 CURRENT_VERSION=$(alembic current)
-sed -i "s/alembic downgrade .*/alembic downgrade $CURRENT_VERSION/g" $CURDIR/rollback.sh
+sed -i "s/alembic downgrade .*/alembic downgrade $CURRENT_VERSION/g" "$CUR_DIR/rollback.sh"
 
 popd
