@@ -70,7 +70,7 @@ class StudyMetadataRepository:
         """Get the study by ID or return `None` if not found in database."""
         # When we fetch a study, we also need to fetch the associated owner and groups
         # to check the permissions of the current user efficiently.
-        metadata: Study = (
+        study: Study = (
             # fmt: off
             db.session.query(Study)
             .options(joinedload(Study.owner))
@@ -78,7 +78,7 @@ class StudyMetadataRepository:
             .get(id)
             # fmt: on
         )
-        return metadata
+        return study
 
     def one(self, id: str) -> Study:
         """Get the study by ID or raise `sqlalchemy.exc.NoResultFound` if not found in database."""
@@ -106,20 +106,20 @@ class StudyMetadataRepository:
         return studies
 
     def get_additional_data(self, study_id: str) -> t.Optional[StudyAdditionalData]:
-        metadata: StudyAdditionalData = db.session.query(StudyAdditionalData).get(study_id)
-        return metadata
+        study: StudyAdditionalData = db.session.query(StudyAdditionalData).get(study_id)
+        return study
 
     def get_all(self) -> t.List[Study]:
         entity = with_polymorphic(Study, "*")
-        metadatas: t.List[Study] = db.session.query(entity).filter(RawStudy.missing.is_(None)).all()
-        return metadatas
+        studies: t.List[Study] = db.session.query(entity).filter(RawStudy.missing.is_(None)).all()
+        return studies
 
     def get_all_raw(self, show_missing: bool = True) -> t.List[RawStudy]:
         query = db.session.query(RawStudy)
         if not show_missing:
             query = query.filter(RawStudy.missing.is_(None))
-        metadatas: t.List[RawStudy] = query.all()
-        return metadatas
+        studies: t.List[RawStudy] = query.all()
+        return studies
 
     def delete(self, id: str) -> None:
         logger.debug(f"Deleting study {id}")
