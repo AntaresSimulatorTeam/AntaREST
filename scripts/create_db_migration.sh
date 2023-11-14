@@ -4,7 +4,7 @@
 # usage:
 #
 # export ANTAREST_CONF=/path/to/application.yaml
-# bash ./scripts/scripts/create_db_migration.sh <name_of_your_migration>
+# bash ./scripts/create_db_migration.sh <name_of_your_migration>
 
 set -e
 

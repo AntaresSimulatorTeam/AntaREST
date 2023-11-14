@@ -4,7 +4,7 @@
 # usage:
 #
 # export ANTAREST_CONF=/path/to/application.yaml
-# bash ./scripts/scripts/rollback.sh
+# bash ./scripts/rollback.sh
 
 set -e
 
