@@ -92,7 +92,7 @@ def create_raw_study_routes(
         or a file attachment (Microsoft Office document, CSV/TSV file...).
         """
         logger.info(
-            f"Fetching data at {path} (depth={depth}) from study {uuid}",
+            f"📘 Fetching data at {path} (depth={depth}) from study {uuid}",
             extra={"user": current_user.id},
         )
         parameters = RequestParameters(user=current_user)

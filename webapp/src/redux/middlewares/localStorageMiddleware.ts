@@ -7,7 +7,6 @@ import {
   setFavoriteStudies,
   updateStudiesFromLocalStorage,
   updateStudiesSortConf,
-  updateStudyFilters,
 } from "../ducks/studies";
 import { setMenuCollapse } from "../ducks/ui";
 
@@ -33,7 +32,6 @@ localStorageMiddleware.startListening({
       dispatch(
         updateStudiesFromLocalStorage({
           favorites: storage.getItem(StorageKey.StudiesFavorites),
-          filters: storage.getItem(StorageKey.StudiesFilters),
           sort: storage.getItem(StorageKey.StudiesSort),
         }),
       );
@@ -54,16 +52,6 @@ localStorageMiddleware.startListening({
   actionCreator: setFavoriteStudies,
   effect: (action) => {
     storage.setItem(StorageKey.StudiesFavorites, action.payload);
-  },
-});
-
-localStorageMiddleware.startListening({
-  actionCreator: updateStudyFilters,
-  effect: (action) => {
-    storage.setItem(StorageKey.StudiesFilters, (prev) => ({
-      ...prev,
-      ...action.payload,
-    }));
   },
 });
 

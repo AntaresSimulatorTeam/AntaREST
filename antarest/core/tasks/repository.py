@@ -5,7 +5,7 @@ from typing import Any, List, Optional
 
 from fastapi import HTTPException
 
-from antarest.core.tasks.model import TaskJob, TaskListFilter
+from antarest.core.tasks.model import TaskJob, TaskListFilter, TaskStatus
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import assert_this
 
@@ -82,3 +82,11 @@ class TaskJobRepository:
         if task:
             db.session.delete(task)
             db.session.commit()
+
+    def update_timeout(self, task_id: str, timeout: int) -> None:
+        """Update task status to TIMEOUT."""
+        task: TaskJob = db.session.get(TaskJob, task_id)
+        task.status = TaskStatus.TIMEOUT
+        task.result_msg = f"Task '{task_id}' timeout after {timeout} seconds"
+        task.result_status = False
+        db.session.commit()

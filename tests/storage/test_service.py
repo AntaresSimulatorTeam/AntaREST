@@ -8,6 +8,7 @@ from unittest.mock import ANY, Mock, call, patch, seal
 from uuid import uuid4
 
 import pytest
+from sqlalchemy.orm import Session
 
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
 from antarest.core.exceptions import TaskAlreadyRunning
@@ -21,7 +22,7 @@ from antarest.core.requests import RequestParameters
 from antarest.core.roles import RoleType
 from antarest.core.tasks.model import TaskDTO, TaskStatus, TaskType
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.login.model import Group, GroupDTO, User
+from antarest.login.model import Group, GroupDTO, Role, User
 from antarest.login.service import LoginService
 from antarest.matrixstore.service import MatrixService
 from antarest.study.model import (
@@ -60,7 +61,7 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
-from antarest.study.storage.utils import assert_permission, study_matcher
+from antarest.study.storage.utils import assert_permission, assert_permission_on_studies, study_matcher
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
@@ -870,6 +871,93 @@ def test_assert_permission() -> None:
     study = Study(id=uuid, owner=wrong, groups=[Group(id="my-group-2")])
     assert not assert_permission(jwt_2, study, StudyPermissionType.WRITE, raising=False)
     assert assert_permission(jwt_2, study, StudyPermissionType.READ)
+
+
+def test_assert_permission_on_studies(db_session: Session) -> None:
+    # Given the following user groups :
+    user_groups = [
+        {
+            "name": "admin",
+            "role": RoleType.ADMIN,
+            "users": ["admin"],
+        },
+        {
+            "name": "Writers",
+            "role": RoleType.WRITER,
+            "users": ["John", "Jane", "Jack"],
+        },
+        {
+            "name": "Readers",
+            "role": RoleType.READER,
+            "users": ["Rita", "Ralph"],
+        },
+    ]
+
+    # Create the JWTGroup and JWTUser objects
+    jwt_groups = {}
+    jwt_users = {}
+    users_sequence = 2  # first non-admin user ID
+    for group in user_groups:
+        group_name = group["name"]
+        jwt_groups[group_name] = JWTGroup(id=group_name, name=group_name, role=group["role"])
+        for user_name in group["users"]:
+            if user_name == "admin":
+                user_id = 1
+            else:
+                user_id = users_sequence
+                users_sequence += 1
+            jwt_users[user_name] = JWTUser(
+                id=user_id,
+                impersonator=user_id,
+                type="users",
+                groups=[jwt_groups[group_name]],
+            )
+
+    # Create the users and groups in the database
+    with db_session:
+        for group_name, jwt_group in jwt_groups.items():
+            db_session.add(Group(id=jwt_group.id, name=group_name))
+        for user_name, jwt_user in jwt_users.items():
+            db_session.add(User(id=jwt_user.id, name=user_name))
+        db_session.commit()
+
+        for user in db_session.query(User):
+            user_jwt_groups = jwt_users[user.name].groups
+            for user_jwt_group in user_jwt_groups:
+                db_session.add(Role(type=user_jwt_group.role, identity_id=user.id, group_id=user_jwt_group.id))
+        db_session.commit()
+
+    # John creates a main study and Jane creates two variant studies.
+    # They all belong to the same group.
+    writers = db_session.query(Group).filter(Group.name == "Writers").one()
+    studies = [
+        Study(id=uuid4(), name="Main Study", owner_id=jwt_users["John"].id, groups=[writers]),
+        Study(id=uuid4(), name="Variant Study 1", owner_id=jwt_users["Jane"].id, groups=[writers]),
+        Study(id=uuid4(), name="Variant Study 2", owner_id=jwt_users["Jane"].id, groups=[writers]),
+    ]
+
+    # All admin and writers should have WRITE access to the studies.
+    # Other members of the group should have no access.
+    for user_name, jwt_user in jwt_users.items():
+        has_access = any(jwt_group.name in {"admin", "Writers"} for jwt_group in jwt_user.groups)
+        actual = assert_permission_on_studies(jwt_user, studies, StudyPermissionType.WRITE, raising=False)
+        assert actual == has_access
+
+    # Jack creates a additional variant study and adds it to the readers and writers groups.
+    readers = db_session.query(Group).filter(Group.name == "Readers").one()
+    studies.append(Study(id=uuid4(), name="Variant Study 3", owner_id=jwt_users["Jack"].id, groups=[readers, writers]))
+
+    # All admin and writers should have READ access to the studies.
+    # Other members of the group should have no access, because they don't have access to the writers-only studies.
+    for user_name, jwt_user in jwt_users.items():
+        has_access = any(jwt_group.name in {"admin", "Writers"} for jwt_group in jwt_user.groups)
+        actual = assert_permission_on_studies(jwt_user, studies, StudyPermissionType.READ, raising=False)
+        assert actual == has_access
+
+    # Everybody should have access to the last study, because it is in the readers and writers group.
+    for user_name, jwt_user in jwt_users.items():
+        actual = assert_permission_on_studies(jwt_user, studies[-1:], StudyPermissionType.READ, raising=False)
+        assert actual
 
 
 @pytest.mark.unit_test

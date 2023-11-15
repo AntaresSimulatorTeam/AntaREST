@@ -1,13 +1,13 @@
 import calendar
 import logging
+import math
 import os
 import shutil
 import tempfile
 import time
+import typing as t
 from datetime import datetime, timedelta
-from math import ceil
 from pathlib import Path
-from typing import Callable, List, Optional, Union, cast
 from uuid import uuid4
 from zipfile import ZipFile
 
@@ -123,7 +123,7 @@ def find_single_output_path(all_output_path: Path) -> Path:
     return all_output_path
 
 
-def extract_output_name(path_output: Path, new_suffix_name: Optional[str] = None) -> str:
+def extract_output_name(path_output: Path, new_suffix_name: t.Optional[str] = None) -> str:
     ini_reader = IniReader()
     is_output_archived = path_output.suffix == ".zip"
     if is_output_archived:
@@ -171,7 +171,7 @@ def remove_from_cache(cache: ICache, root_id: str) -> None:
 
 
 def create_new_empty_study(version: str, path_study: Path, path_resources: Path) -> None:
-    version_template: Optional[str] = STUDY_REFERENCE_TEMPLATES.get(version, None)
+    version_template: t.Optional[str] = STUDY_REFERENCE_TEMPLATES.get(version, None)
     if version_template is None:
         raise UnsupportedStudyVersion(version)
 
@@ -182,8 +182,8 @@ def create_new_empty_study(version: str, path_study: Path, path_resources: Path)
 
 
 def study_matcher(
-    name: Optional[str], workspace: Optional[str], folder: Optional[str]
-) -> Callable[[StudyMetadataDTO], bool]:
+    name: t.Optional[str], workspace: t.Optional[str], folder: t.Optional[str]
+) -> t.Callable[[StudyMetadataDTO], bool]:
     def study_match(study: StudyMetadataDTO) -> bool:
         if name and not study.name.startswith(name):
             return False
@@ -196,14 +196,55 @@ def study_matcher(
     return study_match
 
 
+def assert_permission_on_studies(
+    user: t.Optional[JWTUser],
+    studies: t.Sequence[t.Union[Study, StudyMetadataDTO]],
+    permission_type: StudyPermissionType,
+    *,
+    raising: bool = True,
+) -> bool:
+    """
+    Asserts whether the provided user has the required permissions on the given studies.
+
+    Args:
+        user: The user whose permissions need to be verified.
+        studies: The studies for which permissions need to be verified.
+        permission_type: The type of permission to be checked for the user.
+        raising: If set to `True`, raises `UserHasNotPermissionError` when the permission check fails.
+
+    Returns:
+        `True` if the user has the required permissions, `False` otherwise.
+
+    Raises:
+        `UserHasNotPermissionError`: If the raising parameter is set to `True`
+            and the user does not have the required permissions.
+    """
+    if not user:
+        logger.error("FAIL permission: user is not logged")
+        raise UserHasNotPermissionError()
+    msg = {
+        0: f"FAIL permissions: user '{user}' has no access to any study",
+        1: f"FAIL permissions: user '{user}' does not have {permission_type.value} permission on {studies[0].id}",
+        2: f"FAIL permissions: user '{user}' does not have {permission_type.value} permission on all studies",
+    }[min(len(studies), 2)]
+    infos = (PermissionInfo.from_study(study) for study in studies)
+    if any(not check_permission(user, permission_info, permission_type) for permission_info in infos):
+        logger.error(msg)
+        if raising:
+            raise UserHasNotPermissionError(msg)
+        return False
+    return True
+
+
 def assert_permission(
-    user: Optional[JWTUser],
-    study: Optional[Union[Study, StudyMetadataDTO]],
+    user: t.Optional[JWTUser],
+    study: t.Optional[t.Union[Study, StudyMetadataDTO]],
     permission_type: StudyPermissionType,
     raising: bool = True,
 ) -> bool:
     """
     Assert user has permission to edit or read study.
+
     Args:
         user: user logged
         study: study asked
@@ -211,27 +252,9 @@ def assert_permission(
         raising: raise error if permission not matched
 
     Returns: true if permission match, false if not raising.
-
     """
-    if not user:
-        logger.error("FAIL permission: user is not logged")
-        raise UserHasNotPermissionError()
-
-    if not study:
-        logger.error("FAIL permission: study not exist")
-        raise ValueError("Metadata is None")
-
-    permission_info = PermissionInfo.from_study(study)
-    ok = check_permission(user, permission_info, permission_type)
-    if raising and not ok:
-        logger.error(
-            "FAIL permission: user %d has no permission on study %s",
-            user.id,
-            study.id,
-        )
-        raise UserHasNotPermissionError()
-
-    return ok
+    studies = [study] if study else []
+    return assert_permission_on_studies(user, studies, permission_type, raising=raising)
 
 
 MATRIX_INPUT_DAYS_COUNT = 365
@@ -264,7 +287,7 @@ DAY_NAMES = (
 
 def get_start_date(
     file_study: FileStudy,
-    output_id: Optional[str] = None,
+    output_id: t.Optional[str] = None,
     level: StudyDownloadLevelDTO = StudyDownloadLevelDTO.HOURLY,
 ) -> MatrixIndex:
     """
@@ -277,12 +300,12 @@ def get_start_date(
 
     """
     config = FileStudyHelpers.get_config(file_study, output_id)["general"]
-    starting_month = cast(str, config.get("first-month-in-year"))
-    starting_day = cast(str, config.get("january.1st"))
-    leapyear = cast(bool, config.get("leapyear"))
-    first_week_day = cast(str, config.get("first.weekday"))
-    start_offset = cast(int, config.get("simulation.start"))
-    end = cast(int, config.get("simulation.end"))
+    starting_month = t.cast(str, config.get("first-month-in-year"))
+    starting_day = t.cast(str, config.get("january.1st"))
+    leapyear = t.cast(bool, config.get("leapyear"))
+    first_week_day = t.cast(str, config.get("first.weekday"))
+    start_offset = t.cast(int, config.get("simulation.start"))
+    end = t.cast(int, config.get("simulation.end"))
 
     starting_month_index = MONTHS.index(starting_month.title()) + 1
     starting_day_index = DAY_NAMES.index(starting_day.title())
@@ -303,7 +326,7 @@ def get_start_date(
     elif level == StudyDownloadLevelDTO.ANNUAL:
         steps = 1
     elif level == StudyDownloadLevelDTO.WEEKLY:
-        steps = ceil(steps / 7)
+        steps = math.ceil(steps / 7)
     elif level == StudyDownloadLevelDTO.MONTHLY:
         end_date = start_date + timedelta(days=steps)
         same_year = end_date.year == start_date.year
@@ -333,9 +356,9 @@ def export_study_flat(
     dest: Path,
     study_factory: StudyFactory,
     outputs: bool = True,
-    output_list_filter: Optional[List[str]] = None,
+    output_list_filter: t.Optional[t.List[str]] = None,
     denormalize: bool = True,
-    output_src_path: Optional[Path] = None,
+    output_src_path: t.Optional[Path] = None,
 ) -> None:
     start_time = time.time()
 

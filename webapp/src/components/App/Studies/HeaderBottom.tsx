@@ -1,7 +1,7 @@
 import { Box, Button, Chip, Divider } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { indigo, purple } from "@mui/material/colors";
-import useDebounce from "../../../hooks/useDebounce";
+import { useUnmount } from "react-use";
 import useAppSelector from "../../../redux/hooks/useAppSelector";
 import { getGroups, getStudyFilters, getUsers } from "../../../redux/selectors";
 import useAppDispatch from "../../../redux/hooks/useAppDispatch";
@@ -32,6 +32,11 @@ function HeaderBottom(props: PropTypes) {
       .map((group) => ({ id: group.id, name: group.name }) as GroupDTO);
   });
 
+  // Clear search input
+  useUnmount(() => {
+    dispatch(updateStudyFilters({ inputValue: "" }));
+  });
+
   ////////////////////////////////////////////////////////////////
   // Utils
   ////////////////////////////////////////////////////////////////
@@ -44,26 +49,16 @@ function HeaderBottom(props: PropTypes) {
   };
 
   ////////////////////////////////////////////////////////////////
-  // Event Handlers
-  ////////////////////////////////////////////////////////////////
-
-  const handleSearchChange = useDebounce(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      setFilterValue("inputValue", event.target.value);
-    },
-    150,
-  );
-
-  ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
 
   return (
     <Box display="flex" width="100%" alignItems="center">
       <SearchFE
-        sx={{ mx: 0 }}
-        defaultValue={filters.inputValue}
-        onChange={handleSearchChange}
+        sx={{ mx: 0, width: 260 }}
+        value={filters.inputValue}
+        onSearchValueChange={(v) => setFilterValue("inputValue", v)}
+        onClear={() => setFilterValue("inputValue", "")}
         useLabel
       />
       <Divider

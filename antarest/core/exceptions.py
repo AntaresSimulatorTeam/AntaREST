@@ -56,6 +56,11 @@ class VariantGenerationError(HTTPException):
         super().__init__(HTTPStatus.EXPECTATION_FAILED, message)
 
 
+class VariantGenerationTimeoutError(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.REQUEST_TIMEOUT, message)
+
+
 class NoParentStudyError(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.NOT_FOUND, message)

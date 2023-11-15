@@ -5,7 +5,7 @@ import logging
 import tempfile
 import zipfile
 from abc import ABC, abstractmethod
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 from typing import List, Optional, Sequence, Tuple, Union
 
@@ -154,11 +154,13 @@ class MatrixService(ISimpleMatrixService):
         matrix_id = self.matrix_content_repository.save(data)
         shape = data.shape if isinstance(data, np.ndarray) else (len(data), len(data[0]) if data else 0)
         with db():
+            # Do not use the `timezone.utc` timezone to preserve a naive datetime.
+            created_at = datetime.utcnow()
             matrix = Matrix(
                 id=matrix_id,
                 width=shape[1],
                 height=shape[0],
-                created_at=datetime.now(timezone.utc),
+                created_at=created_at,
             )
             self.repo.save(matrix)
         return matrix_id

@@ -1,2 +1,6 @@
 mkdocs
 mkdocs-material
+
+# Add the required dependencies for ReadTheDocs
+sphinx
+myst-parser

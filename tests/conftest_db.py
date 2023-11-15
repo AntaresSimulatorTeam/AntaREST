@@ -1,5 +1,5 @@
 import contextlib
-from typing import Generator
+import typing as t
 
 import pytest
 from sqlalchemy import create_engine  # type: ignore
@@ -13,7 +13,7 @@ __all__ = ("db_engine_fixture", "db_session_fixture", "db_middleware_fixture")
 
 
 @pytest.fixture(name="db_engine")
-def db_engine_fixture() -> Generator[Engine, None, None]:
+def db_engine_fixture() -> t.Generator[Engine, None, None]:
     """
     Fixture that creates an in-memory SQLite database engine for testing.
 
@@ -28,7 +28,7 @@ def db_engine_fixture() -> Generator[Engine, None, None]:
 
 
 @pytest.fixture(name="db_session")
-def db_session_fixture(db_engine: Engine) -> Generator[Session, None, None]:
+def db_session_fixture(db_engine: Engine) -> t.Generator[Session, None, None]:
     """
     Fixture that creates a database session for testing purposes.
 
@@ -49,7 +49,7 @@ def db_session_fixture(db_engine: Engine) -> Generator[Session, None, None]:
 @pytest.fixture(name="db_middleware", autouse=True)
 def db_middleware_fixture(
     db_engine: Engine,
-) -> Generator[DBSessionMiddleware, None, None]:
+) -> t.Generator[DBSessionMiddleware, None, None]:
     """
     Fixture that sets up a database session middleware with custom engine settings.
 

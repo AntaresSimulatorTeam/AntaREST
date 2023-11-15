@@ -1,6 +1,9 @@
+import datetime
 import json
+import typing as t
 import uuid
 from dataclasses import dataclass
+from pathlib import Path
 
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Table  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
@@ -18,20 +21,20 @@ class VariantStudySnapshot(Base):  # type: ignore
 
     __tablename__ = "variant_study_snapshot"
 
-    id = Column(
+    id: str = Column(
         String(36),
         ForeignKey("variantstudy.id"),
         primary_key=True,
     )
-    created_at = Column(DateTime)
-    last_executed_command = Column(String(), nullable=True)
+    created_at: datetime.date = Column(DateTime)
+    last_executed_command: t.Optional[str] = Column(String(), nullable=True)
 
     __mapper_args__ = {
         "polymorphic_identity": "variant_study_snapshot",
     }
 
     def __str__(self) -> str:
-        return f"[Snapshot]: id={self.id}, created_at={self.created_at}"
+        return f"[Snapshot] id={self.id}, created_at={self.created_at}"
 
 
 @dataclass
@@ -42,17 +45,17 @@ class CommandBlock(Base):  # type: ignore
 
     __tablename__ = "commandblock"
 
-    id = Column(
+    id: str = Column(
         String(36),
         primary_key=True,
         default=lambda: str(uuid.uuid4()),
         unique=True,
     )
-    study_id = Column(String(36), ForeignKey("variantstudy.id"))
-    index = Column(Integer)
-    command = Column(String(255))
-    version = Column(Integer)
-    args = Column(String())
+    study_id: str = Column(String(36), ForeignKey("variantstudy.id"))
+    index: int = Column(Integer)
+    command: str = Column(String(255))
+    version: int = Column(Integer)
+    args: str = Column(String())
 
     def to_dto(self) -> CommandDTO:
         return CommandDTO(id=self.id, action=self.command, args=json.loads(self.args))
@@ -66,12 +69,12 @@ class VariantStudy(Study):
 
     __tablename__ = "variantstudy"
 
-    id = Column(
+    id: str = Column(
         String(36),
         ForeignKey("study.id"),
         primary_key=True,
     )
-    generation_task = Column(String(), nullable=True)
+    generation_task: t.Optional[str] = Column(String(), nullable=True)
 
     __mapper_args__ = {
         "polymorphic_identity": "variantstudy",
@@ -90,3 +93,16 @@ class VariantStudy(Study):
 
     def __str__(self) -> str:
         return super().__str__() + f", snapshot={self.snapshot}"
+
+    @property
+    def snapshot_dir(self) -> Path:
+        """Get the path of the snapshot directory."""
+        return Path(self.path) / "snapshot"
+
+    def is_snapshot_recent(self) -> bool:
+        """Check if the snapshot exists and is up-to-date."""
+        return (
+            (self.snapshot is not None)
+            and (self.snapshot.created_at >= self.updated_at)
+            and (self.snapshot_dir / "study.antares").is_file()
+        )
