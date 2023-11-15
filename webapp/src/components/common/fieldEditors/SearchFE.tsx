@@ -1,19 +1,25 @@
-import { InputAdornment } from "@mui/material";
+import { IconButton, InputAdornment } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
+import ClearIcon from "@mui/icons-material/Clear";
 import { useTranslation } from "react-i18next";
 import clsx from "clsx";
+import { useState } from "react";
+import { useUpdateEffect } from "react-use";
+import * as RA from "ramda-adjunct";
 import StringFE, { StringFEProps } from "./StringFE";
 
 export interface SearchFE extends Omit<StringFEProps, "placeholder" | "label"> {
   InputProps?: Omit<StringFEProps["InputProps"], "startAdornment">;
   onSearchValueChange?: (value: string) => void;
   useLabel?: boolean;
+  onClear?: VoidFunction;
 }
 
 function SearchFE(props: SearchFE) {
   const {
     onSearchValueChange,
     onChange,
+    onClear,
     InputProps,
     useLabel,
     className,
@@ -23,6 +29,14 @@ function SearchFE(props: SearchFE) {
   const placeholderOrLabel = {
     [useLabel ? "label" : "placeholder"]: t("global.search"),
   };
+
+  const [isFieldFilled, setIsFieldFilled] = useState(
+    RA.isString(rest.value) ? !!rest.value : !!rest.defaultValue
+  );
+
+  useUpdateEffect(() => {
+    setIsFieldFilled(!!rest.value);
+  }, [rest.value]);
 
   return (
     <StringFE
@@ -36,10 +50,20 @@ function SearchFE(props: SearchFE) {
             <SearchIcon />
           </InputAdornment>
         ),
+        endAdornment:
+          onClear && isFieldFilled ? (
+            <InputAdornment position="end">
+              <IconButton onClick={onClear} edge="end">
+                <ClearIcon />
+              </IconButton>
+            </InputAdornment>
+          ) : null,
       }}
       onChange={(event) => {
+        const newValue = event.target.value;
         onChange?.(event);
-        onSearchValueChange?.(event.target.value);
+        onSearchValueChange?.(newValue);
+        setIsFieldFilled(!!newValue);
       }}
     />
   );

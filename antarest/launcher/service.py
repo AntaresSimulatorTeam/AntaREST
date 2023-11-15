@@ -3,7 +3,7 @@ import json
 import logging
 import os
 import shutil
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from http import HTTPStatus
 from pathlib import Path
 from typing import Dict, List, Optional, cast
@@ -166,7 +166,8 @@ class LauncherService:
                 job_result.output_id = output_id
                 final_status = status in [JobStatus.SUCCESS, JobStatus.FAILED]
                 if final_status:
-                    job_result.completion_date = datetime.now(timezone.utc)
+                    # Do not use the `timezone.utc` timezone to preserve a naive datetime.
+                    job_result.completion_date = datetime.utcnow()
                 self.job_result_repository.save(job_result)
                 self.event_bus.push(
                     Event(
@@ -224,12 +225,16 @@ class LauncherService:
             study=study_info,
             permission_type=StudyPermissionType.RUN,
         )
+        owner_id: int = 0
+        if params.user:
+            owner_id = params.user.impersonator if params.user.type == "bots" else params.user.id
         job_status = JobResult(
             id=job_uuid,
             study_id=study_uuid,
             job_status=JobStatus.PENDING,
             launcher=launcher,
             launcher_params=launcher_parameters.json() if launcher_parameters else None,
+            owner_id=(owner_id or None),
         )
         self.job_result_repository.save(job_status)
 
@@ -253,9 +258,10 @@ class LauncherService:
     def kill_job(self, job_id: str, params: RequestParameters) -> JobResult:
         logger.info(f"Trying to cancel job {job_id}")
         job_result = self.job_result_repository.get(job_id)
-        assert job_result
+        if job_result is None:
+            raise ValueError(f"Job {job_id} not found")
+
         study_uuid = job_result.study_id
-        launcher = job_result.launcher
         study = self.study_service.get_study(study_uuid)
         assert_permission(
             user=params.user,
@@ -263,15 +269,22 @@ class LauncherService:
             permission_type=StudyPermissionType.RUN,
         )
 
+        launcher = job_result.launcher
+        if launcher is None:
+            raise ValueError(f"Job {job_id} has no launcher")
         self._assert_launcher_is_initialized(launcher)
 
         self.launchers[launcher].kill_job(job_id=job_id)
 
+        owner_id = 0
+        if params.user:
+            owner_id = params.user.impersonator if params.user.type == "bots" else params.user.id
         job_status = JobResult(
             id=str(job_id),
             study_id=study_uuid,
             job_status=JobStatus.FAILED,
             launcher=launcher,
+            owner_id=(owner_id or None),
         )
         self.job_result_repository.save(job_status)
         self.event_bus.push(
@@ -372,6 +385,8 @@ class LauncherService:
                     or ""
                 )
             else:
+                if job_result.launcher is None:
+                    raise ValueError(f"Job {job_id} has no launcher")
                 self._assert_launcher_is_initialized(job_result.launcher)
                 launcher_logs = str(self.launchers[job_result.launcher].get_log(job_id, log_type) or "")
             if log_type == LogType.STDOUT:
@@ -666,5 +681,7 @@ class LauncherService:
             permission_type=StudyPermissionType.READ,
         )
 
+        if launcher is None:
+            raise ValueError(f"Job {job_id} has no launcher")
         launch_progress_json = self.launchers[launcher].cache.get(id=f"Launch_Progress_{job_id}") or {"progress": 0}
         return launch_progress_json.get("progress", 0)

@@ -94,6 +94,7 @@ class TestLauncherService:
         )
         launcher_service._generate_new_id = lambda: str(uuid)
 
+        storage_service_mock.get_user_name.return_value = "fake_user"
         job_id = launcher_service.run_study(
             "study_uuid",
             "local",
@@ -108,7 +109,17 @@ class TestLauncherService:
         )
 
         assert job_id == str(uuid)
-        repository.save.assert_called_once_with(pending)
+
+        repository.save.assert_called_once()
+
+        # SQLAlchemy provides its own way to handle object comparison, which ensures
+        # that the comparison is based on the database identity of the objects.
+        # But, here, in that unit test, objects are not in a database session,
+        # so we need to compare them manually.
+        mock_call = repository.save.mock_calls[0]
+        actual_obj: JobResult = mock_call.args[0]
+        assert actual_obj.to_dto().dict() == pending.to_dto().dict()
+
         event_bus.push.assert_called_once_with(
             Event(
                 type=EventType.STUDY_JOB_STARTED,
@@ -127,6 +138,7 @@ class TestLauncherService:
             msg="Hello, World!",
             exit_code=0,
             launcher="local",
+            owner_id=1,
         )
         factory_launcher_mock = Mock()
         factory_launcher_mock.build_launcher.return_value = {"local": launcher_mock}
@@ -163,6 +175,7 @@ class TestLauncherService:
             job_status=JobStatus.SUCCESS,
             msg="Hello, World!",
             exit_code=0,
+            owner_id=1,
         )
         launcher_mock.get_result.return_value = None
         factory_launcher_mock = Mock()
@@ -201,6 +214,7 @@ class TestLauncherService:
                 job_status=JobStatus.SUCCESS,
                 msg="Hello, World!",
                 exit_code=0,
+                owner_id=1,
             )
         ]
         returned_faked_execution_results = [
@@ -211,6 +225,7 @@ class TestLauncherService:
                 msg="Hello, World!",
                 exit_code=0,
                 creation_date=now,
+                owner_id=1,
             ),
             JobResult(
                 id="2",
@@ -219,6 +234,7 @@ class TestLauncherService:
                 msg="Hello, World!",
                 exit_code=0,
                 creation_date=now,
+                owner_id=1,
             ),
         ]
         all_faked_execution_results = returned_faked_execution_results + [
@@ -229,6 +245,7 @@ class TestLauncherService:
                 msg="Hello, World!",
                 exit_code=0,
                 creation_date=now - timedelta(days=ORPHAN_JOBS_VISIBILITY_THRESHOLD + 1),
+                owner_id=1,
             )
         ]
         launcher_mock.get_result.return_value = None
@@ -565,6 +582,7 @@ class TestLauncherService:
         job_result_mock.id = job_id
         job_result_mock.study_id = "study_id"
         job_result_mock.launcher = launcher
+        job_result_mock.owner_id = 36
         launcher_service.job_result_repository.get.return_value = job_result_mock
         launcher_service.launchers = {"slurm": Mock()}
 
@@ -822,50 +840,67 @@ class TestLauncherService:
 
         job_id = "job_id"
         study_id = "study_id"
-        job_result = JobResult(id=job_id, study_id=study_id, job_status=JobStatus.SUCCESS)
+        job_result = JobResult(
+            id=job_id,
+            study_id=study_id,
+            job_status=JobStatus.SUCCESS,
+            owner_id=1,
+        )
 
         output_path = tmp_path / "some-output"
         output_path.mkdir()
 
         launcher_service._save_solver_stats(job_result, output_path)
-        launcher_service.job_result_repository.save.assert_not_called()
+        repository = launcher_service.job_result_repository
+        repository.save.assert_not_called()
 
         expected_saved_stats = """#item	duration_ms	NbOccurences
-    mc_years	216328	1
-    study_loading	4304	1
-    survey_report	158	1
-    total	244581	1
-    tsgen_hydro	1683	1
-    tsgen_load	2702	1
-    tsgen_solar	21606	1
-    tsgen_thermal	407	2
-    tsgen_wind	2500	1
-        """
+        mc_years	216328	1
+        study_loading	4304	1
+        survey_report	158	1
+        total	244581	1
+        tsgen_hydro	1683	1
+        tsgen_load	2702	1
+        tsgen_solar	21606	1
+        tsgen_thermal	407	2
+        tsgen_wind	2500	1
+            """
         (output_path / EXECUTION_INFO_FILE).write_text(expected_saved_stats)
 
         launcher_service._save_solver_stats(job_result, output_path)
-        launcher_service.job_result_repository.save.assert_called_with(
-            JobResult(
-                id=job_id,
-                study_id=study_id,
-                job_status=JobStatus.SUCCESS,
-                solver_stats=expected_saved_stats,
-            )
+        assert repository.save.call_count == 1
+
+        # SQLAlchemy provides its own way to handle object comparison, which ensures
+        # that the comparison is based on the database identity of the objects.
+        # But, here, in that unit test, objects are not in a database session,
+        # so we need to compare them manually.
+        mock_call = repository.save.mock_calls[0]
+        actual_obj: JobResult = mock_call.args[0]
+        expected_obj = JobResult(
+            id=job_id,
+            study_id=study_id,
+            job_status=JobStatus.SUCCESS,
+            solver_stats=expected_saved_stats,
+            owner_id=1,
         )
+        assert actual_obj.to_dto().dict() == expected_obj.to_dto().dict()
 
         zip_file = tmp_path / "test.zip"
         with ZipFile(zip_file, "w", ZIP_DEFLATED) as output_data:
             output_data.writestr(EXECUTION_INFO_FILE, "0\n1")
 
         launcher_service._save_solver_stats(job_result, zip_file)
-        launcher_service.job_result_repository.save.assert_called_with(
-            JobResult(
-                id=job_id,
-                study_id=study_id,
-                job_status=JobStatus.SUCCESS,
-                solver_stats="0\n1",
-            )
+        assert repository.save.call_count == 2
+        mock_call = repository.save.mock_calls[-1]
+        actual_obj: JobResult = mock_call.args[0]
+        expected_obj = JobResult(
+            id=job_id,
+            study_id=study_id,
+            job_status=JobStatus.SUCCESS,
+            solver_stats="0\n1",
+            owner_id=1,
         )
+        assert actual_obj.to_dto().dict() == expected_obj.to_dto().dict()
 
     def test_get_load(self, tmp_path: Path) -> None:
         study_service = Mock()
