@@ -6,7 +6,7 @@ import SwitchFE from "../../../../../../common/fieldEditors/SwitchFE";
 import Fieldset from "../../../../../../common/Fieldset";
 import { useFormContextPlus } from "../../../../../../common/Form";
 import {
-  CLUSTER_GROUP_OPTIONS,
+  RENEWABLE_GROUPS,
   RenewableFormFields,
   TS_INTERPRETATION_OPTIONS,
 } from "./utils";
@@ -32,7 +32,7 @@ function Fields() {
           label={t("study.modelization.clusters.group")}
           name="group"
           control={control}
-          options={CLUSTER_GROUP_OPTIONS}
+          options={RENEWABLE_GROUPS}
           sx={{
             alignSelf: "center",
           }}

@@ -8,8 +8,8 @@ import SwitchFE from "../../../../../../common/fieldEditors/SwitchFE";
 import Fieldset from "../../../../../../common/Fieldset";
 import { useFormContextPlus } from "../../../../../../common/Form";
 import {
-  CLUSTER_GROUP_OPTIONS,
-  POLLUTANT_NAMES,
+  THERMAL_GROUPS,
+  THERMAL_POLLUTANTS,
   ThermalCluster,
   TS_GENERATION_OPTIONS,
   TS_LAW_OPTIONS,
@@ -38,7 +38,7 @@ function Fields() {
           label={t("study.modelization.clusters.group")}
           name="group"
           control={control}
-          options={CLUSTER_GROUP_OPTIONS}
+          options={THERMAL_GROUPS}
           sx={{
             alignSelf: "center",
           }}
@@ -95,7 +95,7 @@ function Fields() {
         />
       </Fieldset>
       <Fieldset legend={t("study.modelization.clusters.thermal.pollutants")}>
-        {POLLUTANT_NAMES.map(
+        {THERMAL_POLLUTANTS.map(
           (name) =>
             (name === "co2" || studyVersion >= 860) && (
               <NumberFE

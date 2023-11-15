@@ -33,6 +33,10 @@ function AreasTab(props: Props) {
         path: `/studies/${study.id}/explore/modelization/area/${areaId}/thermal`,
       },
       {
+        label: t("study.modelization.storages"),
+        path: `/studies/${study.id}/explore/modelization/area/${areaId}/storages`,
+      },
+      {
         label: t("study.modelization.hydro"),
         path: `/studies/${study.id}/explore/modelization/area/${areaId}/hydro`,
       },

@@ -31,7 +31,7 @@ function SearchFE(props: SearchFE) {
   };
 
   const [isFieldFilled, setIsFieldFilled] = useState(
-    RA.isString(rest.value) ? !!rest.value : !!rest.defaultValue
+    RA.isString(rest.value) ? !!rest.value : !!rest.defaultValue,
   );
 
   useUpdateEffect(() => {

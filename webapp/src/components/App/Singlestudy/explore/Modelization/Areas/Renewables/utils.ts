@@ -6,47 +6,41 @@ import {
 import client from "../../../../../../../services/api/client";
 
 ////////////////////////////////////////////////////////////////
-// Enums
+// Constants
 ////////////////////////////////////////////////////////////////
 
-enum ClusterGroup {
-  WindOnshore = "Wind Onshore",
-  WindOffshore = "Wind Offshore",
-  SolarThermal = "Solar Thermal",
-  SolarPV = "Solar PV",
-  SolarRooftop = "Solar Rooftop",
-  OtherRES1 = "Other RES 1",
-  OtherRES2 = "Other RES 2",
-  OtherRES3 = "Other RES 3",
-  OtherRES4 = "Other RES 4",
-}
+export const RENEWABLE_GROUPS = [
+  "Wind Onshore",
+  "Wind Offshore",
+  "Solar Thermal",
+  "Solar PV",
+  "Solar Rooftop",
+  "Other RES 1",
+  "Other RES 2",
+  "Other RES 3",
+  "Other RES 4",
+] as const;
 
-enum TimeSeriesInterpretation {
-  PowerGeneration = "power-generation",
-  ProductionFactor = "production-factor",
-}
+export const TS_INTERPRETATION_OPTIONS = [
+  "power-generation",
+  "production-factor",
+] as const;
 
 ////////////////////////////////////////////////////////////////
 // Types
 ////////////////////////////////////////////////////////////////
 
+type TimeSeriesInterpretationOption =
+  (typeof TS_INTERPRETATION_OPTIONS)[number];
+
 export interface RenewableFormFields {
   name: string;
   group: string;
-  tsInterpretation: TimeSeriesInterpretation;
+  tsInterpretation: TimeSeriesInterpretationOption;
   enabled: boolean;
   unitCount: number;
   nominalCapacity: number;
 }
-
-////////////////////////////////////////////////////////////////
-// Constants
-////////////////////////////////////////////////////////////////
-
-export const CLUSTER_GROUP_OPTIONS = Object.values(ClusterGroup);
-export const TS_INTERPRETATION_OPTIONS = Object.values(
-  TimeSeriesInterpretation,
-);
 
 ////////////////////////////////////////////////////////////////
 // Functions

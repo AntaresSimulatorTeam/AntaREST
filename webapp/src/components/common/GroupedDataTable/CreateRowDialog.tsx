@@ -12,7 +12,7 @@ interface Props<TData extends TRow> {
   open: boolean;
   onClose: VoidFunction;
   onSubmit: (values: TData) => void;
-  groups: string[];
+  groups: string[] | readonly string[];
   existingNames: Array<TData["name"]>;
 }
 

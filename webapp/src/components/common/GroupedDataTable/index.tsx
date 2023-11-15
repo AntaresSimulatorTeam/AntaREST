@@ -22,7 +22,7 @@ export type TRow = { id: string; name: string; group: string };
 export interface GroupedDataTableProps<TData extends TRow> {
   data: TData[];
   columns: MRT_ColumnDef<TData>[];
-  groups: string[];
+  groups: string[] | readonly string[];
   onCreate?: (values: TData) => Promise<TData>;
   onDelete?: (ids: string[]) => void;
 }

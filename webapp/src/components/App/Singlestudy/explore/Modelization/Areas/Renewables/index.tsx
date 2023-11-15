@@ -12,8 +12,8 @@ import ClusterRoot from "../common/ClusterRoot";
 import { getDefaultValues } from "../common/utils";
 import Fields from "./Fields";
 import {
-  CLUSTER_GROUP_OPTIONS,
   getRenewableFormFields,
+  RENEWABLE_GROUPS,
   RenewableFormFields,
   updateRenewableFormFields,
 } from "./utils";
@@ -44,7 +44,7 @@ function Renewables() {
   return (
     <ClusterRoot
       study={study}
-      fixedGroupList={CLUSTER_GROUP_OPTIONS}
+      fixedGroupList={[...RENEWABLE_GROUPS]}
       type="renewables"
       noDataValues={{
         enabled: true,
