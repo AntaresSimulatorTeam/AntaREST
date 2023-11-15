@@ -2,26 +2,26 @@ import { StudyMetadata, Area } from "../../../../../../../common/types";
 import client from "../../../../../../../services/api/client";
 
 ////////////////////////////////////////////////////////////////
-// Enums
+// Constants
 ////////////////////////////////////////////////////////////////
 
-const StorageGroup = {
-  PspOpen: "PSP_open",
-  PspClosed: "PSP_closed",
-  Pondage: "Pondage",
-  Battery: "Battery",
-  Other1: "Other1",
-  Other2: "Other2",
-  Other3: "Other3",
-  Other4: "Other4",
-  Other5: "Other5",
-} as const;
+export const STORAGE_GROUPS = [
+  "PSP_open",
+  "PSP_closed",
+  "Pondage",
+  "Battery",
+  "Other1",
+  "Other2",
+  "Other3",
+  "Other4",
+  "Other5",
+] as const;
 
 ////////////////////////////////////////////////////////////////
 // Types
 ////////////////////////////////////////////////////////////////
 
-export type StorageGroup = (typeof StorageGroup)[keyof typeof StorageGroup];
+export type StorageGroup = (typeof STORAGE_GROUPS)[number];
 
 export interface Storage {
   id: string;
@@ -34,12 +34,6 @@ export interface Storage {
   initialLevel: number;
   initialLevelOptim: boolean;
 }
-
-////////////////////////////////////////////////////////////////
-// Constants
-////////////////////////////////////////////////////////////////
-
-export const STORAGE_GROUPS = [...Object.values(StorageGroup)];
 
 ////////////////////////////////////////////////////////////////
 // Functions

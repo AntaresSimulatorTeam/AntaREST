@@ -11,11 +11,10 @@ import GroupedDataTable from "../../../../../../common/GroupedDataTable";
 import SimpleLoader from "../../../../../../common/loaders/SimpleLoader";
 import {
   Storage,
-  StorageGroup,
   getStorages,
   deleteStorages,
-  STORAGE_GROUP_OPTIONS,
   createStorage,
+  STORAGE_GROUPS,
 } from "./utils";
 import SimpleContent from "../../../../../../common/page/SimpleContent";
 import UsePromiseCond from "../../../../../../common/utils/UsePromiseCond";
@@ -93,7 +92,7 @@ function Storages() {
         header: t("global.group"),
         size: 50,
         filterVariant: "select",
-        filterSelectOptions: STORAGE_GROUPS,
+        filterSelectOptions: [...STORAGE_GROUPS],
         muiTableHeadCellProps: {
           align: "left",
         },
@@ -226,7 +225,7 @@ function Storages() {
         <GroupedDataTable
           data={data}
           columns={columns}
-          groups={groups}
+          groups={STORAGE_GROUPS}
           onCreate={handleCreateRow}
           onDelete={handleDeleteSelection}
         />

@@ -6,13 +6,12 @@ import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { StudyMetadata } from "../../../../../../../common/types";
 import {
-  ThermalClusterGroup,
   getThermalClusters,
   createThermalCluster,
   deleteThermalClusters,
   capacityAggregationFn,
-  CLUSTER_GROUP_OPTIONS,
   ThermalClusterWithCapacity,
+  THERMAL_GROUPS,
 } from "./utils";
 import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../../redux/selectors";
@@ -28,7 +27,6 @@ function Thermal() {
   const navigate = useNavigate();
   const location = useLocation();
   const currentAreaId = useAppSelector(getCurrentAreaId);
-  const groups = Object.values(ThermalClusterGroup);
 
   const clusters = usePromiseWithSnackbarError(
     () => getThermalClusters(study.id, currentAreaId),
@@ -109,7 +107,7 @@ function Thermal() {
         header: "Group",
         size: 50,
         filterVariant: "select",
-        filterSelectOptions: CLUSTER_GROUP_OPTIONS,
+        filterSelectOptions: [...THERMAL_GROUPS],
         muiTableHeadCellProps: {
           align: "left",
         },
@@ -232,7 +230,7 @@ function Thermal() {
         <GroupedDataTable
           data={clustersWithCapacity}
           columns={columns}
-          groups={groups}
+          groups={THERMAL_GROUPS}
           onCreate={handleCreateRow}
           onDelete={handleDeleteSelection}
         />

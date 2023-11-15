@@ -8,64 +8,63 @@ import {
 import client from "../../../../../../../services/api/client";
 
 ////////////////////////////////////////////////////////////////
-// Enums
+// Constants
 ////////////////////////////////////////////////////////////////
 
-const ThermalClusterGroup = {
-  Gas: "Gas",
-  HardCoal: "Hard Coal",
-  Lignite: "Lignite",
-  MixedFuel: "Mixed fuel",
-  Nuclear: "Nuclear",
-  Oil: "Oil",
-  Other: "Other",
-  Other2: "Other 2",
-  Other3: "Other 3",
-  Other4: "Other 4",
-} as const;
+export const THERMAL_GROUPS = [
+  "Gas",
+  "Hard Coal",
+  "Lignite",
+  "Mixed fuel",
+  "Nuclear",
+  "Oil",
+  "Other",
+  "Other 2",
+  "Other 3",
+  "Other 4",
+] as const;
 
-enum TimeSeriesGenerationOption {
-  UseGlobal = "use global parameter",
-  ForceNoGeneration = "force no generation",
-  ForceGeneration = "force generation",
-}
+export const THERMAL_POLLUTANTS = [
+  // For study versions >= 860
+  "co2",
+  "so2",
+  "nh3",
+  "nox",
+  "nmvoc",
+  "pm25",
+  "pm5",
+  "pm10",
+  "op1",
+  "op2",
+  "op3",
+  "op4",
+  "op5",
+] as const;
 
-enum LawOption {
-  Geometric = "geometric",
-  Uniform = "uniform",
-}
+export const TS_GENERATION_OPTIONS = [
+  "use global parameter",
+  "force no generation",
+  "force generation",
+] as const;
+
+export const TS_LAW_OPTIONS = ["geometric", "uniform"] as const;
 
 ////////////////////////////////////////////////////////////////
 // Types
 ////////////////////////////////////////////////////////////////
 
-export type ThermalGroup =
-  (typeof ThermalClusterGroup)[keyof typeof ThermalClusterGroup];
-export type TimeSeriesGeneration =
-  (typeof TimeSeriesGenerationOption)[keyof typeof TimeSeriesGenerationOption];
-export type Law = (typeof LawOption)[keyof typeof LawOption];
+type ThermalGroup = (typeof THERMAL_GROUPS)[number];
+type TimeSeriesGenerationOption = (typeof TS_GENERATION_OPTIONS)[number];
+type TimeSeriesLawOption = (typeof TS_LAW_OPTIONS)[number];
 
-interface ThermalClusterPollutants {
-  // For study versions >= 860
-  co2: number;
-  so2: number;
-  nh3: number;
-  nox: number;
-  nmvoc: number;
-  pm25: number;
-  pm5: number;
-  pm10: number;
-  op1: number;
-  op2: number;
-  op3: number;
-  op4: number;
-  op5: number;
-}
+type ThermalPollutants = {
+  [K in (typeof THERMAL_POLLUTANTS)[number]]: number;
+};
 
-export interface ThermalCluster extends ThermalClusterPollutants {
+export interface ThermalCluster extends ThermalPollutants {
   id: string;
   name: string;
-  group: string;
+  group: ThermalGroup;
   enabled: boolean;
   unitCount: number;
   nominalCapacity: number;
@@ -82,39 +81,14 @@ export interface ThermalCluster extends ThermalClusterPollutants {
   genTs: TimeSeriesGenerationOption;
   volatilityForced: number;
   volatilityPlanned: number;
-  lawForced: LawOption;
-  lawPlanned: LawOption;
+  lawForced: TimeSeriesLawOption;
+  lawPlanned: TimeSeriesLawOption;
 }
 
 export interface ThermalClusterWithCapacity extends ThermalCluster {
   enabledCapacity: number;
   installedCapacity: number;
 }
-
-////////////////////////////////////////////////////////////////
-// Constants
-////////////////////////////////////////////////////////////////
-
-export const THERMAL_GROUPS = [...Object.values(ThermalClusterGroup)];
-export const TS_GENERATION_OPTIONS = [
-  ...Object.values(TimeSeriesGenerationOption),
-];
-export const LAW_OPTIONS = [...Object.values(LawOption)];
-export const POLLUTANT_NAMES: Array<keyof ThermalClusterPollutants> = [
-  "co2",
-  "so2",
-  "nh3",
-  "nox",
-  "nmvoc",
-  "pm25",
-  "pm5",
-  "pm10",
-  "op1",
-  "op2",
-  "op3",
-  "op4",
-  "op5",
-];
 
 ////////////////////////////////////////////////////////////////
 // Functions
