@@ -47,7 +47,7 @@ injectionnominalcapacity = 2000
 withdrawalnominalcapacity = 1500
 reservoircapacity = 20000
 efficiency = 0.78
-initiallevel = 10000
+initiallevel = 0.5
 
 [storage3]
 name = Storage3
@@ -56,7 +56,7 @@ injectionnominalcapacity = 1500
 withdrawalnominalcapacity = 1500
 reservoircapacity = 21000
 efficiency = 0.72
-initiallevel = 20000
+initiallevel = 1
 """
 
 LIST_CFG = IniReader().read(io.StringIO(LIST_INI))
@@ -148,7 +148,7 @@ class TestSTStorageManager:
                 "efficiency": 0.78,
                 "group": STStorageGroup.PSP_CLOSED,
                 "id": "storage2",
-                "initialLevel": 10000.0,
+                "initialLevel": 0.5,
                 "initialLevelOptim": False,
                 "injectionNominalCapacity": 2000.0,
                 "name": "Storage2",
@@ -159,7 +159,7 @@ class TestSTStorageManager:
                 "efficiency": 0.72,
                 "group": STStorageGroup.PSP_CLOSED,
                 "id": "storage3",
-                "initialLevel": 20000.0,
+                "initialLevel": 1,
                 "initialLevelOptim": False,
                 "injectionNominalCapacity": 1500.0,
                 "name": "Storage3",

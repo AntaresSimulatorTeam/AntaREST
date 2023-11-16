@@ -71,14 +71,16 @@ class STStorageProperties(ItemProperties):
     )
     efficiency: float = Field(
         1,
-        description="Efficiency of the storage system",
+        description="Efficiency of the storage system (%)",
         ge=0,
         le=1,
     )
+    # The `initial_level` value must be between 0 and 1, but the default value is 0.
     initial_level: float = Field(
         0,
-        description="Initial level of the storage system",
+        description="Initial level of the storage system (%)",
         ge=0,
+        le=1,
         alias="initiallevel",
     )
     initial_level_optim: bool = Field(

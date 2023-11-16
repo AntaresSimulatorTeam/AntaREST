@@ -201,13 +201,13 @@ class TestSTStorage:
             f"/v1/studies/{study_id}/areas/{area_id}/storages/{siemens_battery_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
             json={
-                "initialLevel": 5900,
+                "initialLevel": 0.59,
                 "reservoirCapacity": 0,
             },
         )
         siemens_config = {
             **siemens_config,
-            "initialLevel": 5900,
+            "initialLevel": 0.59,
             "reservoirCapacity": 0,
         }
         assert res.status_code == 200, res.json()
@@ -266,7 +266,7 @@ class TestSTStorage:
             "withdrawalNominalCapacity": 1350,
             "reservoirCapacity": 1500,
             "efficiency": 0.90,
-            "initialLevel": 200,
+            "initialLevel": 0.2,
             "initialLevelOptim": False,
         }
         res = client.post(
@@ -286,7 +286,7 @@ class TestSTStorage:
             "withdrawalNominalCapacity": 1800,
             "reservoirCapacity": 20000,
             "efficiency": 0.78,
-            "initialLevel": 10000,
+            "initialLevel": 1,
         }
         res = client.post(
             f"/v1/studies/{study_id}/areas/{area_id}/storages",
