@@ -159,7 +159,7 @@ class TestSTStorage:
                 "withdrawalnominalcapacity": 1800,
                 "reservoircapacity": 20000,
                 "efficiency": 0.78,
-                "initiallevel": 10000,
+                "initiallevel": 0.91,
             },
             "pmax_injection": pmax_injection.tolist(),
             "pmax_withdrawal": pmax_withdrawal.tolist(),
@@ -207,7 +207,7 @@ class TestSTStorage:
                 "withdrawal_nominal_capacity": 1500,
                 "reservoir_capacity": 20000,
                 "efficiency": 0.78,
-                "initial_level": 10000,
+                "initial_level": 0.91,
                 "initial_level_optim": "BlurBool",  # Oops!
             },
             "pmax_injection": pmax_injection.tolist(),

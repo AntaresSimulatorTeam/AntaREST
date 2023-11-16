@@ -406,7 +406,7 @@ injectionnominalcapacity = 1500.0
 withdrawalnominalcapacity = 1800.0
 reservoircapacity = 20000.0
 efficiency = 0.78
-initiallevel = 10000.0
+initiallevel = 0.91
 initialleveloptim = False
 """
 
@@ -438,7 +438,7 @@ def test_parse_st_storage(tmp_path: Path) -> None:
             withdrawal_nominal_capacity=1800.0,
             reservoir_capacity=20000.0,
             efficiency=0.78,
-            initial_level=10000.0,
+            initial_level=0.91,
             initial_level_optim=False,
         ),
     ]
