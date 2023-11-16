@@ -269,4 +269,6 @@ def should_study_be_denormalized(src_version: str, target_version: str) -> bool:
         if curr_version == old and curr_version != target_version:
             list_of_upgrades.append(new)
             curr_version = new
+    # For now, the only upgrade that impacts study matrices is the upgrade from v8.1 to v8.2
+    # In a near future, the upgrade from v8.6 to v8.7 will also require denormalization
     return "820" in list_of_upgrades
