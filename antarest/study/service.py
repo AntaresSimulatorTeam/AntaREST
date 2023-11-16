@@ -97,7 +97,12 @@ from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFi
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.study_download_utils import StudyDownloader, get_output_variables_information
-from antarest.study.storage.study_upgrader import find_next_version, upgrade_study
+from antarest.study.storage.study_upgrader import (
+    find_next_version,
+    get_current_version,
+    should_study_be_denormalized,
+    upgrade_study,
+)
 from antarest.study.storage.utils import (
     assert_permission,
     get_default_workspace_path,
@@ -148,19 +153,23 @@ class StudyUpgraderTask:
         """Run the task (lock the database)."""
         study_id: str = self._study_id
         target_version: str = self._target_version
+        is_study_denormalized = False
         with db():
             # TODO We want to verify that a study doesn't have children and if it does do we upgrade all of them ?
             study_to_upgrade = self.repository.one(study_id)
             is_variant = isinstance(study_to_upgrade, VariantStudy)
-            if is_managed(study_to_upgrade) and not is_variant:
-                file_study = self.storage_service.get_storage(study_to_upgrade).get_raw(study_to_upgrade)
-                file_study.tree.denormalize()
             try:
                 # sourcery skip: extract-method
                 if is_variant:
                     self.storage_service.variant_study_service.clear_snapshot(study_to_upgrade)
                 else:
                     study_path = Path(study_to_upgrade.path)
+                    current_version = get_current_version(study_path)
+                    if is_managed(study_to_upgrade) and should_study_be_denormalized(current_version, target_version):
+                        # We have to denormalize the study because the upgrade impacts study matrices
+                        file_study = self.storage_service.get_storage(study_to_upgrade).get_raw(study_to_upgrade)
+                        file_study.tree.denormalize()
+                        is_study_denormalized = True
                     upgrade_study(study_path, target_version)
                 remove_from_cache(self.cache_service, study_to_upgrade.id)
                 study_to_upgrade.version = target_version
@@ -173,7 +182,7 @@ class StudyUpgraderTask:
                     )
                 )
             finally:
-                if is_managed(study_to_upgrade) and not is_variant:
+                if is_study_denormalized:
                     file_study = self.storage_service.get_storage(study_to_upgrade).get_raw(study_to_upgrade)
                     file_study.tree.normalize()
 
