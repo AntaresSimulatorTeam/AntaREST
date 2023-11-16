@@ -57,10 +57,10 @@ class TestFetchRawData:
             rel_path = file_path.relative_to(study_dir).as_posix()
             res = client.get(
                 f"/v1/studies/{study_id}/raw",
-                params={"path": f"/{rel_path}", "depth": 1},
+                params={"path": rel_path, "depth": 1},
                 headers=headers,
             )
-            res.raise_for_status()
+            assert res.status_code == 200, res.json()
             if file_path.suffix == ".json":
                 # special case for JSON files
                 actual = res.json()
@@ -86,7 +86,7 @@ class TestFetchRawData:
                 params={"path": f"/{rel_path.as_posix()}", "depth": 1},
                 headers=headers,
             )
-            res.raise_for_status()
+            assert res.status_code == 200, res.json()
             actual = res.content
             expected = file_path.read_bytes()
             assert actual == expected
@@ -95,10 +95,10 @@ class TestFetchRawData:
         rel_path = "/input/links/de/properties/fr"
         res = client.get(
             f"/v1/studies/{study_id}/raw",
-            params={"path": f"/{rel_path}", "depth": 2},
+            params={"path": rel_path, "depth": 2},
             headers=headers,
         )
-        res.raise_for_status()
+        assert res.status_code == 200, res.json()
         actual = res.json()
         assert actual == {
             "asset-type": "ac",
@@ -120,10 +120,10 @@ class TestFetchRawData:
         rel_path = "/input/links/de/fr"
         res = client.get(
             f"/v1/studies/{study_id}/raw",
-            params={"path": f"/{rel_path}", "formatted": True},
+            params={"path": rel_path, "formatted": True},
             headers=headers,
         )
-        res.raise_for_status()
+        assert res.status_code == 200, res.json()
         actual = res.json()
         assert actual == {"index": ANY, "columns": ANY, "data": ANY}
 
@@ -131,14 +131,32 @@ class TestFetchRawData:
         rel_path = "/input/links/de/fr"
         res = client.get(
             f"/v1/studies/{study_id}/raw",
-            params={"path": f"/{rel_path}", "formatted": False},
+            params={"path": rel_path, "formatted": False},
             headers=headers,
         )
-        res.raise_for_status()
+        assert res.status_code == 200, res.json()
         actual = res.text
         actual_lines = actual.splitlines()
         first_row = [float(x) for x in actual_lines[0].split("\t")]
-        assert first_row == [100000, 100000, 0.010000, 0.010000, 0, 0, 0, 0]
+        assert first_row == [100000, 100000, 0.01, 0.01, 0, 0, 0, 0]
+
+        # If wa ask for and empty matrix, we should have an empty binary content
+        res = client.get(
+            f"/v1/studies/{study_id}/raw",
+            params={"path": "input/thermal/prepro/de/01_solar/data", "formatted": False},
+            headers=headers,
+        )
+        assert res.status_code == 200, res.json()
+        assert res.content == b""
+
+        # But, if we use formatted = True, we should have a JSON objet representing and empty matrix
+        res = client.get(
+            f"/v1/studies/{study_id}/raw",
+            params={"path": "input/thermal/prepro/de/01_solar/data", "formatted": True},
+            headers=headers,
+        )
+        assert res.status_code == 200, res.json()
+        assert res.json() == {"index": [0], "columns": [], "data": []}
 
         # Some files can be corrupted
         user_folder_dir = study_dir.joinpath("user/bad")
@@ -158,12 +176,13 @@ class TestFetchRawData:
             params={"path": "/input/areas/list", "depth": 1},
             headers=headers,
         )
-        res.raise_for_status()
+        assert res.status_code == 200, res.json()
         assert res.json() == ["DE", "ES", "FR", "IT"]
 
         # asserts that the GET /raw endpoint is able to read matrix containing NaN values
         res = client.get(
-            f"/v1/studies/{study_id}/raw?path=output/20201014-1427eco/economy/mc-all/areas/de/id-monthly",
+            f"/v1/studies/{study_id}/raw",
+            params={"path": "output/20201014-1427eco/economy/mc-all/areas/de/id-monthly"},
             headers=headers,
         )
         assert res.status_code == 200
