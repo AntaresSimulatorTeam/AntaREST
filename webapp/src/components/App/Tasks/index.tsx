@@ -97,7 +97,7 @@ function JobsListing() {
       if (studies.length === 0) {
         await dispatch(fetchStudies()).unwrap();
       }
-      const allJobs = await getStudyJobs(undefined, false, fetchOnlyLatest);
+      const allJobs = await getStudyJobs(undefined, true, fetchOnlyLatest);
       setJobs(allJobs);
       const dlList = await getDownloadsList();
       setDownloads(dlList);

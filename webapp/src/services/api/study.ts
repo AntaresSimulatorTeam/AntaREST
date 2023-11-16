@@ -1,4 +1,5 @@
 import { AxiosRequestConfig } from "axios";
+import * as R from "ramda";
 import { isBoolean, trimCharsStart } from "ramda-adjunct";
 import client from "./client";
 import {
@@ -329,19 +330,21 @@ export const mapLaunchJobDTO = (j: LaunchJobDTO): LaunchJob => ({
 });
 
 export const getStudyJobs = async (
-  sid?: string,
+  studyId?: string,
   filterOrphans = true,
   latest = false,
 ): Promise<LaunchJob[]> => {
-  let query = sid
-    ? `?study=${sid}&filter_orphans=${filterOrphans}`
-    : `?filter_orphans=${filterOrphans}`;
-  if (latest) {
-    query += "&latest=100";
-  }
-  const res = await client.get(`/v1/launcher/jobs${query}`);
-  const data = await res.data;
-  return data.map(mapLaunchJobDTO);
+  const queryParams = new URLSearchParams(
+    R.filter(Boolean, {
+      filter_orphans: filterOrphans,
+      study: studyId,
+      latest: latest && 100,
+    }).toString(),
+  );
+
+  return client
+    .get(`/v1/launcher/jobs?${queryParams}`)
+    .then(({ data }) => data.map(mapLaunchJobDTO));
 };
 
 export const getStudyJobLog = async (
