@@ -214,7 +214,7 @@ def _copies_only_necessary_files(files_to_upgrade: List[Path], study_path: Path,
             files_to_retrieve.append(path)
         else:
             parent_path = path.parent
-            (tmp_path / parent_path).mkdir(parents=True)
+            (tmp_path / parent_path).mkdir(parents=True, exist_ok=True)
             shutil.copy(entire_path, tmp_path / parent_path)
             files_to_retrieve.append(path)
     return files_to_retrieve
@@ -256,3 +256,17 @@ def _do_upgrade(study_path: Path, src_version: str, target_version: str) -> None
         if curr_version == old and curr_version != target_version:
             method(study_path)
             curr_version = new
+
+
+def should_study_be_denormalized(src_version: str, target_version: str) -> bool:
+    try:
+        can_upgrade_version(src_version, target_version)
+    except InvalidUpgrade:
+        return False
+    curr_version = src_version
+    list_of_upgrades = []
+    for old, new, method, _ in UPGRADE_METHODS:
+        if curr_version == old and curr_version != target_version:
+            list_of_upgrades.append(new)
+            curr_version = new
+    return "820" in list_of_upgrades

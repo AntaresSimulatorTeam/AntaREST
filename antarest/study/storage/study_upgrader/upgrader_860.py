@@ -16,16 +16,17 @@ def upgrade_860(study_path: Path) -> None:
     writer = IniWriter(special_keys=DUPLICATE_KEYS)
     writer.write(data, study_path / GENERAL_DATA_PATH)
 
-    study_path.joinpath("input", "st-storage", "clusters").mkdir(parents=True)
-    study_path.joinpath("input", "st-storage", "series").mkdir(parents=True)
+    study_path.joinpath("input", "st-storage", "clusters").mkdir(parents=True, exist_ok=True)
+    study_path.joinpath("input", "st-storage", "series").mkdir(parents=True, exist_ok=True)
     list_areas = (
         study_path.joinpath("input", "areas", "list.txt").read_text(encoding="utf-8").splitlines(keepends=False)
     )
     for area_name in list_areas:
         area_id = transform_name_to_id(area_name)
         st_storage_path = study_path.joinpath("input", "st-storage", "clusters", area_id)
-        st_storage_path.mkdir(parents=True)
+        st_storage_path.mkdir(parents=True, exist_ok=True)
         (st_storage_path / "list.ini").touch()
 
         hydro_series_path = study_path.joinpath("input", "hydro", "series", area_id)
+        hydro_series_path.mkdir(parents=True, exist_ok=True)
         (hydro_series_path / "mingen.txt").touch()

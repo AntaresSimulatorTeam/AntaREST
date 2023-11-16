@@ -1574,6 +1574,9 @@ def test_upgrade_study__raw_study__nominal(
     study_id = str(uuid.uuid4())
     study_name = "my_study"
     target_version = "800"
+    current_version = "720"
+    (tmp_path / "study.antares").touch()
+    (tmp_path / "study.antares").write_text(f"version = {current_version}")
 
     # Prepare a RAW study
     # noinspection PyArgumentList
@@ -1584,7 +1587,7 @@ def test_upgrade_study__raw_study__nominal(
         path=str(tmp_path),
         created_at=datetime.now(timezone.utc),
         updated_at=datetime.now(timezone.utc),
-        version="720",
+        version=current_version,
         additional_data=StudyAdditionalData(),
         archived=False,
         owner=None,
@@ -1751,6 +1754,8 @@ def test_upgrade_study__raw_study__failed(upgrade_study_mock: Mock, tmp_path: Pa
     study_name = "my_study"
     target_version = "800"
     old_version = "720"
+    (tmp_path / "study.antares").touch()
+    (tmp_path / "study.antares").write_text(f"version = {old_version}")
 
     # Prepare a RAW study
     # noinspection PyArgumentList
