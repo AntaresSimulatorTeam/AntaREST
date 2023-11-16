@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from http import HTTPStatus
 from pathlib import Path
 from time import time
-from typing import IO, Any, Callable, Dict, List, Optional, Sequence, Tuple, Union, cast
+from typing import Any, BinaryIO, Callable, Dict, List, Optional, Sequence, Tuple, Union, cast
 from uuid import uuid4
 
 import numpy as np
@@ -1272,20 +1272,23 @@ class StudyService:
 
     def import_study(
         self,
-        stream: IO[bytes],
+        stream: BinaryIO,
         group_ids: List[str],
         params: RequestParameters,
     ) -> str:
         """
-        Import zipped study.
+        Import a compressed study.
 
         Args:
-            stream: zip file
+            stream: binary content of the study compressed in ZIP or 7z format.
             group_ids: group to attach to study
             params: request parameters
 
-        Returns: new study uuid
+        Returns:
+            New study UUID.
 
+        Raises:
+            BadArchiveContent: If the archive is corrupted or in an unknown format.
         """
         sid = str(uuid4())
         path = str(get_default_workspace_path(self.config) / sid)
@@ -1321,7 +1324,7 @@ class StudyService:
     def import_output(
         self,
         uuid: str,
-        output: Union[IO[bytes], Path],
+        output: Union[BinaryIO, Path],
         params: RequestParameters,
         output_name_suffix: Optional[str] = None,
         auto_unzip: bool = True,

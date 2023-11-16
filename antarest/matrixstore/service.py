@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import List, Optional, Sequence, Tuple, Union
 
 import numpy as np
+import py7zr
 from fastapi import UploadFile
 from numpy import typing as npt
 
@@ -189,12 +190,22 @@ class MatrixService(ISimpleMatrixService):
                 with contextlib.closing(f):
                     buffer = io.BytesIO(f.read())
                 matrix_info: List[MatrixInfoDTO] = []
-                with zipfile.ZipFile(buffer) as zf:
-                    for info in zf.infolist():
-                        if info.is_dir() or info.filename in EXCLUDED_FILES:
-                            continue
-                        matrix_id = self._file_importation(zf.read(info.filename), is_json=is_json)
-                        matrix_info.append(MatrixInfoDTO(id=matrix_id, name=info.filename))
+                if file.filename.endswith("zip"):
+                    with zipfile.ZipFile(buffer) as zf:
+                        for info in zf.infolist():
+                            if info.is_dir() or info.filename in EXCLUDED_FILES:
+                                continue
+                            matrix_id = self._file_importation(zf.read(info.filename), is_json=is_json)
+                            matrix_info.append(MatrixInfoDTO(id=matrix_id, name=info.filename))
+                else:
+                    with py7zr.SevenZipFile(buffer, "r") as szf:
+                        for info in szf.list():
+                            if info.is_directory or info.filename in EXCLUDED_FILES:  # type:ignore
+                                continue
+                            file_content = next(iter(szf.read(info.filename).values()))
+                            matrix_id = self._file_importation(file_content.read(), is_json=is_json)
+                            matrix_info.append(MatrixInfoDTO(id=matrix_id, name=info.filename))
+                            szf.reset()
                 return matrix_info
             else:
                 matrix_id = self._file_importation(f.read(), is_json=is_json)

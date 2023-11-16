@@ -8,12 +8,13 @@ from fastapi import APIRouter, Depends, File, HTTPException, Request
 from markupsafe import escape
 
 from antarest.core.config import Config
+from antarest.core.exceptions import BadZipBinary
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.jwt import JWTUser
 from antarest.core.model import PublicMode
 from antarest.core.requests import RequestParameters
-from antarest.core.utils.utils import sanitize_uuid
+from antarest.core.utils.utils import BadArchiveContent, sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.study.model import (
@@ -113,14 +114,17 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> str:
         """
-        Upload and import a study from your computer to the Antares Web server.
+        Upload and import a compressed study from your computer to the Antares Web server.
 
         Args:
-        - `study`: The study file in ZIP format or its corresponding bytes.
+        - `study`: The binary content of the study file in ZIP or 7z format.
         - `groups`: The groups your study will belong to (Default: current user's groups).
 
         Returns:
         - The ID of the imported study.
+
+        Raises:
+        - 415 error if the archive is corrupted or in an unknown format.
         """
         logger.info("Importing new study", extra={"user": current_user.id})
         zip_binary = io.BytesIO(study)
@@ -129,7 +133,10 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         group_ids = groups.split(",") if groups else [group.id for group in current_user.groups]
         group_ids = [sanitize_uuid(gid) for gid in set(group_ids)]  # sanitize and avoid duplicates
 
-        uuid = study_service.import_study(zip_binary, group_ids, params)
+        try:
+            uuid = study_service.import_study(zip_binary, group_ids, params)
+        except BadArchiveContent as e:
+            raise BadZipBinary(str(e))
 
         return uuid
 

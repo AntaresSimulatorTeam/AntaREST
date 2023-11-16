@@ -3,15 +3,16 @@ import os
 import shutil
 import tempfile
 import time
+import zipfile
 from glob import escape
 from pathlib import Path
-from typing import IO, Any, Callable, List, Optional, Tuple, TypeVar
-from zipfile import ZIP_DEFLATED, BadZipFile, ZipFile
+from typing import Any, BinaryIO, Callable, List, Optional, Tuple, TypeVar
 
+import py7zr
 import redis
 
 from antarest.core.config import RedisConfig
-from antarest.core.exceptions import BadZipBinary, ShouldNotHappenException
+from antarest.core.exceptions import ShouldNotHappenException
 
 logger = logging.getLogger(__name__)
 
@@ -41,21 +42,47 @@ def sanitize_uuid(uuid: str) -> str:
     return str(escape(uuid))
 
 
-def extract_zip(stream: IO[bytes], dst: Path) -> None:
+class BadArchiveContent(Exception):
     """
-    Extract zip archive
+    Exception raised when the archive file is corrupted (or unknown).
+    """
+
+    def __init__(self, message: str = "Unsupported archive format") -> None:
+        super().__init__(message)
+
+
+def extract_zip(stream: BinaryIO, target_dir: Path) -> None:
+    """
+    Extract a ZIP archive to a given destination.
+
     Args:
-        stream: zip file
-        dst: destination path
+        stream: The stream containing the archive.
+        target_dir: The directory where to extract the archive.
 
-    Returns:
-
+    Raises:
+        BadArchiveContent: If the archive is corrupted or in an unknown format.
     """
-    try:
-        with ZipFile(stream) as zip_output:
-            zip_output.extractall(path=dst)
-    except BadZipFile:
-        raise BadZipBinary("Only zip file are allowed.")
+
+    # Read the first few bytes to identify the file format
+    file_format = stream.read(4)
+    stream.seek(0)
+
+    if file_format[:4] == b"PK\x03\x04":
+        try:
+            with zipfile.ZipFile(stream) as zf:
+                zf.extractall(path=target_dir)
+        except zipfile.BadZipFile as error:
+            raise BadArchiveContent("Unsupported ZIP format") from error
+
+    elif file_format[:2] == b"7z":
+        try:
+            with py7zr.SevenZipFile(stream, "r") as zf:
+                zf.extractall(target_dir)
+        except py7zr.exceptions.Bad7zFile as error:
+            raise BadArchiveContent("Unsupported 7z format") from error
+
+    else:
+        raise BadArchiveContent
 
 
 def get_default_config_path() -> Optional[Path]:
@@ -143,7 +170,7 @@ def concat_files_to_str(files: List[Path]) -> str:
 
 
 def zip_dir(dir_path: Path, zip_path: Path, remove_source_dir: bool = False) -> None:
-    with ZipFile(zip_path, mode="w", compression=ZIP_DEFLATED, compresslevel=2) as zipf:
+    with zipfile.ZipFile(zip_path, mode="w", compression=zipfile.ZIP_DEFLATED, compresslevel=2) as zipf:
         len_dir_path = len(str(dir_path))
         for root, _, files in os.walk(dir_path):
             for file in files:
@@ -154,7 +181,7 @@ def zip_dir(dir_path: Path, zip_path: Path, remove_source_dir: bool = False) -> 
 
 
 def unzip(dir_path: Path, zip_path: Path, remove_source_zip: bool = False) -> None:
-    with ZipFile(zip_path, mode="r") as zipf:
+    with zipfile.ZipFile(zip_path, mode="r") as zipf:
         zipf.extractall(dir_path)
     if remove_source_zip:
         zip_path.unlink()
@@ -168,7 +195,7 @@ def extract_file_to_tmp_dir(zip_path: Path, inside_zip_path: Path) -> Tuple[Path
     str_inside_zip_path = str(inside_zip_path).replace("\\", "/")
     tmp_dir = tempfile.TemporaryDirectory()
     try:
-        with ZipFile(zip_path) as zip_obj:
+        with zipfile.ZipFile(zip_path) as zip_obj:
             zip_obj.extract(str_inside_zip_path, tmp_dir.name)
     except Exception as e:
         logger.warning(
