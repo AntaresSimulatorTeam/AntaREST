@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { useMemo } from "react";
-import { useOutletContext } from "react-router-dom";
+import { useEffect, useMemo } from "react";
+import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
 import { Paper } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { StudyMetadata } from "../../../../../../common/types";
@@ -17,6 +17,31 @@ function AreasTab(props: Props) {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const areaId = useAppSelector(getCurrentAreaId);
   const [t] = useTranslation();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  /**
+   * Updates the URL path to include the current areaId.
+   *
+   * The effect splits the current path, replaces the segment immediately after 'area'
+   * with the new areaId, and navigates to this updated path. It ensures the rest of the
+   * path, especially in deeply nested URLs, remains unchanged.
+   */
+  useEffect(() => {
+    const currentPath = location.pathname;
+    const pathSegments = currentPath.split("/");
+
+    const areaIndex = pathSegments.findIndex((segment) => segment === "area");
+    if (areaIndex >= 0 && areaIndex + 1 < pathSegments.length) {
+      // replace only the segment after 'area' with the new areaId
+      pathSegments[areaIndex + 1] = areaId.toString();
+
+      const newPath = pathSegments.join("/");
+      if (newPath !== currentPath) {
+        navigate(newPath, { replace: true });
+      }
+    }
+  }, [areaId, navigate, location.pathname]);
 
   const tabList = useMemo(() => {
     const baseTabs = [
