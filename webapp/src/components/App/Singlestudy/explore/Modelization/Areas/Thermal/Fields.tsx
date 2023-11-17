@@ -94,25 +94,6 @@ function Fields() {
           control={control}
         />
       </Fieldset>
-      <Fieldset legend={t("study.modelization.clusters.thermal.pollutants")}>
-        {THERMAL_POLLUTANTS.map(
-          (name) =>
-            (name === "co2" || studyVersion >= 860) && (
-              <NumberFE
-                key={name}
-                label={t(`study.modelization.clusters.thermal.${name}`)}
-                name={name}
-                control={control}
-                rules={{
-                  min: {
-                    value: 0,
-                    message: t("form.field.minValue", { 0: 0 }),
-                  },
-                }}
-              />
-            ),
-        )}
-      </Fieldset>
       <Fieldset legend={t("study.modelization.clusters.operatingCosts")}>
         <NumberFE
           label={t("study.modelization.clusters.marginalCost")}
@@ -139,6 +120,25 @@ function Fields() {
           name="spreadCost"
           control={control}
         />
+      </Fieldset>
+      <Fieldset legend={t("study.modelization.clusters.thermal.pollutants")}>
+        {THERMAL_POLLUTANTS.map(
+          (name) =>
+            (name === "co2" || studyVersion >= 860) && (
+              <NumberFE
+                key={name}
+                label={t(`study.modelization.clusters.thermal.${name}`)}
+                name={name}
+                control={control}
+                rules={{
+                  min: {
+                    value: 0,
+                    message: t("form.field.minValue", { 0: 0 }),
+                  },
+                }}
+              />
+            ),
+        )}
       </Fieldset>
       <Fieldset legend={t("study.modelization.clusters.timeSeriesGen")}>
         <SelectFE
