@@ -6,7 +6,7 @@ import pathlib
 import typing as t
 
 from fastapi import APIRouter, Body, Depends, File, HTTPException
-from fastapi.params import Param
+from fastapi.params import Param, Query
 from starlette.responses import JSONResponse, PlainTextResponse, Response, StreamingResponse
 
 from antarest.core.config import Config
@@ -193,6 +193,10 @@ def create_raw_study_routes(
         uuid: str,
         path: str = Param("/", examples=get_path_examples()),  # type: ignore
         file: bytes = File(...),
+        create_missing: bool = Query(
+            False,
+            description="Create file or parent directories if missing.",
+        ),  # type: ignore
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
         """
@@ -202,6 +206,7 @@ def create_raw_study_routes(
         - `uuid`: The UUID of the study.
         - `path`: The path to the data to update. Defaults to "/".
         - `file`: The raw file to be posted (e.g. a CSV file opened in binary mode).
+        - `create_missing`: Flag to indicate whether to create file or parent directories if missing.
         """
         logger.info(
             f"Uploading new data file at {path} for study {uuid}",
@@ -209,7 +214,7 @@ def create_raw_study_routes(
         )
         path = sanitize_uuid(path)
         params = RequestParameters(user=current_user)
-        study_service.edit_study(uuid, path, file, params)
+        study_service.edit_study(uuid, path, file, params, create_missing=create_missing)
 
     @bp.get(
         "/studies/{uuid}/raw/validate",
@@ -224,7 +229,6 @@ def create_raw_study_routes(
         """
         Launches test validation on the raw data of a study.
         The validation is done recursively on all the files in the study
-
 
         Parameters:
         - `uuid`: The UUID of the study.

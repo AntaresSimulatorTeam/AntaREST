@@ -1,4 +1,5 @@
 import http
+import io
 import itertools
 import json
 import pathlib
@@ -90,6 +91,51 @@ class TestFetchRawData:
             actual = res.content
             expected = file_path.read_bytes()
             assert actual == expected
+
+        # If you try to retrieve a file that doesn't exist, we should have a 404 error
+        res = client.get(
+            f"/v1/studies/{study_id}/raw",
+            params={"path": "user/somewhere/something.txt"},
+            headers=headers,
+        )
+        assert res.status_code == 404, res.json()
+        assert res.json() == {
+            "description": "'somewhere' not a child of User",
+            "exception": "ChildNotFoundError",
+        }
+
+        # If you want to update an existing resource, you can use PUT method.
+        # But, if the resource doesn't exist, you should have a 404 Not Found error.
+        res = client.put(
+            f"/v1/studies/{study_id}/raw",
+            params={"path": "user/somewhere/something.txt"},
+            headers=headers,
+            files={"file": io.BytesIO(b"Goodbye World!")},
+        )
+        assert res.status_code == 404, res.json()
+        assert res.json() == {
+            "description": "'somewhere' not a child of User",
+            "exception": "ChildNotFoundError",
+        }
+
+        # To create or update a resource, you can use PUT method and the `create_missing` flag.
+        # The expected status code should be 204 No Content.
+        res = client.put(
+            f"/v1/studies/{study_id}/raw",
+            params={"path": "user/somewhere/something.txt", "create_missing": True},
+            headers=headers,
+            files={"file": io.BytesIO(b"Goodbye Cruel World!")},
+        )
+        assert res.status_code == 204, res.json()
+
+        # You can check that the resource has been created or updated.
+        res = client.get(
+            f"/v1/studies/{study_id}/raw",
+            params={"path": "user/somewhere/something.txt"},
+            headers=headers,
+        )
+        assert res.status_code == 200, res.json()
+        assert res.content == b"Goodbye Cruel World!"
 
         # If we ask for properties, we should have a JSON content
         rel_path = "/input/links/de/properties/fr"
