@@ -1,4 +1,5 @@
 import io
+import os
 from http import HTTPStatus
 from pathlib import Path
 from unittest.mock import ANY
@@ -6,6 +7,7 @@ from unittest.mock import ANY
 from starlette.testclient import TestClient
 
 from antarest.core.model import PublicMode
+from antarest.launcher.model import LauncherLoadDTO
 from antarest.study.business.adequacy_patch_management import PriceTakingOrder
 from antarest.study.business.area_management import AreaType, LayerInfoDTO
 from antarest.study.business.areas.properties_management import AdequacyPatchMode
@@ -296,6 +298,15 @@ def test_main(client: TestClient, admin_access_token: str, study_id: str) -> Non
         headers={"Authorization": f'Bearer {fred_credentials["access_token"]}'},
     )
     job_id = res.json()["job_id"]
+
+    res = client.get("/v1/launcher/load", headers=admin_headers)
+    assert res.status_code == 200, res.json()
+    launcher_load = LauncherLoadDTO.parse_obj(res.json())
+    assert launcher_load.allocated_cpu_rate == 1 / (os.cpu_count() or 1)
+    assert launcher_load.cluster_load_rate == 1 / (os.cpu_count() or 1)
+    assert launcher_load.nb_queued_jobs == 0
+    assert launcher_load.launcher_status == "SUCCESS"
+
     res = client.get(
         f"/v1/launcher/jobs?study_id={study_id}",
         headers={"Authorization": f'Bearer {fred_credentials["access_token"]}'},

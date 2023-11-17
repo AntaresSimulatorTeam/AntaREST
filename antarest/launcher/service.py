@@ -1,5 +1,4 @@
 import functools
-import json
 import logging
 import os
 import shutil
@@ -33,11 +32,14 @@ from antarest.launcher.model import (
     JobLogType,
     JobResult,
     JobStatus,
+    LauncherLoadDTO,
     LauncherParametersDTO,
     LogType,
     XpansionParametersDTO,
 )
 from antarest.launcher.repository import JobResultRepository
+from antarest.launcher.ssh_client import calculates_slurm_load
+from antarest.launcher.ssh_config import SSHConfigDTO
 from antarest.study.repository import StudyFilter
 from antarest.study.service import StudyService
 from antarest.study.storage.utils import assert_permission, extract_output_name, find_single_output_path
@@ -502,7 +504,7 @@ class LauncherService:
                 launching_user = DEFAULT_ADMIN_USER
 
             study_id = job_result.study_id
-            job_launch_params = LauncherParametersDTO.parse_raw(job_result.launcher_params or "{}")
+            job_launch_params = LauncherParametersDTO.from_launcher_params(job_result.launcher_params)
 
             # this now can be a zip file instead of a directory !
             output_true_path = find_single_output_path(output_path)
@@ -585,7 +587,7 @@ class LauncherService:
             export_path = Path(export_file_download.path)
             export_id = export_file_download.id
 
-            def export_task(notifier: TaskUpdateNotifier) -> TaskResult:
+            def export_task(_: TaskUpdateNotifier) -> TaskResult:
                 try:
                     #
                     zip_dir(output_path, export_path)
@@ -622,43 +624,47 @@ class LauncherService:
             )
         raise JobNotFound()
 
-    def get_load(self, from_cluster: bool = False) -> Dict[str, float]:
-        all_running_jobs = self.job_result_repository.get_running()
-        local_running_jobs = []
-        slurm_running_jobs = []
-        for job in all_running_jobs:
-            if job.launcher == "slurm":
-                slurm_running_jobs.append(job)
-            elif job.launcher == "local":
-                local_running_jobs.append(job)
+    def get_load(self) -> LauncherLoadDTO:
+        """
+        Get the load of the SLURM cluster or the local machine.
+        """
+        # SLURM load calculation
+        if self.config.launcher.default == "slurm":
+            if slurm_config := self.config.launcher.slurm:
+                ssh_config = SSHConfigDTO(
+                    config_path=Path(),
+                    username=slurm_config.username,
+                    hostname=slurm_config.hostname,
+                    port=slurm_config.port,
+                    private_key_file=slurm_config.private_key_file,
+                    key_password=slurm_config.key_password,
+                    password=slurm_config.password,
+                )
+                partition = slurm_config.partition
+                slurm_load = calculates_slurm_load(ssh_config, partition)
+                return LauncherLoadDTO(
+                    allocated_cpu_rate=slurm_load[0],
+                    cluster_load_rate=slurm_load[1],
+                    nb_queued_jobs=slurm_load[2],
+                    launcher_status="SUCCESS",
+                )
             else:
-                logger.warning(f"Unknown job launcher {job.launcher}")
+                raise KeyError("Default launcher is slurm but it is not registered in the config file")
 
-        load = {}
+        # local load calculation
+        local_used_cpus = sum(
+            LauncherParametersDTO.from_launcher_params(job.launcher_params).nb_cpu or 1
+            for job in self.job_result_repository.get_running()
+        )
 
-        slurm_config = self.config.launcher.slurm
-        if slurm_config is not None:
-            if from_cluster:
-                raise NotImplementedError("Cluster load not implemented yet")
-            default_cpu = slurm_config.nb_cores.default
-            slurm_used_cpus = 0
-            for job in slurm_running_jobs:
-                obj = json.loads(job.launcher_params) if job.launcher_params else {}
-                launch_params = LauncherParametersDTO(**obj)
-                slurm_used_cpus += launch_params.nb_cpu or default_cpu
-            load["slurm"] = slurm_used_cpus / slurm_config.max_cores
+        cluster_load_approx = min(1.0, local_used_cpus / (os.cpu_count() or 1))
 
-        local_config = self.config.launcher.local
-        if local_config is not None:
-            default_cpu = local_config.nb_cores.default
-            local_used_cpus = 0
-            for job in local_running_jobs:
-                obj = json.loads(job.launcher_params) if job.launcher_params else {}
-                launch_params = LauncherParametersDTO(**obj)
-                local_used_cpus += launch_params.nb_cpu or default_cpu
-            load["local"] = local_used_cpus / local_config.nb_cores.max
-
-        return load
+        return LauncherLoadDTO(
+            allocated_cpu_rate=cluster_load_approx,
+            cluster_load_rate=cluster_load_approx,
+            nb_queued_jobs=0,
+            launcher_status="SUCCESS",
+        )
 
     def get_solver_versions(self, solver: str) -> List[str]:
         """

@@ -254,6 +254,7 @@ class SlurmConfig:
     default_time_limit: int = 0
     default_json_db_name: str = ""
     slurm_script_path: str = ""
+    partition: str = ""
     max_cores: int = 64
     antares_versions_on_remote_server: List[str] = field(default_factory=list)
     enable_nb_cores_detection: bool = False
@@ -290,6 +291,7 @@ class SlurmConfig:
             default_time_limit=data.get("default_time_limit", defaults.default_time_limit),
             default_json_db_name=data.get("default_json_db_name", defaults.default_json_db_name),
             slurm_script_path=data.get("slurm_script_path", defaults.slurm_script_path),
+            partition=data["partition"],
             antares_versions_on_remote_server=data.get(
                 "antares_versions_on_remote_server",
                 defaults.antares_versions_on_remote_server,
