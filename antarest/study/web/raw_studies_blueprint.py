@@ -3,7 +3,7 @@ import io
 import json
 import logging
 import pathlib
-from typing import Any, List
+import typing as t
 
 from fastapi import APIRouter, Body, Depends, File, HTTPException
 from fastapi.params import Param
@@ -69,7 +69,6 @@ def create_raw_study_routes(
         "/studies/{uuid}/raw",
         tags=[APITag.study_raw_data],
         summary="Retrieve Raw Data from Study: JSON, Text, or File Attachment",
-        response_model=None,
     )
     def get_study(
         uuid: str,
@@ -77,9 +76,9 @@ def create_raw_study_routes(
         depth: int = 3,
         formatted: bool = True,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    ) -> t.Any:
         """
-        Fetches raw data from a study identified by a UUID, and returns the data
+        Fetches raw data from a study, and returns the data
         in different formats based on the file type, or as a JSON response.
 
         Parameters:
@@ -158,14 +157,24 @@ def create_raw_study_routes(
         status_code=http.HTTPStatus.NO_CONTENT,
         tags=[APITag.study_raw_data],
         summary="Update data by posting formatted data",
-        response_model=None,
     )
     def edit_study(
         uuid: str,
         path: str = Param("/", examples=get_path_examples()),  # type: ignore
         data: SUB_JSON = Body(default=""),
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    ) -> None:
+        """
+        Updates raw data for a study by posting formatted data.
+
+        > NOTE: use the PUT endpoint to upload a file.
+
+        Parameters:
+        - `uuid`: The UUID of the study.
+        - `path`: The path to the data to update. Defaults to "/".
+        - `data`: The formatted data to be posted. Defaults to an empty string.
+          The data could be a JSON object, or a simple string.
+        """
         logger.info(
             f"Editing data at {path} for study {uuid}",
             extra={"user": current_user.id},
@@ -179,14 +188,21 @@ def create_raw_study_routes(
         status_code=http.HTTPStatus.NO_CONTENT,
         tags=[APITag.study_raw_data],
         summary="Update data by posting a Raw file",
-        response_model=None,
     )
     def replace_study_file(
         uuid: str,
         path: str = Param("/", examples=get_path_examples()),  # type: ignore
         file: bytes = File(...),
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    ) -> None:
+        """
+        Update raw data for a study by posting a raw file.
+
+        Parameters:
+        - `uuid`: The UUID of the study.
+        - `path`: The path to the data to update. Defaults to "/".
+        - `file`: The raw file to be posted (e.g. a CSV file opened in binary mode).
+        """
         logger.info(
             f"Uploading new data file at {path} for study {uuid}",
             extra={"user": current_user.id},
@@ -199,9 +215,24 @@ def create_raw_study_routes(
         "/studies/{uuid}/raw/validate",
         summary="Launch test validation on study",
         tags=[APITag.study_raw_data],
-        response_model=List[str],
+        response_model=t.List[str],
     )
-    def validate(uuid: str, current_user: JWTUser = Depends(auth.get_current_user)) -> Any:
+    def validate(
+        uuid: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> t.List[str]:
+        """
+        Launches test validation on the raw data of a study.
+        The validation is done recursively on all the files in the study
+
+
+        Parameters:
+        - `uuid`: The UUID of the study.
+
+        Response:
+        - A list of strings indicating validation errors (if any) for the study's raw data.
+          The list is empty if no errors were found.
+        """
         logger.info(
             f"Validating data for study {uuid}",
             extra={"user": current_user.id},
