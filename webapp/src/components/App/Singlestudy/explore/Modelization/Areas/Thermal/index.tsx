@@ -84,6 +84,12 @@ function Thermal() {
         accessorKey: "name",
         header: "Name",
         size: 100,
+        muiTableHeadCellProps: {
+          align: "left",
+        },
+        muiTableBodyCellProps: {
+          align: "left",
+        },
         Cell: ({ renderedCellValue, row }) => {
           const clusterId = row.original.id;
           return (
@@ -158,38 +164,38 @@ function Thermal() {
       },
       {
         accessorKey: "nominalCapacity",
-        header: "Nominal Capacity",
-        size: 50,
+        header: "Nominal Capacity (MW)",
+        size: 200,
         aggregationFn: "sum",
-        Cell: ({ cell }) => <>{cell.getValue<number>()} MW</>,
+        Cell: ({ cell }) => <>{cell.getValue<number>()}</>,
       },
       {
         accessorKey: "installedCapacity",
-        header: "Enabled / Installed",
-        size: 50,
+        header: "Enabled / Installed (MW)",
+        size: 200,
         aggregationFn: capacityAggregationFn,
         AggregatedCell: ({ cell }) => (
           <Box sx={{ color: "info.main", fontWeight: "bold" }}>
-            {cell.getValue<string>() ?? ""} MW
+            {cell.getValue<string>() ?? ""}
           </Box>
         ),
         Cell: ({ row }) => (
           <>
             {row.original.enabledCapacity ?? 0} /{" "}
-            {row.original.installedCapacity ?? 0} MW
+            {row.original.installedCapacity ?? 0}
           </>
         ),
         Footer: () => (
           <Box color="warning.main">
-            {totalEnabledCapacity} / {totalInstalledCapacity} MW
+            {totalEnabledCapacity} / {totalInstalledCapacity}
           </Box>
         ),
       },
       {
         accessorKey: "marketBidCost",
-        header: "Market Bid",
+        header: "Market Bid (€/MWh)",
         size: 50,
-        Cell: ({ cell }) => <>{cell.getValue<number>().toFixed(2)} €/MWh</>,
+        Cell: ({ cell }) => <>{cell.getValue<number>().toFixed(2)}</>,
       },
     ],
     [
