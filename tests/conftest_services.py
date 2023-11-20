@@ -18,6 +18,7 @@ from antarest.core.requests import RequestParameters
 from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskListFilter, TaskResult, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskService, Task
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
+from antarest.matrixstore.repository import MatrixContentRepository
 from antarest.matrixstore.service import SimpleMatrixService
 from antarest.matrixstore.uri_resolver_service import UriResolverService
 from antarest.study.storage.patch_service import PatchService
@@ -128,7 +129,10 @@ def simple_matrix_service_fixture(bucket_dir: Path) -> SimpleMatrixService:
     Returns:
         An instance of the SimpleMatrixService class representing the matrix service.
     """
-    return SimpleMatrixService(bucket_dir)
+    matrix_content_repository = MatrixContentRepository(
+        bucket_dir=bucket_dir,
+    )
+    return SimpleMatrixService(matrix_content_repository=matrix_content_repository)
 
 
 @pytest.fixture(name="generator_matrix_constants", scope="session")
@@ -144,7 +148,9 @@ def generator_matrix_constants_fixture(
     Returns:
         An instance of the GeneratorMatrixConstants class representing the matrix constants generator.
     """
-    return GeneratorMatrixConstants(matrix_service=simple_matrix_service)
+    out_generator_matrix_constants = GeneratorMatrixConstants(simple_matrix_service)
+    out_generator_matrix_constants.init_constant_matrices(bucket_dir=simple_matrix_service.bucket_dir)
+    return out_generator_matrix_constants
 
 
 @pytest.fixture(name="uri_resolver_service", scope="session")

@@ -91,8 +91,10 @@ def command_context_fixture(matrix_service: MatrixService) -> CommandContext:
         CommandContext: The CommandContext object.
     """
     # sourcery skip: inline-immediately-returned-variable
+    generator_matrix_constants = GeneratorMatrixConstants(matrix_service)
+    generator_matrix_constants.init_constant_matrices(bucket_dir=matrix_service.bucket_dir)
     command_context = CommandContext(
-        generator_matrix_constants=GeneratorMatrixConstants(matrix_service=matrix_service),
+        generator_matrix_constants=generator_matrix_constants,
         matrix_service=matrix_service,
         patch_service=PatchService(repository=Mock(spec=StudyMetadataRepository)),
     )
@@ -110,8 +112,10 @@ def command_factory_fixture(matrix_service: MatrixService) -> CommandFactory:
     Returns:
         CommandFactory: The CommandFactory object.
     """
+    generator_matrix_constants = GeneratorMatrixConstants(matrix_service)
+    generator_matrix_constants.init_constant_matrices(bucket_dir=matrix_service.bucket_dir)
     return CommandFactory(
-        generator_matrix_constants=GeneratorMatrixConstants(matrix_service=matrix_service),
+        generator_matrix_constants=generator_matrix_constants,
         matrix_service=matrix_service,
         patch_service=PatchService(),
     )
