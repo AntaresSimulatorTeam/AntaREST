@@ -20,6 +20,7 @@ class VariantCommandsExtractor:
     def __init__(self, matrix_service: ISimpleMatrixService, patch_service: PatchService):
         self.matrix_service = matrix_service
         self.generator_matrix_constants = GeneratorMatrixConstants(self.matrix_service)
+        self.generator_matrix_constants.init_constant_matrices(bucket_dir=matrix_service.bucket_dir)
         self.command_extractor = CommandExtractor(self.matrix_service, patch_service=patch_service)
 
     def extract(self, study: FileStudy) -> List[CommandDTO]:

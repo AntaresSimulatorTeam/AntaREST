@@ -7,7 +7,7 @@ import numpy as np
 from filelock import FileLock
 from numpy import typing as npt
 from sqlalchemy import and_, exists  # type: ignore
-from sqlalchemy.orm import aliased  # type: ignore
+from sqlalchemy.orm import Session, aliased  # type: ignore
 
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.matrixstore.model import Matrix, MatrixContent, MatrixData, MatrixDataSet
@@ -20,23 +20,33 @@ class MatrixDataSetRepository:
     Database connector to manage Matrix metadata entity
     """
 
+    def __init__(self, session: t.Optional[Session] = None) -> None:
+        self._session = session
+
+    @property
+    def session(self) -> Session:
+        """Get the SqlAlchemy session or create a new one on the fly if not available in the current thread."""
+        if self._session is None:
+            return db.session
+        return self._session
+
     def save(self, matrix_user_metadata: MatrixDataSet) -> MatrixDataSet:
-        res: bool = db.session.query(exists().where(MatrixDataSet.id == matrix_user_metadata.id)).scalar()
+        res: bool = self.session.query(exists().where(MatrixDataSet.id == matrix_user_metadata.id)).scalar()
         if res:
-            matrix_user_metadata = db.session.merge(matrix_user_metadata)
+            matrix_user_metadata = self.session.merge(matrix_user_metadata)
         else:
-            db.session.add(matrix_user_metadata)
-        db.session.commit()
+            self.session.add(matrix_user_metadata)
+        self.session.commit()
 
         logger.debug(f"Matrix dataset {matrix_user_metadata.id} for user {matrix_user_metadata.owner_id} saved")
         return matrix_user_metadata
 
-    def get(self, id: str) -> t.Optional[MatrixDataSet]:
-        matrix: MatrixDataSet = db.session.query(MatrixDataSet).get(id)
+    def get(self, id_number: str) -> t.Optional[MatrixDataSet]:
+        matrix: MatrixDataSet = self.session.query(MatrixDataSet).get(id_number)
         return matrix
 
     def get_all_datasets(self) -> t.List[MatrixDataSet]:
-        matrix_datasets: t.List[MatrixDataSet] = db.session.query(MatrixDataSet).all()
+        matrix_datasets: t.List[MatrixDataSet] = self.session.query(MatrixDataSet).all()
         return matrix_datasets
 
     def query(
@@ -54,7 +64,7 @@ class MatrixDataSetRepository:
         Returns:
             the list of metadata per user, matching the query
         """
-        query = db.session.query(MatrixDataSet)
+        query = self.session.query(MatrixDataSet)
         if name is not None:
             query = query.filter(MatrixDataSet.name.ilike(f"%{name}%"))  # type: ignore
         if owner is not None:
@@ -63,9 +73,9 @@ class MatrixDataSetRepository:
         return datasets
 
     def delete(self, dataset_id: str) -> None:
-        dataset = db.session.query(MatrixDataSet).get(dataset_id)
-        db.session.delete(dataset)
-        db.session.commit()
+        dataset = self.session.query(MatrixDataSet).get(dataset_id)
+        self.session.delete(dataset)
+        self.session.commit()
 
 
 class MatrixRepository:
@@ -73,28 +83,38 @@ class MatrixRepository:
     Database connector to manage Matrix entity.
     """
 
+    def __init__(self, session: t.Optional[Session] = None) -> None:
+        self._session = session
+
+    @property
+    def session(self) -> Session:
+        """Get the SqlAlchemy session or create a new one on the fly if not available in the current thread."""
+        if self._session is None:
+            return db.session
+        return self._session
+
     def save(self, matrix: Matrix) -> Matrix:
-        if db.session.query(exists().where(Matrix.id == matrix.id)).scalar():
-            db.session.merge(matrix)
+        if self.session.query(exists().where(Matrix.id == matrix.id)).scalar():
+            self.session.merge(matrix)
         else:
-            db.session.add(matrix)
-        db.session.commit()
+            self.session.add(matrix)
+        self.session.commit()
 
         logger.debug(f"Matrix {matrix.id} saved")
         return matrix
 
     def get(self, matrix_hash: str) -> t.Optional[Matrix]:
-        matrix: Matrix = db.session.query(Matrix).get(matrix_hash)
+        matrix: Matrix = self.session.query(Matrix).get(matrix_hash)
         return matrix
 
     def exists(self, matrix_hash: str) -> bool:
-        res: bool = db.session.query(exists().where(Matrix.id == matrix_hash)).scalar()
+        res: bool = self.session.query(exists().where(Matrix.id == matrix_hash)).scalar()
         return res
 
     def delete(self, matrix_hash: str) -> None:
-        if g := db.session.query(Matrix).get(matrix_hash):
-            db.session.delete(g)
-            db.session.commit()
+        if g := self.session.query(Matrix).get(matrix_hash):
+            self.session.delete(g)
+            self.session.commit()
         else:
             logger.warning(f"Trying to delete matrix {matrix_hash}, but was not found in database!")
         logger.debug(f"Matrix {matrix_hash} deleted")

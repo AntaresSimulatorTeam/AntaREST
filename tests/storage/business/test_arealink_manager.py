@@ -9,6 +9,7 @@ import pytest
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.requests import RequestParameters
 from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.matrixstore.repository import MatrixContentRepository
 from antarest.matrixstore.service import SimpleMatrixService
 from antarest.study.business.area_management import AreaCreationDTO, AreaManager, AreaType, AreaUI
 from antarest.study.business.link_management import LinkInfoDTO, LinkManager
@@ -66,7 +67,10 @@ def matrix_service_fixture(tmp_path: Path) -> SimpleMatrixService:
     """
     matrix_path = tmp_path.joinpath("matrix-store")
     matrix_path.mkdir()
-    return SimpleMatrixService(matrix_path)
+    matrix_content_repository = MatrixContentRepository(
+        bucket_dir=matrix_path,
+    )
+    return SimpleMatrixService(matrix_content_repository=matrix_content_repository)
 
 
 @with_db_context
@@ -94,8 +98,10 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
 
     raw_study_service.get_raw.return_value = empty_study
     raw_study_service.cache = Mock()
+    generator_matrix_constants = GeneratorMatrixConstants(matrix_service)
+    generator_matrix_constants.init_constant_matrices(bucket_dir=generator_matrix_constants.matrix_service.bucket_dir)
     variant_study_service.command_factory = CommandFactory(
-        GeneratorMatrixConstants(matrix_service),
+        generator_matrix_constants,
         matrix_service,
         patch_service=Mock(spec=PatchService),
     )

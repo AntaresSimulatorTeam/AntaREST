@@ -1,11 +1,12 @@
 import uuid
 from datetime import datetime
 from enum import Enum
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Extra
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, Sequence, String  # type: ignore
-from sqlalchemy.orm import relationship  # type: ignore
+from sqlalchemy.engine.base import Engine  # type: ignore
+from sqlalchemy.orm import Session, relationship, sessionmaker  # type: ignore
 
 from antarest.core.persistence import Base
 
@@ -171,3 +172,17 @@ class TaskJob(Base):  # type: ignore
             f" result_msg={self.result_msg},"
             f" result_status={self.result_status}"
         )
+
+
+def cancel_orphan_tasks(engine: Engine, session_args: Dict[str, bool]) -> None:
+    updated_values = {
+        TaskJob.status: TaskStatus.FAILED.value,
+        TaskJob.result: False,
+        TaskJob.result_msg: "Task was interrupted due to server restart",
+        TaskJob.completion_date: datetime.utcnow(),
+    }
+    with sessionmaker(bind=engine, **session_args)() as session:
+        session.query(TaskJob).filter(TaskJob.status.in_([TaskStatus.RUNNING.value, TaskStatus.PENDING.value])).update(
+            updated_values, synchronize_session=False
+        )
+        session.commit()
