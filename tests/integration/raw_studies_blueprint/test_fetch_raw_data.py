@@ -186,7 +186,7 @@ class TestFetchRawData:
         first_row = [float(x) for x in actual_lines[0].split("\t")]
         assert first_row == [100000, 100000, 0.01, 0.01, 0, 0, 0, 0]
 
-        # If wa ask for and empty matrix, we should have an empty binary content
+        # If ask for an empty matrix, we should have an empty binary content
         res = client.get(
             f"/v1/studies/{study_id}/raw",
             params={"path": "input/thermal/prepro/de/01_solar/data", "formatted": False},
