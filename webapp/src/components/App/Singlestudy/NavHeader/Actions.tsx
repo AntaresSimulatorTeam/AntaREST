@@ -2,7 +2,9 @@ import { Box, Tooltip, Typography, Chip, Button, Divider } from "@mui/material";
 import HistoryOutlinedIcon from "@mui/icons-material/HistoryOutlined";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { StudyMetadata, StudyType } from "../../../../common/types";
 import { toggleFavorite } from "../../../../redux/ducks/studies";
 import StarToggle from "../../../common/StarToggle";
@@ -31,9 +33,26 @@ function Actions({
 }: Props) {
   const [t] = useTranslation();
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
   const isStudyFavorite = useAppSelector(isCurrentStudyFavorite);
   const isManaged = study?.managed;
   const isArchived = study?.archived;
+
+  ////////////////////////////////////////////////////////////////
+  // Event handlers
+  ////////////////////////////////////////////////////////////////
+
+  const handleClickBack = () => {
+    if (isExplorer) {
+      navigate(`/studies/${study?.id}`);
+    } else {
+      navigate("/studies");
+    }
+  };
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
 
   if (!study) {
     return null;
@@ -51,12 +70,36 @@ function Actions({
         gap: 2,
       }}
     >
+      <Box>
+        <Button
+          variant="text"
+          color="secondary"
+          onClick={handleClickBack}
+          sx={{ pl: 0 }}
+        >
+          <ArrowBackIcon
+            color="secondary"
+            onClick={handleClickBack}
+            sx={{ cursor: "pointer", mr: 1 }}
+          />
+          <Tooltip
+            title={isExplorer ? study?.name : t("global.studies")}
+            followCursor
+          >
+            <Typography variant="button">
+              {isExplorer ? t("button.back") : t("global.studies")}
+            </Typography>
+          </Tooltip>
+        </Button>
+      </Box>
+      <Divider flexItem orientation="vertical" />
       <Tooltip title={study.folder} placement="bottom-start">
         <Typography
           variant="h6"
           noWrap
           sx={{
             flex: 1,
+            ml: 1,
           }}
         >
           {study.name}
