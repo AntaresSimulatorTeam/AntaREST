@@ -2220,7 +2220,7 @@ class StudyService:
         params: RequestParameters,
     ) -> Optional[str]:
         study = self.get_study(study_id)
-        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        assert_permission(params.user, study, StudyPermissionType.READ)
         self._assert_study_unarchived(study)
 
         archive_task_names = StudyService._get_output_archive_task_names(study, output_id)
