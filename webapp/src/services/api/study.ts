@@ -1,5 +1,4 @@
 import { AxiosRequestConfig } from "axios";
-import * as R from "ramda";
 import { isBoolean, trimCharsStart } from "ramda-adjunct";
 import client from "./client";
 import {
@@ -334,13 +333,11 @@ export const getStudyJobs = async (
   filterOrphans = true,
   latest = false,
 ): Promise<LaunchJob[]> => {
-  const queryParams = new URLSearchParams(
-    R.filter(Boolean, {
-      filter_orphans: filterOrphans,
-      study: studyId,
-      latest: latest && 100,
-    }).toString(),
-  );
+  const queryParams = new URLSearchParams({
+    filter_orphans: filterOrphans.toString(),
+    ...(studyId && { study: studyId }),
+    ...(latest && { latest: "100" }),
+  });
 
   return client
     .get(`/v1/launcher/jobs?${queryParams}`)
