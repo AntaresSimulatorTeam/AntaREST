@@ -118,13 +118,23 @@ class TestFetchRawData:
             "exception": "ChildNotFoundError",
         }
 
-        # To create or update a resource, you can use PUT method and the `create_missing` flag.
+        # To create a resource, you can use PUT method and the `create_missing` flag.
         # The expected status code should be 204 No Content.
         res = client.put(
             f"/v1/studies/{study_id}/raw",
             params={"path": "user/somewhere/something.txt", "create_missing": True},
             headers=headers,
             files={"file": io.BytesIO(b"Goodbye Cruel World!")},
+        )
+        assert res.status_code == 204, res.json()
+
+        # To update a resource, you can use PUT method, with or without the `create_missing` flag.
+        # The expected status code should be 204 No Content.
+        res = client.put(
+            f"/v1/studies/{study_id}/raw",
+            params={"path": "user/somewhere/something.txt", "create_missing": True},
+            headers=headers,
+            files={"file": io.BytesIO(b"This is the end!")},
         )
         assert res.status_code == 204, res.json()
 
@@ -135,7 +145,7 @@ class TestFetchRawData:
             headers=headers,
         )
         assert res.status_code == 200, res.json()
-        assert res.content == b"Goodbye Cruel World!"
+        assert res.content == b"This is the end!"
 
         # If we ask for properties, we should have a JSON content
         rel_path = "/input/links/de/properties/fr"
