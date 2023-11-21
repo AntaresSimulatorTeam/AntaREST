@@ -9,16 +9,19 @@ import {
   getThermalClusters,
   createThermalCluster,
   deleteThermalClusters,
-  capacityAggregationFn,
   ThermalClusterWithCapacity,
   THERMAL_GROUPS,
+  ThermalCluster,
 } from "./utils";
 import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../../redux/selectors";
 import GroupedDataTable from "../../../../../../common/GroupedDataTable";
 import SimpleLoader from "../../../../../../common/loaders/SimpleLoader";
 import SimpleContent from "../../../../../../common/page/SimpleContent";
-import usePromiseWithSnackbarError from "../../../../../../../hooks/usePromiseWithSnackbarError";
+import {
+  capacityAggregationFn,
+  useClusterDataWithCapacity,
+} from "../common/utils";
 import UsePromiseCond from "../../../../../../common/utils/UsePromiseCond";
 
 function Thermal() {
@@ -26,57 +29,19 @@ function Thermal() {
   const [t] = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
-  const currentAreaId = useAppSelector(getCurrentAreaId);
+  const areaId = useAppSelector(getCurrentAreaId);
 
-  const clusters = usePromiseWithSnackbarError(
-    () => getThermalClusters(study.id, currentAreaId),
-    {
-      errorMessage: t("studies.error.retrieveData"),
-      deps: [study.id, currentAreaId],
-    },
+  const {
+    clusters,
+    clustersWithCapacity,
+    totalUnitCount,
+    totalInstalledCapacity,
+    totalEnabledCapacity,
+  } = useClusterDataWithCapacity<ThermalCluster>(
+    () => getThermalClusters(study.id, areaId),
+    t("studies.error.retrieveData"),
+    [study.id, areaId],
   );
-
-  /**
-   * Calculate the installed and enabled capacity for each thermal cluster.
-   * - `installedCapacity` is calculated as the product of `unitCount` and `nominalCapacity`.
-   * - `enabledCapacity` is the product of `unitCount` and `nominalCapacity` if the cluster is enabled, otherwise it's 0.
-   * @returns {Array} - An array of cluster objects, each augmented with `installedCapacity` and `enabledCapacity`.
-   */
-  const clustersWithCapacity = useMemo(
-    () =>
-      clusters?.data?.map((cluster) => {
-        const { unitCount, nominalCapacity, enabled } = cluster;
-        const installedCapacity = unitCount * nominalCapacity;
-        const enabledCapacity = enabled ? installedCapacity : 0;
-        return { ...cluster, installedCapacity, enabledCapacity };
-      }) || [],
-    [clusters],
-  );
-
-  const { totalUnitCount, totalInstalledCapacity, totalEnabledCapacity } =
-    useMemo(() => {
-      if (!clustersWithCapacity) {
-        return {
-          totalUnitCount: 0,
-          totalInstalledCapacity: 0,
-          totalEnabledCapacity: 0,
-        };
-      }
-
-      return clustersWithCapacity.reduce(
-        (acc, { unitCount, nominalCapacity, enabled }) => {
-          acc.totalUnitCount += unitCount;
-          acc.totalInstalledCapacity += unitCount * nominalCapacity;
-          acc.totalEnabledCapacity += enabled ? unitCount * nominalCapacity : 0;
-          return acc;
-        },
-        {
-          totalUnitCount: 0,
-          totalInstalledCapacity: 0,
-          totalEnabledCapacity: 0,
-        },
-      );
-    }, [clustersWithCapacity]);
 
   const columns = useMemo<MRT_ColumnDef<ThermalClusterWithCapacity>[]>(
     () => [
@@ -131,9 +96,10 @@ function Thermal() {
         filterVariant: "checkbox",
         Cell: ({ cell }) => (
           <Chip
-            label={cell.getValue<boolean>() ? "Yes" : "No"}
+            label={cell.getValue<boolean>() ? t("button.yes") : t("button.no")}
             color={cell.getValue<boolean>() ? "success" : "error"}
             size="small"
+            sx={{ minWidth: 40 }}
           />
         ),
       },
@@ -144,9 +110,10 @@ function Thermal() {
         filterVariant: "checkbox",
         Cell: ({ cell }) => (
           <Chip
-            label={cell.getValue<boolean>() ? "Yes" : "No"}
+            label={cell.getValue<boolean>() ? t("button.yes") : t("button.no")}
             color={cell.getValue<boolean>() ? "success" : "error"}
             size="small"
+            sx={{ minWidth: 40 }}
           />
         ),
       },
@@ -166,14 +133,13 @@ function Thermal() {
         accessorKey: "nominalCapacity",
         header: "Nominal Capacity (MW)",
         size: 200,
-        aggregationFn: "sum",
-        Cell: ({ cell }) => <>{cell.getValue<number>()}</>,
+        Cell: ({ cell }) => cell.getValue<number>().toFixed(1),
       },
       {
         accessorKey: "installedCapacity",
         header: "Enabled / Installed (MW)",
         size: 200,
-        aggregationFn: capacityAggregationFn,
+        aggregationFn: capacityAggregationFn(),
         AggregatedCell: ({ cell }) => (
           <Box sx={{ color: "info.main", fontWeight: "bold" }}>
             {cell.getValue<string>() ?? ""}
@@ -181,8 +147,8 @@ function Thermal() {
         ),
         Cell: ({ row }) => (
           <>
-            {row.original.enabledCapacity ?? 0} /{" "}
-            {row.original.installedCapacity ?? 0}
+            {Math.floor(row.original.enabledCapacity ?? 0)} /{" "}
+            {Math.floor(row.original.installedCapacity ?? 0)}
           </>
         ),
         Footer: () => (
@@ -201,6 +167,7 @@ function Thermal() {
     [
       location.pathname,
       navigate,
+      t,
       totalEnabledCapacity,
       totalInstalledCapacity,
       totalUnitCount,
@@ -217,11 +184,11 @@ function Thermal() {
     enabledCapacity,
     ...cluster
   }: ThermalClusterWithCapacity) => {
-    return createThermalCluster(study.id, currentAreaId, cluster);
+    return createThermalCluster(study.id, areaId, cluster);
   };
 
   const handleDeleteSelection = (ids: string[]) => {
-    return deleteThermalClusters(study.id, currentAreaId, ids);
+    return deleteThermalClusters(study.id, areaId, ids);
   };
 
   ////////////////////////////////////////////////////////////////

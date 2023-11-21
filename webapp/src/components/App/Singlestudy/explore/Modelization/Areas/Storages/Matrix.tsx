@@ -34,15 +34,7 @@ function Matrix({ study, areaId, storageId }: Props) {
         alignItems: "center",
       }}
     >
-      <Tabs
-        sx={{
-          width: "98%",
-          borderBottom: 1,
-          borderColor: "divider",
-        }}
-        value={value}
-        onChange={(_, v) => setValue(v)}
-      >
+      <Tabs sx={{ width: 1 }} value={value} onChange={(_, v) => setValue(v)}>
         <Tab label={t("study.modelization.storages.capacities")} />
         <Tab label={t("study.modelization.storages.ruleCurves")} />
         <Tab label={t("study.modelization.storages.inflows")} />

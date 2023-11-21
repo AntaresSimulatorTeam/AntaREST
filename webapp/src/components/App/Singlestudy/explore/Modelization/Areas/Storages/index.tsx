@@ -118,13 +118,16 @@ function Storages() {
           </Tooltip>
         ),
         size: 100,
+        Cell: ({ cell }) => Math.floor(cell.getValue<number>()),
         AggregatedCell: ({ cell }) => (
           <Box sx={{ color: "info.main", fontWeight: "bold" }}>
-            {cell.getValue<number>()}
+            {Math.floor(cell.getValue<number>())}
           </Box>
         ),
         Footer: () => (
-          <Box color="warning.main">{totalInjectionNominalCapacity}</Box>
+          <Box color="warning.main">
+            {Math.floor(totalInjectionNominalCapacity)}
+          </Box>
         ),
       },
       {
@@ -145,11 +148,14 @@ function Storages() {
         aggregationFn: "sum",
         AggregatedCell: ({ cell }) => (
           <Box sx={{ color: "info.main", fontWeight: "bold" }}>
-            {cell.getValue<number>()}
+            {Math.floor(cell.getValue<number>())}
           </Box>
         ),
+        Cell: ({ cell }) => Math.floor(cell.getValue<number>()),
         Footer: () => (
-          <Box color="warning.main">{totalWithdrawalNominalCapacity}</Box>
+          <Box color="warning.main">
+            {Math.floor(totalWithdrawalNominalCapacity)}
+          </Box>
         ),
       },
       {
@@ -165,18 +171,19 @@ function Storages() {
           </Tooltip>
         ),
         size: 100,
-        Cell: ({ cell }) => `${cell.getValue<number>() * 100}`,
+        Cell: ({ cell }) => `${cell.getValue<number>()}`,
       },
       {
         accessorKey: "efficiency",
         header: t("study.modelization.storages.efficiency"),
         size: 50,
-        Cell: ({ cell }) => `${cell.getValue<number>() * 100}`,
+        Cell: ({ cell }) => `${Math.floor(cell.getValue<number>() * 100)}`,
       },
       {
         accessorKey: "initialLevel",
         header: t("study.modelization.storages.initialLevel"),
         size: 50,
+        Cell: ({ cell }) => `${Math.floor(cell.getValue<number>() * 100)}`,
       },
       {
         accessorKey: "initialLevelOptim",
@@ -188,6 +195,7 @@ function Storages() {
             label={cell.getValue<boolean>() ? t("button.yes") : t("button.no")}
             color={cell.getValue<boolean>() ? "success" : "error"}
             size="small"
+            sx={{ minWidth: 40 }}
           />
         ),
       },

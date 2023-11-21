@@ -1,5 +1,3 @@
-/* eslint-disable camelcase */
-import { MRT_AggregationFn } from "material-react-table";
 import {
   Area,
   Cluster,
@@ -166,30 +164,3 @@ export function deleteThermalClusters(
     data: clusterIds,
   });
 }
-
-/**
- * Custom aggregation function summing the values of each row,
- * to display enabled and installed capacity in the same cell.
- * @param colHeader - the column header
- * @param rows - the column rows to aggregate
- * @returns a string with the sum of enabled and installed capacity.
- * @example "100/200"
- * @see https://www.material-react-table.com/docs/guides/aggregation-and-grouping#custom-aggregation-functions
- */
-export const capacityAggregationFn: MRT_AggregationFn<
-  ThermalClusterWithCapacity
-> = (colHeader, rows) => {
-  const { enabledCapacitySum, installedCapacitySum } = rows.reduce(
-    (
-      acc: { enabledCapacitySum: number; installedCapacitySum: number },
-      row,
-    ) => {
-      acc.enabledCapacitySum += row.original.enabledCapacity ?? 0;
-      acc.installedCapacitySum += row.original.installedCapacity ?? 0;
-      return acc;
-    },
-    { enabledCapacitySum: 0, installedCapacitySum: 0 },
-  );
-
-  return `${enabledCapacitySum} / ${installedCapacitySum}`;
-};

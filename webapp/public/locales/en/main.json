@@ -431,7 +431,7 @@
   "study.modelization.storages.initialLevelOptim": "Initial level optimized",
   "study.modelization.wind": "Wind",
   "study.modelization.solar": "Solar",
-  "study.modelization.renewables": "Renewables Clus.",
+  "study.modelization.renewables": "Renewables",
   "study.modelization.reserves": "Reserves",
   "study.modelization.miscGen": "Misc. Gen.",
   "study.modelization.clusters.byGroups": "Clusters by groups",

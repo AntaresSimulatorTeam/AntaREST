@@ -1,93 +1,200 @@
-import { Box } from "@mui/material";
+/* eslint-disable camelcase */
+import { useMemo } from "react";
+import { MRT_ColumnDef } from "material-react-table";
+import { Box, Chip } from "@mui/material";
+import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { useOutletContext } from "react-router-dom";
-import { MatrixStats, StudyMetadata } from "../../../../../../../common/types";
-import { transformNameToId } from "../../../../../../../services/utils";
-import DocLink from "../../../../../../common/DocLink";
-import Form from "../../../../../../common/Form";
-import { SubmitHandlerPlus } from "../../../../../../common/Form/types";
-import MatrixInput from "../../../../../../common/MatrixInput";
-import { ACTIVE_WINDOWS_DOC_PATH } from "../../BindingConstraints/BindingConstView/utils";
-import ClusterRoot from "../common/ClusterRoot";
-import { getDefaultValues } from "../common/utils";
-import Fields from "./Fields";
+import { StudyMetadata } from "../../../../../../../common/types";
 import {
-  getRenewableFormFields,
   RENEWABLE_GROUPS,
-  RenewableFormFields,
-  updateRenewableFormFields,
+  RenewableCluster,
+  RenewableClusterWithCapacity,
+  createRenewableCluster,
+  deleteRenewableClusters,
+  getRenewableClusters,
 } from "./utils";
+import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
+import { getCurrentAreaId } from "../../../../../../../redux/selectors";
+import GroupedDataTable from "../../../../../../common/GroupedDataTable";
+import {
+  capacityAggregationFn,
+  useClusterDataWithCapacity,
+} from "../common/utils";
+import SimpleLoader from "../../../../../../common/loaders/SimpleLoader";
+import SimpleContent from "../../../../../../common/page/SimpleContent";
+import UsePromiseCond from "../../../../../../common/utils/UsePromiseCond";
 
 function Renewables() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const [t] = useTranslation();
+  const areaId = useAppSelector(getCurrentAreaId);
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const {
+    clusters,
+    clustersWithCapacity,
+    totalUnitCount,
+    totalInstalledCapacity,
+    totalEnabledCapacity,
+  } = useClusterDataWithCapacity<RenewableCluster>(
+    () => getRenewableClusters(study.id, areaId),
+    t("studies.error.retrieveData"),
+    [study.id, areaId],
+  );
+
+  const columns = useMemo<MRT_ColumnDef<RenewableClusterWithCapacity>[]>(
+    () => [
+      {
+        accessorKey: "name",
+        header: "Name",
+        muiTableHeadCellProps: {
+          align: "left",
+        },
+        muiTableBodyCellProps: {
+          align: "left",
+        },
+        size: 100,
+        Cell: ({ renderedCellValue, row }) => {
+          const clusterId = row.original.id;
+          return (
+            <Box
+              sx={{
+                cursor: "pointer",
+                "&:hover": {
+                  color: "primary.main",
+                  textDecoration: "underline",
+                },
+              }}
+              onClick={() => navigate(`${location.pathname}/${clusterId}`)}
+            >
+              {renderedCellValue}
+            </Box>
+          );
+        },
+      },
+      {
+        accessorKey: "group",
+        header: "Group",
+        size: 50,
+        filterVariant: "select",
+        filterSelectOptions: [...RENEWABLE_GROUPS],
+        muiTableHeadCellProps: {
+          align: "left",
+        },
+        muiTableBodyCellProps: {
+          align: "left",
+        },
+        Footer: () => (
+          <Box sx={{ display: "flex", alignItems: "flex-start" }}>Total:</Box>
+        ),
+      },
+      {
+        accessorKey: "enabled",
+        header: "Enabled",
+        size: 50,
+        filterVariant: "checkbox",
+        Cell: ({ cell }) => (
+          <Chip
+            label={cell.getValue<boolean>() ? t("button.yes") : t("button.no")}
+            color={cell.getValue<boolean>() ? "success" : "error"}
+            size="small"
+            sx={{ minWidth: 40 }}
+          />
+        ),
+      },
+      {
+        accessorKey: "tsInterpretation",
+        header: "TS Interpretation",
+        size: 50,
+      },
+      {
+        accessorKey: "unitCount",
+        header: "Unit Count",
+        size: 50,
+        aggregationFn: "sum",
+        AggregatedCell: ({ cell }) => (
+          <Box sx={{ color: "info.main", fontWeight: "bold" }}>
+            {cell.getValue<number>()}
+          </Box>
+        ),
+        Footer: () => <Box color="warning.main">{totalUnitCount}</Box>,
+      },
+      {
+        accessorKey: "nominalCapacity",
+        header: "Nominal Capacity (MW)",
+        size: 200,
+        Cell: ({ cell }) => Math.floor(cell.getValue<number>()),
+      },
+      {
+        accessorKey: "installedCapacity",
+        header: "Enabled / Installed (MW)",
+        size: 200,
+        aggregationFn: capacityAggregationFn(),
+        AggregatedCell: ({ cell }) => (
+          <Box sx={{ color: "info.main", fontWeight: "bold" }}>
+            {cell.getValue<string>() ?? ""}
+          </Box>
+        ),
+        Cell: ({ row }) => (
+          <>
+            {Math.floor(row.original.enabledCapacity ?? 0)} /{" "}
+            {Math.floor(row.original.installedCapacity ?? 0)}
+          </>
+        ),
+        Footer: () => (
+          <Box color="warning.main">
+            {totalEnabledCapacity} / {totalInstalledCapacity}
+          </Box>
+        ),
+      },
+    ],
+    [
+      location.pathname,
+      navigate,
+      t,
+      totalEnabledCapacity,
+      totalInstalledCapacity,
+      totalUnitCount,
+    ],
+  );
 
   ////////////////////////////////////////////////////////////////
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit =
-    (areaId: string, clusterId: string) =>
-    ({ dirtyValues }: SubmitHandlerPlus<RenewableFormFields>) => {
-      return updateRenewableFormFields(
-        study.id,
-        areaId,
-        clusterId,
-        dirtyValues,
-      );
-    };
+  const handleCreateRow = ({
+    id,
+    installedCapacity,
+    enabledCapacity,
+    ...cluster
+  }: RenewableClusterWithCapacity) => {
+    return createRenewableCluster(study.id, areaId, cluster);
+  };
+
+  const handleDeleteSelection = (ids: string[]) => {
+    return deleteRenewableClusters(study.id, areaId, ids);
+  };
 
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
 
   return (
-    <ClusterRoot
-      study={study}
-      fixedGroupList={[...RENEWABLE_GROUPS]}
-      type="renewables"
-      noDataValues={{
-        enabled: true,
-        unitcount: 0,
-        nominalcapacity: 0,
-      }}
-      getDefaultValues={getDefaultValues}
-      backButtonName={t("study.modelization.clusters.backClusterList")}
-    >
-      {({ study, cluster, area }) => (
-        <>
-          <DocLink to={`${ACTIVE_WINDOWS_DOC_PATH}#renewable`} isAbsolute />
-          <Form
-            key={study.id + cluster + area}
-            config={{
-              defaultValues: () => {
-                return getRenewableFormFields(study.id, area, cluster);
-              },
-            }}
-            onSubmit={handleSubmit(area, cluster)}
-            autoSubmit
-          >
-            <Fields />
-          </Form>
-          <Box
-            sx={{
-              width: 1,
-              display: "flex",
-              flexDirection: "column",
-              height: "500px",
-            }}
-          >
-            <MatrixInput
-              study={study}
-              url={`input/renewables/series/${area}/${transformNameToId(
-                cluster,
-              )}/series`}
-              computStats={MatrixStats.NOCOL}
-            />
-          </Box>
-        </>
+    <UsePromiseCond
+      response={clusters}
+      ifPending={() => <SimpleLoader />}
+      ifResolved={() => (
+        <GroupedDataTable
+          data={clustersWithCapacity}
+          columns={columns}
+          groups={RENEWABLE_GROUPS}
+          onCreate={handleCreateRow}
+          onDelete={handleDeleteSelection}
+        />
       )}
-    </ClusterRoot>
+      ifRejected={(error) => <SimpleContent title={error?.toString()} />}
+    />
   );
 }
 

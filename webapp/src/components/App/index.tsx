@@ -56,6 +56,7 @@ import Correlation from "./Singlestudy/explore/Modelization/Areas/Hydro/Correlat
 import Storages from "./Singlestudy/explore/Modelization/Areas/Storages";
 import StorageForm from "./Singlestudy/explore/Modelization/Areas/Storages/Form";
 import ThermalForm from "./Singlestudy/explore/Modelization/Areas/Thermal/Form";
+import RenewablesForm from "./Singlestudy/explore/Modelization/Areas/Renewables/Form";
 
 function App() {
   return (
@@ -125,6 +126,10 @@ function App() {
                             <Route path="wind" element={<Wind />} />
                             <Route path="solar" element={<Solar />} />
                             <Route path="renewables" element={<Renewables />} />
+                            <Route
+                              path="renewables/:clusterId"
+                              element={<RenewablesForm />}
+                            />
                             <Route path="reserves" element={<Reserve />} />
                             <Route path="miscGen" element={<MiscGen />} />
                             <Route index element={<Properties />} />
