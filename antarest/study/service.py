@@ -5,7 +5,7 @@ import logging
 import os
 from datetime import datetime, timedelta
 from http import HTTPStatus
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from time import time
 from typing import Any, BinaryIO, Callable, Dict, List, Optional, Sequence, Tuple, Union, cast
 from uuid import uuid4
@@ -534,15 +534,15 @@ class StudyService:
             self._assert_study_unarchived(study)
             study_settings = self.storage_service.get_storage(study).get(study, study_settings_url)
             study_settings["horizon"] = metadata_patch.horizon
-
             self._edit_study_using_command(study=study, url=study_settings_url, data=study_settings)
+
         if metadata_patch.author:
             study_antares_url = "study/antares"
             self._assert_study_unarchived(study)
             study_antares = self.storage_service.get_storage(study).get(study, study_antares_url)
             study_antares["author"] = metadata_patch.author
-
             self._edit_study_using_command(study=study, url=study_antares_url, data=study_antares)
+
         study.additional_data = study.additional_data or StudyAdditionalData()
         if metadata_patch.name:
             study.name = metadata_patch.name
@@ -1411,20 +1411,50 @@ class StudyService:
                 )
         raise NotImplementedError()
 
-    def _edit_study_using_command(self, study: Study, url: str, data: SUB_JSON) -> ICommand:
+    def _edit_study_using_command(
+        self,
+        study: Study,
+        url: str,
+        data: SUB_JSON,
+        *,
+        create_missing: bool = False,
+    ) -> ICommand:
         """
-        Replace data on disk with new, using ICommand
+        Replace data on disk with new, using variant commands.
+
+        In addition to regular configuration changes, this function also allows the end user
+        to store files on disk, in the "user" directory of the study (without using variant commands).
+
         Args:
             study: study
             url: data path to reach
             data: new data to replace
+            create_missing: Flag to indicate whether to create file or parent directories if missing.
         """
-
         study_service = self.storage_service.get_storage(study)
         file_study = study_service.get_raw(metadata=study)
-        tree_node = file_study.tree.get_node(url.split("/"))
+
+        file_relpath = PurePosixPath(url.strip().strip("/"))
+        file_path = study_service.get_study_path(study).joinpath(file_relpath)
+        create_missing &= not file_path.exists()
+        if create_missing:
+            # IMPORTANT: We prohibit deep file system changes in private directories.
+            # - File and directory creation is only possible for the "user" directory,
+            #   because the "input" and "output" directories are managed by Antares.
+            # - We also prohibit writing files in the "user/expansion" folder which currently
+            #   contains the Xpansion tool configuration.
+            #   This configuration should be moved to the "input/expansion" directory in the future.
+            if file_relpath and file_relpath.parts[0] == "user" and file_relpath.parts[1] != "expansion":
+                # In the case of variants, we must write the file directly in the study's snapshot folder,
+                # because the "user" folder is not managed by the command mechanism.
+                file_path.parent.mkdir(parents=True, exist_ok=True)
+                file_path.touch()
+
+        # A 404 Not Found error is raised if the file does not exist.
+        tree_node = file_study.tree.get_node(file_relpath.parts)  # type: ignore
 
         command = self._create_edit_study_command(tree_node=tree_node, url=url, data=data)
+
         if isinstance(study_service, RawStudyService):
             res = command.apply(study_data=file_study)
             if not is_managed(study):
@@ -1432,11 +1462,12 @@ class StudyService:
             if not res.status:
                 raise CommandApplicationError(res.message)
 
-            lastsave_url = "study/antares/lastsave"
-            lastsave_node = file_study.tree.get_node(lastsave_url.split("/"))
-            self._create_edit_study_command(tree_node=lastsave_node, url=lastsave_url, data=int(time())).apply(
-                file_study
-            )
+            # noinspection SpellCheckingInspection
+            url = "study/antares/lastsave"
+            last_save_node = file_study.tree.get_node(url.split("/"))
+            cmd = self._create_edit_study_command(tree_node=last_save_node, url=url, data=int(time()))
+            cmd.apply(file_study)
+
             self.storage_service.variant_study_service.invalidate_cache(study)
 
         elif isinstance(study_service, VariantStudyService):
@@ -1445,8 +1476,10 @@ class StudyService:
                 command=command.to_dto(),
                 params=RequestParameters(user=DEFAULT_ADMIN_USER),
             )
-        else:
-            raise NotImplementedError()
+
+        else:  # pragma: no cover
+            raise TypeError(repr(type(study_service)))
+
         return command  # for testing purpose
 
     def apply_commands(self, uuid: str, commands: List[CommandDTO], params: RequestParameters) -> Optional[List[str]]:
@@ -1486,6 +1519,8 @@ class StudyService:
         url: str,
         new: SUB_JSON,
         params: RequestParameters,
+        *,
+        create_missing: bool = False,
     ) -> JSON:
         """
         Replace data inside study.
@@ -1495,15 +1530,15 @@ class StudyService:
             url: path data target in study
             new: new data to replace
             params: request parameters
+            create_missing: Flag to indicate whether to create file or parent directories if missing.
 
         Returns: new data replaced
-
         """
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
 
-        self._edit_study_using_command(study=study, url=url.strip().strip("/"), data=new)
+        self._edit_study_using_command(study=study, url=url.strip().strip("/"), data=new, create_missing=create_missing)
 
         self.event_bus.push(
             Event(
@@ -1545,11 +1580,8 @@ class StudyService:
             )
         )
 
-        self._edit_study_using_command(
-            study=study,
-            url="study/antares/author",
-            data=new_owner.name if new_owner is not None else None,
-        )
+        owner_name = None if new_owner is None else new_owner.name
+        self._edit_study_using_command(study=study, url="study/antares/author", data=owner_name)
 
         logger.info(
             "user %s change study %s owner to %d",
