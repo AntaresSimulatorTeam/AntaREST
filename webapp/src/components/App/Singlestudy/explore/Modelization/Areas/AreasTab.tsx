@@ -12,8 +12,7 @@ interface Props {
   renewablesClustering: boolean;
 }
 
-function AreasTab(props: Props) {
-  const { renewablesClustering } = props;
+function AreasTab({ renewablesClustering }: Props) {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const areaId = useAppSelector(getCurrentAreaId);
   const [t] = useTranslation();
@@ -44,52 +43,44 @@ function AreasTab(props: Props) {
   }, [areaId, navigate, location.pathname]);
 
   const tabList = useMemo(() => {
-    const baseTabs = [
+    const basePath = `/studies/${study.id}/explore/modelization/area/${areaId}`;
+
+    const tabs = [
+      { label: "study.modelization.properties", pathSuffix: "properties" },
+      { label: "study.modelization.load", pathSuffix: "load" },
+      { label: "study.modelization.thermal", pathSuffix: "thermal" },
       {
-        label: t("study.modelization.properties"),
-        path: `/studies/${study.id}/explore/modelization/area/${areaId}/properties`,
+        label: "study.modelization.storages",
+        pathSuffix: "storages",
+        condition: parseInt(study.version, 10) >= 860,
       },
       {
-        label: t("study.modelization.load"),
-        path: `/studies/${study.id}/explore/modelization/area/${areaId}/load`,
+        label: "study.modelization.renewables",
+        pathSuffix: "renewables",
+        condition: renewablesClustering,
+      },
+      { label: "study.modelization.hydro", pathSuffix: "hydro" },
+      {
+        label: "study.modelization.wind",
+        pathSuffix: "wind",
+        condition: !renewablesClustering,
       },
       {
-        label: t("study.modelization.thermal"),
-        path: `/studies/${study.id}/explore/modelization/area/${areaId}/thermal`,
+        label: "study.modelization.solar",
+        pathSuffix: "solar",
+        condition: !renewablesClustering,
       },
-      {
-        label: t("study.modelization.storages"),
-        path: `/studies/${study.id}/explore/modelization/area/${areaId}/storages`,
-      },
-      {
-        label: t("study.modelization.hydro"),
-        path: `/studies/${study.id}/explore/modelization/area/${areaId}/hydro`,
-      },
-      {
-        label: t("study.modelization.wind"),
-        path: `/studies/${study.id}/explore/modelization/area/${areaId}/wind`,
-      },
-      {
-        label: t("study.modelization.solar"),
-        path: `/studies/${study.id}/explore/modelization/area/${areaId}/solar`,
-      },
-      {
-        label: t("study.modelization.reserves"),
-        path: `/studies/${study.id}/explore/modelization/area/${areaId}/reserves`,
-      },
-      {
-        label: t("study.modelization.miscGen"),
-        path: `/studies/${study.id}/explore/modelization/area/${areaId}/miscGen`,
-      },
+      { label: "study.modelization.reserves", pathSuffix: "reserves" },
+      { label: "study.modelization.miscGen", pathSuffix: "miscGen" },
     ];
-    if (renewablesClustering) {
-      baseTabs.splice(4, 2, {
-        label: t("study.modelization.renewables"),
-        path: `/studies/${study.id}/explore/modelization/area/${areaId}/renewables`,
-      });
-    }
-    return baseTabs;
-  }, [study.id, areaId, renewablesClustering]);
+
+    return tabs
+      .filter(({ condition }) => condition ?? true)
+      .map(({ label, pathSuffix }) => ({
+        label: t(label),
+        path: `${basePath}/${pathSuffix}`,
+      }));
+  }, [study.id, areaId, renewablesClustering, t, study.version]);
 
   return (
     <Paper
