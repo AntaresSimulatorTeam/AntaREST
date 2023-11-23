@@ -149,7 +149,7 @@ def generator_matrix_constants_fixture(
         An instance of the GeneratorMatrixConstants class representing the matrix constants generator.
     """
     out_generator_matrix_constants = GeneratorMatrixConstants(simple_matrix_service)
-    out_generator_matrix_constants.init_constant_matrices(bucket_dir=simple_matrix_service.bucket_dir)
+    out_generator_matrix_constants.init_constant_matrices()
     return out_generator_matrix_constants
 
 

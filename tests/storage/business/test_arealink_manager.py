@@ -99,7 +99,7 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
     raw_study_service.get_raw.return_value = empty_study
     raw_study_service.cache = Mock()
     generator_matrix_constants = GeneratorMatrixConstants(matrix_service)
-    generator_matrix_constants.init_constant_matrices(bucket_dir=generator_matrix_constants.matrix_service.bucket_dir)
+    generator_matrix_constants.init_constant_matrices()
     variant_study_service.command_factory = CommandFactory(
         generator_matrix_constants,
         matrix_service,

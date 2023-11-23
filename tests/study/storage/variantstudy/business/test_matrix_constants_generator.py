@@ -19,6 +19,7 @@ class TestGeneratorMatrixConstants:
                 matrix_content_repository=matrix_content_repository,
             )
         )
+        generator.init_constant_matrices()
 
         ref1 = generator.get_st_storage_pmax_injection()
         matrix_id1 = ref1.split(MATRIX_PROTOCOL_PREFIX)[1]
@@ -54,6 +55,7 @@ class TestGeneratorMatrixConstants:
                 matrix_content_repository=matrix_content_repository,
             )
         )
+        generator.init_constant_matrices()
         series = matrix_constants.binding_constraint.series
 
         hourly = generator.get_binding_constraint_hourly()

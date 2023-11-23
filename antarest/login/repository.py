@@ -1,63 +1,13 @@
 import logging
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 from sqlalchemy import exists  # type: ignore
-from sqlalchemy.engine.base import Engine  # type: ignore
-from sqlalchemy.orm import joinedload, Session, sessionmaker  # type: ignore
+from sqlalchemy.orm import joinedload, Session  # type: ignore
 
-from antarest.core.jwt import ADMIN_ID
-from antarest.core.roles import RoleType
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.login.model import Bot, Group, Password, Role, User, UserLdap
+from antarest.login.model import Bot, Group, Role, User, UserLdap
 
 logger = logging.getLogger(__name__)
-
-DB_INIT_DEFAULT_GROUP_ID = "admin"
-DB_INIT_DEFAULT_GROUP_NAME = "admin"
-
-DB_INIT_DEFAULT_USER_ID = ADMIN_ID
-DB_INIT_DEFAULT_USER_NAME = "admin"
-
-DB_INIT_DEFAULT_ROLE_ID = ADMIN_ID
-DB_INIT_DEFAULT_ROLE_GROUP_ID = "admin"
-
-
-def init_admin_user(engine: Engine, session_args: Dict[str, bool], admin_password: str) -> None:
-    with sessionmaker(bind=engine, **session_args)() as session:
-        group = Group(
-            id=DB_INIT_DEFAULT_GROUP_ID,
-            name=DB_INIT_DEFAULT_GROUP_NAME,
-        )
-        user = User(
-            id=DB_INIT_DEFAULT_USER_ID,
-            name=DB_INIT_DEFAULT_USER_NAME,
-            password=Password(admin_password),
-        )
-        role = Role(
-            type=RoleType.ADMIN,
-            identity=User(id=DB_INIT_DEFAULT_USER_ID),
-            group=Group(
-                id=DB_INIT_DEFAULT_GROUP_ID,
-            ),
-        )
-
-        existing_group = session.query(Group).get(group.id)
-        if not existing_group:
-            session.add(group)
-            session.commit()
-
-        existing_user = session.query(User).get(user.id)
-        if not existing_user:
-            session.add(user)
-            session.commit()
-
-        existing_role = session.query(Role).get((DB_INIT_DEFAULT_USER_ID, DB_INIT_DEFAULT_GROUP_ID))
-        if not existing_role:
-            role.group = session.merge(role.group)
-            role.identity = session.merge(role.identity)
-            session.add(role)
-
-        session.commit()
 
 
 class GroupRepository:
@@ -143,7 +93,7 @@ class UserRepository:
         return user
 
     def get_by_name(self, name: str) -> Optional[User]:
-        user: User = db.session.query(User).filter_by(name=name).first()
+        user: User = self.session.query(User).filter_by(name=name).first()
         return user
 
     def get_all(self) -> List[User]:

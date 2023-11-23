@@ -57,10 +57,12 @@ class GeneratorMatrixConstants:
     def __init__(self, matrix_service: ISimpleMatrixService) -> None:
         self.hashes: Dict[str, str] = {}
         self.matrix_service: ISimpleMatrixService = matrix_service
+        self._lock_dir = tempfile.gettempdir()
 
-    def init_constant_matrices(self, bucket_dir: Path) -> None:
-        bucket_dir.mkdir(parents=True, exist_ok=True)
-        with FileLock(bucket_dir / MATRIX_CONSTANT_INIT_LOCK_FILE_NAME):
+    def init_constant_matrices(
+        self,
+    ) -> None:
+        with FileLock(str(Path(self._lock_dir) / MATRIX_CONSTANT_INIT_LOCK_FILE_NAME)):
             self.hashes[HYDRO_COMMON_CAPACITY_MAX_POWER_V7] = self.matrix_service.create(
                 matrix_constants.hydro.v7.max_power
             )
