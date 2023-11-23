@@ -37,6 +37,7 @@ import SelectSingle from "../../common/SelectSingle";
 import CheckBoxFE from "../../common/fieldEditors/CheckBoxFE";
 import { convertVersions } from "../../../services/utils";
 import UsePromiseCond from "../../common/utils/UsePromiseCond";
+import SwitchFE from "../../common/fieldEditors/SwitchFE";
 
 const LAUNCH_LOAD_DEFAULT = 22;
 
@@ -405,25 +406,20 @@ function LauncherDialog(props: Props) {
           <Box
             sx={{
               display: "flex",
-              gap: 5,
+              gap: 1,
               alignItems: "center",
               alignContent: "center",
             }}
           >
             <Typography>Xpansion</Typography>
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={!!options.xpansion}
-                  onChange={(e, checked) => {
-                    handleChange(
-                      "xpansion",
-                      checked ? { enabled: true } : undefined,
-                    );
-                  }}
-                />
-              }
-              label={t("study.xpansionMode") as string}
+            <SwitchFE
+              value={!!options.xpansion}
+              onChange={(e, checked) => {
+                handleChange(
+                  "xpansion",
+                  checked ? { enabled: true } : undefined,
+                );
+              }}
             />
           </Box>
           {outputList && outputList.length === 1 && (
