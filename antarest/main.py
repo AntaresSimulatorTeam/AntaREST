@@ -35,7 +35,7 @@ from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.core.utils.utils import get_local_path
 from antarest.core.utils.web import tags_metadata
 from antarest.login.auth import Auth, JwtSettings
-from antarest.login.repository import init_admin_user
+from antarest.login.model import init_admin_user
 from antarest.matrixstore.matrix_garbage_collector import MatrixGarbageCollector
 from antarest.singleton_services import start_all_services
 from antarest.study.storage.auto_archive_service import AutoArchiveService

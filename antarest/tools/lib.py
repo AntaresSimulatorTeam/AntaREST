@@ -156,7 +156,7 @@ class LocalVariantGenerator(IVariantGenerator):
         )
         generator = VariantCommandGenerator(study_factory)
         generator_matrix_constants = GeneratorMatrixConstants(matrix_service)
-        generator_matrix_constants.init_constant_matrices(bucket_dir=matrix_service.bucket_dir)
+        generator_matrix_constants.init_constant_matrices()
         command_factory = CommandFactory(
             generator_matrix_constants=generator_matrix_constants,
             matrix_service=matrix_service,

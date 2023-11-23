@@ -92,7 +92,7 @@ def command_context_fixture(matrix_service: MatrixService) -> CommandContext:
     """
     # sourcery skip: inline-immediately-returned-variable
     generator_matrix_constants = GeneratorMatrixConstants(matrix_service)
-    generator_matrix_constants.init_constant_matrices(bucket_dir=matrix_service.bucket_dir)
+    generator_matrix_constants.init_constant_matrices()
     command_context = CommandContext(
         generator_matrix_constants=generator_matrix_constants,
         matrix_service=matrix_service,
@@ -113,7 +113,7 @@ def command_factory_fixture(matrix_service: MatrixService) -> CommandFactory:
         CommandFactory: The CommandFactory object.
     """
     generator_matrix_constants = GeneratorMatrixConstants(matrix_service)
-    generator_matrix_constants.init_constant_matrices(bucket_dir=matrix_service.bucket_dir)
+    generator_matrix_constants.init_constant_matrices()
     return CommandFactory(
         generator_matrix_constants=generator_matrix_constants,
         matrix_service=matrix_service,

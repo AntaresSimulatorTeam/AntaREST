@@ -1,11 +1,14 @@
+import logging
 import typing as t
 import uuid
 
 import bcrypt
 from pydantic.main import BaseModel
 from sqlalchemy import Boolean, Column, Enum, ForeignKey, Integer, Sequence, String  # type: ignore
+from sqlalchemy.engine.base import Engine  # type: ignore
+from sqlalchemy.exc import IntegrityError  # type: ignore
 from sqlalchemy.ext.hybrid import hybrid_property  # type: ignore
-from sqlalchemy.orm import relationship  # type: ignore
+from sqlalchemy.orm import Session, relationship, sessionmaker  # type: ignore
 
 from antarest.core.persistence import Base
 from antarest.core.roles import RoleType
@@ -13,6 +16,16 @@ from antarest.core.roles import RoleType
 if t.TYPE_CHECKING:
     # avoid circular import
     from antarest.launcher.model import JobResult
+
+
+logger = logging.getLogger(__name__)
+
+
+GROUP_ID = "admin"
+GROUP_NAME = "admin"
+
+USER_ID = 1
+USER_NAME = "admin"
 
 
 class UserInfo(BaseModel):
@@ -282,3 +295,39 @@ class CredentialsDTO(BaseModel):
     user: int
     access_token: str
     refresh_token: str
+
+
+def init_admin_user(engine: Engine, session_args: t.Mapping[str, bool], admin_password: str) -> None:
+    with sessionmaker(bind=engine, **session_args)() as session:
+        group = Group(id=GROUP_ID, name=GROUP_NAME)
+        user = User(id=USER_ID, name=USER_NAME, password=Password(admin_password))
+        role = Role(type=RoleType.ADMIN, identity=User(id=USER_ID), group=Group(id=GROUP_ID))
+
+        existing_group = session.query(Group).get(group.id)
+        if not existing_group:
+            session.add(group)
+            try:
+                session.commit()
+            except IntegrityError as e:
+                session.rollback()  # Rollback any changes made before the error
+                logger.error(f"IntegrityError: {e}")
+
+        existing_user = session.query(User).get(user.id)
+        if not existing_user:
+            session.add(user)
+            try:
+                session.commit()
+            except IntegrityError as e:
+                session.rollback()  # Rollback any changes made before the error
+                logger.error(f"IntegrityError: {e}")
+
+        existing_role = session.query(Role).get((USER_ID, GROUP_ID))
+        if not existing_role:
+            role.group = session.merge(role.group)
+            role.identity = session.merge(role.identity)
+            session.add(role)
+        try:
+            session.commit()
+        except IntegrityError as e:
+            session.rollback()  # Rollback any changes made before the error
+            logger.error(f"IntegrityError: {e}")
