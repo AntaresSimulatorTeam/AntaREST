@@ -613,7 +613,16 @@ class TestSnapshotGenerator:
             additional_data=StudyAdditionalData(author="john.doe"),
             owner_id=jwt_user.id,
         )
+
+        # Create the study in database
         root_study = raw_study_service.create(root_study)
+
+        # Create some outputs with a "simulation.log" file
+        for output_name in ["20230802-1425eco", "20230802-1628eco"]:
+            output_dir = study_dir / "output" / output_name
+            output_dir.mkdir(parents=True)
+            (output_dir / "simulation.log").touch()
+
         with db():
             # Save the root study in database
             variant_study_service.repository.save(root_study)
@@ -695,6 +704,7 @@ class TestSnapshotGenerator:
         - the cache is updated with the new variant configuration,
         - the temporary directory is correctly removed.
         - the notifications are correctly registered.
+        - the simulation outputs are not copied.
         """
         generator = SnapshotGenerator(
             cache=variant_study_service.cache,
@@ -801,6 +811,9 @@ class TestSnapshotGenerator:
                 "success": True,
             }
         ]
+
+        # Check: the simulation outputs are not copied.
+        assert not (snapshot_dir / "output").exists()
 
     @with_db_context
     def test_generate__with_user_dir(

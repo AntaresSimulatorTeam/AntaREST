@@ -352,7 +352,7 @@ def get_start_date(
 
 
 def export_study_flat(
-    path_study: Path,
+    study_dir: Path,
     dest: Path,
     study_factory: StudyFactory,
     outputs: bool = True,
@@ -362,11 +362,11 @@ def export_study_flat(
 ) -> None:
     start_time = time.time()
 
-    output_src_path = output_src_path or path_study / "output"
+    output_src_path = output_src_path or study_dir / "output"
     output_dest_path = dest / "output"
-    ignore_patterns = lambda directory, contents: ["output"] if str(directory) == str(path_study) else []
+    ignore_patterns = lambda directory, contents: ["output"] if str(directory) == str(study_dir) else []
 
-    shutil.copytree(src=path_study, dst=dest, ignore=ignore_patterns)
+    shutil.copytree(src=study_dir, dst=dest, ignore=ignore_patterns)
 
     if outputs and output_src_path.exists():
         if output_list_filter is None:
@@ -390,9 +390,14 @@ def export_study_flat(
 
     stop_time = time.time()
     duration = "{:.3f}".format(stop_time - start_time)
-    logger.info(f"Study {path_study} exported (flat mode) in {duration}s")
+    logger.info(
+        {
+            False: f"Study '{study_dir}' exported (flat mode) in {duration}s",
+            True: f"Study '{study_dir}' exported with outputs (flat mode) in {duration}s",
+        }[bool(outputs)]
+    )
     study = study_factory.create_from_fs(dest, "", use_cache=False)
     if denormalize:
         study.tree.denormalize()
         duration = "{:.3f}".format(time.time() - stop_time)
-        logger.info(f"Study {path_study} denormalized in {duration}s")
+        logger.info(f"Study '{study_dir}' denormalized in {duration}s")
