@@ -1,7 +1,11 @@
 import logging
+import os.path
+import tempfile
 import time
 import typing as t
 from pathlib import Path
+
+import filelock
 
 from antarest.core.interfaces.cache import CacheConstants, ICache
 from antarest.matrixstore.service import ISimpleMatrixService
@@ -40,8 +44,43 @@ class StudyFactory:
     ) -> None:
         self.context = ContextServer(matrix=matrix, resolver=resolver)
         self.cache = cache
+        # It is better to store lock files in the temporary directory,
+        # because it is possible that there not deleted when the web application is stopped.
+        # Cleaning up lock files is thus easier.
+        self._lock_dir = tempfile.gettempdir()
+        self._lock_fmt = "{basename}.create_from_fs.lock"
 
     def create_from_fs(
+        self,
+        path: Path,
+        study_id: str,
+        output_path: t.Optional[Path] = None,
+        use_cache: bool = True,
+    ) -> FileStudy:
+        """
+        Create a study from a path on the disk.
+
+        `FileStudy` creation is done with a file lock to avoid that two studies are analyzed at the same time.
+
+        Args:
+            path: full path of the study directory to parse.
+            study_id: ID of the study (if known).
+            output_path: full path of the "output" directory in the study directory.
+            use_cache: Whether to use cache or not.
+
+        Returns:
+            Antares study stored on the disk.
+        """
+        # This file lock is used to avoid that two studies are analyzed at the same time.
+        # This often happens when the user opens a study, because we display both
+        # the summary and the comments in the same time in the UI.
+        lock_basename = study_id if study_id else path.name
+        lock_file = os.path.join(self._lock_dir, self._lock_fmt.format(basename=lock_basename))
+        with filelock.FileLock(lock_file):
+            logger.info(f"🏗 Creating a study by reading the configuration from the directory '{path}'...")
+            return self._create_from_fs_unsafe(path, study_id, output_path, use_cache)
+
+    def _create_from_fs_unsafe(
         self,
         path: Path,
         study_id: str,
