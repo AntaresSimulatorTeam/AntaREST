@@ -647,6 +647,7 @@
   "xpansion.solver": "Solveur",
   "xpansion.timeLimit": "Limite de temps (en heures)",
   "xpansion.logLevel": "Niveau de log",
+  "xpansion.separationParameter": "Paramètre de séparation",
   "xpansion.constraints": "Contraintes",
   "xpansion.capacities": "Capacités",
   "xpansion.weights": "Poids",
