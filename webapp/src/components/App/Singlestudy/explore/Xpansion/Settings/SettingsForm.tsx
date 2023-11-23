@@ -220,6 +220,30 @@ function SettingsForm(props: PropType) {
             sx={{ mb: 1 }}
           />
         </Box>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "flex-start",
+            width: "100%",
+            mb: 2,
+            "&> div": {
+              mr: 2,
+              mb: 2,
+            },
+          }}
+        >
+          <TextField
+            type="number"
+            label={t("xpansion.separationParameter")}
+            variant="filled"
+            defaultValue={0.5}
+            value={currentSettings.separationParameter}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              handleChange("separationParameter", parseFloat(e.target.value))
+            }
+            sx={{ mb: 1 }}
+          />
+        </Box>
       </Box>
       <Box>
         <Title>{t("launcher.xpansion.versionR")}</Title>
