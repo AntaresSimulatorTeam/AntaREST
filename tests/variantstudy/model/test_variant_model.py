@@ -76,7 +76,7 @@ class TestVariantStudyService:
     ) -> None:
         # Initialize the default matrix constants
         # noinspection PyProtectedMember
-        generator_matrix_constants._init()
+        generator_matrix_constants.init_constant_matrices()
 
         params = RequestParameters(user=jwt_user)
 
