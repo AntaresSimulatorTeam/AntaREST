@@ -1,5 +1,6 @@
 import io
 import os
+import typing as t
 import uuid
 import zipfile
 from pathlib import Path
@@ -11,8 +12,13 @@ from pandas.errors import ParserError
 
 from antarest.core.model import JSON
 from antarest.study.business.xpansion_management import (
+    CutType,
     FileCurrentlyUsedInSettings,
     LinkNotFound,
+    Master,
+    MaxIteration,
+    Solver,
+    UcType,
     XpansionCandidateDTO,
     XpansionFileNotFoundError,
     XpansionManager,
@@ -43,7 +49,7 @@ def make_empty_study(tmpdir: Path, version: int) -> FileStudy:
     return FileStudy(config, FileStudyTree(Mock(), config))
 
 
-def make_xpansion_manager(empty_study):
+def make_xpansion_manager(empty_study: FileStudy) -> XpansionManager:
     raw_study_service = Mock(spec=RawStudyService)
     variant_study_service = Mock(spec=VariantStudyService)
     xpansion_manager = XpansionManager(
@@ -54,7 +60,7 @@ def make_xpansion_manager(empty_study):
     return xpansion_manager
 
 
-def make_areas(empty_study):
+def make_areas(empty_study: FileStudy) -> None:
     CreateArea(
         area_name="area1",
         command_context=Mock(spec=CommandContext, generator_matrix_constants=Mock()),
@@ -65,7 +71,7 @@ def make_areas(empty_study):
     )._apply_config(empty_study.config)
 
 
-def make_link(empty_study):
+def make_link(empty_study: FileStudy) -> None:
     CreateLink(
         area1="area1",
         area2="area2",
@@ -73,7 +79,7 @@ def make_link(empty_study):
     )._apply_config(empty_study.config)
 
 
-def make_link_and_areas(empty_study):
+def make_link_and_areas(empty_study: FileStudy) -> None:
     make_areas(empty_study)
     make_link(empty_study)
 
@@ -125,7 +131,7 @@ def make_link_and_areas(empty_study):
         ),
     ],
 )
-def test_create_configuration(tmp_path: Path, version: int, expected_output: JSON):
+def test_create_configuration(tmp_path: Path, version: int, expected_output: JSON) -> None:
     """
     Test the creation of a configuration.
     """
@@ -142,7 +148,7 @@ def test_create_configuration(tmp_path: Path, version: int, expected_output: JSO
 
 
 @pytest.mark.unit_test
-def test_delete_xpansion_configuration(tmp_path: Path):
+def test_delete_xpansion_configuration(tmp_path: Path) -> None:
     """
     Test the deletion of a configuration.
     """
@@ -165,53 +171,58 @@ def test_delete_xpansion_configuration(tmp_path: Path):
 
 @pytest.mark.unit_test
 @pytest.mark.parametrize(
-    "version,expected_output",
+    "version, expected_output",
     [
         (
             720,
-            XpansionSettingsDTO.parse_obj(
-                {
-                    "optimality_gap": 1,
-                    "max_iteration": "+Inf",
-                    "uc_type": "expansion_fast",
-                    "master": "integer",
-                    "yearly_weight": None,
-                    "additional-constraints": None,
-                    "relaxed-optimality-gap": 1000000.0,
-                    "cut-type": "yearly",
-                    "ampl.solver": "cbc",
-                    "ampl.presolve": 0,
-                    "ampl.solve_bounds_frequency": 1000000,
-                    "relative_gap": None,
-                    "solver": None,
-                }
-            ),
+            {
+                "additional-constraints": None,
+                "ampl.presolve": 0,
+                "ampl.solve_bounds_frequency": 1000000,
+                "ampl.solver": "cbc",
+                "batch_size": 0,
+                "cut-type": CutType.YEARLY,
+                "log_level": 0,
+                "master": Master.INTEGER,
+                "max_iteration": MaxIteration.INF,
+                "optimality_gap": 1.0,
+                "relative_gap": None,
+                "relaxed-optimality-gap": 1000000.0,
+                "sensitivity_config": {"capex": False, "epsilon": 10000.0, "projection": []},
+                "separation_parameter": 0.5,
+                "solver": None,
+                "timelimit": 1000000000000,
+                "uc_type": UcType.EXPANSION_FAST,
+                "yearly-weights": None,
+            },
         ),
         (
             810,
-            XpansionSettingsDTO.parse_obj(
-                {
-                    "optimality_gap": 1,
-                    "max_iteration": "+Inf",
-                    "uc_type": "expansion_fast",
-                    "master": "integer",
-                    "yearly_weight": None,
-                    "additional-constraints": None,
-                    "relaxed-optimality-gap": None,
-                    "cut-type": None,
-                    "ampl.solver": None,
-                    "ampl.presolve": None,
-                    "ampl.solve_bounds_frequency": None,
-                    "relative_gap": 1e-12,
-                    "solver": "Cbc",
-                    "batch_size": 0,
-                }
-            ),
+            {
+                "additional-constraints": None,
+                "ampl.presolve": None,
+                "ampl.solve_bounds_frequency": None,
+                "ampl.solver": None,
+                "batch_size": 0,
+                "cut-type": None,
+                "log_level": 0,
+                "master": Master.INTEGER,
+                "max_iteration": MaxIteration.INF,
+                "optimality_gap": 1.0,
+                "relative_gap": 1e-12,
+                "relaxed-optimality-gap": None,
+                "sensitivity_config": {"capex": False, "epsilon": 10000.0, "projection": []},
+                "separation_parameter": 0.5,
+                "solver": Solver.CBC,
+                "timelimit": 1000000000000,
+                "uc_type": UcType.EXPANSION_FAST,
+                "yearly-weights": None,
+            },
         ),
     ],
 )
 @pytest.mark.unit_test
-def test_get_xpansion_settings(tmp_path: Path, version: int, expected_output: JSON):
+def test_get_xpansion_settings(tmp_path: Path, version: int, expected_output: JSON) -> None:
     """
     Test the retrieval of the xpansion settings.
     """
@@ -222,11 +233,12 @@ def test_get_xpansion_settings(tmp_path: Path, version: int, expected_output: JS
 
     xpansion_manager.create_xpansion_configuration(study)
 
-    assert xpansion_manager.get_xpansion_settings(study) == expected_output
+    actual = xpansion_manager.get_xpansion_settings(study)
+    assert actual.dict(by_alias=True) == expected_output
 
 
 @pytest.mark.unit_test
-def test_xpansion_sensitivity_settings(tmp_path: Path):
+def test_xpansion_sensitivity_settings(tmp_path: Path) -> None:
     """
     Test that attribute projection in sensitivity_config is optional
     """
@@ -259,7 +271,7 @@ def test_xpansion_sensitivity_settings(tmp_path: Path):
 
 
 @pytest.mark.unit_test
-def test_update_xpansion_settings(tmp_path: Path):
+def test_update_xpansion_settings(tmp_path: Path) -> None:
     """
     Test the retrieval of the xpansion settings.
     """
@@ -270,32 +282,37 @@ def test_update_xpansion_settings(tmp_path: Path):
 
     xpansion_manager.create_xpansion_configuration(study)
 
-    new_settings = XpansionSettingsDTO.parse_obj(
-        {
-            "optimality_gap": 4,
-            "max_iteration": 123,
-            "uc_type": "expansion_fast",
-            "master": "integer",
-            "yearly_weight": None,
-            "additional-constraints": None,
-            "relaxed-optimality-gap": "1.2%",
-            "cut-type": None,
-            "ampl.solver": None,
-            "ampl.presolve": None,
-            "ampl.solve_bounds_frequency": None,
-            "relative_gap": 1e-12,
-            "solver": "Cbc",
-            "batch_size": 4,
-        }
-    )
+    expected = {
+        "optimality_gap": 4.0,
+        "max_iteration": 123,
+        "uc_type": UcType.EXPANSION_FAST,
+        "master": Master.INTEGER,
+        "yearly-weights": None,
+        "additional-constraints": None,
+        "relaxed-optimality-gap": "1.2%",
+        "cut-type": None,
+        "ampl.solver": None,
+        "ampl.presolve": None,
+        "ampl.solve_bounds_frequency": None,
+        "relative_gap": 1e-12,
+        "batch_size": 4,
+        "separation_parameter": 0.5,
+        "solver": Solver.CBC,
+        "timelimit": 1000000000000,
+        "log_level": 0,
+        "sensitivity_config": {"epsilon": 10000.0, "projection": [], "capex": False},
+    }
+
+    new_settings = XpansionSettingsDTO(**expected)
 
     xpansion_manager.update_xpansion_settings(study, new_settings)
 
-    assert xpansion_manager.get_xpansion_settings(study) == new_settings
+    actual = xpansion_manager.get_xpansion_settings(study)
+    assert actual.dict(by_alias=True) == expected
 
 
 @pytest.mark.unit_test
-def test_add_candidate(tmp_path: Path):
+def test_add_candidate(tmp_path: Path) -> None:
     empty_study = make_empty_study(tmp_path, 810)
     study = RawStudy(id="1", path=empty_study.config.study_path, version=810)
     xpansion_manager = make_xpansion_manager(empty_study)
@@ -344,7 +361,7 @@ def test_add_candidate(tmp_path: Path):
 
 
 @pytest.mark.unit_test
-def test_get_candidate(tmp_path: Path):
+def test_get_candidate(tmp_path: Path) -> None:
     empty_study = make_empty_study(tmp_path, 810)
     study = RawStudy(id="1", path=empty_study.config.study_path, version=810)
     xpansion_manager = make_xpansion_manager(empty_study)
@@ -380,7 +397,7 @@ def test_get_candidate(tmp_path: Path):
 
 
 @pytest.mark.unit_test
-def test_get_candidates(tmp_path: Path):
+def test_get_candidates(tmp_path: Path) -> None:
     empty_study = make_empty_study(tmp_path, 810)
     study = RawStudy(id="1", path=empty_study.config.study_path, version=810)
     xpansion_manager = make_xpansion_manager(empty_study)
@@ -418,7 +435,7 @@ def test_get_candidates(tmp_path: Path):
 
 
 @pytest.mark.unit_test
-def test_update_candidates(tmp_path: Path):
+def test_update_candidates(tmp_path: Path) -> None:
     empty_study = make_empty_study(tmp_path, 810)
     study = RawStudy(id="1", path=empty_study.config.study_path, version=810)
     xpansion_manager = make_xpansion_manager(empty_study)
@@ -452,7 +469,7 @@ def test_update_candidates(tmp_path: Path):
 
 
 @pytest.mark.unit_test
-def test_delete_candidate(tmp_path: Path):
+def test_delete_candidate(tmp_path: Path) -> None:
     empty_study = make_empty_study(tmp_path, 810)
     study = RawStudy(id="1", path=empty_study.config.study_path, version=810)
     xpansion_manager = make_xpansion_manager(empty_study)
@@ -488,7 +505,7 @@ def test_delete_candidate(tmp_path: Path):
 
 
 @pytest.mark.unit_test
-def test_update_constraints(tmp_path: Path):
+def test_update_constraints(tmp_path: Path) -> None:
     empty_study = make_empty_study(tmp_path, 810)
     study = RawStudy(id="1", path=empty_study.config.study_path, version=810)
     xpansion_manager = make_xpansion_manager(empty_study)
@@ -511,7 +528,7 @@ def test_update_constraints(tmp_path: Path):
 
 
 @pytest.mark.unit_test
-def test_add_resources(tmp_path: Path):
+def test_add_resources(tmp_path: Path) -> None:
     empty_study = make_empty_study(tmp_path, 810)
     study = RawStudy(id="1", path=empty_study.config.study_path, version=810)
     xpansion_manager = make_xpansion_manager(empty_study)
@@ -538,10 +555,12 @@ def test_add_resources(tmp_path: Path):
     )
 
     assert filename1 in empty_study.tree.get(["user", "expansion", "constraints"])
-    assert content1.encode() == empty_study.tree.get(["user", "expansion", "constraints", filename1])
+    expected1 = empty_study.tree.get(["user", "expansion", "constraints", filename1])
+    assert content1.encode() == t.cast(bytes, expected1)
 
     assert filename2 in empty_study.tree.get(["user", "expansion", "constraints"])
-    assert content2.encode() == empty_study.tree.get(["user", "expansion", "constraints", filename2])
+    expected2 = empty_study.tree.get(["user", "expansion", "constraints", filename2])
+    assert content2.encode() == t.cast(bytes, expected2)
 
     assert filename3 in empty_study.tree.get(["user", "expansion", "weights"])
     assert {
@@ -561,7 +580,7 @@ def test_add_resources(tmp_path: Path):
 
 
 @pytest.mark.unit_test
-def test_list_root_resources(tmp_path: Path):
+def test_list_root_resources(tmp_path: Path) -> None:
     empty_study = make_empty_study(tmp_path, 810)
     study = RawStudy(id="1", path=empty_study.config.study_path, version=810)
     xpansion_manager = make_xpansion_manager(empty_study)
@@ -574,7 +593,7 @@ def test_list_root_resources(tmp_path: Path):
 
 
 @pytest.mark.unit_test
-def test_get_single_constraints(tmp_path: Path):
+def test_get_single_constraints(tmp_path: Path) -> None:
     empty_study = make_empty_study(tmp_path, 810)
     study = RawStudy(id="1", path=empty_study.config.study_path, version=810)
     xpansion_manager = make_xpansion_manager(empty_study)
@@ -592,7 +611,7 @@ def test_get_single_constraints(tmp_path: Path):
 
 
 @pytest.mark.unit_test
-def test_get_all_constraints(tmp_path: Path):
+def test_get_all_constraints(tmp_path: Path) -> None:
     empty_study = make_empty_study(tmp_path, 810)
     study = RawStudy(id="1", path=empty_study.config.study_path, version=810)
     xpansion_manager = make_xpansion_manager(empty_study)
@@ -617,7 +636,7 @@ def test_get_all_constraints(tmp_path: Path):
 
 
 @pytest.mark.unit_test
-def test_add_capa(tmp_path: Path):
+def test_add_capa(tmp_path: Path) -> None:
     empty_study = make_empty_study(tmp_path, 810)
     study = RawStudy(id="1", path=empty_study.config.study_path, version=810)
     xpansion_manager = make_xpansion_manager(empty_study)
@@ -651,7 +670,7 @@ def test_add_capa(tmp_path: Path):
 
 
 @pytest.mark.unit_test
-def test_delete_capa(tmp_path: Path):
+def test_delete_capa(tmp_path: Path) -> None:
     empty_study = make_empty_study(tmp_path, 810)
     study = RawStudy(id="1", path=empty_study.config.study_path, version=810)
     xpansion_manager = make_xpansion_manager(empty_study)
@@ -677,7 +696,7 @@ def test_delete_capa(tmp_path: Path):
 
 
 @pytest.mark.unit_test
-def test_get_single_capa(tmp_path: Path):
+def test_get_single_capa(tmp_path: Path) -> None:
     empty_study = make_empty_study(tmp_path, 810)
     study = RawStudy(id="1", path=empty_study.config.study_path, version=810)
     xpansion_manager = make_xpansion_manager(empty_study)
@@ -705,7 +724,7 @@ def test_get_single_capa(tmp_path: Path):
 
 
 @pytest.mark.unit_test
-def test_get_all_capa(tmp_path: Path):
+def test_get_all_capa(tmp_path: Path) -> None:
     empty_study = make_empty_study(tmp_path, 810)
     study = RawStudy(id="1", path=empty_study.config.study_path, version=810)
     xpansion_manager = make_xpansion_manager(empty_study)

@@ -19,7 +19,7 @@ class ExpansionSettings(IniFileNode):
         - additional-constraints: str = filename. default = None
 
     version < 800 only:
-        - relaxed-optimality-gap: float = 1e-4  # relaxed-optimality-gap > 0
+        - relaxed-optimality-gap: float = 0.001  # relaxed-optimality-gap > 0
         - cut-type: str = "average", "yearly" or "weekly". default="yearly"
         - ampl.solver: str = "cbc"
         - ampl.presolve: int = 0
