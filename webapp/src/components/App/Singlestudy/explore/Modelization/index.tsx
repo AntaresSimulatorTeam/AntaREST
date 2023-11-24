@@ -1,57 +1,73 @@
 import { useMemo } from "react";
-import { useOutletContext } from "react-router-dom";
+import { useNavigate, useOutletContext } from "react-router-dom";
 import { Box } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { StudyMetadata } from "../../../../../common/types";
 import TabWrapper from "../TabWrapper";
 import useAppSelector from "../../../../../redux/hooks/useAppSelector";
-import { getCurrentAreaId } from "../../../../../redux/selectors";
+import { getAreas, getCurrentAreaId } from "../../../../../redux/selectors";
+import useAppDispatch from "../../../../../redux/hooks/useAppDispatch";
+import { setCurrentArea } from "../../../../../redux/ducks/studySyntheses";
 
 function Modelization() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
-  const areaId = useAppSelector(getCurrentAreaId);
   const [t] = useTranslation();
+  const dispatch = useAppDispatch();
+  const navigate = useNavigate();
+  const areas = useAppSelector((state) => getAreas(state, study.id));
+  const areaId = useAppSelector(getCurrentAreaId);
 
-  const tabList = useMemo(
-    () => [
+  const tabList = useMemo(() => {
+    const basePath = `/studies/${study.id}/explore/modelization`;
+
+    const handleAreasClick = () => {
+      if (areaId.length === 0 && areas.length > 0) {
+        const firstAreaId = areas[0].id ?? null;
+
+        if (firstAreaId) {
+          dispatch(setCurrentArea(firstAreaId));
+          navigate(`${basePath}/area/${firstAreaId}`, { replace: true });
+        }
+      }
+    };
+
+    return [
       {
         label: t("study.modelization.map"),
-        path: `/studies/${study?.id}/explore/modelization/map`,
+        path: `${basePath}/map`,
       },
       {
         label: t("study.areas"),
-        path: `/studies/${study?.id}/explore/modelization/area/${areaId}`,
+        path: `${basePath}/area/${areaId}`,
+        onClick: handleAreasClick,
       },
       {
         label: t("study.links"),
-        path: `/studies/${study?.id}/explore/modelization/links`,
+        path: `${basePath}/links`,
       },
       {
         label: t("study.bindingconstraints"),
-        path: `/studies/${study?.id}/explore/modelization/bindingcontraint`,
+        path: `${basePath}/bindingcontraint`,
       },
       {
         label: t("study.debug"),
-        path: `/studies/${study?.id}/explore/modelization/debug`,
+        path: `${basePath}/debug`,
       },
       {
         label: t("study.modelization.tableMode"),
-        path: `/studies/${study?.id}/explore/modelization/tablemode`,
+        path: `${basePath}/tablemode`,
       },
-    ],
-    [areaId, study?.id, t],
-  );
+    ];
+  }, [areaId, areas, dispatch, navigate, study?.id, t]);
 
   return (
     <Box
-      width="100%"
-      flexGrow={1}
-      display="flex"
-      flexDirection="column"
-      justifyContent="center"
-      alignItems="center"
-      boxSizing="border-box"
-      overflow="hidden"
+      sx={{
+        display: "flex",
+        flex: 1,
+        width: 1,
+        overflow: "hidden",
+      }}
     >
       <TabWrapper study={study} tabStyle="withoutBorder" tabList={tabList} />
     </Box>

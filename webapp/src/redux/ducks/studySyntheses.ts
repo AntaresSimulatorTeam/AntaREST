@@ -87,14 +87,7 @@ const initDefaultAreaLinkSelection = (
   studyData?: FileStudyTreeConfigDTO,
 ): void => {
   if (studyData) {
-    // Set current area
-    const areas = Object.keys(studyData.areas);
-    if (areas.length > 0) {
-      dispatch(setCurrentArea(areas[0]));
-    } else {
-      dispatch(setCurrentArea(""));
-    }
-
+    dispatch(setCurrentArea(""));
     dispatch(setCurrentLink(""));
   } else {
     dispatch(setCurrentArea(""));
