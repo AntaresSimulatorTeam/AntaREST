@@ -9,6 +9,17 @@ v2.15.6 (2023-11-24)
 * **variant:** correct slow variant study snapshot generation [`#1828`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1828)
 
 
+### Documentation
+
+* **RTD:** correct the configuration for [ReadTheDocs](https://antares-web.readthedocs.io/en/latest/) [`#1833`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1833)
+
+
+### Contributors
+
+<a href="https://github.com/laurent-laporte-pro">laurent-laporte-pro</a>.
+
+
+
 v2.15.5 (2023-11-16)
 --------------------
 
