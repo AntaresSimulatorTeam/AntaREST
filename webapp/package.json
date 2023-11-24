@@ -1,6 +1,6 @@
 {
   "name": "antares-web",
-  "version": "2.15.5",
+  "version": "2.15.6",
   "private": true,
   "engines": {
     "node": "18.16.1"
