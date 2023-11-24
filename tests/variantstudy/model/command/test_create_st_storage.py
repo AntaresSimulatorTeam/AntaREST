@@ -363,8 +363,8 @@ class TestCreateSTStorage:
         actual = cmd.to_dto()
 
         expected_parameters = PARAMETERS.copy()
-        # `initiallevel` = 0 because `initialleveloptim` is True
-        expected_parameters["initiallevel"] = 0
+        # `initiallevel` = 0.5 (the default value) because `initialleveloptim` is True
+        expected_parameters["initiallevel"] = 0.5
         constants = command_context.generator_matrix_constants
 
         assert actual == CommandDTO(
