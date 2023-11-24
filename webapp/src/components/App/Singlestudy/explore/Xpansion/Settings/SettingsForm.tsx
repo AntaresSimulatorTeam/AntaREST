@@ -236,9 +236,9 @@ function SettingsForm(props: PropType) {
             type="number"
             label={t("xpansion.separationParameter")}
             variant="filled"
-            value={currentSettings.separationParameter}
+            value={currentSettings.separation_parameter}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-              handleChange("separation_Parameter", parseFloat(e.target.value))
+              handleChange("separation_parameter", parseFloat(e.target.value))
             }
             sx={{ mb: 1 }}
             InputProps={{ inputProps: { min: 0, max: 1 } }}

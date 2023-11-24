@@ -20,7 +20,7 @@ export interface XpansionSettings {
   solver?: string;
   log_level?: number;
   timelimit?: number;
-  separationParameter?: number;
+  separation_parameter?: number;
   batch_size?: number;
   sensitivity_config?: XpansionSensitivitySettings;
 }
