@@ -79,6 +79,7 @@ class XpansionSettingsDTO(BaseModel):
         ampl_solve_bounds_frequency: The frequency with which to solve bounds using AMPL.
         relative_gap: Tolerance on relative gap for the solution.
         batch_size: Amount of batches in the Benders decomposition.
+        separation_parameter: The separation parameter used in the Benders decomposition.
         solver: The solver used to solve the master and the sub-problems in the Benders decomposition.
         timelimit: The timelimit (in seconds) of the Benders step.
         log_level: The severity of the solver's log.
@@ -104,6 +105,7 @@ class XpansionSettingsDTO(BaseModel):
     ampl_solve_bounds_frequency: Optional[int] = Field(None, alias="ampl.solve_bounds_frequency")
     relative_gap: Optional[float] = Field(default=None, ge=0)
     batch_size: Optional[int] = Field(default=0, ge=0)
+    separation_parameter: Optional[float] = Field(default=0.5, ge=0, le=1)
     solver: Optional[Solver] = None
     timelimit: Optional[int] = 1000000000000  # 1e12
     log_level: Optional[int] = 0
@@ -249,6 +251,7 @@ class XpansionManager:
                 xpansion_settings["relative_gap"] = 1e-12
                 xpansion_settings["solver"] = Solver.CBC.value
                 xpansion_settings["batch_size"] = 0
+                xpansion_settings["separation_parameter"] = 0.5
 
             xpansion_configuration_data = {
                 "user": {

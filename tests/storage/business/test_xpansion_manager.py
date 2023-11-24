@@ -1,9 +1,9 @@
+import io
 import os
 import uuid
-from io import StringIO
+import zipfile
 from pathlib import Path
 from unittest.mock import Mock
-from zipfile import ZipFile
 
 import pytest
 from fastapi import UploadFile
@@ -31,13 +31,13 @@ from antarest.study.storage.variantstudy.model.command.create_area import Create
 from antarest.study.storage.variantstudy.model.command.create_link import CreateLink
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
+from tests.storage.business.assets import ASSETS_DIR
 
 
 def make_empty_study(tmpdir: Path, version: int) -> FileStudy:
-    cur_dir: Path = Path(__file__).parent
     study_path = Path(tmpdir / str(uuid.uuid4()))
     os.mkdir(study_path)
-    with ZipFile(cur_dir / "assets" / f"empty_study_{version}.zip") as zip_output:
+    with zipfile.ZipFile(ASSETS_DIR / f"empty_study_{version}.zip") as zip_output:
         zip_output.extractall(path=study_path)
     config = build(study_path, "1")
     return FileStudy(config, FileStudyTree(Mock(), config))
@@ -114,6 +114,7 @@ def make_link_and_areas(empty_study):
                     "relative_gap": 1e-12,
                     "solver": "Cbc",
                     "batch_size": 0,
+                    "separation_parameter": 0.5,
                 },
                 "sensitivity": {"sensitivity_in": {}},
                 "candidates": {},
@@ -524,8 +525,8 @@ def test_add_resources(tmp_path: Path):
     content3 = "2"
 
     upload_file_list = [
-        UploadFile(filename=filename1, file=StringIO(content1)),
-        UploadFile(filename=filename2, file=StringIO(content2)),
+        UploadFile(filename=filename1, file=io.StringIO(content1)),
+        UploadFile(filename=filename2, file=io.StringIO(content2)),
     ]
 
     xpansion_manager.add_resource(study, XpansionResourceFileType.CONSTRAINTS, upload_file_list)
@@ -533,7 +534,7 @@ def test_add_resources(tmp_path: Path):
     xpansion_manager.add_resource(
         study,
         XpansionResourceFileType.WEIGHTS,
-        [UploadFile(filename=filename3, file=StringIO(content3))],
+        [UploadFile(filename=filename3, file=io.StringIO(content3))],
     )
 
     assert filename1 in empty_study.tree.get(["user", "expansion", "constraints"])
@@ -603,8 +604,8 @@ def test_get_all_constraints(tmp_path: Path):
     content2 = "1"
 
     upload_file_list = [
-        UploadFile(filename=filename1, file=StringIO(content1)),
-        UploadFile(filename=filename2, file=StringIO(content2)),
+        UploadFile(filename=filename1, file=io.StringIO(content1)),
+        UploadFile(filename=filename2, file=io.StringIO(content2)),
     ]
 
     xpansion_manager.add_resource(study, XpansionResourceFileType.CONSTRAINTS, upload_file_list)
@@ -628,8 +629,8 @@ def test_add_capa(tmp_path: Path):
     content2 = "1"
 
     upload_file_list = [
-        UploadFile(filename=filename1, file=StringIO(content1)),
-        UploadFile(filename=filename2, file=StringIO(content2)),
+        UploadFile(filename=filename1, file=io.StringIO(content1)),
+        UploadFile(filename=filename2, file=io.StringIO(content2)),
     ]
 
     xpansion_manager.add_resource(study, XpansionResourceFileType.CAPACITIES, upload_file_list)
@@ -662,8 +663,8 @@ def test_delete_capa(tmp_path: Path):
     content2 = "1"
 
     upload_file_list = [
-        UploadFile(filename=filename1, file=StringIO(content1)),
-        UploadFile(filename=filename2, file=StringIO(content2)),
+        UploadFile(filename=filename1, file=io.StringIO(content1)),
+        UploadFile(filename=filename2, file=io.StringIO(content2)),
     ]
 
     xpansion_manager.add_resource(study, XpansionResourceFileType.CAPACITIES, upload_file_list)
@@ -688,8 +689,8 @@ def test_get_single_capa(tmp_path: Path):
     content2 = "3\nbc\td"
 
     upload_file_list = [
-        UploadFile(filename=filename1, file=StringIO(content1)),
-        UploadFile(filename=filename2, file=StringIO(content2)),
+        UploadFile(filename=filename1, file=io.StringIO(content1)),
+        UploadFile(filename=filename2, file=io.StringIO(content2)),
     ]
 
     xpansion_manager.add_resource(study, XpansionResourceFileType.CAPACITIES, upload_file_list)
@@ -716,8 +717,8 @@ def test_get_all_capa(tmp_path: Path):
     content2 = "1"
 
     upload_file_list = [
-        UploadFile(filename=filename1, file=StringIO(content1)),
-        UploadFile(filename=filename2, file=StringIO(content2)),
+        UploadFile(filename=filename1, file=io.StringIO(content1)),
+        UploadFile(filename=filename2, file=io.StringIO(content2)),
     ]
 
     xpansion_manager.add_resource(study, XpansionResourceFileType.CAPACITIES, upload_file_list)

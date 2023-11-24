@@ -19,7 +19,7 @@ class ExpansionSettings(IniFileNode):
         - additional-constraints: str = filename. default = None
 
     version < 800 only:
-        - relaxed-optimality-gap: float = 1e6
+        - relaxed-optimality-gap: float = 1e-4  # relaxed-optimality-gap > 0
         - cut-type: str = "average", "yearly" or "weekly". default="yearly"
         - ampl.solver: str = "cbc"
         - ampl.presolve: int = 0
@@ -27,8 +27,9 @@ class ExpansionSettings(IniFileNode):
 
     version >= 800 only:
         - relative_gap: float = 1e-12
-        - solver: str = "Cbc" or "Coin". default="Cbc"
+        - solver: str = "Cbc", "Coin" or "Xpress". default="Cbc"
         - batch_size: int = 0
+        - separation_parameter: float = 0.5  # 0 <= separation_parameter <= 1
     """
 
     def __init__(self, context: ContextServer, config: FileStudyTreeConfig):
@@ -54,6 +55,7 @@ class ExpansionSettings(IniFileNode):
                 "relative-gap": float,
                 "solver": str,
                 "batch_size": int,
+                "separation_parameter": float,
                 **common_types,
             }
         super().__init__(
