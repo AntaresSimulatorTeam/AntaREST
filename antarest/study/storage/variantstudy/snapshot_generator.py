@@ -157,12 +157,14 @@ class SnapshotGenerator:
                 self._tmp_dir,
                 self.study_factory,
                 denormalize=False,  # de-normalization is done at the end
+                outputs=False,  # do NOT export outputs
             )
         elif isinstance(ref_study, RawStudy):
             self.raw_study_service.export_study_flat(
                 ref_study,
                 self._tmp_dir,
                 denormalize=False,  # de-normalization is done at the end
+                outputs=False,  # do NOT export outputs
             )
         else:  # pragma: no cover
             raise TypeError(repr(type(ref_study)))

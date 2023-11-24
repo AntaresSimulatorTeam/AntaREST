@@ -1,67 +1,40 @@
 Antares Web Changelog
 =====================
 
+v2.15.6 (2023-11-24)
+--------------------
+
+### Performance
+
+* **variant:** correct slow variant study snapshot generation [`#1828`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1828)
+
+
+### Documentation
+
+* **RTD:** correct the configuration for [ReadTheDocs](https://antares-web.readthedocs.io/en/latest/) [`#1833`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1833)
+
+
+### Contributors
+
+<a href="https://github.com/laurent-laporte-pro">laurent-laporte-pro</a>.
+
+
+
 v2.15.5 (2023-11-16)
 --------------------
 
 ### Features
 
-*  **ui-common:** add clear button on SearchFE ([5623857](https://github.com/AntaresSimulatorTeam/AntaREST/commit/56238573ee15cf2bd46778ff3fcf9dd8c6d9563a))
-*  **ui-study:** translate generate button in command view (#1801) ([20a49c7](https://github.com/AntaresSimulatorTeam/AntaREST/commit/20a49c77d0713746fda27c043dacd6f117b76f12))
-*  **launcher:** add information about which user launched a study (#1808) ([ac8d29b](https://github.com/AntaresSimulatorTeam/AntaREST/commit/ac8d29be1d4f714451cbccb182cfce5741e910f5))
-*  **repository:** add a method to update a task status to TIMEOUT in database ([38addea](https://github.com/AntaresSimulatorTeam/AntaREST/commit/38addea8ceb246b77bd49793147bec4ebe6baa8e))
-*  **variant-generation:** improve error handling for timeout tasks ([979ac6a](https://github.com/AntaresSimulatorTeam/AntaREST/commit/979ac6a4e5cf1cd6c74ee7b5474c389c8cad510f))
-*  **tasks:** add timeout parameter to control task completion wait time ([0cac11c](https://github.com/AntaresSimulatorTeam/AntaREST/commit/0cac11c4233a80655323a7eabfb9cac62c22e1df))
-*  **variant-study-repo:** add the `get_ancestor_or_self_ids` to retrieve all ancestor IDs of a variant study ([8262e14](https://github.com/AntaresSimulatorTeam/AntaREST/commit/8262e14897dab55f9dad9bd0a21b289f9f481002))
-*  **permission:** add the `assert_permission_on_studies` to check user permission of several studies ([ea69c38](https://github.com/AntaresSimulatorTeam/AntaREST/commit/ea69c38574816999046faf0fda8122c559457470))
-*  **db:** add methods to check the variant study snapshot status ([e4f7756](https://github.com/AntaresSimulatorTeam/AntaREST/commit/e4f7756a871efe763bb559ba7524fb258aa5532f))
-*  **variant:** add the `SnapshotGenerator` class ([70595c9](https://github.com/AntaresSimulatorTeam/AntaREST/commit/70595c982f7b647815b3efe5a78938235d59c60d))
-*  **variant:** use the `SnapshotGenerator` class in the `VariantStudyService` ([be805dc](https://github.com/AntaresSimulatorTeam/AntaREST/commit/be805dc62da46cc49dd2cc52bad2ac75d59d9f89))
+*  Remove studies filters and search value from localStorage [`#1788`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1788)
+*  **ui-study:** translate generate button in command view [`#1801`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1801)
+*  **launcher:** add information about which user launched a study [`#1808`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1808)
 
 
 ### Bug Fixes
 
-*  **tasks:** resolve incorrect UTC timezone usage for task completion dates in list view (#1786) ([1f23998](https://github.com/AntaresSimulatorTeam/AntaREST/commit/1f2399853d42050872b51c2f11c0a686a7edcdb8))
-*  **upgrade:** remove tmp files when upgrading (#1804) ([5538109](https://github.com/AntaresSimulatorTeam/AntaREST/commit/55381093e1b0a907baffb72b708b5612218969b9))
-*  **api-job-result:** correct the DELETE endpoint to return 204 No Content ([1d5b8df](https://github.com/AntaresSimulatorTeam/AntaREST/commit/1d5b8df91c0a8d205fb554318847dc8b7757cd73))
-*  **task-job-service:** update the task status to TIMEOUT if the processing is too long ([ff357bc](https://github.com/AntaresSimulatorTeam/AntaREST/commit/ff357bc6a862c5409ccf31deb0f478ebbb075388))
-
-
-### Chore
-
-*  **typing:** simplify typing in pytest fixture ([da13c45](https://github.com/AntaresSimulatorTeam/AntaREST/commit/da13c45878f7904c82f105a15a5bbed6036b5f7e))
-*  **variant-study-service:** correct the `timeout` parameter to use a default value ([1e2e617](https://github.com/AntaresSimulatorTeam/AntaREST/commit/1e2e6176ba0943c7c53d31f3fbc8e950c50b6188))
-* improve log message readability by adding prominent emojis ([eb87bb8](https://github.com/AntaresSimulatorTeam/AntaREST/commit/eb87bb8782a3eb5fca213a64da24bc64e916ed9d))
-
-
-### Code Refactoring
-
-*  **variant-study-service:** improve implementation of safe generation ([959b2c0](https://github.com/AntaresSimulatorTeam/AntaREST/commit/959b2c021c3e708f0f0b4d5e77e147ac3a71d7c5))
-*  **variant-study-repo:** optionally use a user-defined SqlAlchemy session instead of the global `db.session` and improve the documentation ([cd15eec](https://github.com/AntaresSimulatorTeam/AntaREST/commit/cd15eec62302844aed3e740cb3679f8f92da3846))
-
-
-### Tests
-
-*  **variant-generation:** add a unit test to check that the variant generation is not blocking the main thread ([0ba6320](https://github.com/AntaresSimulatorTeam/AntaREST/commit/0ba63200d12032adbce7795b9da0ce033f87121b))
-*  **hydro:** improves testing of hydraulic allocation variants ([21823ba](https://github.com/AntaresSimulatorTeam/AntaREST/commit/21823bae235a8659aa1d2452df76b751ff4b0b05))
-*  **variant:** correct the `test_variant_model` unit test to use fixtures ([340881e](https://github.com/AntaresSimulatorTeam/AntaREST/commit/340881e629bfbdfa05ceb1761f0ebe98279c9044))
-
-
-### Styles
-
-*  **db:** add type hints in database model classes ([4c9c081](https://github.com/AntaresSimulatorTeam/AntaREST/commit/4c9c081da03bde9ce3c1b202562d485099cb7f35))
-* correct return type of the get task endpoint ([7dff31a](https://github.com/AntaresSimulatorTeam/AntaREST/commit/7dff31affa0bb1d2c07ae4336d4e16d55cfcba94))
-* correct variable naming ([8d42c1b](https://github.com/AntaresSimulatorTeam/AntaREST/commit/8d42c1bd05b6cc1496f60f47eb11e5c99111c1f1))
-
-
-### Documentation
-
-*  **cache:** add the documentation of cache constants ([94d3cdb](https://github.com/AntaresSimulatorTeam/AntaREST/commit/94d3cdb15b1fe8e3b12612ba832eda6c07366525))
-
-
-### Performance Improvements
-
-*  **db:** improved study query performance using owner and groups preloading ([16cf54f](https://github.com/AntaresSimulatorTeam/AntaREST/commit/16cf54ff8ef54ce1c7c735a45566ff9e35f96e53))
+*  **tasks:** resolve incorrect UTC timezone usage for task completion dates in list view [`#1786`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1786)
+*  **upgrade:** remove tmp files when upgrading [`#1804`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1804)
+*  **variant:** generates cascades of variants synchronously to avoid timeout dead locks [`#1806`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1806)
 
 
 ### Contributors
