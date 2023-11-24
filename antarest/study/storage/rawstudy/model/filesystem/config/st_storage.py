@@ -77,7 +77,7 @@ class STStorageProperties(ItemProperties):
     )
     # The `initial_level` value must be between 0 and 1, but the default value is 0.
     initial_level: float = Field(
-        0,
+        0.5,
         description="Initial level of the storage system (%)",
         ge=0,
         le=1,
