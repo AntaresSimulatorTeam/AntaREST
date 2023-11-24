@@ -177,7 +177,7 @@ class TaskJob(Base):  # type: ignore
 def cancel_orphan_tasks(engine: Engine, session_args: Dict[str, bool]) -> None:
     updated_values = {
         TaskJob.status: TaskStatus.FAILED.value,
-        TaskJob.result: False,
+        TaskJob.result_status: False,
         TaskJob.result_msg: "Task was interrupted due to server restart",
         TaskJob.completion_date: datetime.utcnow(),
     }
