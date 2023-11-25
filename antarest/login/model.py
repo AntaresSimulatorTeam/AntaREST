@@ -1,6 +1,6 @@
+import typing as t
 import uuid
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, List, Optional
 
 import bcrypt
 from pydantic.main import BaseModel
@@ -11,7 +11,7 @@ from sqlalchemy.orm import relationship  # type: ignore
 from antarest.core.persistence import Base
 from antarest.core.roles import RoleType
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     # avoid circular import
     from antarest.launcher.model import JobResult
 
@@ -28,7 +28,7 @@ class BotRoleCreateDTO(BaseModel):
 
 class BotCreateDTO(BaseModel):
     name: str
-    roles: List[BotRoleCreateDTO]
+    roles: t.List[BotRoleCreateDTO]
     is_author: bool = True
 
 
@@ -38,7 +38,7 @@ class UserCreateDTO(BaseModel):
 
 
 class GroupDTO(BaseModel):
-    id: Optional[str] = None
+    id: t.Optional[str] = None
     name: str
 
 
@@ -49,7 +49,7 @@ class RoleCreationDTO(BaseModel):
 
 
 class RoleDTO(BaseModel):
-    group_id: Optional[str]
+    group_id: t.Optional[str]
     group_name: str
     identity_id: int
     type: RoleType
@@ -58,7 +58,7 @@ class RoleDTO(BaseModel):
 class IdentityDTO(BaseModel):
     id: int
     name: str
-    roles: List[RoleDTO]
+    roles: t.List[RoleDTO]
 
 
 class RoleDetailDTO(BaseModel):
@@ -71,7 +71,7 @@ class BotIdentityDTO(BaseModel):
     id: int
     name: str
     isAuthor: bool
-    roles: List[RoleDTO]
+    roles: t.List[RoleDTO]
 
 
 class BotDTO(UserInfo):
@@ -86,7 +86,7 @@ class UserRoleDTO(BaseModel):
 
 
 class GroupDetailDTO(GroupDTO):
-    users: List[UserRoleDTO]
+    users: t.List[UserRoleDTO]
 
 
 class Password:
@@ -124,7 +124,7 @@ class Identity(Base):  # type: ignore
 
     # Define a one-to-many relationship with `JobResult`.
     # If an identity is deleted, all the associated job results are detached from the identity.
-    job_results: List["JobResult"] = relationship("JobResult", back_populates="owner", cascade="save-update, merge")
+    job_results: t.List["JobResult"] = relationship("JobResult", back_populates="owner", cascade="save-update, merge")
 
     def to_dto(self) -> UserInfo:
         return UserInfo(id=self.id, name=self.name)
@@ -170,7 +170,7 @@ class User(Identity):
     def from_dto(data: UserInfo) -> "User":
         return User(id=data.id, name=data.name)
 
-    def __eq__(self, o: Any) -> bool:
+    def __eq__(self, o: t.Any) -> bool:
         if not isinstance(o, User):
             return False
         return bool((o.id == self.id) and (o.name == self.name))
@@ -197,7 +197,7 @@ class UserLdap(Identity):
         "polymorphic_identity": "users_ldap",
     }
 
-    def __eq__(self, o: Any) -> bool:
+    def __eq__(self, o: t.Any) -> bool:
         if not isinstance(o, UserLdap):
             return False
         return bool((o.id == self.id) and (o.name == self.name))
@@ -236,7 +236,7 @@ class Bot(Identity):
             is_author=self.is_author,
         )
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: t.Any) -> bool:
         if not isinstance(other, Bot):
             return False
         return self.to_dto().dict() == other.to_dto().dict()
@@ -261,7 +261,7 @@ class Group(Base):  # type: ignore
     def to_dto(self) -> GroupDTO:
         return GroupDTO(id=self.id, name=self.name)
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: t.Any) -> bool:
         if not isinstance(other, Group):
             return False
 

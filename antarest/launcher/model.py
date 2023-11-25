@@ -1,6 +1,6 @@
 import enum
+import typing as t
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel
 from sqlalchemy import Column, DateTime, Enum, ForeignKey, Integer, Sequence, String  # type: ignore
@@ -11,7 +11,7 @@ from antarest.login.model import Identity
 
 
 class XpansionParametersDTO(BaseModel):
-    output_id: Optional[str]
+    output_id: t.Optional[str]
     sensitivity_mode: bool = False
     enabled: bool = True
 
@@ -20,16 +20,16 @@ class LauncherParametersDTO(BaseModel):
     # Warning ! This class must be retro-compatible (that's the reason for the weird bool/XpansionParametersDTO union)
     # The reason is that it's stored in json format in database and deserialized using the latest class version
     # If compatibility is to be broken, an (alembic) data migration script should be added
-    adequacy_patch: Optional[Dict[str, Any]] = None
-    nb_cpu: Optional[int] = None
+    adequacy_patch: t.Optional[t.Dict[str, t.Any]] = None
+    nb_cpu: t.Optional[int] = None
     post_processing: bool = False
-    time_limit: Optional[int] = None  # 3600 ≤ time_limit < 864000 (10 days)
-    xpansion: Union[XpansionParametersDTO, bool, None] = None
+    time_limit: t.Optional[int] = None  # 3600 ≤ time_limit < 864000 (10 days)
+    xpansion: t.Union[XpansionParametersDTO, bool, None] = None
     xpansion_r_version: bool = False
     archive_output: bool = True
     auto_unzip: bool = True
-    output_suffix: Optional[str] = None
-    other_options: Optional[str] = None
+    output_suffix: t.Optional[str] = None
+    other_options: t.Optional[str] = None
     # add extensions field here
 
 
@@ -38,7 +38,7 @@ class LogType(str, enum.Enum):
     STDERR = "STDERR"
 
     @staticmethod
-    def from_filename(filename: str) -> Optional["LogType"]:
+    def from_filename(filename: str) -> t.Optional["LogType"]:
         if filename == "antares-err.log":
             return LogType.STDERR
         elif filename == "antares-out.log":
@@ -88,16 +88,16 @@ class JobResultDTO(BaseModel):
 
     id: str
     study_id: str
-    launcher: Optional[str]
-    launcher_params: Optional[str]
+    launcher: t.Optional[str]
+    launcher_params: t.Optional[str]
     status: JobStatus
     creation_date: str
-    completion_date: Optional[str]
-    msg: Optional[str]
-    output_id: Optional[str]
-    exit_code: Optional[int]
-    solver_stats: Optional[str]
-    owner_id: Optional[int]
+    completion_date: t.Optional[str]
+    msg: t.Optional[str]
+    output_id: t.Optional[str]
+    exit_code: t.Optional[int]
+    solver_stats: t.Optional[str]
+    owner_id: t.Optional[int]
 
 
 class JobLog(Base):  # type: ignore
@@ -132,21 +132,21 @@ class JobResult(Base):  # type: ignore
 
     id: str = Column(String(36), primary_key=True)
     study_id: str = Column(String(36))
-    launcher: Optional[str] = Column(String)
-    launcher_params: Optional[str] = Column(String, nullable=True)
+    launcher: t.Optional[str] = Column(String)
+    launcher_params: t.Optional[str] = Column(String, nullable=True)
     job_status: JobStatus = Column(Enum(JobStatus))
     creation_date = Column(DateTime, default=datetime.utcnow)
     completion_date = Column(DateTime)
-    msg: Optional[str] = Column(String())
-    output_id: Optional[str] = Column(String())
-    exit_code: Optional[int] = Column(Integer)
-    solver_stats: Optional[str] = Column(String(), nullable=True)
-    owner_id: Optional[int] = Column(Integer(), ForeignKey(Identity.id, ondelete="SET NULL"), nullable=True)
+    msg: t.Optional[str] = Column(String())
+    output_id: t.Optional[str] = Column(String())
+    exit_code: t.Optional[int] = Column(Integer)
+    solver_stats: t.Optional[str] = Column(String(), nullable=True)
+    owner_id: t.Optional[int] = Column(Integer(), ForeignKey(Identity.id, ondelete="SET NULL"), nullable=True)
 
     # Define a many-to-one relationship between `JobResult` and `Identity`.
     # This relationship is required to display the owner of a job result in the UI.
     # If the owner is deleted, the job result is detached from the owner (but not deleted).
-    owner: Optional[Identity] = relationship(Identity, back_populates="job_results", uselist=False)
+    owner: t.Optional[Identity] = relationship(Identity, back_populates="job_results", uselist=False)
 
     logs = relationship(JobLog, uselist=True, cascade="all, delete, delete-orphan")
 
@@ -195,4 +195,4 @@ class JobCreationDTO(BaseModel):
 
 
 class LauncherEnginesDTO(BaseModel):
-    engines: List[str]
+    engines: t.List[str]
