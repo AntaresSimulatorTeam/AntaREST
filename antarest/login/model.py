@@ -1,6 +1,5 @@
 import typing as t
 import uuid
-from dataclasses import dataclass
 
 import bcrypt
 from pydantic.main import BaseModel
@@ -110,7 +109,6 @@ class Password:
         return self.__str__()
 
 
-@dataclass
 class Identity(Base):  # type: ignore
     """
     Abstract entity which represent generic user
@@ -138,10 +136,9 @@ class Identity(Base):  # type: ignore
         return int(self.id)
 
 
-@dataclass
 class User(Identity):
     """
-    Basic user, hosted in this plateform and using UI
+    Basic user, hosted in this platform and using UI
     """
 
     __tablename__ = "users"
@@ -176,7 +173,6 @@ class User(Identity):
         return bool((o.id == self.id) and (o.name == self.name))
 
 
-@dataclass
 class UserLdap(Identity):
     """
     User using UI but hosted on LDAP server
@@ -203,10 +199,9 @@ class UserLdap(Identity):
         return bool((o.id == self.id) and (o.name == self.name))
 
 
-@dataclass
 class Bot(Identity):
     """
-    User hosted in this platform but using ony API (belongs to an user)
+    User hosted in this platform but using ony API (belongs to a user)
     """
 
     __tablename__ = "bots"
@@ -217,6 +212,7 @@ class Bot(Identity):
         ForeignKey("identities.id"),
         primary_key=True,
     )
+    # noinspection SpellCheckingInspection
     owner = Column(Integer, ForeignKey("identities.id", name="bots_owner_fkey"))
     is_author = Column(Boolean(), default=True)
 
@@ -242,7 +238,6 @@ class Bot(Identity):
         return self.to_dto().dict() == other.to_dto().dict()
 
 
-@dataclass
 class Group(Base):  # type: ignore
     """
     Group of users
@@ -271,7 +266,6 @@ class Group(Base):  # type: ignore
         return f"Group(id={self.id}, name={self.name})"
 
 
-@dataclass
 class Role(Base):  # type: ignore
     """
     Enable to link a user to a group with a specific role permission
