@@ -242,8 +242,8 @@ class LoginService:
         """
         group = self.groups.get(id)
         if (
-            group
-            and params.user
+            group is not None
+            and params.user is not None
             and any(
                 (
                     params.user.is_site_admin(),
@@ -528,7 +528,7 @@ class LoginService:
             if params.user.is_site_admin():
                 group_list = self.groups.get_all()
             else:
-                roles_by_user = self.roles.get_all_by_user(user=params.user.id)
+                roles_by_user = self.roles.get_all_by_user(params.user.id)
 
                 for role in roles_by_user:
                     if not details or role.type == RoleType.ADMIN:
@@ -729,7 +729,7 @@ class LoginService:
             )
         ):
             logger.info("bot %d deleted by user %s", id, params.get_user_id())
-            for role in self.roles.get_all_by_user(user=id):
+            for role in self.roles.get_all_by_user(id):
                 self.roles.delete(user=role.identity_id, group=role.group_id)
             return self.bots.delete(id)
         else:
