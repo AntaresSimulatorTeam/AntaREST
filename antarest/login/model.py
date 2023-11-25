@@ -1,6 +1,6 @@
 import uuid
 from dataclasses import dataclass
-from typing import Any, List, Optional
+from typing import TYPE_CHECKING, Any, List, Optional
 
 import bcrypt
 from pydantic.main import BaseModel
@@ -10,6 +10,10 @@ from sqlalchemy.orm import relationship  # type: ignore
 
 from antarest.core.persistence import Base
 from antarest.core.roles import RoleType
+
+if TYPE_CHECKING:
+    # avoid circular import
+    from antarest.launcher.model import JobResult
 
 
 class UserInfo(BaseModel):
@@ -117,6 +121,10 @@ class Identity(Base):  # type: ignore
     id = Column(Integer, Sequence("identity_id_seq"), primary_key=True)
     name = Column(String(255))
     type = Column(String(50))
+
+    # Define a one-to-many relationship with `JobResult`.
+    # If an identity is deleted, all the associated job results are detached from the identity.
+    job_results: List["JobResult"] = relationship("JobResult", back_populates="owner", cascade="save-update, merge")
 
     def to_dto(self) -> UserInfo:
         return UserInfo(id=self.id, name=self.name)

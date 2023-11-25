@@ -103,7 +103,7 @@ class JobResultDTO(BaseModel):
 class JobLog(Base):  # type: ignore
     __tablename__ = "launcherjoblog"
 
-    id: str = Column(Integer(), Sequence("launcherjoblog_id_sequence"), primary_key=True)
+    id: int = Column(Integer(), Sequence("launcherjoblog_id_sequence"), primary_key=True)
     message: str = Column(String, nullable=False)
     job_id: str = Column(
         String(),
@@ -142,6 +142,11 @@ class JobResult(Base):  # type: ignore
     exit_code: Optional[int] = Column(Integer)
     solver_stats: Optional[str] = Column(String(), nullable=True)
     owner_id: Optional[int] = Column(Integer(), ForeignKey(Identity.id, ondelete="SET NULL"), nullable=True)
+
+    # Define a many-to-one relationship between `JobResult` and `Identity`.
+    # This relationship is required to display the owner of a job result in the UI.
+    # If the owner is deleted, the job result is detached from the owner (but not deleted).
+    owner: Optional[Identity] = relationship(Identity, back_populates="job_results", uselist=False)
 
     logs = relationship(JobLog, uselist=True, cascade="all, delete, delete-orphan")
 
