@@ -7,7 +7,7 @@ from sqlalchemy import Column, DateTime, Enum, ForeignKey, Integer, Sequence, St
 from sqlalchemy.orm import relationship  # type: ignore
 
 from antarest.core.persistence import Base
-from antarest.login.model import Identity
+from antarest.login.model import Identity, UserInfo
 
 
 class XpansionParametersDTO(BaseModel):
@@ -83,7 +83,7 @@ class JobResultDTO(BaseModel):
     - exit_code: The exit code associated with the task.
     - solver_stats: Global statistics related to the simulation, including processing time,
       call count, optimization issues, and study-specific statistics (INI file-like format).
-    - owner_id: The unique identifier of the user or bot that executed the task.
+    - owner: The user or bot that executed the task or `None` if unknown.
     """
 
     id: str
@@ -97,7 +97,25 @@ class JobResultDTO(BaseModel):
     output_id: t.Optional[str]
     exit_code: t.Optional[int]
     solver_stats: t.Optional[str]
-    owner_id: t.Optional[int]
+    owner: t.Optional[UserInfo]
+
+    class Config:
+        @staticmethod
+        def schema_extra(schema: t.MutableMapping[str, t.Any]) -> None:
+            schema["example"] = JobResultDTO(
+                id="b2a9f6a7-7f8f-4f7a-9a8b-1f9b4c5d6e7f",
+                study_id="b2a9f6a7-7f8f-4f7a-9a8b-1f9b4c5d6e7f",
+                launcher="slurm",
+                launcher_params='{"nb_cpu": 4, "time_limit": 3600}',
+                status=JobStatus.SUCCESS,
+                creation_date="2023-11-25 12:00:00",
+                completion_date="2023-11-25 12:27:31",
+                msg="Study successfully executed",
+                output_id="20231125-1227eco",
+                exit_code=0,
+                solver_stats="time: 1651s, call_count: 1, optimization_issues: []",
+                owner=UserInfo(id=0o007, name="James BOND"),
+            )
 
 
 class JobLog(Base):  # type: ignore
@@ -163,7 +181,7 @@ class JobResult(Base):  # type: ignore
             output_id=self.output_id,
             exit_code=self.exit_code,
             solver_stats=self.solver_stats,
-            owner_id=self.owner_id,
+            owner=self.owner.to_dto() if self.owner else None,
         )
 
     # SQLAlchemy provides its own way to handle object comparison, which ensures
