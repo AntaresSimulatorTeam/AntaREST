@@ -32,7 +32,7 @@ from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.interfaces.cache import CacheConstants, ICache
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
-from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
+from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTGroup, JWTUser
 from antarest.core.model import JSON, SUB_JSON, PermissionInfo, PublicMode, StudyPermissionType
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.roles import RoleType
@@ -1951,13 +1951,17 @@ class StudyService:
             study.content_status = content_status
 
         study.owner = self.user_service.get_user(owner.impersonator, params=RequestParameters(user=owner))
-        groups = []
+
+        study.groups.clear()
         for gid in group_ids:
-            group = next(filter(lambda g: g.id == gid, owner.groups), None)
-            if group is None or not group.role.is_higher_or_equals(RoleType.WRITER) and not owner.is_site_admin():
+            jwt_group: Optional[JWTGroup] = next(filter(lambda g: g.id == gid, owner.groups), None)  # type: ignore
+            if (
+                jwt_group is None
+                or jwt_group.role is None
+                or (jwt_group.role < RoleType.WRITER and not owner.is_site_admin())
+            ):
                 raise UserHasNotPermissionError(f"Permission denied for group ID: {gid}")
-            groups.append(Group(id=group.id, name=group.name))
-        study.groups = groups
+            study.groups.append(Group(id=jwt_group.id, name=jwt_group.name))
 
         self.repository.save(study)
 

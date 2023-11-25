@@ -150,8 +150,7 @@ class LoginService:
             if not params.user.is_site_admin():
                 for role_create in bot.roles:
                     role = self.roles.get(params.user.id, role_create.group)
-                    role_type = RoleType(role_create.role)
-                    if not (role and role.type.is_higher_or_equals(role_type)):
+                    if not role or role.type is None or role.type < role_create.role:
                         raise UserHasNotPermissionError()
 
             if not bot.name.strip():
