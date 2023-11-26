@@ -483,9 +483,10 @@ def test_cancel_orphan_tasks(
     status: int,
     result_status: bool,
     result_msg: str,
-    max_diff_seconds: int = 6,
-    test_id: str = "test_cancel_orphan_tasks_id",
 ):
+    max_diff_seconds: int = 1
+    test_id: str = "test_cancel_orphan_tasks_id"
+
     completion_date: datetime.datetime = datetime.datetime.utcnow()
     task_job = TaskJob(
         id=test_id,
@@ -494,15 +495,12 @@ def test_cancel_orphan_tasks(
         result_msg=result_msg,
         completion_date=completion_date,
     )
-    with sessionmaker(bind=db_engine, **dict(SESSION_ARGS))() as session:
-        if session.query(TaskJob).get(test_id) is not None:
-            session.merge(task_job)
-            session.commit()
-        else:
-            session.add(task_job)
-            session.commit()
-    cancel_orphan_tasks(engine=db_engine, session_args=dict(SESSION_ARGS))
-    with sessionmaker(bind=db_engine, **dict(SESSION_ARGS))() as session:
+    make_session = sessionmaker(bind=db_engine, **SESSION_ARGS)
+    with make_session() as session:
+        session.add(task_job)
+        session.commit()
+    cancel_orphan_tasks(engine=db_engine, session_args=SESSION_ARGS)
+    with make_session() as session:
         if status in [TaskStatus.RUNNING.value, TaskStatus.PENDING.value]:
             updated_task_job = (
                 session.query(TaskJob)

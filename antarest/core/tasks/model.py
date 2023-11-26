@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, List, Mapping, Optional
 
 from pydantic import BaseModel, Extra
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, Sequence, String  # type: ignore
@@ -174,7 +174,7 @@ class TaskJob(Base):  # type: ignore
         )
 
 
-def cancel_orphan_tasks(engine: Engine, session_args: Dict[str, bool]) -> None:
+def cancel_orphan_tasks(engine: Engine, session_args: Mapping[str, bool]) -> None:
     updated_values = {
         TaskJob.status: TaskStatus.FAILED.value,
         TaskJob.result_status: False,

@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, cast
 
 from antarest.core.config import Config
 from antarest.core.interfaces.service import IService
@@ -27,7 +27,7 @@ def _init(config_file: Path, services_list: List[Module]) -> Dict[Module, IServi
         config,
         False,
     )
-    DBSessionMiddleware(None, custom_engine=engine, session_args=dict(SESSION_ARGS))
+    DBSessionMiddleware(None, custom_engine=engine, session_args=cast(Dict[str, bool], SESSION_ARGS))
     configure_logger(config)
 
     (

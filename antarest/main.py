@@ -253,7 +253,7 @@ def fastapi_app(
     application.add_middleware(
         DBSessionMiddleware,
         custom_engine=engine,
-        session_args=dict(SESSION_ARGS),
+        session_args=SESSION_ARGS,
     )
 
     application.add_middleware(LoggingMiddleware)
@@ -409,7 +409,7 @@ def fastapi_app(
         config=RATE_LIMIT_CONFIG,
     )
 
-    init_admin_user(engine=engine, session_args=dict(SESSION_ARGS), admin_password=config.security.admin_pwd)
+    init_admin_user(engine=engine, session_args=SESSION_ARGS, admin_password=config.security.admin_pwd)
     services = create_services(config, application)
 
     if mount_front:
@@ -439,7 +439,7 @@ def fastapi_app(
     customize_openapi(application)
     cancel_orphan_tasks(
         engine=engine,
-        session_args=dict(SESSION_ARGS),
+        session_args=SESSION_ARGS,
     )
     return application, services
 
