@@ -1,3 +1,4 @@
+import contextlib
 import logging
 import typing as t
 import uuid
@@ -298,36 +299,21 @@ class CredentialsDTO(BaseModel):
 
 
 def init_admin_user(engine: Engine, session_args: t.Mapping[str, bool], admin_password: str) -> None:
-    with sessionmaker(bind=engine, **session_args)() as session:
+    make_session = sessionmaker(bind=engine, **session_args)
+    with make_session() as session:
         group = Group(id=GROUP_ID, name=GROUP_NAME)
-        user = User(id=USER_ID, name=USER_NAME, password=Password(admin_password))
-        role = Role(type=RoleType.ADMIN, identity=User(id=USER_ID), group=Group(id=GROUP_ID))
-
-        existing_group = session.query(Group).get(group.id)
-        if not existing_group:
+        with contextlib.suppress(IntegrityError):
             session.add(group)
-            try:
-                session.commit()
-            except IntegrityError as e:
-                session.rollback()  # Rollback any changes made before the error
-                logger.error(f"IntegrityError: {e}")
-
-        existing_user = session.query(User).get(user.id)
-        if not existing_user:
-            session.add(user)
-            try:
-                session.commit()
-            except IntegrityError as e:
-                session.rollback()  # Rollback any changes made before the error
-                logger.error(f"IntegrityError: {e}")
-
-        existing_role = session.query(Role).get((USER_ID, GROUP_ID))
-        if not existing_role:
-            role.group = session.merge(role.group)
-            role.identity = session.merge(role.identity)
-            session.add(role)
-        try:
             session.commit()
-        except IntegrityError as e:
-            session.rollback()  # Rollback any changes made before the error
-            logger.error(f"IntegrityError: {e}")
+
+    with make_session() as session:
+        user = User(id=USER_ID, name=USER_NAME, password=Password(admin_password))
+        with contextlib.suppress(IntegrityError):
+            session.add(user)
+            session.commit()
+
+    with make_session() as session:
+        role = Role(type=RoleType.ADMIN, identity_id=USER_ID, group_id=GROUP_ID)
+        with contextlib.suppress(IntegrityError):
+            session.add(role)
+            session.commit()
