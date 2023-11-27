@@ -167,10 +167,8 @@ class User(Identity):
     def from_dto(data: UserInfo) -> "User":
         return User(id=data.id, name=data.name)
 
-    def __eq__(self, o: t.Any) -> bool:
-        if not isinstance(o, User):
-            return False
-        return bool((o.id == self.id) and (o.name == self.name))
+    # Implementing a `__eq__` method is superfluous, since the default implementation
+    # is to compare the identity of the objects using the primary key.
 
 
 class UserLdap(Identity):
@@ -193,10 +191,8 @@ class UserLdap(Identity):
         "polymorphic_identity": "users_ldap",
     }
 
-    def __eq__(self, o: t.Any) -> bool:
-        if not isinstance(o, UserLdap):
-            return False
-        return bool((o.id == self.id) and (o.name == self.name))
+    # Implementing a `__eq__` method is superfluous, since the default implementation
+    # is to compare the identity of the objects using the primary key.
 
 
 class Bot(Identity):
@@ -232,10 +228,8 @@ class Bot(Identity):
             is_author=self.is_author,
         )
 
-    def __eq__(self, other: t.Any) -> bool:
-        if not isinstance(other, Bot):
-            return False
-        return self.to_dto().dict() == other.to_dto().dict()
+    # Implementing a `__eq__` method is superfluous, since the default implementation
+    # is to compare the identity of the objects using the primary key.
 
 
 class Group(Base):  # type: ignore
@@ -256,11 +250,8 @@ class Group(Base):  # type: ignore
     def to_dto(self) -> GroupDTO:
         return GroupDTO(id=self.id, name=self.name)
 
-    def __eq__(self, other: t.Any) -> bool:
-        if not isinstance(other, Group):
-            return False
-
-        return bool(self.id == other.id and self.name == other.name)
+    # Implementing a `__eq__` method is superfluous, since the default implementation
+    # is to compare the identity of the objects using the primary key.
 
     def __repr__(self) -> str:
         return f"Group(id={self.id}, name={self.name})"
