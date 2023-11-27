@@ -21,6 +21,14 @@ class RoleType(enum.Enum):
     True
     >>> RoleType.ADMIN >= RoleType.WRITER
     True
+    >>> # noinspection PyTypeChecker
+    >>> RoleType.RUNNER > 10
+    True
+    >>> # noinspection PyTypeChecker
+    >>> RoleType.READER > "foo"
+    Traceback (most recent call last):
+      ...
+    TypeError: '>' not supported between instances of 'RoleType' and 'str'
     """
 
     ADMIN = 40
@@ -38,4 +46,4 @@ class RoleType(enum.Enum):
         elif isinstance(other, int):
             return self.value >= other
         else:
-            raise NotImplemented
+            return NotImplemented
