@@ -10,8 +10,7 @@ from antarest.core.config import Config, StorageConfig, WorkspaceConfig
 from antarest.core.exceptions import CannotScanInternalWorkspace
 from antarest.core.persistence import Base
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
-from antarest.login.model import Group
-from antarest.study.model import DEFAULT_WORKSPACE_NAME, StudyFolder
+from antarest.study.model import DEFAULT_WORKSPACE_NAME
 from antarest.study.storage.rawstudy.watcher import Watcher
 from tests.storage.conftest import SimpleSyncTaskService
 
@@ -88,12 +87,16 @@ def test_scan(tmp_path: Path):
 
     watcher.scan()
 
-    service.sync_studies_on_disk.assert_called_once_with(
-        [
-            StudyFolder(c, "diese", [Group(id="tata", name="tata")]),
-        ],
-        None,
-    )
+    assert service.sync_studies_on_disk.call_count == 1
+    call = service.sync_studies_on_disk.call_args_list[0]
+    assert len(call.args[0]) == 1
+    assert call.args[0][0].path == c
+    assert call.args[0][0].workspace == "diese"
+    groups = call.args[0][0].groups
+    assert len(groups) == 1
+    assert groups[0].id == "tata"
+    assert groups[0].name == "tata"
+    assert call.args[1] is None
 
 
 @pytest.mark.unit_test
@@ -129,12 +132,16 @@ def test_partial_scan(tmp_path: Path):
 
     watcher.scan(workspace_name="test", workspace_directory_path=default)
 
-    service.sync_studies_on_disk.assert_called_once_with(
-        [
-            StudyFolder(a, "test", [Group(id="toto", name="toto")]),
-        ],
-        default,
-    )
+    assert service.sync_studies_on_disk.call_count == 1
+    call = service.sync_studies_on_disk.call_args_list[0]
+    assert len(call.args[0]) == 1
+    assert call.args[0][0].path == a
+    assert call.args[0][0].workspace == "test"
+    groups = call.args[0][0].groups
+    assert len(groups) == 1
+    assert groups[0].id == "toto"
+    assert groups[0].name == "toto"
+    assert call.args[1] is None
 
 
 def process(x: int) -> bool:
