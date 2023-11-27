@@ -158,6 +158,7 @@ function SettingsForm(props: PropType) {
             "&> div": {
               mr: 2,
               mb: 2,
+              flexGrow: 1,
             },
           }}
         >
@@ -169,9 +170,9 @@ function SettingsForm(props: PropType) {
             onChange={(e) =>
               handleChange("relative_gap", parseFloat(e.target.value))
             }
-            sx={{ mb: 1 }}
+            sx={{ mb: 1, width: 1 }}
           />
-          <SelectFields sx={{ mb: 1 }}>
+          <SelectFields sx={{ mb: 1, width: 1 }}>
             <SelectSingle
               name="solver"
               list={solver.map((item) => {
@@ -194,7 +195,7 @@ function SettingsForm(props: PropType) {
             onChange={(e) =>
               handleChange("batch_size", parseInt(e.target.value, 10))
             }
-            sx={{ mb: 1 }}
+            sx={{ mb: 1, width: 1 }}
           />
           <TextField
             type="number"
@@ -207,7 +208,7 @@ function SettingsForm(props: PropType) {
                 Math.round(parseFloat(e.target.value) * 3600),
               )
             }
-            sx={{ mb: 1 }}
+            sx={{ mb: 1, width: 1 }}
           />
           <TextField
             type="number"
@@ -217,21 +218,8 @@ function SettingsForm(props: PropType) {
             onChange={(e) =>
               handleChange("log_level", parseInt(e.target.value, 10))
             }
-            sx={{ mb: 1 }}
+            sx={{ mb: 1, width: 1 }}
           />
-        </Box>
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "flex-start",
-            width: "100%",
-            mb: 2,
-            "&> div": {
-              mr: 2,
-              mb: 2,
-            },
-          }}
-        >
           <TextField
             type="number"
             label={t("xpansion.separationParameter")}
@@ -240,7 +228,7 @@ function SettingsForm(props: PropType) {
             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
               handleChange("separation_parameter", parseFloat(e.target.value))
             }
-            sx={{ mb: 1 }}
+            sx={{ mb: 1, width: 1 }}
             InputProps={{ inputProps: { min: 0, max: 1 } }}
           />
         </Box>
