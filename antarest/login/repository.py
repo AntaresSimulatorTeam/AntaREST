@@ -89,7 +89,7 @@ class UserRepository:
         user: User = db.session.query(User).get(id)
         return user
 
-    def get_by_name(self, name: str) -> User:
+    def get_by_name(self, name: str) -> Optional[User]:
         user: User = db.session.query(User).filter_by(name=name).first()
         return user
 

@@ -240,15 +240,17 @@ class LoginService:
         Returns: group asked
 
         """
+        if params.user is None:
+            user_id = params.get_user_id()
+            err_msg = f"user {user_id} has not permission to get group"
+            logger.error(err_msg)
+            raise UserHasNotPermissionError(err_msg)
+
         group = self.groups.get(id)
-        if (
-            group is not None
-            and params.user is not None
-            and any(
-                (
-                    params.user.is_site_admin(),
-                    id in [group.id for group in params.user.groups],
-                )
+        if group is not None and any(
+            (
+                params.user.is_site_admin(),
+                id in [group.id for group in params.user.groups],
             )
         ):
             return group
@@ -319,15 +321,14 @@ class LoginService:
 
     def get_identity(self, id: int, include_token: bool = False) -> Optional[Identity]:
         """
-        Get user
-        Permission: SADMIN, GADMIN (own group), USER (own user)
+        Get user, LDAP user or bot.
 
         Args:
-            id: user id
-            params: request parameters
+            id: ID of the user to fetch
+            include_token: whether to include the bots or not.
 
-        Returns: user
-
+        Returns:
+            The user, LDAP user or bot if found, `None` otherwise.
         """
         user = self.ldap.get(id) or self.users.get(id)
         if include_token:
@@ -336,14 +337,14 @@ class LoginService:
 
     def get_user_info(self, id: int, params: RequestParameters) -> Optional[IdentityDTO]:
         """
-        Get user informations
+        Get user information
         Permission: SADMIN, GADMIN (own group), USER (own user)
 
         Args:
             id: user id
             params: request parameters
 
-        Returns: user informations and roles
+        Returns: user information and roles
 
         """
         user = self.get_user(id, params)
@@ -471,7 +472,7 @@ class LoginService:
         Returns: jwt data with user information if auth success, None else.
 
         """
-        intern = self.users.get_by_name(name)
+        intern: Optional[User] = self.users.get_by_name(name)
         if intern and intern.password.check(pwd):  # type: ignore
             logger.info("successful login from intern user %s", name)
             return self.get_jwt(intern.id)
@@ -509,9 +510,7 @@ class LoginService:
         logger.error("Can't claim JWT for user=%d", user_id)
         return None
 
-    def get_all_groups(
-        self, params: RequestParameters, details: Optional[bool] = False
-    ) -> List[Union[GroupDetailDTO, GroupDTO]]:
+    def get_all_groups(self, params: RequestParameters, details: bool = False) -> List[Union[GroupDetailDTO, GroupDTO]]:
         """
         Get all groups.
         Permission: SADMIN
