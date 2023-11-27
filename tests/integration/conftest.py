@@ -1,7 +1,7 @@
 import os
+import typing as t
+import zipfile
 from pathlib import Path
-from typing import cast
-from zipfile import ZipFile
 
 import jinja2
 import pytest
@@ -9,7 +9,6 @@ from fastapi import FastAPI
 from sqlalchemy import create_engine
 from starlette.testclient import TestClient
 
-from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.dbmodel import Base
 from antarest.main import fastapi_app
 from antarest.study.storage.rawstudy.watcher import Watcher
@@ -23,19 +22,21 @@ RUN_ON_WINDOWS = os.name == "nt"
 
 
 @pytest.fixture(name="app")
-def app_fixture(tmp_path: Path):
-    # First, create a database and apply migrations
+def app_fixture(tmp_path: Path) -> FastAPI:
+    # Currently, it is impossible to use a SQLite database in memory (with "sqlite:///:memory:")
+    # because the database is created by the FastAPI application during each integration test,
+    # which doesn't apply the migrations (migrations are done by Alembic).
+    # An alternative is to use a SQLite database stored on disk, because migrations can be persisted.
     db_path = tmp_path / "db.sqlite"
     db_url = f"sqlite:///{db_path}"
 
+    # ATTENTION: when setting up integration tests, be aware that creating the database
+    # tables requires a dedicated DB engine (the `engine` below).
+    # This is crucial as the FastAPI application initializes its own engine (a global object),
+    # and the DB engine used in integration tests is not the same.
     engine = create_engine(db_url, echo=False)
     Base.metadata.create_all(engine)
-    # noinspection SpellCheckingInspection
-    DBSessionMiddleware(
-        None,
-        custom_engine=engine,
-        session_args={"autocommit": False, "autoflush": False},
-    )
+    del engine  # This object won't be used anymore.
 
     # Prepare the directories used by the repos
     matrix_dir = tmp_path / "matrix_store"
@@ -52,7 +53,7 @@ def app_fixture(tmp_path: Path):
 
     # Extract the sample study
     sta_mini_zip_path = ASSETS_DIR.joinpath("STA-mini.zip")
-    with ZipFile(sta_mini_zip_path) as zip_output:
+    with zipfile.ZipFile(sta_mini_zip_path) as zip_output:
         zip_output.extractall(path=ext_workspace_path)
 
     # Generate a "config.yml" file for the app
@@ -77,7 +78,7 @@ def app_fixture(tmp_path: Path):
 
     app, services = fastapi_app(config_path, RESOURCES_DIR, mount_front=False)
     yield app
-    cast(Watcher, services["watcher"]).stop()
+    t.cast(Watcher, services["watcher"]).stop()
 
 
 @pytest.fixture(name="client")

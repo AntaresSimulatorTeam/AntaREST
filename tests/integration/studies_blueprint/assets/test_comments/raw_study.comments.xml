@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<richtext version="1.0.0.0" xmlns="http://www.wxwidgets.org">
+    <paragraphlayout textcolor="#000000" fontpointsize="8" fontfamily="70" fontstyle="90" fontweight="90"
+                     fontunderlined="0" fontface="MS Shell Dlg 2" alignment="1" parspacingafter="10"
+                     parspacingbefore="0" linespacing="10" margin-left="5,4098" margin-right="5,4098"
+                     margin-top="5,4098" margin-bottom="5,4098">
+        <paragraph>
+            <text fontweight="92" fontunderlined="1">02/12/2016</text>
+        </paragraph>
+        <paragraph fontweight="92" fontunderlined="0">
+            <text fontweight="92">Cr&#233;ation du mod&#232;le TYNDP 2018 avec la version ANTARES V5.0.4</text>
+        </paragraph>
+        <paragraph fontweight="92" fontunderlined="0">
+            <text>Tous les param&#232;tres sont les param&#232;tres par d&#233;faut d'ANTARES</text>
+        </paragraph>
+        <paragraph fontweight="92" fontunderlined="0">
+            <text/>
+        </paragraph>
+        <paragraph fontweight="92" fontunderlined="1">
+            <text fontweight="90" fontunderlined="0">N&#338;UDS</text>
+        </paragraph>
+        <paragraph fontweight="92" fontunderlined="0">
+            <text fontweight="90" fontunderlined="0">Cr&#233;ation des 54 n&#339;uds repr&#233;sentant les pays.</text>
+        </paragraph>
+        <paragraph fontweight="92" fontunderlined="1">
+            <text/>
+        </paragraph>
+        <paragraph fontweight="92" fontunderlined="1">
+            <text fontweight="90" fontunderlined="0">N&#338;UDS FICTIFS POMPAGE TURBINAGE</text>
+        </paragraph>
+        <paragraph fontweight="92" fontunderlined="1">
+            <text fontweight="90" fontunderlined="0">Cr&#233;ation des 4 n&#339;uds fictifs: 0_PUMP_Daily / 0_TURB_Daily
+                / 1_PUMP_Weekly / 1_TURB_Weekly
+            </text>
+        </paragraph>
+        <paragraph fontweight="92" fontunderlined="1">
+            <text fontstyle="90" fontweight="90" fontunderlined="0">Cr&#233;ation des liens entre les 4 n&#339;uds
+                fictifs et les pays concern&#233;s sur la base des capacit&#233;s existantes dans le package de donn&#233;es
+                livr&#233; le 05 d&#233;cembre 2016.
+            </text>
+        </paragraph>
+        <paragraph fontweight="92" fontunderlined="1">
+            <text fontstyle="90" fontweight="90" fontunderlined="0">Cr&#233;ation d'une consommation de 80 000 MW pour
+                les 2 noeuds de pompage.
+            </text>
+        </paragraph>
+        <paragraph fontweight="92" fontunderlined="1">
+            <text fontstyle="90" fontweight="90" fontunderlined="0">Pour chaque n&#339;ud pompage et turbinage, cr&#233;ation
+                d'un cluster de 80 000 MW dans Thermal (co&#251;t nul pour les n&#339;uds de pompage, co&#251;t &#224;
+                0.01 &#8364;/MWh pour les n&#339;uds de turbinage).
+            </text>
+        </paragraph>
+        <paragraph fontweight="92" fontunderlined="1">
+            <text fontstyle="90" fontweight="90" fontunderlined="0">Pour hydro storage, param&#232;tre intra-daily
+                modulation par d&#233;faut &#224; 24 mis &#224; 2.
+            </text>
+        </paragraph>
+        <paragraph fontweight="92" fontunderlined="1">
+            <text fontweight="90" fontunderlined="0"/>
+        </paragraph>
+        <paragraph fontweight="92" fontunderlined="1">
+            <text fontstyle="90" fontweight="90" fontunderlined="0">BINDING CONSTRAINT</text>
+        </paragraph>
+        <paragraph fontweight="92" fontunderlined="1">
+            <text fontstyle="90" fontweight="90" fontunderlined="0">"Cr&#233;ation manuelle des "</text>
+            <symbol fontstyle="90" fontweight="90" fontunderlined="0">34</symbol>
+            <text fontstyle="90" fontweight="90" fontunderlined="0">binding constraint</text>
+            <symbol fontstyle="90" fontweight="90" fontunderlined="0">34</symbol>
+            <text fontstyle="90" fontweight="90" fontunderlined="0">" pour l'hydraulique (0.75)"</text>
+        </paragraph>
+        <paragraph fontweight="92" fontunderlined="1">
+            <text fontweight="90" fontunderlined="0"/>
+        </paragraph>
+        <paragraph fontweight="92" fontunderlined="1">
+            <text fontweight="90" fontunderlined="0">LIENS</text>
+        </paragraph>
+        <paragraph fontweight="92" fontunderlined="1">
+            <text fontweight="90" fontunderlined="0">Cr&#233;ation des liens entre pays sur la base des liens existants
+                dans l'onglet new BTC - 2020 (MAF&amp;TYNDP) du fichier 2020_2025 BTC-PROPOSAL.xlsx
+            </text>
+        </paragraph>
+        <paragraph fontweight="92" fontunderlined="1">
+            <text fontweight="90" fontunderlined="0">"Pour le lien ES-GB-FR: cr&#233;ation d'un n&#339;ud fictif "
+            </text>
+            <symbol fontweight="90" fontunderlined="0">34</symbol>
+            <text fontweight="90" fontunderlined="0">y-multiterminal</text>
+            <symbol fontweight="90" fontunderlined="0">34</symbol>
+            <text fontweight="90" fontunderlined="0">" et des liens vers ES/GB/FR"</text>
+        </paragraph>
+        <paragraph fontweight="92" fontunderlined="1">
+            <text fontstyle="90" fontweight="90" fontunderlined="0">"Cr&#233;ation d'une "</text>
+            <symbol fontstyle="90" fontweight="90" fontunderlined="0">34</symbol>
+            <text fontstyle="90" fontweight="90" fontunderlined="0">binding constraint</text>
+            <symbol fontstyle="90" fontweight="90" fontunderlined="0">34</symbol>
+            <text fontstyle="90" fontweight="90" fontunderlined="0">" pour limitation des imports/exports sur la
+                Pologne"
+            </text>
+        </paragraph>
+        <paragraph fontweight="92" fontunderlined="1">
+            <text fontweight="90" fontunderlined="0"/>
+        </paragraph>
+        <paragraph fontweight="92" fontunderlined="1">
+            <text fontweight="90" fontunderlined="0">ECONOMIC OPT.</text>
+        </paragraph>
+        <paragraph fontweight="92" fontunderlined="1">
+            <text fontweight="90" fontunderlined="0">Unsupplied Energy Cost (average): valeur mise &#224; 3 000 pour
+                tous les n&#339;uds
+            </text>
+        </paragraph>
+        <paragraph fontweight="92" fontunderlined="1">
+            <text fontweight="90" fontunderlined="0"/>
+        </paragraph>
+        <paragraph>
+            <text fontweight="92" fontunderlined="1">DECEMBRE 2016</text>
+        </paragraph>
+        <paragraph fontweight="92">
+            <text fontweight="92">MISE A JOUR AVEC LES DONNEES POUR SUSTAINABLE TRANSITION 2030</text>
+        </paragraph>
+        <paragraph fontweight="92">
+            <text fontweight="90">HYDRO: construction des inputs &#224; partir du script R hydro4.</text>
+        </paragraph>
+        <paragraph fontweight="92">
+            <text fontweight="90">THERMAL: mise &#224; jour des prix biofuels pour DKe/DKw/EE/IE/FI/PL/SK.</text>
+        </paragraph>
+        <paragraph fontweight="92">
+            <text fontweight="90">OTHER Non-RES avec price band: DKe/DKw/NL.</text>
+        </paragraph>
+        <paragraph fontweight="92">
+            <text fontunderlined="1"></text>
+        </paragraph>
+        <paragraph fontweight="92">
+            <text fontweight="92" fontunderlined="1">JANVIER 2017</text>
+        </paragraph>
+        <paragraph fontweight="92">
+            <text fontweight="92">MISE A JOUR AVEC LES DONNEES POUR SUSTAINABLE TRANSITION 2030 DU 13/01/2017</text>
+        </paragraph>
+        <paragraph fontweight="92">
+            <text>INTEGRATION DES DSR</text>
+        </paragraph>
+        <paragraph fontweight="92">
+            <text/>
+        </paragraph>
+        <paragraph fontweight="92">
+            <text fontweight="92" fontunderlined="1">FEVRIER 2017</text>
+        </paragraph>
+        <paragraph fontweight="92">
+            <text fontweight="92">MISE A JOUR AVEC LES DONNEES POUR SUSTAINABLE TRANSITION 2030 DU 03/02/2017</text>
+        </paragraph>
+        <paragraph fontweight="92">
+            <text>CORRECTION DES PRIX BIOFUELS (prix g&#233;n&#233;rique biofuel: BE/HU/NL/SE/SI/TR/Hard coal PL)</text>
+        </paragraph>
+        <paragraph fontweight="92">
+            <text>"CORRECTION "</text>
+            <text fontweight="92" fontunderlined="0">"0_PUMP_Daily / 0_TURB_Daily "</text>
+            <text>" LUv"</text>
+        </paragraph>
+        <paragraph fontweight="92">
+            <text>ETUDE AVEC LES 34 ANNEES CLIMATIQUES (SELECTION ANNEE CLIMATIQUE 1982/1984/2007 SUITE A DECISION MST
+                TYNDP DU 27/01/2017)
+            </text>
+        </paragraph>
+        <paragraph fontweight="92">
+            <text/>
+        </paragraph>
+        <paragraph fontweight="92">
+            <text fontweight="92" fontunderlined="1">MARS 2017</text>
+        </paragraph>
+        <paragraph fontweight="92">
+            <text fontweight="92">MISE A JOUR AVEC LES DONNEES POUR SUSTAINABLE TRANSITION 2030 DU 17/03/2017 (Hors PECD
+                2.1)
+            </text>
+        </paragraph>
+        <paragraph fontweight="92">
+            <text>MISE A JOUR HURDLE COST: 0.01 &#8364;/MWh</text>
+        </paragraph>
+        <paragraph fontweight="92">
+            <text/>
+        </paragraph>
+        <paragraph fontweight="92">
+            <text fontweight="92" fontunderlined="1">AVRIL 2017</text>
+        </paragraph>
+        <paragraph fontweight="92">
+            <text fontweight="92">MISE A JOUR AVEC PECD</text>
+        </paragraph>
+    </paragraphlayout>
+</richtext>

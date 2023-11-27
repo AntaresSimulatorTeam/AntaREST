@@ -1,4 +1,5 @@
 import base64
+import contextlib
 import io
 import json
 import logging
@@ -356,38 +357,33 @@ class StudyService:
         )
         stopwatch.log_elapsed(lambda t: logger.info(f"Saved logs for job {job_id} in {t}s"))
 
-    def get_comments(
-        self,
-        uuid: str,
-        params: RequestParameters,
-    ) -> Union[str, JSON]:
+    def get_comments(self, study_id: str, params: RequestParameters) -> Union[str, JSON]:
         """
-        Get study data inside filesystem
-        Args:
-            uuid: study uuid
-            params: request parameters
+        Get the comments of a study.
 
-        Returns: data study formatted in json
+        Args:
+            study_id: The ID of the study.
+            params: The parameters of the HTTP request containing the user information.
+
+        Returns: textual comments of the study.
         """
-        study = self.get_study(uuid)
+        study = self.get_study(study_id)
         assert_permission(params.user, study, StudyPermissionType.READ)
 
         output: Union[str, JSON]
+        raw_study_service = self.storage_service.raw_study_service
+        variant_study_service = self.storage_service.variant_study_service
         if isinstance(study, RawStudy):
-            output = self.storage_service.get_storage(study).get(metadata=study, url="/settings/comments", depth=-1)
+            output = raw_study_service.get(metadata=study, url="/settings/comments")
         elif isinstance(study, VariantStudy):
-            patch = self.storage_service.raw_study_service.patch_service.get(study)
-            output = (patch.study or PatchStudy()).comments or self.storage_service.get_storage(study).get(
-                metadata=study, url="/settings/comments", depth=-1
-            )
+            patch = raw_study_service.patch_service.get(study)
+            patch_study = PatchStudy() if patch.study is None else patch.study
+            output = patch_study.comments or variant_study_service.get(metadata=study, url="/settings/comments")
         else:
             raise StudyTypeUnsupported(study.id, study.type)
 
-        try:
-            # try to decode string
+        with contextlib.suppress(AttributeError, UnicodeDecodeError):
             output = output.decode("utf-8")  # type: ignore
-        except (AttributeError, UnicodeDecodeError):
-            pass
 
         return output
 
@@ -667,19 +663,20 @@ class StudyService:
 
     def get_study_synthesis(self, study_id: str, params: RequestParameters) -> FileStudyTreeConfigDTO:
         """
-        Return study synthesis
+        Get the synthesis of a study.
+
         Args:
-            study_id: study id
-            params: request parameters
+            study_id: The ID of the study.
+            params: The parameters of the HTTP request containing the user information.
 
         Returns: study synthesis
-
         """
         study = self.get_study(study_id)
         assert_permission(params.user, study, StudyPermissionType.READ)
         study.last_access = datetime.utcnow()
         self.repository.save(study, update_in_listing=False)
-        return self.storage_service.get_storage(study).get_synthesis(study, params)
+        study_storage_service = self.storage_service.get_storage(study)
+        return study_storage_service.get_synthesis(study, params)
 
     def get_input_matrix_startdate(self, study_id: str, path: Optional[str], params: RequestParameters) -> MatrixIndex:
         study = self.get_study(study_id)
@@ -701,7 +698,7 @@ class StudyService:
         for study in self.repository.get_all():
             if isinstance(study, RawStudy) and not study.archived:
                 path = str(study.path)
-                if not path in study_paths:
+                if path not in study_paths:
                     study_paths[path] = []
                 study_paths[path].append(study.id)
 

@@ -108,22 +108,6 @@ def test_main(client: TestClient, admin_access_token: str, study_id: str) -> Non
     assert res.status_code == 417
     assert res.json()["description"] == "Not a year by year simulation"
 
-    # Set new comments
-    res = client.put(
-        f"/v1/studies/{study_id}/comments",
-        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
-        json={"comments": comments},
-    )
-    assert res.status_code == 204, res.json()
-
-    # Get comments
-    res = client.get(
-        f"/v1/studies/{study_id}/comments",
-        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
-    )
-    assert res.status_code == 200, res.json()
-    assert res.json() == comments
-
     # study synthesis
     res = client.get(
         f"/v1/studies/{study_id}/synthesis",

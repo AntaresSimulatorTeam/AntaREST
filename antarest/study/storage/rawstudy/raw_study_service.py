@@ -258,7 +258,6 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         study = self.study_factory.create_from_fs(dest_path, study_id=dest_study.id)
         update_antares_info(dest_study, study.tree, update_author=False)
 
-        del study.tree
         return dest_study
 
     def delete(self, metadata: RawStudy) -> None:
