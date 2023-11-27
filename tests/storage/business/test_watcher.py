@@ -141,7 +141,7 @@ def test_partial_scan(tmp_path: Path):
     assert len(groups) == 1
     assert groups[0].id == "toto"
     assert groups[0].name == "toto"
-    assert call.args[1] is None
+    assert call.args[1] == tmp_path / "test"
 
 
 def process(x: int) -> bool:
