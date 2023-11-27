@@ -232,15 +232,20 @@ def test_user_save() -> None:
 
     app = create_app(service)
     client = TestClient(app)
+    user_obj = user.to_dto().dict()
     res = client.put(
         "/v1/users/0",
         headers=create_auth_token(app),
-        json=user.to_dto().dict(),
+        json=user_obj,
     )
 
     assert res.status_code == 200
-    service.save_user.assert_called_once_with(user, PARAMS)
-    assert res.json() == user.to_dto().dict()
+    assert res.json() == user_obj
+
+    assert service.save_user.call_count == 1
+    call = service.save_user.call_args_list[0]
+    assert call[0][0].to_dto().dict() == user_obj
+    assert call[0][1] == PARAMS
 
 
 @pytest.mark.unit_test
