@@ -334,8 +334,20 @@ def test_main(client: TestClient, admin_access_token: str, study_id: str) -> Non
         headers={"Authorization": f'Bearer {fred_credentials["access_token"]}'},
     )
     job_info = res.json()[0]
-    assert job_info["id"] == job_id
-    assert job_info["owner_id"] == fred_id
+    assert job_info == {
+        "id": job_id,
+        "study_id": study_id,
+        "launcher": "local",
+        "launcher_params": ANY,
+        "status": "pending",
+        "creation_date": ANY,
+        "completion_date": None,
+        "msg": None,
+        "output_id": None,
+        "exit_code": None,
+        "solver_stats": None,
+        "owner": {"id": fred_id, "name": "Fred"},
+    }
 
     # update metadata
     res = client.put(

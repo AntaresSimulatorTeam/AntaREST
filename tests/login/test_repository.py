@@ -142,7 +142,7 @@ def test_roles():
 
         a = repo.save(a)
         assert a == repo.get(user=0, group="group")
-        assert [a] == repo.get_all_by_user(user=0)
+        assert [a] == repo.get_all_by_user(0)
         assert [a] == repo.get_all_by_group(group="group")
 
         repo.delete(user=0, group="group")

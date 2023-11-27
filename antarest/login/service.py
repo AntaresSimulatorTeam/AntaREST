@@ -150,8 +150,7 @@ class LoginService:
             if not params.user.is_site_admin():
                 for role_create in bot.roles:
                     role = self.roles.get(params.user.id, role_create.group)
-                    role_type = RoleType(role_create.role)
-                    if not (role and role.type.is_higher_or_equals(role_type)):
+                    if not role or role.type is None or role.type < role_create.role:
                         raise UserHasNotPermissionError()
 
             if not bot.name.strip():
@@ -241,15 +240,17 @@ class LoginService:
         Returns: group asked
 
         """
+        if params.user is None:
+            user_id = params.get_user_id()
+            err_msg = f"user {user_id} has not permission to get group"
+            logger.error(err_msg)
+            raise UserHasNotPermissionError(err_msg)
+
         group = self.groups.get(id)
-        if (
-            group
-            and params.user
-            and any(
-                (
-                    params.user.is_site_admin(),
-                    id in [group.id for group in params.user.groups],
-                )
+        if group is not None and any(
+            (
+                params.user.is_site_admin(),
+                id in [group.id for group in params.user.groups],
             )
         ):
             return group
@@ -320,15 +321,14 @@ class LoginService:
 
     def get_identity(self, id: int, include_token: bool = False) -> Optional[Identity]:
         """
-        Get user
-        Permission: SADMIN, GADMIN (own group), USER (own user)
+        Get user, LDAP user or bot.
 
         Args:
-            id: user id
-            params: request parameters
+            id: ID of the user to fetch
+            include_token: whether to include the bots or not.
 
-        Returns: user
-
+        Returns:
+            The user, LDAP user or bot if found, `None` otherwise.
         """
         user = self.ldap.get(id) or self.users.get(id)
         if include_token:
@@ -337,14 +337,14 @@ class LoginService:
 
     def get_user_info(self, id: int, params: RequestParameters) -> Optional[IdentityDTO]:
         """
-        Get user informations
+        Get user information
         Permission: SADMIN, GADMIN (own group), USER (own user)
 
         Args:
             id: user id
             params: request parameters
 
-        Returns: user informations and roles
+        Returns: user information and roles
 
         """
         user = self.get_user(id, params)
@@ -472,7 +472,7 @@ class LoginService:
         Returns: jwt data with user information if auth success, None else.
 
         """
-        intern = self.users.get_by_name(name)
+        intern: Optional[User] = self.users.get_by_name(name)
         if intern and intern.password.check(pwd):  # type: ignore
             logger.info("successful login from intern user %s", name)
             return self.get_jwt(intern.id)
@@ -510,9 +510,7 @@ class LoginService:
         logger.error("Can't claim JWT for user=%d", user_id)
         return None
 
-    def get_all_groups(
-        self, params: RequestParameters, details: Optional[bool] = False
-    ) -> List[Union[GroupDetailDTO, GroupDTO]]:
+    def get_all_groups(self, params: RequestParameters, details: bool = False) -> List[Union[GroupDetailDTO, GroupDTO]]:
         """
         Get all groups.
         Permission: SADMIN
@@ -529,7 +527,7 @@ class LoginService:
             if params.user.is_site_admin():
                 group_list = self.groups.get_all()
             else:
-                roles_by_user = self.roles.get_all_by_user(user=params.user.id)
+                roles_by_user = self.roles.get_all_by_user(params.user.id)
 
                 for role in roles_by_user:
                     if not details or role.type == RoleType.ADMIN:
@@ -730,7 +728,7 @@ class LoginService:
             )
         ):
             logger.info("bot %d deleted by user %s", id, params.get_user_id())
-            for role in self.roles.get_all_by_user(user=id):
+            for role in self.roles.get_all_by_user(id):
                 self.roles.delete(user=role.identity_id, group=role.group_id)
             return self.bots.delete(id)
         else:
