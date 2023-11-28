@@ -12,7 +12,7 @@ the application will try to look for files in the following location (in order):
 # File Structure
 
 - [Security](#security)
-- [Database](#database)
+- [Database](#db)
 - [Storage](#storage)
 - [Launcher](#launcher)
 - [Logging](#logging)
@@ -21,13 +21,13 @@ the application will try to look for files in the following location (in order):
 
 # security
 
-This section concerns application security, authentication and groups
+This section concerns application security, authentication, and groups.
 
 ## **disabled**
 
 - **Type:** Boolean
 - **Default value:** false
-- **Description:** If value is `false`, user identification is required when launching the app
+- **Description:** If the value is `false`, user identification is required when launching the app.
 
 ## **jwt**
 
@@ -35,7 +35,7 @@ This section concerns application security, authentication and groups
 
 - **Type:** String (usually a Base64-encoded one)
 - **Default value:** ""
-- **Description:** JWT(Json Web Token) secret key for authentication
+- **Description:** JWT (Json Web Token) secret key for authentication.
 
 ## **login**
 
@@ -45,7 +45,7 @@ This section concerns application security, authentication and groups
 
 - **Type:** String
 - **Default value:** ""
-- **Description:** Admin user's password
+- **Description:** Admin user's password.
 
 ## **external_auth**
 
@@ -57,19 +57,19 @@ service. The group names and their IDs are obtained from the LDAP directory.
 - **Type:** String
 - **Default value:** ""
 - **Description:** External authentication URL. If you want to enable local authentication, you should write "". To
-  enable authentication via RTE "NNI", you should register http://antarestgaia:8080
+  enable authentication via RTE "NNI", you should register http://antarestgaia:8080.
 
 ### **default_group_role**
 
 - **Type:** Integer
 - **Default value:** 10
-- **Description:** Default user role for external authentication. ADMIN = 40, WRITER = 30, RUNNER = 20, READER = 10
+- **Description:** Default user role for external authentication. ADMIN = 40, WRITER = 30, RUNNER = 20, READER = 10.
 
 ### **add_ext_groups**
 
 - **Type:** Boolean
 - **Default value:** false
-- **Description:** Whether to add external groups to user roles
+- **Description:** Whether to add external groups to user roles.
 
 ### **group_mapping**
 
@@ -80,7 +80,7 @@ service. The group names and their IDs are obtained from the LDAP directory.
     - 00001188: drd
     - 00001574: cnes
 
-# database
+# db
 
 This section relates to configuring the application's database connection.
 
@@ -88,7 +88,7 @@ This section relates to configuring the application's database connection.
 
 - **Type:** String
 - **Default value:** ""
-- **Description:** Database URL. Example: `sqlite:///database.db`for a local SQLite DB
+- **Description:** The Database URL. For example, `sqlite:///database.db` for a local SQLite DB
   or `postgresql://postgres_user:postgres_password@postgres_host:postgres_port/postgres_db` for a PostgreSQL DB.
 
 ## **admin_url**
@@ -101,112 +101,113 @@ This section relates to configuring the application's database connection.
 
 - **Type:** Boolean
 - **Default value:** false
-- **Description:** If `true`, the Pool does not pool connections. This parameter should stay at `false` to avoid issues.
+- **Description:** If set to `true`, the Pool does not pool connections. This parameter should stay at `false` to avoid
+  issues.
 
 ## **db_connect_timeout**
 
 - **Type:** Integer
 - **Default value:** 10
-- **Description:** Database timeout (in seconds) to create the connection
+- **Description:** The timeout (in seconds) for database connection creation.
 
 ## **pool_recycle**
 
 - **Type:** Integer
 - **Default value:** None
 - **Description:** Prevents the pool from using a particular connection that has passed a certain time in seconds. An
-  often used value is 3600 which corresponds to a day. *Not used for SQLite DB*
+  often-used value is 3600, which corresponds to a day. *Not used for SQLite DB.*
 
 ## **pool_size**
 
 - **Type:** Integer
 - **Default value:** 5
-- **Description:** Maximum number of permanent connections to keep. *Not used for SQLite DB*
+- **Description:** The maximum number of permanent connections to keep. *Not used for SQLite DB.*
 
 ## **pool_use_lifo**
 
 - **Type:** Boolean
 - **Default value:** false
-- **Description:** Should Database use Last-in First-out method. It is commonly used in cases where the most recent data
-  entry is the most important and that applies to the application context. Therefore, it's better to set this parameter
-  to `true`. *Not used for SQLite DB*
+- **Description:** Specifies whether the Database should use the Last-in-First-out method. It is commonly used in cases
+  where the most recent data entry is the most important and applies to the application context. Therefore, it's better
+  to set this parameter to `true`. *Not used for SQLite DB.*
 
 ## **pool_pre_ping**
 
 - **Type:** Boolean
 - **Default value:** false
-- **Description:** Connections which are closed from the server side are gracefully handled by the connection pool and
-  replaced with a new connection. *Not used for SQLite DB*
+- **Description:** Connections that are closed from the server side are gracefully handled by the connection pool and
+  replaced with a new connection. *Not used for SQLite DB.*
 
 ## **pool_max_overflow**
 
 - **Type:** Integer
 - **Default value:** 10
-- **Description:** Temporarily exceeds the set pool_size if no connections are available. *Not used for SQLite DB*
+- **Description:** Temporarily exceeds the set pool_size if no connections are available. *Not used for SQLite DB.*
 
 # storage
 
-This section concerns application Paths and Services options
+This section concerns application Paths and Services options.
 
 ## **tmp_dir**
 
 - **Type:** Path
-- **Default value:** tempfile.gettempdir() (doc
-  here: [tempfile_doc](https://docs.python.org/3/library/tempfile.html#tempfile.gettempdir))
-- **Description:** Temporary directory for storing temporary files. Often used value : `./tmp`
+- **Default value:** `tempfile.gettempdir()` (
+  documentation [here](https://docs.python.org/3/library/tempfile.html#tempfile.gettempdir))
+- **Description:** The temporary directory for storing temporary files. An often-used value is `./tmp`.
 
 ## **matrixstore**
 
 - **Type:** Path
 - **Default value:** `./matrixstore`
-- **Description:** Antares Web extract matrices data and share them between managed studies to save space. These
+- **Description:** Antares Web extracts matrices data and shares them between managed studies to save space. These
   matrices are stored here.
 
 ## **archive_dir**
 
 - **Type:** Path
 - **Default value:** `./archives`
-- **Description:** Directory for archived (which means zipped) studies
+- **Description:** The directory for archived (zipped) studies.
 
 ## **workspaces**
 
 - **Type:** Dictionary
 - **Default value:** {}
-- **Description:** Different workspaces where the application expects to find studies.
-  Keys = Folder names, Values = WorkspaceConfig object. Such an object has 4 fields:
-    - groups: List of groups corresponding to the workspace (default [])
-    - path: Path of the workspace (default Path())
-    - filter_in: List of regex. If a folder does not contain a file whose name matches one of the regex , it's not
+- **Description:** Different workspaces where the application expects to find studies. Keys = Folder names, Values =
+  WorkspaceConfig object. Such an object has 4 fields:
+    - `groups`: List of groups corresponding to the workspace (default [])
+    - `path`: Path of the workspace (default `Path()`)
+    - `filter_in`: List of regex. If a folder does not contain a file whose name matches one of the regex, it's not
       scanned (default [".*"])
-    - filter_out: List of regex. If a folder contains any file whose name matches one of the regex, it's not scanned (
+    - `filter_out`: List of regex. If a folder contains any file whose name matches one of the regex, it's not scanned (
       default [])
 
-> NOTE: If a directory is to be ignored by the watcher, place a file named AW_NO_SCAN inside
+> NOTE: If a directory is to be ignored by the watcher, place a file named `AW_NO_SCAN` inside.
 
 Examples:
 
-```
-    default:
-      path: /home/john/Projects/antarest_data/internal_studies/  
-    studies:
-      path: /home/john/Projects/antarest_data/studies/  
-    staging_studies:
-      path: /home/john/Projects/antarest_data/staging_studies/  
+```yaml
+default:
+  path: /home/john/Projects/antarest_data/internal_studies/
+studies:
+  path: /home/john/Projects/antarest_data/studies/
+staging_studies:
+  path: /home/john/Projects/antarest_data/staging_studies/
 ```
 
-```
+```yaml
 default:
   path: /studies/internal
 "public":
   path: /mounts/public
-    filter_in: 
-      - .*
-    filter_out: 
-      - ^R$
-      - System Volume Information
-      - .*RECYCLE.BIN
-      - .Rproj.*
-      - ^.git$
-      - ^areas$
+  filter_in:
+    - .*
+  filter_out:
+    - ^R$
+    - System Volume Information
+    - .*RECYCLE.BIN
+    - .Rproj.*
+    - ^.git$
+    - ^areas$
 "aws_share_2":
   path: /mounts/aws_share_2
   groups:
@@ -221,13 +222,13 @@ default:
 
 - **Type:** Boolean
 - **Default value:** false
-- **Description:** Indicates if studies found in non-default workspace can be deleted by the application
+- **Description:** Indicates if studies found in non-default workspace can be deleted by the application.
 
 ## **matrix_gc_sleeping_time**
 
 - **Type:** Integer
 - **Default value:** 3600 (corresponds to 1 hour)
-- **Description:** Time in seconds to sleep between two garbage collections (which means matrix suppression)
+- **Description:** Time in seconds to sleep between two garbage collections (which means matrix suppression).
 
 ## **matrix_gc_dry_run**
 
@@ -239,7 +240,7 @@ default:
 
 - **Type:** Integer
 - **Default value:** 3600 (corresponds to 1 hour)
-- **Description:** Time in seconds to sleep between two auto_archiver tasks (which means zipping unused studies)
+- **Description:** Time in seconds to sleep between two auto_archiver tasks (which means zipping unused studies).
 
 ## **auto_archive_dry_run**
 
@@ -251,33 +252,33 @@ default:
 
 - **Type:** Integer
 - **Default value:** 60
-- **Description:** Number of days after last study access when the study should be archived
+- **Description:** Number of days after the last study access when the study should be archived.
 
 ## **auto_archive_max_parallel**
 
 - **Type:** Integer
 - **Default value:** 5
-- **Description:** Max auto archival tasks in parallel
+- **Description:** Max auto archival tasks in parallel.
 
 ## **watcher_lock**
 
 - **Type:** Boolean
 - **Default value:** true
 - **Description:** If false, it will scan without any delay. Else, its delay will be the value of the
-  field `watcher_lock_delay`
+  field `watcher_lock_delay`.
 
 ## **watcher_lock_delay**
 
 - **Type:** Integer
 - **Default value:** 10
-- **Description:** Seconds delay between two scans
+- **Description:** Seconds delay between two scans.
 
 ## **download_default_expiration_timeout_minutes**
 
 - **Type:** Integer
 - **Default value:** 1440 (corresponds to 1 day)
-- **Description:** Minutes before your study download will be cleared. The value could be less than the default one as
-  an user should download his study pretty soon after the download becomes available.
+- **Description:** Minutes before your study download will be cleared. The value could be less than the default one as a
+  user should download his study pretty soon after the download becomes available.
 
 # launcher
 
@@ -455,44 +456,45 @@ port: 22
     - "850"
 ```
 
-# logging
+# Logging
 
-This section concerns the application logs
+This section concerns the application logs.
 
 ## **level**
 
 - **Type:** String, possible values: "DEBUG", "INFO", "WARNING", "ERROR"
 - **Default value:** `INFO`
-- **Description:** Logging level of the application (INFO, DEBUG, etc.)
+- **Description:** The logging level of the application (INFO, DEBUG, etc.).
 
 ## **logfile**
 
 - **Type:** Path
 - **Default value:** None
-- **Description:** Path to the application log file. Often used value : `.tmp/antarest.log`
+- **Description:** The path to the application log file. An often-used value is `.tmp/antarest.log`.
 
 ## **json**
 
 - **Type:** Boolean
 - **Default value:** false
-- **Description:** If `true`, logging format will be `json`, else it is `console`
-    - `console`: default format used for console output, suitable for Desktop versions or development environments.
-    - `json`: specific JSON format suitable for consumption by monitoring tools via a web service.
+- **Description:** If `true`, the logging format will be `json`; otherwise, it is `console`.
+    - `console`: The default format used for console output, suitable for Desktop versions or development environments.
+    - `json`: A specific JSON format suitable for consumption by monitoring tools via a web service.
 
 # root_path
 
 - **Type:** String
 - **Default value:** ""
-- **Description:** Root path for FastAPI. To use a remote server, use `/api` and for local environment: `api`.
+- **Description:** The root path for FastAPI. To use a remote server, use `/api`, and for a local environment: `api`.
 
+## `Extra optional configuration`
 ## `Extra optional configuration`
 
 # debug
 
 - **Type:** Boolean
 - **Default value:** false
-- **Description:** This flag, determines whether the engine will log all the SQL statements it executes to the console.
-  If you turn this on by setting it to `true` you'll see a detailed log of the database queries.
+- **Description:** This flag determines whether the engine will log all the SQL statements it executes to the console.
+  If you turn this on by setting it to `true`, you'll see a detailed log of the database queries.
 
 # cache
 
@@ -500,7 +502,7 @@ This section concerns the application logs
 
 - **Type:** Float
 - **Default value:** 0.2
-- **Description:** Time in seconds to sleep before checking what needs to be removed from cache
+- **Description:** The time in seconds to sleep before checking what needs to be removed from the cache.
 
 # tasks
 
@@ -508,7 +510,7 @@ This section concerns the application logs
 
 - **Type:** Integer
 - **Default value:** 5
-- **Description:** Number of threads for Tasks in the ThreadPoolExecutor
+- **Description:** The number of threads for Tasks in the ThreadPoolExecutor.
 
 ## **remote_workers**
 
@@ -516,7 +518,7 @@ This section concerns the application logs
 - **Default value:** []
 - **Description:** Example:
 
-```
+```yaml
 remote_workers:
   -
     name: aws_share_2
@@ -535,33 +537,33 @@ remote_workers:
 
 - **Type:** Integer
 - **Default value:** 5
-- **Description:** Number of threads of the Server in the ThreadPoolExecutor
+- **Description:** The number of threads of the Server in the ThreadPoolExecutor.
 
 ## **services**
 
 - **Type:** List of Strings
 - **Default value:** []
-- **Description:** # Services to enable when launching the application. Possible values: "watcher", "matrix_gc", "
-  archive_worker", "auto_archiver", "simulator_worker".
+- **Description:** Services to enable when launching the application. Possible values: "watcher," "matrix_gc," "
+  archive_worker," "auto_archiver," "simulator_worker."
 
 # redis
 
-This sections concerns the Redis backend, which is used for managing the event bus and in-memory caching.
+This section concerns the Redis backend, which is used for managing the event bus and in-memory caching.
 
 ## **host**
 
 - **Type:** String
 - **Default value:** `localhost`
-- **Description:** Redis server hostname
+- **Description:** The Redis server hostname.
 
 ## **port**
 
 - **Type:** Integer
 - **Default value:** 6379
-- **Description:** Redis server port
+- **Description:** The Redis server port.
 
 ## **password**
 
 - **Type:** String
 - **Default value:** None
-- **Description:** Redis password
+- **Description:** The Redis password.
