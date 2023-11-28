@@ -230,7 +230,7 @@ function SettingsForm(props: PropType) {
               handleChange("separation_parameter", parseFloat(e.target.value))
             }
             sx={{ mb: 1 }}
-            InputProps={{ inputProps: { min: 0, max: 1 } }}
+            inputProps={{ min: 0, max: 1, step: 0.1 }}
           />
         </Box>
       </Box>
