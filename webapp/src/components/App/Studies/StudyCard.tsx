@@ -16,6 +16,7 @@ import {
   ListItemText,
   Tooltip,
   Chip,
+  Divider,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { indigo } from "@mui/material/colors";
@@ -218,7 +219,13 @@ const StudyCard = memo((props: Props) => {
         </Box>
       )}
       <CardContent
-        sx={{ flexGrow: 1, display: "flex", flexDirection: "column" }}
+        sx={{
+          flexGrow: 1,
+          display: "flex",
+          flexDirection: "column",
+          overflow: "auto",
+          maxHeight: "calc(100% - 48px)",
+        }}
       >
         <Box
           sx={{
@@ -289,6 +296,10 @@ const StudyCard = memo((props: Props) => {
               flexFlow: "nowrap",
               px: 0.5,
               paddingBottom: 0.5,
+              width: "90%",
+              whiteSpace: "nowrap",
+              textOverflow: "ellipsis",
+              overflow: "hidden",
             }}
           >
             {study.folder}
@@ -308,8 +319,6 @@ const StudyCard = memo((props: Props) => {
             sx={{
               display: "flex",
               maxWidth: "65%",
-              flexDirection: "row",
-              justifyContent: "flex-start",
               alignItems: "center",
             }}
           >
@@ -321,38 +330,19 @@ const StudyCard = memo((props: Props) => {
           <Box
             sx={{
               display: "flex",
-              flexDirection: "row",
-              justifyContent: "flex-start",
-              alignItems: "center",
+              gap: 1,
             }}
           >
-            <UpdateOutlinedIcon sx={{ color: "text.secondary", mr: 1 }} />
+            <UpdateOutlinedIcon sx={{ color: "text.secondary" }} />
             <TinyText>
               {buildModificationDate(study.modificationDate, t, i18n.language)}
             </TinyText>
-          </Box>
-        </Box>
-        <Box
-          sx={{
-            width: "100%",
-            display: "flex",
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: "row",
-              justifyContent: "flex-start",
-              alignItems: "center",
-            }}
-          >
-            <PersonOutlineIcon sx={{ color: "text.secondary", mr: 1 }} />
+            <Divider flexItem orientation="vertical" />
+            <PersonOutlineIcon sx={{ color: "text.secondary" }} />
             <TinyText>{study.owner.name}</TinyText>
+            <Divider flexItem orientation="vertical" />
+            <TinyText>{`v${displayVersionName(study.version)}`}</TinyText>
           </Box>
-          <TinyText>{`v${displayVersionName(study.version)}`}</TinyText>
         </Box>
         <Box
           sx={{
@@ -377,24 +367,24 @@ const StudyCard = memo((props: Props) => {
               icon={<AltRouteOutlinedIcon />}
               label={t("studies.variant").toLowerCase()}
               color="primary"
+              size="small"
             />
           )}
           <Chip
             label={study.workspace}
-            variant="filled"
+            size="small"
             sx={{
               bgcolor: study.managed ? "secondary.main" : "gray",
             }}
           />
-          {study.tags &&
-            study.tags.map((elm) => (
-              <Chip
-                key={elm}
-                label={elm}
-                variant="filled"
-                sx={{ bgcolor: indigo[300] }}
-              />
-            ))}
+          {study.tags?.map((tag) => (
+            <Chip
+              key={tag}
+              label={tag}
+              size="small"
+              sx={{ bgcolor: indigo[300] }}
+            />
+          ))}
         </Box>
       </CardContent>
       <CardActions>
