@@ -73,6 +73,7 @@ function LauncherDialog(props: Props) {
             nb_cpu: cores.defaultValue,
           };
         });
+        return cores;
       }),
     {
       errorMessage: t("study.error.launcherCores"),
@@ -281,7 +282,7 @@ function LauncherDialog(props: Props) {
           />
           <UsePromiseCond
             response={cores}
-            ifResolved={() => (
+            ifResolved={(cores) => (
               <TextField
                 id="nb-cpu"
                 label={t("study.nbCpu")}
@@ -292,8 +293,8 @@ function LauncherDialog(props: Props) {
                   handleChange("nb_cpu", parseInt(e.target.value, 10))
                 }
                 inputProps={{
-                  min: 1,
-                  max: 24,
+                  min: cores.min,
+                  max: cores.max,
                 }}
                 sx={{
                   minWidth: "125px",
