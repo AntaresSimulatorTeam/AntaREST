@@ -250,6 +250,7 @@ function SettingsForm(props: PropType) {
           }}
         >
           <TextField
+            type="number"
             label={t("xpansion.relaxedOptimalityGap")}
             variant="filled"
             value={currentSettings["relaxed-optimality-gap"] || ""}
@@ -257,7 +258,7 @@ function SettingsForm(props: PropType) {
               handleChange("relaxed-optimality-gap", e.target.value)
             }
             sx={{ mb: 1 }}
-            InputProps={{ inputProps: { min: 0 } }}
+            inputProps={{ min: 0 }}
           />
           <TextField
             label={t("xpansion.amplSolver")}
