@@ -20,12 +20,12 @@ def group_repo_fixture(db_middleware: DBSessionMiddleware) -> GroupRepository:
 
 # noinspection PyUnusedLocal
 @pytest.fixture(name="user_repo")
-def user_repo_fixture(core_config: Config, db_middleware: DBSessionMiddleware) -> UserRepository:
+def user_repo_fixture(db_middleware: DBSessionMiddleware) -> UserRepository:
     """Fixture that creates a UserRepository instance."""
     # note: `DBSessionMiddleware` is required to instantiate a thread-local db session.
     # important: the `UserRepository` insert an admin user in the database if it does not exist.
     # >>> User(id=1, name="admin", password=Password(config.security.admin_pwd))
-    return UserRepository(config=core_config)
+    return UserRepository()
 
 
 # noinspection PyUnusedLocal
