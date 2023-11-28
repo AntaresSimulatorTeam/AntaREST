@@ -3,9 +3,7 @@ from typing import List, Union
 from pydantic import BaseModel
 
 from antarest.core.roles import RoleType
-from antarest.login.model import USER_ID, Group, Identity
-
-ADMIN_ID = USER_ID
+from antarest.login.model import ADMIN_ID, Group, Identity
 
 
 class JWTGroup(BaseModel):
