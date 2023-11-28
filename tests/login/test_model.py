@@ -4,7 +4,7 @@ from sqlalchemy.engine.base import Engine  # type: ignore
 from sqlalchemy.exc import IntegrityError  # type: ignore
 from sqlalchemy.orm import sessionmaker  # type: ignore
 
-from antarest.login.model import GROUP_ID, GROUP_NAME, USER_ID, USER_NAME, Group, Password, Role, User, init_admin_user
+from antarest.login.model import GROUP_ID, GROUP_NAME, ADMIN_ID, ADMIN_NAME, Group, Password, Role, User, init_admin_user
 from antarest.utils import SESSION_ARGS
 
 TEST_ADMIN_PASS_WORD = "test"
@@ -19,16 +19,16 @@ class TestInitAdminUser:
         init_admin_user(db_engine, SESSION_ARGS, admin_password=TEST_ADMIN_PASS_WORD)
         make_session = sessionmaker(bind=db_engine)
         with make_session() as session:
-            user = session.query(User).get(USER_ID)
+            user = session.query(User).get(ADMIN_ID)
             assert user is not None
-            assert user.id == USER_ID
-            assert user.name == USER_NAME
+            assert user.id == ADMIN_ID
+            assert user.name == ADMIN_NAME
             assert user.password.check(TEST_ADMIN_PASS_WORD)
             group = session.query(Group).get(GROUP_ID)
             assert group is not None
             assert group.id == GROUP_ID
             assert group.name == GROUP_NAME
-            role = session.query(Role).get((USER_ID, GROUP_ID))
+            role = session.query(Role).get((ADMIN_ID, GROUP_ID))
             assert role is not None
             assert role.identity is user
             assert role.group is group
@@ -51,7 +51,7 @@ class TestInitAdminUser:
     def test_init_admin_user_existing_user(self, db_engine: Engine):
         make_session = sessionmaker(bind=db_engine)
         with make_session() as session:
-            user = User(id=USER_ID, name=USER_NAME, password=Password(TEST_ADMIN_PASS_WORD))
+            user = User(id=ADMIN_ID, name=ADMIN_NAME, password=Password(TEST_ADMIN_PASS_WORD))
             with contextlib.suppress(IntegrityError):
                 session.add(user)
                 session.commit()

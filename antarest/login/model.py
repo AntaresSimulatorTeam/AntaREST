@@ -1,5 +1,4 @@
 import contextlib
-import logging
 import typing as t
 import uuid
 
@@ -9,7 +8,7 @@ from sqlalchemy import Boolean, Column, Enum, ForeignKey, Integer, Sequence, Str
 from sqlalchemy.engine.base import Engine  # type: ignore
 from sqlalchemy.exc import IntegrityError  # type: ignore
 from sqlalchemy.ext.hybrid import hybrid_property  # type: ignore
-from sqlalchemy.orm import Session, relationship, sessionmaker  # type: ignore
+from sqlalchemy.orm import relationship, sessionmaker  # type: ignore
 
 from antarest.core.persistence import Base
 from antarest.core.roles import RoleType
@@ -19,14 +18,17 @@ if t.TYPE_CHECKING:
     from antarest.launcher.model import JobResult
 
 
-logger = logging.getLogger(__name__)
-
-
 GROUP_ID = "admin"
-GROUP_NAME = "admin"
+"""Unique ID of the administrator group."""
 
-USER_ID = 1
-USER_NAME = "admin"
+GROUP_NAME = "admin"
+"""Name of the administrator group."""
+
+ADMIN_ID = 1
+"""Unique ID of the site administrator."""
+
+ADMIN_NAME = "admin"
+"""Name of the site administrator."""
 
 
 class UserInfo(BaseModel):
@@ -307,13 +309,13 @@ def init_admin_user(engine: Engine, session_args: t.Mapping[str, bool], admin_pa
             session.commit()
 
     with make_session() as session:
-        user = User(id=USER_ID, name=USER_NAME, password=Password(admin_password))
+        user = User(id=ADMIN_ID, name=ADMIN_NAME, password=Password(admin_password))
         with contextlib.suppress(IntegrityError):
             session.add(user)
             session.commit()
 
     with make_session() as session:
-        role = Role(type=RoleType.ADMIN, identity_id=USER_ID, group_id=GROUP_ID)
+        role = Role(type=RoleType.ADMIN, identity_id=ADMIN_ID, group_id=GROUP_ID)
         with contextlib.suppress(IntegrityError):
             session.add(role)
             session.commit()
