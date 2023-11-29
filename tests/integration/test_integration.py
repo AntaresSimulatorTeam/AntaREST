@@ -1497,8 +1497,10 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
         table_mode_url,
         headers=admin_headers,
         params={
-            "table_type": TableTemplateType.CLUSTER.value,
-            "columns": ",".join(FIELDS_INFO_BY_TYPE[TableTemplateType.CLUSTER]),
+            "table_type": TableTemplateType.THERMAL_CLUSTER,
+            "columns": ",".join(
+                FIELDS_INFO_BY_TYPE[TableTemplateType.THERMAL_CLUSTER]
+            ),
         },
     )
     res_table_data_json = res_table_data.json()
@@ -1553,7 +1555,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
         table_mode_url,
         headers=admin_headers,
         params={
-            "table_type": TableTemplateType.CLUSTER.value,
+            "table_type": TableTemplateType.THERMAL_CLUSTER,
         },
         json={
             "area 1 / cluster 1": {
@@ -1572,8 +1574,10 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
         table_mode_url,
         headers=admin_headers,
         params={
-            "table_type": TableTemplateType.CLUSTER.value,
-            "columns": ",".join(FIELDS_INFO_BY_TYPE[TableTemplateType.CLUSTER]),
+            "table_type": TableTemplateType.THERMAL_CLUSTER,
+            "columns": ",".join(
+                FIELDS_INFO_BY_TYPE[TableTemplateType.THERMAL_CLUSTER]
+            ),
         },
     )
     res_table_data_json = res_table_data.json()
@@ -1630,8 +1634,10 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
         table_mode_url,
         headers=admin_headers,
         params={
-            "table_type": TableTemplateType.RENEWABLE.value,
-            "columns": ",".join(FIELDS_INFO_BY_TYPE[TableTemplateType.RENEWABLE]),
+            "table_type": TableTemplateType.RENEWABLE_CLUSTER,
+            "columns": ",".join(
+                FIELDS_INFO_BY_TYPE[TableTemplateType.RENEWABLE_CLUSTER]
+            ),
         },
     )
     res_table_data_json = res_table_data.json()
@@ -1656,7 +1662,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
         table_mode_url,
         headers=admin_headers,
         params={
-            "table_type": TableTemplateType.RENEWABLE.value,
+            "table_type": TableTemplateType.RENEWABLE_CLUSTER,
         },
         json={
             "area 1 / cluster renewable 1": {
@@ -1673,8 +1679,10 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
         table_mode_url,
         headers=admin_headers,
         params={
-            "table_type": TableTemplateType.RENEWABLE.value,
-            "columns": ",".join(FIELDS_INFO_BY_TYPE[TableTemplateType.RENEWABLE]),
+            "table_type": TableTemplateType.RENEWABLE_CLUSTER,
+            "columns": ",".join(
+                FIELDS_INFO_BY_TYPE[TableTemplateType.RENEWABLE_CLUSTER]
+            ),
         },
     )
     res_table_data_json = res_table_data.json()
