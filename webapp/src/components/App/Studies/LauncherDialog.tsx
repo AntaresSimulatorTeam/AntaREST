@@ -64,7 +64,7 @@ function LauncherDialog(props: Props) {
     shallowEqual,
   );
 
-  const cores = usePromiseWithSnackbarError(
+  const res = usePromiseWithSnackbarError(
     () =>
       getLauncherCores().then((cores) => {
         setOptions((prevOptions) => {
@@ -199,7 +199,7 @@ function LauncherDialog(props: Props) {
             sx={{ mx: 2 }}
             color="primary"
             variant="contained"
-            disabled={isLaunching}
+            disabled={isLaunching || !res.isResolved}
             onClick={handleLaunchClick}
           >
             {t("global.launch")}
@@ -281,7 +281,7 @@ function LauncherDialog(props: Props) {
             }}
           />
           <UsePromiseCond
-            response={cores}
+            response={res}
             ifResolved={(cores) => (
               <TextField
                 id="nb-cpu"
