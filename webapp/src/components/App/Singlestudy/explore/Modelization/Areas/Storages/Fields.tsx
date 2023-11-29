@@ -43,6 +43,12 @@ function Fields() {
             label={t("study.modelization.storages.injectionNominalCapacity")}
             name="injectionNominalCapacity"
             control={control}
+            rules={{
+              min: {
+                value: 0,
+                message: t("form.field.minValue", { 0: 0 }),
+              },
+            }}
           />
         </Box>
       </Tooltip>
@@ -56,6 +62,12 @@ function Fields() {
             label={t("study.modelization.storages.withdrawalNominalCapacity")}
             name="withdrawalNominalCapacity"
             control={control}
+            rules={{
+              min: {
+                value: 0,
+                message: t("form.field.minValue", { 0: 0 }),
+              },
+            }}
           />
         </Box>
       </Tooltip>
@@ -69,6 +81,12 @@ function Fields() {
             label={t("study.modelization.storages.reservoirCapacity")}
             name="reservoirCapacity"
             control={control}
+            rules={{
+              min: {
+                value: 0,
+                message: t("form.field.minValue", { 0: 0 }),
+              },
+            }}
           />
         </Box>
       </Tooltip>
@@ -77,11 +95,31 @@ function Fields() {
         label={t("study.modelization.storages.efficiency")}
         name="efficiency"
         control={control}
+        rules={{
+          min: {
+            value: 0,
+            message: t("form.field.minValue", { 0: 0 }),
+          },
+          max: {
+            value: 1,
+            message: t("form.field.maxValue", { 0: 1 }),
+          },
+        }}
       />
       <NumberFE
         label={t("study.modelization.storages.initialLevel")}
         name="initialLevel"
         control={control}
+        rules={{
+          min: {
+            value: 0,
+            message: t("form.field.minValue", { 0: 0 }),
+          },
+          max: {
+            value: 1,
+            message: t("form.field.maxValue", { 0: 1 }),
+          },
+        }}
       />
       <SwitchFE
         label={t("study.modelization.storages.initialLevelOptim")}
