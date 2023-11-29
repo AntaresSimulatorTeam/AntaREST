@@ -66,6 +66,7 @@ function Fields() {
               value: 1,
               message: t("form.field.minValue", { 0: 1 }),
             },
+            setValueAs: Math.floor,
           }}
         />
         <NumberFE
