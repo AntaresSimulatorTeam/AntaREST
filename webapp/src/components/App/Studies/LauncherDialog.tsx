@@ -289,9 +289,13 @@ function LauncherDialog(props: Props) {
                 type="number"
                 variant="filled"
                 value={options.nb_cpu}
-                onChange={(e) =>
-                  handleChange("nb_cpu", parseInt(e.target.value, 10))
-                }
+                onChange={(e) => {
+                  const newValue = parseInt(e.target.value, 10);
+                  handleChange(
+                    "nb_cpu",
+                    Math.min(Math.max(newValue, cores.min), cores.max),
+                  );
+                }}
                 inputProps={{
                   min: cores.min,
                   max: cores.max,
