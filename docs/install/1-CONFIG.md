@@ -487,7 +487,6 @@ This section concerns the application logs.
 - **Description:** The root path for FastAPI. To use a remote server, use `/api`, and for a local environment: `api`.
 
 ## `Extra optional configuration`
-## `Extra optional configuration`
 
 # debug
 
@@ -520,12 +519,10 @@ This section concerns the application logs.
 
 ```yaml
 remote_workers:
-  -
-    name: aws_share_2
+  - name: aws_share_2
     queues:
       - unarchive_aws_share_2
-  -
-    name: simulator_worker
+  - name: simulator_worker
     queues:
       - generate-timeseries
       - generate-kirshoff-constraints
