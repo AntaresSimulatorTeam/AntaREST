@@ -72,6 +72,7 @@ function Fields() {
               value: 1,
               message: t("form.field.minValue", { 0: 1 }),
             },
+            setValueAs: Math.floor,
           }}
         />
         <NumberFE
@@ -118,6 +119,7 @@ function Fields() {
               value: 168,
               message: t("form.field.maxValue", { 0: 168 }),
             },
+            setValueAs: Math.floor,
           }}
         />
         <NumberFE
@@ -133,6 +135,7 @@ function Fields() {
               value: 168,
               message: t("form.field.maxValue", { 0: 168 }),
             },
+            setValueAs: Math.floor,
           }}
         />
       </Fieldset>
