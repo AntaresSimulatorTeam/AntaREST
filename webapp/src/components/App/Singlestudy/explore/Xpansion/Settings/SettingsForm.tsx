@@ -158,6 +158,8 @@ function SettingsForm(props: PropType) {
             "&> div": {
               mr: 2,
               mb: 2,
+              flexGrow: 1,
+              width: 1,
             },
           }}
         >
@@ -219,6 +221,17 @@ function SettingsForm(props: PropType) {
             }
             sx={{ mb: 1 }}
           />
+          <TextField
+            type="number"
+            label={t("xpansion.separationParameter")}
+            variant="filled"
+            value={currentSettings.separation_parameter}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              handleChange("separation_parameter", parseFloat(e.target.value))
+            }
+            sx={{ mb: 1 }}
+            inputProps={{ min: 0, max: 1, step: 0.1 }}
+          />
         </Box>
       </Box>
       <Box>
@@ -237,6 +250,7 @@ function SettingsForm(props: PropType) {
           }}
         >
           <TextField
+            type="number"
             label={t("xpansion.relaxedOptimalityGap")}
             variant="filled"
             value={currentSettings["relaxed-optimality-gap"] || ""}
@@ -244,6 +258,7 @@ function SettingsForm(props: PropType) {
               handleChange("relaxed-optimality-gap", e.target.value)
             }
             sx={{ mb: 1 }}
+            inputProps={{ min: 0 }}
           />
           <TextField
             label={t("xpansion.amplSolver")}

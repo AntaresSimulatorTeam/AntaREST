@@ -1,12 +1,12 @@
+import glob
 import logging
 import os
 import shutil
 import tempfile
 import time
+import typing as t
 import zipfile
-from glob import escape
 from pathlib import Path
-from typing import Any, BinaryIO, Callable, List, Optional, Tuple, TypeVar
 
 import py7zr
 import redis
@@ -25,7 +25,7 @@ class DTO:
     def __hash__(self) -> int:
         return hash(tuple(sorted(self.__dict__.items())))
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: t.Any) -> bool:
         return isinstance(other, type(self)) and self.__dict__ == other.__dict__
 
     def __str__(self) -> str:
@@ -39,7 +39,7 @@ class DTO:
 
 
 def sanitize_uuid(uuid: str) -> str:
-    return str(escape(uuid))
+    return str(glob.escape(uuid))
 
 
 class BadArchiveContent(Exception):
@@ -51,7 +51,7 @@ class BadArchiveContent(Exception):
         super().__init__(message)
 
 
-def extract_zip(stream: BinaryIO, target_dir: Path) -> None:
+def extract_zip(stream: t.BinaryIO, target_dir: Path) -> None:
     """
     Extract a ZIP archive to a given destination.
 
@@ -85,7 +85,7 @@ def extract_zip(stream: BinaryIO, target_dir: Path) -> None:
         raise BadArchiveContent
 
 
-def get_default_config_path() -> Optional[Path]:
+def get_default_config_path() -> t.Optional[Path]:
     config = Path("config.yaml")
     if config.exists():
         return config
@@ -125,17 +125,17 @@ class StopWatch:
     def reset_current(self) -> None:
         self.current_time = time.time()
 
-    def log_elapsed(self, logger: Callable[[float], None], since_start: bool = False) -> None:
-        logger(time.time() - (self.start_time if since_start else self.current_time))
+    def log_elapsed(self, logger_: t.Callable[[float], None], since_start: bool = False) -> None:
+        logger_(time.time() - (self.start_time if since_start else self.current_time))
         self.current_time = time.time()
 
 
-T = TypeVar("T")
+T = t.TypeVar("T")
 
 
-def retry(func: Callable[[], T], attempts: int = 10, interval: float = 0.5) -> T:
+def retry(func: t.Callable[[], T], attempts: int = 10, interval: float = 0.5) -> T:
     attempt = 0
-    caught_exception: Optional[Exception] = None
+    caught_exception: t.Optional[Exception] = None
     while attempt < attempts:
         try:
             attempt += 1
@@ -147,12 +147,12 @@ def retry(func: Callable[[], T], attempts: int = 10, interval: float = 0.5) -> T
     raise caught_exception or ShouldNotHappenException()
 
 
-def assert_this(b: Any) -> None:
+def assert_this(b: t.Any) -> None:
     if not b:
         raise AssertionError
 
 
-def concat_files(files: List[Path], target: Path) -> None:
+def concat_files(files: t.List[Path], target: Path) -> None:
     with open(target, "w") as fh:
         for item in files:
             with open(item, "r") as infile:
@@ -160,7 +160,7 @@ def concat_files(files: List[Path], target: Path) -> None:
                     fh.write(line)
 
 
-def concat_files_to_str(files: List[Path]) -> str:
+def concat_files_to_str(files: t.List[Path]) -> str:
     concat_str = ""
     for item in files:
         with open(item, "r") as infile:
@@ -191,7 +191,7 @@ def is_zip(path: Path) -> bool:
     return path.name.endswith(".zip")
 
 
-def extract_file_to_tmp_dir(zip_path: Path, inside_zip_path: Path) -> Tuple[Path, Any]:
+def extract_file_to_tmp_dir(zip_path: Path, inside_zip_path: Path) -> t.Tuple[Path, t.Any]:
     str_inside_zip_path = str(inside_zip_path).replace("\\", "/")
     tmp_dir = tempfile.TemporaryDirectory()
     try:
@@ -211,7 +211,7 @@ def extract_file_to_tmp_dir(zip_path: Path, inside_zip_path: Path) -> Tuple[Path
 def read_in_zip(
     zip_path: Path,
     inside_zip_path: Path,
-    read: Callable[[Optional[Path]], None],
+    read: t.Callable[[t.Optional[Path]], None],
 ) -> None:
     tmp_dir = None
     try:
@@ -226,11 +226,11 @@ def read_in_zip(
 
 
 def suppress_exception(
-    callback: Callable[[], T],
-    logger: Callable[[Exception], None],
-) -> Optional[T]:
+    callback: t.Callable[[], T],
+    logger_: t.Callable[[Exception], None],
+) -> t.Optional[T]:
     try:
         return callback()
     except Exception as e:
-        logger(e)
+        logger_(e)
         return None
