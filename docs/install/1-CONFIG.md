@@ -80,6 +80,23 @@ service. The group names and their IDs are obtained from the LDAP directory.
     - 00001188: drd
     - 00001574: cnes
 
+```yaml
+# example for security settings
+security:
+  disabled: false
+  jwt:
+    key: best-key
+  login:
+    admin:
+      pwd: root
+  external_auth:
+    url: ""
+    default_group_role: 10
+    group_mapping:
+      id_ext: id_int
+    add_ext_groups: false
+```
+
 # db
 
 This section relates to configuring the application's database connection.
@@ -143,6 +160,18 @@ This section relates to configuring the application's database connection.
 - **Type:** Integer
 - **Default value:** 10
 - **Description:** Temporarily exceeds the set pool_size if no connections are available. *Not used for SQLite DB.*
+
+```yaml
+# example for db settings
+db:
+  url: "postgresql://postgres:My:s3Cr3t/@127.0.0.1:30432/antares"
+  admin_url: "postgresql://{{postgres_owner}}:{{postgres_owner_password}}@{{postgres_host}}:{{postgres_port}}/{{postgres_db}}"
+  pool_recycle: 3600
+  pool_max_overflow: 10
+  pool_size: 5
+  pool_use_lifo: true
+  pool_use_null: false
+```
 
 # storage
 
@@ -280,6 +309,24 @@ default:
 - **Description:** Minutes before your study download will be cleared. The value could be less than the default one as a
   user should download his study pretty soon after the download becomes available.
 
+```yaml
+# example for storage settings
+storage:
+  tmp_dir: /home/jon/Projects/antarest_data/tmp
+  matrixstore: /home/jon/Projects/antarest_data/matrices
+  archive_dir: /home/jon/Projects/antarest_data/archives
+  allow_deletion: false
+  matrix_gc_sleeping_time: 3600
+  matrix_gc_dry_run: False
+  workspaces:
+    default:
+      path: /home/jon/Projects/antarest_data/internal_studies/
+    studies:
+      path: /home/jon/Projects/antarest_data/studies/
+    staging_studies:
+      path: /home/jon/Projects/antarest_data/staging_studies/
+```
+
 # launcher
 
 This section concerns the launcher used, its options and the solver binaries.
@@ -306,7 +353,7 @@ This section concerns the launcher used, its options and the solver binaries.
 - **Default value:** {}
 - **Description:** Binary paths for various versions of the launcher. Example:
 
-```
+```yaml
 700: /home/john/Antares/antares_web_data/antares-solver/antares-8.0-solver
 800: /home/john/Antares/antares_web_data/antares-solver/antares-8.0-solver
 810: /home/john/Antares/antares_web_data/antares-solver/antares-8.3-solver
@@ -448,12 +495,29 @@ port: 22
 - **Default value:** []
 - **Description:** List of Antares solver versions available on the remote server. Examples:
 
-```
-  antares_versions_on_remote_server:
-    - "800"
-    - "830"
-    - "840"
-    - "850"
+```yaml
+# example for launcher settings
+launcher:
+  default: local
+  local:
+    binaries:
+      860: /home/jon/opt/antares-solver_ubuntu20.04/antares-8.6-solver
+  slurm:
+    local_workspace: /home/jon/Projects/antarest_data/slurm_workspace
+    username: jon
+    hostname: localhost
+    port: 22
+    private_key_file: /home/jon/.ssh/id_rsa
+    key_password:
+    default_wait_time: 900
+    default_time_limit: 172800
+    default_n_cpu: 20
+    default_json_db_name: launcher_db.json
+    slurm_script_path: /applis/antares/launchAntares.sh
+    db_primary_key: name
+    antares_versions_on_remote_server:
+      - '610'
+      - '700'
 ```
 
 # Logging
@@ -480,11 +544,25 @@ This section concerns the application logs.
     - `console`: The default format used for console output, suitable for Desktop versions or development environments.
     - `json`: A specific JSON format suitable for consumption by monitoring tools via a web service.
 
+```yaml
+# example for logging settings
+logging:
+  level: INFO
+  logfile: ./tmp/antarest.log
+  json: false
+```
+
 # root_path
 
 - **Type:** String
 - **Default value:** ""
 - **Description:** The root path for FastAPI. To use a remote server, use `/api`, and for a local environment: `api`.
+
+```yaml
+# example for root_path settings
+root_path: "/{root_path}"
+
+```
 
 ## `Extra optional configuration`
 
@@ -495,6 +573,11 @@ This section concerns the application logs.
 - **Description:** This flag determines whether the engine will log all the SQL statements it executes to the console.
   If you turn this on by setting it to `true`, you'll see a detailed log of the database queries.
 
+```yaml
+# example for debug settings
+debug: false
+```
+
 # cache
 
 ## **checker_delay**
@@ -502,6 +585,12 @@ This section concerns the application logs.
 - **Type:** Float
 - **Default value:** 0.2
 - **Description:** The time in seconds to sleep before checking what needs to be removed from the cache.
+
+```yaml
+# example for cache settings
+cache:
+  checker_delay: 0.2
+```
 
 # tasks
 
@@ -518,14 +607,17 @@ This section concerns the application logs.
 - **Description:** Example:
 
 ```yaml
-remote_workers:
-  - name: aws_share_2
-    queues:
-      - unarchive_aws_share_2
-  - name: simulator_worker
-    queues:
-      - generate-timeseries
-      - generate-kirshoff-constraints
+# example for tasks settings
+tasks:
+  max_workers: 4
+  remote_workers:
+    - name: aws_share_2
+      queues:
+        - unarchive_aws_share_2
+    - name: simulator_worker
+      queues:
+        - generate-timeseries
+        - generate-kirshoff-constraints
 ```
 
 # server
@@ -542,6 +634,15 @@ remote_workers:
 - **Default value:** []
 - **Description:** Services to enable when launching the application. Possible values: "watcher," "matrix_gc," "
   archive_worker," "auto_archiver," "simulator_worker."
+
+```yaml
+#example for server settings
+server:
+  worker_threadpool_size: 5
+  services:
+    - watcher
+    - matrix_gc
+```
 
 # redis
 
@@ -564,3 +665,10 @@ This section concerns the Redis backend, which is used for managing the event bu
 - **Type:** String
 - **Default value:** None
 - **Description:** The Redis password.
+
+```yaml
+# example for redis settings
+redis:
+  host: localhost
+  port: 9862
+```
