@@ -13,8 +13,6 @@ from antarest.login.service import LoginService
 def group_repo_fixture(db_middleware: DBSessionMiddleware) -> GroupRepository:
     """Fixture that creates a GroupRepository instance."""
     # note: `DBSessionMiddleware` is required to instantiate a thread-local db session.
-    # important: the `GroupRepository` insert an admin group in the database if it does not exist:
-    # >>> Group(id="admin", name="admin")
     return GroupRepository()
 
 
@@ -23,8 +21,6 @@ def group_repo_fixture(db_middleware: DBSessionMiddleware) -> GroupRepository:
 def user_repo_fixture(db_middleware: DBSessionMiddleware) -> UserRepository:
     """Fixture that creates a UserRepository instance."""
     # note: `DBSessionMiddleware` is required to instantiate a thread-local db session.
-    # important: the `UserRepository` insert an admin user in the database if it does not exist.
-    # >>> User(id=1, name="admin", password=Password(config.security.admin_pwd))
     return UserRepository()
 
 
@@ -49,8 +45,6 @@ def bot_repo_fixture(db_middleware: DBSessionMiddleware) -> BotRepository:
 def role_repo_fixture(db_middleware: DBSessionMiddleware) -> RoleRepository:
     """Fixture that creates a RoleRepository instance."""
     # note: `DBSessionMiddleware` is required to instantiate a thread-local db session.
-    # important: the `RoleRepository` insert an admin role in the database if it does not exist.
-    # >>> Role(type=RoleType.ADMIN, identity=User(id=1), group=Group(id="admin"))
     return RoleRepository()
 
 
