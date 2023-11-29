@@ -5,6 +5,7 @@ from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFi
 
 class InputHydroIni(IniFileNode):
     def __init__(self, context: ContextServer, config: FileStudyTreeConfig):
+        # TODO: missing "use heuristic", "follow load" and "reservoir capacity"
         sections = [
             "inter-daily-breakdown",
             "intra-daily-modulation",
