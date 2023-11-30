@@ -9,7 +9,7 @@ import numpy.typing as npt
 from fastapi import FastAPI
 from starlette.testclient import TestClient
 
-from antarest.study.storage.rawstudy.io.reader import IniReader
+from antarest.study.storage.rawstudy.io.reader import IniReader, MultipleSameKeysIniReader
 from antarest.study.storage.variantstudy.model.command.common import CommandName
 from antarest.study.storage.variantstudy.model.model import CommandDTO, GenerationResultInfoDTO
 from antarest.tools.lib import (
@@ -177,6 +177,10 @@ def test_parse_commands(tmp_path: str, app: FastAPI) -> None:
             assert (generated_study_path / item_relpath).read_text() == fixed_4_columns_empty_data
         elif item_relpath in fixed_8_cols_empty_items:
             assert (generated_study_path / item_relpath).read_text() == fixed_8_columns_empty_data
+        elif file_path.suffix == ".ini":
+            actual = MultipleSameKeysIniReader().read(study_path / item_relpath)
+            expected = MultipleSameKeysIniReader().read(generated_study_path / item_relpath)
+            assert actual == expected, f"Invalid configuration: '{item_relpath}'"
         else:
             actual = (study_path / item_relpath).read_text()
             expected = (generated_study_path / item_relpath).read_text()
@@ -214,6 +218,11 @@ def test_diff_local(tmp_path: Path) -> None:
         if file_path.is_dir() or file_path.name in ["comments.txt", "study.antares", "Desktop.ini", "study.ico"]:
             continue
         item_relpath = file_path.relative_to(variant_study_path).as_posix()
-        actual = (variant_study_path / item_relpath).read_text()
-        expected = (output_study_path / item_relpath).read_text()
-        assert actual.strip() == expected.strip()
+        if file_path.suffix == ".ini":
+            actual = MultipleSameKeysIniReader().read(variant_study_path / item_relpath)
+            expected = MultipleSameKeysIniReader().read(output_study_path / item_relpath)
+            assert actual == expected, f"Invalid configuration: '{item_relpath}'"
+        else:
+            actual = (variant_study_path / item_relpath).read_text()
+            expected = (output_study_path / item_relpath).read_text()
+            assert actual.strip() == expected.strip()

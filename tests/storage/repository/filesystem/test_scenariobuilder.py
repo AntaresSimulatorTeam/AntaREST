@@ -1,7 +1,8 @@
 from pathlib import Path
 from unittest.mock import Mock
 
-from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, Cluster, FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.config.thermal import ThermalConfig
 from antarest.study.storage.rawstudy.model.filesystem.root.settings.scenariobuilder import ScenarioBuilder
 
 content = """
@@ -66,15 +67,15 @@ def test_get(tmp_path: Path):
     path.write_text(content)
 
     thermals = [
-        Cluster(id="01_solar", name="01_solar", enabled=True),
-        Cluster(id="02_wind_on", name="02_wind_on", enabled=True),
-        Cluster(id="03_wind_off", name="03_wind_off", enabled=True),
-        Cluster(id="04_res", name="04_res", enabled=True),
-        Cluster(id="05_nuclear", name="05_nuclear", enabled=True),
-        Cluster(id="06_coal", name="06_coal", enabled=True),
-        Cluster(id="07_gas", name="07_gas", enabled=True),
-        Cluster(id="08_non-res", name="08_non-res", enabled=True),
-        Cluster(id="09_hydro_pump", name="09_hydro_pump", enabled=True),
+        ThermalConfig(id="01_solar", name="01_solar", enabled=True),
+        ThermalConfig(id="02_wind_on", name="02_wind_on", enabled=True),
+        ThermalConfig(id="03_wind_off", name="03_wind_off", enabled=True),
+        ThermalConfig(id="04_res", name="04_res", enabled=True),
+        ThermalConfig(id="05_nuclear", name="05_nuclear", enabled=True),
+        ThermalConfig(id="06_coal", name="06_coal", enabled=True),
+        ThermalConfig(id="07_gas", name="07_gas", enabled=True),
+        ThermalConfig(id="08_non-res", name="08_non-res", enabled=True),
+        ThermalConfig(id="09_hydro_pump", name="09_hydro_pump", enabled=True),
     ]
 
     areas = {

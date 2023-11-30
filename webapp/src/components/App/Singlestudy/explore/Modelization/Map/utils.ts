@@ -49,7 +49,7 @@ export const getNodeWidth = (nodeText: string): number => {
 
 export function getUpdatedNode(
   id: string,
-  nodeData: StudyMapNode[]
+  nodeData: StudyMapNode[],
 ): StudyMapNode | undefined {
   return nodeData.find((node) => node.id === id);
 }
@@ -60,7 +60,7 @@ const getLuminanace = (values: RGB): number => {
     return val <= 0.03928 ? val / 12.92 : ((val + 0.055) / 1.055) ** 2.4;
   });
   return Number(
-    (0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2]).toFixed(3)
+    (0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2]).toFixed(3),
   );
 };
 
@@ -89,7 +89,7 @@ export function useRenderNodes(
   nodes: StudyMapNode[],
   width: number,
   height: number,
-  currentLayerId: StudyLayer["id"]
+  currentLayerId: StudyLayer["id"],
 ): StudyMapNode[] {
   // compute center offset with scale fix on x axis
   const centerVector = { x: width / INITIAL_ZOOM / 2, y: height / 2 };
@@ -129,6 +129,6 @@ export function useRenderNodes(
       realCenter.x,
       realCenter.y,
       centerVector.y,
-    ]
+    ],
   );
 }

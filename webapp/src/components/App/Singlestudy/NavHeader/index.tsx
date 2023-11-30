@@ -3,8 +3,7 @@ import debug from "debug";
 import { useSnackbar } from "notistack";
 import { useNavigate } from "react-router-dom";
 import { AxiosError } from "axios";
-import { Box, Button, Tooltip, Typography } from "@mui/material";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import { Box, Typography } from "@mui/material";
 import UpgradeIcon from "@mui/icons-material/Upgrade";
 import UnarchiveOutlinedIcon from "@mui/icons-material/UnarchiveOutlined";
 import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
@@ -78,14 +77,6 @@ function NavHeader({
     setAnchorEl(null);
   };
 
-  const handleClickBack = () => {
-    if (isExplorer) {
-      navigate(`/studies/${study?.id}`);
-    } else {
-      navigate("/studies");
-    }
-  };
-
   const handleLaunch = () => {
     setOpenLauncherDialog(true);
   };
@@ -97,7 +88,7 @@ function NavHeader({
       } catch (e) {
         enqueueErrorSnackbar(
           t("studies.error.archive", { studyname: study.name }),
-          e as AxiosError
+          e as AxiosError,
         );
       } finally {
         handleClose();
@@ -112,7 +103,7 @@ function NavHeader({
       } catch (e) {
         enqueueErrorSnackbar(
           t("studies.error.unarchive", { studyname: study.name }),
-          e as AxiosError
+          e as AxiosError,
         );
       } finally {
         handleClose();
@@ -209,31 +200,6 @@ function NavHeader({
         overflow: "hidden",
       }}
     >
-      <Box
-        sx={{
-          width: 1,
-          display: "flex",
-          flexDirection: "row",
-          justifyContent: "flex-start",
-          alignItems: "center",
-        }}
-      >
-        <ArrowBackIcon
-          color="secondary"
-          onClick={handleClickBack}
-          sx={{ cursor: "pointer" }}
-        />
-        <Button variant="text" color="secondary" onClick={handleClickBack}>
-          <Tooltip
-            title={isExplorer ? study?.name : t("global.studies")}
-            followCursor
-          >
-            <Typography variant="button">
-              {isExplorer ? t("button.back") : t("global.studies")}
-            </Typography>
-          </Tooltip>
-        </Button>
-      </Box>
       <Box
         sx={{
           width: 1,

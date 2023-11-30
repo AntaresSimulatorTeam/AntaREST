@@ -29,7 +29,7 @@ function TableToolbar({ numSelected, handleDelete }: Props) {
             bgcolor: (theme) =>
               alpha(
                 theme.palette.primary.main,
-                theme.palette.action.activatedOpacity
+                theme.palette.action.activatedOpacity,
               ),
           }),
         }}

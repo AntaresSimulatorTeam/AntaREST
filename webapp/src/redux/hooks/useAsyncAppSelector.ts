@@ -18,7 +18,7 @@ export interface UseAsyncEntityStateResponse<Entity, Selected>
 }
 
 function useAsyncAppSelector<Entity, Selected>(
-  params: UseAsyncEntityStateParams<Entity, Selected>
+  params: UseAsyncEntityStateParams<Entity, Selected>,
 ): UseAsyncEntityStateResponse<Entity, Selected> {
   const { entityStateSelector, fetchAction, valueSelector } = params;
   const status = useAppSelector((state) => entityStateSelector(state).status);

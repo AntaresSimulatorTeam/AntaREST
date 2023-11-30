@@ -10,7 +10,7 @@ import {
   Skeleton,
   Typography,
 } from "@mui/material";
-import produce from "immer";
+import { produce } from "immer";
 import { ReactNode, useMemo, useReducer, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { usePromise as usePromiseWrapper, useUpdateEffect } from "react-use";
@@ -78,7 +78,7 @@ const reducer = produce<BotDetailsDtoWithUser[], [TokenAction]>(
       case TokenActionKind.RESET:
         return payload as BotDetailsDtoWithUser[];
     }
-  }
+  },
 );
 
 /**
@@ -124,7 +124,7 @@ function Tokens() {
       const user = await getUser(authUser.id);
       return bots.map((bot) => ({ ...bot, user }));
     },
-    { errorMessage: t("settings.error.tokensError"), deps: [authUser] }
+    { errorMessage: t("settings.error.tokensError"), deps: [authUser] },
   );
 
   useUpdateEffect(() => {
@@ -168,14 +168,14 @@ function Tokens() {
     mounted(deleteBot(token.id))
       .then(() => {
         dispatch({ type: TokenActionKind.DELETE, payload: token.id });
-        enqueueSnackbar(t("settings.success.tokenDelete", [token.name]), {
+        enqueueSnackbar(t("settings.success.tokenDelete", { 0: token.name }), {
           variant: "success",
         });
       })
       .catch((err) => {
         enqueueErrorSnackbar(
-          t("settings.error.tokenDelete", [token.name]),
-          err
+          t("settings.error.tokenDelete", { 0: token.name }),
+          err,
         );
       })
       .finally(() => {
@@ -281,7 +281,7 @@ function Tokens() {
           alert="warning"
           open
         >
-          {t("settings.question.deleteToken", [tokenToDelete.name])}
+          {t("settings.question.deleteToken", { 0: tokenToDelete.name })}
         </ConfirmationDialog>
       )}
       {tokenToDisplayInfo && (

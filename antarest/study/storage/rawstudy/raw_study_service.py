@@ -1,11 +1,10 @@
-import io
 import logging
 import shutil
 import time
 from datetime import datetime
 from pathlib import Path
 from threading import Thread
-from typing import IO, List, Optional, Sequence
+from typing import BinaryIO, List, Optional, Sequence
 from uuid import uuid4
 from zipfile import ZipFile
 
@@ -259,7 +258,6 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         study = self.study_factory.create_from_fs(dest_path, study_id=dest_study.id)
         update_antares_info(dest_study, study.tree, update_author=False)
 
-        del study.tree
         return dest_study
 
     def delete(self, metadata: RawStudy) -> None:
@@ -298,15 +296,19 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             output_path.unlink(missing_ok=True)
         remove_from_cache(self.cache, metadata.id)
 
-    def import_study(self, metadata: RawStudy, stream: IO[bytes]) -> Study:
+    def import_study(self, metadata: RawStudy, stream: BinaryIO) -> Study:
         """
-        Import study
+        Import study in the directory of the study.
+
         Args:
-            metadata: study information
-            stream: study content compressed in zip file
+            metadata: study information.
+            stream: binary content of the study compressed in ZIP or 7z format.
 
-        Returns: new study information.
+        Returns:
+            Updated study information.
 
+        Raises:
+            BadArchiveContent: If the archive is corrupted or in an unknown format.
         """
         path_study = Path(metadata.path)
         path_study.mkdir()
@@ -316,9 +318,9 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             fix_study_root(path_study)
             self.update_from_raw_meta(metadata)
 
-        except Exception as e:
+        except Exception:
             shutil.rmtree(path_study)
-            raise e
+            raise
 
         metadata.path = str(path_study)
         return metadata
@@ -331,22 +333,22 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         output_list_filter: Optional[List[str]] = None,
         denormalize: bool = True,
     ) -> None:
-        path_study = Path(metadata.path)
-
-        if metadata.archived:
-            self.unarchive(metadata)
         try:
+            if metadata.archived:
+                self.unarchive(metadata)  # may raise BadArchiveContent
+
             export_study_flat(
-                path_study,
+                Path(metadata.path),
                 dst_path,
                 self.study_factory,
                 outputs,
                 output_list_filter,
                 denormalize,
             )
+
         finally:
             if metadata.archived:
-                shutil.rmtree(metadata.path)
+                shutil.rmtree(metadata.path, ignore_errors=True)
 
     def check_errors(
         self,
@@ -376,12 +378,19 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         self.cache.invalidate(study.id)
         return new_study_path
 
+    # noinspection SpellCheckingInspection
     def unarchive(self, study: RawStudy) -> None:
-        with open(
-            self.get_archive_path(study),
-            "rb",
-        ) as fh:
-            self.import_study(study, io.BytesIO(fh.read()))
+        """
+        Extract the archive of a study.
+
+        Args:
+            study: The study to be unarchived.
+
+        Raises:
+            BadArchiveContent: If the archive is corrupted or in an unknown format.
+        """
+        with open(self.get_archive_path(study), mode="rb") as fh:
+            self.import_study(study, fh)
 
     def get_archive_path(self, study: RawStudy) -> Path:
         return Path(self.config.storage.archive_dir / f"{study.id}.zip")

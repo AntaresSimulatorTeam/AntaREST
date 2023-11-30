@@ -53,7 +53,7 @@ function StudyMatrixView(props: PropTypes) {
     {
       errorMessage: t("matrix.error.failedToRetrieveIndex"),
       deps: [study, formattedPath],
-    }
+    },
   );
 
   ////////////////////////////////////////////////////////////////

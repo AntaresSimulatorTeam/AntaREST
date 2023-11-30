@@ -278,3 +278,19 @@ class CannotScanInternalWorkspace(HTTPException):
             HTTPStatus.BAD_REQUEST,
             "You cannot scan the default internal workspace",
         )
+
+
+class ClusterNotFound(HTTPException):
+    def __init__(self, cluster_id: str) -> None:
+        super().__init__(
+            HTTPStatus.NOT_FOUND,
+            f"Cluster: '{cluster_id}' not found",
+        )
+
+
+class ClusterConfigNotFound(HTTPException):
+    def __init__(self, area_id: str) -> None:
+        super().__init__(
+            HTTPStatus.NOT_FOUND,
+            f"Cluster configuration for area: '{area_id}' not found",
+        )

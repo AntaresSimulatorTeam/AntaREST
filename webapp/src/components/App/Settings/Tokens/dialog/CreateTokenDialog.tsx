@@ -46,20 +46,23 @@ function CreateTokenDialog(props: Props) {
         (perm: { group: GroupDTO; type: RoleType }) => ({
           group: perm.group.id,
           role: perm.type,
-        })
+        }),
       ) as BotCreateDTO["roles"];
 
       const tokenValue = await mounted(
-        createBot({ name, is_author: false, roles })
+        createBot({ name, is_author: false, roles }),
       );
 
       setTokenValueToDisplay(tokenValue);
 
-      enqueueSnackbar(t("settings.success.tokenCreation", [name]), {
+      enqueueSnackbar(t("settings.success.tokenCreation", { 0: name }), {
         variant: "success",
       });
     } catch (e) {
-      enqueueErrorSnackbar(t("settings.error.tokenSave", [name]), e as Error);
+      enqueueErrorSnackbar(
+        t("settings.error.tokenSave", { 0: name }),
+        e as Error,
+      );
       closeDialog();
     } finally {
       reloadFetchTokens();

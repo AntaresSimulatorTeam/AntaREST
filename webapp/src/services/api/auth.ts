@@ -33,14 +33,14 @@ export const refresh = async (refreshToken: string): Promise<UserTokensDTO> => {
       headers: {
         Authorization: `Bearer ${refreshToken}`,
       },
-    }
+    },
   );
   return res.data;
 };
 
 export const login = async (
   username: string,
-  password: string
+  password: string,
 ): Promise<UserTokensDTO> => {
   const res = await rawAxiosInstance.post("/v1/login", { username, password });
   return res.data;

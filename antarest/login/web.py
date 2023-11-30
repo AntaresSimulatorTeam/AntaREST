@@ -42,13 +42,13 @@ class UserCredentials(BaseModel):
 def create_login_api(service: LoginService, config: Config) -> APIRouter:
     """
     Endpoints login implementation
+
     Args:
         service: login facade service
         config: server config
-        jwt: jwt manager
 
     Returns:
-
+        login endpoints
     """
     bp = APIRouter(prefix="/v1")
 
@@ -107,7 +107,7 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
         response_model=List[Union[IdentityDTO, UserInfo]],
     )
     def users_get_all(
-        details: Optional[bool] = False,
+        details: bool = False,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info("Fetching users list", extra={"user": current_user.id})
@@ -121,7 +121,7 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
     )
     def users_get_id(
         id: int,
-        details: Optional[bool] = False,
+        details: bool = False,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(f"Fetching user info for {id}", extra={"user": current_user.id})
@@ -185,7 +185,7 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
         response_model=List[Union[GroupDetailDTO, GroupDTO]],
     )
     def groups_get_all(
-        details: Optional[bool] = False,
+        details: bool = False,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info("Fetching groups list", extra={"user": current_user.id})
@@ -199,7 +199,7 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
     )
     def groups_get_id(
         id: str,
-        details: Optional[bool] = False,
+        details: bool = False,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(f"Fetching group {id} info", extra={"user": current_user.id})

@@ -2,30 +2,28 @@
 /* eslint-disable camelcase */
 import Box from "@mui/material/Box";
 import AddIcon from "@mui/icons-material/Add";
-import { Button, IconButton, Tooltip } from "@mui/material";
+import { Button } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
-import VisibilityIcon from "@mui/icons-material/Visibility";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import MaterialReactTable, {
-  MRT_Row,
   MRT_RowSelectionState,
-  MRT_ToggleDensePaddingButton,
   MRT_ToggleFiltersButton,
   MRT_ToggleGlobalFilterButton,
   type MRT_ColumnDef,
 } from "material-react-table";
 import { useTranslation } from "react-i18next";
 import { useMemo, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
 import CreateRowDialog from "./CreateRowDialog";
 import ConfirmationDialog from "../dialogs/ConfirmationDialog";
+import { generateUniqueValue } from "./utils";
 
 export type TRow = { id: string; name: string; group: string };
 
 export interface GroupedDataTableProps<TData extends TRow> {
   data: TData[];
   columns: MRT_ColumnDef<TData>[];
-  groups: string[];
-  onCreate?: (values: TData) => void;
+  groups: string[] | readonly string[];
+  onCreate?: (values: TData) => Promise<TData>;
   onDelete?: (ids: string[]) => void;
 }
 
@@ -37,8 +35,6 @@ function GroupedDataTable<TData extends TRow>({
   onDelete,
 }: GroupedDataTableProps<TData>) {
   const { t } = useTranslation();
-  const navigate = useNavigate();
-  const location = useLocation();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [tableData, setTableData] = useState(data);
@@ -46,22 +42,27 @@ function GroupedDataTable<TData extends TRow>({
 
   const isAnyRowSelected = useMemo(
     () => Object.values(rowSelection).some((value) => value),
-    [rowSelection]
+    [rowSelection],
+  );
+
+  const isOneRowSelected = useMemo(
+    () => Object.values(rowSelection).filter((value) => value).length === 1,
+    [rowSelection],
   );
 
   const existingNames = useMemo(
     () => tableData.map((row) => row.name.toLowerCase()),
-    [tableData]
+    [tableData],
   );
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleCreateRow = (values: TData) => {
+  const handleCreateRow = async (values: TData) => {
     if (onCreate) {
-      onCreate(values);
-      setTableData((prevTableData) => [...prevTableData, values]);
+      const newRow = await onCreate(values);
+      setTableData((prevTableData) => [...prevTableData, newRow]);
     }
   };
 
@@ -74,18 +75,41 @@ function GroupedDataTable<TData extends TRow>({
       .map(Number)
       // ignore groups names
       .filter(Number.isInteger);
+
     const rowIdsToDelete = rowIndexes.map((index) => tableData[index].id);
+
     onDelete(rowIdsToDelete);
     setTableData((prevTableData) =>
-      prevTableData.filter((row) => !rowIdsToDelete.includes(row.id))
+      prevTableData.filter((row) => !rowIdsToDelete.includes(row.id)),
     );
     setRowSelection({});
     setConfirmDialogOpen(false);
   };
 
-  const handleRowClick = (row: MRT_Row<TData>) => {
-    const clusterId = row.original.id;
-    navigate(`${location.pathname}/${clusterId}`);
+  const handleDuplicateRow = async () => {
+    const selectedIndex = Object.keys(rowSelection).find(
+      (key) => rowSelection[key],
+    );
+    const selectedRow = selectedIndex && tableData[+selectedIndex];
+
+    if (!selectedRow) {
+      return;
+    }
+
+    const name = generateUniqueValue("name", selectedRow.name, tableData);
+    const id = generateUniqueValue("id", name, tableData);
+
+    const duplicatedRow = {
+      ...selectedRow,
+      id,
+      name,
+    };
+
+    if (onCreate) {
+      const newRow = await onCreate(duplicatedRow);
+      setTableData((prevTableData) => [...prevTableData, newRow]);
+      setRowSelection({});
+    }
   };
 
   ////////////////////////////////////////////////////////////////
@@ -99,16 +123,40 @@ function GroupedDataTable<TData extends TRow>({
         columns={columns}
         initialState={{
           grouping: ["group"],
-          density: "comfortable",
+          density: "compact",
           expanded: true,
+          columnPinning: { left: ["group"] },
         }}
+        enablePinning
+        enableExpanding
         enableGrouping
-        enableRowSelection
+        muiTableBodyRowProps={({ row: { id, groupingColumnId } }) => {
+          const handleRowClick = () => {
+            // prevent group rows to be selected
+            if (groupingColumnId === undefined) {
+              setRowSelection((prev) => ({
+                ...prev,
+                [id]: !prev[id],
+              }));
+            }
+          };
+
+          return {
+            onClick: handleRowClick,
+            selected: rowSelection[id],
+            sx: {
+              cursor: "pointer",
+            },
+          };
+        }}
+        state={{ rowSelection }}
+        enableColumnDragging={false}
+        enableColumnActions={false}
         positionToolbarAlertBanner="none"
         enableBottomToolbar={false}
-        enableRowActions
-        onRowSelectionChange={setRowSelection}
-        state={{ rowSelection }}
+        enableStickyFooter
+        enableStickyHeader
+        enablePagination={false}
         renderTopToolbarCustomActions={() => (
           <Box sx={{ display: "flex", gap: 1 }}>
             {onCreate && (
@@ -121,17 +169,25 @@ function GroupedDataTable<TData extends TRow>({
                 {t("button.add")}
               </Button>
             )}
-            {isAnyRowSelected && onDelete && (
-              <Tooltip title={t("global.delete")}>
-                <Button
-                  startIcon={<DeleteIcon />}
-                  variant="outlined"
-                  size="small"
-                  onClick={() => setConfirmDialogOpen(true)}
-                >
-                  {t("global.delete")}
-                </Button>
-              </Tooltip>
+            <Button
+              startIcon={<ContentCopyIcon />}
+              variant="outlined"
+              size="small"
+              onClick={handleDuplicateRow}
+              disabled={!isOneRowSelected}
+            >
+              {t("global.duplicate")}
+            </Button>
+            {onDelete && (
+              <Button
+                startIcon={<DeleteIcon />}
+                variant="outlined"
+                size="small"
+                onClick={() => setConfirmDialogOpen(true)}
+                disabled={!isAnyRowSelected}
+              >
+                {t("global.delete")}
+              </Button>
             )}
           </Box>
         )}
@@ -139,19 +195,26 @@ function GroupedDataTable<TData extends TRow>({
           <>
             <MRT_ToggleGlobalFilterButton table={table} />
             <MRT_ToggleFiltersButton table={table} />
-            <MRT_ToggleDensePaddingButton table={table} />
           </>
         )}
-        renderRowActions={({ row }) => (
-          <Tooltip title={t("global.view")}>
-            <IconButton size="small" onClick={() => handleRowClick(row)}>
-              <VisibilityIcon />
-            </IconButton>
-          </Tooltip>
-        )}
-        displayColumnDefOptions={{
-          "mrt-row-actions": {
-            header: "", // hide header
+        muiTableHeadCellProps={{
+          align: "right",
+        }}
+        muiTableBodyCellProps={{
+          align: "right",
+          sx: {
+            borderBottom: "1px solid rgba(224, 224, 224, 0.3)",
+          },
+        }}
+        muiTableFooterCellProps={{
+          align: "right",
+        }}
+        muiTablePaperProps={{
+          sx: {
+            width: 1,
+            display: "flex",
+            flexDirection: "column",
+            overflow: "auto",
           },
         }}
       />

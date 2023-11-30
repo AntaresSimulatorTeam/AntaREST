@@ -20,8 +20,8 @@ function DataPropsView(props: PropTypes) {
       (item) =>
         item.name.search(input) >= 0 ||
         !!item.matrices.find(
-          (matrix: MatrixInfoDTO) => matrix.id.search(input) >= 0
-        )
+          (matrix: MatrixInfoDTO) => matrix.id.search(input) >= 0,
+        ),
     );
   };
 

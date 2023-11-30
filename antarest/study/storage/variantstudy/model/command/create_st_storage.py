@@ -2,13 +2,13 @@ import json
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 import numpy as np
-from pydantic import Extra, Field, validator
+from pydantic import Field, validator
 from pydantic.fields import ModelField
 
 from antarest.core.model import JSON
 from antarest.matrixstore.model import MatrixData
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import STStorageConfig
+from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import STStorageConfigType
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol, validate_matrix
@@ -37,11 +37,8 @@ class CreateSTStorage(ICommand):
     Command used to create a short-terme storage in an area.
     """
 
-    class Config:
-        extra = Extra.forbid
-
-    # Overloaded parameters
-    # =====================
+    # Overloaded metadata
+    # ===================
 
     command_name = CommandName.CREATE_ST_STORAGE
     version = 1
@@ -50,7 +47,7 @@ class CreateSTStorage(ICommand):
     # ==================
 
     area_id: str = Field(description="Area ID", regex=r"[a-z0-9_(),& -]+")
-    parameters: STStorageConfig
+    parameters: STStorageConfigType
     pmax_injection: Optional[Union[MatrixType, str]] = Field(
         None,
         description="Charge capacity (modulation)",
@@ -165,7 +162,7 @@ class CreateSTStorage(ICommand):
             return (
                 CommandOutput(
                     status=False,
-                    message=(f"Invalid study version {version}, at least version {REQUIRED_VERSION} is required."),
+                    message=f"Invalid study version {version}, at least version {REQUIRED_VERSION} is required.",
                 ),
                 {},
             )
@@ -186,7 +183,7 @@ class CreateSTStorage(ICommand):
             return (
                 CommandOutput(
                     status=False,
-                    message=(f"Short-term storage '{self.storage_name}' already exists in the area '{self.area_id}'."),
+                    message=f"Short-term storage '{self.storage_name}' already exists in the area '{self.area_id}'.",
                 ),
                 {},
             )
@@ -197,7 +194,7 @@ class CreateSTStorage(ICommand):
         return (
             CommandOutput(
                 status=True,
-                message=(f"Short-term st_storage '{self.storage_name}' successfully added to area '{self.area_id}'."),
+                message=f"Short-term st_storage '{self.storage_name}' successfully added to area '{self.area_id}'.",
             ),
             {"storage_id": self.storage_id},
         )

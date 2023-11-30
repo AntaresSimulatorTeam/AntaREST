@@ -7,6 +7,13 @@ import {
 } from "@mui/material";
 import * as R from "ramda";
 
+const renderLoadColor = (val: number): LinearProgressProps["color"] =>
+  R.cond([
+    [(v: number) => v > 90, () => "error" as const],
+    [(v: number) => v > 75, () => "primary" as const],
+    [R.T, () => "success" as const],
+  ])(val);
+
 interface PropsType {
   indicator: number;
   size?: string;
@@ -15,14 +22,7 @@ interface PropsType {
 }
 
 function LinearProgressWithLabel(props: PropsType) {
-  const { indicator, size, tooltip, gradiant } = props;
-
-  const renderLoadColor = (val: number): LinearProgressProps["color"] =>
-    R.cond([
-      [R.lt(90), () => "error"],
-      [R.lt(75), () => "primary"],
-      [R.T, () => "success"],
-    ])(val) as LinearProgressProps["color"];
+  const { indicator, size = "100%", tooltip, gradiant = false } = props;
 
   return (
     <Tooltip title={tooltip}>
@@ -36,17 +36,12 @@ function LinearProgressWithLabel(props: PropsType) {
         </Box>
         <Box sx={{ minWidth: 35 }}>
           <Typography variant="body2" color="text.secondary">{`${Math.round(
-            indicator || 0
+            indicator || 0,
           )}%`}</Typography>
         </Box>
       </Box>
     </Tooltip>
   );
 }
-
-LinearProgressWithLabel.defaultProps = {
-  size: "100%",
-  gradiant: false,
-};
 
 export default LinearProgressWithLabel;

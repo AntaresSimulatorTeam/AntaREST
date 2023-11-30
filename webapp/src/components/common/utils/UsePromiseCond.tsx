@@ -10,7 +10,7 @@ export type Response<T = unknown> = Pick<
 
 export function mergeResponses<T1, T2>(
   res1: Response<T1>,
-  res2: Response<T2>
+  res2: Response<T2>,
 ): Response<[T1, T2]> {
   function getMergedStatus() {
     const preResolvedStatus = [
@@ -58,7 +58,7 @@ function UsePromiseCond<T>(props: UsePromiseCondProps<T>) {
         [
           R.either(
             R.equals(PromiseStatus.Idle),
-            R.equals(PromiseStatus.Pending)
+            R.equals(PromiseStatus.Pending),
           ),
           () => ifPending(),
         ],

@@ -1,27 +1,30 @@
-from typing import Any, Dict, List, Tuple
+import typing as t
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.business.utils_binding_constraint import (
-    remove_area_cluster_from_binding_constraints,
-)
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
 class RemoveRenewablesCluster(ICommand):
+    """
+    Command used to remove a renewable cluster in an area.
+    """
+
+    # Overloaded metadata
+    # ===================
+
+    command_name = CommandName.REMOVE_RENEWABLES_CLUSTER
+    version = 1
+
+    # Command parameters
+    # ==================
+
     area_id: str
     cluster_id: str
 
-    def __init__(self, **data: Any) -> None:
-        super().__init__(
-            command_name=CommandName.REMOVE_RENEWABLES_CLUSTER,
-            version=1,
-            **data,
-        )
-
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
         """
         Applies configuration changes to the study data: remove the renewable clusters from the storages list.
 
@@ -57,8 +60,6 @@ class RemoveRenewablesCluster(ICommand):
         # Remove the Renewable cluster from the configuration
         area.renewables.remove(renewable)
 
-        remove_area_cluster_from_binding_constraints(study_data, self.area_id, self.cluster_id)
-
         message = f"Renewable cluster '{self.cluster_id}' removed from the area '{self.area_id}'."
         return CommandOutput(status=True, message=message), {}
 
@@ -73,13 +74,19 @@ class RemoveRenewablesCluster(ICommand):
         Returns:
             The output of the command execution.
         """
+        # Search the Area in the configuration
+        if self.area_id not in study_data.config.areas:
+            message = f"Area '{self.area_id}' does not exist in the study configuration."
+            return CommandOutput(status=False, message=message)
+
         # It is required to delete the files and folders that correspond to the renewable cluster
         # BEFORE updating the configuration, as we need the configuration to do so.
         # Specifically, deleting the time series uses the list of renewable clusters from the configuration.
 
+        series_id = self.cluster_id.lower()
         paths = [
             ["input", "renewables", "clusters", self.area_id, "list", self.cluster_id],
-            ["input", "renewables", "series", self.area_id, self.cluster_id],
+            ["input", "renewables", "series", self.area_id, series_id],
         ]
         area: Area = study_data.config.areas[self.area_id]
         if len(area.renewables) == 1:
@@ -87,13 +94,14 @@ class RemoveRenewablesCluster(ICommand):
 
         for path in paths:
             study_data.tree.delete(path)
+
         # Deleting the renewable cluster in the configuration must be done AFTER
         # deleting the files and folders.
         return self._apply_config(study_data.config)[0]
 
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
-            action=CommandName.REMOVE_RENEWABLES_CLUSTER.value,
+            action=self.command_name.value,
             args={"area_id": self.area_id, "cluster_id": self.cluster_id},
         )
 
@@ -111,8 +119,8 @@ class RemoveRenewablesCluster(ICommand):
             return False
         return self.cluster_id == other.cluster_id and self.area_id == other.area_id
 
-    def _create_diff(self, other: "ICommand") -> List["ICommand"]:
+    def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
         return []
 
-    def get_inner_matrices(self) -> List[str]:
+    def get_inner_matrices(self) -> t.List[str]:
         return []

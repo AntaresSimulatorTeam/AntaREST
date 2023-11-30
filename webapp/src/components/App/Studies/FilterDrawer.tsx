@@ -56,7 +56,7 @@ function FilterDrawer(props: Props) {
         users: [],
         groups: [],
         tags: [],
-      })
+      }),
     );
 
     onClose();
@@ -141,11 +141,11 @@ function FilterDrawer(props: Props) {
             options={users}
             getOptionLabel={(option) => option.name}
             defaultValue={users.filter((user) =>
-              filters.users.includes(user.id)
+              filters.users.includes(user.id),
             )}
             onChange={(event) => {
               filterNewValuesRef.current.users = event.target.value.map(
-                (val) => val.id
+                (val) => val.id,
               );
             }}
             fullWidth
@@ -157,11 +157,11 @@ function FilterDrawer(props: Props) {
             options={groups}
             getOptionLabel={(option) => option.name}
             defaultValue={groups.filter((group) =>
-              filters.groups.includes(group.id)
+              filters.groups.includes(group.id),
             )}
             onChange={(event) => {
               filterNewValuesRef.current.groups = event.target.value.map(
-                (val) => val.id
+                (val) => val.id,
               );
             }}
             fullWidth

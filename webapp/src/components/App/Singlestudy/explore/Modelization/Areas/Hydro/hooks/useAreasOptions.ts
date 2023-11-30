@@ -7,7 +7,7 @@ import { DynamicListProps } from "../../../../../../../common/DynamicList";
 import { AreaCoefficientItem } from "../utils";
 
 export function useAreasOptions(
-  fields: AreaCoefficientItem[]
+  fields: AreaCoefficientItem[],
 ): DynamicListProps["options"] {
   const {
     study: { id: studyId },

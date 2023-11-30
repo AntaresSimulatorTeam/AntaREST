@@ -1,5 +1,4 @@
 import { t } from "i18next";
-import { v4 as uuidv4 } from "uuid";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
 import FormDialog from "../dialogs/FormDialog";
 import StringFE from "../fieldEditors/StringFE";
@@ -7,12 +6,13 @@ import Fieldset from "../Fieldset";
 import { SubmitHandlerPlus } from "../Form/types";
 import SelectFE from "../fieldEditors/SelectFE";
 import { TRow } from ".";
+import { nameToId } from "../../../services/utils";
 
 interface Props<TData extends TRow> {
   open: boolean;
   onClose: VoidFunction;
   onSubmit: (values: TData) => void;
-  groups: string[];
+  groups: string[] | readonly string[];
   existingNames: Array<TData["name"]>;
 }
 
@@ -35,7 +35,12 @@ function CreateRowDialog<TData extends TRow>({
   const handleSubmit = ({
     values,
   }: SubmitHandlerPlus<typeof defaultValues>) => {
-    onSubmit({ ...values, id: uuidv4(), name: values.name.trim() } as TData);
+    onSubmit({
+      ...values,
+      id: nameToId(values.name),
+      name: values.name.trim(),
+    } as TData);
+
     onClose();
   };
 
@@ -64,11 +69,15 @@ function CreateRowDialog<TData extends TRow>({
             rules={{
               required: { value: true, message: t("form.field.required") },
               validate: (v) => {
+                const regex = /^[a-zA-Z0-9_\-() &]+$/;
+                if (!regex.test(v.trim())) {
+                  return t("form.field.specialChars", { 0: "&()_-" });
+                }
                 if (v.trim().length <= 0) {
                   return t("form.field.required");
                 }
-                if (existingNames.includes(v.trim())) {
-                  return t("form.field.duplicate", [v]);
+                if (existingNames.includes(v.trim().toLowerCase())) {
+                  return t("form.field.duplicate", { 0: v });
                 }
               },
             }}
@@ -79,6 +88,7 @@ function CreateRowDialog<TData extends TRow>({
             name="group"
             control={control}
             options={groups}
+            required
             sx={{
               alignSelf: "center",
             }}

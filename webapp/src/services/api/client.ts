@@ -46,7 +46,7 @@ export function initAxiosInterceptors(): void {
         if (authUser) {
           // eslint-disable-next-line no-param-reassign
           config.headers.Authorization = makeHeaderAuthorization(
-            authUser.accessToken
+            authUser.accessToken,
           );
         }
       }

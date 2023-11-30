@@ -46,7 +46,7 @@ class TestRenewableCluster:
         area_fr_id = transform_name_to_id("FR")
 
         cluster_fr1 = "Oleron"
-        cluster_fr1_id = transform_name_to_id(cluster_fr1)
+        cluster_fr1_id = transform_name_to_id(cluster_fr1, lower=False)
         args = {
             "area_id": area_fr_id,
             "cluster_name": cluster_fr1_id,
@@ -65,7 +65,7 @@ class TestRenewableCluster:
         res.raise_for_status()
 
         cluster_fr2 = "La_Rochelle"
-        cluster_fr2_id = transform_name_to_id(cluster_fr2)
+        cluster_fr2_id = transform_name_to_id(cluster_fr2, lower=False)
         args = {
             "area_id": area_fr_id,
             "cluster_name": cluster_fr2_id,
@@ -87,15 +87,16 @@ class TestRenewableCluster:
 
         # Check the properties of the renewable clusters in the "FR" area
         res = client.get(
-            f"/v1/studies/{study_id}/areas/{area_fr_id}/clusters/renewable/{cluster_fr1_id}/form",
+            f"/v1/studies/{study_id}/areas/{area_fr_id}/clusters/renewable/{cluster_fr1_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         res.raise_for_status()
         properties = res.json()
         expected = {
             "enabled": True,
-            "group": "wind offshore",
-            "name": cluster_fr1_id,  # known bug: should be `cluster_fr1`
+            "group": "Wind Offshore",
+            "id": "Oleron",
+            "name": cluster_fr1,
             "nominalCapacity": 2500.0,
             "tsInterpretation": "power-generation",
             "unitCount": 1,
@@ -103,15 +104,16 @@ class TestRenewableCluster:
         assert properties == expected
 
         res = client.get(
-            f"/v1/studies/{study_id}/areas/{area_fr_id}/clusters/renewable/{cluster_fr2_id}/form",
+            f"/v1/studies/{study_id}/areas/{area_fr_id}/clusters/renewable/{cluster_fr2_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         res.raise_for_status()
         properties = res.json()
         expected = {
             "enabled": False,
-            "group": "solar pv",
-            "name": cluster_fr2_id,  # known bug: should be `cluster_fr2`
+            "group": "Solar PV",
+            "id": "La_Rochelle",
+            "name": cluster_fr2,
             "nominalCapacity": 3500.0,
             "tsInterpretation": "power-generation",
             "unitCount": 4,
@@ -124,13 +126,15 @@ class TestRenewableCluster:
 
         # Then, it is possible to update a time series.
         values_fr1 = np.random.randint(0, 1001, size=(8760, 1))
+        series_fr1_id = cluster_fr1_id.lower()  # Series IDs are in lower case
+        series_fr2_id = cluster_fr2_id.lower()  # Series IDs are in lower case
         args_fr1 = {
-            "target": f"input/renewables/series/{area_fr_id}/{cluster_fr1_id}/series",
+            "target": f"input/renewables/series/{area_fr_id}/{series_fr1_id}/series",
             "matrix": values_fr1.tolist(),
         }
         values_fr2 = np.random.randint(0, 1001, size=(8760, 1))
         args_fr2 = {
-            "target": f"input/renewables/series/{area_fr_id}/{cluster_fr2_id}/series",
+            "target": f"input/renewables/series/{area_fr_id}/{series_fr2_id}/series",
             "matrix": values_fr2.tolist(),
         }
         res = client.post(
@@ -145,7 +149,7 @@ class TestRenewableCluster:
 
         # Check the matrices of the renewable clusters in the "FR" area
         res = client.get(
-            f"/v1/studies/{study_id}/raw?path=input/renewables/series/{area_fr_id}/{cluster_fr1_id}/series",
+            f"/v1/studies/{study_id}/raw?path=input/renewables/series/{area_fr_id}/{series_fr1_id}/series",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         res.raise_for_status()
@@ -153,7 +157,7 @@ class TestRenewableCluster:
         assert np.array(matrix_fr1["data"], dtype=np.float64).all() == values_fr1.all()
 
         res = client.get(
-            f"/v1/studies/{study_id}/raw?path=input/renewables/series/{area_fr_id}/{cluster_fr2_id}/series",
+            f"/v1/studies/{study_id}/raw?path=input/renewables/series/{area_fr_id}/{series_fr2_id}/series",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         res.raise_for_status()
@@ -167,7 +171,7 @@ class TestRenewableCluster:
         area_it_id = transform_name_to_id("IT")
 
         cluster_it1 = "Oléron"
-        cluster_it1_id = transform_name_to_id(cluster_it1)
+        cluster_it1_id = transform_name_to_id(cluster_it1, lower=False)
         args = {
             "area_id": area_it_id,
             "cluster_name": cluster_it1_id,
@@ -187,15 +191,16 @@ class TestRenewableCluster:
         res.raise_for_status()
 
         res = client.get(
-            f"/v1/studies/{study_id}/areas/{area_it_id}/clusters/renewable/{cluster_it1_id}/form",
+            f"/v1/studies/{study_id}/areas/{area_it_id}/clusters/renewable/{cluster_it1_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         res.raise_for_status()
         properties = res.json()
         expected = {
             "enabled": True,
-            "group": "wind offshore",
-            "name": cluster_it1_id,  # known bug: should be `cluster_it1`
+            "group": "Wind Offshore",
+            "id": "Ol ron",
+            "name": cluster_it1,
             "nominalCapacity": 1000.0,
             "tsInterpretation": "production-factor",
             "unitCount": 1,
@@ -203,8 +208,9 @@ class TestRenewableCluster:
         assert properties == expected
 
         # Check the matrices of the renewable clusters in the "IT" area
+        series_it1_id = cluster_it1_id.lower()  # Series IDs are in lower case
         res = client.get(
-            f"/v1/studies/{study_id}/raw?path=input/renewables/series/{area_it_id}/{cluster_it1_id}/series",
+            f"/v1/studies/{study_id}/raw?path=input/renewables/series/{area_it_id}/{series_it1_id}/series",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         res.raise_for_status()
@@ -238,7 +244,7 @@ class TestRenewableCluster:
                 "list": {
                     cluster_fr1_id: {
                         "group": "wind offshore",
-                        "name": cluster_fr1_id,
+                        "name": cluster_fr1,
                         "nominalcapacity": 2500,
                         "ts-interpretation": "power-generation",
                     },
@@ -248,7 +254,7 @@ class TestRenewableCluster:
                 "list": {
                     cluster_it1_id: {
                         "group": "wind offshore",
-                        "name": cluster_it1_id,
+                        "name": cluster_it1,
                         "nominalcapacity": 1000,
                         "ts-interpretation": "production-factor",
                         "unitcount": 1,
@@ -281,7 +287,7 @@ class TestRenewableCluster:
                 "list": {
                     cluster_it1_id: {
                         "group": "wind offshore",
-                        "name": cluster_it1_id,
+                        "name": cluster_it1,
                         "nominalcapacity": 1000,
                         "ts-interpretation": "production-factor",
                         "unitcount": 1,

@@ -54,7 +54,7 @@ export default function OptionsList(props: Props) {
 
   useEffect(() => {
     unregister(
-      isLink ? ["data.area", "data.cluster"] : ["data.area1", "data.area2"]
+      isLink ? ["data.area", "data.cluster"] : ["data.area1", "data.area2"],
     );
     setValue(`data.${name1}`, "");
     setValue(`data.${name2}`, "");
@@ -63,7 +63,7 @@ export default function OptionsList(props: Props) {
 
   useEffect(() => {
     const index = linksOrClusters.findIndex(
-      (elm) => elm.element.id === watchSelect1
+      (elm) => elm.element.id === watchSelect1,
     );
     if (index >= 0) {
       setOptions2(
@@ -78,14 +78,14 @@ export default function OptionsList(props: Props) {
                         area1: watchSelect1,
                         area2: elm.id,
                       }
-                    : { area: watchSelect1, cluster: elm.id }
-                )
-              )
+                    : { area: watchSelect1, cluster: elm.id },
+                ),
+              ),
           )
           .map((elm) => ({
             label: elm.name,
             value: elm.id,
-          }))
+          })),
       );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -94,7 +94,7 @@ export default function OptionsList(props: Props) {
   return (
     <>
       <SelectFE
-        name={`data.${name1}`}
+        name={`data.${name1}` as const}
         label={t(`study.${name1}`)}
         options={options1}
         control={control}
@@ -104,7 +104,7 @@ export default function OptionsList(props: Props) {
         sx={{ minWidth: "200px", height: "60px" }}
       />
       <SelectFE
-        name={`data.${name2}`}
+        name={`data.${name2}` as const}
         label={t(`study.${name2}`)}
         options={options2}
         control={control}

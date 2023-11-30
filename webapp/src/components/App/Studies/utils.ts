@@ -10,7 +10,7 @@ export interface StudyTreeNode {
 const nodeProcess = (
   tree: StudyTreeNode,
   path: Array<string>,
-  folderPath: string
+  folderPath: string,
 ): void => {
   const { children } = tree;
   if (path.length === 1) {
@@ -18,7 +18,7 @@ const nodeProcess = (
   }
   const element = path.pop() || "";
   const index = children.findIndex(
-    (elm: StudyTreeNode) => elm.name === element
+    (elm: StudyTreeNode) => elm.name === element,
   );
   const newFolderPath = `${folderPath}/${element}`;
   if (index < 0) {
@@ -26,7 +26,7 @@ const nodeProcess = (
     nodeProcess(
       children[children.length - 1] as StudyTreeNode,
       path,
-      newFolderPath
+      newFolderPath,
     );
   } else {
     nodeProcess(children[index] as StudyTreeNode, path, newFolderPath);
@@ -34,7 +34,7 @@ const nodeProcess = (
 };
 
 export const buildStudyTree = (
-  studies: Array<StudyMetadata>
+  studies: Array<StudyMetadata>,
 ): StudyTreeNode => {
   const tree: StudyTreeNode = { name: "root", children: [], path: "" };
   let path: Array<string> = [];

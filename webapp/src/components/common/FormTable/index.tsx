@@ -19,7 +19,7 @@ type TableFieldValuesByRow = Record<
 >;
 
 export interface FormTableProps<
-  TFieldValues extends TableFieldValuesByRow = TableFieldValuesByRow
+  TFieldValues extends TableFieldValuesByRow = TableFieldValuesByRow,
 > {
   defaultValues: DefaultValues<TFieldValues>;
   onSubmit?: FormProps<TFieldValues>["onSubmit"];
@@ -35,7 +35,7 @@ export interface FormTableProps<
 }
 
 function FormTable<TFieldValues extends TableFieldValuesByRow>(
-  props: FormTableProps<TFieldValues>
+  props: FormTableProps<TFieldValues>,
 ) {
   const {
     defaultValues,
@@ -53,7 +53,7 @@ function FormTable<TFieldValues extends TableFieldValuesByRow>(
     R.keys(defaultValues).map((id) => ({
       ...defaultValues[id],
       id: id as IdType,
-    }))
+    })),
   );
 
   const formattedColumns = useMemo(() => {
@@ -69,7 +69,7 @@ function FormTable<TFieldValues extends TableFieldValuesByRow>(
                 title: colHeaders ? colHeaders(index, col) : startCase(col),
                 type: type || getCellType(firstRow?.[col]),
               }
-            : col
+            : col,
       );
     }
     return columns;
@@ -92,7 +92,7 @@ function FormTable<TFieldValues extends TableFieldValuesByRow>(
           pt: 0,
           overflow: "hidden", // https://handsontable.com/docs/12.0/grid-size/#define-the-size-in-css-styles
         },
-        sx
+        sx,
       )}
       apiRef={formApiRef}
     >

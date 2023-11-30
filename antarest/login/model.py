@@ -1,6 +1,5 @@
+import typing as t
 import uuid
-from dataclasses import dataclass
-from typing import Any, List, Optional
 
 import bcrypt
 from pydantic.main import BaseModel
@@ -10,6 +9,10 @@ from sqlalchemy.orm import relationship  # type: ignore
 
 from antarest.core.persistence import Base
 from antarest.core.roles import RoleType
+
+if t.TYPE_CHECKING:
+    # avoid circular import
+    from antarest.launcher.model import JobResult
 
 
 class UserInfo(BaseModel):
@@ -24,7 +27,7 @@ class BotRoleCreateDTO(BaseModel):
 
 class BotCreateDTO(BaseModel):
     name: str
-    roles: List[BotRoleCreateDTO]
+    roles: t.List[BotRoleCreateDTO]
     is_author: bool = True
 
 
@@ -34,7 +37,7 @@ class UserCreateDTO(BaseModel):
 
 
 class GroupDTO(BaseModel):
-    id: Optional[str] = None
+    id: t.Optional[str] = None
     name: str
 
 
@@ -45,7 +48,7 @@ class RoleCreationDTO(BaseModel):
 
 
 class RoleDTO(BaseModel):
-    group_id: Optional[str]
+    group_id: t.Optional[str]
     group_name: str
     identity_id: int
     type: RoleType
@@ -54,7 +57,7 @@ class RoleDTO(BaseModel):
 class IdentityDTO(BaseModel):
     id: int
     name: str
-    roles: List[RoleDTO]
+    roles: t.List[RoleDTO]
 
 
 class RoleDetailDTO(BaseModel):
@@ -67,7 +70,7 @@ class BotIdentityDTO(BaseModel):
     id: int
     name: str
     isAuthor: bool
-    roles: List[RoleDTO]
+    roles: t.List[RoleDTO]
 
 
 class BotDTO(UserInfo):
@@ -82,7 +85,7 @@ class UserRoleDTO(BaseModel):
 
 
 class GroupDetailDTO(GroupDTO):
-    users: List[UserRoleDTO]
+    users: t.List[UserRoleDTO]
 
 
 class Password:
@@ -106,7 +109,6 @@ class Password:
         return self.__str__()
 
 
-@dataclass
 class Identity(Base):  # type: ignore
     """
     Abstract entity which represent generic user
@@ -117,6 +119,10 @@ class Identity(Base):  # type: ignore
     id = Column(Integer, Sequence("identity_id_seq"), primary_key=True)
     name = Column(String(255))
     type = Column(String(50))
+
+    # Define a one-to-many relationship with `JobResult`.
+    # If an identity is deleted, all the associated job results are detached from the identity.
+    job_results: t.List["JobResult"] = relationship("JobResult", back_populates="owner", cascade="save-update, merge")
 
     def to_dto(self) -> UserInfo:
         return UserInfo(id=self.id, name=self.name)
@@ -130,10 +136,9 @@ class Identity(Base):  # type: ignore
         return int(self.id)
 
 
-@dataclass
 class User(Identity):
     """
-    Basic user, hosted in this plateform and using UI
+    Basic user, hosted in this platform and using UI
     """
 
     __tablename__ = "users"
@@ -162,13 +167,10 @@ class User(Identity):
     def from_dto(data: UserInfo) -> "User":
         return User(id=data.id, name=data.name)
 
-    def __eq__(self, o: Any) -> bool:
-        if not isinstance(o, User):
-            return False
-        return bool((o.id == self.id) and (o.name == self.name))
+    # Implementing a `__eq__` method is superfluous, since the default implementation
+    # is to compare the identity of the objects using the primary key.
 
 
-@dataclass
 class UserLdap(Identity):
     """
     User using UI but hosted on LDAP server
@@ -189,16 +191,13 @@ class UserLdap(Identity):
         "polymorphic_identity": "users_ldap",
     }
 
-    def __eq__(self, o: Any) -> bool:
-        if not isinstance(o, UserLdap):
-            return False
-        return bool((o.id == self.id) and (o.name == self.name))
+    # Implementing a `__eq__` method is superfluous, since the default implementation
+    # is to compare the identity of the objects using the primary key.
 
 
-@dataclass
 class Bot(Identity):
     """
-    User hosted in this platform but using ony API (belongs to an user)
+    User hosted in this platform but using ony API (belongs to a user)
     """
 
     __tablename__ = "bots"
@@ -209,6 +208,7 @@ class Bot(Identity):
         ForeignKey("identities.id"),
         primary_key=True,
     )
+    # noinspection SpellCheckingInspection
     owner = Column(Integer, ForeignKey("identities.id", name="bots_owner_fkey"))
     is_author = Column(Boolean(), default=True)
 
@@ -228,13 +228,10 @@ class Bot(Identity):
             is_author=self.is_author,
         )
 
-    def __eq__(self, other: Any) -> bool:
-        if not isinstance(other, Bot):
-            return False
-        return self.to_dto().dict() == other.to_dto().dict()
+    # Implementing a `__eq__` method is superfluous, since the default implementation
+    # is to compare the identity of the objects using the primary key.
 
 
-@dataclass
 class Group(Base):  # type: ignore
     """
     Group of users
@@ -253,17 +250,13 @@ class Group(Base):  # type: ignore
     def to_dto(self) -> GroupDTO:
         return GroupDTO(id=self.id, name=self.name)
 
-    def __eq__(self, other: Any) -> bool:
-        if not isinstance(other, Group):
-            return False
-
-        return bool(self.id == other.id and self.name == other.name)
+    # Implementing a `__eq__` method is superfluous, since the default implementation
+    # is to compare the identity of the objects using the primary key.
 
     def __repr__(self) -> str:
         return f"Group(id={self.id}, name={self.name})"
 
 
-@dataclass
 class Role(Base):  # type: ignore
     """
     Enable to link a user to a group with a specific role permission

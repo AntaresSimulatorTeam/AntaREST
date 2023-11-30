@@ -30,7 +30,7 @@ function Configuration() {
         Number(study.version) >= 830 && { id: 4, name: "Adequacy Patch" },
         { id: 5, name: "Advanced parameters" },
       ].filter(Boolean),
-    [study.version]
+    [study.version],
   );
 
   return (

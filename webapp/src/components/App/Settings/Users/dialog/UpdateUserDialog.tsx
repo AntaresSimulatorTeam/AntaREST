@@ -46,7 +46,7 @@ function UpdateUserDialog(props: Props) {
         type: role.type,
       })),
     }),
-    [user]
+    [user],
   );
 
   ////////////////////////////////////////////////////////////////
@@ -67,7 +67,7 @@ function UpdateUserDialog(props: Props) {
             group_id: perm.group.id,
             type: perm.type,
             identity_id: user.id,
-          })
+          }),
       );
 
       const res = await mounted(Promise.all(promises));
@@ -81,7 +81,7 @@ function UpdateUserDialog(props: Props) {
 
       editUser({ id: user.id, roles });
 
-      enqueueSnackbar(t("settings.success.userUpdate", [user.name]), {
+      enqueueSnackbar(t("settings.success.userUpdate", { 0: user.name }), {
         variant: "success",
       });
     } catch (e) {
@@ -89,8 +89,8 @@ function UpdateUserDialog(props: Props) {
       reloadFetchUsers();
 
       enqueueErrorSnackbar(
-        t("settings.error.userRolesSave", [user.name]),
-        e as Error
+        t("settings.error.userRolesSave", { 0: user.name }),
+        e as Error,
       );
     }
 
@@ -104,7 +104,7 @@ function UpdateUserDialog(props: Props) {
   return (
     <UserFormDialog
       title={t("settings.updateUser")}
-      subtitle={t("settings.currentUser", [user.name])}
+      subtitle={t("settings.currentUser", { 0: user.name })}
       titleIcon={EditIcon}
       defaultValues={defaultValues}
       onSubmit={handleSubmit}

@@ -1,16 +1,16 @@
+import contextlib
+import http
+import io
 import logging
 import shutil
-from http import HTTPStatus
-from io import BytesIO
-from typing import List, Optional, Union, cast
-from zipfile import BadZipFile, ZipFile
+import typing as t
+import zipfile
 
 from fastapi import HTTPException, UploadFile
 from pydantic import BaseModel, Field, validator
 
 from antarest.core.exceptions import BadZipBinary
 from antarest.core.model import JSON
-from antarest.core.utils.utils import suppress_exception
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.model import Study
 from antarest.study.storage.rawstudy.model.filesystem.bucket_node import BucketNode
@@ -56,11 +56,16 @@ class MaxIteration(EnumIgnoreCase):
 
 
 class XpansionSensitivitySettingsDTO(BaseModel):
-    epsilon: float
-    projection: Optional[List[str]]
+    epsilon: float = 10000.0
+    projection: t.List[str] = Field(default_factory=list)
     capex: bool = False
 
+    @validator("projection", pre=True)
+    def projection_validation(cls, v: t.Optional[t.Sequence[str]]) -> t.Sequence[str]:
+        return [] if v is None else v
 
+
+# noinspection SpellCheckingInspection
 class XpansionSettingsDTO(BaseModel):
     """
     A data transfer object representing the general settings used for Xpansion.
@@ -79,6 +84,7 @@ class XpansionSettingsDTO(BaseModel):
         ampl_solve_bounds_frequency: The frequency with which to solve bounds using AMPL.
         relative_gap: Tolerance on relative gap for the solution.
         batch_size: Amount of batches in the Benders decomposition.
+        separation_parameter: The separation parameter used in the Benders decomposition.
         solver: The solver used to solve the master and the sub-problems in the Benders decomposition.
         timelimit: The timelimit (in seconds) of the Benders step.
         log_level: The severity of the solver's log.
@@ -89,28 +95,29 @@ class XpansionSettingsDTO(BaseModel):
         or a string ending with "%" and a valid float.
     """
 
-    optimality_gap: Optional[float] = Field(default=1, ge=0)
+    optimality_gap: t.Optional[float] = Field(default=1, ge=0)
 
-    max_iteration: Optional[Union[int, MaxIteration]] = Field(default=MaxIteration.INF, ge=0)
+    max_iteration: t.Optional[t.Union[int, MaxIteration]] = Field(default=MaxIteration.INF, ge=0)
 
     uc_type: UcType = UcType.EXPANSION_FAST
     master: Master = Master.INTEGER
-    yearly_weights: Optional[str] = Field(None, alias="yearly-weights")
-    additional_constraints: Optional[str] = Field(None, alias="additional-constraints")
-    relaxed_optimality_gap: Optional[Union[float, str]] = Field(None, alias="relaxed-optimality-gap")
-    cut_type: Optional[CutType] = Field(None, alias="cut-type")
-    ampl_solver: Optional[str] = Field(None, alias="ampl.solver")
-    ampl_presolve: Optional[int] = Field(None, alias="ampl.presolve")
-    ampl_solve_bounds_frequency: Optional[int] = Field(None, alias="ampl.solve_bounds_frequency")
-    relative_gap: Optional[float] = Field(default=None, ge=0)
-    batch_size: Optional[int] = Field(default=0, ge=0)
-    solver: Optional[Solver] = None
-    timelimit: Optional[int] = 1000000000000  # 1e12
-    log_level: Optional[int] = 0
-    sensitivity_config: Optional[XpansionSensitivitySettingsDTO] = None
+    yearly_weights: t.Optional[str] = Field(None, alias="yearly-weights")
+    additional_constraints: t.Optional[str] = Field(None, alias="additional-constraints")
+    relaxed_optimality_gap: t.Optional[t.Union[float, str]] = Field(None, alias="relaxed-optimality-gap")
+    cut_type: t.Optional[CutType] = Field(None, alias="cut-type")
+    ampl_solver: t.Optional[str] = Field(None, alias="ampl.solver")
+    ampl_presolve: t.Optional[int] = Field(None, alias="ampl.presolve")
+    ampl_solve_bounds_frequency: t.Optional[int] = Field(None, alias="ampl.solve_bounds_frequency")
+    relative_gap: t.Optional[float] = Field(default=None, ge=0)
+    batch_size: t.Optional[int] = Field(default=0, ge=0)
+    separation_parameter: t.Optional[float] = Field(default=0.5, ge=0, le=1)
+    solver: t.Optional[Solver] = None
+    timelimit: t.Optional[int] = 1000000000000  # 1e12
+    log_level: t.Optional[int] = 0
+    sensitivity_config: t.Optional[XpansionSensitivitySettingsDTO] = None
 
     @validator("relaxed_optimality_gap")
-    def relaxed_optimality_gap_validation(cls, v: Optional[Union[float, str]]) -> Optional[Union[float, str]]:
+    def relaxed_optimality_gap_validation(cls, v: t.Optional[t.Union[float, str]]) -> t.Optional[t.Union[float, str]]:
         if isinstance(v, float):
             return v
         if isinstance(v, str):
@@ -127,87 +134,87 @@ class XpansionCandidateDTO(BaseModel):
     name: str
     link: str
     annual_cost_per_mw: float = Field(alias="annual-cost-per-mw", ge=0)
-    unit_size: Optional[float] = Field(None, alias="unit-size", ge=0)
-    max_units: Optional[int] = Field(None, alias="max-units", ge=0)
-    max_investment: Optional[float] = Field(None, alias="max-investment", ge=0)
-    already_installed_capacity: Optional[int] = Field(None, alias="already-installed-capacity", ge=0)
+    unit_size: t.Optional[float] = Field(None, alias="unit-size", ge=0)
+    max_units: t.Optional[int] = Field(None, alias="max-units", ge=0)
+    max_investment: t.Optional[float] = Field(None, alias="max-investment", ge=0)
+    already_installed_capacity: t.Optional[int] = Field(None, alias="already-installed-capacity", ge=0)
     # this is obsolete (replaced by direct/indirect)
-    link_profile: Optional[str] = Field(None, alias="link-profile")
+    link_profile: t.Optional[str] = Field(None, alias="link-profile")
     # this is obsolete (replaced by direct/indirect)
-    already_installed_link_profile: Optional[str] = Field(None, alias="already-installed-link-profile")
-    direct_link_profile: Optional[str] = Field(None, alias="direct-link-profile")
-    indirect_link_profile: Optional[str] = Field(None, alias="indirect-link-profile")
-    already_installed_direct_link_profile: Optional[str] = Field(None, alias="already-installed-direct-link-profile")
-    already_installed_indirect_link_profile: Optional[str] = Field(
+    already_installed_link_profile: t.Optional[str] = Field(None, alias="already-installed-link-profile")
+    direct_link_profile: t.Optional[str] = Field(None, alias="direct-link-profile")
+    indirect_link_profile: t.Optional[str] = Field(None, alias="indirect-link-profile")
+    already_installed_direct_link_profile: t.Optional[str] = Field(None, alias="already-installed-direct-link-profile")
+    already_installed_indirect_link_profile: t.Optional[str] = Field(
         None, alias="already-installed-indirect-link-profile"
     )
 
 
 class LinkNotFound(HTTPException):
     def __init__(self, message: str) -> None:
-        super().__init__(HTTPStatus.NOT_FOUND, message)
+        super().__init__(http.HTTPStatus.NOT_FOUND, message)
 
 
 class XpansionFileNotFoundError(HTTPException):
     def __init__(self, message: str) -> None:
-        super().__init__(HTTPStatus.NOT_FOUND, message)
+        super().__init__(http.HTTPStatus.NOT_FOUND, message)
 
 
 class IllegalCharacterInNameError(HTTPException):
     def __init__(self, message: str) -> None:
-        super().__init__(HTTPStatus.BAD_REQUEST, message)
+        super().__init__(http.HTTPStatus.BAD_REQUEST, message)
 
 
 class CandidateNameIsEmpty(HTTPException):
     def __init__(self) -> None:
-        super().__init__(HTTPStatus.BAD_REQUEST)
+        super().__init__(http.HTTPStatus.BAD_REQUEST)
 
 
 class WrongTypeFormat(HTTPException):
     def __init__(self, message: str) -> None:
-        super().__init__(HTTPStatus.BAD_REQUEST, message)
+        super().__init__(http.HTTPStatus.BAD_REQUEST, message)
 
 
 class WrongLinkFormatError(HTTPException):
     def __init__(self, message: str) -> None:
-        super().__init__(HTTPStatus.BAD_REQUEST, message)
+        super().__init__(http.HTTPStatus.BAD_REQUEST, message)
 
 
 class CandidateAlreadyExistsError(HTTPException):
     def __init__(self, message: str) -> None:
-        super().__init__(HTTPStatus.BAD_REQUEST, message)
+        super().__init__(http.HTTPStatus.BAD_REQUEST, message)
 
 
 class BadCandidateFormatError(HTTPException):
     def __init__(self, message: str) -> None:
-        super().__init__(HTTPStatus.BAD_REQUEST, message)
+        super().__init__(http.HTTPStatus.BAD_REQUEST, message)
 
 
 class CandidateNotFoundError(HTTPException):
     def __init__(self, message: str) -> None:
-        super().__init__(HTTPStatus.NOT_FOUND, message)
+        super().__init__(http.HTTPStatus.NOT_FOUND, message)
 
 
 class ConstraintsNotFoundError(HTTPException):
     def __init__(self, message: str) -> None:
-        super().__init__(HTTPStatus.NOT_FOUND, message)
+        super().__init__(http.HTTPStatus.NOT_FOUND, message)
 
 
 class FileCurrentlyUsedInSettings(HTTPException):
     def __init__(self, message: str) -> None:
-        super().__init__(HTTPStatus.CONFLICT, message)
+        super().__init__(http.HTTPStatus.CONFLICT, message)
 
 
 class FileAlreadyExistsError(HTTPException):
     def __init__(self, message: str) -> None:
-        super().__init__(HTTPStatus.CONFLICT, message)
+        super().__init__(http.HTTPStatus.CONFLICT, message)
 
 
 class XpansionManager:
     def __init__(self, study_storage_service: StudyStorageService):
         self.study_storage_service = study_storage_service
 
-    def create_xpansion_configuration(self, study: Study, zipped_config: Optional[UploadFile] = None) -> None:
+    def create_xpansion_configuration(self, study: Study, zipped_config: t.Optional[UploadFile] = None) -> None:
         logger.info(f"Initiating xpansion configuration for study '{study.id}'")
         file_study = self.study_storage_service.get_storage(study).get_raw(study)
         try:
@@ -216,12 +223,12 @@ class XpansionManager:
         except ChildNotFoundError:
             if zipped_config:
                 try:
-                    with ZipFile(BytesIO(zipped_config.file.read())) as zip_output:
+                    with zipfile.ZipFile(io.BytesIO(zipped_config.file.read())) as zip_output:
                         logger.info(f"Importing zipped xpansion configuration for study '{study.id}'")
                         zip_output.extractall(path=file_study.config.path / "user" / "expansion")
                         fix_study_root(file_study.config.path / "user" / "expansion")
                     return
-                except BadZipFile:
+                except zipfile.BadZipFile:
                     shutil.rmtree(
                         file_study.config.path / "user" / "expansion",
                         ignore_errors=True,
@@ -249,6 +256,7 @@ class XpansionManager:
                 xpansion_settings["relative_gap"] = 1e-12
                 xpansion_settings["solver"] = Solver.CBC.value
                 xpansion_settings["batch_size"] = 0
+                xpansion_settings["separation_parameter"] = 0.5
 
             xpansion_configuration_data = {
                 "user": {
@@ -273,15 +281,12 @@ class XpansionManager:
     def get_xpansion_settings(self, study: Study) -> XpansionSettingsDTO:
         logger.info(f"Getting xpansion settings for study '{study.id}'")
         file_study = self.study_storage_service.get_storage(study).get_raw(study)
-        json = file_study.tree.get(["user", "expansion", "settings"])
-        json["sensitivity_config"] = (
-            suppress_exception(
-                lambda: file_study.tree.get(["user", "expansion", "sensitivity", "sensitivity_in"]),
-                lambda e: logger.warning("Failed to read sensitivity config", exc_info=e),
+        settings_obj = file_study.tree.get(["user", "expansion", "settings"])
+        with contextlib.suppress(KeyError):
+            settings_obj["sensitivity_config"] = file_study.tree.get(
+                ["user", "expansion", "sensitivity", "sensitivity_in"]
             )
-            or None
-        )
-        return XpansionSettingsDTO.parse_obj(json)
+        return XpansionSettingsDTO(**settings_obj)
 
     @staticmethod
     def _assert_xpansion_settings_additional_constraints_is_valid(
@@ -413,9 +418,9 @@ class XpansionManager:
 
     @staticmethod
     def _assert_investment_candidate_is_valid(
-        max_investment: Optional[float],
-        max_units: Optional[int],
-        unit_size: Optional[float],
+        max_investment: t.Optional[float],
+        max_units: t.Optional[int],
+        unit_size: t.Optional[float],
     ) -> None:
         bool_max_investment = max_investment is None
         bool_max_units = max_units is None
@@ -480,7 +485,7 @@ class XpansionManager:
         except StopIteration:
             raise CandidateNotFoundError(f"The candidate '{candidate_name}' does not exist")
 
-    def get_candidates(self, study: Study) -> List[XpansionCandidateDTO]:
+    def get_candidates(self, study: Study) -> t.List[XpansionCandidateDTO]:
         logger.info(f"Getting all candidates of study {study.id}")
         file_study = self.study_storage_service.get_storage(study).get_raw(study)
         candidates = file_study.tree.get(["user", "expansion", "candidates"])
@@ -519,13 +524,13 @@ class XpansionManager:
         logger.info(f"Deleting candidate '{candidate_name}' from study '{study.id}'")
         file_study.tree.delete(["user", "expansion", "candidates", candidate_id])
 
-    def update_xpansion_constraints_settings(self, study: Study, constraints_file_name: Optional[str]) -> None:
+    def update_xpansion_constraints_settings(self, study: Study, constraints_file_name: t.Optional[str]) -> None:
         self.update_xpansion_settings(
             study,
             XpansionSettingsDTO.parse_obj({"additional-constraints": constraints_file_name}),
         )
 
-    def _raw_file_dir(self, raw_file_type: XpansionResourceFileType) -> List[str]:
+    def _raw_file_dir(self, raw_file_type: XpansionResourceFileType) -> t.List[str]:
         if raw_file_type == XpansionResourceFileType.CONSTRAINTS:
             return ["user", "expansion", "constraints"]
         elif raw_file_type == XpansionResourceFileType.CAPACITIES:
@@ -537,7 +542,7 @@ class XpansionManager:
     def _add_raw_files(
         self,
         file_study: FileStudy,
-        files: List[UploadFile],
+        files: t.List[UploadFile],
         raw_file_type: XpansionResourceFileType,
     ) -> None:
         keys = self._raw_file_dir(raw_file_type)
@@ -571,7 +576,7 @@ class XpansionManager:
         self,
         study: Study,
         resource_type: XpansionResourceFileType,
-        files: List[UploadFile],
+        files: t.List[UploadFile],
     ) -> None:
         logger.info(f"Adding xpansion {resource_type} resource file list to study '{study.id}'")
         file_study = self.study_storage_service.get_storage(study).get_raw(study)
@@ -608,12 +613,12 @@ class XpansionManager:
         study: Study,
         resource_type: XpansionResourceFileType,
         filename: str,
-    ) -> Union[JSON, bytes]:
+    ) -> t.Union[JSON, bytes]:
         logger.info(f"Getting xpansion {resource_type} resource file '{filename}' from study '{study.id}'")
         file_study = self.study_storage_service.get_storage(study).get_raw(study)
         return file_study.tree.get(self._raw_file_dir(resource_type) + [filename])
 
-    def list_resources(self, study: Study, resource_type: XpansionResourceFileType) -> List[str]:
+    def list_resources(self, study: Study, resource_type: XpansionResourceFileType) -> t.List[str]:
         logger.info(f"Getting all xpansion {resource_type} files from study '{study.id}'")
         file_study = self.study_storage_service.get_storage(study).get_raw(study)
         try:
@@ -621,54 +626,28 @@ class XpansionManager:
         except ChildNotFoundError:
             return []
 
-    def list_root_files(self, study: Study) -> List[str]:
+    def list_root_files(self, study: Study) -> t.List[str]:
         logger.info(f"Getting xpansion root resources file from study '{study.id}'")
         file_study = self.study_storage_service.get_storage(study).get_raw(study)
         registered_filenames = [registered_file.key for registered_file in Expansion.registered_files]
         root_files = [
             key
-            for key, node in cast(FolderNode, file_study.tree.get_node(["user", "expansion"])).build().items()
+            for key, node in t.cast(FolderNode, file_study.tree.get_node(["user", "expansion"])).build().items()
             if key not in registered_filenames and type(node) != BucketNode
         ]
         return root_files
 
     @staticmethod
-    def _is_constraints_file_used(file_study: FileStudy, filename: str) -> bool:
-        try:
-            return (
-                str(
-                    file_study.tree.get(
-                        [
-                            "user",
-                            "expansion",
-                            "settings",
-                            "additional-constraints",
-                        ]
-                    )
-                )
-                == filename
-            )
-        except KeyError:
-            return False
+    def _is_constraints_file_used(file_study: FileStudy, filename: str) -> bool:  # type: ignore
+        with contextlib.suppress(KeyError):
+            constraints = file_study.tree.get(["user", "expansion", "settings", "additional-constraints"])
+            return str(constraints) == filename
 
     @staticmethod
-    def _is_weights_file_used(file_study: FileStudy, filename: str) -> bool:
-        try:
-            return (
-                str(
-                    file_study.tree.get(
-                        [
-                            "user",
-                            "expansion",
-                            "settings",
-                            "yearly-weights",
-                        ]
-                    )
-                )
-                == filename
-            )
-        except KeyError:
-            return False
+    def _is_weights_file_used(file_study: FileStudy, filename: str) -> bool:  # type: ignore
+        with contextlib.suppress(KeyError):
+            weights = file_study.tree.get(["user", "expansion", "settings", "yearly-weights"])
+            return str(weights) == filename
 
     @staticmethod
     def _is_capa_file_used(file_study: FileStudy, filename: str) -> bool:

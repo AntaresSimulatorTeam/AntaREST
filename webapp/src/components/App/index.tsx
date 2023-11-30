@@ -53,6 +53,10 @@ import Districts from "./Singlestudy/explore/Modelization/Map/MapConfig/District
 import InflowStructure from "./Singlestudy/explore/Modelization/Areas/Hydro/InflowStructure";
 import Allocation from "./Singlestudy/explore/Modelization/Areas/Hydro/Allocation";
 import Correlation from "./Singlestudy/explore/Modelization/Areas/Hydro/Correlation";
+import Storages from "./Singlestudy/explore/Modelization/Areas/Storages";
+import StorageForm from "./Singlestudy/explore/Modelization/Areas/Storages/Form";
+import ThermalForm from "./Singlestudy/explore/Modelization/Areas/Thermal/Form";
+import RenewablesForm from "./Singlestudy/explore/Modelization/Areas/Renewables/Form";
 
 function App() {
   return (
@@ -77,10 +81,19 @@ function App() {
                             <Route path="layers" element={<Layers />} />
                             <Route path="districts" element={<Districts />} />
                           </Route>
-                          <Route path="area" element={<Areas />}>
+                          <Route path="area/:areaId" element={<Areas />}>
                             <Route path="properties" element={<Properties />} />
                             <Route path="load" element={<Load />} />
                             <Route path="thermal" element={<Thermal />} />
+                            <Route
+                              path="thermal/:clusterId"
+                              element={<ThermalForm />}
+                            />
+                            <Route path="storages" element={<Storages />} />
+                            <Route
+                              path="storages/:storageId"
+                              element={<StorageForm />}
+                            />
                             <Route
                               path="hydro"
                               element={<Navigate to="management" replace />}
@@ -113,6 +126,10 @@ function App() {
                             <Route path="wind" element={<Wind />} />
                             <Route path="solar" element={<Solar />} />
                             <Route path="renewables" element={<Renewables />} />
+                            <Route
+                              path="renewables/:clusterId"
+                              element={<RenewablesForm />}
+                            />
                             <Route path="reserves" element={<Reserve />} />
                             <Route path="miscGen" element={<MiscGen />} />
                             <Route index element={<Properties />} />

@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import IO, Generic, List, Optional, Sequence, TypeVar, Union
+from typing import BinaryIO, Generic, List, Optional, Sequence, TypeVar, Union
 
 from antarest.core.exceptions import StudyNotFoundError
 from antarest.core.model import JSON
@@ -91,7 +91,7 @@ class IStudyStorageService(ABC, Generic[T]):
     def import_output(
         self,
         study: T,
-        output: Union[IO[bytes], Path],
+        output: Union[BinaryIO, Path],
         output_name: Optional[str] = None,
     ) -> Optional[str]:
         """

@@ -15,7 +15,7 @@ import reactHookFormSupport, {
 interface CheckboxesTagsFEProps<
   T,
   DisableClearable extends boolean | undefined = undefined,
-  FreeSolo extends boolean | undefined = undefined
+  FreeSolo extends boolean | undefined = undefined,
 > extends Omit<
     AutocompleteProps<T, true, DisableClearable, FreeSolo>,
     | "multiple"
@@ -36,7 +36,7 @@ interface CheckboxesTagsFEProps<
         value: AutocompleteValue<T, true, DisableClearable, FreeSolo>;
         name: string | "";
       };
-    }
+    },
   ) => void;
 }
 
@@ -45,7 +45,7 @@ interface CheckboxesTagsFEProps<
 function CheckboxesTagsFE<
   T,
   DisableClearable extends boolean | undefined = undefined,
-  FreeSolo extends boolean | undefined = undefined
+  FreeSolo extends boolean | undefined = undefined,
 >(props: CheckboxesTagsFEProps<T, DisableClearable, FreeSolo>) {
   const {
     label,
@@ -112,8 +112,8 @@ export default reactHookFormSupport()(CheckboxesTagsFE) as <
   TFieldValues extends FieldValues = FieldValues,
   TFieldName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  TContext = any
+  TContext = any,
 >(
   props: ReactHookFormSupportProps<TFieldValues, TFieldName, TContext> &
-    CheckboxesTagsFEProps<T, DisableClearable, FreeSolo>
+    CheckboxesTagsFEProps<T, DisableClearable, FreeSolo>,
 ) => JSX.Element;

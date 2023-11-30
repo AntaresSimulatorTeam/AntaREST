@@ -2,6 +2,7 @@ import logging
 from typing import List, Optional
 
 from sqlalchemy import exists  # type: ignore
+from sqlalchemy.orm import joinedload  # type: ignore
 
 from antarest.core.config import Config
 from antarest.core.jwt import ADMIN_ID
@@ -88,7 +89,7 @@ class UserRepository:
         user: User = db.session.query(User).get(id)
         return user
 
-    def get_by_name(self, name: str) -> User:
+    def get_by_name(self, name: str) -> Optional[User]:
         user: User = db.session.query(User).filter_by(name=name).first()
         return user
 
@@ -218,8 +219,20 @@ class RoleRepository:
         role: Role = db.session.query(Role).get((user, group))
         return role
 
-    def get_all_by_user(self, user: int) -> List[Role]:
-        roles: List[Role] = db.session.query(Role).filter_by(identity_id=user).all()
+    def get_all_by_user(self, /, user_id: int) -> List[Role]:
+        """
+        Get all roles (and groups) associated to a user.
+
+        Args:
+            user_id: The user identifier.
+
+        Returns:
+            A list of `Role` objects.
+        """
+        # When we fetch the list of roles, we also need to fetch the associated groups.
+        # We use a SQL query with joins to fetch all these data efficiently.
+        stm = db.session.query(Role).options(joinedload(Role.group)).filter_by(identity_id=user_id)
+        roles: List[Role] = stm.all()
         return roles
 
     def get_all_by_group(self, group: str) -> List[Role]:

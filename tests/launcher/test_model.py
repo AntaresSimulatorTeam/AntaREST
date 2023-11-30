@@ -1,4 +1,5 @@
 import re
+import typing as t
 import uuid
 
 from sqlalchemy.orm.session import Session  # type: ignore
@@ -43,7 +44,7 @@ class TestJobResult:
             db.commit()
 
         with db_session as db:
-            jr = db.query(JobResult).one()
+            jr: JobResult = db.query(JobResult).one()
             assert jr.id == job_result_id
             assert jr.study_id == study_id
             assert jr.launcher is None
@@ -76,8 +77,15 @@ class TestJobResult:
             job_result_id = job_result.id
 
         with db_session as db:
-            jr = db.get(JobResult, job_result_id)
+            jr: t.Optional[JobResult] = db.get(JobResult, job_result_id)
+            assert jr is not None
             assert jr.owner_id == owner_id
+
+            # Check the relationships between `JobResult` and `Identity`
+            all_users: t.Sequence[Identity] = db.query(Identity).all()
+            assert len(all_users) == 1
+            assert all_users[0].job_results == [jr]
+            assert jr.owner == all_users[0]
 
     def test_update_with_owner(self, db_session: Session) -> None:
         """
@@ -99,12 +107,14 @@ class TestJobResult:
 
         with db_session as db:
             # Update the job result with the owner
+            user: t.Optional[Identity] = db.get(Identity, owner_id)
             job_result = db.get(JobResult, job_result_id)
-            job_result.owner_id = owner_id
+            job_result.owner = user
             db.commit()
 
         with db_session as db:
-            jr = db.get(JobResult, job_result_id)
+            jr: t.Optional[JobResult] = db.get(JobResult, job_result_id)
+            assert jr is not None
             assert jr.owner_id == owner_id
 
     def test_delete_with_owner(self, db_session: Session) -> None:
@@ -112,24 +122,23 @@ class TestJobResult:
         Test the deletion of an owner and check if the associated `JobResult`'s `owner_id` is set to None.
         """
         with db_session as db:
-            identity = Identity()
-            db.add(identity)
-            db.commit()
-            owner_id = identity.id
-
-            job_result = JobResult(id=str(uuid.uuid4()), owner_id=owner_id)
+            owner = Identity()
+            job_result = JobResult(id=str(uuid.uuid4()), owner=owner)
             db.add(job_result)
             db.commit()
+            owner_id = owner.id
             job_result_id = job_result.id
 
         with db_session as db:
-            identity = db.get(Identity, owner_id)
+            identity: t.Optional[Identity] = db.get(Identity, owner_id)
+            assert identity is not None
             db.delete(identity)
             db.commit()
 
         with db_session as db:
             # check `ondelete="SET NULL"`
-            jr = db.get(JobResult, job_result_id)
+            jr: t.Optional[JobResult] = db.get(JobResult, job_result_id)
+            assert jr is not None
             assert jr.owner_id is None
 
 
@@ -161,7 +170,7 @@ class TestJobLog:
             db.commit()
 
         with db_session as db:
-            jl = db.query(JobLog).one()
+            jl: JobLog = db.query(JobLog).one()
             assert jl.id == 1
             assert jl.message == "Log message"
             assert jl.job_id == job_result_id
@@ -197,11 +206,12 @@ class TestJobLog:
             job_log_id = job_log.id
 
         with db_session as db:
-            jr = db.get(JobResult, job_result_id)
+            jr: t.Optional[JobResult] = db.get(JobResult, job_result_id)
+            assert jr is not None
             db.delete(jr)
             db.commit()
 
         with db_session as db:
             # check `cascade="all, delete, delete-orphan"`
-            jl = db.get(JobLog, job_log_id)
+            jl: t.Optional[JobLog] = db.get(JobLog, job_log_id)
             assert jl is None

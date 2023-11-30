@@ -1,7 +1,7 @@
 import { setRef } from "@mui/material";
 
 export function isDependencyList(
-  value: unknown
+  value: unknown,
 ): value is React.DependencyList {
   return Array.isArray(value);
 }
@@ -15,7 +15,7 @@ export function composeRefs(
 }
 
 export function getComponentDisplayName<T>(
-  comp: React.ComponentType<T>
+  comp: React.ComponentType<T>,
 ): string {
   return comp.displayName || comp.name || "Component";
 }

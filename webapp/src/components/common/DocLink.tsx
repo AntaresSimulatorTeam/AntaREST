@@ -20,7 +20,7 @@ function DocLink({ to, isAbsolute, sx }: Props) {
               top: "5px",
             }
           : {},
-        sx
+        sx,
       )}
     >
       <IconButton

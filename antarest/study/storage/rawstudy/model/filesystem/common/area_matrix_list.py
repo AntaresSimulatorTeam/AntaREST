@@ -104,9 +104,12 @@ class ThermalMatrixList(FolderNode):
         self.matrix_class = matrix_class
 
     def build(self) -> TREE:
+        # Note that cluster IDs are case-insensitive, but series IDs are in lower case.
+        # For instance, if your cluster ID is "Base", then the series ID will be "base".
+        series_ids = map(str.lower, self.config.get_thermal_ids(self.area))
         children: TREE = {
-            thermal_cluster: self.matrix_class(self.context, self.config.next_file(f"{thermal_cluster}.txt"))
-            for thermal_cluster in self.config.get_thermal_names(self.area)
+            series_id: self.matrix_class(self.context, self.config.next_file(f"{series_id}.txt"))
+            for series_id in series_ids
         }
         return children
 

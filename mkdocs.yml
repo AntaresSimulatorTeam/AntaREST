@@ -34,6 +34,7 @@ nav:
       - 'User interface': 'user-guide/1-interface.md'
       - 'Variant manager': 'user-guide/2-variant_manager.md'
   - 'How to':
+      - 'Import a study': 'how-to/studies-import.md'
       - 'Upgrade a study': 'how-to/studies-upgrade.md'
   - 'Build':
       - 'Introduction': 'install/0-INSTALL.md'

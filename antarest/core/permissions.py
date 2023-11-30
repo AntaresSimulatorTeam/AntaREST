@@ -30,10 +30,6 @@ permission_matrix = {
         "roles": [RoleType.ADMIN, RoleType.WRITER],
         "public_modes": [PublicMode.FULL, PublicMode.EDIT],
     },
-    StudyPermissionType.DELETE: {
-        "roles": [RoleType.ADMIN],
-        "public_modes": [PublicMode.FULL],
-    },
     StudyPermissionType.MANAGE_PERMISSIONS: {
         "roles": [RoleType.ADMIN],
         "public_modes": [],

@@ -1,63 +1,86 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { useMemo } from "react";
-import { useOutletContext } from "react-router-dom";
+import { useEffect, useMemo } from "react";
+import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
 import { Paper } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { StudyMetadata } from "../../../../../../common/types";
 import TabWrapper from "../../TabWrapper";
+import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
+import { getCurrentAreaId } from "../../../../../../redux/selectors";
 
 interface Props {
   renewablesClustering: boolean;
 }
 
-function AreasTab(props: Props) {
-  const { renewablesClustering } = props;
+function AreasTab({ renewablesClustering }: Props) {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
+  const areaId = useAppSelector(getCurrentAreaId);
   const [t] = useTranslation();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  /**
+   * Updates the URL path to include the current areaId.
+   *
+   * The effect splits the current path, replaces the segment immediately after 'area'
+   * with the new areaId, and navigates to this updated path. It ensures the rest of the
+   * path, especially in deeply nested URLs, remains unchanged.
+   */
+  useEffect(() => {
+    const currentPath = location.pathname;
+    const pathSegments = currentPath.split("/");
+
+    const areaIndex = pathSegments.findIndex((segment) => segment === "area");
+    if (areaIndex >= 0 && areaIndex + 1 < pathSegments.length) {
+      // replace only the segment after 'area' with the new areaId
+      pathSegments[areaIndex + 1] = areaId.toString();
+
+      const newPath = pathSegments.join("/");
+      if (newPath !== currentPath) {
+        navigate(newPath, { replace: true });
+      }
+    }
+  }, [areaId, navigate, location.pathname]);
 
   const tabList = useMemo(() => {
-    const baseTabs = [
+    const basePath = `/studies/${study.id}/explore/modelization/area/${areaId}`;
+
+    const tabs = [
+      { label: "study.modelization.properties", pathSuffix: "properties" },
+      { label: "study.modelization.load", pathSuffix: "load" },
+      { label: "study.modelization.thermal", pathSuffix: "thermal" },
       {
-        label: t("study.modelization.properties"),
-        path: `/studies/${study.id}/explore/modelization/area/properties`,
+        label: "study.modelization.storages",
+        pathSuffix: "storages",
+        condition: parseInt(study.version, 10) >= 860,
       },
       {
-        label: t("study.modelization.load"),
-        path: `/studies/${study.id}/explore/modelization/area/load`,
+        label: "study.modelization.renewables",
+        pathSuffix: "renewables",
+        condition: renewablesClustering,
+      },
+      { label: "study.modelization.hydro", pathSuffix: "hydro" },
+      {
+        label: "study.modelization.wind",
+        pathSuffix: "wind",
+        condition: !renewablesClustering,
       },
       {
-        label: t("study.modelization.thermal"),
-        path: `/studies/${study.id}/explore/modelization/area/thermal`,
+        label: "study.modelization.solar",
+        pathSuffix: "solar",
+        condition: !renewablesClustering,
       },
-      {
-        label: t("study.modelization.hydro"),
-        path: `/studies/${study.id}/explore/modelization/area/hydro`,
-      },
-      {
-        label: t("study.modelization.wind"),
-        path: `/studies/${study.id}/explore/modelization/area/wind`,
-      },
-      {
-        label: t("study.modelization.solar"),
-        path: `/studies/${study.id}/explore/modelization/area/solar`,
-      },
-      {
-        label: t("study.modelization.reserves"),
-        path: `/studies/${study.id}/explore/modelization/area/reserves`,
-      },
-      {
-        label: t("study.modelization.miscGen"),
-        path: `/studies/${study.id}/explore/modelization/area/miscGen`,
-      },
+      { label: "study.modelization.reserves", pathSuffix: "reserves" },
+      { label: "study.modelization.miscGen", pathSuffix: "miscGen" },
     ];
-    if (renewablesClustering) {
-      baseTabs.splice(4, 2, {
-        label: t("study.modelization.renewables"),
-        path: `/studies/${study.id}/explore/modelization/area/renewables`,
-      });
-    }
-    return baseTabs;
-  }, [study, renewablesClustering]);
+
+    return tabs
+      .filter(({ condition }) => condition ?? true)
+      .map(({ label, pathSuffix }) => ({
+        label: t(label),
+        path: `${basePath}/${pathSuffix}`,
+      }));
+  }, [study.id, areaId, renewablesClustering, t, study.version]);
 
   return (
     <Paper

@@ -46,11 +46,11 @@ function CorrelationField({ field, index, label }: Props) {
           rules={{
             min: {
               value: -100,
-              message: t("form.field.minValue", [-100]),
+              message: t("form.field.minValue", { 0: -100 }),
             },
             max: {
               value: 100,
-              message: t("form.field.maxValue", [100]),
+              message: t("form.field.maxValue", { 0: 100 }),
             },
           }}
           disabled={field.areaId === currentArea?.id}

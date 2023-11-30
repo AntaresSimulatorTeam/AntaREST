@@ -29,7 +29,7 @@ export interface FileDownloadTask {
 }
 
 export const convertFileDownloadDTO = (
-  fileDownload: FileDownloadDTO
+  fileDownload: FileDownloadDTO,
 ): FileDownload => ({
   id: fileDownload.id,
   name: fileDownload.name,

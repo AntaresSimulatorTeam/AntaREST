@@ -61,7 +61,7 @@ function JobTableView(props: PropType) {
       }
       return filteredContent;
     },
-    [type, filterRunningStatus]
+    [type, filterRunningStatus],
   );
 
   const handleChange = (event: SelectChangeEvent) => {

@@ -13,7 +13,7 @@ interface Props {
   onClose: VoidFunction;
   onImport: (
     file: File,
-    onUploadProgress: (progress: number) => void
+    onUploadProgress: (progress: number) => void,
   ) => Promise<void>;
 }
 

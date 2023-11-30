@@ -102,14 +102,14 @@ const initialState = studyMapsAdapter.getInitialState({
 
 function filterAreasFromEntity<T extends StudyLayer | StudyMapDistrict>(
   entities: Record<string, T>,
-  nodeId: StudyMapNode["id"]
+  nodeId: StudyMapNode["id"],
 ): Record<string, T> {
   return R.map(
     (entity) => ({
       ...entity,
       areas: entity.areas.filter((areaId) => areaId !== nodeId),
     }),
-    entities
+    entities,
   );
 }
 
@@ -162,7 +162,7 @@ const makeLinkStyle = R.cond<[string], LinkStyle>([
 
 const initStudyMapLayers = (
   dispatch: AppDispatch,
-  layers: Record<StudyLayer["id"], StudyLayer>
+  layers: Record<StudyLayer["id"], StudyLayer>,
 ): void => {
   if (layers) {
     dispatch(setLayers(layers));
@@ -182,67 +182,76 @@ export const fetchStudyMapLayers = createAsyncThunk<
   async (studyId, { dispatch, rejectWithValue }) => {
     try {
       const layers = await studyApi.getStudyLayers(studyId);
-      const studyMapLayers = layers.reduce((acc, { id, name, areas }) => {
-        acc[id] = {
-          id,
-          name,
-          areas,
-        };
-        return acc;
-      }, {} as StudyMapsState["layers"]);
+      const studyMapLayers = layers.reduce(
+        (acc, { id, name, areas }) => {
+          acc[id] = {
+            id,
+            name,
+            areas,
+          };
+          return acc;
+        },
+        {} as StudyMapsState["layers"],
+      );
       initStudyMapLayers(dispatch, studyMapLayers);
     } catch (err) {
       return rejectWithValue(err);
     }
-  }
+  },
 );
 
 async function getLinks(
-  studyId: StudyMap["studyId"]
+  studyId: StudyMap["studyId"],
 ): Promise<StudyMap["links"]> {
   const links = await studyDataApi.getAllLinks({ uuid: studyId, withUi: true });
-  return links.reduce((acc, link) => {
-    const [style, linecap] = makeLinkStyle(link.ui?.style);
-    const id = makeLinkId(link.area1, link.area2);
-    acc[id] = {
-      id,
-      color: `rgb(${link.ui?.color}`,
-      strokeDasharray: style,
-      strokeLinecap: linecap,
-      strokeWidth: link.ui?.width < 2 ? 2 : link.ui?.width,
-    };
-    return acc;
-  }, {} as StudyMap["links"]);
+  return links.reduce(
+    (acc, link) => {
+      const [style, linecap] = makeLinkStyle(link.ui?.style);
+      const id = makeLinkId(link.area1, link.area2);
+      acc[id] = {
+        id,
+        color: `rgb(${link.ui?.color}`,
+        strokeDasharray: style,
+        strokeLinecap: linecap,
+        strokeWidth: link.ui?.width < 2 ? 2 : link.ui?.width,
+      };
+      return acc;
+    },
+    {} as StudyMap["links"],
+  );
 }
 
 async function getNodes(
   state: AppState,
-  studyId: StudyMap["studyId"]
+  studyId: StudyMap["studyId"],
 ): Promise<StudyMap["nodes"]> {
   const areaPositions = await studyApi.getAreaPositions(studyId);
-  return Object.keys(areaPositions).reduce((acc, areaId) => {
-    const {
-      ui,
-      layerColor = {},
-      layerX = {},
-      layerY = {},
-    } = areaPositions[areaId];
-    const rgb = [ui.color_r, ui.color_g, ui.color_b];
-    const area = getArea(state, studyId, areaId) as Area;
-    acc[areaId] = {
-      id: areaId,
-      name: area.name,
-      x: ui.x,
-      y: ui.y,
-      color: `rgb(${rgb.join(", ")})`,
-      rgbColor: rgb,
-      size: { width: getNodeWidth(areaId), height: NODE_HEIGHT },
-      layerX,
-      layerY,
-      layerColor,
-    };
-    return acc;
-  }, {} as StudyMap["nodes"]);
+  return Object.keys(areaPositions).reduce(
+    (acc, areaId) => {
+      const {
+        ui,
+        layerColor = {},
+        layerX = {},
+        layerY = {},
+      } = areaPositions[areaId];
+      const rgb = [ui.color_r, ui.color_g, ui.color_b];
+      const area = getArea(state, studyId, areaId) as Area;
+      acc[areaId] = {
+        id: areaId,
+        name: area.name,
+        x: ui.x,
+        y: ui.y,
+        color: `rgb(${rgb.join(", ")})`,
+        rgbColor: rgb,
+        size: { width: getNodeWidth(areaId), height: NODE_HEIGHT },
+        layerX,
+        layerY,
+        layerColor,
+      };
+      return acc;
+    },
+    {} as StudyMap["nodes"],
+  );
 }
 
 export const createStudyMap = createAsyncThunk<
@@ -329,7 +338,7 @@ export const deleteStudyMapNode = createAsyncThunk<
       }
       return rejectWithValue(error);
     }
-  }
+  },
 );
 
 export const setStudyMap = createAsyncThunk<
@@ -371,7 +380,7 @@ export const createStudyMapLink = createAsyncThunk<
         opacity: 0.3,
         mouseCursor: "wait", // TODO not working
       },
-    })
+    }),
   );
 
   try {
@@ -409,7 +418,7 @@ export const deleteStudyMapLink = createAsyncThunk<
         return rejectWithValue(err);
       }
     }
-  }
+  },
 );
 export const createStudyMapLayer = createAsyncThunk<
   {
@@ -470,7 +479,7 @@ export const deleteStudyMapLayer = createAsyncThunk<
     } catch (error) {
       return rejectWithValue(error);
     }
-  }
+  },
 );
 
 export const fetchStudyMapDistricts = createAsyncThunk<
@@ -491,7 +500,7 @@ export const fetchStudyMapDistricts = createAsyncThunk<
         };
         return acc;
       },
-      {} as StudyMapsState["districts"]
+      {} as StudyMapsState["districts"],
     );
     return studyMapDistricts;
   } catch (err) {
@@ -515,7 +524,7 @@ export const createStudyMapDistrict = createAsyncThunk<
       studyId,
       name,
       output,
-      data.comments
+      data.comments,
     );
     return { id, name, output, comments, areas };
   } catch (error) {
@@ -545,7 +554,7 @@ export const updateStudyMapDistrict = createAsyncThunk<
       districtId,
       output,
       comments,
-      areas
+      areas,
     );
     return { districtId, output, comments, areas };
   } catch (error) {
@@ -645,11 +654,11 @@ export default createReducer(initialState, (builder) => {
       const { nodeId } = action.payload;
       draftState.layers = filterAreasFromEntity<StudyLayer>(
         draftState.layers,
-        nodeId
+        nodeId,
       );
       draftState.districts = filterAreasFromEntity<StudyMapDistrict>(
         draftState.districts,
-        nodeId
+        nodeId,
       );
     })
     .addCase(createStudyMapLinkTemp, (draftState, action) => {

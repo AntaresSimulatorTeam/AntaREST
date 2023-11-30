@@ -11,7 +11,7 @@ import { isSearchMatching } from "./textUtils";
 
 export function sortStudies(
   sortConf: StudiesSortConf,
-  studies: StudyMetadata[]
+  studies: StudyMetadata[],
 ): StudyMetadata[] {
   return R.sort((studyA, studyB) => {
     const first = sortConf.order === "ascend" ? studyA : studyB;
@@ -20,7 +20,7 @@ export function sortStudies(
       return first.name.localeCompare(second.name);
     }
     return moment(first.modificationDate).isAfter(
-      moment(second.modificationDate)
+      moment(second.modificationDate),
     )
       ? 1
       : -1;
@@ -45,7 +45,7 @@ const folderPredicate = R.curry(
     return strict
       ? studyNodeId === folder
       : `${studyNodeId}/`.startsWith(`${folder}/`);
-  }
+  },
 );
 
 const inputValuePredicate = R.curry(
@@ -53,7 +53,7 @@ const inputValuePredicate = R.curry(
     return inputValue
       ? isSearchMatching(inputValue, [study.name, study.id])
       : true;
-  }
+  },
 );
 
 const tagsPredicate = R.curry(
@@ -65,13 +65,13 @@ const tagsPredicate = R.curry(
       return false;
     }
     return R.intersection(study.tags, tags).length > 0;
-  }
+  },
 );
 
 const versionsPredicate = R.curry(
   (versions: StudyFilters["versions"], study: StudyMetadata) => {
     return versions.length === 0 || versions.includes(study.version);
-  }
+  },
 );
 
 const usersPredicate = R.curry(
@@ -80,7 +80,7 @@ const usersPredicate = R.curry(
       return true;
     }
     return RA.isNumber(study.owner.id) && users.includes(study.owner.id);
-  }
+  },
 );
 
 const groupsPredicate = R.curry(
@@ -89,25 +89,25 @@ const groupsPredicate = R.curry(
       groups.length === 0 ||
       R.intersection(study.groups.map(R.prop("id")), groups).length > 0
     );
-  }
+  },
 );
 
 const managedPredicate = R.curry(
   (managed: StudyFilters["managed"], study: StudyMetadata) => {
     return managed ? study.managed : true;
-  }
+  },
 );
 
 const archivedPredicate = R.curry(
   (archived: StudyFilters["archived"], study: StudyMetadata) => {
     return archived ? study.archived : true;
-  }
+  },
 );
 
 const variantPredicate = R.curry(
   (variant: StudyFilters["variant"], study: StudyMetadata) => {
     return variant ? study.type === StudyType.VARIANT : true;
-  }
+  },
 );
 
 ////////////////////////////////////////////////////////////////
@@ -116,7 +116,7 @@ const variantPredicate = R.curry(
 
 export function filterStudies(
   filters: StudyFilters,
-  studies: StudyMetadata[]
+  studies: StudyMetadata[],
 ): StudyMetadata[] {
   const predicates = [
     folderPredicate(filters.folder, filters.strictFolder),
@@ -128,6 +128,6 @@ export function filterStudies(
     managedPredicate(filters.managed),
     archivedPredicate(filters.archived),
     variantPredicate(filters.variant),
-  ];
+  ] as R.Pred[];
   return R.filter(R.allPass(predicates), studies);
 }

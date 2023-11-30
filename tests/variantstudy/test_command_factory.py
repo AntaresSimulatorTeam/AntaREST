@@ -409,7 +409,7 @@ class TestCommandFactory:
         )
         commands = command_factory.to_command(command_dto=command_dto)
 
-        if isinstance(args := command_dto.args, dict):
+        if isinstance(command_dto.args, dict):
             exp_action_args_list = [(command_dto.action, command_dto.args)]
         else:
             exp_action_args_list = [(command_dto.action, args) for args in command_dto.args]

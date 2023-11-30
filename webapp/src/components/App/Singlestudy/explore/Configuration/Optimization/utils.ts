@@ -60,16 +60,16 @@ export interface OptimizationFormFields {
 ////////////////////////////////////////////////////////////////
 
 export const UNFEASIBLE_PROBLEM_BEHAVIOR_OPTIONS = Object.values(
-  UnfeasibleProblemBehavior
+  UnfeasibleProblemBehavior,
 );
 export const SIMPLEX_OPTIMIZATION_RANGE_OPTIONS = Object.values(
-  SimplexOptimizationRange
+  SimplexOptimizationRange,
 );
 export const LEGACY_TRANSMISSION_CAPACITIES_OPTIONS = Object.values(
-  LegacyTransmissionCapacities
+  LegacyTransmissionCapacities,
 );
 export const TRANSMISSION_CAPACITIES_OPTIONS = Object.values(
-  TransmissionCapacities
+  TransmissionCapacities,
 );
 
 ////////////////////////////////////////////////////////////////
@@ -81,7 +81,7 @@ function makeRequestURL(studyId: StudyMetadata["id"]): string {
 }
 
 export async function getOptimizationFormFields(
-  studyId: StudyMetadata["id"]
+  studyId: StudyMetadata["id"],
 ): Promise<OptimizationFormFields> {
   const res = await client.get(makeRequestURL(studyId));
   return res.data;
@@ -89,7 +89,7 @@ export async function getOptimizationFormFields(
 
 export function setOptimizationFormFields(
   studyId: StudyMetadata["id"],
-  values: Partial<OptimizationFormFields>
+  values: Partial<OptimizationFormFields>,
 ): Promise<void> {
   return client.put(makeRequestURL(studyId), values);
 }

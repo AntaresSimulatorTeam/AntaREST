@@ -45,7 +45,7 @@ let globalListenerAdded = false;
 
 export function initWebSocket(
   dispatch: AppDispatch,
-  user?: UserInfo
+  user?: UserInfo,
 ): WebSocket {
   if (webSocket) {
     logInfo("Websocket exists, skipping reconnection");
@@ -55,7 +55,7 @@ export function initWebSocket(
   const config = getConfig();
 
   webSocket = new WebSocket(
-    `${config.wsUrl + config.wsEndpoint}?token=${user?.accessToken}`
+    `${config.wsUrl + config.wsEndpoint}?token=${user?.accessToken}`,
   );
 
   if (!globalListenerAdded) {
@@ -63,7 +63,7 @@ export function initWebSocket(
       makeStudyListener(dispatch),
       makeStudyJobStatusListener(dispatch),
       makeMaintenanceListener(dispatch),
-      makeStudyDataListener(dispatch)
+      makeStudyDataListener(dispatch),
     );
     globalListenerAdded = true;
   }
@@ -99,7 +99,7 @@ export function initWebSocket(
             .catch((err) => {
               logError(
                 "Should not happen because refresh is already guarded",
-                err
+                err,
               );
               reconnect();
             });
@@ -124,13 +124,13 @@ export function addWsMessageListener(listener: MessageListener): VoidFunction {
 }
 
 export function sendWsSubscribeMessage(
-  channels: string | string[]
+  channels: string | string[],
 ): VoidFunction {
   const channelsList = RA.ensureArray(channels);
 
   function send(action: string): void {
     channelSubscriptions = channelSubscriptions.filter(
-      (chan) => channelsList.indexOf(chan) === -1
+      (chan) => channelsList.indexOf(chan) === -1,
     );
     if (action === "SUBSCRIBE") {
       channelSubscriptions.push(...channelsList);
@@ -139,7 +139,7 @@ export function sendWsSubscribeMessage(
     if (webSocket && webSocket.readyState === WebSocket.OPEN) {
       const socket: WebSocket = webSocket;
       const messagesToSend = channelsList.map((chan) =>
-        JSON.stringify({ action, payload: chan })
+        JSON.stringify({ action, payload: chan }),
       );
       messagesToSend.forEach((msg) => socket.send(msg));
     }
@@ -180,7 +180,7 @@ export function closeWebSocket(clean = true): void {
 
 export function reloadWebSocket(
   dispatch: AppDispatch,
-  user?: UserInfo
+  user?: UserInfo,
 ): WebSocket {
   closeWebSocket(false);
   return initWebSocket(dispatch, user);
@@ -211,7 +211,7 @@ function makeStudyJobStatusListener(dispatch: AppDispatch): MessageListener {
     switch (e.type) {
       case WSEvent.STUDY_JOB_STARTED: {
         const unsubscribe = sendWsSubscribeMessage(
-          WsChannel.JobStatus + e.payload.id
+          WsChannel.JobStatus + e.payload.id,
         );
         unsubscribeById[e.payload.id] = unsubscribe;
         break;
@@ -243,8 +243,8 @@ function makeMaintenanceListener(dispatch: AppDispatch) {
       case WSEvent.MESSAGE_INFO:
         dispatch(
           setMessageInfo(
-            isStringEmpty(e.payload as string) ? "" : (e.payload as string)
-          )
+            isStringEmpty(e.payload as string) ? "" : (e.payload as string),
+          ),
         );
         break;
     }

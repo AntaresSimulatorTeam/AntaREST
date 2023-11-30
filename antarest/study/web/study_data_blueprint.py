@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional, Sequence, Union, cast
 
 from fastapi import APIRouter, Body, Depends
 from fastapi.params import Body, Query
+from starlette.responses import RedirectResponse
 
 from antarest.core.config import Config
 from antarest.core.jwt import JWTUser
@@ -18,8 +19,13 @@ from antarest.study.business.allocation_management import AllocationFormFields, 
 from antarest.study.business.area_management import AreaCreationDTO, AreaInfoDTO, AreaType, AreaUI, LayerInfoDTO
 from antarest.study.business.areas.hydro_management import ManagementOptionsFormFields
 from antarest.study.business.areas.properties_management import PropertiesFormFields
-from antarest.study.business.areas.renewable_management import RenewableFormFields
-from antarest.study.business.areas.thermal_management import ThermalFormFields
+from antarest.study.business.areas.renewable_management import (
+    RenewableClusterCreation,
+    RenewableClusterInput,
+    RenewableClusterOutput,
+)
+from antarest.study.business.areas.st_storage_management import *
+from antarest.study.business.areas.thermal_management import *
 from antarest.study.business.binding_constraint_management import ConstraintTermDTO, UpdateBindingConstProps
 from antarest.study.business.correlation_management import CorrelationFormFields, CorrelationManager, CorrelationMatrix
 from antarest.study.business.district_manager import DistrictCreationDTO, DistrictInfoDTO, DistrictUpdateDTO
@@ -27,13 +33,6 @@ from antarest.study.business.general_management import GeneralFormFields
 from antarest.study.business.link_management import LinkInfoDTO
 from antarest.study.business.optimization_management import OptimizationFormFields
 from antarest.study.business.playlist_management import PlaylistColumns
-from antarest.study.business.st_storage_manager import (
-    StorageCreation,
-    StorageInput,
-    StorageOutput,
-    STStorageMatrix,
-    STStorageTimeSeries,
-)
 from antarest.study.business.table_mode_management import ColumnsModelTypes, TableTemplateType
 from antarest.study.business.thematic_trimming_management import ThematicTrimmingFormFields
 from antarest.study.business.timeseries_config_management import TSFormFields
@@ -100,7 +99,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     @bp.post(
         "/studies/{uuid}/areas",
         tags=[APITag.study_data],
-        summary="Create a new area/cluster",
+        summary="Create a new area",
         response_model=AreaInfoDTO,
     )
     def create_area(
@@ -296,7 +295,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
-        study = study_service.check_study_access(uuid, StudyPermissionType.DELETE, params)
+        study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
         study_service.areas.remove_layer(study, layer_id)
 
     @bp.get(
@@ -431,8 +430,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
 
         Args:
         - `uuid`: The UUID of the study.
-        - `path`: The path of the matrix to update.
-        - `matrix_edit_instructions`: A list of edit instructions to be applied to the matrix.
+        - `path`: the path of the matrix to update.
+        - `matrix_edit_instructions`: a list of edit instructions to be applied to the matrix.
 
         Permissions:
         - User must have WRITE permission on the study.
@@ -929,7 +928,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         Get the hydraulic allocation matrix for all areas.
 
         Parameters:
-        - `uuid`: the study UUID.
+        - `uuid`: The study UUID.
 
         Returns the data frame matrix, where:
         - the rows are the areas,
@@ -959,7 +958,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         Get the form fields used for the allocation form.
 
         Parameters:
-        - `uuid`: the study UUID,
+        - `uuid`: The study UUID,
         - `area_id`: the area ID.
 
         Returns the allocation form fields.
@@ -997,7 +996,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         Update the hydraulic allocation of a given area.
 
         Parameters:
-        - `uuid`: the study UUID,
+        - `uuid`: The study UUID,
         - `area_id`: the area ID.
 
         Returns the updated allocation form fields.
@@ -1042,15 +1041,15 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
 
         Parameters:
         - `uuid`: The UUID of the study.
-        - `columns`: A filter on the area identifiers:
+        - `columns`: a filter on the area identifiers:
           - Use no parameter to select all areas.
           - Use an area identifier to select a single area.
           - Use a comma-separated list of areas to select those areas.
 
         Returns the hydraulic/load/solar/wind correlation matrix with the following attributes:
-        - `index`: A list of all study areas.
-        - `columns`: A list of selected production areas.
-        - `data`: A 2D-array matrix of correlation coefficients with values in the range of -1 to 1.
+        - `index`: a list of all study areas.
+        - `columns`: a list of selected production areas.
+        - `data`: a 2D-array matrix of correlation coefficients with values in the range of -1 to 1.
         """
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
@@ -1094,9 +1093,9 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
 
         Parameters:
         - `uuid`: The UUID of the study.
-        - `index`: A list of all study areas.
-        - `columns`: A list of selected production areas.
-        - `data`: A 2D-array matrix of correlation coefficients with values in the range of -1 to 1.
+        - `index`: a list of all study areas.
+        - `columns`: a list of selected production areas.
+        - `data`: a 2D-array matrix of correlation coefficients with values in the range of -1 to 1.
 
         Returns the hydraulic/load/solar/wind correlation matrix updated
         """
@@ -1284,127 +1283,375 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         study_service.properties_manager.set_field_values(study, area_id, form_fields)
 
     @bp.get(
-        path="/studies/{uuid}/areas/{area_id}/clusters/renewable/{cluster_id}/form",
+        path="/studies/{uuid}/areas/{area_id}/clusters/renewable",
         tags=[APITag.study_data],
-        summary="Get renewable options for a given cluster",
-        response_model=RenewableFormFields,
-        response_model_exclude_none=True,
+        summary="Get all renewable clusters",
+        response_model=Sequence[RenewableClusterOutput],
     )
-    def get_renewable_form_values(
+    def get_renewable_clusters(
+        uuid: str,
+        area_id: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Sequence[RenewableClusterOutput]:
+        logger.info(
+            "Getting renewable clusters for study %s and area %s",
+            uuid,
+            area_id,
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
+        return study_service.renewable_manager.get_clusters(study, area_id)
+
+    @bp.get(
+        path="/studies/{uuid}/areas/{area_id}/clusters/renewable/{cluster_id}",
+        tags=[APITag.study_data],
+        summary="Get a single renewable cluster",
+        response_model=RenewableClusterOutput,
+    )
+    def get_renewable_cluster(
         uuid: str,
         area_id: str,
         cluster_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> RenewableFormFields:
+    ) -> RenewableClusterOutput:
         logger.info(
-            "Getting renewable form values for study %s and cluster %s",
+            "Getting renewable cluster values for study %s and cluster %s",
             uuid,
             cluster_id,
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
-        return study_service.renewable_manager.get_field_values(study, area_id, cluster_id)
+        return study_service.renewable_manager.get_cluster(study, area_id, cluster_id)
 
-    @bp.put(
+    @bp.get(
         path="/studies/{uuid}/areas/{area_id}/clusters/renewable/{cluster_id}/form",
         tags=[APITag.study_data],
-        summary="Set renewable form values for a given cluster",
+        summary="Get renewable configuration for a given cluster (deprecated)",
+        response_class=RedirectResponse,
+        deprecated=True,
     )
-    def set_renewable_form_values(
+    def redirect_get_renewable_cluster(
         uuid: str,
         area_id: str,
         cluster_id: str,
-        form_fields: RenewableFormFields,
+    ) -> str:
+        return f"/v1/studies/{uuid}/areas/{area_id}/clusters/renewable/{cluster_id}"
+
+    @bp.post(
+        path="/studies/{uuid}/areas/{area_id}/clusters/renewable",
+        tags=[APITag.study_data],
+        summary="Create a new renewable cluster",
+        response_model=RenewableClusterOutput,
+    )
+    def create_renewable_cluster(
+        uuid: str,
+        area_id: str,
+        cluster_data: RenewableClusterCreation,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> None:
+    ) -> RenewableClusterOutput:
+        """
+        Create a new renewable cluster.
+
+        Args:
+        - `uuid`: The UUID of the study.
+        - `area_id`: the area ID.
+        - `cluster_data`: the properties used for creation:
+          "name" and "group".
+
+        Returns: The properties of the newly-created renewable clusters.
+        """
         logger.info(
-            "Setting renewable form values for study %s and cluster %s",
-            uuid,
-            cluster_id,
+            f"Creating renewable cluster for study '{uuid}' and area '{area_id}'",
             extra={"user": current_user.id},
         )
         request_params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, request_params)
+        return study_service.renewable_manager.create_cluster(study, area_id, cluster_data)
 
-        study_service.renewable_manager.set_field_values(study, area_id, cluster_id, form_fields)
+    @bp.patch(
+        path="/studies/{uuid}/areas/{area_id}/clusters/renewable/{cluster_id}",
+        tags=[APITag.study_data],
+        summary="Update a renewable cluster",
+        response_model=RenewableClusterOutput,
+    )
+    def update_renewable_cluster(
+        uuid: str,
+        area_id: str,
+        cluster_id: str,
+        cluster_data: RenewableClusterInput,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> RenewableClusterOutput:
+        logger.info(
+            f"Updating renewable cluster for study '{uuid}' and cluster '{cluster_id}'",
+            extra={"user": current_user.id},
+        )
+        request_params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, request_params)
+        return study_service.renewable_manager.update_cluster(study, area_id, cluster_id, cluster_data)
+
+    @bp.put(
+        path="/studies/{uuid}/areas/{area_id}/clusters/renewable/{cluster_id}/form",
+        tags=[APITag.study_data],
+        summary="Get renewable configuration for a given cluster (deprecated)",
+        response_model=RenewableClusterOutput,
+        deprecated=True,
+    )
+    def redirect_update_renewable_cluster(
+        uuid: str,
+        area_id: str,
+        cluster_id: str,
+        cluster_data: RenewableClusterInput,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> RenewableClusterOutput:
+        # We cannot perform redirection, because we have a PUT, where a PATCH is required.
+        return update_renewable_cluster(uuid, area_id, cluster_id, cluster_data, current_user=current_user)
+
+    @bp.delete(
+        path="/studies/{uuid}/areas/{area_id}/clusters/renewable",
+        tags=[APITag.study_data],
+        summary="Remove renewable clusters",
+        status_code=HTTPStatus.NO_CONTENT,
+        response_model=None,
+    )
+    def delete_renewable_clusters(
+        uuid: str,
+        area_id: str,
+        cluster_ids: Sequence[str],
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> None:
+        """
+        Remove one or several renewable cluster(s) and it's time series.
+
+        Args:
+        - `uuid`: The UUID of the study.
+        - `area_id`: the area ID.
+        - `cluster_ids`: list of IDs to remove.
+        """
+        logger.info(
+            f"Deleting renewable clusters {cluster_ids!r} for study '{uuid}' and area '{area_id}'",
+            extra={"user": current_user.id},
+        )
+        request_params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, request_params)
+        study_service.renewable_manager.delete_clusters(study, area_id, cluster_ids)
+
+    @bp.get(
+        path="/studies/{uuid}/areas/{area_id}/clusters/thermal",
+        tags=[APITag.study_data],
+        summary="Get thermal clusters for a given area",
+        response_model=Sequence[ThermalClusterOutput],
+    )
+    def get_thermal_clusters(
+        uuid: str,
+        area_id: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Sequence[ThermalClusterOutput]:
+        """
+        Retrieve the list of thermal clusters for a specified area.
+
+        Args:
+        - `uuid`: The UUID of the study.
+        - `area_id`: the area ID.
+
+        Returns: The list thermal clusters.
+        """
+        logger.info(
+            "Getting thermal clusters for study %s and area %s",
+            uuid,
+            area_id,
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
+        return study_service.thermal_manager.get_clusters(study, area_id)
+
+    @bp.get(
+        path="/studies/{uuid}/areas/{area_id}/clusters/thermal/{cluster_id}",
+        tags=[APITag.study_data],
+        summary="Get thermal configuration for a given cluster",
+        response_model=ThermalClusterOutput,
+    )
+    def get_thermal_cluster(
+        uuid: str,
+        area_id: str,
+        cluster_id: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> ThermalClusterOutput:
+        """
+        Retrieve the thermal clusters for a specified area.
+
+        Args:
+        - `uuid`: The UUID of the study.
+        - `area_id`: the area ID.
+        - `cluster_id`: the cluster ID.
+
+        Returns: The properties of the thermal clusters.
+        """
+        logger.info(
+            "Getting thermal cluster values for study %s and cluster %s",
+            uuid,
+            cluster_id,
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
+        return study_service.thermal_manager.get_cluster(study, area_id, cluster_id)
 
     @bp.get(
         path="/studies/{uuid}/areas/{area_id}/clusters/thermal/{cluster_id}/form",
         tags=[APITag.study_data],
-        summary="Get thermal options for a given cluster",
-        response_model=ThermalFormFields,
-        response_model_exclude_none=True,
+        summary="Get thermal configuration for a given cluster (deprecated)",
+        response_class=RedirectResponse,
+        deprecated=True,
     )
-    def get_thermal_form_values(
+    def redirect_get_thermal_cluster(
         uuid: str,
         area_id: str,
         cluster_id: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> ThermalFormFields:
-        logger.info(
-            "Getting thermal form values for study %s and cluster %s",
-            uuid,
-            cluster_id,
-            extra={"user": current_user.id},
-        )
-        params = RequestParameters(user=current_user)
-        study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
-        return study_service.thermal_manager.get_field_values(study, area_id, cluster_id)
+    ) -> str:
+        return f"/v1/studies/{uuid}/areas/{area_id}/clusters/thermal/{cluster_id}"
 
-    @bp.put(
-        path="/studies/{uuid}/areas/{area_id}/clusters/thermal/{cluster_id}/form",
+    @bp.post(
+        path="/studies/{uuid}/areas/{area_id}/clusters/thermal",
         tags=[APITag.study_data],
-        summary="Set thermal form values for a given cluster",
+        summary="Create a new thermal cluster for a given area",
+        response_model=ThermalClusterOutput,
     )
-    def set_thermal_form_values(
+    def create_thermal_cluster(
         uuid: str,
         area_id: str,
-        cluster_id: str,
-        form_fields: ThermalFormFields,
+        cluster_data: ThermalClusterCreation,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> None:
+    ) -> ThermalClusterOutput:
+        """
+        Create a new thermal cluster for a specified area.
+
+        Args:
+        - `uuid`: The UUID of the study.
+        - `area_id`: the area ID.
+        - `cluster_data`: the properties used for creation:
+          "name" and "group".
+
+        Returns: The properties of the newly-created thermal clusters.
+        """
         logger.info(
-            "Setting thermal form values for study %s and cluster %s",
-            uuid,
-            cluster_id,
+            f"Creating thermal cluster for study '{uuid}' and area '{area_id}'",
             extra={"user": current_user.id},
         )
         request_params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, request_params)
+        return study_service.thermal_manager.create_cluster(study, area_id, cluster_data)
 
-        study_service.thermal_manager.set_field_values(study, area_id, cluster_id, form_fields)
+    @bp.patch(
+        path="/studies/{uuid}/areas/{area_id}/clusters/thermal/{cluster_id}",
+        tags=[APITag.study_data],
+        summary="Update thermal cluster for a given area",
+        response_model=ThermalClusterOutput,
+    )
+    def update_thermal_cluster(
+        uuid: str,
+        area_id: str,
+        cluster_id: str,
+        cluster_data: ThermalClusterInput,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> ThermalClusterOutput:
+        """
+        Update the properties of a thermal cluster for a specified area.
+
+        Args:
+        - `uuid`: The UUID of the study.
+        - `area_id`: the area ID.
+        - `cluster_data`: the properties used for updating.
+
+        Returns: The properties of the updated thermal clusters.
+        """
+        logger.info(
+            f"Updating thermal cluster for study '{uuid}' and cluster '{cluster_id}'",
+            extra={"user": current_user.id},
+        )
+        request_params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, request_params)
+        return study_service.thermal_manager.update_cluster(study, area_id, cluster_id, cluster_data)
+
+    @bp.put(
+        path="/studies/{uuid}/areas/{area_id}/clusters/thermal/{cluster_id}/form",
+        tags=[APITag.study_data],
+        summary="Get thermal configuration for a given cluster (deprecated)",
+        response_model=ThermalClusterOutput,
+        deprecated=True,
+    )
+    def redirect_update_thermal_cluster(
+        uuid: str,
+        area_id: str,
+        cluster_id: str,
+        cluster_data: ThermalClusterInput,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> ThermalClusterOutput:
+        # We cannot perform redirection, because we have a PUT, where a PATCH is required.
+        return update_thermal_cluster(uuid, area_id, cluster_id, cluster_data, current_user=current_user)
+
+    @bp.delete(
+        path="/studies/{uuid}/areas/{area_id}/clusters/thermal",
+        tags=[APITag.study_data],
+        summary="Remove thermal clusters for a given area",
+        status_code=HTTPStatus.NO_CONTENT,
+        response_model=None,
+    )
+    def delete_thermal_clusters(
+        uuid: str,
+        area_id: str,
+        cluster_ids: Sequence[str],
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> None:
+        """
+        Remove one or several thermal cluster(s) from a specified area.
+        This endpoint removes the properties and time series of each thermal clusters.
+
+        Args:
+        - `uuid`: The UUID of the study.
+        - `area_id`: the area ID.
+        - `cluster_ids`: list of thermal cluster IDs to remove.
+        """
+        logger.info(
+            f"Deleting thermal clusters {cluster_ids!r} for study '{uuid}' and area '{area_id}'",
+            extra={"user": current_user.id},
+        )
+        request_params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, request_params)
+        study_service.thermal_manager.delete_clusters(study, area_id, cluster_ids)
 
     @bp.get(
         path="/studies/{uuid}/areas/{area_id}/storages/{storage_id}",
         tags=[APITag.study_data],
         summary="Get the short-term storage properties",
-        response_model=StorageOutput,
+        response_model=STStorageOutput,
     )
     def get_st_storage(
         uuid: str,
         area_id: str,
         storage_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> StorageOutput:
+    ) -> STStorageOutput:
         """
         Retrieve the storages by given uuid and area id of a study.
 
         Args:
         - `uuid`: The UUID of the study.
-        - `area_id`: The area ID of the study.
-        - `storage_id`: The storage ID of the study.
+        - `area_id`: the area ID.
+        - `storage_id`: the storage ID of the study.
 
         Returns: One storage with the following attributes:
-        - `id`: The storage ID of the study.
-        - `name`: The name of the  storage.
-        - `group`: The group of the  storage.
-        - `injectionNominalCapacity`: The injection Nominal Capacity of the  storage.
-        - `withdrawalNominalCapacity`: The withdrawal Nominal Capacity of the  storage.
-        - `reservoirCapacity`: The reservoir capacity of the  storage.
-        - `efficiency`: The efficiency of the  storage.
-        - `initialLevel`: The initial Level of the  storage.
-        - `initialLevelOptim`: The initial Level Optim of the  storage.
+        - `id`: the storage ID of the study.
+        - `name`: the name of the  storage.
+        - `group`: the group of the  storage.
+        - `injectionNominalCapacity`: the injection Nominal Capacity of the  storage.
+        - `withdrawalNominalCapacity`: the withdrawal Nominal Capacity of the  storage.
+        - `reservoirCapacity`: the reservoir capacity of the  storage.
+        - `efficiency`: the efficiency of the  storage.
+        - `initialLevel`: the initial Level of the  storage.
+        - `initialLevelOptim`: the initial Level Optim of the  storage.
 
         Permissions:
           The user must have READ permission on the study.
@@ -1421,30 +1668,30 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/areas/{area_id}/storages",
         tags=[APITag.study_data],
         summary="Get the list of short-term storage properties",
-        response_model=Sequence[StorageOutput],
+        response_model=Sequence[STStorageOutput],
     )
     def get_st_storages(
         uuid: str,
         area_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Sequence[StorageOutput]:
+    ) -> Sequence[STStorageOutput]:
         """
         Retrieve the short-term storages by given uuid and area ID of a study.
 
         Args:
         - `uuid`: The UUID of the study.
-        - `area_id`: The area ID.
+        - `area_id`: the area ID.
 
         Returns: A list of storages with the following attributes:
-        - `id`: The storage ID of the study.
-        - `name`: The name of the  storage.
-        - `group`: The group of the  storage.
-        - `injectionNominalCapacity`: The injection Nominal Capacity of the  storage.
-        - `withdrawalNominalCapacity`: The withdrawal Nominal Capacity of the  storage.
-        - `reservoirCapacity`: The reservoir capacity of the  storage.
-        - `efficiency`: The efficiency of the  storage.
-        - `initialLevel`: The initial Level of the  storage.
-        - `initialLevelOptim`: The initial Level Optim of the  storage.
+        - `id`: the storage ID of the study.
+        - `name`: the name of the  storage.
+        - `group`: the group of the  storage.
+        - `injectionNominalCapacity`: the injection Nominal Capacity of the  storage.
+        - `withdrawalNominalCapacity`: the withdrawal Nominal Capacity of the  storage.
+        - `reservoirCapacity`: the reservoir capacity of the  storage.
+        - `efficiency`: the efficiency of the  storage.
+        - `initialLevel`: the initial Level of the  storage.
+        - `initialLevelOptim`: the initial Level Optim of the  storage.
 
         Permissions:
           The user must have READ permission on the study.
@@ -1475,14 +1722,14 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
 
         Args:
         - `uuid`: The UUID of the study.
-        - `area_id`: The area ID.
-        - `storage_id`: The ID of the short-term storage.
-        - `ts_name`: The name of the time series to retrieve.
+        - `area_id`: the area ID.
+        - `storage_id`: the ID of the short-term storage.
+        - `ts_name`: the name of the time series to retrieve.
 
         Returns: The time series matrix with the following attributes:
-        - `index`: A list of 0-indexed time series lines (8760 lines).
-        - `columns`: A list of 0-indexed time series columns (1 column).
-        - `data`: A 2D-array matrix representing the time series.
+        - `index`: a list of 0-indexed time series lines (8760 lines).
+        - `columns`: a list of 0-indexed time series columns (1 column).
+        - `data`: a 2D-array matrix representing the time series.
 
         Permissions:
         - User must have READ permission on the study.
@@ -1513,10 +1760,10 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
 
         Args:
         - `uuid`: The UUID of the study.
-        - `area_id`: The area ID.
-        - `storage_id`: The ID of the short-term storage.
-        - `ts_name`: The name of the time series to retrieve.
-        - `ts`: The time series matrix to update.
+        - `area_id`: the area ID.
+        - `storage_id`: the ID of the short-term storage.
+        - `ts_name`: the name of the time series to retrieve.
+        - `ts`: the time series matrix to update.
 
         Permissions:
         - User must have WRITE permission on the study.
@@ -1545,8 +1792,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
 
         Args:
         - `uuid`: The UUID of the study.
-        - `area_id`: The area ID.
-        - `storage_id`: The ID of the short-term storage.
+        - `area_id`: the area ID.
+        - `storage_id`: the ID of the short-term storage.
 
         Permissions:
         - User must have READ permission on the study.
@@ -1563,14 +1810,14 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/areas/{area_id}/storages",
         tags=[APITag.study_data],
         summary="Create a new short-term storage in an area",
-        response_model=StorageOutput,
+        response_model=STStorageOutput,
     )
     def create_st_storage(
         uuid: str,
         area_id: str,
-        form: StorageCreation,
+        form: STStorageCreation,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> StorageOutput:
+    ) -> STStorageOutput:
         """
         Create a new short-term storage in an area.
 
@@ -1588,15 +1835,15 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
           - `initialLevelOptim`: The initial Level Optim of the updated storage
 
         Returns: New storage with the following attributes:
-        - `id`: The storage ID of the study.
-        - `name`: The name of the  storage.
-        - `group`: The group of the  storage.
-        - `injectionNominalCapacity`: The injection Nominal Capacity of the  storage.
-        - `withdrawalNominalCapacity`: The withdrawal Nominal Capacity of the  storage.
-        - `reservoirCapacity`: The reservoir capacity of the  storage.
-        - `efficiency`: The efficiency of the  storage.
-        - `initialLevel`: The initial Level of the  storage.
-        - `initialLevelOptim`: The initial Level Optim of the  storage.
+        - `id`: the storage ID of the study.
+        - `name`: the name of the  storage.
+        - `group`: the group of the  storage.
+        - `injectionNominalCapacity`: the injection Nominal Capacity of the  storage.
+        - `withdrawalNominalCapacity`: the withdrawal Nominal Capacity of the  storage.
+        - `reservoirCapacity`: the reservoir capacity of the  storage.
+        - `efficiency`: the efficiency of the  storage.
+        - `initialLevel`: the initial Level of the  storage.
+        - `initialLevelOptim`: the initial Level Optim of the  storage.
 
         Permissions:
         - User must have READ/WRITE permission on the study.
@@ -1619,36 +1866,36 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         uuid: str,
         area_id: str,
         storage_id: str,
-        form: StorageInput,
+        form: STStorageInput,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> StorageOutput:
+    ) -> STStorageOutput:
         """
         Update short-term storage of a study.
 
         Args:
         - `uuid`: The UUID of the study.
-        - `area_id`: The area ID.
-        - `storage_id`: The storage id of the study that we want to update.
-        - `form`: The characteristic of the storage that we can update:
-          - `name`: The name of the updated storage.
-          - `group`: The group of the updated storage.
-          - `injectionNominalCapacity`: The injection Nominal Capacity of the updated storage.
-          - `withdrawalNominalCapacity`: The withdrawal Nominal Capacity of the updated storage.
+        - `area_id`: the area ID.
+        - `storage_id`: the storage id of the study that we want to update.
+        - `form`: the characteristic of the storage that we can update:
+          - `name`: the name of the updated storage.
+          - `group`: the group of the updated storage.
+          - `injectionNominalCapacity`: the injection Nominal Capacity of the updated storage.
+          - `withdrawalNominalCapacity`: the withdrawal Nominal Capacity of the updated storage.
           - `reservoirCapacity`:  The reservoir capacity of the updated storage.
-          - `efficiency`: The efficiency of the updated storage
-          - `initialLevel`: The initial Level of the updated storage
-          - `initialLevelOptim`: The initial Level Optim of the updated storage
+          - `efficiency`: the efficiency of the updated storage
+          - `initialLevel`: the initial Level of the updated storage
+          - `initialLevelOptim`: the initial Level Optim of the updated storage
 
         Returns: The updated storage with the following attributes:
-        - `name`: The name of the updated storage.
-        - `group`: The group of the updated storage.
-        - `injectionNominalCapacity`: The injection Nominal Capacity of the updated storage.
-        - `withdrawalNominalCapacity`: The withdrawal Nominal Capacity of the updated storage.
+        - `name`: the name of the updated storage.
+        - `group`: the group of the updated storage.
+        - `injectionNominalCapacity`: the injection Nominal Capacity of the updated storage.
+        - `withdrawalNominalCapacity`: the withdrawal Nominal Capacity of the updated storage.
         - `reservoirCapacity`:  The reservoir capacity of the updated storage.
-        - `efficiency`: The efficiency of the updated storage
-        - `initialLevel`: The initial Level of the updated storage
-        - `initialLevelOptim`: The initial Level Optim of the updated storage
-        - `id`: The storage ID of the study that we want to update.
+        - `efficiency`: the efficiency of the updated storage
+        - `initialLevel`: the initial Level of the updated storage
+        - `initialLevelOptim`: the initial Level Optim of the updated storage
+        - `id`: the storage ID of the study that we want to update.
 
         Permissions:
         - User must have READ/WRITE permission on the study.
@@ -1667,7 +1914,6 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         tags=[APITag.study_data],
         summary="Remove short-term storages from an area",
         status_code=HTTPStatus.NO_CONTENT,
-        response_model=None,
     )
     def delete_st_storages(
         uuid: str,
@@ -1680,8 +1926,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
 
         Args:
         - `uuid`: The UUID of the study.
-        - `area_id`: The area ID.
-        - `storage_ids`: List of IDs of the storages to remove from the area.
+        - `area_id`: the area ID.
+        - `storage_ids`: ist of IDs of the storages to remove from the area.
 
         Permissions:
         - User must have DELETED permission on the study.
@@ -1691,7 +1937,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
-        study = study_service.check_study_access(uuid, StudyPermissionType.DELETE, params)
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
         study_service.st_storage_manager.delete_storages(study, area_id, storage_ids)
 
     return bp

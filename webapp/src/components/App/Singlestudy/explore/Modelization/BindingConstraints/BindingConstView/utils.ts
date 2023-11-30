@@ -49,12 +49,12 @@ export type BindingConstPath = Record<keyof BindingConstFields, string>;
 
 export async function getDefaultValues(
   studyId: string,
-  bindingConstId: string
+  bindingConstId: string,
 ): Promise<BindingConstFields> {
   // Fetch fields
   const fields: BindingConstFieldsDTO = await getBindingConstraint(
     studyId,
-    bindingConstId
+    bindingConstId,
   );
   return {
     ...fields,
@@ -71,7 +71,7 @@ export async function getDefaultValues(
 }
 
 export function isDataLink(
-  data: LinkCreationInfoDTO | ClusterElement
+  data: LinkCreationInfoDTO | ClusterElement,
 ): data is LinkCreationInfoDTO {
   return (data as LinkCreationInfoDTO).area1 !== undefined;
 }
@@ -88,7 +88,7 @@ export function dataToId(data: LinkCreationInfoDTO | ClusterElement): string {
 export const isOptionExist = (
   list: Array<LinkClusterItem>,
   value1: string,
-  value2: string
+  value2: string,
 ): boolean => {
   const index1 = list.findIndex((item) => item.element.id === value1);
   if (index1 < 0) {
@@ -105,7 +105,7 @@ export const isOptionExist = (
 
 export const isTermExist = (
   list: Array<ConstraintType>,
-  termId: string
+  termId: string,
 ): boolean => {
   return list.findIndex((item) => item.id === termId) >= 0;
 };

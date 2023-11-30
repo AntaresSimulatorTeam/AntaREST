@@ -15,23 +15,18 @@ class TestRemoveRenewablesCluster:
         empty_study.config.version = 810
         area_name = "Area_name"
         area_id = transform_name_to_id(area_name)
-        cluster_name = "cluster_name"
-        cluster_id = transform_name_to_id(cluster_name)
+        cluster_name = "Cluster Name"
+        cluster_id = transform_name_to_id(cluster_name, lower=False)
 
-        CreateArea.parse_obj(
-            {
-                "area_name": area_name,
-                "command_context": command_context,
-            }
-        ).apply(empty_study)
+        CreateArea(area_name=area_name, command_context=command_context).apply(empty_study)
 
         hash_before_cluster = dirhash(empty_study.config.study_path, "md5")
 
         CreateRenewablesCluster(
             area_id=area_id,
-            cluster_name=cluster_name,
+            cluster_name=cluster_id,
             parameters={
-                "name": "name",
+                "name": cluster_name,
                 "ts-interpretation": "power-generation",
             },
             command_context=command_context,

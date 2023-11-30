@@ -1,17 +1,18 @@
+import glob
 import logging
 import os
 import shutil
 import tempfile
 import time
-from glob import escape
+import typing as t
+import zipfile
 from pathlib import Path
-from typing import IO, Any, Callable, List, Optional, Tuple, TypeVar
-from zipfile import ZIP_DEFLATED, BadZipFile, ZipFile
 
+import py7zr
 import redis
 
 from antarest.core.config import RedisConfig
-from antarest.core.exceptions import BadZipBinary, ShouldNotHappenException
+from antarest.core.exceptions import ShouldNotHappenException
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +25,7 @@ class DTO:
     def __hash__(self) -> int:
         return hash(tuple(sorted(self.__dict__.items())))
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: t.Any) -> bool:
         return isinstance(other, type(self)) and self.__dict__ == other.__dict__
 
     def __str__(self) -> str:
@@ -38,27 +39,53 @@ class DTO:
 
 
 def sanitize_uuid(uuid: str) -> str:
-    return str(escape(uuid))
+    return str(glob.escape(uuid))
 
 
-def extract_zip(stream: IO[bytes], dst: Path) -> None:
+class BadArchiveContent(Exception):
     """
-    Extract zip archive
+    Exception raised when the archive file is corrupted (or unknown).
+    """
+
+    def __init__(self, message: str = "Unsupported archive format") -> None:
+        super().__init__(message)
+
+
+def extract_zip(stream: t.BinaryIO, target_dir: Path) -> None:
+    """
+    Extract a ZIP archive to a given destination.
+
     Args:
-        stream: zip file
-        dst: destination path
+        stream: The stream containing the archive.
+        target_dir: The directory where to extract the archive.
 
-    Returns:
-
+    Raises:
+        BadArchiveContent: If the archive is corrupted or in an unknown format.
     """
-    try:
-        with ZipFile(stream) as zip_output:
-            zip_output.extractall(path=dst)
-    except BadZipFile:
-        raise BadZipBinary("Only zip file are allowed.")
+
+    # Read the first few bytes to identify the file format
+    file_format = stream.read(4)
+    stream.seek(0)
+
+    if file_format[:4] == b"PK\x03\x04":
+        try:
+            with zipfile.ZipFile(stream) as zf:
+                zf.extractall(path=target_dir)
+        except zipfile.BadZipFile as error:
+            raise BadArchiveContent("Unsupported ZIP format") from error
+
+    elif file_format[:2] == b"7z":
+        try:
+            with py7zr.SevenZipFile(stream, "r") as zf:
+                zf.extractall(target_dir)
+        except py7zr.exceptions.Bad7zFile as error:
+            raise BadArchiveContent("Unsupported 7z format") from error
+
+    else:
+        raise BadArchiveContent
 
 
-def get_default_config_path() -> Optional[Path]:
+def get_default_config_path() -> t.Optional[Path]:
     config = Path("config.yaml")
     if config.exists():
         return config
@@ -98,17 +125,17 @@ class StopWatch:
     def reset_current(self) -> None:
         self.current_time = time.time()
 
-    def log_elapsed(self, logger: Callable[[float], None], since_start: bool = False) -> None:
-        logger(time.time() - (self.start_time if since_start else self.current_time))
+    def log_elapsed(self, logger_: t.Callable[[float], None], since_start: bool = False) -> None:
+        logger_(time.time() - (self.start_time if since_start else self.current_time))
         self.current_time = time.time()
 
 
-T = TypeVar("T")
+T = t.TypeVar("T")
 
 
-def retry(func: Callable[[], T], attempts: int = 10, interval: float = 0.5) -> T:
+def retry(func: t.Callable[[], T], attempts: int = 10, interval: float = 0.5) -> T:
     attempt = 0
-    caught_exception: Optional[Exception] = None
+    caught_exception: t.Optional[Exception] = None
     while attempt < attempts:
         try:
             attempt += 1
@@ -120,12 +147,12 @@ def retry(func: Callable[[], T], attempts: int = 10, interval: float = 0.5) -> T
     raise caught_exception or ShouldNotHappenException()
 
 
-def assert_this(b: Any) -> None:
+def assert_this(b: t.Any) -> None:
     if not b:
         raise AssertionError
 
 
-def concat_files(files: List[Path], target: Path) -> None:
+def concat_files(files: t.List[Path], target: Path) -> None:
     with open(target, "w") as fh:
         for item in files:
             with open(item, "r") as infile:
@@ -133,7 +160,7 @@ def concat_files(files: List[Path], target: Path) -> None:
                     fh.write(line)
 
 
-def concat_files_to_str(files: List[Path]) -> str:
+def concat_files_to_str(files: t.List[Path]) -> str:
     concat_str = ""
     for item in files:
         with open(item, "r") as infile:
@@ -143,7 +170,7 @@ def concat_files_to_str(files: List[Path]) -> str:
 
 
 def zip_dir(dir_path: Path, zip_path: Path, remove_source_dir: bool = False) -> None:
-    with ZipFile(zip_path, mode="w", compression=ZIP_DEFLATED, compresslevel=2) as zipf:
+    with zipfile.ZipFile(zip_path, mode="w", compression=zipfile.ZIP_DEFLATED, compresslevel=2) as zipf:
         len_dir_path = len(str(dir_path))
         for root, _, files in os.walk(dir_path):
             for file in files:
@@ -154,7 +181,7 @@ def zip_dir(dir_path: Path, zip_path: Path, remove_source_dir: bool = False) -> 
 
 
 def unzip(dir_path: Path, zip_path: Path, remove_source_zip: bool = False) -> None:
-    with ZipFile(zip_path, mode="r") as zipf:
+    with zipfile.ZipFile(zip_path, mode="r") as zipf:
         zipf.extractall(dir_path)
     if remove_source_zip:
         zip_path.unlink()
@@ -164,11 +191,11 @@ def is_zip(path: Path) -> bool:
     return path.name.endswith(".zip")
 
 
-def extract_file_to_tmp_dir(zip_path: Path, inside_zip_path: Path) -> Tuple[Path, Any]:
+def extract_file_to_tmp_dir(zip_path: Path, inside_zip_path: Path) -> t.Tuple[Path, t.Any]:
     str_inside_zip_path = str(inside_zip_path).replace("\\", "/")
     tmp_dir = tempfile.TemporaryDirectory()
     try:
-        with ZipFile(zip_path) as zip_obj:
+        with zipfile.ZipFile(zip_path) as zip_obj:
             zip_obj.extract(str_inside_zip_path, tmp_dir.name)
     except Exception as e:
         logger.warning(
@@ -184,7 +211,7 @@ def extract_file_to_tmp_dir(zip_path: Path, inside_zip_path: Path) -> Tuple[Path
 def read_in_zip(
     zip_path: Path,
     inside_zip_path: Path,
-    read: Callable[[Optional[Path]], None],
+    read: t.Callable[[t.Optional[Path]], None],
 ) -> None:
     tmp_dir = None
     try:
@@ -199,11 +226,11 @@ def read_in_zip(
 
 
 def suppress_exception(
-    callback: Callable[[], T],
-    logger: Callable[[Exception], None],
-) -> Optional[T]:
+    callback: t.Callable[[], T],
+    logger_: t.Callable[[Exception], None],
+) -> t.Optional[T]:
     try:
         return callback()
     except Exception as e:
-        logger(e)
+        logger_(e)
         return None

@@ -2,7 +2,7 @@ import logging
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, Dict, List, Tuple
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Extra
 
 from antarest.core.utils.utils import assert_this
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
@@ -18,7 +18,7 @@ MATCH_SIGNATURE_SEPARATOR = "%"
 logger = logging.getLogger(__name__)
 
 
-class ICommand(ABC, BaseModel):
+class ICommand(ABC, BaseModel, extra=Extra.forbid, arbitrary_types_allowed=True):
     command_name: CommandName
     version: int
     command_context: CommandContext
@@ -161,6 +161,3 @@ class ICommand(ABC, BaseModel):
             self.command_context.matrix_service,
             self.command_context.patch_service,
         )
-
-    class Config:
-        arbitrary_types_allowed = True

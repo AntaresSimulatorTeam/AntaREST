@@ -33,7 +33,7 @@ function InformationView(props: Props) {
       await copyStudy(
         study.id,
         `${study.name} (${t("studies.copySuffix")})`,
-        false
+        false,
       );
     } catch (e) {
       enqueueErrorSnackbar(t("studies.error.copyStudy"), e as AxiosError);
@@ -46,7 +46,7 @@ function InformationView(props: Props) {
     } catch (e) {
       enqueueErrorSnackbar(
         t("studies.error.unarchive", { studyname: study.name }),
-        e as AxiosError
+        e as AxiosError,
       );
     }
   };

@@ -1,13 +1,18 @@
+import logging
 from pathlib import Path
 from typing import Any, Dict
 from zipfile import ZipFile
 
 import pytest
 
-from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
+from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
+    BindingConstraintDTO,
+    BindingConstraintFrequency,
+)
 from antarest.study.storage.rawstudy.model.filesystem.config.files import (
     _parse_links,
     _parse_outputs,
+    _parse_renewables,
     _parse_sets,
     _parse_st_storage,
     _parse_thermal,
@@ -15,14 +20,14 @@ from antarest.study.storage.rawstudy.model.filesystem.config.files import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
-    BindingConstraintDTO,
-    Cluster,
     DistrictSet,
     FileStudyTreeConfig,
     Link,
     Simulation,
 )
+from antarest.study.storage.rawstudy.model.filesystem.config.renewable import RenewableConfig
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import STStorageConfig, STStorageGroup
+from antarest.study.storage.rawstudy.model.filesystem.config.thermal import Thermal860Config, ThermalConfig
 from tests.storage.business.assets import ASSETS_DIR
 
 
@@ -265,28 +270,121 @@ def test_parse_area(tmp_path: Path) -> None:
     assert build(study_path, "id") == config
 
 
+# noinspection SpellCheckingInspection
+THERMAL_LIST_INI = """\
+[t1]
+name = t1
+
+[t2]
+name = UPPER2
+enabled = false
+
+[UPPER3]
+name = UPPER3
+enabled = true
+nominalcapacity = 456.5
+"""
+
+
 def test_parse_thermal(tmp_path: Path) -> None:
     study_path = build_empty_files(tmp_path)
-    (study_path / "input/thermal/clusters/fr").mkdir(parents=True)
-    content = """
-    [t1]
-    name = t1
-    
-    [t2]
-    name = t2
-    enabled = false
+    study_path.joinpath("study.antares").write_text("[antares] \n version = 700")
+    ini_path = study_path.joinpath("input/thermal/clusters/fr/list.ini")
 
-    [t3]
-    name = t3
-    enabled = true
-    """
-    (study_path / "input/thermal/clusters/fr/list.ini").write_text(content)
+    # Error case: `input/thermal/clusters/fr` directory is missing.
+    assert not ini_path.parent.exists()
+    actual = _parse_thermal(study_path, "fr")
+    assert actual == []
 
-    assert _parse_thermal(study_path, "fr") == [
-        Cluster(id="t1", name="t1", enabled=True),
-        Cluster(id="t2", name="t2", enabled=False),
-        Cluster(id="t3", name="t3", enabled=True),
+    # Error case: `list.ini` is missing.
+    ini_path.parent.mkdir(parents=True)
+    actual = _parse_thermal(study_path, "fr")
+    assert actual == []
+
+    # Nominal case: `list.ini` is found.
+    ini_path.write_text(THERMAL_LIST_INI)
+    actual = _parse_thermal(study_path, "fr")
+    expected = [
+        ThermalConfig(id="t1", name="t1", enabled=True),
+        ThermalConfig(id="t2", name="UPPER2", enabled=False),
+        ThermalConfig(id="UPPER3", name="UPPER3", enabled=True, nominal_capacity=456.5),
     ]
+    assert actual == expected
+
+
+# noinspection SpellCheckingInspection
+THERMAL_860_LIST_INI = """\
+[t1]
+name = t1
+
+[t2]
+name = t2
+co2 = 156
+nh3 = 456
+"""
+
+
+@pytest.mark.parametrize("version", [850, 860, 870])
+def test_parse_thermal_860(tmp_path: Path, version, caplog) -> None:
+    study_path = build_empty_files(tmp_path)
+    study_path.joinpath("study.antares").write_text(f"[antares] \n version = {version}")
+    ini_path = study_path.joinpath("input/thermal/clusters/fr/list.ini")
+    ini_path.parent.mkdir(parents=True)
+    ini_path.write_text(THERMAL_860_LIST_INI)
+    with caplog.at_level(logging.WARNING):
+        actual = _parse_thermal(study_path, "fr")
+    if version >= 860:
+        expected = [
+            Thermal860Config(id="t1", name="t1"),
+            Thermal860Config(id="t2", name="t2", co2=156, nh3=456),
+        ]
+        assert not caplog.text
+    else:
+        expected = [ThermalConfig(id="t1", name="t1")]
+        assert "extra fields not permitted" in caplog.text
+    assert actual == expected
+
+
+# noinspection SpellCheckingInspection
+REWABLES_LIST_INI = """\
+[t1]
+name = t1
+
+[t2]
+name = UPPER2
+enabled = false
+
+[UPPER3]
+name = UPPER3
+enabled = true
+nominalcapacity = 456.5
+"""
+
+
+def test_parse_renewables(tmp_path: Path) -> None:
+    study_path = build_empty_files(tmp_path)
+    study_path.joinpath("study.antares").write_text("[antares] \n version = 700")
+    ini_path = study_path.joinpath("input/renewables/clusters/fr/list.ini")
+
+    # Error case: `input/renewables/clusters/fr` directory is missing.
+    assert not ini_path.parent.exists()
+    actual = _parse_renewables(study_path, "fr")
+    assert actual == []
+
+    # Error case: `list.ini` is missing.
+    ini_path.parent.mkdir(parents=True)
+    actual = _parse_renewables(study_path, "fr")
+    assert actual == []
+
+    # Nominal case: `list.ini` is found.
+    ini_path.write_text(REWABLES_LIST_INI)
+    actual = _parse_renewables(study_path, "fr")
+    expected = [
+        RenewableConfig(id="t1", name="t1", enabled=True),
+        RenewableConfig(id="t2", name="UPPER2", enabled=False),
+        RenewableConfig(id="UPPER3", name="UPPER3", enabled=True, nominal_capacity=456.5),
+    ]
+    assert actual == expected
 
 
 # noinspection SpellCheckingInspection
@@ -308,7 +406,7 @@ injectionnominalcapacity = 1500.0
 withdrawalnominalcapacity = 1800.0
 reservoircapacity = 20000.0
 efficiency = 0.78
-initiallevel = 10000.0
+initiallevel = 0.91
 initialleveloptim = False
 """
 
@@ -340,7 +438,7 @@ def test_parse_st_storage(tmp_path: Path) -> None:
             withdrawal_nominal_capacity=1800.0,
             reservoir_capacity=20000.0,
             efficiency=0.78,
-            initial_level=10000.0,
+            initial_level=0.91,
             initial_level_optim=False,
         ),
     ]

@@ -66,7 +66,7 @@ function UserForm(props: Props) {
   const allowToAddPermission =
     selectedGroup &&
     !getValues("permissions").some(
-      ({ group }: { group: GroupDTO }) => group.id === selectedGroup.id
+      ({ group }: { group: GroupDTO }) => group.id === selectedGroup.id,
     );
 
   const filteredAndSortedGroups = useMemo(() => {
@@ -74,7 +74,7 @@ function UserForm(props: Props) {
       return [];
     }
     return sortByName(
-      groups.filter((group) => !RESERVED_GROUP_NAMES.includes(group.name))
+      groups.filter((group) => !RESERVED_GROUP_NAMES.includes(group.name)),
     );
   }, [groups]);
 
@@ -122,7 +122,7 @@ function UserForm(props: Props) {
               required: t("form.field.required") as string,
               minLength: {
                 value: PASSWORD_MIN_LENGTH,
-                message: t("form.field.minLength", [PASSWORD_MIN_LENGTH]),
+                message: t("form.field.minLength", { 0: PASSWORD_MIN_LENGTH }),
               },
             })}
           />

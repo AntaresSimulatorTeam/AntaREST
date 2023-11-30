@@ -1,125 +1,68 @@
-import { FieldValues } from "react-hook-form";
 import {
   Area,
   Cluster,
   StudyMetadata,
 } from "../../../../../../../common/types";
 import client from "../../../../../../../services/api/client";
-import { getStudyData } from "../../../../../../../services/api/study";
-
-export interface ThermalType extends FieldValues {
-  name: string;
-  group: string;
-  enabled?: boolean;
-  unitcount?: number;
-  nominalcapacity?: number;
-  "gen-ts"?: string;
-  "min-stable-power"?: number;
-  "min-up-time"?: number;
-  "min-down-time"?: number;
-  "must-run"?: boolean;
-  spinning?: number;
-  co2?: number;
-  "volatility.forced"?: number;
-  "volatility.planned"?: number;
-  "law.forced"?: string;
-  "law.planned"?: string;
-  "marginal-cost"?: number;
-  "spread-cost"?: number;
-  "fixed-cost"?: number;
-  "startup-cost"?: number;
-  "market-bid-cost"?: number;
-}
-
-export const noDataValues: Partial<ThermalType> = {
-  name: "",
-  group: "",
-  enabled: true,
-  unitcount: 0,
-  nominalcapacity: 0,
-  "gen-ts": "use global parameter",
-  "min-stable-power": 0,
-  "min-up-time": 1,
-  "min-down-time": 1,
-  "must-run": false,
-  spinning: 0,
-  co2: 0,
-  "volatility.forced": 0,
-  "volatility.planned": 0,
-  "law.forced": "uniform",
-  "law.planned": "uniform",
-  "marginal-cost": 0,
-  "spread-cost": 0,
-  "fixed-cost": 0,
-  "startup-cost": 0,
-  "market-bid-cost": 0,
-};
-
-export async function getDefaultValues(
-  studyId: string,
-  area: string,
-  cluster: Cluster["id"]
-): Promise<ThermalType> {
-  const pathPrefix = `input/thermal/clusters/${area}/list/${cluster}`;
-  const data: ThermalType = await getStudyData(studyId, pathPrefix, 3);
-  Object.keys(noDataValues).forEach((item) => {
-    data[item] = data[item] !== undefined ? data[item] : noDataValues[item];
-  });
-  return data;
-}
 
 ////////////////////////////////////////////////////////////////
-// Enums
+// Constants
 ////////////////////////////////////////////////////////////////
 
-enum ClusterGroup {
-  Gas = "Gas",
-  HardCoal = "Hard Coal",
-  Lignite = "Lignite",
-  MixedFuel = "Mixed fuel",
-  Nuclear = "Nuclear",
-  Oil = "Oil",
-  Other = "Other",
-  Other2 = "Other 2",
-  Other3 = "Other 3",
-  Other4 = "Other 4",
-}
+export const THERMAL_GROUPS = [
+  "Gas",
+  "Hard Coal",
+  "Lignite",
+  "Mixed fuel",
+  "Nuclear",
+  "Oil",
+  "Other",
+  "Other 2",
+  "Other 3",
+  "Other 4",
+] as const;
 
-enum TimeSeriesGenerationOption {
-  UseGlobal = "use global parameter",
-  ForceNoGeneration = "force no generation",
-  ForceGeneration = "force generation",
-}
+export const THERMAL_POLLUTANTS = [
+  // For study versions >= 860
+  "co2",
+  "so2",
+  "nh3",
+  "nox",
+  "nmvoc",
+  "pm25",
+  "pm5",
+  "pm10",
+  "op1",
+  "op2",
+  "op3",
+  "op4",
+  "op5",
+] as const;
 
-enum LawOption {
-  Geometric = "geometric",
-  Uniform = "uniform",
-}
+export const TS_GENERATION_OPTIONS = [
+  "use global parameter",
+  "force no generation",
+  "force generation",
+] as const;
+
+export const TS_LAW_OPTIONS = ["geometric", "uniform"] as const;
 
 ////////////////////////////////////////////////////////////////
 // Types
 ////////////////////////////////////////////////////////////////
 
-interface PollutantFields {
-  co2: number;
-  // For study versions >= 860
-  so2: number;
-  nh3: number;
-  nox: number;
-  nmvoc: number;
-  pm25: number;
-  pm5: number;
-  pm10: number;
-  op1: number;
-  op2: number;
-  op3: number;
-  op4: number;
-  op5: number;
-}
+type ThermalGroup = (typeof THERMAL_GROUPS)[number];
+type TimeSeriesGenerationOption = (typeof TS_GENERATION_OPTIONS)[number];
+type TimeSeriesLawOption = (typeof TS_LAW_OPTIONS)[number];
 
-export interface ThermalFormFields extends PollutantFields {
+type ThermalPollutants = {
+  [K in (typeof THERMAL_POLLUTANTS)[number]]: number;
+};
+
+export interface ThermalCluster extends ThermalPollutants {
+  id: string;
   name: string;
-  group: string;
+  group: ThermalGroup;
   enabled: boolean;
   unitCount: number;
   nominalCapacity: number;
@@ -136,59 +79,88 @@ export interface ThermalFormFields extends PollutantFields {
   genTs: TimeSeriesGenerationOption;
   volatilityForced: number;
   volatilityPlanned: number;
-  lawForced: LawOption;
-  lawPlanned: LawOption;
+  lawForced: TimeSeriesLawOption;
+  lawPlanned: TimeSeriesLawOption;
 }
 
-////////////////////////////////////////////////////////////////
-// Constants
-////////////////////////////////////////////////////////////////
-
-export const CLUSTER_GROUP_OPTIONS = Object.values(ClusterGroup);
-export const TS_GENERATION_OPTIONS = Object.values(TimeSeriesGenerationOption);
-export const TS_LAW_OPTIONS = Object.values(LawOption);
-export const POLLUTANT_NAMES: Array<keyof PollutantFields> = [
-  "co2",
-  "so2",
-  "nh3",
-  "nox",
-  "nmvoc",
-  "pm25",
-  "pm5",
-  "pm10",
-  "op1",
-  "op2",
-  "op3",
-  "op4",
-  "op5",
-];
+export interface ThermalClusterWithCapacity extends ThermalCluster {
+  enabledCapacity: number;
+  installedCapacity: number;
+}
 
 ////////////////////////////////////////////////////////////////
 // Functions
 ////////////////////////////////////////////////////////////////
 
-function makeRequestURL(
+const getClustersUrl = (
   studyId: StudyMetadata["id"],
   areaId: Area["name"],
-  clusterId: Cluster["id"]
-): string {
-  return `/v1/studies/${studyId}/areas/${areaId}/clusters/thermal/${clusterId}/form`;
-}
+): string => `/v1/studies/${studyId}/areas/${areaId}/clusters/thermal`;
 
-export async function getThermalFormFields(
-  studyId: StudyMetadata["id"],
-  areaId: Area["name"],
-  clusterId: Cluster["id"]
-): Promise<ThermalFormFields> {
-  const res = await client.get(makeRequestURL(studyId, areaId, clusterId));
-  return res.data;
-}
-
-export function setThermalFormFields(
+const getClusterUrl = (
   studyId: StudyMetadata["id"],
   areaId: Area["name"],
   clusterId: Cluster["id"],
-  values: Partial<ThermalFormFields>
+): string => `${getClustersUrl(studyId, areaId)}/${clusterId}`;
+
+async function makeRequest<T>(
+  method: "get" | "post" | "patch" | "delete",
+  url: string,
+  data?: Partial<ThermalCluster> | { data: Array<Cluster["id"]> },
+): Promise<T> {
+  const res = await client[method]<T>(url, data);
+  return res.data;
+}
+
+export async function getThermalClusters(
+  studyId: StudyMetadata["id"],
+  areaId: Area["name"],
+): Promise<ThermalCluster[]> {
+  return makeRequest<ThermalCluster[]>("get", getClustersUrl(studyId, areaId));
+}
+
+export async function getThermalCluster(
+  studyId: StudyMetadata["id"],
+  areaId: Area["name"],
+  clusterId: Cluster["id"],
+): Promise<ThermalCluster> {
+  return makeRequest<ThermalCluster>(
+    "get",
+    getClusterUrl(studyId, areaId, clusterId),
+  );
+}
+
+export async function updateThermalCluster(
+  studyId: StudyMetadata["id"],
+  areaId: Area["name"],
+  clusterId: Cluster["id"],
+  data: Partial<ThermalCluster>,
+): Promise<ThermalCluster> {
+  return makeRequest<ThermalCluster>(
+    "patch",
+    getClusterUrl(studyId, areaId, clusterId),
+    data,
+  );
+}
+
+export async function createThermalCluster(
+  studyId: StudyMetadata["id"],
+  areaId: Area["name"],
+  data: Partial<ThermalCluster>,
+): Promise<ThermalClusterWithCapacity> {
+  return makeRequest<ThermalClusterWithCapacity>(
+    "post",
+    getClustersUrl(studyId, areaId),
+    data,
+  );
+}
+
+export function deleteThermalClusters(
+  studyId: StudyMetadata["id"],
+  areaId: Area["name"],
+  clusterIds: Array<Cluster["id"]>,
 ): Promise<void> {
-  return client.put(makeRequestURL(studyId, areaId, clusterId), values);
+  return makeRequest<void>("delete", getClustersUrl(studyId, areaId), {
+    data: clusterIds,
+  });
 }

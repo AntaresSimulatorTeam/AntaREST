@@ -20,7 +20,7 @@ function BindingConstView(props: Props) {
   const { bindingConst } = props;
   const defaultValuesRes = usePromise(
     () => getDefaultValues(study.id, bindingConst),
-    [study.id, bindingConst]
+    [study.id, bindingConst],
   );
   const optionsRes = useStudySynthesis({
     studyId: study.id,

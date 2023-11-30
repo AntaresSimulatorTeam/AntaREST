@@ -10,11 +10,21 @@ from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
 class UpdateRawFile(ICommand):
+    """
+    Command used to update a raw file.
+    """
+
+    # Overloaded metadata
+    # ===================
+
+    command_name = CommandName.UPDATE_FILE
+    version = 1
+
+    # Command parameters
+    # ==================
+
     target: str
     b64Data: str
-
-    def __init__(self, **data: Any) -> None:
-        super().__init__(command_name=CommandName.UPDATE_FILE, version=1, **data)
 
     def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         return CommandOutput(status=True, message="ok"), {}

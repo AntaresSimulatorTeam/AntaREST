@@ -5,54 +5,57 @@ import DocLink from "../../../../../../common/DocLink";
 import TabWrapper from "../../../TabWrapper";
 import { ACTIVE_WINDOWS_DOC_PATH } from "../../BindingConstraints/BindingConstView/utils";
 import { Root } from "./style";
+import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
+import { getCurrentAreaId } from "../../../../../../../redux/selectors";
 
 function Hydro() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
+  const areaId = useAppSelector(getCurrentAreaId);
 
   const tabList = useMemo(
     () => [
       {
         label: "Management options",
-        path: `/studies/${study?.id}/explore/modelization/area/hydro/management`,
+        path: `/studies/${study?.id}/explore/modelization/area/${areaId}/hydro/management`,
       },
       {
         label: "Inflow structure",
-        path: `/studies/${study?.id}/explore/modelization/area/hydro/inflowstructure`,
+        path: `/studies/${study?.id}/explore/modelization/area/${areaId}/hydro/inflowstructure`,
       },
       {
         label: "Allocation",
-        path: `/studies/${study?.id}/explore/modelization/area/hydro/allocation`,
+        path: `/studies/${study?.id}/explore/modelization/area/${areaId}/hydro/allocation`,
       },
       {
         label: "Correlation",
-        path: `/studies/${study?.id}/explore/modelization/area/hydro/correlation`,
+        path: `/studies/${study?.id}/explore/modelization/area/${areaId}/hydro/correlation`,
       },
       {
         label: "Daily Power",
-        path: `/studies/${study?.id}/explore/modelization/area/hydro/dailypower`,
+        path: `/studies/${study?.id}/explore/modelization/area/${areaId}/hydro/dailypower`,
       },
       {
         label: "Energy Credits",
-        path: `/studies/${study?.id}/explore/modelization/area/hydro/energycredits`,
+        path: `/studies/${study?.id}/explore/modelization/area/${areaId}/hydro/energycredits`,
       },
       {
         label: "Reservoir levels",
-        path: `/studies/${study?.id}/explore/modelization/area/hydro/reservoirlevels`,
+        path: `/studies/${study?.id}/explore/modelization/area/${areaId}/hydro/reservoirlevels`,
       },
       {
         label: "Water values",
-        path: `/studies/${study?.id}/explore/modelization/area/hydro/watervalues`,
+        path: `/studies/${study?.id}/explore/modelization/area/${areaId}/hydro/watervalues`,
       },
       {
         label: "Hydro Storage",
-        path: `/studies/${study?.id}/explore/modelization/area/hydro/hydrostorage`,
+        path: `/studies/${study?.id}/explore/modelization/area/${areaId}/hydro/hydrostorage`,
       },
       {
         label: "Run of river",
-        path: `/studies/${study?.id}/explore/modelization/area/hydro/ror`,
+        path: `/studies/${study?.id}/explore/modelization/area/${areaId}/hydro/ror`,
       },
     ],
-    [study]
+    [areaId, study?.id],
   );
 
   ////////////////////////////////////////////////////////////////

@@ -24,7 +24,7 @@ def upgrade_820(study_path: Path) -> None:
             folder_path = Path(folder)
             all_txt = glob.glob(str(folder_path / "*.txt"))
             if len(all_txt) > 0:
-                (folder_path / "capacities").mkdir()
+                (folder_path / "capacities").mkdir(exist_ok=True)
                 for txt in all_txt:
                     df = pandas.read_csv(txt, sep="\t", header=None)
                     df_parameters = df.iloc[:, 2:8]

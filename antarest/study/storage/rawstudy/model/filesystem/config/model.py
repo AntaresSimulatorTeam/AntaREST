@@ -10,22 +10,14 @@ from antarest.core.model import JSON
 from antarest.core.utils.utils import DTO
 
 from .binding_constraint import BindingConstraintDTO
-from .st_storage import STStorageConfig
+from .renewable import RenewableConfigType
+from .st_storage import STStorageConfigType
+from .thermal import ThermalConfigType
 
 
 class ENR_MODELLING(Enum):
     AGGREGATED = "aggregated"
     CLUSTERS = "clusters"
-
-
-class Cluster(BaseModel):
-    """
-    Object linked to /input/thermal/clusters/<area>/list.ini
-    """
-
-    id: str
-    name: str
-    enabled: bool = True
 
 
 class Link(BaseModel):
@@ -58,12 +50,12 @@ class Area(BaseModel):
 
     name: str
     links: Dict[str, Link]
-    thermals: List[Cluster]
-    renewables: List[Cluster]
+    thermals: List[ThermalConfigType]
+    renewables: List[RenewableConfigType]
     filters_synthesis: List[str]
     filters_year: List[str]
     # since v8.6
-    st_storages: List[STStorageConfig] = []
+    st_storages: List[STStorageConfigType] = []
 
 
 class DistrictSet(BaseModel):
@@ -87,7 +79,7 @@ class DistrictSet(BaseModel):
 
 class Simulation(BaseModel):
     """
-    Object linked to /output/<simulation_name>/about-the-study/** informations
+    Object linked to /output/<simulation_name>/about-the-study/** information
     """
 
     name: str
@@ -193,29 +185,22 @@ class FileStudyTreeConfig(DTO):
             [k for k, v in self.sets.items() if v.output or not only_output],
         )
 
-    def get_thermal_names(self, area: str, only_enabled: bool = False) -> List[str]:
-        return self.cache.get(
-            f"%thermal%{area}%{only_enabled}%{area}",
-            [thermal.id for thermal in self.areas[area].thermals if not only_enabled or thermal.enabled],
-        )
+    def get_thermal_ids(self, area: str) -> List[str]:
+        """
+        Returns a list of thermal cluster IDs for a given area.
+        Note that IDs may not be in lower case (but series IDs are).
+        """
+        return self.cache.get(f"%thermal%{area}%{area}", [th.id for th in self.areas[area].thermals])
+
+    def get_renewable_ids(self, area: str) -> List[str]:
+        """
+        Returns a list of renewable cluster IDs for a given area.
+        Note that IDs may not be in lower case (but series IDs are).
+        """
+        return self.cache.get(f"%renewable%{area}", [r.id for r in self.areas[area].renewables])
 
     def get_st_storage_ids(self, area: str) -> List[str]:
         return self.cache.get(f"%st-storage%{area}", [s.id for s in self.areas[area].st_storages])
-
-    def get_renewable_names(
-        self,
-        area: str,
-        only_enabled: bool = False,
-        section_name: bool = True,
-    ) -> List[str]:
-        return self.cache.get(
-            f"%renewable%{area}%{only_enabled}%{section_name}",
-            [
-                renewable.id if section_name else renewable.name
-                for renewable in self.areas[area].renewables
-                if not only_enabled or renewable.enabled
-            ],
-        )
 
     def get_links(self, area: str) -> List[str]:
         return self.cache.get(f"%links%{area}", list(self.areas[area].links.keys()))

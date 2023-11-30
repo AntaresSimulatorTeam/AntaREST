@@ -40,7 +40,7 @@ function ColorPickerFE(props: ColorPickerFEProps) {
 
   const handleChange = ({ hex, rgb }: ColorResult) => {
     setCurrentColor(
-      ["transparent", "#0000"].includes(hex) ? "" : rgbToString(rgb)
+      ["transparent", "#0000"].includes(hex) ? "" : rgbToString(rgb),
     );
   };
 
@@ -65,7 +65,7 @@ function ColorPickerFE(props: ColorPickerFEProps) {
           alignItems: "center",
           position: "relative",
         },
-        sx
+        sx,
       )}
     >
       <TextField

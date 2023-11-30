@@ -34,12 +34,14 @@ def validate_matrix(matrix: Union[List[List[MatrixData]], str], values: Dict[str
     if isinstance(matrix, list):
         return MATRIX_PROTOCOL_PREFIX + matrix_service.create(data=matrix)
     elif isinstance(matrix, str):
-        if matrix_service.exists(matrix):
+        if not matrix:
+            raise ValueError("The matrix ID cannot be empty")
+        elif matrix_service.exists(matrix):
             return MATRIX_PROTOCOL_PREFIX + matrix
         else:
-            raise ValueError(f"Matrix with id {matrix} does not exist")
+            raise ValueError(f"Matrix with id '{matrix}' does not exist")
     else:
-        raise TypeError(f"The data {matrix} is neither a matrix nor a link to a matrix")
+        raise TypeError(f"The data '{matrix}' is neither a matrix nor a link to a matrix")
 
 
 def get_or_create_section(json_ini: JSON, section: str) -> JSON:

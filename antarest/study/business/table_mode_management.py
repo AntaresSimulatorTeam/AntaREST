@@ -5,12 +5,12 @@ from pydantic.types import StrictBool, StrictInt, StrictStr
 
 from antarest.study.business.areas.properties_management import AdequacyPatchMode
 from antarest.study.business.areas.renewable_management import TimeSeriesInterpretation
-from antarest.study.business.areas.thermal_management import LawOption, TimeSeriesGenerationOption
 from antarest.study.business.binding_constraint_management import BindingConstraintManager
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.utils import FormFieldsBaseModel, execute_or_add_commands
 from antarest.study.common.default_values import FilteringOptions, LinkProperties, NodalOptimization
 from antarest.study.model import RawStudy
+from antarest.study.storage.rawstudy.model.filesystem.config.thermal import LawOption, TimeSeriesGenerationOption
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
@@ -399,16 +399,15 @@ def _get_glob_object(file_study: FileStudy, table_type: TableTemplateType) -> Di
                 if area_id in info_map:
                     info_map[area_id][field] = value
         return info_map
-    if table_type == TableTemplateType.LINK:
-        return file_study.tree.get(LINK_GLOB_PATH.format(area1="*").split("/"))
-    if table_type == TableTemplateType.CLUSTER:
-        return file_study.tree.get(CLUSTER_GLOB_PATH.format(area="*").split("/"))
-    if table_type == TableTemplateType.RENEWABLE:
-        return file_study.tree.get(RENEWABLE_GLOB_PATH.format(area="*").split("/"))
-    if table_type == TableTemplateType.BINDING_CONSTRAINT:
-        return file_study.tree.get(BINDING_CONSTRAINT_PATH.split("/"))
 
-    return {}
+    url = {
+        TableTemplateType.LINK: LINK_GLOB_PATH.format(area1="*").split("/"),
+        TableTemplateType.CLUSTER: CLUSTER_GLOB_PATH.format(area="*").split("/"),
+        TableTemplateType.RENEWABLE: RENEWABLE_GLOB_PATH.format(area="*").split("/"),
+        TableTemplateType.BINDING_CONSTRAINT: BINDING_CONSTRAINT_PATH.split("/"),
+    }[table_type]
+
+    return file_study.tree.get(url)
 
 
 class TableModeManager:
@@ -468,6 +467,7 @@ class TableModeManager:
     ) -> None:
         commands: List[ICommand] = []
         bindings_by_id = None
+        command_context = self.storage_service.variant_study_service.command_factory.command_context
 
         for key, columns in data.items():
             path_vars = TableModeManager.__get_path_vars_from_key(table_type, key)
@@ -491,7 +491,7 @@ class TableModeManager:
                             time_step=col_values.get("type", current_binding_dto.time_step),
                             operator=col_values.get("operator", current_binding_dto.operator),
                             coeffs=BindingConstraintManager.constraints_to_coeffs(current_binding_dto),
-                            command_context=self.storage_service.variant_study_service.command_factory.command_context,
+                            command_context=command_context,
                         )
                     )
             else:
@@ -501,7 +501,7 @@ class TableModeManager:
                             UpdateConfig(
                                 target=TableModeManager.__get_column_path(table_type, path_vars, col),
                                 data=val,
-                                command_context=self.storage_service.variant_study_service.command_factory.command_context,
+                                command_context=command_context,
                             )
                         )
 

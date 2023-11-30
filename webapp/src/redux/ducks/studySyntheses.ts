@@ -84,7 +84,7 @@ export const deleteStudyLink = createAction<{
 
 const initDefaultAreaLinkSelection = (
   dispatch: AppDispatch,
-  studyData?: FileStudyTreeConfigDTO
+  studyData?: FileStudyTreeConfigDTO,
 ): void => {
   if (studyData) {
     // Set current area
@@ -120,15 +120,14 @@ export const createStudySynthesis = createAsyncThunk<
   async (studyId, { dispatch, rejectWithValue }) => {
     try {
       // Fetch study synthesis data
-      const studyData: FileStudyTreeConfigDTO = await api.getStudySynthesis(
-        studyId
-      );
+      const studyData: FileStudyTreeConfigDTO =
+        await api.getStudySynthesis(studyId);
       initDefaultAreaLinkSelection(dispatch, studyData);
       return studyData;
     } catch (err) {
       return rejectWithValue(err);
     }
-  }
+  },
 );
 
 export const setStudySynthesis = createAsyncThunk<

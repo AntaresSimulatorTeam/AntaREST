@@ -33,7 +33,7 @@ localStorageMiddleware.startListening({
         updateStudiesFromLocalStorage({
           favorites: storage.getItem(StorageKey.StudiesFavorites),
           sort: storage.getItem(StorageKey.StudiesSort),
-        })
+        }),
       );
 
       const menuCollapsed = storage.getItem(StorageKey.UIMenuCollapsed);

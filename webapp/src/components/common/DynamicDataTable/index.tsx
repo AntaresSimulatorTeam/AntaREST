@@ -41,16 +41,19 @@ function DynamicDataTable({
   const { t } = useTranslation();
 
   const itemsByGroup = useMemo(() => {
-    return items.reduce((acc, item) => {
-      if (item.group) {
-        if (acc[item.group]) {
-          acc[item.group].items.push(item);
-        } else {
-          acc[item.group] = { group: item.group, items: [item] };
+    return items.reduce(
+      (acc, item) => {
+        if (item.group) {
+          if (acc[item.group]) {
+            acc[item.group].items.push(item);
+          } else {
+            acc[item.group] = { group: item.group, items: [item] };
+          }
         }
-      }
-      return acc;
-    }, {} as { [key: string]: { group: string; items: Item[] } });
+        return acc;
+      },
+      {} as { [key: string]: { group: string; items: Item[] } },
+    );
   }, [items]);
 
   ////////////////////////////////////////////////////////////////
@@ -61,7 +64,7 @@ function DynamicDataTable({
     (e: ChangeEvent<HTMLInputElement>) => {
       setSelected(e.target.checked ? items.map((item) => item.id) : []);
     },
-    [items]
+    [items],
   );
 
   const handleSelect = useCallback(
@@ -73,7 +76,7 @@ function DynamicDataTable({
         return [...prevSelected, name];
       });
     },
-    []
+    [],
   );
 
   const handleDelete = () => {
@@ -106,8 +109,8 @@ function DynamicDataTable({
             columns={columns}
             selected={selected}
             onClick={handleSelect}
-          />
-        )
+          />,
+        ),
       );
 
     return rowsArr;

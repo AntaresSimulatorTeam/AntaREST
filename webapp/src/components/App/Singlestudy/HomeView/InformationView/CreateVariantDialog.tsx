@@ -40,7 +40,7 @@ function CreateVariantDialog(props: Props) {
 
   const handleSubmitSuccessful = async (
     data: SubmitHandlerPlus<typeof defaultValues>,
-    variantId: string
+    variantId: string,
   ) => {
     onClose();
     navigate(`/studies/${variantId}`);

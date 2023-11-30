@@ -5,16 +5,13 @@ import pytest
 from pydantic import ValidationError
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import STStorageConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.study_upgrader import upgrade_study
 from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol
 from antarest.study.storage.variantstudy.model.command.common import CommandName
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
-from antarest.study.storage.variantstudy.model.command.create_st_storage import (
-    REQUIRED_VERSION,
-    CreateSTStorage,
-    STStorageConfig,
-)
+from antarest.study.storage.variantstudy.model.command.create_st_storage import REQUIRED_VERSION, CreateSTStorage
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
@@ -106,7 +103,7 @@ class TestCreateSTStorage:
         assert ctx.value.errors() == [
             {
                 "loc": ("__root__",),
-                "msg": "Invalid short term storage name '?%$$'.",
+                "msg": "Invalid name '?%$$'.",
                 "type": "value_error",
             }
         ]
@@ -366,8 +363,8 @@ class TestCreateSTStorage:
         actual = cmd.to_dto()
 
         expected_parameters = PARAMETERS.copy()
-        # `initiallevel` = 0 because `initialleveloptim` is True
-        expected_parameters["initiallevel"] = 0
+        # `initiallevel` = 0.5 (the default value) because `initialleveloptim` is True
+        expected_parameters["initiallevel"] = 0.5
         constants = command_context.generator_matrix_constants
 
         assert actual == CommandDTO(

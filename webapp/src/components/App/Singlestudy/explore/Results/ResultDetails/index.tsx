@@ -73,19 +73,19 @@ function ResultDetails() {
   const items = useAppSelector((state) =>
     itemType === OutputItemType.Areas
       ? getAreas(state, study.id)
-      : getLinks(state, study.id)
+      : getLinks(state, study.id),
   ) as Array<{ id: string; name: string; label?: string }>;
 
   const filteredItems = useMemo(() => {
     return isSynthesis
       ? SYNTHESIS_ITEMS
       : items.filter((item) =>
-          isSearchMatching(searchValue, item.label || item.name)
+          isSearchMatching(searchValue, item.label || item.name),
         );
   }, [isSynthesis, items, searchValue]);
 
   const selectedItem = filteredItems.find(
-    (item) => item.id === selectedItemId
+    (item) => item.id === selectedItemId,
   ) as (Area & { id: string }) | LinkElement | undefined;
 
   const maxYear = output?.nbyears ?? MAX_YEAR;
@@ -101,7 +101,7 @@ function ResultDetails() {
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [filteredItems]
+    [filteredItems],
   );
 
   const matrixRes = usePromise<MatrixType | null>(
@@ -131,7 +131,7 @@ function ResultDetails() {
       resetDataOnReload: true,
       resetErrorOnReload: true,
       deps: [study.id, output, selectedItem, dataType, timestep, year],
-    }
+    },
   );
 
   const { data: synthesis } = usePromise<string>(
@@ -145,7 +145,7 @@ function ResultDetails() {
     },
     {
       deps: [study.id, outputId, selectedItem],
-    }
+    },
   );
 
   ////////////////////////////////////////////////////////////////
@@ -154,7 +154,7 @@ function ResultDetails() {
 
   const handleItemTypeChange: ToggleButtonGroupProps["onChange"] = (
     _,
-    value: OutputItemType
+    value: OutputItemType,
   ) => {
     setItemType(value);
   };

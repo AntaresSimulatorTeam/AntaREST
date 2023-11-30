@@ -9,14 +9,24 @@ from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
 class UpdateDistrict(ICommand):
+    """
+    Command used to update a district in a study.
+    """
+
+    # Overloaded metadata
+    # ===================
+
+    command_name = CommandName.UPDATE_DISTRICT
+    version = 1
+
+    # Command parameters
+    # ==================
+
     id: str
     base_filter: Optional[DistrictBaseFilter]
     filter_items: Optional[List[str]]
     output: Optional[bool]
     comments: Optional[str]
-
-    def __init__(self, **data: Any) -> None:
-        super().__init__(command_name=CommandName.UPDATE_DISTRICT, version=1, **data)
 
     def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         base_set = study_data.sets[self.id]

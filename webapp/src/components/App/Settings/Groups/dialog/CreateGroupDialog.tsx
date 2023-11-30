@@ -46,11 +46,17 @@ function CreateGroupDialog(props: Props) {
 
     try {
       newGroup = await mounted(createGroup(name));
-      enqueueSnackbar(t("settings.success.groupCreation", [newGroup.name]), {
-        variant: "success",
-      });
+      enqueueSnackbar(
+        t("settings.success.groupCreation", { 0: newGroup.name }),
+        {
+          variant: "success",
+        },
+      );
     } catch (e) {
-      enqueueErrorSnackbar(t("settings.error.groupSave", [name]), e as Error);
+      enqueueErrorSnackbar(
+        t("settings.error.groupSave", { 0: name }),
+        e as Error,
+      );
       throw e;
     }
 
@@ -64,7 +70,7 @@ function CreateGroupDialog(props: Props) {
               group_id: newGroup.id,
               type: perm.type,
               identity_id: perm.user.id,
-            })
+            }),
         );
 
         const res: RoleDetailsDTO[] = await mounted(Promise.all(promises));
@@ -82,8 +88,8 @@ function CreateGroupDialog(props: Props) {
       reloadFetchGroups();
 
       enqueueErrorSnackbar(
-        t("settings.error.userRolesSave", [newGroup.name]),
-        e as Error
+        t("settings.error.userRolesSave", { 0: newGroup.name }),
+        e as Error,
       );
     }
 

@@ -55,7 +55,7 @@ interface OutputDetail {
 
 const combineJobsAndOutputs = (
   jobs: LaunchJob[],
-  outputs: StudyOutput[]
+  outputs: StudyOutput[],
 ): OutputDetail[] => {
   const runningJobs: OutputDetail[] = jobs
     .filter((job) => !job.completionDate)
@@ -79,7 +79,7 @@ const combineJobsAndOutputs = (
       outputDetail.job = relatedJob;
     } else {
       const dateComponents = output.name.match(
-        "(\\d{4})(\\d{2})(\\d{2})-(\\d{2})(\\d{2}).*"
+        "(\\d{4})(\\d{2})(\\d{2})-(\\d{2})(\\d{2}).*",
       );
       if (dateComponents) {
         outputDetail.completionDate = `${dateComponents[1]}-${dateComponents[2]}-${dateComponents[3]} ${dateComponents[4]}:${dateComponents[5]}`;
@@ -160,7 +160,7 @@ function Results() {
               handler().catch((e) => {
                 enqueueErrorSnackbar(
                   t(errorMessage, { outputname: output.name }),
-                  e as AxiosError
+                  e as AxiosError,
                 );
               });
             }}

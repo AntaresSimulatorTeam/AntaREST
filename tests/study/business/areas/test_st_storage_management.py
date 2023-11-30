@@ -17,7 +17,7 @@ from antarest.core.exceptions import (
 )
 from antarest.core.model import PublicMode
 from antarest.login.model import Group, User
-from antarest.study.business.st_storage_manager import STStorageManager
+from antarest.study.business.areas.st_storage_management import STStorageManager
 from antarest.study.model import RawStudy, Study, StudyContentStatus
 from antarest.study.storage.rawstudy.io.reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import STStorageGroup
@@ -47,7 +47,7 @@ injectionnominalcapacity = 2000
 withdrawalnominalcapacity = 1500
 reservoircapacity = 20000
 efficiency = 0.78
-initiallevel = 10000
+initiallevel = 0.5
 
 [storage3]
 name = Storage3
@@ -56,7 +56,7 @@ injectionnominalcapacity = 1500
 withdrawalnominalcapacity = 1500
 reservoircapacity = 21000
 efficiency = 0.72
-initiallevel = 20000
+initiallevel = 1
 """
 
 LIST_CFG = IniReader().read(io.StringIO(LIST_INI))
@@ -137,7 +137,7 @@ class TestSTStorageManager:
                 "efficiency": 0.94,
                 "group": STStorageGroup.BATTERY,
                 "id": "storage1",
-                "initialLevel": 0.0,
+                "initialLevel": 0.5,
                 "initialLevelOptim": True,
                 "injectionNominalCapacity": 1500.0,
                 "name": "Storage1",
@@ -148,7 +148,7 @@ class TestSTStorageManager:
                 "efficiency": 0.78,
                 "group": STStorageGroup.PSP_CLOSED,
                 "id": "storage2",
-                "initialLevel": 10000.0,
+                "initialLevel": 0.5,
                 "initialLevelOptim": False,
                 "injectionNominalCapacity": 2000.0,
                 "name": "Storage2",
@@ -159,7 +159,7 @@ class TestSTStorageManager:
                 "efficiency": 0.72,
                 "group": STStorageGroup.PSP_CLOSED,
                 "id": "storage3",
-                "initialLevel": 20000.0,
+                "initialLevel": 1,
                 "initialLevelOptim": False,
                 "injectionNominalCapacity": 1500.0,
                 "name": "Storage3",
@@ -245,7 +245,7 @@ class TestSTStorageManager:
             "efficiency": 0.94,
             "group": STStorageGroup.BATTERY,
             "id": "storage1",
-            "initialLevel": 0.0,
+            "initialLevel": 0.5,
             "initialLevelOptim": True,
             "injectionNominalCapacity": 1500.0,
             "name": "Storage1",

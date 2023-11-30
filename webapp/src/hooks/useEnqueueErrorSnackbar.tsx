@@ -11,7 +11,7 @@ type EnqueueErrorType = ProviderContext["enqueueSnackbar"];
 
 type EnqueueErrorSnackbarType = (
   message: L.Head<Parameters<EnqueueErrorType>>,
-  details: string | Error
+  details: string | Error,
 ) => ReturnType<EnqueueErrorType>;
 
 /**
@@ -31,7 +31,7 @@ function useEnqueueErrorSnackbar(): EnqueueErrorSnackbarType {
         ),
       });
     },
-    [enqueueSnackbar]
+    [enqueueSnackbar],
   );
 }
 

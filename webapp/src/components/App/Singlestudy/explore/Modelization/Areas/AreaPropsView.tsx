@@ -23,7 +23,7 @@ function AreaPropsView(props: PropsType) {
         return areas.filter(
           (s) =>
             !areaNameFilter ||
-            s.name.search(new RegExp(areaNameFilter, "i")) !== -1
+            s.name.search(new RegExp(areaNameFilter, "i")) !== -1,
         );
       }
       return [];
@@ -33,7 +33,7 @@ function AreaPropsView(props: PropsType) {
         ...el,
         name: transformNameToId(el.name),
         label: el.name,
-      }))
+      })),
     );
   }, [areas, areaNameFilter]);
 

@@ -131,7 +131,7 @@ const StudyCard = memo((props: Props) => {
     studyApi.unarchiveStudy(id).catch((err) => {
       enqueueErrorSnackbar(
         t("studies.error.unarchive", { studyname: study?.name }),
-        err
+        err,
       );
       logError("Failed to unarchive study", study, err);
     });
@@ -141,7 +141,7 @@ const StudyCard = memo((props: Props) => {
     studyApi.archiveStudy(id).catch((err) => {
       enqueueErrorSnackbar(
         t("studies.error.archive", { studyname: study?.name }),
-        err
+        err,
       );
       logError("Failed to archive study", study, err);
     });

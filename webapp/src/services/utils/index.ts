@@ -19,7 +19,7 @@ const logInfo = debug("antares:utils");
 
 export const convertStudyDtoToMetadata = (
   sid: string,
-  metadata: StudyMetadataDTO
+  metadata: StudyMetadataDTO,
 ): StudyMetadata => ({
   id: sid,
   name: metadata.name,
@@ -42,18 +42,18 @@ export const convertStudyDtoToMetadata = (
 });
 
 export const convertVariantTreeDTO = (
-  variantTree: VariantTreeDTO
+  variantTree: VariantTreeDTO,
 ): VariantTree => ({
   node: convertStudyDtoToMetadata(variantTree.node.id, variantTree.node),
   children: (variantTree.children || []).map((child: VariantTreeDTO) =>
-    convertVariantTreeDTO(child)
+    convertVariantTreeDTO(child),
   ),
 });
 
 export const isUserAdmin = (user?: UserInfo): boolean => {
   if (user) {
     const adminElm = user.groups.find(
-      (elm: JWTGroup) => elm.id === "admin" && elm.role === RoleType.ADMIN
+      (elm: JWTGroup) => elm.id === "admin" && elm.role === RoleType.ADMIN,
     );
     return !!adminElm;
   }
@@ -70,7 +70,7 @@ export const isUserExpired = (user: UserInfo): boolean => {
 export const isGroupAdmin = (user?: UserInfo): boolean => {
   if (user) {
     const adminElm = user.groups.find(
-      (elm: JWTGroup) => elm.role === RoleType.ADMIN
+      (elm: JWTGroup) => elm.role === RoleType.ADMIN,
     );
     return !!adminElm;
   }
@@ -95,7 +95,7 @@ export const roleToString = (role: RoleType): string => {
 export const hasAuthorization = (
   user: UserInfo | undefined,
   study: StudyMetadata,
-  role: RoleType
+  role: RoleType,
 ): boolean => {
   if (user) {
     // User is super admin
@@ -113,8 +113,8 @@ export const hasAuthorization = (
         study.groups.findIndex((studyGroupElm) =>
           user.groups.find(
             (userGroupElm) =>
-              studyGroupElm.id === userGroupElm.id && userGroupElm.role >= role
-          )
+              studyGroupElm.id === userGroupElm.id && userGroupElm.role >= role,
+          ),
         ) >= 0
       );
     }
@@ -135,7 +135,7 @@ export const convertUTCToLocalTime = (date: string): string =>
 export const modificationDate = (date: string): moment.Duration =>
   moment.duration(
     moment(Date.now()).diff(moment(convertUTCToLocalTime(date))),
-    "milliseconds"
+    "milliseconds",
   );
 
 export const exportText = (fileData: string, filename: string): void => {
@@ -193,7 +193,7 @@ export const isStringEmpty = (data: string): boolean =>
 export const buildModificationDate = (
   date: string,
   t: TFunction<"translation", undefined>,
-  language = "en"
+  language = "en",
 ): string => {
   const duration = modificationDate(date);
   return duration
@@ -212,7 +212,7 @@ export const countAllChildrens = (tree: VariantTree): number => {
 
 export const findNodeInTree = (
   studyId: string,
-  tree: VariantTree
+  tree: VariantTree,
 ): VariantTree | undefined => {
   if (studyId === tree.node.id) {
     return tree;
@@ -238,7 +238,7 @@ export const createListFromTree = (tree: VariantTree): Array<GenericInfo> => {
 
 export const sortByProp = <T extends object>(
   getProp: (obj: T) => string,
-  list: T[]
+  list: T[],
 ): T[] => {
   return R.sortBy(R.compose(R.toLower, getProp), list);
 };
@@ -247,7 +247,9 @@ export const sortByName = <T extends { name: string }>(list: T[]): T[] => {
   return sortByProp((v) => v.name, list);
 };
 
-// This should work better
+/**
+ * @deprecated This function is deprecated. Please use nameToId instead.
+ */
 export const transformNameToId = (name: string): string => {
   let duppl = false;
   let id = "";
@@ -284,10 +286,24 @@ export const transformNameToId = (name: string): string => {
   return idTrimmed.toLowerCase();
 };
 
+/**
+ * Converts a name string to a valid ID string.
+ * Replacing any characters that are not alphanumeric or -_,()& with a space,
+ * trimming the resulting string, and converting it to lowercase.
+ * @param name The name string to convert to an ID.
+ * @returns The resulting ID string.
+ */
+export const nameToId = (name: string): string => {
+  return name
+    .replace(/[^a-zA-Z0-9_\-(),& ]+|\s+/g, " ")
+    .trim()
+    .toLowerCase();
+};
+
 export const removeEmptyFields = (
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data: { [key: string]: any },
-  fieldsToCheck: Array<string>
+  fieldsToCheck: Array<string>,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): { [key: string]: any } => {
   const cleanData = { ...data };

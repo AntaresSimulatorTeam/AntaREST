@@ -38,7 +38,7 @@ function UpgradeDialog({ study, onClose, open }: Props) {
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = async (
-    data: SubmitHandlerPlus<typeof defaultValues>
+    data: SubmitHandlerPlus<typeof defaultValues>,
   ) => {
     return upgradeStudy(study.id, data.values.version).then(onClose);
   };

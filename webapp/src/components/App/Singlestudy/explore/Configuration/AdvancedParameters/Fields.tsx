@@ -35,40 +35,40 @@ function Fields(props: Props) {
     <Box>
       <Fieldset
         legend={t(
-          "study.configuration.advancedParameters.seedsForRandomNumbers"
+          "study.configuration.advancedParameters.seedsForRandomNumbers",
         )}
       >
         <NumberFE
           label={t(
-            "study.configuration.advancedParameters.windTimeSeriesGeneration"
+            "study.configuration.advancedParameters.windTimeSeriesGeneration",
           )}
           name="seedTsgenWind"
           control={control}
         />
         <NumberFE
           label={t(
-            "study.configuration.advancedParameters.loadTimeSeriesGeneration"
+            "study.configuration.advancedParameters.loadTimeSeriesGeneration",
           )}
           name="seedTsgenLoad"
           control={control}
         />
         <NumberFE
           label={t(
-            "study.configuration.advancedParameters.hydroTimeSeriesGeneration"
+            "study.configuration.advancedParameters.hydroTimeSeriesGeneration",
           )}
           name="seedTsgenHydro"
           control={control}
         />
         <NumberFE
           label={t(
-            "study.configuration.advancedParameters.thermalTimeSeriesGeneration"
+            "study.configuration.advancedParameters.thermalTimeSeriesGeneration",
           )}
           name="seedTsgenThermal"
           control={control}
         />
         <NumberFE
           label={t(
-            "study.configuration.advancedParameters.solarTimeSeriesGeneration"
+            "study.configuration.advancedParameters.solarTimeSeriesGeneration",
           )}
           name="seedTsgenSolar"
           control={control}
@@ -80,35 +80,35 @@ function Fields(props: Props) {
         />
         <NumberFE
           label={t(
-            "study.configuration.advancedParameters.noiseOnUnsuppliedEnergyCosts"
+            "study.configuration.advancedParameters.noiseOnUnsuppliedEnergyCosts",
           )}
           name="seedUnsuppliedEnergyCosts"
           control={control}
         />
         <NumberFE
           label={t(
-            "study.configuration.advancedParameters.noiseOnSpilledEnergyCosts"
+            "study.configuration.advancedParameters.noiseOnSpilledEnergyCosts",
           )}
           name="seedSpilledEnergyCosts"
           control={control}
         />
         <NumberFE
           label={t(
-            "study.configuration.advancedParameters.noiseOnThermalPlantsCosts"
+            "study.configuration.advancedParameters.noiseOnThermalPlantsCosts",
           )}
           name="seedThermalCosts"
           control={control}
         />
         <NumberFE
           label={t(
-            "study.configuration.advancedParameters.noiseOnVirtualHydroCosts"
+            "study.configuration.advancedParameters.noiseOnVirtualHydroCosts",
           )}
           name="seedHydroCosts"
           control={control}
         />
         <NumberFE
           label={t(
-            "study.configuration.advancedParameters.seedInitialReservoirLevels"
+            "study.configuration.advancedParameters.seedInitialReservoirLevels",
           )}
           name="seedInitialReservoirLevels"
           control={control}
@@ -117,13 +117,13 @@ function Fields(props: Props) {
 
       <Fieldset
         legend={t(
-          "study.configuration.advancedParameters.spatialTimeSeriesCorrelation"
+          "study.configuration.advancedParameters.spatialTimeSeriesCorrelation",
         )}
       >
         <SelectFE
           multiple
           label={t(
-            "study.configuration.advancedParameters.accuracyOnCorrelation"
+            "study.configuration.advancedParameters.accuracyOnCorrelation",
           )}
           options={SPATIAL_CORRELATIONS_OPTIONS}
           name="accuracyOnCorrelation"
@@ -136,7 +136,7 @@ function Fields(props: Props) {
       >
         <SelectFE
           label={t(
-            "study.configuration.advancedParameters.initialReservoirLevels"
+            "study.configuration.advancedParameters.initialReservoirLevels",
           )}
           options={INITIAL_RESERVOIR_OPTIONS}
           name="initialReservoirLevels"
@@ -144,7 +144,7 @@ function Fields(props: Props) {
         />
         <SelectFE
           label={t(
-            "study.configuration.advancedParameters.hydroHeuristicPolicy"
+            "study.configuration.advancedParameters.hydroHeuristicPolicy",
           )}
           options={HYDRO_HEURISTIC_POLICY_OPTIONS}
           name="hydroHeuristicPolicy"
@@ -170,7 +170,7 @@ function Fields(props: Props) {
         />
         <SelectFE
           label={t(
-            "study.configuration.advancedParameters.dayAheadReserveManagement"
+            "study.configuration.advancedParameters.dayAheadReserveManagement",
           )}
           options={RESERVE_MANAGEMENT_OPTIONS}
           name="dayAheadReserveManagement"
@@ -191,7 +191,7 @@ function Fields(props: Props) {
         {version >= 810 && (
           <SelectFE
             label={t(
-              "study.configuration.advancedParameters.renewableGenerationModeling"
+              "study.configuration.advancedParameters.renewableGenerationModeling",
             )}
             options={RENEWABLE_GENERATION_OPTIONS}
             name="renewableGenerationModelling"

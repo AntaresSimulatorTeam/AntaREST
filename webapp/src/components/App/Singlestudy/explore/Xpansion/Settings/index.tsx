@@ -23,7 +23,7 @@ import DataViewerDialog from "../../../../../common/dialogs/DataViewerDialog";
 import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithSnackbarError";
 
 const resourceContentFetcher = (
-  resourceType: string
+  resourceType: string,
 ): ((uuid: string, filename: string) => Promise<string>) => {
   if (resourceType === XpansionResourceType.constraints) {
     return getConstraint;
@@ -54,7 +54,7 @@ function Settings() {
     },
     {
       errorMessage: t("xpansion.error.loadConfiguration"),
-    }
+    },
   );
 
   const { data: candidates } = usePromiseWithSnackbarError(
@@ -69,7 +69,7 @@ function Settings() {
       errorMessage: t("xpansion.error.loadConfiguration"),
       resetDataOnReload: false,
       deps: [study],
-    }
+    },
   );
 
   const { data: constraints } = usePromiseWithSnackbarError(
@@ -80,7 +80,7 @@ function Settings() {
     },
     {
       errorMessage: t("xpansion.error.loadConfiguration"),
-    }
+    },
   );
 
   const { data: weights } = usePromiseWithSnackbarError(
@@ -91,7 +91,7 @@ function Settings() {
     },
     {
       errorMessage: t("xpansion.error.loadConfiguration"),
-    }
+    },
   );
 
   ////////////////////////////////////////////////////////////////
@@ -109,7 +109,7 @@ function Settings() {
             "solver",
             "yearly-weights",
             "additional-constraints",
-          ]) as XpansionSettings
+          ]) as XpansionSettings,
         );
       }
     } catch (e) {
@@ -127,7 +127,7 @@ function Settings() {
       if (study) {
         const content = await resourceContentFetcher(resourceType)(
           study.id,
-          filename
+          filename,
         );
         setResourceViewDialog({
           filename,

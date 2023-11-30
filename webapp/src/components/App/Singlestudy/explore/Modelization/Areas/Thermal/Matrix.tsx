@@ -1,7 +1,5 @@
-/* eslint-disable react/jsx-props-no-spreading */
 import * as React from "react";
 import * as R from "ramda";
-import { styled } from "@mui/material";
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
 import Box from "@mui/material/Box";
@@ -13,21 +11,14 @@ import {
 } from "../../../../../../../common/types";
 import MatrixInput from "../../../../../../common/MatrixInput";
 
-export const StyledTab = styled(Tabs)({
-  width: "98%",
-  borderBottom: 1,
-  borderColor: "divider",
-});
-
 interface Props {
   study: StudyMetadata;
-  area: string;
-  cluster: Cluster["id"];
+  areaId: string;
+  clusterId: Cluster["id"];
 }
 
-function ThermalMatrixView(props: Props) {
+function Matrix({ study, areaId, clusterId }: Props) {
   const [t] = useTranslation();
-  const { study, area, cluster } = props;
   const [value, setValue] = React.useState(0);
 
   const commonNames = [
@@ -49,6 +40,7 @@ function ThermalMatrixView(props: Props) {
   const handleChange = (event: React.SyntheticEvent, newValue: number) => {
     setValue(newValue);
   };
+
   return (
     <Box
       width="100%"
@@ -58,7 +50,8 @@ function ThermalMatrixView(props: Props) {
       justifyContent="flex-start"
       alignItems="center"
     >
-      <StyledTab
+      <Tabs
+        sx={{ width: 1 }}
         value={value}
         onChange={handleChange}
         aria-label="basic tabs example"
@@ -66,7 +59,7 @@ function ThermalMatrixView(props: Props) {
         <Tab label={t("study.modelization.clusters.matrix.common")} />
         <Tab label={t("study.modelization.clusters.matrix.tsGen")} />
         <Tab label={t("study.modelization.clusters.matrix.timeSeries")} />
-      </StyledTab>
+      </Tabs>
       <Box
         sx={{
           display: "flex",
@@ -80,7 +73,7 @@ function ThermalMatrixView(props: Props) {
             () => (
               <MatrixInput
                 study={study}
-                url={`input/thermal/prepro/${area}/${cluster}/modulation`}
+                url={`input/thermal/prepro/${areaId}/${clusterId}/modulation`}
                 computStats={MatrixStats.NOCOL}
                 title={t("study.modelization.clusters.matrix.common")}
                 columnsNames={commonNames}
@@ -92,7 +85,7 @@ function ThermalMatrixView(props: Props) {
             () => (
               <MatrixInput
                 study={study}
-                url={`input/thermal/prepro/${area}/${cluster}/data`}
+                url={`input/thermal/prepro/${areaId}/${clusterId}/data`}
                 computStats={MatrixStats.NOCOL}
                 title={t("study.modelization.clusters.matrix.tsGen")}
                 columnsNames={tsGenNames}
@@ -104,7 +97,7 @@ function ThermalMatrixView(props: Props) {
             () => (
               <MatrixInput
                 study={study}
-                url={`input/thermal/series/${area}/${cluster}/series`}
+                url={`input/thermal/series/${areaId}/${clusterId}/series`}
                 computStats={MatrixStats.NOCOL}
                 title={t("study.modelization.clusters.matrix.timeSeries")}
               />
@@ -116,4 +109,4 @@ function ThermalMatrixView(props: Props) {
   );
 }
 
-export default ThermalMatrixView;
+export default Matrix;

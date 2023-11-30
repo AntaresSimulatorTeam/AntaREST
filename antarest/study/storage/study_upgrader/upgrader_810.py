@@ -23,5 +23,5 @@ def upgrade_810(study_path: Path) -> None:
     data["other preferences"]["renewable-generation-modelling"] = "aggregated"
     writer = IniWriter(special_keys=DUPLICATE_KEYS)
     writer.write(data, study_path / GENERAL_DATA_PATH)
-    study_path.joinpath("input", "renewables", "clusters").mkdir(parents=True)
-    study_path.joinpath("input", "renewables", "series").mkdir(parents=True)
+    study_path.joinpath("input", "renewables", "clusters").mkdir(parents=True, exist_ok=True)
+    study_path.joinpath("input", "renewables", "series").mkdir(parents=True, exist_ok=True)

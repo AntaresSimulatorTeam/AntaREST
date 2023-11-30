@@ -20,7 +20,7 @@ function AdvancedParameters() {
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = async (
-    data: SubmitHandlerPlus<AdvancedParamsFormFields>
+    data: SubmitHandlerPlus<AdvancedParamsFormFields>,
   ) => {
     const values = { ...data.dirtyValues };
 
@@ -37,7 +37,7 @@ function AdvancedParameters() {
           updateStudySynthesis({
             id: study.id,
             changes: { enr_modelling: values.renewableGenerationModelling },
-          })
+          }),
         );
       }
     });

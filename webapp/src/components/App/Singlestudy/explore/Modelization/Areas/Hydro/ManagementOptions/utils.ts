@@ -25,7 +25,7 @@ enum InitializeReservoirDate {
 ////////////////////////////////////////////////////////////////
 
 export const INITIALIZE_RESERVOIR_DATE_OPTIONS = Object.entries(
-  InitializeReservoirDate
+  InitializeReservoirDate,
 )
   .splice(Object.keys(InitializeReservoirDate).length / 2)
   .map((options) => ({
@@ -61,14 +61,14 @@ export interface HydroFormFields {
 
 function makeRequestURL(
   studyId: StudyMetadata["id"],
-  areaId: Area["name"]
+  areaId: Area["name"],
 ): string {
   return `v1/studies/${studyId}/areas/${areaId}/hydro/form`;
 }
 
 export async function getManagementOptionsFormFields(
   studyId: StudyMetadata["id"],
-  areaId: Area["name"]
+  areaId: Area["name"],
 ): Promise<HydroFormFields> {
   const res = await client.get(makeRequestURL(studyId, areaId));
   return res.data;
@@ -77,7 +77,7 @@ export async function getManagementOptionsFormFields(
 export function setManagementOptionsFormFields(
   studyId: StudyMetadata["id"],
   areaId: Area["name"],
-  values: Partial<HydroFormFields>
+  values: Partial<HydroFormFields>,
 ): Promise<void> {
   return client.put(makeRequestURL(studyId, areaId), values);
 }

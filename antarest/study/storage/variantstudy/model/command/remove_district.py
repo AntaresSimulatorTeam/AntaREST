@@ -8,10 +8,20 @@ from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
 class RemoveDistrict(ICommand):
-    id: str
+    """
+    Command used to remove a district from the study.
+    """
 
-    def __init__(self, **data: Any) -> None:
-        super().__init__(command_name=CommandName.REMOVE_DISTRICT, version=1, **data)
+    # Overloaded metadata
+    # ===================
+
+    command_name = CommandName.REMOVE_DISTRICT
+    version = 1
+
+    # Command parameters
+    # ==================
+
+    id: str
 
     def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         del study_data.sets[self.id]

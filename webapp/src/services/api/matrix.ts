@@ -13,10 +13,10 @@ import { getConfig } from "../config";
 
 export const getMatrixList = async (
   name = "",
-  filterOwn = false
+  filterOwn = false,
 ): Promise<Array<MatrixDataSetDTO>> => {
   const res = await client.get(
-    `/v1/matrixdataset/_search?name=${encodeURI(name)}&filter_own=${filterOwn}`
+    `/v1/matrixdataset/_search?name=${encodeURI(name)}&filter_own=${filterOwn}`,
   );
   return res.data;
 };
@@ -33,7 +33,7 @@ export const getExportMatrixUrl = (matrixId: string): string =>
   }/v1/matrix/${matrixId}/download`;
 
 export const exportMatrixDataset = async (
-  datasetId: string
+  datasetId: string,
 ): Promise<FileDownloadTask> => {
   const res = await client.get(`/v1/matrixdataset/${datasetId}/download`);
   return res.data;
@@ -42,13 +42,13 @@ export const exportMatrixDataset = async (
 export const createMatrixByImportation = async (
   file: File,
   json: boolean,
-  onProgress?: (progress: number) => void
+  onProgress?: (progress: number) => void,
 ): Promise<Array<MatrixInfoDTO>> => {
   const options: AxiosRequestConfig = {};
   if (onProgress) {
     options.onUploadProgress = (progressEvent): void => {
       const percentCompleted = Math.round(
-        (progressEvent.loaded * 100) / (progressEvent.total || 1)
+        (progressEvent.loaded * 100) / (progressEvent.total || 1),
       );
       onProgress(percentCompleted);
     };
@@ -64,14 +64,14 @@ export const createMatrixByImportation = async (
   const res = await client.post(
     `/v1/matrix/_import?json=${json}`,
     formData,
-    restconfig
+    restconfig,
   );
   return res.data;
 };
 
 export const createDataSet = async (
   metadata: MatrixDataSetUpdateDTO,
-  matrices: Array<MatrixInfoDTO>
+  matrices: Array<MatrixInfoDTO>,
 ): Promise<MatrixDataSetDTO> => {
   const data = { metadata, matrices };
   const res = await client.post("/v1/matrixdataset", data);
@@ -80,7 +80,7 @@ export const createDataSet = async (
 
 export const updateDataSet = async (
   id: string,
-  metadata: MatrixDataSetUpdateDTO
+  metadata: MatrixDataSetUpdateDTO,
 ): Promise<MatrixDataSetUpdateDTO> => {
   const res = await client.put(`/v1/matrixdataset/${id}/metadata`, metadata);
   return res.data;
@@ -94,18 +94,18 @@ export const deleteDataSet = async (id: string): Promise<void> => {
 export const editMatrix = async (
   sid: string,
   path: string,
-  matrixEdit: MatrixEditDTO[]
+  matrixEdit: MatrixEditDTO[],
 ): Promise<void> => {
   const res = await client.put(
     `/v1/studies/${sid}/matrix?path=${path}`,
-    matrixEdit
+    matrixEdit,
   );
   return res.data;
 };
 
 export const getStudyMatrixIndex = async (
   sid: string,
-  path?: string
+  path?: string,
 ): Promise<MatrixIndex> => {
   const query = path ? `?path=${encodeURIComponent(path)}` : "";
   const res = await client.get(`/v1/studies/${sid}/matrixindex${query}`);

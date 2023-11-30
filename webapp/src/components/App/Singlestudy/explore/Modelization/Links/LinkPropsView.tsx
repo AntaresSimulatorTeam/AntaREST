@@ -15,7 +15,7 @@ function LinkPropsView(props: PropsType) {
   const links = useAppSelector((state) => getLinks(state, studyId));
   const [linkNameFilter, setLinkNameFilter] = useState<string>();
   const [filteredLinks, setFilteredLinks] = useState<Array<LinkElement>>(
-    links || []
+    links || [],
   );
 
   useEffect(() => {
@@ -24,7 +24,7 @@ function LinkPropsView(props: PropsType) {
         return links.filter(
           (s) =>
             !linkNameFilter ||
-            s.name.search(new RegExp(linkNameFilter, "i")) !== -1
+            s.name.search(new RegExp(linkNameFilter, "i")) !== -1,
         );
       }
       return [];

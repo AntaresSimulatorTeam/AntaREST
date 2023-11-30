@@ -81,12 +81,12 @@ export default function ExportModal(props: BasicDialogProps & Props) {
       }
     },
     2000,
-    { leading: true, trailing: false }
+    { leading: true, trailing: false },
   );
 
   const onExportFiltered = async (
     output: string,
-    filter: StudyOutputDownloadDTO
+    filter: StudyOutputDownloadDTO,
   ): Promise<void> => {
     if (study) {
       try {
@@ -125,7 +125,7 @@ export default function ExportModal(props: BasicDialogProps & Props) {
         const res = await getStudyOutputs(study.id);
         const tmpSynth = await getStudySynthesis(study.id);
         setOutputList(
-          res.map((o: StudyOutput) => ({ id: o.name, name: o.name }))
+          res.map((o: StudyOutput) => ({ id: o.name, name: o.name })),
         );
         setCurrentOutput(res.length > 0 ? res[0].name : undefined);
         setStudySynthesis(tmpSynth);
@@ -155,7 +155,7 @@ export default function ExportModal(props: BasicDialogProps & Props) {
             variant="contained"
             disabled={
               ["exportOutputFilter", "exportOutput"].indexOf(
-                optionSelection
+                optionSelection,
               ) !== -1 && currentOutput === undefined
             }
             onClick={onExportClick}

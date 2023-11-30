@@ -40,7 +40,7 @@ function AllocationField({ field, index, label }: Props) {
           rules={{
             min: {
               value: 0,
-              message: t("form.field.minValue", [0]),
+              message: t("form.field.minValue", { 0: 0 }),
             },
           }}
         />

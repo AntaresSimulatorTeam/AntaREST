@@ -19,7 +19,7 @@ function AddClusterForm() {
         label: t(`study.modelization.bindingConst.operator.${item}`),
         value: item,
       })),
-    [t]
+    [t],
   );
 
   const typeOptions = useMemo(
@@ -28,7 +28,7 @@ function AddClusterForm() {
         label: t(`global.time.${item}`),
         value: item,
       })),
-    [t]
+    [t],
   );
 
   ////////////////////////////////////////////////////////////////
@@ -38,7 +38,7 @@ function AddClusterForm() {
   const renderInput = (
     name: FieldPath<CreateBindingConstraint>,
     transId: string,
-    required?: boolean
+    required?: boolean,
   ) => (
     <StringFE
       name={name}
@@ -57,7 +57,7 @@ function AddClusterForm() {
   const renderSelect = (
     name: FieldPath<CreateBindingConstraint>,
     options: Array<{ label: string; value: string }>,
-    transId?: string
+    transId?: string,
   ) => (
     <Box
       sx={{
@@ -71,7 +71,7 @@ function AddClusterForm() {
         label={t(
           transId !== undefined
             ? transId
-            : `study.modelization.bindingConst.${name}`
+            : `study.modelization.bindingConst.${name}`,
         )}
         options={options}
         control={control}
@@ -95,7 +95,7 @@ function AddClusterForm() {
       {renderSelect(
         "time_step",
         typeOptions,
-        "study.modelization.bindingConst.type"
+        "study.modelization.bindingConst.type",
       )}
       {renderSelect("operator", operatorOptions)}
     </Root>

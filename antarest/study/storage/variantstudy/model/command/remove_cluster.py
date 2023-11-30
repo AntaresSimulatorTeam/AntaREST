@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Tuple
 
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.utils_binding_constraint import (
     remove_area_cluster_from_binding_constraints,
@@ -11,121 +11,106 @@ from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
 class RemoveCluster(ICommand):
+    """
+    Command used to remove a thermal cluster in an area.
+    """
+
+    # Overloaded metadata
+    # ===================
+
+    command_name = CommandName.REMOVE_THERMAL_CLUSTER
+    version = 1
+
+    # Command parameters
+    # ==================
+
     area_id: str
     cluster_id: str
 
-    def __init__(self, **data: Any) -> None:
-        super().__init__(command_name=CommandName.REMOVE_THERMAL_CLUSTER, version=1, **data)
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
+        """
+        Applies configuration changes to the study data: remove the thermal clusters from the storages list.
 
-    def _remove_cluster(self, study_data: FileStudyTreeConfig) -> None:
-        study_data.areas[self.area_id].thermals = [
-            cluster for cluster in study_data.areas[self.area_id].thermals if cluster.id != self.cluster_id.lower()
-        ]
+        Args:
+            study_data: The study data configuration.
 
-    def _apply_config(self, study_data_config: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
-        if self.area_id not in study_data_config.areas:
-            return (
-                CommandOutput(
-                    status=False,
-                    message=f"Area '{self.area_id}' does not exist",
-                ),
-                dict(),
-            )
+        Returns:
+            A tuple containing the command output and a dictionary of extra data.
+            On success, the dictionary is empty.
+        """
+        # Search the Area in the configuration
+        if self.area_id not in study_data.areas:
+            message = f"Area '{self.area_id}' does not exist in the study configuration."
+            return CommandOutput(status=False, message=message), {}
+        area: Area = study_data.areas[self.area_id]
 
-        if (
-            len(
-                [
-                    cluster
-                    for cluster in study_data_config.areas[self.area_id].thermals
-                    if cluster.id == self.cluster_id.lower()
-                ]
-            )
-            == 0
-        ):
-            return (
-                CommandOutput(
-                    status=False,
-                    message=f"Cluster '{self.cluster_id}' does not exist",
-                ),
-                dict(),
-            )
-        self._remove_cluster(study_data_config)
-        remove_area_cluster_from_binding_constraints(study_data_config, self.area_id, self.cluster_id.lower())
-
-        return (
-            CommandOutput(
-                status=True,
-                message=f"Cluster '{self.cluster_id}' removed from area '{self.area_id}'",
-            ),
-            dict(),
+        # Search the Thermal cluster in the area
+        thermal = next(
+            iter(thermal for thermal in area.thermals if thermal.id == self.cluster_id),
+            None,
         )
+        if thermal is None:
+            message = f"Thermal cluster '{self.cluster_id}' does not exist in the area '{self.area_id}'."
+            return CommandOutput(status=False, message=message), {}
+
+        for thermal in area.thermals:
+            if thermal.id == self.cluster_id:
+                break
+        else:
+            message = f"Thermal cluster '{self.cluster_id}' does not exist in the area '{self.area_id}'."
+            return CommandOutput(status=False, message=message), {}
+
+        # Remove the Thermal cluster from the configuration
+        area.thermals.remove(thermal)
+
+        remove_area_cluster_from_binding_constraints(study_data, self.area_id, self.cluster_id)
+
+        message = f"Thermal cluster '{self.cluster_id}' removed from the area '{self.area_id}'."
+        return CommandOutput(status=True, message=message), {}
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
+        """
+        Applies the study data to update thermal cluster configurations and saves the changes:
+        remove corresponding the configuration and remove the attached time series.
+
+        Args:
+            study_data: The study data to be applied.
+
+        Returns:
+            The output of the command execution.
+        """
+        # Search the Area in the configuration
         if self.area_id not in study_data.config.areas:
-            return CommandOutput(
-                status=False,
-                message=f"Area '{self.area_id}' does not exist",
-            )
+            message = f"Area '{self.area_id}' does not exist in the study configuration."
+            return CommandOutput(status=False, message=message)
 
-        cluster_query_result = [
-            cluster
-            for cluster in study_data.config.areas[self.area_id].thermals
-            if cluster.id == self.cluster_id.lower()
+        # It is required to delete the files and folders that correspond to the thermal cluster
+        # BEFORE updating the configuration, as we need the configuration to do so.
+        # Specifically, deleting the time series uses the list of thermal clusters from the configuration.
+
+        series_id = self.cluster_id.lower()
+        paths = [
+            ["input", "thermal", "clusters", self.area_id, "list", self.cluster_id],
+            ["input", "thermal", "prepro", self.area_id, series_id],
+            ["input", "thermal", "series", self.area_id, series_id],
         ]
+        area: Area = study_data.config.areas[self.area_id]
+        if len(area.thermals) == 1:
+            paths.append(["input", "thermal", "prepro", self.area_id])
+            paths.append(["input", "thermal", "series", self.area_id])
 
-        if len(cluster_query_result) == 0:
-            return CommandOutput(
-                status=False,
-                message=f"Cluster '{self.cluster_id}' does not exist",
-            )
-        cluster = cluster_query_result[0]
+        for path in paths:
+            study_data.tree.delete(path)
 
-        cluster_list = study_data.tree.get(["input", "thermal", "clusters", self.area_id, "list"])
-
-        cluster_list_id = self.cluster_id
-        if cluster_list.get(cluster.name, None):
-            cluster_list_id = cluster.name
-
-        study_data.tree.delete(
-            [
-                "input",
-                "thermal",
-                "clusters",
-                self.area_id,
-                "list",
-                cluster_list_id,
-            ]
-        )
-        study_data.tree.delete(
-            [
-                "input",
-                "thermal",
-                "prepro",
-                self.area_id,
-                self.cluster_id.lower(),
-            ]
-        )
-        study_data.tree.delete(
-            [
-                "input",
-                "thermal",
-                "series",
-                self.area_id,
-                self.cluster_id.lower(),
-            ]
-        )
-
-        self._remove_cluster(study_data.config)
         self._remove_cluster_from_binding_constraints(study_data)
 
-        return CommandOutput(
-            status=True,
-            message=f"Cluster '{self.cluster_id}' removed from area '{self.area_id}'",
-        )
+        # Deleting the renewable cluster in the configuration must be done AFTER
+        # deleting the files and folders.
+        return self._apply_config(study_data.config)[0]
 
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
-            action=CommandName.REMOVE_THERMAL_CLUSTER.value,
+            action=self.command_name.value,
             args={"area_id": self.area_id, "cluster_id": self.cluster_id},
         )
 
@@ -149,30 +134,26 @@ class RemoveCluster(ICommand):
     def get_inner_matrices(self) -> List[str]:
         return []
 
+    # noinspection SpellCheckingInspection
     def _remove_cluster_from_binding_constraints(self, study_data: FileStudy) -> None:
-        binding_constraints = study_data.tree.get(["input", "bindingconstraints", "bindingconstraints"])
+        config = study_data.tree.get(["input", "bindingconstraints", "bindingconstraints"])
 
-        id_to_remove = []
+        # Binding constraints IDs to remove
+        ids_to_remove = set()
 
-        for id, bc in binding_constraints.items():
-            if f"{self.area_id}.{self.cluster_id.lower()}" in bc.keys():
-                id_to_remove.append(id)
+        # Cluster IDs are stored in lower case in the binding contraints configuration file.
+        cluster_id = self.cluster_id.lower()
+        for bc_id, bc_props in config.items():
+            if f"{self.area_id}.{cluster_id}" in bc_props.keys():
+                ids_to_remove.add(bc_id)
 
-        for id in id_to_remove:
-            study_data.tree.delete(
-                [
-                    "input",
-                    "bindingconstraints",
-                    binding_constraints[id]["id"],
-                ]
-            )
-            study_data.config.bindings.remove(
-                next(iter([bind for bind in study_data.config.bindings if bind.id == binding_constraints[id]["id"]]))
-            )
-
-            del binding_constraints[id]
+        for bc_id in ids_to_remove:
+            study_data.tree.delete(["input", "bindingconstraints", config[bc_id]["id"]])
+            bc = next(iter([bind for bind in study_data.config.bindings if bind.id == config[bc_id]["id"]]))
+            study_data.config.bindings.remove(bc)
+            del config[bc_id]
 
         study_data.tree.save(
-            binding_constraints,
+            config,
             ["input", "bindingconstraints", "bindingconstraints"],
         )

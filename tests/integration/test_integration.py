@@ -10,7 +10,6 @@ from antarest.study.business.adequacy_patch_management import PriceTakingOrder
 from antarest.study.business.area_management import AreaType, LayerInfoDTO
 from antarest.study.business.areas.properties_management import AdequacyPatchMode
 from antarest.study.business.areas.renewable_management import TimeSeriesInterpretation
-from antarest.study.business.areas.thermal_management import LawOption, TimeSeriesGenerationOption
 from antarest.study.business.general_management import Mode
 from antarest.study.business.optimization_management import (
     SimplexOptimizationRange,
@@ -26,6 +25,8 @@ from antarest.study.business.table_mode_management import (
     TransmissionCapacity,
 )
 from antarest.study.model import MatrixIndex, StudyDownloadLevelDTO
+from antarest.study.storage.rawstudy.model.filesystem.config.renewable import RenewableClusterGroup
+from antarest.study.storage.rawstudy.model.filesystem.config.thermal import LawOption, TimeSeriesGenerationOption
 from antarest.study.storage.variantstudy.model.command.common import CommandName
 from tests.integration.assets import ASSETS_DIR
 from tests.integration.utils import wait_for
@@ -106,22 +107,6 @@ def test_main(client: TestClient, admin_access_token: str, study_id: str) -> Non
     )
     assert res.status_code == 417
     assert res.json()["description"] == "Not a year by year simulation"
-
-    # Set new comments
-    res = client.put(
-        f"/v1/studies/{study_id}/comments",
-        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
-        json={"comments": comments},
-    )
-    assert res.status_code == 204, res.json()
-
-    # Get comments
-    res = client.get(
-        f"/v1/studies/{study_id}/comments",
-        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
-    )
-    assert res.status_code == 200, res.json()
-    assert res.json() == comments
 
     # study synthesis
     res = client.get(
@@ -349,8 +334,20 @@ def test_main(client: TestClient, admin_access_token: str, study_id: str) -> Non
         headers={"Authorization": f'Bearer {fred_credentials["access_token"]}'},
     )
     job_info = res.json()[0]
-    assert job_info["id"] == job_id
-    assert job_info["owner_id"] == fred_id
+    assert job_info == {
+        "id": job_id,
+        "study_id": study_id,
+        "launcher": "local",
+        "launcher_params": ANY,
+        "status": "pending",
+        "creation_date": ANY,
+        "completion_date": None,
+        "msg": None,
+        "output_id": None,
+        "exit_code": None,
+        "solver_stats": None,
+        "owner": {"id": fred_id, "name": "Fred"},
+    }
 
     # update metadata
     res = client.put(
@@ -1749,97 +1746,53 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
 
     # Renewable form
 
-    res_renewable_config = client.put(
+    res = client.put(
         f"/v1/studies/{study_id}/areas/area 1/clusters/renewable/cluster renewable 1/form",
         headers=admin_headers,
         json={
             "name": "cluster renewable 1 renamed",
-            "tsInterpretation": TimeSeriesInterpretation.PRODUCTION_FACTOR.value,
+            "tsInterpretation": TimeSeriesInterpretation.PRODUCTION_FACTOR,
             "unitCount": 9,
             "enabled": False,
             "nominalCapacity": 3,
         },
     )
-    assert res_renewable_config.status_code == 200
+    assert res.status_code == 200, res.json()
 
-    res_renewable_config = client.get(
-        f"/v1/studies/{study_id}/areas/area 1/clusters/renewable/cluster renewable 1/form", headers=admin_headers
+    res = client.get(
+        f"/v1/studies/{study_id}/areas/area 1/clusters/renewable/cluster renewable 1/form",
+        headers=admin_headers,
     )
-    res_renewable_config_json = res_renewable_config.json()
-
-    assert res_renewable_config_json == {
-        "group": "",
-        "tsInterpretation": TimeSeriesInterpretation.PRODUCTION_FACTOR.value,
-        "name": "cluster renewable 1 renamed",
-        "unitCount": 9,
+    expected = {
         "enabled": False,
-        "nominalCapacity": 3,
+        "group": RenewableClusterGroup.OTHER1,  # Default group used when not specified.
+        "id": "cluster renewable 1",
+        "name": "cluster renewable 1 renamed",
+        "nominalCapacity": 3.0,
+        "tsInterpretation": TimeSeriesInterpretation.PRODUCTION_FACTOR,
+        "unitCount": 9,
     }
+    assert res.status_code == 200, res.json()
+    assert res.json() == expected
 
     # Thermal form
 
-    res_thermal_config = client.put(
-        f"/v1/studies/{study_id}/areas/area 1/clusters/thermal/cluster 1/form",
-        headers=admin_headers,
-        json={
-            "group": "Lignite",
-            "name": "cluster 1 renamed",
-            "unitCount": 3,
-            "enabled": False,
-            "nominalCapacity": 3,
-            "genTs": "use global parameter",
-            "minStablePower": 3,
-            "minUpTime": 3,
-            "minDownTime": 3,
-            "mustRun": False,
-            "spinning": 3,
-            "volatilityForced": 3,
-            "volatilityPlanned": 3,
-            "lawForced": "uniform",
-            "lawPlanned": "uniform",
-            "marginalCost": 3,
-            "spreadCost": 3,
-            "fixedCost": 3,
-            "startupCost": 3,
-            "marketBidCost": 3,
-            "co2": 3,
-            "so2": 2,
-            "nh3": 2,
-            "nox": 4,
-            "nmvoc": 5,
-            "pm25": 11.3,
-            "pm5": 7,
-            "pm10": 9,
-            "op1": 0.5,
-            "op2": 39,
-            "op3": 3,
-            "op4": 2.4,
-            "op5": 0,
-        },
-    )
-    assert res_thermal_config.status_code == 200
-
-    res_thermal_config = client.get(
-        f"/v1/studies/{study_id}/areas/area 1/clusters/thermal/cluster 1/form", headers=admin_headers
-    )
-    res_thermal_config_json = res_thermal_config.json()
-
-    assert res_thermal_config_json == {
+    obj = {
         "group": "Lignite",
         "name": "cluster 1 renamed",
         "unitCount": 3,
         "enabled": False,
         "nominalCapacity": 3,
-        "genTs": TimeSeriesGenerationOption.USE_GLOBAL_PARAMETER.value,
+        "genTs": "use global parameter",
         "minStablePower": 3,
         "minUpTime": 3,
         "minDownTime": 3,
         "mustRun": False,
         "spinning": 3,
-        "volatilityForced": 3,
-        "volatilityPlanned": 3,
-        "lawForced": LawOption.UNIFORM.value,
-        "lawPlanned": LawOption.UNIFORM.value,
+        "volatilityForced": 0.3,
+        "volatilityPlanned": 0.3,
+        "lawForced": "uniform",
+        "lawPlanned": "uniform",
         "marginalCost": 3,
         "spreadCost": 3,
         "fixedCost": 3,
@@ -1859,6 +1812,21 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
         "op4": 2.4,
         "op5": 0,
     }
+    res = client.put(
+        # This URL is deprecated, but we must check it for backward compatibility.
+        f"/v1/studies/{study_id}/areas/area 1/clusters/thermal/cluster 1/form",
+        headers=admin_headers,
+        json=obj,
+    )
+    assert res.status_code == 200, res.json()
+
+    res = client.get(
+        # This URL is deprecated, but we must check it for backward compatibility.
+        f"/v1/studies/{study_id}/areas/area 1/clusters/thermal/cluster 1/form",
+        headers=admin_headers,
+    )
+    assert res.status_code == 200, res.json()
+    assert res.json() == {"id": "cluster 1", **obj}
 
     # Links
 
@@ -2228,12 +2196,13 @@ def test_binding_constraint_manager(client: TestClient, admin_access_token: str,
 def test_import(client: TestClient, admin_access_token: str, study_id: str) -> None:
     admin_headers = {"Authorization": f"Bearer {admin_access_token}"}
 
-    study_path = ASSETS_DIR / "STA-mini.zip"
+    zip_path = ASSETS_DIR / "STA-mini.zip"
+    seven_zip_path = ASSETS_DIR / "STA-mini.7z"
 
     # Admin who belongs to a group imports a study
     uuid = client.post(
         "/v1/studies/_import",
-        files={"study": io.BytesIO(study_path.read_bytes())},
+        files={"study": io.BytesIO(zip_path.read_bytes())},
         headers=admin_headers,
     ).json()
     res = client.get(f"v1/studies/{uuid}", headers=admin_headers).json()
@@ -2253,12 +2222,68 @@ def test_import(client: TestClient, admin_access_token: str, study_id: str) -> N
     georges_headers = {"Authorization": f'Bearer {george_credentials["access_token"]}'}
     uuid = client.post(
         "/v1/studies/_import",
-        files={"study": io.BytesIO(study_path.read_bytes())},
+        files={"study": io.BytesIO(zip_path.read_bytes())},
         headers=georges_headers,
     ).json()
     res = client.get(f"v1/studies/{uuid}", headers=georges_headers).json()
     assert res["groups"] == []
     assert res["public_mode"] == PublicMode.READ
+
+    # Study importer works for 7z files
+    res = client.post(
+        "/v1/studies/_import",
+        files={"study": io.BytesIO(seven_zip_path.read_bytes())},
+        headers=admin_headers,
+    )
+    assert res.status_code == 201
+
+    # tests outputs import for .zip
+    output_path_zip = ASSETS_DIR / "output_adq.zip"
+    client.post(
+        f"/v1/studies/{study_id}/output",
+        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
+        files={"output": io.BytesIO(output_path_zip.read_bytes())},
+    )
+    res = client.get(
+        f"/v1/studies/{study_id}/outputs",
+        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
+    )
+    assert len(res.json()) == 6
+
+    # tests outputs import for .7z
+    output_path_seven_zip = ASSETS_DIR / "output_adq.7z"
+    client.post(
+        f"/v1/studies/{study_id}/output",
+        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
+        files={"output": io.BytesIO(output_path_seven_zip.read_bytes())},
+    )
+    res = client.get(
+        f"/v1/studies/{study_id}/outputs",
+        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
+    )
+    assert len(res.json()) == 7
+
+    # test matrices import for .zip and .7z files
+    matrices_zip_path = ASSETS_DIR / "matrices.zip"
+    res_zip = client.post(
+        "/v1/matrix/_import",
+        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
+        files={"file": (matrices_zip_path.name, io.BytesIO(matrices_zip_path.read_bytes()), "application/zip")},
+    )
+    matrices_seven_zip_path = ASSETS_DIR / "matrices.7z"
+    res_seven_zip = client.post(
+        "/v1/matrix/_import",
+        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
+        files={
+            "file": (matrices_seven_zip_path.name, io.BytesIO(matrices_seven_zip_path.read_bytes()), "application/zip")
+        },
+    )
+    for res in [res_zip, res_seven_zip]:
+        assert res.status_code == 200
+        result = res.json()
+        assert len(result) == 2
+        assert result[0]["name"] == "fr.txt"
+        assert result[1]["name"] == "it.txt"
 
 
 def test_copy(client: TestClient, admin_access_token: str, study_id: str) -> None:

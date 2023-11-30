@@ -1,13 +1,14 @@
 import base64
+import contextlib
 import io
 import json
 import logging
 import os
 from datetime import datetime, timedelta
 from http import HTTPStatus
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from time import time
-from typing import IO, Any, Callable, Dict, List, Optional, Sequence, Tuple, Union, cast
+from typing import Any, BinaryIO, Callable, Dict, List, Optional, Sequence, Tuple, Union, cast
 from uuid import uuid4
 
 import numpy as np
@@ -31,7 +32,7 @@ from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.interfaces.cache import CacheConstants, ICache
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
-from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
+from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTGroup, JWTUser
 from antarest.core.model import JSON, SUB_JSON, PermissionInfo, PublicMode, StudyPermissionType
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.roles import RoleType
@@ -49,6 +50,7 @@ from antarest.study.business.area_management import AreaCreationDTO, AreaInfoDTO
 from antarest.study.business.areas.hydro_management import HydroManager
 from antarest.study.business.areas.properties_management import PropertiesManager
 from antarest.study.business.areas.renewable_management import RenewableManager
+from antarest.study.business.areas.st_storage_management import STStorageManager
 from antarest.study.business.areas.thermal_management import ThermalManager
 from antarest.study.business.binding_constraint_management import BindingConstraintManager
 from antarest.study.business.config_management import ConfigManager
@@ -59,7 +61,6 @@ from antarest.study.business.matrix_management import MatrixManager, MatrixManag
 from antarest.study.business.optimization_management import OptimizationManager
 from antarest.study.business.playlist_management import PlaylistManager
 from antarest.study.business.scenario_builder_management import ScenarioBuilderManager
-from antarest.study.business.st_storage_manager import STStorageManager
 from antarest.study.business.table_mode_management import TableModeManager
 from antarest.study.business.thematic_trimming_management import ThematicTrimmingManager
 from antarest.study.business.timeseries_config_management import TimeSeriesConfigManager
@@ -97,7 +98,12 @@ from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFi
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.study_download_utils import StudyDownloader, get_output_variables_information
-from antarest.study.storage.study_upgrader import find_next_version, upgrade_study
+from antarest.study.storage.study_upgrader import (
+    find_next_version,
+    get_current_version,
+    should_study_be_denormalized,
+    upgrade_study,
+)
 from antarest.study.storage.utils import (
     assert_permission,
     get_default_workspace_path,
@@ -148,19 +154,23 @@ class StudyUpgraderTask:
         """Run the task (lock the database)."""
         study_id: str = self._study_id
         target_version: str = self._target_version
+        is_study_denormalized = False
         with db():
             # TODO We want to verify that a study doesn't have children and if it does do we upgrade all of them ?
             study_to_upgrade = self.repository.one(study_id)
             is_variant = isinstance(study_to_upgrade, VariantStudy)
-            if is_managed(study_to_upgrade) and not is_variant:
-                file_study = self.storage_service.get_storage(study_to_upgrade).get_raw(study_to_upgrade)
-                file_study.tree.denormalize()
             try:
                 # sourcery skip: extract-method
                 if is_variant:
                     self.storage_service.variant_study_service.clear_snapshot(study_to_upgrade)
                 else:
                     study_path = Path(study_to_upgrade.path)
+                    current_version = get_current_version(study_path)
+                    if is_managed(study_to_upgrade) and should_study_be_denormalized(current_version, target_version):
+                        # We have to denormalize the study because the upgrade impacts study matrices
+                        file_study = self.storage_service.get_storage(study_to_upgrade).get_raw(study_to_upgrade)
+                        file_study.tree.denormalize()
+                        is_study_denormalized = True
                     upgrade_study(study_path, target_version)
                 remove_from_cache(self.cache_service, study_to_upgrade.id)
                 study_to_upgrade.version = target_version
@@ -173,7 +183,7 @@ class StudyUpgraderTask:
                     )
                 )
             finally:
-                if is_managed(study_to_upgrade) and not is_variant:
+                if is_study_denormalized:
                     file_study = self.storage_service.get_storage(study_to_upgrade).get_raw(study_to_upgrade)
                     file_study.tree.normalize()
 
@@ -347,38 +357,33 @@ class StudyService:
         )
         stopwatch.log_elapsed(lambda t: logger.info(f"Saved logs for job {job_id} in {t}s"))
 
-    def get_comments(
-        self,
-        uuid: str,
-        params: RequestParameters,
-    ) -> Union[str, JSON]:
+    def get_comments(self, study_id: str, params: RequestParameters) -> Union[str, JSON]:
         """
-        Get study data inside filesystem
-        Args:
-            uuid: study uuid
-            params: request parameters
+        Get the comments of a study.
 
-        Returns: data study formatted in json
+        Args:
+            study_id: The ID of the study.
+            params: The parameters of the HTTP request containing the user information.
+
+        Returns: textual comments of the study.
         """
-        study = self.get_study(uuid)
+        study = self.get_study(study_id)
         assert_permission(params.user, study, StudyPermissionType.READ)
 
         output: Union[str, JSON]
+        raw_study_service = self.storage_service.raw_study_service
+        variant_study_service = self.storage_service.variant_study_service
         if isinstance(study, RawStudy):
-            output = self.storage_service.get_storage(study).get(metadata=study, url="/settings/comments", depth=-1)
+            output = raw_study_service.get(metadata=study, url="/settings/comments")
         elif isinstance(study, VariantStudy):
-            patch = self.storage_service.raw_study_service.patch_service.get(study)
-            output = (patch.study or PatchStudy()).comments or self.storage_service.get_storage(study).get(
-                metadata=study, url="/settings/comments", depth=-1
-            )
+            patch = raw_study_service.patch_service.get(study)
+            patch_study = PatchStudy() if patch.study is None else patch.study
+            output = patch_study.comments or variant_study_service.get(metadata=study, url="/settings/comments")
         else:
             raise StudyTypeUnsupported(study.id, study.type)
 
-        try:
-            # try to decode string
+        with contextlib.suppress(AttributeError, UnicodeDecodeError):
             output = output.decode("utf-8")  # type: ignore
-        except (AttributeError, UnicodeDecodeError):
-            pass
 
         return output
 
@@ -534,15 +539,15 @@ class StudyService:
             self._assert_study_unarchived(study)
             study_settings = self.storage_service.get_storage(study).get(study, study_settings_url)
             study_settings["horizon"] = metadata_patch.horizon
-
             self._edit_study_using_command(study=study, url=study_settings_url, data=study_settings)
+
         if metadata_patch.author:
             study_antares_url = "study/antares"
             self._assert_study_unarchived(study)
             study_antares = self.storage_service.get_storage(study).get(study, study_antares_url)
             study_antares["author"] = metadata_patch.author
-
             self._edit_study_using_command(study=study, url=study_antares_url, data=study_antares)
+
         study.additional_data = study.additional_data or StudyAdditionalData()
         if metadata_patch.name:
             study.name = metadata_patch.name
@@ -658,19 +663,20 @@ class StudyService:
 
     def get_study_synthesis(self, study_id: str, params: RequestParameters) -> FileStudyTreeConfigDTO:
         """
-        Return study synthesis
+        Get the synthesis of a study.
+
         Args:
-            study_id: study id
-            params: request parameters
+            study_id: The ID of the study.
+            params: The parameters of the HTTP request containing the user information.
 
         Returns: study synthesis
-
         """
         study = self.get_study(study_id)
         assert_permission(params.user, study, StudyPermissionType.READ)
         study.last_access = datetime.utcnow()
         self.repository.save(study, update_in_listing=False)
-        return self.storage_service.get_storage(study).get_synthesis(study, params)
+        study_storage_service = self.storage_service.get_storage(study)
+        return study_storage_service.get_synthesis(study, params)
 
     def get_input_matrix_startdate(self, study_id: str, path: Optional[str], params: RequestParameters) -> MatrixIndex:
         study = self.get_study(study_id)
@@ -692,7 +698,7 @@ class StudyService:
         for study in self.repository.get_all():
             if isinstance(study, RawStudy) and not study.archived:
                 path = str(study.path)
-                if not path in study_paths:
+                if path not in study_paths:
                     study_paths[path] = []
                 study_paths[path].append(study.id)
 
@@ -1041,7 +1047,7 @@ class StudyService:
 
         """
         study = self.get_study(uuid)
-        assert_permission(params.user, study, StudyPermissionType.DELETE)
+        assert_permission(params.user, study, StudyPermissionType.WRITE)
 
         study_info = study.to_json_summary()
 
@@ -1272,20 +1278,23 @@ class StudyService:
 
     def import_study(
         self,
-        stream: IO[bytes],
+        stream: BinaryIO,
         group_ids: List[str],
         params: RequestParameters,
     ) -> str:
         """
-        Import zipped study.
+        Import a compressed study.
 
         Args:
-            stream: zip file
+            stream: binary content of the study compressed in ZIP or 7z format.
             group_ids: group to attach to study
             params: request parameters
 
-        Returns: new study uuid
+        Returns:
+            New study UUID.
 
+        Raises:
+            BadArchiveContent: If the archive is corrupted or in an unknown format.
         """
         sid = str(uuid4())
         path = str(get_default_workspace_path(self.config) / sid)
@@ -1321,7 +1330,7 @@ class StudyService:
     def import_output(
         self,
         uuid: str,
-        output: Union[IO[bytes], Path],
+        output: Union[BinaryIO, Path],
         params: RequestParameters,
         output_name_suffix: Optional[str] = None,
         auto_unzip: bool = True,
@@ -1408,20 +1417,50 @@ class StudyService:
                 )
         raise NotImplementedError()
 
-    def _edit_study_using_command(self, study: Study, url: str, data: SUB_JSON) -> ICommand:
+    def _edit_study_using_command(
+        self,
+        study: Study,
+        url: str,
+        data: SUB_JSON,
+        *,
+        create_missing: bool = False,
+    ) -> ICommand:
         """
-        Replace data on disk with new, using ICommand
+        Replace data on disk with new, using variant commands.
+
+        In addition to regular configuration changes, this function also allows the end user
+        to store files on disk, in the "user" directory of the study (without using variant commands).
+
         Args:
             study: study
             url: data path to reach
             data: new data to replace
+            create_missing: Flag to indicate whether to create file or parent directories if missing.
         """
-
         study_service = self.storage_service.get_storage(study)
         file_study = study_service.get_raw(metadata=study)
-        tree_node = file_study.tree.get_node(url.split("/"))
+
+        file_relpath = PurePosixPath(url.strip().strip("/"))
+        file_path = study_service.get_study_path(study).joinpath(file_relpath)
+        create_missing &= not file_path.exists()
+        if create_missing:
+            # IMPORTANT: We prohibit deep file system changes in private directories.
+            # - File and directory creation is only possible for the "user" directory,
+            #   because the "input" and "output" directories are managed by Antares.
+            # - We also prohibit writing files in the "user/expansion" folder which currently
+            #   contains the Xpansion tool configuration.
+            #   This configuration should be moved to the "input/expansion" directory in the future.
+            if file_relpath and file_relpath.parts[0] == "user" and file_relpath.parts[1] != "expansion":
+                # In the case of variants, we must write the file directly in the study's snapshot folder,
+                # because the "user" folder is not managed by the command mechanism.
+                file_path.parent.mkdir(parents=True, exist_ok=True)
+                file_path.touch()
+
+        # A 404 Not Found error is raised if the file does not exist.
+        tree_node = file_study.tree.get_node(file_relpath.parts)  # type: ignore
 
         command = self._create_edit_study_command(tree_node=tree_node, url=url, data=data)
+
         if isinstance(study_service, RawStudyService):
             res = command.apply(study_data=file_study)
             if not is_managed(study):
@@ -1429,11 +1468,12 @@ class StudyService:
             if not res.status:
                 raise CommandApplicationError(res.message)
 
-            lastsave_url = "study/antares/lastsave"
-            lastsave_node = file_study.tree.get_node(lastsave_url.split("/"))
-            self._create_edit_study_command(tree_node=lastsave_node, url=lastsave_url, data=int(time())).apply(
-                file_study
-            )
+            # noinspection SpellCheckingInspection
+            url = "study/antares/lastsave"
+            last_save_node = file_study.tree.get_node(url.split("/"))
+            cmd = self._create_edit_study_command(tree_node=last_save_node, url=url, data=int(time()))
+            cmd.apply(file_study)
+
             self.storage_service.variant_study_service.invalidate_cache(study)
 
         elif isinstance(study_service, VariantStudyService):
@@ -1442,8 +1482,10 @@ class StudyService:
                 command=command.to_dto(),
                 params=RequestParameters(user=DEFAULT_ADMIN_USER),
             )
-        else:
-            raise NotImplementedError()
+
+        else:  # pragma: no cover
+            raise TypeError(repr(type(study_service)))
+
         return command  # for testing purpose
 
     def apply_commands(self, uuid: str, commands: List[CommandDTO], params: RequestParameters) -> Optional[List[str]]:
@@ -1483,6 +1525,8 @@ class StudyService:
         url: str,
         new: SUB_JSON,
         params: RequestParameters,
+        *,
+        create_missing: bool = False,
     ) -> JSON:
         """
         Replace data inside study.
@@ -1492,15 +1536,15 @@ class StudyService:
             url: path data target in study
             new: new data to replace
             params: request parameters
+            create_missing: Flag to indicate whether to create file or parent directories if missing.
 
         Returns: new data replaced
-
         """
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
 
-        self._edit_study_using_command(study=study, url=url.strip().strip("/"), data=new)
+        self._edit_study_using_command(study=study, url=url.strip().strip("/"), data=new, create_missing=create_missing)
 
         self.event_bus.push(
             Event(
@@ -1542,11 +1586,8 @@ class StudyService:
             )
         )
 
-        self._edit_study_using_command(
-            study=study,
-            url="study/antares/author",
-            data=new_owner.name if new_owner is not None else None,
-        )
+        owner_name = None if new_owner is None else new_owner.name
+        self._edit_study_using_command(study=study, url="study/antares/author", data=owner_name)
 
         logger.info(
             "user %s change study %s owner to %d",
@@ -1790,7 +1831,7 @@ class StudyService:
     def archive(self, uuid: str, params: RequestParameters) -> str:
         logger.info(f"Archiving study {uuid}")
         study = self.get_study(uuid)
-        assert_permission(params.user, study, StudyPermissionType.DELETE)
+        assert_permission(params.user, study, StudyPermissionType.WRITE)
 
         self._assert_study_unarchived(study)
 
@@ -1848,7 +1889,7 @@ class StudyService:
         ):
             raise TaskAlreadyRunning()
 
-        assert_permission(params.user, study, StudyPermissionType.DELETE)
+        assert_permission(params.user, study, StudyPermissionType.WRITE)
 
         if not isinstance(study, RawStudy):
             raise StudyTypeUnsupported(study.id, study.type)
@@ -1910,13 +1951,17 @@ class StudyService:
             study.content_status = content_status
 
         study.owner = self.user_service.get_user(owner.impersonator, params=RequestParameters(user=owner))
-        groups = []
+
+        study.groups.clear()
         for gid in group_ids:
-            group = next(filter(lambda g: g.id == gid, owner.groups), None)
-            if group is None or not group.role.is_higher_or_equals(RoleType.WRITER) and not owner.is_site_admin():
+            jwt_group: Optional[JWTGroup] = next(filter(lambda g: g.id == gid, owner.groups), None)  # type: ignore
+            if (
+                jwt_group is None
+                or jwt_group.role is None
+                or (jwt_group.role < RoleType.WRITER and not owner.is_site_admin())
+            ):
                 raise UserHasNotPermissionError(f"Permission denied for group ID: {gid}")
-            groups.append(Group(id=group.id, name=group.name))
-        study.groups = groups
+            study.groups.append(Group(id=jwt_group.id, name=jwt_group.name))
 
         self.repository.save(study)
 
@@ -2179,7 +2224,7 @@ class StudyService:
         params: RequestParameters,
     ) -> Optional[str]:
         study = self.get_study(study_id)
-        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        assert_permission(params.user, study, StudyPermissionType.READ)
         self._assert_study_unarchived(study)
 
         archive_task_names = StudyService._get_output_archive_task_names(study, output_id)

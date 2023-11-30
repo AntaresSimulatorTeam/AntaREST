@@ -26,7 +26,7 @@ interface PropsType<T> {
 }
 
 function ListElement<T extends { id?: IdType; name: string; label?: string }>(
-  props: PropsType<T>
+  props: PropsType<T>,
 ) {
   const {
     list,
@@ -63,7 +63,7 @@ function ListElement<T extends { id?: IdType; name: string; label?: string }>(
         : // Repeated context menu when it is already open closes it with Chrome 84 on Ubuntu
           // Other native context menus might behave different.
           // With this behavior we prevent contextmenu from the backdrop to re-locale existing context menus.
-          null
+          null,
     );
   };
 

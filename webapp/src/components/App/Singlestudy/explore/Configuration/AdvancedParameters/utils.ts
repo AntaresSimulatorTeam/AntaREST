@@ -74,7 +74,7 @@ export const RESERVE_MANAGEMENT_OPTIONS = Object.values(ReserveManagement);
 export const UNIT_COMMITMENT_MODE_OPTIONS = Object.values(UnitCommitmentMode);
 export const SIMULATION_CORES_OPTIONS = Object.values(SimulationCore);
 export const RENEWABLE_GENERATION_OPTIONS = Object.values(
-  RenewableGenerationModeling
+  RenewableGenerationModeling,
 );
 
 ////////////////////////////////////////////////////////////////
@@ -110,7 +110,7 @@ function makeRequestURL(studyId: StudyMetadata["id"]): string {
 }
 
 export async function getAdvancedParamsFormFields(
-  studyId: StudyMetadata["id"]
+  studyId: StudyMetadata["id"],
 ): Promise<AdvancedParamsFormFields> {
   const res = await client.get(makeRequestURL(studyId));
 
@@ -124,7 +124,7 @@ export async function getAdvancedParamsFormFields(
 
 export function setAdvancedParamsFormFields(
   studyId: StudyMetadata["id"],
-  values: Partial<AdvancedParamsFormFields>
+  values: Partial<AdvancedParamsFormFields>,
 ): Promise<void> {
   return client.put(makeRequestURL(studyId), values);
 }

@@ -37,7 +37,7 @@ const convertVariantTreeToStudyTree = (tree: VariantTree): StudyTree => {
     nodeDatum.children = [];
   } else {
     nodeDatum.children = (tree.children || []).map((el: VariantTree) =>
-      convertVariantTreeToStudyTree(el)
+      convertVariantTreeToStudyTree(el),
     );
     nodeDatum.drawOptions.depth =
       1 + Math.max(...nodeDatum.children.map((elm) => elm.drawOptions.depth));
@@ -51,7 +51,7 @@ const convertVariantTreeToStudyTree = (tree: VariantTree): StudyTree => {
 
 const buildTree = async (
   node: StudyTree,
-  childrenTree: VariantTree
+  childrenTree: VariantTree,
 ): Promise<void> => {
   if ((childrenTree.children || []).length === 0) {
     node.drawOptions.depth = 1;

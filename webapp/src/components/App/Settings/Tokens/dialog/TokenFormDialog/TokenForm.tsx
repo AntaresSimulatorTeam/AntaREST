@@ -63,7 +63,7 @@ function TokenForm(props: Props) {
   const allowToAddPermission =
     selectedGroup &&
     !getValues("permissions").some(
-      ({ group }: { group: GroupDTO }) => group.id === selectedGroup.id
+      ({ group }: { group: GroupDTO }) => group.id === selectedGroup.id,
     );
 
   const filteredAndSortedGroups = useMemo(() => {
@@ -71,7 +71,7 @@ function TokenForm(props: Props) {
       return [];
     }
     return sortByName(
-      groups.filter((group) => !RESERVED_GROUP_NAMES.includes(group.name))
+      groups.filter((group) => !RESERVED_GROUP_NAMES.includes(group.name)),
     );
   }, [groups]);
 
@@ -187,7 +187,7 @@ function TokenForm(props: Props) {
                           render={({ field }) => (
                             <Select variant="standard" {...field}>
                               {getValidRolesTypesForGroup(
-                                getValues(`permissions.${index}.group.name`)
+                                getValues(`permissions.${index}.group.name`),
                               ).map((key) => (
                                 <MenuItem key={key} value={RoleType[key]}>
                                   {roleToString(RoleType[key])}
