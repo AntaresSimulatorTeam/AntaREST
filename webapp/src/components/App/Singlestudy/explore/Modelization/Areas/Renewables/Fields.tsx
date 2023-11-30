@@ -61,11 +61,24 @@ function Fields() {
           label={t("study.modelization.clusters.unitcount")}
           name="unitCount"
           control={control}
+          rules={{
+            min: {
+              value: 1,
+              message: t("form.field.minValue", { 0: 1 }),
+            },
+            setValueAs: Math.floor,
+          }}
         />
         <NumberFE
           label={t("study.modelization.clusters.nominalCapacity")}
           name="nominalCapacity"
           control={control}
+          rules={{
+            min: {
+              value: 0,
+              message: t("form.field.minValue", { 0: 0 }),
+            },
+          }}
         />
       </Fieldset>
     </>

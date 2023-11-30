@@ -76,7 +76,7 @@ function CreateRowDialog<TData extends TRow>({
                 if (v.trim().length <= 0) {
                   return t("form.field.required");
                 }
-                if (existingNames.includes(v.trim())) {
+                if (existingNames.includes(v.trim().toLowerCase())) {
                   return t("form.field.duplicate", { 0: v });
                 }
               },

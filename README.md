@@ -31,7 +31,7 @@ Install the front-end dependencies:
 
 ```shell script
 cd webapp
-npm install
+npm install --legacy-peer-deps
 cd ..
 ```
 

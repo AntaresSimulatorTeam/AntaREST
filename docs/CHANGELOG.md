@@ -1,6 +1,172 @@
 Antares Web Changelog
 =====================
 
+v2.16.0 (2023-11-30)
+--------------------
+
+### Features
+
+* **api:** add renewable clusters to API endpoints [`#1798`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1798)
+* **api:** add endpoint get_nb_cores [`#1727`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1727)
+* **api-raw:** add the `create_missing` flag to allow creating missing files when uploading a file [`#1817`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1817)
+* **api-storage:** update initial level field default value [`#1836`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1836)
+* **api-thermal:** add clusters management endpoints [`2fbfcfc`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/2fbfcfc83b7b4df3ad59f602ab36336b8d3848fa)
+* **api-thermal:** delay the import of `transform_name_to_id` [`1d80ecf`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/1d80ecfa844bf6f20fe91977764a529858b2c5ce)
+* **api-thermal:** implement the `__repr__` method in enum classes for easier debugging [`7e595a9`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/7e595a90555750b72401c99a21eaac2e88419015)
+* **api-thermal:** improve the `ThermalClusterGroup` enum to allow "Other 1" and "Other" values for the `OTHER1` option [`c2d6bc1`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/c2d6bc1be72ad722aea1dccc61779a5d25c52786)
+* **binding-constraint:** add the binding constraint series in the matrix constants generator [`c1b4667`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/c1b4667dcb2ebcce0a4225030888efa392d6b109)
+* **common:** add dynamic size for GroupedDataTable [`116c0a5`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/116c0a5743d434aa40975c8c023ab8c545ad9d49)
+* **job-result-dto:** the `JobResultDTO` returns the owner (ID and name) instead of owner ID [`a53d1b2`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/a53d1b21a024b9fc3ba0cfbde8f9396917165b18)
+* **launcher:** add information about which user launched a study [`#1761`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1761)
+* **launcher:** unzipping task raised by the user who launched the study [`f6fe27f`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/f6fe27fdabf052a70c55c357b235e7692ac83064)
+* **launcher:** allow users with `Permission.READ` or above to unzip a study [`4568b91`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/4568b9154cc174de1a430805b6378234bc2c3584)
+* **model:** handling binding constraints frequency in study configuration parsing [`#1702`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1702)
+* **model:** add a one-to-many relationship between `Identity` and `JobResult` [`e9a10b1`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/e9a10b1e1c45e248ba4968d243cf0ea561084924)
+* **model:** handling binding constraints frequency in study configuration parsing (#1702) [`02b6ba7`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/02b6ba7a8c069ce4e3f7a765aa7aa074a4277ba5)
+* **permission:** update permission types, replaced DELETE with WRITE for improved study control [`#1775`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1775)
+* **requirements:** add py7zr to project requirements [`e10622e`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/e10622ef2d8b75b3107c2494128c92223dda5f6d)
+* **simulation-ui:** use API to get launcher number of cores [`#1776`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1776)
+* **st-storage:** allow all parameters in endpoint for short term storage creation [`#1736`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1736)
+* **tests:** add integration tests for outputs import [`a8db0b4`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/a8db0b42db3a7e334125ec591b193acaae04c37b)
+* **thermal:** refactor thermal view [`#1733`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1733)
+* **ui:** reduce studies header height [`#1819`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1819)
+* **ui:** update LauncherDialog [`#1789`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1789)
+* **ui-areas:** add version check for storage tab [`#1825`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1825)
+* **ui-common:** add missing areaId param to routes [`4c67f3d`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/4c67f3d9b84e38ebe5e560892319f779806d5af9)
+* **ui-common:** add missing areaId param to routes [`3f09111`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/3f09111541c8a55bb5e36fccb6cc547a14601ad5)
+* **ui-launcher:** block launch button if cores info cannot be get [`4267028`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/4267028ae0ba719b349c30007273108ec4a1407e)
+* **ui-model:** add validation rules for thermal renewable and storage forms [`86fe2ed`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/86fe2ed30f3c0494306c38713a6f96e856eb003a)
+* **ui-model:** check integer fields [`da314aa`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/da314aa31707f33359a9a495588d376d3f6824ce)
+* **ui-npm:** update packages [`7e08826`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/7e08826bf1fa62c07445905fd7ba978fa7d4cba6)
+* **ui-renewables:** add new list view [`#1803`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1803)
+* **ui-storages:** add storages list view and form [`#1791`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1791)
+* **ui-studies:** rework study launch dialog [`#1784`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1784)
+* **ui-studies:** update launcher dialog xpansion field [`011fbc6`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/011fbc689f45c06c381fbb4efb6f7bd0dedb1da6)
+* **ui-thermal:** update thermal clusters list view and form labels [`#1807`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1807)
+* **ui-thermal:** minor user experience improvements [`5258d14`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/5258d14484feca50e452a69dd265860141804888)
+* **ui-thermal:** update thermal cluster view with new component [`eb93f72`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/eb93f72301c3823b2afffff3543d8008abc8962f)
+* **ui-thermal:** minor improvements [`4434d7c`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/4434d7c0cc73cf9e86350fc3da4ea3df6d059054)
+* **ui-thermal:** add type for cluster capacity [`10aaea3`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/10aaea3009500a8a69e6d6f3ba3f496c4fdd47d3)
+* **ui-thermal:** add error display on thermal clusters list [`92e3132`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/92e3132c30e216d4b075d6af028c1e38031dde9f)
+* **upgrade:** denormalize study only when needed [`931fdae`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/931fdae3b2b05abad035c62b61edcb831171a5e5)
+* **utils:** add 7z support for matrices import [`d53a99c`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/d53a99c27056fd9785b2659ab8805232b8d546fe)
+* **utils:** support 7z import for studies, outputs and matrices [`a84d2aa`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/a84d2aa29f0346c68226b58a3b97e1df7a1b1db9)
+* **utils:** add integration test for 7z study import [`1f2da96`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/1f2da96cd3ef16f7b7d5546a68d4e807a63866a4)
+* **utils:** add support for .7z [`0779d88`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/0779d8876137db432194d5eb3280bbf9fd495538)
+
+
+### Performance
+
+* **api-study:** optimize study overview display in Antares Web [`52cf0ca`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/52cf0ca0b54886b87d336facc52409224894b17b)
+* **role-repository:** optimize the query used in `get_all_by_user` to fetch roles and groups at once [`dcde8a3`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/dcde8a30d4c4f96a33d33a4b0156519eb4fa4647)
+* **study-factory:** `FileStudy` creation is done with a file lock to avoid that two studies are analyzed at the same time [`0bd9d5f`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/0bd9d5f7ae47f4ecc871fb0a34bde433f3659856)
+* **variant:** correct slow variant study snapshot generation [`#1828`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1828)
+
+
+### Bug Fixes
+
+* **matrix:** matrix ID validator now raise an exception if the ID is empty [`d483198`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/d483198ea5891081e524d10242a2330e4c9c0116)
+* **raw-study:** correct matrix list generation for thermal clusters to handle non-lowercase IDs [`db86384`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/db863844fc6d1af6d61ff8401fbeccef9645b799)
+* **role-type:** correct implementation of the `__ge__` operator [`379d4ae`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/379d4aee4685096cbf86879050c2fd1d87fdc5d1)
+* **service:** allow unzipping with permission read [`0fa59a6`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/0fa59a6da29e6524b819b5949780e48d0dd9df48)
+* **st-storage:** the `initial_level` value must be between 0 and 1 [`#1815`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1815)
+* **tests:** fix unit test and refactor integration one [`6bbbffc`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/6bbbffc5213e996098239174c7611be979d0cb45)
+* **ui:** update dynamic areaId segment URL path on area change [`#1811`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1811)
+* **ui:** i18next API change [`e8a8503`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/e8a8503cb24ddd543196cd7bddc6ec03b140bc1c)
+* **ui:** TS issues [`ff8e635`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/ff8e6357d25d02d07a28bafd8e8223f41a33ce84)
+* **ui:** immer import change [`d45d274`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/d45d274a316f990d60c3d6a6b54b2a8827618be3)
+* **ui:** correct merge conflict imports [`77fd1ad`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/77fd1ad68a1337bef05cb8e094321f693162f193)
+* **ui-common:** add case check for name in GroupedDataTable [`586580b`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/586580b320a3cfb0a6e48ae3e0b2d5d1db6c68aa)
+* **ui-lancher:** cores limit cannot be break [`d3f4b79`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/d3f4b792780a7662330fb3c6869dc2812e1c249e)
+* **ui-launcher:** add API values for min max number of cores [`ea188b1`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/ea188b1fc8934769f314a43a8a27a5b3f9601f0f)
+* **ui-study:** prevent study tasks list to contain all studies tasks [`#1820`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1820)
+* **ui-tasks:** filter deleted studies jobs [`#1816`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1816)
+* **ui-thermal:** update regex to prevent commas in id [`b7ab9a5`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/b7ab9a5a1bfb004a369a7df33e35eac5729c4056)
+* **ui-thermal:** update regex to avoid ReDoS vulnerabilities [`c837474`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/c837474f882559cd0a283e300db364603806c002)
+* **xpansion:** add missing `separation_parameter` field in the settings [`#1831`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1831)
+
+
+### Documentation
+
+* **api-thermal:** add the documentation of the thermal cluster endpoints [`c84c6cd`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/c84c6cd5db7412c55d0947eaec374c808dc78bb8)
+* **api-thermal:** improve the documentation of the thermal manager [`099e4e0`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/099e4e0535b7491edd1d8d0fef268137dec9e704)
+* **api-thermal:** correct thermal manager doctrings [`3d3f8c3`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/3d3f8c343f7192d904a9f225c4cf9e836c4ee8e2)
+* **how-to:** add a "How to import a compressed study?" topic in the documentation [`28c654f`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/28c654f7493db54beccfbf640b95b0aeda874e31)
+* **import-api:** improve the documentation of the import API [`f1f2112`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/f1f2112e92d946002bab16c26e7cbe6a0d6945c5)
+* **rtd:** correct the configuration for ReadTheDocs [`#1833`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1833)
+* **study-service:** improve documentation of the `StudyService` class [`3ece436`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/3ece4368eb14f77027a575ed8b2b2e9ffc2bbcb5)
+* **upgrade:** add little documentation [`7075ed8`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/7075ed83b0aa298c91bfc736b23a3e83901a2f24)
+
+
+### Tests
+
+* correct `test_commands_service`: ensure the admin user is in database [`#1782`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1782)
+* add the `DbStatementRecorder` class to record SQL statements in memory to diagnose the queries performed by the application [`c02a839`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/c02a839d9f16eb757f1bac7fdce3e4572bf102d2)
+* add unit tests for `antarest.core.utils.utils.extract_zip` [`4878878`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/48788783dc24519926b1b6517ed45be3fc1deee9)
+* add the `compare_elements` function to compare two XML and find differences [`15753e3`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/15753e3cb6fc9d66993c00227e02d9f3d10cc89e)
+* **api:** added end-to-end test to ensure seamless functionality of API endpoints with the "bot" token [`#1770`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1770)
+* **api-user:** correct API endpoint `user_save` [`483d639`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/483d63937b1325a3b98ca4fcad4b6f75c18cc15e)
+* **apidoc:** add unit test for apidoc page [`#1797`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1797)
+* **integration:** simplify the `app` fixture used in integration tests and add comments [`e48ce6d`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/e48ce6d9c8dfd30d117f5af853d0179e49418c85)
+* **login-service:** refactor unit tests to use fixture instead of mocks [`02f20f0`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/02f20f001c3612969b680c904bf6d22d5a9786da)
+* **matrix-dataset:** correct unit test `test_watcher` [`d829033`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/d82903375b8d83b8dde30e6d8637825602708b7c)
+* **matrix-dataset:** correct unit test `test_dataset_lifecycle` [`da6f84b`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/da6f84be183902428db61ad227fc3c98df29d8bb)
+* **model:** correct and improve the `TestLdapService` unit tests [`84c0c05`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/84c0c05c96e9a73ca45e004d1f5cc5f4fbb58218)
+* **model:** don't decorate model classes with `@dataclass` [`82d565b`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/82d565b4423281bf41782201cceef34b3d5b29dc)
+* **study-comments:** add integration tests for study synthesis endpoint [`f56a4ae`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/f56a4ae1b565843d1a58db60d10c945ea0c6e657)
+* **study-comments:** add integration tests for study comments endpoints [`3eb1491`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/3eb1491aca9b84a6beb2007a8e0977679a560e4c)
+* **study-comments:** remove deprecated integration tests [`7651438`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/7651438021ba580f5710f301b27ae5c0fc7a7674)
+* **thermal-manager:** add unit tests for the `TestThermalManager` class [`d7f83b8`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/d7f83b8249af25172d25e8e7287be063d8aa9077)
+* **watcher:** correct unit test `test_partial_scan` [`cf07093`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/cf070939309b6e4f772542046c7bfb2727f450c6)
+
+
+### Refactoring
+
+* **cluster:** improve the implementation of the thermal, renewable and the short terme storage [`48c3352`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/48c3352a7e1429cdbc74518f4163d93e97262a9e)
+* **commands:** refactor the variant commands to use thermal / renewable configurations [`996fb20`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/996fb20d5359ab7f6184ac02945de200f20a294b)
+* **commands:** simplify implementation of study variant commands and improve constraints [`4ce9bd0`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/4ce9bd039ec31441f0f17860ca0896ddc951f513)
+* **commands:** refactor the variant commands to use thermal / renewable configurations [`ff3ccdf`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/ff3ccdf4f7721aff8bf1d89e3d265bb4b001f884)
+* **config:** create base classes use to configure thermal and renewable clusters and short term storage [`e7e7198`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/e7e719869e27cdea7e1b5a87875692af7d4d1977)
+* **config:** use `create_st_storage_config` during config parsing [`0d1bac8`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/0d1bac80dcead8dc5fe1d0f8276e7905456ae1cb)
+* **launcher-service:** rename long variable name `user_who_launched_the_study` [`4ec7cb0`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/4ec7cb013be776489f43ccf0c7940d36018cbd7e)
+* **login-model:** drop superfluous `__eq__` operator [`73bc168`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/73bc168327594e533ced27c404f67c494bfa0908)
+* **raw-study:** the `create_from_fs` method is changed to return a `NamedTuple` (perf) [`191fb98`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/191fb98c0723299d6c6c531cf2a61140c3fd4c1a)
+* **role-type:** replace `is_higher_or_equals` by `__ge__` operator [`fc10814`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/fc108147ddc5505c8fcf5833891ade4ec765b940)
+* **st-storage:** implement `STStorageProperties` using `BaseClusterProperties` class [`0cc639e`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/0cc639e1cf3c1aee57d70ff137acc0c479335e82)
+* **table-mode:** simplify implementation of the `TableModeManager` class [`52fcb80`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/52fcb80e0e1a8ee7afccc8a79285925b7fbb6fd0)
+* **thermal-api:** replace the `DELETE` permission with `WRITE` in the `delete_thermal_clusters` endpoint [`37f99ac`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/37f99ac62a711fd72877799e2aafd0919d960e58)
+* **thermal-manager:** correct the `update_cluster` method to update only required and changed properties [`9715add`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/9715addf45c412e8b3017852d49e890080c2591b)
+* **utils:** replace HTTP exception with `BadArchiveContent` in `extract_zip` function, and update documentation accordingly [`2143dd7`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/2143dd7cc2fa20b5f6ecdb7395a4f9c2d08e696d)
+
+
+### Styles
+
+* **api-thermal:** sort imports and reformat source code. [`451c27c`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/451c27cc39a2323dd665297eaf05034b5fd5da4b)
+* **model:** simplify typing imports [`2d77d65`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/2d77d65f9ac89c788366045fd544202f8dd4c5d3)
+* **typing:** replace `IO[bytes]` by `typing.BinaryIO` in function signatures [`4e2e5f9`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/4e2e5f92c66f0792d0ea4bea3a1d5e14eb686a03)
+* **ui:** update file with new Prettier version [`dfd79a7`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/dfd79a7dd73a5e769a20eaff7b9234e829ab8cf4)
+* **ui:** issue with Prettier [`b204b6a`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/b204b6acafe5bd03036b078bbc72233366d46b1d)
+
+
+### Chore
+
+* fix typo in the documentation of shell scripts [`#1793`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1793)
+* correct the typing of the `camel_case_model` decorator [`4784a74`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/4784a744c84067beba9e1c11d0c33938821524ef)
+* correct bad imports in unit tests [`786de74`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/786de74c3606455465fb6204aaf3f310f092de5c)
+* fix typing in `CommandExtractor` class [`0da8f3e`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/0da8f3e12e5e2c7f1eb2e3bdd63257d3cf3d74b0)
+* handle all ancestor classes in `AllOptionalMetaclass` [`7153292`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/7153292a74aad0f70a4f1a09d85f95fb440acabf)
+* correct indentation in docstring [`6d19ebb`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/6d19ebb101dc0cbe0d3b2a602e668d562328288c)
+* **api:** modify `ThermalConfig` in API example to avoid `ValidationError` [`#1795`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1795)
+* **api-thermal:** improve typing of functions [`36ea466`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/36ea466ba75b9c06477cbc4d9a31ddb51ecb168f)
+* **doc:** correct image names and titles in the documentation [`b976713`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/b9767132389f2ad09b3a6cd57a0870efb9f0eb38)
+
+
+### Reverts
+
+* change `requirements.txt` to restore `PyYAML~=5.4.1` [`cf47556`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/cf47556e8161bf7f184cac5bc08904954f04b1f6)
+
+
+
 v2.15.6 (2023-11-24)
 --------------------
 

@@ -37,6 +37,7 @@ import SelectSingle from "../../common/SelectSingle";
 import CheckBoxFE from "../../common/fieldEditors/CheckBoxFE";
 import { convertVersions } from "../../../services/utils";
 import UsePromiseCond from "../../common/utils/UsePromiseCond";
+import SwitchFE from "../../common/fieldEditors/SwitchFE";
 
 const LAUNCH_LOAD_DEFAULT = 22;
 
@@ -63,7 +64,7 @@ function LauncherDialog(props: Props) {
     shallowEqual,
   );
 
-  const cores = usePromiseWithSnackbarError(
+  const res = usePromiseWithSnackbarError(
     () =>
       getLauncherCores().then((cores) => {
         setOptions((prevOptions) => {
@@ -72,6 +73,7 @@ function LauncherDialog(props: Props) {
             nb_cpu: cores.defaultValue,
           };
         });
+        return cores;
       }),
     {
       errorMessage: t("study.error.launcherCores"),
@@ -197,7 +199,7 @@ function LauncherDialog(props: Props) {
             sx={{ mx: 2 }}
             color="primary"
             variant="contained"
-            disabled={isLaunching}
+            disabled={isLaunching || !res.isResolved}
             onClick={handleLaunchClick}
           >
             {t("global.launch")}
@@ -279,20 +281,24 @@ function LauncherDialog(props: Props) {
             }}
           />
           <UsePromiseCond
-            response={cores}
-            ifResolved={() => (
+            response={res}
+            ifResolved={(cores) => (
               <TextField
                 id="nb-cpu"
                 label={t("study.nbCpu")}
                 type="number"
                 variant="filled"
                 value={options.nb_cpu}
-                onChange={(e) =>
-                  handleChange("nb_cpu", parseInt(e.target.value, 10))
-                }
+                onChange={(e) => {
+                  const newValue = parseInt(e.target.value, 10);
+                  handleChange(
+                    "nb_cpu",
+                    Math.min(Math.max(newValue, cores.min), cores.max),
+                  );
+                }}
                 inputProps={{
-                  min: 1,
-                  max: 24,
+                  min: cores.min,
+                  max: cores.max,
                 }}
                 sx={{
                   minWidth: "125px",
@@ -405,25 +411,20 @@ function LauncherDialog(props: Props) {
           <Box
             sx={{
               display: "flex",
-              gap: 5,
+              gap: 1,
               alignItems: "center",
               alignContent: "center",
             }}
           >
             <Typography>Xpansion</Typography>
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={!!options.xpansion}
-                  onChange={(e, checked) => {
-                    handleChange(
-                      "xpansion",
-                      checked ? { enabled: true } : undefined,
-                    );
-                  }}
-                />
-              }
-              label={t("study.xpansionMode") as string}
+            <SwitchFE
+              value={!!options.xpansion}
+              onChange={(e, checked) => {
+                handleChange(
+                  "xpansion",
+                  checked ? { enabled: true } : undefined,
+                );
+              }}
             />
           </Box>
           {outputList && outputList.length === 1 && (

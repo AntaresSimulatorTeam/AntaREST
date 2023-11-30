@@ -67,11 +67,24 @@ function Fields() {
           label={t("study.modelization.clusters.unitcount")}
           name="unitCount"
           control={control}
+          rules={{
+            min: {
+              value: 1,
+              message: t("form.field.minValue", { 0: 1 }),
+            },
+            setValueAs: Math.floor,
+          }}
         />
         <NumberFE
           label={t("study.modelization.clusters.nominalCapacity")}
           name="nominalCapacity"
           control={control}
+          rules={{
+            min: {
+              value: 0,
+              message: t("form.field.minValue", { 0: 0 }),
+            },
+          }}
         />
         <NumberFE
           label={t("study.modelization.clusters.minStablePower")}
@@ -82,16 +95,48 @@ function Fields() {
           label={t("study.modelization.clusters.spinning")}
           name="spinning"
           control={control}
+          rules={{
+            min: {
+              value: 0,
+              message: t("form.field.minValue", { 0: 0 }),
+            },
+            max: {
+              value: 100,
+              message: t("form.field.maxValue", { 0: 100 }),
+            },
+          }}
         />
         <NumberFE
           label={t("study.modelization.clusters.minUpTime")}
           name="minUpTime"
           control={control}
+          rules={{
+            min: {
+              value: 1,
+              message: t("form.field.minValue", { 0: 1 }),
+            },
+            max: {
+              value: 168,
+              message: t("form.field.maxValue", { 0: 168 }),
+            },
+            setValueAs: Math.floor,
+          }}
         />
         <NumberFE
           label={t("study.modelization.clusters.minDownTime")}
           name="minDownTime"
           control={control}
+          rules={{
+            min: {
+              value: 1,
+              message: t("form.field.minValue", { 0: 1 }),
+            },
+            max: {
+              value: 168,
+              message: t("form.field.maxValue", { 0: 168 }),
+            },
+            setValueAs: Math.floor,
+          }}
         />
       </Fieldset>
       <Fieldset legend={t("study.modelization.clusters.operatingCosts")}>
@@ -99,21 +144,45 @@ function Fields() {
           label={t("study.modelization.clusters.marginalCost")}
           name="marginalCost"
           control={control}
+          rules={{
+            min: {
+              value: 0,
+              message: t("form.field.minValue", { 0: 0 }),
+            },
+          }}
         />
         <NumberFE
           label={t("study.modelization.clusters.fixedCost")}
           name="fixedCost"
           control={control}
+          rules={{
+            min: {
+              value: 0,
+              message: t("form.field.minValue", { 0: 0 }),
+            },
+          }}
         />
         <NumberFE
           label={t("study.modelization.clusters.startupCost")}
           name="startupCost"
           control={control}
+          rules={{
+            min: {
+              value: 0,
+              message: t("form.field.minValue", { 0: 0 }),
+            },
+          }}
         />
         <NumberFE
           label={t("study.modelization.clusters.marketBidCost")}
           name="marketBidCost"
           control={control}
+          rules={{
+            min: {
+              value: 0,
+              message: t("form.field.minValue", { 0: 0 }),
+            },
+          }}
         />
         <NumberFE
           label={t("study.modelization.clusters.spreadCost")}
@@ -154,11 +223,31 @@ function Fields() {
           label={t("study.modelization.clusters.volatilityForced")}
           name="volatilityForced"
           control={control}
+          rules={{
+            min: {
+              value: 0,
+              message: t("form.field.minValue", { 0: 0 }),
+            },
+            max: {
+              value: 1,
+              message: t("form.field.maxValue", { 0: 1 }),
+            },
+          }}
         />
         <NumberFE
           label={t("study.modelization.clusters.volatilityPlanned")}
           name="volatilityPlanned"
           control={control}
+          rules={{
+            min: {
+              value: 0,
+              message: t("form.field.minValue", { 0: 0 }),
+            },
+            max: {
+              value: 1,
+              message: t("form.field.maxValue", { 0: 1 }),
+            },
+          }}
         />
         <SelectFE
           label={t("study.modelization.clusters.lawForced")}
