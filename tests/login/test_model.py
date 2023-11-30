@@ -4,7 +4,17 @@ from sqlalchemy.engine.base import Engine  # type: ignore
 from sqlalchemy.exc import IntegrityError  # type: ignore
 from sqlalchemy.orm import sessionmaker  # type: ignore
 
-from antarest.login.model import GROUP_ID, GROUP_NAME, ADMIN_ID, ADMIN_NAME, Group, Password, Role, User, init_admin_user
+from antarest.login.model import (
+    ADMIN_ID,
+    ADMIN_NAME,
+    GROUP_ID,
+    GROUP_NAME,
+    Group,
+    Password,
+    Role,
+    User,
+    init_admin_user,
+)
 from antarest.utils import SESSION_ARGS
 
 TEST_ADMIN_PASS_WORD = "test"
