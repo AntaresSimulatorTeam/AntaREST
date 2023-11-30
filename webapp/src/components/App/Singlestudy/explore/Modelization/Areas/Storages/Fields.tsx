@@ -101,8 +101,8 @@ function Fields() {
             message: t("form.field.minValue", { 0: 0 }),
           },
           max: {
-            value: 1,
-            message: t("form.field.maxValue", { 0: 1 }),
+            value: 100,
+            message: t("form.field.maxValue", { 0: 100 }),
           },
         }}
       />
@@ -116,8 +116,8 @@ function Fields() {
             message: t("form.field.minValue", { 0: 0 }),
           },
           max: {
-            value: 1,
-            message: t("form.field.maxValue", { 0: 1 }),
+            value: 100,
+            message: t("form.field.maxValue", { 0: 100 }),
           },
         }}
       />
