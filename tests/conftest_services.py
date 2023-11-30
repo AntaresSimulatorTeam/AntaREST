@@ -18,8 +18,11 @@ from antarest.core.requests import RequestParameters
 from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskListFilter, TaskResult, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskService, Task
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
+from antarest.login.service import LoginService
 from antarest.matrixstore.service import SimpleMatrixService
 from antarest.matrixstore.uri_resolver_service import UriResolverService
+from antarest.study.repository import StudyMetadataRepository
+from antarest.study.service import StudyService
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
@@ -45,6 +48,7 @@ __all__ = (
     "raw_study_service_fixture",
     "variant_study_service_fixture",
     "study_storage_service_fixture",
+    "study_service_fixture"
 )
 
 
@@ -404,3 +408,34 @@ def study_storage_service_fixture(
         raw_study_service=raw_study_service,
         variant_study_service=variant_study_service,
     )
+
+
+@pytest.fixture(name="study_service")
+def study_service_fixture(
+    raw_study_service: RawStudyService,
+    variant_study_service: VariantStudyService,
+    core_config: Config,
+    core_cache,
+    event_bus,
+    task_service
+) -> StudyService:
+    """
+    Fixture that creates a StudyStorageService instance for study storage-related testing.
+
+    Args:
+        raw_study_service: The RawStudyService instance.
+        variant_study_service: The VariantStudyService instance.
+
+    Returns:
+        An instance of the StudyStorageService class representing the study storage service.
+    """
+    return StudyService(
+        raw_study_service,
+        variant_study_service,
+        Mock(),
+        StudyMetadataRepository(core_cache),
+        event_bus,
+        Mock(),
+        task_service,
+        core_cache,
+        core_config)

@@ -54,7 +54,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Link,
     Simulation,
 )
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
@@ -1822,3 +1822,82 @@ def test_upgrade_study__raw_study__failed(upgrade_study_mock: Mock, tmp_path: Pa
 
     # No event must be emitted
     event_bus.push.assert_not_called()
+
+
+from datetime import datetime
+
+# noinspection PyArgumentList
+# noinspection PyArgumentList
+@pytest.mark.unit_test
+@with_db_context
+def test_study_listing_with_db(
+        tmp_path: Path,
+        study_service: StudyService
+) -> None:
+
+    import logging
+
+    bob = User(id=2, name="bob")
+    alice = User(id=3, name="alice")
+
+    a = RawStudy(
+        id="A",
+        owner=bob,
+        type="rawstudy",
+        name="A",
+        version=810,
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow(),
+        path="",
+        workspace=DEFAULT_WORKSPACE_NAME,
+        additional_data=StudyAdditionalData(),
+    )
+    b = RawStudy(
+        id="B",
+        owner=alice,
+        type="rawstudy",
+        name="B",
+        version=810,
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow(),
+        path="",
+        workspace=DEFAULT_WORKSPACE_NAME,
+        additional_data=StudyAdditionalData(),
+    )
+    c = RawStudy(
+        id="C",
+        owner=bob,
+        type="rawstudy",
+        name="C",
+        version=810,
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow(),
+        path="",
+        workspace=DEFAULT_WORKSPACE_NAME,
+        additional_data=StudyAdditionalData(),
+    )
+
+    db.session.add(a)
+    db.session.add(b)
+    db.session.add(c)
+    db.session.add(bob)
+    db.session.add(alice)
+    db.session.commit()
+
+    import logging
+    logging.getLogger('sqlalchemy.engine').setLevel(logging.DEBUG)
+    logging.root.setLevel(logging.DEBUG)
+
+    # noinspection PyArgumentList
+    studies = study_service.get_studies_information(
+        managed=False,
+        name=None,
+        workspace=None,
+        folder=None,
+        params=RequestParameters(user=JWTUser(id=2, impersonator=2, type="users")),
+    )
+
+    expected_result = {e.id: e for e in map(lambda x: study_to_dto(x), [a, c])}
+    assert expected_result == studies
+
+    logging.info("Test OK")
