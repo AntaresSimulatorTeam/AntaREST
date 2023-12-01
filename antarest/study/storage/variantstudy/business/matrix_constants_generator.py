@@ -37,7 +37,7 @@ ONES_SCENARIO_MATRIX = "ones_scenario_matrix"
 # Binding constraint aliases
 BINDING_CONSTRAINT_HOURLY = "empty_2nd_member_hourly"
 BINDING_CONSTRAINT_DAILY = "empty_2nd_member_daily"
-BINDING_CONSTRAINT_WEEKLY = "empty_2nd_member_daily"
+BINDING_CONSTRAINT_WEEKLY = "empty_2nd_member_weekly"
 
 # Short-term storage aliases
 ST_STORAGE_PMAX_INJECTION = ONES_SCENARIO_MATRIX
