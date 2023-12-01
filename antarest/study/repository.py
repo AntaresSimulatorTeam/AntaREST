@@ -111,8 +111,17 @@ class StudyMetadataRepository:
         return study
 
     def get_all(self) -> t.List[Study]:
+        # When we fetch a study, we also need to fetch the associated owner and groups
+        # to check the permissions of the current user efficiently.
+        # We also need to fetch the additional data to display the study information
+        # efficiently (see: `utils.get_study_information`)
         entity = with_polymorphic(Study, "*")
-        studies: t.List[Study] = self.session.query(entity).filter(RawStudy.missing.is_(None)).all()
+        # noinspection PyTypeChecker
+        q = self.session.query(entity).filter(RawStudy.missing.is_(None))
+        q = q.options(joinedload(entity.owner))
+        q = q.options(joinedload(entity.groups))
+        q = q.options(joinedload(entity.additional_data))
+        studies: t.List[Study] = q.all()
         return studies
 
     def get_all_raw(self, show_missing: bool = True) -> t.List[RawStudy]:
