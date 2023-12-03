@@ -301,6 +301,10 @@ class CredentialsDTO(BaseModel):
 
 
 def init_admin_user(engine: Engine, session_args: t.Mapping[str, bool], admin_password: str) -> None:
+    """
+    When starting the app, the 'admin' group and 'admin' user are automatically created if they
+    do not already exist in the database.
+    """
     make_session = sessionmaker(bind=engine, **session_args)
     with make_session() as session:
         group = Group(id=GROUP_ID, name=GROUP_NAME)

@@ -175,6 +175,12 @@ class TaskJob(Base):  # type: ignore
 
 
 def cancel_orphan_tasks(engine: Engine, session_args: Mapping[str, bool]) -> None:
+    """
+    When the web application restarts, such as after a new deployment, any pending or running tasks may be lost.
+    To mitigate this, it is preferable to set these tasks to a "FAILED" status.
+    This ensures that users can easily identify the tasks that were affected by the restart and take appropriate
+    actions, such as restarting the tasks manually.
+    """
     updated_values = {
         TaskJob.status: TaskStatus.FAILED.value,
         TaskJob.result_status: False,

@@ -485,7 +485,7 @@ def test_cancel_orphan_tasks(
     result_msg: str,
 ):
     max_diff_seconds: int = 1
-    test_id: str = "test_cancel_orphan_tasks_id"
+    test_id: str = "2ea94758-9ea5-4015-a45f-b245a6ffc147"
 
     completion_date: datetime.datetime = datetime.datetime.utcnow()
     task_job = TaskJob(
@@ -502,12 +502,12 @@ def test_cancel_orphan_tasks(
     cancel_orphan_tasks(engine=db_engine, session_args=SESSION_ARGS)
     with make_session() as session:
         if status in [TaskStatus.RUNNING.value, TaskStatus.PENDING.value]:
-            updated_task_job = (
+            update_tasks_count = (
                 session.query(TaskJob)
                 .filter(TaskJob.status.in_([TaskStatus.RUNNING.value, TaskStatus.PENDING.value]))
-                .all()
+                .count()
             )
-            assert not updated_task_job
+            assert not update_tasks_count
             updated_task_job = session.query(TaskJob).get(test_id)
             assert updated_task_job.status == TaskStatus.FAILED.value
             assert not updated_task_job.result_status

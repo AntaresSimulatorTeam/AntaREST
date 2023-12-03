@@ -53,16 +53,14 @@ class TestInitAdminUser:
         make_session = sessionmaker(bind=db_engine)
         with make_session() as session:
             group = Group(id=GROUP_ID, name=GROUP_NAME)
-            with contextlib.suppress(IntegrityError):
-                session.add(group)
-                session.commit()
+            session.add(group)
+            session.commit()
         init_admin_user(db_engine, SESSION_ARGS, admin_password=TEST_ADMIN_PASS_WORD)
 
     def test_init_admin_user_existing_user(self, db_engine: Engine):
         make_session = sessionmaker(bind=db_engine)
         with make_session() as session:
             user = User(id=ADMIN_ID, name=ADMIN_NAME, password=Password(TEST_ADMIN_PASS_WORD))
-            with contextlib.suppress(IntegrityError):
-                session.add(user)
-                session.commit()
+            session.add(user)
+            session.commit()
         init_admin_user(db_engine, SESSION_ARGS, admin_password=TEST_ADMIN_PASS_WORD)
