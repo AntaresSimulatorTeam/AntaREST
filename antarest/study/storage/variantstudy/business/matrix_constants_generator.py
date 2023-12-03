@@ -49,7 +49,7 @@ ST_STORAGE_UPPER_RULE_CURVE = ONES_SCENARIO_MATRIX
 ST_STORAGE_INFLOWS = EMPTY_SCENARIO_MATRIX
 
 MATRIX_PROTOCOL_PREFIX = "matrix://"
-MATRIX_CONSTANT_INIT_LOCK_FILE_NAME = "matrix_constant_init.lock"
+_LOCK_FILE_NAME = "matrix_constant_init.lock"
 
 
 # noinspection SpellCheckingInspection
@@ -62,7 +62,7 @@ class GeneratorMatrixConstants:
     def init_constant_matrices(
         self,
     ) -> None:
-        with FileLock(str(Path(self._lock_dir) / MATRIX_CONSTANT_INIT_LOCK_FILE_NAME)):
+        with FileLock(str(Path(self._lock_dir) / _LOCK_FILE_NAME)):
             self.hashes[HYDRO_COMMON_CAPACITY_MAX_POWER_V7] = self.matrix_service.create(
                 matrix_constants.hydro.v7.max_power
             )

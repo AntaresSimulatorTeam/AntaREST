@@ -57,10 +57,6 @@ class ISimpleMatrixService(ABC):
     def __init__(self, matrix_content_repository: MatrixContentRepository) -> None:
         self.matrix_content_repository = matrix_content_repository
 
-    @property
-    def bucket_dir(self) -> Path:
-        return self.matrix_content_repository.bucket_dir
-
     @abstractmethod
     def create(self, data: Union[List[List[MatrixData]], npt.NDArray[np.float64]]) -> str:
         raise NotImplementedError()

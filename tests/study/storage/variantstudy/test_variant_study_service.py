@@ -11,7 +11,6 @@ from antarest.core.model import PublicMode
 from antarest.core.requests import RequestParameters
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group, User
-from antarest.matrixstore.repository import MatrixContentRepository
 from antarest.matrixstore.service import SimpleMatrixService
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import RawStudy, StudyAdditionalData

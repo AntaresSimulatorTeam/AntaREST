@@ -250,11 +250,7 @@ def fastapi_app(
 
     # Database
     engine = init_db_engine(config_file, config, auto_upgrade_db)
-    application.add_middleware(
-        DBSessionMiddleware,
-        custom_engine=engine,
-        session_args=SESSION_ARGS,
-    )
+    application.add_middleware(DBSessionMiddleware, custom_engine=engine, session_args=SESSION_ARGS)
 
     application.add_middleware(LoggingMiddleware)
 
@@ -437,10 +433,7 @@ def fastapi_app(
         auto_archiver.start()
 
     customize_openapi(application)
-    cancel_orphan_tasks(
-        engine=engine,
-        session_args=SESSION_ARGS,
-    )
+    cancel_orphan_tasks(engine=engine, session_args=SESSION_ARGS)
     return application, services
 
 

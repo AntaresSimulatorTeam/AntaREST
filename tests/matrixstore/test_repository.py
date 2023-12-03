@@ -156,14 +156,12 @@ class TestMatrixRepository:
             assert len(dataset_repo.query("name 2")) == 0
             assert repo.get(m1.id) is not None
             assert (
-                len(
-                    # fmt: off
-                    db_session
-                    .query(MatrixDataSetRelation)
-                    .filter(MatrixDataSetRelation.dataset_id == dataset.id)
-                    .all()
-                    # fmt: on
-                )
+                # fmt: off
+                db_session
+                .query(MatrixDataSetRelation)
+                .filter(MatrixDataSetRelation.dataset_id == dataset.id)
+                .count()
+                # fmt: on
                 == 0
             )
 
