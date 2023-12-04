@@ -82,14 +82,13 @@ export const createDateFromIndex = (
   return date;
 };
 
-export const slice = (tab: CellChange[]): MatrixEditDTO[] => {
-  return tab.map((cell) => {
-    return {
-      coordinates: [[cell[0] as number, (cell[1] as number) - 1]],
-      operation: { operation: Operator.EQ, value: parseInt(cell[3], 10) },
-    };
-  });
-};
+export const cellChangesToMatrixEdits = (
+  cellChanges: CellChange[],
+): MatrixEditDTO[] =>
+  cellChanges.map(([row, column, , value]) => ({
+    coordinates: [[row, (column as number) - 1]],
+    operation: { operation: Operator.EQ, value: parseFloat(value) },
+  }));
 
 export const computeStats = (
   statsType: string,
