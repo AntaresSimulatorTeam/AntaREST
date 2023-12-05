@@ -176,10 +176,16 @@ class TaskJob(Base):  # type: ignore
 
 def cancel_orphan_tasks(engine: Engine, session_args: Mapping[str, bool]) -> None:
     """
+    Cancel all tasks that are currently running or pending.
+
     When the web application restarts, such as after a new deployment, any pending or running tasks may be lost.
     To mitigate this, it is preferable to set these tasks to a "FAILED" status.
     This ensures that users can easily identify the tasks that were affected by the restart and take appropriate
     actions, such as restarting the tasks manually.
+
+    Args:
+        engine: The database engine (SQLAlchemy connection to SQLite or PostgreSQL).
+        session_args: The session arguments (SQLAlchemy session arguments).
     """
     updated_values = {
         TaskJob.status: TaskStatus.FAILED.value,
