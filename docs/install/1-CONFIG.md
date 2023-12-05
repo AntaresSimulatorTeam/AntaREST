@@ -1,13 +1,25 @@
 # Application Configuration Documentation
 
-Almost all the configuration of the application can be found in the
-[application.yaml](https://github.com/AntaresSimulatorTeam/AntaREST/blob/master/resources/application.yaml) file.
-If the path to this configuration file is not explicitly provided (through the `-c` option),
-the application will try to look for files in the following location (in order):
+In the following, we will be exploring how to edit your application configuration file. <br>
+As explained in the main documentation readme file, you can use the following command line 
+to start the API:
+
+```shell
+python3 antarest/main.py -c resources/application.yaml --auto-upgrade-db --no-front
+```
+
+The `-c` option here describes the path towards the configuration `.yaml` file. If this option is 
+not fed to the program, it will to look for files in the following locations (in order):
 
 1. `./config.yaml`
 2. `../config.yaml`
 3. `$HOME/.antares/config.yaml`
+
+<br>
+In this documentation, you will have a global overview of the configuration 
+file structure and details for each of the `.yaml` fields with specifications regarding
+type of data and the default values, and descriptions of those fields.
+
 
 # File Structure
 
@@ -21,13 +33,13 @@ the application will try to look for files in the following location (in order):
 
 # security
 
-This section concerns application security, authentication, and groups.
+This section defines the settings for application security, authentication, and groups.
 
 ## **disabled**
 
 - **Type:** Boolean
 - **Default value:** false
-- **Description:** If the value is `false`, user identification is required when launching the app.
+- **Description:** If set to `false`, user identification will be required when launching the app.
 
 ## **jwt**
 
@@ -56,14 +68,17 @@ service. The group names and their IDs are obtained from the LDAP directory.
 
 - **Type:** String
 - **Default value:** ""
-- **Description:** External authentication URL. If you want to enable local authentication, you should write "". To
-  enable authentication via RTE "NNI", you should register http://antarestgaia:8080.
+- **Description:** External authentication URL. If you want to enable local authentication, you should write "".
 
 ### **default_group_role**
 
 - **Type:** Integer
 - **Default value:** 10
-- **Description:** Default user role for external authentication. ADMIN = 40, WRITER = 30, RUNNER = 20, READER = 10.
+- **Description:** Default user role for external authentication
+    - `ADMIN = 40`
+    - `WRITER = 30`
+    - `RUNNER = 20`
+    - `READER = 10`
 
 ### **add_ext_groups**
 
@@ -99,7 +114,7 @@ security:
 
 # db
 
-This section relates to configuring the application's database connection.
+This section presents the configuration of application's database connection.
 
 ## **url**
 
@@ -118,7 +133,7 @@ This section relates to configuring the application's database connection.
 
 - **Type:** Boolean
 - **Default value:** false
-- **Description:** If set to `true`, the Pool does not pool connections. This parameter should stay at `false` to avoid
+- **Description:** If set to `true`, connections are not pooled. This parameter should be kept at `false` to avoid
   issues.
 
 ## **db_connect_timeout**
@@ -132,7 +147,7 @@ This section relates to configuring the application's database connection.
 - **Type:** Integer
 - **Default value:** None
 - **Description:** Prevents the pool from using a particular connection that has passed a certain time in seconds. An
-  often-used value is 3600, which corresponds to a day. *Not used for SQLite DB.*
+  often-used value is 3600, which corresponds to an hour. *Not used for SQLite DB.*
 
 ## **pool_size**
 
@@ -175,7 +190,7 @@ db:
 
 # storage
 
-This section concerns application Paths and Services options.
+The following section configuration parameters define the application paths and services options.
 
 ## **tmp_dir**
 
@@ -281,7 +296,7 @@ default:
 
 - **Type:** Integer
 - **Default value:** 60
-- **Description:** Number of days after the last study access when the study should be archived.
+- **Description:** Number of days after the last study access date before it should be archived.
 
 ## **auto_archive_max_parallel**
 
@@ -329,13 +344,14 @@ storage:
 
 # launcher
 
-This section concerns the launcher used, its options and the solver binaries.
+This section provides the launcher with specified options and defines the settings for solver binaries.
 
 ## **default**
 
 - **Type:** String, possible values: `local` or `slurm`
 - **Default value:** `local`
-- **Description:** Default launcher configuration
+- **Description:** Default launcher configuration, if set to `local` then the launcher is defined locally. Otherwise
+it is instantiated on shared servers using `slurm`.
 
 ## **local**
 
@@ -343,8 +359,8 @@ This section concerns the launcher used, its options and the solver binaries.
 
 - **Type:** Boolean
 - **Default value:** false
-- **Description:** Enables detection of available CPUs for the solver. If so, the default value used will be max(1,
-  multiprocessing.cpu_count() - 2). Else, it will be 22. To maximize the solver's performance, it is recommended to
+- **Description:** Enables detection of available CPUs for the solver. If so, the default value used will be `max(1,
+  multiprocessing.cpu_count() - 2)`. Else, it will be 22. To maximize the solver's performance, it is recommended to
   activate this option.
 
 ### **binaries**
@@ -369,25 +385,25 @@ This section concerns the launcher used, its options and the solver binaries.
 ## **slurm**
 
 SLURM (Simple Linux Utility for Resource Management) is used to interact with a remote environment (for Antares it's
-Calin) as a workload manager.
+computing server) as a workload manager.
 
 ### **local_workspace**
 
 - **Type:** Path
-- **Default value:** Path()
+- **Default value:** Path
 - **Description:** Path to the local SLURM workspace
 
 ### **username**
 
 - **Type:** String
 - **Default value:** ""
-- **Description:** Username for SLURM to connect itself with SSH protocol to Calin.
+- **Description:** Username for SLURM to connect itself with SSH protocol to computing server.
 
 ### **hostname**
 
 - **Type:** String
 - **Default value:** ""
-- **Description:** IP address for SLURM to connect itself with SSH protocol to Calin.
+- **Description:** IP address for SLURM to connect itself with SSH protocol to computing server.
 
 ### **port**
 
@@ -397,19 +413,19 @@ Calin) as a workload manager.
 
 Examples:
 
-- Options to connect SLURM to Calin `calinfrprdif201` (production):
+- Options to connect SLURM to computing server `prod-server-name` (production):
 
 ```
 username: run-antares
-hostname: 10.134.248.111
+hostname: XX.XXX.XXX.XXX
 port: 22
 ```
 
-- Options to connect SLURM to Calin `PF9SOCALIN019` (recette and integration):
+- Options to connect SLURM to computing server `dev-server-name` (recette and integration):
 
 ```
 username: dev-antares
-hostname: 10.132.145.143
+hostname: XX.XXX.XXX.XXX
 port: 22
 ```
 
@@ -444,7 +460,7 @@ port: 22
 
 - **Type:** Integer
 - **Default value:** 0
-- **Description:** Time_limit for SLURM jobs (in seconds). If a jobs exceed this time_limit, SLURM kills the job and it
+- **Description:** Time limit for SLURM jobs (in seconds). If a jobs exceed this time limit, SLURM kills the job and it
   is considered failed. Often used value: 172800 (48 hours)
 
 ### **enable_nb_cores_detection**
@@ -485,8 +501,8 @@ port: 22
 - **Type:** String
 - **Default value:** ""
 - **Description:** Bash script path to execute on remote server.
-    - If SLURM is connected to `calinfrprdif201` (production), use this path: `/applis/antares/launchAntares.sh`
-    - If SLURM is connected to `PF9SOCALIN019` (recette and integration), use this
+    - If SLURM is connected to `prod-server-name` (*production*), use this path: `/applis/antares/launchAntares.sh`
+    - If SLURM is connected to `dev-server-name` (*recette* and *integration*), use this
       path: `/applis/antares/launchAntaresRec.sh`
 
 ### **antares_versions_on_remote_server**
@@ -522,7 +538,7 @@ launcher:
 
 # Logging
 
-This section concerns the application logs.
+This section sets the configuration for the application logs.
 
 ## **level**
 
@@ -626,7 +642,7 @@ tasks:
 
 - **Type:** Integer
 - **Default value:** 5
-- **Description:** The number of threads of the Server in the ThreadPoolExecutor.
+- **Description:** The number of threads of the Server in the `ThreadPoolExecutor`.
 
 ## **services**
 
@@ -646,7 +662,7 @@ server:
 
 # redis
 
-This section concerns the Redis backend, which is used for managing the event bus and in-memory caching.
+This section is for the settings of Redis backend, which is used for managing the event bus and in-memory caching.
 
 ## **host**
 
