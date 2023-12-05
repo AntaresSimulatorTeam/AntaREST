@@ -79,24 +79,21 @@ function StorageForm() {
           defaultValues,
         }}
         onSubmit={handleSubmit}
-        autoSubmit
+        enableUndoRedo
       >
         <Fields />
-        <Box
-          sx={{
-            width: 1,
-            display: "flex",
-            flexDirection: "column",
-            height: "500px",
-          }}
-        >
-          <Matrix
-            study={study}
-            areaId={areaId}
-            storageId={nameToId(storageId)}
-          />
-        </Box>
       </Form>
+      <Box
+        sx={{
+          width: 1,
+          display: "flex",
+          flexDirection: "column",
+          py: 3,
+          height: "75vh",
+        }}
+      >
+        <Matrix study={study} areaId={areaId} storageId={nameToId(storageId)} />
+      </Box>
     </Box>
   );
 }
