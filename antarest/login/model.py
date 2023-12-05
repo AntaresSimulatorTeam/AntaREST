@@ -302,8 +302,12 @@ class CredentialsDTO(BaseModel):
 
 def init_admin_user(engine: Engine, session_args: t.Mapping[str, bool], admin_password: str) -> None:
     """
-    When starting the app, the 'admin' group and 'admin' user are automatically created if they
-    do not already exist in the database.
+    Create the default admin user, group and role if they do not already exist in the database.
+
+    Args:
+        engine: The database engine (SQLAlchemy connection to SQLite or PostgreSQL).
+        session_args: The session arguments (SQLAlchemy session arguments).
+        admin_password: The admin password extracted from the configuration file.
     """
     make_session = sessionmaker(bind=engine, **session_args)
     with make_session() as session:
