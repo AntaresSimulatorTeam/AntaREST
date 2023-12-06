@@ -233,6 +233,7 @@ function Fields() {
               message: t("form.field.maxValue", { 0: 1 }),
             },
           }}
+          inputProps={{ step: 0.1 }}
         />
         <NumberFE
           label={t("study.modelization.clusters.volatilityPlanned")}
@@ -248,6 +249,7 @@ function Fields() {
               message: t("form.field.maxValue", { 0: 1 }),
             },
           }}
+          inputProps={{ step: 0.1 }}
         />
         <SelectFE
           label={t("study.modelization.clusters.lawForced")}
