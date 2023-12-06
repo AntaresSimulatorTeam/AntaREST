@@ -1,5 +1,5 @@
 /* eslint-disable react/jsx-props-no-spreading */
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import * as React from "react";
 import { styled, SxProps, Theme } from "@mui/material";
 import Tabs from "@mui/material/Tabs";
@@ -28,19 +28,32 @@ export const StyledTab = styled(Tabs, {
   }),
 );
 
+interface TabItem {
+  label: string;
+  path: string;
+  onClick?: () => void;
+}
+
 interface Props {
   study: StudyMetadata | undefined;
-  tabList: Array<{ label: string; path: string }>;
+  tabList: TabItem[];
   border?: boolean;
   tabStyle?: "normal" | "withoutBorder";
   sx?: SxProps<Theme>;
+  isScrollable?: boolean;
 }
 
-function TabWrapper(props: Props) {
-  const { study, tabList, border, tabStyle, sx } = props;
+function TabWrapper({
+  study,
+  tabList,
+  border,
+  tabStyle,
+  sx,
+  isScrollable = false,
+}: Props) {
   const location = useLocation();
   const navigate = useNavigate();
-  const [selectedTab, setSelectedTab] = React.useState(0);
+  const [selectedTab, setSelectedTab] = useState(0);
 
   useEffect(() => {
     const getTabIndex = (): number => {
@@ -66,6 +79,11 @@ function TabWrapper(props: Props) {
   const handleChange = (event: React.SyntheticEvent, newValue: number) => {
     setSelectedTab(newValue);
     navigate(tabList[newValue].path);
+
+    const onTabClick = tabList[newValue].onClick;
+    if (onTabClick) {
+      onTabClick();
+    }
   };
 
   ////////////////////////////////////////////////////////////////
@@ -87,16 +105,15 @@ function TabWrapper(props: Props) {
       )}
     >
       <StyledTab
-        border={border === true}
+        border={border}
         tabStyle={tabStyle}
         value={selectedTab}
         onChange={handleChange}
-        variant="scrollable"
+        variant={isScrollable ? "scrollable" : "standard"}
         sx={{
           width: "98%",
-          ...(border === true
-            ? { borderBottom: 1, borderColor: "divider" }
-            : {}),
+          borderBottom: border ? 1 : 0,
+          borderColor: border ? "divider" : "inherit",
         }}
       >
         {tabList.map((tab) => (
@@ -107,10 +124,5 @@ function TabWrapper(props: Props) {
     </Box>
   );
 }
-
-TabWrapper.defaultProps = {
-  border: undefined,
-  tabStyle: "normal",
-};
 
 export default TabWrapper;
