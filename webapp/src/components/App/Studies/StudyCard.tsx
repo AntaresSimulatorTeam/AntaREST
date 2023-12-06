@@ -1,5 +1,5 @@
 import { memo, useState } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { AxiosError } from "axios";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
@@ -16,6 +16,7 @@ import {
   ListItemText,
   Tooltip,
   Chip,
+  Divider,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { indigo } from "@mui/material/colors";
@@ -93,6 +94,7 @@ const StudyCard = memo((props: Props) => {
   const study = useAppSelector((state) => getStudy(state, id));
   const isFavorite = useAppSelector((state) => isStudyFavorite(state, id));
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -218,7 +220,13 @@ const StudyCard = memo((props: Props) => {
         </Box>
       )}
       <CardContent
-        sx={{ flexGrow: 1, display: "flex", flexDirection: "column" }}
+        sx={{
+          flexGrow: 1,
+          display: "flex",
+          flexDirection: "column",
+          overflow: "auto",
+          maxHeight: "calc(100% - 48px)",
+        }}
       >
         <Box
           sx={{
@@ -236,6 +244,7 @@ const StudyCard = memo((props: Props) => {
               noWrap
               variant="h6"
               component="div"
+              onClick={() => navigate(`/studies/${study.id}`)}
               sx={{
                 color: "white",
                 boxSizing: "border-box",
@@ -244,6 +253,11 @@ const StudyCard = memo((props: Props) => {
                 whiteSpace: "nowrap",
                 textOverflow: "ellipsis",
                 overflow: "hidden",
+                cursor: "pointer",
+                "&:hover": {
+                  color: "primary.main",
+                  textDecoration: "underline",
+                },
               }}
             >
               {study.name}
@@ -289,6 +303,10 @@ const StudyCard = memo((props: Props) => {
               flexFlow: "nowrap",
               px: 0.5,
               paddingBottom: 0.5,
+              width: "90%",
+              whiteSpace: "nowrap",
+              textOverflow: "ellipsis",
+              overflow: "hidden",
             }}
           >
             {study.folder}
@@ -308,8 +326,6 @@ const StudyCard = memo((props: Props) => {
             sx={{
               display: "flex",
               maxWidth: "65%",
-              flexDirection: "row",
-              justifyContent: "flex-start",
               alignItems: "center",
             }}
           >
@@ -321,38 +337,27 @@ const StudyCard = memo((props: Props) => {
           <Box
             sx={{
               display: "flex",
-              flexDirection: "row",
-              justifyContent: "flex-start",
-              alignItems: "center",
+              gap: 1,
             }}
           >
-            <UpdateOutlinedIcon sx={{ color: "text.secondary", mr: 1 }} />
+            <UpdateOutlinedIcon sx={{ color: "text.secondary" }} />
             <TinyText>
               {buildModificationDate(study.modificationDate, t, i18n.language)}
             </TinyText>
+            <Divider flexItem orientation="vertical" />
+            <TinyText>{`v${displayVersionName(study.version)}`}</TinyText>
           </Box>
         </Box>
         <Box
           sx={{
-            width: "100%",
             display: "flex",
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "center",
+            textOverflow: "ellipsis",
+            overflow: "hidden",
+            mt: 1,
           }}
         >
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: "row",
-              justifyContent: "flex-start",
-              alignItems: "center",
-            }}
-          >
-            <PersonOutlineIcon sx={{ color: "text.secondary", mr: 1 }} />
-            <TinyText>{study.owner.name}</TinyText>
-          </Box>
-          <TinyText>{`v${displayVersionName(study.version)}`}</TinyText>
+          <PersonOutlineIcon sx={{ color: "text.secondary" }} />
+          <TinyText>{study.owner.name}</TinyText>
         </Box>
         <Box
           sx={{
@@ -364,8 +369,7 @@ const StudyCard = memo((props: Props) => {
             flexWrap: "wrap",
             justifyContent: "flex-start",
             alignItems: "center",
-            overflowX: "hidden",
-            overflowY: "auto",
+
             gap: 0.5,
             ".MuiChip-root": {
               color: "black",
@@ -377,24 +381,24 @@ const StudyCard = memo((props: Props) => {
               icon={<AltRouteOutlinedIcon />}
               label={t("studies.variant").toLowerCase()}
               color="primary"
+              size="small"
             />
           )}
           <Chip
             label={study.workspace}
-            variant="filled"
+            size="small"
             sx={{
               bgcolor: study.managed ? "secondary.main" : "gray",
             }}
           />
-          {study.tags &&
-            study.tags.map((elm) => (
-              <Chip
-                key={elm}
-                label={elm}
-                variant="filled"
-                sx={{ bgcolor: indigo[300] }}
-              />
-            ))}
+          {study.tags?.map((tag) => (
+            <Chip
+              key={tag}
+              label={tag}
+              size="small"
+              sx={{ bgcolor: indigo[300] }}
+            />
+          ))}
         </Box>
       </CardContent>
       <CardActions>
