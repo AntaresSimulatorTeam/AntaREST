@@ -1,13 +1,12 @@
+import datetime
 import typing as t
-from datetime import datetime
 from pathlib import Path
 
 import numpy as np
 import pytest
 from numpy import typing as npt
+from sqlalchemy.orm import Session  # type: ignore
 
-from antarest.core.config import Config, SecurityConfig
-from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group, Password, User
 from antarest.login.repository import GroupRepository, UserRepository
 from antarest.matrixstore.model import Matrix, MatrixContent, MatrixDataSet, MatrixDataSetRelation
@@ -17,11 +16,10 @@ ArrayData = t.Union[t.List[t.List[float]], npt.NDArray[np.float64]]
 
 
 class TestMatrixRepository:
-    def test_db_lifecycle(self) -> None:
-        with db():
-            # sourcery skip: extract-method
-            repo = MatrixRepository()
-            m = Matrix(id="hello", created_at=datetime.now())
+    def test_db_lifecycle(self, db_session: Session) -> None:
+        with db_session:
+            repo = MatrixRepository(db_session)
+            m = Matrix(id="hello", created_at=datetime.datetime.now())
             repo.save(m)
             assert m.id
             assert m == repo.get(m.id)
@@ -51,24 +49,21 @@ class TestMatrixRepository:
         with pytest.raises(FileNotFoundError):
             repo.get(aid)
 
-    def test_dataset(self) -> None:
-        with db():
-            # sourcery skip: extract-duplicate-method, extract-method
-            repo = MatrixRepository()
+    def test_dataset(self, db_session: Session) -> None:
+        with db_session:
+            repo = MatrixRepository(session=db_session)
 
-            user_repo = UserRepository(Config(security=SecurityConfig()))
-            # noinspection PyArgumentList
+            user_repo = UserRepository(session=db_session)
             user = user_repo.save(User(name="foo", password=Password("bar")))
 
-            group_repo = GroupRepository()
-            # noinspection PyArgumentList
+            group_repo = GroupRepository(session=db_session)
             group = group_repo.save(Group(name="group"))
 
-            dataset_repo = MatrixDataSetRepository()
+            dataset_repo = MatrixDataSetRepository(session=db_session)
 
-            m1 = Matrix(id="hello", created_at=datetime.now())
+            m1 = Matrix(id="hello", created_at=datetime.datetime.now())
             repo.save(m1)
-            m2 = Matrix(id="world", created_at=datetime.now())
+            m2 = Matrix(id="world", created_at=datetime.datetime.now())
             repo.save(m2)
 
             dataset = MatrixDataSet(
@@ -76,8 +71,8 @@ class TestMatrixRepository:
                 public=True,
                 owner_id=user.id,
                 groups=[group],
-                created_at=datetime.now(),
-                updated_at=datetime.now(),
+                created_at=datetime.datetime.now(),
+                updated_at=datetime.datetime.now(),
             )
 
             matrix_relation = MatrixDataSetRelation(name="m1")
@@ -97,7 +92,7 @@ class TestMatrixRepository:
                 id=dataset.id,
                 name="some name change",
                 public=False,
-                updated_at=datetime.now(),
+                updated_at=datetime.datetime.now(),
             )
             dataset_repo.save(dataset_update)
             dataset_query_result = dataset_repo.get(dataset.id)
@@ -105,29 +100,27 @@ class TestMatrixRepository:
             assert dataset_query_result.name == "some name change"
             assert dataset_query_result.owner_id == user.id
 
-    def test_datastore_query(self) -> None:
+    def test_datastore_query(self, db_session: Session) -> None:
         # sourcery skip: extract-duplicate-method
-        with db():
-            user_repo = UserRepository(Config(security=SecurityConfig()))
-            # noinspection PyArgumentList
+        with db_session:
+            user_repo = UserRepository(session=db_session)
             user1 = user_repo.save(User(name="foo", password=Password("bar")))
-            # noinspection PyArgumentList
             user2 = user_repo.save(User(name="hello", password=Password("world")))
 
-            repo = MatrixRepository()
-            m1 = Matrix(id="hello", created_at=datetime.now())
+            repo = MatrixRepository(session=db_session)
+            m1 = Matrix(id="hello", created_at=datetime.datetime.now())
             repo.save(m1)
-            m2 = Matrix(id="world", created_at=datetime.now())
+            m2 = Matrix(id="world", created_at=datetime.datetime.now())
             repo.save(m2)
 
-            dataset_repo = MatrixDataSetRepository()
+            dataset_repo = MatrixDataSetRepository(session=db_session)
 
             dataset = MatrixDataSet(
                 name="some name",
                 public=True,
                 owner_id=user1.id,
-                created_at=datetime.now(),
-                updated_at=datetime.now(),
+                created_at=datetime.datetime.now(),
+                updated_at=datetime.datetime.now(),
             )
             matrix_relation = MatrixDataSetRelation(name="m1")
             matrix_relation.matrix_id = "hello"
@@ -141,8 +134,8 @@ class TestMatrixRepository:
                 name="some name 2",
                 public=False,
                 owner_id=user2.id,
-                created_at=datetime.now(),
-                updated_at=datetime.now(),
+                created_at=datetime.datetime.now(),
+                updated_at=datetime.datetime.now(),
             )
             matrix_relation = MatrixDataSetRelation(name="m1")
             matrix_relation.matrix_id = "hello"
@@ -163,14 +156,12 @@ class TestMatrixRepository:
             assert len(dataset_repo.query("name 2")) == 0
             assert repo.get(m1.id) is not None
             assert (
-                len(
-                    # fmt: off
-                    db.session
-                    .query(MatrixDataSetRelation)
-                    .filter(MatrixDataSetRelation.dataset_id == dataset.id)
-                    .all()
-                    # fmt: on
-                )
+                # fmt: off
+                db_session
+                .query(MatrixDataSetRelation)
+                .filter(MatrixDataSetRelation.dataset_id == dataset.id)
+                .count()
+                # fmt: on
                 == 0
             )
 

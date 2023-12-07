@@ -1,7 +1,8 @@
+import datetime
 import logging
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Mapping, Optional, Tuple
 
 import redis
 import sqlalchemy.ext.baked  # type: ignore
@@ -12,6 +13,7 @@ from ratelimit import RateLimitMiddleware  # type: ignore
 from ratelimit.backends.redis import RedisBackend  # type: ignore
 from ratelimit.backends.simple import MemoryBackend  # type: ignore
 from sqlalchemy import create_engine
+from sqlalchemy.engine.base import Engine  # type: ignore
 from sqlalchemy.pool import NullPool  # type: ignore
 
 from antarest.core.cache.main import build_cache
@@ -20,13 +22,11 @@ from antarest.core.filetransfer.main import build_filetransfer_service
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus
-from antarest.core.logging.utils import configure_logger
 from antarest.core.maintenance.main import build_maintenance_manager
 from antarest.core.persistence import upgrade_db
 from antarest.core.tasks.main import build_taskjob_manager
 from antarest.core.tasks.service import ITaskService
-from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
-from antarest.core.utils.utils import get_local_path, new_redis_instance
+from antarest.core.utils.utils import new_redis_instance
 from antarest.eventbus.main import build_eventbus
 from antarest.launcher.main import build_launcher
 from antarest.login.main import build_login
@@ -46,6 +46,19 @@ from antarest.worker.worker import AbstractWorker
 logger = logging.getLogger(__name__)
 
 
+SESSION_ARGS: Mapping[str, bool] = {
+    "autocommit": False,
+    "expire_on_commit": False,
+    "autoflush": False,
+}
+"""
+This mapping can be used to instantiate a new session, for example:
+
+>>> with sessionmaker(engine, **SESSION_ARGS)() as session:
+...     session.execute("SELECT 1")
+"""
+
+
 class Module(str, Enum):
     APP = "app"
     WATCHER = "watcher"
@@ -55,12 +68,11 @@ class Module(str, Enum):
     SIMULATOR_WORKER = "simulator_worker"
 
 
-def init_db(
+def init_db_engine(
     config_file: Path,
     config: Config,
     auto_upgrade_db: bool,
-    application: Optional[FastAPI],
-) -> None:
+) -> Engine:
     if auto_upgrade_db:
         upgrade_db(config_file)
     connect_args: Dict[str, Any] = {}
@@ -86,19 +98,7 @@ def init_db(
 
     engine = create_engine(config.db.db_url, echo=config.debug, connect_args=connect_args, **extra)
 
-    session_args = {
-        "autocommit": False,
-        "expire_on_commit": False,
-        "autoflush": False,
-    }
-    if application:
-        application.add_middleware(
-            DBSessionMiddleware,
-            custom_engine=engine,
-            session_args=session_args,
-        )
-    else:
-        DBSessionMiddleware(None, custom_engine=engine, session_args=session_args)
+    return engine
 
 
 def create_event_bus(
@@ -264,14 +264,3 @@ def create_services(config: Config, application: Optional[FastAPI], create_all: 
     services["cache"] = cache
     services["maintenance"] = maintenance_service
     return services
-
-
-def create_env(config_file: Path) -> Dict[str, Any]:
-    """
-    Create application services env for testing and scripting purpose
-    """
-    res = get_local_path() / "resources"
-    config = Config.from_yaml_file(res=res, file=config_file)
-    configure_logger(config)
-    init_db(config_file, config, False, None)
-    return create_services(config, None)

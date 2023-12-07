@@ -8,22 +8,13 @@ from typing import List, Optional, Set, Union
 from zipfile import ZipFile
 
 import numpy as np
-
-try:
-    # The HTTPX equivalent of `requests.Session` is `httpx.Client`.
-    import httpx as requests
-    from httpx import Client as Session
-except ImportError:
-    # noinspection PyUnresolvedReferences, PyPackageRequirements
-    import requests
-
-    # noinspection PyUnresolvedReferences,PyPackageRequirements
-    from requests import Session
+from httpx import Client
 
 from antarest.core.cache.business.local_chache import LocalCache
 from antarest.core.config import CacheConfig
 from antarest.core.tasks.model import TaskDTO
 from antarest.core.utils.utils import StopWatch, get_local_path
+from antarest.matrixstore.repository import MatrixContentRepository
 from antarest.matrixstore.service import SimpleMatrixService
 from antarest.matrixstore.uri_resolver_service import UriResolverService
 from antarest.study.model import NEW_DEFAULT_STUDY_VERSION, STUDY_REFERENCE_TEMPLATES
@@ -54,22 +45,17 @@ class RemoteVariantGenerator(IVariantGenerator):
         study_id: str,
         host: Optional[str] = None,
         token: Optional[str] = None,
-        session: Optional[Session] = None,
+        session: Optional[Client] = None,
     ):
         self.study_id = study_id
 
         # todo: find the correct way to handle certificates.
-        #  By default, Requests/Httpx verifies SSL certificates for HTTPS requests.
+        #  By default, Httpx verifies SSL certificates for HTTPS requests.
         #  When verify is set to `False`, requests will accept any TLS certificate presented
-        #  by the server,and will ignore hostname mismatches and/or expired certificates,
+        #  by the server, and will ignore hostname mismatches and/or expired certificates,
         #  which will make your application vulnerable to man-in-the-middle (MitM) attacks.
-        #  Setting verify to False may be useful during local development or testing.
-        if Session.__name__ == "Client":
-            # noinspection PyArgumentList
-            self.session = session or Session(verify=False)
-        else:
-            self.session = session or Session()
-            self.session.verify = False
+        #  Setting verify to `False` may be useful during local development or testing.
+        self.session = session or Client(verify=False)
 
         self.host = host
         if session is None and host is None:
@@ -140,7 +126,12 @@ class LocalVariantGenerator(IVariantGenerator):
 
     def apply_commands(self, commands: List[CommandDTO], matrices_dir: Path) -> GenerationResultInfoDTO:
         stopwatch = StopWatch()
-        matrix_service = SimpleMatrixService(matrices_dir)
+        matrix_content_repository = MatrixContentRepository(
+            bucket_dir=matrices_dir,
+        )
+        matrix_service = SimpleMatrixService(
+            matrix_content_repository=matrix_content_repository,
+        )
         matrix_resolver = UriResolverService(matrix_service)
         local_cache = LocalCache(CacheConfig())
         study_factory = StudyFactory(
@@ -149,8 +140,10 @@ class LocalVariantGenerator(IVariantGenerator):
             cache=local_cache,
         )
         generator = VariantCommandGenerator(study_factory)
+        generator_matrix_constants = GeneratorMatrixConstants(matrix_service)
+        generator_matrix_constants.init_constant_matrices()
         command_factory = CommandFactory(
-            generator_matrix_constants=GeneratorMatrixConstants(matrix_service),
+            generator_matrix_constants=generator_matrix_constants,
             matrix_service=matrix_service,
             patch_service=PatchService(),
         )
@@ -176,8 +169,12 @@ def extract_commands(study_path: Path, commands_output_dir: Path) -> None:
         commands_output_dir.mkdir(parents=True)
     matrices_dir = commands_output_dir / MATRIX_STORE_DIR
     matrices_dir.mkdir()
-
-    matrix_service = SimpleMatrixService(matrices_dir)
+    matrix_content_repository = MatrixContentRepository(
+        bucket_dir=matrices_dir,
+    )
+    matrix_service = SimpleMatrixService(
+        matrix_content_repository=matrix_content_repository,
+    )
     matrix_resolver = UriResolverService(matrix_service)
     cache = LocalCache(CacheConfig())
     study_factory = StudyFactory(
@@ -187,7 +184,12 @@ def extract_commands(study_path: Path, commands_output_dir: Path) -> None:
     )
 
     study = study_factory.create_from_fs(study_path, str(study_path), use_cache=False)
-    local_matrix_service = SimpleMatrixService(matrices_dir)
+    matrix_content_repository = MatrixContentRepository(
+        bucket_dir=matrices_dir,
+    )
+    local_matrix_service = SimpleMatrixService(
+        matrix_content_repository=matrix_content_repository,
+    )
     extractor = VariantCommandsExtractor(local_matrix_service, patch_service=PatchService())
     command_list = extractor.extract(study)
 
@@ -233,7 +235,12 @@ def generate_diff(
     study_id = "empty_base"
     path_study = output_dir / study_id
 
-    local_matrix_service = SimpleMatrixService(matrices_dir)
+    matrix_content_repository = MatrixContentRepository(
+        bucket_dir=matrices_dir,
+    )
+    local_matrix_service = SimpleMatrixService(
+        matrix_content_repository=matrix_content_repository,
+    )
     resolver = UriResolverService(matrix_service=local_matrix_service)
 
     cache = LocalCache()

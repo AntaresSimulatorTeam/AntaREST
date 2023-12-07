@@ -37,7 +37,7 @@ def build_login(
     """
 
     if service is None:
-        user_repo = UserRepository(config)
+        user_repo = UserRepository()
         bot_repo = BotRepository()
         group_repo = GroupRepository()
         role_repo = RoleRepository()

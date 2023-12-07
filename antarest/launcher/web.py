@@ -201,23 +201,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         response_model=List[str],
     )
     def get_solver_versions(
-        solver: str = Query(
-            "default",
-            examples={
-                "Default solver": {
-                    "description": "Get the solver versions of the default configuration",
-                    "value": "default",
-                },
-                "SLURM solver": {
-                    "description": "Get the solver versions of the SLURM server if available",
-                    "value": "slurm",
-                },
-                "Local solver": {
-                    "description": "Get the solver versions of the Local server if available",
-                    "value": "local",
-                },
-            },
-        )
+        solver: str = Query("default", examples=["default", "slurm", "local"]),
     ) -> List[str]:
         """
         Get list of supported solver versions defined in the configuration.

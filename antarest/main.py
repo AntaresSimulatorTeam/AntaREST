@@ -30,15 +30,18 @@ from antarest.core.core_blueprint import create_utils_routes
 from antarest.core.logging.utils import LoggingMiddleware, configure_logger
 from antarest.core.requests import RATE_LIMIT_CONFIG
 from antarest.core.swagger import customize_openapi
+from antarest.core.tasks.model import cancel_orphan_tasks
+from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.core.utils.utils import get_local_path
 from antarest.core.utils.web import tags_metadata
 from antarest.login.auth import Auth, JwtSettings
+from antarest.login.model import init_admin_user
 from antarest.matrixstore.matrix_garbage_collector import MatrixGarbageCollector
-from antarest.singleton_services import SingletonServices
+from antarest.singleton_services import start_all_services
 from antarest.study.storage.auto_archive_service import AutoArchiveService
 from antarest.study.storage.rawstudy.watcher import Watcher
 from antarest.tools.admin_lib import clean_locks
-from antarest.utils import Module, create_services, init_db
+from antarest.utils import SESSION_ARGS, Module, create_services, init_db_engine
 
 logger = logging.getLogger(__name__)
 
@@ -246,7 +249,8 @@ def fastapi_app(
     )
 
     # Database
-    init_db(config_file, config, auto_upgrade_db, application)
+    engine = init_db_engine(config_file, config, auto_upgrade_db)
+    application.add_middleware(DBSessionMiddleware, custom_engine=engine, session_args=SESSION_ARGS)
 
     application.add_middleware(LoggingMiddleware)
 
@@ -401,6 +405,7 @@ def fastapi_app(
         config=RATE_LIMIT_CONFIG,
     )
 
+    init_admin_user(engine=engine, session_args=SESSION_ARGS, admin_password=config.security.admin_pwd)
     services = create_services(config, application)
 
     if mount_front:
@@ -428,6 +433,7 @@ def fastapi_app(
         auto_archiver.start()
 
     customize_openapi(application)
+    cancel_orphan_tasks(engine=engine, session_args=SESSION_ARGS)
     return application, services
 
 
@@ -455,8 +461,7 @@ def main() -> None:
         # noinspection PyTypeChecker
         uvicorn.run(app, host="0.0.0.0", port=8080, log_config=LOGGING_CONFIG)
     else:
-        services = SingletonServices(arguments.config_file, [arguments.module])
-        services.start()
+        start_all_services(arguments.config_file, [arguments.module])
 
 
 if __name__ == "__main__":

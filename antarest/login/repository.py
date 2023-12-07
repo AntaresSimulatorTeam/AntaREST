@@ -2,13 +2,10 @@ import logging
 from typing import List, Optional
 
 from sqlalchemy import exists  # type: ignore
-from sqlalchemy.orm import joinedload  # type: ignore
+from sqlalchemy.orm import Session, joinedload  # type: ignore
 
-from antarest.core.config import Config
-from antarest.core.jwt import ADMIN_ID
-from antarest.core.roles import RoleType
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.login.model import Bot, Group, Password, Role, User, UserLdap
+from antarest.login.model import Bot, Group, Role, User, UserLdap
 
 logger = logging.getLogger(__name__)
 
@@ -18,37 +15,46 @@ class GroupRepository:
     Database connector to manage Group entity.
     """
 
-    def __init__(self) -> None:
-        with db():
-            self.save(Group(id="admin", name="admin"))
+    def __init__(
+        self,
+        session: Optional[Session] = None,
+    ) -> None:
+        self._session = session
+
+    @property
+    def session(self) -> Session:
+        """Get the SqlAlchemy session or create a new one on the fly if not available in the current thread."""
+        if self._session is None:
+            return db.session
+        return self._session
 
     def save(self, group: Group) -> Group:
-        res = db.session.query(exists().where(Group.id == group.id)).scalar()
+        res = self.session.query(exists().where(Group.id == group.id)).scalar()
         if res:
-            db.session.merge(group)
+            self.session.merge(group)
         else:
-            db.session.add(group)
-        db.session.commit()
+            self.session.add(group)
+        self.session.commit()
 
         logger.debug(f"Group {group.id} saved")
         return group
 
     def get(self, id: str) -> Optional[Group]:
-        group: Group = db.session.query(Group).get(id)
+        group: Group = self.session.query(Group).get(id)
         return group
 
     def get_by_name(self, name: str) -> Group:
-        group: Group = db.session.query(Group).filter_by(name=name).first()
+        group: Group = self.session.query(Group).filter_by(name=name).first()
         return group
 
     def get_all(self) -> List[Group]:
-        groups: List[Group] = db.session.query(Group).all()
+        groups: List[Group] = self.session.query(Group).all()
         return groups
 
     def delete(self, id: str) -> None:
-        g = db.session.query(Group).get(id)
-        db.session.delete(g)
-        db.session.commit()
+        g = self.session.query(Group).get(id)
+        self.session.delete(g)
+        self.session.commit()
 
         logger.debug(f"Group {id} deleted")
 
@@ -58,49 +64,46 @@ class UserRepository:
     Database connector to manage User entity.
     """
 
-    def __init__(self, config: Config) -> None:
-        # init seed admin user from conf
-        with db():
-            admin_user = self.get_by_name("admin")
-            if admin_user is None:
-                self.save(
-                    User(
-                        id=ADMIN_ID,
-                        name="admin",
-                        password=Password(config.security.admin_pwd),
-                    )
-                )
-            elif not admin_user.password.check(config.security.admin_pwd):  # type: ignore
-                admin_user.password = Password(config.security.admin_pwd)  # type: ignore
-                self.save(admin_user)
+    def __init__(
+        self,
+        session: Optional[Session] = None,
+    ) -> None:
+        self._session = session
+
+    @property
+    def session(self) -> Session:
+        """Get the SqlAlchemy session or create a new one on the fly if not available in the current thread."""
+        if self._session is None:
+            return db.session
+        return self._session
 
     def save(self, user: User) -> User:
-        res = db.session.query(exists().where(User.id == user.id)).scalar()
+        res = self.session.query(exists().where(User.id == user.id)).scalar()
         if res:
-            db.session.merge(user)
+            self.session.merge(user)
         else:
-            db.session.add(user)
-        db.session.commit()
+            self.session.add(user)
+        self.session.commit()
 
         logger.debug(f"User {user.id} saved")
         return user
 
-    def get(self, id: int) -> Optional[User]:
-        user: User = db.session.query(User).get(id)
+    def get(self, id_number: int) -> Optional[User]:
+        user: User = self.session.query(User).get(id_number)
         return user
 
     def get_by_name(self, name: str) -> Optional[User]:
-        user: User = db.session.query(User).filter_by(name=name).first()
+        user: User = self.session.query(User).filter_by(name=name).first()
         return user
 
     def get_all(self) -> List[User]:
-        users: List[User] = db.session.query(User).all()
+        users: List[User] = self.session.query(User).all()
         return users
 
     def delete(self, id: int) -> None:
-        u: User = db.session.query(User).get(id)
-        db.session.delete(u)
-        db.session.commit()
+        u: User = self.session.query(User).get(id)
+        self.session.delete(u)
+        self.session.commit()
 
         logger.debug(f"User {id} deleted")
 
@@ -110,39 +113,54 @@ class UserLdapRepository:
     Database connector to manage UserLdap entity.
     """
 
+    def __init__(
+        self,
+        session: Optional[Session] = None,
+    ) -> None:
+        self._session = session
+
+    @property
+    def session(self) -> Session:
+        """Get the SqlAlchemy session or create a new one on the fly if not available in the current thread."""
+        if self._session is None:
+            return db.session
+        return self._session
+
     def save(self, user_ldap: UserLdap) -> UserLdap:
-        res = db.session.query(exists().where(UserLdap.id == user_ldap.id)).scalar()
+        res = self.session.query(exists().where(UserLdap.id == user_ldap.id)).scalar()
         if res:
-            db.session.merge(user_ldap)
+            self.session.merge(user_ldap)
         else:
-            db.session.add(user_ldap)
-        db.session.commit()
+            self.session.add(user_ldap)
+        self.session.commit()
 
         logger.debug(f"User LDAP {user_ldap.id} saved")
         return user_ldap
 
-    def get(self, id: int) -> Optional[UserLdap]:
-        user_ldap: Optional[UserLdap] = db.session.query(UserLdap).get(id)
+    def get(self, id_number: int) -> Optional[UserLdap]:
+        user_ldap: Optional[UserLdap] = self.session.query(UserLdap).get(id_number)
         return user_ldap
 
     def get_by_name(self, name: str) -> Optional[UserLdap]:
-        user: UserLdap = db.session.query(UserLdap).filter_by(name=name).first()
+        user: UserLdap = self.session.query(UserLdap).filter_by(name=name).first()
         return user
 
     def get_by_external_id(self, external_id: str) -> Optional[UserLdap]:
-        user: UserLdap = db.session.query(UserLdap).filter_by(external_id=external_id).first()
+        user: UserLdap = self.session.query(UserLdap).filter_by(external_id=external_id).first()
         return user
 
-    def get_all(self) -> List[UserLdap]:
-        users_ldap: List[UserLdap] = db.session.query(UserLdap).all()
+    def get_all(
+        self,
+    ) -> List[UserLdap]:
+        users_ldap: List[UserLdap] = self.session.query(UserLdap).all()
         return users_ldap
 
-    def delete(self, id: int) -> None:
-        u: UserLdap = db.session.query(UserLdap).get(id)
-        db.session.delete(u)
-        db.session.commit()
+    def delete(self, id_number: int) -> None:
+        u: UserLdap = self.session.query(UserLdap).get(id_number)
+        self.session.delete(u)
+        self.session.commit()
 
-        logger.debug(f"User LDAP {id} deleted")
+        logger.debug(f"User LDAP {id_number} deleted")
 
 
 class BotRepository:
@@ -150,42 +168,57 @@ class BotRepository:
     Database connector to manage Bot entity.
     """
 
+    def __init__(
+        self,
+        session: Optional[Session] = None,
+    ) -> None:
+        self._session = session
+
+    @property
+    def session(self) -> Session:
+        """Get the SqlAlchemy session or create a new one on the fly if not available in the current thread."""
+        if self._session is None:
+            return db.session
+        return self._session
+
     def save(self, bot: Bot) -> Bot:
-        res = db.session.query(exists().where(Bot.id == bot.id)).scalar()
+        res = self.session.query(exists().where(Bot.id == bot.id)).scalar()
         if res:
             raise ValueError("Bot already exist")
         else:
-            db.session.add(bot)
-        db.session.commit()
+            self.session.add(bot)
+        self.session.commit()
 
         logger.debug(f"Bot {bot.id} saved")
         return bot
 
-    def get(self, id: int) -> Optional[Bot]:
-        bot: Bot = db.session.query(Bot).get(id)
+    def get(self, id_number: int) -> Optional[Bot]:
+        bot: Bot = self.session.query(Bot).get(id_number)
         return bot
 
-    def get_all(self) -> List[Bot]:
-        bots: List[Bot] = db.session.query(Bot).all()
+    def get_all(
+        self,
+    ) -> List[Bot]:
+        bots: List[Bot] = self.session.query(Bot).all()
         return bots
 
-    def delete(self, id: int) -> None:
-        u: Bot = db.session.query(Bot).get(id)
-        db.session.delete(u)
-        db.session.commit()
+    def delete(self, id_number: int) -> None:
+        u: Bot = self.session.query(Bot).get(id_number)
+        self.session.delete(u)
+        self.session.commit()
 
-        logger.debug(f"Bot {id} deleted")
+        logger.debug(f"Bot {id_number} deleted")
 
     def get_all_by_owner(self, owner: int) -> List[Bot]:
-        bots: List[Bot] = db.session.query(Bot).filter_by(owner=owner).all()
+        bots: List[Bot] = self.session.query(Bot).filter_by(owner=owner).all()
         return bots
 
     def get_by_name_and_owner(self, owner: int, name: str) -> Optional[Bot]:
-        bot: Bot = db.session.query(Bot).filter_by(owner=owner, name=name).first()
+        bot: Bot = self.session.query(Bot).filter_by(owner=owner, name=name).first()
         return bot
 
-    def exists(self, id: int) -> bool:
-        res: bool = db.session.query(exists().where(Bot.id == id)).scalar()
+    def exists(self, id_number: int) -> bool:
+        res: bool = self.session.query(exists().where(Bot.id == id_number)).scalar()
         return res
 
 
@@ -194,29 +227,31 @@ class RoleRepository:
     Database connector to manage Role entity.
     """
 
-    def __init__(self) -> None:
-        with db():
-            if self.get(1, "admin") is None:
-                self.save(
-                    Role(
-                        type=RoleType.ADMIN,
-                        identity=User(id=1),
-                        group=Group(id="admin"),
-                    )
-                )
+    def __init__(
+        self,
+        session: Optional[Session] = None,
+    ) -> None:
+        self._session = session
+
+    @property
+    def session(self) -> Session:
+        """Get the SqlAlchemy session or create a new one on the fly if not available in the current thread."""
+        if self._session is None:
+            return db.session
+        return self._session
 
     def save(self, role: Role) -> Role:
-        role.group = db.session.merge(role.group)
-        role.identity = db.session.merge(role.identity)
+        role.group = self.session.merge(role.group)
+        role.identity = self.session.merge(role.identity)
 
-        db.session.add(role)
-        db.session.commit()
+        self.session.add(role)
+        self.session.commit()
 
         logger.debug(f"Role (user={role.identity}, group={role.group} saved")
         return role
 
     def get(self, user: int, group: str) -> Optional[Role]:
-        role: Role = db.session.query(Role).get((user, group))
+        role: Role = self.session.query(Role).get((user, group))
         return role
 
     def get_all_by_user(self, /, user_id: int) -> List[Role]:
@@ -231,17 +266,17 @@ class RoleRepository:
         """
         # When we fetch the list of roles, we also need to fetch the associated groups.
         # We use a SQL query with joins to fetch all these data efficiently.
-        stm = db.session.query(Role).options(joinedload(Role.group)).filter_by(identity_id=user_id)
+        stm = self.session.query(Role).options(joinedload(Role.group)).filter_by(identity_id=user_id)
         roles: List[Role] = stm.all()
         return roles
 
     def get_all_by_group(self, group: str) -> List[Role]:
-        roles: List[Role] = db.session.query(Role).filter_by(group_id=group).all()
+        roles: List[Role] = self.session.query(Role).filter_by(group_id=group).all()
         return roles
 
     def delete(self, user: int, group: str) -> None:
-        r = db.session.query(Role).get((user, group))
-        db.session.delete(r)
-        db.session.commit()
+        r = self.session.query(Role).get((user, group))
+        self.session.delete(r)
+        self.session.commit()
 
         logger.debug(f"Role (user={user}, group={group} deleted")

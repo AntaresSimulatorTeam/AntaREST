@@ -54,6 +54,9 @@ logger = logging.getLogger(__name__)
 
 
 class ISimpleMatrixService(ABC):
+    def __init__(self, matrix_content_repository: MatrixContentRepository) -> None:
+        self.matrix_content_repository = matrix_content_repository
+
     @abstractmethod
     def create(self, data: Union[List[List[MatrixData]], npt.NDArray[np.float64]]) -> str:
         raise NotImplementedError()
@@ -72,15 +75,14 @@ class ISimpleMatrixService(ABC):
 
 
 class SimpleMatrixService(ISimpleMatrixService):
-    def __init__(self, bucket_dir: Path):
-        self.bucket_dir = bucket_dir
-        self.content_repo = MatrixContentRepository(bucket_dir)
+    def __init__(self, matrix_content_repository: MatrixContentRepository):
+        super().__init__(matrix_content_repository=matrix_content_repository)
 
     def create(self, data: Union[List[List[MatrixData]], npt.NDArray[np.float64]]) -> str:
-        return self.content_repo.save(data)
+        return self.matrix_content_repository.save(data)
 
     def get(self, matrix_id: str) -> MatrixDTO:
-        data = self.content_repo.get(matrix_id)
+        data = self.matrix_content_repository.get(matrix_id)
         return MatrixDTO.construct(
             id=matrix_id,
             width=len(data.columns),
@@ -91,10 +93,10 @@ class SimpleMatrixService(ISimpleMatrixService):
         )
 
     def exists(self, matrix_id: str) -> bool:
-        return self.content_repo.exists(matrix_id)
+        return self.matrix_content_repository.exists(matrix_id)
 
     def delete(self, matrix_id: str) -> None:
-        self.content_repo.delete(matrix_id)
+        self.matrix_content_repository.delete(matrix_id)
 
 
 class MatrixService(ISimpleMatrixService):
@@ -108,9 +110,9 @@ class MatrixService(ISimpleMatrixService):
         config: Config,
         user_service: LoginService,
     ):
+        super().__init__(matrix_content_repository=matrix_content_repository)
         self.repo = repo
         self.repo_dataset = repo_dataset
-        self.matrix_content_repository = matrix_content_repository
         self.user_service = user_service
         self.file_transfer_manager = file_transfer_manager
         self.task_service = task_service
