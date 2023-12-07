@@ -73,9 +73,9 @@ echo "INFO: Copying basic configuration files..."
 rm -rf "${DIST_DIR}/examples" # in case of replay
 cp -r "${RESOURCES_DIR}"/deploy/* "${DIST_DIR}"
 if [[ "$OSTYPE" == "msys"* ]]; then
-  sed -i "s/700: path\/to\/700/$ANTARES_SOLVER_FULL_VERSION_INT: .\/AntaresWeb\/antares_solver\/antares-$ANTARES_SOLVER_VERSION-solver.exe/g" "${DIST_DIR}/config.yaml"
+  sed -i "s/VER: ANTARES_SOLVER_PATH/$ANTARES_SOLVER_FULL_VERSION_INT: .\/AntaresWeb\/antares_solver\/antares-$ANTARES_SOLVER_VERSION-solver.exe/g" "${DIST_DIR}/config.yaml"
 else
-  sed -i "s/700: path\/to\/700/$ANTARES_SOLVER_FULL_VERSION_INT: .\/AntaresWeb\/antares_solver\/antares-$ANTARES_SOLVER_VERSION-solver/g" "${DIST_DIR}/config.yaml"
+  sed -i "s/VER: ANTARES_SOLVER_PATH/$ANTARES_SOLVER_FULL_VERSION_INT: .\/AntaresWeb\/antares_solver\/antares-$ANTARES_SOLVER_VERSION-solver/g" "${DIST_DIR}/config.yaml"
 fi
 
 echo "INFO: Creating shortcuts..."
