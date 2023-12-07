@@ -8,9 +8,8 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.command_extractor import CommandExtractor
 from antarest.study.storage.variantstudy.business.command_reverter import CommandReverter
 from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series import (
-    default_binding_constraint_daily,
-    default_binding_constraint_hourly,
-    default_binding_constraint_weekly,
+    default_bc_hourly,
+    default_bc_weekly_daily,
 )
 from antarest.study.storage.variantstudy.model.command.common import BindingConstraintOperator
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
@@ -109,7 +108,7 @@ def test_manage_binding_constraint(
         "type": "daily",
     }
 
-    weekly_values = default_binding_constraint_weekly.tolist()
+    weekly_values = default_bc_weekly_daily.tolist()
     bind_update = UpdateBindingConstraint(
         id="bd 1",
         enabled=False,
@@ -148,7 +147,7 @@ def test_manage_binding_constraint(
 
 
 def test_match(command_context: CommandContext):
-    values = default_binding_constraint_daily.tolist()
+    values = default_bc_weekly_daily.tolist()
     base = CreateBindingConstraint(
         name="foo",
         enabled=False,
@@ -231,9 +230,9 @@ def test_match(command_context: CommandContext):
 
 
 def test_revert(command_context: CommandContext):
-    hourly_values = default_binding_constraint_hourly.tolist()
-    daily_values = default_binding_constraint_daily.tolist()
-    weekly_values = default_binding_constraint_weekly.tolist()
+    hourly_values = default_bc_hourly.tolist()
+    daily_values = default_bc_weekly_daily.tolist()
+    weekly_values = default_bc_weekly_daily.tolist()
     base = CreateBindingConstraint(
         name="foo",
         enabled=False,
@@ -339,7 +338,7 @@ def test_revert(command_context: CommandContext):
 
 
 def test_create_diff(command_context: CommandContext):
-    values_a = np.random.rand(365, 3).tolist()
+    values_a = np.random.rand(366, 3).tolist()
     base = CreateBindingConstraint(
         name="foo",
         enabled=False,
@@ -350,7 +349,7 @@ def test_create_diff(command_context: CommandContext):
         command_context=command_context,
     )
 
-    values_b = np.random.rand(8760, 3).tolist()
+    values_b = np.random.rand(8784, 3).tolist()
     other_match = CreateBindingConstraint(
         name="foo",
         enabled=True,
@@ -372,7 +371,7 @@ def test_create_diff(command_context: CommandContext):
         )
     ]
 
-    values = default_binding_constraint_daily.tolist()
+    values = default_bc_weekly_daily.tolist()
     base = UpdateBindingConstraint(
         id="foo",
         enabled=False,
