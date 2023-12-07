@@ -1,6 +1,6 @@
 import datetime
+import typing as t
 import uuid
-from typing import Any, List, Union
 
 from pydantic import BaseModel
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Table  # type: ignore
@@ -29,7 +29,11 @@ class Matrix(Base):  # type: ignore
     height: int = Column(Integer)
     created_at: datetime.datetime = Column(DateTime)
 
-    def __eq__(self, other: Any) -> bool:
+    def __repr__(self) -> str:  # pragma: no cover
+        """Returns a string representation of the matrix."""
+        return f"Matrix(id={self.id}, shape={(self.height, self.width)}, created_at={self.created_at})"
+
+    def __eq__(self, other: t.Any) -> bool:
         if not isinstance(other, Matrix):
             return False
 
@@ -50,9 +54,9 @@ class MatrixInfoDTO(BaseModel):
 class MatrixDataSetDTO(BaseModel):
     id: str
     name: str
-    matrices: List[MatrixInfoDTO]
+    matrices: t.List[MatrixInfoDTO]
     owner: UserInfo
-    groups: List[GroupDTO]
+    groups: t.List[GroupDTO]
     public: bool
     created_at: str
     updated_at: str
@@ -85,7 +89,11 @@ class MatrixDataSetRelation(Base):  # type: ignore
     name: str = Column(String, primary_key=True)
     matrix: Matrix = relationship(Matrix)
 
-    def __eq__(self, other: Any) -> bool:
+    def __repr__(self) -> str:  # pragma: no cover
+        """Returns a string representation of the matrix."""
+        return f"MatrixDataSetRelation(dataset_id={self.dataset_id}, matrix_id={self.matrix_id}, name={self.name})"
+
+    def __eq__(self, other: t.Any) -> bool:
         if not isinstance(other, MatrixDataSetRelation):
             return False
 
@@ -152,7 +160,18 @@ class MatrixDataSet(Base):  # type: ignore
             updated_at=str(self.updated_at),
         )
 
-    def __eq__(self, other: Any) -> bool:
+    def __repr__(self) -> str:  # pragma: no cover
+        """Returns a string representation of the matrix."""
+        return (
+            f"MatrixDataSet(id={self.id},"
+            f" name={self.name},"
+            f" owner_id={self.owner_id},"
+            f" public={self.public},"
+            f" created_at={self.created_at},"
+            f" updated_at={self.updated_at})"
+        )
+
+    def __eq__(self, other: t.Any) -> bool:
         if not isinstance(other, MatrixDataSet):
             return False
 
@@ -181,9 +200,9 @@ MatrixData = float
 class MatrixDTO(BaseModel):
     width: int
     height: int
-    index: List[str]
-    columns: List[str]
-    data: List[List[MatrixData]]
+    index: t.List[str]
+    columns: t.List[str]
+    data: t.List[t.List[MatrixData]]
     created_at: int = 0
     id: str = ""
 
@@ -198,12 +217,12 @@ class MatrixContent(BaseModel):
         columns: A list of columns indexes or names.
     """
 
-    data: List[List[MatrixData]]
-    index: List[Union[int, str]]
-    columns: List[Union[int, str]]
+    data: t.List[t.List[MatrixData]]
+    index: t.List[t.Union[int, str]]
+    columns: t.List[t.Union[int, str]]
 
 
 class MatrixDataSetUpdateDTO(BaseModel):
     name: str
-    groups: List[str]
+    groups: t.List[str]
     public: bool
