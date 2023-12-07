@@ -71,10 +71,14 @@ export interface ThermalCluster extends ThermalPollutants {
   spinning: number;
   minUpTime: number;
   minDownTime: number;
+  maxUpwardPowerRampingRate: number;
+  maxDownwardPowerRampingRate: number;
   marginalCost: number;
   fixedCost: number;
   startupCost: number;
   marketBidCost: number;
+  powerIncreaseCost: number;
+  powerDecreaseCost: number;
   spreadCost: number;
   genTs: TimeSeriesGenerationOption;
   volatilityForced: number;

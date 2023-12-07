@@ -138,6 +138,28 @@ function Fields() {
             setValueAs: Math.floor,
           }}
         />
+        <NumberFE
+          label={t("study.modelization.clusters.maxUpwardPowerRampingRate")}
+          name="maxUpwardPowerRampingRate"
+          control={control}
+          rules={{
+            min: {
+              value: 1,
+              message: t("form.field.minValue", { 0: 1 }),
+            },
+          }}
+        />
+        <NumberFE
+          label={t("study.modelization.clusters.maxDownwardPowerRampingRate")}
+          name="maxDownwardPowerRampingRate"
+          control={control}
+          rules={{
+            min: {
+              value: 1,
+              message: t("form.field.minValue", { 0: 1 }),
+            },
+          }}
+        />
       </Fieldset>
       <Fieldset legend={t("study.modelization.clusters.operatingCosts")}>
         <NumberFE
@@ -188,6 +210,28 @@ function Fields() {
           label={t("study.modelization.clusters.spreadCost")}
           name="spreadCost"
           control={control}
+        />
+        <NumberFE
+          label={t("study.modelization.clusters.powerIncreaseCost")}
+          name="powerIncreaseCost"
+          control={control}
+          rules={{
+            min: {
+              value: 0,
+              message: t("form.field.minValue", { 0: 0 }),
+            },
+          }}
+        />
+        <NumberFE
+          label={t("study.modelization.clusters.powerDecreaseCost")}
+          name="powerDecreaseCost"
+          control={control}
+          rules={{
+            min: {
+              value: 0,
+              message: t("form.field.minValue", { 0: 0 }),
+            },
+          }}
         />
       </Fieldset>
       <Fieldset legend={t("study.modelization.clusters.thermal.pollutants")}>
