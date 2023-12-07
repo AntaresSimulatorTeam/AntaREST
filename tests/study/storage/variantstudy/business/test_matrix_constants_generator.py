@@ -44,14 +44,14 @@ class TestGeneratorMatrixConstants:
         hourly = generator.get_binding_constraint_hourly()
         hourly_matrix_id = hourly.split(MATRIX_PROTOCOL_PREFIX)[1]
         hourly_matrix_dto = generator.matrix_service.get(hourly_matrix_id)
-        assert np.array(hourly_matrix_dto.data).all() == series.default_binding_constraint_hourly.all()
+        assert np.array(hourly_matrix_dto.data).all() == series.default_bc_hourly.all()
 
         daily = generator.get_binding_constraint_daily()
         daily_matrix_id = daily.split(MATRIX_PROTOCOL_PREFIX)[1]
         daily_matrix_dto = generator.matrix_service.get(daily_matrix_id)
-        assert np.array(daily_matrix_dto.data).all() == series.default_binding_constraint_daily.all()
+        assert np.array(daily_matrix_dto.data).all() == series.default_bc_weekly_daily.all()
 
         weekly = generator.get_binding_constraint_weekly()
         weekly_matrix_id = weekly.split(MATRIX_PROTOCOL_PREFIX)[1]
         weekly_matrix_dto = generator.matrix_service.get(weekly_matrix_id)
-        assert np.array(weekly_matrix_dto.data).all() == series.default_binding_constraint_weekly.all()
+        assert np.array(weekly_matrix_dto.data).all() == series.default_bc_weekly_daily.all()

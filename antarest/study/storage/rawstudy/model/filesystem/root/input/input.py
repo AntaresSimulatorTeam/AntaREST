@@ -18,7 +18,12 @@ from antarest.study.storage.rawstudy.model.filesystem.root.input.wind.wind impor
 
 
 class Input(FolderNode):
+    """
+    Handle the input folder which contains all the input data of the study.
+    """
+
     def build(self) -> TREE:
+        # noinspection SpellCheckingInspection
         children: TREE = {
             "areas": InputAreas(self.context, self.config.next_file("areas")),
             "bindingconstraints": BindingConstraints(self.context, self.config.next_file("bindingconstraints")),
