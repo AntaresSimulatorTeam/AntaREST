@@ -77,22 +77,39 @@ class SnapshotGenerator:
         assert_permission_on_studies(jwt_user, [root_study, *descendants], StudyPermissionType.READ, raising=True)
         ref_study, cmd_blocks = search_ref_study(root_study, descendants, from_scratch=from_scratch)
 
-        # We are going to generate the snapshot in a temporary directory which will be renamed
-        # at the end of the process. This prevents incomplete snapshots in case of error.
-
-        # Get snapshot directory and prepare a temporary directory next to it.
+        # Get snapshot directory
         variant_study = descendants[-1]
         snapshot_dir = variant_study.snapshot_dir
-        snapshot_dir.parent.mkdir(parents=True, exist_ok=True)
-        self._tmp_dir = Path(tempfile.mkdtemp(dir=snapshot_dir.parent, prefix=f"~{snapshot_dir.name}", suffix=".tmp"))
+
+        if snapshot_dir.exists():
+            # The snapshot directory already exists, so we generate the commands directly inside.
+            # In this case, we cannot guarantee that the snapshot will remain valid in case of error,
+            # because there is no undo mechanism.
+            self._tmp_dir = snapshot_dir
+            use_tmp_dir = False
+        else:
+            # We are going to generate the snapshot in a temporary directory which will be renamed
+            # at the end of the process. This prevents incomplete snapshots in case of error.
+            snapshot_dir.parent.mkdir(parents=True, exist_ok=True)
+            self._tmp_dir = Path(
+                tempfile.mkdtemp(dir=snapshot_dir.parent, prefix=f"~{snapshot_dir.name}", suffix=".tmp")
+            )
+            use_tmp_dir = True
+
         try:
-            logger.info(f"Exporting the reference study '{ref_study.id}' to '{self._tmp_dir.name}'...")
-            self._export_ref_study(ref_study)
+            if use_tmp_dir:
+                logger.info(f"Exporting the reference study '{ref_study.id}' to '{self._tmp_dir.name}'...")
+                self._export_ref_study(ref_study)
 
             logger.info(f"Applying commands to the reference study '{ref_study.id}'...")
             results = self._apply_commands(variant_study, ref_study, cmd_blocks)
 
-            if (snapshot_dir / "user").exists():
+            # With a classic use of variants, we should not have a `user` folder in the snapshot,
+            # because they are regularly deleted.
+            # However, the `user` folder in a raw study could contain the configuration for Xpansion.
+            # In any case, we don't want to overwrite the user's configuration.
+
+            if use_tmp_dir and (snapshot_dir / "user").exists():
                 logger.info("Keeping previous unmanaged user config...")
                 shutil.copytree(snapshot_dir / "user", self._tmp_dir / "user", dirs_exist_ok=True)
 
@@ -129,9 +146,11 @@ class SnapshotGenerator:
             raise
 
         else:
-            # Rename the temporary directory to the final snapshot directory
-            shutil.rmtree(snapshot_dir, ignore_errors=True)
-            self._tmp_dir.rename(snapshot_dir)
+            if use_tmp_dir:
+                # Rename the temporary directory to the final snapshot directory
+                shutil.rmtree(snapshot_dir, ignore_errors=True)
+                self._tmp_dir.rename(snapshot_dir)
+
             try:
                 notifier(results.json())
             except Exception as exc:

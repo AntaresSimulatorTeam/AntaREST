@@ -25,6 +25,7 @@ from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, Vari
 from antarest.study.storage.variantstudy.model.model import CommandDTO, GenerationResultInfoDTO
 from antarest.study.storage.variantstudy.snapshot_generator import SnapshotGenerator, search_ref_study
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
+from tests.db_statement_recorder import DBStatementRecorder
 from tests.helpers import with_db_context
 
 
@@ -715,15 +716,9 @@ class TestSnapshotGenerator:
             repository=variant_study_service.repository,
         )
 
-        sql_statements = []
         notifier = RegisterNotification()
 
-        @event.listens_for(db.session.bind, "before_cursor_execute")  # type: ignore
-        def before_cursor_execute(conn, cursor, statement: str, parameters, context, executemany) -> None:
-            # note: add a breakpoint here to debug the SQL statements.
-            sql_statements.append(statement)
-
-        try:
+        with DBStatementRecorder(db.session.bind) as db_recorder:
             results = generator.generate_snapshot(
                 variant_study.id,
                 jwt_user,
@@ -731,8 +726,6 @@ class TestSnapshotGenerator:
                 from_scratch=False,
                 notifier=notifier,
             )
-        finally:
-            event.remove(db.session.bind, "before_cursor_execute", before_cursor_execute)
 
         # Check: the number of database queries is kept as low as possible.
         # We expect 5 queries:
@@ -741,7 +734,7 @@ class TestSnapshotGenerator:
         # - 1 query to fetch the list of variants with snapshot, commands, etc.,
         # - 1 query to update the variant study additional_data,
         # - 1 query to insert the variant study snapshot.
-        assert len(sql_statements) == 5, "\n-------\n".join(sql_statements)
+        assert len(db_recorder.sql_statements) == 5, str(db_recorder)
 
         # Check: the variant generation must succeed.
         assert results == GenerationResultInfoDTO(
@@ -826,11 +819,6 @@ class TestSnapshotGenerator:
         Test the generation of a variant study containing a user directory.
         We expect that the user directory is correctly preserved.
         """
-        # Add a user directory to the variant study.
-        user_dir = Path(variant_study.snapshot_dir) / "user"
-        user_dir.mkdir(parents=True, exist_ok=True)
-        user_dir.joinpath("user_file.txt").touch()
-
         generator = SnapshotGenerator(
             cache=variant_study_service.cache,
             raw_study_service=variant_study_service.raw_study_service,
@@ -840,22 +828,25 @@ class TestSnapshotGenerator:
             repository=variant_study_service.repository,
         )
 
-        results = generator.generate_snapshot(
+        # Generate the snapshot once
+        generator.generate_snapshot(
             variant_study.id,
             jwt_user,
             denormalize=False,
             from_scratch=False,
         )
 
-        # Check the results
-        assert results == GenerationResultInfoDTO(
-            success=True,
-            details=[
-                ("create_area", True, "Area 'North' created"),
-                ("create_area", True, "Area 'South' created"),
-                ("create_link", True, "Link between 'north' and 'south' created"),
-                ("create_cluster", True, "Thermal cluster 'gas_cluster' added to area 'south'."),
-            ],
+        # Add a user directory to the variant study.
+        user_dir = Path(variant_study.snapshot_dir) / "user"
+        user_dir.mkdir(parents=True, exist_ok=True)
+        user_dir.joinpath("user_file.txt").touch()
+
+        # Generate the snapshot again
+        generator.generate_snapshot(
+            variant_study.id,
+            jwt_user,
+            denormalize=False,
+            from_scratch=False,
         )
 
         # Check that the user directory is correctly preserved.
