@@ -304,9 +304,14 @@ class LauncherService:
 
         orphan_visibility_threshold = datetime.utcnow() - timedelta(days=ORPHAN_JOBS_VISIBILITY_THRESHOLD)
         allowed_job_results = []
+
         studies = {
-            study.id: study for study in self.study_service.repository.get_list([job.study_id for job in job_results])
+            study.id: study
+            for study in self.study_service.repository.get_all(
+                studies_ids=[job_result.study_id for job_result in job_results]
+            )
         }
+
         for job_result in job_results:
             if job_result.study_id in studies:
                 if assert_permission(

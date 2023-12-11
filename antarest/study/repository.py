@@ -2,12 +2,13 @@ import datetime
 import logging
 import typing as t
 
+from sqlalchemy import or_  # type: ignore
 from sqlalchemy.orm import Session, joinedload, with_polymorphic  # type: ignore
 
 from antarest.core.interfaces.cache import CacheConstants, ICache
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.study.common.utils import get_study_information
-from antarest.study.model import RawStudy, Study, StudyAdditionalData
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, Study, StudyAdditionalData
 
 logger = logging.getLogger(__name__)
 
@@ -81,7 +82,7 @@ class StudyMetadataRepository:
         )
         return study
 
-    def one(self, id: str) -> Study:
+    def one(self, study_id: str) -> Study:
         """Get the study by ID or raise `sqlalchemy.exc.NoResultFound` if not found in database."""
         # When we fetch a study, we also need to fetch the associated owner and groups
         # to check the permissions of the current user efficiently.
@@ -89,28 +90,24 @@ class StudyMetadataRepository:
             self.session.query(Study)
             .options(joinedload(Study.owner))
             .options(joinedload(Study.groups))
-            .filter_by(id=id)
+            .filter_by(id=study_id)
             .one()
         )
         return study
-
-    def get_list(self, study_id: t.List[str]) -> t.List[Study]:
-        # When we fetch a study, we also need to fetch the associated owner and groups
-        # to check the permissions of the current user efficiently.
-        studies: t.List[Study] = (
-            self.session.query(Study)
-            .options(joinedload(Study.owner))
-            .options(joinedload(Study.groups))
-            .where(Study.id.in_(study_id))
-            .all()
-        )
-        return studies
 
     def get_additional_data(self, study_id: str) -> t.Optional[StudyAdditionalData]:
         study: StudyAdditionalData = self.session.query(StudyAdditionalData).get(study_id)
         return study
 
-    def get_all(self) -> t.List[Study]:
+    def get_all(
+        self,
+        name_regex: t.Optional[str] = None,
+        version: t.Optional[int] = None,
+        archived: t.Optional[bool] = None,
+        managed: t.Optional[bool] = None,
+        studies_ids: t.Optional[t.List[str]] = None,
+        study_type: t.Optional[str] = None,
+    ) -> t.List[Study]:
         # When we fetch a study, we also need to fetch the associated owner and groups
         # to check the permissions of the current user efficiently.
         # We also need to fetch the additional data to display the study information
@@ -121,6 +118,22 @@ class StudyMetadataRepository:
         q = q.options(joinedload(entity.owner))
         q = q.options(joinedload(entity.groups))
         q = q.options(joinedload(entity.additional_data))
+        if name_regex is not None:
+            q = q.filter(entity.name.like(f"%{name_regex}%"))
+        if version is not None:
+            q = q.filter(entity.version == version)
+        if archived is not None:
+            q = q.filter(entity.archived == archived)
+        if managed is not None:
+            if managed:
+                q = q.filter(or_(entity.type != "rawstudy", entity.workspace == DEFAULT_WORKSPACE_NAME))
+            else:
+                q = q.filter(entity.type == "rawstudy")
+                q = q.filter(entity.workspace != DEFAULT_WORKSPACE_NAME)
+        if studies_ids is not None:
+            q = q.filter(entity.id.in_(studies_ids))
+        if study_type is not None:
+            q = q.filter(entity.type == study_type)
         studies: t.List[Study] = q.all()
         return studies
 
@@ -138,6 +151,11 @@ class StudyMetadataRepository:
         session.delete(u)
         session.commit()
         self._remove_study_from_cache_listing(id)
+
+    def multi_delete(self, ids: t.List[str]) -> None:
+        logger.debug(f"Deleting study {ids}")
+        self.session.query(Study).filter(Study.id.in_(ids)).delete(synchronize_session="fetch")
+        self.session.commit()
 
     def _remove_study_from_cache_listing(self, study_id: str) -> None:
         try:

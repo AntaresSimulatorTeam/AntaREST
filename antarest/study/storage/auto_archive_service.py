@@ -29,13 +29,12 @@ class AutoArchiveService(IService):
         now = datetime.datetime.utcnow()
         study_ids_to_archive: List[Tuple[str, bool]] = []
         with db():
-            studies: List[Study] = self.study_service.repository.get_all()
+            studies: List[Study] = self.study_service.repository.get_all(managed=True)
             # list of study id and boolean indicating if it's a raw study (True) or a variant (False)
             study_ids_to_archive = [
                 (study.id, isinstance(study, RawStudy))
                 for study in studies
-                if is_managed(study)
-                and (study.last_access or study.updated_at)
+                if (study.last_access or study.updated_at)
                 < now - datetime.timedelta(days=self.config.storage.auto_archive_threshold_days)
                 and (isinstance(study, VariantStudy) or not study.archived)
             ]

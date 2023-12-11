@@ -453,13 +453,15 @@ class StudyService:
                 studies[k] = StudyMetadataDTO.parse_obj(cached_studies[k])
         else:
             logger.info("Retrieving all studies")
-            all_studies = self.repository.get_all()
+            if not managed:
+                all_studies = self.repository.get_all()
+            else:
+                all_studies = self.repository.get_all(managed=True)
             logger.info("Studies retrieved")
             for study in all_studies:
-                if not managed or is_managed(study):
-                    study_metadata = self._try_get_studies_information(study)
-                    if study_metadata is not None:
-                        studies[study_metadata.id] = study_metadata
+                study_metadata = self._try_get_studies_information(study)
+                if study_metadata is not None:
+                    studies[study_metadata.id] = study_metadata
             self.cache_service.put(cache_key, studies)
         return {
             s.id: s
@@ -695,19 +697,18 @@ class StudyService:
 
     def remove_duplicates(self) -> None:
         study_paths: Dict[str, List[str]] = {}
-        for study in self.repository.get_all():
-            if isinstance(study, RawStudy) and not study.archived:
-                path = str(study.path)
-                if path not in study_paths:
-                    study_paths[path] = []
-                study_paths[path].append(study.id)
+        for study in self.repository.get_all(archived=False, study_type="rawstudy"):
+            path = str(study.path)
+            if path not in study_paths:
+                study_paths[path] = []
+            study_paths[path].append(study.id)
 
+        duplicate_studies_ids = []
         for studies_with_same_path in study_paths.values():
-            if len(studies_with_same_path) > 1:
-                logger.info(f"Found studies {studies_with_same_path} with same path, de duplicating")
-                for study_name in studies_with_same_path[1:]:
-                    logger.info(f"Removing study {study_name}")
-                    self.repository.delete(study_name)
+            duplicate_studies_ids += studies_with_same_path[1:]
+        if len(duplicate_studies_ids) > 1:
+            logger.info(f"Found studies {duplicate_studies_ids} with same path of pre-existing studies, de duplicating")
+            self.repository.multi_delete(duplicate_studies_ids)
 
     def sync_studies_on_disk(self, folders: List[StudyFolder], directory: Optional[Path] = None) -> None:
         """
@@ -2135,11 +2136,10 @@ class StudyService:
         if params.user and not params.user.is_site_admin():
             logger.error(f"User {params.user.id} is not site admin")
             raise UserHasNotPermissionError()
-        studies = self.repository.get_all()
+        studies = self.repository.get_all(managed=False)
         for study in studies:
-            if isinstance(study, RawStudy) and not is_managed(study):
-                storage = self.storage_service.raw_study_service
-                storage.check_and_update_study_version_in_database(study)
+            storage = self.storage_service.raw_study_service
+            storage.check_and_update_study_version_in_database(study)
 
     def archive_outputs(self, study_id: str, params: RequestParameters) -> None:
         logger.info(f"Archiving all outputs for study {study_id}")
