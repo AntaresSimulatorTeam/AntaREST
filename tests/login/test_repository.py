@@ -1,29 +1,14 @@
 import pytest
-from sqlalchemy import create_engine
-from sqlalchemy.orm import scoped_session, sessionmaker  # type: ignore
+from sqlalchemy.orm import Session, scoped_session, sessionmaker  # type: ignore
 
-from antarest.core.config import Config, SecurityConfig
-from antarest.core.persistence import Base
-from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
 from antarest.login.model import Bot, Group, Password, Role, RoleType, User, UserLdap
 from antarest.login.repository import BotRepository, GroupRepository, RoleRepository, UserLdapRepository, UserRepository
 
 
 @pytest.mark.unit_test
-def test_users():
-    engine = create_engine("sqlite:///:memory:", echo=False)
-    Base.metadata.create_all(engine)
-    # noinspection SpellCheckingInspection
-    DBSessionMiddleware(
-        None,
-        custom_engine=engine,
-        session_args={"autocommit": False, "autoflush": False},
-    )
-
-    with db():
-        repo = UserRepository(
-            config=Config(security=SecurityConfig(admin_pwd="admin")),
-        )
+def test_users(db_session: Session):
+    with db_session:
+        repo = UserRepository(session=db_session)
         a = User(
             name="a",
             password=Password("a"),
@@ -43,18 +28,9 @@ def test_users():
 
 
 @pytest.mark.unit_test
-def test_users_ldap():
-    engine = create_engine("sqlite:///:memory:", echo=False)
-    Base.metadata.create_all(engine)
-    # noinspection SpellCheckingInspection
-    DBSessionMiddleware(
-        None,
-        custom_engine=engine,
-        session_args={"autocommit": False, "autoflush": False},
-    )
-
-    with db():
-        repo = UserLdapRepository()
+def test_users_ldap(db_session: Session):
+    repo = UserLdapRepository(session=db_session)
+    with repo.session:
         a = UserLdap(name="a", external_id="b")
 
         a = repo.save(a)
@@ -67,18 +43,9 @@ def test_users_ldap():
 
 
 @pytest.mark.unit_test
-def test_bots():
-    engine = create_engine("sqlite:///:memory:", echo=False)
-    Base.metadata.create_all(engine)
-    # noinspection SpellCheckingInspection
-    DBSessionMiddleware(
-        None,
-        custom_engine=engine,
-        session_args={"autocommit": False, "autoflush": False},
-    )
-
-    with db():
-        repo = BotRepository()
+def test_bots(db_session: Session):
+    repo = BotRepository(session=db_session)
+    with repo.session:
         a = Bot(name="a", owner=1)
         a = repo.save(a)
         assert a.id
@@ -98,19 +65,9 @@ def test_bots():
 
 
 @pytest.mark.unit_test
-def test_groups():
-    engine = create_engine("sqlite:///:memory:", echo=False)
-    Base.metadata.create_all(engine)
-    # noinspection SpellCheckingInspection
-    DBSessionMiddleware(
-        None,
-        custom_engine=engine,
-        session_args={"autocommit": False, "autoflush": False},
-    )
-
-    with db():
-        repo = GroupRepository()
-
+def test_groups(db_session: Session):
+    repo = GroupRepository(session=db_session)
+    with repo.session:
         a = Group(name="a")
 
         a = repo.save(a)
@@ -125,19 +82,9 @@ def test_groups():
 
 
 @pytest.mark.unit_test
-def test_roles():
-    engine = create_engine("sqlite:///:memory:", echo=False)
-    Base.metadata.create_all(engine)
-    # noinspection SpellCheckingInspection
-    DBSessionMiddleware(
-        None,
-        custom_engine=engine,
-        session_args={"autocommit": False, "autoflush": False},
-    )
-
-    with db():
-        repo = RoleRepository()
-
+def test_roles(db_session: Session):
+    repo = RoleRepository(session=db_session)
+    with repo.session:
         a = Role(type=RoleType.ADMIN, identity=User(id=0), group=Group(id="group"))
 
         a = repo.save(a)

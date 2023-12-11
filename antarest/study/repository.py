@@ -53,18 +53,19 @@ class StudyMetadataRepository:
         if update_modification_date:
             metadata.updated_at = datetime.datetime.utcnow()
 
-        metadata.groups = [db.session.merge(g) for g in metadata.groups]
+        session = self.session
+        metadata.groups = [session.merge(g) for g in metadata.groups]
         if metadata.owner:
-            metadata.owner = db.session.merge(metadata.owner)
-        db.session.add(metadata)
-        db.session.commit()
+            metadata.owner = session.merge(metadata.owner)
+        session.add(metadata)
+        session.commit()
 
         if update_in_listing:
             self._update_study_from_cache_listing(metadata)
         return metadata
 
     def refresh(self, metadata: Study) -> None:
-        db.session.refresh(metadata)
+        self.session.refresh(metadata)
 
     def get(self, id: str) -> t.Optional[Study]:
         """Get the study by ID or return `None` if not found in database."""
@@ -72,7 +73,7 @@ class StudyMetadataRepository:
         # to check the permissions of the current user efficiently.
         study: Study = (
             # fmt: off
-            db.session.query(Study)
+            self.session.query(Study)
             .options(joinedload(Study.owner))
             .options(joinedload(Study.groups))
             .get(id)
@@ -85,7 +86,7 @@ class StudyMetadataRepository:
         # When we fetch a study, we also need to fetch the associated owner and groups
         # to check the permissions of the current user efficiently.
         study: Study = (
-            db.session.query(Study)
+            self.session.query(Study)
             .options(joinedload(Study.owner))
             .options(joinedload(Study.groups))
             .filter_by(id=id)
@@ -97,7 +98,7 @@ class StudyMetadataRepository:
         # When we fetch a study, we also need to fetch the associated owner and groups
         # to check the permissions of the current user efficiently.
         studies: t.List[Study] = (
-            db.session.query(Study)
+            self.session.query(Study)
             .options(joinedload(Study.owner))
             .options(joinedload(Study.groups))
             .where(Study.id.in_(study_id))
@@ -106,16 +107,16 @@ class StudyMetadataRepository:
         return studies
 
     def get_additional_data(self, study_id: str) -> t.Optional[StudyAdditionalData]:
-        study: StudyAdditionalData = db.session.query(StudyAdditionalData).get(study_id)
+        study: StudyAdditionalData = self.session.query(StudyAdditionalData).get(study_id)
         return study
 
     def get_all(self) -> t.List[Study]:
         entity = with_polymorphic(Study, "*")
-        studies: t.List[Study] = db.session.query(entity).filter(RawStudy.missing.is_(None)).all()
+        studies: t.List[Study] = self.session.query(entity).filter(RawStudy.missing.is_(None)).all()
         return studies
 
     def get_all_raw(self, show_missing: bool = True) -> t.List[RawStudy]:
-        query = db.session.query(RawStudy)
+        query = self.session.query(RawStudy)
         if not show_missing:
             query = query.filter(RawStudy.missing.is_(None))
         studies: t.List[RawStudy] = query.all()
@@ -123,9 +124,10 @@ class StudyMetadataRepository:
 
     def delete(self, id: str) -> None:
         logger.debug(f"Deleting study {id}")
-        u: Study = db.session.query(Study).get(id)
-        db.session.delete(u)
-        db.session.commit()
+        session = self.session
+        u: Study = session.query(Study).get(id)
+        session.delete(u)
+        session.commit()
         self._remove_study_from_cache_listing(id)
 
     def _remove_study_from_cache_listing(self, study_id: str) -> None:

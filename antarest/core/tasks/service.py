@@ -1,16 +1,16 @@
 import datetime
 import logging
 import time
+import typing as t
 from abc import ABC, abstractmethod
 from concurrent.futures import Future, ThreadPoolExecutor
 from http import HTTPStatus
-from typing import Awaitable, Callable, Dict, List, Optional, Union
 
 from fastapi import HTTPException
+from sqlalchemy.orm import Session  # type: ignore
 
 from antarest.core.config import Config
 from antarest.core.interfaces.eventbus import Event, EventChannelDirectory, EventType, IEventBus
-from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.requests import MustBeAuthenticatedError, RequestParameters, UserHasNotPermissionError
 from antarest.core.tasks.model import (
@@ -26,13 +26,12 @@ from antarest.core.tasks.model import (
 )
 from antarest.core.tasks.repository import TaskJobRepository
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.utils import retry
 from antarest.worker.worker import WorkerTaskCommand, WorkerTaskResult
 
 logger = logging.getLogger(__name__)
 
-TaskUpdateNotifier = Callable[[str], None]
-Task = Callable[[TaskUpdateNotifier], TaskResult]
+TaskUpdateNotifier = t.Callable[[str], None]
+Task = t.Callable[[TaskUpdateNotifier], TaskResult]
 
 DEFAULT_AWAIT_MAX_TIMEOUT = 172800  # 48 hours
 """Default timeout for `await_task` in seconds."""
@@ -44,21 +43,21 @@ class ITaskService(ABC):
         self,
         task_type: TaskType,
         task_queue: str,
-        task_args: Dict[str, Union[int, float, bool, str]],
-        name: Optional[str],
-        ref_id: Optional[str],
+        task_args: t.Dict[str, t.Union[int, float, bool, str]],
+        name: t.Optional[str],
+        ref_id: t.Optional[str],
         request_params: RequestParameters,
-    ) -> Optional[str]:
+    ) -> t.Optional[str]:
         raise NotImplementedError()
 
     @abstractmethod
     def add_task(
         self,
         action: Task,
-        name: Optional[str],
-        task_type: Optional[TaskType],
-        ref_id: Optional[str],
-        custom_event_messages: Optional[CustomTaskEventMessages],
+        name: t.Optional[str],
+        task_type: t.Optional[TaskType],
+        ref_id: t.Optional[str],
+        custom_event_messages: t.Optional[CustomTaskEventMessages],
         request_params: RequestParameters,
     ) -> str:
         raise NotImplementedError()
@@ -73,7 +72,7 @@ class ITaskService(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def list_tasks(self, task_filter: TaskListFilter, request_params: RequestParameters) -> List[TaskDTO]:
+    def list_tasks(self, task_filter: TaskListFilter, request_params: RequestParameters) -> t.List[TaskDTO]:
         raise NotImplementedError()
 
     @abstractmethod
@@ -86,6 +85,26 @@ def noop_notifier(message: str) -> None:
     """This function is used in tasks when no notification is required."""
 
 
+class TaskJobLogRecorder:
+    """
+    Callback used to register log messages in the TaskJob table.
+
+    Args:
+        task_id: The task id.
+        session: The database session created in the same thread as the task thread.
+    """
+
+    def __init__(self, task_id: str, session: Session):
+        self.session = session
+        self.task_id = task_id
+
+    def __call__(self, message: str) -> None:
+        task = self.session.query(TaskJob).get(self.task_id)
+        if task:
+            task.logs.append(TaskJobLog(message=message, task_id=self.task_id))
+            db.session.commit()
+
+
 class TaskJobService(ITaskService):
     def __init__(
         self,
@@ -96,24 +115,22 @@ class TaskJobService(ITaskService):
         self.config = config
         self.repo = repository
         self.event_bus = event_bus
-        self.tasks: Dict[str, Future[None]] = {}
+        self.tasks: t.Dict[str, Future[None]] = {}
         self.threadpool = ThreadPoolExecutor(max_workers=config.tasks.max_workers, thread_name_prefix="taskjob_")
         self.event_bus.add_listener(self.create_task_event_callback(), [EventType.TASK_CANCEL_REQUEST])
         self.remote_workers = config.tasks.remote_workers
-        # set the status of previously running job to FAILED due to server restart
-        self._fix_running_status()
 
     def _create_worker_task(
         self,
         task_id: str,
         task_type: str,
-        task_args: Dict[str, Union[int, float, bool, str]],
-    ) -> Callable[[TaskUpdateNotifier], TaskResult]:
-        task_result_wrapper: List[TaskResult] = []
+        task_args: t.Dict[str, t.Union[int, float, bool, str]],
+    ) -> t.Callable[[TaskUpdateNotifier], TaskResult]:
+        task_result_wrapper: t.List[TaskResult] = []
 
         def _create_awaiter(
-            res_wrapper: List[TaskResult],
-        ) -> Callable[[Event], Awaitable[None]]:
+            res_wrapper: t.List[TaskResult],
+        ) -> t.Callable[[Event], t.Awaitable[None]]:
             async def _await_task_end(event: Event) -> None:
                 task_event = WorkerTaskResult.parse_obj(event.payload)
                 if task_event.task_id == task_id:
@@ -155,11 +172,11 @@ class TaskJobService(ITaskService):
         self,
         task_type: TaskType,
         task_queue: str,
-        task_args: Dict[str, Union[int, float, bool, str]],
-        name: Optional[str],
-        ref_id: Optional[str],
+        task_args: t.Dict[str, t.Union[int, float, bool, str]],
+        name: t.Optional[str],
+        ref_id: t.Optional[str],
         request_params: RequestParameters,
-    ) -> Optional[str]:
+    ) -> t.Optional[str]:
         if not self.check_remote_worker_for_queue(task_queue):
             logger.warning(f"Failed to find configured remote worker for task queue {task_queue}")
             return None
@@ -176,10 +193,10 @@ class TaskJobService(ITaskService):
     def add_task(
         self,
         action: Task,
-        name: Optional[str],
-        task_type: Optional[TaskType],
-        ref_id: Optional[str],
-        custom_event_messages: Optional[CustomTaskEventMessages],
+        name: t.Optional[str],
+        task_type: t.Optional[TaskType],
+        ref_id: t.Optional[str],
+        custom_event_messages: t.Optional[CustomTaskEventMessages],
         request_params: RequestParameters,
     ) -> str:
         task = self._create_task(name, task_type, ref_id, request_params)
@@ -188,9 +205,9 @@ class TaskJobService(ITaskService):
 
     def _create_task(
         self,
-        name: Optional[str],
-        task_type: Optional[TaskType],
-        ref_id: Optional[str],
+        name: t.Optional[str],
+        task_type: t.Optional[TaskType],
+        ref_id: t.Optional[str],
         request_params: RequestParameters,
     ) -> TaskJob:
         if not request_params.user:
@@ -209,7 +226,7 @@ class TaskJobService(ITaskService):
         self,
         action: Task,
         task: TaskJob,
-        custom_event_messages: Optional[CustomTaskEventMessages],
+        custom_event_messages: t.Optional[CustomTaskEventMessages],
         request_params: RequestParameters,
     ) -> None:
         if not request_params.user:
@@ -230,7 +247,7 @@ class TaskJobService(ITaskService):
         future = self.threadpool.submit(self._run_task, action, task.id, custom_event_messages)
         self.tasks[task.id] = future
 
-    def create_task_event_callback(self) -> Callable[[Event], Awaitable[None]]:
+    def create_task_event_callback(self) -> t.Callable[[Event], t.Awaitable[None]]:
         async def task_event_callback(event: Event) -> None:
             self._cancel_task(str(event.payload), dispatch=False)
 
@@ -275,10 +292,10 @@ class TaskJobService(ITaskService):
                 detail=f"Failed to retrieve task {task_id} in db",
             )
 
-    def list_tasks(self, task_filter: TaskListFilter, request_params: RequestParameters) -> List[TaskDTO]:
+    def list_tasks(self, task_filter: TaskListFilter, request_params: RequestParameters) -> t.List[TaskDTO]:
         return [task.to_dto() for task in self.list_db_tasks(task_filter, request_params)]
 
-    def list_db_tasks(self, task_filter: TaskListFilter, request_params: RequestParameters) -> List[TaskJob]:
+    def list_db_tasks(self, task_filter: TaskListFilter, request_params: RequestParameters) -> t.List[TaskJob]:
         if not request_params.user:
             raise MustBeAuthenticatedError()
         user = None if request_params.user.is_site_admin() else request_params.user.impersonator
@@ -297,25 +314,33 @@ class TaskJobService(ITaskService):
             logger.warning(f"Task '{task_id}' not handled by this worker, will poll for task completion from db")
             end = time.time() + timeout_sec
             while time.time() < end:
-                with db():
-                    task = self.repo.get(task_id)
-                    if task is None:
-                        logger.error(f"Awaited task '{task_id}' was not found")
-                        return
-                    if TaskStatus(task.status).is_final():
-                        return
+                task_status = db.session.query(TaskJob.status).filter(TaskJob.id == task_id).scalar()
+                if task_status is None:
+                    logger.error(f"Awaited task '{task_id}' was not found")
+                    return
+                if TaskStatus(task_status).is_final():
+                    return
                 logger.info("💤 Sleeping 2 seconds...")
                 time.sleep(2)
+
             logger.error(f"Timeout while awaiting task '{task_id}'")
-            with db():
-                self.repo.update_timeout(task_id, timeout_sec)
+            db.session.query(TaskJob).filter(TaskJob.id == task_id).update(
+                {
+                    TaskJob.status: TaskStatus.TIMEOUT.value,
+                    TaskJob.result_msg: f"Task '{task_id}' timeout after {timeout_sec} seconds",
+                    TaskJob.result_status: False,
+                }
+            )
+            db.session.commit()
 
     def _run_task(
         self,
         callback: Task,
         task_id: str,
-        custom_event_messages: Optional[CustomTaskEventMessages] = None,
+        custom_event_messages: t.Optional[CustomTaskEventMessages] = None,
     ) -> None:
+        # attention: this function is executed in a thread, not in the main process
+
         self.event_bus.push(
             Event(
                 type=EventType.TASK_RUNNING,
@@ -332,22 +357,32 @@ class TaskJobService(ITaskService):
 
         logger.info(f"Starting task {task_id}")
         with db():
-            task = retry(lambda: self.repo.get_or_raise(task_id))
-            task.status = TaskStatus.RUNNING.value
-            self.repo.save(task)
-            logger.info(f"Task {task_id} set to RUNNING")
+            db.session.query(TaskJob).filter(TaskJob.id == task_id).update({TaskJob.status: TaskStatus.RUNNING.value})
+            db.session.commit()
+        logger.info(f"Task {task_id} set to RUNNING")
+
         try:
             with db():
-                result = callback(self._task_logger(task_id))
-            logger.info(f"Task {task_id} ended")
+                # We must use the DB session attached to the current thread
+                result = callback(TaskJobLogRecorder(task_id, session=db.session))
+
+            status = TaskStatus.COMPLETED if result.success else TaskStatus.FAILED
+            logger.info(f"Task {task_id} ended with status {status}")
+
             with db():
-                self._update_task_status(
-                    task_id,
-                    TaskStatus.COMPLETED if result.success else TaskStatus.FAILED,
-                    result.success,
-                    result.message,
-                    result.return_value,
+                # Do not use the `timezone.utc` timezone to preserve a naive datetime.
+                completion_date = datetime.datetime.utcnow() if status.is_final() else None
+                db.session.query(TaskJob).filter(TaskJob.id == task_id).update(
+                    {
+                        TaskJob.status: status.value,
+                        TaskJob.result_msg: result.message,
+                        TaskJob.result_status: result.success,
+                        TaskJob.result: result.return_value,
+                        TaskJob.completion_date: completion_date,
+                    }
                 )
+                db.session.commit()
+
             event_type = {True: EventType.TASK_COMPLETED, False: EventType.TASK_FAILED}[result.success]
             event_msg = {True: "completed", False: "failed"}[result.success]
             self.event_bus.push(
@@ -368,13 +403,19 @@ class TaskJobService(ITaskService):
         except Exception as exc:
             err_msg = f"Task {task_id} failed: Unhandled exception {exc}"
             logger.error(err_msg, exc_info=exc)
+
             with db():
-                self._update_task_status(
-                    task_id,
-                    TaskStatus.FAILED,
-                    False,
-                    f"{err_msg}\nSee the logs for detailed information and the error traceback.",
+                result_msg = f"{err_msg}\nSee the logs for detailed information and the error traceback."
+                db.session.query(TaskJob).filter(TaskJob.id == task_id).update(
+                    {
+                        TaskJob.status: TaskStatus.FAILED.value,
+                        TaskJob.result_msg: result_msg,
+                        TaskJob.result_status: False,
+                        TaskJob.completion_date: datetime.datetime.utcnow(),
+                    }
                 )
+                db.session.commit()
+
             message = err_msg if custom_event_messages is None else custom_event_messages.end
             self.event_bus.push(
                 Event(
@@ -384,44 +425,3 @@ class TaskJobService(ITaskService):
                     channel=EventChannelDirectory.TASK + task_id,
                 )
             )
-
-    def _task_logger(self, task_id: str) -> Callable[[str], None]:
-        def log_msg(message: str) -> None:
-            task = self.repo.get(task_id)
-            if task:
-                task.logs.append(TaskJobLog(message=message, task_id=task_id))
-                self.repo.save(task)
-
-        return log_msg
-
-    def _fix_running_status(self) -> None:
-        with db():
-            previous_tasks = self.list_db_tasks(
-                TaskListFilter(status=[TaskStatus.RUNNING, TaskStatus.PENDING]),
-                request_params=RequestParameters(user=DEFAULT_ADMIN_USER),
-            )
-            for task in previous_tasks:
-                self._update_task_status(
-                    task.id,
-                    TaskStatus.FAILED,
-                    False,
-                    "Task was interrupted due to server restart",
-                )
-
-    def _update_task_status(
-        self,
-        task_id: str,
-        status: TaskStatus,
-        result: bool,
-        message: str,
-        command_result: Optional[str] = None,
-    ) -> None:
-        task = self.repo.get_or_raise(task_id)
-        task.status = status.value
-        task.result_msg = message
-        task.result_status = result
-        task.result = command_result
-        if status.is_final():
-            # Do not use the `timezone.utc` timezone to preserve a naive datetime.
-            task.completion_date = datetime.datetime.utcnow()
-        self.repo.save(task)

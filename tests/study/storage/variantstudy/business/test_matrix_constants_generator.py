@@ -1,5 +1,6 @@
 import numpy as np
 
+from antarest.matrixstore.repository import MatrixContentRepository
 from antarest.matrixstore.service import SimpleMatrixService
 from antarest.study.storage.variantstudy.business import matrix_constants
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
@@ -10,7 +11,15 @@ from antarest.study.storage.variantstudy.business.matrix_constants_generator imp
 
 class TestGeneratorMatrixConstants:
     def test_get_st_storage(self, tmp_path):
-        generator = GeneratorMatrixConstants(matrix_service=SimpleMatrixService(bucket_dir=tmp_path))
+        matrix_content_repository = MatrixContentRepository(
+            bucket_dir=tmp_path,
+        )
+        generator = GeneratorMatrixConstants(
+            matrix_service=SimpleMatrixService(
+                matrix_content_repository=matrix_content_repository,
+            )
+        )
+        generator.init_constant_matrices()
 
         ref1 = generator.get_st_storage_pmax_injection()
         matrix_id1 = ref1.split(MATRIX_PROTOCOL_PREFIX)[1]
@@ -38,7 +47,15 @@ class TestGeneratorMatrixConstants:
         assert np.array(matrix_dto5.data).all() == matrix_constants.st_storage.series.inflows.all()
 
     def test_get_binding_constraint(self, tmp_path):
-        generator = GeneratorMatrixConstants(matrix_service=SimpleMatrixService(bucket_dir=tmp_path))
+        matrix_content_repository = MatrixContentRepository(
+            bucket_dir=tmp_path,
+        )
+        generator = GeneratorMatrixConstants(
+            matrix_service=SimpleMatrixService(
+                matrix_content_repository=matrix_content_repository,
+            )
+        )
+        generator.init_constant_matrices()
         series = matrix_constants.binding_constraint.series
 
         hourly = generator.get_binding_constraint_hourly()

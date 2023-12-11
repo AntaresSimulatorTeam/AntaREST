@@ -49,6 +49,7 @@ ST_STORAGE_UPPER_RULE_CURVE = ONES_SCENARIO_MATRIX
 ST_STORAGE_INFLOWS = EMPTY_SCENARIO_MATRIX
 
 MATRIX_PROTOCOL_PREFIX = "matrix://"
+_LOCK_FILE_NAME = "matrix_constant_init.lock"
 
 
 # noinspection SpellCheckingInspection
@@ -56,49 +57,53 @@ class GeneratorMatrixConstants:
     def __init__(self, matrix_service: ISimpleMatrixService) -> None:
         self.hashes: Dict[str, str] = {}
         self.matrix_service: ISimpleMatrixService = matrix_service
-        with FileLock(str(Path(tempfile.gettempdir()) / "matrix_constant_init.lock")):
-            self._init()
+        self._lock_dir = tempfile.gettempdir()
 
-    def _init(self) -> None:
-        self.hashes[HYDRO_COMMON_CAPACITY_MAX_POWER_V7] = self.matrix_service.create(
-            matrix_constants.hydro.v7.max_power
-        )
-        self.hashes[HYDRO_COMMON_CAPACITY_RESERVOIR_V7] = self.matrix_service.create(
-            matrix_constants.hydro.v7.reservoir
-        )
-        self.hashes[HYDRO_COMMON_CAPACITY_RESERVOIR_V6] = self.matrix_service.create(
-            matrix_constants.hydro.v6.reservoir
-        )
-        self.hashes[HYDRO_COMMON_CAPACITY_INFLOW_PATTERN] = self.matrix_service.create(
-            matrix_constants.hydro.v7.inflow_pattern
-        )
-        self.hashes[HYDRO_COMMON_CAPACITY_CREDIT_MODULATION] = self.matrix_service.create(
-            matrix_constants.hydro.v7.credit_modulations
-        )
-        self.hashes[PREPRO_CONVERSION] = self.matrix_service.create(matrix_constants.prepro.conversion)
-        self.hashes[PREPRO_DATA] = self.matrix_service.create(matrix_constants.prepro.data)
-        self.hashes[THERMAL_PREPRO_DATA] = self.matrix_service.create(matrix_constants.thermals.prepro.data)
+    def init_constant_matrices(
+        self,
+    ) -> None:
+        with FileLock(str(Path(self._lock_dir) / _LOCK_FILE_NAME)):
+            self.hashes[HYDRO_COMMON_CAPACITY_MAX_POWER_V7] = self.matrix_service.create(
+                matrix_constants.hydro.v7.max_power
+            )
+            self.hashes[HYDRO_COMMON_CAPACITY_RESERVOIR_V7] = self.matrix_service.create(
+                matrix_constants.hydro.v7.reservoir
+            )
+            self.hashes[HYDRO_COMMON_CAPACITY_RESERVOIR_V6] = self.matrix_service.create(
+                matrix_constants.hydro.v6.reservoir
+            )
+            self.hashes[HYDRO_COMMON_CAPACITY_INFLOW_PATTERN] = self.matrix_service.create(
+                matrix_constants.hydro.v7.inflow_pattern
+            )
+            self.hashes[HYDRO_COMMON_CAPACITY_CREDIT_MODULATION] = self.matrix_service.create(
+                matrix_constants.hydro.v7.credit_modulations
+            )
+            self.hashes[PREPRO_CONVERSION] = self.matrix_service.create(matrix_constants.prepro.conversion)
+            self.hashes[PREPRO_DATA] = self.matrix_service.create(matrix_constants.prepro.data)
+            self.hashes[THERMAL_PREPRO_DATA] = self.matrix_service.create(matrix_constants.thermals.prepro.data)
 
-        self.hashes[THERMAL_PREPRO_MODULATION] = self.matrix_service.create(matrix_constants.thermals.prepro.modulation)
-        self.hashes[LINK_V7] = self.matrix_service.create(matrix_constants.link.v7.link)
-        self.hashes[LINK_V8] = self.matrix_service.create(matrix_constants.link.v8.link)
-        self.hashes[LINK_DIRECT] = self.matrix_service.create(matrix_constants.link.v8.direct)
-        self.hashes[LINK_INDIRECT] = self.matrix_service.create(matrix_constants.link.v8.indirect)
+            self.hashes[THERMAL_PREPRO_MODULATION] = self.matrix_service.create(
+                matrix_constants.thermals.prepro.modulation
+            )
+            self.hashes[LINK_V7] = self.matrix_service.create(matrix_constants.link.v7.link)
+            self.hashes[LINK_V8] = self.matrix_service.create(matrix_constants.link.v8.link)
+            self.hashes[LINK_DIRECT] = self.matrix_service.create(matrix_constants.link.v8.direct)
+            self.hashes[LINK_INDIRECT] = self.matrix_service.create(matrix_constants.link.v8.indirect)
 
-        self.hashes[NULL_MATRIX_NAME] = self.matrix_service.create(NULL_MATRIX)
-        self.hashes[EMPTY_SCENARIO_MATRIX] = self.matrix_service.create(NULL_SCENARIO_MATRIX)
-        self.hashes[RESERVES_TS] = self.matrix_service.create(FIXED_4_COLUMNS)
-        self.hashes[MISCGEN_TS] = self.matrix_service.create(FIXED_8_COLUMNS)
+            self.hashes[NULL_MATRIX_NAME] = self.matrix_service.create(NULL_MATRIX)
+            self.hashes[EMPTY_SCENARIO_MATRIX] = self.matrix_service.create(NULL_SCENARIO_MATRIX)
+            self.hashes[RESERVES_TS] = self.matrix_service.create(FIXED_4_COLUMNS)
+            self.hashes[MISCGEN_TS] = self.matrix_service.create(FIXED_8_COLUMNS)
 
-        # Binding constraint matrices
-        series = matrix_constants.binding_constraint.series
-        self.hashes[BINDING_CONSTRAINT_HOURLY] = self.matrix_service.create(series.default_bc_hourly)
-        self.hashes[BINDING_CONSTRAINT_WEEKLY_DAILY] = self.matrix_service.create(series.default_bc_weekly_daily)
+            # Binding constraint matrices
+            series = matrix_constants.binding_constraint.series
+            self.hashes[BINDING_CONSTRAINT_HOURLY] = self.matrix_service.create(series.default_bc_hourly)
+            self.hashes[BINDING_CONSTRAINT_WEEKLY_DAILY] = self.matrix_service.create(series.default_bc_weekly_daily)
 
-        # Some short-term storage matrices use np.ones((8760, 1))
-        self.hashes[ONES_SCENARIO_MATRIX] = self.matrix_service.create(
-            matrix_constants.st_storage.series.pmax_injection
-        )
+            # Some short-term storage matrices use np.ones((8760, 1))
+            self.hashes[ONES_SCENARIO_MATRIX] = self.matrix_service.create(
+                matrix_constants.st_storage.series.pmax_injection
+            )
 
     def get_hydro_max_power(self, version: int) -> str:
         if version > 650:
