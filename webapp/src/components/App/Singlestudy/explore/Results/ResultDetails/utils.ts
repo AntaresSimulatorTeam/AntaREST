@@ -11,6 +11,7 @@ export enum DataType {
   Thermal = "details",
   Renewable = "details-res",
   Record = "id",
+  STStorage = "details-STstorage",
 }
 
 export enum Timestep {
