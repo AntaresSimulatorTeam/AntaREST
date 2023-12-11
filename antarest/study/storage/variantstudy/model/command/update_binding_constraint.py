@@ -4,7 +4,7 @@ from pydantic import validator
 
 from antarest.core.model import JSON
 from antarest.matrixstore.model import MatrixData
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.utils import validate_matrix
 from antarest.study.storage.variantstudy.business.utils_binding_constraint import apply_binding_constraint
@@ -35,8 +35,6 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
     # Command parameters
     # ==================
 
-    # Properties of the `UPDATE_BINDING_CONSTRAINT` command:
-    id: str
 
     @validator("values", always=True)
     def validate_series(
@@ -64,10 +62,12 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
     def _apply(self, study_data: FileStudy) -> CommandOutput:
         binding_constraints = study_data.tree.get(["input", "bindingconstraints", "bindingconstraints"])
 
+        id = transform_name_to_id(self.name)
+
         binding: Optional[JSON] = None
         new_key: Optional[str] = None
         for key, binding_config in binding_constraints.items():
-            if binding_config["id"] == self.id:
+            if binding_config["id"] == id:
                 binding = binding_config
                 new_key = key
                 break
@@ -81,8 +81,8 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
             study_data,
             binding_constraints,
             new_key,
-            self.id,
-            binding["name"],
+            id,
+            self.name,
             self.comments,
             self.enabled,
             self.time_step,
@@ -99,12 +99,12 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
         return dto
 
     def match_signature(self) -> str:
-        return str(self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.id)
+        return str(self.command_name.value + MATCH_SIGNATURE_SEPARATOR + transform_name_to_id(self.name))
 
     def match(self, other: ICommand, equal: bool = False) -> bool:
         if not isinstance(other, UpdateBindingConstraint):
             return False
-        simple_match = self.id == other.id
+        simple_match = transform_name_to_id(self.name) == transform_name_to_id(other.name)
         if not equal:
             return simple_match
         return (

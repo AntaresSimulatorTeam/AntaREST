@@ -3,6 +3,7 @@ from typing import Any, Dict, List, Optional, Union
 from pydantic import BaseModel
 
 from antarest.core.exceptions import (
+    BindingConstraintAlreadyExistError,
     ConstraintAlreadyExistError,
     ConstraintIdNotFoundError,
     MissingDataError,
@@ -13,8 +14,13 @@ from antarest.matrixstore.model import MatrixData
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import Study
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
+from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.common import BindingConstraintOperator
+from antarest.study.storage.variantstudy.model.command.create_binding_constraint import (
+    AbstractBindingConstraintSchema,
+    CreateBindingConstraint,
+)
 from antarest.study.storage.variantstudy.model.command.update_binding_constraint import UpdateBindingConstraint
 
 
@@ -152,6 +158,34 @@ class BindingConstraintManager:
             new_config = BindingConstraintManager.process_constraint(config_value)
             binding_constraint.append(new_config)
         return binding_constraint
+
+    def create_binding_constraint(
+        self,
+        study: Study,
+        data: AbstractBindingConstraintSchema,
+    ) -> None:
+        binding_constraints = self.get_binding_constraint(study, None)
+        existing_ids = [bd.id for bd in binding_constraints]  # type: ignore
+        bd_id = transform_name_to_id(data.name)
+        if bd_id in existing_ids:
+            raise BindingConstraintAlreadyExistError(
+                f"A binding constraint with the same name already exists: {bd_id}."
+            )
+
+        file_study = self.storage_service.get_storage(study).get_raw(study)
+        command = CreateBindingConstraint(
+            name=bd_id,
+            enabled=data.enabled,
+            time_step=data.time_step,
+            operator=data.operator,
+            coeffs=data.coeffs,
+            values=data.values,
+            filter_year_by_year=data.filter_year_by_year,
+            filter_synthesis=data.filter_synthesis,
+            comments=data.comments or "",
+            command_context=self.storage_service.variant_study_service.command_factory.command_context,
+        )
+        execute_or_add_commands(study, file_study, [command], self.storage_service)
 
     def update_binding_constraint(
         self,

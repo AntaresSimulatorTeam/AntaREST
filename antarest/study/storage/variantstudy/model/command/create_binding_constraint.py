@@ -2,7 +2,7 @@ from abc import ABCMeta
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 import numpy as np
-from pydantic import Field, validator
+from pydantic import BaseModel, Field, validator
 
 from antarest.matrixstore.model import MatrixData
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
@@ -58,12 +58,8 @@ def check_matrix_values(time_step: BindingConstraintFrequency, values: MatrixTyp
         raise ValueError("Matrix values cannot contain NaN")
 
 
-class AbstractBindingConstraintCommand(ICommand, metaclass=ABCMeta):
-    """
-    Abstract class for binding constraint commands.
-    """
-
-    # todo: add the `name` attribute because it should also be updated
+class AbstractBindingConstraintSchema(BaseModel):
+    name: str
     enabled: bool = True
     time_step: BindingConstraintFrequency
     operator: BindingConstraintOperator
@@ -73,8 +69,15 @@ class AbstractBindingConstraintCommand(ICommand, metaclass=ABCMeta):
     filter_synthesis: Optional[str] = None
     comments: Optional[str] = None
 
+
+class AbstractBindingConstraintCommand(AbstractBindingConstraintSchema, ICommand, metaclass=ABCMeta):
+    """
+    Abstract class for binding constraint commands.
+    """
+
     def to_dto(self) -> CommandDTO:
         args = {
+            "name": self.name,
             "enabled": self.enabled,
             "time_step": self.time_step.value,
             "operator": self.operator.value,

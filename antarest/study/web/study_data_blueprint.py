@@ -26,6 +26,7 @@ from antarest.study.business.areas.renewable_management import (
 )
 from antarest.study.business.areas.st_storage_management import *
 from antarest.study.business.areas.thermal_management import *
+from antarest.study.business.binding_constraint_management import AbstractBindingConstraintSchema  # type: ignore
 from antarest.study.business.binding_constraint_management import ConstraintTermDTO, UpdateBindingConstProps
 from antarest.study.business.correlation_management import CorrelationFormFields, CorrelationManager, CorrelationMatrix
 from antarest.study.business.district_manager import DistrictCreationDTO, DistrictInfoDTO, DistrictUpdateDTO
@@ -856,6 +857,23 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
         return study_service.binding_constraint_manager.update_binding_constraint(study, binding_constraint_id, data)
+
+    @bp.post(
+        "/studies/{uuid}/bindingconstraints",
+        tags=[APITag.study_data],
+        summary="Create a binding constraint",
+        response_model=None,
+    )
+    def create_binding_constraint(
+        uuid: str, data: AbstractBindingConstraintSchema, current_user: JWTUser = Depends(auth.get_current_user)
+    ) -> None:
+        logger.info(
+            f"Creating a new binding constraint for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
+        return study_service.binding_constraint_manager.create_binding_constraint(study, data)
 
     @bp.post(
         "/studies/{uuid}/bindingconstraints/{binding_constraint_id}/term",

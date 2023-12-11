@@ -189,6 +189,11 @@ class ConstraintAlreadyExistError(HTTPException):
         super().__init__(HTTPStatus.NOT_FOUND, message)
 
 
+class BindingConstraintAlreadyExistError(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.CONFLICT, message)
+
+
 class MissingDataError(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.NOT_FOUND, message)
