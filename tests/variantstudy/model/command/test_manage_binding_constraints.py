@@ -110,7 +110,7 @@ def test_manage_binding_constraint(
 
     weekly_values = default_bc_weekly_daily.tolist()
     bind_update = UpdateBindingConstraint(
-        name="BD 1",
+        id="bd 1",
         enabled=False,
         time_step=BindingConstraintFrequency.WEEKLY,
         operator=BindingConstraintOperator.BOTH,
@@ -184,7 +184,7 @@ def test_match(command_context: CommandContext):
     assert base.get_inner_matrices() == [matrix_id]
 
     base = UpdateBindingConstraint(
-        name="foo",
+        id="foo",
         enabled=False,
         time_step=BindingConstraintFrequency.DAILY,
         operator=BindingConstraintOperator.BOTH,
@@ -193,7 +193,7 @@ def test_match(command_context: CommandContext):
         command_context=command_context,
     )
     other_match = UpdateBindingConstraint(
-        name="foo",
+        id="foo",
         enabled=False,
         time_step=BindingConstraintFrequency.DAILY,
         operator=BindingConstraintOperator.BOTH,
@@ -202,7 +202,7 @@ def test_match(command_context: CommandContext):
         command_context=command_context,
     )
     other_not_match = UpdateBindingConstraint(
-        name="bar",
+        id="bar",
         enabled=False,
         time_step=BindingConstraintFrequency.DAILY,
         operator=BindingConstraintOperator.BOTH,
@@ -247,7 +247,7 @@ def test_revert(command_context: CommandContext):
     ]
 
     base = UpdateBindingConstraint(
-        name="foo",
+        id="foo",
         enabled=False,
         time_step=BindingConstraintFrequency.DAILY,
         operator=BindingConstraintOperator.BOTH,
@@ -265,7 +265,7 @@ def test_revert(command_context: CommandContext):
         base,
         [
             UpdateBindingConstraint(
-                name="foo",
+                id="foo",
                 enabled=True,
                 time_step=BindingConstraintFrequency.WEEKLY,
                 operator=BindingConstraintOperator.BOTH,
@@ -274,7 +274,7 @@ def test_revert(command_context: CommandContext):
                 command_context=command_context,
             ),
             UpdateBindingConstraint(
-                name="foo",
+                id="foo",
                 enabled=True,
                 time_step=BindingConstraintFrequency.HOURLY,
                 operator=BindingConstraintOperator.BOTH,
@@ -286,7 +286,7 @@ def test_revert(command_context: CommandContext):
         Mock(spec=FileStudy),
     ) == [
         UpdateBindingConstraint(
-            name="foo",
+            id="foo",
             enabled=True,
             time_step=BindingConstraintFrequency.HOURLY,
             operator=BindingConstraintOperator.BOTH,
@@ -301,7 +301,7 @@ def test_revert(command_context: CommandContext):
         base,
         [
             UpdateBindingConstraint(
-                name="foo",
+                id="foo",
                 enabled=True,
                 time_step=BindingConstraintFrequency.WEEKLY,
                 operator=BindingConstraintOperator.BOTH,
@@ -322,7 +322,7 @@ def test_revert(command_context: CommandContext):
         Mock(spec=FileStudy),
     ) == [
         UpdateBindingConstraint(
-            name="foo",
+            id="foo",
             enabled=True,
             time_step=BindingConstraintFrequency.HOURLY,
             operator=BindingConstraintOperator.EQUAL,
@@ -361,7 +361,7 @@ def test_create_diff(command_context: CommandContext):
     )
     assert base.create_diff(other_match) == [
         UpdateBindingConstraint(
-            name="foo",
+            id="foo",
             enabled=True,
             time_step=BindingConstraintFrequency.HOURLY,
             operator=BindingConstraintOperator.EQUAL,
@@ -373,7 +373,7 @@ def test_create_diff(command_context: CommandContext):
 
     values = default_bc_weekly_daily.tolist()
     base = UpdateBindingConstraint(
-        name="foo",
+        id="foo",
         enabled=False,
         time_step=BindingConstraintFrequency.DAILY,
         operator=BindingConstraintOperator.BOTH,
@@ -382,7 +382,7 @@ def test_create_diff(command_context: CommandContext):
         command_context=command_context,
     )
     other_match = UpdateBindingConstraint(
-        name="foo",
+        id="foo",
         enabled=False,
         time_step=BindingConstraintFrequency.DAILY,
         operator=BindingConstraintOperator.BOTH,

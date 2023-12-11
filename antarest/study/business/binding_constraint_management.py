@@ -3,9 +3,9 @@ from typing import Any, Dict, List, Optional, Union
 from pydantic import BaseModel
 
 from antarest.core.exceptions import (
-    BindingConstraintAlreadyExistError,
     ConstraintAlreadyExistError,
     ConstraintIdNotFoundError,
+    DuplicateConstraintName,
     MissingDataError,
     NoBindingConstraintError,
     NoConstraintError,
@@ -172,9 +172,7 @@ class BindingConstraintManager:
         existing_ids = [bd.id for bd in binding_constraints]  # type: ignore
         bd_id = transform_name_to_id(data.name)
         if bd_id in existing_ids:
-            raise BindingConstraintAlreadyExistError(
-                f"A binding constraint with the same name already exists: {bd_id}."
-            )
+            raise DuplicateConstraintName(f"A binding constraint with the same name already exists: {bd_id}.")
 
         file_study = self.storage_service.get_storage(study).get_raw(study)
         command = CreateBindingConstraint(

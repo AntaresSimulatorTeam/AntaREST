@@ -189,7 +189,7 @@ class ConstraintAlreadyExistError(HTTPException):
         super().__init__(HTTPStatus.NOT_FOUND, message)
 
 
-class BindingConstraintAlreadyExistError(HTTPException):
+class DuplicateConstraintName(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.CONFLICT, message)
 

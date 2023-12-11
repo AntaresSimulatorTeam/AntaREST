@@ -59,6 +59,8 @@ def check_matrix_values(time_step: BindingConstraintFrequency, values: MatrixTyp
 
 
 class AbstractBindingConstraintSchema(BaseModel):
+    # todo: add the `name` attribute because it should also be updated
+    # It would lead to an API change as update_binding_constraint currently does not have it
     enabled: bool = True
     time_step: BindingConstraintFrequency
     operator: BindingConstraintOperator
