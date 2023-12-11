@@ -84,11 +84,17 @@ export const createDateFromIndex = (
 
 export const cellChangesToMatrixEdits = (
   cellChanges: CellChange[],
+  matrixTime: boolean,
 ): MatrixEditDTO[] =>
-  cellChanges.map(([row, column, , value]) => ({
-    coordinates: [[row, (column as number) - 1]],
-    operation: { operation: Operator.EQ, value: parseFloat(value) },
-  }));
+  cellChanges.map(([row, column, , value]) => {
+    const rowIndex = parseFloat(row.toString());
+    const colIndex = parseFloat(column.toString()) - (matrixTime ? 1 : 0);
+
+    return {
+      coordinates: [[rowIndex, colIndex]],
+      operation: { operation: Operator.EQ, value: parseFloat(value) },
+    };
+  });
 
 export const computeStats = (
   statsType: string,

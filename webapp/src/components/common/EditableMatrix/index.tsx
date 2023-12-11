@@ -83,7 +83,7 @@ function EditableMatrix(props: PropTypes) {
     );
 
     if (filteredChanges.length > 0) {
-      const edits = cellChangesToMatrixEdits(filteredChanges);
+      const edits = cellChangesToMatrixEdits(filteredChanges, matrixTime);
       onUpdate(edits, source);
     }
   };
