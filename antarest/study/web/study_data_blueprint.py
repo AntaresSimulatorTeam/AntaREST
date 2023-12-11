@@ -26,8 +26,11 @@ from antarest.study.business.areas.renewable_management import (
 )
 from antarest.study.business.areas.st_storage_management import *
 from antarest.study.business.areas.thermal_management import *
-from antarest.study.business.binding_constraint_management import AbstractBindingConstraintSchema  # type: ignore
-from antarest.study.business.binding_constraint_management import ConstraintTermDTO, UpdateBindingConstProps
+from antarest.study.business.binding_constraint_management import (
+    BindingConstraintSchemaWithName,
+    ConstraintTermDTO,
+    UpdateBindingConstProps,
+)
 from antarest.study.business.correlation_management import CorrelationFormFields, CorrelationManager, CorrelationMatrix
 from antarest.study.business.district_manager import DistrictCreationDTO, DistrictInfoDTO, DistrictUpdateDTO
 from antarest.study.business.general_management import GeneralFormFields
@@ -865,7 +868,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         response_model=None,
     )
     def create_binding_constraint(
-        uuid: str, data: AbstractBindingConstraintSchema, current_user: JWTUser = Depends(auth.get_current_user)
+        uuid: str, data: BindingConstraintSchemaWithName, current_user: JWTUser = Depends(auth.get_current_user)
     ) -> None:
         logger.info(
             f"Creating a new binding constraint for study {uuid}",

@@ -274,7 +274,7 @@ def test_revert(command_context: CommandContext):
                 command_context=command_context,
             ),
             UpdateBindingConstraint(
-                id="foo",
+                name="foo",
                 enabled=True,
                 time_step=BindingConstraintFrequency.HOURLY,
                 operator=BindingConstraintOperator.BOTH,

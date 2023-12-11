@@ -46,6 +46,10 @@ class UpdateBindingConstProps(BaseModel):
     value: Any
 
 
+class BindingConstraintSchemaWithName(AbstractBindingConstraintSchema):
+    name: str
+
+
 class BindingConstraintDTO(BaseModel):
     id: str
     name: str
@@ -162,7 +166,7 @@ class BindingConstraintManager:
     def create_binding_constraint(
         self,
         study: Study,
-        data: AbstractBindingConstraintSchema,
+        data: BindingConstraintSchemaWithName,
     ) -> None:
         binding_constraints = self.get_binding_constraint(study, None)
         existing_ids = [bd.id for bd in binding_constraints]  # type: ignore

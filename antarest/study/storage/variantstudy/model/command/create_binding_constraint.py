@@ -59,7 +59,6 @@ def check_matrix_values(time_step: BindingConstraintFrequency, values: MatrixTyp
 
 
 class AbstractBindingConstraintSchema(BaseModel):
-    name: str
     enabled: bool = True
     time_step: BindingConstraintFrequency
     operator: BindingConstraintOperator
@@ -77,7 +76,6 @@ class AbstractBindingConstraintCommand(AbstractBindingConstraintSchema, ICommand
 
     def to_dto(self) -> CommandDTO:
         args = {
-            "name": self.name,
             "enabled": self.enabled,
             "time_step": self.time_step.value,
             "operator": self.operator.value,
