@@ -2192,6 +2192,45 @@ def test_binding_constraint_manager(client: TestClient, admin_access_token: str,
     assert res.status_code == 200
     assert constraints is None
 
+    # Creates a binding constraint with the new API
+    res = client.post(
+        f"/v1/studies/{variant_id}/bindingconstraints",
+        json={
+            "name": "binding_constraint_3",
+            "enabled": True,
+            "time_step": "hourly",
+            "operator": "less",
+            "coeffs": {},
+            "comments": "New API",
+        },
+        headers=admin_headers,
+    )
+    assert res.status_code == 200
+
+    # Asserts that creating 2 binding constraints with the same name raises an Exception
+    res = client.post(
+        f"/v1/studies/{variant_id}/bindingconstraints",
+        json={
+            "name": "binding_constraint_3",
+            "enabled": True,
+            "time_step": "hourly",
+            "operator": "less",
+            "coeffs": {},
+            "comments": "New API",
+        },
+        headers=admin_headers,
+    )
+    assert res.status_code == 409
+    assert res.json() == {
+        "description": "A binding constraint with the same name already exists: binding_constraint_3.",
+        "exception": "DuplicateConstraintName",
+    }
+
+    # Asserts that only 3 binding constraint have been created
+    res = client.get(f"/v1/studies/{variant_id}/bindingconstraints", headers=admin_headers)
+    assert res.status_code == 200
+    assert len(res.json()) == 3
+
 
 def test_import(client: TestClient, admin_access_token: str, study_id: str) -> None:
     admin_headers = {"Authorization": f"Bearer {admin_access_token}"}
