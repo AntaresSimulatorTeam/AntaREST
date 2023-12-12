@@ -19,7 +19,6 @@ from antarest.study.business.optimization_management import (
     UnfeasibleProblemBehavior,
 )
 from antarest.study.business.table_mode_management import (
-    FIELDS_INFO_BY_TYPE,
     AssetType,
     BindingConstraintOperator,
     TableTemplateType,
