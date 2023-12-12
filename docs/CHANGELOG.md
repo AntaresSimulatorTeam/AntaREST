@@ -4,6 +4,34 @@ Antares Web Changelog
 v2.16.1 (2023-12-14)
 --------------------
 
+### Features
+
+* **db-init:** separate database initialization from global database session [`#1837`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1837)
+* **ui:** add manual submit on clusters form [`#1852`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1852)
+* **ui-modelling:** add dynamic area selection on Areas tab click [`#1835`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1835)
+* **ui-storages:** use percentage values instead of ratio values [`#1846`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1846)
+
+
+### Bug Fixes
+
+* **bc:** correct the name and shape of the binding constraint matrices [`#1849`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1849)
+* **bc:** avoid duplicates in Binding Constraints creation through REST API [`#1858`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1858)
+* **ui-study:** fix the study card explore button visibility [`#1842`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1842)
+* **ui-matrix:** prevent matrices float values to be converted [`#1850`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1850)
+* **ui-matrix:** calculate the prepend index according to the existence of a time column [`#1856`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1856)
+* **ui-output:** add the missing "ST Storages" option in the Display selector in results view [`#1855`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1855)
+
+
+## Documentation
+
+* **config:** enhance application configuration documentation [`#1710`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1710)
+
+
+### Chore
+
+* **deps:** upgrade material-react-table [`#1851`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1851)
+
+
 
 v2.16.0 (2023-11-30)
 --------------------
