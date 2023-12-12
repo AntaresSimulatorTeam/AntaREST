@@ -18,7 +18,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import transf
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.common import BindingConstraintOperator
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import (
-    AbstractBindingConstraintSchema,
+    BindingConstraintProperties,
     CreateBindingConstraint,
 )
 from antarest.study.storage.variantstudy.model.command.update_binding_constraint import UpdateBindingConstraint
@@ -46,7 +46,7 @@ class UpdateBindingConstProps(BaseModel):
     value: Any
 
 
-class BindingConstraintSchemaWithName(AbstractBindingConstraintSchema):
+class BindingConstraintPropertiesWithName(BindingConstraintProperties):
     name: str
 
 
@@ -166,7 +166,7 @@ class BindingConstraintManager:
     def create_binding_constraint(
         self,
         study: Study,
-        data: BindingConstraintSchemaWithName,
+        data: BindingConstraintPropertiesWithName,
     ) -> None:
         binding_constraints = self.get_binding_constraint(study, None)
         existing_ids = [bd.id for bd in binding_constraints]  # type: ignore

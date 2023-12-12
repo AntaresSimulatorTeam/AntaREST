@@ -58,7 +58,7 @@ def check_matrix_values(time_step: BindingConstraintFrequency, values: MatrixTyp
         raise ValueError("Matrix values cannot contain NaN")
 
 
-class AbstractBindingConstraintSchema(BaseModel):
+class BindingConstraintProperties(BaseModel):
     # todo: add the `name` attribute because it should also be updated
     # It would lead to an API change as update_binding_constraint currently does not have it
     enabled: bool = True
@@ -71,7 +71,7 @@ class AbstractBindingConstraintSchema(BaseModel):
     comments: Optional[str] = None
 
 
-class AbstractBindingConstraintCommand(AbstractBindingConstraintSchema, ICommand, metaclass=ABCMeta):
+class AbstractBindingConstraintCommand(BindingConstraintProperties, ICommand, metaclass=ABCMeta):
     """
     Abstract class for binding constraint commands.
     """

@@ -27,7 +27,7 @@ from antarest.study.business.areas.renewable_management import (
 from antarest.study.business.areas.st_storage_management import *
 from antarest.study.business.areas.thermal_management import *
 from antarest.study.business.binding_constraint_management import (
-    BindingConstraintSchemaWithName,
+    BindingConstraintPropertiesWithName,
     ConstraintTermDTO,
     UpdateBindingConstProps,
 )
@@ -868,7 +868,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         response_model=None,
     )
     def create_binding_constraint(
-        uuid: str, data: BindingConstraintSchemaWithName, current_user: JWTUser = Depends(auth.get_current_user)
+        uuid: str, data: BindingConstraintPropertiesWithName, current_user: JWTUser = Depends(auth.get_current_user)
     ) -> None:
         logger.info(
             f"Creating a new binding constraint for study {uuid}",
