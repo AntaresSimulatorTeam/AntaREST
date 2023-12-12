@@ -75,13 +75,13 @@ class SnapshotGenerator:
 
         root_study, descendants = self._retrieve_descendants(variant_study_id)
         assert_permission_on_studies(jwt_user, [root_study, *descendants], StudyPermissionType.READ, raising=True)
-        ref_study, cmd_blocks = search_ref_study(root_study, descendants, from_scratch=from_scratch)
+        search_result = search_ref_study(root_study, descendants, from_scratch=from_scratch)
 
         # Get snapshot directory
         variant_study = descendants[-1]
         snapshot_dir = variant_study.snapshot_dir
 
-        if snapshot_dir.exists():
+        if snapshot_dir.exists() and not search_result.force_regenerate:
             # The snapshot directory already exists, so we generate the commands directly inside.
             # In this case, we cannot guarantee that the snapshot will remain valid in case of error,
             # because there is no undo mechanism.
@@ -97,6 +97,9 @@ class SnapshotGenerator:
             use_tmp_dir = True
 
         try:
+            ref_study = search_result.ref_study
+            cmd_blocks = search_result.cmd_blocks
+
             if use_tmp_dir:
                 logger.info(f"Exporting the reference study '{ref_study.id}' to '{self._tmp_dir.name}'...")
                 self._export_ref_study(ref_study)
@@ -227,12 +230,22 @@ class SnapshotGenerator:
         )
 
 
+class RefStudySearchResult(t.NamedTuple):
+    """
+    Result of the search for the reference study.
+    """
+
+    ref_study: t.Union[RawStudy, VariantStudy]
+    cmd_blocks: t.Sequence[CommandBlock]
+    force_regenerate: bool = False
+
+
 def search_ref_study(
     root_study: t.Union[RawStudy, VariantStudy],
     descendants: t.Sequence[VariantStudy],
     *,
     from_scratch: bool = False,
-) -> t.Tuple[t.Union[RawStudy, VariantStudy], t.Sequence[CommandBlock]]:
+) -> RefStudySearchResult:
     """
     Search for the reference study and the commands to use for snapshot generation.
 
@@ -251,12 +264,16 @@ def search_ref_study(
     # The commands to apply on the reference study to generate the current variant
     cmd_blocks: t.List[CommandBlock]
 
+    # Whether to force the regeneration of the snapshot
+    force_regenerate: bool = False
+
     if from_scratch:
         # In the case of a from scratch generation, the root study will be used as the reference study.
         # We need to retrieve all commands from the descendants of variants in order to apply them
         # on the reference study.
         ref_study = root_study
         cmd_blocks = [c for v in descendants for c in v.commands]
+        force_regenerate = True
 
     else:
         # To generate the last variant of a descendant of variants, we must search for
@@ -273,15 +290,18 @@ def search_ref_study(
             # at the time of the snapshot. However, we need to retrieve the remaining commands,
             # because the snapshot generation may be incomplete.
             last_exec_cmd = ref_study.snapshot.last_executed_command  # ID of the command
-            if not last_exec_cmd:
-                # It is unlikely that this case will occur, but it means that
-                # the snapshot is not correctly generated (corrupted database).
-                # It better to use all commands to force snapshot re-generation.
+            command_ids = [c.id for c in ref_study.commands]
+            if not last_exec_cmd or last_exec_cmd not in command_ids:
+                # The last executed command may be missing (probably caused by a bug)
+                # or may reference a removed command.
+                # This requires regenerating the snapshot from scratch,
+                # with all commands from the reference study.
                 cmd_blocks = ref_study.commands[:]
+                force_regenerate = True
             else:
-                command_ids = [c.id for c in ref_study.commands]
                 last_exec_index = command_ids.index(last_exec_cmd)
                 cmd_blocks = ref_study.commands[last_exec_index + 1 :]
+                force_regenerate = False
 
             # We need to add all commands from the descendants of variants
             # starting at the first descendant of reference study.
@@ -292,5 +312,10 @@ def search_ref_study(
             # We use the root study as a reference study
             ref_study = root_study
             cmd_blocks = [c for v in descendants for c in v.commands]
+            force_regenerate = True
 
-    return ref_study, cmd_blocks
+    return RefStudySearchResult(
+        ref_study=ref_study,
+        cmd_blocks=cmd_blocks,
+        force_regenerate=force_regenerate,
+    )

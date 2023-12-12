@@ -119,9 +119,10 @@ class TestSearchRefStudy:
         """
         root_study = Study(id=str(uuid.uuid4()), name="root")
         references: t.Sequence[VariantStudy] = []
-        ref_study, cmd_blocks = search_ref_study(root_study, references)
-        assert ref_study == root_study
-        assert cmd_blocks == []
+        search_result = search_ref_study(root_study, references)
+        assert search_result.ref_study == root_study
+        assert search_result.cmd_blocks == []
+        assert search_result.force_regenerate is True
 
     def test_search_ref_study__from_scratch(self, tmp_path: Path) -> None:
         """
@@ -196,9 +197,10 @@ class TestSearchRefStudy:
 
         # Check the variants
         references = [variant1, variant2, variant3]
-        ref_study, cmd_blocks = search_ref_study(root_study, references, from_scratch=True)
-        assert ref_study == root_study
-        assert cmd_blocks == [c for v in [variant1, variant2, variant3] for c in v.commands]
+        search_result = search_ref_study(root_study, references, from_scratch=True)
+        assert search_result.ref_study == root_study
+        assert search_result.cmd_blocks == [c for v in [variant1, variant2, variant3] for c in v.commands]
+        assert search_result.force_regenerate is True
 
     def test_search_ref_study__obsolete_snapshots(self, tmp_path: Path) -> None:
         """
@@ -258,9 +260,10 @@ class TestSearchRefStudy:
 
         # Check the variants
         references = [variant1, variant2]
-        ref_study, cmd_blocks = search_ref_study(root_study, references)
-        assert ref_study == root_study
-        assert cmd_blocks == [c for v in [variant1, variant2] for c in v.commands]
+        search_result = search_ref_study(root_study, references)
+        assert search_result.ref_study == root_study
+        assert search_result.cmd_blocks == [c for v in [variant1, variant2] for c in v.commands]
+        assert search_result.force_regenerate is True
 
     def test_search_ref_study__old_recent_snapshot(self, tmp_path: Path) -> None:
         """
@@ -319,9 +322,10 @@ class TestSearchRefStudy:
 
         # Check the variants
         references = [variant1, variant2]
-        ref_study, cmd_blocks = search_ref_study(root_study, references)
-        assert ref_study == variant2
-        assert cmd_blocks == []
+        search_result = search_ref_study(root_study, references)
+        assert search_result.ref_study == variant2
+        assert search_result.cmd_blocks == []
+        assert search_result.force_regenerate is False
 
     def test_search_ref_study__recent_old_snapshot(self, tmp_path: Path) -> None:
         """
@@ -381,9 +385,10 @@ class TestSearchRefStudy:
 
         # Check the variants
         references = [variant1, variant2]
-        ref_study, cmd_blocks = search_ref_study(root_study, references)
-        assert ref_study == variant1
-        assert cmd_blocks == variant2.commands
+        search_result = search_ref_study(root_study, references)
+        assert search_result.ref_study == variant1
+        assert search_result.cmd_blocks == variant2.commands
+        assert search_result.force_regenerate is False
 
     def test_search_ref_study__one_variant_completely_uptodate(self, tmp_path: Path) -> None:
         """
@@ -439,9 +444,10 @@ class TestSearchRefStudy:
 
         # Check the variants
         references = [variant1]
-        ref_study, cmd_blocks = search_ref_study(root_study, references)
-        assert ref_study == variant1
-        assert cmd_blocks == []
+        search_result = search_ref_study(root_study, references)
+        assert search_result.ref_study == variant1
+        assert search_result.cmd_blocks == []
+        assert search_result.force_regenerate is False
 
     def test_search_ref_study__one_variant_partially_uptodate(self, tmp_path: Path) -> None:
         """
@@ -497,9 +503,10 @@ class TestSearchRefStudy:
 
         # Check the variants
         references = [variant1]
-        ref_study, cmd_blocks = search_ref_study(root_study, references)
-        assert ref_study == variant1
-        assert cmd_blocks == variant1.commands[1:]
+        search_result = search_ref_study(root_study, references)
+        assert search_result.ref_study == variant1
+        assert search_result.cmd_blocks == variant1.commands[1:]
+        assert search_result.force_regenerate is False
 
     def test_search_ref_study__missing_last_command(self, tmp_path: Path) -> None:
         """
@@ -551,9 +558,65 @@ class TestSearchRefStudy:
 
         # Check the variants
         references = [variant1]
-        ref_study, cmd_blocks = search_ref_study(root_study, references)
-        assert ref_study == variant1
-        assert cmd_blocks == variant1.commands
+        search_result = search_ref_study(root_study, references)
+        assert search_result.ref_study == variant1
+        assert search_result.cmd_blocks == variant1.commands
+        assert search_result.force_regenerate is True
+
+    def test_search_ref_study__deleted_last_command(self, tmp_path: Path) -> None:
+        """
+        Case where the list of studies contains a variant with an up-to-date snapshot,
+        but the last executed command is missing (removed).
+        We expect to have the list of all variant commands, so that the snapshot can be re-generated.
+        """
+        root_study = Study(id=str(uuid.uuid4()), name="root")
+
+        # Prepare some variants with snapshots:
+        variant1 = _create_variant(
+            tmp_path,
+            "variant1",
+            root_study.id,
+            datetime.datetime(year=2023, month=1, day=1),
+            snapshot_created_at=datetime.datetime(year=2023, month=1, day=2),
+        )
+
+        # Add some variant commands
+        variant1.commands = [
+            CommandBlock(
+                id=str(uuid.uuid4()),
+                study_id=variant1.id,
+                index=0,
+                command="create_area",
+                version=1,
+                args='{"area_name": "DE"}',
+            ),
+            CommandBlock(
+                id=str(uuid.uuid4()),
+                study_id=variant1.id,
+                index=1,
+                command="create_thermal_cluster",
+                version=1,
+                args='{"area_name": "DE", "cluster_name": "DE", "cluster_type": "thermal"}',
+            ),
+            CommandBlock(
+                id=str(uuid.uuid4()),
+                study_id=variant1.id,
+                index=2,
+                command="update_thermal_cluster",
+                version=1,
+                args='{"area_name": "DE", "cluster_name": "DE", "capacity": 1500}',
+            ),
+        ]
+
+        # The last executed command is missing.
+        variant1.snapshot.last_executed_command = str(uuid.uuid4())
+
+        # Check the variants
+        references = [variant1]
+        search_result = search_ref_study(root_study, references)
+        assert search_result.ref_study == variant1
+        assert search_result.cmd_blocks == variant1.commands
+        assert search_result.force_regenerate is True
 
 
 class RegisterNotification:
