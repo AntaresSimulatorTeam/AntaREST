@@ -4,7 +4,6 @@ This module dedicated to variant snapshot generation.
 import datetime
 import logging
 import shutil
-import tempfile
 import typing as t
 from pathlib import Path
 
@@ -51,8 +50,6 @@ class SnapshotGenerator:
         self.study_factory = study_factory
         self.patch_service = patch_service
         self.repository = repository
-        # Temporary directory used to generate the snapshot
-        self._tmp_dir: Path = Path()
 
     def generate_snapshot(
         self,
@@ -77,50 +74,32 @@ class SnapshotGenerator:
         assert_permission_on_studies(jwt_user, [root_study, *descendants], StudyPermissionType.READ, raising=True)
         search_result = search_ref_study(root_study, descendants, from_scratch=from_scratch)
 
+        ref_study = search_result.ref_study
+        cmd_blocks = search_result.cmd_blocks
+
         # Get snapshot directory
         variant_study = descendants[-1]
         snapshot_dir = variant_study.snapshot_dir
 
-        if snapshot_dir.exists() and not search_result.force_regenerate:
-            # The snapshot directory already exists, so we generate the commands directly inside.
-            # In this case, we cannot guarantee that the snapshot will remain valid in case of error,
-            # because there is no undo mechanism.
-            self._tmp_dir = snapshot_dir
-            use_tmp_dir = False
-        else:
-            # We are going to generate the snapshot in a temporary directory which will be renamed
-            # at the end of the process. This prevents incomplete snapshots in case of error.
-            snapshot_dir.parent.mkdir(parents=True, exist_ok=True)
-            self._tmp_dir = Path(
-                tempfile.mkdtemp(dir=snapshot_dir.parent, prefix=f"~{snapshot_dir.name}", suffix=".tmp")
-            )
-            use_tmp_dir = True
+        force_regenerate = (
+            search_result.force_regenerate or not snapshot_dir.exists() or ref_study.id != variant_study_id
+        )
+        if force_regenerate:
+            shutil.rmtree(snapshot_dir, ignore_errors=True)
 
         try:
-            ref_study = search_result.ref_study
-            cmd_blocks = search_result.cmd_blocks
-
-            if use_tmp_dir:
-                logger.info(f"Exporting the reference study '{ref_study.id}' to '{self._tmp_dir.name}'...")
-                self._export_ref_study(ref_study)
+            if force_regenerate:
+                logger.info(f"Exporting the reference study '{ref_study.id}' to '{snapshot_dir.name}'...")
+                self._export_ref_study(snapshot_dir, ref_study)
 
             logger.info(f"Applying commands to the reference study '{ref_study.id}'...")
-            results = self._apply_commands(variant_study, ref_study, cmd_blocks)
-
-            # With a classic use of variants, we should not have a `user` folder in the snapshot,
-            # because they are regularly deleted.
-            # However, the `user` folder in a raw study could contain the configuration for Xpansion.
-            # In any case, we don't want to overwrite the user's configuration.
-
-            if use_tmp_dir and (snapshot_dir / "user").exists():
-                logger.info("Keeping previous unmanaged user config...")
-                shutil.copytree(snapshot_dir / "user", self._tmp_dir / "user", dirs_exist_ok=True)
+            results = self._apply_commands(snapshot_dir, variant_study, cmd_blocks)
 
             # The snapshot is generated, we also need to de-normalize the matrices.
             file_study = self.study_factory.create_from_fs(
-                self._tmp_dir,
+                snapshot_dir,
                 study_id=variant_study_id,
-                output_path=self._tmp_dir / OUTPUT_RELATIVE_PATH,
+                output_path=snapshot_dir / OUTPUT_RELATIVE_PATH,
                 use_cache=False,  # Avoid saving the study config in the cache
             )
             if denormalize:
@@ -145,15 +124,10 @@ class SnapshotGenerator:
             self._update_cache(file_study)
 
         except Exception:
-            shutil.rmtree(self._tmp_dir, ignore_errors=True)
+            shutil.rmtree(snapshot_dir, ignore_errors=True)
             raise
 
         else:
-            if use_tmp_dir:
-                # Rename the temporary directory to the final snapshot directory
-                shutil.rmtree(snapshot_dir, ignore_errors=True)
-                self._tmp_dir.rename(snapshot_dir)
-
             try:
                 notifier(results.json())
             except Exception as exc:
@@ -171,12 +145,11 @@ class SnapshotGenerator:
         root_study = self.repository.one(descendant_ids[0])
         return root_study, descendants
 
-    def _export_ref_study(self, ref_study: t.Union[RawStudy, VariantStudy]) -> None:
-        self._tmp_dir.rmdir()  # remove the temporary directory for shutil.copytree
+    def _export_ref_study(self, snapshot_dir: Path, ref_study: t.Union[RawStudy, VariantStudy]) -> None:
         if isinstance(ref_study, VariantStudy):
             export_study_flat(
                 ref_study.snapshot_dir,
-                self._tmp_dir,
+                snapshot_dir,
                 self.study_factory,
                 denormalize=False,  # de-normalization is done at the end
                 outputs=False,  # do NOT export outputs
@@ -184,7 +157,7 @@ class SnapshotGenerator:
         elif isinstance(ref_study, RawStudy):
             self.raw_study_service.export_study_flat(
                 ref_study,
-                self._tmp_dir,
+                snapshot_dir,
                 denormalize=False,  # de-normalization is done at the end
                 outputs=False,  # do NOT export outputs
             )
@@ -193,15 +166,15 @@ class SnapshotGenerator:
 
     def _apply_commands(
         self,
+        snapshot_dir: Path,
         variant_study: VariantStudy,
-        ref_study: t.Union[RawStudy, VariantStudy],
         cmd_blocks: t.Sequence[CommandBlock],
     ) -> GenerationResultInfoDTO:
         commands = [self.command_factory.to_command(cb.to_dto()) for cb in cmd_blocks]
         generator = VariantCommandGenerator(self.study_factory)
         results = generator.generate(
             commands,
-            self._tmp_dir,
+            snapshot_dir,
             variant_study,
             delete_on_failure=False,  # Not needed, because we are using a temporary directory
             notifier=None,
@@ -263,9 +236,6 @@ def search_ref_study(
 
     # The commands to apply on the reference study to generate the current variant
     cmd_blocks: t.List[CommandBlock]
-
-    # Whether to force the regeneration of the snapshot
-    force_regenerate: bool = False
 
     if from_scratch:
         # In the case of a from scratch generation, the root study will be used as the reference study.
