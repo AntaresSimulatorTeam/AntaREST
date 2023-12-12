@@ -81,15 +81,10 @@ class SnapshotGenerator:
         variant_study = descendants[-1]
         snapshot_dir = variant_study.snapshot_dir
 
-        force_regenerate = (
-            search_result.force_regenerate or not snapshot_dir.exists() or ref_study.id != variant_study_id
-        )
-        if force_regenerate:
-            shutil.rmtree(snapshot_dir, ignore_errors=True)
-
         try:
-            if force_regenerate:
+            if search_result.force_regenerate or not snapshot_dir.exists():
                 logger.info(f"Exporting the reference study '{ref_study.id}' to '{snapshot_dir.name}'...")
+                shutil.rmtree(snapshot_dir, ignore_errors=True)
                 self._export_ref_study(snapshot_dir, ref_study)
 
             logger.info(f"Applying commands to the reference study '{ref_study.id}'...")
@@ -230,6 +225,9 @@ def search_ref_study(
     Returns:
         The reference study and the commands to use for snapshot generation.
     """
+    if not descendants:
+        # Edge case where the list of studies is empty.
+        return RefStudySearchResult(ref_study=root_study, cmd_blocks=[], force_regenerate=True)
 
     # The reference study is the root study or a variant study with a valid snapshot
     ref_study: t.Union[RawStudy, VariantStudy]
@@ -241,51 +239,60 @@ def search_ref_study(
         # In the case of a from scratch generation, the root study will be used as the reference study.
         # We need to retrieve all commands from the descendants of variants in order to apply them
         # on the reference study.
-        ref_study = root_study
-        cmd_blocks = [c for v in descendants for c in v.commands]
-        force_regenerate = True
+        return RefStudySearchResult(
+            ref_study=root_study,
+            cmd_blocks=[c for v in descendants for c in v.commands],
+            force_regenerate=True,
+        )
+
+    # To reuse the snapshot of the current variant, the last executed command
+    # must be one of the commands of the current variant.
+    curr_variant = descendants[-1]
+    last_exec_cmd = curr_variant.snapshot.last_executed_command if curr_variant.snapshot else None
+    command_ids = [c.id for c in curr_variant.commands]
+    if last_exec_cmd and last_exec_cmd in command_ids:
+        # We can reuse the snapshot of the current variant
+        last_exec_index = command_ids.index(last_exec_cmd)
+        return RefStudySearchResult(
+            ref_study=curr_variant,
+            cmd_blocks=curr_variant.commands[last_exec_index + 1 :],
+            force_regenerate=False,
+        )
+
+    # We cannot reuse the snapshot of the current variant
+    # To generate the last variant of a descendant of variants, we must search for
+    # the most recent snapshot in order to use it as a reference study.
+    # If no snapshot is found, we use the root study as a reference study.
+
+    snapshot_vars = [v for v in descendants if v.is_snapshot_recent()]
+
+    if snapshot_vars:
+        # We use the most recent snapshot as a reference study
+        ref_study = max(snapshot_vars, key=lambda v: v.snapshot.created_at)
+
+        # This variant's snapshot corresponds to the commands actually generated
+        # at the time of the snapshot. However, we need to retrieve the remaining commands,
+        # because the snapshot generation may be incomplete.
+        last_exec_cmd = ref_study.snapshot.last_executed_command  # ID of the command
+        command_ids = [c.id for c in ref_study.commands]
+        if not last_exec_cmd or last_exec_cmd not in command_ids:
+            # The last executed command may be missing (probably caused by a bug)
+            # or may reference a removed command.
+            # This requires regenerating the snapshot from scratch,
+            # with all commands from the reference study.
+            cmd_blocks = ref_study.commands[:]
+        else:
+            last_exec_index = command_ids.index(last_exec_cmd)
+            cmd_blocks = ref_study.commands[last_exec_index + 1 :]
+
+        # We need to add all commands from the descendants of variants
+        # starting at the first descendant of reference study.
+        index = descendants.index(ref_study)
+        cmd_blocks.extend([c for v in descendants[index + 1 :] for c in v.commands])
 
     else:
-        # To generate the last variant of a descendant of variants, we must search for
-        # the most recent snapshot in order to use it as a reference study.
-        # If no snapshot is found, we use the root study as a reference study.
+        # We use the root study as a reference study
+        ref_study = root_study
+        cmd_blocks = [c for v in descendants for c in v.commands]
 
-        snapshot_vars = [v for v in descendants if v.is_snapshot_recent()]
-
-        if snapshot_vars:
-            # We use the most recent snapshot as a reference study
-            ref_study = max(snapshot_vars, key=lambda v: v.snapshot.created_at)
-
-            # This variant's snapshot corresponds to the commands actually generated
-            # at the time of the snapshot. However, we need to retrieve the remaining commands,
-            # because the snapshot generation may be incomplete.
-            last_exec_cmd = ref_study.snapshot.last_executed_command  # ID of the command
-            command_ids = [c.id for c in ref_study.commands]
-            if not last_exec_cmd or last_exec_cmd not in command_ids:
-                # The last executed command may be missing (probably caused by a bug)
-                # or may reference a removed command.
-                # This requires regenerating the snapshot from scratch,
-                # with all commands from the reference study.
-                cmd_blocks = ref_study.commands[:]
-                force_regenerate = True
-            else:
-                last_exec_index = command_ids.index(last_exec_cmd)
-                cmd_blocks = ref_study.commands[last_exec_index + 1 :]
-                force_regenerate = False
-
-            # We need to add all commands from the descendants of variants
-            # starting at the first descendant of reference study.
-            index = descendants.index(ref_study)
-            cmd_blocks.extend([c for v in descendants[index + 1 :] for c in v.commands])
-
-        else:
-            # We use the root study as a reference study
-            ref_study = root_study
-            cmd_blocks = [c for v in descendants for c in v.commands]
-            force_regenerate = True
-
-    return RefStudySearchResult(
-        ref_study=ref_study,
-        cmd_blocks=cmd_blocks,
-        force_regenerate=force_regenerate,
-    )
+    return RefStudySearchResult(ref_study=ref_study, cmd_blocks=cmd_blocks, force_regenerate=True)
