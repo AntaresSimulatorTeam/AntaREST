@@ -10,6 +10,7 @@ from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.utils import FormFieldsBaseModel, execute_or_add_commands
 from antarest.study.common.default_values import FilteringOptions, LinkProperties, NodalOptimization
 from antarest.study.model import RawStudy
+from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import LawOption, TimeSeriesGenerationOption
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.storage_service import StudyStorageService
@@ -38,12 +39,6 @@ class TransmissionCapacity(EnumIgnoreCase):
     INFINITE = "infinite"
     IGNORE = "ignore"
     ENABLED = "enabled"
-
-
-class BindingConstraintType(EnumIgnoreCase):
-    HOURLY = "hourly"
-    DAILY = "daily"
-    WEEKLY = "weekly"
 
 
 class BindingConstraintOperator(EnumIgnoreCase):
@@ -114,7 +109,7 @@ class RenewableColumns(FormFieldsBaseModel):
 
 
 class BindingConstraintColumns(FormFieldsBaseModel):
-    type: Optional[BindingConstraintType]
+    type: Optional[BindingConstraintFrequency]
     operator: Optional[BindingConstraintOperator]
     enabled: Optional[StrictBool]
 
@@ -337,7 +332,7 @@ FIELDS_INFO_BY_TYPE: Dict[TableTemplateType, Dict[str, ColumnInfo]] = {
     TableTemplateType.BINDING_CONSTRAINT: {
         "type": {
             "path": f"{BINDING_CONSTRAINT_PATH}/type",
-            "default_value": BindingConstraintType.HOURLY.value,
+            "default_value": BindingConstraintFrequency.HOURLY.value,
         },
         "operator": {
             "path": f"{BINDING_CONSTRAINT_PATH}/operator",
