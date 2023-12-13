@@ -215,7 +215,7 @@ class TestVariantStudy:
 
         # check Variant-specific properties
         assert obj.snapshot_dir == Path(variant_study_path).joinpath("snapshot")
-        assert obj.is_snapshot_recent() is False
+        assert obj.is_snapshot_up_to_date() is False
 
     @pytest.mark.parametrize(
         "created_at, updated_at, study_antares_file, expected",
@@ -294,4 +294,4 @@ class TestVariantStudy:
 
         # Check the snapshot_uptodate() method
         obj: VariantStudy = db_session.query(VariantStudy).filter(VariantStudy.id == variant_id).one()
-        assert obj.is_snapshot_recent() == expected
+        assert obj.is_snapshot_up_to_date() == expected

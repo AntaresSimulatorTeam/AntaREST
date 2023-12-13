@@ -201,9 +201,10 @@ def _copies_only_necessary_files(files_to_upgrade: List[Path], study_path: Path,
         The list of files and folders that were really copied. It's the same as files_to_upgrade but
         without any children that has parents already in the list.
     """
-    files_to_upgrade.append(Path("study.antares"))
+    files_to_copy = _filters_out_children_files(files_to_upgrade)
+    files_to_copy.append(Path("study.antares"))
     files_to_retrieve = []
-    for path in files_to_upgrade:
+    for path in files_to_copy:
         entire_path = study_path / path
         if entire_path.is_dir():
             if not (tmp_path / path).exists():
@@ -218,6 +219,22 @@ def _copies_only_necessary_files(files_to_upgrade: List[Path], study_path: Path,
             shutil.copy(entire_path, tmp_path / parent_path)
             files_to_retrieve.append(path)
     return files_to_retrieve
+
+
+def _filters_out_children_files(files_to_upgrade: List[Path]) -> List[Path]:
+    """
+    Filters out children paths of "input" if "input" is already in the list.
+    Args:
+        files_to_upgrade: List[Path]: List of the files and folders concerned by the upgrade.
+    Returns:
+        The list of files filtered
+    """
+    is_input_in_files_to_upgrade = Path("input") in files_to_upgrade
+    if is_input_in_files_to_upgrade:
+        files_to_keep = [Path("input")]
+        files_to_keep.extend(path for path in files_to_upgrade if "input" not in path.parts)
+        return files_to_keep
+    return files_to_upgrade
 
 
 def _replace_safely_original_files(files_to_replace: List[Path], study_path: Path, tmp_path: Path) -> None:
