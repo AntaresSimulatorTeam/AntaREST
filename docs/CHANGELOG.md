@@ -6,20 +6,27 @@ v2.16.1 (2023-12-14)
 
 ### Features
 
-* **db-init:** separate database initialization from global database session [`#1837`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1837)
 * **ui:** add manual submit on clusters form [`#1852`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1852)
 * **ui-modelling:** add dynamic area selection on Areas tab click [`#1835`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1835)
 * **ui-storages:** use percentage values instead of ratio values [`#1846`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1846)
+* **upgrade:** correction of study upgrade when upgrading from v8.2 to v8.6 (creation of MinGen) [`#1861`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1861)
 
 
 ### Bug Fixes
 
 * **bc:** correct the name and shape of the binding constraint matrices [`#1849`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1849)
 * **bc:** avoid duplicates in Binding Constraints creation through REST API [`#1858`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1858)
+* **ui:** update current area after window reload [`#1862`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1862)
 * **ui-study:** fix the study card explore button visibility [`#1842`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1842)
 * **ui-matrix:** prevent matrices float values to be converted [`#1850`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1850)
 * **ui-matrix:** calculate the prepend index according to the existence of a time column [`#1856`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1856)
 * **ui-output:** add the missing "ST Storages" option in the Display selector in results view [`#1855`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1855)
+
+
+### Performance
+
+* **db-init:** separate database initialization from global database session [`#1837`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1837)
+* **variant:** improve performances and correct snapshot generation [`#1854`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1854)
 
 
 ## Documentation
