@@ -432,7 +432,7 @@ def test_sta_mini_output(storage_service, url: str, expected_output: dict):
                 "master": '"integer"',
                 "yearly-weights": "None",
                 "additional-constraints": "None",
-                "relaxed-optimality-gap": 1000000.0,
+                "relaxed_optimality_gap": 1000000.0,
                 "cut-type": '"average"',
                 "ampl.solver": '"cbc"',
                 "ampl.presolve": 0,

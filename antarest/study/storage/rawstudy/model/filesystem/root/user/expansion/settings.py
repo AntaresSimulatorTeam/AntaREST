@@ -43,7 +43,7 @@ class ExpansionSettings(IniFileNode):
         }
         if config.version < 800:
             types = {
-                "relaxed-optimality-gap": float,
+                "relaxed_optimality_gap": float,
                 "cut-type": str,
                 "ampl.solver": str,
                 "ampl.presolve": int,

@@ -11,7 +11,7 @@ export interface XpansionSettings {
   max_iteration?: number | string;
   "yearly-weights": string;
   "additional-constraints"?: string;
-  "relaxed-optimality-gap"?: number | string;
+  relaxed_optimality_gap?: number | string;
   "cut-type"?: string;
   "ampl.solver"?: string;
   "ampl.presolve"?: number;
