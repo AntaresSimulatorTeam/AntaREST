@@ -25,6 +25,7 @@ from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, Vari
 from antarest.study.storage.variantstudy.model.model import CommandDTO, GenerationResultInfoDTO
 from antarest.study.storage.variantstudy.snapshot_generator import SnapshotGenerator, search_ref_study
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
+from tests.db_statement_recorder import DBStatementRecorder
 from tests.helpers import with_db_context
 
 
@@ -85,12 +86,12 @@ class TestSearchRefStudy:
     and corresponding to a variant with an up-to-date snapshot.
 
     - The case where the list of studies contains two variants with up-to-date snapshots and
-      where the first is older than the second.
+      where the first is older than the second, and a third variant without snapshot.
       We expect to have a reference study corresponding to the second variant
       and a list of commands for the second variant.
 
     - The case where the list of studies contains two variants with up-to-date snapshots and
-      where the first is more recent than the second.
+      where the first is more recent than the second, and a third variant without snapshot.
       We expect to have a reference study corresponding to the first variant
       and a list of commands for both variants in order.
 
@@ -118,9 +119,10 @@ class TestSearchRefStudy:
         """
         root_study = Study(id=str(uuid.uuid4()), name="root")
         references: t.Sequence[VariantStudy] = []
-        ref_study, cmd_blocks = search_ref_study(root_study, references)
-        assert ref_study == root_study
-        assert cmd_blocks == []
+        search_result = search_ref_study(root_study, references)
+        assert search_result.ref_study == root_study
+        assert search_result.cmd_blocks == []
+        assert search_result.force_regenerate is True
 
     def test_search_ref_study__from_scratch(self, tmp_path: Path) -> None:
         """
@@ -195,9 +197,10 @@ class TestSearchRefStudy:
 
         # Check the variants
         references = [variant1, variant2, variant3]
-        ref_study, cmd_blocks = search_ref_study(root_study, references, from_scratch=True)
-        assert ref_study == root_study
-        assert cmd_blocks == [c for v in [variant1, variant2, variant3] for c in v.commands]
+        search_result = search_ref_study(root_study, references, from_scratch=True)
+        assert search_result.ref_study == root_study
+        assert search_result.cmd_blocks == [c for v in [variant1, variant2, variant3] for c in v.commands]
+        assert search_result.force_regenerate is True
 
     def test_search_ref_study__obsolete_snapshots(self, tmp_path: Path) -> None:
         """
@@ -205,12 +208,9 @@ class TestSearchRefStudy:
           - either there is no snapshot,
           - or the snapshot's creation date is earlier than the variant's last modification date.
           Note: The situation where the "snapshot/study.antares" file does not exist is not considered.
-        We expect to have the root study and a list of `CommandBlock` for all variants.
-
-        Given a list of descendants with some variants with obsolete snapshots,
-        When calling search_ref_study with the flag from_scratch=False,
-        Then the root study is returned as reference study,
-        and all commands of all variants are returned.
+        The third variant has no snapshot, and must be generated from scratch.
+        We expect to have a reference study corresponding to the root study
+        and the list of commands of all variants in order.
         """
         root_study = Study(id=str(uuid.uuid4()), name="root")
 
@@ -231,6 +231,14 @@ class TestSearchRefStudy:
             datetime.datetime(year=2023, month=1, day=2),
             snapshot_created_at=datetime.datetime(year=2023, month=1, day=1),
         )
+        # Variant 3 has no snapshot.
+        variant3 = _create_variant(
+            tmp_path,
+            "variant3",
+            variant2.id,
+            datetime.datetime(year=2023, month=1, day=3),
+            snapshot_created_at=None,
+        )
 
         # Add some variant commands
         variant1.commands = [
@@ -252,25 +260,41 @@ class TestSearchRefStudy:
                 version=1,
                 args='{"area_name": "DE", "cluster_name": "DE", "cluster_type": "thermal"}',
             ),
+            CommandBlock(
+                id=str(uuid.uuid4()),
+                study_id=variant2.id,
+                index=1,
+                command="create_thermal_cluster",
+                version=1,
+                args='{"area_name": "IT", "cluster_name": "IT", "cluster_type": "gas"}',
+            ),
         ]
         variant2.snapshot.last_executed_command = variant2.commands[0].id
+        variant3.commands = [
+            CommandBlock(
+                id=str(uuid.uuid4()),
+                study_id=variant2.id,
+                index=0,
+                command="create_thermal_cluster",
+                version=1,
+                args='{"area_name": "BE", "cluster_name": "BE", "cluster_type": "oil"}',
+            ),
+        ]
 
         # Check the variants
-        references = [variant1, variant2]
-        ref_study, cmd_blocks = search_ref_study(root_study, references)
-        assert ref_study == root_study
-        assert cmd_blocks == [c for v in [variant1, variant2] for c in v.commands]
+        references = [variant1, variant2, variant3]
+        search_result = search_ref_study(root_study, references)
+        assert search_result.ref_study == root_study
+        assert search_result.cmd_blocks == [c for v in [variant1, variant2, variant3] for c in v.commands]
+        assert search_result.force_regenerate is True
 
     def test_search_ref_study__old_recent_snapshot(self, tmp_path: Path) -> None:
         """
         Case where the list of studies contains a variant with up-to-date snapshots and
         where the first is older than the second.
+        The third variant has no snapshot, and must be generated from scratch.
         We expect to have a reference study corresponding to the second variant
-        and an empty list of commands, because the snapshot is already completely up-to-date.
-
-        Given a list of descendants with some variants with up-to-date snapshots,
-        When calling search_ref_study with the flag from_scratch=False,
-        Then the second variant is returned as reference study, and no commands are returned.
+        and the list of commands of the third variant.
         """
         root_study = Study(id=str(uuid.uuid4()), name="root")
 
@@ -291,6 +315,14 @@ class TestSearchRefStudy:
             datetime.datetime(year=2023, month=1, day=2),
             snapshot_created_at=datetime.datetime(year=2023, month=1, day=3),
         )
+        # Variant 3 has no snapshot.
+        variant3 = _create_variant(
+            tmp_path,
+            "variant3",
+            variant2.id,
+            datetime.datetime(year=2023, month=1, day=3),
+            snapshot_created_at=None,
+        )
 
         # Add some variant commands
         variant1.commands = [
@@ -315,24 +347,31 @@ class TestSearchRefStudy:
             ),
         ]
         variant2.snapshot.last_executed_command = variant2.commands[0].id
+        variant3.commands = [
+            CommandBlock(
+                id=str(uuid.uuid4()),
+                study_id=variant2.id,
+                index=0,
+                command="create_thermal_cluster",
+                version=1,
+                args='{"area_name": "BE", "cluster_name": "BE", "cluster_type": "oil"}',
+            ),
+        ]
 
         # Check the variants
-        references = [variant1, variant2]
-        ref_study, cmd_blocks = search_ref_study(root_study, references)
-        assert ref_study == variant2
-        assert cmd_blocks == []
+        references = [variant1, variant2, variant3]
+        search_result = search_ref_study(root_study, references)
+        assert search_result.ref_study == variant2
+        assert search_result.cmd_blocks == variant3.commands
+        assert search_result.force_regenerate is True
 
     def test_search_ref_study__recent_old_snapshot(self, tmp_path: Path) -> None:
         """
         Case where the list of studies contains a variant with up-to-date snapshots and
         where the second is older than the first.
+        The third variant has no snapshot, and must be generated from scratch.
         We expect to have a reference study corresponding to the first variant
-        and the list of commands of the second variant, because the first is completely up-to-date.
-
-        Given a list of descendants with some variants with up-to-date snapshots,
-        When calling search_ref_study with the flag from_scratch=False,
-        Then the first variant is returned as reference study,
-        and the commands of the second variant are returned.
+        and the list of commands of the second and third variants.
         """
         root_study = Study(id=str(uuid.uuid4()), name="root")
 
@@ -353,6 +392,14 @@ class TestSearchRefStudy:
             datetime.datetime(year=2023, month=1, day=2),
             snapshot_created_at=datetime.datetime(year=2023, month=1, day=2),
         )
+        # Variant 3 has no snapshot.
+        variant3 = _create_variant(
+            tmp_path,
+            "variant3",
+            variant2.id,
+            datetime.datetime(year=2023, month=1, day=3),
+            snapshot_created_at=None,
+        )
 
         # Add some variant commands
         variant1.commands = [
@@ -377,12 +424,23 @@ class TestSearchRefStudy:
             ),
         ]
         variant2.snapshot.last_executed_command = variant2.commands[0].id
+        variant3.commands = [
+            CommandBlock(
+                id=str(uuid.uuid4()),
+                study_id=variant2.id,
+                index=0,
+                command="create_thermal_cluster",
+                version=1,
+                args='{"area_name": "BE", "cluster_name": "BE", "cluster_type": "oil"}',
+            ),
+        ]
 
         # Check the variants
-        references = [variant1, variant2]
-        ref_study, cmd_blocks = search_ref_study(root_study, references)
-        assert ref_study == variant1
-        assert cmd_blocks == variant2.commands
+        references = [variant1, variant2, variant3]
+        search_result = search_ref_study(root_study, references)
+        assert search_result.ref_study == variant1
+        assert search_result.cmd_blocks == [c for v in [variant2, variant3] for c in v.commands]
+        assert search_result.force_regenerate is True
 
     def test_search_ref_study__one_variant_completely_uptodate(self, tmp_path: Path) -> None:
         """
@@ -438,9 +496,10 @@ class TestSearchRefStudy:
 
         # Check the variants
         references = [variant1]
-        ref_study, cmd_blocks = search_ref_study(root_study, references)
-        assert ref_study == variant1
-        assert cmd_blocks == []
+        search_result = search_ref_study(root_study, references)
+        assert search_result.ref_study == variant1
+        assert search_result.cmd_blocks == []
+        assert search_result.force_regenerate is False
 
     def test_search_ref_study__one_variant_partially_uptodate(self, tmp_path: Path) -> None:
         """
@@ -496,9 +555,10 @@ class TestSearchRefStudy:
 
         # Check the variants
         references = [variant1]
-        ref_study, cmd_blocks = search_ref_study(root_study, references)
-        assert ref_study == variant1
-        assert cmd_blocks == variant1.commands[1:]
+        search_result = search_ref_study(root_study, references)
+        assert search_result.ref_study == variant1
+        assert search_result.cmd_blocks == variant1.commands[1:]
+        assert search_result.force_regenerate is False
 
     def test_search_ref_study__missing_last_command(self, tmp_path: Path) -> None:
         """
@@ -550,9 +610,65 @@ class TestSearchRefStudy:
 
         # Check the variants
         references = [variant1]
-        ref_study, cmd_blocks = search_ref_study(root_study, references)
-        assert ref_study == variant1
-        assert cmd_blocks == variant1.commands
+        search_result = search_ref_study(root_study, references)
+        assert search_result.ref_study == variant1
+        assert search_result.cmd_blocks == variant1.commands
+        assert search_result.force_regenerate is True
+
+    def test_search_ref_study__deleted_last_command(self, tmp_path: Path) -> None:
+        """
+        Case where the list of studies contains a variant with an up-to-date snapshot,
+        but the last executed command is missing (removed).
+        We expect to have the list of all variant commands, so that the snapshot can be re-generated.
+        """
+        root_study = Study(id=str(uuid.uuid4()), name="root")
+
+        # Prepare some variants with snapshots:
+        variant1 = _create_variant(
+            tmp_path,
+            "variant1",
+            root_study.id,
+            datetime.datetime(year=2023, month=1, day=1),
+            snapshot_created_at=datetime.datetime(year=2023, month=1, day=2),
+        )
+
+        # Add some variant commands
+        variant1.commands = [
+            CommandBlock(
+                id=str(uuid.uuid4()),
+                study_id=variant1.id,
+                index=0,
+                command="create_area",
+                version=1,
+                args='{"area_name": "DE"}',
+            ),
+            CommandBlock(
+                id=str(uuid.uuid4()),
+                study_id=variant1.id,
+                index=1,
+                command="create_thermal_cluster",
+                version=1,
+                args='{"area_name": "DE", "cluster_name": "DE", "cluster_type": "thermal"}',
+            ),
+            CommandBlock(
+                id=str(uuid.uuid4()),
+                study_id=variant1.id,
+                index=2,
+                command="update_thermal_cluster",
+                version=1,
+                args='{"area_name": "DE", "cluster_name": "DE", "capacity": 1500}',
+            ),
+        ]
+
+        # The last executed command is missing.
+        variant1.snapshot.last_executed_command = str(uuid.uuid4())
+
+        # Check the variants
+        references = [variant1]
+        search_result = search_ref_study(root_study, references)
+        assert search_result.ref_study == variant1
+        assert search_result.cmd_blocks == variant1.commands
+        assert search_result.force_regenerate is True
 
 
 class RegisterNotification:
@@ -715,15 +831,9 @@ class TestSnapshotGenerator:
             repository=variant_study_service.repository,
         )
 
-        sql_statements = []
         notifier = RegisterNotification()
 
-        @event.listens_for(db.session.bind, "before_cursor_execute")  # type: ignore
-        def before_cursor_execute(conn, cursor, statement: str, parameters, context, executemany) -> None:
-            # note: add a breakpoint here to debug the SQL statements.
-            sql_statements.append(statement)
-
-        try:
+        with DBStatementRecorder(db.session.bind) as db_recorder:
             results = generator.generate_snapshot(
                 variant_study.id,
                 jwt_user,
@@ -731,8 +841,6 @@ class TestSnapshotGenerator:
                 from_scratch=False,
                 notifier=notifier,
             )
-        finally:
-            event.remove(db.session.bind, "before_cursor_execute", before_cursor_execute)
 
         # Check: the number of database queries is kept as low as possible.
         # We expect 5 queries:
@@ -741,7 +849,7 @@ class TestSnapshotGenerator:
         # - 1 query to fetch the list of variants with snapshot, commands, etc.,
         # - 1 query to update the variant study additional_data,
         # - 1 query to insert the variant study snapshot.
-        assert len(sql_statements) == 5, "\n-------\n".join(sql_statements)
+        assert len(db_recorder.sql_statements) == 5, str(db_recorder)
 
         # Check: the variant generation must succeed.
         assert results == GenerationResultInfoDTO(
@@ -826,11 +934,6 @@ class TestSnapshotGenerator:
         Test the generation of a variant study containing a user directory.
         We expect that the user directory is correctly preserved.
         """
-        # Add a user directory to the variant study.
-        user_dir = Path(variant_study.snapshot_dir) / "user"
-        user_dir.mkdir(parents=True, exist_ok=True)
-        user_dir.joinpath("user_file.txt").touch()
-
         generator = SnapshotGenerator(
             cache=variant_study_service.cache,
             raw_study_service=variant_study_service.raw_study_service,
@@ -840,22 +943,25 @@ class TestSnapshotGenerator:
             repository=variant_study_service.repository,
         )
 
-        results = generator.generate_snapshot(
+        # Generate the snapshot once
+        generator.generate_snapshot(
             variant_study.id,
             jwt_user,
             denormalize=False,
             from_scratch=False,
         )
 
-        # Check the results
-        assert results == GenerationResultInfoDTO(
-            success=True,
-            details=[
-                ("create_area", True, "Area 'North' created"),
-                ("create_area", True, "Area 'South' created"),
-                ("create_link", True, "Link between 'north' and 'south' created"),
-                ("create_cluster", True, "Thermal cluster 'gas_cluster' added to area 'south'."),
-            ],
+        # Add a user directory to the variant study.
+        user_dir = Path(variant_study.snapshot_dir) / "user"
+        user_dir.mkdir(parents=True, exist_ok=True)
+        user_dir.joinpath("user_file.txt").touch()
+
+        # Generate the snapshot again
+        generator.generate_snapshot(
+            variant_study.id,
+            jwt_user,
+            denormalize=False,
+            from_scratch=False,
         )
 
         # Check that the user directory is correctly preserved.

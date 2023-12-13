@@ -99,7 +99,7 @@ class VariantStudy(Study):
         """Get the path of the snapshot directory."""
         return Path(self.path) / "snapshot"
 
-    def is_snapshot_recent(self) -> bool:
+    def is_snapshot_up_to_date(self) -> bool:
         """Check if the snapshot exists and is up-to-date."""
         return (
             (self.snapshot is not None)
