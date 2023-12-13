@@ -106,16 +106,13 @@ class SnapshotGenerator:
             variant_study.snapshot = VariantStudySnapshot(
                 id=variant_study_id,
                 created_at=datetime.datetime.utcnow(),
-                last_executed_command=cmd_blocks[-1].id if cmd_blocks else None,
+                last_executed_command=variant_study.commands[-1].id if variant_study.commands else None,
             )
 
             logger.info(f"Reading additional data from files for study {file_study.config.study_id}")
             variant_study.additional_data = self._read_additional_data(file_study)
             self.repository.save(variant_study)
 
-            # Store the study config in the cache (with adjusted paths).
-            file_study.config.study_path = file_study.config.path = snapshot_dir
-            file_study.config.output_path = snapshot_dir / OUTPUT_RELATIVE_PATH
             self._update_cache(file_study)
 
         except Exception:
@@ -142,6 +139,7 @@ class SnapshotGenerator:
 
     def _export_ref_study(self, snapshot_dir: Path, ref_study: t.Union[RawStudy, VariantStudy]) -> None:
         if isinstance(ref_study, VariantStudy):
+            snapshot_dir.parent.mkdir(parents=True, exist_ok=True)
             export_study_flat(
                 ref_study.snapshot_dir,
                 snapshot_dir,
@@ -248,23 +246,31 @@ def search_ref_study(
     # To reuse the snapshot of the current variant, the last executed command
     # must be one of the commands of the current variant.
     curr_variant = descendants[-1]
-    last_exec_cmd = curr_variant.snapshot.last_executed_command if curr_variant.snapshot else None
-    command_ids = [c.id for c in curr_variant.commands]
-    if last_exec_cmd and last_exec_cmd in command_ids:
-        # We can reuse the snapshot of the current variant
-        last_exec_index = command_ids.index(last_exec_cmd)
-        return RefStudySearchResult(
-            ref_study=curr_variant,
-            cmd_blocks=curr_variant.commands[last_exec_index + 1 :],
-            force_regenerate=False,
-        )
+    if curr_variant.snapshot:
+        last_exec_cmd = curr_variant.snapshot.last_executed_command
+        command_ids = [c.id for c in curr_variant.commands]
+        # If the variant has no command, we can reuse the snapshot if it is recent
+        if not last_exec_cmd and not command_ids and curr_variant.is_snapshot_up_to_date():
+            return RefStudySearchResult(
+                ref_study=curr_variant,
+                cmd_blocks=[],
+                force_regenerate=False,
+            )
+        elif last_exec_cmd and last_exec_cmd in command_ids:
+            # We can reuse the snapshot of the current variant
+            last_exec_index = command_ids.index(last_exec_cmd)
+            return RefStudySearchResult(
+                ref_study=curr_variant,
+                cmd_blocks=curr_variant.commands[last_exec_index + 1 :],
+                force_regenerate=False,
+            )
 
     # We cannot reuse the snapshot of the current variant
     # To generate the last variant of a descendant of variants, we must search for
     # the most recent snapshot in order to use it as a reference study.
     # If no snapshot is found, we use the root study as a reference study.
 
-    snapshot_vars = [v for v in descendants if v.is_snapshot_recent()]
+    snapshot_vars = [v for v in descendants if v.is_snapshot_up_to_date()]
 
     if snapshot_vars:
         # We use the most recent snapshot as a reference study
