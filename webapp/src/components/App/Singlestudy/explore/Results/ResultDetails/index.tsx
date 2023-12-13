@@ -296,6 +296,7 @@ function ResultDetails() {
                           { value: DataType.Thermal, label: "Thermal plants" },
                           { value: DataType.Renewable, label: "Ren. clusters" },
                           { value: DataType.Record, label: "RecordYears" },
+                          { value: DataType.STStorage, label: "ST Storages" },
                         ]}
                         size="small"
                         variant="outlined"

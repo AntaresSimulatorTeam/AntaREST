@@ -1,11 +1,12 @@
 import uuid
 from datetime import datetime
 from enum import Enum
-from typing import Any, List, Optional
+from typing import Any, List, Mapping, Optional
 
 from pydantic import BaseModel, Extra
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, Sequence, String  # type: ignore
-from sqlalchemy.orm import relationship  # type: ignore
+from sqlalchemy.engine.base import Engine  # type: ignore
+from sqlalchemy.orm import Session, relationship, sessionmaker  # type: ignore
 
 from antarest.core.persistence import Base
 
@@ -171,3 +172,29 @@ class TaskJob(Base):  # type: ignore
             f" result_msg={self.result_msg},"
             f" result_status={self.result_status}"
         )
+
+
+def cancel_orphan_tasks(engine: Engine, session_args: Mapping[str, bool]) -> None:
+    """
+    Cancel all tasks that are currently running or pending.
+
+    When the web application restarts, such as after a new deployment, any pending or running tasks may be lost.
+    To mitigate this, it is preferable to set these tasks to a "FAILED" status.
+    This ensures that users can easily identify the tasks that were affected by the restart and take appropriate
+    actions, such as restarting the tasks manually.
+
+    Args:
+        engine: The database engine (SQLAlchemy connection to SQLite or PostgreSQL).
+        session_args: The session arguments (SQLAlchemy session arguments).
+    """
+    updated_values = {
+        TaskJob.status: TaskStatus.FAILED.value,
+        TaskJob.result_status: False,
+        TaskJob.result_msg: "Task was interrupted due to server restart",
+        TaskJob.completion_date: datetime.utcnow(),
+    }
+    with sessionmaker(bind=engine, **session_args)() as session:
+        session.query(TaskJob).filter(TaskJob.status.in_([TaskStatus.RUNNING.value, TaskStatus.PENDING.value])).update(
+            updated_values, synchronize_session=False
+        )
+        session.commit()

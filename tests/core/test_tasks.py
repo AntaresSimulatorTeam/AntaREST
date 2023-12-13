@@ -1,56 +1,83 @@
+import dataclasses
 import datetime
 import time
+import typing as t
 from pathlib import Path
-from typing import Callable, List
-from unittest.mock import ANY, Mock, call
+from unittest.mock import ANY, Mock
 
 import pytest
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine  # type: ignore
+from sqlalchemy.engine.base import Engine  # type: ignore
+from sqlalchemy.orm import Session, sessionmaker  # type: ignore
 
 from antarest.core.config import Config, RemoteWorkerConfig, TaskConfig
-from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
+from antarest.core.interfaces.eventbus import EventType, IEventBus
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.persistence import Base
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
-from antarest.core.tasks.model import TaskDTO, TaskJob, TaskJobLog, TaskListFilter, TaskResult, TaskStatus, TaskType
+from antarest.core.tasks.model import (
+    TaskJob,
+    TaskJobLog,
+    TaskListFilter,
+    TaskResult,
+    TaskStatus,
+    TaskType,
+    cancel_orphan_tasks,
+)
 from antarest.core.tasks.repository import TaskJobRepository
 from antarest.core.tasks.service import TaskJobService
-from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
+from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.eventbus.business.local_eventbus import LocalEventBus
 from antarest.eventbus.service import EventBusService
+from antarest.login.model import User
+from antarest.study.model import RawStudy
+from antarest.utils import SESSION_ARGS
 from antarest.worker.worker import AbstractWorker, WorkerTaskCommand
 from tests.helpers import with_db_context
 
 
-def test_service() -> None:
-    # sourcery skip: aware-datetime-for-utc
-    engine = create_engine("sqlite:///:memory:", echo=False)
-    Base.metadata.create_all(engine)
-    # noinspection SpellCheckingInspection
-    DBSessionMiddleware(
-        None,
-        custom_engine=engine,
-        session_args={"autocommit": False, "autoflush": False},
-    )
+@pytest.fixture(name="db_engine", autouse=True)
+def db_engine_fixture(tmp_path: Path) -> t.Generator[Engine, None, None]:
+    """
+    Fixture that creates an SQLite database in a temporary directory.
 
-    repo_mock = Mock(spec=TaskJobRepository)
-    creation_date = datetime.datetime.now(datetime.timezone.utc)
-    task = TaskJob(id="a", name="b", status=2, creation_date=creation_date)
-    repo_mock.list.return_value = [task]
-    repo_mock.get_or_raise.return_value = task
-    service = TaskJobService(config=Config(), repository=repo_mock, event_bus=Mock())
-    repo_mock.save.assert_called_with(
-        TaskJob(
-            id="a",
-            name="b",
-            status=4,
-            creation_date=creation_date,
-            result_status=False,
-            result_msg="Task was interrupted due to server restart",
-            completion_date=ANY,
-        )
-    )
+    When a function runs in a different thread than the main one and needs to use
+    the database, it uses the global `db` object. This object helps create a new
+    local session in the thread to connect to the SQLite database.
+    However, we can't use an in-memory SQLite database ("sqlite:///:memory:") because
+    it creates a new empty database each time. That's why we use a SQLite database stored on disk.
+
+    Yields:
+        An instance of the created SQLite database engine.
+    """
+    db_path = tmp_path / "db.sqlite"
+    db_url = f"sqlite:///{db_path}"
+    engine = create_engine(db_url, echo=False)
+    engine.execute("PRAGMA foreign_keys = ON")
+    Base.metadata.create_all(engine)
+    yield engine
+    engine.dispose()
+
+
+@with_db_context
+def test_service(core_config: Config, event_bus: IEventBus) -> None:
+    engine = db.session.bind
+    task_job_repo = TaskJobRepository()
+
+    # Prepare a TaskJob in the database
+    creation_date = datetime.datetime.utcnow()
+    running_task = TaskJob(id="a", name="b", status=TaskStatus.RUNNING.value, creation_date=creation_date)
+    task_job_repo.save(running_task)
+
+    # Create a TaskJobService
+    service = TaskJobService(config=core_config, repository=task_job_repo, event_bus=event_bus)
+
+    # Cancel pending and running tasks
+    cancel_orphan_tasks(engine=engine, session_args=SESSION_ARGS)
+
+    # Test Case: list tasks
+    # =====================
 
     tasks = service.list_tasks(
         TaskListFilter(),
@@ -60,52 +87,37 @@ def test_service() -> None:
     assert tasks[0].status == TaskStatus.FAILED
     assert tasks[0].creation_date_utc == str(creation_date)
 
-    start = datetime.datetime.now(datetime.timezone.utc)
-    end = start + datetime.timedelta(seconds=1)
-    repo_mock.reset_mock()
-    repo_mock.get.return_value = TaskJob(
-        id="a",
-        completion_date=end,
-        name="Unnamed",
-        owner_id=1,
-        status=TaskStatus.COMPLETED.value,
-        result_status=True,
-        result_msg="OK",
-        creation_date=start,
-    )
+    # Test Case: get task status
+    # ==========================
+
     res = service.status_task("a", RequestParameters(user=DEFAULT_ADMIN_USER))
     assert res is not None
-    assert res == TaskDTO(
-        id="a",
-        completion_date_utc=str(end),
-        creation_date_utc=str(start),
-        owner=1,
-        name="Unnamed",
-        result=TaskResult(success=True, message="OK"),
-        status=TaskStatus.COMPLETED,
-    )
+    expected = {
+        "completion_date_utc": ANY,
+        "creation_date_utc": creation_date.isoformat(" "),
+        "id": "a",
+        "logs": None,
+        "name": "b",
+        "owner": None,
+        "ref_id": None,
+        "result": {
+            "message": "Task was interrupted due to server restart",
+            "return_value": None,
+            "success": False,
+        },
+        "status": TaskStatus.FAILED,
+        "type": None,
+    }
+    assert res.dict() == expected
+
+    # Test Case: add a task that fails and wait for it
+    # ================================================
 
     # noinspection PyUnusedLocal
-    def action_fail(update_msg: Callable[[str], None]) -> TaskResult:
-        raise NotImplementedError()
+    def action_fail(update_msg: t.Callable[[str], None]) -> TaskResult:
+        raise Exception("this action failed")
 
-    def action_ok(update_msg: Callable[[str], None]) -> TaskResult:
-        update_msg("start")
-        update_msg("end")
-        return TaskResult(success=True, message="OK")
-
-    repo_mock.reset_mock()
-    now = datetime.datetime.utcnow()
-    task = TaskJob(
-        name="failed action",
-        owner_id=1,
-        id="a",
-        creation_date=now,
-        status=TaskStatus.PENDING.value,
-    )
-    repo_mock.save.side_effect = lambda x: task
-    repo_mock.get_or_raise.return_value = task
-    service.add_task(
+    failed_id = service.add_task(
         action_fail,
         "failed action",
         None,
@@ -113,79 +125,27 @@ def test_service() -> None:
         None,
         RequestParameters(user=DEFAULT_ADMIN_USER),
     )
-    service.await_task("a")
-    repo_mock.save.assert_has_calls(
-        [
-            call(
-                TaskJob(
-                    id=None,
-                    logs=[],
-                    owner_id=1,
-                    creation_date=None,
-                    completion_date=None,
-                    name="failed action",
-                    status=None,
-                    result_msg=None,
-                    result_status=None,
-                )
-            ),
-            call(
-                TaskJob(
-                    id="a",
-                    logs=[],
-                    owner_id=1,
-                    creation_date=now,
-                    completion_date=ANY,
-                    name="failed action",
-                    status=4,
-                    result_msg=ANY,  # "Task a failed: Unhandled exception [...]"
-                    result_status=False,
-                )
-            ),
-            call(
-                TaskJob(
-                    id="a",
-                    logs=[],
-                    owner_id=1,
-                    creation_date=now,
-                    completion_date=ANY,
-                    name="failed action",
-                    status=4,
-                    result_msg=ANY,  # "Task a failed: Unhandled exception [...]"
-                    result_status=False,
-                )
-            ),
-        ]
-    )
+    service.await_task(failed_id, timeout_sec=2)
 
-    repo_mock.reset_mock()
-    now = datetime.datetime.utcnow()
-    task = TaskJob(
-        name="Unnamed",
-        owner_id=1,
-        id="a",
-        creation_date=now,
-        status=TaskStatus.PENDING.value,
+    failed_task = task_job_repo.get(failed_id)
+    assert failed_task is not None
+    assert failed_task.status == TaskStatus.FAILED.value
+    assert failed_task.result_status is False
+    assert failed_task.result_msg == (
+        f"Task {failed_id} failed: Unhandled exception this action failed"
+        f"\nSee the logs for detailed information and the error traceback."
     )
-    repo_mock.save.side_effect = lambda x: task
-    repo_mock.get_or_raise.return_value = task
-    repo_mock.get.side_effect = [
-        TaskJob(
-            name="Unnamed",
-            owner_id=1,
-            id="a",
-            creation_date=now,
-            status=TaskStatus.RUNNING.value,
-        ),
-        TaskJob(
-            name="Unnamed",
-            owner_id=1,
-            id="a",
-            creation_date=now,
-            status=TaskStatus.RUNNING.value,
-        ),
-    ]
-    service.add_task(
+    assert failed_task.completion_date is not None
+
+    # Test Case: add a task that succeeds and wait for it
+    # ===================================================
+
+    def action_ok(update_msg: t.Callable[[str], None]) -> TaskResult:
+        update_msg("start")
+        update_msg("end")
+        return TaskResult(success=True, message="OK")
+
+    ok_id = service.add_task(
         action_ok,
         None,
         None,
@@ -193,134 +153,46 @@ def test_service() -> None:
         None,
         request_params=RequestParameters(user=DEFAULT_ADMIN_USER),
     )
-    service.await_task("a")
-    repo_mock.save.assert_has_calls(
-        [
-            call(TaskJob(owner_id=1, name="Unnamed")),
-            # this is not called with that because the object is mutated, and mock seems to suck..
-            # TaskJob(
-            #     id="a",
-            #     name="failed action",
-            #     owner_id=1,
-            #     status=TaskStatus.RUNNING.value,
-            #     creation_date=now,
-            # ),
-            call(
-                TaskJob(
-                    id="a",
-                    completion_date=ANY,
-                    name="Unnamed",
-                    owner_id=1,
-                    status=TaskStatus.COMPLETED.value,
-                    result_status=True,
-                    result_msg="OK",
-                    creation_date=now,
-                )
-            ),
-            call(
-                TaskJob(
-                    name="Unnamed",
-                    owner_id=1,
-                    id="a",
-                    creation_date=now,
-                    status=TaskStatus.RUNNING.value,
-                    logs=[TaskJobLog(message="start", task_id="a")],
-                )
-            ),
-            call(
-                TaskJob(
-                    name="Unnamed",
-                    owner_id=1,
-                    id="a",
-                    creation_date=now,
-                    status=TaskStatus.RUNNING.value,
-                    logs=[TaskJobLog(message="end", task_id="a")],
-                )
-            ),
-            call(
-                TaskJob(
-                    id="a",
-                    completion_date=ANY,
-                    name="Unnamed",
-                    owner_id=1,
-                    status=TaskStatus.COMPLETED.value,
-                    result_status=True,
-                    result_msg="OK",
-                    creation_date=now,
-                )
-            ),
-        ]
-    )
+    service.await_task(ok_id, timeout_sec=2)
 
-    repo_mock.get.reset_mock()
-    repo_mock.get.side_effect = [None]
-    service.await_task("elsewhere")
-    repo_mock.get.assert_called_with("elsewhere")
+    ok_task = task_job_repo.get(ok_id)
+    assert ok_task is not None
+    assert ok_task.status == TaskStatus.COMPLETED.value
+    assert ok_task.result_status is True
+    assert ok_task.result_msg == "OK"
+    assert ok_task.completion_date is not None
+    assert len(ok_task.logs) == 2
+    assert ok_task.logs[0].message == "start"
+    assert ok_task.logs[1].message == "end"
 
 
 class DummyWorker(AbstractWorker):
-    def __init__(self, event_bus: IEventBus, accept: List[str], tmp_path: Path):
+    def __init__(self, event_bus: IEventBus, accept: t.List[str], tmp_path: Path):
         super().__init__("test", event_bus, accept)
         self.tmp_path = tmp_path
 
     def _execute_task(self, task_info: WorkerTaskCommand) -> TaskResult:
         # simulate a "long" task ;-)
         time.sleep(0.01)
-        relative_path = task_info.task_args["file"]
+        relative_path = t.cast(str, task_info.task_args["file"])
         (self.tmp_path / relative_path).touch()
         return TaskResult(success=True, message="")
 
 
 @with_db_context
-def test_worker_tasks(tmp_path: Path):
-    repo_mock = Mock(spec=TaskJobRepository)
-    repo_mock.list.return_value = []
-    event_bus = EventBusService(LocalEventBus())
-    service = TaskJobService(
-        config=Config(tasks=TaskConfig(remote_workers=[RemoteWorkerConfig(name="test", queues=["test"])])),
-        repository=repo_mock,
-        event_bus=event_bus,
-    )
+def test_worker_tasks(tmp_path: Path, core_config: Config, event_bus: IEventBus) -> None:
+    # Create a TaskJobService
+    task_job_repo = TaskJobRepository()
+    task_config = TaskConfig(remote_workers=[RemoteWorkerConfig(name="test", queues=["test"])])
+    config = dataclasses.replace(core_config, tasks=task_config)
+    service = TaskJobService(config=config, repository=task_job_repo, event_bus=event_bus)
 
     worker = DummyWorker(event_bus, ["test"], tmp_path)
     worker.start(threaded=True)
 
     file_to_create = "foo"
-
     assert not (tmp_path / file_to_create).exists()
 
-    repo_mock.save.side_effect = [
-        TaskJob(
-            id="taskid",
-            name="Unnamed",
-            owner_id=0,
-            type=TaskType.WORKER_TASK,
-            ref_id=None,
-        ),
-        TaskJob(
-            id="taskid",
-            name="Unnamed",
-            owner_id=0,
-            type=TaskType.WORKER_TASK,
-            ref_id=None,
-            status=TaskStatus.RUNNING,
-        ),
-        TaskJob(
-            id="taskid",
-            name="Unnamed",
-            owner_id=0,
-            type=TaskType.WORKER_TASK,
-            ref_id=None,
-            status=TaskStatus.COMPLETED,
-        ),
-    ]
-    repo_mock.get_or_raise.return_value = TaskJob(
-        id="taskid",
-        name="Unnamed",
-        owner_id=0,
-        type=TaskType.WORKER_TASK,
-        ref_id=None,
-    )
     task_id = service.add_worker_task(
         TaskType.WORKER_TASK,
         "test",
@@ -329,127 +201,192 @@ def test_worker_tasks(tmp_path: Path):
         None,
         request_params=RequestParameters(user=DEFAULT_ADMIN_USER),
     )
-    service.await_task(task_id)
+    assert task_id is not None
+    service.await_task(task_id, timeout_sec=2)
 
     assert (tmp_path / file_to_create).exists()
 
 
-def test_repository():
-    # sourcery skip: aware-datetime-for-utc
-    engine = create_engine("sqlite:///:memory:", echo=False)
-    Base.metadata.create_all(engine)
-    # noinspection SpellCheckingInspection
-    DBSessionMiddleware(
-        None,
-        custom_engine=engine,
-        session_args={"autocommit": False, "autoflush": False},
-    )
+def test_repository(db_session: Session) -> None:
+    # Prepare two users in the database
+    user1_id = 9
+    db_session.add(User(id=user1_id, name="John"))
+    user2_id = 10
+    db_session.add(User(id=user2_id, name="Jane"))
+    db_session.commit()
 
-    with db():
-        # sourcery skip: extract-method
-        task_repository = TaskJobRepository()
+    # Create a RawStudy in the database
+    study_id = "e34fe4d5-5964-4ef2-9baf-fad66dadc512"
+    db_session.add(RawStudy(id="study_id", name="foo", version="860"))
+    db_session.commit()
 
-        new_task = TaskJob(name="foo", owner_id=0, type=TaskType.COPY)
-        second_task = TaskJob(owner_id=1, ref_id="a")
+    # Create a TaskJobService
+    task_job_repo = TaskJobRepository(db_session)
 
-        now = datetime.datetime.utcnow()
-        new_task = task_repository.save(new_task)
-        assert task_repository.get(new_task.id) == new_task
-        assert new_task.status == TaskStatus.PENDING.value
-        assert new_task.owner_id == 0
-        assert new_task.creation_date >= now
+    new_task = TaskJob(name="foo", owner_id=user1_id, type=TaskType.COPY)
 
-        second_task = task_repository.save(second_task)
+    now = datetime.datetime.utcnow()
+    new_task = task_job_repo.save(new_task)
+    assert task_job_repo.get(new_task.id) == new_task
+    assert new_task.status == TaskStatus.PENDING.value
+    assert new_task.owner_id == user1_id
+    assert new_task.creation_date >= now
 
-        result = task_repository.list(TaskListFilter(type=[TaskType.COPY]))
-        assert len(result) == 1
-        assert result[0].id == new_task.id
+    second_task = TaskJob(owner_id=user2_id, ref_id=study_id)
+    second_task = task_job_repo.save(second_task)
 
-        result = task_repository.list(TaskListFilter(ref_id="a"))
-        assert len(result) == 1
-        assert result[0].id == second_task.id
+    result = task_job_repo.list(TaskListFilter(type=[TaskType.COPY]))
+    assert len(result) == 1
+    assert result[0].id == new_task.id
 
-        result = task_repository.list(TaskListFilter(), user=1)
-        assert len(result) == 1
-        assert result[0].id == second_task.id
+    result = task_job_repo.list(TaskListFilter(ref_id=study_id))
+    assert len(result) == 1
+    assert result[0].id == second_task.id
 
-        result = task_repository.list(TaskListFilter())
-        assert len(result) == 2
+    result = task_job_repo.list(TaskListFilter(), user=user2_id)
+    assert len(result) == 1
+    assert result[0].id == second_task.id
 
-        result = task_repository.list(TaskListFilter(name="fo"))
-        assert len(result) == 1
+    result = task_job_repo.list(TaskListFilter())
+    assert len(result) == 2
 
-        result = task_repository.list(TaskListFilter(name="fo", status=[TaskStatus.RUNNING]))
-        assert len(result) == 0
-        new_task.status = TaskStatus.RUNNING.value
-        task_repository.save(new_task)
-        result = task_repository.list(TaskListFilter(name="fo", status=[TaskStatus.RUNNING]))
-        assert len(result) == 1
+    result = task_job_repo.list(TaskListFilter(name="fo"))
+    assert len(result) == 1
 
-        new_task.completion_date = datetime.datetime.utcnow()
-        task_repository.save(new_task)
-        result = task_repository.list(
-            TaskListFilter(
-                name="fo",
-                from_completion_date_utc=(new_task.completion_date + datetime.timedelta(seconds=1)).timestamp(),
-            )
+    result = task_job_repo.list(TaskListFilter(name="fo", status=[TaskStatus.RUNNING]))
+    assert len(result) == 0
+    new_task.status = TaskStatus.RUNNING.value
+    task_job_repo.save(new_task)
+    result = task_job_repo.list(TaskListFilter(name="fo", status=[TaskStatus.RUNNING]))
+    assert len(result) == 1
+
+    new_task.completion_date = datetime.datetime.utcnow()
+    task_job_repo.save(new_task)
+    result = task_job_repo.list(
+        TaskListFilter(
+            name="fo",
+            from_completion_date_utc=(new_task.completion_date + datetime.timedelta(seconds=1)).timestamp(),
         )
-        assert len(result) == 0
-        result = task_repository.list(
-            TaskListFilter(
-                name="fo",
-                from_completion_date_utc=(new_task.completion_date - datetime.timedelta(seconds=1)).timestamp(),
-            )
-        )
-        assert len(result) == 1
-
-        new_task.logs.append(TaskJobLog(message="hello"))
-        new_task.logs.append(TaskJobLog(message="bar"))
-        task_repository.save(new_task)
-        new_task = task_repository.get(new_task.id)
-        assert len(new_task.logs) == 2
-        assert new_task.logs[0].message == "hello"
-
-        assert len(db.session.query(TaskJobLog).where(TaskJobLog.task_id == new_task.id).all()) == 2
-
-        task_repository.delete(new_task.id)
-        assert len(db.session.query(TaskJobLog).where(TaskJobLog.task_id == new_task.id).all()) == 0
-        assert task_repository.get(new_task.id) is None
-
-
-def test_cancel():
-    # sourcery skip: aware-datetime-for-utc
-    engine = create_engine("sqlite:///:memory:", echo=False)
-    Base.metadata.create_all(engine)
-    # noinspection SpellCheckingInspection
-    DBSessionMiddleware(
-        None,
-        custom_engine=engine,
-        session_args={"autocommit": False, "autoflush": False},
     )
+    assert len(result) == 0
+    result = task_job_repo.list(
+        TaskListFilter(
+            name="fo",
+            from_completion_date_utc=(new_task.completion_date - datetime.timedelta(seconds=1)).timestamp(),
+        )
+    )
+    assert len(result) == 1
 
-    repo_mock = Mock(spec=TaskJobRepository)
-    repo_mock.list.return_value = []
-    service = TaskJobService(config=Config(), repository=repo_mock, event_bus=Mock())
+    new_task.logs.append(TaskJobLog(message="hello"))
+    new_task.logs.append(TaskJobLog(message="bar"))
+    task_job_repo.save(new_task)
+    assert new_task.id is not None
+    new_task = task_job_repo.get_or_raise(new_task.id)
+    assert len(new_task.logs) == 2
+    assert new_task.logs[0].message == "hello"
+
+    assert len(db_session.query(TaskJobLog).where(TaskJobLog.task_id == new_task.id).all()) == 2
+
+    task_job_repo.delete(new_task.id)
+    assert len(db_session.query(TaskJobLog).where(TaskJobLog.task_id == new_task.id).all()) == 0
+    assert task_job_repo.get(new_task.id) is None
+
+
+@with_db_context
+def test_cancel(core_config: Config, event_bus: IEventBus) -> None:
+    # Create a TaskJobService and add tasks
+    task_job_repo = TaskJobRepository()
+    task_job_repo.save(TaskJob(id="a"))
+    task_job_repo.save(TaskJob(id="b"))
+
+    # Create a TaskJobService
+    service = TaskJobService(config=core_config, repository=task_job_repo, event_bus=event_bus)
 
     with pytest.raises(UserHasNotPermissionError):
         service.cancel_task("a", RequestParameters())
 
-    service.cancel_task("b", RequestParameters(user=DEFAULT_ADMIN_USER), dispatch=True)
-    # noinspection PyUnresolvedReferences
-    service.event_bus.push.assert_called_with(
-        Event(
-            type=EventType.TASK_CANCEL_REQUEST,
-            payload="b",
-            permissions=PermissionInfo(public_mode=PublicMode.NONE),
-        )
-    )
+    # The event_bus fixture is actually a EventBusService with LocalEventBus backend
+    backend = t.cast(LocalEventBus, t.cast(EventBusService, event_bus).backend)
 
-    creation_date = datetime.datetime.utcnow()
-    task = TaskJob(id="a", name="b", status=2, creation_date=creation_date)
-    repo_mock.list.return_value = [task]
-    repo_mock.get_or_raise.return_value = task
-    service.tasks["a"] = Mock()
+    # Test Case: cancel a task that is not in the service tasks map
+    # =============================================================
+
+    backend.clear_events()
+
+    service.cancel_task("b", RequestParameters(user=DEFAULT_ADMIN_USER), dispatch=True)
+
+    collected_events = backend.get_events()
+
+    assert len(collected_events) == 1
+    assert collected_events[0].type == EventType.TASK_CANCEL_REQUEST
+    assert collected_events[0].payload == "b"
+    assert collected_events[0].permissions == PermissionInfo(public_mode=PublicMode.NONE)
+
+    # Test Case: cancel a task that is in the service tasks map
+    # =========================================================
+
+    service.tasks["a"] = Mock(cancel=Mock(return_value=None))
+
+    backend.clear_events()
+
     service.cancel_task("a", RequestParameters(user=DEFAULT_ADMIN_USER), dispatch=True)
-    task.status = TaskStatus.CANCELLED.value
-    repo_mock.save.assert_called_with(task)
+
+    collected_events = backend.get_events()
+    assert len(collected_events) == 0, "No event should have been emitted because the task is in the service map"
+    task_a = task_job_repo.get("a")
+    assert task_a is not None
+    assert task_a.status == TaskStatus.CANCELLED.value
+
+
+@pytest.mark.parametrize(
+    ("status", "result_status", "result_msg"),
+    [
+        (TaskStatus.RUNNING.value, False, "task ongoing"),
+        (TaskStatus.PENDING.value, True, "task pending"),
+        (TaskStatus.FAILED.value, False, "task failed"),
+        (TaskStatus.COMPLETED.value, True, "task finished"),
+        (TaskStatus.TIMEOUT.value, False, "task timed out"),
+        (TaskStatus.CANCELLED.value, True, "task canceled"),
+    ],
+)
+def test_cancel_orphan_tasks(
+    db_engine: Engine,
+    status: int,
+    result_status: bool,
+    result_msg: str,
+) -> None:
+    max_diff_seconds: int = 1
+    test_id: str = "2ea94758-9ea5-4015-a45f-b245a6ffc147"
+
+    completion_date: datetime.datetime = datetime.datetime.utcnow()
+    task_job = TaskJob(
+        id=test_id,
+        status=status,
+        result_status=result_status,
+        result_msg=result_msg,
+        completion_date=completion_date,
+    )
+    make_session = sessionmaker(bind=db_engine, **SESSION_ARGS)
+    with make_session() as session:
+        session.add(task_job)
+        session.commit()
+    cancel_orphan_tasks(engine=db_engine, session_args=SESSION_ARGS)
+    with make_session() as session:
+        if status in [TaskStatus.RUNNING.value, TaskStatus.PENDING.value]:
+            update_tasks_count = (
+                session.query(TaskJob)
+                .filter(TaskJob.status.in_([TaskStatus.RUNNING.value, TaskStatus.PENDING.value]))
+                .count()
+            )
+            assert not update_tasks_count
+            updated_task_job = session.query(TaskJob).get(test_id)
+            assert updated_task_job.status == TaskStatus.FAILED.value
+            assert not updated_task_job.result_status
+            assert updated_task_job.result_msg == "Task was interrupted due to server restart"
+            assert (datetime.datetime.utcnow() - updated_task_job.completion_date).seconds <= max_diff_seconds
+        else:
+            updated_task_job = session.query(TaskJob).get(test_id)
+            assert updated_task_job.status == status
+            assert updated_task_job.result_status == result_status
+            assert updated_task_job.result_msg == result_msg
+            assert (datetime.datetime.utcnow() - updated_task_job.completion_date).seconds <= max_diff_seconds

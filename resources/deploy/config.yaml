@@ -1,13 +1,9 @@
+# Documentation about this file can be found in this file: `docs/install/1-CONFIG.md`
+
 security:
   disabled: true
   jwt:
     key: super-secret
-  login:
-    admin:
-      pwd: admin
-  external_auth:
-    url: ""
-    default_group_role: 10
 
 db:
   url: "sqlite:///database.db"
@@ -17,43 +13,33 @@ storage:
   matrixstore: ./matrices
   archive_dir: ./examples/archives
   workspaces:
-    default: # required, no filters applied, this folder is not watched
+    default:
       path: ./examples/internal_studies/
-    # other workspaces can be added
-    # if a directory is to be ignored by the watcher, place a file named AW_NO_SCAN inside
-    tmp:
+    studies:
       path: ./examples/studies/
-      # filter_in: ['.*'] # default to '.*'
-      # filter_out: [] # default to empty
-      # groups: [] # default empty
 
 launcher:
-  default: local
-
   local:
     binaries:
-      700: path/to/700
-    enable_nb_cores_detection: true
+      VER: ANTARES_SOLVER_PATH
 
 #  slurm:
-#    local_workspace: path/to/workspace
-#    username: username
-#    hostname: 0.0.0.0
-#    port: 22
-#    private_key_file: path/to/key
-#    key_password: key_password
-#    password: password_is_optional_but_necessary_if_key_is_absent
-#    default_wait_time: 900
-#    default_time_limit: 172800
-#    enable_nb_cores_detection: False
+#    local_workspace: /path/to/slurm_workspace  # Path to the local SLURM workspace
+#    username: run-antares  # SLURM username
+#    hostname: 10.134.248.111  # SLURM server hostname
+#    port: 22  # SSH port for SLURM
+#    private_key_file: /path/to/ssh_private_key  # SSH private key file
+#    default_wait_time: 900  # Default wait time for SLURM jobs
+#    default_time_limit: 172800  # Default time limit for SLURM jobs
+#    enable_nb_cores_detection: False  # Enable detection of available CPU cores for SLURM
 #    nb_cores:
-#        min: 1
-#        default: 22
-#        max: 24
-#    default_json_db_name: launcher_db.json
-#    slurm_script_path: /path/to/launchantares_v1.1.3.sh
-#    db_primary_key: name
-#    antares_versions_on_remote_server :
+#      min: 1  # Minimum number of CPU cores
+#      default: 22  # Default number of CPU cores
+#      max: 24  # Maximum number of CPU cores
+#    default_json_db_name: launcher_db.json  # Default JSON database name for SLURM
+#    slurm_script_path: /applis/antares/launchAntares.sh  # Path to the SLURM script (on distant server)
+#    db_primary_key: name  # Primary key for the SLURM database
+#    antares_versions_on_remote_server: #List of Antares versions available on the remote SLURM server
 #      - "840"
 #      - "850"
 
@@ -62,20 +48,5 @@ debug: false
 
 root_path: "api"
 
-#tasks:
-#  max_workers: 5
-server:
-  worker_threadpool_size: 12
-  services:
-    - watcher
-
 logging:
-  level: INFO
   logfile: ./tmp/antarest.log
-#  json: false
-
-# Uncomment these lines to use redis as a backend for the eventbus
-# It is required to use redis when using this application on multiple workers in a preforked model like gunicorn for instance
-#redis:
-#  host: localhost
-#  port: 6379

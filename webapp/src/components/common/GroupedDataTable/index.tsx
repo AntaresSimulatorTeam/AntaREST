@@ -5,7 +5,8 @@ import AddIcon from "@mui/icons-material/Add";
 import { Button } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import MaterialReactTable, {
+import {
+  MaterialReactTable,
   MRT_RowSelectionState,
   MRT_ToggleFiltersButton,
   MRT_ToggleGlobalFilterButton,

@@ -1,12 +1,13 @@
 """
 This module provides various pytest fixtures for unit testing the AntaREST application.
 
-Fixtures in this module are used to set up and provide instances of different classes and services required during testing.
+Fixtures in this module are used to set up and provide instances of different classes
+and services required during testing.
 """
 import datetime
+import typing as t
 import uuid
 from pathlib import Path
-from typing import Dict, List, Optional, Union
 from unittest.mock import Mock
 
 import pytest
@@ -18,6 +19,9 @@ from antarest.core.requests import RequestParameters
 from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskListFilter, TaskResult, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskService, Task
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
+from antarest.eventbus.business.local_eventbus import LocalEventBus
+from antarest.eventbus.service import EventBusService
+from antarest.matrixstore.repository import MatrixContentRepository
 from antarest.matrixstore.service import SimpleMatrixService
 from antarest.matrixstore.uri_resolver_service import UriResolverService
 from antarest.study.storage.patch_service import PatchService
@@ -50,26 +54,26 @@ __all__ = (
 
 class SynchTaskService(ITaskService):
     def __init__(self) -> None:
-        self._task_result: Optional[TaskResult] = None
+        self._task_result: t.Optional[TaskResult] = None
 
     def add_worker_task(
         self,
         task_type: TaskType,
         task_queue: str,
-        task_args: Dict[str, Union[int, float, bool, str]],
-        name: Optional[str],
-        ref_id: Optional[str],
+        task_args: t.Dict[str, t.Union[int, float, bool, str]],
+        name: t.Optional[str],
+        ref_id: t.Optional[str],
         request_params: RequestParameters,
-    ) -> Optional[str]:
+    ) -> t.Optional[str]:
         raise NotImplementedError()
 
     def add_task(
         self,
         action: Task,
-        name: Optional[str],
-        task_type: Optional[TaskType],
-        ref_id: Optional[str],
-        custom_event_messages: Optional[CustomTaskEventMessages],
+        name: t.Optional[str],
+        task_type: t.Optional[TaskType],
+        ref_id: t.Optional[str],
+        custom_event_messages: t.Optional[CustomTaskEventMessages],
         request_params: RequestParameters,
     ) -> str:
         self._task_result = action(lambda message: None)
@@ -92,15 +96,15 @@ class SynchTaskService(ITaskService):
             logs=None,
         )
 
-    def list_tasks(self, task_filter: TaskListFilter, request_params: RequestParameters) -> List[TaskDTO]:
+    def list_tasks(self, task_filter: TaskListFilter, request_params: RequestParameters) -> t.List[TaskDTO]:
         return []
 
-    def await_task(self, task_id: str, timeout_sec: Optional[int] = None) -> None:
+    def await_task(self, task_id: str, timeout_sec: t.Optional[int] = None) -> None:
         pass
 
 
 @pytest.fixture(name="bucket_dir", scope="session")
-def bucket_dir_fixture(tmp_path_factory) -> Path:
+def bucket_dir_fixture(tmp_path_factory: t.Any) -> Path:
     """
     Fixture that creates a session-level temporary directory named "matrix_store" for storing matrices.
 
@@ -114,7 +118,7 @@ def bucket_dir_fixture(tmp_path_factory) -> Path:
     Returns:
         A Path object representing the created temporary directory for storing matrices.
     """
-    return tmp_path_factory.mktemp("matrix_store", numbered=False)
+    return t.cast(Path, tmp_path_factory.mktemp("matrix_store"))
 
 
 @pytest.fixture(name="simple_matrix_service", scope="session")
@@ -128,7 +132,10 @@ def simple_matrix_service_fixture(bucket_dir: Path) -> SimpleMatrixService:
     Returns:
         An instance of the SimpleMatrixService class representing the matrix service.
     """
-    return SimpleMatrixService(bucket_dir)
+    matrix_content_repository = MatrixContentRepository(
+        bucket_dir=bucket_dir,
+    )
+    return SimpleMatrixService(matrix_content_repository=matrix_content_repository)
 
 
 @pytest.fixture(name="generator_matrix_constants", scope="session")
@@ -144,7 +151,9 @@ def generator_matrix_constants_fixture(
     Returns:
         An instance of the GeneratorMatrixConstants class representing the matrix constants generator.
     """
-    return GeneratorMatrixConstants(matrix_service=simple_matrix_service)
+    out_generator_matrix_constants = GeneratorMatrixConstants(simple_matrix_service)
+    out_generator_matrix_constants.init_constant_matrices()
+    return out_generator_matrix_constants
 
 
 @pytest.fixture(name="uri_resolver_service", scope="session")
@@ -269,7 +278,7 @@ def event_bus_fixture() -> IEventBus:
     Returns:
         A Mock instance of the IEventBus class for event bus-related testing.
     """
-    return Mock(spec=IEventBus)
+    return EventBusService(LocalEventBus())
 
 
 @pytest.fixture(name="command_factory", scope="session")

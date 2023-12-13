@@ -7,18 +7,22 @@ from antarest.study.storage.rawstudy.model.filesystem.root.input.bindingconstrai
     BindingConstraintsIni,
 )
 from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series import (
-    default_binding_constraint_daily,
-    default_binding_constraint_hourly,
-    default_binding_constraint_weekly,
+    default_bc_hourly,
+    default_bc_weekly_daily,
 )
 
 
 class BindingConstraints(FolderNode):
+    """
+    Handle the binding constraints folder which contains the binding constraints
+    configuration and matrices.
+    """
+
     def build(self) -> TREE:
         default_matrices = {
-            BindingConstraintFrequency.HOURLY: default_binding_constraint_hourly,
-            BindingConstraintFrequency.DAILY: default_binding_constraint_daily,
-            BindingConstraintFrequency.WEEKLY: default_binding_constraint_weekly,
+            BindingConstraintFrequency.HOURLY: default_bc_hourly,
+            BindingConstraintFrequency.DAILY: default_bc_weekly_daily,
+            BindingConstraintFrequency.WEEKLY: default_bc_weekly_daily,
         }
         children: TREE = {
             binding.id: InputSeriesMatrix(
@@ -31,6 +35,7 @@ class BindingConstraints(FolderNode):
             for binding in self.config.bindings
         }
 
+        # noinspection SpellCheckingInspection
         children["bindingconstraints"] = BindingConstraintsIni(
             self.context, self.config.next_file("bindingconstraints.ini")
         )

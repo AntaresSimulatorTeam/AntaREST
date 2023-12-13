@@ -48,6 +48,7 @@ class CommandExtractor(ICommandExtractor):
     def __init__(self, matrix_service: ISimpleMatrixService, patch_service: PatchService):
         self.matrix_service = matrix_service
         self.generator_matrix_constants = GeneratorMatrixConstants(self.matrix_service)
+        self.generator_matrix_constants.init_constant_matrices()
         self.patch_service = patch_service
         self.command_context = CommandContext(
             generator_matrix_constants=self.generator_matrix_constants,

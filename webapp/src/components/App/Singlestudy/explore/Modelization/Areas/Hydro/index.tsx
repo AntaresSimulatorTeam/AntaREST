@@ -65,7 +65,7 @@ function Hydro() {
   return (
     <Root>
       <DocLink to={`${ACTIVE_WINDOWS_DOC_PATH}#hydro`} isAbsolute />
-      <TabWrapper study={study} tabStyle="normal" tabList={tabList} />
+      <TabWrapper study={study} tabList={tabList} isScrollable />
     </Root>
   );
 }

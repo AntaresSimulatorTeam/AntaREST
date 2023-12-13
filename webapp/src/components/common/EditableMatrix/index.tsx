@@ -13,7 +13,11 @@ import "handsontable/dist/handsontable.min.css";
 import MatrixGraphView from "./MatrixGraphView";
 import { Root } from "./style";
 import "./style.css";
-import { computeStats, createDateFromIndex, slice } from "./utils";
+import {
+  computeStats,
+  createDateFromIndex,
+  cellChangesToMatrixEdits,
+} from "./utils";
 import Handsontable from "../Handsontable";
 
 const logError = debug("antares:editablematrix:error");
@@ -68,18 +72,19 @@ function EditableMatrix(props: PropTypes) {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSlice = (change: CellChange[], source: string) => {
-    const isChanged = change.map((item) => {
-      if (parseFloat(item[2]) === parseFloat(item[3])) {
-        return;
-      }
-      return item;
-    });
-    if (onUpdate) {
-      const edit = slice(
-        isChanged.filter((e) => e !== undefined) as CellChange[],
-      );
-      onUpdate(edit, source);
+  const handleSlice = (changes: CellChange[], source: string) => {
+    if (!onUpdate) {
+      return;
+    }
+
+    const filteredChanges = changes.filter(
+      ([, , oldValue, newValue]) =>
+        parseFloat(oldValue) !== parseFloat(newValue),
+    );
+
+    if (filteredChanges.length > 0) {
+      const edits = cellChangesToMatrixEdits(filteredChanges, matrixTime);
+      onUpdate(edits, source);
     }
   };
 

@@ -3,6 +3,7 @@ import { Box, Button } from "@mui/material";
 import { useParams, useOutletContext, useNavigate } from "react-router-dom";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useTranslation } from "react-i18next";
+import * as RA from "ramda-adjunct";
 import { StudyMetadata } from "../../../../../../../common/types";
 import Form from "../../../../../../common/Form";
 import Fields from "./Fields";
@@ -27,17 +28,34 @@ function StorageForm() {
   });
 
   // prevent re-fetch while useNavigateOnCondition event occurs
-  const defaultValues = useCallback(() => {
-    return getStorage(study.id, areaId, storageId);
+  const defaultValues = useCallback(
+    async () => {
+      const storage = await getStorage(study.id, areaId, storageId);
+      return {
+        ...storage,
+        // Convert to percentage ([0-1] -> [0-100])
+        efficiency: storage.efficiency * 100,
+        initialLevel: storage.initialLevel * 100,
+      };
+    },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    [],
+  );
 
   ////////////////////////////////////////////////////////////////
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = ({ dirtyValues }: SubmitHandlerPlus<Storage>) => {
-    return updateStorage(study.id, areaId, storageId, dirtyValues);
+    const newValues = { ...dirtyValues };
+    // Convert to ratio ([0-100] -> [0-1])
+    if (RA.isNumber(newValues.efficiency)) {
+      newValues.efficiency /= 100;
+    }
+    if (RA.isNumber(newValues.initialLevel)) {
+      newValues.initialLevel /= 100;
+    }
+    return updateStorage(study.id, areaId, storageId, newValues);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -61,24 +79,21 @@ function StorageForm() {
           defaultValues,
         }}
         onSubmit={handleSubmit}
-        autoSubmit
+        enableUndoRedo
       >
         <Fields />
-        <Box
-          sx={{
-            width: 1,
-            display: "flex",
-            flexDirection: "column",
-            height: "500px",
-          }}
-        >
-          <Matrix
-            study={study}
-            areaId={areaId}
-            storageId={nameToId(storageId)}
-          />
-        </Box>
       </Form>
+      <Box
+        sx={{
+          width: 1,
+          display: "flex",
+          flexDirection: "column",
+          py: 3,
+          height: "75vh",
+        }}
+      >
+        <Matrix study={study} areaId={areaId} storageId={nameToId(storageId)} />
+      </Box>
     </Box>
   );
 }

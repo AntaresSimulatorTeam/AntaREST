@@ -63,24 +63,21 @@ function ThermalForm() {
         key={study.id + areaId}
         config={{ defaultValues }}
         onSubmit={handleSubmit}
-        autoSubmit
+        enableUndoRedo
       >
         <Fields />
-        <Box
-          sx={{
-            width: 1,
-            display: "flex",
-            flexDirection: "column",
-            height: "500px",
-          }}
-        >
-          <Matrix
-            study={study}
-            areaId={areaId}
-            clusterId={nameToId(clusterId)}
-          />
-        </Box>
       </Form>
+      <Box
+        sx={{
+          width: 1,
+          display: "flex",
+          flexDirection: "column",
+          py: 3,
+          height: "75vh",
+        }}
+      >
+        <Matrix study={study} areaId={areaId} clusterId={nameToId(clusterId)} />
+      </Box>
     </Box>
   );
 }

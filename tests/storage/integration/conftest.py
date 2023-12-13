@@ -12,6 +12,7 @@ from antarest.core.tasks.service import ITaskService
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.dbmodel import Base
 from antarest.login.model import User
+from antarest.matrixstore.repository import MatrixContentRepository
 from antarest.matrixstore.service import SimpleMatrixService
 from antarest.study.main import build_study_service
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, StudyAdditionalData
@@ -87,7 +88,10 @@ def storage_service(tmp_path: Path, project_path: Path, sta_mini_zip_path: Path)
 
     matrix_path = tmp_path / "matrices"
     matrix_path.mkdir()
-    matrix_service = SimpleMatrixService(matrix_path)
+    matrix_content_repository = MatrixContentRepository(
+        bucket_dir=matrix_path,
+    )
+    matrix_service = SimpleMatrixService(matrix_content_repository=matrix_content_repository)
     storage_service = build_study_service(
         application=Mock(),
         cache=LocalCache(config=config.cache),

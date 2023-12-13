@@ -1,6 +1,6 @@
 {
   "name": "antares-web",
-  "version": "2.16.0",
+  "version": "2.16.1",
   "private": true,
   "engines": {
     "node": "18.16.1"
@@ -12,6 +12,7 @@
     "@mui/icons-material": "5.14.11",
     "@mui/lab": "5.0.0-alpha.146",
     "@mui/material": "5.14.11",
+    "@mui/x-date-pickers": "6.18.3",
     "@reduxjs/toolkit": "1.9.6",
     "@types/d3": "5.16.0",
     "@types/draft-convert": "2.1.5",
@@ -42,7 +43,7 @@
     "js-cookie": "3.0.5",
     "jwt-decode": "3.1.2",
     "lodash": "4.17.21",
-    "material-react-table": "1.15.0",
+    "material-react-table": "2.0.5",
     "moment": "2.29.4",
     "notistack": "3.0.1",
     "os": "0.1.2",

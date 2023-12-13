@@ -82,14 +82,19 @@ export const createDateFromIndex = (
   return date;
 };
 
-export const slice = (tab: CellChange[]): MatrixEditDTO[] => {
-  return tab.map((cell) => {
+export const cellChangesToMatrixEdits = (
+  cellChanges: CellChange[],
+  matrixTime: boolean,
+): MatrixEditDTO[] =>
+  cellChanges.map(([row, column, , value]) => {
+    const rowIndex = parseFloat(row.toString());
+    const colIndex = parseFloat(column.toString()) - (matrixTime ? 1 : 0);
+
     return {
-      coordinates: [[cell[0] as number, (cell[1] as number) - 1]],
-      operation: { operation: Operator.EQ, value: parseInt(cell[3], 10) },
+      coordinates: [[rowIndex, colIndex]],
+      operation: { operation: Operator.EQ, value: parseFloat(value) },
     };
   });
-};
 
 export const computeStats = (
   statsType: string,

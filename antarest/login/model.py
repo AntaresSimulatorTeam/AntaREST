@@ -1,11 +1,14 @@
+import contextlib
 import typing as t
 import uuid
 
 import bcrypt
 from pydantic.main import BaseModel
 from sqlalchemy import Boolean, Column, Enum, ForeignKey, Integer, Sequence, String  # type: ignore
+from sqlalchemy.engine.base import Engine  # type: ignore
+from sqlalchemy.exc import IntegrityError  # type: ignore
 from sqlalchemy.ext.hybrid import hybrid_property  # type: ignore
-from sqlalchemy.orm import relationship  # type: ignore
+from sqlalchemy.orm import relationship, sessionmaker  # type: ignore
 
 from antarest.core.persistence import Base
 from antarest.core.roles import RoleType
@@ -13,6 +16,19 @@ from antarest.core.roles import RoleType
 if t.TYPE_CHECKING:
     # avoid circular import
     from antarest.launcher.model import JobResult
+
+
+GROUP_ID = "admin"
+"""Unique ID of the administrator group."""
+
+GROUP_NAME = "admin"
+"""Name of the administrator group."""
+
+ADMIN_ID = 1
+"""Unique ID of the site administrator."""
+
+ADMIN_NAME = "admin"
+"""Name of the site administrator."""
 
 
 class UserInfo(BaseModel):
@@ -282,3 +298,32 @@ class CredentialsDTO(BaseModel):
     user: int
     access_token: str
     refresh_token: str
+
+
+def init_admin_user(engine: Engine, session_args: t.Mapping[str, bool], admin_password: str) -> None:
+    """
+    Create the default admin user, group and role if they do not already exist in the database.
+
+    Args:
+        engine: The database engine (SQLAlchemy connection to SQLite or PostgreSQL).
+        session_args: The session arguments (SQLAlchemy session arguments).
+        admin_password: The admin password extracted from the configuration file.
+    """
+    make_session = sessionmaker(bind=engine, **session_args)
+    with make_session() as session:
+        group = Group(id=GROUP_ID, name=GROUP_NAME)
+        with contextlib.suppress(IntegrityError):
+            session.add(group)
+            session.commit()
+
+    with make_session() as session:
+        user = User(id=ADMIN_ID, name=ADMIN_NAME, password=Password(admin_password))
+        with contextlib.suppress(IntegrityError):
+            session.add(user)
+            session.commit()
+
+    with make_session() as session:
+        role = Role(type=RoleType.ADMIN, identity_id=ADMIN_ID, group_id=GROUP_ID)
+        with contextlib.suppress(IntegrityError):
+            session.add(role)
+            session.commit()

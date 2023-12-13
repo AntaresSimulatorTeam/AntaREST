@@ -2,7 +2,7 @@ from abc import ABCMeta
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 import numpy as np
-from pydantic import Field, validator
+from pydantic import BaseModel, Field, validator
 
 from antarest.matrixstore.model import MatrixData
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
@@ -40,10 +40,15 @@ def check_matrix_values(time_step: BindingConstraintFrequency, values: MatrixTyp
             If the matrix shape does not match the expected shape for the given time step.
             If the matrix values contain NaN (Not-a-Number).
     """
+    # Matrice shapes for binding constraints are different from usual shapes,
+    # because we need to take leap years into account, which contains 366 days and 8784 hours.
+    # Also, we use the same matrices for "weekly" and "daily" frequencies,
+    # because the solver calculates the weekly matrix from the daily matrix.
+    # See https://github.com/AntaresSimulatorTeam/AntaREST/issues/1843
     shapes = {
-        BindingConstraintFrequency.HOURLY: (8760, 3),
-        BindingConstraintFrequency.DAILY: (365, 3),
-        BindingConstraintFrequency.WEEKLY: (52, 3),
+        BindingConstraintFrequency.HOURLY: (8784, 3),
+        BindingConstraintFrequency.DAILY: (366, 3),
+        BindingConstraintFrequency.WEEKLY: (366, 3),
     }
     # Check the matrix values and create the corresponding matrix link
     array = np.array(values, dtype=np.float64)
@@ -53,12 +58,9 @@ def check_matrix_values(time_step: BindingConstraintFrequency, values: MatrixTyp
         raise ValueError("Matrix values cannot contain NaN")
 
 
-class AbstractBindingConstraintCommand(ICommand, metaclass=ABCMeta):
-    """
-    Abstract class for binding constraint commands.
-    """
-
+class BindingConstraintProperties(BaseModel):
     # todo: add the `name` attribute because it should also be updated
+    # It would lead to an API change as update_binding_constraint currently does not have it
     enabled: bool = True
     time_step: BindingConstraintFrequency
     operator: BindingConstraintOperator
@@ -67,6 +69,12 @@ class AbstractBindingConstraintCommand(ICommand, metaclass=ABCMeta):
     filter_year_by_year: Optional[str] = None
     filter_synthesis: Optional[str] = None
     comments: Optional[str] = None
+
+
+class AbstractBindingConstraintCommand(BindingConstraintProperties, ICommand, metaclass=ABCMeta):
+    """
+    Abstract class for binding constraint commands.
+    """
 
     def to_dto(self) -> CommandDTO:
         args = {
