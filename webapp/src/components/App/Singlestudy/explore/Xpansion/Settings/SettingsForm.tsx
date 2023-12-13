@@ -253,7 +253,7 @@ function SettingsForm(props: PropType) {
             type="number"
             label={t("xpansion.relaxedOptimalityGap")}
             variant="filled"
-            value={currentSettings["relaxed_optimality_gap"] || ""}
+            value={currentSettings.relaxed_optimality_gap || ""}
             onChange={(e) =>
               handleChange("relaxed_optimality_gap", e.target.value)
             }
