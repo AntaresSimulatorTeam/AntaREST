@@ -305,13 +305,16 @@ def test_cancel(core_config: Config, event_bus: IEventBus) -> None:
     with pytest.raises(UserHasNotPermissionError):
         service.cancel_task("a", RequestParameters())
 
+    # The event_bus fixture is actually a EventBusService with LocalEventBus backend
+    backend = t.cast(LocalEventBus, t.cast(EventBusService, event_bus).backend)
+
     # Test Case: cancel a task that is not in the service tasks map
     # =============================================================
 
+    backend.clear_events()
+
     service.cancel_task("b", RequestParameters(user=DEFAULT_ADMIN_USER), dispatch=True)
 
-    # The event_bus fixture is actually a EventBusService with LocalEventBus backend
-    backend = t.cast(LocalEventBus, t.cast(EventBusService, event_bus).backend)
     collected_events = backend.get_events()
 
     assert len(collected_events) == 1
@@ -324,10 +327,12 @@ def test_cancel(core_config: Config, event_bus: IEventBus) -> None:
 
     service.tasks["a"] = Mock(cancel=Mock(return_value=None))
 
+    backend.clear_events()
+
     service.cancel_task("a", RequestParameters(user=DEFAULT_ADMIN_USER), dispatch=True)
 
     collected_events = backend.get_events()
-    assert len(collected_events) == 1, "No event should have been emitted because the task is in the service map"
+    assert len(collected_events) == 0, "No event should have been emitted because the task is in the service map"
     task_a = task_job_repo.get("a")
     assert task_a is not None
     assert task_a.status == TaskStatus.CANCELLED.value
