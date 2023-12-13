@@ -1,5 +1,5 @@
-import { useMemo } from "react";
-import { useNavigate, useOutletContext } from "react-router-dom";
+import { useEffect, useMemo } from "react";
+import { useNavigate, useOutletContext, useParams } from "react-router-dom";
 import { Box } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { StudyMetadata } from "../../../../../common/types";
@@ -14,8 +14,15 @@ function Modelization() {
   const [t] = useTranslation();
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const { areaId: paramAreaId } = useParams();
   const areas = useAppSelector((state) => getAreas(state, study.id));
   const areaId = useAppSelector(getCurrentAreaId);
+
+  useEffect(() => {
+    if (!areaId && paramAreaId) {
+      dispatch(setCurrentArea(paramAreaId));
+    }
+  }, [paramAreaId, dispatch, areaId]);
 
   const tabList = useMemo(() => {
     const basePath = `/studies/${study.id}/explore/modelization`;
