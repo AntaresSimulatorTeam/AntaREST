@@ -654,7 +654,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         if variant_study.parent_id is None:
             raise NoParentStudyError(variant_study_id)
 
-        return self.generate_task(variant_study, denormalize)
+        return self.generate_task(variant_study, denormalize, from_scratch=from_scratch)
 
     def generate_study_config(
         self,
