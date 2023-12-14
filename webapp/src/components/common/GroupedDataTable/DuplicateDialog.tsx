@@ -1,46 +1,31 @@
-import { t } from "i18next";
-import AddCircleIcon from "@mui/icons-material/AddCircle";
-import FormDialog from "../dialogs/FormDialog";
-import StringFE from "../fieldEditors/StringFE";
+import { useTranslation } from "react-i18next";
+import ControlPointDuplicateIcon from "@mui/icons-material/ControlPointDuplicate";
 import Fieldset from "../Fieldset";
+import FormDialog from "../dialogs/FormDialog";
 import { SubmitHandlerPlus } from "../Form/types";
-import SelectFE from "../fieldEditors/SelectFE";
-import { TRow } from ".";
-import { nameToId } from "../../../services/utils";
+import StringFE from "../fieldEditors/StringFE";
 
-interface Props<TData extends TRow> {
+interface Props {
   open: boolean;
   onClose: VoidFunction;
-  onSubmit: (values: TData) => void;
-  groups: string[] | readonly string[];
-  existingNames: Array<TData["name"]>;
+  onSubmit: (name: string) => Promise<void>;
+  existingNames: string[];
+  defaultName: string;
 }
 
-const defaultValues = {
-  name: "",
-  group: "",
-};
+function DuplicateDialog(props: Props) {
+  const { open, onClose, onSubmit, existingNames, defaultName } = props;
+  const { t } = useTranslation();
+  const defaultValues = { name: defaultName };
 
-function CreateRowDialog<TData extends TRow>({
-  open,
-  onClose,
-  onSubmit,
-  groups,
-  existingNames,
-}: Props<TData>) {
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = ({
-    values,
+  const handleSubmit = async ({
+    values: { name },
   }: SubmitHandlerPlus<typeof defaultValues>) => {
-    onSubmit({
-      ...values,
-      id: nameToId(values.name),
-      name: values.name.trim(),
-    } as TData);
-
+    await onSubmit(name);
     onClose();
   };
 
@@ -50,14 +35,13 @@ function CreateRowDialog<TData extends TRow>({
 
   return (
     <FormDialog
-      title={t("button.add")}
-      titleIcon={AddCircleIcon}
       open={open}
+      title={t("global.duplicate")}
+      titleIcon={ControlPointDuplicateIcon}
       onCancel={onClose}
       onSubmit={handleSubmit}
-      config={{
-        defaultValues,
-      }}
+      config={{ defaultValues }}
+      isCreationForm
     >
       {({ control }) => (
         <Fieldset fullFieldWidth>
@@ -83,20 +67,10 @@ function CreateRowDialog<TData extends TRow>({
             }}
             sx={{ m: 0 }}
           />
-          <SelectFE
-            label={t("study.modelization.clusters.group")}
-            name="group"
-            control={control}
-            options={groups}
-            required
-            sx={{
-              alignSelf: "center",
-            }}
-          />
         </Fieldset>
       )}
     </FormDialog>
   );
 }
 
-export default CreateRowDialog;
+export default DuplicateDialog;
