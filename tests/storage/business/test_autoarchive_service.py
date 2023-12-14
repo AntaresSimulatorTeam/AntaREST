@@ -29,30 +29,64 @@ def test_auto_archival(tmp_path: Path):
 
     # Add some studies in the database
     db_session = repository.session
-    db_session.add(RawStudy(id="a", workspace="test", updated_at=now - datetime.timedelta(days=61)))
-    db_session.add(RawStudy(id="b", workspace="test", updated_at=now - datetime.timedelta(days=59)))
-    db_session.add(RawStudy(id="c", workspace="test", updated_at=now - datetime.timedelta(days=61), archived=True))
-    db_session.add(RawStudy(id="d", workspace="test", updated_at=now - datetime.timedelta(days=61), archived=False))
-    db_session.add(VariantStudy(id="e", updated_at=now - datetime.timedelta(days=61)))
+    db_session.add(
+        RawStudy(
+            id="a",
+            workspace="not default",
+            updated_at=now - datetime.timedelta(days=61),
+        )
+    )
+    db_session.add(
+        RawStudy(
+            id="b",
+            workspace=DEFAULT_WORKSPACE_NAME,
+            updated_at=now - datetime.timedelta(days=59),
+        )
+    )
+    db_session.add(
+        RawStudy(
+            id="c",
+            workspace=DEFAULT_WORKSPACE_NAME,
+            updated_at=now - datetime.timedelta(days=61),
+            archived=True,
+        )
+    )
+    db_session.add(
+        RawStudy(
+            id="d",
+            workspace=DEFAULT_WORKSPACE_NAME,
+            updated_at=now - datetime.timedelta(days=61),
+            archived=False,
+        )
+    )
+    db_session.add(
+        VariantStudy(
+            id="e",
+            updated_at=now - datetime.timedelta(days=61),
+        )
+    )
     db_session.commit()
 
-    auto_archive_service.study_service.repository = repository
+    study_service = auto_archive_service.study_service
+    study_service.repository = repository
 
-    auto_archive_service.study_service.storage_service = Mock()
-    auto_archive_service.study_service.storage_service.variant_study_service = Mock()
-    auto_archive_service.study_service.archive.side_effect = TaskAlreadyRunning
-    auto_archive_service.study_service.get_study.return_value = VariantStudy(
-        id="e", updated_at=now - datetime.timedelta(days=61)
-    )
+    study_service.storage_service = Mock()
+    study_service.storage_service.variant_study_service = Mock()
+    study_service.archive.side_effect = TaskAlreadyRunning
+    study_service.get_study = repository.get
 
     auto_archive_service._try_archive_studies()
 
-    auto_archive_service.study_service.archive.assert_called_once_with(
-        "d", params=RequestParameters(DEFAULT_ADMIN_USER)
-    )
-    auto_archive_service.study_service.storage_service.variant_study_service.clear_snapshot.assert_called_once_with(
-        VariantStudy(id="e", updated_at=now - datetime.timedelta(days=61))
-    )
-    auto_archive_service.study_service.archive_outputs.assert_called_once_with(
-        "e", params=RequestParameters(DEFAULT_ADMIN_USER)
-    )
+    # Check that the raw study "d" was about to be archived but failed because the task was already running
+    study_service.archive.assert_called_once_with("d", params=RequestParameters(DEFAULT_ADMIN_USER))
+
+    # Check that the snapshot of the variant study "e" is cleared
+    study_service.storage_service.variant_study_service.clear_snapshot.assert_called_once()
+    calls = study_service.storage_service.variant_study_service.clear_snapshot.call_args_list
+    assert len(calls) == 1
+    clear_snapshot_call = calls[0]
+    actual_study = clear_snapshot_call[0][0]
+    assert actual_study.id == "e"
+
+    # Check that the variant outputs are deleted for the variant study "e"
+    study_service.archive_outputs.assert_called_once_with("e", params=RequestParameters(DEFAULT_ADMIN_USER))

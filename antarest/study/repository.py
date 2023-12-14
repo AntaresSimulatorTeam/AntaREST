@@ -114,7 +114,8 @@ class StudyMetadataRepository:
         # efficiently (see: `utils.get_study_information`)
         entity = with_polymorphic(Study, "*")
         # noinspection PyTypeChecker
-        q = self.session.query(entity).filter(RawStudy.missing.is_(None))
+        q = self.session.query(entity)
+        # q = q.filter(RawStudy.missing.is_(None))
         q = q.options(joinedload(entity.owner))
         q = q.options(joinedload(entity.groups))
         q = q.options(joinedload(entity.additional_data))
@@ -126,8 +127,7 @@ class StudyMetadataRepository:
             q = q.filter(entity.archived == archived)
         if managed is not None:
             if managed:
-                smt = or_(entity.type == "variantstudy", RawStudy.workspace == DEFAULT_WORKSPACE_NAME)
-                q.filter(smt)
+                q = q.filter(or_(entity.type == "variantstudy", RawStudy.workspace == DEFAULT_WORKSPACE_NAME))
             else:
                 q = q.filter(entity.type == "rawstudy")
                 q = q.filter(RawStudy.workspace != DEFAULT_WORKSPACE_NAME)
