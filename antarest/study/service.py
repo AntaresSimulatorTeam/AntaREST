@@ -697,18 +697,19 @@ class StudyService:
 
     def remove_duplicates(self) -> None:
         study_paths: Dict[str, List[str]] = {}
-        for study in self.repository.get_all(archived=False, study_type="rawstudy"):
-            path = str(study.path)
-            if path not in study_paths:
-                study_paths[path] = []
-            study_paths[path].append(study.id)
+        for study in self.repository.get_all():
+            if isinstance(study, RawStudy) and not study.archived:
+                path = str(study.path)
+                if path not in study_paths:
+                    study_paths[path] = []
+                study_paths[path].append(study.id)
 
-        duplicate_studies_ids = []
         for studies_with_same_path in study_paths.values():
-            duplicate_studies_ids += studies_with_same_path[1:]
-        if len(duplicate_studies_ids) > 1:
-            logger.info(f"Found studies {duplicate_studies_ids} with same path of pre-existing studies, de duplicating")
-            self.repository.multi_delete(duplicate_studies_ids)
+            if len(studies_with_same_path) > 1:
+                logger.info(f"Found studies {studies_with_same_path} with same path, de duplicating")
+                for study_name in studies_with_same_path[1:]:
+                    logger.info(f"Removing study {study_name}")
+                    self.repository.delete(study_name)
 
     def sync_studies_on_disk(self, folders: List[StudyFolder], directory: Optional[Path] = None) -> None:
         """

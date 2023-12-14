@@ -153,11 +153,6 @@ class StudyMetadataRepository:
         session.commit()
         self._remove_study_from_cache_listing(id)
 
-    def multi_delete(self, ids: t.List[str]) -> None:
-        logger.debug(f"Deleting study {ids}")
-        self.session.query(Study).filter(Study.id.in_(ids)).delete(synchronize_session="fetch")
-        self.session.commit()
-
     def _remove_study_from_cache_listing(self, study_id: str) -> None:
         try:
             cached_studies = self.cache_service.get(CacheConstants.STUDY_LISTING.value)
