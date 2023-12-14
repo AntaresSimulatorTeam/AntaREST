@@ -2264,10 +2264,23 @@ def test_binding_constraint_manager(client: TestClient, admin_access_token: str,
         "exception": "InvalidConstraintName",
     }
 
-    # Asserts that only 3 binding constraint have been created
+    # Asserts that only 3 binding constraints have been created
     res = client.get(f"/v1/studies/{variant_id}/bindingconstraints", headers=admin_headers)
     assert res.status_code == 200
     assert len(res.json()) == 3
+
+    res = client.put(
+        f"/v1/studies/{variant_id}/bindingconstraints/{binding_constraint_id}",
+        json={"key": "time_step", "value": "daily"},
+        headers=admin_headers,
+    )
+    assert res.status_code == 200
+
+    res = client.get(f"/v1/studies/{variant_id}/commands", headers=admin_headers)
+    commands = res.json()
+    args = commands[len(commands) - 1]["args"]
+    assert args["time_step"] == "daily"
+    assert args["values"] is not None
 
 
 def test_import(client: TestClient, admin_access_token: str, study_id: str) -> None:
