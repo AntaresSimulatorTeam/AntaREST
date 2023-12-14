@@ -20,11 +20,11 @@ from antarest.study.business.table_mode_management import (
     FIELDS_INFO_BY_TYPE,
     AssetType,
     BindingConstraintOperator,
-    BindingConstraintType,
     TableTemplateType,
     TransmissionCapacity,
 )
 from antarest.study.model import MatrixIndex, StudyDownloadLevelDTO
+from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.renewable import RenewableClusterGroup
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import LawOption, TimeSeriesGenerationOption
 from antarest.study.storage.variantstudy.model.command.common import CommandName
@@ -543,7 +543,7 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
                 "args": {
                     "name": "binding constraint 1",
                     "enabled": True,
-                    "time_step": BindingConstraintType.HOURLY.value,
+                    "time_step": BindingConstraintFrequency.HOURLY.value,
                     "operator": BindingConstraintOperator.LESS.value,
                     "coeffs": {"area 1.cluster 1": [2.0, 4]},
                 },
@@ -561,7 +561,7 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
                 "args": {
                     "name": "binding constraint 2",
                     "enabled": True,
-                    "time_step": BindingConstraintType.HOURLY.value,
+                    "time_step": BindingConstraintFrequency.HOURLY.value,
                     "operator": BindingConstraintOperator.LESS.value,
                     "coeffs": {},
                 },
@@ -1684,12 +1684,12 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
     assert res_table_data_json == {
         "binding constraint 1": {
             "enabled": True,
-            "type": BindingConstraintType.HOURLY.value,
+            "type": BindingConstraintFrequency.HOURLY.value,
             "operator": BindingConstraintOperator.LESS.value,
         },
         "binding constraint 2": {
             "enabled": True,
-            "type": BindingConstraintType.HOURLY.value,
+            "type": BindingConstraintFrequency.HOURLY.value,
             "operator": BindingConstraintOperator.LESS.value,
         },
     }
@@ -1706,7 +1706,7 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
                 "operator": BindingConstraintOperator.BOTH.value,
             },
             "binding constraint 2": {
-                "type": BindingConstraintType.WEEKLY.value,
+                "type": BindingConstraintFrequency.WEEKLY.value,
                 "operator": BindingConstraintOperator.EQUAL.value,
             },
         },
@@ -1723,12 +1723,12 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
     assert res_table_data_json == {
         "binding constraint 1": {
             "enabled": False,
-            "type": BindingConstraintType.HOURLY.value,
+            "type": BindingConstraintFrequency.HOURLY.value,
             "operator": BindingConstraintOperator.BOTH.value,
         },
         "binding constraint 2": {
             "enabled": True,
-            "type": BindingConstraintType.WEEKLY.value,
+            "type": BindingConstraintFrequency.WEEKLY.value,
             "operator": BindingConstraintOperator.EQUAL.value,
         },
     }
