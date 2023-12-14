@@ -2,7 +2,7 @@ import datetime
 import logging
 import typing as t
 
-from sqlalchemy import or_  # type: ignore
+from sqlalchemy import or_, and_  # type: ignore
 from sqlalchemy.orm import Session, joinedload, with_polymorphic  # type: ignore
 
 from antarest.core.interfaces.cache import CacheConstants, ICache
@@ -126,10 +126,11 @@ class StudyMetadataRepository:
             q = q.filter(entity.archived == archived)
         if managed is not None:
             if managed:
-                q = q.filter(or_(entity.type != "rawstudy", entity.workspace == DEFAULT_WORKSPACE_NAME))
+                smt = or_(entity.type == "variantstudy", RawStudy.workspace == DEFAULT_WORKSPACE_NAME)
+                q.filter(smt)
             else:
                 q = q.filter(entity.type == "rawstudy")
-                q = q.filter(entity.workspace != DEFAULT_WORKSPACE_NAME)
+                q = q.filter(RawStudy.workspace != DEFAULT_WORKSPACE_NAME)
         if studies_ids is not None:
             q = q.filter(entity.id.in_(studies_ids))
         if study_type is not None:
