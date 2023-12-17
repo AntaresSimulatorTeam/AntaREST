@@ -14,6 +14,10 @@ from antarest.core.model import PublicMode
 from antarest.core.persistence import Base
 from antarest.login.model import Group, GroupDTO, Identity
 
+if t.TYPE_CHECKING:
+    # avoid circular import
+    from antarest.core.tasks.model import TaskJob
+
 DEFAULT_WORKSPACE_NAME = "default"
 
 groups_metadata = Table(
@@ -75,6 +79,7 @@ class StudyAdditionalData(Base):  # type:ignore
             return False
         return bool(other.author == self.author and other.horizon == self.horizon and other.patch == self.patch)
 
+
 class Study(Base):  # type: ignore
     """
     Standard Study entity
@@ -108,6 +113,11 @@ class Study(Base):  # type: ignore
         uselist=False,
         cascade="all, delete, delete-orphan",
     )
+
+    # Define a one-to-many relationship between `Study` and `TaskJob`.
+    # If the Study is deleted, all attached TaskJob must be deleted in cascade.
+    jobs: t.List["TaskJob"] = relationship("TaskJob", back_populates="study", cascade="all, delete, delete-orphan")
+
     __mapper_args__ = {"polymorphic_identity": "study", "polymorphic_on": type}
 
     def __str__(self) -> str:
@@ -175,6 +185,7 @@ class RawStudy(Study):
             and other.folder == self.folder
             and other.missing == self.missing
         )
+
 
 @dataclasses.dataclass
 class StudyFolder:
