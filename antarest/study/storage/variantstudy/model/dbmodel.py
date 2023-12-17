@@ -2,10 +2,9 @@ import datetime
 import json
 import typing as t
 import uuid
-from dataclasses import dataclass
 from pathlib import Path
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Table  # type: ignore
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
 
 from antarest.core.persistence import Base
@@ -13,7 +12,6 @@ from antarest.study.model import Study
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
-@dataclass
 class VariantStudySnapshot(Base):  # type: ignore
     """
     Variant Study Snapshot based entity implementation.
@@ -37,7 +35,6 @@ class VariantStudySnapshot(Base):  # type: ignore
         return f"[Snapshot] id={self.id}, created_at={self.created_at}"
 
 
-@dataclass
 class CommandBlock(Base):  # type: ignore
     """
     Command Block based entity implementation.
@@ -60,8 +57,17 @@ class CommandBlock(Base):  # type: ignore
     def to_dto(self) -> CommandDTO:
         return CommandDTO(id=self.id, action=self.command, args=json.loads(self.args))
 
+    def __str__(self) -> str:
+        return (
+            f"CommandBlock(id={self.id!r},"
+            f" study_id={self.study_id!r},"
+            f" index={self.index!r},"
+            f" command={self.command!r},"
+            f" version={self.version!r},"
+            f" args={self.args!r})"
+        )
 
-@dataclass
+
 class VariantStudy(Study):
     """
     Study filesystem based entity implementation.

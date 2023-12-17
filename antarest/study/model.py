@@ -1,7 +1,7 @@
+import dataclasses
 import enum
 import typing as t
 import uuid
-from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -52,7 +52,6 @@ class CommentsDto(BaseModel):
     comments: str
 
 
-@dataclass
 class StudyAdditionalData(Base):  # type:ignore
     """
     Study additional data
@@ -76,8 +75,6 @@ class StudyAdditionalData(Base):  # type:ignore
             return False
         return bool(other.author == self.author and other.horizon == self.horizon and other.patch == self.patch)
 
-
-@dataclass
 class Study(Base):  # type: ignore
     """
     Standard Study entity
@@ -147,7 +144,6 @@ class Study(Base):  # type: ignore
         return {"id": self.id, "name": self.name}
 
 
-@dataclass
 class RawStudy(Study):
     """
     Study filesystem based entity implementation.
@@ -180,8 +176,7 @@ class RawStudy(Study):
             and other.missing == self.missing
         )
 
-
-@dataclass
+@dataclasses.dataclass
 class StudyFolder:
     """
     DTO used by watcher to keep synchronized studies and workspace organization and database
