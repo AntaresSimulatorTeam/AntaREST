@@ -116,7 +116,7 @@ def study_to_dto(study: Study) -> StudyMetadataDTO:
     )
 
 
-# noinspection PyArgumentList
+@with_db_context
 @pytest.mark.unit_test
 def test_study_listing() -> None:
     bob = User(id=2, name="bob")
@@ -160,8 +160,14 @@ def test_study_listing() -> None:
     )
 
     # Mock
-    repository = Mock()
-    repository.get_all.return_value = [a, b, c]
+    repository = StudyMetadataRepository(cache_service=Mock(spec=ICache))
+
+    # Add some studies in the database
+    db_session = repository.session
+    db_session.add(a)
+    db_session.add(b)
+    db_session.add(c)
+    db_session.commit()
 
     raw_study_service = Mock(spec=RawStudyService)
     raw_study_service.get_study_information.side_effect = study_to_dto

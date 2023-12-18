@@ -2,7 +2,7 @@ import datetime
 import logging
 import typing as t
 
-from sqlalchemy import or_, and_  # type: ignore
+from sqlalchemy import and_, or_  # type: ignore
 from sqlalchemy.orm import Session, joinedload, with_polymorphic  # type: ignore
 
 from antarest.core.interfaces.cache import CacheConstants, ICache
@@ -107,15 +107,17 @@ class StudyMetadataRepository:
         managed: t.Optional[bool] = None,
         studies_ids: t.Optional[t.List[str]] = None,
         study_type: t.Optional[str] = None,
+        raw_study_missing: bool = True,
     ) -> t.List[Study]:
         # When we fetch a study, we also need to fetch the associated owner and groups
         # to check the permissions of the current user efficiently.
         # We also need to fetch the additional data to display the study information
         # efficiently (see: `utils.get_study_information`)
         entity = with_polymorphic(Study, "*")
-        # noinspection PyTypeChecker
+
         q = self.session.query(entity)
-        # q = q.filter(RawStudy.missing.is_(None))
+        if raw_study_missing:
+            q = q.filter(RawStudy.missing.is_(None))
         q = q.options(joinedload(entity.owner))
         q = q.options(joinedload(entity.groups))
         q = q.options(joinedload(entity.additional_data))
