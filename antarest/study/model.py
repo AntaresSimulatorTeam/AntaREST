@@ -1,9 +1,9 @@
 import enum
+import typing as t
 import uuid
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
 
 from pydantic import BaseModel
 from sqlalchemy import Boolean, Column, DateTime, Enum, ForeignKey, Integer, String, Table  # type: ignore
@@ -23,7 +23,7 @@ groups_metadata = Table(
     Column("study_id", String(36), ForeignKey("study.id")),
 )
 
-STUDY_REFERENCE_TEMPLATES: Dict[str, str] = {
+STUDY_REFERENCE_TEMPLATES: t.Dict[str, str] = {
     "600": "empty_study_613.zip",
     "610": "empty_study_613.zip",
     "640": "empty_study_613.zip",
@@ -69,7 +69,7 @@ class StudyAdditionalData(Base):  # type:ignore
     horizon = Column(String)
     patch = Column(String(), nullable=True)
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: t.Any) -> bool:
         if not super().__eq__(other):
             return False
         if not isinstance(other, StudyAdditionalData):
@@ -126,7 +126,7 @@ class Study(Base):  # type: ignore
             f" groups={[str(u) + ',' for u in self.groups]}"
         )
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: t.Any) -> bool:
         if not isinstance(other, Study):
             return False
         return bool(
@@ -143,7 +143,7 @@ class Study(Base):  # type: ignore
             and other.archived == self.archived
         )
 
-    def to_json_summary(self) -> Any:
+    def to_json_summary(self) -> t.Any:
         return {"id": self.id, "name": self.name}
 
 
@@ -168,7 +168,7 @@ class RawStudy(Study):
         "polymorphic_identity": "rawstudy",
     }
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: t.Any) -> bool:
         if not super().__eq__(other):
             return False
         if not isinstance(other, RawStudy):
@@ -189,25 +189,25 @@ class StudyFolder:
 
     path: Path
     workspace: str
-    groups: List[Group]
+    groups: t.List[Group]
 
 
 class PatchStudy(BaseModel):
-    scenario: Optional[str] = None
-    doc: Optional[str] = None
-    status: Optional[str] = None
-    comments: Optional[str] = None
-    tags: List[str] = []
+    scenario: t.Optional[str] = None
+    doc: t.Optional[str] = None
+    status: t.Optional[str] = None
+    comments: t.Optional[str] = None
+    tags: t.List[str] = []
 
 
 class PatchArea(BaseModel):
-    country: Optional[str] = None
-    tags: List[str] = []
+    country: t.Optional[str] = None
+    tags: t.List[str] = []
 
 
 class PatchCluster(BaseModel):
-    type: Optional[str] = None
-    code_oi: Optional[str] = None
+    type: t.Optional[str] = None
+    code_oi: t.Optional[str] = None
 
     class Config:
         @classmethod
@@ -216,18 +216,18 @@ class PatchCluster(BaseModel):
 
 
 class PatchOutputs(BaseModel):
-    reference: Optional[str] = None
+    reference: t.Optional[str] = None
 
 
 class Patch(BaseModel):
-    study: Optional[PatchStudy] = None
-    areas: Optional[Dict[str, PatchArea]] = None
-    thermal_clusters: Optional[Dict[str, PatchCluster]] = None
-    outputs: Optional[PatchOutputs] = None
+    study: t.Optional[PatchStudy] = None
+    areas: t.Optional[t.Dict[str, PatchArea]] = None
+    thermal_clusters: t.Optional[t.Dict[str, PatchCluster]] = None
+    outputs: t.Optional[PatchOutputs] = None
 
 
 class OwnerInfo(BaseModel):
-    id: Optional[int] = None
+    id: t.Optional[int] = None
     name: str
 
 
@@ -239,38 +239,38 @@ class StudyMetadataDTO(BaseModel):
     updated: str
     type: str
     owner: OwnerInfo
-    groups: List[GroupDTO]
+    groups: t.List[GroupDTO]
     public_mode: PublicMode
     workspace: str
     managed: bool
     archived: bool
-    horizon: Optional[str]
-    scenario: Optional[str]
-    status: Optional[str]
-    doc: Optional[str]
-    folder: Optional[str] = None
-    tags: List[str] = []
+    horizon: t.Optional[str]
+    scenario: t.Optional[str]
+    status: t.Optional[str]
+    doc: t.Optional[str]
+    folder: t.Optional[str] = None
+    tags: t.List[str] = []
 
 
 class StudyMetadataPatchDTO(BaseModel):
-    name: Optional[str] = None
-    author: Optional[str] = None
-    horizon: Optional[str] = None
-    scenario: Optional[str] = None
-    status: Optional[str] = None
-    doc: Optional[str] = None
-    tags: List[str] = []
+    name: t.Optional[str] = None
+    author: t.Optional[str] = None
+    horizon: t.Optional[str] = None
+    scenario: t.Optional[str] = None
+    status: t.Optional[str] = None
+    doc: t.Optional[str] = None
+    tags: t.List[str] = []
 
 
 class StudySimSettingsDTO(BaseModel):
-    general: Dict[str, Any]
-    input: Dict[str, Any]
-    output: Dict[str, Any]
-    optimization: Dict[str, Any]
-    otherPreferences: Dict[str, Any]
-    advancedParameters: Dict[str, Any]
-    seedsMersenneTwister: Dict[str, Any]
-    playlist: Optional[List[int]] = None
+    general: t.Dict[str, t.Any]
+    input: t.Dict[str, t.Any]
+    output: t.Dict[str, t.Any]
+    optimization: t.Dict[str, t.Any]
+    otherPreferences: t.Dict[str, t.Any]
+    advancedParameters: t.Dict[str, t.Any]
+    seedsMersenneTwister: t.Dict[str, t.Any]
+    playlist: t.Optional[t.List[int]] = None
 
 
 class StudySimResultDTO(BaseModel):
@@ -335,12 +335,12 @@ class StudyDownloadDTO(BaseModel):
     """
 
     type: StudyDownloadType
-    years: Optional[List[int]]
+    years: t.Optional[t.List[int]]
     level: StudyDownloadLevelDTO
-    filterIn: Optional[str]
-    filterOut: Optional[str]
-    filter: Optional[List[str]]
-    columns: Optional[List[str]]
+    filterIn: t.Optional[str]
+    filterOut: t.Optional[str]
+    filter: t.Optional[t.List[str]]
+    columns: t.Optional[t.List[str]]
     synthesis: bool = False
     includeClusters: bool = False
 
@@ -355,25 +355,25 @@ class MatrixIndex(BaseModel):
 class TimeSerie(BaseModel):
     name: str
     unit: str
-    data: List[Optional[float]] = []
+    data: t.List[t.Optional[float]] = []
 
 
 class TimeSeriesData(BaseModel):
     type: StudyDownloadType
     name: str
-    data: Dict[str, List[TimeSerie]] = {}
+    data: t.Dict[str, t.List[TimeSerie]] = {}
 
 
 class MatrixAggregationResultDTO(BaseModel):
     index: MatrixIndex
-    data: List[TimeSeriesData]
-    warnings: List[str]
+    data: t.List[TimeSeriesData]
+    warnings: t.List[str]
 
 
 class MatrixAggregationResult(BaseModel):
     index: MatrixIndex
-    data: Dict[Tuple[StudyDownloadType, str], Dict[str, List[TimeSerie]]]
-    warnings: List[str]
+    data: t.Dict[t.Tuple[StudyDownloadType, str], t.Dict[str, t.List[TimeSerie]]]
+    warnings: t.List[str]
 
     def to_dto(self) -> MatrixAggregationResultDTO:
         return MatrixAggregationResultDTO.construct(

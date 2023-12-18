@@ -1,12 +1,12 @@
+import typing as t
 import uuid
 from datetime import datetime
 from enum import Enum
-from typing import Any, List, Mapping, Optional
 
 from pydantic import BaseModel, Extra
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, Sequence, String  # type: ignore
 from sqlalchemy.engine.base import Engine  # type: ignore
-from sqlalchemy.orm import Session, relationship, sessionmaker  # type: ignore
+from sqlalchemy.orm import relationship, sessionmaker  # type: ignore
 
 from antarest.core.persistence import Base
 
@@ -43,7 +43,7 @@ class TaskResult(BaseModel, extra=Extra.forbid):
     success: bool
     message: str
     # Can be used to store json serialized result
-    return_value: Optional[str]
+    return_value: t.Optional[str]
 
 
 class TaskLogDTO(BaseModel, extra=Extra.forbid):
@@ -65,25 +65,25 @@ class TaskEventPayload(BaseModel, extra=Extra.forbid):
 class TaskDTO(BaseModel, extra=Extra.forbid):
     id: str
     name: str
-    owner: Optional[int]
+    owner: t.Optional[int]
     status: TaskStatus
     creation_date_utc: str
-    completion_date_utc: Optional[str]
-    result: Optional[TaskResult]
-    logs: Optional[List[TaskLogDTO]]
-    type: Optional[str] = None
-    ref_id: Optional[str] = None
+    completion_date_utc: t.Optional[str]
+    result: t.Optional[TaskResult]
+    logs: t.Optional[t.List[TaskLogDTO]]
+    type: t.Optional[str] = None
+    ref_id: t.Optional[str] = None
 
 
 class TaskListFilter(BaseModel, extra=Extra.forbid):
-    status: List[TaskStatus] = []
-    name: Optional[str] = None
-    type: List[TaskType] = []
-    ref_id: Optional[str] = None
-    from_creation_date_utc: Optional[float] = None
-    to_creation_date_utc: Optional[float] = None
-    from_completion_date_utc: Optional[float] = None
-    to_completion_date_utc: Optional[float] = None
+    status: t.List[TaskStatus] = []
+    name: t.Optional[str] = None
+    type: t.List[TaskType] = []
+    ref_id: t.Optional[str] = None
+    from_creation_date_utc: t.Optional[float] = None
+    to_creation_date_utc: t.Optional[float] = None
+    from_completion_date_utc: t.Optional[float] = None
+    to_completion_date_utc: t.Optional[float] = None
 
 
 class TaskJobLog(Base):  # type: ignore
@@ -96,7 +96,7 @@ class TaskJobLog(Base):  # type: ignore
         ForeignKey("taskjob.id", name="fk_log_taskjob_id"),
     )
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: t.Any) -> bool:
         if not isinstance(other, TaskJobLog):
             return False
         return bool(other.id == self.id and other.message == self.message and other.task_id == self.task_id)
@@ -145,7 +145,7 @@ class TaskJob(Base):  # type: ignore
             ref_id=self.ref_id,
         )
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: t.Any) -> bool:
         if not isinstance(other, TaskJob):
             return False
         return bool(
@@ -174,7 +174,7 @@ class TaskJob(Base):  # type: ignore
         )
 
 
-def cancel_orphan_tasks(engine: Engine, session_args: Mapping[str, bool]) -> None:
+def cancel_orphan_tasks(engine: Engine, session_args: t.Mapping[str, bool]) -> None:
     """
     Cancel all tasks that are currently running or pending.
 
