@@ -194,6 +194,11 @@ class DuplicateConstraintName(HTTPException):
         super().__init__(HTTPStatus.CONFLICT, message)
 
 
+class InvalidConstraintName(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.BAD_REQUEST, message)
+
+
 class MissingDataError(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.NOT_FOUND, message)

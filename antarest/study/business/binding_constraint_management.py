@@ -9,6 +9,7 @@ from antarest.core.exceptions import (
     MissingDataError,
     NoBindingConstraintError,
     NoConstraintError,
+    InvalidConstraintName,
 )
 from antarest.matrixstore.model import MatrixData
 from antarest.study.business.utils import execute_or_add_commands
@@ -168,15 +169,20 @@ class BindingConstraintManager:
         study: Study,
         data: BindingConstraintPropertiesWithName,
     ) -> None:
-        binding_constraints = self.get_binding_constraint(study, None)
-        existing_ids = [bd.id for bd in binding_constraints]  # type: ignore
-        bd_id = transform_name_to_id(data.name)
-        if bd_id in existing_ids:
-            raise DuplicateConstraintName(f"A binding constraint with the same name already exists: {bd_id}.")
+        bc_id = transform_name_to_id(data.name)
+
+        if not bc_id:
+            raise InvalidConstraintName(f"Invalid binding constraint name: {data.name}.")
 
         file_study = self.storage_service.get_storage(study).get_raw(study)
+        binding_constraints = self.get_binding_constraint(study, None)
+        existing_ids = {bc.id for bc in binding_constraints}  # type: ignore
+
+        if bc_id in existing_ids:
+            raise DuplicateConstraintName(f"A binding constraint with the same name already exists: {bc_id}.")
+
         command = CreateBindingConstraint(
-            name=bd_id,
+            name=data.name,
             enabled=data.enabled,
             time_step=data.time_step,
             operator=data.operator,

@@ -1,21 +1,19 @@
 import { useMemo } from "react";
 import { Box } from "@mui/material";
-import { AxiosError } from "axios";
 import { useTranslation } from "react-i18next";
 import { useSnackbar } from "notistack";
-import useEnqueueErrorSnackbar from "../../../../../../../hooks/useEnqueueErrorSnackbar";
-import FormDialog from "../../../../../../common/dialogs/FormDialog";
+import FormDialog from "../../../../../common/dialogs/FormDialog";
 import {
   BindingConstraintOperator,
   TimeStep,
-} from "../../../../Commands/Edition/commandTypes";
-import { SubmitHandlerPlus } from "../../../../../../common/Form/types";
-import { BindingConstFields } from "../BindingConstView/utils";
-import { createBindingConstraint } from "../../../../../../../services/api/studydata";
-import SelectFE from "../../../../../../common/fieldEditors/SelectFE";
-import StringFE from "../../../../../../common/fieldEditors/StringFE";
-import SwitchFE from "../../../../../../common/fieldEditors/SwitchFE";
-import { StudyMetadata } from "../../../../../../../common/types";
+} from "../../../Commands/Edition/commandTypes";
+import { SubmitHandlerPlus } from "../../../../../common/Form/types";
+import { BindingConstFields } from "./BindingConstView/utils";
+import { createBindingConstraint } from "../../../../../../services/api/studydata";
+import SelectFE from "../../../../../common/fieldEditors/SelectFE";
+import StringFE from "../../../../../common/fieldEditors/StringFE";
+import SwitchFE from "../../../../../common/fieldEditors/SwitchFE";
+import { StudyMetadata } from "../../../../../../common/types";
 
 interface Props {
   studyId: StudyMetadata["id"];
@@ -24,14 +22,8 @@ interface Props {
   onClose: VoidFunction;
 }
 
-function AddBindingConstDialog({
-  studyId,
-  existingConstraints,
-  open,
-  onClose,
-}: Props) {
+function AddDialog({ studyId, existingConstraints, open, onClose }: Props) {
   const [t] = useTranslation();
-  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { enqueueSnackbar } = useSnackbar();
 
   const defaultValues = {
@@ -39,8 +31,8 @@ function AddBindingConstDialog({
     enabled: true,
     time_step: TimeStep.HOURLY,
     operator: BindingConstraintOperator.LESS,
-    coeffs: {},
     comments: "",
+    coeffs: {},
   };
 
   const operatorOptions = useMemo(
@@ -68,16 +60,14 @@ function AddBindingConstDialog({
   const handleSubmit = async (
     data: SubmitHandlerPlus<typeof defaultValues>,
   ) => {
-    try {
-      await createBindingConstraint(studyId, data.values);
-      enqueueSnackbar(t("study.success.addBindingConst"), {
-        variant: "success",
-      });
-    } catch (e) {
-      enqueueErrorSnackbar(t("study.error.addBindingConst"), e as AxiosError);
-    } finally {
-      onClose();
-    }
+    return createBindingConstraint(studyId, data.values);
+  };
+
+  const handleSubmitSuccessful = () => {
+    enqueueSnackbar(t("study.success.addBindingConst"), {
+      variant: "success",
+    });
+    onClose();
   };
 
   ////////////////////////////////////////////////////////////////
@@ -90,6 +80,7 @@ function AddBindingConstDialog({
       title={t("study.modelization.bindingConst.newBindingConst")}
       config={{ defaultValues }}
       onSubmit={handleSubmit}
+      onSubmitSuccessful={handleSubmitSuccessful}
       onCancel={onClose}
       open={open}
     >
@@ -109,7 +100,6 @@ function AddBindingConstDialog({
           <StringFE
             name="name"
             label={t("global.name")}
-            variant="filled"
             control={control}
             rules={{
               validate: (v) => {
@@ -122,15 +112,22 @@ function AddBindingConstDialog({
               },
             }}
           />
+          <StringFE
+            name="comments"
+            label={t("study.modelization.bindingConst.comments")}
+            control={control}
+          />
           <SelectFE
             name="time_step"
             label={t("study.modelization.bindingConst.type")}
+            variant="outlined"
             options={typeOptions}
             control={control}
           />
           <SelectFE
             name="operator"
             label={t(t("study.modelization.bindingConst.operator"))}
+            variant="outlined"
             options={operatorOptions}
             control={control}
           />
@@ -140,4 +137,4 @@ function AddBindingConstDialog({
   );
 }
 
-export default AddBindingConstDialog;
+export default AddDialog;

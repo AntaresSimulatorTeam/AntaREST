@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { StudyMetadata } from "../../../../../../common/types";
 import PropertiesView from "../../../../../common/PropertiesView";
 import ListElement from "../../common/ListElement";
-import AddBindingConstDialog from "./AddBindingConstDialog";
+import AddDialog from "./AddDialog";
 import { BindingConstFields } from "./BindingConstView/utils";
 
 interface Props {
@@ -35,7 +35,10 @@ function BindingConstPropsView(props: Props) {
     setFilteredBindingConst(filter());
   }, [list, bindingConstNameFilter]);
 
-  const existingConstraints = useMemo(() => list.map(({ id }) => id), [list]);
+  const existingConstraints = useMemo(
+    () => list.map(({ name }) => name.toLowerCase()),
+    [list],
+  );
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -59,7 +62,7 @@ function BindingConstPropsView(props: Props) {
         onSearchFilterChange={(e) => setBindingConstNameFilter(e as string)}
       />
       {addBindingConst && (
-        <AddBindingConstDialog
+        <AddDialog
           open={addBindingConst}
           studyId={studyId}
           existingConstraints={existingConstraints}
