@@ -1,10 +1,11 @@
 /* eslint-disable react/jsx-pascal-case */
 /* eslint-disable camelcase */
 import Box from "@mui/material/Box";
-import AddIcon from "@mui/icons-material/Add";
-import { Button } from "@mui/material";
+import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
+import ControlPointDuplicateIcon from "@mui/icons-material/ControlPointDuplicate";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import DeleteIcon from "@mui/icons-material/Delete";
-import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import { Button } from "@mui/material";
 import {
   MaterialReactTable,
   MRT_RowSelectionState,
@@ -14,11 +15,10 @@ import {
 } from "material-react-table";
 import { useTranslation } from "react-i18next";
 import { useMemo, useState } from "react";
-import CreateRowDialog from "./CreateRowDialog";
+import CreateDialog from "./CreateDialog";
 import ConfirmationDialog from "../dialogs/ConfirmationDialog";
-import { generateUniqueValue } from "./utils";
-
-export type TRow = { id: string; name: string; group: string };
+import { TRow, generateUniqueValue } from "./utils";
+import DuplicateDialog from "./DuplicateDialog";
 
 export interface GroupedDataTableProps<TData extends TRow> {
   data: TData[];
@@ -36,8 +36,9 @@ function GroupedDataTable<TData extends TRow>({
   onDelete,
 }: GroupedDataTableProps<TData>) {
   const { t } = useTranslation();
-  const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [openDialog, setOpenDialog] = useState<
+    "add" | "duplicate" | "delete" | ""
+  >("");
   const [tableData, setTableData] = useState(data);
   const [rowSelection, setRowSelection] = useState<MRT_RowSelectionState>({});
 
@@ -51,23 +52,38 @@ function GroupedDataTable<TData extends TRow>({
     [rowSelection],
   );
 
+  const selectedRow = useMemo(() => {
+    if (isOneRowSelected) {
+      const selectedIndex = Object.keys(rowSelection).find(
+        (key) => rowSelection[key],
+      );
+      return selectedIndex && tableData[+selectedIndex];
+    }
+  }, [isOneRowSelected, rowSelection, tableData]);
+
   const existingNames = useMemo(
     () => tableData.map((row) => row.name.toLowerCase()),
     [tableData],
   );
 
   ////////////////////////////////////////////////////////////////
+  // Utils
+  ////////////////////////////////////////////////////////////////
+
+  const closeDialog = () => setOpenDialog("");
+
+  ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleCreateRow = async (values: TData) => {
+  const handleCreate = async (values: TData) => {
     if (onCreate) {
       const newRow = await onCreate(values);
       setTableData((prevTableData) => [...prevTableData, newRow]);
     }
   };
 
-  const handleDeleteSelection = () => {
+  const handleDelete = () => {
     if (!onDelete) {
       return;
     }
@@ -84,20 +100,14 @@ function GroupedDataTable<TData extends TRow>({
       prevTableData.filter((row) => !rowIdsToDelete.includes(row.id)),
     );
     setRowSelection({});
-    setConfirmDialogOpen(false);
+    closeDialog();
   };
 
-  const handleDuplicateRow = async () => {
-    const selectedIndex = Object.keys(rowSelection).find(
-      (key) => rowSelection[key],
-    );
-    const selectedRow = selectedIndex && tableData[+selectedIndex];
-
+  const handleDuplicate = async (name: string) => {
     if (!selectedRow) {
       return;
     }
 
-    const name = generateUniqueValue("name", selectedRow.name, tableData);
     const id = generateUniqueValue("id", name, tableData);
 
     const duplicatedRow = {
@@ -162,29 +172,29 @@ function GroupedDataTable<TData extends TRow>({
           <Box sx={{ display: "flex", gap: 1 }}>
             {onCreate && (
               <Button
-                startIcon={<AddIcon />}
+                startIcon={<AddCircleOutlineIcon />}
                 variant="contained"
                 size="small"
-                onClick={() => setCreateDialogOpen(true)}
+                onClick={() => setOpenDialog("add")}
               >
                 {t("button.add")}
               </Button>
             )}
             <Button
-              startIcon={<ContentCopyIcon />}
+              startIcon={<ControlPointDuplicateIcon />}
               variant="outlined"
               size="small"
-              onClick={handleDuplicateRow}
+              onClick={() => setOpenDialog("duplicate")}
               disabled={!isOneRowSelected}
             >
               {t("global.duplicate")}
             </Button>
             {onDelete && (
               <Button
-                startIcon={<DeleteIcon />}
+                startIcon={<DeleteOutlineIcon />}
                 variant="outlined"
                 size="small"
-                onClick={() => setConfirmDialogOpen(true)}
+                onClick={() => setOpenDialog("delete")}
                 disabled={!isAnyRowSelected}
               >
                 {t("global.delete")}
@@ -219,22 +229,32 @@ function GroupedDataTable<TData extends TRow>({
           },
         }}
       />
-      {createDialogOpen && (
-        <CreateRowDialog
-          open={createDialogOpen}
-          onClose={() => setCreateDialogOpen(false)}
+      {openDialog === "add" && (
+        <CreateDialog
+          open
+          onClose={closeDialog}
           groups={groups}
           existingNames={existingNames}
-          onSubmit={handleCreateRow}
+          onSubmit={handleCreate}
         />
       )}
-      {confirmDialogOpen && (
-        <ConfirmationDialog
-          title={t("dialog.title.confirmation")}
-          onCancel={() => setConfirmDialogOpen(false)}
-          onConfirm={handleDeleteSelection}
-          alert="warning"
+      {openDialog === "duplicate" && selectedRow && (
+        <DuplicateDialog
           open
+          onClose={closeDialog}
+          onSubmit={handleDuplicate}
+          existingNames={existingNames}
+          defaultName={generateUniqueValue("name", selectedRow.name, tableData)}
+        />
+      )}
+      {openDialog === "delete" && (
+        <ConfirmationDialog
+          open
+          titleIcon={DeleteIcon}
+          title={t("dialog.title.confirmation")}
+          onCancel={closeDialog}
+          onConfirm={handleDelete}
+          alert="warning"
         >
           {t("studies.modelization.clusters.question.delete")}
         </ConfirmationDialog>
