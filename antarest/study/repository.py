@@ -101,13 +101,9 @@ class StudyMetadataRepository:
 
     def get_all(
         self,
-        name_regex: t.Optional[str] = None,
-        version: t.Optional[int] = None,
-        archived: t.Optional[bool] = None,
         managed: t.Optional[bool] = None,
         studies_ids: t.Optional[t.List[str]] = None,
-        study_type: t.Optional[str] = None,
-        raw_study_missing: bool = True,
+        exists: bool = True,
     ) -> t.List[Study]:
         # When we fetch a study, we also need to fetch the associated owner and groups
         # to check the permissions of the current user efficiently.
@@ -116,17 +112,11 @@ class StudyMetadataRepository:
         entity = with_polymorphic(Study, "*")
 
         q = self.session.query(entity)
-        if raw_study_missing:
+        if exists:
             q = q.filter(RawStudy.missing.is_(None))
         q = q.options(joinedload(entity.owner))
         q = q.options(joinedload(entity.groups))
         q = q.options(joinedload(entity.additional_data))
-        if name_regex is not None:
-            q = q.filter(entity.name.like(f"%{name_regex}%"))
-        if version is not None:
-            q = q.filter(entity.version == version)
-        if archived is not None:
-            q = q.filter(entity.archived == archived)
         if managed is not None:
             if managed:
                 q = q.filter(or_(entity.type == "variantstudy", RawStudy.workspace == DEFAULT_WORKSPACE_NAME))
@@ -135,8 +125,6 @@ class StudyMetadataRepository:
                 q = q.filter(RawStudy.workspace != DEFAULT_WORKSPACE_NAME)
         if studies_ids is not None:
             q = q.filter(entity.id.in_(studies_ids))
-        if study_type is not None:
-            q = q.filter(entity.type == study_type)
         studies: t.List[Study] = q.all()
         return studies
 
