@@ -19,8 +19,6 @@ from antarest.utils import (
     init_db_engine,
 )
 
-SLEEP_TIME = 2
-
 
 def _init(config_file: Path, services_list: List[Module]) -> Dict[Module, IService]:
     res = get_local_path() / "resources"
@@ -74,9 +72,20 @@ def _init(config_file: Path, services_list: List[Module]) -> Dict[Module, IServi
 
 
 def start_all_services(config_file: Path, services_list: List[Module]) -> None:
+    """
+    Start all services in a worker.
+
+    This function is used to start all services in a worker.
+    Each worker is started in a different docker image.
+
+    Args:
+        config_file: Path to the configuration file (`application.yaml`)
+        services_list: List of services to start.
+    """
     services = _init(config_file, services_list)
     for service in services:
         services[service].start(threaded=True)
-    # this loop may be interrupted using Crl+C
+    # Once started, the worker must wait indefinitely (demon service).
+    # This loop may be interrupted using Crl+C
     while True:
-        time.sleep(SLEEP_TIME)
+        time.sleep(2)
