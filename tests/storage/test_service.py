@@ -160,9 +160,7 @@ def test_study_listing(db_session: Session) -> None:
     )
 
     # Add some studies in the database
-    db_session.add(a)
-    db_session.add(b)
-    db_session.add(c)
+    db_session.add_all([a, b, c])
     db_session.commit()
 
     raw_study_service = Mock(spec=RawStudyService)

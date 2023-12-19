@@ -39,11 +39,10 @@ from antarest.launcher.service import (
     LauncherService,
 )
 from antarest.login.auth import Auth
-from antarest.login.model import Identity, User
+from antarest.login.model import Identity
 from antarest.study.model import OwnerInfo, PublicMode, Study, StudyMetadataDTO
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.service import StudyService
-from tests.helpers import with_db_context
 
 
 class TestLauncherService:
@@ -263,10 +262,8 @@ class TestLauncherService:
 
         study_service = Mock(spec=StudyService)
         study_service.repository = StudyMetadataRepository(cache_service=Mock(spec=ICache), session=db_session)
-        for elm in fake_execution_result:
-            db_session.add(elm)
-        for elm in all_faked_execution_results:
-            db_session.add(elm)
+        db_session.add_all(fake_execution_result)
+        db_session.add_all(all_faked_execution_results)
         db_session.commit()
 
         launcher_service = LauncherService(

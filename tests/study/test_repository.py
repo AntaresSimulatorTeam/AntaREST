@@ -50,14 +50,7 @@ def test_repository_get_all(
     study_7 = RawStudy(id=7, missing=None, workspace=test_workspace)
     study_8 = RawStudy(id=8, missing=None, workspace=DEFAULT_WORKSPACE_NAME)
 
-    db_session.add(study_1)
-    db_session.add(study_2)
-    db_session.add(study_3)
-    db_session.add(study_4)
-    db_session.add(study_5)
-    db_session.add(study_6)
-    db_session.add(study_7)
-    db_session.add(study_8)
+    db_session.add_all([study_1, study_2, study_3, study_4, study_5, study_6, study_7, study_8])
     db_session.commit()
 
     # use the db recorder to check that:

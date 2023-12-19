@@ -29,41 +29,35 @@ def test_auto_archival(tmp_path: Path):
 
     # Add some studies in the database
     db_session = repository.session
-    db_session.add(
-        RawStudy(
-            id="a",
-            workspace="not default",
-            updated_at=now - datetime.timedelta(days=61),
-        )
-    )
-    db_session.add(
-        RawStudy(
-            id="b",
-            workspace=DEFAULT_WORKSPACE_NAME,
-            updated_at=now - datetime.timedelta(days=59),
-        )
-    )
-    db_session.add(
-        RawStudy(
-            id="c",
-            workspace=DEFAULT_WORKSPACE_NAME,
-            updated_at=now - datetime.timedelta(days=61),
-            archived=True,
-        )
-    )
-    db_session.add(
-        RawStudy(
-            id="d",
-            workspace=DEFAULT_WORKSPACE_NAME,
-            updated_at=now - datetime.timedelta(days=61),
-            archived=False,
-        )
-    )
-    db_session.add(
-        VariantStudy(
-            id="e",
-            updated_at=now - datetime.timedelta(days=61),
-        )
+    db_session.add_all(
+        [
+            RawStudy(
+                id="a",
+                workspace="not default",
+                updated_at=now - datetime.timedelta(days=61),
+            ),
+            RawStudy(
+                id="b",
+                workspace=DEFAULT_WORKSPACE_NAME,
+                updated_at=now - datetime.timedelta(days=59),
+            ),
+            RawStudy(
+                id="c",
+                workspace=DEFAULT_WORKSPACE_NAME,
+                updated_at=now - datetime.timedelta(days=61),
+                archived=True,
+            ),
+            RawStudy(
+                id="d",
+                workspace=DEFAULT_WORKSPACE_NAME,
+                updated_at=now - datetime.timedelta(days=61),
+                archived=False,
+            ),
+            VariantStudy(
+                id="e",
+                updated_at=now - datetime.timedelta(days=61),
+            ),
+        ]
     )
     db_session.commit()
 
