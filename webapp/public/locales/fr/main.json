@@ -504,7 +504,6 @@
   "study.error.addConstraintTerm": "Échec lors de l'ajout du nouveau terme",
   "study.error.missingData": "Erreur: {{0}} et/ou {{1}} est manquante",
   "study.error.termAlreadyExist": "Ce terme existe déjà",
-  "study.error.addBindingConst": "Échec lors de la création de la contrainte couplante",
   "study.error.addCluster": "Échec lors de la création du cluster",
   "study.error.deleteCluster": "Échec lors de la suppression du cluster",
   "study.error.deleteConstraint": "Échec lors de la suppression de la contrainte couplante",

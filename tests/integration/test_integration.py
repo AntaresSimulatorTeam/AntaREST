@@ -2226,6 +2226,44 @@ def test_binding_constraint_manager(client: TestClient, admin_access_token: str,
         "exception": "DuplicateConstraintName",
     }
 
+    # Assert empty name
+    res = client.post(
+        f"/v1/studies/{variant_id}/bindingconstraints",
+        json={
+            "name": "  ",
+            "enabled": True,
+            "time_step": "hourly",
+            "operator": "less",
+            "coeffs": {},
+            "comments": "New API",
+        },
+        headers=admin_headers,
+    )
+    assert res.status_code == 400
+    assert res.json() == {
+        "description": "Invalid binding constraint name:   .",
+        "exception": "InvalidConstraintName",
+    }
+
+    # Assert invalid special characters
+    res = client.post(
+        f"/v1/studies/{variant_id}/bindingconstraints",
+        json={
+            "name": "%%**",
+            "enabled": True,
+            "time_step": "hourly",
+            "operator": "less",
+            "coeffs": {},
+            "comments": "New API",
+        },
+        headers=admin_headers,
+    )
+    assert res.status_code == 400
+    assert res.json() == {
+        "description": "Invalid binding constraint name: %%**.",
+        "exception": "InvalidConstraintName",
+    }
+
     # Asserts that only 3 binding constraint have been created
     res = client.get(f"/v1/studies/{variant_id}/bindingconstraints", headers=admin_headers)
     assert res.status_code == 200
