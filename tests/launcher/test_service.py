@@ -207,9 +207,8 @@ class TestLauncherService:
             == fake_execution_result
         )
 
-    @with_db_context
     @pytest.mark.unit_test
-    def test_service_get_jobs_from_database(self) -> None:
+    def test_service_get_jobs_from_database(self, db_session) -> None:
         launcher_mock = Mock()
         now = datetime.utcnow()
         identity_instance = Identity(id=1)
@@ -263,8 +262,7 @@ class TestLauncherService:
         repository.get_all.return_value = all_faked_execution_results
 
         study_service = Mock(spec=StudyService)
-        study_service.repository = StudyMetadataRepository(cache_service=Mock(spec=ICache))
-        db_session = study_service.repository.session
+        study_service.repository = StudyMetadataRepository(cache_service=Mock(spec=ICache), session=db_session)
         for elm in fake_execution_result:
             db_session.add(elm)
         for elm in all_faked_execution_results:

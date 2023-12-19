@@ -67,6 +67,7 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 from antarest.worker.archive_worker import ArchiveTaskArgs
+from tests.db_statement_recorder import DBStatementRecorder
 from tests.helpers import with_db_context
 
 
@@ -116,9 +117,8 @@ def study_to_dto(study: Study) -> StudyMetadataDTO:
     )
 
 
-@with_db_context
 @pytest.mark.unit_test
-def test_study_listing() -> None:
+def test_study_listing(db_session: Session) -> None:
     bob = User(id=2, name="bob")
     alice = User(id=3, name="alice")
 
@@ -159,11 +159,7 @@ def test_study_listing() -> None:
         additional_data=StudyAdditionalData(),
     )
 
-    # Mock
-    repository = StudyMetadataRepository(cache_service=Mock(spec=ICache))
-
     # Add some studies in the database
-    db_session = repository.session
     db_session.add(a)
     db_session.add(b)
     db_session.add(c)
@@ -176,40 +172,59 @@ def test_study_listing() -> None:
     cache.get.return_value = None
 
     config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
+    repository = StudyMetadataRepository(cache_service=Mock(spec=ICache), session=db_session)
     service = build_study_service(raw_study_service, repository, config, cache_service=cache)
 
-    studies = service.get_studies_information(
-        managed=False,
-        name=None,
-        workspace=None,
-        folder=None,
-        params=RequestParameters(user=JWTUser(id=2, impersonator=2, type="users")),
-    )
+    # use the db recorder to check that:
+    # 1- retrieving studies information requires only 1 query
+    # 2- having an exact total of queries equals to 1
+    with DBStatementRecorder(db_session.bind) as db_recorder:
+        studies = service.get_studies_information(
+            managed=False,
+            name=None,
+            workspace=None,
+            folder=None,
+            params=RequestParameters(user=JWTUser(id=2, impersonator=2, type="users")),
+        )
+    assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
+    # verify that we get the expected studies information
     expected_result = {e.id: e for e in map(lambda x: study_to_dto(x), [a, c])}
     assert expected_result == studies
     cache.get.return_value = {e.id: e for e in map(lambda x: study_to_dto(x), [a, b, c])}
 
-    studies = service.get_studies_information(
-        managed=False,
-        name=None,
-        workspace=None,
-        folder=None,
-        params=RequestParameters(user=JWTUser(id=2, impersonator=2, type="users")),
-    )
-
-    assert expected_result == studies
+    # check that:
+    # 1- retrieving studies information requires no query at all (cache is used)
+    # 2- the `put` method of `cache` was used once
+    with DBStatementRecorder(db_session.bind) as db_recorder:
+        studies = service.get_studies_information(
+            managed=False,
+            name=None,
+            workspace=None,
+            folder=None,
+            params=RequestParameters(user=JWTUser(id=2, impersonator=2, type="users")),
+        )
+    assert len(db_recorder.sql_statements) == 0, str(db_recorder)
     cache.put.assert_called_once()
 
-    cache.get.return_value = None
-    studies = service.get_studies_information(
-        managed=True,
-        name=None,
-        workspace=None,
-        folder=None,
-        params=RequestParameters(user=JWTUser(id=2, impersonator=2, type="users")),
-    )
+    # verify that we get the expected studies information
+    assert expected_result == studies
 
+    cache.get.return_value = None
+    # use the db recorder to check that:
+    # 1- retrieving studies information requires only 1 query (cache reset to None)
+    # 2- having an exact total of queries equals to 1
+    with DBStatementRecorder(db_session.bind) as db_recorder:
+        studies = service.get_studies_information(
+            managed=True,
+            name=None,
+            workspace=None,
+            folder=None,
+            params=RequestParameters(user=JWTUser(id=2, impersonator=2, type="users")),
+        )
+    assert len(db_recorder.sql_statements) == 1, str(db_recorder)
+
+    # verify that we get the expected studies information
     expected_result = {e.id: e for e in map(lambda x: study_to_dto(x), [a])}
     assert expected_result == studies
 
