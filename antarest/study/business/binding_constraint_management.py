@@ -1,7 +1,5 @@
 from typing import Any, Dict, List, Optional, Union
 
-import numpy as np
-from numpy import typing as npt
 from pydantic import BaseModel
 
 from antarest.core.exceptions import (
@@ -212,34 +210,30 @@ class BindingConstraintManager:
         if not isinstance(constraint, BindingConstraintDTO):
             raise NoBindingConstraintError(study.id)
 
-        new_values = self._get_new_matrix(data, constraint)
+        if data.key == "time_step" and data.value != constraint.time_step:
+            # The user changed the time step, we need to update the matrix accordingly
+            matrix = {
+                BindingConstraintFrequency.HOURLY.value: default_bc_hourly,
+                BindingConstraintFrequency.DAILY.value: default_bc_weekly_daily,
+                BindingConstraintFrequency.WEEKLY.value: default_bc_weekly_daily,
+            }[data.value].tolist()
+        else:
+            # The user changed another property, we keep the matrix as it is
+            matrix = constraint.values
+
         command = UpdateBindingConstraint(
             id=constraint.id,
             enabled=data.value if data.key == "enabled" else constraint.enabled,
             time_step=data.value if data.key == "time_step" else constraint.time_step,
             operator=data.value if data.key == "operator" else constraint.operator,
             coeffs=BindingConstraintManager.constraints_to_coeffs(constraint),
-            values=constraint.values if new_values is None else new_values.tolist(),
+            values=matrix,
             filter_year_by_year=data.value if data.key == "filterByYear" else constraint.filter_year_by_year,
             filter_synthesis=data.value if data.key == "filterSynthesis" else constraint.filter_synthesis,
             comments=data.value if data.key == "comments" else constraint.comments,
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
         )
         execute_or_add_commands(study, file_study, [command], self.storage_service)
-
-    @staticmethod
-    def _get_new_matrix(
-        data: UpdateBindingConstProps, constraint: BindingConstraintDTO
-    ) -> Optional[npt.NDArray[np.float64]]:
-        if data.key == "time_step":
-            time_step = BindingConstraintFrequency(data.value)
-            if time_step != constraint.time_step:
-                return (
-                    default_bc_hourly
-                    if time_step.value == BindingConstraintFrequency.HOURLY
-                    else default_bc_weekly_daily
-                )
-        return None
 
     @staticmethod
     def find_constraint_term_id(constraints_term: List[ConstraintTermDTO], constraint_term_id: str) -> int:
