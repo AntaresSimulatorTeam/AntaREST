@@ -1,3 +1,4 @@
+import time
 from pathlib import Path
 from typing import Dict, List, cast
 
@@ -71,6 +72,20 @@ def _init(config_file: Path, services_list: List[Module]) -> Dict[Module, IServi
 
 
 def start_all_services(config_file: Path, services_list: List[Module]) -> None:
+    """
+    Start all services in a worker.
+
+    This function is used to start all services in a worker.
+    Each worker is started in a different docker image.
+
+    Args:
+        config_file: Path to the configuration file (`application.yaml`)
+        services_list: List of services to start.
+    """
     services = _init(config_file, services_list)
     for service in services:
         services[service].start(threaded=True)
+    # Once started, the worker must wait indefinitely (demon service).
+    # This loop may be interrupted using Crl+C
+    while True:
+        time.sleep(2)
