@@ -23,6 +23,7 @@ from antarest.core.config import (
 )
 from antarest.core.exceptions import StudyNotFoundError
 from antarest.core.filetransfer.model import FileDownload, FileDownloadDTO, FileDownloadTaskDTO
+from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import Event, EventType
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
 from antarest.core.model import PermissionInfo
@@ -38,8 +39,10 @@ from antarest.launcher.service import (
     LauncherService,
 )
 from antarest.login.auth import Auth
-from antarest.login.model import User
+from antarest.login.model import Identity
 from antarest.study.model import OwnerInfo, PublicMode, Study, StudyMetadataDTO
+from antarest.study.repository import StudyMetadataRepository
+from antarest.study.service import StudyService
 
 
 class TestLauncherService:
@@ -204,9 +207,10 @@ class TestLauncherService:
         )
 
     @pytest.mark.unit_test
-    def test_service_get_jobs_from_database(self) -> None:
+    def test_service_get_jobs_from_database(self, db_session) -> None:
         launcher_mock = Mock()
         now = datetime.utcnow()
+        identity_instance = Identity(id=1)
         fake_execution_result = [
             JobResult(
                 id=str(uuid4()),
@@ -214,7 +218,7 @@ class TestLauncherService:
                 job_status=JobStatus.SUCCESS,
                 msg="Hello, World!",
                 exit_code=0,
-                owner_id=1,
+                owner=identity_instance,
             )
         ]
         returned_faked_execution_results = [
@@ -225,7 +229,7 @@ class TestLauncherService:
                 msg="Hello, World!",
                 exit_code=0,
                 creation_date=now,
-                owner_id=1,
+                owner=identity_instance,
             ),
             JobResult(
                 id="2",
@@ -234,7 +238,7 @@ class TestLauncherService:
                 msg="Hello, World!",
                 exit_code=0,
                 creation_date=now,
-                owner_id=1,
+                owner=identity_instance,
             ),
         ]
         all_faked_execution_results = returned_faked_execution_results + [
@@ -245,7 +249,7 @@ class TestLauncherService:
                 msg="Hello, World!",
                 exit_code=0,
                 creation_date=now - timedelta(days=ORPHAN_JOBS_VISIBILITY_THRESHOLD + 1),
-                owner_id=1,
+                owner=identity_instance,
             )
         ]
         launcher_mock.get_result.return_value = None
@@ -256,17 +260,11 @@ class TestLauncherService:
         repository.find_by_study.return_value = fake_execution_result
         repository.get_all.return_value = all_faked_execution_results
 
-        study_service = Mock()
-        study_service.repository = Mock()
-        study_service.repository.get_list.return_value = [
-            Mock(
-                spec=Study,
-                id="b",
-                groups=[],
-                owner=User(id=2),
-                public_mode=PublicMode.NONE,
-            )
-        ]
+        study_service = Mock(spec=StudyService)
+        study_service.repository = StudyMetadataRepository(cache_service=Mock(spec=ICache), session=db_session)
+        db_session.add_all(fake_execution_result)
+        db_session.add_all(all_faked_execution_results)
+        db_session.commit()
 
         launcher_service = LauncherService(
             config=Config(),

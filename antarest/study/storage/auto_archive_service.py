@@ -26,17 +26,14 @@ class AutoArchiveService(IService):
         self.max_parallel = self.config.storage.auto_archive_max_parallel
 
     def _try_archive_studies(self) -> None:
-        now = datetime.datetime.utcnow()
-        study_ids_to_archive: List[Tuple[str, bool]] = []
+        old_date = datetime.datetime.utcnow() - datetime.timedelta(days=self.config.storage.auto_archive_threshold_days)
         with db():
-            studies: List[Study] = self.study_service.repository.get_all()
+            studies: List[Study] = self.study_service.repository.get_all(managed=True, exists=False)
             # list of study id and boolean indicating if it's a raw study (True) or a variant (False)
             study_ids_to_archive = [
                 (study.id, isinstance(study, RawStudy))
                 for study in studies
-                if is_managed(study)
-                and (study.last_access or study.updated_at)
-                < now - datetime.timedelta(days=self.config.storage.auto_archive_threshold_days)
+                if (study.last_access or study.updated_at) < old_date
                 and (isinstance(study, VariantStudy) or not study.archived)
             ]
         for study_id, is_raw_study in study_ids_to_archive[0 : self.max_parallel]:

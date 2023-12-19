@@ -452,14 +452,17 @@ class StudyService:
             for k in cached_studies:
                 studies[k] = StudyMetadataDTO.parse_obj(cached_studies[k])
         else:
-            logger.info("Retrieving all studies")
-            all_studies = self.repository.get_all()
+            if managed:
+                logger.info("Retrieving all managed studies")
+                all_studies = self.repository.get_all(managed=True)
+            else:
+                logger.info("Retrieving all studies")
+                all_studies = self.repository.get_all()
             logger.info("Studies retrieved")
             for study in all_studies:
-                if not managed or is_managed(study):
-                    study_metadata = self._try_get_studies_information(study)
-                    if study_metadata is not None:
-                        studies[study_metadata.id] = study_metadata
+                study_metadata = self._try_get_studies_information(study)
+                if study_metadata is not None:
+                    studies[study_metadata.id] = study_metadata
             self.cache_service.put(cache_key, studies)
         return {
             s.id: s
@@ -2135,11 +2138,10 @@ class StudyService:
         if params.user and not params.user.is_site_admin():
             logger.error(f"User {params.user.id} is not site admin")
             raise UserHasNotPermissionError()
-        studies = self.repository.get_all()
+        studies = self.repository.get_all(managed=False)
         for study in studies:
-            if isinstance(study, RawStudy) and not is_managed(study):
-                storage = self.storage_service.raw_study_service
-                storage.check_and_update_study_version_in_database(study)
+            storage = self.storage_service.raw_study_service
+            storage.check_and_update_study_version_in_database(study)
 
     def archive_outputs(self, study_id: str, params: RequestParameters) -> None:
         logger.info(f"Archiving all outputs for study {study_id}")
