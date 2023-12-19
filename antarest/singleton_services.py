@@ -1,3 +1,4 @@
+import time
 from pathlib import Path
 from typing import Dict, List, cast
 
@@ -17,6 +18,8 @@ from antarest.utils import (
     create_watcher,
     init_db_engine,
 )
+
+SLEEP_TIME = 2
 
 
 def _init(config_file: Path, services_list: List[Module]) -> Dict[Module, IService]:
@@ -74,3 +77,6 @@ def start_all_services(config_file: Path, services_list: List[Module]) -> None:
     services = _init(config_file, services_list)
     for service in services:
         services[service].start(threaded=True)
+    # this loop may be interrupted using Crl+C
+    while True:
+        time.sleep(SLEEP_TIME)
