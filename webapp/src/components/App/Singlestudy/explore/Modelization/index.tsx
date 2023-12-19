@@ -33,7 +33,9 @@ function Modelization() {
 
         if (firstAreaId) {
           dispatch(setCurrentArea(firstAreaId));
-          navigate(`${basePath}/area/${firstAreaId}`, { replace: true });
+          navigate(`${basePath}/area/${firstAreaId}`, {
+            replace: true,
+          });
         }
       }
     };
@@ -45,7 +47,7 @@ function Modelization() {
       },
       {
         label: t("study.areas"),
-        path: `${basePath}/area/${areaId}`,
+        path: `${basePath}/area/${encodeURI(areaId)}`,
         onClick: handleAreasClick,
       },
       {
