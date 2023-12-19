@@ -43,7 +43,9 @@ function AreasTab({ renewablesClustering }: Props) {
   }, [areaId, navigate, location.pathname]);
 
   const tabList = useMemo(() => {
-    const basePath = `/studies/${study.id}/explore/modelization/area/${areaId}`;
+    const basePath = `/studies/${
+      study.id
+    }/explore/modelization/area/${encodeURI(areaId)}`;
 
     const tabs = [
       { label: "study.modelization.properties", pathSuffix: "properties" },
