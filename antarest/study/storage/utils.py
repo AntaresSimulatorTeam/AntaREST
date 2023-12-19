@@ -115,14 +115,17 @@ def fix_study_root(study_path: Path) -> None:
 
 
 def retrieve_output_path(job_path: Path) -> Path:
-    inside_study_output_path = job_path / "output"
     output_already_zipped_path = job_path.with_suffix(".zip")
     if output_already_zipped_path.exists():
         return output_already_zipped_path
-    elif inside_study_output_path.exists() and len(os.listdir(inside_study_output_path)) == 1:
-        return inside_study_output_path / os.listdir(str(inside_study_output_path))[0]
-    else:
-        return Path()
+
+    output_inside_study = job_path / "output"
+    if output_inside_study.is_dir():
+        output_folders = os.listdir(output_inside_study)
+        if len(output_folders) == 1:
+            return output_inside_study / output_folders[0]
+
+    return Path()
 
 
 def extract_output_name(path_output: Path, new_suffix_name: t.Optional[str] = None) -> str:

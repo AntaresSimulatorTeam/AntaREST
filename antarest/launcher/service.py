@@ -498,9 +498,9 @@ class LauncherService:
             study_id = job_result.study_id
             job_launch_params = LauncherParametersDTO.parse_raw(job_result.launcher_params or "{}")
 
-            # this now can be a zip file instead of a directory !
+            # this now can be a zip file instead of a directory!
             output_true_path = retrieve_output_path(output_path)
-            output_is_zipped = is_zip(output_true_path)
+            output_is_zipped = output_true_path.suffix.lower() == ".zip"
             output_suffix = cast(
                 Optional[str],
                 getattr(
