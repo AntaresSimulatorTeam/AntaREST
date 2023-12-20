@@ -394,7 +394,14 @@ def _parse_renewables(root: Path, area: str) -> t.List[RenewableConfigType]:
     """
     Parse the renewables INI file, return an empty list if missing.
     """
+
+    # Before version 8.1, we only have "Load", "Wind" and "Solar" objects.
+    # We can't use renewable clusters.
     version = _parse_version(root)
+    if version < 810:
+        return []
+
+    # Since version 8.1 of the solver, we can use "renewable clusters" objects.
     relpath = Path(f"input/renewables/clusters/{area}/list.ini")
     config_dict: t.Dict[str, t.Any] = _extract_data_from_file(
         root=root,
