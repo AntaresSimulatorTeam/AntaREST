@@ -40,10 +40,10 @@ class ExpansionSettings(IniFileNode):
             "master": str,
             "yearly-weights": str,
             "additional_constraints": str,
+            "relaxed_optimality_gap": float,
         }
         if config.version < 800:
             types = {
-                "relaxed_optimality_gap": float,
                 "cut-type": str,
                 "ampl.solver": str,
                 "ampl.presolve": int,

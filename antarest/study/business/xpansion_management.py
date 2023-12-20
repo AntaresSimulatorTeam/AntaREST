@@ -103,7 +103,7 @@ class XpansionSettingsDTO(BaseModel):
     master: Master = Master.INTEGER
     yearly_weights: t.Optional[str] = Field(None, alias="yearly-weights")
     additional_constraints: t.Optional[str] = Field(None, alias="additional-constraints")
-    relaxed_optimality_gap: t.Optional[t.Union[float, str]] = Field(None, alias="relaxed_optimality_gap")
+    relaxed_optimality_gap: t.Optional[t.Union[float, str]] = 1e-5
     cut_type: t.Optional[CutType] = Field(None, alias="cut-type")
     ampl_solver: t.Optional[str] = Field(None, alias="ampl.solver")
     ampl_presolve: t.Optional[int] = Field(None, alias="ampl.presolve")
@@ -244,10 +244,10 @@ class XpansionManager:
                 "master": "integer",
                 "yearly-weights": None,
                 "additional-constraints": None,
+                "relaxed_optimality_gap": 1e-5,
             }
 
             if study_version < 800:
-                xpansion_settings["relaxed_optimality_gap"] = 1e6
                 xpansion_settings["cut-type"] = "yearly"
                 xpansion_settings["ampl.solver"] = "cbc"
                 xpansion_settings["ampl.presolve"] = 0
