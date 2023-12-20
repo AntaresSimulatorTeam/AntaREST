@@ -1,3 +1,4 @@
+import io
 import json
 import logging
 import re
@@ -8,7 +9,6 @@ from enum import Enum
 from pathlib import Path
 
 from antarest.core.model import JSON
-from antarest.core.utils.utils import extract_file_to_tmp_dir
 from antarest.study.storage.rawstudy.ini_reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     BindingConstraintDTO,
@@ -91,30 +91,61 @@ def _extract_data_from_file(
 ) -> t.Any:
     """
     Extract and process data from various types of files.
+
+    Args:
+        root: Directory or ZIP file containing the study.
+        inside_root_path: Relative path to the file to extract.
+        file_type: Type of the file to extract: text, simple INI or multi INI.
+        multi_ini_keys: List of keys to use for multi INI files.
+
+    Returns:
+        The content of the file, processed according to its type:
+        - TXT: list of lines
+        - SIMPLE_INI or MULTI_INI: dictionary of keys/values
     """
 
-    tmp_dir = None
-    try:
-        if root.suffix.lower() == ".zip":
-            output_data_path, tmp_dir = extract_file_to_tmp_dir(root, inside_root_path)
+    is_zip_file: bool = root.suffix.lower() == ".zip"
+    posix_path: str = inside_root_path.as_posix()
+
+    if file_type == FileType.TXT:
+        # Parse the file as a list of lines, return an empty list if missing.
+        if is_zip_file:
+            with zipfile.ZipFile(root) as zf:
+                try:
+                    with zf.open(posix_path) as f:
+                        text = f.read().decode("utf-8")
+                        return text.splitlines(keepends=False)
+                except KeyError:
+                    # File not found in the ZIP archive
+                    return []
         else:
             output_data_path = root / inside_root_path
+            try:
+                return output_data_path.read_text(encoding="utf-8").splitlines(keepends=False)
+            except FileNotFoundError:
+                return []
 
-        if file_type == FileType.TXT:
-            text = output_data_path.read_text(encoding="utf-8")
-            return text.splitlines(keepends=False)
-        elif file_type == FileType.MULTI_INI:
-            multi_reader = IniReader(multi_ini_keys)
-            return multi_reader.read(output_data_path)
-        elif file_type == FileType.SIMPLE_INI:
-            ini_reader = IniReader()
-            return ini_reader.read(output_data_path)
-        else:  # pragma: no cover
-            raise NotImplementedError(file_type)
+    elif file_type in {FileType.MULTI_INI, FileType.SIMPLE_INI}:
+        # Parse the file as a dictionary of keys/values, return an empty dictionary if missing.
+        reader = IniReader(multi_ini_keys)
+        if is_zip_file:
+            with zipfile.ZipFile(root) as zf:
+                try:
+                    with zf.open(posix_path) as f:
+                        buffer = io.StringIO(f.read().decode("utf-8"))
+                        return reader.read(buffer)
+                except KeyError:
+                    # File not found in the ZIP archive
+                    return {}
+        else:
+            output_data_path = root / inside_root_path
+            try:
+                return reader.read(output_data_path)
+            except FileNotFoundError:
+                return {}
 
-    finally:
-        if tmp_dir:
-            tmp_dir.cleanup()
+    else:  # pragma: no cover
+        raise NotImplementedError(file_type)
 
 
 def _parse_version(path: Path) -> int:
