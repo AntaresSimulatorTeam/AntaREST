@@ -23,4 +23,4 @@ This brings:
 `antares-web` brings an edition event store that provides a way to edit a study while keeping track of changes.
 It eases the creation of "variants" of a study and allow an explicit diff change between studies.
 
-You can read more information in [using the variant manager here](./2-variant_manager.md)
+You can read more information in [using the variant manager here](./3-variant_manager)
