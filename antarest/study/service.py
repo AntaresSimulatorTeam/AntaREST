@@ -4,6 +4,7 @@ import io
 import json
 import logging
 import os
+
 from datetime import datetime, timedelta
 from http import HTTPStatus
 from pathlib import Path, PurePosixPath
@@ -126,6 +127,19 @@ from antarest.worker.simulator_worker import GenerateTimeseriesTaskArgs
 logger = logging.getLogger(__name__)
 
 MAX_MISSING_STUDY_TIMEOUT = 2  # days
+
+
+def get_disk_usage(path: str) -> int:
+    total_size = 0
+    if path.endswith(".zip"):
+        return os.path.getsize(path)
+    with os.scandir(path) as it:
+        for entry in it:
+            if entry.is_file():
+                total_size += entry.stat().st_size
+            elif entry.is_dir():
+                total_size += get_disk_usage(path=str(entry.path))
+    return total_size
 
 
 class StudyUpgraderTask:
@@ -2353,3 +2367,21 @@ class StudyService:
             custom_event_messages=None,
             request_params=params,
         )
+
+    def get_disk_usage(self, uuid: str, params: RequestParameters) -> int:
+        """
+        This function computes the disk size used to store the study with
+        id=`uuid` if such study exists and user has permissions
+        otherwise it raises an error
+
+        Args:
+            uuid: the study id
+            params: user request parameters
+
+        return:
+            disk usage of the study with id = `uuid`
+        """
+        study = self.get_study(uuid=uuid)
+        assert_permission(params.user, study, StudyPermissionType.READ)
+        path = str(self.storage_service.get_storage(study).get_study_path(study))
+        return get_disk_usage(path=path)

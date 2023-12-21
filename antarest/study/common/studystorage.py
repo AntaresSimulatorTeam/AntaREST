@@ -8,6 +8,7 @@ from antarest.core.requests import RequestParameters
 from antarest.study.model import Study, StudyMetadataDTO, StudyMetadataPatchDTO, StudySimResultDTO
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 
 T = TypeVar("T", bound=Study)
 
@@ -186,7 +187,11 @@ class IStudyStorageService(ABC, Generic[T]):
         Returns: study path
 
         """
-        raise NotImplementedError()
+
+        if isinstance(metadata, VariantStudy):
+            return metadata.snapshot_dir
+        else:
+            return Path(metadata.path)
 
     def _check_study_exists(self, metadata: Study) -> None:
         """
