@@ -2,7 +2,8 @@
 
 ![](../assets/antares.png)
 
-This package works along with RTE's adequacy software [Antares Simulator](https://antares-simulator.org) that is also [hosted on github][antares-github]
+This package works along with RTE's adequacy software [Antares Simulator](https://antares-simulator.org)
+that is also [hosted on github][antares-github]
 
 `antares-web` is a server api interfacing Antares Simulator studies. It provides a web application to manage studies
 adding more features to simple edition.
@@ -17,10 +18,9 @@ This brings:
 >
 > - **user accounts** : add user management and permission system
 
-
 ## Variant manager
 
 `antares-web` brings an edition event store that provides a way to edit a study while keeping track of changes.
 It eases the creation of "variants" of a study and allow an explicit diff change between studies.
 
-You can read more information in [using the variant manager here](./3-variant_manager)
+You can read more information in [using the variant manager here](./3-variant_manager.md)

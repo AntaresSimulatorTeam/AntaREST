@@ -36,7 +36,7 @@ The storages table displays the following information:
 - **Initial Level (%):** Initial level of the storage.
 - **Initial Level Optimized:** Indicates whether the initial level of the storage is optimized.
 
-- The **Total** row displays the sum of the values in the **Withdrawal** and **Injection** columns.
+The **Total** row displays the sum of the values in the **Withdrawal** and **Injection** columns.
 
 
 ## Configuration Form

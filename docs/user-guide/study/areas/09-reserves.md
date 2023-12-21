@@ -18,7 +18,7 @@ To access the configuration of Reserves:
 
 In the tabs, you will find time series matrices composed of 8760 rows (hourly for a simulation year).
 
-![09-reserves.tab.png](../../../assets/media/user-guide/study/areas/09-reserves.tab.png)
+![09-reserves.series.png](../../../assets/media/user-guide/study/areas/09-reserves.series.png)
 
 The available commands are:
 
