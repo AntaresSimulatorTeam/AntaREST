@@ -65,7 +65,12 @@ from antarest.study.business.table_mode_management import TableModeManager
 from antarest.study.business.thematic_trimming_management import ThematicTrimmingManager
 from antarest.study.business.timeseries_config_management import TimeSeriesConfigManager
 from antarest.study.business.utils import execute_or_add_commands
-from antarest.study.business.xpansion_management import XpansionCandidateDTO, XpansionManager, XpansionSettingsDTO
+from antarest.study.business.xpansion_management import (
+    GetXpansionSettings,
+    UpdateXpansionSettings,
+    XpansionCandidateDTO,
+    XpansionManager,
+)
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     NEW_DEFAULT_STUDY_VERSION,
@@ -2051,7 +2056,7 @@ class StudyService:
         self._assert_study_unarchived(study)
         self.xpansion_manager.delete_xpansion_configuration(study)
 
-    def get_xpansion_settings(self, uuid: str, params: RequestParameters) -> XpansionSettingsDTO:
+    def get_xpansion_settings(self, uuid: str, params: RequestParameters) -> GetXpansionSettings:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
         return self.xpansion_manager.get_xpansion_settings(study)
@@ -2059,9 +2064,9 @@ class StudyService:
     def update_xpansion_settings(
         self,
         uuid: str,
-        xpansion_settings_dto: XpansionSettingsDTO,
+        xpansion_settings_dto: UpdateXpansionSettings,
         params: RequestParameters,
-    ) -> XpansionSettingsDTO:
+    ) -> GetXpansionSettings:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
         self._assert_study_unarchived(study)
@@ -2072,7 +2077,7 @@ class StudyService:
         uuid: str,
         xpansion_candidate_dto: XpansionCandidateDTO,
         params: RequestParameters,
-    ) -> None:
+    ) -> XpansionCandidateDTO:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
@@ -2109,9 +2114,9 @@ class StudyService:
     def update_xpansion_constraints_settings(
         self,
         uuid: str,
-        constraints_file_name: Optional[str],
+        constraints_file_name: str,
         params: RequestParameters,
-    ) -> None:
+    ) -> GetXpansionSettings:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)

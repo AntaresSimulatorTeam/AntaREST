@@ -5,59 +5,39 @@ from antarest.study.storage.rawstudy.model.filesystem.context import ContextServ
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 
 
-# noinspection SpellCheckingInspection
 class ExpansionSettings(IniFileNode):
-    # /!\ The name of all the parameters is correct.
-    # Especially the differences of "_" and "-" in parameter names.
     """
-    Common:
-        - optimality_gap: float = 1
-        - max_iteration: int = +Inf
-        - uc_type: str = "expansion_fast" or "expansion_accurate". default="expansion_fast"
-        - master: str = "integer" or "relaxed". default="integer"
-        - yearly-weights: str = filename. default = None
-        - additional-constraints: str = filename. default = None
+    Since version >= 800:
 
-    version < 800 only:
-        - relaxed-optimality-gap: float = 0.001  # relaxed-optimality-gap > 0
-        - cut-type: str = "average", "yearly" or "weekly". default="yearly"
-        - ampl.solver: str = "cbc"
-        - ampl.presolve: int = 0
-        - ampl.solve_bounds_frequency: int = 1000000
-
-    version >= 800 only:
-        - relative_gap: float = 1e-12
-        - solver: str = "Cbc", "Coin" or "Xpress". default="Cbc"
-        - batch_size: int = 0
-        - separation_parameter: float = 0.5  # 0 <= separation_parameter <= 1
+    - master: str = "integer" or "relaxed". default="integer"
+    - uc_type: str = "expansion_fast" or "expansion_accurate". default="expansion_fast"
+    - optimality_gap: float = 1
+    - relative_gap: float = 1e-6
+    - relaxed_optimality_gap: float = 1e-5
+    - max_iteration: int = 1000
+    - solver: str = "Cbc", "Coin" or "Xpress". default="Cbc"
+    - log_level: int = 0, 1, 2, 3. default=0
+    - separation_parameter: float = 0.5  # 0 < separation_parameter <= 1
+    - batch_size: int = 0
+    - yearly-weights: str = filename. default = ""
+    - additional-constraints: str = filename. default = ""
     """
 
     def __init__(self, context: ContextServer, config: FileStudyTreeConfig):
-        common_types = {
-            "optimality_gap": float,
-            "max_iteration": int,
-            "uc_type": str,
+        types = {
             "master": str,
-            "yearly-weights": str,
-            "additional_constraints": str,
+            "uc_type": str,
+            "optimality_gap": float,
+            "relative_gap": float,
             "relaxed_optimality_gap": float,
+            "max_iteration": int,
+            "solver": str,
+            "log_level": int,
+            "separation_parameter": float,
+            "batch_size": int,
+            "yearly-weights": str,
+            "additional-constraints": str,
         }
-        if config.version < 800:
-            types = {
-                "cut-type": str,
-                "ampl.solver": str,
-                "ampl.presolve": int,
-                "ampl.solve_bounds_frequency": int,
-                **common_types,
-            }
-        else:
-            types = {
-                "relative-gap": float,
-                "solver": str,
-                "batch_size": int,
-                "separation_parameter": float,
-                **common_types,
-            }
         super().__init__(
             context,
             config,

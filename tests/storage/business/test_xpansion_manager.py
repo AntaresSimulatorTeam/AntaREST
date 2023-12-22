@@ -12,19 +12,16 @@ from pandas.errors import ParserError
 
 from antarest.core.model import JSON
 from antarest.study.business.xpansion_management import (
-    CutType,
     FileCurrentlyUsedInSettings,
     LinkNotFound,
     Master,
-    MaxIteration,
     Solver,
     UcType,
+    UpdateXpansionSettings,
     XpansionCandidateDTO,
     XpansionFileNotFoundError,
     XpansionManager,
     XpansionResourceFileType,
-    XpansionSensitivitySettingsDTO,
-    XpansionSettingsDTO,
 )
 from antarest.study.model import RawStudy
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
@@ -86,47 +83,30 @@ def make_link_and_areas(empty_study: FileStudy) -> None:
 
 @pytest.mark.unit_test
 @pytest.mark.parametrize(
-    "version,expected_output",
+    "version, expected_output",
     [
-        (
-            720,
-            {
-                "settings": {
-                    "optimality_gap": 1,
-                    "max_iteration": "+Inf",
-                    "uc_type": "expansion_fast",
-                    "master": "integer",
-                    "relaxed_optimality_gap": 1e-5,
-                    "cut-type": "yearly",
-                    "ampl.solver": "cbc",
-                    "ampl.presolve": 0,
-                    "ampl.solve_bounds_frequency": 1000000,
-                },
-                "sensitivity": {"sensitivity_in": {}},
-                "candidates": {},
-                "capa": {},
-                "constraints": {},
-                "weights": {},
-            },
-        ),
         (
             810,
             {
-                "settings": {
-                    "optimality_gap": 1,
-                    "max_iteration": "+Inf",
-                    "uc_type": "expansion_fast",
-                    "master": "integer",
-                    "relaxed_optimality_gap": 1e-5,
-                    "relative_gap": 1e-12,
-                    "solver": "Cbc",
-                    "batch_size": 0,
-                    "separation_parameter": 0.5,
-                },
-                "sensitivity": {"sensitivity_in": {}},
                 "candidates": {},
                 "capa": {},
                 "constraints": {},
+                "sensitivity": {"sensitivity_in": {}},
+                "settings": {
+                    "master": "integer",
+                    "uc_type": "expansion_fast",
+                    "optimality_gap": 1,
+                    "relative_gap": 1e-06,
+                    "relaxed_optimality_gap": 1e-05,
+                    "max_iteration": 1000,
+                    "solver": "Xpress",
+                    "log_level": 0,
+                    "separation_parameter": 0.5,
+                    "batch_size": 96,
+                    "yearly-weights": "",
+                    "additional-constraints": "",
+                    "timelimit": int(1e12),
+                },
                 "weights": {},
             },
         ),
@@ -145,7 +125,8 @@ def test_create_configuration(tmp_path: Path, version: int, expected_output: JSO
 
     xpansion_manager.create_xpansion_configuration(study)
 
-    assert empty_study.tree.get(["user", "expansion"], expanded=True, depth=9) == expected_output
+    actual = empty_study.tree.get(["user", "expansion"], expanded=True, depth=9)
+    assert actual == expected_output
 
 
 @pytest.mark.unit_test
@@ -175,49 +156,22 @@ def test_delete_xpansion_configuration(tmp_path: Path) -> None:
     "version, expected_output",
     [
         (
-            720,
-            {
-                "additional-constraints": None,
-                "ampl.presolve": 0,
-                "ampl.solve_bounds_frequency": 1000000,
-                "ampl.solver": "cbc",
-                "batch_size": 0,
-                "cut-type": CutType.YEARLY,
-                "log_level": 0,
-                "master": Master.INTEGER,
-                "max_iteration": MaxIteration.INF,
-                "optimality_gap": 1.0,
-                "relative_gap": None,
-                "relaxed_optimality_gap": 0.00001,
-                "sensitivity_config": {"capex": False, "epsilon": 10000.0, "projection": []},
-                "separation_parameter": 0.5,
-                "solver": None,
-                "timelimit": 1000000000000,
-                "uc_type": UcType.EXPANSION_FAST,
-                "yearly-weights": None,
-            },
-        ),
-        (
             810,
             {
-                "additional-constraints": None,
-                "ampl.presolve": None,
-                "ampl.solve_bounds_frequency": None,
-                "ampl.solver": None,
-                "batch_size": 0,
-                "cut-type": None,
-                "log_level": 0,
                 "master": Master.INTEGER,
-                "max_iteration": MaxIteration.INF,
-                "optimality_gap": 1.0,
-                "relative_gap": 1e-12,
-                "relaxed_optimality_gap": 1e-5,
-                "sensitivity_config": {"capex": False, "epsilon": 10000.0, "projection": []},
-                "separation_parameter": 0.5,
-                "solver": Solver.CBC,
-                "timelimit": 1000000000000,
                 "uc_type": UcType.EXPANSION_FAST,
-                "yearly-weights": None,
+                "optimality_gap": 1.0,
+                "relative_gap": 1e-06,
+                "relaxed_optimality_gap": 1e-05,
+                "max_iteration": 1000,
+                "solver": Solver.XPRESS,
+                "log_level": 0,
+                "separation_parameter": 0.5,
+                "batch_size": 96,
+                "yearly-weights": "",
+                "additional-constraints": "",
+                "timelimit": int(1e12),
+                "sensitivity_config": {"epsilon": 0, "projection": [], "capex": False},
             },
         ),
     ],
@@ -239,39 +193,6 @@ def test_get_xpansion_settings(tmp_path: Path, version: int, expected_output: JS
 
 
 @pytest.mark.unit_test
-def test_xpansion_sensitivity_settings(tmp_path: Path) -> None:
-    """
-    Test that attribute projection in sensitivity_config is optional
-    """
-
-    empty_study = make_empty_study(tmp_path, 720)
-    study = RawStudy(id="1", path=empty_study.config.study_path, version=720)
-    xpansion_manager = make_xpansion_manager(empty_study)
-
-    xpansion_manager.create_xpansion_configuration(study)
-    expected_settings = XpansionSettingsDTO.parse_obj(
-        {
-            "optimality_gap": 1,
-            "max_iteration": "+Inf",
-            "uc_type": "expansion_fast",
-            "master": "integer",
-            "yearly_weight": None,
-            "additional-constraints": None,
-            "relaxed_optimality_gap": 1e-5,
-            "cut-type": None,
-            "ampl.solver": None,
-            "ampl.presolve": None,
-            "ampl.solve_bounds_frequency": None,
-            "relative_gap": 1e-12,
-            "solver": "Cbc",
-            "sensitivity_config": XpansionSensitivitySettingsDTO(epsilon=0.1, capex=False),
-        }
-    )
-    xpansion_manager.update_xpansion_settings(study, expected_settings)
-    assert xpansion_manager.get_xpansion_settings(study) == expected_settings
-
-
-@pytest.mark.unit_test
 def test_update_xpansion_settings(tmp_path: Path) -> None:
     """
     Test the retrieval of the xpansion settings.
@@ -283,32 +204,43 @@ def test_update_xpansion_settings(tmp_path: Path) -> None:
 
     xpansion_manager.create_xpansion_configuration(study)
 
-    expected = {
+    new_settings_obj = {
         "optimality_gap": 4.0,
         "max_iteration": 123,
         "uc_type": UcType.EXPANSION_FAST,
         "master": Master.INTEGER,
-        "yearly-weights": None,
-        "additional-constraints": None,
-        "relaxed_optimality_gap": "1.2%",
-        "cut-type": None,
-        "ampl.solver": None,
-        "ampl.presolve": None,
-        "ampl.solve_bounds_frequency": None,
+        "yearly-weights": "",
+        "additional-constraints": "",
+        "relaxed_optimality_gap": "1.2%",  # percentage
         "relative_gap": 1e-12,
         "batch_size": 4,
         "separation_parameter": 0.5,
         "solver": Solver.CBC,
-        "timelimit": 1000000000000,
+        "timelimit": int(1e12),
         "log_level": 0,
-        "sensitivity_config": {"epsilon": 10000.0, "projection": [], "capex": False},
+        "sensitivity_config": {"epsilon": 10500.0, "projection": ["foo"], "capex": False},
     }
 
-    new_settings = XpansionSettingsDTO(**expected)
+    new_settings = UpdateXpansionSettings(**new_settings_obj)
 
-    xpansion_manager.update_xpansion_settings(study, new_settings)
+    actual = xpansion_manager.update_xpansion_settings(study, new_settings)
 
-    actual = xpansion_manager.get_xpansion_settings(study)
+    expected = {
+        "master": Master.INTEGER,
+        "uc_type": UcType.EXPANSION_FAST,
+        "optimality_gap": 4.0,
+        "relative_gap": 1e-12,
+        "relaxed_optimality_gap": 1.2,
+        "max_iteration": 123,
+        "solver": Solver.CBC,
+        "log_level": 0,
+        "separation_parameter": 0.5,
+        "batch_size": 4,
+        "yearly-weights": "",
+        "additional-constraints": "",
+        "timelimit": int(1e12),
+        "sensitivity_config": {"epsilon": 10500.0, "projection": ["foo"], "capex": False},
+    }
     assert actual.dict(by_alias=True) == expected
 
 
@@ -319,7 +251,8 @@ def test_add_candidate(tmp_path: Path) -> None:
     xpansion_manager = make_xpansion_manager(empty_study)
     xpansion_manager.create_xpansion_configuration(study)
 
-    assert empty_study.tree.get(["user", "expansion", "candidates"]) == {}
+    actual = empty_study.tree.get(["user", "expansion", "candidates"])
+    assert actual == {}
 
     new_candidate = XpansionCandidateDTO.parse_obj(
         {
@@ -353,12 +286,14 @@ def test_add_candidate(tmp_path: Path) -> None:
 
     candidates = {"1": new_candidate.dict(by_alias=True, exclude_none=True)}
 
-    assert empty_study.tree.get(["user", "expansion", "candidates"]) == candidates
+    actual = empty_study.tree.get(["user", "expansion", "candidates"])
+    assert actual == candidates
 
     xpansion_manager.add_candidate(study, new_candidate2)
     candidates["2"] = new_candidate2.dict(by_alias=True, exclude_none=True)
 
-    assert empty_study.tree.get(["user", "expansion", "candidates"]) == candidates
+    actual = empty_study.tree.get(["user", "expansion", "candidates"])
+    assert actual == candidates
 
 
 @pytest.mark.unit_test
@@ -520,12 +455,11 @@ def test_update_constraints(tmp_path: Path) -> None:
 
     empty_study.tree.save({"user": {"expansion": {"constraints": {"constraints.txt": b"0"}}}})
 
-    xpansion_manager.update_xpansion_constraints_settings(study=study, constraints_file_name="constraints.txt")
+    actual_settings = xpansion_manager.update_xpansion_constraints_settings(study, "constraints.txt")
+    assert actual_settings.additional_constraints == "constraints.txt"
 
-    assert xpansion_manager.get_xpansion_settings(study).additional_constraints == "constraints.txt"
-
-    xpansion_manager.update_xpansion_constraints_settings(study=study, constraints_file_name=None)
-    assert xpansion_manager.get_xpansion_settings(study).additional_constraints is None
+    actual_settings = xpansion_manager.update_xpansion_constraints_settings(study, "")
+    assert actual_settings.additional_constraints == ""
 
 
 @pytest.mark.unit_test
@@ -572,11 +506,15 @@ def test_add_resources(tmp_path: Path) -> None:
 
     settings = xpansion_manager.get_xpansion_settings(study)
     settings.yearly_weights = filename3
-    xpansion_manager.update_xpansion_settings(study, settings)
+    update_settings = UpdateXpansionSettings(**settings.dict())
+    xpansion_manager.update_xpansion_settings(study, update_settings)
+
     with pytest.raises(FileCurrentlyUsedInSettings):
         xpansion_manager.delete_resource(study, XpansionResourceFileType.WEIGHTS, filename3)
-    settings.yearly_weights = None
-    xpansion_manager.update_xpansion_settings(study, settings)
+
+    settings.yearly_weights = ""
+    update_settings = UpdateXpansionSettings(**settings.dict())
+    xpansion_manager.update_xpansion_settings(study, update_settings)
     xpansion_manager.delete_resource(study, XpansionResourceFileType.WEIGHTS, filename3)
 
 
