@@ -1,5 +1,5 @@
 import JSONEditorLib, { JSONEditorOptions } from "jsoneditor";
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import { useDeepCompareEffect, useMount } from "react-use";
 import "jsoneditor/dist/jsoneditor.min.css";
 import "./dark-theme.css";
@@ -12,12 +12,6 @@ interface JSONEditorProps extends JSONEditorOptions {
 function JSONEditor({ json, ...options }: JSONEditorProps) {
   const ref = useRef<HTMLDivElement | null>(null);
   const editorRef = useRef<JSONEditorLib>();
-
-  useEffect(() => {
-    if (editorRef.current) {
-      editorRef.current.expandAll();
-    }
-  }, []);
 
   useMount(() => {
     if (!ref.current) {
