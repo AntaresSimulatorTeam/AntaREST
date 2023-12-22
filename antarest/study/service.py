@@ -106,7 +106,6 @@ from antarest.study.storage.study_upgrader import (
 )
 from antarest.study.storage.utils import (
     assert_permission,
-    get_default_workspace_path,
     get_start_date,
     is_managed,
     remove_from_cache,
@@ -633,7 +632,7 @@ class StudyService:
             str: The ID of the newly created study.
         """
         sid = str(uuid4())
-        study_path = str(get_default_workspace_path(self.config) / sid)
+        study_path = self.config.get_workspace_path() / sid
 
         author = self.get_user_name(params)
 
@@ -1314,7 +1313,7 @@ class StudyService:
             BadArchiveContent: If the archive is corrupted or in an unknown format.
         """
         sid = str(uuid4())
-        path = str(get_default_workspace_path(self.config) / sid)
+        path = str(self.config.get_workspace_path() / sid)
         study = RawStudy(
             id=sid,
             workspace=DEFAULT_WORKSPACE_NAME,
