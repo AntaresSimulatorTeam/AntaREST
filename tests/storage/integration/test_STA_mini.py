@@ -433,6 +433,7 @@ def test_sta_mini_output(storage_service, url: str, expected_output: dict):
                 "yearly-weights": "None",
                 "additional-constraints": "None",
                 "relaxed_optimality_gap": 0.00001,
+                # legacy attributes from version < 800
                 "cut-type": '"average"',
                 "ampl.solver": '"cbc"',
                 "ampl.presolve": 0,
