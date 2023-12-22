@@ -3,7 +3,6 @@ import { useState, useEffect } from "react";
 import { AxiosError } from "axios";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
-import ReactJson from "react-json-view";
 import SaveIcon from "@mui/icons-material/Save";
 import { Box, Button, Typography } from "@mui/material";
 import {
@@ -11,8 +10,9 @@ import {
   getStudyData,
 } from "../../../../../../../services/api/study";
 import useEnqueueErrorSnackbar from "../../../../../../../hooks/useEnqueueErrorSnackbar";
-import { Header, Root, Content } from "./style";
+import { Header, Root } from "./style";
 import SimpleLoader from "../../../../../../common/loaders/SimpleLoader";
+import JSONEditor from "../../../../../../common/JSONEditor";
 
 interface PropTypes {
   data: string;
@@ -29,6 +29,12 @@ function StudyJsonView(props: PropTypes) {
   const [loaded, setLoaded] = useState(false);
   const [saveAllowed, setSaveAllowed] = useState<boolean>(false);
   const [isEditable, setEditable] = useState<boolean>(true);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleJsonChange = (newJsonData: any) => {
+    setJsonData(newJsonData);
+    setSaveAllowed(true);
+  };
 
   const saveData = async () => {
     const tmpDataPath = data.split("/").filter((item) => item);
@@ -88,27 +94,30 @@ function StudyJsonView(props: PropTypes) {
           </Button>
         </Header>
       )}
-      <Content>
-        {jsonData && (
-          <ReactJson
-            src={jsonData}
-            onEdit={
-              isEditable
-                ? (e) => {
-                    setJsonData(e.updated_src);
-                    setSaveAllowed(true);
-                  }
-                : undefined
-            }
-            theme="monokai"
+      {jsonData && (
+        <Box
+          sx={{
+            width: 1,
+            height: 1,
+            overflow: "auto",
+            position: "relative",
+          }}
+        >
+          <JSONEditor
+            json={jsonData}
+            onChangeJSON={handleJsonChange}
+            onChangeText={(json) => console.log(json)}
+            modes={["tree", "code"]}
+            enableSort={false}
+            enableTransform={false}
           />
-        )}
-        {!loaded && (
-          <Box width="100%" height="100%" position="relative">
-            <SimpleLoader />
-          </Box>
-        )}
-      </Content>
+        </Box>
+      )}
+      {!loaded && (
+        <Box width="100%" height="100%" position="relative">
+          <SimpleLoader />
+        </Box>
+      )}
     </Root>
   );
 }
