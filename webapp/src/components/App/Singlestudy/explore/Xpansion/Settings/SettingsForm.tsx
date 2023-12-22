@@ -34,7 +34,6 @@ function SettingsForm(props: PropType) {
   const ucType = ["expansion_fast", "expansion_accurate"];
   const master = ["relaxed", "integer"];
   const solver = ["Cbc", "Xpress"];
-  const cutType = ["yearly", "weekly", "average"];
 
   const handleChange = (key: string, value: string | number) => {
     setSaveAllowed(true);
@@ -72,7 +71,7 @@ function SettingsForm(props: PropType) {
           justifyContent="space-between"
           alignItems="flex-end"
         >
-          <Title>{t("global.settings")}</Title>
+          <Title>{t("xpansion.optimization")}</Title>
           <Button
             variant="outlined"
             color="primary"
@@ -144,25 +143,6 @@ function SettingsForm(props: PropType) {
             onChange={(e) => handleChange("max_iteration", e.target.value)}
             sx={{ mb: 1 }}
           />
-        </Fields>
-      </Box>
-      <Box>
-        <Title>{t("launcher.xpansion.versionCpp")}</Title>
-        <Divider sx={{ mt: 1, mb: 2 }} />
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "flex-start",
-            width: "100%",
-            mb: 2,
-            "&> div": {
-              mr: 2,
-              mb: 2,
-              flexGrow: 1,
-              width: 1,
-            },
-          }}
-        >
           <TextField
             type="number"
             label={t("xpansion.relativeGap")}
@@ -198,7 +178,7 @@ function SettingsForm(props: PropType) {
             }
             sx={{ mb: 1 }}
           />
-          <TextField
+          {/* <TextField
             type="number"
             label={t("xpansion.timeLimit")}
             variant="filled"
@@ -210,7 +190,7 @@ function SettingsForm(props: PropType) {
               )
             }
             sx={{ mb: 1 }}
-          />
+          /> */}
           <TextField
             type="number"
             label={t("xpansion.logLevel")}
@@ -232,23 +212,6 @@ function SettingsForm(props: PropType) {
             sx={{ mb: 1 }}
             inputProps={{ min: 0, max: 1, step: 0.1 }}
           />
-        </Box>
-      </Box>
-      <Box>
-        <Title>{t("launcher.xpansion.versionR")}</Title>
-        <Divider sx={{ mt: 1, mb: 2 }} />
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "flex-start",
-            width: "100%",
-            mb: 2,
-            "&> div": {
-              mr: 2,
-              mb: 2,
-            },
-          }}
-        >
           <TextField
             type="number"
             label={t("xpansion.relaxedOptimalityGap")}
@@ -260,52 +223,7 @@ function SettingsForm(props: PropType) {
             sx={{ mb: 1 }}
             inputProps={{ min: 0 }}
           />
-          <TextField
-            label={t("xpansion.amplSolver")}
-            variant="filled"
-            value={currentSettings["ampl.solver"] || ""}
-            onChange={(e) => handleChange("ampl.solver", e.target.value)}
-            sx={{ mb: 1 }}
-          />
-          <TextField
-            type="number"
-            label={t("xpansion.amplPresolve")}
-            variant="filled"
-            value={currentSettings["ampl.presolve"] || ""}
-            onChange={(e) =>
-              handleChange("ampl.presolve", parseFloat(e.target.value))
-            }
-            sx={{ mb: 1 }}
-          />
-          <TextField
-            type="number"
-            label={t("xpansion.amplSolverBoundsFrequency")}
-            variant="filled"
-            value={currentSettings["ampl.solve_bounds_frequency"] || ""}
-            onChange={(e) =>
-              handleChange(
-                "ampl.solve_bounds_frequency",
-                parseFloat(e.target.value),
-              )
-            }
-            sx={{ mb: 1 }}
-          />
-          <SelectFields sx={{ mb: 1 }}>
-            <SelectSingle
-              name="cut-type"
-              list={cutType.map((item) => {
-                return { id: item, name: item };
-              })}
-              label={t("xpansion.cutType")}
-              data={currentSettings["cut-type"] || ""}
-              sx={{
-                minWidth: "100%",
-              }}
-              handleChange={handleChange}
-              optional
-            />
-          </SelectFields>
-        </Box>
+        </Fields>
       </Box>
       <Box>
         <Title>{t("xpansion.extra")}</Title>
