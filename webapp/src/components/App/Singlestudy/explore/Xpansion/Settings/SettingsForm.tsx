@@ -128,6 +128,15 @@ function SettingsForm(props: PropType) {
           </SelectFields>
           <TextField
             type="number"
+            label={t("xpansion.maxIteration")}
+            variant="filled"
+            value={currentSettings.max_iteration}
+            onChange={(e) => handleChange("max_iteration", e.target.value)}
+            sx={{ mb: 1 }}
+            inputProps={{ min: 1, max: 1000, step: 1 }}
+          />
+          <TextField
+            type="number"
             label={t("xpansion.optimalityGap")}
             variant="filled"
             value={currentSettings.optimality_gap}
@@ -135,23 +144,29 @@ function SettingsForm(props: PropType) {
               handleChange("optimality_gap", parseFloat(e.target.value))
             }
             sx={{ mb: 1 }}
-          />
-          <TextField
-            label={t("xpansion.maxIteration")}
-            variant="filled"
-            value={currentSettings.max_iteration || ""}
-            onChange={(e) => handleChange("max_iteration", e.target.value)}
-            sx={{ mb: 1 }}
+            inputProps={{ min: 0 }}
           />
           <TextField
             type="number"
             label={t("xpansion.relativeGap")}
             variant="filled"
-            value={currentSettings.relative_gap || ""}
+            value={currentSettings.relative_gap}
             onChange={(e) =>
               handleChange("relative_gap", parseFloat(e.target.value))
             }
             sx={{ mb: 1 }}
+            inputProps={{ min: 0 }}
+          />
+          <TextField
+            type="number"
+            label={t("xpansion.relaxedOptimalityGap")}
+            variant="filled"
+            value={currentSettings.relaxed_optimality_gap}
+            onChange={(e) =>
+              handleChange("relaxed_optimality_gap", e.target.value)
+            }
+            sx={{ mb: 1 }}
+            inputProps={{ min: 0 }}
           />
           <SelectFields sx={{ mb: 1 }}>
             <SelectSingle
@@ -160,24 +175,13 @@ function SettingsForm(props: PropType) {
                 return { id: item, name: item };
               })}
               label={t("xpansion.solver")}
-              data={currentSettings.solver || ""}
+              data={currentSettings.solver}
               handleChange={handleChange}
-              optional
               sx={{
                 minWidth: "100%",
               }}
             />
           </SelectFields>
-          <TextField
-            type="number"
-            label={t("xpansion.batchSize")}
-            variant="filled"
-            value={currentSettings.batch_size || ""}
-            onChange={(e) =>
-              handleChange("batch_size", parseInt(e.target.value, 10))
-            }
-            sx={{ mb: 1 }}
-          />
           {/* <TextField
             type="number"
             label={t("xpansion.timeLimit")}
@@ -193,16 +197,6 @@ function SettingsForm(props: PropType) {
           /> */}
           <TextField
             type="number"
-            label={t("xpansion.logLevel")}
-            variant="filled"
-            value={currentSettings.log_level || ""}
-            onChange={(e) =>
-              handleChange("log_level", parseInt(e.target.value, 10))
-            }
-            sx={{ mb: 1 }}
-          />
-          <TextField
-            type="number"
             label={t("xpansion.separationParameter")}
             variant="filled"
             value={currentSettings.separation_parameter}
@@ -210,18 +204,29 @@ function SettingsForm(props: PropType) {
               handleChange("separation_parameter", parseFloat(e.target.value))
             }
             sx={{ mb: 1 }}
-            inputProps={{ min: 0, max: 1, step: 0.1 }}
+            inputProps={{ min: 0, max: 1, step: 0.05 }}
           />
           <TextField
             type="number"
-            label={t("xpansion.relaxedOptimalityGap")}
+            label={t("xpansion.batchSize")}
             variant="filled"
-            value={currentSettings.relaxed_optimality_gap || ""}
+            value={currentSettings.batch_size}
             onChange={(e) =>
-              handleChange("relaxed_optimality_gap", e.target.value)
+              handleChange("batch_size", parseInt(e.target.value, 10))
             }
             sx={{ mb: 1 }}
             inputProps={{ min: 0 }}
+          />
+          <TextField
+            type="number"
+            label={t("xpansion.logLevel")}
+            variant="filled"
+            value={currentSettings.log_level}
+            onChange={(e) =>
+              handleChange("log_level", parseInt(e.target.value, 10))
+            }
+            inputProps={{ min: 0, max: 3, step: 1 }}
+            sx={{ mb: 1 }}
           />
         </Fields>
       </Box>
@@ -317,6 +322,7 @@ function SettingsForm(props: PropType) {
                 parseFloat(e.target.value),
               )
             }
+            inputProps={{ min: 0 }}
           />
           <SwitchFE
             value={currentSettings.sensitivity_config?.capex}
