@@ -232,7 +232,7 @@ def test_repository(db_session: Session) -> None:
     assert new_task.owner_id == user1_id
     assert new_task.creation_date >= now
 
-    second_task = TaskJob(owner_id=user2_id, ref_id=study_id)
+    second_task = TaskJob(name="bar", owner_id=user2_id, ref_id=study_id)
     second_task = task_job_repo.save(second_task)
 
     result = task_job_repo.list(TaskListFilter(type=[TaskType.COPY]))
@@ -296,8 +296,8 @@ def test_repository(db_session: Session) -> None:
 def test_cancel(core_config: Config, event_bus: IEventBus) -> None:
     # Create a TaskJobService and add tasks
     task_job_repo = TaskJobRepository()
-    task_job_repo.save(TaskJob(id="a"))
-    task_job_repo.save(TaskJob(id="b"))
+    task_job_repo.save(TaskJob(id="a", name="foo"))
+    task_job_repo.save(TaskJob(id="b", name="foo"))
 
     # Create a TaskJobService
     service = TaskJobService(config=core_config, repository=task_job_repo, event_bus=event_bus)
@@ -361,6 +361,7 @@ def test_cancel_orphan_tasks(
     completion_date: datetime.datetime = datetime.datetime.utcnow()
     task_job = TaskJob(
         id=test_id,
+        name="test",
         status=status,
         result_status=result_status,
         result_msg=result_msg,
