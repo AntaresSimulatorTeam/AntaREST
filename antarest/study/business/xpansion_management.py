@@ -208,14 +208,20 @@ class UpdateXpansionSettings(XpansionSettings, metaclass=AllOptionalMetaclass):
     # note: for some reason, the alias is not taken into account when using the metaclass,
     # so we have to redefine the fields with the alias.
 
-    yearly_weights: t.Optional[str] = Field(  # type: ignore
-        None,
+    # On the other hand, we make these fields mandatory, because there is an anomaly on the front side:
+    # When the user does not select any file, the front sends a request without the "yearly-weights"
+    # or "additional-constraints" field, instead of sending the field with an empty value.
+    # This is not a problem as long as the front sends a request with all the fields (PUT case),
+    # but it is a problem for partial requests (PATCH case).
+
+    yearly_weights: str = Field(
+        "",
         alias="yearly-weights",
         description="Yearly weights file",
     )
 
-    additional_constraints: t.Optional[str] = Field(  # type: ignore
-        None,
+    additional_constraints: str = Field(
+        "",
         alias="additional-constraints",
         description="Additional constraints file",
     )
@@ -702,7 +708,7 @@ class XpansionManager:
         root_files = [
             key
             for key, node in t.cast(FolderNode, file_study.tree.get_node(["user", "expansion"])).build().items()
-            if key not in registered_filenames and type(node) != BucketNode
+            if key not in registered_filenames and not isinstance(node, BucketNode)
         ]
         return root_files
 

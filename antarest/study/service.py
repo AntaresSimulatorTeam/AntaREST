@@ -109,13 +109,7 @@ from antarest.study.storage.study_upgrader import (
     should_study_be_denormalized,
     upgrade_study,
 )
-from antarest.study.storage.utils import (
-    assert_permission,
-    get_start_date,
-    is_managed,
-    remove_from_cache,
-    study_matcher,
-)
+from antarest.study.storage.utils import assert_permission, get_start_date, is_managed, remove_from_cache, study_matcher
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command.update_comments import UpdateComments
