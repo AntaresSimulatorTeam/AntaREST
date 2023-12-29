@@ -79,6 +79,10 @@ class IniReader(IReader):
             try:
                 with open(path, mode="r", encoding="utf-8") as f:
                     sections = self._parse_ini_file(f)
+            except UnicodeDecodeError:
+                # On windows, `.ini` files may use "cp1252" encoding
+                with open(path, mode="r", encoding="cp1252") as f:
+                    sections = self._parse_ini_file(f)
             except FileNotFoundError:
                 # If the file is missing, an empty dictionary is returned.
                 # This is required tp mimic the behavior of `configparser.ConfigParser`.
