@@ -9,7 +9,7 @@ import numpy.typing as npt
 from fastapi import FastAPI
 from starlette.testclient import TestClient
 
-from antarest.study.storage.rawstudy.io.reader.ini_reader import IniReader, MultipleSameKeysIniReader
+from antarest.study.storage.rawstudy.ini_reader import IniReader, MultipleSameKeysIniReader
 from antarest.study.storage.variantstudy.model.command.common import CommandName
 from antarest.study.storage.variantstudy.model.model import CommandDTO, GenerationResultInfoDTO
 from antarest.tools.lib import (
