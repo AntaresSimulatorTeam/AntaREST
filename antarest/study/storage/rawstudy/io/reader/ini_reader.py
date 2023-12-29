@@ -1,9 +1,9 @@
 import configparser
 import contextlib
 import re
+import typing as t
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, List, Optional, Union
 
 from antarest.core.model import JSON, SUB_JSON
 
@@ -14,7 +14,7 @@ class IReader(ABC):
     """
 
     @abstractmethod
-    def read(self, path: Any) -> JSON:
+    def read(self, path: t.Any) -> JSON:
         """
         Parse .ini file to json
         Args:
@@ -32,25 +32,25 @@ class IniReader(IReader):
     """
 
     @staticmethod
-    def _parse_bool(value: str) -> Optional[bool]:
+    def _parse_bool(value: str) -> t.Optional[bool]:
         return {"true": True, "false": False}.get(value.lower())
 
     @staticmethod
-    def _parse_int(value: str) -> Optional[int]:
+    def _parse_int(value: str) -> t.Optional[int]:
         try:
             return int(value)
         except ValueError:
             return None
 
     @staticmethod
-    def _parse_float(value: str) -> Optional[float]:
+    def _parse_float(value: str) -> t.Optional[float]:
         try:
             return float(value)
         except ValueError:
             return None
 
     @staticmethod
-    def parse_value(value: str) -> Union[bool, int, float, str]:
+    def parse_value(value: str) -> t.Union[bool, int, float, str]:
         def strict_bool(v: str) -> bool:
             return {"true": True, "false": False}[v.lower()]
 
@@ -63,7 +63,7 @@ class IniReader(IReader):
     def _parse_json(json: configparser.SectionProxy) -> JSON:
         return {key: IniReader.parse_value(value) for key, value in json.items()}
 
-    def read(self, path: Any) -> JSON:
+    def read(self, path: t.Any) -> JSON:
         config = IniConfigParser()
         if isinstance(path, Path):
             config.read(path)
@@ -78,7 +78,7 @@ class SimpleKeyValueReader(IReader):
     """
 
     @staticmethod
-    def _parse_inf(value: str) -> Optional[str]:
+    def _parse_inf(value: str) -> t.Optional[str]:
         try:
             return "+Inf" if float(value) == float("inf") else None
         except ValueError:
@@ -87,7 +87,7 @@ class SimpleKeyValueReader(IReader):
     # noinspection PyProtectedMember
     @staticmethod
     def parse_value(value: str) -> SUB_JSON:
-        parsed: Union[str, int, float, bool, None] = SimpleKeyValueReader._parse_inf(value)
+        parsed: t.Union[str, int, float, bool, None] = SimpleKeyValueReader._parse_inf(value)
         parsed = parsed if parsed is not None else IniReader._parse_bool(value)
         parsed = parsed if parsed is not None else IniReader._parse_int(value)
         parsed = parsed if parsed is not None else IniReader._parse_float(value)
@@ -97,7 +97,7 @@ class SimpleKeyValueReader(IReader):
     def _parse_json(json: JSON) -> JSON:
         return {key: SimpleKeyValueReader.parse_value(value) for key, value in json.items()}
 
-    def read(self, path: Any) -> JSON:
+    def read(self, path: t.Any) -> JSON:
         json = {}
         ini_file = path.open(mode="r", encoding="utf-8") if isinstance(path, Path) else path
         with ini_file:
@@ -135,11 +135,11 @@ class MultipleSameKeysIniReader(IReader):
     multikey is not compatible with standard .ini readers
     """
 
-    def __init__(self, special_keys: Optional[List[str]] = None) -> None:
+    def __init__(self, special_keys: t.Optional[t.List[str]] = None) -> None:
         self.special_keys = special_keys or []
         super().__init__()
 
-    def read(self, path: Any) -> JSON:
+    def read(self, path: t.Any) -> JSON:
         data: JSON = {}
         section = ""
         ini_file = path.open(mode="r", encoding="utf-8") if isinstance(path, Path) else path
