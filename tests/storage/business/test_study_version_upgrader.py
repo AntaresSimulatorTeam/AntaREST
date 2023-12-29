@@ -9,7 +9,7 @@ from typing import List
 import pandas
 import pytest
 
-from antarest.study.storage.rawstudy.io.reader import MultipleSameKeysIniReader
+from antarest.study.storage.rawstudy.io.reader.ini_reader import MultipleSameKeysIniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata import DUPLICATE_KEYS
 from antarest.study.storage.study_upgrader import UPGRADE_METHODS, InvalidUpgrade, upgrade_study

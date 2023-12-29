@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Optional, Tuple, cast
 
 from antarest.core.model import JSON
 from antarest.core.utils.utils import extract_file_to_tmp_dir
-from antarest.study.storage.rawstudy.io.reader import IniReader, MultipleSameKeysIniReader
+from antarest.study.storage.rawstudy.io.reader.ini_reader import IniReader, MultipleSameKeysIniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     BindingConstraintDTO,
     BindingConstraintFrequency,

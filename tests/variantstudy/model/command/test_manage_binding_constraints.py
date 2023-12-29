@@ -2,7 +2,7 @@ from unittest.mock import Mock
 
 import numpy as np
 
-from antarest.study.storage.rawstudy.io.reader import IniReader
+from antarest.study.storage.rawstudy.io.reader.ini_reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.command_extractor import CommandExtractor

@@ -27,7 +27,7 @@ from antarest.study.model import (
     StudyDownloadLevelDTO,
     StudyMetadataDTO,
 )
-from antarest.study.storage.rawstudy.io.reader import IniReader
+from antarest.study.storage.rawstudy.io.reader.ini_reader import IniReader
 from antarest.study.storage.rawstudy.io.writer.ini_writer import IniWriter
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree

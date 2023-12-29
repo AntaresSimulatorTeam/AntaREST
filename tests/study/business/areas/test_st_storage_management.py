@@ -19,7 +19,7 @@ from antarest.core.model import PublicMode
 from antarest.login.model import Group, User
 from antarest.study.business.areas.st_storage_management import STStorageManager
 from antarest.study.model import RawStudy, Study, StudyContentStatus
-from antarest.study.storage.rawstudy.io.reader import IniReader
+from antarest.study.storage.rawstudy.io.reader.ini_reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import STStorageGroup
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree

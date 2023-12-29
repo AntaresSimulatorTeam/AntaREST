@@ -26,7 +26,7 @@ from antarest.core.utils.utils import assert_this, unzip
 from antarest.launcher.adapters.abstractlauncher import AbstractLauncher, LauncherCallbacks, LauncherInitException
 from antarest.launcher.adapters.log_manager import LogTailManager
 from antarest.launcher.model import JobStatus, LauncherParametersDTO, LogType, XpansionParametersDTO
-from antarest.study.storage.rawstudy.io.reader import IniReader
+from antarest.study.storage.rawstudy.io.reader.ini_reader import IniReader
 from antarest.study.storage.rawstudy.io.writer.ini_writer import IniWriter
 
 logger = logging.getLogger(__name__)

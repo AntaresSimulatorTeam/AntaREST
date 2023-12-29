@@ -3,7 +3,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from antarest.study.storage.rawstudy.io.reader import MultipleSameKeysIniReader
+from antarest.study.storage.rawstudy.io.reader.ini_reader import MultipleSameKeysIniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import ChildNotFoundError
