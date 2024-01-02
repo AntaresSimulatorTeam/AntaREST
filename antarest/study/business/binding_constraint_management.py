@@ -6,10 +6,10 @@ from antarest.core.exceptions import (
     ConstraintAlreadyExistError,
     ConstraintIdNotFoundError,
     DuplicateConstraintName,
+    InvalidConstraintName,
     MissingDataError,
     NoBindingConstraintError,
     NoConstraintError,
-    InvalidConstraintName,
 )
 from antarest.matrixstore.model import MatrixData
 from antarest.study.business.utils import execute_or_add_commands

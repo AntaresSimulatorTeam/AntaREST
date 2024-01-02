@@ -726,4 +726,26 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         params = RequestParameters(user=current_user)
         return study_service.invalidate_cache_listing(params)
 
+    @bp.get(
+        "/studies/{uuid}/disk-usage",
+        summary="Compute study disk usage",
+        tags=[APITag.study_management],
+    )
+    def study_disk_usage(
+        uuid: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> int:
+        """
+        Compute disk usage of an input study
+
+        Args:
+        - `uuid`: the UUID of the study whose disk usage is to be retrieved.
+
+        Return:
+        - The disk usage of the study in bytes.
+        """
+        logger.info("Retrieving study disk usage", extra={"user": current_user.id})
+        params = RequestParameters(user=current_user)
+        return study_service.get_disk_usage(uuid=uuid, params=params)
+
     return bp
