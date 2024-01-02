@@ -4,7 +4,6 @@ import io
 import json
 import logging
 import os
-
 from datetime import datetime, timedelta
 from http import HTTPStatus
 from pathlib import Path, PurePosixPath
@@ -129,10 +128,11 @@ logger = logging.getLogger(__name__)
 MAX_MISSING_STUDY_TIMEOUT = 2  # days
 
 
-def get_disk_usage(path: str) -> int:
-    total_size = 0
-    if path.endswith(".zip"):
+def get_disk_usage(path: Union[str, Path]) -> int:
+    path = Path(path)
+    if path.suffix.lower() in {".zip", "7z"}:
         return os.path.getsize(path)
+    total_size = 0
     with os.scandir(path) as it:
         for entry in it:
             if entry.is_file():
