@@ -5,8 +5,10 @@ import pytest
 from antarest.study.service import get_disk_usage
 
 
-def test_get_disk_usage__nominal_case(tmp_path: Path):
-    """Nominal case: the study path in a directory."""
+def test_get_disk_usage__nominal_case(tmp_path: Path) -> None:
+    """
+    This test ensures that the 'get_disk_usage' function handles a typical directory structure correctly.
+    """
     tmp_path.joinpath("input").mkdir()
     ini_data = b"[config]\nkey = value"
     tmp_path.joinpath("input/params.ini").write_bytes(ini_data)
@@ -17,8 +19,10 @@ def test_get_disk_usage__nominal_case(tmp_path: Path):
 
 
 @pytest.mark.parametrize("suffix", [".zip", ".7z", ".ZIP"])
-def test_get_disk__usage_archive(tmp_path: Path, suffix: str):
-    """Test archived files .7z and .zip"""
+def test_get_disk__usage_archive(tmp_path: Path, suffix: str) -> None:
+    """
+    This test ensures that the 'get_disk_usage' function correctly handles archive files (.zip, .7z).
+    """
     compressed_path = tmp_path.joinpath("study").with_suffix(suffix)
     compressed_data = b"dummy archive content"
     compressed_path.write_bytes(compressed_data)
@@ -26,7 +30,9 @@ def test_get_disk__usage_archive(tmp_path: Path, suffix: str):
 
 
 def test_gest_disk_usage__unknown_format(tmp_path: Path) -> None:
-    """Test unusual directories"""
+    """
+    This test ensures that the 'get_disk_usage' function handles unknown directory formats appropriately.
+    """
     path = tmp_path.joinpath("study.dat")
     path.touch()
     with pytest.raises(NotADirectoryError):

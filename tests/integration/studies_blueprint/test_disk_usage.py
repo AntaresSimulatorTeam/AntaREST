@@ -9,14 +9,15 @@ class TestDiskUsage:
         study_id: str,
     ) -> None:
         """
-        we verify the endpoint work:
-        - we get a response
-        - the length of the response json is big enough
+        Verify the functionality of the disk usage endpoint:
+
+        - Ensure a successful response is received.
+        - Confirm that the JSON response is an integer which represent a (big enough) directory size.
         """
         res = client.get(
             f"/v1/studies/{study_id}/disk-usage",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code == 200, res.json()
-        actual = res.json()
-        assert actual > 1000
+        disk_usage = res.json()  # currently: 7.47 Mio on Ubuntu
+        assert 7 * 1024 * 1024 < disk_usage < 8 * 1024 * 1024
