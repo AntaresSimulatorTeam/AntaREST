@@ -1,29 +1,19 @@
 import ast
-from configparser import RawConfigParser
+import configparser
+import typing as t
 from pathlib import Path
-from typing import Any, List, Optional
 
 from antarest.core.model import JSON
-from antarest.study.storage.rawstudy.io.reader import IniReader
 
 
-class IniConfigParser(RawConfigParser):
-    def __init__(self, special_keys: Optional[List[str]] = None) -> None:
+class IniConfigParser(configparser.RawConfigParser):
+    def __init__(self, special_keys: t.Optional[t.List[str]] = None) -> None:
         super().__init__()
         self.special_keys = special_keys
 
     # noinspection SpellCheckingInspection
     def optionxform(self, optionstr: str) -> str:
         return optionstr
-
-    @staticmethod
-    def format_value(value: Any) -> Any:
-        parsed_value = IniReader.parse_value(value)
-        if isinstance(parsed_value, bool):
-            return str(parsed_value).lower()
-        elif isinstance(parsed_value, float):
-            return "%.6f" % parsed_value
-        return value
 
     def _write_line(  # type:ignore
         self,
@@ -66,7 +56,7 @@ class IniWriter:
     Standard INI writer.
     """
 
-    def __init__(self, special_keys: Optional[List[str]] = None):
+    def __init__(self, special_keys: t.Optional[t.List[str]] = None):
         self.special_keys = special_keys
 
     def write(self, data: JSON, path: Path) -> None:

@@ -459,8 +459,6 @@ def test_sta_mini_expansion(storage_service, url: str, expected_output: dict):
 
 @pytest.mark.integration_test
 def test_sta_mini_copy(storage_service) -> None:
-    input_link = "input/links/de/fr.txt"
-
     source_study_name = "STA-mini"
     destination_study_name = "copy-STA-mini"
 

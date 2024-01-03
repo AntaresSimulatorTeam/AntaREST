@@ -2,14 +2,14 @@ import json
 import logging
 import re
 import tempfile
+import typing as t
 import zipfile
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, cast
 
 from antarest.core.model import JSON
 from antarest.core.utils.utils import extract_file_to_tmp_dir
-from antarest.study.storage.rawstudy.io.reader import IniReader, MultipleSameKeysIniReader
+from antarest.study.storage.rawstudy.ini_reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     BindingConstraintDTO,
     BindingConstraintFrequency,
@@ -46,7 +46,7 @@ class FileType(Enum):
     MULTI_INI = "multi_ini"
 
 
-def build(study_path: Path, study_id: str, output_path: Optional[Path] = None) -> "FileStudyTreeConfig":
+def build(study_path: Path, study_id: str, output_path: t.Optional[Path] = None) -> "FileStudyTreeConfig":
     """
     Extracts data from the filesystem to build a study config.
 
@@ -87,8 +87,8 @@ def _extract_data_from_file(
     root: Path,
     inside_root_path: Path,
     file_type: FileType,
-    multi_ini_keys: Optional[List[str]] = None,
-) -> Any:
+    multi_ini_keys: t.Sequence[str] = (),
+) -> t.Any:
     """
     Extract and process data from various types of files.
     """
@@ -104,7 +104,7 @@ def _extract_data_from_file(
             text = output_data_path.read_text(encoding="utf-8")
             return text.splitlines(keepends=False)
         elif file_type == FileType.MULTI_INI:
-            multi_reader = MultipleSameKeysIniReader(multi_ini_keys)
+            multi_reader = IniReader(multi_ini_keys)
             return multi_reader.read(output_data_path)
         elif file_type == FileType.SIMPLE_INI:
             ini_reader = IniReader()
@@ -127,7 +127,7 @@ def _parse_version(path: Path) -> int:
     return version
 
 
-def _parse_parameters(path: Path) -> Tuple[bool, List[str], str]:
+def _parse_parameters(path: Path) -> t.Tuple[bool, t.List[str], str]:
     general = _extract_data_from_file(
         root=path,
         inside_root_path=Path("settings/generaldata.ini"),
@@ -135,14 +135,14 @@ def _parse_parameters(path: Path) -> Tuple[bool, List[str], str]:
     )
 
     store_new_set: bool = general.get("output", {}).get("storenewset", False)
-    archive_input_series: List[str] = [
+    archive_input_series: t.List[str] = [
         e.strip() for e in general.get("output", {}).get("archives", "").strip().split(",") if e.strip()
     ]
     enr_modelling: str = general.get("other preferences", {}).get("renewable-generation-modelling", "aggregated")
     return store_new_set, archive_input_series, enr_modelling
 
 
-def _parse_bindings(root: Path) -> List[BindingConstraintDTO]:
+def _parse_bindings(root: Path) -> t.List[BindingConstraintDTO]:
     bindings = _extract_data_from_file(
         root=root,
         inside_root_path=Path("input/bindingconstraints/bindingconstraints.ini"),
@@ -173,7 +173,7 @@ def _parse_bindings(root: Path) -> List[BindingConstraintDTO]:
     return output_list
 
 
-def _parse_sets(root: Path) -> Dict[str, DistrictSet]:
+def _parse_sets(root: Path) -> t.Dict[str, DistrictSet]:
     obj = _extract_data_from_file(
         root=root,
         inside_root_path=Path("input/areas/sets.ini"),
@@ -191,7 +191,7 @@ def _parse_sets(root: Path) -> Dict[str, DistrictSet]:
     }
 
 
-def _parse_areas(root: Path) -> Dict[str, Area]:
+def _parse_areas(root: Path) -> t.Dict[str, Area]:
     areas = _extract_data_from_file(
         root=root,
         inside_root_path=Path("input/areas/list.txt"),
@@ -201,7 +201,7 @@ def _parse_areas(root: Path) -> Dict[str, Area]:
     return {transform_name_to_id(a): parse_area(root, a) for a in areas}
 
 
-def _parse_outputs(output_path: Path) -> Dict[str, Simulation]:
+def _parse_outputs(output_path: Path) -> t.Dict[str, Simulation]:
     if not output_path.is_dir():
         return {}
     sims = {}
@@ -284,7 +284,7 @@ def parse_simulation(path: Path, canonical_name: str) -> Simulation:
         xpansion = ""
 
     ini_path = path / "about-the-study" / "parameters.ini"
-    reader = MultipleSameKeysIniReader(DUPLICATE_KEYS)
+    reader = IniReader(DUPLICATE_KEYS)
     try:
         obj: JSON = reader.read(ini_path)
     except FileNotFoundError:
@@ -308,10 +308,10 @@ def parse_simulation(path: Path, canonical_name: str) -> Simulation:
     )
 
 
-def get_playlist(config: JSON) -> Optional[Dict[int, float]]:
+def get_playlist(config: JSON) -> t.Optional[t.Dict[int, float]]:
     general_config = config.get("general", {})
-    nb_years = cast(int, general_config.get("nbyears"))
-    playlist_activated = cast(bool, general_config.get("user-playlist", False))
+    nb_years = t.cast(int, general_config.get("nbyears"))
+    playlist_activated = t.cast(bool, general_config.get("user-playlist", False))
     if not playlist_activated:
         return None
     playlist_config = config.get("playlist", {})
@@ -340,13 +340,13 @@ def parse_area(root: Path, area: str) -> "Area":
     )
 
 
-def _parse_thermal(root: Path, area: str) -> List[ThermalConfigType]:
+def _parse_thermal(root: Path, area: str) -> t.List[ThermalConfigType]:
     """
     Parse the thermal INI file, return an empty list if missing.
     """
     version = _parse_version(root)
     relpath = Path(f"input/thermal/clusters/{area}/list.ini")
-    config_dict: Dict[str, Any] = _extract_data_from_file(
+    config_dict: t.Dict[str, t.Any] = _extract_data_from_file(
         root=root, inside_root_path=relpath, file_type=FileType.SIMPLE_INI
     )
     config_list = []
@@ -359,13 +359,13 @@ def _parse_thermal(root: Path, area: str) -> List[ThermalConfigType]:
     return config_list
 
 
-def _parse_renewables(root: Path, area: str) -> List[RenewableConfigType]:
+def _parse_renewables(root: Path, area: str) -> t.List[RenewableConfigType]:
     """
     Parse the renewables INI file, return an empty list if missing.
     """
     version = _parse_version(root)
     relpath = Path(f"input/renewables/clusters/{area}/list.ini")
-    config_dict: Dict[str, Any] = _extract_data_from_file(
+    config_dict: t.Dict[str, t.Any] = _extract_data_from_file(
         root=root,
         inside_root_path=relpath,
         file_type=FileType.SIMPLE_INI,
@@ -380,7 +380,7 @@ def _parse_renewables(root: Path, area: str) -> List[RenewableConfigType]:
     return config_list
 
 
-def _parse_st_storage(root: Path, area: str) -> List[STStorageConfigType]:
+def _parse_st_storage(root: Path, area: str) -> t.List[STStorageConfigType]:
     """
     Parse the short-term storage INI file, return an empty list if missing.
     """
@@ -391,7 +391,7 @@ def _parse_st_storage(root: Path, area: str) -> List[STStorageConfigType]:
         return []
 
     relpath = Path(f"input/st-storage/clusters/{area}/list.ini")
-    config_dict: Dict[str, Any] = _extract_data_from_file(
+    config_dict: t.Dict[str, t.Any] = _extract_data_from_file(
         root=root,
         inside_root_path=relpath,
         file_type=FileType.SIMPLE_INI,
@@ -406,7 +406,7 @@ def _parse_st_storage(root: Path, area: str) -> List[STStorageConfigType]:
     return config_list
 
 
-def _parse_links(root: Path, area: str) -> Dict[str, Link]:
+def _parse_links(root: Path, area: str) -> t.Dict[str, Link]:
     properties_ini = _extract_data_from_file(
         root=root,
         inside_root_path=Path(f"input/links/{area}/properties.ini"),
@@ -415,7 +415,7 @@ def _parse_links(root: Path, area: str) -> Dict[str, Link]:
     return {link: Link.from_json(properties_ini[link]) for link in list(properties_ini.keys())}
 
 
-def _parse_filters_synthesis(root: Path, area: str) -> List[str]:
+def _parse_filters_synthesis(root: Path, area: str) -> t.List[str]:
     optimization = _extract_data_from_file(
         root=root,
         inside_root_path=Path(f"input/areas/{area}/optimization.ini"),
@@ -425,7 +425,7 @@ def _parse_filters_synthesis(root: Path, area: str) -> List[str]:
     return Link.split(filters)
 
 
-def _parse_filters_year(root: Path, area: str) -> List[str]:
+def _parse_filters_year(root: Path, area: str) -> t.List[str]:
     optimization = _extract_data_from_file(
         root=root,
         inside_root_path=Path(f"input/areas/{area}/optimization.ini"),
