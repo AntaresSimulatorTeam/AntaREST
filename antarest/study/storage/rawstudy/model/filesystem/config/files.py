@@ -9,7 +9,7 @@ from pathlib import Path
 
 from antarest.core.model import JSON
 from antarest.core.utils.utils import extract_file_to_tmp_dir
-from antarest.study.storage.rawstudy.ini_reader import IniReader, MultipleSameKeysIniReader
+from antarest.study.storage.rawstudy.ini_reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     BindingConstraintDTO,
     BindingConstraintFrequency,
@@ -104,7 +104,7 @@ def _extract_data_from_file(
             text = output_data_path.read_text(encoding="utf-8")
             return text.splitlines(keepends=False)
         elif file_type == FileType.MULTI_INI:
-            multi_reader = MultipleSameKeysIniReader(multi_ini_keys)
+            multi_reader = IniReader(multi_ini_keys)
             return multi_reader.read(output_data_path)
         elif file_type == FileType.SIMPLE_INI:
             ini_reader = IniReader()
@@ -284,7 +284,7 @@ def parse_simulation(path: Path, canonical_name: str) -> Simulation:
         xpansion = ""
 
     ini_path = path / "about-the-study" / "parameters.ini"
-    reader = MultipleSameKeysIniReader(DUPLICATE_KEYS)
+    reader = IniReader(DUPLICATE_KEYS)
     try:
         obj: JSON = reader.read(ini_path)
     except FileNotFoundError:

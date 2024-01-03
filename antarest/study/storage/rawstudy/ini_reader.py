@@ -54,7 +54,31 @@ class IReader(ABC):
 
 class IniReader(IReader):
     """
-    Common `.ini` file reader. Use for general purpose.
+    Custom `.ini` reader for `.ini` files which have duplicate keys in a section.
+
+    This class is required, to parse `settings/generaldata.ini` files which
+    has duplicate keys like "playlist_year_weight", "playlist_year +", "playlist_year -",
+    "select_var -", "select_var +", in the `[playlist]` section.
+
+    For instance::
+
+        [playlist]
+        playlist_reset = false
+        playlist_year + = 6
+        playlist_year + = 8
+        playlist_year + = 13
+
+    It is also required to parse `input/areas/sets.ini` files which have keys like "+" or "-".
+
+    For instance::
+
+        [all areas]
+        caption = All areas
+        comments = Spatial aggregates on all areas
+        + = east
+        + = west
+
+    This class is not compatible with standard `.ini` readers.
     """
 
     def __init__(self, special_keys: t.Sequence[str] = (), section_name: str = "settings") -> None:
@@ -174,33 +198,3 @@ class SimpleKeyValueReader(IniReader):
         sections = super().read(path)
         obj = t.cast(t.Mapping[str, JSON], sections)
         return obj[self._section_name]
-
-
-class MultipleSameKeysIniReader(IniReader):
-    """
-    Custom `.ini` reader for `.ini` files which have duplicate keys in a section.
-
-    This class is required, to parse `settings/generaldata.ini` files which
-    has duplicate keys like "playlist_year_weight", "playlist_year +", "playlist_year -",
-    "select_var -", "select_var +", in the `[playlist]` section.
-
-    For instance::
-
-        [playlist]
-        playlist_reset = false
-        playlist_year + = 6
-        playlist_year + = 8
-        playlist_year + = 13
-
-    It is also required to parse `input/areas/sets.ini` files which have keys like "+" or "-".
-
-    For instance::
-
-        [all areas]
-        caption = All areas
-        comments = Spatial aggregates on all areas
-        + = east
-        + = west
-
-    This class is not compatible with standard `.ini` readers.
-    """

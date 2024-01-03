@@ -3,7 +3,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from antarest.study.storage.rawstudy.ini_reader import MultipleSameKeysIniReader
+from antarest.study.storage.rawstudy.ini_reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import ChildNotFoundError
@@ -34,7 +34,7 @@ def test_update_config(empty_study: FileStudy, command_context: CommandContext):
     )
     output = update_settings_command.apply(empty_study)
     assert output.status
-    generaldata = MultipleSameKeysIniReader().read(study_path / "settings/generaldata.ini")
+    generaldata = IniReader().read(study_path / "settings/generaldata.ini")
     assert generaldata["optimization"]["simplex-range"] == "day"
     assert generaldata["optimization"]["transmission-capacities"]
 
@@ -45,7 +45,7 @@ def test_update_config(empty_study: FileStudy, command_context: CommandContext):
     )
     output = update_settings_command.apply(empty_study)
     assert output.status
-    area_config = MultipleSameKeysIniReader().read(study_path / f"input/areas/{area1_id}/optimization.ini")
+    area_config = IniReader().read(study_path / f"input/areas/{area1_id}/optimization.ini")
     assert not area_config["nodal optimization"]["other-dispatchable-power"]
 
     # test UpdateConfig with byte object which is necessary with the API PUT /v1/studies/{uuid}/raw
@@ -56,7 +56,7 @@ def test_update_config(empty_study: FileStudy, command_context: CommandContext):
         command_context=command_context,
     )
     command.apply(empty_study)
-    layers = MultipleSameKeysIniReader().read(study_path / "layers/layers.ini")
+    layers = IniReader().read(study_path / "layers/layers.ini")
     assert layers == {"first_layer": {"0": "Nothing"}}
     new_data = json.dumps({"1": False}).encode("utf-8")
     command = UpdateConfig(
@@ -65,7 +65,7 @@ def test_update_config(empty_study: FileStudy, command_context: CommandContext):
         command_context=command_context,
     )
     command.apply(empty_study)
-    layers = MultipleSameKeysIniReader().read(study_path / "layers/layers.ini")
+    layers = IniReader().read(study_path / "layers/layers.ini")
     assert layers == {"first_layer": {"1": False}}
 
 

@@ -2,7 +2,7 @@ import io
 import textwrap
 from pathlib import Path
 
-from antarest.study.storage.rawstudy.ini_reader import IniReader, MultipleSameKeysIniReader, SimpleKeyValueReader
+from antarest.study.storage.rawstudy.ini_reader import IniReader, SimpleKeyValueReader
 
 
 class TestIniReader:
@@ -207,6 +207,31 @@ class TestIniReader:
         }
         assert actual == expected
 
+    def test_read__sets(self) -> None:
+        """
+        It is also required to parse `input/areas/sets.ini` files which have keys like "+" or "-".
+        """
+        reader = IniReader(["+", "-"])
+        actual = reader.read(
+            io.StringIO(
+                """
+                [all areas]
+                caption = All areas
+                comments = Spatial aggregates on all areas
+                + = east
+                + = west
+                """
+            )
+        )
+        expected = {
+            "all areas": {
+                "caption": "All areas",
+                "comments": "Spatial aggregates on all areas",
+                "+": ["east", "west"],
+            },
+        }
+        assert actual == expected
+
 
 class TestSimpleKeyValueReader:
     def test_read(self) -> None:
@@ -245,32 +270,5 @@ class TestSimpleKeyValueReader:
             "yearly-weights": "",
             "additional-constraints": "constraintsFile.txt",
             "timelimit": 1000000000000,
-        }
-        assert actual == expected
-
-
-class TestMultipleSameKeysIniReader:
-    def test_read__sets(self) -> None:
-        """
-        It is also required to parse `input/areas/sets.ini` files which have keys like "+" or "-".
-        """
-        reader = MultipleSameKeysIniReader(["+", "-"])
-        actual = reader.read(
-            io.StringIO(
-                """
-                [all areas]
-                caption = All areas
-                comments = Spatial aggregates on all areas
-                + = east
-                + = west
-                """
-            )
-        )
-        expected = {
-            "all areas": {
-                "caption": "All areas",
-                "comments": "Spatial aggregates on all areas",
-                "+": ["east", "west"],
-            },
         }
         assert actual == expected
