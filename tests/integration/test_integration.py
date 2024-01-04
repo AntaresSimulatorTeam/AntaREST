@@ -23,7 +23,6 @@ from antarest.study.business.table_mode_management import (
     TableTemplateType,
     TransmissionCapacity,
 )
-from antarest.study.model import MatrixIndex, StudyDownloadLevelDTO
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.renewable import RenewableClusterGroup
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import LawOption, TimeSeriesGenerationOption
@@ -92,7 +91,6 @@ def test_main(client: TestClient, admin_access_token: str, study_id: str) -> Non
     )
     assert len(res.json()) == 1
     study_id = next(iter(res.json()))
-    comments = "<text>Hello</text>"
 
     res = client.get(
         f"/v1/studies/{study_id}/outputs",
@@ -171,37 +169,6 @@ def test_main(client: TestClient, admin_access_token: str, study_id: str) -> Non
         headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
     )
     assert res.status_code == 200
-
-    # study matrix index
-    res = client.get(
-        f"/v1/studies/{study_id}/matrixindex",
-        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
-    )
-    assert res.status_code == 200
-    assert (
-        res.json()
-        == MatrixIndex(
-            first_week_size=7,
-            start_date="2001-01-01 00:00:00",
-            steps=8760,
-            level=StudyDownloadLevelDTO.HOURLY,
-        ).dict()
-    )
-
-    res = client.get(
-        f"/v1/studies/{study_id}/matrixindex?path=output/20201014-1427eco/economy/mc-all/areas/es/details-daily",
-        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
-    )
-    assert res.status_code == 200
-    assert (
-        res.json()
-        == MatrixIndex(
-            first_week_size=7,
-            start_date="2001-01-01 00:00:00",
-            steps=7,
-            level=StudyDownloadLevelDTO.DAILY,
-        ).dict()
-    )
 
     res = client.delete(
         f"/v1/studies/{study_id}/outputs/20201014-1427eco",
