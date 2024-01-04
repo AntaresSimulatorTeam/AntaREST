@@ -1,13 +1,12 @@
-"""fix-task_job_cascade_delete
+"""fix task_job cascade delete
 
 Revision ID: 782a481f3414
 Revises: d495746853cc
 Create Date: 2023-12-16 14:26:30.035324
 
 """
-from alembic import op
-import sqlalchemy as sa
-
+import sqlalchemy as sa  # type: ignore
+from alembic import context, op
 
 # revision identifiers, used by Alembic.
 revision = "782a481f3414"
@@ -16,17 +15,41 @@ branch_labels = None
 depends_on = None
 
 
-def upgrade():
-    # Delete logs of tasks older than one week
-    op.execute(
-        """
-        DELETE FROM taskjoblog
-        WHERE task_id IN (SELECT id FROM taskjob WHERE NOW() - creation_date > INTERVAL '1 week');
-        """
-    )
+def upgrade() -> None:
+    connection = context.get_bind()
 
-    # Delete tasks older than one week
-    op.execute(""" DELETE FROM taskjob WHERE NOW() - creation_date > INTERVAL '1 week'; """)
+    # Delete logs of tasks older than one week
+    if "postgresql" in connection.dialect.name:
+        # PostgreSQL-specific code
+        op.execute(
+            """
+            DELETE FROM taskjoblog
+            WHERE task_id IN (SELECT id FROM taskjob WHERE NOW() - creation_date > INTERVAL '1 week');
+            """
+        )
+
+        op.execute(
+            """ 
+            DELETE FROM taskjob WHERE NOW() - creation_date > INTERVAL '1 week';
+            """
+        )
+    elif "sqlite" in connection.dialect.name:
+        # SQLite-specific code
+        op.execute(
+            """
+            DELETE FROM taskjoblog
+            WHERE task_id IN (SELECT id FROM taskjob WHERE creation_date < date('now', '-7 days'));
+            """
+        )
+
+        op.execute(
+            """
+            DELETE FROM taskjob WHERE creation_date < date('now', '-7 days');
+            """
+        )
+    else:
+        # Other databases
+        pass
 
     # Set the name "Unknown task" to tasks that have no name
     op.execute(""" UPDATE taskjob SET name = 'Unknown task' WHERE name IS NULL OR name = ''; """)
@@ -37,26 +60,27 @@ def upgrade():
     # Delete logs of tasks that reference a study that has been deleted
     op.execute(
         """
-        DELETE FROM taskjoblog tjl
+        DELETE FROM taskjoblog
         WHERE
-          tjl.task_id IN (
-          SELECT
-            t.id
-          FROM
-            taskjob t
-          WHERE
-            t.ref_id IS NOT NULL
-            AND t.ref_id NOT IN (SELECT s.id FROM study s));
+          task_id IN (
+            SELECT
+              t.id
+            FROM
+              taskjob t
+            WHERE
+              t.ref_id IS NOT NULL
+              AND t.ref_id NOT IN (SELECT s.id FROM study s)
+          );
         """
     )
 
     # Delete tasks that reference a study that has been deleted (long query)
     op.execute(
         """
-        DELETE FROM taskjob t
+        DELETE FROM taskjob
         WHERE
-          t.ref_id IS NOT NULL
-          AND t.ref_id NOT IN (SELECT s.id FROM study s);
+          ref_id IS NOT NULL
+          AND ref_id NOT IN (SELECT id FROM study);
         """
     )
 
@@ -78,32 +102,32 @@ def upgrade():
         batch_op.drop_constraint("fk_log_taskjob_id", type_="foreignkey")
         batch_op.create_foreign_key("fk_log_taskjob_id", "taskjob", ["task_id"], ["id"], ondelete="CASCADE")
 
-    with op.batch_alter_table('taskjob', schema=None) as batch_op:
-        batch_op.alter_column('name', existing_type=sa.VARCHAR(), nullable=False)
-        batch_op.create_index(batch_op.f('ix_taskjob_creation_date'), ['creation_date'], unique=False)
-        batch_op.create_index(batch_op.f('ix_taskjob_name'), ['name'], unique=False)
-        batch_op.create_index(batch_op.f('ix_taskjob_owner_id'), ['owner_id'], unique=False)
-        batch_op.create_index(batch_op.f('ix_taskjob_ref_id'), ['ref_id'], unique=False)
-        batch_op.create_index(batch_op.f('ix_taskjob_status'), ['status'], unique=False)
-        batch_op.create_index(batch_op.f('ix_taskjob_type'), ['type'], unique=False)
-        batch_op.create_foreign_key('fk_taskjob_identity_id', 'identities', ['owner_id'], ['id'], ondelete='SET NULL')
-        batch_op.create_foreign_key('fk_taskjob_study_id', 'study', ['ref_id'], ['id'], ondelete='CASCADE')
+    with op.batch_alter_table("taskjob", schema=None) as batch_op:
+        batch_op.alter_column("name", existing_type=sa.VARCHAR(), nullable=False)
+        batch_op.create_index(batch_op.f("ix_taskjob_creation_date"), ["creation_date"], unique=False)
+        batch_op.create_index(batch_op.f("ix_taskjob_name"), ["name"], unique=False)
+        batch_op.create_index(batch_op.f("ix_taskjob_owner_id"), ["owner_id"], unique=False)
+        batch_op.create_index(batch_op.f("ix_taskjob_ref_id"), ["ref_id"], unique=False)
+        batch_op.create_index(batch_op.f("ix_taskjob_status"), ["status"], unique=False)
+        batch_op.create_index(batch_op.f("ix_taskjob_type"), ["type"], unique=False)
+        batch_op.create_foreign_key("fk_taskjob_identity_id", "identities", ["owner_id"], ["id"], ondelete="SET NULL")
+        batch_op.create_foreign_key("fk_taskjob_study_id", "study", ["ref_id"], ["id"], ondelete="CASCADE")
 
     # ### end Alembic commands ###
 
 
-def downgrade():
+def downgrade() -> None:
     # ### commands auto generated by Alembic - please adjust! ###
-    with op.batch_alter_table('taskjob', schema=None) as batch_op:
-        batch_op.drop_constraint('fk_taskjob_study_id', type_='foreignkey')
-        batch_op.drop_constraint('fk_taskjob_identity_id', type_='foreignkey')
-        batch_op.drop_index(batch_op.f('ix_taskjob_type'))
-        batch_op.drop_index(batch_op.f('ix_taskjob_status'))
-        batch_op.drop_index(batch_op.f('ix_taskjob_ref_id'))
-        batch_op.drop_index(batch_op.f('ix_taskjob_owner_id'))
-        batch_op.drop_index(batch_op.f('ix_taskjob_name'))
-        batch_op.drop_index(batch_op.f('ix_taskjob_creation_date'))
-        batch_op.alter_column('name', existing_type=sa.VARCHAR(), nullable=True)
+    with op.batch_alter_table("taskjob", schema=None) as batch_op:
+        batch_op.drop_constraint("fk_taskjob_study_id", type_="foreignkey")
+        batch_op.drop_constraint("fk_taskjob_identity_id", type_="foreignkey")
+        batch_op.drop_index(batch_op.f("ix_taskjob_type"))
+        batch_op.drop_index(batch_op.f("ix_taskjob_status"))
+        batch_op.drop_index(batch_op.f("ix_taskjob_ref_id"))
+        batch_op.drop_index(batch_op.f("ix_taskjob_owner_id"))
+        batch_op.drop_index(batch_op.f("ix_taskjob_name"))
+        batch_op.drop_index(batch_op.f("ix_taskjob_creation_date"))
+        batch_op.alter_column("name", existing_type=sa.VARCHAR(), nullable=True)
 
     with op.batch_alter_table("taskjoblog", schema=None) as batch_op:
         batch_op.drop_constraint("fk_log_taskjob_id", type_="foreignkey")
