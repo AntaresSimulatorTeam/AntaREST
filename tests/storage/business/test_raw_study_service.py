@@ -17,7 +17,6 @@ from antarest.core.model import PublicMode
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, StudyAdditionalData
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
-from antarest.study.storage.utils import get_default_workspace_path
 
 
 def build_config(
@@ -139,7 +138,7 @@ def test_check_errors():
     metadata = RawStudy(
         id="study",
         workspace=DEFAULT_WORKSPACE_NAME,
-        path=str(get_default_workspace_path(config) / "study"),
+        path=str(config.get_workspace_path() / "study"),
     )
     assert study_service.check_errors(metadata) == ["Hello"]
 
@@ -218,7 +217,7 @@ def test_create(tmp_path: Path, project_path: Path) -> None:
     metadata = RawStudy(
         id="study1",
         workspace=DEFAULT_WORKSPACE_NAME,
-        path=str(get_default_workspace_path(config) / "study1"),
+        path=str(config.get_workspace_path() / "study1"),
         version="720",
         created_at=datetime.datetime.now(),
         updated_at=datetime.datetime.now(),
@@ -257,7 +256,7 @@ def test_create_study_versions(tmp_path: str, project_path) -> None:
         metadata = RawStudy(
             id=f"study{version}",
             workspace=DEFAULT_WORKSPACE_NAME,
-            path=str(get_default_workspace_path(config) / f"study{version}"),
+            path=str(config.get_workspace_path() / f"study{version}"),
             version=version,
             created_at=datetime.datetime.now(),
             updated_at=datetime.datetime.now(),

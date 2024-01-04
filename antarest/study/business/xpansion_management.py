@@ -7,11 +7,12 @@ import typing as t
 import zipfile
 
 from fastapi import HTTPException, UploadFile
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Extra, Field, ValidationError, root_validator, validator
 
 from antarest.core.exceptions import BadZipBinary
 from antarest.core.model import JSON
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
+from antarest.study.business.utils import AllOptionalMetaclass
 from antarest.study.model import Study
 from antarest.study.storage.rawstudy.model.filesystem.bucket_node import BucketNode
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -39,34 +40,34 @@ class Master(EnumIgnoreCase):
     RELAXED = "relaxed"
 
 
-class CutType(EnumIgnoreCase):
-    AVERAGE = "average"
-    YEARLY = "yearly"
-    WEEKLY = "weekly"
-
-
 class Solver(EnumIgnoreCase):
     CBC = "Cbc"
     COIN = "Coin"
     XPRESS = "Xpress"
 
 
-class MaxIteration(EnumIgnoreCase):
-    INF = "+Inf"
+class XpansionSensitivitySettings(BaseModel):
+    """
+    A DTO representing the sensitivity analysis settings used for Xpansion.
 
+    The sensitivity analysis is optional.
 
-class XpansionSensitivitySettingsDTO(BaseModel):
-    epsilon: float = 10000.0
-    projection: t.List[str] = Field(default_factory=list)
-    capex: bool = False
+    Attributes:
+        epsilon: Max deviation from optimum (€).
+        projection: List of candidate names to project (the candidate names should be in "candidates.ini" file).
+        capex: Whether to include CAPEX in the sensitivity analysis.
+    """
+
+    epsilon: float = Field(default=0, ge=0, description="Max deviation from optimum (€)")
+    projection: t.List[str] = Field(default_factory=list, description="List of candidate names to project")
+    capex: bool = Field(default=False, description="Whether to include capex in the sensitivity analysis")
 
     @validator("projection", pre=True)
     def projection_validation(cls, v: t.Optional[t.Sequence[str]]) -> t.Sequence[str]:
         return [] if v is None else v
 
 
-# noinspection SpellCheckingInspection
-class XpansionSettingsDTO(BaseModel):
+class XpansionSettings(BaseModel, extra=Extra.ignore, validate_assignment=True, allow_population_by_field_name=True):
     """
     A data transfer object representing the general settings used for Xpansion.
 
@@ -78,54 +79,152 @@ class XpansionSettingsDTO(BaseModel):
         yearly_weights: Path of the Monte-Carlo weights file for the solution.
         additional_constraints: Path of the additional constraints file for the solution.
         relaxed_optimality_gap: Threshold to switch from relaxed to integer master.
-        cut_type: The type of cut used in the Benders decomposition.
-        ampl_solver: The solver used by AMPL.
-        ampl_presolve: The pre-solve setting used by AMPL.
-        ampl_solve_bounds_frequency: The frequency with which to solve bounds using AMPL.
         relative_gap: Tolerance on relative gap for the solution.
         batch_size: Amount of batches in the Benders decomposition.
         separation_parameter: The separation parameter used in the Benders decomposition.
         solver: The solver used to solve the master and the sub-problems in the Benders decomposition.
         timelimit: The timelimit (in seconds) of the Benders step.
-        log_level: The severity of the solver's log.
-        sensitivity_config: The sensitivity configuration for Xpansion.
+        log_level: The severity of the solver's logs in range [0, 3].
+        sensitivity_config: The sensitivity analysis configuration for Xpansion, if any.
 
     Raises:
         ValueError: If the `relaxed_optimality_gap` attribute is not a float
         or a string ending with "%" and a valid float.
+        ValueError: If the `max_iteration` attribute is not a valid integer.
     """
 
-    optimality_gap: t.Optional[float] = Field(default=1, ge=0)
+    # https://antares-xpansion.readthedocs.io/en/stable/user-guide/get-started/settings-definition/#master
+    master: Master = Field(default=Master.INTEGER, description="Master problem resolution mode")
 
-    max_iteration: t.Optional[t.Union[int, MaxIteration]] = Field(default=MaxIteration.INF, ge=0)
+    # https://antares-xpansion.readthedocs.io/en/stable/user-guide/get-started/settings-definition/#uc_type
+    uc_type: UcType = Field(default=UcType.EXPANSION_FAST, description="Unit commitment type")
 
-    uc_type: UcType = UcType.EXPANSION_FAST
-    master: Master = Master.INTEGER
-    yearly_weights: t.Optional[str] = Field(None, alias="yearly-weights")
-    additional_constraints: t.Optional[str] = Field(None, alias="additional-constraints")
-    relaxed_optimality_gap: t.Optional[t.Union[float, str]] = Field(None, alias="relaxed-optimality-gap")
-    cut_type: t.Optional[CutType] = Field(None, alias="cut-type")
-    ampl_solver: t.Optional[str] = Field(None, alias="ampl.solver")
-    ampl_presolve: t.Optional[int] = Field(None, alias="ampl.presolve")
-    ampl_solve_bounds_frequency: t.Optional[int] = Field(None, alias="ampl.solve_bounds_frequency")
-    relative_gap: t.Optional[float] = Field(default=None, ge=0)
-    batch_size: t.Optional[int] = Field(default=0, ge=0)
-    separation_parameter: t.Optional[float] = Field(default=0.5, ge=0, le=1)
-    solver: t.Optional[Solver] = None
-    timelimit: t.Optional[int] = 1000000000000  # 1e12
-    log_level: t.Optional[int] = 0
-    sensitivity_config: t.Optional[XpansionSensitivitySettingsDTO] = None
+    # https://antares-xpansion.readthedocs.io/en/stable/user-guide/get-started/settings-definition/#optimality_gap
+    optimality_gap: float = Field(default=1, ge=0, description="Absolute optimality gap (€)")
 
-    @validator("relaxed_optimality_gap")
-    def relaxed_optimality_gap_validation(cls, v: t.Optional[t.Union[float, str]]) -> t.Optional[t.Union[float, str]]:
-        if isinstance(v, float):
-            return v
-        if isinstance(v, str):
-            stripped_v = v.strip()
-            if stripped_v.endswith("%") and float(stripped_v[:-1]):
-                return v
-            raise ValueError("season_correlation is not allowed for 'thermal' type")
-        return v
+    # https://antares-xpansion.readthedocs.io/en/stable/user-guide/get-started/settings-definition/#relative_gap
+    relative_gap: float = Field(default=1e-6, ge=0, description="Relative optimality gap")
+
+    # https://antares-xpansion.readthedocs.io/en/stable/user-guide/get-started/settings-definition/#relaxed_optimality_gap
+    relaxed_optimality_gap: float = Field(default=1e-5, ge=0, description="Relative optimality gap for relaxation")
+
+    # https://antares-xpansion.readthedocs.io/en/stable/user-guide/get-started/settings-definition/#max_iteration
+    max_iteration: int = Field(default=1000, gt=0, description="Maximum number of iterations")
+
+    # https://antares-xpansion.readthedocs.io/en/stable/user-guide/get-started/settings-definition/#solver
+    solver: Solver = Field(default=Solver.XPRESS, description="Solver")
+
+    # https://antares-xpansion.readthedocs.io/en/stable/user-guide/get-started/settings-definition/#log_level
+    log_level: int = Field(default=0, ge=0, le=3, description="Log level in range [0, 3]")
+
+    # https://antares-xpansion.readthedocs.io/en/stable/user-guide/get-started/settings-definition/#separation_parameter
+    separation_parameter: float = Field(default=0.5, gt=0, le=1, description="Separation parameter in range ]0, 1]")
+
+    # https://antares-xpansion.readthedocs.io/en/stable/user-guide/get-started/settings-definition/#batch_size
+    batch_size: int = Field(default=96, ge=0, description="Number of batches")
+
+    yearly_weights: str = Field(
+        "",
+        alias="yearly-weights",
+        description="Yearly weights file",
+    )
+    additional_constraints: str = Field(
+        "",
+        alias="additional-constraints",
+        description="Additional constraints file",
+    )
+
+    # (deprecated field)
+    timelimit: int = int(1e12)
+
+    # The sensitivity analysis is optional
+    sensitivity_config: t.Optional[XpansionSensitivitySettings] = None
+
+    @root_validator(pre=True)
+    def normalize_values(cls, values: t.MutableMapping[str, t.Any]) -> t.MutableMapping[str, t.Any]:
+        if "relaxed-optimality-gap" in values:
+            values["relaxed_optimality_gap"] = values.pop("relaxed-optimality-gap")
+
+        relaxed_optimality_gap = values.get("relaxed_optimality_gap")
+        if relaxed_optimality_gap and isinstance(relaxed_optimality_gap, str):
+            relaxed_optimality_gap = relaxed_optimality_gap.strip()
+            if relaxed_optimality_gap.endswith("%"):
+                # Don't divide by 100, because the value is already a percentage.
+                values["relaxed_optimality_gap"] = float(relaxed_optimality_gap[:-1])
+            else:
+                values["relaxed_optimality_gap"] = float(relaxed_optimality_gap)
+
+        separation_parameter = values.get("separation_parameter")
+        if separation_parameter and isinstance(separation_parameter, str):
+            separation_parameter = separation_parameter.strip()
+            if separation_parameter.endswith("%"):
+                values["separation_parameter"] = float(separation_parameter[:-1]) / 100
+            else:
+                values["separation_parameter"] = float(separation_parameter)
+
+        if "max_iteration" in values:
+            max_iteration = float(values["max_iteration"])
+            if max_iteration == float("inf"):
+                values["max_iteration"] = 1000
+
+        return values
+
+
+class GetXpansionSettings(XpansionSettings):
+    """
+    DTO object used to get the Xpansion settings.
+    """
+
+    @classmethod
+    def from_config(cls, config_obj: JSON) -> "GetXpansionSettings":
+        """
+        Create a GetXpansionSettings object from a JSON object.
+
+        First, make an attempt to validate the JSON object.
+        If it fails, try to read the settings without validation,
+        so that the user can fix the issue in the form.
+
+        Args:
+            config_obj: The JSON object to read.
+
+        Returns:
+            The object which may contains extra attributes or invalid values.
+        """
+        try:
+            return cls(**config_obj)
+        except ValidationError:
+            return cls.construct(**config_obj)
+
+
+class UpdateXpansionSettings(XpansionSettings, metaclass=AllOptionalMetaclass):
+    """
+    DTO object used to update the Xpansion settings.
+
+    Fields with a value of `None` are ignored, this allows a partial update of the settings.
+    For that reason the fields "yearly-weights" and "additional-constraints" must
+    be set to "" instead of `None` if you want to remove the file.
+    """
+
+    # note: for some reason, the alias is not taken into account when using the metaclass,
+    # so we have to redefine the fields with the alias.
+
+    # On the other hand, we make these fields mandatory, because there is an anomaly on the front side:
+    # When the user does not select any file, the front sends a request without the "yearly-weights"
+    # or "additional-constraints" field, instead of sending the field with an empty value.
+    # This is not a problem as long as the front sends a request with all the fields (PUT case),
+    # but it is a problem for partial requests (PATCH case).
+
+    yearly_weights: str = Field(
+        "",
+        alias="yearly-weights",
+        description="Yearly weights file",
+    )
+
+    additional_constraints: str = Field(
+        "",
+        alias="additional-constraints",
+        description="Additional constraints file",
+    )
 
 
 class XpansionCandidateDTO(BaseModel):
@@ -235,34 +334,18 @@ class XpansionManager:
                     )
                     raise BadZipBinary("Only zip file are allowed.")
 
-            study_version = file_study.config.version
-
-            xpansion_settings = {
-                "optimality_gap": 1,
-                "max_iteration": "+Inf",
-                "uc_type": "expansion_fast",
-                "master": "integer",
-                "yearly-weights": None,
-                "additional-constraints": None,
-            }
-
-            if study_version < 800:
-                xpansion_settings["relaxed-optimality-gap"] = 1e6
-                xpansion_settings["cut-type"] = "yearly"
-                xpansion_settings["ampl.solver"] = "cbc"
-                xpansion_settings["ampl.presolve"] = 0
-                xpansion_settings["ampl.solve_bounds_frequency"] = 1000000
+            xpansion_settings = XpansionSettings()
+            settings_obj = xpansion_settings.dict(by_alias=True, exclude_none=True, exclude={"sensitivity_config"})
+            if xpansion_settings.sensitivity_config:
+                sensitivity_obj = xpansion_settings.sensitivity_config.dict(by_alias=True, exclude_none=True)
             else:
-                xpansion_settings["relative_gap"] = 1e-12
-                xpansion_settings["solver"] = Solver.CBC.value
-                xpansion_settings["batch_size"] = 0
-                xpansion_settings["separation_parameter"] = 0.5
+                sensitivity_obj = {}
 
             xpansion_configuration_data = {
                 "user": {
                     "expansion": {
-                        "settings": xpansion_settings,
-                        "sensitivity": {"sensitivity_in": {}},
+                        "settings": settings_obj,
+                        "sensitivity": {"sensitivity_in": sensitivity_obj},
                         "candidates": {},
                         "capa": {},
                         "weights": {},
@@ -278,61 +361,50 @@ class XpansionManager:
         file_study = self.study_storage_service.get_storage(study).get_raw(study)
         file_study.tree.delete(["user", "expansion"])
 
-    def get_xpansion_settings(self, study: Study) -> XpansionSettingsDTO:
+    def get_xpansion_settings(self, study: Study) -> GetXpansionSettings:
         logger.info(f"Getting xpansion settings for study '{study.id}'")
         file_study = self.study_storage_service.get_storage(study).get_raw(study)
-        settings_obj = file_study.tree.get(["user", "expansion", "settings"])
+        config_obj = file_study.tree.get(["user", "expansion", "settings"])
         with contextlib.suppress(KeyError):
-            settings_obj["sensitivity_config"] = file_study.tree.get(
+            config_obj["sensitivity_config"] = file_study.tree.get(
                 ["user", "expansion", "sensitivity", "sensitivity_in"]
             )
-        return XpansionSettingsDTO(**settings_obj)
-
-    @staticmethod
-    def _assert_xpansion_settings_additional_constraints_is_valid(
-        file_study: FileStudy,
-        additional_constraints: str,
-    ) -> None:
-        if additional_constraints:
-            try:
-                file_study.tree.get(
-                    [
-                        "user",
-                        "expansion",
-                        "constraints",
-                        additional_constraints,
-                    ]
-                )
-            except ChildNotFoundError:
-                raise XpansionFileNotFoundError(
-                    f"The 'additional-constraints' file '{additional_constraints}' does not exist"
-                )
+        return GetXpansionSettings.from_config(config_obj)
 
     def update_xpansion_settings(
-        self, study: Study, new_xpansion_settings_dto: XpansionSettingsDTO
-    ) -> XpansionSettingsDTO:
+        self, study: Study, new_xpansion_settings: UpdateXpansionSettings
+    ) -> GetXpansionSettings:
         logger.info(f"Updating xpansion settings for study '{study.id}'")
-        file_study = self.study_storage_service.get_storage(study).get_raw(study)
-        if new_xpansion_settings_dto.additional_constraints:
-            self._assert_xpansion_settings_additional_constraints_is_valid(
-                file_study, new_xpansion_settings_dto.additional_constraints
-            )
 
-        file_study.tree.save(
-            new_xpansion_settings_dto.dict(by_alias=True, exclude={"sensitivity_config"}),
-            ["user", "expansion", "settings"],
-        )
-        if new_xpansion_settings_dto.sensitivity_config:
-            file_study.tree.save(
-                new_xpansion_settings_dto.sensitivity_config.dict(),
-                [
-                    "user",
-                    "expansion",
-                    "sensitivity",
-                    "sensitivity_in",
-                ],
-            )
-        return new_xpansion_settings_dto
+        actual_settings = self.get_xpansion_settings(study)
+        settings_fields = new_xpansion_settings.dict(by_alias=False, exclude_none=True, exclude={"sensitivity_config"})
+        updated_settings = actual_settings.copy(deep=True, update=settings_fields)
+
+        file_study = self.study_storage_service.get_storage(study).get_raw(study)
+
+        # Specific handling of the additional constraints file:
+        # - If the file name is `None`, it means that the user does not want to select an additional constraints file.
+        # - If the file name is empty, it means that the user wants to deselect the additional constraints file,
+        #   but he does not want to delete it from the expansion configuration folder.
+        # - If the file name is not empty, it means that the user wants to select an additional constraints file.
+        #   It is therefore necessary to check that the file exists.
+        constraints_file = new_xpansion_settings.additional_constraints
+        if constraints_file:
+            try:
+                constraints_url = ["user", "expansion", "constraints", constraints_file]
+                file_study.tree.get(constraints_url)
+            except ChildNotFoundError:
+                msg = f"Additional constraints file '{constraints_file}' does not exist"
+                raise XpansionFileNotFoundError(msg) from None
+
+        config_obj = updated_settings.dict(by_alias=True, exclude={"sensitivity_config"})
+        file_study.tree.save(config_obj, ["user", "expansion", "settings"])
+
+        if new_xpansion_settings.sensitivity_config:
+            sensitivity_obj = new_xpansion_settings.sensitivity_config.dict(by_alias=True)
+            file_study.tree.save(sensitivity_obj, ["user", "expansion", "sensitivity", "sensitivity_in"])
+
+        return self.get_xpansion_settings(study)
 
     @staticmethod
     def _assert_link_profile_are_files(
@@ -431,7 +503,8 @@ class XpansionManager:
             or (bool_max_investment and not bool_max_units and not bool_unit_size)
         ):
             raise BadCandidateFormatError(
-                "The candidate is not well formatted.\nIt should either contain max-investment or (max-units and unit-size)."
+                "The candidate is not well formatted."
+                "\nIt should either contain max-investment or (max-units and unit-size)."
             )
 
     def _assert_candidate_is_correct(
@@ -454,24 +527,25 @@ class XpansionManager:
         )
         assert xpansion_candidate_dto.annual_cost_per_mw
 
-    def add_candidate(self, study: Study, xpansion_candidate_dto: XpansionCandidateDTO) -> None:
+    def add_candidate(self, study: Study, xpansion_candidate: XpansionCandidateDTO) -> XpansionCandidateDTO:
         file_study = self.study_storage_service.get_storage(study).get_raw(study)
 
-        candidates = file_study.tree.get(["user", "expansion", "candidates"])
+        candidates_obj = file_study.tree.get(["user", "expansion", "candidates"])
 
-        self._assert_candidate_is_correct(candidates, file_study, xpansion_candidate_dto)
+        self._assert_candidate_is_correct(candidates_obj, file_study, xpansion_candidate)
 
         # Find next candidate id
-        max_id = 2 if not candidates else int(sorted(candidates.keys()).pop()) + 2
+        max_id = 2 if not candidates_obj else int(sorted(candidates_obj.keys()).pop()) + 2
         next_id = next(
-            str(i) for i in range(1, max_id) if str(i) not in candidates
+            str(i) for i in range(1, max_id) if str(i) not in candidates_obj
         )  # The primary key is actually the name, the id does not matter and is never checked.
 
-        logger.info(f"Adding candidate '{xpansion_candidate_dto.name}' to study '{study.id}'")
-        candidates[next_id] = xpansion_candidate_dto.dict(by_alias=True, exclude_none=True)
-        candidates_data = {"user": {"expansion": {"candidates": candidates}}}
+        logger.info(f"Adding candidate '{xpansion_candidate.name}' to study '{study.id}'")
+        candidates_obj[next_id] = xpansion_candidate.dict(by_alias=True, exclude_none=True)
+        candidates_data = {"user": {"expansion": {"candidates": candidates_obj}}}
         file_study.tree.save(candidates_data)
         # Should we add a field in the study config containing the xpansion candidates like the links or the areas ?
+        return self.get_candidate(study, xpansion_candidate.name)
 
     def get_candidate(self, study: Study, candidate_name: str) -> XpansionCandidateDTO:
         logger.info(f"Getting candidate '{candidate_name}' of study '{study.id}'")
@@ -524,11 +598,12 @@ class XpansionManager:
         logger.info(f"Deleting candidate '{candidate_name}' from study '{study.id}'")
         file_study.tree.delete(["user", "expansion", "candidates", candidate_id])
 
-    def update_xpansion_constraints_settings(self, study: Study, constraints_file_name: t.Optional[str]) -> None:
-        self.update_xpansion_settings(
-            study,
-            XpansionSettingsDTO.parse_obj({"additional-constraints": constraints_file_name}),
-        )
+    def update_xpansion_constraints_settings(self, study: Study, constraints_file_name: str) -> GetXpansionSettings:
+        # Make sure filename is not `None`, because `None` values are ignored by the update.
+        constraints_file_name = constraints_file_name or ""
+        # noinspection PyArgumentList
+        xpansion_settings = UpdateXpansionSettings(additional_constraints=constraints_file_name)
+        return self.update_xpansion_settings(study, xpansion_settings)
 
     def _raw_file_dir(self, raw_file_type: XpansionResourceFileType) -> t.List[str]:
         if raw_file_type == XpansionResourceFileType.CONSTRAINTS:
@@ -566,8 +641,8 @@ class XpansionManager:
 
         for file in files:
             content = file.file.read()
-            if type(content) != bytes:
-                content = content.encode()
+            if isinstance(content, str):
+                content = content.encode(encoding="utf-8")
             buffer[file.filename] = content
 
         file_study.tree.save(data)
@@ -633,7 +708,7 @@ class XpansionManager:
         root_files = [
             key
             for key, node in t.cast(FolderNode, file_study.tree.get_node(["user", "expansion"])).build().items()
-            if key not in registered_filenames and type(node) != BucketNode
+            if key not in registered_filenames and not isinstance(node, BucketNode)
         ]
         return root_files
 

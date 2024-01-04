@@ -69,7 +69,7 @@ function SelectSingle(props: Props) {
         }
       >
         {optional && (
-          <MenuItem value="" key="None">
+          <MenuItem key="None" value="">
             {t("global.none")}
           </MenuItem>
         )}

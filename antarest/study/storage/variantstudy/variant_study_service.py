@@ -41,13 +41,7 @@ from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
-from antarest.study.storage.utils import (
-    assert_permission,
-    export_study_flat,
-    get_default_workspace_path,
-    is_managed,
-    remove_from_cache,
-)
+from antarest.study.storage.utils import assert_permission, export_study_flat, is_managed, remove_from_cache
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
@@ -536,7 +530,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
 
         assert_permission(params.user, study, StudyPermissionType.READ)
         new_id = str(uuid4())
-        study_path = str(get_default_workspace_path(self.config) / new_id)
+        study_path = str(self.config.get_workspace_path() / new_id)
         if study.additional_data:
             # noinspection PyArgumentList
             additional_data = StudyAdditionalData(
@@ -832,7 +826,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             The newly created study.
         """
         new_id = str(uuid4())
-        study_path = str(get_default_workspace_path(self.config) / new_id)
+        study_path = str(self.config.get_workspace_path() / new_id)
         if src_meta.additional_data:
             # noinspection PyArgumentList
             additional_data = StudyAdditionalData(

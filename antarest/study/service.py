@@ -65,7 +65,12 @@ from antarest.study.business.table_mode_management import TableModeManager
 from antarest.study.business.thematic_trimming_management import ThematicTrimmingManager
 from antarest.study.business.timeseries_config_management import TimeSeriesConfigManager
 from antarest.study.business.utils import execute_or_add_commands
-from antarest.study.business.xpansion_management import XpansionCandidateDTO, XpansionManager, XpansionSettingsDTO
+from antarest.study.business.xpansion_management import (
+    GetXpansionSettings,
+    UpdateXpansionSettings,
+    XpansionCandidateDTO,
+    XpansionManager,
+)
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     NEW_DEFAULT_STUDY_VERSION,
@@ -104,14 +109,7 @@ from antarest.study.storage.study_upgrader import (
     should_study_be_denormalized,
     upgrade_study,
 )
-from antarest.study.storage.utils import (
-    assert_permission,
-    get_default_workspace_path,
-    get_start_date,
-    is_managed,
-    remove_from_cache,
-    study_matcher,
-)
+from antarest.study.storage.utils import assert_permission, get_start_date, is_managed, remove_from_cache, study_matcher
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command.update_comments import UpdateComments
@@ -633,7 +631,7 @@ class StudyService:
             str: The ID of the newly created study.
         """
         sid = str(uuid4())
-        study_path = str(get_default_workspace_path(self.config) / sid)
+        study_path = self.config.get_workspace_path() / sid
 
         author = self.get_user_name(params)
 
@@ -1314,7 +1312,7 @@ class StudyService:
             BadArchiveContent: If the archive is corrupted or in an unknown format.
         """
         sid = str(uuid4())
-        path = str(get_default_workspace_path(self.config) / sid)
+        path = str(self.config.get_workspace_path() / sid)
         study = RawStudy(
             id=sid,
             workspace=DEFAULT_WORKSPACE_NAME,
@@ -2052,7 +2050,7 @@ class StudyService:
         self._assert_study_unarchived(study)
         self.xpansion_manager.delete_xpansion_configuration(study)
 
-    def get_xpansion_settings(self, uuid: str, params: RequestParameters) -> XpansionSettingsDTO:
+    def get_xpansion_settings(self, uuid: str, params: RequestParameters) -> GetXpansionSettings:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
         return self.xpansion_manager.get_xpansion_settings(study)
@@ -2060,9 +2058,9 @@ class StudyService:
     def update_xpansion_settings(
         self,
         uuid: str,
-        xpansion_settings_dto: XpansionSettingsDTO,
+        xpansion_settings_dto: UpdateXpansionSettings,
         params: RequestParameters,
-    ) -> XpansionSettingsDTO:
+    ) -> GetXpansionSettings:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
         self._assert_study_unarchived(study)
@@ -2073,7 +2071,7 @@ class StudyService:
         uuid: str,
         xpansion_candidate_dto: XpansionCandidateDTO,
         params: RequestParameters,
-    ) -> None:
+    ) -> XpansionCandidateDTO:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
@@ -2110,9 +2108,9 @@ class StudyService:
     def update_xpansion_constraints_settings(
         self,
         uuid: str,
-        constraints_file_name: Optional[str],
+        constraints_file_name: str,
         params: RequestParameters,
-    ) -> None:
+    ) -> GetXpansionSettings:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
