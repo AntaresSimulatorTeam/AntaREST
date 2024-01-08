@@ -44,7 +44,7 @@ from antarest.study.model import (
     TimeSerie,
     TimeSeriesData,
 )
-from antarest.study.repository import StudyMetadataRepository
+from antarest.study.repository import StudyMetadataRepository, StudyFilter
 from antarest.study.service import MAX_MISSING_STUDY_TIMEOUT, StudyService, StudyUpgraderTask, UserHasNotPermissionError
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -178,10 +178,9 @@ def test_study_listing(db_session: Session) -> None:
     # 2- having an exact total of queries equals to 1
     with DBStatementRecorder(db_session.bind) as db_recorder:
         studies = service.get_studies_information(
-            managed=False,
-            name=None,
-            workspace=None,
-            folder=None,
+            study_filter=StudyFilter(
+                managed=False,
+            ),
             params=RequestParameters(user=JWTUser(id=2, impersonator=2, type="users")),
         )
     assert len(db_recorder.sql_statements) == 1, str(db_recorder)
@@ -196,10 +195,9 @@ def test_study_listing(db_session: Session) -> None:
     # 2- the `put` method of `cache` was used once
     with DBStatementRecorder(db_session.bind) as db_recorder:
         studies = service.get_studies_information(
-            managed=False,
-            name=None,
-            workspace=None,
-            folder=None,
+            study_filter=StudyFilter(
+                managed=False,
+            ),
             params=RequestParameters(user=JWTUser(id=2, impersonator=2, type="users")),
         )
     assert len(db_recorder.sql_statements) == 0, str(db_recorder)
@@ -214,10 +212,9 @@ def test_study_listing(db_session: Session) -> None:
     # 2- having an exact total of queries equals to 1
     with DBStatementRecorder(db_session.bind) as db_recorder:
         studies = service.get_studies_information(
-            managed=True,
-            name=None,
-            workspace=None,
-            folder=None,
+            study_filter=StudyFilter(
+                managed=False,
+            ),
             params=RequestParameters(user=JWTUser(id=2, impersonator=2, type="users")),
         )
     assert len(db_recorder.sql_statements) == 1, str(db_recorder)

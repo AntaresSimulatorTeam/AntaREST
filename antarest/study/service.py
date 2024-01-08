@@ -4,6 +4,7 @@ import io
 import json
 import logging
 import os
+import typing as t
 from datetime import datetime, timedelta
 from http import HTTPStatus
 from pathlib import Path, PurePosixPath
@@ -92,7 +93,7 @@ from antarest.study.model import (
     StudyMetadataPatchDTO,
     StudySimResultDTO,
 )
-from antarest.study.repository import StudyMetadataRepository
+from antarest.study.repository import StudyFilter, StudyMetadataRepository, StudyPagination, StudySortBy
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import ChildNotFoundError
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
@@ -438,44 +439,33 @@ class StudyService:
 
     def get_studies_information(
         self,
-        managed: bool,
-        name: Optional[str],
-        workspace: Optional[str],
-        folder: Optional[str],
         params: RequestParameters,
+        study_filter: StudyFilter,
+        sort_by: StudySortBy = StudySortBy.DATE_DESC,
+        pagination: StudyPagination = StudyPagination(),
     ) -> Dict[str, StudyMetadataDTO]:
         """
-        Get information for all studies.
+        Get information for matching studies of a search query.
         Args:
-            managed: indicate if just managed studies should be retrieved
-            name: optional name of the study to match
-            folder: optional folder prefix of the study to match
-            workspace: optional workspace of the study to match
             params: request parameters
+            study_filter: filtering parameters
+            sort_by: how to sort the db query results
+            pagination: set offset and limit for db query
 
         Returns: List of study information
-
         """
-        logger.info("Fetching study listing")
+        logger.info("Retrieving matching studies")
         studies: Dict[str, StudyMetadataDTO] = {}
-        cache_key = CacheConstants.STUDY_LISTING.value
-        cached_studies = self.cache_service.get(cache_key)
-        if cached_studies:
-            for k in cached_studies:
-                studies[k] = StudyMetadataDTO.parse_obj(cached_studies[k])
-        else:
-            if managed:
-                logger.info("Retrieving all managed studies")
-                all_studies = self.repository.get_all(managed=True)
-            else:
-                logger.info("Retrieving all studies")
-                all_studies = self.repository.get_all()
-            logger.info("Studies retrieved")
-            for study in all_studies:
-                study_metadata = self._try_get_studies_information(study)
-                if study_metadata is not None:
-                    studies[study_metadata.id] = study_metadata
-            self.cache_service.put(cache_key, studies)
+        matching_studies = self.repository.get_all(
+            study_filter=study_filter,
+            sort_by=sort_by,
+            pagination=pagination,
+        )
+        logger.info("Studies retrieved")
+        for study in matching_studies:
+            study_metadata = self._try_get_studies_information(study)
+            if study_metadata is not None:
+                studies[study_metadata.id] = study_metadata
         return {
             s.id: s
             for s in filter(
@@ -485,8 +475,7 @@ class StudyService:
                     StudyPermissionType.READ,
                     raising=False,
                 )
-                and study_matcher(name, workspace, folder)(study_dto)
-                and (not managed or study_dto.managed),
+                and (not study_filter.managed or study_dto.managed),
                 studies.values(),
             )
         }
@@ -2150,7 +2139,8 @@ class StudyService:
         if params.user and not params.user.is_site_admin():
             logger.error(f"User {params.user.id} is not site admin")
             raise UserHasNotPermissionError()
-        studies = self.repository.get_all(managed=False)
+        studies = self.repository.get_all(study_filter=StudyFilter(managed=False))
+
         for study in studies:
             storage = self.storage_service.raw_study_service
             storage.check_and_update_study_version_in_database(study)

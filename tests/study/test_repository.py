@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session  # type: ignore
 
 from antarest.core.interfaces.cache import ICache
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy
-from antarest.study.repository import StudyMetadataRepository
+from antarest.study.repository import StudyFilter, StudyMetadataRepository
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from tests.db_statement_recorder import DBStatementRecorder
 
@@ -58,7 +58,9 @@ def test_repository_get_all(
     # 2- accessing studies attributes does require additional queries to db
     # 3- having an exact total of queries equals to 1
     with DBStatementRecorder(db_session.bind) as db_recorder:
-        all_studies = repository.get_all(managed=managed, studies_ids=studies_ids, exists=exists)
+        all_studies = repository.get_all(
+            study_filter=StudyFilter(managed=managed, studies_ids=studies_ids, exists=exists)
+        )
         _ = [s.owner for s in all_studies]
         _ = [s.groups for s in all_studies]
         _ = [s.additional_data for s in all_studies]

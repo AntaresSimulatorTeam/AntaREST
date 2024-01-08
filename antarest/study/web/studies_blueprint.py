@@ -2,9 +2,9 @@ import io
 import logging
 from http import HTTPStatus
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Sequence
 
-from fastapi import APIRouter, Depends, File, HTTPException, Request
+from fastapi import APIRouter, Depends, File, HTTPException, Query, Request
 from markupsafe import escape
 
 from antarest.core.config import Config
@@ -26,10 +26,14 @@ from antarest.study.model import (
     StudyMetadataPatchDTO,
     StudySimResultDTO,
 )
+from antarest.study.repository import StudyFilter, StudyPagination, StudySortBy
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 
 logger = logging.getLogger(__name__)
+
+
+SEQUENCE_SEPARATOR = ","
 
 
 def create_study_routes(study_service: StudyService, ftm: FileTransferManager, config: Config) -> APIRouter:
@@ -53,16 +57,108 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         response_model=Dict[str, StudyMetadataDTO],
     )
     def get_studies(
-        managed: bool = False,
-        name: str = "",
-        folder: str = "",
-        workspace: str = "",
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
-        logger.info("Fetching study list", extra={"user": current_user.id})
+        sort_by: str = Query(
+            "-date",
+            description="- `sort_by`: Sort studies based on their name or date."
+            "  - `+name`: Sort by name in ascending order (case-insensitive)."
+            "  - `-name`: Sort by name in descending order (case-insensitive)."
+            "  - `+date`: Sort by creation date in ascending order."
+            " - `-date`: Sort by creation date in descending order.",
+            alias="sortBy",
+        ),
+        page_nb: int = Query(0, description="Page number (starting from 0).", alias="pageNb"),
+        page_size: int = Query(100, description="Number of studies per page.", alias="pageSize"),
+        name: str = Query(
+            "",
+            description="Filter studies based on their name."
+            "Case-insensitive search for studies whose name starts with the specified value.",
+            alias="name",
+        ),
+        managed: Optional[bool] = Query(
+            None, description="Filter studies based on their management status.", alias="managed"
+        ),
+        archived: Optional[bool] = Query(
+            None, description="Filter studies based on their archive status.", alias="archived"
+        ),
+        variant: Optional[bool] = Query(
+            None, description="Filter studies based on their variant status.", alias="variant"
+        ),
+        versions: str = Query(
+            "",
+            description="Filter studies based on their version(s)."
+            " Provide a comma-separated list of versions for filtering.",
+            alias="versions",
+        ),
+        users: str = Query(
+            "",
+            description="Filter studies based on user(s)."
+            " Provide a comma-separated list of group IDs for filtering.",
+            alias="users",
+        ),
+        groups: str = Query(
+            "",
+            description="Filter studies based on group(s)."
+            " Provide a comma-separated list of group IDs for filtering.",
+            alias="groups",
+        ),
+        tags: str = Query(
+            "",
+            description="Filter studies based on tag(s)." " Provide a comma-separated list of tags for filtering.",
+            alias="tags",
+        ),
+        studies_ids: str = Query(
+            "",
+            description="Filter studies based on their ID(s)."
+            "  Provide a comma-separated list of study IDs for filtering.",
+            alias="studiesIds",
+        ),
+        exists: bool = Query(
+            None,
+            description="Filter studies based on their existence on disk."
+            "  - not set: No specific filtering."
+            "  - `True`: Filter for studies existing on disk."
+            " - `False`: Filter for studies not existing on disk.",
+            alias="exists",
+        ),
+        workspace: str = Query(
+            "",
+            description="Filter studies based on their workspace."
+            " Search for studies whose workspace matches the specified value.",
+            alias="workspace",
+        ),
+        folder: str = Query(
+            "",
+            description="Filter studies based on their folder."
+            " Search for studies whose folder starts with the specified value.",
+            alias="folder",
+        ),
+    ) -> Dict[str, StudyMetadataDTO]:
+        logger.info("Fetching for matching studies", extra={"user": current_user.id})
         params = RequestParameters(user=current_user)
-        available_studies = study_service.get_studies_information(managed, name, workspace, folder, params)
-        return available_studies
+
+        study_filter: StudyFilter = StudyFilter(
+            name=name,
+            managed=managed,
+            archived=archived,
+            variant=variant,
+            versions=versions.split(SEQUENCE_SEPARATOR) if versions else (),
+            users=users.split(SEQUENCE_SEPARATOR) if users else (),
+            groups=groups.split(SEQUENCE_SEPARATOR) if groups else (),
+            tags=tags.split(SEQUENCE_SEPARATOR) if tags else (),
+            studies_ids=studies_ids.split(SEQUENCE_SEPARATOR) if studies_ids else None,
+            exists=exists,
+            workspace=workspace,
+            folder=folder,
+        )
+
+        matching_studies = study_service.get_studies_information(
+            params=params,
+            study_filter=study_filter,
+            sort_by=StudySortBy(sort_by.lower()),
+            pagination=StudyPagination(page_nb=page_nb, page_size=page_size),
+        )
+        return matching_studies
 
     @bp.get(
         "/studies/{uuid}/comments",

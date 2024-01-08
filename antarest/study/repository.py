@@ -1,16 +1,94 @@
 import datetime
 import logging
 import typing as t
+from enum import Enum
 
+from pydantic import BaseModel
 from sqlalchemy import and_, or_  # type: ignore
 from sqlalchemy.orm import Session, joinedload, with_polymorphic  # type: ignore
 
 from antarest.core.interfaces.cache import CacheConstants, ICache
 from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.login.model import Group, Identity
 from antarest.study.common.utils import get_study_information
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, Study, StudyAdditionalData
 
 logger = logging.getLogger(__name__)
+
+
+def escape_like(string: str, escape_char: str = "\\") -> str:
+    """
+    Escape the string parameter used in SQL LIKE expressions.
+
+    ::
+
+        from sqlalchemy_utils import escape_like
+
+
+        query = session.query(User).filter(
+            User.name.ilike(escape_like('John'))
+        )
+
+
+    :param string: a string to escape
+    :param escape_char: escape character
+    """
+    return string.replace(escape_char, escape_char * 2).replace("%", escape_char + "%").replace("_", escape_char + "_")
+
+
+class StudyFilter(BaseModel, frozen=True):
+    """
+    Study filter
+
+    Attrs:
+        - name: optional name regex of the study to match
+        - managed: indicate if just managed studies should be retrieved
+        - archived: optional if the study is archived
+        - variant: optional if the study is raw study
+        - versions: versions to filter by
+        - users: users to filter by
+        - groups: groups to filter by
+        - tags: tags to filter by
+        - studies_ids: optional list of ids to be matched, **note that if empty the query result will be empty also**
+        - exists: if raw study missing
+        - workspace: optional workspace of the study
+        - folder: optional folder prefix of the study
+    """
+
+    name: str = ""
+    managed: t.Optional[bool] = None
+    archived: t.Optional[bool] = None
+    variant: t.Optional[bool] = None
+    versions: t.Sequence[str] = ()
+    users: t.Sequence[str] = ()
+    groups: t.Sequence[str] = ()
+    tags: t.Sequence[str] = ()
+    studies_ids: t.Optional[t.Sequence[str]] = None
+    exists: t.Optional[bool] = None
+    workspace: str = ""
+    folder: str = ""
+
+
+class StudySortBy(str, Enum):
+    """
+    How to sort the results of studies query results
+    """
+
+    NAME_ASC = "+name"
+    NAME_DESC = "-name"
+    DATE_ASC = "+date"
+    DATE_DESC = "-date"
+
+
+class StudyPagination(BaseModel, frozen=True):
+    """
+    Pagination of a studies query results
+    page_nb: offset
+    page_size: SQL limit
+    """
+
+    page_nb: int = 0
+    page_size: int = 100
 
 
 class StudyMetadataRepository:
@@ -101,10 +179,17 @@ class StudyMetadataRepository:
 
     def get_all(
         self,
-        managed: t.Optional[bool] = None,
-        studies_ids: t.Optional[t.List[str]] = None,
-        exists: bool = True,
+        study_filter: StudyFilter = StudyFilter(),
+        sort_by: StudySortBy = StudySortBy.DATE_DESC,
+        pagination: StudyPagination = StudyPagination(),
     ) -> t.List[Study]:
+        """
+        This function goal is to create a search engine throughout the studies with optimal
+        runtime.
+
+        Args:
+
+        """
         # When we fetch a study, we also need to fetch the associated owner and groups
         # to check the permissions of the current user efficiently.
         # We also need to fetch the additional data to display the study information
@@ -112,19 +197,55 @@ class StudyMetadataRepository:
         entity = with_polymorphic(Study, "*")
 
         q = self.session.query(entity)
-        if exists:
+        if study_filter.exists:
             q = q.filter(RawStudy.missing.is_(None))
         q = q.options(joinedload(entity.owner))
         q = q.options(joinedload(entity.groups))
         q = q.options(joinedload(entity.additional_data))
-        if managed is not None:
-            if managed:
+        if study_filter.managed is not None:
+            if study_filter.managed:
                 q = q.filter(or_(entity.type == "variantstudy", RawStudy.workspace == DEFAULT_WORKSPACE_NAME))
             else:
                 q = q.filter(entity.type == "rawstudy")
                 q = q.filter(RawStudy.workspace != DEFAULT_WORKSPACE_NAME)
-        if studies_ids is not None:
-            q = q.filter(entity.id.in_(studies_ids))
+        if study_filter.studies_ids is not None:
+            q = q.filter(entity.id.in_(study_filter.studies_ids))
+        if study_filter.users:
+            q = q.filter(Identity.name.in_(study_filter.users))
+        if study_filter.groups:
+            q = q.filter(Group.name.in_(study_filter.groups))
+        if study_filter.archived is not None:
+            q = q.filter(entity.archived == study_filter.archived)
+        if study_filter.name:
+            regex = f"%{escape_like(study_filter.name)}%"
+            q = q.filter(entity.name.ilike(regex))
+        if study_filter.folder:
+            regex = f"{escape_like(study_filter.folder)}%"
+            q = q.filter(entity.folder.ilike(regex))
+        if study_filter.workspace:
+            regex = f"%{escape_like(study_filter.workspace)}%"
+            q = q.filter(RawStudy.workspace.ilike(regex))
+        if study_filter.variant is not None:
+            if study_filter.variant:
+                q = q.filter(entity.type == "variantstudy")
+            else:
+                q = q.filter(entity.type == "rawstudy")
+        if study_filter.versions:
+            q = q.filter(entity.version.in_(study_filter.versions))
+
+        # sorting
+        if sort_by == StudySortBy.DATE_DESC:
+            q = q.order_by(entity.created_at.desc())
+        elif sort_by == StudySortBy.DATE_ASC:
+            q = q.order_by(entity.created_at.asc())
+        elif sort_by == StudySortBy.NAME_DESC:
+            q = q.order_by(entity.name.desc())
+        elif sort_by == StudySortBy.NAME_ASC:
+            q = q.order_by(entity.name.asc())
+
+        # pagination
+        q = q.offset(pagination.page_nb * pagination.page_size).limit(pagination.page_size)
+
         studies: t.List[Study] = q.all()
         return studies
 
