@@ -1271,7 +1271,7 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
 
     # --- TableMode START ---
 
-    table_mode_url = f"/v1/studies/{study_id}/tablemode/form"
+    table_mode_url = f"/v1/studies/{study_id}/tablemode"
 
     # Table Mode - Area
 

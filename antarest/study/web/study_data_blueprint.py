@@ -757,14 +757,14 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         study_service.ts_config_manager.set_field_values(study, field_values)
 
     @bp.get(
-        path="/studies/{uuid}/tablemode/form",
+        path="/studies/{uuid}/tablemode",
         tags=[APITag.study_data],
         summary="Get table data for table form",
         # `Any` because `Union[AreaColumns, LinkColumns]` not working
         response_model=Dict[str, Dict[str, Any]],
         response_model_exclude_none=True,
     )
-    def get_table_data(
+    def get_table_mode(
         uuid: str,
         table_type: TableTemplateType,
         columns: str,
@@ -780,11 +780,11 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         return study_service.table_mode_manager.get_table_data(study, table_type, columns.split(","))
 
     @bp.put(
-        path="/studies/{uuid}/tablemode/form",
+        path="/studies/{uuid}/tablemode",
         tags=[APITag.study_data],
         summary="Set table data with values from table form",
     )
-    def set_table_data(
+    def set_table_mode(
         uuid: str,
         table_type: TableTemplateType,
         data: Dict[str, ColumnsModelTypes],
