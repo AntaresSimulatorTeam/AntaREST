@@ -22,7 +22,8 @@ function Table(props: TableProps) {
     tableRef,
     ...restProps
   } = props;
-  const { setValue } = useFormContextPlus();
+
+  const { setValues } = useFormContextPlus();
 
   const rowHeaderWidth = useMemo(
     () =>
@@ -47,9 +48,18 @@ function Table(props: TableProps) {
 
   const handleAfterChange: HandsontableProps["afterChange"] =
     function afterChange(this: unknown, changes, ...rest): void {
-      changes?.forEach(([row, column, _, nextValue]) => {
-        setValue(`${data[row].id}.${column}`, nextValue);
-      });
+      const newValues = changes?.reduce(
+        (acc, [row, column, _, nextValue]) => {
+          acc[`${data[row].id}.${column}`] = nextValue;
+          return acc;
+        },
+        {} as Record<string, unknown>,
+      );
+
+      if (newValues) {
+        setValues(newValues);
+      }
+
       restProps.afterChange?.call(this, changes, ...rest);
     };
 
@@ -59,6 +69,7 @@ function Table(props: TableProps) {
 
   return (
     <Handsontable
+      height="auto"
       allowInvalid={false}
       allowEmpty={false}
       rowHeaderWidth={rowHeaderWidth}

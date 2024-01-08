@@ -41,7 +41,6 @@ import {
 } from "./utils";
 import useDebouncedState from "../../../hooks/useDebouncedState";
 import usePrompt from "../../../hooks/usePrompt";
-import { mergeSxProp } from "../../../utils/muiUtils";
 import { SubmitHandlerPlus, UseFormReturnPlus } from "./types";
 import FormContext from "./FormContext";
 import useFormApiPlus from "./useFormApiPlus";
@@ -319,7 +318,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
   return (
     <Box
       {...formProps}
-      sx={mergeSxProp({ pt: 1 }, sx)}
+      sx={sx}
       component="form"
       onSubmit={handleFormSubmit}
       className={clsx("Form", className)}
@@ -351,7 +350,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
         </Box>
       )}
       {showFooter && (
-        <Box sx={{ display: "flex" }} className="Form__Footer">
+        <Box sx={{ display: "flex", pt: 1 }} className="Form__Footer">
           {showSubmitButton && (
             <>
               <LoadingButton
