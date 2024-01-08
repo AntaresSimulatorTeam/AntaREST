@@ -1,7 +1,9 @@
 import datetime
 import logging
 import typing as t
+from typing import List, Tuple, Union
 
+from sqlalchemy import select, func
 from sqlalchemy import and_, or_  # type: ignore
 from sqlalchemy.orm import Session, joinedload, with_polymorphic  # type: ignore
 
@@ -135,13 +137,18 @@ class StudyMetadataRepository:
         studies: t.List[RawStudy] = query.all()
         return studies
 
-    def delete(self, id: str) -> None:
+    def delete(self, ids: Union[str, List[str]]) -> None:
         logger.debug(f"Deleting study {id}")
+        if isinstance(ids, str):
+            # if id is str, convert it to list with one element
+            ids = [ids]
         session = self.session
-        u: Study = session.query(Study).get(id)
-        session.delete(u)
+        for study_id in ids:
+            study: Study = session.query(Study).get(study_id)
+            if study:
+                session.delete(study)
+                self._remove_study_from_cache_listing(study_id)
         session.commit()
-        self._remove_study_from_cache_listing(id)
 
     def _remove_study_from_cache_listing(self, study_id: str) -> None:
         try:
@@ -172,3 +179,20 @@ class StudyMetadataRepository:
                 self.cache_service.invalidate(CacheConstants.STUDY_LISTING.value)
             except Exception as e:
                 logger.error("Failed to invalidate listing cache", exc_info=e)
+
+    def list_duplicates(self) -> List[Tuple[str, str]]:
+        """
+            Get list of duplicates as tuples (id, path).
+        """
+        session = self.session
+        subquery = (
+            session.query(Study.path)
+            .group_by(Study.path)
+            .having(func.count()>1)
+            .subquery()
+        )
+        query = (
+            session.query(Study.id, Study.path)
+            .filter(Study.path.in_(subquery))
+        )
+        return query.all()
