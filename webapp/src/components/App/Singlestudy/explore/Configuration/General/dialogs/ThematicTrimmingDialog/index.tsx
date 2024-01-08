@@ -9,7 +9,7 @@ import {
   UseFormReturnPlus,
 } from "../../../../../../../common/Form/types";
 import SearchFE from "../../../../../../../common/fieldEditors/SearchFE";
-import { isSearchMatching } from "../../../../../../../../utils/textUtils";
+import { isSearchMatching } from "../../../../../../../../utils/stringUtils";
 import FormDialog from "../../../../../../../common/dialogs/FormDialog";
 import {
   getFieldNames,

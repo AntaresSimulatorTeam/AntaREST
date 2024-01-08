@@ -11,7 +11,7 @@ import {
 } from "../../../../../../../redux/selectors";
 import useAppDispatch from "../../../../../../../redux/hooks/useAppDispatch";
 import AreaConfig from "./AreaConfig";
-import { isSearchMatching } from "../../../../../../../utils/textUtils";
+import { isSearchMatching } from "../../../../../../../utils/stringUtils";
 import { setCurrentArea } from "../../../../../../../redux/ducks/studySyntheses";
 import { StudyMapNode } from "../../../../../../../redux/ducks/studyMaps";
 
