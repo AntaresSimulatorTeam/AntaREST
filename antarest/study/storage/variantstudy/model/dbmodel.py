@@ -77,7 +77,7 @@ class VariantStudy(Study):
 
     id: str = Column(
         String(36),
-        ForeignKey("study.id"),
+        ForeignKey("study.id", ondelete="CASCADE"),
         primary_key=True,
     )
     generation_task: t.Optional[str] = Column(String(), nullable=True)

@@ -272,10 +272,10 @@ class StudyMetadataRepository:
         studies: t.Sequence[RawStudy] = query.all()
         return studies
 
-    def delete(self, id: str) -> None:
+    def delete(self, id_: str, *ids: str) -> None:
+        ids = (id_,) + ids
         session = self.session
-        u: Study = session.query(Study).get(id)
-        session.delete(u)
+        session.query(Study).filter(Study.id.in_(ids)).delete(synchronize_session=False)
         session.commit()
 
     def update_tags(self, study: Study, new_tags: t.Sequence[str]) -> None:
@@ -292,3 +292,12 @@ class StudyMetadataRepository:
         study.tags = [Tag(label=tag) for tag in new_labels] + existing_tags
         self.session.merge(study)
         self.session.commit()
+
+    def list_duplicates(self) -> t.List[t.Tuple[str, str]]:
+        """
+        Get list of duplicates as tuples (id, path).
+        """
+        session = self.session
+        subquery = session.query(Study.path).group_by(Study.path).having(func.count() > 1).subquery()
+        query = session.query(Study.id, Study.path).filter(Study.path.in_(subquery))
+        return t.cast(t.List[t.Tuple[str, str]], query.all())

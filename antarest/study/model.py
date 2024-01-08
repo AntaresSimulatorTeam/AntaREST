@@ -130,7 +130,7 @@ class StudyAdditionalData(Base):  # type:ignore
 
     study_id = Column(
         String(36),
-        ForeignKey("study.id"),
+        ForeignKey("study.id", ondelete="CASCADE"),
         primary_key=True,
     )
     author = Column(String(255), default="Unknown")
@@ -230,7 +230,7 @@ class RawStudy(Study):
 
     id = Column(
         String(36),
-        ForeignKey("study.id"),
+        ForeignKey("study.id", ondelete="CASCADE"),
         primary_key=True,
     )
     content_status = Column(Enum(StudyContentStatus))
