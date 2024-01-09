@@ -103,6 +103,7 @@
   "proxy": "http://localhost:8080",
   "homepage": "/",
   "devDependencies": {
+    "@babel/plugin-proposal-private-property-in-object": "7.21.11",
     "@total-typescript/ts-reset": "0.5.1",
     "@types/debug": "4.1.9",
     "@types/js-cookie": "3.0.4",
@@ -129,6 +130,7 @@
     "eslint-plugin-react": "7.33.2",
     "eslint-plugin-react-hooks": "4.6.0",
     "husky": "8.0.3",
+    "immutable": "3.8.2",
     "jest-sonar-reporter": "2.0.0",
     "prettier": "3.0.3",
     "process": "0.11.10",
