@@ -24,7 +24,7 @@ import BindingConstraints from "./Singlestudy/explore/Modelization/BindingConstr
 import Links from "./Singlestudy/explore/Modelization/Links";
 import Areas from "./Singlestudy/explore/Modelization/Areas";
 import Map from "./Singlestudy/explore/Modelization/Map";
-import DebugView from "./Singlestudy/explore/Modelization/DebugView";
+import Debug from "./Singlestudy/explore/Modelization/Debug";
 import Xpansion from "./Singlestudy/explore/Xpansion";
 import Candidates from "./Singlestudy/explore/Xpansion/Candidates";
 import XpansionSettings from "./Singlestudy/explore/Xpansion/Settings";
@@ -140,7 +140,6 @@ function App() {
                             path="bindingcontraint"
                             element={<BindingConstraints />}
                           />
-                          <Route path="debug" element={<DebugView />} />
                           <Route index element={<Map />} />
                           <Route path="*" element={<Map />} />
                         </Route>
@@ -165,6 +164,7 @@ function App() {
                           <Route path=":outputId" element={<ResultDetails />} />
                           <Route index element={<Results />} />
                         </Route>
+                        <Route path="debug" element={<Debug />} />
                         <Route path="*" element={<Modelization />}>
                           <Route index element={<Map />} />
                         </Route>

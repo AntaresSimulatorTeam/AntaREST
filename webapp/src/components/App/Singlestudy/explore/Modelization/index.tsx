@@ -58,10 +58,6 @@ function Modelization() {
         label: t("study.bindingconstraints"),
         path: `${basePath}/bindingcontraint`,
       },
-      {
-        label: t("study.debug"),
-        path: `${basePath}/debug`,
-      },
     ];
   }, [areaId, areas, dispatch, navigate, study?.id, t]);
 
