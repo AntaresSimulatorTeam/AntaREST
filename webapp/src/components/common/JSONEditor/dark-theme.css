@@ -102,6 +102,7 @@ div.jsoneditor-contextmenu .jsoneditor-menu button {
   background-color: #222333;
   color: #ffffff; /* White color for context menu items */
 }
+
 .jsoneditor-contextmenu .jsoneditor-menu li button.jsoneditor-selected,
 .jsoneditor-contextmenu .jsoneditor-menu li button.jsoneditor-selected:focus,
 .jsoneditor-contextmenu .jsoneditor-menu li button.jsoneditor-selected:hover {
@@ -123,7 +124,6 @@ div.jsoneditor-contextmenu .jsoneditor-menu button {
 ////////////////////////////////////////////////////////////////
 // Ace editor
 ////////////////////////////////////////////////////////////////
-
 
 div.ace_jsoneditor .ace_editor {
   background-color: #222333;

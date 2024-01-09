@@ -32,5 +32,3 @@ export const Content = styled(Paper)(({ theme }) => ({
   overflow: "auto",
   position: "relative",
 }));
-
-export default {};
