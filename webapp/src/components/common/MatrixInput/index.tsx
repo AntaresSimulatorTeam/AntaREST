@@ -115,7 +115,8 @@ function MatrixInput({
     if (source !== "loadData" && source !== "updateData") {
       try {
         if (change.length > 0) {
-          await editMatrix(study.id, url, change);
+          const sanitizedUrl = url.startsWith("/") ? url.substring(1) : url;
+          await editMatrix(study.id, sanitizedUrl, change);
           enqueueSnackbar(t("matrix.success.matrixUpdate"), {
             variant: "success",
           });
