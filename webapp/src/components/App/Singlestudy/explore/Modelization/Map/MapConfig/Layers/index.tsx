@@ -10,7 +10,7 @@ import {
   getStudyMapLayersById,
 } from "../../../../../../../../redux/selectors";
 import { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
-import FormTable from "../../../../../../../common/FormTable";
+import TableForm from "../../../../../../../common/TableForm";
 import CreateLayerDialog from "./CreateLayerDialog";
 import { updateStudyMapLayer } from "../../../../../../../../redux/ducks/studyMaps";
 import useAppDispatch from "../../../../../../../../redux/hooks/useAppDispatch";
@@ -124,7 +124,7 @@ function Layers() {
       </Box>
       <Box sx={{ flexGrow: 1, overflow: "hidden" }}>
         {columns.length > 0 && (
-          <FormTable
+          <TableForm
             key={JSON.stringify(defaultValues)}
             defaultValues={defaultValues}
             tableProps={{

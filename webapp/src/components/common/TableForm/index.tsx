@@ -2,7 +2,7 @@ import * as RA from "ramda-adjunct";
 import { ColumnSettings } from "handsontable/settings";
 import { startCase } from "lodash";
 import * as R from "ramda";
-import type { SxProps } from "@mui/material";
+import { Box, type SxProps } from "@mui/material";
 import type { Theme } from "@mui/system";
 import { useMemo } from "react";
 import { DefaultValues } from "react-hook-form";
@@ -18,12 +18,14 @@ type TableFieldValuesByRow = Record<
   Record<string, string | boolean | number>
 >;
 
-export interface FormTableProps<
+export interface TableFormProps<
   TFieldValues extends TableFieldValuesByRow = TableFieldValuesByRow,
 > {
   defaultValues: DefaultValues<TFieldValues>;
   onSubmit?: FormProps<TFieldValues>["onSubmit"];
   onInvalid?: FormProps<TFieldValues>["onInvalid"];
+  autoSubmit?: FormProps<TFieldValues>["autoSubmit"];
+  enableUndoRedo?: FormProps<TFieldValues>["enableUndoRedo"];
   formApiRef?: FormProps<TFieldValues>["apiRef"];
   sx?: SxProps<Theme>;
   tableProps?: Omit<TableProps, "data" | "columns" | "colHeaders"> & {
@@ -34,13 +36,15 @@ export interface FormTableProps<
   };
 }
 
-function FormTable<TFieldValues extends TableFieldValuesByRow>(
-  props: FormTableProps<TFieldValues>,
+function TableForm<TFieldValues extends TableFieldValuesByRow>(
+  props: TableFormProps<TFieldValues>,
 ) {
   const {
     defaultValues,
     onSubmit,
     onInvalid,
+    autoSubmit = true, // TODO: change to false after testing all table forms
+    enableUndoRedo,
     sx,
     formApiRef,
     tableProps = {},
@@ -84,25 +88,33 @@ function FormTable<TFieldValues extends TableFieldValuesByRow>(
       config={{ defaultValues }}
       onSubmit={onSubmit}
       onInvalid={onInvalid}
-      autoSubmit
+      autoSubmit={autoSubmit}
+      enableUndoRedo={enableUndoRedo}
       sx={mergeSxProp(
         {
           width: 1,
           height: 1,
-          pt: 0,
-          overflow: "hidden", // https://handsontable.com/docs/12.0/grid-size/#define-the-size-in-css-styles
+          display: "flex",
+          flexDirection: "column",
         },
         sx,
       )}
       apiRef={formApiRef}
     >
-      <Table
-        data={defaultData}
-        columns={formattedColumns}
-        {...restTableProps}
-      />
+      <Box
+        sx={{
+          // https://handsontable.com/docs/12.0/grid-size/#define-the-size-in-css-styles
+          overflow: "auto",
+        }}
+      >
+        <Table
+          data={defaultData}
+          columns={formattedColumns}
+          {...restTableProps}
+        />
+      </Box>
     </Form>
   );
 }
 
-export default FormTable;
+export default TableForm;

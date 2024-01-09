@@ -3,15 +3,12 @@ import { startCase } from "lodash";
 import { useTranslation } from "react-i18next";
 import FormDialog, {
   FormDialogProps,
-} from "../../../../../../common/dialogs/FormDialog";
-import ListFE from "../../../../../../common/fieldEditors/ListFE";
-import SelectFE from "../../../../../../common/fieldEditors/SelectFE";
-import StringFE from "../../../../../../common/fieldEditors/StringFE";
-import {
-  getTableColumnsForType,
-  TableTemplate,
-  TABLE_TEMPLATE_TYPE_OPTIONS,
-} from "../utils";
+} from "../../../../../common/dialogs/FormDialog";
+import ListFE from "../../../../../common/fieldEditors/ListFE";
+import SelectFE from "../../../../../common/fieldEditors/SelectFE";
+import StringFE from "../../../../../common/fieldEditors/StringFE";
+import { getTableColumnsForType, type TableTemplate } from "../utils";
+import { TABLE_MODE_TYPES } from "../../../../../../services/api/studies/tableMode/constants";
 
 export interface TableTemplateFormDialogProps
   extends Pick<
@@ -64,7 +61,7 @@ function TableTemplateFormDialog(props: TableTemplateFormDialogProps) {
           />
           <SelectFE
             label={t("study.type")}
-            options={TABLE_TEMPLATE_TYPE_OPTIONS}
+            options={TABLE_MODE_TYPES}
             variant="outlined"
             onChange={() => resetField("columns")}
             name="type"

@@ -29,7 +29,7 @@ import { RESERVED_USER_NAMES } from "../utils";
 import { UserDetailsDTO } from "../../../../common/types";
 import UpdateUserDialog from "./dialog/UpdateUserDialog";
 import { sortByName } from "../../../../services/utils";
-import { isSearchMatching } from "../../../../utils/textUtils";
+import { isSearchMatching } from "../../../../utils/stringUtils";
 
 /**
  * Types

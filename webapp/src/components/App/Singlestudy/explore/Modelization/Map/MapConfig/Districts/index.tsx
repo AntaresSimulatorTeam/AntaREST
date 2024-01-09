@@ -10,7 +10,7 @@ import {
   getStudyMapDistrictsById,
 } from "../../../../../../../../redux/selectors";
 import { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
-import FormTable from "../../../../../../../common/FormTable";
+import TableForm from "../../../../../../../common/TableForm";
 import CreateDistrictDialog from "./CreateDistrictDialog";
 import useAppDispatch from "../../../../../../../../redux/hooks/useAppDispatch";
 import { updateStudyMapDistrict } from "../../../../../../../../redux/ducks/studyMaps";
@@ -123,7 +123,7 @@ function Districts() {
       </Box>
       <Box sx={{ flexGrow: 1, overflow: "hidden" }}>
         {columns.length > 0 && (
-          <FormTable
+          <TableForm
             key={JSON.stringify(defaultValues)}
             defaultValues={defaultValues}
             tableProps={{

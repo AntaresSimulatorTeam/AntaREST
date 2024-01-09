@@ -4,7 +4,7 @@ import TableTemplateFormDialog, {
   TableTemplateFormDialogProps,
 } from "./TableTemplateFormDialog";
 import { TableTemplate } from "../utils";
-import { SubmitHandlerPlus } from "../../../../../../common/Form/types";
+import { SubmitHandlerPlus } from "../../../../../common/Form/types";
 
 interface Props
   extends Pick<TableTemplateFormDialogProps, "open" | "onCancel"> {
@@ -36,7 +36,7 @@ function UpdateTemplateTableDialog(props: Props) {
   return (
     <TableTemplateFormDialog
       open={open}
-      title={t("study.modelization.tableMode.dialog.edit.title")}
+      title={t("study.tableMode.dialog.edit.title")}
       titleIcon={EditIcon}
       config={{ defaultValues }}
       onSubmit={handleSubmit}

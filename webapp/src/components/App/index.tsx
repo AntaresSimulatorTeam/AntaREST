@@ -41,7 +41,7 @@ import Renewables from "./Singlestudy/explore/Modelization/Areas/Renewables";
 import ResultDetails from "./Singlestudy/explore/Results/ResultDetails";
 import Constraints from "./Singlestudy/explore/Xpansion/Constraints";
 import Weights from "./Singlestudy/explore/Xpansion/Weights";
-import TableMode from "./Singlestudy/explore/Modelization/TableMode";
+import TableModeList from "./Singlestudy/explore/TableModeList";
 import ManagementOptions from "./Singlestudy/explore/Modelization/Areas/Hydro/ManagementOptions";
 import {
   HYDRO_ROUTES,
@@ -141,7 +141,6 @@ function App() {
                             element={<BindingConstraints />}
                           />
                           <Route path="debug" element={<DebugView />} />
-                          <Route path="tablemode" element={<TableMode />} />
                           <Route index element={<Map />} />
                           <Route path="*" element={<Map />} />
                         </Route>
@@ -149,6 +148,7 @@ function App() {
                           path="configuration"
                           element={<Configuration />}
                         />
+                        <Route path="tablemode" element={<TableModeList />} />
                         <Route path="xpansion" element={<Xpansion />}>
                           <Route path="candidates" element={<Candidates />} />
                           <Route
