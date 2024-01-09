@@ -6,7 +6,7 @@ excluded_dirs = {"alembic", "conf", "docs", "examples", "resources", "scripts", 
 
 setup(
     name="AntaREST",
-    version="2.16.1",
+    version="2.16.2",
     description="Antares Server",
     long_description=Path("README.md").read_text(encoding="utf-8"),
     long_description_content_type="text/markdown",
