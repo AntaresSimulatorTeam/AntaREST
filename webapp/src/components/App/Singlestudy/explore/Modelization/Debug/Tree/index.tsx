@@ -2,24 +2,22 @@ import { TreeView } from "@mui/x-tree-view";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import FileTreeItem from "./FileTreeItem";
-import { useDebugContext } from "../DebugContext";
+import { TreeData } from "../utils";
 
-function Tree() {
-  const { treeData } = useDebugContext();
+interface Props {
+  data: TreeData;
+}
 
-  ////////////////////////////////////////////////////////////////
-  // JSX
-  ////////////////////////////////////////////////////////////////
-
+function Tree({ data }: Props) {
   return (
     <TreeView
       multiSelect
       defaultCollapseIcon={<ExpandMoreIcon />}
       defaultExpandIcon={<ChevronRightIcon />}
     >
-      {typeof treeData === "object" &&
-        Object.keys(treeData).map((key) => (
-          <FileTreeItem key={key} name={key} content={treeData[key]} path="" />
+      {typeof data === "object" &&
+        Object.keys(data).map((key) => (
+          <FileTreeItem key={key} name={key} content={data[key]} path="" />
         ))}
     </TreeView>
   );
