@@ -10,6 +10,7 @@ v2.16.2 (2024-01-10)
 * **study-size:** add new route to get a study disk usage (in bytes) [`#1878`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1878)
 * **table-mode:** update Table Mode view [`#1883`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1883)
 * **thermals, st-storages:** add a dialog to define a name when duplicating a cluster or a storage [`#1866`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1866)
+* **debug-view:** introduce advanced `JSONEditor` and `Debug` view updates [`#1885`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1885)
 
 
 ### Performance
