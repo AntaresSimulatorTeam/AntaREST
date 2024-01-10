@@ -9,7 +9,7 @@ from typing import List
 import pandas
 import pytest
 
-from antarest.study.storage.rawstudy.io.reader import MultipleSameKeysIniReader
+from antarest.study.storage.rawstudy.ini_reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata import DUPLICATE_KEYS
 from antarest.study.storage.study_upgrader import UPGRADE_METHODS, InvalidUpgrade, upgrade_study
@@ -90,7 +90,7 @@ def assert_study_antares_file_is_updated(tmp_path: Path, target_version: str) ->
 
 def assert_settings_are_updated(tmp_path: Path, old_values: List[str]) -> None:
     general_data_path = tmp_path / "settings" / "generaldata.ini"
-    reader = MultipleSameKeysIniReader(DUPLICATE_KEYS)
+    reader = IniReader(DUPLICATE_KEYS)
     data = reader.read(general_data_path)
     general = data["general"]
     optimization = data["optimization"]
@@ -119,7 +119,7 @@ def assert_settings_are_updated(tmp_path: Path, old_values: List[str]) -> None:
 
 def get_old_settings_values(tmp_path: Path) -> List[str]:
     general_data_path = tmp_path / "settings" / "generaldata.ini"
-    reader = MultipleSameKeysIniReader(DUPLICATE_KEYS)
+    reader = IniReader(DUPLICATE_KEYS)
     data = reader.read(general_data_path)
     filtering_value = data["general"]["filtering"]
     custom_ts_value = data["general"]["custom-ts-numbers"]
@@ -170,7 +170,7 @@ def assert_inputs_are_updated(tmp_path: Path, dico: dict) -> None:
     for folder in areas:
         folder_path = Path(folder)
         if folder_path.is_dir():
-            reader = MultipleSameKeysIniReader(DUPLICATE_KEYS)
+            reader = IniReader(DUPLICATE_KEYS)
             data = reader.read(folder_path / "adequacy_patch.ini")
             assert data["adequacy-patch"]["adequacy-patch-mode"] == "outside"
 

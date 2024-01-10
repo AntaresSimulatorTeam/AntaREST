@@ -1,2 +1,4 @@
 mkdocs
 mkdocs-material
+mkdocs-material-extensions
+mike  # deploy several mkdocs site versions to github pages

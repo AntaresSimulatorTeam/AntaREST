@@ -57,10 +57,18 @@ function SingleStudy(props: Props) {
         label: t("study.configuration"),
         path: `/studies/${studyId}/explore/configuration`,
       },
+      {
+        label: t("study.tableMode"),
+        path: `/studies/${studyId}/explore/tablemode`,
+      },
       { label: "Xpansion", path: `/studies/${studyId}/explore/xpansion` },
       {
         label: t("study.results"),
         path: `/studies/${studyId}/explore/results`,
+      },
+      {
+        label: t("study.debug"),
+        path: `/studies/${studyId}/explore/debug`,
       },
     ],
     [studyId],

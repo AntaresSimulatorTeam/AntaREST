@@ -5,7 +5,7 @@ import { styled, SxProps, Theme } from "@mui/material";
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
 import Box from "@mui/material/Box";
-import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Outlet, matchPath, useLocation, useNavigate } from "react-router-dom";
 import { StudyMetadata } from "../../../../common/types";
 import { mergeSxProp } from "../../../../utils/muiUtils";
 
@@ -56,21 +56,11 @@ function TabWrapper({
   const [selectedTab, setSelectedTab] = useState(0);
 
   useEffect(() => {
-    const getTabIndex = (): number => {
-      const index = tabList.findIndex(
-        (tab) => location.pathname.substring(0, tab.path.length) === tab.path,
-      );
-
-      if (index >= 0) {
-        return index;
-      }
-      return 0;
-    };
-
-    if (study) {
-      setSelectedTab(getTabIndex);
-    }
-  }, [location.pathname, study, tabList]);
+    const matchedTab = tabList.findIndex((tab) =>
+      matchPath({ path: tab.path, end: false }, location.pathname),
+    );
+    setSelectedTab(matchedTab >= 0 ? matchedTab : 0);
+  }, [location.pathname, tabList]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -79,11 +69,7 @@ function TabWrapper({
   const handleChange = (event: React.SyntheticEvent, newValue: number) => {
     setSelectedTab(newValue);
     navigate(tabList[newValue].path);
-
-    const onTabClick = tabList[newValue].onClick;
-    if (onTabClick) {
-      onTabClick();
-    }
+    tabList[newValue].onClick?.();
   };
 
   ////////////////////////////////////////////////////////////////

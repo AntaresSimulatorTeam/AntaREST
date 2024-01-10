@@ -15,6 +15,7 @@ from antarest.core.roles import RoleType
 
 if t.TYPE_CHECKING:
     # avoid circular import
+    from antarest.core.tasks.model import TaskJob
     from antarest.launcher.model import JobResult
 
 
@@ -139,6 +140,10 @@ class Identity(Base):  # type: ignore
     # Define a one-to-many relationship with `JobResult`.
     # If an identity is deleted, all the associated job results are detached from the identity.
     job_results: t.List["JobResult"] = relationship("JobResult", back_populates="owner", cascade="save-update, merge")
+
+    # Define a one-to-many relationship with `TaskJob`.
+    # If an identity is deleted, all the associated task jobs are detached from the identity.
+    owned_jobs: t.List["TaskJob"] = relationship("TaskJob", back_populates="owner", cascade="save-update, merge")
 
     def to_dto(self) -> UserInfo:
         return UserInfo(id=self.id, name=self.name)

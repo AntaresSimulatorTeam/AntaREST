@@ -3,8 +3,8 @@ from pathlib import Path
 from typing import Any, Dict, Optional, cast
 
 from antarest.core.model import JSON
-from antarest.study.storage.rawstudy.io.reader.ini_reader import IReader
-from antarest.study.storage.rawstudy.io.writer.ini_writer import IniWriter
+from antarest.study.storage.rawstudy.ini_reader import IReader
+from antarest.study.storage.rawstudy.ini_writer import IniWriter
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode

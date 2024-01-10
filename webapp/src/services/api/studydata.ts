@@ -4,6 +4,7 @@ import {
   LinkInfoWithUI,
   UpdateAreaUi,
 } from "../../common/types";
+import { CreateBindingConstraint } from "../../components/App/Singlestudy/Commands/Edition/commandTypes";
 import {
   BindingConstFields,
   BindingConstFieldsDTO,
@@ -138,6 +139,17 @@ export const updateBindingConstraint = async (
     `/v1/studies/${uuid}/bindingconstraints/${encodeURIComponent(
       bindingConst,
     )}`,
+    data,
+  );
+  return res.data;
+};
+
+export const createBindingConstraint = async (
+  studyId: string,
+  data: CreateBindingConstraint,
+): Promise<void> => {
+  const res = await client.post(
+    `/v1/studies/${studyId}/bindingconstraints`,
     data,
   );
   return res.data;

@@ -1,9 +1,8 @@
-import { useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
+import { useEffect, useMemo, useState } from "react";
 import { StudyMetadata } from "../../../../../../common/types";
 import PropertiesView from "../../../../../common/PropertiesView";
 import ListElement from "../../common/ListElement";
-import AddBindingConstDialog from "./AddBindingConstDialog";
+import AddDialog from "./AddDialog";
 import { BindingConstFields } from "./BindingConstView/utils";
 
 interface Props {
@@ -15,7 +14,6 @@ interface Props {
 
 function BindingConstPropsView(props: Props) {
   const { onClick, currentBindingConst, studyId, list } = props;
-  const [t] = useTranslation();
   const [bindingConstNameFilter, setBindingConstNameFilter] =
     useState<string>();
   const [addBindingConst, setAddBindingConst] = useState(false);
@@ -36,6 +34,11 @@ function BindingConstPropsView(props: Props) {
     };
     setFilteredBindingConst(filter());
   }, [list, bindingConstNameFilter]);
+
+  const existingConstraints = useMemo(
+    () => list.map(({ name }) => name.toLowerCase()),
+    [list],
+  );
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -59,11 +62,11 @@ function BindingConstPropsView(props: Props) {
         onSearchFilterChange={(e) => setBindingConstNameFilter(e as string)}
       />
       {addBindingConst && (
-        <AddBindingConstDialog
+        <AddDialog
           open={addBindingConst}
           studyId={studyId}
-          title={t("study.modelization.bindingConst.newBindingConst")}
-          onCancel={() => setAddBindingConst(false)}
+          existingConstraints={existingConstraints}
+          onClose={() => setAddBindingConst(false)}
         />
       )}
     </>

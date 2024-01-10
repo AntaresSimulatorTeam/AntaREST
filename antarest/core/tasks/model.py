@@ -1,14 +1,19 @@
+import typing as t
 import uuid
 from datetime import datetime
 from enum import Enum
-from typing import Any, List, Mapping, Optional
 
 from pydantic import BaseModel, Extra
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, Sequence, String  # type: ignore
 from sqlalchemy.engine.base import Engine  # type: ignore
-from sqlalchemy.orm import Session, relationship, sessionmaker  # type: ignore
+from sqlalchemy.orm import relationship, sessionmaker  # type: ignore
 
 from antarest.core.persistence import Base
+
+if t.TYPE_CHECKING:
+    # avoid circular import
+    from antarest.login.model import Identity
+    from antarest.study.model import Study
 
 
 class TaskType(str, Enum):
@@ -43,7 +48,7 @@ class TaskResult(BaseModel, extra=Extra.forbid):
     success: bool
     message: str
     # Can be used to store json serialized result
-    return_value: Optional[str]
+    return_value: t.Optional[str]
 
 
 class TaskLogDTO(BaseModel, extra=Extra.forbid):
@@ -65,25 +70,25 @@ class TaskEventPayload(BaseModel, extra=Extra.forbid):
 class TaskDTO(BaseModel, extra=Extra.forbid):
     id: str
     name: str
-    owner: Optional[int]
+    owner: t.Optional[int]
     status: TaskStatus
     creation_date_utc: str
-    completion_date_utc: Optional[str]
-    result: Optional[TaskResult]
-    logs: Optional[List[TaskLogDTO]]
-    type: Optional[str] = None
-    ref_id: Optional[str] = None
+    completion_date_utc: t.Optional[str]
+    result: t.Optional[TaskResult]
+    logs: t.Optional[t.List[TaskLogDTO]]
+    type: t.Optional[str] = None
+    ref_id: t.Optional[str] = None
 
 
 class TaskListFilter(BaseModel, extra=Extra.forbid):
-    status: List[TaskStatus] = []
-    name: Optional[str] = None
-    type: List[TaskType] = []
-    ref_id: Optional[str] = None
-    from_creation_date_utc: Optional[float] = None
-    to_creation_date_utc: Optional[float] = None
-    from_completion_date_utc: Optional[float] = None
-    to_completion_date_utc: Optional[float] = None
+    status: t.List[TaskStatus] = []
+    name: t.Optional[str] = None
+    type: t.List[TaskType] = []
+    ref_id: t.Optional[str] = None
+    from_creation_date_utc: t.Optional[float] = None
+    to_creation_date_utc: t.Optional[float] = None
+    from_completion_date_utc: t.Optional[float] = None
+    to_completion_date_utc: t.Optional[float] = None
 
 
 class TaskJobLog(Base):  # type: ignore
@@ -93,10 +98,15 @@ class TaskJobLog(Base):  # type: ignore
     message = Column(String, nullable=False)
     task_id = Column(
         String(),
-        ForeignKey("taskjob.id", name="fk_log_taskjob_id"),
+        ForeignKey("taskjob.id", name="fk_log_taskjob_id", ondelete="CASCADE"),
+        nullable=False,
     )
 
-    def __eq__(self, other: Any) -> bool:
+    # Define a many-to-one relationship between `TaskJobLog` and `TaskJob`.
+    # If the TaskJob is deleted, all attached logs must also be deleted in cascade.
+    job: "TaskJob" = relationship("TaskJob", back_populates="logs", uselist=False)
+
+    def __eq__(self, other: t.Any) -> bool:
         if not isinstance(other, TaskJobLog):
             return False
         return bool(other.id == self.id and other.message == self.message and other.task_id == self.task_id)
@@ -111,19 +121,41 @@ class TaskJobLog(Base):  # type: ignore
 class TaskJob(Base):  # type: ignore
     __tablename__ = "taskjob"
 
-    id = Column(String(), default=lambda: str(uuid.uuid4()), primary_key=True)
-    name = Column(String())
-    status = Column(Integer(), default=lambda: TaskStatus.PENDING.value)
-    creation_date = Column(DateTime, default=datetime.utcnow)
-    completion_date = Column(DateTime, nullable=True)
-    result_msg = Column(String(), nullable=True)
-    result = Column(String(), nullable=True)
-    result_status = Column(Boolean(), nullable=True)
-    logs = relationship(TaskJobLog, uselist=True, cascade="all, delete, delete-orphan")
-    # this is not a foreign key to prevent the need to delete the job history if the user is deleted
-    owner_id = Column(Integer(), nullable=True)
-    type = Column(String(), nullable=True)
-    ref_id = Column(String(), nullable=True)
+    id: str = Column(String(), default=lambda: str(uuid.uuid4()), primary_key=True)
+    name: str = Column(String(), nullable=False, index=True)
+    status: int = Column(Integer(), default=lambda: TaskStatus.PENDING.value, index=True)
+    creation_date: datetime = Column(DateTime, default=datetime.utcnow, index=True)
+    completion_date: t.Optional[datetime] = Column(DateTime, nullable=True, default=None)
+    result_msg: t.Optional[str] = Column(String(), nullable=True, default=None)
+    result: t.Optional[str] = Column(String(), nullable=True, default=None)
+    result_status: t.Optional[bool] = Column(Boolean(), nullable=True, default=None)
+    type: t.Optional[str] = Column(String(), nullable=True, default=None, index=True)
+    owner_id: int = Column(
+        Integer(),
+        ForeignKey("identities.id", name="fk_taskjob_identity_id", ondelete="SET NULL"),
+        nullable=True,
+        default=None,
+        index=True,
+    )
+    ref_id: t.Optional[str] = Column(
+        String(),
+        ForeignKey("study.id", name="fk_taskjob_study_id", ondelete="CASCADE"),
+        nullable=True,
+        default=None,
+        index=True,
+    )
+
+    # Define a one-to-many relationship between `TaskJob` and `TaskJobLog`.
+    # If the TaskJob is deleted, all attached logs must also be deleted in cascade.
+    logs: t.List["TaskJobLog"] = relationship("TaskJobLog", back_populates="job", cascade="all, delete, delete-orphan")
+
+    # Define a many-to-one relationship between `TaskJob` and `Identity`.
+    # If the Identity is deleted, all attached TaskJob must be preserved.
+    owner: "Identity" = relationship("Identity", back_populates="owned_jobs", uselist=False)
+
+    # Define a many-to-one relationship between `TaskJob` and `Study`.
+    # If the Study is deleted, all attached TaskJob must be deleted in cascade.
+    study: "Study" = relationship("Study", back_populates="jobs", uselist=False)
 
     def to_dto(self, with_logs: bool = False) -> TaskDTO:
         return TaskDTO(
@@ -140,12 +172,12 @@ class TaskJob(Base):  # type: ignore
             )
             if self.completion_date
             else None,
-            logs=sorted([log.to_dto() for log in self.logs], key=lambda l: l.id) if with_logs else None,
+            logs=sorted([log.to_dto() for log in self.logs], key=lambda log: log.id) if with_logs else None,
             type=self.type,
             ref_id=self.ref_id,
         )
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: t.Any) -> bool:
         if not isinstance(other, TaskJob):
             return False
         return bool(
@@ -174,7 +206,7 @@ class TaskJob(Base):  # type: ignore
         )
 
 
-def cancel_orphan_tasks(engine: Engine, session_args: Mapping[str, bool]) -> None:
+def cancel_orphan_tasks(engine: Engine, session_args: t.Mapping[str, bool]) -> None:
     """
     Cancel all tasks that are currently running or pending.
 
@@ -193,8 +225,9 @@ def cancel_orphan_tasks(engine: Engine, session_args: Mapping[str, bool]) -> Non
         TaskJob.result_msg: "Task was interrupted due to server restart",
         TaskJob.completion_date: datetime.utcnow(),
     }
-    with sessionmaker(bind=engine, **session_args)() as session:
-        session.query(TaskJob).filter(TaskJob.status.in_([TaskStatus.RUNNING.value, TaskStatus.PENDING.value])).update(
-            updated_values, synchronize_session=False
-        )
+    orphan_status = [TaskStatus.RUNNING.value, TaskStatus.PENDING.value]
+    make_session = sessionmaker(bind=engine, **session_args)
+    with make_session() as session:
+        q = session.query(TaskJob).filter(TaskJob.status.in_(orphan_status))  # type: ignore
+        q.update(updated_values, synchronize_session=False)
         session.commit()

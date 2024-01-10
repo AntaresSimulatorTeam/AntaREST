@@ -6,6 +6,7 @@ from antarest.core.exceptions import (
     ConstraintAlreadyExistError,
     ConstraintIdNotFoundError,
     DuplicateConstraintName,
+    InvalidConstraintName,
     MissingDataError,
     NoBindingConstraintError,
     NoConstraintError,
@@ -16,6 +17,10 @@ from antarest.study.model import Study
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.storage_service import StudyStorageService
+from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series import (
+    default_bc_hourly,
+    default_bc_weekly_daily,
+)
 from antarest.study.storage.variantstudy.model.command.common import BindingConstraintOperator
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import (
     BindingConstraintProperties,
@@ -168,15 +173,20 @@ class BindingConstraintManager:
         study: Study,
         data: BindingConstraintPropertiesWithName,
     ) -> None:
-        binding_constraints = self.get_binding_constraint(study, None)
-        existing_ids = [bd.id for bd in binding_constraints]  # type: ignore
-        bd_id = transform_name_to_id(data.name)
-        if bd_id in existing_ids:
-            raise DuplicateConstraintName(f"A binding constraint with the same name already exists: {bd_id}.")
+        bc_id = transform_name_to_id(data.name)
+
+        if not bc_id:
+            raise InvalidConstraintName(f"Invalid binding constraint name: {data.name}.")
 
         file_study = self.storage_service.get_storage(study).get_raw(study)
+        binding_constraints = self.get_binding_constraint(study, None)
+        existing_ids = {bc.id for bc in binding_constraints}  # type: ignore
+
+        if bc_id in existing_ids:
+            raise DuplicateConstraintName(f"A binding constraint with the same name already exists: {bc_id}.")
+
         command = CreateBindingConstraint(
-            name=bd_id,
+            name=data.name,
             enabled=data.enabled,
             time_step=data.time_step,
             operator=data.operator,
@@ -200,13 +210,24 @@ class BindingConstraintManager:
         if not isinstance(constraint, BindingConstraintDTO):
             raise NoBindingConstraintError(study.id)
 
+        if data.key == "time_step" and data.value != constraint.time_step:
+            # The user changed the time step, we need to update the matrix accordingly
+            matrix = {
+                BindingConstraintFrequency.HOURLY.value: default_bc_hourly,
+                BindingConstraintFrequency.DAILY.value: default_bc_weekly_daily,
+                BindingConstraintFrequency.WEEKLY.value: default_bc_weekly_daily,
+            }[data.value].tolist()
+        else:
+            # The user changed another property, we keep the matrix as it is
+            matrix = constraint.values
+
         command = UpdateBindingConstraint(
             id=constraint.id,
             enabled=data.value if data.key == "enabled" else constraint.enabled,
             time_step=data.value if data.key == "time_step" else constraint.time_step,
             operator=data.value if data.key == "operator" else constraint.operator,
             coeffs=BindingConstraintManager.constraints_to_coeffs(constraint),
-            values=constraint.values,
+            values=matrix,
             filter_year_by_year=data.value if data.key == "filterByYear" else constraint.filter_year_by_year,
             filter_synthesis=data.value if data.key == "filterSynthesis" else constraint.filter_synthesis,
             comments=data.value if data.key == "comments" else constraint.comments,

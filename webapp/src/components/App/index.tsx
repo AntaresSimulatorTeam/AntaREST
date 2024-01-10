@@ -24,7 +24,7 @@ import BindingConstraints from "./Singlestudy/explore/Modelization/BindingConstr
 import Links from "./Singlestudy/explore/Modelization/Links";
 import Areas from "./Singlestudy/explore/Modelization/Areas";
 import Map from "./Singlestudy/explore/Modelization/Map";
-import DebugView from "./Singlestudy/explore/Modelization/DebugView";
+import Debug from "./Singlestudy/explore/Modelization/Debug";
 import Xpansion from "./Singlestudy/explore/Xpansion";
 import Candidates from "./Singlestudy/explore/Xpansion/Candidates";
 import XpansionSettings from "./Singlestudy/explore/Xpansion/Settings";
@@ -41,7 +41,7 @@ import Renewables from "./Singlestudy/explore/Modelization/Areas/Renewables";
 import ResultDetails from "./Singlestudy/explore/Results/ResultDetails";
 import Constraints from "./Singlestudy/explore/Xpansion/Constraints";
 import Weights from "./Singlestudy/explore/Xpansion/Weights";
-import TableMode from "./Singlestudy/explore/Modelization/TableMode";
+import TableModeList from "./Singlestudy/explore/TableModeList";
 import ManagementOptions from "./Singlestudy/explore/Modelization/Areas/Hydro/ManagementOptions";
 import {
   HYDRO_ROUTES,
@@ -140,8 +140,6 @@ function App() {
                             path="bindingcontraint"
                             element={<BindingConstraints />}
                           />
-                          <Route path="debug" element={<DebugView />} />
-                          <Route path="tablemode" element={<TableMode />} />
                           <Route index element={<Map />} />
                           <Route path="*" element={<Map />} />
                         </Route>
@@ -149,6 +147,7 @@ function App() {
                           path="configuration"
                           element={<Configuration />}
                         />
+                        <Route path="tablemode" element={<TableModeList />} />
                         <Route path="xpansion" element={<Xpansion />}>
                           <Route path="candidates" element={<Candidates />} />
                           <Route
@@ -165,6 +164,7 @@ function App() {
                           <Route path=":outputId" element={<ResultDetails />} />
                           <Route index element={<Results />} />
                         </Route>
+                        <Route path="debug" element={<Debug />} />
                         <Route path="*" element={<Modelization />}>
                           <Route index element={<Map />} />
                         </Route>

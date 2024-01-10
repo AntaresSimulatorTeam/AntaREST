@@ -65,7 +65,12 @@ from antarest.study.business.table_mode_management import TableModeManager
 from antarest.study.business.thematic_trimming_management import ThematicTrimmingManager
 from antarest.study.business.timeseries_config_management import TimeSeriesConfigManager
 from antarest.study.business.utils import execute_or_add_commands
-from antarest.study.business.xpansion_management import XpansionCandidateDTO, XpansionManager, XpansionSettingsDTO
+from antarest.study.business.xpansion_management import (
+    GetXpansionSettings,
+    UpdateXpansionSettings,
+    XpansionCandidateDTO,
+    XpansionManager,
+)
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     NEW_DEFAULT_STUDY_VERSION,
@@ -104,14 +109,7 @@ from antarest.study.storage.study_upgrader import (
     should_study_be_denormalized,
     upgrade_study,
 )
-from antarest.study.storage.utils import (
-    assert_permission,
-    get_default_workspace_path,
-    get_start_date,
-    is_managed,
-    remove_from_cache,
-    study_matcher,
-)
+from antarest.study.storage.utils import assert_permission, get_start_date, is_managed, remove_from_cache, study_matcher
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command.update_comments import UpdateComments
@@ -126,6 +124,20 @@ from antarest.worker.simulator_worker import GenerateTimeseriesTaskArgs
 logger = logging.getLogger(__name__)
 
 MAX_MISSING_STUDY_TIMEOUT = 2  # days
+
+
+def get_disk_usage(path: Union[str, Path]) -> int:
+    path = Path(path)
+    if path.suffix.lower() in {".zip", "7z"}:
+        return os.path.getsize(path)
+    total_size = 0
+    with os.scandir(path) as it:
+        for entry in it:
+            if entry.is_file():
+                total_size += entry.stat().st_size
+            elif entry.is_dir():
+                total_size += get_disk_usage(path=str(entry.path))
+    return total_size
 
 
 class StudyUpgraderTask:
@@ -452,14 +464,17 @@ class StudyService:
             for k in cached_studies:
                 studies[k] = StudyMetadataDTO.parse_obj(cached_studies[k])
         else:
-            logger.info("Retrieving all studies")
-            all_studies = self.repository.get_all()
+            if managed:
+                logger.info("Retrieving all managed studies")
+                all_studies = self.repository.get_all(managed=True)
+            else:
+                logger.info("Retrieving all studies")
+                all_studies = self.repository.get_all()
             logger.info("Studies retrieved")
             for study in all_studies:
-                if not managed or is_managed(study):
-                    study_metadata = self._try_get_studies_information(study)
-                    if study_metadata is not None:
-                        studies[study_metadata.id] = study_metadata
+                study_metadata = self._try_get_studies_information(study)
+                if study_metadata is not None:
+                    studies[study_metadata.id] = study_metadata
             self.cache_service.put(cache_key, studies)
         return {
             s.id: s
@@ -616,7 +631,7 @@ class StudyService:
             str: The ID of the newly created study.
         """
         sid = str(uuid4())
-        study_path = str(get_default_workspace_path(self.config) / sid)
+        study_path = self.config.get_workspace_path() / sid
 
         author = self.get_user_name(params)
 
@@ -1297,7 +1312,7 @@ class StudyService:
             BadArchiveContent: If the archive is corrupted or in an unknown format.
         """
         sid = str(uuid4())
-        path = str(get_default_workspace_path(self.config) / sid)
+        path = str(self.config.get_workspace_path() / sid)
         study = RawStudy(
             id=sid,
             workspace=DEFAULT_WORKSPACE_NAME,
@@ -2035,7 +2050,7 @@ class StudyService:
         self._assert_study_unarchived(study)
         self.xpansion_manager.delete_xpansion_configuration(study)
 
-    def get_xpansion_settings(self, uuid: str, params: RequestParameters) -> XpansionSettingsDTO:
+    def get_xpansion_settings(self, uuid: str, params: RequestParameters) -> GetXpansionSettings:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
         return self.xpansion_manager.get_xpansion_settings(study)
@@ -2043,9 +2058,9 @@ class StudyService:
     def update_xpansion_settings(
         self,
         uuid: str,
-        xpansion_settings_dto: XpansionSettingsDTO,
+        xpansion_settings_dto: UpdateXpansionSettings,
         params: RequestParameters,
-    ) -> XpansionSettingsDTO:
+    ) -> GetXpansionSettings:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
         self._assert_study_unarchived(study)
@@ -2056,7 +2071,7 @@ class StudyService:
         uuid: str,
         xpansion_candidate_dto: XpansionCandidateDTO,
         params: RequestParameters,
-    ) -> None:
+    ) -> XpansionCandidateDTO:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
@@ -2093,9 +2108,9 @@ class StudyService:
     def update_xpansion_constraints_settings(
         self,
         uuid: str,
-        constraints_file_name: Optional[str],
+        constraints_file_name: str,
         params: RequestParameters,
-    ) -> None:
+    ) -> GetXpansionSettings:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
@@ -2135,11 +2150,10 @@ class StudyService:
         if params.user and not params.user.is_site_admin():
             logger.error(f"User {params.user.id} is not site admin")
             raise UserHasNotPermissionError()
-        studies = self.repository.get_all()
+        studies = self.repository.get_all(managed=False)
         for study in studies:
-            if isinstance(study, RawStudy) and not is_managed(study):
-                storage = self.storage_service.raw_study_service
-                storage.check_and_update_study_version_in_database(study)
+            storage = self.storage_service.raw_study_service
+            storage.check_and_update_study_version_in_database(study)
 
     def archive_outputs(self, study_id: str, params: RequestParameters) -> None:
         logger.info(f"Archiving all outputs for study {study_id}")
@@ -2351,3 +2365,21 @@ class StudyService:
             custom_event_messages=None,
             request_params=params,
         )
+
+    def get_disk_usage(self, uuid: str, params: RequestParameters) -> int:
+        """
+        This function computes the disk size used to store the study with
+        id=`uuid` if such study exists and user has permissions
+        otherwise it raises an error
+
+        Args:
+            uuid: the study id
+            params: user request parameters
+
+        return:
+            disk usage of the study with id = `uuid`
+        """
+        study = self.get_study(uuid=uuid)
+        assert_permission(params.user, study, StudyPermissionType.READ)
+        path = str(self.storage_service.get_storage(study).get_study_path(study))
+        return get_disk_usage(path=path)

@@ -3,6 +3,9 @@ import { Button } from "@mui/material";
 import { useId, useState } from "react";
 import { FieldValues, FormState } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { LoadingButton } from "@mui/lab";
+import * as RA from "ramda-adjunct";
+import SaveIcon from "@mui/icons-material/Save";
 import BasicDialog, { BasicDialogProps } from "./BasicDialog";
 import Form, { FormProps } from "../Form";
 
@@ -23,6 +26,7 @@ export interface FormDialogProps<
 > extends SuperType<TFieldValues, TContext, SubmitReturnValue> {
   cancelButtonText?: string;
   onCancel: VoidFunction;
+  isCreationForm?: boolean;
 }
 
 // TODO: `formState.isSubmitting` doesn't update when auto submit enabled
@@ -44,6 +48,8 @@ function FormDialog<
     onClose,
     cancelButtonText,
     submitButtonText,
+    submitButtonIcon,
+    isCreationForm = false,
     ...dialogProps
   } = props;
 
@@ -59,7 +65,7 @@ function FormDialog<
   const { t } = useTranslation();
   const formId = useId();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSubmitAllowed, setIsSubmitAllowed] = useState(false);
+  const [isSubmitAllowed, setIsSubmitAllowed] = useState(isCreationForm);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -69,7 +75,7 @@ function FormDialog<
     const { isSubmitting, isDirty } = formState;
     onStateChange?.(formState);
     setIsSubmitting(isSubmitting);
-    setIsSubmitAllowed(isDirty && !isSubmitting);
+    setIsSubmitAllowed((isDirty || isCreationForm) && !isSubmitting);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -97,14 +103,23 @@ function FormDialog<
             {cancelButtonText || t("button.close")}
           </Button>
           {!autoSubmit && (
-            <Button
+            <LoadingButton
               type="submit"
               form={formId}
               variant="contained"
               disabled={!isSubmitAllowed}
+              loading={isSubmitting}
+              loadingPosition="start"
+              startIcon={
+                RA.isNotUndefined(submitButtonIcon) ? (
+                  submitButtonIcon
+                ) : (
+                  <SaveIcon />
+                )
+              }
             >
               {submitButtonText || t("global.save")}
-            </Button>
+            </LoadingButton>
           )}
         </>
       }

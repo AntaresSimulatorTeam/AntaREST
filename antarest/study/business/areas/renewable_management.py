@@ -24,6 +24,7 @@ __all__ = (
     "RenewableClusterCreation",
     "RenewableClusterOutput",
     "RenewableManager",
+    "TimeSeriesInterpretation",
 )
 
 _CLUSTER_PATH = "input/renewables/clusters/{area_id}/list/{cluster_id}"

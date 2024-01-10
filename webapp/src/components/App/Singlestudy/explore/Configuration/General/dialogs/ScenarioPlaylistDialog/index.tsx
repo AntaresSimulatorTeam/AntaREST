@@ -8,7 +8,7 @@ import Handsontable from "handsontable";
 import { StudyMetadata } from "../../../../../../../../common/types";
 import usePromise from "../../../../../../../../hooks/usePromise";
 import BasicDialog from "../../../../../../../common/dialogs/BasicDialog";
-import FormTable from "../../../../../../../common/FormTable";
+import TableForm from "../../../../../../../common/TableForm";
 import BackdropLoading from "../../../../../../../common/loaders/BackdropLoading";
 import UsePromiseCond from "../../../../../../../common/utils/UsePromiseCond";
 import {
@@ -115,7 +115,7 @@ function ScenarioPlaylistDialog(props: Props) {
               )}
             </Button>
           </Box>
-          <FormTable
+          <TableForm
             defaultValues={defaultValues}
             onSubmit={handleSubmit}
             sx={{ pt: 2, m: "0 auto" }}

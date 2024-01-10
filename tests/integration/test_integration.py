@@ -20,11 +20,10 @@ from antarest.study.business.table_mode_management import (
     FIELDS_INFO_BY_TYPE,
     AssetType,
     BindingConstraintOperator,
-    BindingConstraintType,
     TableTemplateType,
     TransmissionCapacity,
 )
-from antarest.study.model import MatrixIndex, StudyDownloadLevelDTO
+from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.renewable import RenewableClusterGroup
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import LawOption, TimeSeriesGenerationOption
 from antarest.study.storage.variantstudy.model.command.common import CommandName
@@ -92,7 +91,6 @@ def test_main(client: TestClient, admin_access_token: str, study_id: str) -> Non
     )
     assert len(res.json()) == 1
     study_id = next(iter(res.json()))
-    comments = "<text>Hello</text>"
 
     res = client.get(
         f"/v1/studies/{study_id}/outputs",
@@ -171,37 +169,6 @@ def test_main(client: TestClient, admin_access_token: str, study_id: str) -> Non
         headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
     )
     assert res.status_code == 200
-
-    # study matrix index
-    res = client.get(
-        f"/v1/studies/{study_id}/matrixindex",
-        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
-    )
-    assert res.status_code == 200
-    assert (
-        res.json()
-        == MatrixIndex(
-            first_week_size=7,
-            start_date="2001-01-01 00:00:00",
-            steps=8760,
-            level=StudyDownloadLevelDTO.HOURLY,
-        ).dict()
-    )
-
-    res = client.get(
-        f"/v1/studies/{study_id}/matrixindex?path=output/20201014-1427eco/economy/mc-all/areas/es/details-daily",
-        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
-    )
-    assert res.status_code == 200
-    assert (
-        res.json()
-        == MatrixIndex(
-            first_week_size=7,
-            start_date="2001-01-01 00:00:00",
-            steps=7,
-            level=StudyDownloadLevelDTO.DAILY,
-        ).dict()
-    )
 
     res = client.delete(
         f"/v1/studies/{study_id}/outputs/20201014-1427eco",
@@ -543,7 +510,7 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
                 "args": {
                     "name": "binding constraint 1",
                     "enabled": True,
-                    "time_step": BindingConstraintType.HOURLY.value,
+                    "time_step": BindingConstraintFrequency.HOURLY.value,
                     "operator": BindingConstraintOperator.LESS.value,
                     "coeffs": {"area 1.cluster 1": [2.0, 4]},
                 },
@@ -561,7 +528,7 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
                 "args": {
                     "name": "binding constraint 2",
                     "enabled": True,
-                    "time_step": BindingConstraintType.HOURLY.value,
+                    "time_step": BindingConstraintFrequency.HOURLY.value,
                     "operator": BindingConstraintOperator.LESS.value,
                     "coeffs": {},
                 },
@@ -1304,7 +1271,7 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
 
     # --- TableMode START ---
 
-    table_mode_url = f"/v1/studies/{study_id}/tablemode/form"
+    table_mode_url = f"/v1/studies/{study_id}/tablemode"
 
     # Table Mode - Area
 
@@ -1684,12 +1651,12 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
     assert res_table_data_json == {
         "binding constraint 1": {
             "enabled": True,
-            "type": BindingConstraintType.HOURLY.value,
+            "type": BindingConstraintFrequency.HOURLY.value,
             "operator": BindingConstraintOperator.LESS.value,
         },
         "binding constraint 2": {
             "enabled": True,
-            "type": BindingConstraintType.HOURLY.value,
+            "type": BindingConstraintFrequency.HOURLY.value,
             "operator": BindingConstraintOperator.LESS.value,
         },
     }
@@ -1706,7 +1673,7 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
                 "operator": BindingConstraintOperator.BOTH.value,
             },
             "binding constraint 2": {
-                "type": BindingConstraintType.WEEKLY.value,
+                "type": BindingConstraintFrequency.WEEKLY.value,
                 "operator": BindingConstraintOperator.EQUAL.value,
             },
         },
@@ -1723,12 +1690,12 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
     assert res_table_data_json == {
         "binding constraint 1": {
             "enabled": False,
-            "type": BindingConstraintType.HOURLY.value,
+            "type": BindingConstraintFrequency.HOURLY.value,
             "operator": BindingConstraintOperator.BOTH.value,
         },
         "binding constraint 2": {
             "enabled": True,
-            "type": BindingConstraintType.WEEKLY.value,
+            "type": BindingConstraintFrequency.WEEKLY.value,
             "operator": BindingConstraintOperator.EQUAL.value,
         },
     }
@@ -2006,230 +1973,6 @@ def test_maintenance(client: TestClient, admin_access_token: str, study_id: str)
     res = client.get("/v1/core/maintenance/message", headers=admin_headers)
     assert res.status_code == 200
     assert res.json() == message
-
-
-def test_binding_constraint_manager(client: TestClient, admin_access_token: str, study_id: str) -> None:
-    admin_headers = {"Authorization": f"Bearer {admin_access_token}"}
-
-    created = client.post("/v1/studies?name=foo", headers=admin_headers)
-    study_id = created.json()
-
-    area1_name = "area1"
-    area2_name = "area2"
-    res = client.post(
-        f"/v1/studies/{study_id}/areas",
-        headers=admin_headers,
-        json={
-            "name": area1_name,
-            "type": AreaType.AREA.value,
-            "metadata": {"country": "FR"},
-        },
-    )
-    assert res.status_code == 200
-
-    res = client.post(
-        f"/v1/studies/{study_id}/areas",
-        headers=admin_headers,
-        json={
-            "name": area2_name,
-            "type": AreaType.AREA.value,
-            "metadata": {"country": "DE"},
-        },
-    )
-    assert res.status_code == 200
-
-    res = client.post(
-        f"/v1/studies/{study_id}/links",
-        headers=admin_headers,
-        json={
-            "area1": area1_name,
-            "area2": area2_name,
-        },
-    )
-    assert res.status_code == 200
-
-    # Create Variant
-    res = client.post(f"/v1/studies/{study_id}/variants?name=foo", headers=admin_headers)
-    variant_id = res.json()
-
-    # Create Binding constraints
-    res = client.post(
-        f"/v1/studies/{variant_id}/commands",
-        json=[
-            {
-                "action": "create_binding_constraint",
-                "args": {
-                    "name": "binding_constraint_1",
-                    "enabled": True,
-                    "time_step": "hourly",
-                    "operator": "less",
-                    "coeffs": {},
-                    "comments": "",
-                },
-            }
-        ],
-        headers=admin_headers,
-    )
-    assert res.status_code == 200
-
-    res = client.post(
-        f"/v1/studies/{variant_id}/commands",
-        json=[
-            {
-                "action": "create_binding_constraint",
-                "args": {
-                    "name": "binding_constraint_2",
-                    "enabled": True,
-                    "time_step": "hourly",
-                    "operator": "less",
-                    "coeffs": {},
-                    "comments": "",
-                },
-            }
-        ],
-        headers=admin_headers,
-    )
-    assert res.status_code == 200
-
-    # Get Binding Constraint list
-    res = client.get(f"/v1/studies/{variant_id}/bindingconstraints", headers=admin_headers)
-    binding_constraints_list = res.json()
-    assert res.status_code == 200
-    assert len(binding_constraints_list) == 2
-    assert binding_constraints_list[0]["id"] == "binding_constraint_1"
-    assert binding_constraints_list[1]["id"] == "binding_constraint_2"
-
-    binding_constraint_id = binding_constraints_list[0]["id"]
-
-    # Update element of Binding constraint
-    new_comment = "We made it !"
-    res = client.put(
-        f"v1/studies/{variant_id}/bindingconstraints/{binding_constraint_id}",
-        json={"key": "comments", "value": new_comment},
-        headers=admin_headers,
-    )
-    assert res.status_code == 200
-
-    # Get Binding Constraint
-    res = client.get(
-        f"/v1/studies/{variant_id}/bindingconstraints/{binding_constraint_id}",
-        headers=admin_headers,
-    )
-    binding_constraint = res.json()
-    comments = binding_constraint["comments"]
-    assert res.status_code == 200
-    assert comments == new_comment
-
-    # Add Constraint term
-    res = client.post(
-        f"/v1/studies/{variant_id}/bindingconstraints/{binding_constraint_id}/term",
-        json={
-            "weight": 1,
-            "offset": 2,
-            "data": {"area1": area1_name, "area2": area2_name},
-        },
-        headers=admin_headers,
-    )
-    assert res.status_code == 200
-
-    # Get Binding Constraint
-    res = client.get(
-        f"/v1/studies/{variant_id}/bindingconstraints/{binding_constraint_id}",
-        headers=admin_headers,
-    )
-    binding_constraint = res.json()
-    constraints = binding_constraint["constraints"]
-    assert res.status_code == 200
-    assert binding_constraint["id"] == binding_constraint_id
-    assert len(constraints) == 1
-    assert constraints[0]["id"] == f"{area1_name}%{area2_name}"
-    assert constraints[0]["weight"] == 1
-    assert constraints[0]["offset"] == 2
-    assert constraints[0]["data"]["area1"] == area1_name
-    assert constraints[0]["data"]["area2"] == area2_name
-
-    # Update Constraint term
-    res = client.put(
-        f"/v1/studies/{variant_id}/bindingconstraints/{binding_constraint_id}/term",
-        json={
-            "id": f"{area1_name}%{area2_name}",
-            "weight": 3,
-        },
-        headers=admin_headers,
-    )
-    assert res.status_code == 200
-
-    # Get Binding Constraint
-    res = client.get(
-        f"/v1/studies/{variant_id}/bindingconstraints/{binding_constraint_id}",
-        headers=admin_headers,
-    )
-    binding_constraint = res.json()
-    constraints = binding_constraint["constraints"]
-    assert res.status_code == 200
-    assert binding_constraint["id"] == binding_constraint_id
-    assert len(constraints) == 1
-    assert constraints[0]["id"] == f"{area1_name}%{area2_name}"
-    assert constraints[0]["weight"] == 3
-    assert constraints[0]["offset"] is None
-    assert constraints[0]["data"]["area1"] == area1_name
-    assert constraints[0]["data"]["area2"] == area2_name
-
-    # Remove Constraint term
-    res = client.delete(
-        f"/v1/studies/{variant_id}/bindingconstraints/{binding_constraint_id}/term/{area1_name}%{area2_name}",
-        headers=admin_headers,
-    )
-    assert res.status_code == 200
-
-    # Get Binding Constraint
-    res = client.get(
-        f"/v1/studies/{variant_id}/bindingconstraints/{binding_constraint_id}",
-        headers=admin_headers,
-    )
-    binding_constraint = res.json()
-    constraints = binding_constraint["constraints"]
-    assert res.status_code == 200
-    assert constraints is None
-
-    # Creates a binding constraint with the new API
-    res = client.post(
-        f"/v1/studies/{variant_id}/bindingconstraints",
-        json={
-            "name": "binding_constraint_3",
-            "enabled": True,
-            "time_step": "hourly",
-            "operator": "less",
-            "coeffs": {},
-            "comments": "New API",
-        },
-        headers=admin_headers,
-    )
-    assert res.status_code == 200
-
-    # Asserts that creating 2 binding constraints with the same name raises an Exception
-    res = client.post(
-        f"/v1/studies/{variant_id}/bindingconstraints",
-        json={
-            "name": "binding_constraint_3",
-            "enabled": True,
-            "time_step": "hourly",
-            "operator": "less",
-            "coeffs": {},
-            "comments": "New API",
-        },
-        headers=admin_headers,
-    )
-    assert res.status_code == 409
-    assert res.json() == {
-        "description": "A binding constraint with the same name already exists: binding_constraint_3.",
-        "exception": "DuplicateConstraintName",
-    }
-
-    # Asserts that only 3 binding constraint have been created
-    res = client.get(f"/v1/studies/{variant_id}/bindingconstraints", headers=admin_headers)
-    assert res.status_code == 200
-    assert len(res.json()) == 3
 
 
 def test_import(client: TestClient, admin_access_token: str, study_id: str) -> None:

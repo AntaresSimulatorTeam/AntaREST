@@ -3,13 +3,14 @@ from http import HTTPStatus
 from typing import Any, Dict, List, Optional, Sequence, Union, cast
 
 from fastapi import APIRouter, Body, Depends
-from fastapi.params import Body, Query
+from fastapi.params import Query
 from starlette.responses import RedirectResponse
 
 from antarest.core.config import Config
 from antarest.core.jwt import JWTUser
 from antarest.core.model import StudyPermissionType
 from antarest.core.requests import RequestParameters
+from antarest.core.utils.utils import sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.matrixstore.matrix_editor import MatrixEditInstruction
@@ -24,8 +25,8 @@ from antarest.study.business.areas.renewable_management import (
     RenewableClusterInput,
     RenewableClusterOutput,
 )
-from antarest.study.business.areas.st_storage_management import *
-from antarest.study.business.areas.thermal_management import *
+from antarest.study.business.areas.st_storage_management import *  # noqa
+from antarest.study.business.areas.thermal_management import *  # noqa
 from antarest.study.business.binding_constraint_management import (
     BindingConstraintPropertiesWithName,
     ConstraintTermDTO,
@@ -42,6 +43,7 @@ from antarest.study.business.thematic_trimming_management import ThematicTrimmin
 from antarest.study.business.timeseries_config_management import TSFormFields
 from antarest.study.model import PatchArea, PatchCluster
 from antarest.study.service import StudyService
+from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 
 logger = logging.getLogger(__name__)
 
@@ -199,6 +201,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
+        uuid = sanitize_uuid(uuid)
+        area_id = transform_name_to_id(area_id)
         study_service.delete_area(uuid, area_id, params)
         return area_id
 
@@ -219,6 +223,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
+        area_from = transform_name_to_id(area_from)
+        area_to = transform_name_to_id(area_to)
         study_service.delete_link(uuid, area_from, area_to, params)
         return f"{area_from}%{area_to}"
 
@@ -751,14 +757,14 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         study_service.ts_config_manager.set_field_values(study, field_values)
 
     @bp.get(
-        path="/studies/{uuid}/tablemode/form",
+        path="/studies/{uuid}/tablemode",
         tags=[APITag.study_data],
         summary="Get table data for table form",
         # `Any` because `Union[AreaColumns, LinkColumns]` not working
         response_model=Dict[str, Dict[str, Any]],
         response_model_exclude_none=True,
     )
-    def get_table_data(
+    def get_table_mode(
         uuid: str,
         table_type: TableTemplateType,
         columns: str,
@@ -774,11 +780,11 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         return study_service.table_mode_manager.get_table_data(study, table_type, columns.split(","))
 
     @bp.put(
-        path="/studies/{uuid}/tablemode/form",
+        path="/studies/{uuid}/tablemode",
         tags=[APITag.study_data],
         summary="Set table data with values from table form",
     )
-    def set_table_data(
+    def set_table_mode(
         uuid: str,
         table_type: TableTemplateType,
         data: Dict[str, ColumnsModelTypes],

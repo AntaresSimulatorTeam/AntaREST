@@ -9,6 +9,8 @@ import yaml
 from antarest.core.model import JSON
 from antarest.core.roles import RoleType
 
+DEFAULT_WORKSPACE_NAME = "default"
+
 
 @dataclass(frozen=True)
 class ExternalAuthConfig:
@@ -547,3 +549,18 @@ class Config:
         if res is not None:
             data["resources_path"] = res
         return cls.from_dict(data)
+
+    def get_workspace_path(self, *, workspace: str = DEFAULT_WORKSPACE_NAME) -> Path:
+        """
+        Get workspace path from config file.
+
+        Args:
+            workspace: Workspace name.
+
+        Returns:
+            Absolute (or relative) path to the workspace directory.
+        """
+        try:
+            return self.storage.workspaces[workspace].path
+        except KeyError:
+            raise ValueError(f"Workspace '{workspace}' not found in config") from None

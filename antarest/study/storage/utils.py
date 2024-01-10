@@ -11,7 +11,6 @@ from pathlib import Path
 from uuid import uuid4
 from zipfile import ZipFile
 
-from antarest.core.config import Config
 from antarest.core.exceptions import StudyValidationError, UnsupportedStudyVersion
 from antarest.core.interfaces.cache import CacheConstants, ICache
 from antarest.core.jwt import JWTUser
@@ -27,8 +26,8 @@ from antarest.study.model import (
     StudyDownloadLevelDTO,
     StudyMetadataDTO,
 )
-from antarest.study.storage.rawstudy.io.reader import IniReader
-from antarest.study.storage.rawstudy.io.writer.ini_writer import IniWriter
+from antarest.study.storage.rawstudy.ini_reader import IniReader
+from antarest.study.storage.rawstudy.ini_writer import IniWriter
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
@@ -36,28 +35,7 @@ from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
 logger = logging.getLogger(__name__)
 
 
-def get_workspace_path(config: Config, workspace: str) -> Path:
-    """
-    Retrieve workspace path from config
-
-    Args:
-        workspace: workspace name
-        config: antarest config
-    Returns: path
-
-    """
-    return config.storage.workspaces[workspace].path
-
-
-def get_default_workspace_path(config: Config) -> Path:
-    """
-    Get path of default workspace
-    Returns: path
-
-    """
-    return get_workspace_path(config, DEFAULT_WORKSPACE_NAME)
-
-
+# noinspection SpellCheckingInspection
 def update_antares_info(metadata: Study, study_tree: FileStudyTree, *, update_author: bool) -> None:
     """
     Update the "antares" information directly in the study tree.
@@ -81,16 +59,17 @@ def update_antares_info(metadata: Study, study_tree: FileStudyTree, *, update_au
 
 def fix_study_root(study_path: Path) -> None:
     """
-    Fix possibly the wrong study root in zipped archive (when the study root is nested)
+    Fix possibly the wrong study root in zipped archive (when the study root is nested).
 
-    @param study_path the study initial root path
+    Args:
+        study_path: the study initial root path
     """
     # TODO: what if it is a zipped output ?
     if study_path.suffix == ".zip":
         return None
 
     if not study_path.is_dir():
-        raise StudyValidationError("Not a directory")
+        raise StudyValidationError("Not a directory: '{study_path}'")
 
     root_path = study_path
     contents = os.listdir(root_path)
@@ -105,7 +84,7 @@ def fix_study_root(study_path: Path) -> None:
         logger.debug(f"Searching study root in {new_root}")
         root_path = new_root
         if not new_root.is_dir():
-            raise StudyValidationError("Not a directory")
+            raise StudyValidationError("Not a directory: '{new_root}'")
         contents = os.listdir(new_root)
 
     if sub_root_path is not None:
@@ -364,9 +343,11 @@ def export_study_flat(
 
     output_src_path = output_src_path or study_dir / "output"
     output_dest_path = dest / "output"
-    ignore_patterns = lambda directory, contents: ["output"] if str(directory) == str(study_dir) else []
 
-    shutil.copytree(src=study_dir, dst=dest, ignore=ignore_patterns)
+    def ignore_outputs(directory: str, _: t.Sequence[str]) -> t.Sequence[str]:
+        return ["output"] if str(directory) == str(study_dir) else []
+
+    shutil.copytree(src=study_dir, dst=dest, ignore=ignore_outputs)
 
     if outputs and output_src_path.exists():
         if output_list_filter is None:

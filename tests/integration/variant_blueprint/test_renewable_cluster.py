@@ -4,7 +4,9 @@ import numpy as np
 import pytest
 from starlette.testclient import TestClient
 
+from antarest.core.tasks.model import TaskStatus
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
+from tests.integration.utils import wait_task_completion
 
 
 # noinspection SpellCheckingInspection
@@ -22,6 +24,22 @@ class TestRenewableCluster:
         study_id: str,
     ) -> None:
         # sourcery skip: extract-duplicate-method
+
+        # =======================
+        #  Study version upgrade
+        # =======================
+
+        # We have an "old" study that we need to upgrade to version 810
+        min_study_version = 810
+        res = client.put(
+            f"/v1/studies/{study_id}/upgrade",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+            params={"target_version": min_study_version},
+        )
+        res.raise_for_status()
+        task_id = res.json()
+        task = wait_task_completion(client, user_access_token, task_id)
+        assert task.status == TaskStatus.COMPLETED, task
 
         # =====================
         #  General Data Update
