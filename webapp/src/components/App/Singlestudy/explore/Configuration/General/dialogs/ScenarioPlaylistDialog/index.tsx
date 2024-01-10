@@ -2,7 +2,6 @@ import { Box, Button, Divider } from "@mui/material";
 import { useRef } from "react";
 import { useTranslation } from "react-i18next";
 import * as R from "ramda";
-import { Pred } from "ramda";
 import HotTable from "@handsontable/react";
 import Handsontable from "handsontable";
 import { StudyMetadata } from "../../../../../../../../common/types";

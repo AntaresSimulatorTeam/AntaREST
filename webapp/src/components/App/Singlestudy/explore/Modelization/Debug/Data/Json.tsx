@@ -11,7 +11,9 @@ import {
 } from "../../../../../../../services/api/study";
 import { Header, Root } from "./style";
 import SimpleLoader from "../../../../../../common/loaders/SimpleLoader";
-import JSONEditor from "../../../../../../common/JSONEditor";
+import JSONEditor, {
+  JSONEditorProps,
+} from "../../../../../../common/JSONEditor";
 import usePromiseWithSnackbarError from "../../../../../../../hooks/usePromiseWithSnackbarError";
 import UsePromiseCond from "../../../../../../common/utils/UsePromiseCond";
 import SimpleContent from "../../../../../../common/page/SimpleContent";
@@ -29,7 +31,7 @@ function JsonView({ path, studyId }: Props) {
   const [jsonData, setJsonData] = useState<string | null>(null);
   const [isSaveAllowed, setSaveAllowed] = useState(false);
 
-  const json = usePromiseWithSnackbarError(
+  const res = usePromiseWithSnackbarError(
     () => getStudyData(studyId, path, -1),
     {
       errorMessage: t("studies.error.retrieveData"),
@@ -60,8 +62,15 @@ function JsonView({ path, studyId }: Props) {
     }
   };
 
-  const handleJsonChange = (newJson: string) => {
-    setJsonData(newJson);
+  const handleJsonChange: JSONEditorProps["onChange"] = (
+    content,
+    previousContent,
+    status,
+  ) => {
+    console.log({
+      status,
+    });
+    // setJsonData(newJson);
     setSaveAllowed(true);
   };
 
@@ -83,9 +92,9 @@ function JsonView({ path, studyId }: Props) {
         </Button>
       </Header>
       <UsePromiseCond
-        response={json}
+        response={res}
         ifPending={() => <SimpleLoader />}
-        ifResolved={() => (
+        ifResolved={(json) => (
           <Box
             sx={{
               width: 1,
@@ -93,12 +102,12 @@ function JsonView({ path, studyId }: Props) {
             }}
           >
             <JSONEditor
-              json={json.data}
-              onChangeJSON={handleJsonChange}
-              onChangeText={handleJsonChange} // only for code mode
-              modes={["tree", "code"]}
-              enableSort={false}
-              enableTransform={false}
+              content={{ json }}
+              onChange={handleJsonChange}
+              // onChangeText={handleJsonChange} // only for code mode
+              // modes={["tree", "code"]}
+              // enableSort={false}
+              // enableTransform={false}
             />
           </Box>
         )}
