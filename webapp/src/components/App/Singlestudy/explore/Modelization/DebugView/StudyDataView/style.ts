@@ -17,7 +17,7 @@ export const Header = styled(Box)(({ theme }) => ({
   flexFlow: "row nowrap",
   justifyContent: "space-between",
   alignItems: "center",
-  padding: theme.spacing(0, 2),
+  marginBottom: theme.spacing(1),
 }));
 
 export const Content = styled(Paper)(({ theme }) => ({
