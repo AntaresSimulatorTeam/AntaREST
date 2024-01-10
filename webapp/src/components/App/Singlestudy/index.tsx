@@ -66,6 +66,10 @@ function SingleStudy(props: Props) {
         label: t("study.results"),
         path: `/studies/${studyId}/explore/results`,
       },
+      {
+        label: t("study.debug"),
+        path: `/studies/${studyId}/explore/debug`,
+      },
     ],
     [studyId],
   );
