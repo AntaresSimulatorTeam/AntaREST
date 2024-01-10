@@ -11,7 +11,7 @@ interface Props {
 
 function FileTreeItem({ name, content, path }: Props) {
   const { onFileSelect } = useDebugContext();
-  const fullPath = `${path}/${name}`;
+  const filePath = `${path}/${name}`;
   const fileType = determineFileType(content);
   const FileIcon = getFileIcon(fileType);
   const isFolderEmpty = !Object.keys(content).length;
@@ -22,7 +22,7 @@ function FileTreeItem({ name, content, path }: Props) {
 
   const handleClick = () => {
     if (fileType !== "folder") {
-      onFileSelect(fileType, fullPath);
+      onFileSelect({ fileType, filePath });
     }
   };
 
@@ -32,7 +32,7 @@ function FileTreeItem({ name, content, path }: Props) {
 
   return (
     <TreeItem
-      nodeId={fullPath}
+      nodeId={filePath}
       label={
         <Box
           role="button"
@@ -54,7 +54,7 @@ function FileTreeItem({ name, content, path }: Props) {
             key={childName}
             name={childName}
             content={content[childName]}
-            path={fullPath}
+            path={filePath}
           />
         ))}
     </TreeItem>

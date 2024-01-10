@@ -10,11 +10,9 @@ import {
   getStudyData,
 } from "../../../../../../../services/api/study";
 import { Header, Root } from "./style";
-import SimpleLoader from "../../../../../../common/loaders/SimpleLoader";
 import JSONEditor from "../../../../../../common/JSONEditor";
 import usePromiseWithSnackbarError from "../../../../../../../hooks/usePromiseWithSnackbarError";
 import UsePromiseCond from "../../../../../../common/utils/UsePromiseCond";
-import SimpleContent from "../../../../../../common/page/SimpleContent";
 import useEnqueueErrorSnackbar from "../../../../../../../hooks/useEnqueueErrorSnackbar";
 
 interface Props {
@@ -37,7 +35,7 @@ function Json({ path, studyId }: Props) {
     },
   );
 
-  /* Reset save button when path changes */
+  // Reset save button when path changes
   useUpdateEffect(() => {
     setSaveAllowed(false);
   }, [studyId, path]);
@@ -84,7 +82,6 @@ function Json({ path, studyId }: Props) {
       </Header>
       <UsePromiseCond
         response={res}
-        ifPending={() => <SimpleLoader />}
         ifResolved={(json) => (
           <Box
             sx={{
@@ -102,7 +99,6 @@ function Json({ path, studyId }: Props) {
             />
           </Box>
         )}
-        ifRejected={(error) => <SimpleContent title={error?.toString()} />}
       />
     </Root>
   );

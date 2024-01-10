@@ -1,21 +1,14 @@
 import { createContext, useContext } from "react";
-import { FileType, TreeData } from "./utils";
+import type { File } from "./utils";
 
-interface DebugContextProps {
-  treeData: TreeData;
-  onFileSelect: (fileType: FileType, filePath: string) => void;
-  reloadTreeData: () => void;
-}
-
-const initialDebugContextValue: DebugContextProps = {
-  treeData: {},
-  onFileSelect: () => {},
-  reloadTreeData: () => {},
+const initialDebugContextValue = {
+  onFileSelect: (file: File): void => {},
+  reloadTreeData: (): void => {},
 };
 
-const DebugContext = createContext<DebugContextProps>(initialDebugContextValue);
+const DebugContext = createContext(initialDebugContextValue);
 
-export const useDebugContext = (): DebugContextProps =>
+export const useDebugContext = (): typeof initialDebugContextValue =>
   useContext(DebugContext);
 
 export default DebugContext;
