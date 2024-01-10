@@ -4,6 +4,47 @@ Antares Web Changelog
 v2.16.2 (2024-01-10)
 --------------------
 
+### Features
+
+* **bc:** add input validation for binding constraint creation [`#1868`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1868)
+* **study-size:** add new route to get a study disk usage (in bytes) [`#1878`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1878)
+* **table-mode:** update Table Mode view [`#1883`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1883)
+* **thermals, st-storages:** add a dialog to define a name when duplicating a cluster or a storage [`#1866`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1866)
+
+
+### Performance
+
+* **db:** improve performance by using joins instead of N+1 queries [`#1848`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1848)
+* **raw-study:** improve INI file reading performance for RAW studies [`#1879`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1879)
+
+
+### Bug Fixes
+
+* **bc:** automatically change binding constraint matrix when changing frequency [`#1867`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1867)
+* **ci:** avoid reflecting user-controlled data (SonarCloud issue) [`#1886`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1886)
+* **db:** correct alembic migration script used to purge obsolete tasks [`#1881`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1881)
+* **db:** add missing constraints and relationships in `TaskJob` table [`#1872`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1872)
+* **services:** ensure all worker services run indefinitely [`#1870`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1870)
+* **study-factory:** ignore non-existent files in archived studies during build [`#1871`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1871)
+* **thermals:** correct TS Generator matrix index for thermal clusters [`#1882`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1882)
+* **ui:** prevent synchro issues between tabs and react-router [`#1869`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1869)
+* **xpansion:** update for improved parameter handling and code refactoring [`#1865`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1865)
+
+
+### Documentation
+
+* **st-storage:** add ST-Storage documentation [`#1873`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1873)
+
+
+### Tests
+
+* remove Locust dependency and unit tests (not really useful) [`34c97e0`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/34c97e05fe8a623a799cd31519b7982dae579368)
+
+
+### Refactoring
+
+* **bc:** remove duplicate class BindingConstraintType [`#1860`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1860)
+
 
 v2.16.1 (2023-12-14)
 --------------------
