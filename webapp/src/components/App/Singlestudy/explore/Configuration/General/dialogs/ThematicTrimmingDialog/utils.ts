@@ -116,8 +116,8 @@ const keysMap: Record<keyof ThematicTrimmingFormFields, string> = {
   congFeeAlg: "CONG. FEE (ALG.)",
   congFeeAbs: "CONG. FEE (ABS.)",
   margCost: "MARG. COST",
-  congProdPlus: "CONG. PROD +",
-  congProdMinus: "CONG. PROD -",
+  congProdPlus: "CONG. PROB +",
+  congProdMinus: "CONG. PROB -",
   hurdleCost: "HURDLE COST",
   // Study version >= 810
   resGenerationByPlant: "RES generation by plant",

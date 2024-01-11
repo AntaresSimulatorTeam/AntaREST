@@ -724,8 +724,8 @@ export interface ThematicTrimmingConfigDTO {
   "CONG. FEE (ALG.)": boolean;
   "CONG. FEE (ABS.)": boolean;
   "MARG. COST": boolean;
-  "CONG. PROD +": boolean;
-  "CONG. PROD -": boolean;
+  "CONG. PROB +": boolean;
+  "CONG. PROB -": boolean;
   "HURDLE COST": boolean;
   // Study version >= 810
   "RES generation by plant"?: boolean;
