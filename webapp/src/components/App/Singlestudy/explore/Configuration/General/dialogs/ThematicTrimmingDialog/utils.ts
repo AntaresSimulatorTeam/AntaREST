@@ -48,8 +48,8 @@ export interface ThematicTrimmingFormFields {
   congFeeAlg: boolean;
   congFeeAbs: boolean;
   margCost: boolean;
-  congProdPlus: boolean;
-  congProdMinus: boolean;
+  congProbPlus: boolean;
+  congProbMinus: boolean;
   hurdleCost: boolean;
   // For study versions >= 810
   resGenerationByPlant?: boolean;
@@ -116,8 +116,8 @@ const keysMap: Record<keyof ThematicTrimmingFormFields, string> = {
   congFeeAlg: "CONG. FEE (ALG.)",
   congFeeAbs: "CONG. FEE (ABS.)",
   margCost: "MARG. COST",
-  congProdPlus: "CONG. PROB +",
-  congProdMinus: "CONG. PROB -",
+  congProbPlus: "CONG. PROB +",
+  congProbMinus: "CONG. PROB -",
   hurdleCost: "HURDLE COST",
   // Study version >= 810
   resGenerationByPlant: "RES generation by plant",

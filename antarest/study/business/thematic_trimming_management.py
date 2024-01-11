@@ -64,8 +64,8 @@ class ThematicTrimmingFormFields(FormFieldsBaseModel, metaclass=AllOptionalMetac
     cong_fee_alg: bool
     cong_fee_abs: bool
     marg_cost: bool
-    cong_prod_plus: bool
-    cong_prod_minus: bool
+    cong_prob_plus: bool
+    cong_prob_minus: bool
     hurdle_cost: bool
     # For study versions >= 810
     res_generation_by_plant: bool
@@ -132,8 +132,8 @@ FIELDS_INFO: t.Dict[str, FieldInfo] = {
     "cong_fee_alg": {"path": "CONG. FEE (ALG.)", "default_value": True},
     "cong_fee_abs": {"path": "CONG. FEE (ABS.)", "default_value": True},
     "marg_cost": {"path": "MARG. COST", "default_value": True},
-    "cong_prod_plus": {"path": "CONG. PROB +", "default_value": True},
-    "cong_prod_minus": {"path": "CONG. PROB -", "default_value": True},
+    "cong_prob_plus": {"path": "CONG. PROB +", "default_value": True},
+    "cong_prob_minus": {"path": "CONG. PROB -", "default_value": True},
     "hurdle_cost": {"path": "HURDLE COST", "default_value": True},
     "res_generation_by_plant": {"path": "RES generation by plant", "default_value": True, "start_version": 810},
     "misc_dtg_2": {"path": "MISC. DTG 2", "default_value": True, "start_version": 810},
