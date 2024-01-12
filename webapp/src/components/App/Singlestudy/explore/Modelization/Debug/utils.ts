@@ -67,7 +67,7 @@ export const determineFileType = (treeData: TreeData): FileType | "folder" => {
  * @returns {TreeData} The filtered tree data.
  */
 export const filterTreeData = (data: TreeData): TreeData => {
-  const excludedKeys = new Set(["Desktop", "study", "output", "logs"]);
+  const excludedKeys = new Set(["Desktop", "study", "logs"]);
 
   return Object.fromEntries(
     Object.entries(data).filter(([key]) => !excludedKeys.has(key)),
