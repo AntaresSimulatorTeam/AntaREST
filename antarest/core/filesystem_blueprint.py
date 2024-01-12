@@ -119,23 +119,23 @@ class FileInfoDTO(
     Attributes:
 
     - `path`: full path of the file or directory in Antares Web Server.
-    - `file_type`: file type: "folder", "file", "symlink", "socket", "block_device",
+    - `file_type`: file type: "directory", "file", "symlink", "socket", "block_device",
       "character_device", "fifo", or "unknown".
-    - `file_count`: number of files in the directory (1 for files).
+    - `file_count`: number of files and folders in the directory (1 for files).
     - `size_bytes`: size of the file or total size of the directory in bytes.
-    - `created`: creation date of the file or directory (UTC).
-    - `modified`: last modification date of the file or directory (UTC).
-    - `accessed`: last access date of the file or directory (UTC).
+    - `created`: creation date of the file or directory (local time).
+    - `modified`: last modification date of the file or directory (local time).
+    - `accessed`: last access date of the file or directory (local time).
     - `message`: a message describing the status of the file.
     """
 
     path: Path = Field(description="Full path of the file or directory in Antares Web Server")
     file_type: str = Field(description="Type of the file or directory")
-    file_count: int = Field(1, description="Number of files in the directory (1 for files)")
+    file_count: int = Field(1, description="Number of files and folders in the directory (1 for files)")
     size_bytes: int = Field(0, description="Size of the file or total size of the directory in bytes")
-    created: datetime.datetime = Field(description="Creation date of the file or directory (UTC)")
-    modified: datetime.datetime = Field(description="Last modification date of the file or directory (UTC)")
-    accessed: datetime.datetime = Field(description="Last access date of the file or directory (UTC)")
+    created: datetime.datetime = Field(description="Creation date of the file or directory (local time)")
+    modified: datetime.datetime = Field(description="Last modification date of the file or directory (local time)")
+    accessed: datetime.datetime = Field(description="Last access date of the file or directory (local time)")
     message: str = Field("OK", description="A message describing the status of the file")
 
     @classmethod
@@ -149,9 +149,9 @@ class FileInfoDTO(
                 path=full_path,
                 file_type="unknown",
                 file_count=0,  # missing
-                created=datetime.datetime.utcnow(),
-                modified=datetime.datetime.utcnow(),
-                accessed=datetime.datetime.utcnow(),
+                created=datetime.datetime.min,
+                modified=datetime.datetime.min,
+                accessed=datetime.datetime.min,
                 message=f"N/A: {exc}",
             )
 
@@ -166,22 +166,22 @@ class FileInfoDTO(
         )
 
         if stat.S_ISDIR(file_stat.st_mode):
-            obj.file_type = "folder"
+            obj.file_type = "directory"
             if details:
                 file_count, disk_space = await _calc_details(full_path)
                 obj.file_count = file_count
                 obj.size_bytes = disk_space
         elif stat.S_ISREG(file_stat.st_mode):
             obj.file_type = "file"
-        elif stat.S_ISLNK(file_stat.st_mode):
+        elif stat.S_ISLNK(file_stat.st_mode):  # pragma: no cover
             obj.file_type = "symlink"
-        elif stat.S_ISSOCK(file_stat.st_mode):
+        elif stat.S_ISSOCK(file_stat.st_mode):  # pragma: no cover
             obj.file_type = "socket"
-        elif stat.S_ISBLK(file_stat.st_mode):
+        elif stat.S_ISBLK(file_stat.st_mode):  # pragma: no cover
             obj.file_type = "block_device"
-        elif stat.S_ISCHR(file_stat.st_mode):
+        elif stat.S_ISCHR(file_stat.st_mode):  # pragma: no cover
             obj.file_type = "character_device"
-        elif stat.S_ISFIFO(file_stat.st_mode):
+        elif stat.S_ISFIFO(file_stat.st_mode):  # pragma: no cover
             obj.file_type = "fifo"
         else:  # pragma: no cover
             obj.file_type = "unknown"
@@ -191,17 +191,17 @@ class FileInfoDTO(
 
 async def _calc_details(full_path: t.Union[str, Path]) -> t.Tuple[int, int]:
     """Calculate the number of files and the total size of a directory recursively."""
-    file_count = 0
-    total_size = 0
 
-    for entry in os.scandir(full_path):
-        if entry.is_dir():
+    full_path = Path(full_path)
+    file_stat = full_path.stat()
+    file_count = 1
+    total_size = file_stat.st_size
+
+    if stat.S_ISDIR(file_stat.st_mode):
+        for entry in os.scandir(full_path):
             sub_file_count, sub_total_size = await _calc_details(entry.path)
             file_count += sub_file_count
             total_size += sub_total_size
-        else:
-            file_count += 1
-            total_size += entry.stat().st_size
 
     return file_count, total_size
 
@@ -383,13 +383,13 @@ def create_file_system_blueprint(config: Config) -> APIRouter:
         Returns:
         - `path`: full path of the file or directory in Antares Web Server.
           This path can contain glob patterns (e.g., `*.txt`).
-        - `file_type`: file type: "folder", "file", "symlink", "socket", "block_device",
+        - `file_type`: file type: "directory", "file", "symlink", "socket", "block_device",
             "character_device", "fifo", or "unknown".
-        - `file_count`: number of files in the directory (1 for files).
+        - `file_count`: number of files of folders in the directory (1 for files).
         - `size_bytes`: size of the file or total size of the directory in bytes.
-        - `created`: creation date of the file or directory (UTC).
-        - `modified`: last modification date of the file or directory (UTC).
-        - `accessed`: last access date of the file or directory (UTC).
+        - `created`: creation date of the file or directory (local time).
+        - `modified`: last modification date of the file or directory (local time).
+        - `accessed`: last access date of the file or directory (local time).
         - `message`: a message describing the status of the file.
 
         Possible error codes:
