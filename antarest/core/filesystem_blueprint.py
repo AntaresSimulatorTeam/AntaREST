@@ -85,7 +85,7 @@ class MountPointDTO(
 
     @classmethod
     async def from_path(cls, name: str, path: Path) -> "MountPointDTO":
-        obj = cls(name=name, path=path.resolve())
+        obj = cls(name=name, path=path)
         try:
             obj.total_bytes, obj.used_bytes, obj.free_bytes = shutil.disk_usage(obj.path)
         except OSError as exc:

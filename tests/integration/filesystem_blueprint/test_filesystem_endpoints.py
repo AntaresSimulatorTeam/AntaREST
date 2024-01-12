@@ -257,7 +257,7 @@ class TestFilesystemEndpoints:
                     "path": str(ext_workspace_path / "STA-mini"),
                     "file_type": "directory",
                     "file_count": IntegerRange(900, 1000),  # 918
-                    "size_bytes": IntegerRange(8_000_000, 9_000_000),  # 8_597_683
+                    "size_bytes": IntegerRange(7_000_000, 9_000_000),  # nt: 7_741_619, posix: 8_597_683
                     "created": AnyIsoDateTime(),
                     "accessed": AnyIsoDateTime(),
                     "modified": AnyIsoDateTime(),
