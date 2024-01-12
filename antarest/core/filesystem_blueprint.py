@@ -460,10 +460,10 @@ def create_file_system_blueprint(config: Config) -> APIRouter:
 
         if full_path.is_dir():
             shutil.rmtree(full_path)
-            return f"Directory deleted successfully: '{path}'"
+            return "Directory deleted successfully"
         elif full_path.is_file():
             full_path.unlink()
-            return f"File deleted successfully: '{path}'"
+            return "File deleted successfully"
         else:  # pragma: no cover
             raise HTTPException(status_code=417, detail=f"Unknown file type: '{path}'")
 
