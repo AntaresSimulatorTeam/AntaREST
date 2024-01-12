@@ -48,7 +48,10 @@ export const getFileIcon = (type: FileType | "folder"): SvgIconComponent => {
  */
 export const determineFileType = (treeData: TreeData): FileType | "folder" => {
   if (typeof treeData === "string") {
-    if (treeData.startsWith("matrix://")) {
+    if (
+      treeData.startsWith("matrix://") ||
+      treeData.startsWith("matrixfile://")
+    ) {
       return "matrix";
     }
     if (treeData.startsWith("json://")) {
