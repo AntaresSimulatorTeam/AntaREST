@@ -9,7 +9,7 @@ import stat
 import typing as t
 from pathlib import Path
 
-import typing_extensions
+import typing_extensions as te
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Extra, Field
 from starlette.responses import PlainTextResponse, StreamingResponse
@@ -19,8 +19,8 @@ from antarest.core.jwt import JWTUser
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 
-FilesystemName = typing_extensions.Annotated[str, Field(regex=r"^\w+$", description="Filesystem name")]
-MountPointName = typing_extensions.Annotated[str, Field(regex=r"^\w+$", description="Mount point name")]
+FilesystemName = te.Annotated[str, Field(regex=r"^\w+$", description="Filesystem name")]
+MountPointName = te.Annotated[str, Field(regex=r"^\w+$", description="Mount point name")]
 
 
 class FilesystemDTO(
