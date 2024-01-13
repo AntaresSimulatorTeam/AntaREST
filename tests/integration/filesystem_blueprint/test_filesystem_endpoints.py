@@ -111,7 +111,7 @@ class TestFilesystemEndpoints:
             # ==================================================
 
             # Without authentication
-            res = client.get("/filesystem")
+            res = client.get("/v1/filesystem")
             assert res.status_code == 401, res.json()
             assert res.json()["detail"] == "Missing cookie access_token_cookie"
             # This error generates no log entry
@@ -119,7 +119,7 @@ class TestFilesystemEndpoints:
 
             # With authentication
             user_headers = {"Authorization": f"Bearer {user_access_token}"}
-            res = client.get("/filesystem", headers=user_headers)
+            res = client.get("/v1/filesystem", headers=user_headers)
             assert res.status_code == 200, res.json()
             actual = res.json()
             expected = [
@@ -147,13 +147,13 @@ class TestFilesystemEndpoints:
             # ===================================================================
 
             # Unknown filesystem
-            res = client.get("/filesystem/foo", headers=user_headers)
+            res = client.get("/v1/filesystem/foo", headers=user_headers)
             assert res.status_code == 404, res.json()
             assert res.json()["description"] == "Filesystem not found: 'foo'"
             err_count += 1
 
             # Known filesystem
-            res = client.get("/filesystem/ws", headers=user_headers)
+            res = client.get("/v1/filesystem/ws", headers=user_headers)
             assert res.status_code == 200, res.json()
             actual = sorted(res.json(), key=operator.itemgetter("name"))
             # Both mount point are in the same filesystem, which is the `tmp_path` filesystem
@@ -183,12 +183,12 @@ class TestFilesystemEndpoints:
             # ================================================
 
             # Unknown mount point
-            res = client.get("/filesystem/ws/foo", headers=user_headers)
+            res = client.get("/v1/filesystem/ws/foo", headers=user_headers)
             assert res.status_code == 404, res.json()
             assert res.json()["description"] == "Mount point not found: 'ws/foo'"
             err_count += 1
 
-            res = client.get("/filesystem/ws/default", headers=user_headers)
+            res = client.get("/v1/filesystem/ws/default", headers=user_headers)
             assert res.status_code == 200, res.json()
             actual = res.json()
             expected = {
@@ -206,19 +206,19 @@ class TestFilesystemEndpoints:
             # =========================================
 
             # Listing a workspace with and invalid glob pattern raises an error
-            res = client.get("/filesystem/ws/default/ls", headers=user_headers, params={"path": "."})
+            res = client.get("/v1/filesystem/ws/default/ls", headers=user_headers, params={"path": "."})
             assert res.status_code == 400, res.json()
             assert res.json()["description"].startswith("Invalid path: '.'"), res.json()
             err_count += 1
 
             # Providing en absolute to an external workspace is not allowed
-            res = client.get("/filesystem/ws/ext/ls", headers=user_headers, params={"path": "/foo"})
+            res = client.get("/v1/filesystem/ws/ext/ls", headers=user_headers, params={"path": "/foo"})
             assert res.status_code == 403, res.json()
             assert res.json()["description"].startswith("Access denied to path: '/foo'"), res.json()
             err_count += 1
 
             # Recursively search all "study.antares" files in the "default" workspace
-            res = client.get("/filesystem/ws/default/ls", headers=user_headers, params={"path": "**/study.antares"})
+            res = client.get("/v1/filesystem/ws/default/ls", headers=user_headers, params={"path": "**/study.antares"})
             assert res.status_code == 200, res.json()
             actual = res.json()
             # There is no managed study in the "default" workspace
@@ -226,7 +226,7 @@ class TestFilesystemEndpoints:
             assert actual == expected
 
             # Recursively search all "study.antares" files in the "ext" workspace
-            res = client.get("/filesystem/ws/ext/ls", headers=user_headers, params={"path": "**/study.antares"})
+            res = client.get("/v1/filesystem/ws/ext/ls", headers=user_headers, params={"path": "**/study.antares"})
             assert res.status_code == 200, res.json()
             actual = res.json()
             # There is one external study in the "ext" workspace, which is "STA-mini"
@@ -246,7 +246,7 @@ class TestFilesystemEndpoints:
 
             # Get the details of the "STA-mini" study
             res = client.get(
-                "/filesystem/ws/ext/ls",
+                "/v1/filesystem/ws/ext/ls",
                 headers=user_headers,
                 params={"path": "STA-mini", "details": True},  # type: ignore
             )
@@ -275,7 +275,7 @@ class TestFilesystemEndpoints:
             dummy_file.touch()
 
             # Normal users are not allowed to remove files
-            res = client.delete("/filesystem/ws/ext", headers=user_headers, params={"path": "dummy.txt"})
+            res = client.delete("/v1/filesystem/ws/ext", headers=user_headers, params={"path": "dummy.txt"})
             assert res.status_code == 403, res.json()
             assert res.json()["description"] == "User has no permission to delete files"
             err_count += 1
@@ -284,19 +284,19 @@ class TestFilesystemEndpoints:
             admin_headers = {"Authorization": f"Bearer {admin_access_token}"}
 
             # Providing an empty path is not allowed
-            res = client.delete("/filesystem/ws/ext", headers=admin_headers, params={"path": ""})
+            res = client.delete("/v1/filesystem/ws/ext", headers=admin_headers, params={"path": ""})
             assert res.status_code == 400, res.json()
             assert res.json()["description"] == "Empty or missing path parameter"
             err_count += 1
 
             # Providing en absolute to an external workspace is not allowed
-            res = client.delete("/filesystem/ws/ext", headers=admin_headers, params={"path": "/foo"})
+            res = client.delete("/v1/filesystem/ws/ext", headers=admin_headers, params={"path": "/foo"})
             assert res.status_code == 403, res.json()
             assert res.json()["description"] == "Access denied to path: '/foo'"
             err_count += 1
 
             # Admin users are allowed to remove files
-            res = client.delete("/filesystem/ws/ext", headers=admin_headers, params={"path": "dummy.txt"})
+            res = client.delete("/v1/filesystem/ws/ext", headers=admin_headers, params={"path": "dummy.txt"})
             assert res.status_code == 200, res.json()
             assert not dummy_file.exists()
 
@@ -307,13 +307,13 @@ class TestFilesystemEndpoints:
             dummy_file.touch()
 
             # Normal users are not allowed to remove files or directories
-            res = client.delete("/filesystem/ws/ext", headers=user_headers, params={"path": "dummy"})
+            res = client.delete("/v1/filesystem/ws/ext", headers=user_headers, params={"path": "dummy"})
             assert res.status_code == 403, res.json()
             assert res.json()["description"] == "User has no permission to delete files"
             err_count += 1
 
             # Admin users are allowed to remove files or directories
-            res = client.delete("/filesystem/ws/ext", headers=admin_headers, params={"path": "dummy"})
+            res = client.delete("/v1/filesystem/ws/ext", headers=admin_headers, params={"path": "dummy"})
             assert res.status_code == 200, res.json()
             assert not dummy_dir.exists()
 
@@ -322,19 +322,19 @@ class TestFilesystemEndpoints:
             # =================================
 
             # Providing an empty path is not allowed
-            res = client.get("/filesystem/ws/ext/cat", headers=user_headers, params={"path": ""})
+            res = client.get("/v1/filesystem/ws/ext/cat", headers=user_headers, params={"path": ""})
             assert res.status_code == 400, res.json()
             assert res.json()["description"] == "Empty or missing path parameter"
             err_count += 1
 
             # Providing en absolute to an external workspace is not allowed
-            res = client.get("/filesystem/ws/ext/cat", headers=user_headers, params={"path": "/foo"})
+            res = client.get("/v1/filesystem/ws/ext/cat", headers=user_headers, params={"path": "/foo"})
             assert res.status_code == 403, res.json()
             assert res.json()["description"] == "Access denied to path: '/foo'"
             err_count += 1
 
             # Providing a directory path is not allowed
-            res = client.get("/filesystem/ws/ext/cat", headers=user_headers, params={"path": "STA-mini"})
+            res = client.get("/v1/filesystem/ws/ext/cat", headers=user_headers, params={"path": "STA-mini"})
             assert res.status_code == 417, res.json()
             assert res.json()["description"] == "Path is not a file: 'STA-mini'"
             err_count += 1
@@ -344,25 +344,25 @@ class TestFilesystemEndpoints:
             dummy_file.write_text("Hello, world!")
 
             # Authorized users can view text files
-            res = client.get("/filesystem/ws/ext/cat", headers=user_headers, params={"path": "dummy.txt"})
+            res = client.get("/v1/filesystem/ws/ext/cat", headers=user_headers, params={"path": "dummy.txt"})
             assert res.status_code == 200, res.json()
             assert res.text == "Hello, world!"
 
             # If the file is missing, a 404 error is returned
-            res = client.get("/filesystem/ws/ext/cat", headers=user_headers, params={"path": "missing.txt"})
+            res = client.get("/v1/filesystem/ws/ext/cat", headers=user_headers, params={"path": "missing.txt"})
             assert res.status_code == 404, res.json()
             assert res.json()["description"] == "Path not found: 'missing.txt'"
             err_count += 1
 
             # If the file is not a text file, a 417 error is returned
-            res = client.get("/filesystem/ws/ext/cat", headers=user_headers, params={"path": "STA-mini"})
+            res = client.get("/v1/filesystem/ws/ext/cat", headers=user_headers, params={"path": "STA-mini"})
             assert res.status_code == 417, res.json()
             assert res.json()["description"] == "Path is not a file: 'STA-mini'"
             err_count += 1
 
             # If the user choose an unknown encoding, a 417 error is returned
             res = client.get(
-                "/filesystem/ws/ext/cat",
+                "/v1/filesystem/ws/ext/cat",
                 headers=user_headers,
                 params={"path": "dummy.txt", "encoding": "unknown"},
             )
@@ -372,7 +372,7 @@ class TestFilesystemEndpoints:
 
             # If the file is not a texte file, a 417 error may be returned
             dummy_file.write_bytes(b"\x81\x82\x83")  # invalid utf-8 bytes
-            res = client.get("/filesystem/ws/ext/cat", headers=user_headers, params={"path": "dummy.txt"})
+            res = client.get("/v1/filesystem/ws/ext/cat", headers=user_headers, params={"path": "dummy.txt"})
             assert res.status_code == 417, res.json()
             assert res.json()["description"] == "Failed to decode file: 'dummy.txt'"
             err_count += 1
@@ -382,19 +382,19 @@ class TestFilesystemEndpoints:
             # ================================
 
             # Providing an empty path is not allowed
-            res = client.get("/filesystem/ws/ext/download", headers=user_headers, params={"path": ""})
+            res = client.get("/v1/filesystem/ws/ext/download", headers=user_headers, params={"path": ""})
             assert res.status_code == 400, res.json()
             assert res.json()["description"] == "Empty or missing path parameter"
             err_count += 1
 
             # Providing en absolute to an external workspace is not allowed
-            res = client.get("/filesystem/ws/ext/download", headers=user_headers, params={"path": "/foo"})
+            res = client.get("/v1/filesystem/ws/ext/download", headers=user_headers, params={"path": "/foo"})
             assert res.status_code == 403, res.json()
             assert res.json()["description"] == "Access denied to path: '/foo'"
             err_count += 1
 
             # Providing a directory path is not allowed
-            res = client.get("/filesystem/ws/ext/download", headers=user_headers, params={"path": "STA-mini"})
+            res = client.get("/v1/filesystem/ws/ext/download", headers=user_headers, params={"path": "STA-mini"})
             assert res.status_code == 417, res.json()
             assert res.json()["description"] == "Path is not a file: 'STA-mini'"
             err_count += 1
@@ -404,18 +404,18 @@ class TestFilesystemEndpoints:
             dummy_file.write_bytes(b"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09")
 
             # Authorized users can download files
-            res = client.get("/filesystem/ws/ext/download", headers=user_headers, params={"path": "dummy.bin"})
+            res = client.get("/v1/filesystem/ws/ext/download", headers=user_headers, params={"path": "dummy.bin"})
             assert res.status_code == 200, res.json()
             assert res.content == b"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09"
 
             # If the file is missing, a 404 error is returned
-            res = client.get("/filesystem/ws/ext/download", headers=user_headers, params={"path": "missing.bin"})
+            res = client.get("/v1/filesystem/ws/ext/download", headers=user_headers, params={"path": "missing.bin"})
             assert res.status_code == 404, res.json()
             assert res.json()["description"] == "Path not found: 'missing.bin'"
             err_count += 1
 
             # Downloading a directory is not allowed
-            res = client.get("/filesystem/ws/ext/download", headers=user_headers, params={"path": "STA-mini"})
+            res = client.get("/v1/filesystem/ws/ext/download", headers=user_headers, params={"path": "STA-mini"})
             assert res.status_code == 417, res.json()
             assert res.json()["description"] == "Path is not a file: 'STA-mini'"
             err_count += 1
@@ -433,7 +433,7 @@ class TestFilesystemEndpoints:
         This test demonstrates how to compute the size of all studies.
 
         - First, we get the list of studies using the `/v1/studies` endpoint.
-        - Then, we get the size of each study using the `/filesystem/ws/{workspace}/ls` endpoint,
+        - Then, we get the size of each study using the `/v1/filesystem/ws/{workspace}/ls` endpoint,
           with the `details` parameter set to `True`.
         """
         user_headers = {"Authorization": f"Bearer {user_access_token}"}
@@ -457,7 +457,7 @@ class TestFilesystemEndpoints:
             sizes = []
             for study in actual.values():
                 res = client.get(
-                    f"/filesystem/ws/{study['workspace']}/ls",
+                    f"/v1/filesystem/ws/{study['workspace']}/ls",
                     headers=user_headers,
                     params={"path": study["folder"], "details": True},
                 )
