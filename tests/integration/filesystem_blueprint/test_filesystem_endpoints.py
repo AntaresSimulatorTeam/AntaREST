@@ -77,10 +77,10 @@ class TestFilesystemEndpoints:
     def test_lifecycle(
         self,
         tmp_path: Path,
+        caplog: t.Any,
         client: TestClient,
         user_access_token: str,
         admin_access_token: str,
-        caplog: t.Any,
     ) -> None:
         """
         Test the lifecycle of the filesystem endpoints.
@@ -422,3 +422,51 @@ class TestFilesystemEndpoints:
 
         # At the end of this unit test, the caplog should have errors
         assert len(caplog.records) == err_count, caplog.records
+
+    def test_size_of_studies(
+        self,
+        client: TestClient,
+        user_access_token: str,
+        caplog: t.Any,
+    ):
+        """
+        This test demonstrates how to compute the size of all studies.
+
+        - First, we get the list of studies using the `/v1/studies` endpoint.
+        - Then, we get the size of each study using the `/filesystem/ws/{workspace}/ls` endpoint,
+          with the `details` parameter set to `True`.
+        """
+        user_headers = {"Authorization": f"Bearer {user_access_token}"}
+
+        # For this demo, we can disable the logs
+        with caplog.at_level(level="CRITICAL", logger="antarest.main"):
+            # Create a new study in the "default" workspace for this demo
+            res = client.post(
+                "/v1/studies",
+                headers=user_headers,
+                params={"name": "New Study", "version": "860"},
+            )
+            res.raise_for_status()
+
+            # Get the list of studies from all workspaces
+            res = client.get("/v1/studies", headers=user_headers)
+            res.raise_for_status()
+            actual = res.json()
+
+            # Get the size of each study
+            sizes = []
+            for study in actual.values():
+                res = client.get(
+                    f"/filesystem/ws/{study['workspace']}/ls",
+                    headers=user_headers,
+                    params={"path": study["folder"], "details": True},
+                )
+                res.raise_for_status()
+                actual = res.json()
+                sizes.append(actual[0]["size_bytes"])
+
+            # Check the sizes
+            # The size of the new study should be between 200 and 300 KB.
+            # The suze of 'STA-mini' should be between 7 and 9 MB.
+            sizes.sort()
+            assert sizes == [IntegerRange(200_000, 300_000), IntegerRange(7_000_000, 9_000_000)]
