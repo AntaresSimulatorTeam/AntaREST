@@ -4,15 +4,12 @@ import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
 import { Button } from "@mui/material";
 import UploadOutlinedIcon from "@mui/icons-material/UploadOutlined";
-import {
-  getStudyData,
-  importFile,
-} from "../../../../../../../services/api/study";
+import { getStudyData, importFile } from "../../../../../../services/api/study";
 import { Content, Header, Root } from "./style";
-import useEnqueueErrorSnackbar from "../../../../../../../hooks/useEnqueueErrorSnackbar";
-import ImportDialog from "../../../../../../common/dialogs/ImportDialog";
-import usePromiseWithSnackbarError from "../../../../../../../hooks/usePromiseWithSnackbarError";
-import UsePromiseCond from "../../../../../../common/utils/UsePromiseCond";
+import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
+import ImportDialog from "../../../../../common/dialogs/ImportDialog";
+import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithSnackbarError";
+import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
 import { useDebugContext } from "../DebugContext";
 
 interface Props {

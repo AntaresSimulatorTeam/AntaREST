@@ -5,15 +5,12 @@ import { useSnackbar } from "notistack";
 import SaveIcon from "@mui/icons-material/Save";
 import { Box, Button, Typography } from "@mui/material";
 import { useUpdateEffect } from "react-use";
-import {
-  editStudy,
-  getStudyData,
-} from "../../../../../../../services/api/study";
+import { editStudy, getStudyData } from "../../../../../../services/api/study";
 import { Header, Root } from "./style";
-import JSONEditor from "../../../../../../common/JSONEditor";
-import usePromiseWithSnackbarError from "../../../../../../../hooks/usePromiseWithSnackbarError";
-import UsePromiseCond from "../../../../../../common/utils/UsePromiseCond";
-import useEnqueueErrorSnackbar from "../../../../../../../hooks/useEnqueueErrorSnackbar";
+import JSONEditor from "../../../../../common/JSONEditor";
+import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithSnackbarError";
+import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
+import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
 
 interface Props {
   path: string;
