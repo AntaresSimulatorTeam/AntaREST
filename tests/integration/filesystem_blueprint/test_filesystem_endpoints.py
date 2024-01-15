@@ -266,57 +266,6 @@ class TestFilesystemEndpoints:
             ]
             assert actual == expected
 
-            # =======================================================
-            # Remove a file or directory recursively from a workspace
-            # =======================================================
-
-            # Let's create a dummy file in the "ext" workspace
-            dummy_file = ext_workspace_path / "dummy.txt"
-            dummy_file.touch()
-
-            # Normal users are not allowed to remove files
-            res = client.delete("/v1/filesystem/ws/ext", headers=user_headers, params={"path": "dummy.txt"})
-            assert res.status_code == 403, res.json()
-            assert res.json()["description"] == "User has no permission to delete files"
-            err_count += 1
-
-            # Admin users are allowed to remove files
-            admin_headers = {"Authorization": f"Bearer {admin_access_token}"}
-
-            # Providing an empty path is not allowed
-            res = client.delete("/v1/filesystem/ws/ext", headers=admin_headers, params={"path": ""})
-            assert res.status_code == 400, res.json()
-            assert res.json()["description"] == "Empty or missing path parameter"
-            err_count += 1
-
-            # Providing en absolute to an external workspace is not allowed
-            res = client.delete("/v1/filesystem/ws/ext", headers=admin_headers, params={"path": "/foo"})
-            assert res.status_code == 403, res.json()
-            assert res.json()["description"] == "Access denied to path: '/foo'"
-            err_count += 1
-
-            # Admin users are allowed to remove files
-            res = client.delete("/v1/filesystem/ws/ext", headers=admin_headers, params={"path": "dummy.txt"})
-            assert res.status_code == 200, res.json()
-            assert not dummy_file.exists()
-
-            # Let's create a dummy directory in the "ext" workspace, and a dummy file in it
-            dummy_dir = ext_workspace_path / "dummy"
-            dummy_dir.mkdir()
-            dummy_file = dummy_dir / "dummy.txt"
-            dummy_file.touch()
-
-            # Normal users are not allowed to remove files or directories
-            res = client.delete("/v1/filesystem/ws/ext", headers=user_headers, params={"path": "dummy"})
-            assert res.status_code == 403, res.json()
-            assert res.json()["description"] == "User has no permission to delete files"
-            err_count += 1
-
-            # Admin users are allowed to remove files or directories
-            res = client.delete("/v1/filesystem/ws/ext", headers=admin_headers, params={"path": "dummy"})
-            assert res.status_code == 200, res.json()
-            assert not dummy_dir.exists()
-
             # =================================
             # View a text file from a workspace
             # =================================

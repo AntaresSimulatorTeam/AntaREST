@@ -224,8 +224,7 @@ def create_file_system_blueprint(config: Config) -> APIRouter:
     workspaces (especially the "default" workspace of Antares Web), and the different
     storage directories (`tmp`, `matrixstore`, `archive`, etc. defined in the configuration file).
 
-    This blueprint is also used to list files and directories, to download a file,
-    and to delete a file or directory.
+    This blueprint is also used to list files and directories, and to view or download a file.
 
     Reading files is allowed for authenticated users, but deleting files is reserved
     for site administrators.
@@ -526,52 +525,6 @@ def create_file_system_blueprint(config: Config) -> APIRouter:
             headers = {"Content-Disposition": f"attachment; filename={full_path.name}"}
             return StreamingResponse(iter_file(), media_type="application/octet-stream", headers=headers)
 
-        else:  # pragma: no cover
-            raise HTTPException(status_code=417, detail=f"Unknown file type: '{path}'")
-
-    @bp.delete(
-        "/{fs}/{mount}",
-        summary="Remove a file or directory recursively from a mount point",
-        response_model=str,
-    )
-    async def remove_file(
-        fs: FilesystemName,
-        mount: MountPointName,
-        path: str = "",
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> str:
-        """
-        Remove a file or directory recursively from a mount point.
-
-        > **⚠ Warning:** This endpoint is reserved for site administrators.
-
-        Args:
-        - `fs`: The name of the filesystem: "cfg" or "ws".
-        - `mount`: The name of the mount point.
-        - `path`: The relative path of the file or directory to delete.
-
-        Returns:
-        - Success message (e.g., "File deleted successfully").
-
-        Possible error codes:
-        - 400 Bad Request: If the specified path is missing (empty).
-        - 403 Forbidden: If the user has no permission to delete the file or directory.
-        - 404 Not Found: If the specified filesystem, mount point, file or directory doesn't exist.
-        - 417 Expectation Failed: If the specified path is not a file or directory.
-        """
-
-        if not current_user.is_site_admin():
-            raise HTTPException(status_code=403, detail="User has no permission to delete files")
-
-        mount_dir = _get_mount_dir(fs, mount)
-        full_path = _get_full_path(mount_dir, path)
-
-        if full_path.is_dir():
-            shutil.rmtree(full_path)
-            return "Directory successfully deleted"
-        elif full_path.is_file():
-            full_path.unlink()
-            return "File successfully deleted"
         else:  # pragma: no cover
             raise HTTPException(status_code=417, detail=f"Unknown file type: '{path}'")
 
