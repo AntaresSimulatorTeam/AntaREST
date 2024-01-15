@@ -88,8 +88,7 @@ function Json({ path, studyId }: Props) {
           >
             <JSONEditor
               json={json}
-              onChangeJSON={handleJsonChange}
-              onChangeText={handleJsonChange} // only for code mode
+              onChangeText={handleJsonChange}
               modes={["tree", "code"]}
               enableSort={false}
               enableTransform={false}
