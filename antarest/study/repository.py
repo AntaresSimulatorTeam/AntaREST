@@ -4,7 +4,7 @@ import typing as t
 from enum import Enum
 
 from pydantic import BaseModel
-from sqlalchemy import and_, or_  # type: ignore
+from sqlalchemy import and_, not_, or_  # type: ignore
 from sqlalchemy.orm import Session, joinedload, with_polymorphic  # type: ignore
 
 from antarest.core.interfaces.cache import CacheConstants, ICache
@@ -20,8 +20,7 @@ def escape_like(string: str, escape_char: str = "\\") -> str:
     """
     Escape the string parameter used in SQL LIKE expressions.
 
-    ::
-
+    Examples:
         from sqlalchemy_utils import escape_like
 
 
@@ -29,16 +28,18 @@ def escape_like(string: str, escape_char: str = "\\") -> str:
             User.name.ilike(escape_like('John'))
         )
 
+    Args:
+        string: a string to escape
+        escape_char: escape character
 
-    :param string: a string to escape
-    :param escape_char: escape character
+    Returns:
+        Escaped string.
     """
     return string.replace(escape_char, escape_char * 2).replace("%", escape_char + "%").replace("_", escape_char + "_")
 
 
 class StudyFilter(BaseModel, frozen=True):
-    """
-    Study filter
+    """Study filter class gathering the main filtering parameters
 
     Attrs:
         - name: optional name regex of the study to match
@@ -63,17 +64,16 @@ class StudyFilter(BaseModel, frozen=True):
     users: t.Sequence[str] = ()
     groups: t.Sequence[str] = ()
     tags: t.Sequence[str] = ()
-    studies_ids: t.Optional[t.Sequence[str]] = None
+    studies_ids: t.Sequence[str] = ()
     exists: t.Optional[bool] = None
     workspace: str = ""
     folder: str = ""
 
 
 class StudySortBy(str, Enum):
-    """
-    How to sort the results of studies query results
-    """
+    """How to sort the results of studies query results"""
 
+    NO_SORT = "+-"
     NAME_ASC = "+name"
     NAME_DESC = "-name"
     DATE_ASC = "+date"
@@ -180,7 +180,7 @@ class StudyMetadataRepository:
     def get_all(
         self,
         study_filter: StudyFilter = StudyFilter(),
-        sort_by: StudySortBy = StudySortBy.DATE_DESC,
+        sort_by: StudySortBy = StudySortBy.NO_SORT,
         pagination: StudyPagination = StudyPagination(),
     ) -> t.List[Study]:
         """
@@ -188,7 +188,12 @@ class StudyMetadataRepository:
         runtime.
 
         Args:
+            study_filter: composed of all filtering criteria
+            sort_by: how the user would like the results to be sorted
+            pagination: specifies the number of results to displayed in each page and the actually displayed page
 
+        Returns:
+            The matching studies in proper order and pagination
         """
         # When we fetch a study, we also need to fetch the associated owner and groups
         # to check the permissions of the current user efficiently.
@@ -197,8 +202,11 @@ class StudyMetadataRepository:
         entity = with_polymorphic(Study, "*")
 
         q = self.session.query(entity)
-        if study_filter.exists:
-            q = q.filter(RawStudy.missing.is_(None))
+        if study_filter.exists is not None:
+            if study_filter.exists:
+                q = q.filter(RawStudy.missing.is_(None))
+            else:
+                q = q.filter(not_(RawStudy.missing.is_(None)))
         q = q.options(joinedload(entity.owner))
         q = q.options(joinedload(entity.groups))
         q = q.options(joinedload(entity.additional_data))
@@ -208,7 +216,7 @@ class StudyMetadataRepository:
             else:
                 q = q.filter(entity.type == "rawstudy")
                 q = q.filter(RawStudy.workspace != DEFAULT_WORKSPACE_NAME)
-        if study_filter.studies_ids is not None:
+        if study_filter.studies_ids:
             q = q.filter(entity.id.in_(study_filter.studies_ids))
         if study_filter.users:
             q = q.filter(Identity.name.in_(study_filter.users))
@@ -223,8 +231,7 @@ class StudyMetadataRepository:
             regex = f"{escape_like(study_filter.folder)}%"
             q = q.filter(entity.folder.ilike(regex))
         if study_filter.workspace:
-            regex = f"%{escape_like(study_filter.workspace)}%"
-            q = q.filter(RawStudy.workspace.ilike(regex))
+            q = q.filter(RawStudy.workspace == study_filter.workspace)
         if study_filter.variant is not None:
             if study_filter.variant:
                 q = q.filter(entity.type == "variantstudy")
@@ -234,14 +241,17 @@ class StudyMetadataRepository:
             q = q.filter(entity.version.in_(study_filter.versions))
 
         # sorting
-        if sort_by == StudySortBy.DATE_DESC:
-            q = q.order_by(entity.created_at.desc())
-        elif sort_by == StudySortBy.DATE_ASC:
-            q = q.order_by(entity.created_at.asc())
-        elif sort_by == StudySortBy.NAME_DESC:
-            q = q.order_by(entity.name.desc())
-        elif sort_by == StudySortBy.NAME_ASC:
-            q = q.order_by(entity.name.asc())
+        if sort_by != StudySortBy.NO_SORT:
+            if sort_by == StudySortBy.DATE_DESC:
+                q = q.order_by(entity.created_at.desc())
+            elif sort_by == StudySortBy.DATE_ASC:
+                q = q.order_by(entity.created_at.asc())
+            elif sort_by == StudySortBy.NAME_DESC:
+                q = q.order_by(entity.name.desc())
+            elif sort_by == StudySortBy.NAME_ASC:
+                q = q.order_by(entity.name.asc())
+            else:
+                raise NotImplementedError(sort_by)
 
         # pagination
         q = q.offset(pagination.page_nb * pagination.page_size).limit(pagination.page_size)
@@ -249,10 +259,13 @@ class StudyMetadataRepository:
         studies: t.List[Study] = q.all()
         return studies
 
-    def get_all_raw(self, show_missing: bool = True) -> t.List[RawStudy]:
+    def get_all_raw(self, exists: t.Optional[bool] = None) -> t.List[RawStudy]:
         query = self.session.query(RawStudy)
-        if not show_missing:
-            query = query.filter(RawStudy.missing.is_(None))
+        if exists is not None:
+            if exists:
+                query = query.filter(RawStudy.missing.is_(None))
+            else:
+                query = query.filter(not_(RawStudy.missing.is_(None)))
         studies: t.List[RawStudy] = query.all()
         return studies
 

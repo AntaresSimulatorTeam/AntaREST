@@ -441,7 +441,7 @@ class StudyService:
         self,
         params: RequestParameters,
         study_filter: StudyFilter,
-        sort_by: StudySortBy = StudySortBy.DATE_DESC,
+        sort_by: StudySortBy = StudySortBy.NO_SORT,
         pagination: StudyPagination = StudyPagination(),
     ) -> Dict[str, StudyMetadataDTO]:
         """
@@ -474,8 +474,7 @@ class StudyService:
                     study_dto,
                     StudyPermissionType.READ,
                     raising=False,
-                )
-                and (not study_filter.managed or study_dto.managed),
+                ),
                 studies.values(),
             )
         }

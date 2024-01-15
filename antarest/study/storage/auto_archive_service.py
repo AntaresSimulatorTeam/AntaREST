@@ -30,7 +30,9 @@ class AutoArchiveService(IService):
         old_date = datetime.datetime.utcnow() - datetime.timedelta(days=self.config.storage.auto_archive_threshold_days)
         with db():
             studies: List[Study] = self.study_service.repository.get_all(
-                study_filter=StudyFilter(managed=True, exists=False)
+                study_filter=StudyFilter(
+                    managed=True,
+                )
             )
             # list of study id and boolean indicating if it's a raw study (True) or a variant (False)
             study_ids_to_archive = [

@@ -59,8 +59,9 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
     def get_studies(
         current_user: JWTUser = Depends(auth.get_current_user),
         sort_by: str = Query(
-            "-date",
+            "+-",
             description="- `sort_by`: Sort studies based on their name or date."
+            "  - `+-`: No sorting to be done."
             "  - `+name`: Sort by name in ascending order (case-insensitive)."
             "  - `-name`: Sort by name in descending order (case-insensitive)."
             "  - `+date`: Sort by creation date in ascending order."
@@ -146,7 +147,7 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
             users=users.split(SEQUENCE_SEPARATOR) if users else (),
             groups=groups.split(SEQUENCE_SEPARATOR) if groups else (),
             tags=tags.split(SEQUENCE_SEPARATOR) if tags else (),
-            studies_ids=studies_ids.split(SEQUENCE_SEPARATOR) if studies_ids else None,
+            studies_ids=studies_ids.split(SEQUENCE_SEPARATOR) if studies_ids else (),
             exists=exists,
             workspace=workspace,
             folder=folder,

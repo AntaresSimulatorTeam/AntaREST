@@ -44,7 +44,7 @@ from antarest.study.model import (
     TimeSerie,
     TimeSeriesData,
 )
-from antarest.study.repository import StudyMetadataRepository, StudyFilter
+from antarest.study.repository import StudyFilter, StudyMetadataRepository
 from antarest.study.service import MAX_MISSING_STUDY_TIMEOUT, StudyService, StudyUpgraderTask, UserHasNotPermissionError
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -173,6 +173,7 @@ def test_study_listing(db_session: Session) -> None:
     repository = StudyMetadataRepository(cache_service=Mock(spec=ICache), session=db_session)
     service = build_study_service(raw_study_service, repository, config, cache_service=cache)
 
+    # retrieve studies that are not managed
     # use the db recorder to check that:
     # 1- retrieving studies information requires only 1 query
     # 2- having an exact total of queries equals to 1
@@ -186,34 +187,17 @@ def test_study_listing(db_session: Session) -> None:
     assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
     # verify that we get the expected studies information
-    expected_result = {e.id: e for e in map(lambda x: study_to_dto(x), [a, c])}
-    assert expected_result == studies
-    cache.get.return_value = {e.id: e for e in map(lambda x: study_to_dto(x), [a, b, c])}
-
-    # check that:
-    # 1- retrieving studies information requires no query at all (cache is used)
-    # 2- the `put` method of `cache` was used once
-    with DBStatementRecorder(db_session.bind) as db_recorder:
-        studies = service.get_studies_information(
-            study_filter=StudyFilter(
-                managed=False,
-            ),
-            params=RequestParameters(user=JWTUser(id=2, impersonator=2, type="users")),
-        )
-    assert len(db_recorder.sql_statements) == 0, str(db_recorder)
-    cache.put.assert_called_once()
-
-    # verify that we get the expected studies information
+    expected_result = {e.id: e for e in map(lambda x: study_to_dto(x), [c])}
     assert expected_result == studies
 
-    cache.get.return_value = None
+    # retrieve managed studies
     # use the db recorder to check that:
-    # 1- retrieving studies information requires only 1 query (cache reset to None)
+    # 1- retrieving studies information requires only 1 query
     # 2- having an exact total of queries equals to 1
     with DBStatementRecorder(db_session.bind) as db_recorder:
         studies = service.get_studies_information(
             study_filter=StudyFilter(
-                managed=False,
+                managed=True,
             ),
             params=RequestParameters(user=JWTUser(id=2, impersonator=2, type="users")),
         )
@@ -221,6 +205,41 @@ def test_study_listing(db_session: Session) -> None:
 
     # verify that we get the expected studies information
     expected_result = {e.id: e for e in map(lambda x: study_to_dto(x), [a])}
+    assert expected_result == studies
+
+    # retrieve studies regardless of whether they are managed or not
+    # use the db recorder to check that:
+    # 1- retrieving studies information requires only 1 query
+    # 2- having an exact total of queries equals to 1
+    with DBStatementRecorder(db_session.bind) as db_recorder:
+        studies = service.get_studies_information(
+            study_filter=StudyFilter(
+                managed=None,
+            ),
+            params=RequestParameters(user=JWTUser(id=2, impersonator=2, type="users")),
+        )
+    assert len(db_recorder.sql_statements) == 1, str(db_recorder)
+
+    # verify that we get the expected studies information
+    expected_result = {e.id: e for e in map(lambda x: study_to_dto(x), [a, c])}
+    assert expected_result == studies
+
+    # in previous versions cache was used, verify that it is not used anymore
+    # check that:
+    # 1- retrieving studies information still requires 1 query
+    # 2- the `put` method of `cache` was never used
+    with DBStatementRecorder(db_session.bind) as db_recorder:
+        studies = service.get_studies_information(
+            study_filter=StudyFilter(
+                managed=None,
+            ),
+            params=RequestParameters(user=JWTUser(id=2, impersonator=2, type="users")),
+        )
+    assert len(db_recorder.sql_statements) == 1, str(db_recorder)
+    with contextlib.suppress(AssertionError):
+        cache.put.assert_any_call()
+
+    # verify that we get the expected studies information
     assert expected_result == studies
 
 

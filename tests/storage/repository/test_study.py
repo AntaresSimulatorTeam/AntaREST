@@ -67,9 +67,10 @@ def test_cyclelife():
     c = repo.get(a.id)
     assert a == c
 
-    assert len(repo.get_all()) == 3
-    assert len(repo.get_all_raw(show_missing=True)) == 2
-    assert len(repo.get_all_raw(show_missing=False)) == 1
+    assert len(repo.get_all()) == 4
+    assert len(repo.get_all_raw(exists=True)) == 1
+    assert len(repo.get_all_raw(exists=False)) == 1
+    assert len(repo.get_all_raw()) == 2
 
     repo.delete(a.id)
     assert repo.get(a.id) is None
