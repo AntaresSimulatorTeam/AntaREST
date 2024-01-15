@@ -4,10 +4,10 @@ import { useOutletContext } from "react-router-dom";
 import { Box } from "@mui/material";
 import Tree from "./Tree";
 import Data from "./Data";
-import { StudyMetadata } from "../../../../../../common/types";
-import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
-import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithSnackbarError";
-import { getStudyData } from "../../../../../../services/api/study";
+import { StudyMetadata } from "../../../../../common/types";
+import UsePromiseCond from "../../../../common/utils/UsePromiseCond";
+import usePromiseWithSnackbarError from "../../../../../hooks/usePromiseWithSnackbarError";
+import { getStudyData } from "../../../../../services/api/study";
 import DebugContext from "./DebugContext";
 import { TreeData, filterTreeData, File } from "./utils";
 

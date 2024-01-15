@@ -54,7 +54,7 @@ export const determineFileType = (treeData: TreeData): FileType | "folder" => {
     ) {
       return "matrix";
     }
-    if (treeData.startsWith("json://")) {
+    if (treeData.startsWith("json://") || treeData.endsWith(".json")) {
       return "json";
     }
   }
