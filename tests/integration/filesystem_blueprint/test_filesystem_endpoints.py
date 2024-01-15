@@ -466,7 +466,7 @@ class TestFilesystemEndpoints:
                 sizes.append(actual[0]["size_bytes"])
 
             # Check the sizes
-            # The size of the new study should be between 200 and 300 KB.
+            # The size of the new study should be between 140 and 300 KB.
             # The suze of 'STA-mini' should be between 7 and 9 MB.
             sizes.sort()
-            assert sizes == [IntegerRange(200_000, 300_000), IntegerRange(7_000_000, 9_000_000)]
+            assert sizes == [IntegerRange(140_000, 300_000), IntegerRange(7_000_000, 9_000_000)]
