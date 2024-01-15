@@ -24,7 +24,7 @@ import BindingConstraints from "./Singlestudy/explore/Modelization/BindingConstr
 import Links from "./Singlestudy/explore/Modelization/Links";
 import Areas from "./Singlestudy/explore/Modelization/Areas";
 import Map from "./Singlestudy/explore/Modelization/Map";
-import Debug from "./Singlestudy/explore/Modelization/Debug";
+import Debug from "./Singlestudy/explore/Debug";
 import Xpansion from "./Singlestudy/explore/Xpansion";
 import Candidates from "./Singlestudy/explore/Xpansion/Candidates";
 import XpansionSettings from "./Singlestudy/explore/Xpansion/Settings";

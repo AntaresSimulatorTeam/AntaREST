@@ -5,7 +5,6 @@ import { useMemo, useState } from "react";
 import { useOutletContext } from "react-router";
 import { useTranslation } from "react-i18next";
 import { StudyMetadata } from "../../../../../common/types";
-import UnderConstruction from "../../../../common/page/UnderConstruction";
 import PropertiesView from "../../../../common/PropertiesView";
 import SplitLayoutView from "../../../../common/SplitLayoutView";
 import ListElement from "../common/ListElement";
@@ -13,7 +12,6 @@ import AdequacyPatch from "./AdequacyPatch";
 import AdvancedParameters from "./AdvancedParameters";
 import General from "./General";
 import Optimization from "./Optimization";
-import RegionalDistricts from "./RegionalDistricts";
 import TimeSeriesManagement from "./TimeSeriesManagement";
 import TableMode from "../../../../common/TableMode";
 
@@ -28,13 +26,12 @@ function Configuration() {
       [
         { id: 0, name: "General" },
         { id: 1, name: "Time-series management" },
-        { id: 2, name: "Regional districts" },
-        { id: 3, name: "Optimization preferences" },
-        Number(study.version) >= 830 && { id: 4, name: "Adequacy Patch" },
-        { id: 5, name: "Advanced parameters" },
-        { id: 6, name: t("study.configuration.economicOpt") },
-        { id: 7, name: t("study.configuration.geographicTrimmingAreas") },
-        { id: 8, name: t("study.configuration.geographicTrimmingLinks") },
+        { id: 2, name: "Optimization preferences" },
+        Number(study.version) >= 830 && { id: 3, name: "Adequacy Patch" },
+        { id: 4, name: "Advanced parameters" },
+        { id: 5, name: t("study.configuration.economicOpt") },
+        { id: 6, name: t("study.configuration.geographicTrimmingAreas") },
+        { id: 7, name: t("study.configuration.geographicTrimmingLinks") },
       ].filter(Boolean),
     [study.version, t],
   );
@@ -59,13 +56,11 @@ function Configuration() {
           {R.cond([
             [R.equals(0), () => <General />],
             [R.equals(1), () => <TimeSeriesManagement />],
-            [R.equals(1), () => <UnderConstruction />],
-            [R.equals(2), () => <RegionalDistricts />],
-            [R.equals(3), () => <Optimization />],
-            [R.equals(4), () => <AdequacyPatch />],
-            [R.equals(5), () => <AdvancedParameters />],
+            [R.equals(2), () => <Optimization />],
+            [R.equals(3), () => <AdequacyPatch />],
+            [R.equals(4), () => <AdvancedParameters />],
             [
-              R.equals(6),
+              R.equals(5),
               () => (
                 <TableMode
                   studyId={study.id}
@@ -83,7 +78,7 @@ function Configuration() {
               ),
             ],
             [
-              R.equals(7),
+              R.equals(6),
               () => (
                 <TableMode
                   studyId={study.id}
@@ -93,7 +88,7 @@ function Configuration() {
               ),
             ],
             [
-              R.equals(8),
+              R.equals(7),
               () => (
                 <TableMode
                   studyId={study.id}

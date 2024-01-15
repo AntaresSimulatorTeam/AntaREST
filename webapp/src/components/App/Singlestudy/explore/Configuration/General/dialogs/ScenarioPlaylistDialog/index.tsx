@@ -9,7 +9,6 @@ import { StudyMetadata } from "../../../../../../../../common/types";
 import usePromise from "../../../../../../../../hooks/usePromise";
 import BasicDialog from "../../../../../../../common/dialogs/BasicDialog";
 import TableForm from "../../../../../../../common/TableForm";
-import BackdropLoading from "../../../../../../../common/loaders/BackdropLoading";
 import UsePromiseCond from "../../../../../../../common/utils/UsePromiseCond";
 import {
   DEFAULT_WEIGHT,
@@ -78,58 +77,60 @@ function ScenarioPlaylistDialog(props: Props) {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <UsePromiseCond
-      response={res}
-      ifPending={() => <BackdropLoading open />}
-      ifResolved={(defaultValues) => (
-        <BasicDialog
-          title={t("study.configuration.general.mcScenarioPlaylist")}
-          open={open}
-          onClose={onClose}
-          actions={<Button onClick={onClose}>{t("button.close")}</Button>}
-          // TODO: add `maxHeight` and `fullHeight` in BasicDialog`
-          PaperProps={{ sx: { height: 500 } }}
-          maxWidth="sm"
-        >
-          <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1 }}>
-            <Button color="secondary" onClick={handleUpdateStatus(R.T)}>
-              {t(
-                "study.configuration.general.mcScenarioPlaylist.action.enableAll",
-              )}
-            </Button>
-            <Button color="secondary" onClick={handleUpdateStatus(R.F)}>
-              {t(
-                "study.configuration.general.mcScenarioPlaylist.action.disableAll",
-              )}
-            </Button>
-            <Divider orientation="vertical" flexItem />
-            <Button color="secondary" onClick={handleUpdateStatus(R.not)}>
-              {t(
-                "study.configuration.general.mcScenarioPlaylist.action.reverse",
-              )}
-            </Button>
-            <Divider orientation="vertical" flexItem />
-            <Button color="secondary" onClick={handleResetWeights}>
-              {t(
-                "study.configuration.general.mcScenarioPlaylist.action.resetWeights",
-              )}
-            </Button>
-          </Box>
-          <TableForm
-            defaultValues={defaultValues}
-            onSubmit={handleSubmit}
-            sx={{ pt: 2, m: "0 auto" }}
-            tableProps={{
-              rowHeaders: (row) => `MC Year ${row.id}`,
-              tableRef,
-              stretchH: "all",
-              className: "htCenter",
-              cells: handleCellsRender,
-            }}
-          />
-        </BasicDialog>
-      )}
-    />
+    <BasicDialog
+      title={t("study.configuration.general.mcScenarioPlaylist")}
+      open={open}
+      onClose={onClose}
+      actions={<Button onClick={onClose}>{t("button.close")}</Button>}
+      // TODO: add `maxHeight` and `fullHeight` in BasicDialog`
+      PaperProps={{ sx: { height: 500 } }}
+      maxWidth="sm"
+      fullWidth
+    >
+      <UsePromiseCond
+        response={res}
+        ifResolved={(defaultValues) => (
+          <>
+            <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1 }}>
+              <Button color="secondary" onClick={handleUpdateStatus(R.T)}>
+                {t(
+                  "study.configuration.general.mcScenarioPlaylist.action.enableAll",
+                )}
+              </Button>
+              <Button color="secondary" onClick={handleUpdateStatus(R.F)}>
+                {t(
+                  "study.configuration.general.mcScenarioPlaylist.action.disableAll",
+                )}
+              </Button>
+              <Divider orientation="vertical" flexItem />
+              <Button color="secondary" onClick={handleUpdateStatus(R.not)}>
+                {t(
+                  "study.configuration.general.mcScenarioPlaylist.action.reverse",
+                )}
+              </Button>
+              <Divider orientation="vertical" flexItem />
+              <Button color="secondary" onClick={handleResetWeights}>
+                {t(
+                  "study.configuration.general.mcScenarioPlaylist.action.resetWeights",
+                )}
+              </Button>
+            </Box>
+            <TableForm
+              defaultValues={defaultValues}
+              onSubmit={handleSubmit}
+              sx={{ pt: 2, overflow: "auto" }}
+              tableProps={{
+                rowHeaders: (row) => `MC Year ${row.id}`,
+                tableRef,
+                stretchH: "all",
+                className: "htCenter",
+                cells: handleCellsRender,
+              }}
+            />
+          </>
+        )}
+      />
+    </BasicDialog>
   );
 }
 

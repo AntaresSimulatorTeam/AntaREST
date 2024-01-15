@@ -1,7 +1,7 @@
 import { useOutletContext } from "react-router";
-import { MatrixStats, StudyMetadata } from "../../../../../../../common/types";
+import { MatrixStats, StudyMetadata } from "../../../../../../common/types";
 import { Root, Content } from "./style";
-import MatrixInput from "../../../../../../common/MatrixInput";
+import MatrixInput from "../../../../../common/MatrixInput";
 
 interface Props {
   path: string;

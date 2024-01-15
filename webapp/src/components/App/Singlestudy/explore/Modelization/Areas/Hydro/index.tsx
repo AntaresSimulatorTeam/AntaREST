@@ -12,51 +12,24 @@ function Hydro() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const areaId = useAppSelector(getCurrentAreaId);
 
-  const tabList = useMemo(
-    () => [
-      {
-        label: "Management options",
-        path: `/studies/${study?.id}/explore/modelization/area/${areaId}/hydro/management`,
-      },
-      {
-        label: "Inflow structure",
-        path: `/studies/${study?.id}/explore/modelization/area/${areaId}/hydro/inflowstructure`,
-      },
-      {
-        label: "Allocation",
-        path: `/studies/${study?.id}/explore/modelization/area/${areaId}/hydro/allocation`,
-      },
-      {
-        label: "Correlation",
-        path: `/studies/${study?.id}/explore/modelization/area/${areaId}/hydro/correlation`,
-      },
-      {
-        label: "Daily Power",
-        path: `/studies/${study?.id}/explore/modelization/area/${areaId}/hydro/dailypower`,
-      },
-      {
-        label: "Energy Credits",
-        path: `/studies/${study?.id}/explore/modelization/area/${areaId}/hydro/energycredits`,
-      },
-      {
-        label: "Reservoir levels",
-        path: `/studies/${study?.id}/explore/modelization/area/${areaId}/hydro/reservoirlevels`,
-      },
-      {
-        label: "Water values",
-        path: `/studies/${study?.id}/explore/modelization/area/${areaId}/hydro/watervalues`,
-      },
-      {
-        label: "Hydro Storage",
-        path: `/studies/${study?.id}/explore/modelization/area/${areaId}/hydro/hydrostorage`,
-      },
-      {
-        label: "Run of river",
-        path: `/studies/${study?.id}/explore/modelization/area/${areaId}/hydro/ror`,
-      },
-    ],
-    [areaId, study?.id],
-  );
+  const tabList = useMemo(() => {
+    const basePath = `/studies/${study?.id}/explore/modelization/area/${encodeURI(
+      areaId,
+    )}/hydro`;
+
+    return [
+      { label: "Management options", path: `${basePath}/management` },
+      { label: "Inflow structure", path: `${basePath}/inflowstructure` },
+      { label: "Allocation", path: `${basePath}/allocation` },
+      { label: "Correlation", path: `${basePath}/correlation` },
+      { label: "Daily Power", path: `${basePath}/dailypower` },
+      { label: "Energy Credits", path: `${basePath}/energycredits` },
+      { label: "Reservoir levels", path: `${basePath}/reservoirlevels` },
+      { label: "Water values", path: `${basePath}/watervalues` },
+      { label: "Hydro Storage", path: `${basePath}/hydrostorage` },
+      { label: "Run of river", path: `${basePath}/ror` },
+    ];
+  }, [areaId, study?.id]);
 
   ////////////////////////////////////////////////////////////////
   // JSX

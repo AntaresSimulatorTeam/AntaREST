@@ -27,6 +27,7 @@ from starlette.types import ASGIApp
 from antarest import __version__
 from antarest.core.config import Config
 from antarest.core.core_blueprint import create_utils_routes
+from antarest.core.filesystem_blueprint import create_file_system_blueprint
 from antarest.core.logging.utils import LoggingMiddleware, configure_logger
 from antarest.core.requests import RATE_LIMIT_CONFIG
 from antarest.core.swagger import customize_openapi
@@ -299,6 +300,7 @@ def fastapi_app(
         allow_headers=["*"],
     )
     application.include_router(create_utils_routes(config))
+    application.include_router(create_file_system_blueprint(config))
 
     # noinspection PyUnusedLocal
     @application.exception_handler(HTTPException)

@@ -5,17 +5,12 @@ import { useSnackbar } from "notistack";
 import SaveIcon from "@mui/icons-material/Save";
 import { Box, Button, Typography } from "@mui/material";
 import { useUpdateEffect } from "react-use";
-import {
-  editStudy,
-  getStudyData,
-} from "../../../../../../../services/api/study";
+import { editStudy, getStudyData } from "../../../../../../services/api/study";
 import { Header, Root } from "./style";
-import SimpleLoader from "../../../../../../common/loaders/SimpleLoader";
-import JSONEditor from "../../../../../../common/JSONEditor";
-import usePromiseWithSnackbarError from "../../../../../../../hooks/usePromiseWithSnackbarError";
-import UsePromiseCond from "../../../../../../common/utils/UsePromiseCond";
-import SimpleContent from "../../../../../../common/page/SimpleContent";
-import useEnqueueErrorSnackbar from "../../../../../../../hooks/useEnqueueErrorSnackbar";
+import JSONEditor from "../../../../../common/JSONEditor";
+import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithSnackbarError";
+import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
+import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
 
 interface Props {
   path: string;
@@ -37,7 +32,7 @@ function Json({ path, studyId }: Props) {
     },
   );
 
-  /* Reset save button when path changes */
+  // Reset save button when path changes
   useUpdateEffect(() => {
     setSaveAllowed(false);
   }, [studyId, path]);
@@ -84,7 +79,6 @@ function Json({ path, studyId }: Props) {
       </Header>
       <UsePromiseCond
         response={res}
-        ifPending={() => <SimpleLoader />}
         ifResolved={(json) => (
           <Box
             sx={{
@@ -94,15 +88,13 @@ function Json({ path, studyId }: Props) {
           >
             <JSONEditor
               json={json}
-              onChangeJSON={handleJsonChange}
-              onChangeText={handleJsonChange} // only for code mode
+              onChangeText={handleJsonChange}
               modes={["tree", "code"]}
               enableSort={false}
               enableTransform={false}
             />
           </Box>
         )}
-        ifRejected={(error) => <SimpleContent title={error?.toString()} />}
       />
     </Root>
   );
