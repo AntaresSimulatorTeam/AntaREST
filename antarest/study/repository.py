@@ -3,15 +3,15 @@ import logging
 import typing as t
 from enum import Enum
 
-from pydantic import BaseModel
-from sqlalchemy import and_, not_, or_  # type: ignore
+from pydantic import BaseModel, Field
+from sqlalchemy import String, and_, any_, not_, or_  # type: ignore
 from sqlalchemy.orm import Session, joinedload, with_polymorphic  # type: ignore
 
 from antarest.core.interfaces.cache import CacheConstants, ICache
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.login.model import Group, Identity
+from antarest.login.model import Group
 from antarest.study.common.utils import get_study_information
-from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, Study, StudyAdditionalData
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, Study, StudyAdditionalData, groups_metadata
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +61,7 @@ class StudyFilter(BaseModel, frozen=True):
     archived: t.Optional[bool] = None
     variant: t.Optional[bool] = None
     versions: t.Sequence[str] = ()
-    users: t.Sequence[str] = ()
+    users: t.Sequence["int"] = ()
     groups: t.Sequence[str] = ()
     tags: t.Sequence[str] = ()
     studies_ids: t.Sequence[str] = ()
@@ -73,7 +73,7 @@ class StudyFilter(BaseModel, frozen=True):
 class StudySortBy(str, Enum):
     """How to sort the results of studies query results"""
 
-    NO_SORT = "+-"
+    NO_SORT = ""
     NAME_ASC = "+name"
     NAME_DESC = "-name"
     DATE_ASC = "+date"
@@ -88,7 +88,7 @@ class StudyPagination(BaseModel, frozen=True):
     """
 
     page_nb: int = 0
-    page_size: int = 100
+    page_size: int = Field(0, ge=0)
 
 
 class StudyMetadataRepository:
@@ -219,9 +219,9 @@ class StudyMetadataRepository:
         if study_filter.studies_ids:
             q = q.filter(entity.id.in_(study_filter.studies_ids))
         if study_filter.users:
-            q = q.filter(Identity.name.in_(study_filter.users))
+            q = q.filter(entity.owner_id.in_(study_filter.users))
         if study_filter.groups:
-            q = q.filter(Group.name.in_(study_filter.groups))
+            q = q.join(entity.groups).filter(Group.id.in_(study_filter.groups))
         if study_filter.archived is not None:
             q = q.filter(entity.archived == study_filter.archived)
         if study_filter.name:
@@ -254,7 +254,8 @@ class StudyMetadataRepository:
                 raise NotImplementedError(sort_by)
 
         # pagination
-        q = q.offset(pagination.page_nb * pagination.page_size).limit(pagination.page_size)
+        if pagination.page_nb or pagination.page_size:
+            q = q.offset(pagination.page_nb * pagination.page_size).limit(pagination.page_size)
 
         studies: t.List[Study] = q.all()
         return studies
