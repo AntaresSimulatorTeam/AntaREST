@@ -1,6 +1,33 @@
 Antares Web Changelog
 =====================
 
+v2.16.3 (2024-01-17)
+--------------------
+
+### Features
+
+* **api-filesystem:** add new API endpoints to manage filesystem and get disk usage [`#1895`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1895)
+* **ui-district:** enhance Scenario Playlist loading and remove Regional District menu  [`#1897`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1897)
+
+
+### Bug Fixes
+
+* **config:** use "CONG. PROB" for thematic trimming (fix typo) [`#1893`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1893)
+* **ui-debug:** correct debug view for JSON configuration [`#1898`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1898)
+* **ui-debug:** correct debug view for textual matrices [`#1896`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1896)
+* **ui-hydro:** add areas encoding to hydro tabs path [`#1894`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1894)
+
+
+### Refactoring
+
+* **ui-debug:** code review [`#1892`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1892)
+
+
+### Continuous Integration
+
+* **docker:** add the `ll` alias in `.bashrc` to simplify debugging [`#1880`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1880)
+
+
 v2.16.2 (2024-01-10)
 --------------------
 
