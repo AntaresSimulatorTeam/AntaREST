@@ -523,3 +523,9 @@ export async function deleteStudyDistrict(
 ): Promise<void> {
   await client.delete(`v1/studies/${studyId}/districts/${districtId}`);
 }
+
+export async function getStudyDiskUsage(
+  studyId: StudyMetadata["id"],
+): Promise<number> {
+  return (await client.get(`v1/studies/${studyId}/disk-usage`)).data;
+}

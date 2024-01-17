@@ -5,6 +5,7 @@ import { ContentState, convertToRaw, EditorState } from "draft-js";
 import draftToHtml from "draftjs-to-html";
 import { convertFromHTML } from "draft-convert";
 import { Element as XMLElement, js2xml, xml2json } from "xml-js";
+import theme from "../../../../../../theme";
 
 interface BlockMap {
   from: string;
@@ -567,4 +568,35 @@ export const convertDraftJSToXML = (editorState: EditorState): string => {
   htmlToXml = convertHTMLToXML(htmlToXml);
   return htmlToXml;
 };
-export default {};
+
+export const convertSize = (bytes: number): string => {
+  const units = ["bytes", "KB", "MB", "GB", "TB"];
+  const step = 1024;
+
+  if (bytes < step) {
+    return `${bytes} ${units[0]}`;
+  }
+
+  let unitIndex = 0;
+  let size = bytes;
+
+  while (size >= step && unitIndex < units.length - 1) {
+    size /= step;
+    unitIndex += 1;
+  }
+
+  return `${size.toFixed(2)} ${units[unitIndex]}`;
+};
+
+const ONE_GB = 1024 ** 3;
+
+const sizeRanges = [
+  { limit: 0, color: "default" }, // Size is unknown or not calculated
+  { limit: 5 * ONE_GB, color: theme.palette.success.main }, // Size is 0 to 5 GB
+  { limit: 25 * ONE_GB, color: theme.palette.warning.main }, // Size is 5 GB to 25 GB
+  { limit: Infinity, color: theme.palette.error.main }, // Size is 25 GB and above
+];
+
+export const getColorForSize = (bytes: number): string => {
+  return sizeRanges.find((range) => bytes <= range.limit)?.color || "default";
+};
