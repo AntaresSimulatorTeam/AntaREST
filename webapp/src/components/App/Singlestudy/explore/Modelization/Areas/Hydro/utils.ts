@@ -102,8 +102,9 @@ export const MATRICES: Matrices = {
   [HydroMatrixType.ReservoirLevels]: {
     title: "Reservoir Levels",
     url: "input/hydro/common/capacity/reservoir_{areaId}",
-    cols: ["Lev Low (p.u)", "Lev Avg (p.u)", "Lev High (p.u)"],
+    cols: ["Lev Low (%)", "Lev Avg (%)", "Lev High (%)"],
     stats: MatrixStats.NOCOL,
+    enablePercentDisplay: true,
   },
   [HydroMatrixType.WaterValues]: {
     title: "Water Values",
