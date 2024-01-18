@@ -1,7 +1,7 @@
+import enum
 import logging
 import re
-from enum import Enum
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+import typing as t
 
 from pydantic import BaseModel
 
@@ -10,6 +10,7 @@ from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import Patch, PatchArea, PatchCluster, RawStudy, Study
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.patch_service import PatchService
+from antarest.study.storage.rawstudy.model.filesystem.config.area import AreaUI
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, DistrictSet, transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.storage_service import StudyStorageService
@@ -21,7 +22,7 @@ from antarest.study.storage.variantstudy.model.command.update_config import Upda
 logger = logging.getLogger(__name__)
 
 
-class AreaType(Enum):
+class AreaType(enum.Enum):
     AREA = "AREA"
     DISTRICT = "DISTRICT"
 
@@ -29,8 +30,8 @@ class AreaType(Enum):
 class AreaCreationDTO(BaseModel):
     name: str
     type: AreaType
-    metadata: Optional[PatchArea]
-    set: Optional[List[str]]
+    metadata: t.Optional[PatchArea]
+    set: t.Optional[t.List[str]]
 
 
 class ClusterInfoDTO(PatchCluster):
@@ -39,34 +40,28 @@ class ClusterInfoDTO(PatchCluster):
     enabled: bool = True
     unitcount: int = 0
     nominalcapacity: int = 0
-    group: Optional[str] = None
-    min_stable_power: Optional[int] = None
-    min_up_time: Optional[int] = None
-    min_down_time: Optional[int] = None
-    spinning: Optional[float] = None
-    marginal_cost: Optional[float] = None
-    spread_cost: Optional[float] = None
-    market_bid_cost: Optional[float] = None
+    group: t.Optional[str] = None
+    min_stable_power: t.Optional[int] = None
+    min_up_time: t.Optional[int] = None
+    min_down_time: t.Optional[int] = None
+    spinning: t.Optional[float] = None
+    marginal_cost: t.Optional[float] = None
+    spread_cost: t.Optional[float] = None
+    market_bid_cost: t.Optional[float] = None
 
 
 class AreaInfoDTO(AreaCreationDTO):
     id: str
-    thermals: Optional[List[ClusterInfoDTO]] = None
-
-
-class AreaUI(BaseModel):
-    x: int
-    y: int
-    color_rgb: Tuple[int, int, int]
+    thermals: t.Optional[t.List[ClusterInfoDTO]] = None
 
 
 class LayerInfoDTO(BaseModel):
     id: str
     name: str
-    areas: List[str]
+    areas: t.List[str]
 
 
-def _get_ui_info_map(file_study: FileStudy, area_ids: Sequence[str]) -> Dict[str, Any]:
+def _get_ui_info_map(file_study: FileStudy, area_ids: t.Sequence[str]) -> t.Dict[str, t.Any]:
     """
     Get the UI information (a JSON object) for each selected Area.
 
@@ -95,7 +90,7 @@ def _get_ui_info_map(file_study: FileStudy, area_ids: Sequence[str]) -> Dict[str
     return ui_info_map
 
 
-def _get_area_layers(area_uis: Dict[str, Any], area: str) -> List[str]:
+def _get_area_layers(area_uis: t.Dict[str, t.Any], area: str) -> t.List[str]:
     if area in area_uis and "ui" in area_uis[area] and "layers" in area_uis[area]["ui"]:
         return re.split(r"\s+", (str(area_uis[area]["ui"]["layers"]) or ""))
     return []
@@ -110,7 +105,7 @@ class AreaManager:
         self.storage_service = storage_service
         self.patch_service = PatchService(repository=repository)
 
-    def get_all_areas(self, study: RawStudy, area_type: Optional[AreaType] = None) -> List[AreaInfoDTO]:
+    def get_all_areas(self, study: RawStudy, area_type: t.Optional[AreaType] = None) -> t.List[AreaInfoDTO]:
         """
         Retrieves all areas and districts of a raw study based on the area type.
 
@@ -124,9 +119,9 @@ class AreaManager:
         storage_service = self.storage_service.get_storage(study)
         file_study = storage_service.get_raw(study)
         metadata = self.patch_service.get(study)
-        areas_metadata: Dict[str, PatchArea] = metadata.areas or {}
-        cfg_areas: Dict[str, Area] = file_study.config.areas
-        result: List[AreaInfoDTO] = []
+        areas_metadata: t.Dict[str, PatchArea] = metadata.areas or {}
+        cfg_areas: t.Dict[str, Area] = file_study.config.areas
+        result: t.List[AreaInfoDTO] = []
 
         if area_type is None or area_type == AreaType.AREA:
             result.extend(
@@ -141,7 +136,7 @@ class AreaManager:
             )
 
         if area_type is None or area_type == AreaType.DISTRICT:
-            cfg_sets: Dict[str, DistrictSet] = file_study.config.sets
+            cfg_sets: t.Dict[str, DistrictSet] = file_study.config.sets
             result.extend(
                 AreaInfoDTO(
                     id=set_id,
@@ -155,7 +150,7 @@ class AreaManager:
 
         return result
 
-    def get_all_areas_ui_info(self, study: RawStudy) -> Dict[str, Any]:
+    def get_all_areas_ui_info(self, study: RawStudy) -> t.Dict[str, t.Any]:
         """
         Retrieve information about all areas' user interface (UI) from the study.
 
@@ -173,7 +168,7 @@ class AreaManager:
         area_ids = list(file_study.config.areas)
         return _get_ui_info_map(file_study, area_ids)
 
-    def get_layers(self, study: RawStudy) -> List[LayerInfoDTO]:
+    def get_layers(self, study: RawStudy) -> t.List[LayerInfoDTO]:
         storage_service = self.storage_service.get_storage(study)
         file_study = storage_service.get_raw(study)
         area_ids = list(file_study.config.areas)
@@ -196,7 +191,7 @@ class AreaManager:
             for layer in layers
         ]
 
-    def update_layer_areas(self, study: RawStudy, layer_id: str, areas: List[str]) -> None:
+    def update_layer_areas(self, study: RawStudy, layer_id: str, areas: t.List[str]) -> None:
         logger.info(f"Updating layer {layer_id} with areas {areas}")
         file_study = self.storage_service.get_storage(study).get_raw(study)
         layers = file_study.tree.get(["layers", "layers", "layers"])
@@ -213,9 +208,9 @@ class AreaManager:
         ]
         to_remove_areas = [area for area in existing_areas if area not in areas]
         to_add_areas = [area for area in areas if area not in existing_areas]
-        commands: List[ICommand] = []
+        commands: t.List[ICommand] = []
 
-        def create_update_commands(area_id: str) -> List[ICommand]:
+        def create_update_commands(area_id: str) -> t.List[ICommand]:
             return [
                 UpdateConfig(
                     target=f"input/areas/{area_id}/ui/layerX",
@@ -235,7 +230,7 @@ class AreaManager:
             ]
 
         for area in to_remove_areas:
-            area_to_remove_layers: List[str] = _get_area_layers(areas_ui, area)
+            area_to_remove_layers: t.List[str] = _get_area_layers(areas_ui, area)
             if layer_id in areas_ui[area]["layerX"]:
                 del areas_ui[area]["layerX"][layer_id]
             if layer_id in areas_ui[area]["layerY"]:
@@ -246,7 +241,7 @@ class AreaManager:
                 )
             commands.extend(create_update_commands(area))
         for area in to_add_areas:
-            area_to_add_layers: List[str] = _get_area_layers(areas_ui, area)
+            area_to_add_layers: t.List[str] = _get_area_layers(areas_ui, area)
             if layer_id not in areas_ui[area]["layerX"]:
                 areas_ui[area]["layerX"][layer_id] = areas_ui[area]["ui"]["x"]
             if layer_id not in areas_ui[area]["layerY"]:
@@ -423,7 +418,7 @@ class AreaManager:
         self,
         study: Study,
         area_id: str,
-        clusters_metadata: Dict[str, PatchCluster],
+        clusters_metadata: t.Dict[str, PatchCluster],
     ) -> AreaInfoDTO:
         file_study = self.storage_service.get_storage(study).get_raw(study)
         patch = self.patch_service.get(study)
@@ -452,7 +447,7 @@ class AreaManager:
     def _update_with_cluster_metadata(
         area: str,
         info: ClusterInfoDTO,
-        cluster_patch: Dict[str, PatchCluster],
+        cluster_patch: t.Dict[str, PatchCluster],
     ) -> ClusterInfoDTO:
         patch = cluster_patch.get(f"{area}.{info.id}", PatchCluster())
         info.code_oi = patch.code_oi
@@ -460,7 +455,7 @@ class AreaManager:
         return info
 
     @staticmethod
-    def _get_clusters(file_study: FileStudy, area: str, metadata_patch: Patch) -> List[ClusterInfoDTO]:
+    def _get_clusters(file_study: FileStudy, area: str, metadata_patch: Patch) -> t.List[ClusterInfoDTO]:
         thermal_clusters_data = file_study.tree.get(["input", "thermal", "clusters", area, "list"])
         cluster_patch = metadata_patch.thermal_clusters or {}
         return [
