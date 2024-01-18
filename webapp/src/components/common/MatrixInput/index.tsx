@@ -3,16 +3,7 @@ import { useSnackbar } from "notistack";
 import { useState } from "react";
 import { AxiosError } from "axios";
 import debug from "debug";
-import {
-  Typography,
-  Box,
-  ButtonGroup,
-  Button,
-  Divider,
-  Tooltip,
-} from "@mui/material";
-import TableViewIcon from "@mui/icons-material/TableView";
-import BarChartIcon from "@mui/icons-material/BarChart";
+import { Typography, Box, Button, Divider, Tooltip } from "@mui/material";
 import UploadOutlinedIcon from "@mui/icons-material/UploadOutlined";
 import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
 import InventoryIcon from "@mui/icons-material/Inventory";
@@ -26,7 +17,7 @@ import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import { getStudyData, importFile } from "../../../services/api/study";
 import usePromiseWithSnackbarError from "../../../hooks/usePromiseWithSnackbarError";
 import { editMatrix, getStudyMatrixIndex } from "../../../services/api/matrix";
-import { Root, Content, Header, StyledButton } from "./style";
+import { Root, Content, Header } from "./style";
 import SimpleLoader from "../loaders/SimpleLoader";
 import SimpleContent from "../page/SimpleContent";
 import EditableMatrix from "../EditableMatrix";
@@ -63,7 +54,6 @@ function MatrixInput({
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [t] = useTranslation();
-  const [toggleView, setToggleView] = useState(true);
   const [openImportDialog, setOpenImportDialog] = useState(false);
   const [openMatrixAsignDialog, setOpenMatrixAsignDialog] = useState(false);
 
@@ -166,17 +156,6 @@ function MatrixInput({
             {title || t("xpansion.timeSeries")}
           </Typography>
           <Box sx={{ display: "flex", alignItems: "center" }}>
-            {!isLoading && matrixData?.columns?.length >= 1 && (
-              <ButtonGroup variant="contained">
-                <StyledButton onClick={() => setToggleView((prev) => !prev)}>
-                  {toggleView ? (
-                    <BarChartIcon sx={{ color: "text.main" }} />
-                  ) : (
-                    <TableViewIcon sx={{ color: "text.main" }} />
-                  )}
-                </StyledButton>
-              </ButtonGroup>
-            )}
             <Button
               sx={{
                 mx: 2,
@@ -229,7 +208,6 @@ function MatrixInput({
             columnsNames={columnsNames}
             rowNames={rowNames}
             readOnly={!!disableEdit}
-            toggleView={toggleView}
             onUpdate={handleUpdate}
             computStats={computStats}
             isPercentDisplayEnabled={enablePercentDisplay}

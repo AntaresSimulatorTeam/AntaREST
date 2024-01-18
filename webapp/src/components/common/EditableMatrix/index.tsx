@@ -8,7 +8,6 @@ import {
   MatrixStats,
 } from "../../../common/types";
 import "handsontable/dist/handsontable.min.css";
-import MatrixGraphView from "./MatrixGraphView";
 import { Root } from "./style";
 import "./style.css";
 import {
@@ -25,7 +24,6 @@ interface PropTypes {
   matrixIndex?: MatrixIndex;
   matrixTime: boolean;
   readOnly: boolean;
-  toggleView?: boolean;
   onUpdate?: (change: MatrixEditDTO[], source: string) => void;
   columnsNames?: string[];
   rowNames?: string[];
@@ -53,7 +51,6 @@ function EditableMatrix(props: PropTypes) {
     matrix,
     matrixIndex,
     matrixTime,
-    toggleView,
     onUpdate,
     columnsNames,
     rowNames,
@@ -175,27 +172,23 @@ function EditableMatrix(props: PropTypes) {
 
   return (
     <Root>
-      {toggleView ? (
-        <Handsontable
-          ref={hotTableComponent}
-          data={grid}
-          width="100%"
-          height="100%"
-          stretchH="all"
-          className="editableMatrix"
-          colHeaders
-          rowHeaderWidth={matrixRowNames ? 150 : undefined}
-          afterChange={(change, source) =>
-            onUpdate && handleSlice(change || [], source)
-          }
-          beforeKeyDown={(e) => handleKeyDown(e)}
-          columns={formattedColumns}
-          rowHeaders={matrixRowNames || true}
-          manualColumnResize
-        />
-      ) : (
-        <MatrixGraphView matrix={matrix} />
-      )}
+      <Handsontable
+        ref={hotTableComponent}
+        data={grid}
+        width="100%"
+        height="100%"
+        stretchH="all"
+        className="editableMatrix"
+        colHeaders
+        rowHeaderWidth={matrixRowNames ? 150 : undefined}
+        afterChange={(change, source) =>
+          onUpdate && handleSlice(change || [], source)
+        }
+        beforeKeyDown={(e) => handleKeyDown(e)}
+        columns={formattedColumns}
+        rowHeaders={matrixRowNames || true}
+        manualColumnResize
+      />
     </Root>
   );
 }
