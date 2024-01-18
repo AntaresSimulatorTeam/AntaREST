@@ -5,16 +5,15 @@ import typing as t
 
 import numpy as np
 from pydantic import BaseModel, Extra, root_validator, validator
+from requests.structures import CaseInsensitiveDict
 from typing_extensions import Literal
 
 from antarest.core.exceptions import (
     AreaNotFound,
-    ClusterAlreadyExists,
-    DuplicateSTStorageId,
-    STStorageConfigNotFoundError,
-    STStorageFieldsNotFoundError,
-    STStorageMatrixNotFoundError,
-    STStorageNotFoundError,
+    DuplicateSTStorage,
+    STStorageConfigNotFound,
+    STStorageMatrixNotFound,
+    STStorageNotFound,
 )
 from antarest.study.business.utils import AllOptionalMetaclass, camel_case_model, execute_or_add_commands
 from antarest.study.model import Study
@@ -26,6 +25,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
     create_st_storage_config,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import ChildNotFoundError
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
 from antarest.study.storage.variantstudy.model.command.remove_st_storage import RemoveSTStorage
@@ -227,8 +227,18 @@ STStorageTimeSeries = Literal[
 # ============================
 
 
-STORAGE_LIST_PATH = "input/st-storage/clusters/{area_id}/list/{storage_id}"
-STORAGE_SERIES_PATH = "input/st-storage/series/{area_id}/{storage_id}/{ts_name}"
+_STORAGE_LIST_PATH = "input/st-storage/clusters/{area_id}/list/{storage_id}"
+_STORAGE_SERIES_PATH = "input/st-storage/series/{area_id}/{storage_id}/{ts_name}"
+
+
+def _get_values_by_ids(file_study: FileStudy, area_id: str) -> t.Mapping[str, t.Mapping[str, t.Any]]:
+    path = _STORAGE_LIST_PATH.format(area_id=area_id, storage_id="")[:-1]
+    try:
+        return CaseInsensitiveDict(file_study.tree.get(path.split("/"), depth=3))
+    except ChildNotFoundError:
+        raise AreaNotFound(area_id) from None
+    except KeyError:
+        raise STStorageConfigNotFound(path, area_id) from None
 
 
 class STStorageManager:
@@ -264,8 +274,13 @@ class STStorageManager:
             The ID of the newly created short-term storage.
         """
         file_study = self._get_file_study(study)
+        values_by_ids = _get_values_by_ids(file_study, area_id)
+
         storage = form.to_config(study.version)
-        _check_creation_feasibility(file_study, area_id, storage.id)
+        values = values_by_ids.get(storage.id)
+        if values is not None:
+            raise DuplicateSTStorage(area_id, storage.id)
+
         command = self._make_create_cluster_cmd(area_id, storage)
         execute_or_add_commands(
             study,
@@ -301,11 +316,13 @@ class STStorageManager:
         """
 
         file_study = self._get_file_study(study)
-        path = STORAGE_LIST_PATH.format(area_id=area_id, storage_id="")[:-1]
+        path = _STORAGE_LIST_PATH.format(area_id=area_id, storage_id="")[:-1]
         try:
             config = file_study.tree.get(path.split("/"), depth=3)
+        except ChildNotFoundError:
+            raise AreaNotFound(area_id) from None
         except KeyError:
-            raise STStorageConfigNotFoundError(study.id, area_id) from None
+            raise STStorageConfigNotFound(path, area_id) from None
 
         # Sort STStorageConfig by groups and then by name
         order_by = operator.attrgetter("group", "name")
@@ -334,11 +351,11 @@ class STStorageManager:
         """
 
         file_study = self._get_file_study(study)
-        path = STORAGE_LIST_PATH.format(area_id=area_id, storage_id=storage_id)
+        path = _STORAGE_LIST_PATH.format(area_id=area_id, storage_id=storage_id)
         try:
             config = file_study.tree.get(path.split("/"), depth=1)
         except KeyError:
-            raise STStorageFieldsNotFoundError(storage_id) from None
+            raise STStorageNotFound(path, storage_id) from None
         return STStorageOutput.from_config(storage_id, config)
 
     def update_storage(
@@ -365,15 +382,13 @@ class STStorageManager:
         #  But sadly, there's no other way to prevent creating wrong commands.
 
         file_study = self._get_file_study(study)
-        _check_update_feasibility(file_study, area_id, storage_id)
+        values_by_ids = _get_values_by_ids(file_study, area_id)
 
-        path = STORAGE_LIST_PATH.format(area_id=area_id, storage_id=storage_id)
-        try:
-            values = file_study.tree.get(path.split("/"), depth=1)
-        except KeyError:
-            raise STStorageFieldsNotFoundError(storage_id) from None
-        else:
-            old_config = create_st_storage_config(study_version, **values)
+        values = values_by_ids.get(storage_id)
+        if values is None:
+            path = _STORAGE_LIST_PATH.format(area_id=area_id, storage_id=storage_id)
+            raise STStorageNotFound(path, storage_id)
+        old_config = create_st_storage_config(study_version, **values)
 
         # use Python values to synchronize Config and Form values
         new_values = form.dict(by_alias=False, exclude_none=True)
@@ -389,6 +404,7 @@ class STStorageManager:
 
         # create the update config commands with the modified data
         command_context = self.storage_service.variant_study_service.command_factory.command_context
+        path = _STORAGE_LIST_PATH.format(area_id=area_id, storage_id=storage_id)
         commands = [
             UpdateConfig(target=f"{path}/{key}", data=value, command_context=command_context)
             for key, value in data.items()
@@ -413,7 +429,12 @@ class STStorageManager:
             storage_ids: IDs list of short-term storages to remove.
         """
         file_study = self._get_file_study(study)
-        _check_deletion_feasibility(file_study, area_id, storage_ids)
+        values_by_ids = _get_values_by_ids(file_study, area_id)
+
+        for storage_id in storage_ids:
+            if storage_id not in values_by_ids:
+                path = _STORAGE_LIST_PATH.format(area_id=area_id, storage_id=storage_id)
+                raise STStorageNotFound(path, storage_id)
 
         command_context = self.storage_service.variant_study_service.command_factory.command_context
         for storage_id in storage_ids:
@@ -443,7 +464,7 @@ class STStorageManager:
         new_id = transform_name_to_id(new_cluster_name)
         lower_new_id = new_id.lower()
         if any(lower_new_id == storage.id.lower() for storage in self.get_storages(study, area_id)):
-            raise ClusterAlreadyExists("Short-term storage", new_id)
+            raise DuplicateSTStorage(area_id, new_id)
 
         # Cluster duplication
         current_cluster = self.get_storage(study, area_id, source_id)
@@ -457,11 +478,11 @@ class STStorageManager:
         # noinspection SpellCheckingInspection
         ts_names = ["pmax_injection", "pmax_withdrawal", "lower_rule_curve", "upper_rule_curve", "inflows"]
         source_paths = [
-            STORAGE_SERIES_PATH.format(area_id=area_id, storage_id=lower_source_id, ts_name=ts_name)
+            _STORAGE_SERIES_PATH.format(area_id=area_id, storage_id=lower_source_id, ts_name=ts_name)
             for ts_name in ts_names
         ]
         new_paths = [
-            STORAGE_SERIES_PATH.format(area_id=area_id, storage_id=lower_new_id, ts_name=ts_name)
+            _STORAGE_SERIES_PATH.format(area_id=area_id, storage_id=lower_new_id, ts_name=ts_name)
             for ts_name in ts_names
         ]
 
@@ -508,11 +529,11 @@ class STStorageManager:
         ts_name: STStorageTimeSeries,
     ) -> t.MutableMapping[str, t.Any]:
         file_study = self._get_file_study(study)
-        path = STORAGE_SERIES_PATH.format(area_id=area_id, storage_id=storage_id, ts_name=ts_name)
+        path = _STORAGE_SERIES_PATH.format(area_id=area_id, storage_id=storage_id, ts_name=ts_name)
         try:
             matrix = file_study.tree.get(path.split("/"), depth=1)
         except KeyError:
-            raise STStorageMatrixNotFoundError(study.id, area_id, storage_id, ts_name) from None
+            raise STStorageMatrixNotFound(path) from None
         return matrix
 
     def update_matrix(
@@ -545,7 +566,7 @@ class STStorageManager:
     ) -> None:
         file_study = self._get_file_study(study)
         command_context = self.storage_service.variant_study_service.command_factory.command_context
-        path = STORAGE_SERIES_PATH.format(area_id=area_id, storage_id=storage_id, ts_name=ts_name)
+        path = _STORAGE_SERIES_PATH.format(area_id=area_id, storage_id=storage_id, ts_name=ts_name)
         command = ReplaceMatrix(target=path, matrix=matrix_data, command_context=command_context)
         execute_or_add_commands(study, file_study, [command], self.storage_service)
 
@@ -592,31 +613,3 @@ class STStorageManager:
 
         # Validation successful
         return True
-
-
-def _get_existing_storage_ids(file_study: FileStudy, area_id: str) -> t.Set[str]:
-    try:
-        area = file_study.config.areas[area_id]
-    except KeyError:
-        raise AreaNotFound(area_id) from None
-    else:
-        return {s.id for s in area.st_storages}
-
-
-def _check_deletion_feasibility(file_study: FileStudy, area_id: str, storage_ids: t.Sequence[str]) -> None:
-    existing_ids = _get_existing_storage_ids(file_study, area_id)
-    for storage_id in storage_ids:
-        if storage_id not in existing_ids:
-            raise STStorageNotFoundError(file_study.config.study_id, area_id, storage_id)
-
-
-def _check_update_feasibility(file_study: FileStudy, area_id: str, storage_id: str) -> None:
-    existing_ids = _get_existing_storage_ids(file_study, area_id)
-    if storage_id not in existing_ids:
-        raise STStorageNotFoundError(file_study.config.study_id, area_id, storage_id)
-
-
-def _check_creation_feasibility(file_study: FileStudy, area_id: str, storage_id: str) -> None:
-    existing_ids = _get_existing_storage_ids(file_study, area_id)
-    if storage_id in existing_ids:
-        raise DuplicateSTStorageId(file_study.config.study_id, area_id, storage_id)

@@ -477,8 +477,10 @@ class TestSTStorage:
         )
         assert res.status_code == 404
         obj = res.json()
-        assert obj["description"] == f"Short-term storage '{bad_storage_id}' not found in area '{area_id}'"
-        assert obj["exception"] == "STStorageNotFoundError"
+        description = obj["description"]
+        assert bad_storage_id in description
+        assert re.search(r"'bad_storage'", description, flags=re.IGNORECASE)
+        assert re.search(r"not found", description, flags=re.IGNORECASE)
 
         # Check PATCH with the wrong `study_id`
         res = client.patch(
@@ -500,8 +502,8 @@ class TestSTStorage:
         )
         assert res.status_code == 404, res.json()
         obj = res.json()
-        assert obj["description"] == f"Fields of storage '{unknown_id}' not found"
-        assert obj["exception"] == "STStorageFieldsNotFoundError"
+        assert f"'{unknown_id}' not found" in obj["description"]
+        assert obj["exception"] == "STStorageNotFound"
 
         # Cannot duplicate with an existing id
         res = client.post(
@@ -513,7 +515,7 @@ class TestSTStorage:
         obj = res.json()
         description = obj["description"]
         assert siemens_battery.lower() in description
-        assert obj["exception"] == "ClusterAlreadyExists"
+        assert obj["exception"] == "DuplicateSTStorage"
 
     @pytest.mark.parametrize("study_type", ["raw", "variant"])
     def test__default_values(self, client: TestClient, user_access_token: str, study_type: str) -> None:

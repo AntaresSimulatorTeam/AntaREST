@@ -777,8 +777,8 @@ class TestThermal:
         )
         assert res.status_code == 404, res.json()
         obj = res.json()
-        assert obj["description"] == f"Cluster: '{unknown_id}' not found"
-        assert obj["exception"] == "ClusterNotFound"
+        assert f"'{unknown_id}' not found" in obj["description"]
+        assert obj["exception"] == "ThermalClusterNotFound"
 
         # Cannot duplicate with an existing id
         res = client.post(
@@ -790,7 +790,7 @@ class TestThermal:
         obj = res.json()
         description = obj["description"]
         assert new_name.upper() in description
-        assert obj["exception"] == "ClusterAlreadyExists"
+        assert obj["exception"] == "DuplicateThermalCluster"
 
     @pytest.fixture(name="base_study_id")
     def base_study_id_fixture(self, request: t.Any, client: TestClient, user_access_token: str) -> str:
