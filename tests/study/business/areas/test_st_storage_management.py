@@ -59,6 +59,11 @@ initiallevel = 1
 
 LIST_CFG = IniReader().read(io.StringIO(LIST_INI))
 
+ALL_STORAGES = {
+    "west": {"list": LIST_CFG},
+    "east": {"list": {}},
+}
+
 
 class TestSTStorageManager:
     @pytest.fixture(name="study_storage_service")
@@ -98,6 +103,108 @@ class TestSTStorageManager:
         db_session.add(raw_study)
         db_session.commit()
         return t.cast(str, raw_study.id)
+
+    def test_get_all_storages__nominal_case(
+        self,
+        db_session: Session,
+        study_storage_service: StudyStorageService,
+        study_uuid: str,
+    ) -> None:
+        """
+        This unit test is to verify the behavior of the `get_all_storages`
+        method in the `STStorageManager` class under nominal conditions.
+        It checks whether the method returns the expected storage lists
+        for each area, based on a specific configuration.
+        """
+        # The study must be fetched from the database
+        study: RawStudy = db_session.query(Study).get(study_uuid)
+
+        # Prepare the mocks
+        storage = study_storage_service.get_storage(study)
+        file_study = storage.get_raw(study)
+        file_study.tree = Mock(
+            spec=FileStudyTree,
+            get=Mock(return_value=ALL_STORAGES),
+        )
+
+        # Given the following arguments
+        manager = STStorageManager(study_storage_service)
+
+        # run
+        all_storages = manager.get_all_storages(study)
+
+        # Check
+        actual = {area_id: [form.dict(by_alias=True) for form in forms] for area_id, forms in all_storages.items()}
+        expected = {
+            "west": [
+                {
+                    "id": "storage1",
+                    "group": STStorageGroup.BATTERY,
+                    "name": "Storage1",
+                    "injectionNominalCapacity": 1500.0,
+                    "withdrawalNominalCapacity": 1500.0,
+                    "reservoirCapacity": 20000.0,
+                    "efficiency": 0.94,
+                    "initialLevel": 0.5,
+                    "initialLevelOptim": True,
+                },
+                {
+                    "id": "storage2",
+                    "group": STStorageGroup.PSP_CLOSED,
+                    "name": "Storage2",
+                    "injectionNominalCapacity": 2000.0,
+                    "withdrawalNominalCapacity": 1500.0,
+                    "reservoirCapacity": 20000.0,
+                    "efficiency": 0.78,
+                    "initialLevel": 0.5,
+                    "initialLevelOptim": False,
+                },
+                {
+                    "id": "storage3",
+                    "group": STStorageGroup.PSP_CLOSED,
+                    "name": "Storage3",
+                    "injectionNominalCapacity": 1500.0,
+                    "withdrawalNominalCapacity": 1500.0,
+                    "reservoirCapacity": 21000.0,
+                    "efficiency": 0.72,
+                    "initialLevel": 1.0,
+                    "initialLevelOptim": False,
+                },
+            ],
+            "east": [],
+        }
+        assert actual == expected
+
+    def test_get_all_storages__config_not_found(
+        self,
+        db_session: Session,
+        study_storage_service: StudyStorageService,
+        study_uuid: str,
+    ) -> None:
+        """
+        This test verifies that when the `get_all_storages` method is called
+        with a study and the corresponding configuration is not found
+        (indicated by the `KeyError` raised by the mock), it correctly
+        raises the `STStorageConfigNotFound` exception with the expected error
+        message containing the study ID.
+        """
+        # The study must be fetched from the database
+        study: RawStudy = db_session.query(Study).get(study_uuid)
+
+        # Prepare the mocks
+        storage = study_storage_service.get_storage(study)
+        file_study = storage.get_raw(study)
+        file_study.tree = Mock(
+            spec=FileStudyTree,
+            get=Mock(side_effect=KeyError("Oops!")),
+        )
+
+        # Given the following arguments
+        manager = STStorageManager(study_storage_service)
+
+        # run
+        with pytest.raises(STStorageConfigNotFound, match="not found"):
+            manager.get_all_storages(study)
 
     def test_get_st_storages__nominal_case(
         self,

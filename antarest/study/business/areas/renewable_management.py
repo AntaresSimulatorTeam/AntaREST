@@ -32,6 +32,7 @@ __all__ = (
 
 _CLUSTER_PATH = "input/renewables/clusters/{area_id}/list/{cluster_id}"
 _CLUSTERS_PATH = "input/renewables/clusters/{area_id}/list"
+_ALL_CLUSTERS_PATH = "input/renewables/clusters"
 
 
 class TimeSeriesInterpretation(EnumIgnoreCase):
@@ -144,6 +145,43 @@ class RenewableManager:
             raise RenewableClusterConfigNotFound(path, area_id)
 
         return [create_renewable_output(study.version, cluster_id, cluster) for cluster_id, cluster in clusters.items()]
+
+    def get_all_clusters(
+        self,
+        study: Study,
+    ) -> t.Mapping[str, t.Sequence[RenewableClusterOutput]]:
+        """
+        Retrieve all renewable clusters from all areas within a study.
+
+        Args:
+            study: Study from which to retrieve the clusters.
+
+        Returns:
+            A mapping of area IDs to lists of renewable clusters within the specified area.
+
+        Raises:
+            RenewableClusterConfigNotFound: If no clusters are found in the specified area.
+        """
+
+        file_study = self._get_file_study(study)
+        path = _ALL_CLUSTERS_PATH
+        try:
+            # may raise KeyError if the path is missing
+            clusters = file_study.tree.get(path.split("/"), depth=5)
+            # may raise KeyError if "list" is missing
+            clusters = {area_id: cluster_list["list"] for area_id, cluster_list in clusters.items()}
+        except KeyError:
+            raise RenewableClusterConfigNotFound(path)
+
+        study_version = study.version
+        all_clusters = {
+            area_id: [
+                create_renewable_output(study_version, cluster_id, cluster)
+                for cluster_id, cluster in cluster_obj.items()
+            ]
+            for area_id, cluster_obj in clusters.items()
+        }
+        return all_clusters
 
     def create_cluster(
         self, study: Study, area_id: str, cluster_data: RenewableClusterCreation

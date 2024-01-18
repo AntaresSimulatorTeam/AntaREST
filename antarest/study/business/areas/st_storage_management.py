@@ -216,6 +216,7 @@ STStorageTimeSeries = Literal[
 
 _STORAGE_LIST_PATH = "input/st-storage/clusters/{area_id}/list/{storage_id}"
 _STORAGE_SERIES_PATH = "input/st-storage/series/{area_id}/{storage_id}/{ts_name}"
+_ALL_STORAGE_PATH = "input/st-storage/clusters"
 
 
 def _get_values_by_ids(file_study: FileStudy, area_id: str) -> t.Mapping[str, t.Mapping[str, t.Any]]:
@@ -326,6 +327,39 @@ class STStorageManager:
         study_version = int(study.version)
         storages = [create_storage_output(study_version, storage_id, options) for storage_id, options in config.items()]
         return sorted(storages, key=order_by)
+
+    def get_all_storages(
+        self,
+        study: Study,
+    ) -> t.Mapping[str, t.Sequence[STStorageOutput]]:
+        """
+        Retrieve all short-term storages from all areas within a study.
+
+        Args:
+            study: Study from which to retrieve the storages.
+
+        Returns:
+            A mapping of area IDs to lists of short-term storages within the specified area.
+
+        Raises:
+            STStorageConfigNotFound: If no storages are found in the specified area.
+        """
+
+        file_study = self._get_file_study(study)
+        path = _ALL_STORAGE_PATH
+        try:
+            # may raise KeyError if the path is missing
+            storages = file_study.tree.get(path.split("/"), depth=5)
+            # may raise KeyError if "list" is missing
+            storages = {area_id: cluster_list["list"] for area_id, cluster_list in storages.items()}
+        except KeyError:
+            raise STStorageConfigNotFound(path) from None
+
+        all_storages = {
+            area_id: [STStorageOutput.from_config(cluster_id, cluster) for cluster_id, cluster in cluster_obj.items()]
+            for area_id, cluster_obj in storages.items()
+        }
+        return all_storages
 
     def get_storage(
         self,
