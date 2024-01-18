@@ -57,6 +57,7 @@ import Storages from "./Singlestudy/explore/Modelization/Areas/Storages";
 import StorageForm from "./Singlestudy/explore/Modelization/Areas/Storages/Form";
 import ThermalForm from "./Singlestudy/explore/Modelization/Areas/Thermal/Form";
 import RenewablesForm from "./Singlestudy/explore/Modelization/Areas/Renewables/Form";
+import DailyPowerAndEnergy from "./Singlestudy/explore/Modelization/Areas/Hydro/DailyPowerAndEnergy";
 
 function App() {
   return (
@@ -114,6 +115,10 @@ function App() {
                               <Route
                                 path="correlation"
                                 element={<Correlation />}
+                              />
+                              <Route
+                                path="dailypower&energy"
+                                element={<DailyPowerAndEnergy />}
                               />
                               {HYDRO_ROUTES.map((route: HydroRoute) => (
                                 <Route

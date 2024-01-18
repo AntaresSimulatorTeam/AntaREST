@@ -33,6 +33,7 @@ export interface HydroMatrixProps {
   stats: MatrixStats;
   fetchFn?: fetchMatrixFn;
   disableEdit?: boolean;
+  enablePercentDisplay?: boolean;
 }
 
 type Matrices = Record<HydroMatrixType, HydroMatrixProps>;
@@ -80,14 +81,15 @@ export const HYDRO_ROUTES: HydroRoute[] = [
 
 export const MATRICES: Matrices = {
   [HydroMatrixType.Dailypower]: {
-    title: "Daily power",
+    title: "Credit Modulation",
     url: "input/hydro/common/capacity/creditmodulations_{areaId}",
-    cols: generateColumns(),
+    cols: generateColumns("%"),
     rows: ["Generating Power", "Pumping Power"],
     stats: MatrixStats.NOCOL,
+    enablePercentDisplay: true,
   },
   [HydroMatrixType.EnergyCredits]: {
-    title: "Standard credit",
+    title: "Standard Credit",
     url: "input/hydro/common/capacity/maxpower_{areaId}",
     cols: [
       "Generating Max Power (MW)",
@@ -98,35 +100,35 @@ export const MATRICES: Matrices = {
     stats: MatrixStats.NOCOL,
   },
   [HydroMatrixType.ReservoirLevels]: {
-    title: "Reservoir levels",
+    title: "Reservoir Levels",
     url: "input/hydro/common/capacity/reservoir_{areaId}",
     cols: ["Lev Low (p.u)", "Lev Avg (p.u)", "Lev High (p.u)"],
     stats: MatrixStats.NOCOL,
   },
   [HydroMatrixType.WaterValues]: {
-    title: "Water values",
+    title: "Water Values",
     url: "input/hydro/common/capacity/waterValues_{areaId}",
     cols: generateColumns("%"),
     stats: MatrixStats.NOCOL,
   },
   [HydroMatrixType.HydroStorage]: {
-    title: "Hydro storage",
+    title: "Hydro Storage",
     url: "input/hydro/series/{areaId}/mod",
     stats: MatrixStats.STATS,
   },
   [HydroMatrixType.RunOfRiver]: {
-    title: "Run of river",
+    title: "Run Of River",
     url: "input/hydro/series/{areaId}/ror",
     stats: MatrixStats.STATS,
   },
   [HydroMatrixType.InflowPattern]: {
-    title: "Inflow pattern",
+    title: "Inflow Pattern",
     url: "input/hydro/common/capacity/inflowPattern_{areaId}",
     cols: ["Inflow Pattern (X)"],
     stats: MatrixStats.NOCOL,
   },
   [HydroMatrixType.OverallMonthlyHydro]: {
-    title: "Overall monthly hydro",
+    title: "Overall Monthly Hydro",
     url: "input/hydro/prepro/{areaId}/energy",
     cols: [
       "Expectation (MWh)",
