@@ -46,6 +46,7 @@ interface Props {
   computStats: MatrixStats;
   fetchFn?: fetchMatrixFn;
   disableEdit?: boolean;
+  enablePercentDisplay?: boolean;
 }
 
 function MatrixInput({
@@ -57,6 +58,7 @@ function MatrixInput({
   computStats,
   fetchFn,
   disableEdit,
+  enablePercentDisplay,
 }: Props) {
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
@@ -230,6 +232,7 @@ function MatrixInput({
             toggleView={toggleView}
             onUpdate={handleUpdate}
             computStats={computStats}
+            isPercentDisplayEnabled={enablePercentDisplay}
           />
         ) : (
           !isLoading && (

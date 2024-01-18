@@ -30,6 +30,7 @@ interface PropTypes {
   columnsNames?: string[];
   rowNames?: string[];
   computStats?: MatrixStats;
+  isPercentDisplayEnabled?: boolean;
 }
 
 type CellType = Array<number | string | boolean>;
@@ -57,6 +58,7 @@ function EditableMatrix(props: PropTypes) {
     columnsNames,
     rowNames,
     computStats,
+    isPercentDisplayEnabled = false,
   } = props;
   const { data = [], columns = [], index = [] } = matrix;
   const prependIndex = index.length > 0 && matrixTime;
@@ -81,7 +83,12 @@ function EditableMatrix(props: PropTypes) {
     );
 
     if (filteredChanges.length > 0) {
-      const edits = cellChangesToMatrixEdits(filteredChanges, matrixTime);
+      const edits = cellChangesToMatrixEdits(
+        filteredChanges,
+        matrixTime,
+        isPercentDisplayEnabled,
+      );
+
       onUpdate(edits, source);
     }
   };
@@ -127,13 +134,25 @@ function EditableMatrix(props: PropTypes) {
       if (prependIndex && matrixIndex) {
         tmpRow = [createDateFromIndex(i, matrixIndex)].concat(row);
       }
+
       if (computStats) {
         tmpRow = tmpRow.concat(
           computeStats(computStats, row) as Array<string | number>,
         );
       }
+
+      if (isPercentDisplayEnabled) {
+        tmpRow = tmpRow.map((cell) => {
+          if (typeof cell === "number") {
+            return cell * 100;
+          }
+          return cell;
+        });
+      }
+
       return tmpRow;
     });
+
     setGrid(tmpData);
   }, [
     columns,
@@ -144,6 +163,7 @@ function EditableMatrix(props: PropTypes) {
     readOnly,
     matrixIndex,
     computStats,
+    isPercentDisplayEnabled,
   ]);
 
   const matrixRowNames =

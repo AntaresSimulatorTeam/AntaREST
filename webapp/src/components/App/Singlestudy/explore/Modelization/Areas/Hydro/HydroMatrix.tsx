@@ -8,9 +8,10 @@ import { MATRICES, HydroMatrixType } from "./utils";
 
 interface Props {
   type: HydroMatrixType;
+  enablePercentDisplay?: boolean;
 }
 
-function HydroMatrix({ type }: Props) {
+function HydroMatrix({ type, enablePercentDisplay }: Props) {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const areaId = useAppSelector(getCurrentAreaId);
 
@@ -31,6 +32,7 @@ function HydroMatrix({ type }: Props) {
         computStats={hydroMatrix.stats}
         fetchFn={hydroMatrix.fetchFn}
         disableEdit={hydroMatrix.disableEdit}
+        enablePercentDisplay={enablePercentDisplay}
       />
     </Root>
   );
