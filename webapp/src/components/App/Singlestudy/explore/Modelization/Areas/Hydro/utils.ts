@@ -179,6 +179,7 @@ export const MATRICES: Matrices = {
     stats: MatrixStats.NOCOL,
     fetchFn: getAllocationMatrix,
     disableEdit: true,
+    enablePercentDisplay: true,
   },
   [HydroMatrixType.Correlation]: {
     title: "Correlation",
@@ -186,6 +187,7 @@ export const MATRICES: Matrices = {
     stats: MatrixStats.NOCOL,
     fetchFn: getCorrelationMatrix,
     disableEdit: true,
+    enablePercentDisplay: true,
   },
 };
 
