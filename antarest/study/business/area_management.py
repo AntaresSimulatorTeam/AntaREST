@@ -3,14 +3,20 @@ import logging
 import re
 import typing as t
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Extra, Field
 
-from antarest.core.exceptions import DuplicateAreaName, LayerNotAllowedToBeDeleted, LayerNotFound
-from antarest.study.business.utils import execute_or_add_commands
+from antarest.core.exceptions import DuplicateAreaName, ConfigFileNotFound, LayerNotAllowedToBeDeleted, LayerNotFound
+from antarest.study.business.utils import AllOptionalMetaclass, camel_case_model, execute_or_add_commands
 from antarest.study.model import Patch, PatchArea, PatchCluster, RawStudy, Study
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.patch_service import PatchService
-from antarest.study.storage.rawstudy.model.filesystem.config.area import AreaUI
+from antarest.study.storage.rawstudy.model.filesystem.config.area import (
+    AdequacyPathProperties,
+    AreaFolder,
+    AreaUI,
+    OptimizationProperties,
+    ThermalAreasProperties,
+)
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, DistrictSet, transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.storage_service import StudyStorageService
@@ -96,14 +102,143 @@ def _get_area_layers(area_uis: t.Dict[str, t.Any], area: str) -> t.List[str]:
     return []
 
 
+_ALL_AREAS_PATH = "input/areas"
+_THERMAL_AREAS_PATH = "input/thermal/areas"
+
+
+# noinspection SpellCheckingInspection
+class _BaseAreaDTO(
+    OptimizationProperties.FilteringSection,
+    OptimizationProperties.ModalOptimizationSection,
+    AdequacyPathProperties.AdequacyPathSection,
+    extra=Extra.forbid,
+    validate_assignment=True,
+    allow_population_by_field_name=True,
+):
+    """
+    Represents an area output.
+
+    Aggregates the fields of the `OptimizationProperties` and `AdequacyPathProperties` classes,
+    but without the `UIProperties` fields.
+
+    Add the fields extracted from the `/input/thermal/areas.ini` information:
+
+    - `average_unsupplied_energy_cost` is extracted from `unserverd_energy_cost`,
+    - `average_spilled_energy_cost` is extracted from `spilled_energy_cost`.
+    """
+
+    average_unsupplied_energy_cost: float = Field(0.0, description="average unserverd energy cost (€/MWh)")
+    average_spilled_energy_cost: float = Field(0.0, description="average spilled energy cost (€/MWh)")
+
+
+# noinspection SpellCheckingInspection
+@camel_case_model
+class GetAreaDTO(_BaseAreaDTO, metaclass=AllOptionalMetaclass):
+    """
+    DTO object use to get the area information using a flat structure.
+    """
+
+    @classmethod
+    def create_area_dto(
+        cls,
+        area_folder: AreaFolder,
+        *,
+        average_unsupplied_energy_cost: float,
+        average_spilled_energy_cost: float,
+    ) -> "GetAreaDTO":
+        """
+        Creates a `GetAreaDTO` object from configuration data.
+
+        Args:
+            area_folder: Configuration data read from the `/input/areas/<area>` information.
+            average_unsupplied_energy_cost: Unserverd energy cost (€/MWh).
+            average_spilled_energy_cost: Spilled energy cost (€/MWh).
+        Returns:
+            The `GetAreaDTO` object.
+        """
+        obj = {
+            "average_unsupplied_energy_cost": average_unsupplied_energy_cost,
+            "average_spilled_energy_cost": average_spilled_energy_cost,
+            **area_folder.optimization.filtering.dict(by_alias=False),
+            **area_folder.optimization.nodal_optimization.dict(by_alias=False),
+            # adequacy_patch is only available if study version >= 830.
+            **(area_folder.adequacy_patch.adequacy_patch.dict(by_alias=False) if area_folder.adequacy_patch else {}),
+        }
+        return cls(**obj)
+
+
 class AreaManager:
+    """
+    Manages operations related to areas in a study, including retrieval, creation, and updates.
+
+    Attributes:
+        storage_service: The service responsible for study storage operations.
+        patch_service: The service responsible for study patch operations.
+            This service is used to store additional data for each area, in particular the country
+            of origin (`country`) and a list of tags for searching (`tags`).
+    """
+
     def __init__(
         self,
         storage_service: StudyStorageService,
         repository: StudyMetadataRepository,
     ) -> None:
+        """
+        Initializes the AreaManager.
+
+        Args:
+            storage_service: The service responsible for study storage operations.
+            repository: The repository for study metadata operations.
+        """
         self.storage_service = storage_service
         self.patch_service = PatchService(repository=repository)
+
+    # noinspection SpellCheckingInspection
+    def get_all_area_props(self, study: RawStudy) -> t.Mapping[str, GetAreaDTO]:
+        """
+        Retrieves all areas of a study.
+
+        Args:
+            study: The raw study object.
+        Returns:
+            A mapping of area IDs to area properties.
+        Raises:
+            ConfigFileNotFound: if a configuration file is not found.
+        """
+        file_study = self.storage_service.get_storage(study).get_raw(study)
+
+        # Get the area information from the `/input/areas` file.
+        path = _ALL_AREAS_PATH
+        try:
+            areas_cfg = file_study.tree.get(path.split("/"), depth=5)
+        except KeyError:
+            raise ConfigFileNotFound(path) from None
+        else:
+            # "list" and "sets" must be removed: we only need areas.
+            areas_cfg.pop("list", None)
+            areas_cfg.pop("sets", None)
+
+        # Get the unserverd and spilled energy costs from the `/input/thermal/areas.ini` file.
+        path = _THERMAL_AREAS_PATH
+        try:
+            thermal_cfg = file_study.tree.get(path.split("/"), depth=3)
+        except KeyError:
+            raise ConfigFileNotFound(path) from None
+        else:
+            thermal_areas = ThermalAreasProperties(**thermal_cfg)
+
+        # areas_cfg contains a dictionary where the keys are the area IDs,
+        # and the values are objects that can be converted to `AreaFolder`.
+        area_map = {}
+        for area_id, area_cfg in areas_cfg.items():
+            area_folder = AreaFolder(**area_cfg)
+            area_map[area_id] = GetAreaDTO.create_area_dto(
+                area_folder,
+                average_unsupplied_energy_cost=thermal_areas.unserverd_energy_cost.get(area_id, 0.0),
+                average_spilled_energy_cost=thermal_areas.spilled_energy_cost.get(area_id, 0.0),
+            )
+
+        return area_map
 
     def get_all_areas(self, study: RawStudy, area_type: t.Optional[AreaType] = None) -> t.List[AreaInfoDTO]:
         """
