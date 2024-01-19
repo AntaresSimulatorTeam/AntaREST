@@ -1,4 +1,5 @@
 import { MatrixStats, MatrixType } from "../../../../../../../common/types";
+import { SplitViewProps } from "../../../../../../common/SplitView";
 import { getAllocationMatrix } from "./Allocation/utils";
 import { getCorrelationMatrix } from "./Correlation/utils";
 
@@ -41,6 +42,12 @@ type Matrices = Record<HydroMatrixType, HydroMatrixProps>;
 export interface HydroRoute {
   path: string;
   type: number;
+  isSplitView?: boolean;
+  splitConfig?: {
+    direction: SplitViewProps["direction"];
+    partnerType: HydroMatrixType;
+    sizes: SplitViewProps["sizes"];
+  };
 }
 
 export interface AreaCoefficientItem {
@@ -54,12 +61,24 @@ export interface AreaCoefficientItem {
 
 export const HYDRO_ROUTES: HydroRoute[] = [
   {
-    path: "dailypower",
-    type: HydroMatrixType.Dailypower,
+    path: "inflowstructure",
+    type: HydroMatrixType.InflowPattern,
+    isSplitView: true,
+    splitConfig: {
+      direction: "horizontal",
+      partnerType: HydroMatrixType.OverallMonthlyHydro,
+      sizes: [50, 50],
+    },
   },
   {
-    path: "energycredits",
-    type: HydroMatrixType.EnergyCredits,
+    path: "dailypower&energy",
+    type: HydroMatrixType.Dailypower,
+    isSplitView: true,
+    splitConfig: {
+      direction: "vertical",
+      partnerType: HydroMatrixType.EnergyCredits,
+      sizes: [25, 75],
+    },
   },
   {
     path: "reservoirlevels",

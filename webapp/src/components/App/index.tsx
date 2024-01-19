@@ -50,14 +50,13 @@ import {
 import HydroMatrix from "./Singlestudy/explore/Modelization/Areas/Hydro/HydroMatrix";
 import Layers from "./Singlestudy/explore/Modelization/Map/MapConfig/Layers";
 import Districts from "./Singlestudy/explore/Modelization/Map/MapConfig/Districts";
-import InflowStructure from "./Singlestudy/explore/Modelization/Areas/Hydro/InflowStructure";
 import Allocation from "./Singlestudy/explore/Modelization/Areas/Hydro/Allocation";
 import Correlation from "./Singlestudy/explore/Modelization/Areas/Hydro/Correlation";
 import Storages from "./Singlestudy/explore/Modelization/Areas/Storages";
 import StorageForm from "./Singlestudy/explore/Modelization/Areas/Storages/Form";
 import ThermalForm from "./Singlestudy/explore/Modelization/Areas/Thermal/Form";
 import RenewablesForm from "./Singlestudy/explore/Modelization/Areas/Renewables/Form";
-import DailyPowerAndEnergy from "./Singlestudy/explore/Modelization/Areas/Hydro/DailyPowerAndEnergy";
+import SplitHydroMatrix from "./Singlestudy/explore/Modelization/Areas/Hydro/SplitHydroMatrix";
 
 function App() {
   return (
@@ -105,10 +104,6 @@ function App() {
                                 element={<ManagementOptions />}
                               />
                               <Route
-                                path="inflowstructure"
-                                element={<InflowStructure />}
-                              />
-                              <Route
                                 path="allocation"
                                 element={<Allocation />}
                               />
@@ -116,17 +111,35 @@ function App() {
                                 path="correlation"
                                 element={<Correlation />}
                               />
-                              <Route
-                                path="dailypower&energy"
-                                element={<DailyPowerAndEnergy />}
-                              />
-                              {HYDRO_ROUTES.map((route: HydroRoute) => (
-                                <Route
-                                  key={route.path}
-                                  path={route.path}
-                                  element={<HydroMatrix type={route.type} />}
-                                />
-                              ))}
+                              {HYDRO_ROUTES.map(
+                                ({
+                                  path,
+                                  type,
+                                  isSplitView,
+                                  splitConfig,
+                                }: HydroRoute) => {
+                                  return isSplitView && splitConfig ? (
+                                    <Route
+                                      key={path}
+                                      path={path}
+                                      element={
+                                        <SplitHydroMatrix
+                                          type={type}
+                                          direction={splitConfig.direction}
+                                          partnerType={splitConfig.partnerType}
+                                          splitSizes={splitConfig.sizes}
+                                        />
+                                      }
+                                    />
+                                  ) : (
+                                    <Route
+                                      key={path}
+                                      path={path}
+                                      element={<HydroMatrix type={type} />}
+                                    />
+                                  );
+                                },
+                              )}
                             </Route>
                             <Route path="wind" element={<Wind />} />
                             <Route path="solar" element={<Solar />} />
