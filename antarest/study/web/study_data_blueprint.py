@@ -54,18 +54,15 @@ from antarest.study.business.general_management import GeneralFormFields
 from antarest.study.business.link_management import LinkInfoDTO
 from antarest.study.business.optimization_management import OptimizationFormFields
 from antarest.study.business.playlist_management import PlaylistColumns
-from antarest.study.business.table_mode_management import (
-    BindingConstraintOperator,
-    ColumnsModelTypes,
-    TableTemplateType,
-)
+from antarest.study.business.table_mode_management import TableDataDTO, TableTemplateType
 from antarest.study.business.thematic_trimming_field_infos import ThematicTrimmingFormFields
 from antarest.study.business.timeseries_config_management import TSFormFields
 from antarest.study.model import PatchArea, PatchCluster
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
-from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.area import AreaUI
+from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
+from antarest.study.storage.variantstudy.model.command.common import BindingConstraintOperator
 
 logger = logging.getLogger(__name__)
 
@@ -845,24 +842,22 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/tablemode",
         tags=[APITag.study_data],
         summary="Get table data for table form",
-        # `Any` because `Union[AreaColumns, LinkColumns]` not working
-        response_model=t.Dict[str, t.Dict[str, t.Any]],
-        response_model_exclude_none=True,
     )
     def get_table_mode(
         uuid: str,
         table_type: TableTemplateType,
         columns: str,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> t.Dict[str, ColumnsModelTypes]:
+    ) -> TableDataDTO:
         logger.info(
             f"Getting template table data for study {uuid}",
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
-
-        return study_service.table_mode_manager.get_table_data(study, table_type, columns.split(","))
+        column_list = columns.split(",") if columns else []
+        table_data = study_service.table_mode_manager.get_table_data(study, table_type, column_list)
+        return table_data
 
     @bp.put(
         path="/studies/{uuid}/tablemode",
@@ -872,17 +867,17 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     def set_table_mode(
         uuid: str,
         table_type: TableTemplateType,
-        data: t.Dict[str, ColumnsModelTypes],
+        data: TableDataDTO,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> None:
+    ) -> TableDataDTO:
         logger.info(
             f"Updating table data for study {uuid}",
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
-
-        study_service.table_mode_manager.set_table_data(study, table_type, data)
+        table_data = study_service.table_mode_manager.set_table_data(study, table_type, data)
+        return table_data
 
     @bp.post(
         "/studies/_update_version",

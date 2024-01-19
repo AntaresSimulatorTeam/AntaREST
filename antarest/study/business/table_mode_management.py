@@ -1,16 +1,22 @@
-from typing import Any, Dict, List, Optional, TypedDict, Union, cast
+import typing as t
+
+import pandas as pd
 from pydantic import Field
-from antarest.study.business.areas.properties_management import AdequacyPatchMode
-from antarest.study.business.areas.renewable_management import TimeSeriesInterpretation
+
+from antarest.study.business.area_management import AreaManager
+from antarest.study.business.areas.renewable_management import RenewableManager, TimeSeriesInterpretation
+from antarest.study.business.areas.st_storage_management import STStorageManager
+from antarest.study.business.areas.thermal_management import ThermalManager
 from antarest.study.business.binding_constraint_management import BindingConstraintManager
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
-from antarest.study.business.utils import FormFieldsBaseModel, execute_or_add_commands, AllOptionalMetaclass
+from antarest.study.business.link_management import LinkManager
+from antarest.study.business.utils import AllOptionalMetaclass, FormFieldsBaseModel, execute_or_add_commands
 from antarest.study.common.default_values import FilteringOptions, LinkProperties, NodalOptimization
 from antarest.study.model import RawStudy
+from antarest.study.storage.rawstudy.model.filesystem.config.area import AdequacyPatchMode
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import LawOption, LocalTSGenerationBehavior
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.update_binding_constraint import UpdateBindingConstraint
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
@@ -31,6 +37,7 @@ class TableTemplateType(EnumIgnoreCase):
     LINK = "link"
     THERMAL_CLUSTER = "thermal cluster"
     RENEWABLE_CLUSTER = "renewable cluster"
+    ST_STORAGE = "short-term storage"
     BINDING_CONSTRAINT = "binding constraint"
 
 
@@ -187,7 +194,7 @@ class ThermalClusterColumns(FormFieldsBaseModel, metaclass=AllOptionalMetaclass)
         path=f"{THERMAL_CLUSTER_PATH}/spread-cost",
     )
     ts_gen: LocalTSGenerationBehavior = Field(
-        default=LocalTSGenerationBehavior.USE_GLOBAL_PARAMETER.value,
+        default=LocalTSGenerationBehavior.USE_GLOBAL.value,
         path=f"{THERMAL_CLUSTER_PATH}/gen-ts",
     )
     volatility_forced: int = Field(
@@ -285,18 +292,18 @@ class BindingConstraintColumns(FormFieldsBaseModel, metaclass=AllOptionalMetacla
         default=True,
         path=f"{BINDING_CONSTRAINT_PATH}/enabled",
     )
-    group: Optional[str] = Field(
+    group: t.Optional[str] = Field(
         default="default",
         path=f"{BINDING_CONSTRAINT_PATH}/group",
     )
 
 
-class ColumnInfo(TypedDict):
+class ColumnInfo(t.TypedDict):
     path: str
-    default_value: Any
+    default_value: t.Any
 
 
-class PathVars(TypedDict, total=False):
+class PathVars(t.TypedDict, total=False):
     # Area
     id: str
     # Link
@@ -307,17 +314,7 @@ class PathVars(TypedDict, total=False):
     cluster: str
 
 
-AREA_PATH = "input/areas/{area}"
-THERMAL_PATH = "input/thermal/areas"
-LINK_GLOB_PATH = "input/links/{area1}/properties"
-LINK_PATH = f"{LINK_GLOB_PATH}/{{area2}}"
-CLUSTER_GLOB_PATH = "input/thermal/clusters/{area}/list"
-CLUSTER_PATH = f"{CLUSTER_GLOB_PATH}/{{cluster}}"
-RENEWABLE_GLOB_PATH = "input/renewables/clusters/{area}/list"
-RENEWABLE_PATH = f"{RENEWABLE_GLOB_PATH}/{{cluster}}"
-BINDING_CONSTRAINT_PATH = "input/bindingconstraints/bindingconstraints"
-
-FIELDS_INFO_BY_TYPE: Dict[TableTemplateType, Dict[str, ColumnInfo]] = {
+FIELDS_INFO_BY_TYPE: t.Dict[TableTemplateType, t.Dict[str, ColumnInfo]] = {
     TableTemplateType.AREA: {
         "non_dispatchable_power": {
             "path": f"{AREA_PATH}/optimization/nodal optimization/non-dispatchable-power",
@@ -402,107 +399,107 @@ FIELDS_INFO_BY_TYPE: Dict[TableTemplateType, Dict[str, ColumnInfo]] = {
             "default_value": FilteringOptions.FILTER_YEAR_BY_YEAR,
         },
     },
-    TableTemplateType.CLUSTER: {
+    TableTemplateType.THERMAL_CLUSTER: {
         "group": {
-            "path": f"{CLUSTER_PATH}/group",
+            "path": f"{THERMAL_CLUSTER_PATH}/group",
             "default_value": "",
         },
         "enabled": {
-            "path": f"{CLUSTER_PATH}/enabled",
+            "path": f"{THERMAL_CLUSTER_PATH}/enabled",
             "default_value": True,
         },
         "must_run": {
-            "path": f"{CLUSTER_PATH}/must-run",
+            "path": f"{THERMAL_CLUSTER_PATH}/must-run",
             "default_value": False,
         },
         "unit_count": {
-            "path": f"{CLUSTER_PATH}/unitcount",
+            "path": f"{THERMAL_CLUSTER_PATH}/unitcount",
             "default_value": 0,
         },
         "nominal_capacity": {
-            "path": f"{CLUSTER_PATH}/nominalcapacity",
+            "path": f"{THERMAL_CLUSTER_PATH}/nominalcapacity",
             "default_value": 0,
         },
         "min_stable_power": {
-            "path": f"{CLUSTER_PATH}/min-stable-power",
+            "path": f"{THERMAL_CLUSTER_PATH}/min-stable-power",
             "default_value": 0,
         },
         "spinning": {
-            "path": f"{CLUSTER_PATH}/spinning",
+            "path": f"{THERMAL_CLUSTER_PATH}/spinning",
             "default_value": 0,
         },
         "min_up_time": {
-            "path": f"{CLUSTER_PATH}/min-up-time",
+            "path": f"{THERMAL_CLUSTER_PATH}/min-up-time",
             "default_value": 1,
         },
         "min_down_time": {
-            "path": f"{CLUSTER_PATH}/min-down-time",
+            "path": f"{THERMAL_CLUSTER_PATH}/min-down-time",
             "default_value": 1,
         },
         "co2": {
-            "path": f"{CLUSTER_PATH}/co2",
+            "path": f"{THERMAL_CLUSTER_PATH}/co2",
             "default_value": 0,
         },
         "marginal_cost": {
-            "path": f"{CLUSTER_PATH}/marginal-cost",
+            "path": f"{THERMAL_CLUSTER_PATH}/marginal-cost",
             "default_value": 0,
         },
         "fixed_cost": {
-            "path": f"{CLUSTER_PATH}/fixed-cost",
+            "path": f"{THERMAL_CLUSTER_PATH}/fixed-cost",
             "default_value": 0,
         },
         "startup_cost": {
-            "path": f"{CLUSTER_PATH}/startup-cost",
+            "path": f"{THERMAL_CLUSTER_PATH}/startup-cost",
             "default_value": 0,
         },
         "market_bid_cost": {
-            "path": f"{CLUSTER_PATH}/market-bid-cost",
+            "path": f"{THERMAL_CLUSTER_PATH}/market-bid-cost",
             "default_value": 0,
         },
         "spread_cost": {
-            "path": f"{CLUSTER_PATH}/spread-cost",
+            "path": f"{THERMAL_CLUSTER_PATH}/spread-cost",
             "default_value": 0,
         },
         "ts_gen": {
-            "path": f"{CLUSTER_PATH}/gen-ts",
+            "path": f"{THERMAL_CLUSTER_PATH}/gen-ts",
             "default_value": LocalTSGenerationBehavior.USE_GLOBAL.value,
         },
         "volatility_forced": {
-            "path": f"{CLUSTER_PATH}/volatility.forced",
+            "path": f"{THERMAL_CLUSTER_PATH}/volatility.forced",
             "default_value": 0,
         },
         "volatility_planned": {
-            "path": f"{CLUSTER_PATH}/volatility.planned",
+            "path": f"{THERMAL_CLUSTER_PATH}/volatility.planned",
             "default_value": 0,
         },
         "law_forced": {
-            "path": f"{CLUSTER_PATH}/law.forced",
+            "path": f"{THERMAL_CLUSTER_PATH}/law.forced",
             "default_value": LawOption.UNIFORM.value,
         },
         "law_planned": {
-            "path": f"{CLUSTER_PATH}/law.planned",
+            "path": f"{THERMAL_CLUSTER_PATH}/law.planned",
             "default_value": LawOption.UNIFORM.value,
         },
     },
-    TableTemplateType.RENEWABLE: {
+    TableTemplateType.RENEWABLE_CLUSTER: {
         "group": {
-            "path": f"{RENEWABLE_PATH}/group",
+            "path": f"{RENEWABLE_CLUSTER_PATH}/group",
             "default_value": "",
         },
         "ts_interpretation": {
-            "path": f"{RENEWABLE_PATH}/ts-interpretation",
+            "path": f"{RENEWABLE_CLUSTER_PATH}/ts-interpretation",
             "default_value": TimeSeriesInterpretation.POWER_GENERATION.value,
         },
         "enabled": {
-            "path": f"{RENEWABLE_PATH}/enabled",
+            "path": f"{RENEWABLE_CLUSTER_PATH}/enabled",
             "default_value": True,
         },
         "unit_count": {
-            "path": f"{RENEWABLE_PATH}/unitcount",
+            "path": f"{RENEWABLE_CLUSTER_PATH}/unitcount",
             "default_value": 0,
         },
         "nominal_capacity": {
-            "path": f"{RENEWABLE_PATH}/nominalcapacity",
+            "path": f"{RENEWABLE_CLUSTER_PATH}/nominalcapacity",
             "default_value": 0,
         },
     },
@@ -534,7 +531,7 @@ COLUMNS_MODELS_BY_TYPE = {
     TableTemplateType.BINDING_CONSTRAINT: BindingConstraintColumns,
 }
 
-ColumnsModelTypes = Union[
+ColumnsModelTypes = t.Union[
     AreaColumns,
     LinkColumns,
     ThermalClusterColumns,
@@ -543,7 +540,7 @@ ColumnsModelTypes = Union[
 ]
 
 
-def _get_glob_object(file_study: FileStudy, table_type: TableTemplateType) -> Dict[str, Any]:
+def _get_glob_object(file_study: FileStudy, table_type: TableTemplateType) -> t.Dict[str, t.Any]:
     """
     Retrieves the fields of an object according to its type (area, link, thermal cluster...).
 
@@ -559,7 +556,7 @@ def _get_glob_object(file_study: FileStudy, table_type: TableTemplateType) -> Di
     """
     # sourcery skip: extract-method
     if table_type == TableTemplateType.AREA:
-        info_map: Dict[str, Any] = file_study.tree.get(url=AREA_PATH.format(area="*").split("/"), depth=3)
+        info_map: t.Dict[str, t.Any] = file_study.tree.get(url=AREA_PATH.format(area="*").split("/"), depth=3)
         area_ids = list(file_study.config.areas)
         # If there is only one ID in the `area_ids`, the result returned from
         # the `file_study.tree.get` call will be a single object.
@@ -588,7 +585,7 @@ def _get_glob_object(file_study: FileStudy, table_type: TableTemplateType) -> Di
     return {}
 
 
-def _get_value(path: List[str], data: Dict[str, Any], default_value: Any) -> Any:
+def _get_value(path: t.List[str], data: t.Dict[str, t.Any], default_value: t.Any) -> t.Any:
     if len(path):
         return _get_value(path[1:], data.get(path[0], {}), default_value)
     return data if data != {} else default_value
@@ -597,7 +594,7 @@ def _get_value(path: List[str], data: Dict[str, Any], default_value: Any) -> Any
 def _get_relative_path(
     table_type: TableTemplateType,
     path: str,
-) -> List[str]:
+) -> t.List[str]:
     base_path = ""
     path_arr = path.split("/")
 
@@ -626,7 +623,7 @@ def _get_column_path(
     path_vars: PathVars,
 ) -> str:
     columns_model = COLUMNS_MODELS_BY_TYPE[table_type]
-    path = cast(str, columns_model.__fields__[column].field_info.extra["path"])
+    path = t.cast(str, columns_model.__fields__[column].field_info.extra["path"])
 
     if table_type == TableTemplateType.AREA:
         return path.format(area=path_vars["id"])
@@ -663,22 +660,81 @@ def _get_path_vars_from_key(
     return PathVars()
 
 
+_TableIndex = str  # row name
+_TableColumn = str  # column name
+_CellValue = t.Any  # cell value (str, int, float, bool, enum, etc.)
+TableDataDTO = t.Mapping[_TableIndex, t.Mapping[_TableColumn, _CellValue]]
+
+
 class TableModeManager:
-    def __init__(self, storage_service: StudyStorageService) -> None:
-        self.storage_service = storage_service
+    def __init__(
+        self,
+        area_manager: AreaManager,
+        link_manager: LinkManager,
+        thermal_manager: ThermalManager,
+        renewable_manager: RenewableManager,
+        st_storage_manager: STStorageManager,
+        binding_constraint_manager: BindingConstraintManager,
+    ) -> None:
+        self._area_manager = area_manager
+        self._link_manager = link_manager
+        self._thermal_manager = thermal_manager
+        self._renewable_manager = renewable_manager
+        self._st_storage_manager = st_storage_manager
+        self._binding_constraint_manager = binding_constraint_manager
 
     def get_table_data(
         self,
         study: RawStudy,
         table_type: TableTemplateType,
-        columns: List[str],
-    ) -> Dict[str, ColumnsModelTypes]:
+        columns: t.Sequence[_TableColumn],
+    ) -> TableDataDTO:
+        if table_type == TableTemplateType.AREA:
+            areas_map = self._area_manager.get_all_area_props(study)
+            data = {area_id: area.dict(by_alias=True) for area_id, area in areas_map.items()}
+        elif table_type == TableTemplateType.LINK:
+            pass
+        elif table_type == TableTemplateType.THERMAL_CLUSTER:
+            clusters_map = self._thermal_manager.get_all_thermal_props(study)
+            data = {
+                f"{area_id} / {cluster.id}": cluster.dict(by_alias=True)
+                for area_id, clusters in clusters_map.items()
+                for cluster in clusters
+            }
+        elif table_type == TableTemplateType.RENEWABLE_CLUSTER:
+            clusters_map = self._renewable_manager.get_all_renewable_props(study)
+            data = {
+                f"{area_id} / {cluster.id}": cluster.dict(by_alias=True)
+                for area_id, clusters in clusters_map.items()
+                for cluster in clusters
+            }
+        elif table_type == TableTemplateType.ST_STORAGE:
+            storage_map = self._st_storage_manager.get_all_storage_props(study)
+            data = {
+                f"{area_id} / {storage.id}": storage.dict(by_alias=True)
+                for area_id, storages in storage_map.items()
+                for storage in storages
+            }
+        elif table_type == TableTemplateType.BINDING_CONSTRAINT:
+            pass
+
+        df = pd.DataFrame.from_dict(data, orient="index")
+        if columns:
+            # Create a new dataframe with the listed columns.
+            # If a column does not exist in the DataFrame, it is created with empty values,
+            # because NaN (or `None`) is not JSON-serializable.
+            df = pd.DataFrame(df, columns=columns)
+            df = df.where(pd.notna(df), other="")
+
+        obj = df.to_dict(orient="index")
+        return obj
+
         file_study = self.storage_service.get_storage(study).get_raw(study)
         columns_model = COLUMNS_MODELS_BY_TYPE[table_type]
         glob_object = _get_glob_object(file_study, table_type)
         schema_columns = columns_model.schema()["properties"]
 
-        def get_column_value(col: str, data: Dict[str, Any]) -> Any:
+        def get_column_value(col: str, data: t.Dict[str, t.Any]) -> t.Any:
             schema = schema_columns[col]
             relative_path = _get_relative_path(table_type, schema["path"])
             return _get_value(relative_path, data, schema["default"])
@@ -695,7 +751,7 @@ class TableModeManager:
                 for data in glob_object.values()
             }
 
-        obj: Dict[str, Any] = {}
+        obj: t.Dict[str, t.Any] = {}
         for id_1, value_1 in glob_object.items():
             for id_2, value_2 in value_1.items():
                 obj[f"{id_1} / {id_2}"] = columns_model.construct(
@@ -708,9 +764,9 @@ class TableModeManager:
         self,
         study: RawStudy,
         table_type: TableTemplateType,
-        data: Dict[str, ColumnsModelTypes],
+        data: t.Dict[str, ColumnsModelTypes],
     ) -> None:
-        commands: List[ICommand] = []
+        commands: t.List[ICommand] = []
         bindings_by_id = None
         command_context = self.storage_service.variant_study_service.command_factory.command_context
 

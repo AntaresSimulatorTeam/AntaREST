@@ -276,13 +276,20 @@ class StudyService:
         self.thermal_manager = ThermalManager(self.storage_service)
         self.st_storage_manager = STStorageManager(self.storage_service)
         self.ts_config_manager = TimeSeriesConfigManager(self.storage_service)
-        self.table_mode_manager = TableModeManager(self.storage_service)
         self.playlist_manager = PlaylistManager(self.storage_service)
         self.scenario_builder_manager = ScenarioBuilderManager(self.storage_service)
         self.xpansion_manager = XpansionManager(self.storage_service)
         self.matrix_manager = MatrixManager(self.storage_service)
         self.binding_constraint_manager = BindingConstraintManager(self.storage_service)
         self.correlation_manager = CorrelationManager(self.storage_service)
+        self.table_mode_manager = TableModeManager(
+            self.areas,
+            self.links,
+            self.thermal_manager,
+            self.renewable_manager,
+            self.st_storage_manager,
+            self.binding_constraint_manager,
+        )
         self.cache_service = cache_service
         self.config = config
         self.on_deletion_callbacks: t.List[t.Callable[[str], None]] = []

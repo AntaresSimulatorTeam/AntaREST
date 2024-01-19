@@ -207,7 +207,7 @@ class AreaManager:
         """
         file_study = self.storage_service.get_storage(study).get_raw(study)
 
-        # Get the area information from the `/input/areas` file.
+        # Get the area information from the `/input/areas/<area>` file.
         path = _ALL_AREAS_PATH
         try:
             areas_cfg = file_study.tree.get(path.split("/"), depth=5)
