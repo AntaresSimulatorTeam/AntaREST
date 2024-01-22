@@ -569,31 +569,31 @@ export const convertDraftJSToXML = (editorState: EditorState): string => {
   return htmlToXml;
 };
 
+const BYTES_PER_KB = 1024; // 1KB = 1024 bytes
+const BYTES_PER_GB = BYTES_PER_KB ** 3; // 1GB = 1024^3 bytes
+
 export const convertSize = (bytes: number): string => {
   const units = ["bytes", "KB", "MB", "GB", "TB"];
-  const step = 1024;
 
-  if (bytes < step) {
+  if (bytes < BYTES_PER_KB) {
     return `${bytes} ${units[0]}`;
   }
 
   let unitIndex = 0;
   let size = bytes;
 
-  while (size >= step && unitIndex < units.length - 1) {
-    size /= step;
+  while (size >= BYTES_PER_KB && unitIndex < units.length - 1) {
+    size /= BYTES_PER_KB;
     unitIndex += 1;
   }
 
   return `${size.toFixed(2)} ${units[unitIndex]}`;
 };
 
-const ONE_GB = 1024 ** 3;
-
 const sizeRanges = [
   { limit: 0, color: "default" }, // Size is unknown or not calculated
-  { limit: 5 * ONE_GB, color: theme.palette.success.main }, // Size is 0 to 5 GB
-  { limit: 25 * ONE_GB, color: theme.palette.warning.main }, // Size is 5 GB to 25 GB
+  { limit: 5 * BYTES_PER_GB, color: theme.palette.success.main }, // Size is 0 to 5 GB
+  { limit: 25 * BYTES_PER_GB, color: theme.palette.warning.main }, // Size is 5 GB to 25 GB
   { limit: Infinity, color: theme.palette.error.main }, // Size is 25 GB and above
 ];
 
