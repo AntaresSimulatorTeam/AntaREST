@@ -37,11 +37,10 @@ const Root = styled(Box)(() => ({
 }));
 
 const Note = styled(Box)(({ theme }) => ({
-  flex: "0 0 70%",
+  flex: 1,
   width: "100%",
   display: "flex",
   flexDirection: "column",
-  justifyContent: "flex-start",
   alignItems: "center",
   padding: theme.spacing(2),
   paddingTop: 0,
