@@ -7,7 +7,7 @@ import { Icon } from "@mui/material";
 import { SvgIconComponent } from "@mui/icons-material";
 
 interface ListItem {
-  content: string | number;
+  content: React.ReactNode;
   label: string;
   icon: SvgIconComponent;
   iconColor?: string;

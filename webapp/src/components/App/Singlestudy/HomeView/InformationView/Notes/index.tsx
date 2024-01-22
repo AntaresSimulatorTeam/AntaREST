@@ -2,13 +2,15 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSnackbar } from "notistack";
 import { AxiosError } from "axios";
-import { Box, Button, Divider, styled, Typography } from "@mui/material";
+import { Box, Divider, Skeleton, styled, Typography } from "@mui/material";
 import StickyNote2OutlinedIcon from "@mui/icons-material/StickyNote2Outlined";
 import LinearScaleIcon from "@mui/icons-material/LinearScale";
 import StorageIcon from "@mui/icons-material/Storage";
 import HubIcon from "@mui/icons-material/Hub";
 import { Editor, EditorState } from "draft-js";
 import "draft-js/dist/Draft.css";
+import { LoadingButton } from "@mui/lab";
+import EditIcon from "@mui/icons-material/Edit";
 import {
   editComments,
   getComments,
@@ -78,55 +80,56 @@ function Notes({ study }: Props) {
   const [editorState, setEditorState] = useState(() =>
     EditorState.createEmpty(),
   );
-  const [editionMode, setEditionMode] = useState(false);
+  const [editionMode, setEditionMode] = useState<boolean | "loading">(false);
   const [content, setContent] = useState("");
   const areas = useAppSelector((state) => getAreas(state, study.id));
   const links = useAppSelector((state) => getLinks(state, study.id));
 
-  const res = usePromiseWithSnackbarError(
-    async () => {
-      const [comments, diskUsage] = await Promise.all([
-        getComments(study.id),
-        getStudyDiskUsage(study.id),
-      ]);
-
-      return { comments, diskUsage };
-    },
-    {
+  const { data: diskUsage, isLoading: isDiskUsageLoading } =
+    usePromiseWithSnackbarError(() => getStudyDiskUsage(study.id), {
       errorMessage: t("studies.error.retrieveData"),
       deps: [study?.id],
-    },
-  );
+    });
+
+  const commentRes = usePromiseWithSnackbarError(() => getComments(study.id), {
+    errorMessage: t("studies.error.retrieveData"),
+    deps: [study?.id],
+  });
 
   useEffect(() => {
-    if (!res.data) {
-      return;
+    const comments = commentRes.data;
+    if (comments) {
+      setEditorState(
+        EditorState.createWithContent(convertXMLToDraftJS(comments)),
+      );
+      setContent(comments);
     }
-    const { comments } = res.data;
-    setEditorState(
-      EditorState.createWithContent(convertXMLToDraftJS(comments)),
-    );
-    setContent(comments);
-  }, [res.data]);
+  }, [commentRes.data]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
   const handleSave = async (newContent: string) => {
+    const prevEditorState = editorState;
+    setEditionMode("loading");
+    setEditorState(
+      EditorState.createWithContent(convertXMLToDraftJS(newContent)),
+    );
+
     try {
       await editComments(study.id, newContent);
-      setEditorState(
-        EditorState.createWithContent(convertXMLToDraftJS(newContent)),
-      );
+
       setContent(newContent);
       enqueueSnackbar(t("study.success.commentsSaved"), {
         variant: "success",
       });
-      setEditionMode(false);
     } catch (e) {
+      setEditorState(prevEditorState);
       enqueueErrorSnackbar(t("study.error.commentsNotSaved"), e as AxiosError);
     }
+
+    setEditionMode(false);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -135,74 +138,77 @@ function Notes({ study }: Props) {
 
   return (
     <Root>
-      <UsePromiseCond
-        response={res}
-        ifResolved={(data) => (
-          <>
-            <Note>
-              <NoteHeader>
-                <StickyNote2OutlinedIcon
-                  sx={{ color: "text.secondary", mr: 1 }}
-                />
-                <Typography color="text.secondary">
-                  {t("study.notes")}
-                </Typography>
-              </NoteHeader>
+      <Note>
+        <NoteHeader>
+          <StickyNote2OutlinedIcon sx={{ color: "text.secondary", mr: 1 }} />
+          <Typography color="text.secondary">{t("study.notes")}</Typography>
+        </NoteHeader>
+
+        <UsePromiseCond
+          response={commentRes}
+          ifResolved={() => (
+            <>
               <EditorContainer>
                 <Editor
-                  readOnly={!editionMode}
+                  readOnly
                   editorState={editorState}
                   onChange={setEditorState}
                   textAlignment="left"
                 />
               </EditorContainer>
               <NoteFooter>
-                <Button
+                <LoadingButton
                   variant="text"
                   color="secondary"
                   onClick={() => setEditionMode(true)}
+                  loading={editionMode === "loading"}
+                  loadingPosition="end"
+                  endIcon={<EditIcon />}
                 >
                   {t("global.edit")}
-                </Button>
+                </LoadingButton>
               </NoteFooter>
-            </Note>
-            <Divider sx={{ width: "98%", height: "1px", bgcolor: "divider" }} />
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                width: 1,
-                height: 1,
-              }}
-            >
-              <DetailsList
-                items={[
-                  {
-                    content: convertSize(data.diskUsage),
-                    label: t("study.diskUsage"),
-                    icon: StorageIcon,
-                    iconColor: getColorForSize(data.diskUsage),
-                  },
-                  {
-                    content: areas.length,
-                    label: t("study.areas"),
-                    icon: HubIcon,
-                  },
-                  {
-                    content: links.length,
-                    label: t("study.links"),
-                    icon: LinearScaleIcon,
-                  },
-                ]}
-              />
-            </Box>
-          </>
-        )}
-      />
-
-      {editionMode && (
+            </>
+          )}
+        />
+      </Note>
+      <Divider sx={{ width: "98%", height: "1px", bgcolor: "divider" }} />
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "flex-start",
+          overflowY: "auto",
+          width: 1,
+        }}
+      >
+        <DetailsList
+          items={[
+            {
+              content: isDiskUsageLoading ? (
+                <Skeleton width={100} />
+              ) : (
+                convertSize(diskUsage || 0)
+              ),
+              label: t("study.diskUsage"),
+              icon: StorageIcon,
+              iconColor: getColorForSize(diskUsage || 0),
+            },
+            {
+              content: areas.length,
+              label: t("study.areas"),
+              icon: HubIcon,
+            },
+            {
+              content: links.length,
+              label: t("study.links"),
+              icon: LinearScaleIcon,
+            },
+          ]}
+        />
+      </Box>
+      {editionMode === true && (
         <NoteEditorModal
-          open={editionMode}
+          open
           content={content}
           onClose={() => setEditionMode(false)}
           onSave={handleSave}
