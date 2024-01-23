@@ -70,7 +70,7 @@ class StudyAdditionalData(Base):  # type:ignore
     )
     author = Column(String(255), default="Unknown")
     horizon = Column(String)
-    patch = Column(String(), nullable=True)
+    patch = Column(String(), index=True, nullable=True)
 
     def __eq__(self, other: t.Any) -> bool:
         if not super().__eq__(other):
@@ -93,19 +93,19 @@ class Study(Base):  # type: ignore
         default=lambda: str(uuid.uuid4()),
         unique=True,
     )
-    name = Column(String(255))
-    type = Column(String(50))
-    version = Column(String(255))
+    name = Column(String(255), index=True)
+    type = Column(String(50), index=True)
+    version = Column(String(255), index=True)
     author = Column(String(255))
-    created_at = Column(DateTime)
-    updated_at = Column(DateTime)
+    created_at = Column(DateTime, index=True)
+    updated_at = Column(DateTime, index=True)
     last_access = Column(DateTime)
     path = Column(String())
-    folder = Column(String, nullable=True)
-    parent_id = Column(String(36), ForeignKey("study.id", name="fk_study_study_id"))
+    folder = Column(String, nullable=True, index=True)
+    parent_id = Column(String(36), ForeignKey("study.id", name="fk_study_study_id"), index=True)
     public_mode = Column(Enum(PublicMode), default=PublicMode.NONE)
-    owner_id = Column(Integer, ForeignKey(Identity.id), nullable=True)
-    archived = Column(Boolean(), default=False)
+    owner_id = Column(Integer, ForeignKey(Identity.id), nullable=True, index=True)
+    archived = Column(Boolean(), default=False, index=True)
     owner = relationship(Identity, uselist=False)
     groups = relationship(Group, secondary=lambda: groups_metadata, cascade="")
     additional_data = relationship(
@@ -167,8 +167,8 @@ class RawStudy(Study):
         primary_key=True,
     )
     content_status = Column(Enum(StudyContentStatus))
-    workspace = Column(String(255), default=DEFAULT_WORKSPACE_NAME)
-    missing = Column(DateTime, nullable=True)
+    workspace = Column(String(255), default=DEFAULT_WORKSPACE_NAME, nullable=False, index=True)
+    missing = Column(DateTime, nullable=True, index=True)
 
     __mapper_args__ = {
         "polymorphic_identity": "rawstudy",
