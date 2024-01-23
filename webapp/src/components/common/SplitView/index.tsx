@@ -1,15 +1,13 @@
 import React from "react";
 import Split, { SplitProps } from "react-split";
-import { v4 as uuidv4 } from "uuid";
-import { Box, SxProps, Theme } from "@mui/material";
+import { Box } from "@mui/material";
+import "./style.css";
 
 export interface SplitViewProps {
   children: React.ReactNode[];
   direction?: SplitProps["direction"];
-  sizes: SplitProps["sizes"];
+  sizes?: SplitProps["sizes"];
   gutterSize?: SplitProps["gutterSize"];
-  snapOffset?: SplitProps["snapOffset"];
-  sx?: SxProps<Theme>;
 }
 
 /**
@@ -25,11 +23,9 @@ export interface SplitViewProps {
  */
 function SplitView({
   children,
-  direction = "horizontal",
-  sizes = [50, 50],
+  direction,
+  sizes,
   gutterSize = 4,
-  snapOffset = 0,
-  sx,
 }: SplitViewProps) {
   const numberOfChildren = React.Children.count(children);
   const defaultSizes = Array(numberOfChildren).fill(100 / numberOfChildren);
@@ -43,30 +39,17 @@ function SplitView({
       }}
     >
       <Split
-        key={`split-${direction}`} // force re-render when direction changes.
+        key={direction} // force re-render when direction changes.
         className="split"
         direction={direction}
-        sizes={sizes.length === numberOfChildren ? sizes : defaultSizes} // sizes array must sum up to 100 and match the number of children.
+        sizes={sizes?.length === numberOfChildren ? sizes : defaultSizes} // sizes array must sum up to 100 and match the number of children.
         gutterSize={gutterSize}
-        snapOffset={snapOffset}
         style={{
           display: "flex",
           flexDirection: direction === "horizontal" ? "row" : "column",
         }}
       >
-        {children.map((child) => (
-          <Box
-            key={uuidv4()}
-            sx={{
-              height: 1,
-              width: 1,
-              overflow: "hidden",
-              ...sx,
-            }}
-          >
-            {child}
-          </Box>
-        ))}
+        {children}
       </Split>
     </Box>
   );

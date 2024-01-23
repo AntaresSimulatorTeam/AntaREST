@@ -77,7 +77,7 @@ export const HYDRO_ROUTES: HydroRoute[] = [
     splitConfig: {
       direction: "vertical",
       partnerType: HydroMatrixType.EnergyCredits,
-      sizes: [25, 75],
+      sizes: [30, 70],
     },
   },
   {

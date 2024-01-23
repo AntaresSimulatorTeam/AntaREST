@@ -9,7 +9,6 @@ import {
 } from "../../../common/types";
 import "handsontable/dist/handsontable.min.css";
 import { Root } from "./style";
-import "./style.css";
 import {
   computeStats,
   createDateFromIndex,
