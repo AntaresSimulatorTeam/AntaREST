@@ -2,22 +2,31 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSnackbar } from "notistack";
 import { AxiosError } from "axios";
-import { Box, Button, Divider, Paper, styled, Typography } from "@mui/material";
+import { Box, Divider, Skeleton, styled, Typography } from "@mui/material";
 import StickyNote2OutlinedIcon from "@mui/icons-material/StickyNote2Outlined";
-import { ContentState, Editor, EditorState } from "draft-js";
+import LinearScaleIcon from "@mui/icons-material/LinearScale";
+import StorageIcon from "@mui/icons-material/Storage";
+import HubIcon from "@mui/icons-material/Hub";
+import { Editor, EditorState } from "draft-js";
 import "draft-js/dist/Draft.css";
+import { LoadingButton } from "@mui/lab";
+import EditIcon from "@mui/icons-material/Edit";
 import {
   editComments,
   getComments,
-  getStudySynthesis,
+  getStudyDiskUsage,
 } from "../../../../../../services/api/study";
-import { convertXMLToDraftJS } from "./utils";
+import { convertSize, convertXMLToDraftJS, getColorForSize } from "./utils";
 import { StudyMetadata } from "../../../../../../common/types";
 import NoteEditorModal from "./NodeEditorModal";
-import SimpleLoader from "../../../../../common/loaders/SimpleLoader";
 import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
+import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithSnackbarError";
+import DetailsList from "./DetailsList";
+import { getAreas, getLinks } from "../../../../../../redux/selectors";
+import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
+import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 
-const Root = styled(Box)(({ theme }) => ({
+const Root = styled(Box)(() => ({
   flex: "0 0 40%",
   height: "100%",
   display: "flex",
@@ -28,17 +37,16 @@ const Root = styled(Box)(({ theme }) => ({
 }));
 
 const Note = styled(Box)(({ theme }) => ({
-  flex: "0 0 70%",
+  flex: 1,
   width: "100%",
   display: "flex",
   flexDirection: "column",
-  justifyContent: "flex-start",
   alignItems: "center",
   padding: theme.spacing(2),
   paddingTop: 0,
 }));
 
-const NoteHeader = styled(Box)(({ theme }) => ({
+const NoteHeader = styled(Box)(() => ({
   display: "flex",
   justifyContent: "flex-start",
   alignItems: "center",
@@ -60,138 +68,73 @@ const EditorContainer = styled(Box)(({ theme }) => ({
   overflow: "auto",
 }));
 
-const FigureInfoContainer = styled(Box)(({ theme }) => ({
-  display: "flex",
-  justifyContent: "center",
-  alignItems: "flex-start",
-  width: "100%",
-  flexGrow: 1,
-  padding: theme.spacing(2),
-}));
-
-const FigureInfo = styled(Paper)(({ theme }) => ({
-  backgroundColor: "rgba(36, 207, 157, 0.05)",
-  display: "flex",
-  flexDirection: "column",
-  justifyContent: "center",
-  alignItems: "center",
-  width: "87px",
-  height: "96px",
-  margin: theme.spacing(0, 1),
-}));
-
-function Figure({ title, data }: { title: string; data: number }) {
-  return (
-    <FigureInfo>
-      <Typography
-        variant="h4"
-        fontStyle="normal"
-        fontWeight={400}
-        fontSize="34px"
-        lineHeight="123.5%"
-      >
-        {data}
-      </Typography>
-      <Typography
-        fontStyle="normal"
-        fontWeight={400}
-        fontSize="16px"
-        lineHeight="175%"
-        letterSpacing="0.15px"
-      >
-        {title}
-      </Typography>
-    </FigureInfo>
-  );
-}
-
 interface Props {
-  // eslint-disable-next-line react/no-unused-prop-types
-  study: StudyMetadata | undefined;
+  study: StudyMetadata;
 }
 
-export default function Notes(props: Props) {
-  const { study } = props;
+function Notes({ study }: Props) {
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [editorState, setEditorState] = useState(() =>
     EditorState.createEmpty(),
   );
-  const [editionMode, setEditionMode] = useState<boolean>(false);
-  const [content, setContent] = useState<string>("");
-  const [loaded, setLoaded] = useState(false);
-  const [nbAreas, setNbAreas] = useState<number>(0);
-  const [nbLinks, setNbLinks] = useState<number>(0);
+  const [editionMode, setEditionMode] = useState<boolean | "loading">(false);
+  const [content, setContent] = useState("");
+  const areas = useAppSelector((state) => getAreas(state, study.id));
+  const links = useAppSelector((state) => getLinks(state, study.id));
 
-  const onSave = async (newContent: string) => {
-    if (study) {
-      try {
-        await editComments(study.id, newContent);
-        setEditorState(
-          EditorState.createWithContent(convertXMLToDraftJS(newContent)),
-        );
-        setContent(newContent);
-        enqueueSnackbar(t("study.success.commentsSaved"), {
-          variant: "success",
-        });
-        setEditionMode(false);
-      } catch (e) {
-        enqueueErrorSnackbar(
-          t("study.error.commentsNotSaved"),
-          e as AxiosError,
-        );
-      }
+  const { data: diskUsage, isLoading: isDiskUsageLoading } =
+    usePromiseWithSnackbarError(() => getStudyDiskUsage(study.id), {
+      errorMessage: t("studies.error.retrieveData"),
+      deps: [study?.id],
+    });
+
+  const commentRes = usePromiseWithSnackbarError(() => getComments(study.id), {
+    errorMessage: t("studies.error.retrieveData"),
+    deps: [study?.id],
+  });
+
+  useEffect(() => {
+    const comments = commentRes.data;
+    if (comments) {
+      setEditorState(
+        EditorState.createWithContent(convertXMLToDraftJS(comments)),
+      );
+      setContent(comments);
     }
+  }, [commentRes.data]);
+
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
+
+  const handleSave = async (newContent: string) => {
+    const prevEditorState = editorState;
+    setEditionMode("loading");
+    setEditorState(
+      EditorState.createWithContent(convertXMLToDraftJS(newContent)),
+    );
+
+    try {
+      await editComments(study.id, newContent);
+
+      setContent(newContent);
+      enqueueSnackbar(t("study.success.commentsSaved"), {
+        variant: "success",
+      });
+    } catch (e) {
+      setEditorState(prevEditorState);
+      enqueueErrorSnackbar(t("study.error.commentsNotSaved"), e as AxiosError);
+    }
+
+    setEditionMode(false);
   };
 
-  useEffect(() => {
-    const init = async () => {
-      if (study) {
-        try {
-          const data = await getComments(study?.id);
-          setEditorState(
-            EditorState.createWithContent(convertXMLToDraftJS(data)),
-          );
-          setContent(data);
-        } catch (e) {
-          setEditorState(
-            EditorState.createWithContent(
-              ContentState.createFromText(t("study.error.fetchComments")),
-            ),
-          );
-        } finally {
-          setLoaded(true);
-        }
-      }
-    };
-    init();
-    return () => setContent("");
-  }, [study, t]);
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
 
-  useEffect(() => {
-    (async () => {
-      if (study) {
-        try {
-          const tmpSynth = await getStudySynthesis(study.id);
-          const areas = Object.keys(tmpSynth.areas).map(
-            (elm) => tmpSynth.areas[elm],
-          );
-          const links = areas
-            .map((elm) => Object.keys(elm.links).length)
-            .reduce(
-              (prevValue: number, currentValue: number) =>
-                prevValue + currentValue,
-              0,
-            );
-          setNbAreas(areas.length);
-          setNbLinks(links);
-        } catch (e) {
-          enqueueErrorSnackbar(t("study.error.getAreasInfo"), e as AxiosError);
-        }
-      }
-    })();
-  }, [enqueueErrorSnackbar, study, t]);
   return (
     <Root>
       <Note>
@@ -199,40 +142,79 @@ export default function Notes(props: Props) {
           <StickyNote2OutlinedIcon sx={{ color: "text.secondary", mr: 1 }} />
           <Typography color="text.secondary">{t("study.notes")}</Typography>
         </NoteHeader>
-        <EditorContainer sx={{ overflowY: "auto" }}>
-          {!loaded && <SimpleLoader />}
-          {loaded && (
-            <Editor
-              readOnly={!editionMode}
-              editorState={editorState}
-              onChange={setEditorState}
-              textAlignment="left"
-            />
+
+        <UsePromiseCond
+          response={commentRes}
+          ifResolved={() => (
+            <>
+              <EditorContainer>
+                <Editor
+                  readOnly
+                  editorState={editorState}
+                  onChange={setEditorState}
+                  textAlignment="left"
+                />
+              </EditorContainer>
+              <NoteFooter>
+                <LoadingButton
+                  variant="text"
+                  color="secondary"
+                  onClick={() => setEditionMode(true)}
+                  loading={editionMode === "loading"}
+                  loadingPosition="end"
+                  endIcon={<EditIcon />}
+                >
+                  {t("global.edit")}
+                </LoadingButton>
+              </NoteFooter>
+            </>
           )}
-        </EditorContainer>
-        <NoteFooter>
-          <Button
-            variant="text"
-            color="secondary"
-            onClick={() => setEditionMode(true)}
-          >
-            {t("global.edit")}
-          </Button>
-        </NoteFooter>
+        />
       </Note>
       <Divider sx={{ width: "98%", height: "1px", bgcolor: "divider" }} />
-      <FigureInfoContainer>
-        <Figure title={t("study.areas")} data={nbAreas} />
-        <Figure title={t("study.links")} data={nbLinks} />
-      </FigureInfoContainer>
-      {editionMode && (
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "flex-start",
+          overflowY: "auto",
+          width: 1,
+        }}
+      >
+        <DetailsList
+          items={[
+            {
+              content: isDiskUsageLoading ? (
+                <Skeleton width={100} />
+              ) : (
+                convertSize(diskUsage || 0)
+              ),
+              label: t("study.diskUsage"),
+              icon: StorageIcon,
+              iconColor: getColorForSize(diskUsage || 0),
+            },
+            {
+              content: areas.length,
+              label: t("study.areas"),
+              icon: HubIcon,
+            },
+            {
+              content: links.length,
+              label: t("study.links"),
+              icon: LinearScaleIcon,
+            },
+          ]}
+        />
+      </Box>
+      {editionMode === true && (
         <NoteEditorModal
-          open={editionMode}
+          open
           content={content}
           onClose={() => setEditionMode(false)}
-          onSave={onSave}
+          onSave={handleSave}
         />
       )}
     </Root>
   );
 }
+
+export default Notes;

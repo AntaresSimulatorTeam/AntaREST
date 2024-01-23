@@ -75,7 +75,7 @@ function InformationView(props: Props) {
         py={1.5}
       >
         <LauncherHistory study={study} />
-        <Notes study={study} />
+        {study && <Notes study={study} />}
       </Box>
       <Divider sx={{ width: "100%", height: "1px" }} />
       <Box

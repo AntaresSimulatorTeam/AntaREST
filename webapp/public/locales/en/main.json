@@ -207,6 +207,7 @@
   "study.cluster": "Cluster",
   "study.link": "Link",
   "study.links": "Links",
+  "study.diskUsage": "Disk usage",
   "study.district": "District",
   "study.bindingconstraints": "Binding Constraints",
   "study.debug": "Debug",
