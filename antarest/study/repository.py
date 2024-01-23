@@ -1,17 +1,17 @@
 import datetime
+import enum
 import logging
 import typing as t
-from enum import Enum
 
 from pydantic import BaseModel, Field
-from sqlalchemy import String, and_, any_, not_, or_  # type: ignore
+from sqlalchemy import not_, or_  # type: ignore
 from sqlalchemy.orm import Session, joinedload, with_polymorphic  # type: ignore
 
 from antarest.core.interfaces.cache import CacheConstants, ICache
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group
 from antarest.study.common.utils import get_study_information
-from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, Study, StudyAdditionalData, groups_metadata
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, Study, StudyAdditionalData
 
 logger = logging.getLogger(__name__)
 
@@ -41,19 +41,19 @@ def escape_like(string: str, escape_char: str = "\\") -> str:
 class StudyFilter(BaseModel, frozen=True):
     """Study filter class gathering the main filtering parameters
 
-    Attrs:
-        - name: optional name regex of the study to match
-        - managed: indicate if just managed studies should be retrieved
-        - archived: optional if the study is archived
-        - variant: optional if the study is raw study
-        - versions: versions to filter by
-        - users: users to filter by
-        - groups: groups to filter by
-        - tags: tags to filter by
-        - studies_ids: optional list of ids to be matched, **note that if empty the query result will be empty also**
-        - exists: if raw study missing
-        - workspace: optional workspace of the study
-        - folder: optional folder prefix of the study
+    Attributes:
+        name: optional name regex of the study to match
+        managed: indicate if just managed studies should be retrieved
+        archived: optional if the study is archived
+        variant: optional if the study is raw study
+        versions: versions to filter by
+        users: users to filter by
+        groups: groups to filter by
+        tags: tags to filter by
+        studies_ids: studies ids to filter by
+        exists: if raw study missing
+        workspace: optional workspace of the study
+        folder: optional folder prefix of the study
     """
 
     name: str = ""
@@ -70,7 +70,7 @@ class StudyFilter(BaseModel, frozen=True):
     folder: str = ""
 
 
-class StudySortBy(str, Enum):
+class StudySortBy(str, enum.Enum):
     """How to sort the results of studies query results"""
 
     NO_SORT = ""
@@ -83,8 +83,10 @@ class StudySortBy(str, Enum):
 class StudyPagination(BaseModel, frozen=True):
     """
     Pagination of a studies query results
-    page_nb: offset
-    page_size: SQL limit
+
+    Attributes:
+        page_nb: offset
+        page_size: SQL limit
     """
 
     page_nb: int = 0
@@ -201,6 +203,7 @@ class StudyMetadataRepository:
         # efficiently (see: `utils.get_study_information`)
         entity = with_polymorphic(Study, "*")
 
+        # noinspection PyTypeChecker
         q = self.session.query(entity)
         if study_filter.exists is not None:
             if study_filter.exists:
