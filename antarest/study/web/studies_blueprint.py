@@ -114,7 +114,7 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
             "  Provide a comma-separated list of study IDs for filtering.",
             alias="studiesIds",
         ),
-        exists: bool = Query(
+        exists: Optional[bool] = Query(
             None,
             description="Filter studies based on their existence on disk."
             "  - not set: No specific filtering."
