@@ -347,7 +347,20 @@ class STStorageManager:
             Updated form of short-term storage.
         """
         study_version = study.version
+
+        # review: reading the configuration poses a problem for variants,
+        #  because it requires generating a snapshot, which takes time.
+        #  This reading could be avoided if we don't need the previous values
+        #  (no cross-field validation, no default values, etc.).
+        #  In return, we won't be able to return a complete `STStorageOutput` object.
+        #  So, we need to make sure the frontend doesn't need the missing fields.
+        #  This missing information could also be a problem for the API users.
+        #  The solution would be to avoid reading the configuration if the study is a variant
+        #  (we then use the default values), otherwise, for a RAW study, we read the configuration
+        #  and update the modified values.
+
         file_study = self._get_file_study(study)
+
         path = STORAGE_LIST_PATH.format(area_id=area_id, storage_id=storage_id)
         try:
             values = file_study.tree.get(path.split("/"), depth=1)
@@ -357,31 +370,27 @@ class STStorageManager:
             old_config = create_st_storage_config(study_version, **values)
 
         # use Python values to synchronize Config and Form values
-        old_values = old_config.dict(exclude={"id"})
         new_values = form.dict(by_alias=False, exclude_none=True)
-        updated = {**old_values, **new_values}
-        new_config = create_st_storage_config(study_version, **updated, id=storage_id)
+        new_config = old_config.copy(exclude={"id"}, update=new_values)
         new_data = json.loads(new_config.json(by_alias=True, exclude={"id"}))
 
-        # create the dict containing the old values (excluding defaults),
-        # the updated values (including defaults)
-        data: Dict[str, Any] = {}
-        for field_name, field in new_config.__fields__.items():
-            if field_name in {"id"}:
-                continue
-            value = getattr(new_config, field_name)
-            if field_name in new_values or value != field.get_default():
-                # use the JSON-converted value
-                data[field.alias] = new_data[field.alias]
+        # create the dict containing the new values using aliases
+        data: Dict[str, Any] = {
+            field.alias: new_data[field.alias]
+            for field_name, field in new_config.__fields__.items()
+            if field_name in new_values
+        }
 
-        # create the update config command with the modified data
+        # create the update config commands with the modified data
         command_context = self.storage_service.variant_study_service.command_factory.command_context
-        command = UpdateConfig(target=path, data=data, command_context=command_context)
-        file_study = self._get_file_study(study)
-        execute_or_add_commands(study, file_study, [command], self.storage_service)
+        commands = [
+            UpdateConfig(target=f"{path}/{key}", data=value, command_context=command_context)
+            for key, value in data.items()
+        ]
+        execute_or_add_commands(study, file_study, commands, self.storage_service)
 
         values = new_config.dict(by_alias=False)
-        return STStorageOutput(**values)
+        return STStorageOutput(**values, id=storage_id)
 
     def delete_storages(
         self,
