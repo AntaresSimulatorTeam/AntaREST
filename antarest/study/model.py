@@ -27,6 +27,44 @@ groups_metadata = Table(
     Column("study_id", String(36), ForeignKey("study.id")),
 )
 
+
+class StudyTag(Base):
+    """
+    A table to manage the many-to-many relationship between `Study` and `Tag`
+    """
+
+    __tablename__ = "study_tag"
+
+    study_id = Column(String(36), ForeignKey("study.id"), index=True)
+    tag = Column(String, ForeignKey("tag.label"), index=True)
+
+    def __str__(self) -> str:
+        return f"[Study-Tag-Pair] study_id={self.study_id}, tag={self.tag},"
+
+    def __eq__(self, other: "StudyTag") -> bool:
+        if not isinstance(other, StudyTag):
+            return False
+        return bool(other.study_id == self.study_id and other.tag == self.tag)
+
+
+class Tag(Base):
+    """
+    A table to store all tags
+    """
+
+    __tablename__ = "tag"
+
+    label = Column(String, primary_key=True, index=True)
+
+    def __str__(self) -> str:
+        return f"[Tag]" f" label={self.label},"
+
+    def __eq__(self, other: t.Any) -> bool:
+        if not isinstance(other, Tag):
+            return False
+        return bool(other.label == self.label)
+
+
 STUDY_REFERENCE_TEMPLATES: t.Dict[str, str] = {
     "600": "empty_study_613.zip",
     "610": "empty_study_613.zip",
@@ -106,6 +144,7 @@ class Study(Base):  # type: ignore
     public_mode = Column(Enum(PublicMode), default=PublicMode.NONE)
     owner_id = Column(Integer, ForeignKey(Identity.id), nullable=True, index=True)
     archived = Column(Boolean(), default=False, index=True)
+    tags = relationship(Tag, secondary=lambda: StudyTag, cascade="all, delete")
     owner = relationship(Identity, uselist=False)
     groups = relationship(Group, secondary=lambda: groups_metadata, cascade="")
     additional_data = relationship(
