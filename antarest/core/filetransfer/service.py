@@ -43,6 +43,7 @@ class FileTransferManager:
         filename: str,
         name: Optional[str] = None,
         owner: Optional[JWTUser] = None,
+        create_task: bool = True,
     ) -> FileDownload:
         fh, path = tempfile.mkstemp(dir=self.tmp_dir, suffix=filename)
         os.close(fh)
@@ -58,33 +59,35 @@ class FileTransferManager:
             + datetime.timedelta(minutes=self.download_default_expiration_timeout_minutes),
         )
         self.repository.add(download)
-        self.event_bus.push(
-            Event(
-                type=EventType.DOWNLOAD_CREATED,
-                payload=download.to_dto(),
-                permissions=PermissionInfo(owner=owner.impersonator)
-                if owner
-                else PermissionInfo(public_mode=PublicMode.READ),
+        if create_task:
+            self.event_bus.push(
+                Event(
+                    type=EventType.DOWNLOAD_CREATED,
+                    payload=download.to_dto(),
+                    permissions=PermissionInfo(owner=owner.impersonator)
+                    if owner
+                    else PermissionInfo(public_mode=PublicMode.READ),
+                )
             )
-        )
         return download
 
-    def set_ready(self, download_id: str) -> None:
+    def set_ready(self, download_id: str, create_task: bool = True) -> None:
         download = self.repository.get(download_id)
         if not download:
             raise FileDownloadNotFound()
 
         download.ready = True
         self.repository.save(download)
-        self.event_bus.push(
-            Event(
-                type=EventType.DOWNLOAD_READY,
-                payload=download.to_dto(),
-                permissions=PermissionInfo(owner=download.owner)
-                if download.owner
-                else PermissionInfo(public_mode=PublicMode.READ),
+        if create_task:
+            self.event_bus.push(
+                Event(
+                    type=EventType.DOWNLOAD_READY,
+                    payload=download.to_dto(),
+                    permissions=PermissionInfo(owner=download.owner)
+                    if download.owner
+                    else PermissionInfo(public_mode=PublicMode.READ),
+                )
             )
-        )
 
     def fail(self, download_id: str, reason: str = "") -> None:
         download = self.repository.get(download_id)

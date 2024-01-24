@@ -4,12 +4,15 @@ import json
 import logging
 import pathlib
 import typing as t
+from enum import Enum
 
+import pandas as pd
 from fastapi import APIRouter, Body, Depends, File, HTTPException
 from fastapi.params import Param, Query
-from starlette.responses import JSONResponse, PlainTextResponse, Response, StreamingResponse
+from starlette.responses import FileResponse, JSONResponse, PlainTextResponse, Response, StreamingResponse
 
 from antarest.core.config import Config
+from antarest.core.exceptions import IncorrectPathError
 from antarest.core.jwt import JWTUser
 from antarest.core.model import SUB_JSON
 from antarest.core.requests import RequestParameters
@@ -47,6 +50,11 @@ CONTENT_TYPES = {
     # (JSON)
     ".json": ("application/json", "utf-8"),
 }
+
+
+class ExpectedFormatTypes(Enum):
+    XLSX = "xlsx"
+    CSV = "csv"
 
 
 def create_raw_study_routes(
@@ -217,6 +225,63 @@ def create_raw_study_routes(
         study_service.edit_study(uuid, path, file, params, create_missing=create_missing)
 
     @bp.get(
+        "/studies/{uuid}/raw/download",
+        summary="Download a matrix in a given format",
+        tags=[APITag.study_raw_data],
+        response_class=StreamingResponse,
+    )
+    def get_matrix(
+        uuid: str,
+        path: str,
+        format: ExpectedFormatTypes,
+        header: bool = True,
+        index: bool = True,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> StreamingResponse:
+        # todo: Question Alexander, est-ce qu'on veut toujours pouvoir importer en format raw (.txt) ?
+        parameters = RequestParameters(user=current_user)
+        json_matrix = study_service.get(uuid, path, depth=3, formatted=True, params=parameters)
+        expected_keys = ["data", "index", "columns"]
+        for key in expected_keys:
+            if key not in json_matrix:
+                raise IncorrectPathError(f"The path filled does not correspond to a matrix : {path}")
+        df_matrix = pd.DataFrame(data=json_matrix["data"], columns=json_matrix["columns"], index=json_matrix["index"])
+        if index:
+            # todo: Ne marche que pour les matrices classiques pas les autres ...
+            matrix_index = study_service.get_input_matrix_startdate(uuid, path, parameters)
+            time_column = pd.date_range(
+                start=matrix_index.start_date, periods=len(df_matrix), freq=matrix_index.level.value[0]
+            )
+            df_matrix.insert(0, "Time", time_column)
+
+        export_file_download = study_service.file_transfer_manager.request_download(
+            f"{pathlib.Path(path).stem}.{format.value}",
+            f"Exporting matrix {pathlib.Path(path).stem} to format {format.value} for study {uuid}",
+            current_user,
+            create_task=False,
+        )
+        export_path = pathlib.Path(export_file_download.path)
+        export_id = export_file_download.id
+
+        try:
+            _create_matrix_files(df_matrix, header, index, format, export_path)
+            study_service.file_transfer_manager.set_ready(export_id, create_task=False)
+        except Exception as e:
+            study_service.file_transfer_manager.fail(export_id, str(e))
+            raise e
+            # todo: Maybe this should be wrapped by an HTTP Exception
+
+        def iter_file() -> t.Iterator[bytes]:
+            with export_path.open(mode="rb") as file:
+                yield from file
+
+        return StreamingResponse(
+            iter_file(),
+            headers={"Content-Disposition": f'attachment; filename="{export_file_download.filename}"'},
+            media_type="application/octet-stream",
+        )
+
+    @bp.get(
         "/studies/{uuid}/raw/validate",
         summary="Launch test validation on study",
         tags=[APITag.study_raw_data],
@@ -244,3 +309,25 @@ def create_raw_study_routes(
         return study_service.check_errors(uuid)
 
     return bp
+
+
+def _create_matrix_files(
+    df_matrix: pd.DataFrame, header: bool, index: bool, format: ExpectedFormatTypes, export_path: pathlib.Path
+) -> None:
+    if format == ExpectedFormatTypes.CSV:
+        # todo: Question Alexander : sep = , ou ; pour les csv. Idem pour les xlsx
+        # Perso je préfère le ; mais si on veut réimporter c'est ptetr chiant
+        df_matrix.to_csv(
+            export_path,
+            sep="\t",
+            header=header,
+            index=index,
+            float_format="%.6f",
+        )
+    else:
+        df_matrix.to_excel(
+            export_path,
+            header=header,
+            index=index,
+            float_format="%.6f",
+        )

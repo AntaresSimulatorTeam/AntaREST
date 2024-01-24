@@ -4,6 +4,9 @@ from http import HTTPStatus
 from pathlib import Path
 from unittest.mock import ANY
 
+import numpy as np
+import pandas as pd
+import pytest
 from starlette.testclient import TestClient
 
 from antarest.core.model import PublicMode
@@ -2101,3 +2104,112 @@ def test_copy(client: TestClient, admin_access_token: str, study_id: str) -> Non
     res = client.get(f"/v1/studies/{copied.json()}", headers=admin_headers).json()
     assert res["groups"] == []
     assert res["public_mode"] == PublicMode.READ
+
+
+def test_download_matrices(client: TestClient, admin_access_token: str, study_id: str) -> None:
+    admin_headers = {"Authorization": f"Bearer {admin_access_token}"}
+
+    # =============================
+    #  STUDIES PREPARATION
+    # =============================
+
+    # Manage parent study
+    copied = client.post(f"/v1/studies/{study_id}/copy?dest=copied&use_task=false", headers=admin_headers)
+    parent_id = copied.json()
+
+    # Create Variant
+    res = client.post(
+        f"/v1/studies/{parent_id}/variants",
+        headers=admin_headers,
+        params={"name": "variant_1"},
+    )
+    assert res.status_code == 200
+    variant_id = res.json()
+
+    # Create a new area to implicitly create normalized matrices
+    area_name = "new_area"
+    res = client.post(
+        f"/v1/studies/{variant_id}/areas",
+        headers=admin_headers,
+        json={"name": area_name, "type": "AREA", "metadata": {"country": "FR"}},
+    )
+    assert res.status_code in {200, 201}
+
+    # Really generates the new area in the snapshot
+    client.get(f"/v1/studies/{variant_id}/areas", headers=admin_headers)
+    assert res.status_code == 200
+
+    # =============================
+    #  TESTS MATRIX CONSISTENCY FOR RAW AND VARIANT STUDY
+    # =============================
+
+    raw_matrix_path = r"input/load/series/load_de"
+    variant_matrix_path = f"input/load/series/load_{area_name}"
+    fake_str = "fake_str"
+
+    for uuid, path in zip([parent_id, variant_id], [raw_matrix_path, variant_matrix_path]):
+        # get downloaded bytes
+        res = client.get(f"/v1/studies/{uuid}/raw/download?path={path}&format=xlsx", headers=admin_headers)
+        assert res.status_code == 200
+
+        # reformat them into a json to help comparison
+        dataframe = pd.read_excel(io.BytesIO(res.content), index_col=0)
+        dataframe.drop(columns=["Time"], inplace=True)
+        new_cols = [int(col) for col in dataframe.columns]
+        dataframe.columns = new_cols
+        actual_matrix = dataframe.to_dict(orient="split")
+
+        # asserts that the result is the same as the one we get with the classic get /raw endpoint
+        res = client.get(f"/v1/studies/{uuid}/raw?path={path}&formatted=true", headers=admin_headers)
+        expected_matrix = res.json()
+        assert actual_matrix == expected_matrix
+
+    # =============================
+    # TEST OTHER PARAMETERS
+    # =============================
+
+    # test only few possibilities as each API call is quite long
+    for header in [True, False]:
+        index = not header
+        res = client.get(
+            f"/v1/studies/{parent_id}/raw/download?path={raw_matrix_path}&format=csv&header={header}&index={index}",
+            headers=admin_headers,
+        )
+        assert res.status_code == 200
+        content = io.BytesIO(res.content)
+        dataframe = pd.read_csv(content, index_col=0 if index else None, header="infer" if header else None, sep="\t")
+        columns = dataframe.columns
+        assert len(columns) == 2 if index else 1
+        print(type(columns[0]))
+        assert isinstance(columns[0], str) if header else isinstance(columns[0], np.int64)
+
+    # =============================
+    #  ERRORS
+    # =============================
+
+    # fake study_id
+    res = client.get(f"/v1/studies/{fake_str}/raw/download?path={raw_matrix_path}&format=csv", headers=admin_headers)
+    assert res.status_code == 404
+    assert res.json()["exception"] == "StudyNotFoundError"
+
+    # fake path
+    res = client.get(
+        f"/v1/studies/{parent_id}/raw/download?path=input/links/de/{fake_str}&format=csv", headers=admin_headers
+    )
+    assert res.status_code == 404
+    assert res.json()["exception"] == "ChildNotFoundError"
+
+    # path that does not lead to a matrix
+    res = client.get(
+        f"/v1/studies/{parent_id}/raw/download?path=settings/generaldata&format=csv", headers=admin_headers
+    )
+    assert res.status_code == 404
+    assert res.json()["exception"] == "IncorrectPathError"
+    assert res.json()["description"] == "The path filled does not correspond to a matrix : settings/generaldata"
+
+    # wrong format
+    res = client.get(
+        f"/v1/studies/{parent_id}/raw/download?path={raw_matrix_path}&format={fake_str}", headers=admin_headers
+    )
+    assert res.status_code == 422
+    assert res.json()["exception"] == "RequestValidationError"
