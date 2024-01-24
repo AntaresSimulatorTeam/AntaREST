@@ -21,47 +21,47 @@ class TestBindingConstraints:
         study_id = res.json()
 
         # Create Areas
-        area1_name = "area1"
-        area2_name = "area2"
         res = client.post(
             f"/v1/studies/{study_id}/areas",
             headers=user_headers,
             json={
-                "name": area1_name,
+                "name": "Area 1",
                 "type": "AREA",
-                "metadata": {"country": "FR"},
             },
         )
         assert res.status_code == 200, res.json()
+        area1_id = res.json()["id"]
+        assert area1_id == "area 1"
 
         res = client.post(
             f"/v1/studies/{study_id}/areas",
             headers=user_headers,
             json={
-                "name": area2_name,
+                "name": "Area 2",
                 "type": "AREA",
-                "metadata": {"country": "DE"},
             },
         )
         assert res.status_code == 200, res.json()
+        area2_id = res.json()["id"]
+        assert area2_id == "area 2"
 
         # Create a link between the two areas
         res = client.post(
             f"/v1/studies/{study_id}/links",
             headers=user_headers,
             json={
-                "area1": area1_name,
-                "area2": area2_name,
+                "area1": area1_id,
+                "area2": area2_id,
             },
         )
         assert res.status_code == 200, res.json()
 
         # Create a cluster in area1
         res = client.post(
-            f"/v1/studies/{study_id}/areas/area1/clusters/thermal",
+            f"/v1/studies/{study_id}/areas/{area1_id}/clusters/thermal",
             headers=user_headers,
             json={
-                "name": "cluster1",
+                "name": "Cluster 1",
                 "group": "Nuclear",
             },
         )
@@ -70,18 +70,19 @@ class TestBindingConstraints:
         assert cluster_id == "Cluster 1"
 
         # Get clusters list to check created cluster in area1
-        res = client.get(f"/v1/studies/{study_id}/areas/area1/clusters/thermal", headers=user_headers)
+        res = client.get(f"/v1/studies/{study_id}/areas/{area1_id}/clusters/thermal", headers=user_headers)
         clusters_list = res.json()
         assert res.status_code == 200, res.json()
         assert len(clusters_list) == 1
-        assert clusters_list[0]["name"] == "cluster1"
+        assert clusters_list[0]["id"] == cluster_id
+        assert clusters_list[0]["name"] == "Cluster 1"
         assert clusters_list[0]["group"] == "Nuclear"
 
-        # Create two binding constraints in the study
+        # Create Binding Constraints
         res = client.post(
             f"/v1/studies/{study_id}/bindingconstraints",
             json={
-                "name": "binding_constraint_1",
+                "name": "Binding Constraint 1",
                 "enabled": True,
                 "time_step": "hourly",
                 "operator": "less",
@@ -95,7 +96,7 @@ class TestBindingConstraints:
         res = client.post(
             f"/v1/studies/{study_id}/bindingconstraints",
             json={
-                "name": "binding_constraint_2",
+                "name": "Binding Constraint 2",
                 "enabled": True,
                 "time_step": "hourly",
                 "operator": "less",
@@ -106,13 +107,51 @@ class TestBindingConstraints:
         )
         assert res.status_code == 200, res.json()
 
-        # Get binding constraints list to check created binding constraints
+        # Asserts that creating 2 binding constraints with the same name raises an Exception
+        res = client.post(
+            f"/v1/studies/{study_id}/bindingconstraints",
+            json={
+                "name": "Binding Constraint 1",
+                "enabled": True,
+                "time_step": "hourly",
+                "operator": "less",
+                "coeffs": {},
+                "comments": "",
+            },
+            headers=user_headers,
+        )
+        assert res.status_code == 409, res.json()
+
+        # Get Binding Constraint list to check created binding constraints
         res = client.get(f"/v1/studies/{study_id}/bindingconstraints", headers=user_headers)
         binding_constraints_list = res.json()
-        assert res.status_code == 200, res.json()
-        assert len(binding_constraints_list) == 2
-        assert binding_constraints_list[0]["id"] == "binding_constraint_1"
-        assert binding_constraints_list[1]["id"] == "binding_constraint_2"
+        expected = [
+            {
+                "id": "binding constraint 1",
+                "name": "Binding Constraint 1",
+                "enabled": True,
+                "time_step": "hourly",
+                "operator": "less",
+                "constraints": None,  # terms
+                "values": None,
+                "filter_year_by_year": "",
+                "filter_synthesis": "",
+                "comments": "",
+            },
+            {
+                "id": "binding constraint 2",
+                "name": "Binding Constraint 2",
+                "enabled": True,
+                "time_step": "hourly",
+                "operator": "less",
+                "constraints": None,  # terms
+                "values": None,
+                "filter_year_by_year": "",
+                "filter_synthesis": "",
+                "comments": "",
+            },
+        ]
+        assert binding_constraints_list == expected
 
         bc_id = binding_constraints_list[0]["id"]
 
@@ -122,7 +161,7 @@ class TestBindingConstraints:
             json={
                 "weight": 1,
                 "offset": 2,
-                "data": {"area1": area1_name, "area2": area2_name},
+                "data": {"area1": area1_id, "area2": area2_id},
             },
             headers=user_headers,
         )
@@ -134,7 +173,7 @@ class TestBindingConstraints:
             json={
                 "weight": 1,
                 "offset": 2,
-                "data": {"area": area1_name, "cluster": "cluster1"},
+                "data": {"area": area1_id, "cluster": cluster_id},
             },
             headers=user_headers,
         )
@@ -145,27 +184,30 @@ class TestBindingConstraints:
             f"/v1/studies/{study_id}/bindingconstraints/{bc_id}",
             headers=user_headers,
         )
-        binding_constraint = res.json()
-        constraints = binding_constraint["constraints"]
         assert res.status_code == 200, res.json()
-        assert binding_constraint["id"] == bc_id
-        assert len(constraints) == 2
-        assert constraints[0]["id"] == f"{area1_name}%{area2_name}"
-        assert constraints[0]["weight"] == 1
-        assert constraints[0]["offset"] == 2
-        assert constraints[0]["data"]["area1"] == area1_name
-        assert constraints[0]["data"]["area2"] == area2_name
-        assert constraints[1]["id"] == f"{area1_name}.cluster1"
-        assert constraints[1]["weight"] == 1
-        assert constraints[1]["offset"] == 2
-        assert constraints[1]["data"]["area"] == area1_name
-        assert constraints[1]["data"]["cluster"] == "cluster1"
+        binding_constraint = res.json()
+        constraint_terms = binding_constraint["constraints"]
+        expected = [
+            {
+                "data": {"area1": area1_id, "area2": area2_id},
+                "id": f"{area1_id}%{area2_id}",
+                "offset": 2.0,
+                "weight": 1.0,
+            },
+            {
+                "data": {"area": area1_id, "cluster": cluster_id},
+                "id": f"{area1_id}.{cluster_id}",
+                "offset": 2.0,
+                "weight": 1.0,
+            },
+        ]
+        assert constraint_terms == expected
 
         # Update constraint cluster term
         res = client.put(
             f"/v1/studies/{study_id}/bindingconstraints/{bc_id}/term",
             json={
-                "id": f"{area1_name}.cluster1",
+                "id": f"{area1_id}.{cluster_id}",
                 "weight": 3,
             },
             headers=user_headers,
@@ -177,22 +219,30 @@ class TestBindingConstraints:
             f"/v1/studies/{study_id}/bindingconstraints/{bc_id}",
             headers=user_headers,
         )
-        binding_constraint = res.json()
-        constraints = binding_constraint["constraints"]
         assert res.status_code == 200, res.json()
-        assert binding_constraint["id"] == bc_id
-        assert len(constraints) == 2
-        assert constraints[1]["id"] == f"{area1_name}.cluster1"
-        assert constraints[1]["weight"] == 3
-        assert constraints[1]["offset"] is None
-        assert constraints[1]["data"]["area"] == area1_name
-        assert constraints[1]["data"]["cluster"] == "cluster1"
+        binding_constraint = res.json()
+        constraint_terms = binding_constraint["constraints"]
+        expected = [
+            {
+                "data": {"area1": area1_id, "area2": area2_id},
+                "id": f"{area1_id}%{area2_id}",
+                "offset": 2.0,
+                "weight": 1.0,
+            },
+            {
+                "data": {"area": area1_id, "cluster": cluster_id},
+                "id": f"{area1_id}.{cluster_id}",
+                "offset": None,  # updated
+                "weight": 3.0,  # updated
+            },
+        ]
+        assert constraint_terms == expected
 
-        # Update constraint cluster term with case-insensitive id
+        # Update constraint term regardless of the case of the cluster id
         res = client.put(
             f"/v1/studies/{study_id}/bindingconstraints/{bc_id}/term",
             json={
-                "id": f"{area1_name}.Cluster1",
+                "id": f"{area1_id}.Cluster 1",
                 "weight": 4,
             },
             headers=user_headers,
@@ -204,19 +254,30 @@ class TestBindingConstraints:
             f"/v1/studies/{study_id}/bindingconstraints/{bc_id}",
             headers=user_headers,
         )
-        binding_constraint = res.json()
-        constraints = binding_constraint["constraints"]
         assert res.status_code == 200, res.json()
-        assert binding_constraint["id"] == bc_id
-        assert len(constraints) == 2
-        assert constraints[1]["id"] == f"{area1_name}.cluster1"
-        assert constraints[1]["weight"] == 4
+        binding_constraint = res.json()
+        constraint_terms = binding_constraint["constraints"]
+        expected = [
+            {
+                "data": {"area1": area1_id, "area2": area2_id},
+                "id": f"{area1_id}%{area2_id}",
+                "offset": 2.0,
+                "weight": 1.0,
+            },
+            {
+                "data": {"area": area1_id, "cluster": cluster_id},
+                "id": f"{area1_id}.{cluster_id}",
+                "offset": None,  # updated
+                "weight": 4.0,  # updated
+            },
+        ]
+        assert constraint_terms == expected
 
         # Update constraint cluster term with invalid id
         res = client.put(
             f"/v1/studies/{study_id}/bindingconstraints/{bc_id}/term",
             json={
-                "id": f"{area1_name}.cluster2",
+                "id": f"{area1_id}.!!Invalid#cluster%%",
                 "weight": 4,
             },
             headers=user_headers,
@@ -231,14 +292,14 @@ class TestBindingConstraints:
         res = client.put(
             f"/v1/studies/{study_id}/bindingconstraints/{bc_id}/term",
             json={
-                "id": f"{area1_name}.cluster1",
+                "id": f"{area1_id}.{cluster_id}",
                 "data": {},
             },
             headers=user_headers,
         )
         assert res.status_code == 422, res.json()
         assert res.json() == {
-            "body": {"data": {}, "id": "area1.cluster1"},
+            "body": {"data": {}, "id": f"{area1_id}.{cluster_id}"},
             "description": "field required",
             "exception": "RequestValidationError",
         }
@@ -321,15 +382,13 @@ class TestBindingConstraints:
         assert comments == new_comment
 
         # Add Binding Constraint term
-        area1_name = "area1"
-        area2_name = "area2"
 
         res = client.post(
             f"/v1/studies/{variant_id}/bindingconstraints/{bc_id}/term",
             json={
                 "weight": 1,
                 "offset": 2,
-                "data": {"area1": area1_name, "area2": area2_name},
+                "data": {"area1": area1_id, "area2": area2_id},
             },
             headers=user_headers,
         )
@@ -345,17 +404,17 @@ class TestBindingConstraints:
         assert res.status_code == 200, res.json()
         assert binding_constraint["id"] == bc_id
         assert len(constraints) == 1
-        assert constraints[0]["id"] == f"{area1_name}%{area2_name}"
+        assert constraints[0]["id"] == f"{area1_id}%{area2_id}"
         assert constraints[0]["weight"] == 1
         assert constraints[0]["offset"] == 2
-        assert constraints[0]["data"]["area1"] == area1_name
-        assert constraints[0]["data"]["area2"] == area2_name
+        assert constraints[0]["data"]["area1"] == area1_id
+        assert constraints[0]["data"]["area2"] == area2_id
 
         # Update Constraint term
         res = client.put(
             f"/v1/studies/{variant_id}/bindingconstraints/{bc_id}/term",
             json={
-                "id": f"{area1_name}%{area2_name}",
+                "id": f"{area1_id}%{area2_id}",
                 "weight": 3,
             },
             headers=user_headers,
@@ -372,15 +431,15 @@ class TestBindingConstraints:
         assert res.status_code == 200, res.json()
         assert binding_constraint["id"] == bc_id
         assert len(constraints) == 1
-        assert constraints[0]["id"] == f"{area1_name}%{area2_name}"
+        assert constraints[0]["id"] == f"{area1_id}%{area2_id}"
         assert constraints[0]["weight"] == 3
         assert constraints[0]["offset"] is None
-        assert constraints[0]["data"]["area1"] == area1_name
-        assert constraints[0]["data"]["area2"] == area2_name
+        assert constraints[0]["data"]["area1"] == area1_id
+        assert constraints[0]["data"]["area2"] == area2_id
 
         # Remove Constraint term
         res = client.delete(
-            f"/v1/studies/{variant_id}/bindingconstraints/{bc_id}/term/{area1_name}%{area2_name}",
+            f"/v1/studies/{variant_id}/bindingconstraints/{bc_id}/term/{area1_id}%{area2_id}",
             headers=user_headers,
         )
         assert res.status_code == 200, res.json()
