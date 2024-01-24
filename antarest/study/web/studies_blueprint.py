@@ -1,11 +1,14 @@
+import collections
 import io
 import logging
+import re
 from http import HTTPStatus
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, Request
 from markupsafe import escape
+from pydantic import NonNegativeInt
 
 from antarest.core.config import Config
 from antarest.core.exceptions import BadZipBinary
@@ -33,7 +36,12 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import FileSt
 logger = logging.getLogger(__name__)
 
 
-SEQUENCE_SEPARATOR = ","
+def _split_comma_separated_values(value: str, *, default: Sequence[str] = ()) -> Sequence[str]:
+    """Split a comma-separated list of values into an ordered set of strings."""
+    value = value.strip()
+    value_list = re.split(r"\s*,\s*", value) if value else default
+    # remove duplicates and preserve order (to have a deterministic result for unit tests).
+    return list(collections.OrderedDict.fromkeys(value_list))
 
 
 def create_study_routes(study_service: StudyService, ftm: FileTransferManager, config: Config) -> APIRouter:
@@ -54,100 +62,94 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         "/studies",
         tags=[APITag.study_management],
         summary="Get Studies",
-        response_model=Dict[str, StudyMetadataDTO],
     )
     def get_studies(
         current_user: JWTUser = Depends(auth.get_current_user),
-        sort_by: str = Query(
-            "",
-            description="- `sort_by`: Sort studies based on their name or date."
-            "  - ``: No sorting to be done."
-            "  - `+name`: Sort by name in ascending order (case-insensitive)."
-            "  - `-name`: Sort by name in descending order (case-insensitive)."
-            "  - `+date`: Sort by creation date in ascending order."
-            " - `-date`: Sort by creation date in descending order.",
-            alias="sortBy",
-        ),
-        page_nb: int = Query(0, description="Page number (starting from 0).", alias="pageNb"),
-        page_size: int = Query(0, description="Number of studies per page.", alias="pageSize"),
         name: str = Query(
             "",
-            description="Filter studies based on their name."
-            "Case-insensitive search for studies whose name starts with the specified value.",
+            description=(
+                "Filter studies based on their name."
+                "Case-insensitive search for studies whose name contains the specified value."
+            ),
             alias="name",
         ),
-        managed: Optional[bool] = Query(
-            None, description="Filter studies based on their management status.", alias="managed"
-        ),
-        archived: Optional[bool] = Query(
-            None, description="Filter studies based on their archive status.", alias="archived"
-        ),
-        variant: Optional[bool] = Query(
-            None, description="Filter studies based on their variant status.", alias="variant"
-        ),
-        versions: str = Query(
+        managed: Optional[bool] = Query(None, description="Filter studies based on their management status."),
+        archived: Optional[bool] = Query(None, description="Filter studies based on their archive status."),
+        variant: Optional[bool] = Query(None, description="Filter studies based on their variant status."),
+        versions: str = Query("", description="Comma-separated list of versions for filtering."),
+        users: str = Query("", description="Comma-separated list of group IDs for filtering."),
+        groups: str = Query("", description="Comma-separated list of group IDs for filtering."),
+        tags: str = Query("", description="Comma-separated list of tags for filtering."),
+        study_ids: str = Query(
             "",
-            description="Filter studies based on their version(s)."
-            " Provide a comma-separated list of versions for filtering.",
-            alias="versions",
+            description="Comma-separated list of study IDs for filtering.",
+            alias="studyIds",
         ),
-        users: str = Query(
-            "",
-            description="Filter studies based on user(s)."
-            " Provide a comma-separated list of group IDs for filtering.",
-            alias="users",
+        exists: Optional[bool] = Query(None, description="Filter studies based on their existence on disk."),
+        workspace: str = Query("", description="Filter studies based on their workspace."),
+        folder: str = Query("", description="Filter studies based on their folder."),
+        sort_by: StudySortBy = Query(
+            StudySortBy.NO_SORT,
+            description="Sort studies based on their name (case-insensitive) or date.",
+            alias="sortBy",
         ),
-        groups: str = Query(
-            "",
-            description="Filter studies based on group(s)."
-            " Provide a comma-separated list of group IDs for filtering.",
-            alias="groups",
+        page_nb: NonNegativeInt = Query(
+            0,
+            description="Page number (starting from 0).",
+            alias="pageNb",
         ),
-        tags: str = Query(
-            "",
-            description="Filter studies based on tag(s)." " Provide a comma-separated list of tags for filtering.",
-            alias="tags",
-        ),
-        studies_ids: str = Query(
-            "",
-            description="Filter studies based on their ID(s)."
-            "  Provide a comma-separated list of study IDs for filtering.",
-            alias="studiesIds",
-        ),
-        exists: Optional[bool] = Query(
-            None,
-            description="Filter studies based on their existence on disk."
-            "  - not set: No specific filtering."
-            "  - `True`: Filter for studies existing on disk."
-            " - `False`: Filter for studies not existing on disk.",
-            alias="exists",
-        ),
-        workspace: str = Query(
-            "",
-            description="Filter studies based on their workspace."
-            " Search for studies whose workspace matches the specified value.",
-            alias="workspace",
-        ),
-        folder: str = Query(
-            "",
-            description="Filter studies based on their folder."
-            " Search for studies whose folder starts with the specified value.",
-            alias="folder",
+        page_size: NonNegativeInt = Query(
+            0,
+            description="Number of studies per page (0 = no limit).",
+            alias="pageSize",
         ),
     ) -> Dict[str, StudyMetadataDTO]:
+        """
+        Get the list of studies matching the specified criteria.
+
+        Args:
+        - `name`: Filter studies based on their name. Case-insensitive search for studies
+          whose name contains the specified value.
+        - `managed`: Filter studies based on their management status.
+        - `archived`: Filter studies based on their archive status.
+        - `variant`: Filter studies based on their variant status.
+        - `versions`: Comma-separated list of versions for filtering.
+        - `users`: Comma-separated list of group IDs for filtering.
+        - `groups`: Comma-separated list of group IDs for filtering.
+        - `tags`: Comma-separated list of tags for filtering.
+        - `studyIds`: Comma-separated list of study IDs for filtering.
+        - `exists`: Filter studies based on their existence on disk.
+        - `workspace`: Filter studies based on their workspace.
+        - `folder`: Filter studies based on their folder.
+        - `sortBy`: Sort studies based on their name (case-insensitive) or date.
+        - `pageNb`: Page number (starting from 0).
+        - `pageSize`: Number of studies per page (0 = no limit).
+
+        Returns:
+        - A dictionary of studies matching the specified criteria,
+          where keys are study IDs and values are study properties.
+        """
+
         logger.info("Fetching for matching studies", extra={"user": current_user.id})
         params = RequestParameters(user=current_user)
 
-        study_filter: StudyFilter = StudyFilter(
+        # todo: there must be another way to do this
+        #  for instance by using a pydantic model with a custom validator
+        try:
+            user_list = [int(v) for v in _split_comma_separated_values(users)]
+        except ValueError:
+            raise HTTPException(status_code=422, detail="'users' must be a list of integers") from None
+
+        study_filter = StudyFilter(
             name=name,
             managed=managed,
             archived=archived,
             variant=variant,
-            versions=versions.split(SEQUENCE_SEPARATOR) if versions else (),
-            users=users.split(SEQUENCE_SEPARATOR) if users else (),
-            groups=groups.split(SEQUENCE_SEPARATOR) if groups else (),
-            tags=tags.split(SEQUENCE_SEPARATOR) if tags else (),
-            studies_ids=studies_ids.split(SEQUENCE_SEPARATOR) if studies_ids else (),
+            versions=_split_comma_separated_values(versions),
+            users=user_list,
+            groups=_split_comma_separated_values(groups),
+            tags=_split_comma_separated_values(tags),
+            study_ids=_split_comma_separated_values(study_ids),
             exists=exists,
             workspace=workspace,
             folder=folder,
@@ -156,9 +158,10 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         matching_studies = study_service.get_studies_information(
             params=params,
             study_filter=study_filter,
-            sort_by=StudySortBy(sort_by.lower()),
+            sort_by=StudySortBy(sort_by),
             pagination=StudyPagination(page_nb=page_nb, page_size=page_size),
         )
+
         return matching_studies
 
     @bp.get(
@@ -227,8 +230,8 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         zip_binary = io.BytesIO(study)
 
         params = RequestParameters(user=current_user)
-        group_ids = groups.split(",") if groups else [group.id for group in current_user.groups]
-        group_ids = [sanitize_uuid(gid) for gid in set(group_ids)]  # sanitize and avoid duplicates
+        group_ids = _split_comma_separated_values(groups, default=[group.id for group in current_user.groups])
+        group_ids = [sanitize_uuid(gid) for gid in group_ids]
 
         try:
             uuid = study_service.import_study(zip_binary, group_ids, params)
@@ -306,8 +309,8 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
             extra={"user": current_user.id},
         )
         source_uuid = uuid
-        group_ids = groups.split(",") if groups else [group.id for group in current_user.groups]
-        group_ids = [sanitize_uuid(gid) for gid in set(group_ids)]  # sanitize and avoid duplicates
+        group_ids = _split_comma_separated_values(groups, default=[group.id for group in current_user.groups])
+        group_ids = [sanitize_uuid(gid) for gid in group_ids]
         source_uuid_sanitized = sanitize_uuid(source_uuid)
         destination_name_sanitized = escape(dest)
 
@@ -356,8 +359,8 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
     ) -> Any:
         logger.info(f"Creating new study '{name}'", extra={"user": current_user.id})
         name_sanitized = escape(name)
-        group_ids = groups.split(",") if groups else []
-        group_ids = [sanitize_uuid(gid) for gid in set(group_ids)]  # sanitize and avoid duplicates
+        group_ids = _split_comma_separated_values(groups)
+        group_ids = [sanitize_uuid(gid) for gid in group_ids]
 
         params = RequestParameters(user=current_user)
         uuid = study_service.create_study(name_sanitized, version, group_ids, params)

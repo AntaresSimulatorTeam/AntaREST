@@ -3,8 +3,8 @@ import enum
 import logging
 import typing as t
 
-from pydantic import BaseModel, Field
-from sqlalchemy import not_, or_  # type: ignore
+from pydantic import BaseModel, NonNegativeInt
+from sqlalchemy import func, not_, or_  # type: ignore
 from sqlalchemy.orm import Session, joinedload, with_polymorphic  # type: ignore
 
 from antarest.core.interfaces.cache import CacheConstants, ICache
@@ -20,9 +20,9 @@ def escape_like(string: str, escape_char: str = "\\") -> str:
     """
     Escape the string parameter used in SQL LIKE expressions.
 
-    Examples:
-        from sqlalchemy_utils import escape_like
+    Examples::
 
+        from sqlalchemy_utils import escape_like
 
         query = session.query(User).filter(
             User.name.ilike(escape_like('John'))
@@ -38,7 +38,7 @@ def escape_like(string: str, escape_char: str = "\\") -> str:
     return string.replace(escape_char, escape_char * 2).replace("%", escape_char + "%").replace("_", escape_char + "_")
 
 
-class StudyFilter(BaseModel, frozen=True):
+class StudyFilter(BaseModel, frozen=True, extra="forbid"):
     """Study filter class gathering the main filtering parameters
 
     Attributes:
@@ -50,7 +50,7 @@ class StudyFilter(BaseModel, frozen=True):
         users: users to filter by
         groups: groups to filter by
         tags: tags to filter by
-        studies_ids: studies ids to filter by
+        study_ids: studies ids to filter by
         exists: if raw study missing
         workspace: optional workspace of the study
         folder: optional folder prefix of the study
@@ -61,10 +61,10 @@ class StudyFilter(BaseModel, frozen=True):
     archived: t.Optional[bool] = None
     variant: t.Optional[bool] = None
     versions: t.Sequence[str] = ()
-    users: t.Sequence["int"] = ()
+    users: t.Sequence[int] = ()
     groups: t.Sequence[str] = ()
     tags: t.Sequence[str] = ()
-    studies_ids: t.Sequence[str] = ()
+    study_ids: t.Sequence[str] = ()
     exists: t.Optional[bool] = None
     workspace: str = ""
     folder: str = ""
@@ -80,7 +80,7 @@ class StudySortBy(str, enum.Enum):
     DATE_DESC = "-date"
 
 
-class StudyPagination(BaseModel, frozen=True):
+class StudyPagination(BaseModel, frozen=True, extra="forbid"):
     """
     Pagination of a studies query results
 
@@ -89,8 +89,8 @@ class StudyPagination(BaseModel, frozen=True):
         page_size: SQL limit
     """
 
-    page_nb: int = 0
-    page_size: int = Field(0, ge=0)
+    page_nb: NonNegativeInt = 0
+    page_size: NonNegativeInt = 0
 
 
 class StudyMetadataRepository:
@@ -219,8 +219,8 @@ class StudyMetadataRepository:
             else:
                 q = q.filter(entity.type == "rawstudy")
                 q = q.filter(RawStudy.workspace != DEFAULT_WORKSPACE_NAME)
-        if study_filter.studies_ids:
-            q = q.filter(entity.id.in_(study_filter.studies_ids))
+        if study_filter.study_ids:
+            q = q.filter(entity.id.in_(study_filter.study_ids))
         if study_filter.users:
             q = q.filter(entity.owner_id.in_(study_filter.users))
         if study_filter.groups:
@@ -243,16 +243,15 @@ class StudyMetadataRepository:
         if study_filter.versions:
             q = q.filter(entity.version.in_(study_filter.versions))
 
-        # sorting
         if sort_by != StudySortBy.NO_SORT:
             if sort_by == StudySortBy.DATE_DESC:
                 q = q.order_by(entity.created_at.desc())
             elif sort_by == StudySortBy.DATE_ASC:
                 q = q.order_by(entity.created_at.asc())
             elif sort_by == StudySortBy.NAME_DESC:
-                q = q.order_by(entity.name.desc())
+                q = q.order_by(func.upper(entity.name).desc())
             elif sort_by == StudySortBy.NAME_ASC:
-                q = q.order_by(entity.name.asc())
+                q = q.order_by(func.upper(entity.name).asc())
             else:
                 raise NotImplementedError(sort_by)
 

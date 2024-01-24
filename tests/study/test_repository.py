@@ -1,5 +1,5 @@
+import datetime
 import typing as t
-from datetime import datetime
 from unittest.mock import Mock
 
 import pytest
@@ -7,14 +7,14 @@ from sqlalchemy.orm import Session  # type: ignore
 
 from antarest.core.interfaces.cache import ICache
 from antarest.login.model import Group, User
-from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, Study
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy
 from antarest.study.repository import StudyFilter, StudyMetadataRepository
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from tests.db_statement_recorder import DBStatementRecorder
 
 
 @pytest.mark.parametrize(
-    "managed, studies_ids, exists, expected_ids",
+    "managed, study_ids, exists, expected_ids",
     [
         (None, [], False, {"5", "6"}),
         (None, [], True, {"1", "2", "3", "4", "7", "8"}),
@@ -41,10 +41,10 @@ from tests.db_statement_recorder import DBStatementRecorder
 def test_repository_get_all__general_case(
     db_session: Session,
     managed: t.Union[bool, None],
-    studies_ids: t.Union[t.List[str], None],
+    study_ids: t.List[str],
     exists: t.Union[bool, None],
-    expected_ids: set,
-):
+    expected_ids: t.Set[str],
+) -> None:
     test_workspace = "test-repository"
     icache: Mock = Mock(spec=ICache)
     repository = StudyMetadataRepository(cache_service=icache, session=db_session)
@@ -53,8 +53,8 @@ def test_repository_get_all__general_case(
     study_2 = VariantStudy(id=2)
     study_3 = VariantStudy(id=3)
     study_4 = VariantStudy(id=4)
-    study_5 = RawStudy(id=5, missing=datetime.now(), workspace=DEFAULT_WORKSPACE_NAME)
-    study_6 = RawStudy(id=6, missing=datetime.now(), workspace=test_workspace)
+    study_5 = RawStudy(id=5, missing=datetime.datetime.now(), workspace=DEFAULT_WORKSPACE_NAME)
+    study_6 = RawStudy(id=6, missing=datetime.datetime.now(), workspace=test_workspace)
     study_7 = RawStudy(id=7, missing=None, workspace=test_workspace)
     study_8 = RawStudy(id=8, missing=None, workspace=DEFAULT_WORKSPACE_NAME)
 
@@ -66,21 +66,19 @@ def test_repository_get_all__general_case(
     # 2- accessing studies attributes does require additional queries to db
     # 3- having an exact total of queries equals to 1
     with DBStatementRecorder(db_session.bind) as db_recorder:
-        all_studies = repository.get_all(
-            study_filter=StudyFilter(managed=managed, studies_ids=studies_ids, exists=exists)
-        )
+        all_studies = repository.get_all(study_filter=StudyFilter(managed=managed, study_ids=study_ids, exists=exists))
         _ = [s.owner for s in all_studies]
         _ = [s.groups for s in all_studies]
         _ = [s.additional_data for s in all_studies]
     assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
     if expected_ids is not None:
-        assert set([s.id for s in all_studies]) == expected_ids
+        assert {s.id for s in all_studies} == expected_ids
 
 
 def test_repository_get_all__incompatible_case(
     db_session: Session,
-):
+) -> None:
     test_workspace = "workspace1"
     icache: Mock = Mock(spec=ICache)
     repository = StudyMetadataRepository(cache_service=icache, session=db_session)
@@ -89,8 +87,8 @@ def test_repository_get_all__incompatible_case(
     study_2 = VariantStudy(id=2)
     study_3 = VariantStudy(id=3)
     study_4 = VariantStudy(id=4)
-    study_5 = RawStudy(id=5, missing=datetime.now(), workspace=DEFAULT_WORKSPACE_NAME)
-    study_6 = RawStudy(id=6, missing=datetime.now(), workspace=test_workspace)
+    study_5 = RawStudy(id=5, missing=datetime.datetime.now(), workspace=DEFAULT_WORKSPACE_NAME)
+    study_6 = RawStudy(id=6, missing=datetime.datetime.now(), workspace=test_workspace)
     study_7 = RawStudy(id=7, missing=None, workspace=test_workspace)
     study_8 = RawStudy(id=8, missing=None, workspace=DEFAULT_WORKSPACE_NAME)
 
@@ -105,7 +103,7 @@ def test_repository_get_all__incompatible_case(
         _ = [s.groups for s in all_studies]
         _ = [s.additional_data for s in all_studies]
     assert len(db_recorder.sql_statements) == 1, str(db_recorder)
-    assert set([s.id for s in all_studies]) == set()
+    assert not {s.id for s in all_studies}
 
     # case 2
     study_filter = StudyFilter(workspace=test_workspace, variant=True)
@@ -115,7 +113,7 @@ def test_repository_get_all__incompatible_case(
         _ = [s.groups for s in all_studies]
         _ = [s.additional_data for s in all_studies]
     assert len(db_recorder.sql_statements) == 1, str(db_recorder)
-    assert set([s.id for s in all_studies]) == set()
+    assert not {s.id for s in all_studies}
 
     # case 3
     study_filter = StudyFilter(exists=False, variant=True)
@@ -125,7 +123,7 @@ def test_repository_get_all__incompatible_case(
         _ = [s.groups for s in all_studies]
         _ = [s.additional_data for s in all_studies]
     assert len(db_recorder.sql_statements) == 1, str(db_recorder)
-    assert set([s.id for s in all_studies]) == set()
+    assert not {s.id for s in all_studies}
 
 
 @pytest.mark.parametrize(
@@ -145,8 +143,8 @@ def test_repository_get_all__incompatible_case(
 def test_repository_get_all__study_name_filter(
     db_session: Session,
     name: str,
-    expected_ids: set,
-):
+    expected_ids: t.Set[str],
+) -> None:
     icache: Mock = Mock(spec=ICache)
     repository = StudyMetadataRepository(cache_service=icache, session=db_session)
 
@@ -174,7 +172,7 @@ def test_repository_get_all__study_name_filter(
     assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
     if expected_ids is not None:
-        assert set([s.id for s in all_studies]) == expected_ids
+        assert {s.id for s in all_studies} == expected_ids
 
 
 @pytest.mark.parametrize(
@@ -188,8 +186,8 @@ def test_repository_get_all__study_name_filter(
 def test_repository_get_all__managed_study_filter(
     db_session: Session,
     managed: t.Optional[bool],
-    expected_ids: set,
-):
+    expected_ids: t.Set[str],
+) -> None:
     test_workspace = "test-workspace"
     icache: Mock = Mock(spec=ICache)
     repository = StudyMetadataRepository(cache_service=icache, session=db_session)
@@ -218,7 +216,7 @@ def test_repository_get_all__managed_study_filter(
     assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
     if expected_ids is not None:
-        assert set([s.id for s in all_studies]) == expected_ids
+        assert {s.id for s in all_studies} == expected_ids
 
 
 @pytest.mark.parametrize(
@@ -232,8 +230,8 @@ def test_repository_get_all__managed_study_filter(
 def test_repository_get_all__archived_study_filter(
     db_session: Session,
     archived: t.Optional[bool],
-    expected_ids: set,
-):
+    expected_ids: t.Set[str],
+) -> None:
     icache: Mock = Mock(spec=ICache)
     repository = StudyMetadataRepository(cache_service=icache, session=db_session)
 
@@ -257,7 +255,7 @@ def test_repository_get_all__archived_study_filter(
     assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
     if expected_ids is not None:
-        assert set([s.id for s in all_studies]) == expected_ids
+        assert {s.id for s in all_studies} == expected_ids
 
 
 @pytest.mark.parametrize(
@@ -271,8 +269,8 @@ def test_repository_get_all__archived_study_filter(
 def test_repository_get_all__variant_study_filter(
     db_session: Session,
     variant: t.Optional[bool],
-    expected_ids: set,
-):
+    expected_ids: t.Set[str],
+) -> None:
     icache: Mock = Mock(spec=ICache)
     repository = StudyMetadataRepository(cache_service=icache, session=db_session)
 
@@ -296,7 +294,7 @@ def test_repository_get_all__variant_study_filter(
     assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
     if expected_ids is not None:
-        assert set([s.id for s in all_studies]) == expected_ids
+        assert {s.id for s in all_studies} == expected_ids
 
 
 @pytest.mark.parametrize(
@@ -312,8 +310,8 @@ def test_repository_get_all__variant_study_filter(
 def test_repository_get_all__study_version_filter(
     db_session: Session,
     versions: t.List[str],
-    expected_ids: set,
-):
+    expected_ids: t.Set[str],
+) -> None:
     icache: Mock = Mock(spec=ICache)
     repository = StudyMetadataRepository(cache_service=icache, session=db_session)
 
@@ -337,7 +335,7 @@ def test_repository_get_all__study_version_filter(
     assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
     if expected_ids is not None:
-        assert set([s.id for s in all_studies]) == expected_ids
+        assert {s.id for s in all_studies} == expected_ids
 
 
 @pytest.mark.parametrize(
@@ -353,8 +351,8 @@ def test_repository_get_all__study_version_filter(
 def test_repository_get_all__study_users_filter(
     db_session: Session,
     users: t.List["int"],
-    expected_ids: set,
-):
+    expected_ids: t.Set[str],
+) -> None:
     icache: Mock = Mock(spec=ICache)
     repository = StudyMetadataRepository(cache_service=icache, session=db_session)
 
@@ -384,7 +382,7 @@ def test_repository_get_all__study_users_filter(
     assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
     if expected_ids is not None:
-        assert set([s.id for s in all_studies]) == expected_ids
+        assert {s.id for s in all_studies} == expected_ids
 
 
 @pytest.mark.parametrize(
@@ -400,8 +398,8 @@ def test_repository_get_all__study_users_filter(
 def test_repository_get_all__study_groups_filter(
     db_session: Session,
     groups: t.List[str],
-    expected_ids: set,
-):
+    expected_ids: t.Set[str],
+) -> None:
     icache: Mock = Mock(spec=ICache)
     repository = StudyMetadataRepository(cache_service=icache, session=db_session)
 
@@ -431,11 +429,11 @@ def test_repository_get_all__study_groups_filter(
     assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
     if expected_ids is not None:
-        assert set([s.id for s in all_studies]) == expected_ids
+        assert {s.id for s in all_studies} == expected_ids
 
 
 @pytest.mark.parametrize(
-    "studies_ids, expected_ids",
+    "study_ids, expected_ids",
     [
         ([], {"1", "2", "3", "4"}),
         (["1", "2", "3", "4"], {"1", "2", "3", "4"}),
@@ -445,11 +443,11 @@ def test_repository_get_all__study_groups_filter(
         (["3000"], set()),
     ],
 )
-def test_repository_get_all__studies_ids_filter(
+def test_repository_get_all__study_ids_filter(
     db_session: Session,
-    studies_ids: t.List[str],
-    expected_ids: set,
-):
+    study_ids: t.List[str],
+    expected_ids: t.Set[str],
+) -> None:
     icache: Mock = Mock(spec=ICache)
     repository = StudyMetadataRepository(cache_service=icache, session=db_session)
 
@@ -466,14 +464,14 @@ def test_repository_get_all__studies_ids_filter(
     # 2- accessing studies attributes does require additional queries to db
     # 3- having an exact total of queries equals to 1
     with DBStatementRecorder(db_session.bind) as db_recorder:
-        all_studies = repository.get_all(study_filter=StudyFilter(studies_ids=studies_ids))
+        all_studies = repository.get_all(study_filter=StudyFilter(study_ids=study_ids))
         _ = [s.owner for s in all_studies]
         _ = [s.groups for s in all_studies]
         _ = [s.additional_data for s in all_studies]
     assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
     if expected_ids is not None:
-        assert set([s.id for s in all_studies]) == expected_ids
+        assert {s.id for s in all_studies} == expected_ids
 
 
 @pytest.mark.parametrize(
@@ -487,14 +485,14 @@ def test_repository_get_all__studies_ids_filter(
 def test_repository_get_all__study_existence_filter(
     db_session: Session,
     exists: t.Optional[bool],
-    expected_ids: set,
-):
+    expected_ids: t.Set[str],
+) -> None:
     icache: Mock = Mock(spec=ICache)
     repository = StudyMetadataRepository(cache_service=icache, session=db_session)
 
     study_1 = VariantStudy(id=1)
     study_2 = VariantStudy(id=2)
-    study_3 = RawStudy(id=3, missing=datetime.now())
+    study_3 = RawStudy(id=3, missing=datetime.datetime.now())
     study_4 = RawStudy(id=4)
 
     db_session.add_all([study_1, study_2, study_3, study_4])
@@ -512,7 +510,7 @@ def test_repository_get_all__study_existence_filter(
     assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
     if expected_ids is not None:
-        assert set([s.id for s in all_studies]) == expected_ids
+        assert {s.id for s in all_studies} == expected_ids
 
 
 @pytest.mark.parametrize(
@@ -527,8 +525,8 @@ def test_repository_get_all__study_existence_filter(
 def test_repository_get_all__study_workspace_filter(
     db_session: Session,
     workspace: str,
-    expected_ids: set,
-):
+    expected_ids: t.Set[str],
+) -> None:
     icache: Mock = Mock(spec=ICache)
     repository = StudyMetadataRepository(cache_service=icache, session=db_session)
 
@@ -552,7 +550,7 @@ def test_repository_get_all__study_workspace_filter(
     assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
     if expected_ids is not None:
-        assert set([s.id for s in all_studies]) == expected_ids
+        assert {s.id for s in all_studies} == expected_ids
 
 
 @pytest.mark.parametrize(
@@ -569,8 +567,8 @@ def test_repository_get_all__study_workspace_filter(
 def test_repository_get_all__study_folder_filter(
     db_session: Session,
     folder: str,
-    expected_ids: set,
-):
+    expected_ids: t.Set[str],
+) -> None:
     icache: Mock = Mock(spec=ICache)
     repository = StudyMetadataRepository(cache_service=icache, session=db_session)
 
@@ -594,4 +592,4 @@ def test_repository_get_all__study_folder_filter(
     assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
     if expected_ids is not None:
-        assert set([s.id for s in all_studies]) == expected_ids
+        assert {s.id for s in all_studies} == expected_ids
