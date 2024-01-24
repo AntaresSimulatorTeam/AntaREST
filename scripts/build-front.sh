@@ -5,28 +5,8 @@ set -e
 CURR_DIR=$(cd "$(dirname "$0")" && pwd)
 
 cd "$CURR_DIR"/../webapp
-
-# shellcheck disable=SC2016
-if [[ "$OSTYPE" == "darwin"* ]]; then
-  sed -i '' 's|"homepage".*|"homepage": "/static",|g' package.json
-  sed -i '' 's|loadPath.*|loadPath: `/static/locales/{{lng}}/{{ns}}.json?v=${version}`,|g' src/i18n.js
-else
-  sed -i 's|"homepage".*|"homepage": "/static",|g' package.json
-  sed -i 's|loadPath.*|loadPath: `/static/locales/{{lng}}/{{ns}}.json?v=${version}`,|g' src/i18n.js
-fi
-
-./node_modules/.bin/cross-env GENERATE_SOURCEMAP=false DISABLE_ESLINT_PLUGIN=true npm run build
-
-# shellcheck disable=SC2016
-if [[ "$OSTYPE" == "darwin"* ]]; then
-  sed -i '' 's|"homepage".*|"homepage": "/",|g' package.json
-  sed -i '' 's|loadPath.*|loadPath: `/locales/{{lng}}/{{ns}}.json?v=${version}`,|g' src/i18n.js
-else
-  sed -i 's|"homepage".*|"homepage": "/",|g' package.json
-  sed -i 's|loadPath.*|loadPath: `/locales/{{lng}}/{{ns}}.json?v=${version}`,|g' src/i18n.js
-fi
-
+npm run build
 cd ..
 rm -fr resources/webapp
-cp -r ./webapp/build/ resources/webapp
-cp ./webapp/build/index.html resources/templates/
+cp -r ./webapp/dist/ resources/webapp
+cp ./webapp/dist/index.html resources/templates/

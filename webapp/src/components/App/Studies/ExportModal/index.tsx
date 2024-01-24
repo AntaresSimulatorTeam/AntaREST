@@ -41,7 +41,7 @@ export default function ExportModal(props: BasicDialogProps & Props) {
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
 
-  const optionsList: Array<GenericInfo> = [
+  const optionsList: GenericInfo[] = [
     {
       id: "exportWith",
       name: t("studies.exportWith"),
@@ -60,7 +60,7 @@ export default function ExportModal(props: BasicDialogProps & Props) {
     },
   ];
   const [optionSelection, setOptionSelection] = useState<string>("exportWith");
-  const [outputList, setOutputList] = useState<Array<GenericInfo>>();
+  const [outputList, setOutputList] = useState<GenericInfo[]>();
   const [currentOutput, setCurrentOutput] = useState<string>();
   const [synthesis, setStudySynthesis] = useState<FileStudyTreeConfigDTO>();
   const [filter, setFilter] = useState<StudyOutputDownloadDTO>({
@@ -188,7 +188,7 @@ export default function ExportModal(props: BasicDialogProps & Props) {
               (
                 <SelectSingle
                   name={t("studies.selectOutput")}
-                  list={outputList as Array<GenericInfo>}
+                  list={outputList as GenericInfo[]}
                   data={currentOutput}
                   setValue={(data: string) => setCurrentOutput(data)}
                   sx={{ width: "300px", my: 3 }}

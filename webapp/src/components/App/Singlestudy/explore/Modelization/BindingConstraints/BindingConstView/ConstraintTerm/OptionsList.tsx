@@ -8,7 +8,7 @@ interface Props {
   list: AllClustersAndLinks;
   isLink: boolean;
   constraint: ConstraintType;
-  constraintsTerm: Array<ConstraintType>;
+  constraintsTerm: ConstraintType[];
   saveValue: (constraint: Partial<ConstraintType>) => void;
   value1: string;
   value2: string;

@@ -5,7 +5,6 @@ import useBlocker from "./useBlocker";
 
 function usePrompt(message: string, when = true): void {
   useBlocker((tx) => {
-    // eslint-disable-next-line no-alert
     if (window.confirm(message)) {
       tx.retry();
     }

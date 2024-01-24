@@ -25,7 +25,7 @@ function Areas(props: Props) {
   const { onAdd, updateUI, nodes } = props;
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const dispatch = useAppDispatch();
-  const [filteredNodes, setFilteredNodes] = useState<Array<StudyMapNode>>([]);
+  const [filteredNodes, setFilteredNodes] = useState<StudyMapNode[]>([]);
   const [searchValue, setSearchValue] = useState("");
   const currentArea = useAppSelector(getCurrentStudyMapNode);
   const currentLink = useAppSelector((state) =>

@@ -46,7 +46,7 @@ export const createVariant = async (
 
 export const appendCommands = async (
   studyId: string,
-  commands: Array<CommandDTO>,
+  commands: CommandDTO[],
 ): Promise<string> => {
   const res = await client.post(`/v1/studies/${studyId}/commands`, commands);
   return res.data;
@@ -87,7 +87,7 @@ export const updateCommand = async (
 
 export const replaceCommands = async (
   studyId: string,
-  commands: Array<CommandDTO>,
+  commands: CommandDTO[],
 ): Promise<string> => {
   const res = await client.put(`/v1/studies/${studyId}/commands`, commands);
   return res.data;
@@ -116,9 +116,7 @@ export const getCommand = async (
   return res.data;
 };
 
-export const getCommands = async (
-  studyId: string,
-): Promise<Array<CommandDTO>> => {
+export const getCommands = async (studyId: string): Promise<CommandDTO[]> => {
   const res = await client.get(`/v1/studies/${studyId}/commands`);
   return res.data;
 };

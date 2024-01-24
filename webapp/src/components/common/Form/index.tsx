@@ -46,7 +46,10 @@ import FormContext from "./FormContext";
 import useFormApiPlus from "./useFormApiPlus";
 import useFormUndoRedo from "./useFormUndoRedo";
 
-export type AutoSubmitConfig = { enable: boolean; wait?: number };
+export interface AutoSubmitConfig {
+  enable: boolean;
+  wait?: number;
+}
 
 export interface FormProps<
   TFieldValues extends FieldValues = FieldValues,
@@ -114,9 +117,9 @@ function Form<TFieldValues extends FieldValues, TContext>(
   const fieldAutoSubmitListeners = useRef<
     Record<string, ((v: any) => any | Promise<any>) | undefined>
   >({});
-  const fieldsChangeDuringAutoSubmitting = useRef<FieldPath<TFieldValues>[]>(
-    [],
-  );
+  const fieldsChangeDuringAutoSubmitting = useRef<
+    Array<FieldPath<TFieldValues>>
+  >([]);
   const lastSubmittedData = useRef<TFieldValues>();
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   const submitSuccessfulCb = useRef(() => {});

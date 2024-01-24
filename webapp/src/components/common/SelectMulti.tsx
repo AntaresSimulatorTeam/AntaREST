@@ -16,9 +16,9 @@ import { GenericInfo } from "../../common/types";
 
 interface Props {
   name: string;
-  list: Array<GenericInfo>;
-  data: Array<string>;
-  setValue: (data: Array<string>) => void;
+  list: GenericInfo[];
+  data: string[];
+  setValue: (data: string[]) => void;
   sx?: SxProps<Theme> | undefined;
   placeholder?: string;
   tagsMode?: boolean;
@@ -29,14 +29,14 @@ function SelectMulti(props: Props) {
   const { name, list, data, setValue, placeholder, tagsMode, sx, required } =
     props;
 
-  const handleChange = (event: SelectChangeEvent<Array<string>>) => {
+  const handleChange = (event: SelectChangeEvent<string[]>) => {
     const {
       target: { value },
     } = event;
     setValue(typeof value === "string" ? value.split(",") : value);
   };
 
-  const chipRender = (selected: Array<string>): React.ReactNode => (
+  const chipRender = (selected: string[]): React.ReactNode => (
     <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
       {selected.map((value) => {
         const element = list.find((item) =>
@@ -52,7 +52,7 @@ function SelectMulti(props: Props) {
     </Box>
   );
 
-  const checkboxRender = (selected: Array<string>): string =>
+  const checkboxRender = (selected: string[]): string =>
     selected
       .map(
         (elm) =>

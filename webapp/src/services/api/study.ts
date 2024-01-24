@@ -21,9 +21,7 @@ import { convertStudyDtoToMetadata } from "../utils";
 import { FileDownloadTask } from "./downloads";
 import { StudyMapDistrict } from "../../redux/ducks/studyMaps";
 
-const getStudiesRaw = async (): Promise<{
-  [sid: string]: StudyMetadataDTO;
-}> => {
+const getStudiesRaw = async (): Promise<Record<string, StudyMetadataDTO>> => {
   const res = await client.get(`/v1/studies`);
   return res.data;
 };
@@ -36,7 +34,7 @@ export const getStudies = async (): Promise<StudyMetadata[]> => {
   });
 };
 
-export const getStudyVersions = async (): Promise<Array<string>> => {
+export const getStudyVersions = async (): Promise<string[]> => {
   const res = await client.get("/v1/studies/_versions");
   return res.data;
 };
@@ -68,9 +66,7 @@ export const getStudyMetadata = async (sid: string): Promise<StudyMetadata> => {
   return convertStudyDtoToMetadata(sid, res.data);
 };
 
-export const getStudyOutputs = async (
-  sid: string,
-): Promise<Array<StudyOutput>> => {
+export const getStudyOutputs = async (sid: string): Promise<StudyOutput[]> => {
   const res = await client.get(`/v1/studies/${sid}/outputs`);
   return res.data;
 };
@@ -106,7 +102,7 @@ export const downloadOutput = async (
 export const createStudy = async (
   name: string,
   version: number,
-  groups?: Array<string>,
+  groups?: string[],
 ): Promise<string> => {
   const groupIds =
     groups && groups.length > 0 ? `&groups=${groups.join(",")}` : "";
@@ -296,7 +292,7 @@ interface LauncherLoadDTO {
   local: number;
 }
 
-export const getLauncherVersions = async (): Promise<Array<string>> => {
+export const getLauncherVersions = async (): Promise<string[]> => {
   const res = await client.get("/v1/launcher/versions");
   return res.data;
 };

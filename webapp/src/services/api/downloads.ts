@@ -5,11 +5,9 @@ export interface FileDownloadDTO {
   id: string;
   name: string;
   filename: string;
-  // eslint-disable-next-line camelcase
   expiration_date: string;
   ready: boolean;
   failed: boolean;
-  // eslint-disable-next-line camelcase
   error_message: string;
 }
 
@@ -40,7 +38,7 @@ export const convertFileDownloadDTO = (
   errorMessage: fileDownload.error_message,
 });
 
-export const getDownloadsList = async (): Promise<Array<FileDownload>> => {
+export const getDownloadsList = async (): Promise<FileDownload[]> => {
   const res = await client.get("/v1/downloads");
   return res.data.map(convertFileDownloadDTO);
 };

@@ -14,12 +14,12 @@ function LinkPropsView(props: PropsType) {
   const currentLinkId = useAppSelector(getCurrentLinkId);
   const links = useAppSelector((state) => getLinks(state, studyId));
   const [linkNameFilter, setLinkNameFilter] = useState<string>();
-  const [filteredLinks, setFilteredLinks] = useState<Array<LinkElement>>(
+  const [filteredLinks, setFilteredLinks] = useState<LinkElement[]>(
     links || [],
   );
 
   useEffect(() => {
-    const filter = (): Array<LinkElement> => {
+    const filter = (): LinkElement[] => {
       if (links) {
         return links.filter(
           (s) =>

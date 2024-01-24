@@ -161,7 +161,6 @@ function MapGraph({
         },
         node: {
           renderLabel: false,
-          // eslint-disable-next-line react/no-unstable-nested-components
           viewGenerator: (node) => (
             <Node node={node} linkCreation={handleLinkCreation} />
           ),

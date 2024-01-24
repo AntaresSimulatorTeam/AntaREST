@@ -1,4 +1,3 @@
-/* eslint-disable react/jsx-props-no-spreading */
 import * as React from "react";
 import { Divider, styled } from "@mui/material";
 import Tabs from "@mui/material/Tabs";

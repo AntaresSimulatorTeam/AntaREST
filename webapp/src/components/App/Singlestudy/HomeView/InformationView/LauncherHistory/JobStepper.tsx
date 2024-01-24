@@ -56,7 +56,7 @@ function QontoStepIcon(props: {
 }
 
 interface Props {
-  jobs: Array<LaunchJob>;
+  jobs: LaunchJob[];
   jobsProgress: LaunchJobsProgress;
 }
 

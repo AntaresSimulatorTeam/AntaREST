@@ -25,9 +25,7 @@ const logError = debug("antares:websocket:error");
 
 const RECONNECTION_DEFAULT_DELAY = 3000;
 
-interface MessageListener {
-  (message: WSMessage): void;
-}
+type MessageListener = (message: WSMessage) => void;
 
 let webSocket: WebSocket | null;
 let messageListeners = [] as MessageListener[];

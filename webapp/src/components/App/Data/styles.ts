@@ -1,7 +1,7 @@
 import { styled, Box, Typography } from "@mui/material";
 import DownloadIcon from "@mui/icons-material/Download";
 
-export const BoxParamHeader = styled(Box)(({ theme }) => ({
+export const BoxParamHeader = styled(Box)({
   width: "100%",
   height: "40px",
   display: "flex",
@@ -9,7 +9,7 @@ export const BoxParamHeader = styled(Box)(({ theme }) => ({
   justifyContent: "flex-start",
   alignItems: "center",
   boxSizing: "border-box",
-}));
+});
 
 export const BoxParam = styled(Box)(({ theme }) => ({
   flex: "1",
@@ -36,12 +36,12 @@ export const StyledDownloadIcon = styled(DownloadIcon)(({ theme }) => ({
   },
 }));
 
-export const StyledListingBox = styled(Box)(({ theme }) => ({
+export const StyledListingBox = styled(Box)({
   width: "100%",
   display: "flex",
   flexDirection: "column",
   alignItems: "flex-end",
   flexGrow: 1,
-}));
+});
 
 export default {};

@@ -14,7 +14,7 @@ import { SubmitHandlerPlus } from "../../../../../common/Form/types";
 
 interface PropType {
   open: boolean;
-  links: Array<LinkCreationInfoDTO>;
+  links: LinkCreationInfoDTO[];
   onClose: () => void;
   onSave: (candidate: XpansionCandidate) => void;
 }
