@@ -6,7 +6,6 @@ from unittest.mock import ANY
 
 import numpy as np
 import pandas as pd
-import pytest
 from starlette.testclient import TestClient
 
 from antarest.core.model import PublicMode
@@ -2109,6 +2108,8 @@ def test_copy(client: TestClient, admin_access_token: str, study_id: str) -> Non
 def test_download_matrices(client: TestClient, admin_access_token: str, study_id: str) -> None:
     admin_headers = {"Authorization": f"Bearer {admin_access_token}"}
 
+    # todo: replacer ce test dans un autre fichier
+
     # =============================
     #  STUDIES PREPARATION
     # =============================
@@ -2135,7 +2136,13 @@ def test_download_matrices(client: TestClient, admin_access_token: str, study_id
     )
     assert res.status_code in {200, 201}
 
-    # Really generates the new area in the snapshot
+    # Change study start_date
+    res = client.put(
+        f"/v1/studies/{variant_id}/config/general/form", json={"firstMonth": "july"}, headers=admin_headers
+    )
+    assert res.status_code == 200
+
+    # Really generates the snapshot
     client.get(f"/v1/studies/{variant_id}/areas", headers=admin_headers)
     assert res.status_code == 200
 
@@ -2152,8 +2159,19 @@ def test_download_matrices(client: TestClient, admin_access_token: str, study_id
         res = client.get(f"/v1/studies/{uuid}/raw/download?path={path}&format=xlsx", headers=admin_headers)
         assert res.status_code == 200
 
-        # reformat them into a json to help comparison
+        # load into dataframe
         dataframe = pd.read_excel(io.BytesIO(res.content), index_col=0)
+
+        # check time coherence
+        generated_index = dataframe["Time"]
+        first_date = generated_index[0].to_pydatetime()
+        second_date = generated_index[1].to_pydatetime()
+        assert first_date.month == second_date.month == 1 if uuid == parent_id else 7
+        assert first_date.day == second_date.day == 1
+        assert first_date.hour == 0
+        assert second_date.hour == 1
+
+        # reformat into a json to help comparison
         dataframe.drop(columns=["Time"], inplace=True)
         new_cols = [int(col) for col in dataframe.columns]
         dataframe.columns = new_cols

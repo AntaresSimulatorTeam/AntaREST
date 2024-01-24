@@ -275,6 +275,8 @@ def create_raw_study_routes(
             with export_path.open(mode="rb") as file:
                 yield from file
 
+        # todo: tester la perf du StreamingResponse VS FileResponse
+
         return StreamingResponse(
             iter_file(),
             headers={"Content-Disposition": f'attachment; filename="{export_file_download.filename}"'},
