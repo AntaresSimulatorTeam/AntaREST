@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional, Union
 
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 
 from antarest.core.exceptions import (
     ConstraintAlreadyExistError,
@@ -30,20 +30,71 @@ from antarest.study.storage.variantstudy.model.command.update_binding_constraint
 
 
 class LinkInfoDTO(BaseModel):
+    """
+    DTO for a constraint term on a link between two areas.
+
+    Attributes:
+        area1: the first area ID
+        area2: the second area ID
+    """
+
     area1: str
     area2: str
 
+    def calc_term_id(self) -> str:
+        """Return the constraint term ID for this link, of the form "area1%area2"."""
+        # Ensure IDs are in alphabetical order and lower case
+        ids = sorted((self.area1.lower(), self.area2.lower()))
+        return "%".join(ids)
+
 
 class ClusterInfoDTO(BaseModel):
+    """
+    DTO for a constraint term on a cluster in an area.
+
+    Attributes:
+        area: the area ID
+        cluster: the cluster ID
+    """
+
     area: str
     cluster: str
 
+    def calc_term_id(self) -> str:
+        """Return the constraint term ID for this Area/cluster constraint, of the form "area.cluster"."""
+        # Ensure IDs are in lower case
+        ids = [self.area.lower(), self.cluster.lower()]
+        return ".".join(ids)
+
 
 class ConstraintTermDTO(BaseModel):
+    """
+    DTO for a constraint term.
+
+    Attributes:
+        id: the constraint term ID, of the form "area1%area2" or "area.cluster".
+        weight: the constraint term weight, if any.
+        offset: the constraint term offset, if any.
+        data: the constraint term data (link or cluster), if any.
+    """
+
     id: Optional[str]
     weight: Optional[float]
     offset: Optional[float]
     data: Optional[Union[LinkInfoDTO, ClusterInfoDTO]]
+
+    @validator("id")
+    def id_to_lower(cls, v: Optional[str]) -> Optional[str]:
+        """Ensure the ID is lower case."""
+        if v is None:
+            return None
+        return v.lower()
+
+    def calc_term_id(self) -> str:
+        """Return the constraint term ID for this term based on its data."""
+        if self.data is None:
+            return self.id or ""
+        return self.data.calc_term_id()
 
 
 class UpdateBindingConstProps(BaseModel):
@@ -245,13 +296,7 @@ class BindingConstraintManager:
 
     @staticmethod
     def get_constraint_id(data: Union[LinkInfoDTO, ClusterInfoDTO]) -> str:
-        if isinstance(data, ClusterInfoDTO):
-            constraint_id = f"{data.area}.{data.cluster}"
-        else:
-            area1 = data.area1 if data.area1 < data.area2 else data.area2
-            area2 = data.area2 if area1 == data.area1 else data.area1
-            constraint_id = f"{area1}%{area2}"
-        return constraint_id
+        return data.calc_term_id()
 
     def add_new_constraint_term(
         self,
@@ -262,12 +307,13 @@ class BindingConstraintManager:
         file_study = self.storage_service.get_storage(study).get_raw(study)
         constraint = self.get_binding_constraint(study, binding_constraint_id)
         if not isinstance(constraint, BindingConstraintDTO):
+            # todo: should be renamed 'BindingConstraintNotFoundError'
             raise NoBindingConstraintError(study.id)
 
         if constraint_term.data is None:
             raise MissingDataError("Add new constraint term : data is missing")
 
-        constraint_id = BindingConstraintManager.get_constraint_id(constraint_term.data)
+        constraint_id = constraint_term.data.calc_term_id()
         constraints_term = constraint.constraints or []
         if BindingConstraintManager.find_constraint_term_id(constraints_term, constraint_id) >= 0:
             raise ConstraintAlreadyExistError(study.id)
@@ -309,10 +355,12 @@ class BindingConstraintManager:
         file_study = self.storage_service.get_storage(study).get_raw(study)
         constraint = self.get_binding_constraint(study, binding_constraint_id)
         if not isinstance(constraint, BindingConstraintDTO):
+            # todo: should be renamed 'BindingConstraintNotFoundError'
             raise NoBindingConstraintError(study.id)
 
         constraints = constraint.constraints
         if constraints is None:
+            # todo: should be renamed 'ConstraintTermNotFoundError'
             raise NoConstraintError(study.id)
 
         data_id = data.id if isinstance(data, ConstraintTermDTO) else data
@@ -324,7 +372,7 @@ class BindingConstraintManager:
             raise ConstraintIdNotFoundError(study.id)
 
         if isinstance(data, ConstraintTermDTO):
-            constraint_id = BindingConstraintManager.get_constraint_id(data.data) if data.data is not None else data_id
+            constraint_id = data_id if data.data is None else data.data.calc_term_id()
             current_constraint = constraints[data_term_index]
             constraints.append(
                 ConstraintTermDTO(
