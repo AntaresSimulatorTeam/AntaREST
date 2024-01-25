@@ -269,6 +269,125 @@ DAY_NAMES = (
 )
 
 
+def _generate_columns(column_suffix: str) -> t.List[str]:
+    return [str(i) + column_suffix for i in range(100)]
+
+
+SPECIFIC_MATRICES = {
+    "input/hydro/common/capacity/creditmodulations_*": {
+        "alias": "creditmodulations",
+        "cols": _generate_columns(""),
+        "rows": ["Generating Power", "Pumping Power"],
+        "stats": False,
+    },
+    "input/hydro/common/capacity/maxpower_*": {
+        "alias": "maxpower",
+        "cols": [
+            "Generating Max Power (MW)",
+            "Generating Max Energy (Hours at Pmax)",
+            "Pumping Max Power (MW)",
+            "Pumping Max Energy (Hours at Pmax)",
+        ],
+        "rows": [],
+        "stats": False,
+    },
+    "input/hydro/common/capacity/reservoir_*": {
+        "alias": "reservoir",
+        "cols": ["Lev Low (p.u)", "Lev Avg (p.u)", "Lev High (p.u)"],
+        "rows": [],
+        "stats": False,
+    },
+    "input/hydro/common/capacity/waterValues_*": {
+        "alias": "waterValues",
+        "cols": _generate_columns("%"),
+        "rows": [],
+        "stats": False,
+    },
+    "input/hydro/series/*/mod": {"alias": "mod", "cols": [], "rows": [], "stats": True},
+    "input/hydro/series/*/ror": {"alias": "ror", "cols": [], "rows": [], "stats": True},
+    "input/hydro/common/capacity/inflowPattern_*": {
+        "alias": "inflowPattern",
+        "cols": ["Inflow Pattern (X)"],
+        "rows": [],
+        "stats": False,
+    },
+    "input/hydro/prepro/*/energy": {
+        "alias": "energy",
+        "cols": ["Expectation (MWh)", "Std Deviation (MWh)", "Min. (MWh)", "Max. (MWh)", "ROR Share"],
+        "rows": [
+            "January",
+            "February",
+            "March",
+            "April",
+            "May",
+            "June",
+            "July",
+            "August",
+            "September",
+            "October",
+            "November",
+            "December",
+        ],
+        "stats": False,
+    },
+    "input/thermal/prepro/*/*/modulation": {
+        "alias": "modulation",
+        "cols": ["Marginal cost modulation", "Market bid modulation", "Capacity modulation", "Min gen modulation"],
+        "rows": [],
+        "stats": False,
+    },
+    "input/thermal/prepro/*/*/data": {
+        "alias": "data",
+        "cols": ["FO Duration", "PO Duration", "FO Rate", "PO Rate", "NPO Min", "NPO Max"],
+        "rows": [],
+        "status": False,
+    },
+    "input/reserves/*": {
+        "alias": "reserves",
+        "cols": ["Primary Res. (draft)", "Strategic Res. (draft)", "DSM", "Day Ahead"],
+        "rows": [],
+        "status": False,
+    },
+    "input/misc-gen/miscgen-*": {
+        "alias": "miscgen",
+        "cols": ["CHP", "Bio Mass", "Bio Gaz", "Waste", "GeoThermal", "Other", "PSP", "ROW Balance"],
+        "rows": [],
+        "status": False,
+    },
+    "input/bindingconstraints/*": {
+        "alias": "bindingconstraints",
+        "rows": [],
+        "stats": False,
+        "cols_with_version": {"after_870": ["<", ">", "="], "before_870": []},
+    },
+    "input/links/*/*": {
+        "alias": "links",
+        "rows": [],
+        "stats": False,
+        "cols_with_version": {
+            "after_820": [
+                "Hurdle costs direct",
+                "Hurdle costs indirect",
+                "Impedances",
+                "Loop flow",
+                "P.Shift Min",
+                "P.Shift Max",
+            ],
+            "before_820": [
+                "Capacités de transmission directes",
+                "Capacités de transmission indirectes",
+                "Hurdle costs direct",
+                "Hurdle costs indirect",
+                "Impedances",
+                "Loop flow",
+                "P.Shift Min",
+                "P.Shift Max",
+            ],
+        },
+    },
+}
+
+
 def get_start_date(
     file_study: FileStudy,
     output_id: t.Optional[str] = None,

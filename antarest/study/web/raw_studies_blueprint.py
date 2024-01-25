@@ -268,74 +268,22 @@ def create_raw_study_routes(
         index: bool = True,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> StreamingResponse:
-        # todo: Il faudrait supporter le format txt s'il n'y a pas de header. Comment ?
+        # todo: Il faudrait supporter le format txt s'il n'y a pas de header. Possible avec GET raw et formatted à False. A creuser.
         # todo: Question Alexander : Quel séparateur pour csv et xlsx ?
         # todo: ajouter dans les exemples le truc pour allocation et correlation pour que les users comprennent
         # todo: envoyer un xlsx à Alexander pour voir s'il s'ouvre bien dans excel sous Windows
         # todo: tester la perf du StreamingResponse VS FileResponse
         # todo: Peut-être wrapper autour d'une HTTP Exception en cas de download fail (try catch dans le code)
-        # todo: ajouter les autres cas : binding, lien etc. avec l'hydro
         # todo: on ne gère pas encore les stats
         # todo: on ne gère pas non plus les outputs
         # todo: peut-être changer la structure de la matrice pour ne pas avoir à faire du type ignore
+        # todo: changer le check if index or header pour aller plus vite si nécessaire.
+        # todo: comment gérer la langue ?
+        # todo: faire tout le travail pour avoir les headers dans un endpoint dédié. Ce endpoint pourrait prendre en entrée une langue qui serait envoyé par le front.
+        # pour allocation et correlation nécessite de build toute la matrice mais bon.
 
         parameters = RequestParameters(user=current_user)
-        if pathlib.Path(path) == pathlib.Path("input") / "hydro" / "allocation":
-            all_areas = t.cast(
-                t.List[AreaInfoDTO],
-                study_service.get_all_areas(uuid, area_type=AreaType.AREA, ui=False, params=parameters),
-            )
-            study = study_service.get_study(uuid)
-            allocation_matrix = study_service.allocation_manager.get_allocation_matrix(study, all_areas)
-            df_matrix = pd.DataFrame(
-                data=allocation_matrix.data, columns=allocation_matrix.columns, index=allocation_matrix.index
-            )
-        elif pathlib.Path(path) == pathlib.Path("input") / "hydro" / "correlation":
-            all_areas = t.cast(
-                t.List[AreaInfoDTO],
-                study_service.get_all_areas(uuid, area_type=AreaType.AREA, ui=False, params=parameters),
-            )
-            manager = CorrelationManager(study_service.storage_service)
-            study = study_service.get_study(uuid)
-            correlation_matrix = manager.get_correlation_matrix(all_areas, study, [])
-            df_matrix = pd.DataFrame(
-                data=correlation_matrix.data, columns=correlation_matrix.columns, index=correlation_matrix.index
-            )
-        else:
-            json_matrix = study_service.get(uuid, path, depth=3, formatted=True, params=parameters)
-            expected_keys = ["data", "index", "columns"]
-            for key in expected_keys:
-                if key not in json_matrix:
-                    raise IncorrectPathError(f"The path filled does not correspond to a matrix : {path}")
-            df_matrix = pd.DataFrame(
-                data=json_matrix["data"], columns=json_matrix["columns"], index=json_matrix["index"]
-            )
-            if index:
-                if pathlib.Path(path).parts[:2] == ("input", "hydro"):
-                    for hydro_name in HYDRO_MATRICES:
-                        pattern = re.compile(hydro_name)
-                        if pattern.match(path):
-                            hydro_json = HYDRO_MATRICES[hydro_name]
-                            cols: t.List[str] = hydro_json["cols"]  # type: ignore
-                            rows: t.List[str] = hydro_json["rows"]  # type: ignore
-                            if cols:
-                                df_matrix.columns = pd.Index(cols)
-                            if rows:
-                                df_matrix.set_index(rows)
-                            else:
-                                matrix_index = study_service.get_input_matrix_startdate(uuid, path, parameters)
-                                time_column = pd.date_range(
-                                    start=matrix_index.start_date,
-                                    periods=len(df_matrix),
-                                    freq=matrix_index.level.value[0],
-                                )
-                                df_matrix.set_index(time_column)
-                else:
-                    matrix_index = study_service.get_input_matrix_startdate(uuid, path, parameters)
-                    time_column = pd.date_range(
-                        start=matrix_index.start_date, periods=len(df_matrix), freq=matrix_index.level.value[0]
-                    )
-                    df_matrix.set_index(time_column)
+        df_matrix = study_service.get_matrix_with_index_and_header(uuid, path, parameters)
 
         export_file_download = study_service.file_transfer_manager.request_download(
             f"{pathlib.Path(path).stem}.{format.value}",
@@ -384,20 +332,3 @@ def _create_matrix_files(
             index=index,
             float_format="%.6f",
         )
-
-
-def _generate_columns(column_suffix: str) -> t.List[str]:
-    return [str(i) + column_suffix for i in range(100)]
-
-
-# fmt: off
-HYDRO_MATRICES = {
-    "input/hydro/common/capacity/creditmodulations_*": {'cols': _generate_columns(""), 'rows': ["Generating Power", "Pumping Power"], 'stats': False},
-    "input/hydro/common/capacity/maxpower_*": {'cols': ["Generating Max Power (MW)", "Generating Max Energy (Hours at Pmax)", "Pumping Max Power (MW)", "Pumping Max Energy (Hours at Pmax)"], 'rows': [], 'stats': False},
-    "input/hydro/common/capacity/reservoir_*": {'cols': ["Lev Low (p.u)", "Lev Avg (p.u)", "Lev High (p.u)"], 'rows': [], 'stats': False},
-    "input/hydro/common/capacity/waterValues_*": {'cols': _generate_columns("%"), 'rows': [], 'stats': False},
-    "input/hydro/series/*/mod": {'cols': [], 'rows': [], 'stats': True},
-    "input/hydro/series/*/ror": {'cols': [], 'rows': [], 'stats': True},
-    "input/hydro/common/capacity/inflowPattern_*": {'cols': ["Inflow Pattern (X)"], 'rows': [], 'stats': False},
-    "input/hydro/prepro/*/energy": {'cols': ["Expectation (MWh)", "Std Deviation (MWh)", "Min. (MWh)", "Max. (MWh)", "ROR Share"], 'rows': ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"], 'stats': False}
-}

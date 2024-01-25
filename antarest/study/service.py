@@ -4,6 +4,7 @@ import io
 import json
 import logging
 import os
+import re
 import time
 import typing as t
 from datetime import datetime, timedelta
@@ -12,6 +13,7 @@ from pathlib import Path, PurePosixPath
 from uuid import uuid4
 
 import numpy as np
+import pandas as pd
 from fastapi import HTTPException, UploadFile
 from markupsafe import escape
 from starlette.responses import FileResponse, Response
@@ -20,6 +22,7 @@ from antarest.core.config import Config
 from antarest.core.exceptions import (
     BadEditInstructionException,
     CommandApplicationError,
+    IncorrectPathError,
     NotAManagedStudyException,
     StudyDeletionNotAllowed,
     StudyNotFoundError,
@@ -54,6 +57,7 @@ from antarest.study.business.areas.st_storage_management import STStorageManager
 from antarest.study.business.areas.thermal_management import ThermalManager
 from antarest.study.business.binding_constraint_management import BindingConstraintManager
 from antarest.study.business.config_management import ConfigManager
+from antarest.study.business.correlation_management import CorrelationManager
 from antarest.study.business.district_manager import DistrictManager
 from antarest.study.business.general_management import GeneralManager
 from antarest.study.business.link_management import LinkInfoDTO, LinkManager
@@ -109,7 +113,13 @@ from antarest.study.storage.study_upgrader import (
     should_study_be_denormalized,
     upgrade_study,
 )
-from antarest.study.storage.utils import assert_permission, get_start_date, is_managed, remove_from_cache
+from antarest.study.storage.utils import (
+    SPECIFIC_MATRICES,
+    assert_permission,
+    get_start_date,
+    is_managed,
+    remove_from_cache,
+)
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command.update_comments import UpdateComments
@@ -2379,3 +2389,70 @@ class StudyService:
         study_path = self.storage_service.raw_study_service.get_study_path(study)
         # If the study is a variant, it's possible that it only exists in DB and not on disk. If so, we return 0.
         return get_disk_usage(study_path) if study_path.exists() else 0
+
+    def get_matrix_with_index_and_header(self, study_id: str, path: str, parameters: RequestParameters) -> pd.DataFrame:
+        matrix_path = Path(path)
+        study = self.get_study(study_id)
+        for aggregate in ["allocation", "correlation"]:
+            if matrix_path == Path("input") / "hydro" / aggregate:
+                all_areas = t.cast(
+                    t.List[AreaInfoDTO],
+                    self.get_all_areas(study_id, area_type=AreaType.AREA, ui=False, params=parameters),
+                )
+                if aggregate == "allocation":
+                    hydro_matrix = self.allocation_manager.get_allocation_matrix(study, all_areas)
+                else:
+                    hydro_matrix = CorrelationManager(self.storage_service).get_correlation_matrix(all_areas, study, [])  # type: ignore
+                return pd.DataFrame(data=hydro_matrix.data, columns=hydro_matrix.columns, index=hydro_matrix.index)
+
+        json_matrix = self.get(study_id, path, depth=3, formatted=True, params=parameters)
+        expected_keys = ["data", "index", "columns"]
+        for key in expected_keys:
+            if key not in json_matrix:
+                raise IncorrectPathError(f"The path filled does not correspond to a matrix : {path}")
+        df_matrix = pd.DataFrame(data=json_matrix["data"], columns=json_matrix["columns"], index=json_matrix["index"])
+        for specific_matrix in SPECIFIC_MATRICES:
+            if re.compile(specific_matrix).match(path):
+                json_matrix = SPECIFIC_MATRICES[specific_matrix]
+                if json_matrix["alias"] == "bindingconstraints":
+                    study_version = int(study.version)
+                    if study_version < 870:
+                        cols: t.List[str] = json_matrix["cols_with_version"]["before_870"]  # type: ignore
+                    else:
+                        cols: t.List[str] = json_matrix["cols_with_version"]["after_870"]  # type: ignore
+                elif json_matrix["alias"] == "links":
+                    study_version = int(study.version)
+                    path_parts = matrix_path.parts
+                    area_1 = path_parts[3]
+                    area_2 = path_parts[4]
+                    if study_version < 820:
+                        cols: t.List[str] = json_matrix["cols_with_version"]["before_820"]  # type: ignore
+                    else:
+                        cols: t.List[str] = json_matrix["cols_with_version"]["after_820"]  # type: ignore
+                    for k, col in enumerate(cols):
+                        if col == "Hurdle costs direct":
+                            cols[k] = f"{col} ({area_1}->{area_2})"
+                        elif col == "Hurdle costs indirect":
+                            cols[k] = f"{col} ({area_2}->{area_1})"
+                else:
+                    cols: t.List[str] = json_matrix["cols"]  # type: ignore
+                rows: t.List[str] = json_matrix["rows"]  # type: ignore
+                if cols:
+                    df_matrix.columns = pd.Index(cols)
+                if rows:
+                    df_matrix.index = rows
+                else:
+                    matrix_index = self.get_input_matrix_startdate(study_id, path, parameters)
+                    time_column = pd.date_range(
+                        start=matrix_index.start_date,
+                        periods=len(df_matrix),
+                        freq=matrix_index.level.value[0],
+                    )
+                    df_matrix.index = time_column
+                return df_matrix
+        matrix_index = self.get_input_matrix_startdate(study_id, path, parameters)
+        time_column = pd.date_range(
+            start=matrix_index.start_date, periods=len(df_matrix), freq=matrix_index.level.value[0]
+        )
+        df_matrix.index = time_column
+        return df_matrix

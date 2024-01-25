@@ -2175,7 +2175,7 @@ def test_download_matrices(client: TestClient, admin_access_token: str, study_id
         # reformat into a json to help comparison
         new_cols = [int(col) for col in dataframe.columns]
         dataframe.columns = new_cols
-        dataframe.set_index(range(len(dataframe)))
+        dataframe.index = range(len(dataframe))
         actual_matrix = dataframe.to_dict(orient="split")
 
         # asserts that the result is the same as the one we get with the classic get /raw endpoint
