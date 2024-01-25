@@ -304,45 +304,40 @@ class BindingConstraintManager:
         self,
         study: Study,
         binding_constraint_id: str,
-        data: Union[ConstraintTermDTO, str],
+        term: Union[ConstraintTermDTO, str],
     ) -> None:
         file_study = self.storage_service.get_storage(study).get_raw(study)
         constraint = self.get_binding_constraint(study, binding_constraint_id)
+
         if not isinstance(constraint, BindingConstraintDTO):
             raise NoBindingConstraintError(study.id)
 
-        constraints = constraint.constraints
-        if constraints is None:
+        constraint_terms = constraint.constraints  # existing constraint terms
+        if constraint_terms is None:
             raise NoConstraintError(study.id)
 
-        data_id = data.id if isinstance(data, ConstraintTermDTO) else data
-        if data_id is None:
+        term_id = term.id if isinstance(term, ConstraintTermDTO) else term
+        if term_id is None:
+            raise NoConstraintError(study.id)
+
+        term_id_index = BindingConstraintManager.find_constraint_term_id(constraint_terms, term_id)
+        if term_id_index < 0:
             raise ConstraintIdNotFoundError(study.id)
 
-        data_term_index = BindingConstraintManager.find_constraint_term_id(constraints, data_id)
-        if data_term_index < 0:
-            raise ConstraintIdNotFoundError(study.id)
+        if isinstance(term, ConstraintTermDTO):
+            updated_term_id = BindingConstraintManager.get_constraint_id(term.data) if term.data else term_id
+            current_constraint = constraint_terms[term_id_index]
 
-        if isinstance(data, ConstraintTermDTO):
-            constraint_id = BindingConstraintManager.get_constraint_id(data.data) if data.data is not None else data_id
-            current_constraint = constraints[data_term_index]
-            constraints.append(
-                ConstraintTermDTO(
-                    id=constraint_id,
-                    weight=data.weight if data.weight is not None else current_constraint.weight,
-                    offset=data.offset,
-                    data=data.data if data.data is not None else current_constraint.data,
-                )
+            constraint_terms[term_id_index] = ConstraintTermDTO(
+                id=updated_term_id,
+                weight=term.weight or current_constraint.weight,
+                offset=term.offset,
+                data=term.data or current_constraint.data,
             )
-            del constraints[data_term_index]
         else:
-            del constraints[data_term_index]
+            del constraint_terms[term_id_index]
 
-        coeffs = {}
-        for term in constraints:
-            coeffs[term.id] = [term.weight]
-            if term.offset is not None:
-                coeffs[term.id].append(term.offset)
+        coeffs = {term.id: [term.weight, term.offset] if term.offset else [term.weight] for term in constraint_terms}
 
         command = UpdateBindingConstraint(
             id=constraint.id,
