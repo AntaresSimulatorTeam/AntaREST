@@ -1,7 +1,6 @@
 import collections
 import io
 import logging
-import re
 import typing as t
 from http import HTTPStatus
 from pathlib import Path
@@ -38,8 +37,9 @@ logger = logging.getLogger(__name__)
 
 def _split_comma_separated_values(value: str, *, default: t.Sequence[str] = ()) -> t.Sequence[str]:
     """Split a comma-separated list of values into an ordered set of strings."""
-    value = value.strip()
-    value_list = re.split(r"\s*,\s*", value) if value else default
+    value_list = value.split(",") if value else default
+    # drop whitespace around values
+    value_list = map(str.strip, value_list)
     # remove duplicates and preserve order (to have a deterministic result for unit tests).
     return list(collections.OrderedDict.fromkeys(value_list))
 
