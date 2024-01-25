@@ -8,9 +8,9 @@
 
 set -e
 
-ANTARES_SOLVER_VERSION="8.6"
-ANTARES_SOLVER_FULL_VERSION="8.6.2"
-ANTARES_SOLVER_FULL_VERSION_INT="862"
+ANTARES_SOLVER_VERSION="8.8"
+ANTARES_SOLVER_FULL_VERSION="8.8.2"
+ANTARES_SOLVER_VERSION_INT="880"
 
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd -P)
 PROJECT_DIR=$(dirname -- "${SCRIPT_DIR}")
@@ -73,9 +73,9 @@ echo "INFO: Copying basic configuration files..."
 rm -rf "${DIST_DIR}/examples" # in case of replay
 cp -r "${RESOURCES_DIR}"/deploy/* "${DIST_DIR}"
 if [[ "$OSTYPE" == "msys"* ]]; then
-  sed -i "s/VER: ANTARES_SOLVER_PATH/$ANTARES_SOLVER_FULL_VERSION_INT: .\/AntaresWeb\/antares_solver\/antares-$ANTARES_SOLVER_VERSION-solver.exe/g" "${DIST_DIR}/config.yaml"
+  sed -i "s/VER: ANTARES_SOLVER_PATH/$ANTARES_SOLVER_VERSION_INT: .\/AntaresWeb\/antares_solver\/antares-$ANTARES_SOLVER_VERSION-solver.exe/g" "${DIST_DIR}/config.yaml"
 else
-  sed -i "s/VER: ANTARES_SOLVER_PATH/$ANTARES_SOLVER_FULL_VERSION_INT: .\/AntaresWeb\/antares_solver\/antares-$ANTARES_SOLVER_VERSION-solver/g" "${DIST_DIR}/config.yaml"
+  sed -i "s/VER: ANTARES_SOLVER_PATH/$ANTARES_SOLVER_VERSION_INT: .\/AntaresWeb\/antares_solver\/antares-$ANTARES_SOLVER_VERSION-solver/g" "${DIST_DIR}/config.yaml"
 fi
 
 echo "INFO: Creating shortcuts..."
