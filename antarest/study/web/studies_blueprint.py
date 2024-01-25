@@ -76,8 +76,16 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         managed: t.Optional[bool] = Query(None, description="Filter studies based on their management status."),
         archived: t.Optional[bool] = Query(None, description="Filter studies based on their archive status."),
         variant: t.Optional[bool] = Query(None, description="Filter studies based on their variant status."),
-        versions: str = Query("", description="Comma-separated list of versions for filtering."),
-        users: str = Query("", description="Comma-separated list of group IDs for filtering."),
+        versions: str = Query(
+            "",
+            description="Comma-separated list of versions for filtering.",
+            regex=r"^\s*(?:\d+\s*(?:,\s*\d+\s*)*)?$",
+        ),
+        users: str = Query(
+            "",
+            description="Comma-separated list of user IDs for filtering.",
+            regex=r"^\s*(?:\d+\s*(?:,\s*\d+\s*)*)?$",
+        ),
         groups: str = Query("", description="Comma-separated list of group IDs for filtering."),
         tags: str = Query("", description="Comma-separated list of tags for filtering."),
         study_ids: str = Query(
@@ -115,7 +123,7 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         - `archived`: Filter studies based on their archive status.
         - `variant`: Filter studies based on their variant status.
         - `versions`: Comma-separated list of versions for filtering.
-        - `users`: Comma-separated list of group IDs for filtering.
+        - `users`: Comma-separated list of user IDs for filtering.
         - `groups`: Comma-separated list of group IDs for filtering.
         - `tags`: Comma-separated list of tags for filtering.
         - `studyIds`: Comma-separated list of study IDs for filtering.
@@ -134,12 +142,7 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         logger.info("Fetching for matching studies", extra={"user": current_user.id})
         params = RequestParameters(user=current_user)
 
-        # todo: there must be another way to do this
-        #  for instance by using a pydantic model with a custom validator
-        try:
-            user_list = [int(v) for v in _split_comma_separated_values(users)]
-        except ValueError:
-            raise HTTPException(status_code=422, detail="'users' must be a list of integers") from None
+        user_list = [int(v) for v in _split_comma_separated_values(users)]
 
         study_filter = StudyFilter(
             name=name,

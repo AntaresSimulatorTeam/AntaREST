@@ -751,11 +751,17 @@ class TestStudiesListing:
         description = res.json()["description"]
         assert re.search(r"could not be parsed to a boolean", description), f"{description=}"
 
+        # Invalid `versions` parameter (not a list of integers)
+        res = client.get(STUDIES_URL, headers=headers, params={"versions": "invalid"})
+        assert res.status_code == INVALID_PARAMS_STATUS_CODE, res.json()
+        description = res.json()["description"]
+        assert re.search(r"string does not match regex", description), f"{description=}"
+
         # Invalid `users` parameter (not a list of integers)
         res = client.get(STUDIES_URL, headers=headers, params={"users": "invalid"})
         assert res.status_code == INVALID_PARAMS_STATUS_CODE, res.json()
         description = res.json()["description"]
-        assert re.search(r"must be a list of integers", description), f"{description=}"
+        assert re.search(r"string does not match regex", description), f"{description=}"
 
         # Invalid `exists` parameter (not a boolean)
         res = client.get(STUDIES_URL, headers=headers, params={"exists": "invalid"})
