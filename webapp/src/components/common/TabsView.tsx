@@ -1,4 +1,3 @@
-/* eslint-disable react/no-array-index-key */
 import { TabContext, TabList, TabListProps, TabPanel } from "@mui/lab";
 import { Tab } from "@mui/material";
 import { useState } from "react";

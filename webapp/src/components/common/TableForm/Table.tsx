@@ -1,18 +1,20 @@
-import HotTable from "@handsontable/react";
-import type { RowObject } from "handsontable/common";
+import HT from "handsontable";
 import * as RA from "ramda-adjunct";
 import { useMemo } from "react";
 import type { IdType } from "../../../common/types";
 import { useFormContextPlus } from "../Form";
-import Handsontable, { HandsontableProps } from "../Handsontable";
+import Handsontable, {
+  HandsontableProps,
+  HotTableClass,
+} from "../Handsontable";
 
-type Row = { id: IdType } & RowObject;
+type Row = { id: IdType } & HT.RowObject;
 
 export interface TableProps extends Omit<HandsontableProps, "rowHeaders"> {
   data: Row[];
   columns: NonNullable<HandsontableProps["columns"]>;
   rowHeaders?: boolean | ((row: Row) => string);
-  tableRef?: React.ForwardedRef<HotTable>;
+  tableRef?: React.ForwardedRef<HotTableClass>;
 }
 
 function Table(props: TableProps) {

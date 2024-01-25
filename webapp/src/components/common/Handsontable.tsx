@@ -1,6 +1,6 @@
+import { registerAllModules } from "handsontable/registry";
 import HotTable, { HotTableProps } from "@handsontable/react";
 import { styled } from "@mui/material";
-import { registerAllModules } from "handsontable/registry";
 import { forwardRef } from "react";
 import * as RA from "ramda-adjunct";
 import { SECONDARY_MAIN_COLOR } from "../../theme";
@@ -31,37 +31,41 @@ const StyledHotTable = styled(HotTable)(() => ({
 
 export type HandsontableProps = Omit<HotTableProps, "licenseKey">;
 
-const Handsontable = forwardRef<HotTable, HandsontableProps>((props, ref) => {
-  ////////////////////////////////////////////////////////////////
-  // Event Handlers
-  ////////////////////////////////////////////////////////////////
+export type HotTableClass = React.ElementRef<HotTable>;
 
-  const handleBeforeChange: HotTableProps["beforeChange"] =
-    function beforeChange(this: unknown, changes, ...rest): void {
-      changes.filter(Boolean).forEach((cell) => {
-        const [, , oldValue, newValue] = cell;
-        // Prevent null values for string cells
-        if (RA.isString(oldValue) && newValue === null) {
-          // eslint-disable-next-line no-param-reassign
-          cell[3] = "";
-        }
-      });
-      props.beforeChange?.call(this, changes, ...rest);
-    };
+const Handsontable = forwardRef<HotTableClass, HandsontableProps>(
+  (props, ref) => {
+    ////////////////////////////////////////////////////////////////
+    // Event Handlers
+    ////////////////////////////////////////////////////////////////
 
-  ////////////////////////////////////////////////////////////////
-  // JSX
-  ////////////////////////////////////////////////////////////////
+    const handleBeforeChange: HotTableProps["beforeChange"] =
+      function beforeChange(this: unknown, changes, ...rest): void {
+        changes.filter(Boolean).forEach((cell) => {
+          const [, , oldValue, newValue] = cell;
+          // Prevent null values for string cells
+          if (RA.isString(oldValue) && newValue === null) {
+            // eslint-disable-next-line no-param-reassign
+            cell[3] = "";
+          }
+        });
+        props.beforeChange?.call(this, changes, ...rest);
+      };
 
-  return (
-    <StyledHotTable
-      licenseKey="non-commercial-and-evaluation"
-      {...props}
-      beforeChange={handleBeforeChange}
-      ref={ref}
-    />
-  );
-});
+    ////////////////////////////////////////////////////////////////
+    // JSX
+    ////////////////////////////////////////////////////////////////
+
+    return (
+      <StyledHotTable
+        licenseKey="non-commercial-and-evaluation"
+        {...props}
+        beforeChange={handleBeforeChange}
+        ref={ref}
+      />
+    );
+  },
+);
 
 Handsontable.displayName = "Handsontable";
 

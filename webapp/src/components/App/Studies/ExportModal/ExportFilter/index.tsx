@@ -1,4 +1,3 @@
-/* eslint-disable camelcase */
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import _ from "lodash";
@@ -36,22 +35,22 @@ interface PropTypes {
 function ExportFilterModal(props: PropTypes) {
   const [t] = useTranslation();
   const { output, synthesis, filter, setFilter } = props;
-  const [year, setCurrentYear] = useState<Array<number>>([]);
+  const [year, setCurrentYear] = useState<number[]>([]);
   const [byYear, setByYear] = useState<{ isByYear: boolean; nbYear: number }>({
     isByYear: false,
     nbYear: -1,
   });
-  const [areaList, setAreaList] = useState<{ [elm: string]: Area }>({});
-  const [districtList, setDistrictList] = useState<{ [elm: string]: District }>(
+  const [areaList, setAreaList] = useState<Record<string, Area>>({});
+  const [districtList, setDistrictList] = useState<Record<string, District>>(
     {},
   );
 
-  const typeList: Array<string> = [
+  const typeList: string[] = [
     StudyOutputDownloadType.AREAS,
     StudyOutputDownloadType.LINKS,
     StudyOutputDownloadType.DISTRICT,
   ];
-  const levelList: Array<string> = [
+  const levelList: string[] = [
     StudyOutputDownloadLevelDTO.HOURLY,
     StudyOutputDownloadLevelDTO.DAILY,
     StudyOutputDownloadLevelDTO.WEEKLY,
@@ -59,7 +58,7 @@ function ExportFilterModal(props: PropTypes) {
     StudyOutputDownloadLevelDTO.ANNUAL,
   ];
 
-  const onTypeChange = (value: Array<string> | string): void => {
+  const onTypeChange = (value: string[] | string): void => {
     setFilter({
       ...filter,
       filter: [],
@@ -69,7 +68,7 @@ function ExportFilterModal(props: PropTypes) {
     });
   };
 
-  const onLevelChange = (value: Array<string> | string): void => {
+  const onLevelChange = (value: string[] | string): void => {
     setFilter({ ...filter, level: value as StudyOutputDownloadLevelDTO });
   };
 
@@ -105,10 +104,8 @@ function ExportFilterModal(props: PropTypes) {
             name: elm.toString(),
           }))}
           data={year.map((elm) => elm.toString())}
-          setValue={(value: Array<string> | string) =>
-            setCurrentYear(
-              (value as Array<string>).map((elm) => parseInt(elm, 10)),
-            )
+          setValue={(value: string[] | string) =>
+            setCurrentYear((value as string[]).map((elm) => parseInt(elm, 10)))
           }
           sx={{ width: "100%", mb: 2 }}
           required
@@ -127,16 +124,14 @@ function ExportFilterModal(props: PropTypes) {
       <TagSelect
         label={t("study.columns")}
         values={filter.columns !== undefined ? filter.columns : []}
-        onChange={(value: Array<string>) =>
-          setFilter({ ...filter, columns: value })
-        }
+        onChange={(value: string[]) => setFilter({ ...filter, columns: value })}
       />
       <Filter
         type={filter.type}
         areas={areaList}
         sets={districtList}
         filterValue={filter.filter ? filter.filter : []}
-        setFilterValue={(elm: Array<string>) =>
+        setFilterValue={(elm: string[]) =>
           setFilter({ ...filter, filter: elm })
         }
         filterInValue={filter.filterIn ? filter.filterIn : ""}

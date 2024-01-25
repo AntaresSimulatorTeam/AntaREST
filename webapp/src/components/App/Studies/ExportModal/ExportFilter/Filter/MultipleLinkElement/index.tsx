@@ -13,9 +13,9 @@ interface FilterLink {
 
 export default function MultipleLinkElement(props: {
   label: string;
-  areas: Array<string>;
-  values: Array<string>;
-  onChange: (value: Array<string>) => void;
+  areas: string[];
+  values: string[];
+  onChange: (value: string[]) => void;
 }) {
   const { label, areas, values, onChange } = props;
   const [t] = useTranslation();
@@ -52,7 +52,7 @@ export default function MultipleLinkElement(props: {
             name={t("study.area1")}
             list={areas.map((elm) => ({ id: elm, name: elm }))}
             data={link.area1}
-            setValue={(elm: Array<string> | string) =>
+            setValue={(elm: string[] | string) =>
               onSelectChange(0, elm as string)
             }
             sx={{ flexGrow: 1, px: 0.5 }}
@@ -62,7 +62,7 @@ export default function MultipleLinkElement(props: {
             name={t("study.area2")}
             list={areas.map((elm) => ({ id: elm, name: elm }))}
             data={link.area2}
-            setValue={(elm: Array<string> | string) =>
+            setValue={(elm: string[] | string) =>
               onSelectChange(1, elm as string)
             }
             sx={{ flexGrow: 1, px: 0.1 }}

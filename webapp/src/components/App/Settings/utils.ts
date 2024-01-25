@@ -6,4 +6,4 @@ export const RESERVED_GROUP_NAMES = ["admin"];
 
 export const ROLE_TYPE_KEYS = Object.values(RoleType).filter(
   RA.isString,
-) as (keyof typeof RoleType)[];
+) as Array<keyof typeof RoleType>;

@@ -14,7 +14,7 @@ import { IdType } from "../../../../../common/types";
 import { mergeSxProp } from "../../../../../utils/muiUtils";
 
 interface PropsType<T> {
-  list: Array<T>;
+  list: T[];
   currentElement?: string;
   currentElementKeyToTest?: keyof T;
   setSelectedItem: (item: T, index: number) => void;

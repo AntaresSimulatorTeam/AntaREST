@@ -1,4 +1,3 @@
-/* eslint-disable react/jsx-props-no-spreading */
 import { useEffect, useState } from "react";
 import * as React from "react";
 import { styled, SxProps, Theme } from "@mui/material";

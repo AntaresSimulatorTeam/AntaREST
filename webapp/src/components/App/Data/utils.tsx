@@ -14,7 +14,7 @@ const updateMatrix = async (
   data: MatrixDataSetDTO,
   name: string,
   publicStatus: boolean,
-  selectedGroupList: Array<GroupDTO>,
+  selectedGroupList: GroupDTO[],
   onNewDataUpdate: (newData: MatrixDataSetDTO) => void,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): Promise<any> => {
@@ -35,8 +35,8 @@ const updateMatrix = async (
 const createMatrix = async (
   name: string,
   publicStatus: boolean,
-  selectedGroupList: Array<GroupDTO>,
-  matrices: Array<MatrixInfoDTO>,
+  selectedGroupList: GroupDTO[],
+  matrices: MatrixInfoDTO[],
   onNewDataUpdate: (newData: MatrixDataSetDTO) => void,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): Promise<any> => {
@@ -53,7 +53,7 @@ const createMatrix = async (
 export const saveMatrix = async (
   name: string,
   publicStatus: boolean,
-  selectedGroupList: Array<GroupDTO>,
+  selectedGroupList: GroupDTO[],
   onNewDataUpdate: (newData: MatrixDataSetDTO) => void,
   file?: File,
   data?: MatrixDataSetDTO,

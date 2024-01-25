@@ -65,7 +65,6 @@ function NoteEditorModal(props: Props) {
       );
       setInitContent(content);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [content]);
 
   return (

@@ -1,6 +1,6 @@
 import _ from "lodash";
 import moment, { DurationInputArg2 } from "moment";
-import { CellChange } from "handsontable/common";
+import HT from "handsontable";
 import {
   MatrixEditDTO,
   MatrixIndex,
@@ -11,7 +11,7 @@ import {
 
 export const formatDateFromIndex = (
   index: Array<string | number>,
-): Array<string> => {
+): string[] => {
   if (index.length === 0) {
     return [];
   }
@@ -83,7 +83,7 @@ export const createDateFromIndex = (
 };
 
 export const cellChangesToMatrixEdits = (
-  cellChanges: CellChange[],
+  cellChanges: HT.CellChange[],
   matrixTime: boolean,
 ): MatrixEditDTO[] =>
   cellChanges.map(([row, column, , value]) => {
@@ -96,10 +96,7 @@ export const cellChangesToMatrixEdits = (
     };
   });
 
-export const computeStats = (
-  statsType: string,
-  row: Array<number>,
-): Array<number> => {
+export const computeStats = (statsType: string, row: number[]): number[] => {
   if (statsType === MatrixStats.TOTAL) {
     return [
       row.reduce((agg, value) => {

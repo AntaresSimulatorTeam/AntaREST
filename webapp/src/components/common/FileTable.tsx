@@ -33,7 +33,7 @@ const logErr = debug("antares:createimportform:error");
 
 interface PropType {
   title: ReactNode;
-  content: Array<GenericInfo>;
+  content: GenericInfo[];
   onDelete?: (id: string) => Promise<void>;
   onRead: (id: string) => Promise<void>;
   uploadFile?: (file: File) => Promise<void>;

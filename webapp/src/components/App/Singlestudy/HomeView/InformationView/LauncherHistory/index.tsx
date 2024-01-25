@@ -35,14 +35,13 @@ const TitleHeader = styled(Box)(({ theme }) => ({
 }));
 
 interface Props {
-  // eslint-disable-next-line react/no-unused-prop-types
   study: StudyMetadata | undefined;
 }
 
 function LauncherHistory(props: Props) {
   const { study } = props;
   const [t] = useTranslation();
-  const [studyJobs, setStudyJobs] = useState<Array<LaunchJob>>([]);
+  const [studyJobs, setStudyJobs] = useState<LaunchJob[]>([]);
   const [studyJobsProgress, setStudyJobsProgress] =
     useState<LaunchJobsProgress>({});
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
@@ -99,7 +98,7 @@ function LauncherHistory(props: Props) {
         try {
           const data = await getStudyJobs(sid);
 
-          const initJobProgress: { [key: string]: number } = {};
+          const initJobProgress: Record<string, number> = {};
           const jobProgress = await Promise.all(
             data
               .filter((o) => o.status === "running")

@@ -52,7 +52,7 @@ function DynamicDataTable({
         }
         return acc;
       },
-      {} as { [key: string]: { group: string; items: Item[] } },
+      {} as Record<string, { group: string; items: Item[] }>,
     );
   }, [items]);
 

@@ -9,7 +9,12 @@ interface Props {
   onClick: (e: ChangeEvent<HTMLInputElement>, name: string) => void;
 }
 
-function TableRowItem({ item, columns, selected, onClick }: Props) {
+const TableRowItem = memo(function TableRowItem({
+  item,
+  columns,
+  selected,
+  onClick,
+}: Props) {
   const isSelected = selected.includes(item.id);
 
   ////////////////////////////////////////////////////////////////
@@ -61,6 +66,6 @@ function TableRowItem({ item, columns, selected, onClick }: Props) {
       })}
     </TableRow>
   );
-}
+});
 
-export default memo(TableRowItem);
+export default TableRowItem;

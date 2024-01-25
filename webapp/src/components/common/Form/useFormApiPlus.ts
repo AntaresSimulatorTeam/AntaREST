@@ -24,7 +24,9 @@ interface Params<TFieldValues extends FieldValues, TContext> {
   fieldAutoSubmitListeners: MutableRefObject<
     Record<string, AutoSubmitHandler<FieldValue<TFieldValues>> | undefined>
   >;
-  fieldsChangeDuringAutoSubmitting: MutableRefObject<FieldPath<TFieldValues>[]>;
+  fieldsChangeDuringAutoSubmitting: MutableRefObject<
+    Array<FieldPath<TFieldValues>>
+  >;
   submit: VoidFunction;
 }
 
@@ -102,7 +104,7 @@ function useFormApiPlus<TFieldValues extends FieldValues, TContext>(
         options,
       ) => {
         if (dataRef.current.isAutoSubmitEnabled) {
-          const names = RA.ensureArray(name) as Path<TFieldValues>[];
+          const names = RA.ensureArray(name) as Array<Path<TFieldValues>>;
           names.forEach((n) => {
             delete fieldAutoSubmitListeners.current[n];
           });
@@ -148,7 +150,6 @@ function useFormApiPlus<TFieldValues extends FieldValues, TContext>(
 
       // Spreading cannot be used because getters and setters would be removed
       const controlPlus = new Proxy(control, {
-        // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
         get(...args) {
           const prop = args[1];
           if (prop === "register") {

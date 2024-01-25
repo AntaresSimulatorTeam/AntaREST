@@ -78,7 +78,7 @@ function JobsListing() {
   const theme = useTheme();
   const [jobs, setJobs] = useState<LaunchJob[]>([]);
   const [downloads, setDownloads] = useState<FileDownload[]>([]);
-  const [tasks, setTasks] = useState<Array<TaskDTO>>([]);
+  const [tasks, setTasks] = useState<TaskDTO[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [openConfirmationDialog, setOpenConfirmationDialog] = useState<
     string | undefined
@@ -111,7 +111,7 @@ function JobsListing() {
         ),
       );
 
-      const initJobProgress: { [key: string]: number } = {};
+      const initJobProgress: Record<string, number> = {};
       const jobProgress = await Promise.all(
         allJobs
           .filter((o) => o.status === "running")

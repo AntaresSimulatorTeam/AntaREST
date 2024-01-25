@@ -8,7 +8,7 @@ import ConfirmationDialog from "../../../../../common/dialogs/ConfirmationDialog
 import ListElement from "../../common/ListElement";
 
 interface PropsType {
-  candidateList: Array<XpansionCandidate>;
+  candidateList: XpansionCandidate[];
   selectedItem: string;
   setSelectedItem: (item: string) => void;
   onAdd: () => void;
@@ -25,7 +25,7 @@ function XpansionPropsView(props: PropsType) {
     deleteXpansion,
   } = props;
   const [filteredCandidates, setFilteredCandidates] =
-    useState<Array<XpansionCandidate>>(candidateList);
+    useState<XpansionCandidate[]>(candidateList);
   const [searchFilter, setSearchFilter] = useState<string>("");
   const [openConfirmationModal, setOpenConfirmationModal] =
     useState<boolean>(false);

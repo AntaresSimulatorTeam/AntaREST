@@ -1,9 +1,7 @@
 import { TaskDTO, TaskStatus } from "../../common/types";
 import client from "./client";
 
-export const getStudyRunningTasks = async (
-  sid: string,
-): Promise<Array<TaskDTO>> => {
+export const getStudyRunningTasks = async (sid: string): Promise<TaskDTO[]> => {
   const res = await client.post("/v1/tasks", {
     ref_id: sid,
     status: [TaskStatus.RUNNING, TaskStatus.PENDING],
@@ -11,14 +9,14 @@ export const getStudyRunningTasks = async (
   return res.data;
 };
 
-export const getAllRunningTasks = async (): Promise<Array<TaskDTO>> => {
+export const getAllRunningTasks = async (): Promise<TaskDTO[]> => {
   const res = await client.post("/v1/tasks", {
     status: [TaskStatus.RUNNING, TaskStatus.PENDING],
   });
   return res.data;
 };
 
-export const getAllMiscRunningTasks = async (): Promise<Array<TaskDTO>> => {
+export const getAllMiscRunningTasks = async (): Promise<TaskDTO[]> => {
   const res = await client.post("/v1/tasks", {
     status: [
       TaskStatus.RUNNING,

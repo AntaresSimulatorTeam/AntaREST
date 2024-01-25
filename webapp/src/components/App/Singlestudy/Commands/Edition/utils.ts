@@ -36,9 +36,9 @@ export const reorder = <T>(
 };
 
 export const fromCommandDTOToCommandItem = (
-  commands: Array<CommandDTO>,
-): Array<CommandItem> => {
-  const dtoItems: Array<CommandItem> = commands.map((elm) => ({
+  commands: CommandDTO[],
+): CommandItem[] => {
+  const dtoItems: CommandItem[] = commands.map((elm) => ({
     id: elm?.id,
     action: elm.action,
     args: elm.args,
@@ -48,9 +48,9 @@ export const fromCommandDTOToCommandItem = (
 };
 
 export const fromCommandDTOToJsonCommand = (
-  commands: Array<CommandDTO>,
-): Array<JsonCommandItem> => {
-  const dtoItems: Array<JsonCommandItem> = commands.map((elm) => ({
+  commands: CommandDTO[],
+): JsonCommandItem[] => {
+  const dtoItems: JsonCommandItem[] = commands.map((elm) => ({
     action: elm.action,
     args: elm.args,
   }));
@@ -85,13 +85,11 @@ export const isTaskFinal = (task: TaskDTO): boolean =>
 
 export const updateCommandResults = (
   studyId: string,
-  generationCommands: Array<CommandItem>,
-  commandResults: Array<CommandResultDTO>,
-): { commands: Array<CommandItem>; index: number } => {
-  const tmpCommands: Array<CommandItem> = generationCommands.concat([]);
-  // eslint-disable-next-line no-plusplus
-  for (let i = 0; i < commandResults.length; i++) {
-    const commandResult = commandResults[i];
+  generationCommands: CommandItem[],
+  commandResults: CommandResultDTO[],
+): { commands: CommandItem[]; index: number } => {
+  const tmpCommands: CommandItem[] = generationCommands.concat([]);
+  for (const commandResult of commandResults) {
     if (studyId === commandResult.study_id) {
       const index = tmpCommands.findIndex(
         (item) => item.id === commandResult.id,
@@ -101,7 +99,6 @@ export const updateCommandResults = (
   }
   let commandGenerationIndex = -1;
   if (tmpCommands.length > 0) {
-    // eslint-disable-next-line no-plusplus
     for (let i = tmpCommands.length - 1; i >= 0; i--) {
       const command = tmpCommands[i];
       if (command.results) {

@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable no-param-reassign */
-/* eslint-disable no-plusplus */
 import { ContentState, convertToRaw, EditorState } from "draft-js";
 import draftToHtml from "draftjs-to-html";
 import { convertFromHTML } from "draft-convert";
@@ -12,7 +11,7 @@ interface BlockMap {
   to: string;
 }
 
-const blockMap: Array<BlockMap> = [
+const blockMap: BlockMap[] = [
   { from: "ins", to: "u" },
   { from: "em", to: "i" },
   { from: "strong", to: "b" },
@@ -58,10 +57,10 @@ const parseXMLAttributes = (node: XMLElement): AttributesUtils => {
   let isList = false;
   if (node.attributes !== undefined) {
     const list = Object.keys(node.attributes);
-    for (let i = 0; i < list.length; i++) {
-      switch (list[i]) {
+    for (const attr of list) {
+      switch (attr) {
         case "fontweight":
-          if (parseInt(node.attributes[list[i]] as string, 10) > 0) {
+          if (parseInt(node.attributes[attr] as string, 10) > 0) {
             // BOLD
             openBalise += "<b>";
             closeBalise = `</b>${closeBalise}`;
@@ -72,7 +71,7 @@ const parseXMLAttributes = (node: XMLElement): AttributesUtils => {
           closeBalise = `</u>${closeBalise}`;
           break;
         case "fontstyle":
-          if (parseInt(node.attributes[list[i]] as string, 10) > 0) {
+          if (parseInt(node.attributes[attr] as string, 10) > 0) {
             // BOLD
             openBalise += "<i>";
             closeBalise = `</i>${closeBalise}`;
@@ -80,12 +79,12 @@ const parseXMLAttributes = (node: XMLElement): AttributesUtils => {
           break;
         case "liststyle":
           if (
-            node.attributes[list[i]] === "Bullet List" ||
-            node.attributes[list[i]] === "Numbered List"
+            node.attributes[attr] === "Bullet List" ||
+            node.attributes[attr] === "Numbered List"
           ) {
             // BOLD
             isList = true;
-            listType = node.attributes[list[i]] as ListType;
+            listType = node.attributes[attr] as ListType;
           }
           break;
         default:
@@ -255,7 +254,7 @@ const parseHTMLToXMLNode = (
     let resultAction: ParseHTMLToXMLNodeActions =
       ParseHTMLToXMLNodeActions.NONE;
     if (nodeElement.elements !== undefined) {
-      const actionList: Array<ParseHTMLToXMLActionList> = [];
+      const actionList: ParseHTMLToXMLActionList[] = [];
       let childAction: ParseHTMLToXMLNodeActions =
         ParseHTMLToXMLNodeActions.NONE;
       for (let i = 0; i < nodeElement.elements.length; i++) {
@@ -281,7 +280,7 @@ const parseHTMLToXMLNode = (
             elm.node.elements !== undefined &&
             elm.node.elements.length > 0
           ) {
-            let newElements: Array<XMLElement> = [];
+            let newElements: XMLElement[] = [];
             const index = nodeElement.elements.findIndex(
               (item) => item === elm.node,
             );
@@ -306,11 +305,8 @@ const parseHTMLToXMLNode = (
     return resultAction;
   };
 
-  const checkForQuote = (
-    data: string,
-    elements: Array<XMLElement>,
-  ): boolean => {
-    const quoteList: Array<string> = data.split('"');
+  const checkForQuote = (data: string, elements: XMLElement[]): boolean => {
+    const quoteList: string[] = data.split('"');
     if (quoteList.length > 1) {
       for (let j = 0; j < quoteList.length; j++) {
         if (quoteList[j].length > 0) {
@@ -468,7 +464,7 @@ const parseHTMLToXMLNode = (
         node.type = "element";
         const { text } = node;
         if (text !== undefined && typeof text === "string" && text.length > 0) {
-          const elements: Array<XMLElement> = [];
+          const elements: XMLElement[] = [];
           const tabList = text.split("&nbsp;");
           if (tabList.length > 1) {
             for (let i = 0; i < tabList.length; i++) {

@@ -75,10 +75,9 @@ function EditionView(props: Props) {
   const [currentCommandGenerationIndex, setCurrentCommandGenerationIndex] =
     useState<number>(-1);
   const [expandedIndex, setExpandedIndex] = useState<number>(-1);
-  const [commands, setCommands] = useState<Array<CommandItem>>([]);
+  const [commands, setCommands] = useState<CommandItem[]>([]);
   const [loaded, setLoaded] = useState(false);
   const taskFetchPeriod = 3000;
-  // eslint-disable-next-line no-undef
   const taskTimeoutId = useRef<NodeJS.Timeout>();
 
   const onDragEnd = async ({ destination, source }: DropResult) => {
@@ -106,7 +105,7 @@ function EditionView(props: Props) {
       const elm = commands[index];
       if (elm.updated) {
         await updateCommand(studyId, elm.id as string, elm);
-        let tmpCommand: Array<CommandItem> = [];
+        let tmpCommand: CommandItem[] = [];
         tmpCommand = tmpCommand.concat(commands);
         tmpCommand[index].updated = false;
         setCommands(tmpCommand);
@@ -124,7 +123,7 @@ function EditionView(props: Props) {
   };
 
   const onArgsUpdate = (index: number, args: object) => {
-    let tmpCommand: Array<CommandItem> = [];
+    let tmpCommand: CommandItem[] = [];
     tmpCommand = tmpCommand.concat(commands);
     tmpCommand[index].args = { ...args };
     tmpCommand[index].updated = true;
@@ -133,10 +132,9 @@ function EditionView(props: Props) {
 
   const onCommandImport = async (index: number, json: object) => {
     try {
-      let tmpCommand: Array<CommandItem> = [];
+      let tmpCommand: CommandItem[] = [];
       tmpCommand = tmpCommand.concat(commands);
       const elm = tmpCommand[index];
-      // eslint-disable-next-line dot-notation
       elm.args = { ...json };
       elm.updated = false;
       await updateCommand(studyId, elm.id as string, elm);
@@ -184,7 +182,7 @@ function EditionView(props: Props) {
   const onGlobalImport = async (json: object) => {
     setLoaded(false);
     try {
-      const globalJson: Array<JsonCommandItem> = json as Array<JsonCommandItem>;
+      const globalJson: JsonCommandItem[] = json as JsonCommandItem[];
       await replaceCommands(studyId, globalJson);
 
       const dtoItems = await getCommands(studyId);
@@ -229,7 +227,7 @@ function EditionView(props: Props) {
   };
 
   const doUpdateCommandResults = useCallback(
-    (commandResults: Array<CommandResultDTO>) => {
+    (commandResults: CommandResultDTO[]) => {
       const res = updateCommandResults(studyId, commands, commandResults);
       setCurrentCommandGenerationIndex(res.index);
       setCommands(res.commands);
@@ -312,7 +310,7 @@ function EditionView(props: Props) {
     const unsubscribe = sendWsSubscribeMessage(commandGenerationChannel);
 
     const init = async () => {
-      let items: Array<CommandItem> = [];
+      let items: CommandItem[] = [];
       setLoaded(false);
       try {
         const dtoItems = await getCommands(studyId);
