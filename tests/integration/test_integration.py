@@ -1,3 +1,4 @@
+import datetime
 import io
 import os
 from http import HTTPStatus
@@ -2163,7 +2164,7 @@ def test_download_matrices(client: TestClient, admin_access_token: str, study_id
         dataframe = pd.read_excel(io.BytesIO(res.content), index_col=0)
 
         # check time coherence
-        generated_index = dataframe["Time"]
+        generated_index = dataframe.index
         first_date = generated_index[0].to_pydatetime()
         second_date = generated_index[1].to_pydatetime()
         assert first_date.month == second_date.month == 1 if uuid == parent_id else 7
@@ -2172,9 +2173,9 @@ def test_download_matrices(client: TestClient, admin_access_token: str, study_id
         assert second_date.hour == 1
 
         # reformat into a json to help comparison
-        dataframe.drop(columns=["Time"], inplace=True)
         new_cols = [int(col) for col in dataframe.columns]
         dataframe.columns = new_cols
+        dataframe.set_index(range(len(dataframe)))
         actual_matrix = dataframe.to_dict(orient="split")
 
         # asserts that the result is the same as the one we get with the classic get /raw endpoint
@@ -2196,10 +2197,9 @@ def test_download_matrices(client: TestClient, admin_access_token: str, study_id
         assert res.status_code == 200
         content = io.BytesIO(res.content)
         dataframe = pd.read_csv(content, index_col=0 if index else None, header="infer" if header else None, sep="\t")
-        columns = dataframe.columns
-        assert len(columns) == 2 if index else 1
-        print(type(columns[0]))
-        assert isinstance(columns[0], str) if header else isinstance(columns[0], np.int64)
+        first_index = dataframe.index[0]
+        assert first_index == "2018-01-01 00:00:00" if index else first_index == 0
+        assert isinstance(dataframe.columns[0], str) if header else isinstance(dataframe.columns[0], np.int64)
 
     # =============================
     #  ERRORS
