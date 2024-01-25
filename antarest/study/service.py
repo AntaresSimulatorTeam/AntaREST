@@ -4,11 +4,10 @@ import io
 import json
 import logging
 import os
-import typing as t
+import time
 from datetime import datetime, timedelta
 from http import HTTPStatus
 from pathlib import Path, PurePosixPath
-from time import time
 from typing import Any, BinaryIO, Callable, Dict, List, Optional, Sequence, Tuple, Union, cast
 from uuid import uuid4
 
@@ -110,7 +109,7 @@ from antarest.study.storage.study_upgrader import (
     should_study_be_denormalized,
     upgrade_study,
 )
-from antarest.study.storage.utils import assert_permission, get_start_date, is_managed, remove_from_cache, study_matcher
+from antarest.study.storage.utils import assert_permission, get_start_date, is_managed, remove_from_cache
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command.update_comments import UpdateComments
@@ -441,7 +440,7 @@ class StudyService:
         self,
         params: RequestParameters,
         study_filter: StudyFilter,
-        sort_by: StudySortBy = StudySortBy.NO_SORT,
+        sort_by: Optional[StudySortBy] = None,
         pagination: StudyPagination = StudyPagination(),
     ) -> Dict[str, StudyMetadataDTO]:
         """
@@ -1474,7 +1473,7 @@ class StudyService:
             # noinspection SpellCheckingInspection
             url = "study/antares/lastsave"
             last_save_node = file_study.tree.get_node(url.split("/"))
-            cmd = self._create_edit_study_command(tree_node=last_save_node, url=url, data=int(time()))
+            cmd = self._create_edit_study_command(tree_node=last_save_node, url=url, data=int(time.time()))
             cmd.apply(file_study)
 
             self.storage_service.variant_study_service.invalidate_cache(study)

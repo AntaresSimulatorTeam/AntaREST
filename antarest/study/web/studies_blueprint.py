@@ -88,9 +88,10 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         exists: Optional[bool] = Query(None, description="Filter studies based on their existence on disk."),
         workspace: str = Query("", description="Filter studies based on their workspace."),
         folder: str = Query("", description="Filter studies based on their folder."),
-        sort_by: StudySortBy = Query(
-            StudySortBy.NO_SORT,
-            description="Sort studies based on their name (case-insensitive) or date.",
+        # It is advisable to use an optional Query parameter for enumerated types, like booleans.
+        sort_by: Optional[StudySortBy] = Query(
+            None,
+            description="Sort studies based on their name (case-insensitive) or creation date.",
             alias="sortBy",
         ),
         page_nb: NonNegativeInt = Query(
@@ -158,7 +159,7 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         matching_studies = study_service.get_studies_information(
             params=params,
             study_filter=study_filter,
-            sort_by=StudySortBy(sort_by),
+            sort_by=sort_by,
             pagination=StudyPagination(page_nb=page_nb, page_size=page_size),
         )
 

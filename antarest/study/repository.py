@@ -50,7 +50,7 @@ class StudyFilter(BaseModel, frozen=True, extra="forbid"):
         users: users to filter by
         groups: groups to filter by
         tags: tags to filter by
-        study_ids: studies ids to filter by
+        study_ids: study IDs to filter by
         exists: if raw study missing
         workspace: optional workspace of the study
         folder: optional folder prefix of the study
@@ -73,7 +73,6 @@ class StudyFilter(BaseModel, frozen=True, extra="forbid"):
 class StudySortBy(str, enum.Enum):
     """How to sort the results of studies query results"""
 
-    NO_SORT = ""
     NAME_ASC = "+name"
     NAME_DESC = "-name"
     DATE_ASC = "+date"
@@ -182,7 +181,7 @@ class StudyMetadataRepository:
     def get_all(
         self,
         study_filter: StudyFilter = StudyFilter(),
-        sort_by: StudySortBy = StudySortBy.NO_SORT,
+        sort_by: t.Optional[StudySortBy] = None,
         pagination: StudyPagination = StudyPagination(),
     ) -> t.List[Study]:
         """
@@ -243,7 +242,7 @@ class StudyMetadataRepository:
         if study_filter.versions:
             q = q.filter(entity.version.in_(study_filter.versions))
 
-        if sort_by != StudySortBy.NO_SORT:
+        if sort_by:
             if sort_by == StudySortBy.DATE_DESC:
                 q = q.order_by(entity.created_at.desc())
             elif sort_by == StudySortBy.DATE_ASC:
