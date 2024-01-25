@@ -94,7 +94,7 @@ class TestStudiesListing:
         task = wait_task_completion(client, admin_access_token, task_id)
         assert task.status == TaskStatus.COMPLETED, task
 
-        # retrieve a created non managed + to be deleted studies ids
+        # retrieve a created non managed + to be deleted study IDs
         res = client.get(STUDIES_URL, headers={"Authorization": f"Bearer {admin_access_token}"})
         res.raise_for_status()
         folder_map = {v["folder"]: k for k, v in res.json().items()}
