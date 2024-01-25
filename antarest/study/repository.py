@@ -149,6 +149,9 @@ class StudyMetadataRepository:
 
     def get(self, id: str) -> t.Optional[Study]:
         """Get the study by ID or return `None` if not found in database."""
+        # todo: I think we should use a `entity = with_polymorphic(Study, "*")`
+        #  to make sure RawStudy and VariantStudy fields are also fetched.
+        #  see: antarest.study.service.StudyService.delete_study
         # When we fetch a study, we also need to fetch the associated owner and groups
         # to check the permissions of the current user efficiently.
         study: Study = (
@@ -163,6 +166,9 @@ class StudyMetadataRepository:
 
     def one(self, study_id: str) -> Study:
         """Get the study by ID or raise `sqlalchemy.exc.NoResultFound` if not found in database."""
+        # todo: I think we should use a `entity = with_polymorphic(Study, "*")`
+        #  to make sure RawStudy and VariantStudy fields are also fetched.
+        #  see: antarest.study.service.StudyService.delete_study
         # When we fetch a study, we also need to fetch the associated owner and groups
         # to check the permissions of the current user efficiently.
         study: Study = (
