@@ -87,14 +87,10 @@ function LinkForm(props: Props) {
 
   const handleTypeAutoSubmit: AutoSubmitHandler = (value) => {
     const defaultFilterSynthesis = defaultValues?.filterSynthesis
-      ? (defaultValues?.filterSynthesis as Array<string>).filter(
-          (elm) => elm !== "",
-        )
+      ? (defaultValues?.filterSynthesis as string[]).filter((elm) => elm !== "")
       : [];
     const defaultFilterByYear = defaultValues?.filterByYear
-      ? (defaultValues?.filterByYear as Array<string>).filter(
-          (elm) => elm !== "",
-        )
+      ? (defaultValues?.filterByYear as string[]).filter((elm) => elm !== "")
       : [];
 
     const common = {

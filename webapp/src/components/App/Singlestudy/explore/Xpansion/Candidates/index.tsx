@@ -156,7 +156,7 @@ function Candidates() {
           study.id,
           name,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          removeEmptyFields(value as { [key: string]: any }, [
+          removeEmptyFields(value as Record<string, any>, [
             "link-profile",
             "already-installed-link-profile",
             "already-installed-capacity",

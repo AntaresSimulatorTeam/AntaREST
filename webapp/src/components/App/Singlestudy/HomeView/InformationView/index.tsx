@@ -15,7 +15,6 @@ import {
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
 
 interface Props {
-  // eslint-disable-next-line react/no-unused-prop-types
   study: StudyMetadata | undefined;
   tree: VariantTree | undefined;
 }

@@ -28,9 +28,9 @@ export interface BindingConstFields {
   time_step: Exclude<FilteringType, "monthly" | "annual">;
   operator: OperatorType;
   comments?: string;
-  filterByYear: Array<FilteringType>;
-  filterSynthesis: Array<FilteringType>;
-  constraints: Array<ConstraintType>;
+  filterByYear: FilteringType[];
+  filterSynthesis: FilteringType[];
+  constraints: ConstraintType[];
 }
 
 export interface BindingConstFieldsDTO {
@@ -42,7 +42,7 @@ export interface BindingConstFieldsDTO {
   comments?: string;
   filter_year_by_year?: string;
   filter_synthesis?: string;
-  constraints: Array<ConstraintType>;
+  constraints: ConstraintType[];
 }
 
 export type BindingConstPath = Record<keyof BindingConstFields, string>;
@@ -86,7 +86,7 @@ export function dataToId(data: LinkCreationInfoDTO | ClusterElement): string {
 }
 
 export const isOptionExist = (
-  list: Array<LinkClusterItem>,
+  list: LinkClusterItem[],
   value1: string,
   value2: string,
 ): boolean => {
@@ -104,7 +104,7 @@ export const isOptionExist = (
 };
 
 export const isTermExist = (
-  list: Array<ConstraintType>,
+  list: ConstraintType[],
   termId: string,
 ): boolean => {
   return list.findIndex((item) => item.id === termId) >= 0;

@@ -27,8 +27,8 @@ export interface LinkFields extends FieldValues {
   pst: boolean;
   type: string;
   transmissionCapa: string;
-  filterSynthesis: Array<FilteringType>;
-  filterByYear: Array<FilteringType>;
+  filterSynthesis: FilteringType[];
+  filterByYear: FilteringType[];
 }
 
 export type LinkPath = Omit<Record<keyof LinkFields, string>, "name">;

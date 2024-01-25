@@ -1,4 +1,3 @@
-/* eslint-disable camelcase */
 import { useMemo } from "react";
 import { MRT_ColumnDef } from "material-react-table";
 import { Box, Chip } from "@mui/material";
@@ -43,7 +42,7 @@ function Thermal() {
     [study.id, areaId],
   );
 
-  const columns = useMemo<MRT_ColumnDef<ThermalClusterWithCapacity>[]>(
+  const columns = useMemo<Array<MRT_ColumnDef<ThermalClusterWithCapacity>>>(
     () => [
       {
         accessorKey: "name",

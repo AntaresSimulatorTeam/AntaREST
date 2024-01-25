@@ -2,8 +2,7 @@ import { Box, Button, Divider } from "@mui/material";
 import { useRef } from "react";
 import { useTranslation } from "react-i18next";
 import * as R from "ramda";
-import { Pred } from "ramda";
-import HotTable from "@handsontable/react";
+import * as RA from "ramda-adjunct";
 import Handsontable from "handsontable";
 import { StudyMetadata } from "../../../../../../../../common/types";
 import usePromise from "../../../../../../../../hooks/usePromise";
@@ -17,7 +16,10 @@ import {
   setPlaylist,
 } from "./utils";
 import { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
-import { HandsontableProps } from "../../../../../../../common/Handsontable";
+import {
+  HandsontableProps,
+  HotTableClass,
+} from "../../../../../../../common/Handsontable";
 
 interface Props {
   study: StudyMetadata;
@@ -28,15 +30,19 @@ interface Props {
 function ScenarioPlaylistDialog(props: Props) {
   const { study, open, onClose } = props;
   const { t } = useTranslation();
-  const tableRef = useRef({} as HotTable);
+  const tableRef = useRef({} as HotTableClass);
   const res = usePromise(() => getPlaylist(study.id), [study.id]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleUpdateStatus = (fn: Pred) => () => {
-    const api = tableRef.current.hotInstance as Handsontable;
+  const handleUpdateStatus = (fn: RA.Pred) => () => {
+    const api = tableRef.current.hotInstance;
+    if (!api) {
+      return;
+    }
+
     const changes: Array<[number, string, boolean]> = api
       .getDataAtProp("status")
       .map((status, index) => [index, "status", fn(status)]);
@@ -65,7 +71,6 @@ function ScenarioPlaylistDialog(props: Props) {
     prop,
   ) {
     if (prop === "weight") {
-      // eslint-disable-next-line react/no-this-in-sfc
       const status = this.instance.getDataAtRowProp(row, "status");
       return { readOnly: !status };
     }

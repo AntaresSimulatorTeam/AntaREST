@@ -26,7 +26,10 @@ export const makeActionName = R.curry(
     `${packages.name}/${reducerName}/${actionType}`,
 );
 
-type ThunkAPI = { dispatch: AppDispatch; getState: () => AppState };
+interface ThunkAPI {
+  dispatch: AppDispatch;
+  getState: () => AppState;
+}
 
 interface ThunkActionCreatorWithPayload<P, T = void>
   extends ActionCreatorWithPayload<P> {

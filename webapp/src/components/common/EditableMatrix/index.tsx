@@ -1,8 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import debug from "debug";
-import HotTable from "@handsontable/react";
-import { CellChange } from "handsontable/common";
-import { ColumnSettings } from "handsontable/settings";
+import HT from "handsontable";
 import {
   MatrixIndex,
   MatrixEditDTO,
@@ -18,7 +16,7 @@ import {
   createDateFromIndex,
   cellChangesToMatrixEdits,
 } from "./utils";
-import Handsontable from "../Handsontable";
+import Handsontable, { HotTableClass } from "../Handsontable";
 
 const logError = debug("antares:editablematrix:error");
 
@@ -62,17 +60,17 @@ function EditableMatrix(props: PropTypes) {
   } = props;
   const { data = [], columns = [], index = [] } = matrix;
   const prependIndex = index.length > 0 && matrixTime;
-  const [grid, setGrid] = useState<Array<CellType>>([]);
-  const [formattedColumns, setFormattedColumns] = useState<ColumnSettings[]>(
+  const [grid, setGrid] = useState<CellType[]>([]);
+  const [formattedColumns, setFormattedColumns] = useState<HT.ColumnSettings[]>(
     [],
   );
-  const hotTableComponent = useRef<HotTable>(null);
+  const hotTableComponent = useRef<HotTableClass>(null);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSlice = (changes: CellChange[], source: string) => {
+  const handleSlice = (changes: HT.CellChange[], source: string) => {
     if (!onUpdate) {
       return;
     }
@@ -125,13 +123,13 @@ function EditableMatrix(props: PropTypes) {
     ]);
 
     const tmpData = data.map((row, i) => {
-      let tmpRow = row as (string | number)[];
+      let tmpRow = row as Array<string | number>;
       if (prependIndex && matrixIndex) {
         tmpRow = [createDateFromIndex(i, matrixIndex)].concat(row);
       }
       if (computStats) {
         tmpRow = tmpRow.concat(
-          computeStats(computStats, row) as (string | number)[],
+          computeStats(computStats, row) as Array<string | number>,
         );
       }
       return tmpRow;

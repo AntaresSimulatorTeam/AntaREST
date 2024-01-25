@@ -39,7 +39,7 @@ Then perform the following steps:
 
    ```shell
    cd webapp
-   npm install --legacy-peer-deps
+   npm install
    npm run build
    cd ..
    ```

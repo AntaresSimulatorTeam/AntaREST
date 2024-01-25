@@ -10,9 +10,9 @@ import { GroupDTO, UserDTO } from "../../../common/types";
 import { displayVersionName } from "../../../services/utils";
 import SearchFE from "../../common/fieldEditors/SearchFE";
 
-type PropTypes = {
+interface PropTypes {
   onOpenFilterClick: VoidFunction;
-};
+}
 
 function HeaderBottom(props: PropTypes) {
   const { onOpenFilterClick } = props;

@@ -45,10 +45,8 @@ function DatasetCreationDialog(props: PropTypes) {
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { enqueueSnackbar } = useSnackbar();
   const { open, onNewDataUpdate, onClose, data } = props;
-  const [groupList, setGroupList] = useState<Array<GroupDTO>>([]);
-  const [selectedGroupList, setSelectedGroupList] = useState<Array<GroupDTO>>(
-    [],
-  );
+  const [groupList, setGroupList] = useState<GroupDTO[]>([]);
+  const [selectedGroupList, setSelectedGroupList] = useState<GroupDTO[]>([]);
   const [name, setName] = useState<string>("");
   const [isJson, setIsJson] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
@@ -92,7 +90,6 @@ function DatasetCreationDialog(props: PropTypes) {
     }
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const onUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const { target } = e;
     if (target && target.files && target.files.length === 1) {

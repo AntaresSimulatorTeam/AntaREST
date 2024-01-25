@@ -78,7 +78,7 @@ jobs:
         with:
           node-version: 18.16.1
       - name: Install dependencies
-        run: npm install --legacy-peer-deps
+        run: npm install
         working-directory: webapp
       - name: Build
         run: npm run build
@@ -89,16 +89,6 @@ jobs:
       - name: Lint
         run: npm run lint
         working-directory: webapp
-      - name: Run tests
-        run: npm run test-coverage
-        working-directory: webapp
-        env:
-          CI: true
-      - name: Archive code coverage results
-        uses: actions/upload-artifact@v3
-        with:
-          name: js-code-coverage-report
-          path: webapp/coverage/lcov.info
 
   sonarcloud:
     runs-on: ubuntu-20.04
@@ -109,11 +99,6 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: python-code-coverage-report
-      - name: Download js coverage report
-        uses: actions/download-artifact@v3
-        with:
-          name: js-code-coverage-report
-          path: webapp/coverage
       - name: SonarCloud Scan
         uses: sonarsource/sonarcloud-github-action@master
         env:

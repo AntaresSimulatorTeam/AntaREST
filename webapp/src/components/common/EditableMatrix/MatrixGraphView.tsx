@@ -29,7 +29,7 @@ export default function MatrixGraphView(props: PropTypes) {
   const [selectedColumns, setSelectedColumns] = useState<number[]>([]);
   const [monotonic, setMonotonic] = useState<boolean>(false);
 
-  const handleChange = (event: SelectChangeEvent<Array<number>>) => {
+  const handleChange = (event: SelectChangeEvent<number[]>) => {
     setSelectedColumns(event.target.value as number[]);
   };
 
@@ -37,7 +37,7 @@ export default function MatrixGraphView(props: PropTypes) {
     setMonotonic(!monotonic);
   };
 
-  const unitChange = (tabBase: Array<number>) => {
+  const unitChange = (tabBase: number[]) => {
     const stepLength = 100 / tabBase.length;
     return tabBase.map((el, i) => stepLength * (i + 1));
   };
@@ -64,7 +64,7 @@ export default function MatrixGraphView(props: PropTypes) {
             multiple
             value={selectedColumns}
             onChange={(
-              event: SelectChangeEvent<Array<number>>,
+              event: SelectChangeEvent<number[]>,
               child: React.ReactNode,
             ) => handleChange(event)}
             sx={{
@@ -123,7 +123,7 @@ export default function MatrixGraphView(props: PropTypes) {
             <Plot
               data={selectedColumns.map((val) => ({
                 x: monotonic
-                  ? unitChange(index as Array<number>)
+                  ? unitChange(index as number[])
                   : formatDateFromIndex(index),
                 y: monotonic
                   ? data.map((a) => a[val]).sort((b, c) => c - b)

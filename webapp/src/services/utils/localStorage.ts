@@ -24,7 +24,7 @@ interface TypeFromKey {
   [StorageKey.AuthUser]: UserInfo;
   [StorageKey.StudiesFavorites]: StudiesState["favorites"];
   [StorageKey.StudiesSort]: Partial<StudiesSortConf>;
-  [StorageKey.StudiesModelTableModeTemplates]: Omit<TableTemplate, "id">[];
+  [StorageKey.StudiesModelTableModeTemplates]: Array<Omit<TableTemplate, "id">>;
   [StorageKey.UIMenuCollapsed]: UIState["menuCollapsed"];
 }
 
