@@ -37,11 +37,11 @@ logger = logging.getLogger(__name__)
 
 def _split_comma_separated_values(value: str, *, default: t.Sequence[str] = ()) -> t.Sequence[str]:
     """Split a comma-separated list of values into an ordered set of strings."""
-    value_list = value.split(",") if value else default
+    values = value.split(",") if value else default
     # drop whitespace around values
-    value_list = map(str.strip, value_list)
+    values = [v.strip() for v in values]
     # remove duplicates and preserve order (to have a deterministic result for unit tests).
-    return list(collections.OrderedDict.fromkeys(value_list))
+    return list(collections.OrderedDict.fromkeys(values))
 
 
 def create_study_routes(study_service: StudyService, ftm: FileTransferManager, config: Config) -> APIRouter:
