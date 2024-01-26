@@ -6,7 +6,17 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 from pydantic import BaseModel
-from sqlalchemy import Boolean, Column, DateTime, Enum, ForeignKey, Integer, String, Table  # type: ignore
+from sqlalchemy import (  # type: ignore
+    Boolean,
+    Column,
+    DateTime,
+    Enum,
+    ForeignKey,
+    Integer,
+    PrimaryKeyConstraint,
+    String,
+    Table,
+)
 from sqlalchemy.orm import relationship  # type: ignore
 
 from antarest.core.exceptions import ShouldNotHappenException
@@ -28,26 +38,28 @@ groups_metadata = Table(
 )
 
 
-class StudyTag(Base):
+class StudyTag(Base):  # type:ignore
     """
     A table to manage the many-to-many relationship between `Study` and `Tag`
     """
 
     __tablename__ = "study_tag"
 
-    study_id = Column(String(36), ForeignKey("study.id"), index=True)
-    tag = Column(String, ForeignKey("tag.label"), index=True)
+    study_id = Column(String(36), ForeignKey("study.id"), index=True, nullable=False)
+    tag = Column(String, ForeignKey("tag.label"), index=True, nullable=False)
+
+    __table_args__ = (PrimaryKeyConstraint("study_id", "tag"),)
 
     def __str__(self) -> str:
-        return f"[Study-Tag-Pair] study_id={self.study_id}, tag={self.tag},"
+        return f"[Study-Tag-Pair] study_id={self.study_id}, tag={self.tag}"
 
-    def __eq__(self, other: "StudyTag") -> bool:
+    def __eq__(self, other: t.Any) -> bool:
         if not isinstance(other, StudyTag):
             return False
         return bool(other.study_id == self.study_id and other.tag == self.tag)
 
 
-class Tag(Base):
+class Tag(Base):  # type:ignore
     """
     A table to store all tags
     """
@@ -144,7 +156,7 @@ class Study(Base):  # type: ignore
     public_mode = Column(Enum(PublicMode), default=PublicMode.NONE)
     owner_id = Column(Integer, ForeignKey(Identity.id), nullable=True, index=True)
     archived = Column(Boolean(), default=False, index=True)
-    tags = relationship(Tag, secondary=lambda: StudyTag, cascade="all, delete")
+    tags = relationship(Tag, secondary=lambda: StudyTag.__table__, cascade="")
     owner = relationship(Identity, uselist=False)
     groups = relationship(Group, secondary=lambda: groups_metadata, cascade="")
     additional_data = relationship(
