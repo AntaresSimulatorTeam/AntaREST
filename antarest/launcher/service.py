@@ -38,6 +38,7 @@ from antarest.launcher.model import (
     XpansionParametersDTO,
 )
 from antarest.launcher.repository import JobResultRepository
+from antarest.study.repository import StudyFilter
 from antarest.study.service import StudyService
 from antarest.study.storage.utils import assert_permission, extract_output_name, find_single_output_path
 
@@ -305,8 +306,14 @@ class LauncherService:
         orphan_visibility_threshold = datetime.utcnow() - timedelta(days=ORPHAN_JOBS_VISIBILITY_THRESHOLD)
         allowed_job_results = []
 
-        studies_ids = [job_result.study_id for job_result in job_results]
-        studies = {study.id: study for study in self.study_service.repository.get_all(studies_ids=studies_ids)}
+        study_ids = [job_result.study_id for job_result in job_results]
+        if study_ids:
+            studies = {
+                study.id: study
+                for study in self.study_service.repository.get_all(study_filter=StudyFilter(study_ids=study_ids))
+            }
+        else:
+            studies = {}
 
         for job_result in job_results:
             if job_result.study_id in studies:
