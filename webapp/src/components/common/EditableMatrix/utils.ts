@@ -85,6 +85,7 @@ export const createDateFromIndex = (
 export const cellChangesToMatrixEdits = (
   cellChanges: HT.CellChange[],
   matrixTime: boolean,
+  isPercentEnabled: boolean,
 ): MatrixEditDTO[] =>
   cellChanges.map(([row, column, , value]) => {
     const rowIndex = parseFloat(row.toString());
@@ -92,7 +93,10 @@ export const cellChangesToMatrixEdits = (
 
     return {
       coordinates: [[rowIndex, colIndex]],
-      operation: { operation: Operator.EQ, value: parseFloat(value) },
+      operation: {
+        operation: Operator.EQ,
+        value: isPercentEnabled ? parseFloat(value) / 100 : parseFloat(value),
+      },
     };
   });
 

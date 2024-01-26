@@ -182,7 +182,6 @@ function MatrixAssignDialog(props: Props) {
                             matrix={matrix}
                             readOnly
                             matrixTime={false}
-                            toggleView
                           />
                         </>
                       )

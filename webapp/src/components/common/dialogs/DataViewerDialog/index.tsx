@@ -1,17 +1,8 @@
-import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  Box,
-  IconButton,
-  Tooltip,
-  ButtonGroup,
-  Typography,
-} from "@mui/material";
+import { Box, IconButton, Tooltip, Typography } from "@mui/material";
 import { useSnackbar } from "notistack";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import TableViewIcon from "@mui/icons-material/TableView";
-import BarChartIcon from "@mui/icons-material/BarChart";
-import { Code, StyledButton } from "./styles";
+import { Code } from "./styles";
 import { MatrixType } from "../../../../common/types";
 import usePromiseWithSnackbarError from "../../../../hooks/usePromiseWithSnackbarError";
 import OkDialog from "../OkDialog";
@@ -43,7 +34,6 @@ function DataViewerDialog(props: Props) {
     loading,
     readOnly = true,
   } = props;
-  const [toggleView, setToggleView] = useState(true);
 
   const { data: matrixIndex } = usePromiseWithSnackbarError(
     async () => {
@@ -85,7 +75,6 @@ function DataViewerDialog(props: Props) {
           matrixTime={!!matrixIndex}
           matrixIndex={matrixIndex}
           readOnly={!!readOnly}
-          toggleView={toggleView}
         />
       </Box>
     ) : (
@@ -118,15 +107,6 @@ function DataViewerDialog(props: Props) {
                 </Tooltip>
               </IconButton>
             )}
-            <ButtonGroup sx={{ ml: 1 }} variant="contained">
-              <StyledButton onClick={() => setToggleView((prev) => !prev)}>
-                {toggleView ? (
-                  <BarChartIcon sx={{ color: "text.main" }} />
-                ) : (
-                  <TableViewIcon sx={{ color: "text.main" }} />
-                )}
-              </StyledButton>
-            </ButtonGroup>
           </Box>
         ) : (
           filename

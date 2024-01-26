@@ -43,20 +43,17 @@ import Constraints from "./Singlestudy/explore/Xpansion/Constraints";
 import Weights from "./Singlestudy/explore/Xpansion/Weights";
 import TableModeList from "./Singlestudy/explore/TableModeList";
 import ManagementOptions from "./Singlestudy/explore/Modelization/Areas/Hydro/ManagementOptions";
-import {
-  HYDRO_ROUTES,
-  HydroRoute,
-} from "./Singlestudy/explore/Modelization/Areas/Hydro/utils";
+import { HYDRO_ROUTES } from "./Singlestudy/explore/Modelization/Areas/Hydro/utils";
 import HydroMatrix from "./Singlestudy/explore/Modelization/Areas/Hydro/HydroMatrix";
 import Layers from "./Singlestudy/explore/Modelization/Map/MapConfig/Layers";
 import Districts from "./Singlestudy/explore/Modelization/Map/MapConfig/Districts";
-import InflowStructure from "./Singlestudy/explore/Modelization/Areas/Hydro/InflowStructure";
 import Allocation from "./Singlestudy/explore/Modelization/Areas/Hydro/Allocation";
 import Correlation from "./Singlestudy/explore/Modelization/Areas/Hydro/Correlation";
 import Storages from "./Singlestudy/explore/Modelization/Areas/Storages";
 import StorageForm from "./Singlestudy/explore/Modelization/Areas/Storages/Form";
 import ThermalForm from "./Singlestudy/explore/Modelization/Areas/Thermal/Form";
 import RenewablesForm from "./Singlestudy/explore/Modelization/Areas/Renewables/Form";
+import SplitHydroMatrix from "./Singlestudy/explore/Modelization/Areas/Hydro/SplitHydroMatrix";
 
 function App() {
   return (
@@ -104,10 +101,6 @@ function App() {
                                 element={<ManagementOptions />}
                               />
                               <Route
-                                path="inflowstructure"
-                                element={<InflowStructure />}
-                              />
-                              <Route
                                 path="allocation"
                                 element={<Allocation />}
                               />
@@ -115,13 +108,32 @@ function App() {
                                 path="correlation"
                                 element={<Correlation />}
                               />
-                              {HYDRO_ROUTES.map((route: HydroRoute) => (
-                                <Route
-                                  key={route.path}
-                                  path={route.path}
-                                  element={<HydroMatrix type={route.type} />}
-                                />
-                              ))}
+                              {HYDRO_ROUTES.map(
+                                ({ path, type, isSplitView, splitConfig }) => {
+                                  return isSplitView && splitConfig ? (
+                                    <Route
+                                      key={path}
+                                      path={path}
+                                      element={
+                                        <SplitHydroMatrix
+                                          types={[
+                                            type,
+                                            splitConfig.partnerType,
+                                          ]}
+                                          direction={splitConfig.direction}
+                                          sizes={splitConfig.sizes}
+                                        />
+                                      }
+                                    />
+                                  ) : (
+                                    <Route
+                                      key={path}
+                                      path={path}
+                                      element={<HydroMatrix type={type} />}
+                                    />
+                                  );
+                                },
+                              )}
                             </Route>
                             <Route path="wind" element={<Wind />} />
                             <Route path="solar" element={<Solar />} />
