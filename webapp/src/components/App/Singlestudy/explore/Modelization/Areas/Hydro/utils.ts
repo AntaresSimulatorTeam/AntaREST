@@ -46,7 +46,7 @@ export interface HydroRoute {
   splitConfig?: {
     direction: SplitViewProps["direction"];
     partnerType: HydroMatrixType;
-    sizes: SplitViewProps["sizes"];
+    sizes: [number, number];
   };
 }
 

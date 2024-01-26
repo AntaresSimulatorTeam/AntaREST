@@ -3,17 +3,16 @@ import HydroMatrix from "./HydroMatrix";
 import { HydroMatrixType } from "./utils";
 
 interface Props {
-  type: HydroMatrixType;
+  types: [HydroMatrixType, HydroMatrixType];
   direction?: SplitViewProps["direction"];
-  partnerType: HydroMatrixType;
-  splitSizes: SplitViewProps["sizes"];
+  sizes: [number, number];
 }
 
-function SplitHydroMatrix({ type, direction, partnerType, splitSizes }: Props) {
+function SplitHydroMatrix({ types, direction, sizes }: Props) {
   return (
-    <SplitView direction={direction} sizes={splitSizes}>
-      <HydroMatrix type={type} />
-      <HydroMatrix type={partnerType} />
+    <SplitView direction={direction} sizes={sizes}>
+      <HydroMatrix type={types[0]} />
+      <HydroMatrix type={types[1]} />
     </SplitView>
   );
 }

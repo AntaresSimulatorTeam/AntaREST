@@ -43,10 +43,7 @@ import Constraints from "./Singlestudy/explore/Xpansion/Constraints";
 import Weights from "./Singlestudy/explore/Xpansion/Weights";
 import TableModeList from "./Singlestudy/explore/TableModeList";
 import ManagementOptions from "./Singlestudy/explore/Modelization/Areas/Hydro/ManagementOptions";
-import {
-  HYDRO_ROUTES,
-  HydroRoute,
-} from "./Singlestudy/explore/Modelization/Areas/Hydro/utils";
+import { HYDRO_ROUTES } from "./Singlestudy/explore/Modelization/Areas/Hydro/utils";
 import HydroMatrix from "./Singlestudy/explore/Modelization/Areas/Hydro/HydroMatrix";
 import Layers from "./Singlestudy/explore/Modelization/Map/MapConfig/Layers";
 import Districts from "./Singlestudy/explore/Modelization/Map/MapConfig/Districts";
@@ -112,22 +109,19 @@ function App() {
                                 element={<Correlation />}
                               />
                               {HYDRO_ROUTES.map(
-                                ({
-                                  path,
-                                  type,
-                                  isSplitView,
-                                  splitConfig,
-                                }: HydroRoute) => {
+                                ({ path, type, isSplitView, splitConfig }) => {
                                   return isSplitView && splitConfig ? (
                                     <Route
                                       key={path}
                                       path={path}
                                       element={
                                         <SplitHydroMatrix
-                                          type={type}
+                                          types={[
+                                            type,
+                                            splitConfig.partnerType,
+                                          ]}
                                           direction={splitConfig.direction}
-                                          partnerType={splitConfig.partnerType}
-                                          splitSizes={splitConfig.sizes}
+                                          sizes={splitConfig.sizes}
                                         />
                                       }
                                     />
