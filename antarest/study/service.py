@@ -176,8 +176,8 @@ def _handle_specific_matrices(
 
 def _handle_links_columns(study_version: int, matrix_path: str, json_matrix: t.Dict[str, t.Any]) -> t.List[str]:
     path_parts = Path(matrix_path).parts
-    area_1 = path_parts[3]
-    area_2 = path_parts[4]
+    area_1 = path_parts[2]
+    area_2 = path_parts[3]
     result: t.List[str] = (
         json_matrix["cols_with_version"]["before_820"]
         if study_version < 820
@@ -2448,8 +2448,7 @@ class StudyService:
                 return pd.DataFrame(data=hydro_matrix.data, columns=hydro_matrix.columns, index=hydro_matrix.index)
 
         json_matrix = self.get(study_id, path, depth=3, formatted=True, params=parameters)
-        expected_keys = ["data", "index", "columns"]
-        for key in expected_keys:
+        for key in ["data", "index", "columns"]:
             if key not in json_matrix:
                 raise IncorrectPathError(f"The path filled does not correspond to a matrix : {path}")
         if len(json_matrix["data"]) == 0:

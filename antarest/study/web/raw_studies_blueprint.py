@@ -270,17 +270,11 @@ def create_raw_study_routes(
     ) -> StreamingResponse:
         # todo: J'ai mis 10 minutes d'expiration, à voir
         # todo: Il faudrait supporter le format txt s'il n'y a pas de header. Possible avec GET raw et formatted à False. A creuser.
-        # todo: Question Alexander : Quel séparateur pour csv et xlsx ?
         # todo: ajouter dans les exemples le truc pour allocation et correlation pour que les users comprennent
-        # todo: envoyer un xlsx à Alexander pour voir s'il s'ouvre bien dans excel sous Windows
         # todo: tester la perf du StreamingResponse VS FileResponse
-        # todo: Peut-être wrapper autour d'une HTTP Exception en cas de download fail (try catch dans le code)
         # todo: on ne gère pas encore les stats
-        # todo: on ne gère pas non plus les outputs
         # todo: peut-être changer la structure de la matrice pour ne pas avoir à faire du type ignore
-        # todo: changer le check if index or header pour aller plus vite si nécessaire.
         # todo: faire tout le travail pour avoir les headers dans un endpoint dédié. Ce endpoint pourrait prendre en entrée une langue qui serait envoyé par le front.
-        # pour allocation et correlation nécessite de build toute la matrice mais bon.
 
         parameters = RequestParameters(user=current_user)
         df_matrix = study_service.get_matrix_with_index_and_header(
@@ -302,7 +296,10 @@ def create_raw_study_routes(
             study_service.file_transfer_manager.set_ready(export_id, create_task=False)
         except Exception as e:
             study_service.file_transfer_manager.fail(export_id, str(e))
-            raise e
+            raise HTTPException(
+                status_code=http.HTTPStatus.UNPROCESSABLE_ENTITY,
+                detail=f"Could not download matrix at path {path}: {str(e)}",
+            ) from None
 
         def iter_file() -> t.Iterator[bytes]:
             with export_path.open(mode="rb") as file:
