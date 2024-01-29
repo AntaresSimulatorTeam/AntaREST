@@ -30,7 +30,7 @@ class TestDownloadMatrices:
         assert res.status_code == 200
         task_id = res.json()
         assert task_id
-        task = wait_task_completion(client, admin_access_token, task_id)
+        task = wait_task_completion(client, admin_access_token, task_id, timeout=20)
         assert task.status == TaskStatus.COMPLETED
 
         # Create Variant
