@@ -25,6 +25,7 @@ import DetailsList from "./DetailsList";
 import { getAreas, getLinks } from "../../../../../../redux/selectors";
 import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
+import useStudySynthesis from "../../../../../../redux/hooks/useStudySynthesis";
 
 const Root = styled(Box)(() => ({
   flex: "0 0 40%",
@@ -81,6 +82,7 @@ function Notes({ study }: Props) {
   );
   const [editionMode, setEditionMode] = useState<boolean | "loading">(false);
   const [content, setContent] = useState("");
+  const { status: synthesisStatus } = useStudySynthesis({ studyId: study.id });
   const areas = useAppSelector((state) => getAreas(state, study.id));
   const links = useAppSelector((state) => getLinks(state, study.id));
 
@@ -193,12 +195,22 @@ function Notes({ study }: Props) {
               iconColor: getColorForSize(diskUsage || 0),
             },
             {
-              content: areas.length,
+              content:
+                synthesisStatus === "resolved" ? (
+                  areas.length
+                ) : (
+                  <Skeleton width={100} />
+                ),
               label: t("study.areas"),
               icon: HubIcon,
             },
             {
-              content: links.length,
+              content:
+                synthesisStatus === "resolved" ? (
+                  links.length
+                ) : (
+                  <Skeleton width={100} />
+                ),
               label: t("study.links"),
               icon: LinearScaleIcon,
             },
