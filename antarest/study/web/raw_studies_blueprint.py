@@ -268,6 +268,7 @@ def create_raw_study_routes(
         index: bool = True,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> StreamingResponse:
+        # todo: Que faire si la matrice est vide ????? Je peux juste la renvoyer en détente mais bon
         # todo: Il faudrait supporter le format txt s'il n'y a pas de header. Possible avec GET raw et formatted à False. A creuser.
         # todo: Question Alexander : Quel séparateur pour csv et xlsx ?
         # todo: ajouter dans les exemples le truc pour allocation et correlation pour que les users comprennent
@@ -278,7 +279,6 @@ def create_raw_study_routes(
         # todo: on ne gère pas non plus les outputs
         # todo: peut-être changer la structure de la matrice pour ne pas avoir à faire du type ignore
         # todo: changer le check if index or header pour aller plus vite si nécessaire.
-        # todo: comment gérer la langue ?
         # todo: faire tout le travail pour avoir les headers dans un endpoint dédié. Ce endpoint pourrait prendre en entrée une langue qui serait envoyé par le front.
         # pour allocation et correlation nécessite de build toute la matrice mais bon.
 

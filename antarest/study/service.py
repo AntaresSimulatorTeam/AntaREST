@@ -2410,6 +2410,8 @@ class StudyService:
         for key in expected_keys:
             if key not in json_matrix:
                 raise IncorrectPathError(f"The path filled does not correspond to a matrix : {path}")
+        if len(json_matrix["data"]) == 0:
+            return pd.DataFrame()
         df_matrix = pd.DataFrame(data=json_matrix["data"], columns=json_matrix["columns"], index=json_matrix["index"])
         for specific_matrix in SPECIFIC_MATRICES:
             if re.compile(specific_matrix).match(path):

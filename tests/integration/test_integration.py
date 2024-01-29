@@ -1,4 +1,3 @@
-import datetime
 import io
 import os
 from http import HTTPStatus
@@ -2148,7 +2147,47 @@ def test_download_matrices(client: TestClient, admin_access_token: str, study_id
     assert res.status_code == 200
 
     # =============================
-    #  TESTS MATRIX CONSISTENCY FOR RAW AND VARIANT STUDY
+    # TEST SPECIFIC MATRICES
+    # =============================
+
+    # todo: test bindingconstraints version 87 ou avant, links before 82 and after 82
+
+    # allocation and correlation matrices
+    for path in ["input/hydro/allocation", "input/hydro/correlation"]:
+        res = client.get(f"/v1/studies/{parent_id}/raw/download?path={path}&format=csv", headers=admin_headers)
+        assert res.status_code == 200
+        content = io.BytesIO(res.content)
+        dataframe = pd.read_csv(content, index_col=0, sep="\t")
+        assert list(dataframe.index) == list(dataframe.columns) == ["de", "es", "fr", "it"]
+        for i in range((len(dataframe))):
+            assert dataframe.iloc[i, i] == 1.0
+
+    # test for empty matrix
+    res = client.get(
+        f"/v1/studies/{parent_id}/raw/download?path=input/hydro/common/capacity/waterValues_de&format=csv",
+        headers=admin_headers,
+    )
+    assert res.status_code == 200
+    content = io.BytesIO(res.content)
+    dataframe = pd.read_csv(content, index_col=0, sep="\t")
+    assert dataframe.empty
+
+    # modulation matrix
+    res = client.get(
+        f"/v1/studies/{parent_id}/raw/download?path=input/thermal/prepro/de/01_solar/modulation&format=csv",
+        headers=admin_headers,
+    )
+    assert res.status_code == 200
+    content = io.BytesIO(res.content)
+    dataframe = pd.read_csv(content, index_col=0, sep="\t")
+    assert dataframe.index[0] == "2018-01-01 00:00:00"
+    dataframe.index = range(len(dataframe))
+    liste_transposee = list(zip(*[8760 * [1.0], 8760 * [1.0], 8760 * [1.0], 8760 * [0.0]]))
+    expected_df = pd.DataFrame(columns=["0", "1", "2", "3"], index=range(8760), data=liste_transposee)
+    assert dataframe.equals(expected_df)
+
+    # =============================
+    #  TESTS NOMINAL CASE ON RAW AND VARIANT STUDY
     # =============================
 
     raw_matrix_path = r"input/load/series/load_de"
