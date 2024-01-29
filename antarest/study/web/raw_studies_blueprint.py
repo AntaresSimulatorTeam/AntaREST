@@ -283,7 +283,9 @@ def create_raw_study_routes(
         # pour allocation et correlation nécessite de build toute la matrice mais bon.
 
         parameters = RequestParameters(user=current_user)
-        df_matrix = study_service.get_matrix_with_index_and_header(uuid, path, parameters)
+        df_matrix = study_service.get_matrix_with_index_and_header(
+            study_id=uuid, path=path, index=index, header=header, parameters=parameters
+        )
 
         export_file_download = study_service.file_transfer_manager.request_download(
             f"{pathlib.Path(path).stem}.{format.value}",

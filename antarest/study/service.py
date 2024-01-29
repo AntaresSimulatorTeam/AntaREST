@@ -151,6 +151,46 @@ def get_disk_usage(path: t.Union[str, Path]) -> int:
     return total_size
 
 
+def _handle_specific_matrices(
+    study: Study, df: pd.DataFrame, specific_matrix_name: str, matrix_path: str, *, index: bool, header: bool
+) -> pd.DataFrame:
+    json_matrix = SPECIFIC_MATRICES[specific_matrix_name]
+    if header:
+        if json_matrix["alias"] == "bindingconstraints":
+            study_version = int(study.version)
+            if study_version < 870:
+                cols: t.List[str] = json_matrix["cols_with_version"]["before_870"]  # type: ignore
+            else:
+                cols: t.List[str] = json_matrix["cols_with_version"]["after_870"]  # type: ignore
+        elif json_matrix["alias"] == "links":
+            cols = _handle_links_columns(int(study.version), matrix_path, json_matrix)
+        else:
+            cols: t.List[str] = json_matrix["cols"]  # type: ignore
+        if cols:
+            df.columns = pd.Index(cols)
+    rows: t.List[str] = json_matrix["rows"]  # type: ignore
+    if index and rows:
+        df.index = rows  # type: ignore
+    return df
+
+
+def _handle_links_columns(study_version: int, matrix_path: str, json_matrix: t.Dict[str, t.Any]) -> t.List[str]:
+    path_parts = Path(matrix_path).parts
+    area_1 = path_parts[3]
+    area_2 = path_parts[4]
+    result: t.List[str] = (
+        json_matrix["cols_with_version"]["before_820"]
+        if study_version < 820
+        else json_matrix["cols_with_version"]["after_820"]
+    )
+    for k, col in enumerate(result):
+        if col == "Hurdle costs direct":
+            result[k] = f"{col} ({area_1}->{area_2})"
+        elif col == "Hurdle costs indirect":
+            result[k] = f"{col} ({area_2}->{area_1})"
+    return result
+
+
 class StudyUpgraderTask:
     """
     Task to perform a study upgrade.
@@ -2390,7 +2430,9 @@ class StudyService:
         # If the study is a variant, it's possible that it only exists in DB and not on disk. If so, we return 0.
         return get_disk_usage(study_path) if study_path.exists() else 0
 
-    def get_matrix_with_index_and_header(self, study_id: str, path: str, parameters: RequestParameters) -> pd.DataFrame:
+    def get_matrix_with_index_and_header(
+        self, *, study_id: str, path: str, index: bool, header: bool, parameters: RequestParameters
+    ) -> pd.DataFrame:
         matrix_path = Path(path)
         study = self.get_study(study_id)
         for aggregate in ["allocation", "correlation"]:
@@ -2413,48 +2455,15 @@ class StudyService:
         if len(json_matrix["data"]) == 0:
             return pd.DataFrame()
         df_matrix = pd.DataFrame(data=json_matrix["data"], columns=json_matrix["columns"], index=json_matrix["index"])
+
+        if index:
+            matrix_index = self.get_input_matrix_startdate(study_id, path, parameters)
+            time_column = pd.date_range(
+                start=matrix_index.start_date, periods=len(df_matrix), freq=matrix_index.level.value[0]
+            )
+            df_matrix.index = time_column
+
         for specific_matrix in SPECIFIC_MATRICES:
             if re.compile(specific_matrix).match(path):
-                json_matrix = SPECIFIC_MATRICES[specific_matrix]
-                if json_matrix["alias"] == "bindingconstraints":
-                    study_version = int(study.version)
-                    if study_version < 870:
-                        cols: t.List[str] = json_matrix["cols_with_version"]["before_870"]  # type: ignore
-                    else:
-                        cols: t.List[str] = json_matrix["cols_with_version"]["after_870"]  # type: ignore
-                elif json_matrix["alias"] == "links":
-                    study_version = int(study.version)
-                    path_parts = matrix_path.parts
-                    area_1 = path_parts[3]
-                    area_2 = path_parts[4]
-                    if study_version < 820:
-                        cols: t.List[str] = json_matrix["cols_with_version"]["before_820"]  # type: ignore
-                    else:
-                        cols: t.List[str] = json_matrix["cols_with_version"]["after_820"]  # type: ignore
-                    for k, col in enumerate(cols):
-                        if col == "Hurdle costs direct":
-                            cols[k] = f"{col} ({area_1}->{area_2})"
-                        elif col == "Hurdle costs indirect":
-                            cols[k] = f"{col} ({area_2}->{area_1})"
-                else:
-                    cols: t.List[str] = json_matrix["cols"]  # type: ignore
-                rows: t.List[str] = json_matrix["rows"]  # type: ignore
-                if cols:
-                    df_matrix.columns = pd.Index(cols)
-                if rows:
-                    df_matrix.index = rows  # type: ignore
-                else:
-                    matrix_index = self.get_input_matrix_startdate(study_id, path, parameters)
-                    time_column = pd.date_range(
-                        start=matrix_index.start_date,
-                        periods=len(df_matrix),
-                        freq=matrix_index.level.value[0],
-                    )
-                    df_matrix.index = time_column
-                return df_matrix
-        matrix_index = self.get_input_matrix_startdate(study_id, path, parameters)
-        time_column = pd.date_range(
-            start=matrix_index.start_date, periods=len(df_matrix), freq=matrix_index.level.value[0]
-        )
-        df_matrix.index = time_column
+                return _handle_specific_matrices(study, df_matrix, specific_matrix, path, index=index, header=header)
         return df_matrix
