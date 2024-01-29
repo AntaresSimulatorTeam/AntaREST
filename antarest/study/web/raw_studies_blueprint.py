@@ -254,7 +254,7 @@ def create_raw_study_routes(
         "/studies/{uuid}/raw/download",
         summary="Download a matrix in a given format",
         tags=[APITag.study_raw_data],
-        response_class=StreamingResponse,
+        response_class=FileResponse,
     )
     def get_matrix(
         uuid: str,
