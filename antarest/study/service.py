@@ -2442,7 +2442,7 @@ class StudyService:
                 if cols:
                     df_matrix.columns = pd.Index(cols)
                 if rows:
-                    df_matrix.index = rows
+                    df_matrix.index = rows  # type: ignore
                 else:
                     matrix_index = self.get_input_matrix_startdate(study_id, path, parameters)
                     time_column = pd.date_range(
