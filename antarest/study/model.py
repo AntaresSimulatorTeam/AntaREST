@@ -1,5 +1,7 @@
 import dataclasses
 import enum
+import random
+import string
 import typing as t
 import uuid
 from datetime import datetime, timedelta
@@ -45,18 +47,13 @@ class StudyTag(Base):  # type:ignore
 
     __tablename__ = "study_tag"
 
-    study_id = Column(String(36), ForeignKey("study.id"), index=True, nullable=False)
-    tag = Column(String, ForeignKey("tag.label"), index=True, nullable=False)
+    study_id: str = Column(String(36), ForeignKey("study.id", ondelete="CASCADE"), index=True, nullable=False)
+    tag: str = Column(String, ForeignKey("tag.label", ondelete="CASCADE"), index=True, nullable=False)
 
     __table_args__ = (PrimaryKeyConstraint("study_id", "tag"),)
 
     def __str__(self) -> str:
         return f"[Study-Tag-Pair] study_id={self.study_id}, tag={self.tag}"
-
-    def __eq__(self, other: t.Any) -> bool:
-        if not isinstance(other, StudyTag):
-            return False
-        return bool(other.study_id == self.study_id and other.tag == self.tag)
 
 
 class Tag(Base):  # type:ignore
@@ -66,15 +63,18 @@ class Tag(Base):  # type:ignore
 
     __tablename__ = "tag"
 
-    label = Column(String, primary_key=True, index=True)
+    label: str = Column(String, primary_key=True, index=True)
+    color: str = Column(String(7), index=True)
 
     def __str__(self) -> str:
-        return f"[Tag]" f" label={self.label},"
+        return f"[Tag] label={self.label}, css-color-code={self.color}"
 
-    def __eq__(self, other: t.Any) -> bool:
-        if not isinstance(other, Tag):
-            return False
-        return bool(other.label == self.label)
+    @staticmethod
+    def generate_random_color_code() -> str:
+        """
+        Generate a random CSS color code.
+        """
+        return "#" + "".join(random.choice(string.hexdigits) for _ in range(6))
 
 
 STUDY_REFERENCE_TEMPLATES: t.Dict[str, str] = {
@@ -156,7 +156,7 @@ class Study(Base):  # type: ignore
     public_mode = Column(Enum(PublicMode), default=PublicMode.NONE)
     owner_id = Column(Integer, ForeignKey(Identity.id), nullable=True, index=True)
     archived = Column(Boolean(), default=False, index=True)
-    tags = relationship(Tag, secondary=lambda: StudyTag.__table__, cascade="")
+    tags = relationship(Tag, secondary=lambda: StudyTag.__table__, backref="studies", cascade="")
     owner = relationship(Identity, uselist=False)
     groups = relationship(Group, secondary=lambda: groups_metadata, cascade="")
     additional_data = relationship(
