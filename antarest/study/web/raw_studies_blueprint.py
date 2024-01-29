@@ -3,7 +3,6 @@ import io
 import json
 import logging
 import pathlib
-import re
 import typing as t
 from enum import Enum
 
@@ -13,7 +12,6 @@ from fastapi.params import Param, Query
 from starlette.responses import FileResponse, JSONResponse, PlainTextResponse, Response, StreamingResponse
 
 from antarest.core.config import Config
-from antarest.core.exceptions import IncorrectPathError
 from antarest.core.jwt import JWTUser
 from antarest.core.model import SUB_JSON
 from antarest.core.requests import RequestParameters
@@ -21,8 +19,6 @@ from antarest.core.swagger import get_path_examples
 from antarest.core.utils.utils import sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
-from antarest.study.business.area_management import AreaInfoDTO, AreaType
-from antarest.study.business.correlation_management import CorrelationManager
 from antarest.study.service import StudyService
 
 logger = logging.getLogger(__name__)
@@ -267,11 +263,10 @@ def create_raw_study_routes(
         header: bool = True,
         index: bool = True,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> StreamingResponse:
+    ) -> FileResponse:
         # todo: J'ai mis 10 minutes d'expiration, à voir
         # todo: Il faudrait supporter le format txt s'il n'y a pas de header. Possible avec GET raw et formatted à False. A creuser.
         # todo: ajouter dans les exemples le truc pour allocation et correlation pour que les users comprennent
-        # todo: tester la perf du StreamingResponse VS FileResponse
         # todo: on ne gère pas encore les stats
         # todo: peut-être changer la structure de la matrice pour ne pas avoir à faire du type ignore
         # todo: faire tout le travail pour avoir les headers dans un endpoint dédié. Ce endpoint pourrait prendre en entrée une langue qui serait envoyé par le front.
@@ -301,12 +296,8 @@ def create_raw_study_routes(
                 detail=f"Could not download matrix at path {path}: {str(e)}",
             ) from None
 
-        def iter_file() -> t.Iterator[bytes]:
-            with export_path.open(mode="rb") as file:
-                yield from file
-
-        return StreamingResponse(
-            iter_file(),
+        return FileResponse(
+            export_path,
             headers={"Content-Disposition": f'attachment; filename="{export_file_download.filename}"'},
             media_type="application/octet-stream",
         )
