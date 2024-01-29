@@ -44,6 +44,7 @@ class FileTransferManager:
         name: Optional[str] = None,
         owner: Optional[JWTUser] = None,
         create_task: bool = True,
+        expiration_time_in_minutes: Optional[int] = None,
     ) -> FileDownload:
         fh, path = tempfile.mkstemp(dir=self.tmp_dir, suffix=filename)
         os.close(fh)
@@ -56,7 +57,9 @@ class FileTransferManager:
             path=str(tmpfile),
             owner=owner.impersonator if owner is not None else None,
             expiration_date=datetime.datetime.utcnow()
-            + datetime.timedelta(minutes=self.download_default_expiration_timeout_minutes),
+            + datetime.timedelta(
+                minutes=expiration_time_in_minutes or self.download_default_expiration_timeout_minutes
+            ),
         )
         self.repository.add(download)
         if create_task:

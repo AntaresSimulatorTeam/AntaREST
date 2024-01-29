@@ -268,7 +268,7 @@ def create_raw_study_routes(
         index: bool = True,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> StreamingResponse:
-        # todo: Que faire si la matrice est vide ????? Je peux juste la renvoyer en détente mais bon
+        # todo: J'ai mis 10 minutes d'expiration, à voir
         # todo: Il faudrait supporter le format txt s'il n'y a pas de header. Possible avec GET raw et formatted à False. A creuser.
         # todo: Question Alexander : Quel séparateur pour csv et xlsx ?
         # todo: ajouter dans les exemples le truc pour allocation et correlation pour que les users comprennent
@@ -290,6 +290,7 @@ def create_raw_study_routes(
             f"Exporting matrix {pathlib.Path(path).stem} to format {format.value} for study {uuid}",
             current_user,
             create_task=False,
+            expiration_time_in_minutes=10,
         )
         export_path = pathlib.Path(export_file_download.path)
         export_id = export_file_download.id
