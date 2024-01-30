@@ -1,6 +1,65 @@
 import pytest
 from starlette.testclient import TestClient
 
+from antarest.study.business.binding_constraint_management import AreaClusterDTO, AreaLinkDTO, ConstraintTermDTO
+
+
+class TestAreaLinkDTO:
+    @pytest.mark.parametrize(
+        "area1, area2, expected",
+        [
+            ("Area 1", "Area 2", "area 1%area 2"),
+            ("de", "fr", "de%fr"),
+            ("fr", "de", "de%fr"),
+            ("FR", "de", "de%fr"),
+        ],
+    )
+    def test_constraint_id(self, area1: str, area2: str, expected: str) -> None:
+        info = AreaLinkDTO(area1=area1, area2=area2)
+        assert info.generate_id() == expected
+
+
+class TestAreaClusterDTO:
+    @pytest.mark.parametrize(
+        "area, cluster, expected",
+        [
+            ("Area 1", "Cluster X", "area 1.cluster x"),
+            ("de", "Nuclear", "de.nuclear"),
+            ("GB", "Gas", "gb.gas"),
+        ],
+    )
+    def test_constraint_id(self, area: str, cluster: str, expected: str) -> None:
+        info = AreaClusterDTO(area=area, cluster=cluster)
+        assert info.generate_id() == expected
+
+
+class TestConstraintTermDTO:
+    def test_constraint_id__link(self):
+        term = ConstraintTermDTO(
+            id="foo",
+            weight=3.14,
+            offset=123,
+            data=AreaLinkDTO(area1="Area 1", area2="Area 2"),
+        )
+        assert term.generate_id() == term.data.generate_id()
+
+    def test_constraint_id__cluster(self):
+        term = ConstraintTermDTO(
+            id="foo",
+            weight=3.14,
+            offset=123,
+            data=AreaClusterDTO(area="Area 1", cluster="Cluster X"),
+        )
+        assert term.generate_id() == term.data.generate_id()
+
+    def test_constraint_id__other(self):
+        term = ConstraintTermDTO(
+            id="foo",
+            weight=3.14,
+            offset=123,
+        )
+        assert term.generate_id() == "foo"
+
 
 @pytest.mark.unit_test
 class TestBindingConstraints:
@@ -173,7 +232,10 @@ class TestBindingConstraints:
             json={
                 "weight": 1,
                 "offset": 2,
-                "data": {"area": area1_id, "cluster": cluster_id},
+                "data": {
+                    "area": area1_id,
+                    "cluster": cluster_id,
+                },  # NOTE: cluster_id in term data can be uppercase, but it must be lowercase in the returned ini configuration file
             },
             headers=user_headers,
         )
@@ -195,15 +257,15 @@ class TestBindingConstraints:
                 "weight": 1.0,
             },
             {
-                "data": {"area": area1_id, "cluster": cluster_id},
-                "id": f"{area1_id}.{cluster_id}",
+                "data": {"area": area1_id, "cluster": cluster_id.lower()},
+                "id": f"{area1_id}.{cluster_id.lower()}",
                 "offset": 2.0,
                 "weight": 1.0,
             },
         ]
         assert constraint_terms == expected
 
-        # Update constraint cluster term
+        # Update constraint cluster term with uppercase cluster_id
         res = client.put(
             f"/v1/studies/{study_id}/bindingconstraints/{bc_id}/term",
             json={
@@ -214,7 +276,7 @@ class TestBindingConstraints:
         )
         assert res.status_code == 200, res.json()
 
-        # Get binding constraints list to check updated term
+        # Check updated terms, cluster_id should be lowercase in the returned configuration
         res = client.get(
             f"/v1/studies/{study_id}/bindingconstraints/{bc_id}",
             headers=user_headers,
@@ -230,45 +292,10 @@ class TestBindingConstraints:
                 "weight": 1.0,
             },
             {
-                "data": {"area": area1_id, "cluster": cluster_id},
-                "id": f"{area1_id}.{cluster_id}",
+                "data": {"area": area1_id, "cluster": cluster_id.lower()},
+                "id": f"{area1_id}.{cluster_id.lower()}",
                 "offset": None,  # updated
                 "weight": 3.0,  # updated
-            },
-        ]
-        assert constraint_terms == expected
-
-        # Update constraint term regardless of the case of the cluster id
-        res = client.put(
-            f"/v1/studies/{study_id}/bindingconstraints/{bc_id}/term",
-            json={
-                "id": f"{area1_id}.Cluster 1",
-                "weight": 4,
-            },
-            headers=user_headers,
-        )
-        assert res.status_code == 200, res.json()
-
-        # The term should be successfully updated
-        res = client.get(
-            f"/v1/studies/{study_id}/bindingconstraints/{bc_id}",
-            headers=user_headers,
-        )
-        assert res.status_code == 200, res.json()
-        binding_constraint = res.json()
-        constraint_terms = binding_constraint["constraints"]
-        expected = [
-            {
-                "data": {"area1": area1_id, "area2": area2_id},
-                "id": f"{area1_id}%{area2_id}",
-                "offset": 2.0,
-                "weight": 1.0,
-            },
-            {
-                "data": {"area": area1_id, "cluster": cluster_id},
-                "id": f"{area1_id}.{cluster_id}",
-                "offset": None,  # updated
-                "weight": 4.0,  # updated
             },
         ]
         assert constraint_terms == expected
