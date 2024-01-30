@@ -44,7 +44,7 @@ class ThermalClusterInput(Thermal860Properties, metaclass=AllOptionalMetaclass):
                 enabled=False,
                 unitCount=100,
                 nominalCapacity=1000.0,
-                genTs="use global parameter",
+                genTs="use global",
                 co2=7.0,
             )
 
@@ -85,7 +85,7 @@ class ThermalClusterOutput(Thermal860Config, metaclass=AllOptionalMetaclass):
                 enabled=False,
                 unitCount=100,
                 nominalCapacity=1000.0,
-                genTs="use global parameter",
+                genTs="use global",
                 co2=7.0,
             )
 

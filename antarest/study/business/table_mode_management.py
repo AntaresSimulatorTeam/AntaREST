@@ -288,7 +288,7 @@ FIELDS_INFO_BY_TYPE: Dict[TableTemplateType, Dict[str, ColumnInfo]] = {
         },
         "ts_gen": {
             "path": f"{CLUSTER_PATH}/gen-ts",
-            "default_value": TimeSeriesGenerationOption.USE_GLOBAL_PARAMETER.value,
+            "default_value": TimeSeriesGenerationOption.USE_GLOBAL.value,
         },
         "volatility_forced": {
             "path": f"{CLUSTER_PATH}/volatility.forced",

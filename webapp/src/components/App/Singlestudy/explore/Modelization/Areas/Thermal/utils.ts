@@ -40,7 +40,7 @@ export const THERMAL_POLLUTANTS = [
 ] as const;
 
 export const TS_GENERATION_OPTIONS = [
-  "use global parameter",
+  "use global",
   "force no generation",
   "force generation",
 ] as const;
