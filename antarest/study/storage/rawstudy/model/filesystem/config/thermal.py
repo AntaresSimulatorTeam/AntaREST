@@ -7,7 +7,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.cluster import Clus
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import IgnoreCaseIdentifier
 
 __all__ = (
-    "TimeSeriesGenerationOption",
+    "LocalTSGenerationBehavior",
     "LawOption",
     "ThermalClusterGroup",
     "ThermalProperties",
@@ -19,7 +19,7 @@ __all__ = (
 )
 
 
-class TimeSeriesGenerationOption(EnumIgnoreCase):
+class LocalTSGenerationBehavior(EnumIgnoreCase):
     """
     Options related to time series generation.
     The option `USE_GLOBAL` is used by default.
@@ -98,8 +98,8 @@ class ThermalProperties(ClusterProperties):
         description="Thermal Cluster Group",
     )
 
-    gen_ts: TimeSeriesGenerationOption = Field(
-        default=TimeSeriesGenerationOption.USE_GLOBAL,
+    gen_ts: LocalTSGenerationBehavior = Field(
+        default=LocalTSGenerationBehavior.USE_GLOBAL,
         description="Time Series Generation Option",
         alias="gen-ts",
     )
