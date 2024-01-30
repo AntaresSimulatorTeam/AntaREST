@@ -5,6 +5,7 @@ on:
     branches:
       - "master"
       - "hotfix/**"
+      - "bugfix/desktop_app"
 
 jobs:
   binary:
