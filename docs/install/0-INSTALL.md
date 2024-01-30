@@ -44,6 +44,9 @@ Then perform the following steps:
    cd ..
    ```
 
+   > IMPORTANT : make sur the generated files are in the `dist` (or `build`) folder.
+   > Using another folder may require substantial adaptations in the CI/CD pipelines.
+
 5. Run the application
 
    ```shell
