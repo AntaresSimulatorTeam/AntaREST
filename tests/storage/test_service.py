@@ -402,6 +402,7 @@ def test_create_study() -> None:
         }
     }
     study_service.create.return_value = expected
+    repository.update_tags.return_value = None
     config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
     service = build_study_service(study_service, repository, config, user_service=user_service)
 

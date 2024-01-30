@@ -80,7 +80,7 @@ class Tag(Base):  # type:ignore
 
     __tablename__ = "tag"
 
-    label: str = Column(String, primary_key=True, index=True)
+    label = Column(String, primary_key=True, index=True)
     color: str = Column(String(7), index=True)
 
     def __str__(self) -> str:

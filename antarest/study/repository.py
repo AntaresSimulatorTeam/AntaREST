@@ -11,7 +11,7 @@ from antarest.core.interfaces.cache import CacheConstants, ICache
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group
 from antarest.study.common.utils import get_study_information
-from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, Study, StudyAdditionalData
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, Study, StudyAdditionalData, Tag
 
 logger = logging.getLogger(__name__)
 
@@ -159,6 +159,7 @@ class StudyMetadataRepository:
             self.session.query(Study)
             .options(joinedload(Study.owner))
             .options(joinedload(Study.groups))
+            .options(joinedload(Study.tags))
             .get(id)
             # fmt: on
         )
@@ -218,6 +219,7 @@ class StudyMetadataRepository:
         q = q.options(joinedload(entity.owner))
         q = q.options(joinedload(entity.groups))
         q = q.options(joinedload(entity.additional_data))
+        q = q.options(joinedload(entity.tags))
         if study_filter.managed is not None:
             if study_filter.managed:
                 q = q.filter(or_(entity.type == "variantstudy", RawStudy.workspace == DEFAULT_WORKSPACE_NAME))
@@ -230,6 +232,8 @@ class StudyMetadataRepository:
             q = q.filter(entity.owner_id.in_(study_filter.users))
         if study_filter.groups:
             q = q.join(entity.groups).filter(Group.id.in_(study_filter.groups))
+        if study_filter.tags:
+            q = q.join(entity.tags).filter(Tag.id.in_(study_filter.tags))
         if study_filter.archived is not None:
             q = q.filter(entity.archived == study_filter.archived)
         if study_filter.name:
@@ -314,3 +318,10 @@ class StudyMetadataRepository:
                 self.cache_service.invalidate(CacheConstants.STUDY_LISTING.value)
             except Exception as e:
                 logger.error("Failed to invalidate listing cache", exc_info=e)
+
+    def update_tags(self, tags: t.Set[str]) -> None:
+        if tags:
+            existing_tags = self.session.query(Tag).filter(Tag.label.in_(tags)).all()
+            new_tags = tags.difference(map(lambda x: x.label, existing_tags))
+            self.session.add_all([Tag(label=tag, color=Tag.generate_random_color_code(tag)) for tag in new_tags])
+            self.session.commit()

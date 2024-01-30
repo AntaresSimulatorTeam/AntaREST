@@ -91,6 +91,7 @@ from antarest.study.model import (
     StudyMetadataDTO,
     StudyMetadataPatchDTO,
     StudySimResultDTO,
+    StudyTag,
     Tag,
 )
 from antarest.study.repository import StudyFilter, StudyMetadataRepository, StudyPagination, StudySortBy
@@ -561,6 +562,15 @@ class StudyService:
 
         new_metadata = self.storage_service.get_storage(study).patch_update_study_metadata(study, metadata_patch)
 
+        self.repository.session.query(StudyTag).filter(StudyTag.study_id == uuid).delete()
+        self.repository.session.commit()
+        existing_tags = self.repository.session.query(Tag).filter(Tag.label.in_(new_metadata.tags)).all()
+        new_tags = set(new_metadata.tags).difference(map(lambda x: x.label, existing_tags))
+        self.repository.session.add_all([Tag(label=tag, color=Tag.generate_random_color_code(tag)) for tag in new_tags])
+        self.repository.session.commit()
+        self.repository.session.add_all([StudyTag(study_id=uuid, tag=tag) for tag in metadata_patch.tags])
+        self.repository.session.commit()
+
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_DATA_EDITED,
@@ -624,6 +634,9 @@ class StudyService:
         study_path = self.config.get_workspace_path() / sid
 
         author = self.get_user_name(params)
+
+        if tags:
+            self.repository.update_tags(tags)
 
         raw = RawStudy(
             id=sid,
