@@ -264,13 +264,6 @@ def create_raw_study_routes(
         index: bool = True,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> FileResponse:
-        # todo: J'ai mis 10 minutes d'expiration, à voir
-        # todo: Il faudrait supporter le format txt s'il n'y a pas de header. Possible avec GET raw et formatted à False. A creuser.
-        # todo: ajouter dans les exemples le truc pour allocation et correlation pour que les users comprennent
-        # todo: on ne gère pas encore les stats, et il y en a aussi ailleurs genre dans load :/. Il faudra faire une passe là-dessus.
-        # todo: peut-être changer la structure de la matrice pour ne pas avoir à faire du type ignore
-        # todo: faire tout le travail pour avoir les headers dans un endpoint dédié. Ce endpoint pourrait prendre en entrée une langue qui serait envoyé par le front.
-
         parameters = RequestParameters(user=current_user)
         df_matrix = study_service.get_matrix_with_index_and_header(
             study_id=uuid, path=path, index=index, header=header, parameters=parameters
