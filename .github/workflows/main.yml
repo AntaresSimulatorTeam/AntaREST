@@ -38,7 +38,7 @@ jobs:
     strategy:
       max-parallel: 9
       matrix:
-        os: [ windows-latest, ubuntu-20.04 ]
+        os: [windows-latest, ubuntu-20.04]
 
     steps:
       - name: Checkout github repo (+ download lfs dependencies)
@@ -69,7 +69,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ ubuntu-20.04 ]
+        os: [ubuntu-20.04]
     steps:
       - name: Checkout github repo
         uses: actions/checkout@v3
@@ -92,7 +92,7 @@ jobs:
 
   sonarcloud:
     runs-on: ubuntu-20.04
-    needs: [ python-test, npm-test ]
+    needs: [python-test, npm-test]
     steps:
       - uses: actions/checkout@v3
       - name: Download python coverage report
@@ -104,3 +104,34 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  auto-merge-or-squash:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine Merge Method
+        id: merge-method
+        run: |
+          base_branch="dev" 
+          git fetch origin $base_branch  
+
+          commit_count=$(git rev-list --count HEAD ^origin/$base_branch)
+          echo "Commit Count: $commit_count"
+
+          if [ "$commit_count" -eq "1" ]; then
+            echo "::set-output name=METHOD::squash"
+          else
+            echo "::set-output name=METHOD::merge"
+          fi
+
+      - name: Apply Merge Method
+        run: |
+          echo "Merge Method: ${{ steps.merge-method.outputs.METHOD }}"
+          gh pr merge ${{ github.event.pull_request.number }} --merge-method ${{ steps.merge-method.outputs.METHOD }} --repo $GITHUB_REPOSITORY
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
