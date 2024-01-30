@@ -1,6 +1,6 @@
 import dataclasses
 import enum
-import random
+import secrets
 import string
 import typing as t
 import uuid
@@ -31,6 +31,24 @@ if t.TYPE_CHECKING:
     from antarest.core.tasks.model import TaskJob
 
 DEFAULT_WORKSPACE_NAME = "default"
+
+STUDY_REFERENCE_TEMPLATES: t.Dict[str, str] = {
+    "600": "empty_study_613.zip",
+    "610": "empty_study_613.zip",
+    "640": "empty_study_613.zip",
+    "700": "empty_study_700.zip",
+    "710": "empty_study_710.zip",
+    "720": "empty_study_720.zip",
+    "800": "empty_study_803.zip",
+    "810": "empty_study_810.zip",
+    "820": "empty_study_820.zip",
+    "830": "empty_study_830.zip",
+    "840": "empty_study_840.zip",
+    "850": "empty_study_850.zip",
+    "860": "empty_study_860.zip",
+}
+
+NEW_DEFAULT_STUDY_VERSION: str = "860"
 
 groups_metadata = Table(
     "group_metadata",
@@ -74,26 +92,7 @@ class Tag(Base):  # type:ignore
         """
         Generate a random CSS color code.
         """
-        return "#" + "".join(random.choice(string.hexdigits) for _ in range(6))
-
-
-STUDY_REFERENCE_TEMPLATES: t.Dict[str, str] = {
-    "600": "empty_study_613.zip",
-    "610": "empty_study_613.zip",
-    "640": "empty_study_613.zip",
-    "700": "empty_study_700.zip",
-    "710": "empty_study_710.zip",
-    "720": "empty_study_720.zip",
-    "800": "empty_study_803.zip",
-    "810": "empty_study_810.zip",
-    "820": "empty_study_820.zip",
-    "830": "empty_study_830.zip",
-    "840": "empty_study_840.zip",
-    "850": "empty_study_850.zip",
-    "860": "empty_study_860.zip",
-}
-
-NEW_DEFAULT_STUDY_VERSION: str = "860"
+        return "#" + ("".join(secrets.choice(string.hexdigits[:-6]) for _ in range(6))).upper()
 
 
 class StudyContentStatus(enum.Enum):
