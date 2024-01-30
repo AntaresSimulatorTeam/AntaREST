@@ -18,7 +18,9 @@ export default function i18nInit(version = "unknown") {
     .init({
       fallbackLng: "en",
       backend: {
-        loadPath: `/locales/{{lng}}/{{ns}}.json?v=${version}`,
+        loadPath: `${
+          import.meta.env.BASE_URL
+        }locales/{{lng}}/{{ns}}.json?v=${version}`,
       },
       react: {
         useSuspense: false,
