@@ -91,6 +91,7 @@ from antarest.study.model import (
     StudyMetadataDTO,
     StudyMetadataPatchDTO,
     StudySimResultDTO,
+    Tag,
 )
 from antarest.study.repository import StudyFilter, StudyMetadataRepository, StudyPagination, StudySortBy
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
@@ -602,6 +603,7 @@ class StudyService:
         version: t.Optional[str],
         group_ids: t.List[str],
         params: RequestParameters,
+        tags: t.Optional[t.Set[str]] = None,
     ) -> str:
         """
         Creates a study with the specified study name, version, group IDs, and user parameters.
@@ -610,6 +612,7 @@ class StudyService:
             study_name: The name of the study to create.
             version: The version number of the study to choose the template for creation.
             group_ids: A possibly empty list of user group IDs to associate with the study.
+            tags: A set of tags to be associated with the new created study
             params:
                 The parameters of the HTTP request for creation, used to determine
                 the currently logged-in user (ID and name).
@@ -631,6 +634,7 @@ class StudyService:
             updated_at=datetime.utcnow(),
             version=version or NEW_DEFAULT_STUDY_VERSION,
             additional_data=StudyAdditionalData(author=author),
+            tags=[Tag(label=tag, color=Tag.generate_random_color_code(tag)) for tag in tags] if tags else [],
         )
 
         raw = self.storage_service.raw_study_service.create(raw)

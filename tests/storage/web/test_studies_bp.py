@@ -162,7 +162,7 @@ def test_create_study(tmp_path: str, project_path) -> None:
 
     assert result_right.status_code == HTTPStatus.CREATED
     assert result_right.json() == "my-uuid"
-    storage_service.create_study.assert_called_once_with("study2", "", [], PARAMS)
+    storage_service.create_study.assert_called_once_with("study2", "", [], PARAMS, set())
 
 
 @pytest.mark.unit_test

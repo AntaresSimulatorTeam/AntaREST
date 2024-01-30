@@ -425,6 +425,7 @@ def test_create_study() -> None:
                 groups=[JWTGroup(id="my-group", name="group", role=RoleType.WRITER)],
             )
         ),
+        {"test-tag-1", "test-tag-2"},
     )
 
     study_service.create.assert_called()

@@ -359,15 +359,20 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         name: str,
         version: str = "",
         groups: str = "",
+        tags: str = "",
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> t.Any:
         logger.info(f"Creating new study '{name}'", extra={"user": current_user.id})
         name_sanitized = escape(name)
+
         group_ids = _split_comma_separated_values(groups)
         group_ids = [sanitize_uuid(gid) for gid in group_ids]
 
+        input_tags = set(_split_comma_separated_values(tags))
+        input_tags = set(sanitize_uuid(tag) for tag in input_tags)
+
         params = RequestParameters(user=current_user)
-        uuid = study_service.create_study(name_sanitized, version, group_ids, params)
+        uuid = study_service.create_study(name_sanitized, version, group_ids, params, input_tags)
 
         return uuid
 
