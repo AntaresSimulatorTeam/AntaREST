@@ -358,7 +358,7 @@ SPECIFIC_MATRICES = {
         "alias": "bindingconstraints",
         "rows": [],
         "stats": False,
-        "cols_with_version": {"after_870": ["<", ">", "="], "before_870": []},
+        "cols_with_version": {"before_870": ["<", ">", "="], "after_870": []},
     },
     "input/links/*/*": {
         "alias": "links",
