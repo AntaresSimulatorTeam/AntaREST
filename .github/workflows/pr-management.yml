@@ -1,0 +1,32 @@
+name: PR Management
+
+on:
+  pull_request:
+    branches: [test-actions] # TODO only for tests to be removed
+    types: [opened, synchronize, reopened]
+
+jobs:
+  auto-merge-or-squash:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Determine Merge Method
+        id: merge-method
+        run: |
+          commit_count=$(git rev-list --count HEAD ^$GITHUB_BASE_REF)
+          echo "Commit Count: $commit_count"
+
+          if [ "$commit_count" -eq "1" ]; then
+            echo "::set-output name=METHOD::squash"
+          else
+            echo "::set-output name=METHOD::merge"
+          fi
+
+      - name: Apply Merge Method
+        run: |
+          echo "Merge Method: ${{ steps.merge-method.outputs.METHOD }}"
+          gh pr merge ${{ github.event.pull_request.number }} --merge-method ${{ steps.merge-method.outputs.METHOD }} --repo $GITHUB_REPOSITORY
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
