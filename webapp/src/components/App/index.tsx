@@ -109,7 +109,13 @@ function App() {
                                 element={<Correlation />}
                               />
                               {HYDRO_ROUTES.map(
-                                ({ path, type, isSplitView, splitConfig }) => {
+                                ({
+                                  path,
+                                  type,
+                                  isSplitView,
+                                  splitConfig,
+                                  form,
+                                }) => {
                                   return isSplitView && splitConfig ? (
                                     <Route
                                       key={path}
@@ -122,6 +128,7 @@ function App() {
                                           ]}
                                           direction={splitConfig.direction}
                                           sizes={splitConfig.sizes}
+                                          form={form}
                                         />
                                       }
                                     />
