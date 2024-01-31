@@ -12,6 +12,7 @@ from fastapi.params import Param, Query
 from starlette.responses import FileResponse, JSONResponse, PlainTextResponse, Response, StreamingResponse
 
 from antarest.core.config import Config
+from antarest.core.filetransfer.model import FileDownloadNotFound
 from antarest.core.jwt import JWTUser
 from antarest.core.model import SUB_JSON
 from antarest.core.requests import RequestParameters
@@ -282,11 +283,17 @@ def create_raw_study_routes(
         try:
             _create_matrix_files(df_matrix, header, index, format, export_path)
             study_service.file_transfer_manager.set_ready(export_id, use_notification=False)
-        except Exception as e:
+        except ValueError as e:
             study_service.file_transfer_manager.fail(export_id, str(e))
             raise HTTPException(
                 status_code=http.HTTPStatus.UNPROCESSABLE_ENTITY,
-                detail=f"Could not download matrix at path {path}: {str(e)}",
+                detail=f"The Excel file {export_path} already exists and cannot be replaced due to Excel policy :{str(e)}",
+            ) from e
+        except FileDownloadNotFound as e:
+            study_service.file_transfer_manager.fail(export_id, str(e))
+            raise HTTPException(
+                status_code=http.HTTPStatus.UNPROCESSABLE_ENTITY,
+                detail=f"The file download does not exist in database :{str(e)}",
             ) from e
 
         return FileResponse(
