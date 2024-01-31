@@ -564,9 +564,16 @@ class StudyService:
 
         self.repository.session.query(StudyTag).filter(StudyTag.study_id == uuid).delete()
         self.repository.session.commit()
+
+        # review: On peut simplifier la requête en récupérant uniquement les labels
         existing_tags = self.repository.session.query(Tag).filter(Tag.label.in_(new_metadata.tags)).all()
         new_tags = set(new_metadata.tags).difference(map(lambda x: x.label, existing_tags))
-        self.repository.session.add_all([Tag(label=tag, color=Tag.generate_random_color_code(tag)) for tag in new_tags])
+
+        # review: Il faudrait mettre à jour `study` en utilisant leds relationships
+        #  study.tags = [mettre la liste des tags]
+        self.repository.session.commit()
+
+        self.repository.session.add_all([Tag(label=tag) for tag in new_tags])
         self.repository.session.commit()
         self.repository.session.add_all([StudyTag(study_id=uuid, tag=tag) for tag in metadata_patch.tags])
         self.repository.session.commit()
@@ -647,7 +654,7 @@ class StudyService:
             updated_at=datetime.utcnow(),
             version=version or NEW_DEFAULT_STUDY_VERSION,
             additional_data=StudyAdditionalData(author=author),
-            tags=[Tag(label=tag, color=Tag.generate_random_color_code(tag)) for tag in tags] if tags else [],
+            tags=[Tag(label=tag) for tag in tags] if tags else [],
         )
 
         raw = self.storage_service.raw_study_service.create(raw)

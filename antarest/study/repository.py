@@ -320,8 +320,12 @@ class StudyMetadataRepository:
                 logger.error("Failed to invalidate listing cache", exc_info=e)
 
     def update_tags(self, tags: t.Set[str]) -> None:
-        if tags:
-            existing_tags = self.session.query(Tag).filter(Tag.label.in_(tags)).all()
-            new_tags = tags.difference(map(lambda x: x.label, existing_tags))
-            self.session.add_all([Tag(label=tag, color=Tag.generate_random_color_code(tag)) for tag in new_tags])
-            self.session.commit()
+        existing_labels = set(self.session.query(Tag.label).filter(Tag.label.in_(tags)))
+        new_tags = tags - existing_labels
+        self.session.add_all([Tag(label=tag) for tag in new_tags])
+        self.session.commit()
+
+    def update_study_tags(self, study_id: str, labels: t.Set[str]) -> None:
+        study = self.session.query(Study).get(study_id)
+        study.tags = [Tag(label=tag) for tag in labels]
+        self.session.commit()

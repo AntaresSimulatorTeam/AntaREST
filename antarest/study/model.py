@@ -1,6 +1,6 @@
 import dataclasses
 import enum
-import hashlib
+import secrets
 import typing as t
 import uuid
 from datetime import datetime, timedelta
@@ -24,6 +24,7 @@ from antarest.core.exceptions import ShouldNotHappenException
 from antarest.core.model import PublicMode
 from antarest.core.persistence import Base
 from antarest.login.model import Group, GroupDTO, Identity
+from antarest.study.css4_colors import COLOR_NAMES
 
 if t.TYPE_CHECKING:
     # avoid circular import
@@ -63,11 +64,11 @@ class StudyTag(Base):  # type:ignore
     """
 
     __tablename__ = "study_tag"
+    __table_args__ = (PrimaryKeyConstraint("study_id", "tag"),)
 
+    # review: vérifier à l'aide d'un TU que le ondelete="CASCADE" fonctionne bien
     study_id: str = Column(String(36), ForeignKey("study.id", ondelete="CASCADE"), index=True, nullable=False)
     tag: str = Column(String, ForeignKey("tag.label", ondelete="CASCADE"), index=True, nullable=False)
-
-    __table_args__ = (PrimaryKeyConstraint("study_id", "tag"),)
 
     def __str__(self) -> str:
         return f"[Study-Tag-Pair] study_id={self.study_id}, tag={self.tag}"
@@ -81,17 +82,13 @@ class Tag(Base):  # type:ignore
     __tablename__ = "tag"
 
     label = Column(String, primary_key=True, index=True)
-    color: str = Column(String(7), index=True)
+    color: str = Column(String(20), index=True, default=lambda: secrets.choice(COLOR_NAMES))
+
+    # review: faut-il vraiment un lambda ici ?
+    studies: t.List["Study"] = relationship("Study", secondary=lambda: StudyTag.__table__, back_populates="tags")
 
     def __str__(self) -> str:
         return f"[Tag] label={self.label}, css-color-code={self.color}"
-
-    @staticmethod
-    def generate_random_color_code(label: str) -> str:
-        """
-        Generate a random CSS color code.
-        """
-        return "#" + (hashlib.sha256(label.encode()).hexdigest()[:6]).upper()
 
 
 class StudyContentStatus(enum.Enum):
@@ -154,7 +151,9 @@ class Study(Base):  # type: ignore
     public_mode = Column(Enum(PublicMode), default=PublicMode.NONE)
     owner_id = Column(Integer, ForeignKey(Identity.id), nullable=True, index=True)
     archived = Column(Boolean(), default=False, index=True)
-    tags: t.List[Tag] = relationship(Tag, secondary=lambda: StudyTag.__table__, backref="studies", cascade="")
+
+    # review: faut-il vraiment un lambda ici ?
+    tags: t.List[Tag] = relationship(Tag, secondary=lambda: StudyTag.__table__, back_populates="studies")
     owner = relationship(Identity, uselist=False)
     groups = relationship(Group, secondary=lambda: groups_metadata, cascade="")
     additional_data = relationship(
