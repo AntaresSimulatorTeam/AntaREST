@@ -2373,5 +2373,6 @@ class StudyService:
         """
         study = self.get_study(uuid=uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
-        path = str(self.storage_service.get_storage(study).get_study_path(study))
-        return get_disk_usage(path=path)
+        study_path = self.storage_service.get_storage(study).get_study_path(study)
+        # If the study is a variant, it's possible that it only exists in db and not on disk. If so, we return 0.
+        return get_disk_usage(path=str(study_path)) if study_path.exists() else 0
