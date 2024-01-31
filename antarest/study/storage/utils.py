@@ -270,7 +270,7 @@ DAY_NAMES = (
 
 
 def _generate_columns(column_suffix: str) -> t.List[str]:
-    return [str(i) + column_suffix for i in range(100)]
+    return [f"{i}{column_suffix}" for i in range(101)]
 
 
 SPECIFIC_MATRICES = {

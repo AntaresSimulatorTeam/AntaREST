@@ -43,8 +43,8 @@ class FileTransferManager:
         filename: str,
         name: Optional[str] = None,
         owner: Optional[JWTUser] = None,
-        create_task: bool = True,
-        expiration_time_in_minutes: Optional[int] = None,
+        use_notification: bool = True,
+        expiration_time_in_minutes: int = 0,
     ) -> FileDownload:
         fh, path = tempfile.mkstemp(dir=self.tmp_dir, suffix=filename)
         os.close(fh)
@@ -62,7 +62,7 @@ class FileTransferManager:
             ),
         )
         self.repository.add(download)
-        if create_task:
+        if use_notification:
             self.event_bus.push(
                 Event(
                     type=EventType.DOWNLOAD_CREATED,
@@ -74,14 +74,14 @@ class FileTransferManager:
             )
         return download
 
-    def set_ready(self, download_id: str, create_task: bool = True) -> None:
+    def set_ready(self, download_id: str, use_notification: bool = True) -> None:
         download = self.repository.get(download_id)
         if not download:
             raise FileDownloadNotFound()
 
         download.ready = True
         self.repository.save(download)
-        if create_task:
+        if use_notification:
             self.event_bus.push(
                 Event(
                     type=EventType.DOWNLOAD_READY,

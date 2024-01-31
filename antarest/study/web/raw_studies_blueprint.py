@@ -266,14 +266,14 @@ def create_raw_study_routes(
     ) -> FileResponse:
         parameters = RequestParameters(user=current_user)
         df_matrix = study_service.get_matrix_with_index_and_header(
-            study_id=uuid, path=path, index=index, header=header, parameters=parameters
+            study_id=uuid, path=path, with_index=index, with_columns=header, parameters=parameters
         )
 
         export_file_download = study_service.file_transfer_manager.request_download(
             f"{pathlib.Path(path).stem}.{format.value}",
             f"Exporting matrix {pathlib.Path(path).stem} to format {format.value} for study {uuid}",
             current_user,
-            create_task=False,
+            use_notification=False,
             expiration_time_in_minutes=10,
         )
         export_path = pathlib.Path(export_file_download.path)
@@ -281,13 +281,13 @@ def create_raw_study_routes(
 
         try:
             _create_matrix_files(df_matrix, header, index, format, export_path)
-            study_service.file_transfer_manager.set_ready(export_id, create_task=False)
+            study_service.file_transfer_manager.set_ready(export_id, use_notification=False)
         except Exception as e:
             study_service.file_transfer_manager.fail(export_id, str(e))
             raise HTTPException(
                 status_code=http.HTTPStatus.UNPROCESSABLE_ENTITY,
                 detail=f"Could not download matrix at path {path}: {str(e)}",
-            ) from None
+            ) from e
 
         return FileResponse(
             export_path,

@@ -152,32 +152,37 @@ def get_disk_usage(path: t.Union[str, Path]) -> int:
 
 
 def _handle_specific_matrices(
-    study: Study, df: pd.DataFrame, specific_matrix_name: str, matrix_path: str, *, index: bool, header: bool
+    study_version: int,
+    df: pd.DataFrame,
+    specific_matrix_name: str,
+    matrix_path: str,
+    *,
+    with_index: bool,
+    with_columns: bool,
 ) -> pd.DataFrame:
     json_matrix = SPECIFIC_MATRICES[specific_matrix_name]
-    if header:
+    if with_columns:
         if json_matrix["alias"] == "bindingconstraints":
-            study_version = int(study.version)
             if study_version < 870:
                 cols: t.List[str] = json_matrix["cols_with_version"]["before_870"]  # type: ignore
             else:
                 cols: t.List[str] = json_matrix["cols_with_version"]["after_870"]  # type: ignore
         elif json_matrix["alias"] == "links":
-            cols = _handle_links_columns(int(study.version), matrix_path, json_matrix)
+            cols = _handle_links_columns(study_version, matrix_path, json_matrix)
         else:
             cols: t.List[str] = json_matrix["cols"]  # type: ignore
         if cols:
             df.columns = pd.Index(cols)
     rows: t.List[str] = json_matrix["rows"]  # type: ignore
-    if index and rows:
+    if with_index and rows:
         df.index = rows  # type: ignore
     return df
 
 
-def _handle_links_columns(study_version: int, matrix_path: str, json_matrix: t.Dict[str, t.Any]) -> t.List[str]:
+def _handle_links_columns(study_version: int, matrix_path: str, json_matrix: t.Mapping[str, t.Any]) -> t.List[str]:
     path_parts = Path(matrix_path).parts
-    area_1 = path_parts[2]
-    area_2 = path_parts[3]
+    area_id_1 = path_parts[2]
+    area_id_2 = path_parts[3]
     result: t.List[str] = (
         json_matrix["cols_with_version"]["before_820"]
         if study_version < 820
@@ -185,9 +190,9 @@ def _handle_links_columns(study_version: int, matrix_path: str, json_matrix: t.D
     )
     for k, col in enumerate(result):
         if col == "Hurdle costs direct":
-            result[k] = f"{col} ({area_1}->{area_2})"
+            result[k] = f"{col} ({area_id_1}->{area_id_2})"
         elif col == "Hurdle costs indirect":
-            result[k] = f"{col} ({area_2}->{area_1})"
+            result[k] = f"{col} ({area_id_2}->{area_id_1})"
     return result
 
 
@@ -2431,7 +2436,7 @@ class StudyService:
         return get_disk_usage(study_path) if study_path.exists() else 0
 
     def get_matrix_with_index_and_header(
-        self, *, study_id: str, path: str, index: bool, header: bool, parameters: RequestParameters
+        self, *, study_id: str, path: str, with_index: bool, with_columns: bool, parameters: RequestParameters
     ) -> pd.DataFrame:
         matrix_path = Path(path)
         study = self.get_study(study_id)
@@ -2451,11 +2456,11 @@ class StudyService:
         for key in ["data", "index", "columns"]:
             if key not in json_matrix:
                 raise IncorrectPathError(f"The path filled does not correspond to a matrix : {path}")
-        if len(json_matrix["data"]) == 0:
+        if not json_matrix["data"]:
             return pd.DataFrame()
         df_matrix = pd.DataFrame(data=json_matrix["data"], columns=json_matrix["columns"], index=json_matrix["index"])
 
-        if index:
+        if with_index:
             matrix_index = self.get_input_matrix_startdate(study_id, path, parameters)
             time_column = pd.date_range(
                 start=matrix_index.start_date, periods=len(df_matrix), freq=matrix_index.level.value[0]
@@ -2464,5 +2469,12 @@ class StudyService:
 
         for specific_matrix in SPECIFIC_MATRICES:
             if re.compile(specific_matrix).match(path):
-                return _handle_specific_matrices(study, df_matrix, specific_matrix, path, index=index, header=header)
+                return _handle_specific_matrices(
+                    int(study.version),
+                    df_matrix,
+                    specific_matrix,
+                    path,
+                    with_index=with_index,
+                    with_columns=with_columns,
+                )
         return df_matrix
