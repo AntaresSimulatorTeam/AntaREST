@@ -14,35 +14,57 @@ class TestDiskUsage:
         - Ensure a successful response is received.
         - Confirm that the JSON response is an integer which represent a (big enough) directory size.
         """
+        disk_usage: int
+
         user_headers = {"Authorization": f"Bearer {user_access_token}"}
         res = client.get(
             f"/v1/studies/{study_id}/disk-usage",
-            headers={"Authorization": f"Bearer {user_access_token}"},
+            headers=user_headers,
         )
         assert res.status_code == 200, res.json()
         disk_usage = res.json()  # currently: 7.47 Mio on Ubuntu
         assert 7 * 1024 * 1024 < disk_usage < 8 * 1024 * 1024
 
-        # Study copy
-        copied = client.post(
-            f"/v1/studies/{study_id}/copy?dest=copied&use_task=false",
+        # Copy the study in managed workspace in order to create a variant
+        res = client.post(
+            f"/v1/studies/{study_id}/copy",
             headers=user_headers,
+            params={"dest": "somewhere", "use_task": "false"},
         )
-        assert copied.status_code == 201
-        parent_id = copied.json()
+        res.raise_for_status()
+        parent_id: str = res.json()
 
-        # Create variant
+        # Create variant of the copied study
         res = client.post(
             f"/v1/studies/{parent_id}/variants",
             headers=user_headers,
             params={"name": "Variant Test"},
         )
-        assert res.status_code == 200
-        variant_id = res.json()
+        res.raise_for_status()
+        variant_id: str = res.json()
 
+        # Ensure a successful response is received even if the variant has no snapshot
         res = client.get(
             f"/v1/studies/{variant_id}/disk-usage",
             headers=user_headers,
         )
-        assert res.status_code == 200
-        assert res.json() == 0
+        assert res.status_code == 200, res.json()
+        disk_usage = res.json()
+        assert disk_usage == 0
+
+        # Generate a snapshot for the variant
+        res = client.put(
+            f"/v1/studies/{variant_id}/generate",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+            params={"denormalize": True, "from_scratch": True},
+        )
+        res.raise_for_status()
+
+        # Ensure a successful response is received and the disk usage is not zero
+        res = client.get(
+            f"/v1/studies/{variant_id}/disk-usage",
+            headers=user_headers,
+        )
+        assert res.status_code == 200, res.json()
+        disk_usage = res.json()  # currently: 7.47 Mio on Ubuntu
+        assert 7 * 1024 * 1024 < disk_usage < 8 * 1024 * 1024
