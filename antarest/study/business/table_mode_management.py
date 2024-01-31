@@ -11,7 +11,7 @@ from antarest.study.business.utils import FormFieldsBaseModel, execute_or_add_co
 from antarest.study.common.default_values import FilteringOptions, LinkProperties, NodalOptimization
 from antarest.study.model import RawStudy
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
-from antarest.study.storage.rawstudy.model.filesystem.config.thermal import LawOption, TimeSeriesGenerationOption
+from antarest.study.storage.rawstudy.model.filesystem.config.thermal import LawOption, LocalTSGenerationBehavior
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
@@ -93,7 +93,7 @@ class ClusterColumns(FormFieldsBaseModel):
     startup_cost: Optional[StrictInt]
     market_bid_cost: Optional[StrictInt]
     spread_cost: Optional[StrictInt]
-    ts_gen: Optional[TimeSeriesGenerationOption]
+    ts_gen: Optional[LocalTSGenerationBehavior]
     volatility_forced: Optional[StrictInt]
     volatility_planned: Optional[StrictInt]
     law_forced: Optional[LawOption]
@@ -288,7 +288,7 @@ FIELDS_INFO_BY_TYPE: Dict[TableTemplateType, Dict[str, ColumnInfo]] = {
         },
         "ts_gen": {
             "path": f"{CLUSTER_PATH}/gen-ts",
-            "default_value": TimeSeriesGenerationOption.USE_GLOBAL_PARAMETER.value,
+            "default_value": LocalTSGenerationBehavior.USE_GLOBAL.value,
         },
         "volatility_forced": {
             "path": f"{CLUSTER_PATH}/volatility.forced",

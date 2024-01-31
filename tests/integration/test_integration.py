@@ -25,7 +25,7 @@ from antarest.study.business.table_mode_management import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.renewable import RenewableClusterGroup
-from antarest.study.storage.rawstudy.model.filesystem.config.thermal import LawOption, TimeSeriesGenerationOption
+from antarest.study.storage.rawstudy.model.filesystem.config.thermal import LawOption, LocalTSGenerationBehavior
 from antarest.study.storage.variantstudy.model.command.common import CommandName
 from tests.integration.assets import ASSETS_DIR
 from tests.integration.utils import wait_for
@@ -1461,7 +1461,7 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
             "startupCost": 0,
             "marketBidCost": 0,
             "spreadCost": 0,
-            "tsGen": "use global parameter",
+            "tsGen": "use global",
             "volatilityForced": 0,
             "volatilityPlanned": 0,
             "lawForced": "uniform",
@@ -1483,7 +1483,7 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
             "startupCost": 0,
             "marketBidCost": 0,
             "spreadCost": 0,
-            "tsGen": "use global parameter",
+            "tsGen": "use global",
             "volatilityForced": 0,
             "volatilityPlanned": 0,
             "lawForced": "uniform",
@@ -1502,7 +1502,7 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
                 "enabled": False,
                 "unitCount": 3,
                 "spinning": 8,
-                "tsGen": TimeSeriesGenerationOption.FORCE_GENERATION.value,
+                "tsGen": LocalTSGenerationBehavior.FORCE_GENERATION.value,
                 "lawPlanned": LawOption.GEOMETRIC.value,
             },
             "area 2 / cluster 2": {
@@ -1558,7 +1558,7 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
             "startupCost": 0,
             "marketBidCost": 0,
             "spreadCost": 0,
-            "tsGen": "use global parameter",
+            "tsGen": "use global",
             "volatilityForced": 0,
             "volatilityPlanned": 0,
             "lawForced": "uniform",
@@ -1750,7 +1750,7 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
         "unitCount": 3,
         "enabled": False,
         "nominalCapacity": 3,
-        "genTs": "use global parameter",
+        "genTs": "use global",
         "minStablePower": 3,
         "minUpTime": 3,
         "minDownTime": 3,

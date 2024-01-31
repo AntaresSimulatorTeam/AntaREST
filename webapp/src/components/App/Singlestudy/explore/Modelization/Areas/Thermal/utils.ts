@@ -40,7 +40,7 @@ export const THERMAL_POLLUTANTS = [
 ] as const;
 
 export const TS_GENERATION_OPTIONS = [
-  "use global parameter",
+  "use global",
   "force no generation",
   "force generation",
 ] as const;
@@ -52,7 +52,7 @@ export const TS_LAW_OPTIONS = ["geometric", "uniform"] as const;
 ////////////////////////////////////////////////////////////////
 
 type ThermalGroup = (typeof THERMAL_GROUPS)[number];
-type TimeSeriesGenerationOption = (typeof TS_GENERATION_OPTIONS)[number];
+type LocalTSGenerationBehavior = (typeof TS_GENERATION_OPTIONS)[number];
 type TimeSeriesLawOption = (typeof TS_LAW_OPTIONS)[number];
 
 type ThermalPollutants = {
@@ -76,7 +76,7 @@ export interface ThermalCluster extends ThermalPollutants {
   startupCost: number;
   marketBidCost: number;
   spreadCost: number;
-  genTs: TimeSeriesGenerationOption;
+  genTs: LocalTSGenerationBehavior;
   volatilityForced: number;
   volatilityPlanned: number;
   lawForced: TimeSeriesLawOption;
