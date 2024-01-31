@@ -209,6 +209,16 @@ class TestDownloadMatrices:
             "('HURDLE COST', 'Euro', '')",
         ]
 
+        # test energy matrix to test the regex
+        res = client.get(
+            f"/v1/studies/{study_id}/raw/download?path=input/hydro/prepro/de/energy&format=csv",
+            headers=admin_headers,
+        )
+        assert res.status_code == 200
+        content = io.BytesIO(res.content)
+        dataframe = pd.read_csv(content, index_col=0, sep="\t")
+        assert dataframe.empty
+
         # =============================
         #  ERRORS
         # =============================

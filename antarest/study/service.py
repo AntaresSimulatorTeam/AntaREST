@@ -323,6 +323,7 @@ class StudyService:
         self.xpansion_manager = XpansionManager(self.storage_service)
         self.matrix_manager = MatrixManager(self.storage_service)
         self.binding_constraint_manager = BindingConstraintManager(self.storage_service)
+        self.correlation_manager = CorrelationManager(self.storage_service)
         self.cache_service = cache_service
         self.config = config
         self.on_deletion_callbacks: t.List[t.Callable[[str], None]] = []
@@ -2449,7 +2450,7 @@ class StudyService:
                 if aggregate == "allocation":
                     hydro_matrix = self.allocation_manager.get_allocation_matrix(study, all_areas)
                 else:
-                    hydro_matrix = CorrelationManager(self.storage_service).get_correlation_matrix(all_areas, study, [])  # type: ignore
+                    hydro_matrix = self.correlation_manager.get_correlation_matrix(all_areas, study, [])  # type: ignore
                 return pd.DataFrame(data=hydro_matrix.data, columns=hydro_matrix.columns, index=hydro_matrix.index)
 
         json_matrix = self.get(study_id, path, depth=3, formatted=True, params=parameters)
@@ -2468,7 +2469,7 @@ class StudyService:
             df_matrix.index = time_column
 
         for specific_matrix in SPECIFIC_MATRICES:
-            if re.compile(specific_matrix).match(path):
+            if re.match(specific_matrix, path):
                 return _handle_specific_matrices(
                     int(study.version),
                     df_matrix,
