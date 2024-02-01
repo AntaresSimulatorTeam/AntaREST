@@ -423,43 +423,46 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
 
         study_service.hydro_manager.set_field_values(study, data, area_id)
 
+    # noinspection SpellCheckingInspection
     @bp.get(
-        "/studies/{study_id}/areas/{area_id}/hydro/inflow-structure",
+        "/studies/{uuid}/areas/{area_id}/hydro/inflow-structure",
         tags=[APITag.study_data],
-        summary="Get inflow structure form values",
+        summary="Get inflow structure values",
         response_model=InflowStructure,
     )
     def get_inflow_structure(
-        study_id: str,
+        uuid: str,
         area_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> InflowStructure:
+        """Get the configuration for the hydraulic inflow structure of the given area."""
         logger.info(
-            msg=f"Getting inflow structure values for area {area_id} of study {study_id}",
+            msg=f"Getting inflow structure values for area {area_id} of study {uuid}",
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
-        study = study_service.check_study_access(study_id, StudyPermissionType.READ, params)
+        study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
         return study_service.hydro_manager.get_inflow_structure(study, area_id)
 
     @bp.put(
-        "/studies/{study_id}/areas/{area_id}/hydro/inflow-structure",
+        "/studies/{uuid}/areas/{area_id}/hydro/inflow-structure",
         tags=[APITag.study_data],
-        summary="Update inflow structure form values",
+        summary="Update inflow structure values",
         response_model=InflowStructure,
     )
     def update_inflow_structure(
-        study_id: str,
+        uuid: str,
         area_id: str,
         values: InflowStructure,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
+        """Update the configuration for the hydraulic inflow structure of the given area."""
         logger.info(
-            msg=f"Updating inflow structure values for area {area_id} of study {study_id}",
+            msg=f"Updating inflow structure values for area {area_id} of study {uuid}",
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
-        study = study_service.check_study_access(study_id, StudyPermissionType.WRITE, params)
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
         return study_service.hydro_manager.update_inflow_structure(study, area_id, values)
 
     @bp.put(

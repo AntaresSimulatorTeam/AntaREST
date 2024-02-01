@@ -11,11 +11,17 @@ INFLOW_PATH = "input/hydro/prepro/{area_id}/prepro/prepro"
 
 
 class InflowStructure(FormFieldsBaseModel):
-    """Represents the inflow structure form values in the hydraulic configuration."""
+    """Represents the inflow structure values in the hydraulic configuration."""
 
     # NOTE: Currently, there is only one field for the inflow structure model
     # due to the scope of hydro config requirements, it may change.
-    inter_monthly_correlation: float = Field(default=0.5, ge=0, le=1, description="Inter-monthly correlation value")
+    inter_monthly_correlation: float = Field(
+        default=0.5,
+        ge=0,
+        le=1,
+        description="Average correlation between the energy of a month and that of the next month",
+        title="Inter-monthly correlation",
+    )
 
 
 class ManagementOptionsFormFields(FormFieldsBaseModel):
