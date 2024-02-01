@@ -74,6 +74,7 @@ export interface FormProps<
     | React.ReactNode;
   submitButtonText?: string;
   submitButtonIcon?: LoadingButtonProps["startIcon"];
+  miniSubmitButton?: boolean;
   hideSubmitButton?: boolean;
   onStateChange?: (state: FormState<TFieldValues>) => void;
   autoSubmit?: boolean | AutoSubmitConfig;
@@ -96,7 +97,8 @@ function Form<TFieldValues extends FieldValues, TContext>(
     onInvalid,
     children,
     submitButtonText,
-    submitButtonIcon,
+    submitButtonIcon = <SaveIcon />,
+    miniSubmitButton,
     hideSubmitButton,
     onStateChange,
     autoSubmit,
@@ -358,20 +360,19 @@ function Form<TFieldValues extends FieldValues, TContext>(
             <>
               <LoadingButton
                 type="submit"
-                variant="contained"
                 disabled={!isSubmitAllowed}
                 loading={isSubmitting}
-                loadingPosition="start"
-                startIcon={
-                  RA.isNotUndefined(submitButtonIcon) ? (
-                    submitButtonIcon
-                  ) : (
-                    <SaveIcon />
-                  )
-                }
-              >
-                {submitButtonText || t("global.save")}
-              </LoadingButton>
+                {...(miniSubmitButton
+                  ? {
+                      children: submitButtonIcon,
+                    }
+                  : {
+                      loadingPosition: "start",
+                      startIcon: submitButtonIcon,
+                      variant: "contained",
+                      children: submitButtonText || t("global.save"),
+                    })}
+              />
               {enableUndoRedo && (
                 <Divider sx={{ mx: 2 }} orientation="vertical" flexItem />
               )}
