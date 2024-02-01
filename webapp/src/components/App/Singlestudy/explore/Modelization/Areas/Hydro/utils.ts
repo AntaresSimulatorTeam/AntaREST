@@ -63,7 +63,7 @@ export interface AreaCoefficientItem {
 
 export const HYDRO_ROUTES: HydroRoute[] = [
   {
-    path: "inflowstructure",
+    path: "inflow-structure",
     type: HydroMatrixType.InflowPattern,
     isSplitView: true,
     splitConfig: {

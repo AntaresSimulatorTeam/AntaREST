@@ -14,7 +14,7 @@ export interface InflowStructureFields {
 ////////////////////////////////////////////////////////////////
 
 function makeRequestURL(studyId: StudyMetadata["id"], areaId: string): string {
-  return `v1/studies/${studyId}/areas/${areaId}/hydro/inflowstructure`;
+  return `v1/studies/${studyId}/areas/${areaId}/hydro/inflow-structure`;
 }
 
 export async function getInflowStructureFields(

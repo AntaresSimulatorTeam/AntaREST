@@ -18,7 +18,7 @@ from antarest.study.business.adequacy_patch_management import AdequacyPatchFormF
 from antarest.study.business.advanced_parameters_management import AdvancedParamsFormFields
 from antarest.study.business.allocation_management import AllocationFormFields, AllocationMatrix
 from antarest.study.business.area_management import AreaCreationDTO, AreaInfoDTO, AreaType, AreaUI, LayerInfoDTO
-from antarest.study.business.areas.hydro_management import ManagementOptionsFormFields, InflowStructure
+from antarest.study.business.areas.hydro_management import InflowStructure, ManagementOptionsFormFields
 from antarest.study.business.areas.properties_management import PropertiesFormFields
 from antarest.study.business.areas.renewable_management import (
     RenewableClusterCreation,
@@ -424,7 +424,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         study_service.hydro_manager.set_field_values(study, data, area_id)
 
     @bp.get(
-        "/studies/{study_id}/areas/{area_id}/hydro/inflowstructure",
+        "/studies/{study_id}/areas/{area_id}/hydro/inflow-structure",
         tags=[APITag.study_data],
         summary="Get inflow structure form values",
         response_model=InflowStructure,
@@ -443,7 +443,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         return study_service.hydro_manager.get_inflow_structure(study, area_id)
 
     @bp.put(
-        "/studies/{study_id}/areas/{area_id}/hydro/inflowstructure",
+        "/studies/{study_id}/areas/{area_id}/hydro/inflow-structure",
         tags=[APITag.study_data],
         summary="Update inflow structure form values",
         response_model=InflowStructure,
