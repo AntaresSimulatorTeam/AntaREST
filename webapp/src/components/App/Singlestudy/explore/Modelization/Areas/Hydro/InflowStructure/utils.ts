@@ -25,7 +25,7 @@ export async function getInflowStructureFields(
   return res.data;
 }
 
-export function updatetInflowStructureFields(
+export function updateInflowStructureFields(
   studyId: StudyMetadata["id"],
   areaId: string,
   values: InflowStructureFields,

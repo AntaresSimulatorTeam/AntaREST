@@ -6,7 +6,7 @@ import Form from "../../../../../../../common/Form";
 import {
   type InflowStructureFields,
   getInflowStructureFields,
-  updatetInflowStructureFields,
+  updateInflowStructureFields,
 } from "./utils";
 import NumberFE from "../../../../../../../common/fieldEditors/NumberFE";
 import { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
@@ -23,7 +23,7 @@ function InflowStructure() {
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = (data: SubmitHandlerPlus<InflowStructureFields>) => {
-    return updatetInflowStructureFields(study.id, areaId, data.values);
+    return updateInflowStructureFields(study.id, areaId, data.values);
   };
 
   ////////////////////////////////////////////////////////////////
