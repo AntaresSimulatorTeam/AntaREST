@@ -429,7 +429,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         summary="Get inflow structure form values",
         response_model=InflowStructure,
     )
-    def get_inflowstructure(
+    def get_inflow_structure(
         study_id: str,
         area_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
@@ -440,7 +440,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(study_id, StudyPermissionType.READ, params)
-        return study_service.hydro_manager.get_inflowstructure(study, area_id)
+        return study_service.hydro_manager.get_inflow_structure(study, area_id)
 
     @bp.put(
         "/studies/{study_id}/areas/{area_id}/hydro/inflowstructure",
@@ -448,7 +448,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         summary="Update inflow structure form values",
         response_model=InflowStructure,
     )
-    def update_inflowstructure(
+    def update_inflow_structure(
         study_id: str,
         area_id: str,
         values: InflowStructure,
@@ -460,7 +460,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(study_id, StudyPermissionType.WRITE, params)
-        return study_service.hydro_manager.update_inflowstructure(study, area_id, values)
+        return study_service.hydro_manager.update_inflow_structure(study, area_id, values)
 
     @bp.put(
         "/studies/{uuid}/matrix",

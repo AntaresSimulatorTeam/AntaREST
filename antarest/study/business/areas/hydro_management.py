@@ -11,9 +11,10 @@ INFLOW_PATH = "input/hydro/prepro/{area_id}/prepro/prepro"
 
 
 class InflowStructure(FormFieldsBaseModel):
-    """Represents the inflow structure form values in the hydrolic configuration."""
+    """Represents the inflow structure form values in the hydraulic configuration."""
 
-    # NOTE: Currently, there is only one field for the inflow structure model due to the scope of hydro config requirements, it may change.
+    # NOTE: Currently, there is only one field for the inflow structure model
+    # due to the scope of hydro config requirements, it may change.
     inter_monthly_correlation: float = Field(default=0.5, ge=0, le=1, description="Inter-monthly correlation value")
 
 
@@ -131,7 +132,8 @@ class HydroManager:
             file_study = self.storage_service.get_storage(study).get_raw(study)
             execute_or_add_commands(study, file_study, commands, self.storage_service)
 
-    def get_inflowstructure(self, study: Study, area_id: str) -> InflowStructure:
+    # noinspection SpellCheckingInspection
+    def get_inflow_structure(self, study: Study, area_id: str) -> InflowStructure:
         """
         Retrieves inflow structure values for a specific area within a study.
 
@@ -144,14 +146,15 @@ class HydroManager:
         inter_monthly_correlation = file_study.tree.get(path.split("/")).get("intermonthly-correlation", 0.5)
         return InflowStructure(inter_monthly_correlation=inter_monthly_correlation)
 
-    def update_inflowstructure(self, study: Study, area_id: str, values: InflowStructure) -> None:
+    # noinspection SpellCheckingInspection
+    def update_inflow_structure(self, study: Study, area_id: str, values: InflowStructure) -> None:
         """
         Updates inflow structure values for a specific area within a study.
 
-        Parameters:
+        Args:
             study: The study instance to update the inflow data for.
             area_id: The area identifier to update data for.
-            values (InflowStructure): The new inflow structure values to be updated.
+            values: The new inflow structure values to be updated.
 
         Raises:
             RequestValidationError: If the provided `values` parameter is None or invalid.
