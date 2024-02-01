@@ -19,7 +19,7 @@ function Hydro() {
 
     return [
       { label: "Management options", path: `${basePath}/management` },
-      { label: "Inflow structure", path: `${basePath}/inflowstructure` },
+      { label: "Inflow structure", path: `${basePath}/inflow-structure` },
       { label: "Allocation", path: `${basePath}/allocation` },
       { label: "Correlation", path: `${basePath}/correlation` },
       {

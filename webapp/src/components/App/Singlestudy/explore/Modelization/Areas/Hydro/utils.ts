@@ -2,6 +2,7 @@ import { MatrixStats, MatrixType } from "../../../../../../../common/types";
 import { SplitViewProps } from "../../../../../../common/SplitView";
 import { getAllocationMatrix } from "./Allocation/utils";
 import { getCorrelationMatrix } from "./Correlation/utils";
+import InflowStructure from "./InflowStructure";
 
 ////////////////////////////////////////////////////////////////
 // Enums
@@ -48,6 +49,7 @@ export interface HydroRoute {
     partnerType: HydroMatrixType;
     sizes: [number, number];
   };
+  form?: React.ComponentType;
 }
 
 export interface AreaCoefficientItem {
@@ -61,7 +63,7 @@ export interface AreaCoefficientItem {
 
 export const HYDRO_ROUTES: HydroRoute[] = [
   {
-    path: "inflowstructure",
+    path: "inflow-structure",
     type: HydroMatrixType.InflowPattern,
     isSplitView: true,
     splitConfig: {
@@ -69,6 +71,7 @@ export const HYDRO_ROUTES: HydroRoute[] = [
       partnerType: HydroMatrixType.OverallMonthlyHydro,
       sizes: [50, 50],
     },
+    form: InflowStructure,
   },
   {
     path: "dailypower&energy",

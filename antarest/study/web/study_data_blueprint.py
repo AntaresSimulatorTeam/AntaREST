@@ -18,7 +18,7 @@ from antarest.study.business.adequacy_patch_management import AdequacyPatchFormF
 from antarest.study.business.advanced_parameters_management import AdvancedParamsFormFields
 from antarest.study.business.allocation_management import AllocationFormFields, AllocationMatrix
 from antarest.study.business.area_management import AreaCreationDTO, AreaInfoDTO, AreaType, AreaUI, LayerInfoDTO
-from antarest.study.business.areas.hydro_management import ManagementOptionsFormFields
+from antarest.study.business.areas.hydro_management import InflowStructure, ManagementOptionsFormFields
 from antarest.study.business.areas.properties_management import PropertiesFormFields
 from antarest.study.business.areas.renewable_management import (
     RenewableClusterCreation,
@@ -422,6 +422,48 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
 
         study_service.hydro_manager.set_field_values(study, data, area_id)
+
+    # noinspection SpellCheckingInspection
+    @bp.get(
+        "/studies/{uuid}/areas/{area_id}/hydro/inflow-structure",
+        tags=[APITag.study_data],
+        summary="Get inflow structure values",
+        response_model=InflowStructure,
+    )
+    def get_inflow_structure(
+        uuid: str,
+        area_id: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> InflowStructure:
+        """Get the configuration for the hydraulic inflow structure of the given area."""
+        logger.info(
+            msg=f"Getting inflow structure values for area {area_id} of study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
+        return study_service.hydro_manager.get_inflow_structure(study, area_id)
+
+    @bp.put(
+        "/studies/{uuid}/areas/{area_id}/hydro/inflow-structure",
+        tags=[APITag.study_data],
+        summary="Update inflow structure values",
+        response_model=InflowStructure,
+    )
+    def update_inflow_structure(
+        uuid: str,
+        area_id: str,
+        values: InflowStructure,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> None:
+        """Update the configuration for the hydraulic inflow structure of the given area."""
+        logger.info(
+            msg=f"Updating inflow structure values for area {area_id} of study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
+        return study_service.hydro_manager.update_inflow_structure(study, area_id, values)
 
     @bp.put(
         "/studies/{uuid}/matrix",

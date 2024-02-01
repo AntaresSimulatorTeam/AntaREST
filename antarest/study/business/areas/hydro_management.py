@@ -7,6 +7,22 @@ from antarest.study.model import Study
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 
+INFLOW_PATH = "input/hydro/prepro/{area_id}/prepro/prepro"
+
+
+class InflowStructure(FormFieldsBaseModel):
+    """Represents the inflow structure values in the hydraulic configuration."""
+
+    # NOTE: Currently, there is only one field for the inflow structure model
+    # due to the scope of hydro config requirements, it may change.
+    inter_monthly_correlation: float = Field(
+        default=0.5,
+        ge=0,
+        le=1,
+        description="Average correlation between the energy of a month and that of the next month",
+        title="Inter-monthly correlation",
+    )
+
 
 class ManagementOptionsFormFields(FormFieldsBaseModel):
     inter_daily_breakdown: Optional[float] = Field(ge=0)
@@ -121,3 +137,40 @@ class HydroManager:
         if len(commands) > 0:
             file_study = self.storage_service.get_storage(study).get_raw(study)
             execute_or_add_commands(study, file_study, commands, self.storage_service)
+
+    # noinspection SpellCheckingInspection
+    def get_inflow_structure(self, study: Study, area_id: str) -> InflowStructure:
+        """
+        Retrieves inflow structure values for a specific area within a study.
+
+        Returns:
+            InflowStructure: The inflow structure values.
+        """
+        # NOTE: Focusing on the single field "intermonthly-correlation" due to current model scope.
+        path = INFLOW_PATH.format(area_id=area_id)
+        file_study = self.storage_service.get_storage(study).get_raw(study)
+        inter_monthly_correlation = file_study.tree.get(path.split("/")).get("intermonthly-correlation", 0.5)
+        return InflowStructure(inter_monthly_correlation=inter_monthly_correlation)
+
+    # noinspection SpellCheckingInspection
+    def update_inflow_structure(self, study: Study, area_id: str, values: InflowStructure) -> None:
+        """
+        Updates inflow structure values for a specific area within a study.
+
+        Args:
+            study: The study instance to update the inflow data for.
+            area_id: The area identifier to update data for.
+            values: The new inflow structure values to be updated.
+
+        Raises:
+            RequestValidationError: If the provided `values` parameter is None or invalid.
+        """
+        # NOTE: Updates only "intermonthly-correlation" due to current model scope.
+        path = INFLOW_PATH.format(area_id=area_id)
+        command = UpdateConfig(
+            target=path,
+            data={"intermonthly-correlation": values.inter_monthly_correlation},
+            command_context=self.storage_service.variant_study_service.command_factory.command_context,
+        )
+        file_study = self.storage_service.get_storage(study).get_raw(study)
+        execute_or_add_commands(study, file_study, [command], self.storage_service)
