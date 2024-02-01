@@ -16,8 +16,13 @@ export default defineConfig(({ mode }) => {
       port: 3000,
       strictPort: true,
       proxy: {
+        // Main API URLs
         "/v1": SERVER_URL,
+        // Core API URLs
+        "/health": SERVER_URL,
+        "/kill": SERVER_URL,
         "/version": SERVER_URL,
+        // WebSocket
         "/ws": SERVER_URL,
       },
     },
