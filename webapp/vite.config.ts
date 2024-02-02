@@ -8,22 +8,19 @@ export default defineConfig(({ mode }) => {
   const isDesktopMode = mode === "desktop";
 
   return {
-    // When the web application is running in Desktop mode,
-    // the web app is served at the `/static` entry point
+    // Serve the web app at the `/static` entry point on Desktop mode
     base: isDesktopMode ? "/static/" : "/",
     plugins: [react({ devTarget: "es2022" })],
     server: {
       port: 3000,
       strictPort: true,
       proxy: {
-        // Main API URLs
-        "/v1": SERVER_URL,
-        // Core API URLs
-        "/health": SERVER_URL,
-        "/kill": SERVER_URL,
-        "/version": SERVER_URL,
-        // WebSocket
-        "/ws": SERVER_URL,
+        // API, WebSocket and Swagger URLs
+        "^/(v1|health|kill|version|ws|openapi.json|redoc)": {
+          target: SERVER_URL,
+          changeOrigin: true, // Recommended for avoiding CORS issues
+          ws: true, // WebSocket support for hot module replacement
+        },
       },
     },
   };
