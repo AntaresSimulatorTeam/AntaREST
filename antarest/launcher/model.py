@@ -3,7 +3,7 @@ import json
 import typing as t
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy import Column, DateTime, Enum, ForeignKey, Integer, Sequence, String  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
 
@@ -238,13 +238,30 @@ class LauncherLoadDTO(
     DTO representing the load of the SLURM cluster or local machine.
 
     Attributes:
-        allocated_cpu_rate: The rate of allocated CPU, in range (0, 1).
-        cluster_load_rate: The rate of cluster load, in range (0, 1).
+        allocated_cpu_rate: The rate of allocated CPU, in range (0, 100).
+        cluster_load_rate: The rate of cluster load, in range (0, 100).
         nb_queued_jobs: The number of queued jobs.
         launcher_status: The status of the launcher: "SUCCESS" or "FAILED".
     """
 
-    allocated_cpu_rate: float
-    cluster_load_rate: float
-    nb_queued_jobs: int
-    launcher_status: str
+    allocated_cpu_rate: float = Field(
+        description="The rate of allocated CPU, in range (0, 100)",
+        ge=0,
+        le=100,
+        title="Allocated CPU Rate",
+    )
+    cluster_load_rate: float = Field(
+        description="The rate of cluster load, in range (0, 100)",
+        ge=0,
+        le=100,
+        title="Cluster Load Rate",
+    )
+    nb_queued_jobs: int = Field(
+        description="The number of queued jobs",
+        ge=0,
+        title="Number of Queued Jobs",
+    )
+    launcher_status: str = Field(
+        description="The status of the launcher: 'SUCCESS' or 'FAILED'",
+        title="Launcher Status",
+    )
