@@ -7,12 +7,12 @@ from antarest.launcher.ssh_client import SlurmError, calculates_slurm_load, pars
 
 
 @pytest.mark.unit_test
-def test_parse_cpu_used():
+def test_parse_cpu_used() -> None:
     assert parse_cpu_used("3/28/1/32") == 100 * 3 / (3 + 28)
 
 
 @pytest.mark.unit_test
-def test_parse_cpu_load():
+def test_parse_cpu_load() -> None:
     sinfo_output = "0.01     24    \n0.01   24  \nN/A     24    \n9.94   24 "
     assert math.isclose(
         parse_cpu_load(sinfo_output),
@@ -21,7 +21,7 @@ def test_parse_cpu_load():
 
 
 @pytest.mark.unit_test
-def test_calculates_slurm_load_whithout_pkey_fails():
+def test_calculates_slurm_load_without_private_key_fails() -> None:
     ssh_config = Mock()
     with pytest.raises(SlurmError):
         calculates_slurm_load(ssh_config, "fake_partition")
