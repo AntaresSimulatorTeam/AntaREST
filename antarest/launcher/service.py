@@ -641,11 +641,11 @@ class LauncherService:
                     password=slurm_config.password,
                 )
                 partition = slurm_config.partition
-                slurm_load = calculates_slurm_load(ssh_config, partition)
+                allocated_cpus, cluster_load, queued_jobs = calculates_slurm_load(ssh_config, partition)
                 return LauncherLoadDTO(
-                    allocated_cpu_rate=slurm_load[0],
-                    cluster_load_rate=slurm_load[1],
-                    nb_queued_jobs=slurm_load[2],
+                    allocated_cpu_rate=allocated_cpus,
+                    cluster_load_rate=cluster_load,
+                    nb_queued_jobs=queued_jobs,
                     launcher_status="SUCCESS",
                 )
             else:
