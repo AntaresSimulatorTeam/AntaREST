@@ -1,9 +1,10 @@
 import json
+import math
 import os
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Dict, List, Union
+from typing import Any, Dict, List, Union
 from unittest.mock import Mock, call, patch
 from uuid import uuid4
 from zipfile import ZIP_DEFLATED, ZipFile
@@ -30,7 +31,15 @@ from antarest.core.model import PermissionInfo
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.dbmodel import Base
-from antarest.launcher.model import JobLog, JobLogType, JobResult, JobStatus, LauncherParametersDTO, LogType
+from antarest.launcher.model import (
+    JobLog,
+    JobLogType,
+    JobResult,
+    JobStatus,
+    LauncherLoadDTO,
+    LauncherParametersDTO,
+    LogType,
+)
 from antarest.launcher.service import (
     EXECUTION_INFO_FILE,
     LAUNCHER_PARAM_NAME_SUFFIX,
@@ -900,16 +909,73 @@ class TestLauncherService:
         )
         assert actual_obj.to_dto().dict() == expected_obj.to_dto().dict()
 
-    def test_get_load(self, tmp_path: Path) -> None:
+    @pytest.mark.parametrize(
+        ["running_jobs", "expected_result", "default_launcher"],
+        [
+            pytest.param(
+                [],
+                {
+                    "allocated_cpu_rate": 0.0,
+                    "cluster_load_rate": 0.0,
+                    "nb_queued_jobs": 0,
+                    "launcher_status": "SUCCESS",
+                },
+                "local",
+                id="local_no_running_job",
+            ),
+            pytest.param(
+                [
+                    Mock(
+                        spec=JobResult,
+                        launcher="local",
+                        launcher_params=None,
+                    ),
+                    Mock(
+                        spec=JobResult,
+                        launcher="local",
+                        launcher_params='{"nb_cpu": 7}',
+                    ),
+                ],
+                {
+                    "allocated_cpu_rate": min(1.0, 8.0 / (os.cpu_count() or 1)),
+                    "cluster_load_rate": min(1.0, 8.0 / (os.cpu_count() or 1)),
+                    "nb_queued_jobs": 0,
+                    "launcher_status": "SUCCESS",
+                },
+                "local",
+                id="local_with_running_jobs",
+            ),
+            pytest.param(
+                [],
+                {
+                    "allocated_cpu_rate": 0.0,
+                    "cluster_load_rate": 0.0,
+                    "nb_queued_jobs": 0,
+                    "launcher_status": "SUCCESS",
+                },
+                "slurm",
+                id="slurm launcher with no config",
+                marks=pytest.mark.xfail(
+                    reason="Default launcher is slurm but it is not registered in the config file",
+                    raises=KeyError,
+                    strict=True,
+                ),
+            ),
+        ],
+    )
+    def test_get_load(
+        self,
+        tmp_path: Path,
+        running_jobs: List[JobResult],
+        expected_result: Dict[str, Any],
+        default_launcher: str,
+    ) -> None:
         study_service = Mock()
         job_repository = Mock()
 
         config = Config(
             storage=StorageConfig(tmp_dir=tmp_path),
-            launcher=LauncherConfig(
-                local=LocalConfig(),
-                slurm=SlurmConfig(nb_cores=NbCoresConfig(min=1, default=12, max=24)),
-            ),
+            launcher=LauncherConfig(default=default_launcher, local=LocalConfig(), slurm=None),
         )
         launcher_service = LauncherService(
             config=config,
@@ -922,61 +988,18 @@ class TestLauncherService:
             cache=Mock(),
         )
 
-        job_repository.get_running.side_effect = [
-            # call #1
-            [],
-            # call #2
-            [],
-            # call #3
-            [
-                Mock(
-                    spec=JobResult,
-                    launcher="slurm",
-                    launcher_params=None,
-                ),
-            ],
-            # call #4
-            [
-                Mock(
-                    spec=JobResult,
-                    launcher="slurm",
-                    launcher_params='{"nb_cpu": 18}',
-                ),
-                Mock(
-                    spec=JobResult,
-                    launcher="local",
-                    launcher_params=None,
-                ),
-                Mock(
-                    spec=JobResult,
-                    launcher="slurm",
-                    launcher_params=None,
-                ),
-                Mock(
-                    spec=JobResult,
-                    launcher="local",
-                    launcher_params='{"nb_cpu": 7}',
-                ),
-            ],
-        ]
+        job_repository.get_running.return_value = running_jobs
 
-        # call #1
-        with pytest.raises(NotImplementedError):
-            launcher_service.get_load(from_cluster=True)
+        launcher_expected_result = LauncherLoadDTO.parse_obj(expected_result)
+        actual_result = launcher_service.get_load()
 
-        # call #2
-        load = launcher_service.get_load()
-        assert load["slurm"] == 0
-        assert load["local"] == 0
-
-        # call #3
-        load = launcher_service.get_load()
-        slurm_config = config.launcher.slurm
-        assert load["slurm"] == slurm_config.nb_cores.default / slurm_config.max_cores
-        assert load["local"] == 0
-
-        # call #4
-        load = launcher_service.get_load()
-        local_config = config.launcher.local
-        assert load["slurm"] == (18 + slurm_config.nb_cores.default) / slurm_config.max_cores
-        assert load["local"] == (7 + local_config.nb_cores.default) / local_config.nb_cores.max
+        assert launcher_expected_result.launcher_status == actual_result.launcher_status
+        assert launcher_expected_result.nb_queued_jobs == actual_result.nb_queued_jobs
+        assert math.isclose(
+            launcher_expected_result.cluster_load_rate,
+            actual_result.cluster_load_rate,
+        )
+        assert math.isclose(
+            launcher_expected_result.allocated_cpu_rate,
+            actual_result.allocated_cpu_rate,
+        )

@@ -40,6 +40,7 @@ def launcher_config(tmp_path: Path) -> Config:
         "default_time_limit": 20,
         "default_json_db_name": "antares.db",
         "slurm_script_path": "/path/to/slurm/launcher.sh",
+        "partition": "fake_partition",
         "max_cores": 32,
         "antares_versions_on_remote_server": ["840", "850", "860"],
         "enable_nb_cores_detection": False,
@@ -103,6 +104,7 @@ def test_init_slurm_launcher_parameters(tmp_path: Path) -> None:
                 local_workspace=tmp_path,
                 default_json_db_name="default_json_db_name",
                 slurm_script_path="slurm_script_path",
+                partition="fake_partition",
                 antares_versions_on_remote_server=["42"],
                 username="username",
                 hostname="hostname",
@@ -122,6 +124,7 @@ def test_init_slurm_launcher_parameters(tmp_path: Path) -> None:
     assert main_parameters.json_dir == slurm_config.local_workspace
     assert main_parameters.default_json_db_name == slurm_config.default_json_db_name
     assert main_parameters.slurm_script_path == slurm_config.slurm_script_path
+    assert main_parameters.partition == config.launcher.slurm.partition
     assert main_parameters.antares_versions_on_remote_server == slurm_config.antares_versions_on_remote_server
     assert main_parameters.default_ssh_dict == {
         "username": slurm_config.username,
@@ -474,6 +477,7 @@ def test_kill_job(
         json_dir=Path(tmp_path),
         default_json_db_name=slurm_config.default_json_db_name,
         slurm_script_path=slurm_config.slurm_script_path,
+        partition="fake_partition",
         antares_versions_on_remote_server=slurm_config.antares_versions_on_remote_server,
         default_ssh_dict={
             "username": slurm_config.username,
