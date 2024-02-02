@@ -1,31 +1,36 @@
 import dataclasses
 import enum
+import secrets
 import typing as t
 import uuid
 from datetime import datetime, timedelta
 from pathlib import Path
 
 from pydantic import BaseModel
-from sqlalchemy import Boolean, Column, DateTime, Enum, ForeignKey, Integer, String, Table  # type: ignore
+from sqlalchemy import (  # type: ignore
+    Boolean,
+    Column,
+    DateTime,
+    Enum,
+    ForeignKey,
+    Integer,
+    PrimaryKeyConstraint,
+    String,
+    Table,
+)
 from sqlalchemy.orm import relationship  # type: ignore
 
 from antarest.core.exceptions import ShouldNotHappenException
 from antarest.core.model import PublicMode
 from antarest.core.persistence import Base
 from antarest.login.model import Group, GroupDTO, Identity
+from antarest.study.css4_colors import COLOR_NAMES
 
 if t.TYPE_CHECKING:
     # avoid circular import
     from antarest.core.tasks.model import TaskJob
 
 DEFAULT_WORKSPACE_NAME = "default"
-
-groups_metadata = Table(
-    "group_metadata",
-    Base.metadata,
-    Column("group_id", String(36), ForeignKey("groups.id")),
-    Column("study_id", String(36), ForeignKey("study.id")),
-)
 
 STUDY_REFERENCE_TEMPLATES: t.Dict[str, str] = {
     "600": "empty_study_613.zip",
@@ -44,6 +49,44 @@ STUDY_REFERENCE_TEMPLATES: t.Dict[str, str] = {
 }
 
 NEW_DEFAULT_STUDY_VERSION: str = "860"
+
+groups_metadata = Table(
+    "group_metadata",
+    Base.metadata,
+    Column("group_id", String(36), ForeignKey("groups.id")),
+    Column("study_id", String(36), ForeignKey("study.id")),
+)
+
+
+class StudyTag(Base):  # type:ignore
+    """
+    A table to manage the many-to-many relationship between `Study` and `Tag`
+    """
+
+    __tablename__ = "study_tag"
+    __table_args__ = (PrimaryKeyConstraint("study_id", "tag_label"),)
+
+    study_id: str = Column(String(36), ForeignKey("study.id", ondelete="CASCADE"), index=True, nullable=False)
+    tag_label: str = Column(String(40), ForeignKey("tag.label", ondelete="CASCADE"), index=True, nullable=False)
+
+    def __str__(self) -> str:
+        return f"[StudyTag] study_id={self.study_id}, tag={self.tag}"
+
+
+class Tag(Base):  # type:ignore
+    """
+    A table to store all tags
+    """
+
+    __tablename__ = "tag"
+
+    label = Column(String(40), primary_key=True, index=True)
+    color: str = Column(String(20), index=True, default=lambda: secrets.choice(COLOR_NAMES))
+
+    studies: t.List["Study"] = relationship("Study", secondary=StudyTag.__table__, back_populates="tags")
+
+    def __str__(self) -> str:
+        return f"[Tag] label={self.label}, css-color-code={self.color}"
 
 
 class StudyContentStatus(enum.Enum):
@@ -106,6 +149,8 @@ class Study(Base):  # type: ignore
     public_mode = Column(Enum(PublicMode), default=PublicMode.NONE)
     owner_id = Column(Integer, ForeignKey(Identity.id), nullable=True, index=True)
     archived = Column(Boolean(), default=False, index=True)
+
+    tags: t.List[Tag] = relationship(Tag, secondary=StudyTag.__table__, back_populates="studies")
     owner = relationship(Identity, uselist=False)
     groups = relationship(Group, secondary=lambda: groups_metadata, cascade="")
     additional_data = relationship(
