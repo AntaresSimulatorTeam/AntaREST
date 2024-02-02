@@ -1,5 +1,6 @@
 import contextlib
 import socket
+import shlex
 from typing import Any, List, Tuple
 
 import paramiko
@@ -40,13 +41,16 @@ def execute_command(ssh_config: SSHConfigDTO, args: List[str]) -> Any:
         socket.timeout,
         socket.error,
     ) as e:
-        raise SlurmError("Can't retrieve SLURM information") from e
+        raise SlurmError(f"Can't retrieve SLURM information: {e}") from e
     if error:
         raise SlurmError(f"Can't retrieve SLURM information: {error}")
     return output
 
 
 def parse_cpu_used(sinfo_output: str) -> float:
+    """
+    Returns the percentage of used CPUs in the cluster, in range [0, 100].
+    """
     cpu_info_split = sinfo_output.split("/")
     cpu_used_count = int(cpu_info_split[0])
     cpu_inactive_count = int(cpu_info_split[1])
@@ -54,6 +58,9 @@ def parse_cpu_used(sinfo_output: str) -> float:
 
 
 def parse_cpu_load(sinfo_output: str) -> float:
+    """
+    Returns the percentage of CPU load in the cluster, in range [0, 100].
+    """
     lines = sinfo_output.splitlines()
     cpus_used = 0.0
     cpus_available = 0.0
@@ -68,41 +75,32 @@ def parse_cpu_load(sinfo_output: str) -> float:
 
 
 def calculates_slurm_load(ssh_config: SSHConfigDTO, partition: str) -> Tuple[float, float, int]:
+    """
+    Returns the used/oad of the SLURM cluster or local machine in percentage and the number of queued jobs.
+    """
+    partition_arg = f"--partition={partition}" if partition else ""
+
     # allocated cpus
-    sinfo_cpus_used = execute_command(
-        ssh_config,
-        ["sinfo", "--partition", partition, "-O", "NodeAIOT", "--noheader"],
-    )
+    arg_list = ["sinfo", partition_arg, "-O", "NodeAIOT", "--noheader"]
+    sinfo_cpus_used = execute_command(ssh_config, arg_list)
+    if not sinfo_cpus_used:
+        args = " ".join(map(shlex.quote, arg_list))
+        raise SlurmError(f"Can't retrieve SLURM information: [{args}] returned no result")
     allocated_cpus = parse_cpu_used(sinfo_cpus_used)
+
     # cluster load
-    sinfo_cpus_load = execute_command(
-        ssh_config,
-        [
-            "sinfo",
-            "--partition",
-            partition,
-            "-N",
-            "-O",
-            "CPUsLoad,CPUs",
-            "--noheader",
-        ],
-    )
+    arg_list = ["sinfo", partition_arg, "-N", "-O", "CPUsLoad,CPUs", "--noheader"]
+    sinfo_cpus_load = execute_command(ssh_config, arg_list)
+    if not sinfo_cpus_load:
+        args = " ".join(map(shlex.quote, arg_list))
+        raise SlurmError(f"Can't retrieve SLURM information: [{args}] returned no result")
     cluster_load = parse_cpu_load(sinfo_cpus_load)
+
     # queued jobs
-    queued_jobs = int(
-        execute_command(
-            ssh_config,
-            [
-                "squeue",
-                "--partition",
-                partition,
-                "--noheader",
-                "-t",
-                "pending",
-                "|",
-                "wc",
-                "-l",
-            ],
-        )
-    )
-    return allocated_cpus, cluster_load, queued_jobs
+    arg_list = ["squeue", partition_arg, "--noheader", "-t", "pending", "|", "wc", "-l"]
+    queued_jobs = execute_command(ssh_config, arg_list)
+    if not queued_jobs:
+        args = " ".join(map(shlex.quote, arg_list))
+        raise SlurmError(f"Can't retrieve SLURM information: [{args}] returned no result")
+
+    return allocated_cpus, cluster_load, int(queued_jobs)
