@@ -505,6 +505,15 @@ port: 22
     - If SLURM is connected to `dev-server-name` (*recette* and *integration*), use this
       path: `/applis/antares/launchAntaresRec.sh`
 
+### **partition**
+
+- **Type:** String
+- **Default value:** ""
+- **Description:** SLURM partition name. The partition refers to a logical division of the computing resources
+  available on a cluster managed by SLURM.
+  - If not specified, the default behavior is to allow the SLURM controller
+    to select the default partition as designated by the system administrator.
+
 ### **antares_versions_on_remote_server**
 
 - **Type:** List of String
@@ -530,6 +539,7 @@ launcher:
     default_n_cpu: 20
     default_json_db_name: launcher_db.json
     slurm_script_path: /applis/antares/launchAntares.sh
+    partition: calin1
     db_primary_key: name
     antares_versions_on_remote_server:
       - '610'
