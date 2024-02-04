@@ -63,7 +63,7 @@ export default function OptionsList(props: Props) {
       )
       .map((elm) => ({
         name: elm.name,
-        id: elm.id,
+        id: elm.id.toLowerCase(),
       }));
     return tmp;
   }, [constraintsTerm, isLink, options, value1, value2]);
@@ -144,7 +144,7 @@ export default function OptionsList(props: Props) {
         name="value2"
         list={options2}
         label={t(`study.${name2}`)}
-        data={value2}
+        data={value2.toLowerCase()}
         handleChange={(key, value) => handleValue2(value as string)}
         sx={{
           flexGrow: 1,
