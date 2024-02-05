@@ -1,7 +1,7 @@
 import functools
 import json
 import operator
-from typing import Any, Dict, List, Mapping, MutableMapping, Optional, Sequence
+import typing as t
 
 import numpy as np
 from pydantic import BaseModel, Extra, root_validator, validator
@@ -44,7 +44,7 @@ class STStorageInput(STStorageProperties, metaclass=AllOptionalMetaclass, use_no
 
     class Config:
         @staticmethod
-        def schema_extra(schema: MutableMapping[str, Any]) -> None:
+        def schema_extra(schema: t.MutableMapping[str, t.Any]) -> None:
             schema["example"] = STStorageInput(
                 name="Siemens Battery",
                 group=STStorageGroup.BATTERY,
@@ -64,7 +64,7 @@ class STStorageCreation(STStorageInput):
 
     # noinspection Pydantic
     @validator("name", pre=True)
-    def validate_name(cls, name: Optional[str]) -> str:
+    def validate_name(cls, name: t.Optional[str]) -> str:
         """
         Validator to check if the name is not empty.
         """
@@ -86,7 +86,7 @@ class STStorageOutput(STStorageConfig):
 
     class Config:
         @staticmethod
-        def schema_extra(schema: MutableMapping[str, Any]) -> None:
+        def schema_extra(schema: t.MutableMapping[str, t.Any]) -> None:
             schema["example"] = STStorageOutput(
                 id="siemens_battery",
                 name="Siemens Battery",
@@ -99,7 +99,7 @@ class STStorageOutput(STStorageConfig):
             )
 
     @classmethod
-    def from_config(cls, storage_id: str, config: Mapping[str, Any]) -> "STStorageOutput":
+    def from_config(cls, storage_id: str, config: t.Mapping[str, t.Any]) -> "STStorageOutput":
         storage = STStorageConfig(**config, id=storage_id)
         values = storage.dict(by_alias=False)
         return cls(**values)
@@ -126,12 +126,12 @@ class STStorageMatrix(BaseModel):
     class Config:
         extra = Extra.forbid
 
-    data: List[List[float]]
-    index: List[int]
-    columns: List[int]
+    data: t.List[t.List[float]]
+    index: t.List[int]
+    columns: t.List[int]
 
     @validator("data")
-    def validate_time_series(cls, data: List[List[float]]) -> List[List[float]]:
+    def validate_time_series(cls, data: t.List[t.List[float]]) -> t.List[t.List[float]]:
         """
         Validator to check the integrity of the time series data.
 
@@ -189,7 +189,9 @@ class STStorageMatrices(BaseModel):
         return matrix
 
     @root_validator()
-    def validate_rule_curve(cls, values: MutableMapping[str, STStorageMatrix]) -> MutableMapping[str, STStorageMatrix]:
+    def validate_rule_curve(
+        cls, values: t.MutableMapping[str, STStorageMatrix]
+    ) -> t.MutableMapping[str, STStorageMatrix]:
         """
         Validator to ensure 'lower_rule_curve' values are less than
         or equal to 'upper_rule_curve' values.
@@ -275,7 +277,7 @@ class STStorageManager:
         self,
         study: Study,
         area_id: str,
-    ) -> Sequence[STStorageOutput]:
+    ) -> t.Sequence[STStorageOutput]:
         """
         Get the list of short-term storage configurations for the given `study`, and `area_id`.
 
@@ -375,7 +377,7 @@ class STStorageManager:
         new_data = json.loads(new_config.json(by_alias=True, exclude={"id"}))
 
         # create the dict containing the new values using aliases
-        data: Dict[str, Any] = {
+        data: t.Dict[str, t.Any] = {
             field.alias: new_data[field.alias]
             for field_name, field in new_config.__fields__.items()
             if field_name in new_values
@@ -396,7 +398,7 @@ class STStorageManager:
         self,
         study: Study,
         area_id: str,
-        storage_ids: Sequence[str],
+        storage_ids: t.Sequence[str],
     ) -> None:
         """
         Delete short-term storage configurations form the given study and area_id.
@@ -444,7 +446,7 @@ class STStorageManager:
         area_id: str,
         storage_id: str,
         ts_name: STStorageTimeSeries,
-    ) -> MutableMapping[str, Any]:
+    ) -> t.MutableMapping[str, t.Any]:
         file_study = self._get_file_study(study)
         path = STORAGE_SERIES_PATH.format(area_id=area_id, storage_id=storage_id, ts_name=ts_name)
         try:
@@ -480,7 +482,7 @@ class STStorageManager:
         area_id: str,
         storage_id: str,
         ts_name: STStorageTimeSeries,
-        matrix_obj: Dict[str, Any],
+        matrix_obj: t.Dict[str, t.Any],
     ) -> None:
         file_study = self._get_file_study(study)
         path = STORAGE_SERIES_PATH.format(area_id=area_id, storage_id=storage_id, ts_name=ts_name)
