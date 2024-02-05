@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, List, Optional, Tuple, Union, cast
+import typing as t
 
 import numpy as np
 from pydantic import Field, validator
@@ -28,7 +28,7 @@ _MATRIX_NAMES = (
 # Minimum required version.
 REQUIRED_VERSION = 860
 
-MatrixType = List[List[MatrixData]]
+MatrixType = t.List[t.List[MatrixData]]
 
 
 # noinspection SpellCheckingInspection
@@ -48,23 +48,23 @@ class CreateSTStorage(ICommand):
 
     area_id: str = Field(description="Area ID", regex=r"[a-z0-9_(),& -]+")
     parameters: STStorageConfigType
-    pmax_injection: Optional[Union[MatrixType, str]] = Field(
+    pmax_injection: t.Optional[t.Union[MatrixType, str]] = Field(
         None,
         description="Charge capacity (modulation)",
     )
-    pmax_withdrawal: Optional[Union[MatrixType, str]] = Field(
+    pmax_withdrawal: t.Optional[t.Union[MatrixType, str]] = Field(
         None,
         description="Discharge capacity (modulation)",
     )
-    lower_rule_curve: Optional[Union[MatrixType, str]] = Field(
+    lower_rule_curve: t.Optional[t.Union[MatrixType, str]] = Field(
         None,
         description="Lower rule curve (coefficient)",
     )
-    upper_rule_curve: Optional[Union[MatrixType, str]] = Field(
+    upper_rule_curve: t.Optional[t.Union[MatrixType, str]] = Field(
         None,
         description="Upper rule curve (coefficient)",
     )
-    inflows: Optional[Union[MatrixType, str]] = Field(
+    inflows: t.Optional[t.Union[MatrixType, str]] = Field(
         None,
         description="Inflows (MW)",
     )
@@ -82,10 +82,10 @@ class CreateSTStorage(ICommand):
     @validator(*_MATRIX_NAMES, always=True)
     def register_matrix(
         cls,
-        v: Optional[Union[MatrixType, str]],
-        values: Dict[str, Any],
+        v: t.Optional[t.Union[MatrixType, str]],
+        values: t.Dict[str, t.Any],
         field: ModelField,
-    ) -> Optional[Union[MatrixType, str]]:
+    ) -> t.Optional[t.Union[MatrixType, str]]:
         """
         Validates a matrix array or link, and store the matrix array in the matrix repository.
 
@@ -138,13 +138,13 @@ class CreateSTStorage(ICommand):
             constrained = set(_MATRIX_NAMES) - {"inflows"}
             if field.name in constrained and (np.any(array < 0) or np.any(array > 1)):
                 raise ValueError("Matrix values should be between 0 and 1")
-            v = cast(MatrixType, array.tolist())
+            v = t.cast(MatrixType, array.tolist())
             return validate_matrix(v, values)
         # Invalid datatype
         # pragma: no cover
         raise TypeError(repr(v))
 
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
         """
         Applies configuration changes to the study data: add the short-term storage in the storages list.
 
@@ -284,7 +284,7 @@ class CreateSTStorage(ICommand):
         else:
             return self.area_id == other.area_id and self.storage_id == other.storage_id
 
-    def _create_diff(self, other: "ICommand") -> List["ICommand"]:
+    def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
         """
         Creates a list of commands representing the differences between
         the current instance and another `ICommand` object.
@@ -299,8 +299,8 @@ class CreateSTStorage(ICommand):
         from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
         from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 
-        other = cast(CreateSTStorage, other)
-        commands: List[ICommand] = [
+        other = t.cast(CreateSTStorage, other)
+        commands: t.List[ICommand] = [
             ReplaceMatrix(
                 target=f"input/st-storage/series/{self.area_id}/{self.storage_id}/{attr}",
                 matrix=strip_matrix_protocol(getattr(other, attr)),
@@ -310,7 +310,7 @@ class CreateSTStorage(ICommand):
             if getattr(self, attr) != getattr(other, attr)
         ]
         if self.parameters != other.parameters:
-            data: Dict[str, Any] = json.loads(other.parameters.json(by_alias=True, exclude={"id"}))
+            data: t.Dict[str, t.Any] = json.loads(other.parameters.json(by_alias=True, exclude={"id"}))
             commands.append(
                 UpdateConfig(
                     target=f"input/st-storage/clusters/{self.area_id}/list/{self.storage_id}",
@@ -320,9 +320,9 @@ class CreateSTStorage(ICommand):
             )
         return commands
 
-    def get_inner_matrices(self) -> List[str]:
+    def get_inner_matrices(self) -> t.List[str]:
         """
         Retrieves the list of matrix IDs.
         """
-        matrices: List[str] = [strip_matrix_protocol(getattr(self, attr)) for attr in _MATRIX_NAMES]
+        matrices: t.List[str] = [strip_matrix_protocol(getattr(self, attr)) for attr in _MATRIX_NAMES]
         return matrices
