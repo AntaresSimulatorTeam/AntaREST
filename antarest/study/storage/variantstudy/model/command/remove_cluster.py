@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Tuple
+import typing as t
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -27,7 +27,7 @@ class RemoveCluster(ICommand):
     area_id: str
     cluster_id: str
 
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
         """
         Applies configuration changes to the study data: remove the thermal clusters from the storages list.
 
@@ -128,10 +128,10 @@ class RemoveCluster(ICommand):
             return False
         return self.cluster_id == other.cluster_id and self.area_id == other.area_id
 
-    def _create_diff(self, other: "ICommand") -> List["ICommand"]:
+    def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
         return []
 
-    def get_inner_matrices(self) -> List[str]:
+    def get_inner_matrices(self) -> t.List[str]:
         return []
 
     # noinspection SpellCheckingInspection

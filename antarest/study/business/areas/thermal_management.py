@@ -30,7 +30,7 @@ _CLUSTERS_PATH = "input/thermal/clusters/{area_id}/list"
 
 
 @camel_case_model
-class ThermalClusterInput(Thermal860Properties, metaclass=AllOptionalMetaclass):
+class ThermalClusterInput(Thermal860Properties, metaclass=AllOptionalMetaclass, use_none=True):
     """
     Model representing the data structure required to edit an existing thermal cluster within a study.
     """
@@ -70,7 +70,7 @@ class ThermalClusterCreation(ThermalClusterInput):
 
 
 @camel_case_model
-class ThermalClusterOutput(Thermal860Config, metaclass=AllOptionalMetaclass):
+class ThermalClusterOutput(Thermal860Config, metaclass=AllOptionalMetaclass, use_none=True):
     """
     Model representing the output data structure to display the details of a thermal cluster within a study.
     """
@@ -245,31 +245,27 @@ class ThermalManager:
             old_config = create_thermal_config(study_version, **values)
 
         # Use Python values to synchronize Config and Form values
-        old_values = old_config.dict(exclude={"id"})
         new_values = cluster_data.dict(by_alias=False, exclude_none=True)
-        updated = {**old_values, **new_values}
-        new_config = create_thermal_config(study_version, **updated, id=cluster_id)
+        new_config = old_config.copy(exclude={"id"}, update=new_values)
         new_data = json.loads(new_config.json(by_alias=True, exclude={"id"}))
 
-        # Create the dict containing the old values (excluding defaults),
-        #  and the updated values (including defaults)
-        data: t.Dict[str, t.Any] = {}
-        for field_name, field in new_config.__fields__.items():
-            if field_name in {"id"}:
-                continue
-            value = getattr(new_config, field_name)
-            if field_name in new_values or value != field.get_default():
-                # use the JSON-converted value
-                data[field.alias] = new_data[field.alias]
+        # create the dict containing the new values using aliases
+        data: t.Dict[str, t.Any] = {
+            field.alias: new_data[field.alias]
+            for field_name, field in new_config.__fields__.items()
+            if field_name in new_values
+        }
 
-        # create the update config command with the modified data
+        # create the update config commands with the modified data
         command_context = self.storage_service.variant_study_service.command_factory.command_context
-        command = UpdateConfig(target=path, data=data, command_context=command_context)
-        file_study = self.storage_service.get_storage(study).get_raw(study)
-        execute_or_add_commands(study, file_study, [command], self.storage_service)
+        commands = [
+            UpdateConfig(target=f"{path}/{key}", data=value, command_context=command_context)
+            for key, value in data.items()
+        ]
+        execute_or_add_commands(study, file_study, commands, self.storage_service)
 
         values = new_config.dict(by_alias=False)
-        return ThermalClusterOutput(**values)
+        return ThermalClusterOutput(**values, id=cluster_id)
 
     def delete_clusters(self, study: Study, area_id: str, cluster_ids: t.Sequence[str]) -> None:
         """

@@ -201,7 +201,7 @@ class TestRenewable:
             json=bad_properties,
         )
         assert res.status_code == 422, res.json()
-        assert res.json()["exception"] == "ValidationError", res.json()
+        assert res.json()["exception"] == "RequestValidationError", res.json()
 
         # The renewable cluster properties should not have been updated.
         res = client.get(

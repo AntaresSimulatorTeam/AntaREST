@@ -17,11 +17,12 @@ from antarest.core.exceptions import (
 )
 from antarest.core.model import PublicMode
 from antarest.login.model import Group, User
-from antarest.study.business.areas.st_storage_management import STStorageManager
+from antarest.study.business.areas.st_storage_management import STStorageInput, STStorageManager
 from antarest.study.model import RawStudy, Study, StudyContentStatus
 from antarest.study.storage.rawstudy.ini_reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import STStorageGroup
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.storage_service import StudyStorageService
@@ -86,7 +87,7 @@ class TestSTStorageManager:
         raw_study = RawStudy(
             id=str(uuid.uuid4()),
             name="Dummy",
-            version="850",
+            version="860",  # version 860 is required for the storage feature
             author="John Smith",
             created_at=datetime.datetime.now(datetime.timezone.utc),
             updated_at=datetime.datetime.now(datetime.timezone.utc),
@@ -251,6 +252,72 @@ class TestSTStorageManager:
             "name": "Storage1",
             "reservoirCapacity": 20000.0,
             "withdrawalNominalCapacity": 1500.0,
+        }
+        assert actual == expected
+
+    # noinspection SpellCheckingInspection
+    def test_update_storage__nominal_case(
+        self,
+        db_session: Session,
+        study_storage_service: StudyStorageService,
+        study_uuid: str,
+    ) -> None:
+        """
+        Test the `update_st_storage` method of the `STStorageManager` class under nominal conditions.
+
+        This test verifies that the `update_st_storage` method correctly updates the storage fields
+        for a specific study, area, and storage ID combination.
+
+        Args:
+            db_session: A database session fixture.
+            study_storage_service: A study storage service fixture.
+            study_uuid: The UUID of the study to be tested.
+        """
+
+        # The study must be fetched from the database
+        study: RawStudy = db_session.query(Study).get(study_uuid)
+
+        # Prepare the mocks
+        storage = study_storage_service.get_storage(study)
+        file_study = storage.get_raw(study)
+        ini_file_node = IniFileNode(context=Mock(), config=Mock())
+        file_study.tree = Mock(
+            spec=FileStudyTree,
+            get=Mock(return_value=LIST_CFG["storage1"]),
+            get_node=Mock(return_value=ini_file_node),
+        )
+
+        # Given the following arguments
+        manager = STStorageManager(study_storage_service)
+
+        # Run the method being tested
+        edit_form = STStorageInput(initial_level=0, initial_level_optim=False)
+        manager.update_storage(study, area_id="West", storage_id="storage1", form=edit_form)
+
+        # Assert that the storage fields have been updated
+        #
+        # Currently, the method used to update the fields is the `UpdateConfig` command
+        # which only does a partial update of the configuration file: only the fields
+        # that are explicitly mentioned in the form are updated. The other fields are left unchanged.
+        #
+        # The effective update of the fields is done by the `save` method of the `IniFileNode` class.
+        # The signature of the `save` method is: `save(self, value: Any, path: Sequence[str]) -> None`
+
+        assert file_study.tree.save.call_count == 2
+
+        # Fields "initiallevel" and "initialleveloptim" could be updated in any order.
+        # We construct a *set* of the actual calls to the `save` method and compare it
+        # to the expected set of calls.
+        actual = {(call_args[0][0], tuple(call_args[0][1])) for call_args in file_study.tree.save.call_args_list}
+        expected = {
+            (
+                str(0.0),
+                ("input", "st-storage", "clusters", "West", "list", "storage1", "initiallevel"),
+            ),
+            (
+                str(False),
+                ("input", "st-storage", "clusters", "West", "list", "storage1", "initialleveloptim"),
+            ),
         }
         assert actual == expected
 

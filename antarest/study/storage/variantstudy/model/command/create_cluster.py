@@ -1,6 +1,6 @@
-from typing import Any, Dict, List, Optional, Tuple, Union, cast
+import typing as t
 
-from pydantic import Extra, validator
+from pydantic import validator
 
 from antarest.core.model import JSON
 from antarest.core.utils.utils import assert_this
@@ -34,9 +34,9 @@ class CreateCluster(ICommand):
 
     area_id: str
     cluster_name: str
-    parameters: Dict[str, str]
-    prepro: Optional[Union[List[List[MatrixData]], str]] = None
-    modulation: Optional[Union[List[List[MatrixData]], str]] = None
+    parameters: t.Dict[str, str]
+    prepro: t.Optional[t.Union[t.List[t.List[MatrixData]], str]] = None
+    modulation: t.Optional[t.Union[t.List[t.List[MatrixData]], str]] = None
 
     @validator("cluster_name")
     def validate_cluster_name(cls, val: str) -> str:
@@ -47,8 +47,8 @@ class CreateCluster(ICommand):
 
     @validator("prepro", always=True)
     def validate_prepro(
-        cls, v: Optional[Union[List[List[MatrixData]], str]], values: Any
-    ) -> Optional[Union[List[List[MatrixData]], str]]:
+        cls, v: t.Optional[t.Union[t.List[t.List[MatrixData]], str]], values: t.Any
+    ) -> t.Optional[t.Union[t.List[t.List[MatrixData]], str]]:
         if v is None:
             v = values["command_context"].generator_matrix_constants.get_thermal_prepro_data()
             return v
@@ -58,8 +58,8 @@ class CreateCluster(ICommand):
 
     @validator("modulation", always=True)
     def validate_modulation(
-        cls, v: Optional[Union[List[List[MatrixData]], str]], values: Any
-    ) -> Optional[Union[List[List[MatrixData]], str]]:
+        cls, v: t.Optional[t.Union[t.List[t.List[MatrixData]], str]], values: t.Any
+    ) -> t.Optional[t.Union[t.List[t.List[MatrixData]], str]]:
         if v is None:
             v = values["command_context"].generator_matrix_constants.get_thermal_prepro_modulation()
             return v
@@ -67,7 +67,7 @@ class CreateCluster(ICommand):
         else:
             return validate_matrix(v, values)
 
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
         # Search the Area in the configuration
         if self.area_id not in study_data.areas:
             return (
@@ -173,14 +173,14 @@ class CreateCluster(ICommand):
             and self.modulation == other.modulation
         )
 
-    def _create_diff(self, other: "ICommand") -> List["ICommand"]:
-        other = cast(CreateCluster, other)
+    def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
+        other = t.cast(CreateCluster, other)
         from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
         from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 
         # Series identifiers are in lower case.
         series_id = transform_name_to_id(self.cluster_name, lower=True)
-        commands: List[ICommand] = []
+        commands: t.List[ICommand] = []
         if self.prepro != other.prepro:
             commands.append(
                 ReplaceMatrix(
@@ -207,8 +207,8 @@ class CreateCluster(ICommand):
             )
         return commands
 
-    def get_inner_matrices(self) -> List[str]:
-        matrices: List[str] = []
+    def get_inner_matrices(self) -> t.List[str]:
+        matrices: t.List[str] = []
         if self.prepro:
             assert_this(isinstance(self.prepro, str))
             matrices.append(strip_matrix_protocol(self.prepro))

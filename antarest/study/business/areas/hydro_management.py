@@ -163,7 +163,7 @@ class HydroManager:
             values: The new inflow structure values to be updated.
 
         Raises:
-            RequestValidationError: If the provided `values` parameter is None or invalid.
+            ValidationError: If the provided `values` parameter is None or invalid.
         """
         # NOTE: Updates only "intermonthly-correlation" due to current model scope.
         path = INFLOW_PATH.format(area_id=area_id)

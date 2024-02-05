@@ -1,6 +1,6 @@
-from typing import Any, Dict, List, Tuple, cast
+import typing as t
 
-from pydantic import Extra, validator
+from pydantic import validator
 
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -32,7 +32,7 @@ class CreateRenewablesCluster(ICommand):
 
     area_id: str
     cluster_name: str
-    parameters: Dict[str, str]
+    parameters: t.Dict[str, str]
 
     @validator("cluster_name")
     def validate_cluster_name(cls, val: str) -> str:
@@ -41,7 +41,7 @@ class CreateRenewablesCluster(ICommand):
             raise ValueError("Area name must only contains [a-zA-Z0-9],&,-,_,(,) characters")
         return val
 
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
         if study_data.enr_modelling != ENR_MODELLING.CLUSTERS.value:
             # Since version 8.1 of the solver, we can use renewable clusters
             # instead of "Load", "Wind" and "Solar" objects for modelling.
@@ -147,11 +147,11 @@ class CreateRenewablesCluster(ICommand):
             return simple_match
         return simple_match and self.parameters == other.parameters
 
-    def _create_diff(self, other: "ICommand") -> List["ICommand"]:
-        other = cast(CreateRenewablesCluster, other)
+    def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
+        other = t.cast(CreateRenewablesCluster, other)
         from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 
-        commands: List[ICommand] = []
+        commands: t.List[ICommand] = []
         if self.parameters != other.parameters:
             commands.append(
                 UpdateConfig(
@@ -162,5 +162,5 @@ class CreateRenewablesCluster(ICommand):
             )
         return commands
 
-    def get_inner_matrices(self) -> List[str]:
+    def get_inner_matrices(self) -> t.List[str]:
         return []
