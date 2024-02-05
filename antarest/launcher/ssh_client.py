@@ -1,6 +1,6 @@
 import contextlib
-import socket
 import shlex
+import socket
 from typing import Any, List, Tuple
 
 import paramiko
