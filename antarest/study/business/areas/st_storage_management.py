@@ -37,7 +37,7 @@ __all__ = (
 
 
 @camel_case_model
-class STStorageInput(STStorageProperties, metaclass=AllOptionalMetaclass):
+class STStorageInput(STStorageProperties, metaclass=AllOptionalMetaclass, use_none=True):
     """
     Model representing the form used to EDIT an existing short-term storage.
     """

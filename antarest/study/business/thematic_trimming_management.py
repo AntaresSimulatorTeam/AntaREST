@@ -12,7 +12,7 @@ from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 
 
-class ThematicTrimmingFormFields(FormFieldsBaseModel, metaclass=AllOptionalMetaclass):
+class ThematicTrimmingFormFields(FormFieldsBaseModel, metaclass=AllOptionalMetaclass, use_none=True):
     """
     This class manages the configuration of result filtering in a simulation.
 

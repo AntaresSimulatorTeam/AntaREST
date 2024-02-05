@@ -25,8 +25,18 @@ from antarest.study.business.areas.renewable_management import (
     RenewableClusterInput,
     RenewableClusterOutput,
 )
-from antarest.study.business.areas.st_storage_management import *  # noqa
-from antarest.study.business.areas.thermal_management import *  # noqa
+from antarest.study.business.areas.st_storage_management import (
+    STStorageCreation,
+    STStorageInput,
+    STStorageMatrix,
+    STStorageOutput,
+    STStorageTimeSeries,
+)
+from antarest.study.business.areas.thermal_management import (
+    ThermalClusterCreation,
+    ThermalClusterInput,
+    ThermalClusterOutput,
+)
 from antarest.study.business.binding_constraint_management import (
     BindingConstraintPropertiesWithName,
     ConstraintTermDTO,

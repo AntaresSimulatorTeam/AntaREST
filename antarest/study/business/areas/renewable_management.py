@@ -37,7 +37,7 @@ class TimeSeriesInterpretation(EnumIgnoreCase):
 
 
 @camel_case_model
-class RenewableClusterInput(RenewableProperties, metaclass=AllOptionalMetaclass):
+class RenewableClusterInput(RenewableProperties, metaclass=AllOptionalMetaclass, use_none=True):
     """
     Model representing the data structure required to edit an existing renewable cluster.
     """
@@ -76,7 +76,7 @@ class RenewableClusterCreation(RenewableClusterInput):
 
 
 @camel_case_model
-class RenewableClusterOutput(RenewableConfig, metaclass=AllOptionalMetaclass):
+class RenewableClusterOutput(RenewableConfig, metaclass=AllOptionalMetaclass, use_none=True):
     """
     Model representing the output data structure to display the details of a renewable cluster.
     """

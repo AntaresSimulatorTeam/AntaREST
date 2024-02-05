@@ -30,7 +30,7 @@ _CLUSTERS_PATH = "input/thermal/clusters/{area_id}/list"
 
 
 @camel_case_model
-class ThermalClusterInput(Thermal860Properties, metaclass=AllOptionalMetaclass):
+class ThermalClusterInput(Thermal860Properties, metaclass=AllOptionalMetaclass, use_none=True):
     """
     Model representing the data structure required to edit an existing thermal cluster within a study.
     """
@@ -70,7 +70,7 @@ class ThermalClusterCreation(ThermalClusterInput):
 
 
 @camel_case_model
-class ThermalClusterOutput(Thermal860Config, metaclass=AllOptionalMetaclass):
+class ThermalClusterOutput(Thermal860Config, metaclass=AllOptionalMetaclass, use_none=True):
     """
     Model representing the output data structure to display the details of a thermal cluster within a study.
     """
