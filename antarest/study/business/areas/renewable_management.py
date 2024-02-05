@@ -199,7 +199,11 @@ class RenewableManager:
         return create_renewable_output(study.version, cluster_id, cluster)
 
     def update_cluster(
-        self, study: Study, area_id: str, cluster_id: str, cluster_data: RenewableClusterInput
+        self,
+        study: Study,
+        area_id: str,
+        cluster_id: str,
+        cluster_data: RenewableClusterInput,
     ) -> RenewableClusterOutput:
         """
         Updates the configuration of an existing cluster within an area in the study.
@@ -225,33 +229,31 @@ class RenewableManager:
             values = file_study.tree.get(path.split("/"), depth=1)
         except KeyError:
             raise ClusterNotFound(cluster_id) from None
+        else:
+            old_config = create_renewable_config(study_version, **values)
 
-        # merge old and new values
-        updated_values = {
-            **create_renewable_config(study_version, **values).dict(exclude={"id"}),
-            **cluster_data.dict(by_alias=False, exclude_none=True),
-            "id": cluster_id,
-        }
-        new_config = create_renewable_config(study_version, **updated_values)
+        # use Python values to synchronize Config and Form values
+        new_values = cluster_data.dict(by_alias=False, exclude_none=True)
+        new_config = old_config.copy(exclude={"id"}, update=new_values)
         new_data = json.loads(new_config.json(by_alias=True, exclude={"id"}))
 
-        data = {
+        # create the dict containing the new values using aliases
+        data: t.Dict[str, t.Any] = {
             field.alias: new_data[field.alias]
             for field_name, field in new_config.__fields__.items()
-            if field_name not in {"id"}
-            and (field_name in updated_values or getattr(new_config, field_name) != field.get_default())
+            if field_name in new_values
         }
 
-        command = UpdateConfig(
-            target=path,
-            data=data,
-            command_context=self.storage_service.variant_study_service.command_factory.command_context,
-        )
+        # create the update config commands with the modified data
+        command_context = self.storage_service.variant_study_service.command_factory.command_context
+        commands = [
+            UpdateConfig(target=f"{path}/{key}", data=value, command_context=command_context)
+            for key, value in data.items()
+        ]
+        execute_or_add_commands(study, file_study, commands, self.storage_service)
 
-        # fixme: The `file_study` is already retrieved at the beginning of the function.
-        file_study = self.storage_service.get_storage(study).get_raw(study)
-        execute_or_add_commands(study, file_study, [command], self.storage_service)
-        return RenewableClusterOutput(**new_config.dict(by_alias=False))
+        values = new_config.dict(by_alias=False)
+        return RenewableClusterOutput(**values, id=cluster_id)
 
     def delete_clusters(self, study: Study, area_id: str, cluster_ids: t.Sequence[str]) -> None:
         """
