@@ -551,6 +551,9 @@ class StudyService:
         if metadata_patch.horizon:
             study.additional_data.horizon = metadata_patch.horizon
 
+        new_tags = metadata_patch.tags
+        self.repository.update_tags(study, new_tags)
+
         new_metadata = self.storage_service.get_storage(study).patch_update_study_metadata(study, metadata_patch)
 
         self.event_bus.push(
@@ -560,9 +563,6 @@ class StudyService:
                 permissions=PermissionInfo.from_study(study),
             )
         )
-
-        new_tags = new_metadata.tags
-        self.repository.update_tags(study, new_tags)
 
         return new_metadata
 

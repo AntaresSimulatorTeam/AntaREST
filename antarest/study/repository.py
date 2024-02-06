@@ -298,6 +298,8 @@ class StudyMetadataRepository:
 
         """
         logger.debug(f"Updating tags for study: {study.id}")
-        study.tags = [Tag(label=tag) for tag in new_tags]
+        existing_tags = self.session.query(Tag).filter(Tag.label.in_(new_tags)).all()
+        new_labels = set(new_tags) - set([tag.label for tag in existing_tags])
+        study.tags = [Tag(label=tag) for tag in new_labels] + existing_tags
         self.session.merge(study)
         self.session.commit()
