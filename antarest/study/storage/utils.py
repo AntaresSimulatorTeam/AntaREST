@@ -1,4 +1,5 @@
 import calendar
+import copy
 import logging
 import math
 import os
@@ -273,48 +274,44 @@ def _generate_columns(column_suffix: str) -> t.List[str]:
     return [f"{i}{column_suffix}" for i in range(101)]
 
 
+class MatrixProfile(t.NamedTuple):
+    """
+    Matrix profile for time series or classic tables.
+    """
+
+    cols: t.List[str]
+    rows: t.List[str]
+    stats: bool
+
+
 SPECIFIC_MATRICES = {
-    "input/hydro/common/capacity/creditmodulations_*": {
-        "alias": "creditmodulations",
-        "cols": _generate_columns(""),
-        "rows": ["Generating Power", "Pumping Power"],
-        "stats": False,
-    },
-    "input/hydro/common/capacity/maxpower_*": {
-        "alias": "maxpower",
-        "cols": [
+    "input/hydro/common/capacity/creditmodulations_*": MatrixProfile(
+        cols=_generate_columns(""),
+        rows=["Generating Power", "Pumping Power"],
+        stats=False,
+    ),
+    "input/hydro/common/capacity/maxpower_*": MatrixProfile(
+        cols=[
             "Generating Max Power (MW)",
             "Generating Max Energy (Hours at Pmax)",
             "Pumping Max Power (MW)",
             "Pumping Max Energy (Hours at Pmax)",
         ],
-        "rows": [],
-        "stats": False,
-    },
-    "input/hydro/common/capacity/reservoir_*": {
-        "alias": "reservoir",
-        "cols": ["Lev Low (p.u)", "Lev Avg (p.u)", "Lev High (p.u)"],
-        "rows": [],
-        "stats": False,
-    },
-    "input/hydro/common/capacity/waterValues_*": {
-        "alias": "waterValues",
-        "cols": _generate_columns("%"),
-        "rows": [],
-        "stats": False,
-    },
-    "input/hydro/series/*/mod": {"alias": "mod", "cols": [], "rows": [], "stats": True},
-    "input/hydro/series/*/ror": {"alias": "ror", "cols": [], "rows": [], "stats": True},
-    "input/hydro/common/capacity/inflowPattern_*": {
-        "alias": "inflowPattern",
-        "cols": ["Inflow Pattern (X)"],
-        "rows": [],
-        "stats": False,
-    },
-    "input/hydro/prepro/*/energy": {
-        "alias": "energy",
-        "cols": ["Expectation (MWh)", "Std Deviation (MWh)", "Min. (MWh)", "Max. (MWh)", "ROR Share"],
-        "rows": [
+        rows=[],
+        stats=False,
+    ),
+    "input/hydro/common/capacity/reservoir_*": MatrixProfile(
+        cols=["Lev Low (p.u)", "Lev Avg (p.u)", "Lev High (p.u)"],
+        rows=[],
+        stats=False,
+    ),
+    "input/hydro/common/capacity/waterValues_*": MatrixProfile(cols=_generate_columns("%"), rows=[], stats=False),
+    "input/hydro/series/*/mod": MatrixProfile(cols=[], rows=[], stats=True),
+    "input/hydro/series/*/ror": MatrixProfile(cols=[], rows=[], stats=True),
+    "input/hydro/common/capacity/inflowPattern_*": MatrixProfile(cols=["Inflow Pattern (X)"], rows=[], stats=False),
+    "input/hydro/prepro/*/energy": MatrixProfile(
+        cols=["Expectation (MWh)", "Std Deviation (MWh)", "Min. (MWh)", "Max. (MWh)", "ROR Share"],
+        rows=[
             "January",
             "February",
             "March",
@@ -328,64 +325,70 @@ SPECIFIC_MATRICES = {
             "November",
             "December",
         ],
-        "stats": False,
-    },
-    "input/thermal/prepro/*/*/modulation": {
-        "alias": "modulation",
-        "cols": ["Marginal cost modulation", "Market bid modulation", "Capacity modulation", "Min gen modulation"],
-        "rows": [],
-        "stats": False,
-    },
-    "input/thermal/prepro/*/*/data": {
-        "alias": "data",
-        "cols": ["FO Duration", "PO Duration", "FO Rate", "PO Rate", "NPO Min", "NPO Max"],
-        "rows": [],
-        "status": False,
-    },
-    "input/reserves/*": {
-        "alias": "reserves",
-        "cols": ["Primary Res. (draft)", "Strategic Res. (draft)", "DSM", "Day Ahead"],
-        "rows": [],
-        "status": False,
-    },
-    "input/misc-gen/miscgen-*": {
-        "alias": "miscgen",
-        "cols": ["CHP", "Bio Mass", "Bio Gaz", "Waste", "GeoThermal", "Other", "PSP", "ROW Balance"],
-        "rows": [],
-        "status": False,
-    },
-    "input/bindingconstraints/*": {
-        "alias": "bindingconstraints",
-        "rows": [],
-        "stats": False,
-        "cols_with_version": {"before_870": ["<", ">", "="], "after_870": []},
-    },
-    "input/links/*/*": {
-        "alias": "links",
-        "rows": [],
-        "stats": False,
-        "cols_with_version": {
-            "after_820": [
-                "Hurdle costs direct",
-                "Hurdle costs indirect",
-                "Impedances",
-                "Loop flow",
-                "P.Shift Min",
-                "P.Shift Max",
-            ],
-            "before_820": [
-                "Capacités de transmission directes",
-                "Capacités de transmission indirectes",
-                "Hurdle costs direct",
-                "Hurdle costs indirect",
-                "Impedances",
-                "Loop flow",
-                "P.Shift Min",
-                "P.Shift Max",
-            ],
-        },
-    },
+        stats=False,
+    ),
+    "input/thermal/prepro/*/*/modulation": MatrixProfile(
+        cols=["Marginal cost modulation", "Market bid modulation", "Capacity modulation", "Min gen modulation"],
+        rows=[],
+        stats=False,
+    ),
+    "input/thermal/prepro/*/*/data": MatrixProfile(
+        cols=["FO Duration", "PO Duration", "FO Rate", "PO Rate", "NPO Min", "NPO Max"],
+        rows=[],
+        stats=False,
+    ),
+    "input/reserves/*": MatrixProfile(
+        cols=["Primary Res. (draft)", "Strategic Res. (draft)", "DSM", "Day Ahead"],
+        rows=[],
+        stats=False,
+    ),
+    "input/misc-gen/miscgen-*": MatrixProfile(
+        cols=["CHP", "Bio Mass", "Bio Gaz", "Waste", "GeoThermal", "Other", "PSP", "ROW Balance"],
+        rows=[],
+        stats=False,
+    ),
+    "input/bindingconstraints/*": MatrixProfile(cols=["<", ">", "="], rows=[], stats=False),
+    "input/links/*/*": MatrixProfile(
+        cols=[
+            "Capacités de transmission directes",
+            "Capacités de transmission indirectes",
+            "Hurdle costs direct",
+            "Hurdle costs indirect",
+            "Impedances",
+            "Loop flow",
+            "P.Shift Min",
+            "P.Shift Max",
+        ],
+        rows=[],
+        stats=False,
+    ),
 }
+
+
+SPECIFIC_MATRICES_820 = copy.deepcopy(SPECIFIC_MATRICES)
+SPECIFIC_MATRICES_820["input/links/*/*"] = MatrixProfile(
+    cols=[
+        "Hurdle costs direct",
+        "Hurdle costs indirect",
+        "Impedances",
+        "Loop flow",
+        "P.Shift Min",
+        "P.Shift Max",
+    ],
+    rows=[],
+    stats=False,
+)
+
+SPECIFIC_MATRICES_870 = copy.deepcopy(SPECIFIC_MATRICES_820)
+SPECIFIC_MATRICES_870["input/bindingconstraints/*"] = MatrixProfile(cols=[], rows=[], stats=False)
+
+
+def get_specific_matrices_according_to_version(study_version: int) -> t.Dict[str, MatrixProfile]:
+    if study_version < 820:
+        return SPECIFIC_MATRICES
+    elif study_version < 870:
+        return SPECIFIC_MATRICES_820
+    return SPECIFIC_MATRICES_870
 
 
 def get_start_date(

@@ -114,8 +114,9 @@ from antarest.study.storage.study_upgrader import (
     upgrade_study,
 )
 from antarest.study.storage.utils import (
-    SPECIFIC_MATRICES,
+    MatrixProfile,
     assert_permission,
+    get_specific_matrices_according_to_version,
     get_start_date,
     is_managed,
     remove_from_cache,
@@ -152,42 +153,31 @@ def get_disk_usage(path: t.Union[str, Path]) -> int:
 
 
 def _handle_specific_matrices(
-    study_version: int,
     df: pd.DataFrame,
-    specific_matrix_name: str,
+    matrix_profile: MatrixProfile,
     matrix_path: str,
     *,
     with_index: bool,
     with_columns: bool,
 ) -> pd.DataFrame:
-    json_matrix = SPECIFIC_MATRICES[specific_matrix_name]
     if with_columns:
-        if json_matrix["alias"] == "bindingconstraints":
-            if study_version < 870:
-                cols: t.List[str] = json_matrix["cols_with_version"]["before_870"]  # type: ignore
-            else:
-                cols: t.List[str] = json_matrix["cols_with_version"]["after_870"]  # type: ignore
-        elif json_matrix["alias"] == "links":
-            cols = _handle_links_columns(study_version, matrix_path, json_matrix)
+        if Path(matrix_path).parts[1] == "links":
+            cols = _handle_links_columns(matrix_path, matrix_profile)
         else:
-            cols: t.List[str] = json_matrix["cols"]  # type: ignore
+            cols = matrix_profile.cols
         if cols:
             df.columns = pd.Index(cols)
-    rows: t.List[str] = json_matrix["rows"]  # type: ignore
+    rows = matrix_profile.rows
     if with_index and rows:
         df.index = rows  # type: ignore
     return df
 
 
-def _handle_links_columns(study_version: int, matrix_path: str, json_matrix: t.Mapping[str, t.Any]) -> t.List[str]:
+def _handle_links_columns(matrix_path: str, matrix_profile: MatrixProfile) -> t.List[str]:
     path_parts = Path(matrix_path).parts
     area_id_1 = path_parts[2]
     area_id_2 = path_parts[3]
-    result: t.List[str] = (
-        json_matrix["cols_with_version"]["before_820"]
-        if study_version < 820
-        else json_matrix["cols_with_version"]["after_820"]
-    )
+    result = matrix_profile.cols
     for k, col in enumerate(result):
         if col == "Hurdle costs direct":
             result[k] = f"{col} ({area_id_1}->{area_id_2})"
@@ -2468,12 +2458,12 @@ class StudyService:
             )
             df_matrix.index = time_column
 
-        for specific_matrix in SPECIFIC_MATRICES:
+        specific_matrices = get_specific_matrices_according_to_version(int(study.version))
+        for specific_matrix in specific_matrices:
             if re.match(specific_matrix, path):
                 return _handle_specific_matrices(
-                    int(study.version),
                     df_matrix,
-                    specific_matrix,
+                    specific_matrices[specific_matrix],
                     path,
                     with_index=with_index,
                     with_columns=with_columns,
