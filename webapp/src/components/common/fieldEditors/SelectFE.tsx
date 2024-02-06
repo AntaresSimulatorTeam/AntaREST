@@ -12,10 +12,12 @@ import * as RA from "ramda-adjunct";
 import { startCase } from "lodash";
 import { O } from "ts-toolbelt";
 import reactHookFormSupport from "../../../hoc/reactHookFormSupport";
+import type { SvgIconComponent } from "@mui/icons-material";
 
 type OptionObj<T extends O.Object = O.Object> = {
   label: string;
   value: string | number;
+  icon?: SvgIconComponent;
 } & T;
 
 export interface SelectFEProps extends Omit<SelectProps, "labelId"> {
@@ -42,7 +44,7 @@ function SelectFE(props: SelectFEProps) {
     options,
     emptyValue,
     inputRef,
-    variant = "filled",
+    variant,
     helperText,
     error,
     label,
@@ -80,8 +82,9 @@ function SelectFE(props: SelectFEProps) {
             <em>None</em>
           </MenuItem>
         )}
-        {optionsFormatted.map(({ id, value, label }) => (
+        {optionsFormatted.map(({ id, value, label, icon: Icon }) => (
           <MenuItem key={id} value={value}>
+            {Icon && <Icon sx={{ mr: 1, verticalAlign: "sub" }} />}
             {label}
           </MenuItem>
         ))}

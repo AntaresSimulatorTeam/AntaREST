@@ -7,7 +7,6 @@ import {
 } from "react-router-dom";
 import { CssBaseline, ThemeProvider } from "@mui/material";
 import { SnackbarProvider } from "notistack";
-import maintheme from "../../theme";
 import MenuWrapper from "../wrappers/MenuWrapper";
 import Studies from "./Studies";
 import Data from "./Data";
@@ -54,13 +53,16 @@ import StorageForm from "./Singlestudy/explore/Modelization/Areas/Storages/Form"
 import ThermalForm from "./Singlestudy/explore/Modelization/Areas/Thermal/Form";
 import RenewablesForm from "./Singlestudy/explore/Modelization/Areas/Renewables/Form";
 import SplitHydroMatrix from "./Singlestudy/explore/Modelization/Areas/Hydro/SplitHydroMatrix";
+import useMuiTheme from "../../hooks/useMuiTheme";
 
 function App() {
+  const { theme } = useMuiTheme();
+
   return (
     <Router>
-      <ThemeProvider theme={maintheme}>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
         <SnackbarProvider maxSnack={5}>
-          <CssBaseline />
           <MaintenanceWrapper>
             <LoginWrapper>
               <MenuWrapper>

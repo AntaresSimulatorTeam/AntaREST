@@ -3,7 +3,7 @@ import HotTable, { HotTableProps } from "@handsontable/react";
 import { styled } from "@mui/material";
 import { forwardRef } from "react";
 import * as RA from "ramda-adjunct";
-import { SECONDARY_MAIN_COLOR } from "../../theme";
+import { SECONDARY_MAIN_COLOR } from "../App/theme";
 
 // Register Handsontable's modules
 registerAllModules();

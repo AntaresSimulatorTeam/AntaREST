@@ -1,16 +1,9 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Box,
   Typography,
   Breadcrumbs,
-  Select,
-  MenuItem,
-  ListItemText,
-  SelectChangeEvent,
-  ListItemIcon,
   Tooltip,
-  FormControl,
-  InputLabel,
   IconButton,
 } from "@mui/material";
 import { useTranslation } from "react-i18next";
@@ -22,16 +15,11 @@ import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 import FolderOffIcon from "@mui/icons-material/FolderOff";
 import RadarIcon from "@mui/icons-material/Radar";
 import { FixedSizeGrid, GridOnScrollProps } from "react-window";
-import { v4 as uuidv4 } from "uuid";
 import { AxiosError } from "axios";
 import { StudyMetadata } from "../../../../common/types";
-import {
-  STUDIES_HEIGHT_HEADER,
-  STUDIES_LIST_HEADER_HEIGHT,
-} from "../../../../theme";
+import { STUDIES_HEIGHT_HEADER, STUDIES_LIST_HEADER_HEIGHT } from "../../theme";
 import {
   setStudyScrollPosition,
-  StudiesSortConf,
   updateStudiesSortConf,
   updateStudyFilters,
 } from "../../../../redux/ducks/studies";
@@ -50,6 +38,7 @@ import RefreshButton from "../RefreshButton";
 import { scanFolder } from "../../../../services/api/study";
 import useEnqueueErrorSnackbar from "../../../../hooks/useEnqueueErrorSnackbar";
 import ConfirmationDialog from "../../../common/dialogs/ConfirmationDialog";
+import SelectFE from "../../../common/fieldEditors/SelectFE";
 
 const CARD_TARGET_WIDTH = 500;
 const CARD_HEIGHT = 250;
@@ -73,7 +62,6 @@ function StudiesList(props: StudiesListProps) {
   );
   const [folderList, setFolderList] = useState(folder.split("/"));
   const dispatch = useAppDispatch();
-  const sortLabelId = useRef(uuidv4()).current;
   const [selectedStudies, setSelectedStudies] = useState<string[]>([]);
   const [selectionMode, setSelectionMode] = useState(false);
   const [confirmFolderScan, setConfirmFolderScan] = useState<boolean>(false);
@@ -94,27 +82,33 @@ function StudiesList(props: StudiesListProps) {
     }
   }, [selectedStudies]);
 
-  const sortOptions = useMemo<Array<StudiesSortConf & { name: string }>>(
+  const sortOptions = useMemo(
     () => [
       {
-        name: t("studies.sortByName"),
-        property: "name",
-        order: "ascend",
+        label: t("studies.sortByName"),
+        value: JSON.stringify({ property: "name", order: "ascend" }),
+        icon: ArrowUpwardIcon,
       },
       {
-        name: t("studies.sortByName"),
-        property: "name",
-        order: "descend",
+        label: t("studies.sortByName"),
+        value: JSON.stringify({ property: "name", order: "descend" }),
+        icon: ArrowDownwardIcon,
       },
       {
-        name: t("studies.sortByDate"),
-        property: "modificationDate",
-        order: "ascend",
+        label: t("studies.sortByDate"),
+        value: JSON.stringify({
+          property: "modificationDate",
+          order: "ascend",
+        }),
+        icon: ArrowUpwardIcon,
       },
       {
-        name: t("studies.sortByDate"),
-        property: "modificationDate",
-        order: "descend",
+        label: t("studies.sortByDate"),
+        value: JSON.stringify({
+          property: "modificationDate",
+          order: "descend",
+        }),
+        icon: ArrowDownwardIcon,
       },
     ],
     [t],
@@ -235,7 +229,7 @@ function StudiesList(props: StudiesListProps) {
               );
             })}
           </Breadcrumbs>
-          <Typography mx={2} sx={{ color: "white" }}>
+          <Typography mx={2}>
             ({`${studyIds.length} ${t("global.studies").toLowerCase()}`})
           </Typography>
           <Tooltip title={t("studies.filters.strictfolder") as string}>
@@ -277,69 +271,16 @@ function StudiesList(props: StudiesListProps) {
             setSelectionMode={setSelectionMode}
           />
           <RefreshButton />
-          <FormControl
-            sx={{
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "center",
-              alignItems: "flex-start",
-              boxSizing: "border-box",
-            }}
-          >
-            <InputLabel id={sortLabelId} variant="standard">
-              {t("studies.sortBy")}
-            </InputLabel>
-            <Select
-              labelId={sortLabelId}
-              value={JSON.stringify(sortConf)}
-              label={t("studies.sortBy")}
-              variant="filled"
-              onChange={(e: SelectChangeEvent<string>) =>
-                dispatch(updateStudiesSortConf(JSON.parse(e.target.value)))
-              }
-              sx={{
-                width: "230px",
-                height: "45px",
-                ".MuiSelect-select": {
-                  display: "flex",
-                  flexFlow: "row nowrap",
-                  justifyContent: "center",
-                  alignItems: "center",
-                },
-                background: "rgba(255, 255, 255, 0)",
-                borderRadius: "4px 4px 0px 0px",
-                borderBottom: "1px solid rgba(255, 255, 255, 0.42)",
-                ".MuiSelect-icon": {
-                  backgroundColor: "#222333",
-                },
-              }}
-            >
-              {sortOptions.map(({ name, ...conf }) => {
-                const value = JSON.stringify(conf);
-                return (
-                  <MenuItem
-                    key={value}
-                    value={value}
-                    sx={{
-                      display: "flex",
-                      flexFlow: "row nowrap",
-                      justifyContent: "center",
-                      alignItems: "center",
-                    }}
-                  >
-                    <ListItemIcon sx={{ minWidth: "30px" }}>
-                      {conf.order === "ascend" ? (
-                        <ArrowUpwardIcon />
-                      ) : (
-                        <ArrowDownwardIcon />
-                      )}
-                    </ListItemIcon>
-                    <ListItemText primary={name} />
-                  </MenuItem>
-                );
-              })}
-            </Select>
-          </FormControl>
+          <SelectFE
+            label={t("studies.sortBy")}
+            value={JSON.stringify(sortConf)}
+            onChange={(e) =>
+              dispatch(
+                updateStudiesSortConf(JSON.parse(e.target.value as string)),
+              )
+            }
+            options={sortOptions}
+          />
         </Box>
       </Box>
       <Box sx={{ width: 1, height: 1 }}>

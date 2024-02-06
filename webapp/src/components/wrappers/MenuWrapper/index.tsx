@@ -154,18 +154,10 @@ function MenuWrapper(props: Props) {
       return (
         <Tooltip title={tooltipTitle} placement="right-end" key={elm.id}>
           <NavListItem link>
-            <NavInternalLink
-              to={elm.link}
-              end={elm.strict}
-              style={({ isActive }) => ({
-                background: isActive
-                  ? theme.palette.primary.outlinedHoverBackground
-                  : undefined,
-              })}
-            >
+            <NavInternalLink to={elm.link} end={elm.strict}>
               <NotificationBadge>
                 <NavListItemIcon>
-                  <elm.icon sx={{ color: "grey.400" }} />
+                  <elm.icon />
                 </NavListItemIcon>
               </NotificationBadge>
               {extended && <NavListItemText primary={t(`${elm.id}`)} />}
@@ -180,22 +172,14 @@ function MenuWrapper(props: Props) {
           {elm.newTab === true ? (
             <NavExternalLink href={elm.link} target="_blank">
               <NavListItemIcon>
-                <elm.icon sx={{ color: "grey.400" }} />
+                <elm.icon />
               </NavListItemIcon>
               {extended && <NavListItemText primary={t(`${elm.id}`)} />}
             </NavExternalLink>
           ) : (
-            <NavInternalLink
-              to={elm.link}
-              end={elm.strict}
-              style={({ isActive }) => ({
-                background: isActive
-                  ? theme.palette.primary.outlinedHoverBackground
-                  : undefined,
-              })}
-            >
+            <NavInternalLink to={elm.link} end={elm.strict}>
               <NavListItemIcon>
-                <elm.icon sx={{ color: "grey.400" }} />
+                <elm.icon />
               </NavListItemIcon>
               {extended && <NavListItemText primary={t(`${elm.id}`)} />}
             </NavInternalLink>
@@ -276,7 +260,7 @@ function MenuWrapper(props: Props) {
           >
             <NavListItem onClick={() => setOpenLogoutDialog(true)}>
               <NavInternalLink to="#">
-                <NavListItemIcon sx={{ color: "grey.400" }}>
+                <NavListItemIcon>
                   <LogoutIcon />
                 </NavListItemIcon>
                 {extended && <NavListItemText primary={t("logout.title")} />}
@@ -289,7 +273,7 @@ function MenuWrapper(props: Props) {
           >
             <NavListItem onClick={() => dispatch(setMenuCollapse(extended))}>
               <NavInternalLink to="#">
-                <NavListItemIcon sx={{ color: "grey.400" }}>
+                <NavListItemIcon>
                   {extended ? <ArrowBackIosIcon /> : <ArrowForwardIosIcon />}
                 </NavListItemIcon>
                 {extended && <NavListItemText primary={t("button.collapse")} />}

@@ -246,7 +246,6 @@ const StudyCard = memo((props: Props) => {
               component="div"
               onClick={() => navigate(`/studies/${study.id}`)}
               sx={{
-                color: "white",
                 boxSizing: "border-box",
                 flexFlow: "nowrap",
                 width: "calc(100% - 64px)",

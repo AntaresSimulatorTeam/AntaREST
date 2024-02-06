@@ -62,7 +62,6 @@ function UpgradeDialog({ study, onClose, open }: Props) {
           <SelectFE
             name="version"
             label="Version"
-            variant="filled"
             options={versionOptions}
             control={control}
           />

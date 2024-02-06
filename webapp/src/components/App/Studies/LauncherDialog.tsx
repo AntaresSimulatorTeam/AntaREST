@@ -248,7 +248,6 @@ function LauncherDialog(props: Props) {
             id="launcher-option-output-suffix"
             label={t("global.name")}
             type="text"
-            variant="filled"
             value={options.output_suffix}
             onChange={(e) =>
               handleChange("output_suffix", e.target.value.trim())
@@ -264,7 +263,6 @@ function LauncherDialog(props: Props) {
             id="launcher-option-time-limit"
             label={t("study.timeLimit")}
             type="number"
-            variant="filled"
             value={(options.time_limit ?? 864000) / 3600} // 240 hours default
             onChange={(e) =>
               handleChange("time_limit", timeLimitParse(e.target.value))
@@ -287,7 +285,6 @@ function LauncherDialog(props: Props) {
                 id="nb-cpu"
                 label={t("study.nbCpu")}
                 type="number"
-                variant="filled"
                 value={options.nb_cpu}
                 onChange={(e) => {
                   const newValue = parseInt(e.target.value, 10);
@@ -333,7 +330,6 @@ function LauncherDialog(props: Props) {
             id="other-options"
             label={t("study.otherOptions")}
             type="text"
-            variant="filled"
             value={options.other_options}
             onChange={(e) => handleChange("other_options", e.target.value)}
             sx={{

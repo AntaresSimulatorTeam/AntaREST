@@ -43,7 +43,6 @@ export default function AddConstraintTermForm(props: Props) {
             <NumberFE
               name="weight"
               label={t("study.modelization.bindingConst.weight")}
-              variant="filled"
               control={control}
               rules={{
                 required: t("form.field.required") as string,
@@ -76,7 +75,6 @@ export default function AddConstraintTermForm(props: Props) {
                   <NumberFE
                     name="offset"
                     label={t("study.modelization.bindingConst.offset")}
-                    variant="filled"
                     control={control}
                     rules={{
                       required: t("form.field.required") as string,

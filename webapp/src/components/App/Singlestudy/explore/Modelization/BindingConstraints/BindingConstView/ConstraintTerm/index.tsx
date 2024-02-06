@@ -80,7 +80,6 @@ export default function ConstraintItem(props: Props) {
         left={
           <TextField
             label={t("study.modelization.bindingConst.weight")}
-            variant="filled"
             type="number"
             value={weight}
             onChange={(e) => handleChange("weight", e.target.value)}
@@ -113,7 +112,6 @@ export default function ConstraintItem(props: Props) {
               <OffsetInput onRemove={() => handleChange("offset", null)}>
                 <TextField
                   label={t("study.modelization.bindingConst.offset")}
-                  variant="filled"
                   type="number"
                   value={offset}
                   onChange={(e) => handleChange("offset", e.target.value)}

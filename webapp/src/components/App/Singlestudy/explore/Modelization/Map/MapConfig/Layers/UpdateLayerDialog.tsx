@@ -91,7 +91,6 @@ function UpdateLayerDialog(props: Props) {
           <SelectFE
             name="layerId"
             label={t("Layers")}
-            variant="filled"
             options={layersOptions}
             control={control}
             onChange={(e) =>

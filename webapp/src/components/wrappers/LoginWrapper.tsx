@@ -77,14 +77,7 @@ function LoginWrapper(props: Props) {
         canDisplayApp ? (
           children
         ) : (
-          <Box
-            display="flex"
-            height="100vh"
-            sx={{
-              background:
-                "radial-gradient(ellipse at top right, #190520 0%, #190520 30%, #222333 100%)",
-            }}
-          >
+          <Box display="flex" height="100vh">
             <Box
               position="absolute"
               top="0px"
@@ -153,7 +146,6 @@ function LoginWrapper(props: Props) {
                         <StringFE
                           name="username"
                           label="NNI"
-                          variant="filled"
                           size="small"
                           sx={{ mb: 2 }}
                           fullWidth
@@ -163,7 +155,6 @@ function LoginWrapper(props: Props) {
                         <PasswordFE
                           name="password"
                           label={t("global.password")}
-                          variant="filled"
                           size="small"
                           inputProps={{
                             // https://web.dev/sign-in-form-best-practices/#current-password

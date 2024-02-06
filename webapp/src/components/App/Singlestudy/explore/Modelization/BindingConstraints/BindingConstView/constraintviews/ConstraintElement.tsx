@@ -22,7 +22,6 @@ export default function ConstraintElement(props: ElementProps) {
       <ConstraintElementHeader>
         <Typography
           sx={{
-            color: "grey.400",
             fontSize: "16px",
           }}
         >

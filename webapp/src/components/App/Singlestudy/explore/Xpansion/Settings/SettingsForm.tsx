@@ -129,7 +129,6 @@ function SettingsForm(props: PropType) {
           <TextField
             type="number"
             label={t("xpansion.maxIteration")}
-            variant="filled"
             value={currentSettings.max_iteration}
             onChange={(e) => handleChange("max_iteration", e.target.value)}
             sx={{ mb: 1 }}
@@ -138,7 +137,6 @@ function SettingsForm(props: PropType) {
           <TextField
             type="number"
             label={t("xpansion.optimalityGap")}
-            variant="filled"
             value={currentSettings.optimality_gap}
             onChange={(e) =>
               handleChange("optimality_gap", parseFloat(e.target.value))
@@ -149,7 +147,6 @@ function SettingsForm(props: PropType) {
           <TextField
             type="number"
             label={t("xpansion.relativeGap")}
-            variant="filled"
             value={currentSettings.relative_gap}
             onChange={(e) =>
               handleChange("relative_gap", parseFloat(e.target.value))
@@ -160,7 +157,6 @@ function SettingsForm(props: PropType) {
           <TextField
             type="number"
             label={t("xpansion.relaxedOptimalityGap")}
-            variant="filled"
             value={currentSettings.relaxed_optimality_gap}
             onChange={(e) =>
               handleChange("relaxed_optimality_gap", e.target.value)
@@ -185,7 +181,7 @@ function SettingsForm(props: PropType) {
           {/* <TextField
             type="number"
             label={t("xpansion.timeLimit")}
-            variant="filled"
+            
             value={Math.round((currentSettings.timelimit || 1e12) / 3600)}
             onChange={(e) =>
               handleChange(
@@ -198,7 +194,6 @@ function SettingsForm(props: PropType) {
           <TextField
             type="number"
             label={t("xpansion.separationParameter")}
-            variant="filled"
             value={currentSettings.separation_parameter}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
               handleChange("separation_parameter", parseFloat(e.target.value))
@@ -209,7 +204,6 @@ function SettingsForm(props: PropType) {
           <TextField
             type="number"
             label={t("xpansion.batchSize")}
-            variant="filled"
             value={currentSettings.batch_size}
             onChange={(e) =>
               handleChange("batch_size", parseInt(e.target.value, 10))
@@ -220,7 +214,6 @@ function SettingsForm(props: PropType) {
           <TextField
             type="number"
             label={t("xpansion.logLevel")}
-            variant="filled"
             value={currentSettings.log_level}
             onChange={(e) =>
               handleChange("log_level", parseInt(e.target.value, 10))
@@ -343,7 +336,6 @@ function SettingsForm(props: PropType) {
                 e.target.value as string[],
               )
             }
-            variant="filled"
             options={candidates}
           />
         </Box>

@@ -161,7 +161,6 @@ function JobsListing() {
           <Chip
             key="xpansion"
             label="Xpansion"
-            variant="filled"
             sx={{ m: 0.25, color: "black", bgcolor: indigo[300] }}
           />
         )}
@@ -169,7 +168,6 @@ function JobsListing() {
           <Chip
             key="adequacy_patch"
             label="Adequacy patch"
-            variant="filled"
             sx={{ m: 0.25, color: "black", bgcolor: indigo[300] }}
           />
         )}
@@ -295,7 +293,7 @@ function JobsListing() {
                 style={{ textDecoration: "none" }}
                 to={`/studies/${encodeURI(job.studyId)}`}
               >
-                <Typography sx={{ color: "white", fontSize: "0.95rem" }}>
+                <Typography sx={{ fontSize: "0.95rem" }}>
                   {studies.find((s) => s.id === job.studyId)?.name ||
                     `${t("global.unknown")} (${job.id})`}
                 </Typography>

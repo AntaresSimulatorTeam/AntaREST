@@ -109,7 +109,6 @@ export default function FormGenerator<T extends FieldValues>(
                     () => (
                       <StringFE
                         {...otherProps}
-                        variant="filled"
                         control={control}
                         rules={vRules}
                       />
@@ -120,7 +119,6 @@ export default function FormGenerator<T extends FieldValues>(
                     () => (
                       <NumberFE
                         {...otherProps}
-                        variant="filled"
                         control={control}
                         rules={vRules}
                       />
@@ -141,7 +139,6 @@ export default function FormGenerator<T extends FieldValues>(
                     () => (
                       <BooleanFE
                         {...otherProps}
-                        variant="filled"
                         control={control}
                         rules={vRules}
                       />
@@ -156,7 +153,6 @@ export default function FormGenerator<T extends FieldValues>(
                             .options || []
                         }
                         {...otherProps}
-                        variant="filled"
                         control={control}
                         rules={vRules}
                       />

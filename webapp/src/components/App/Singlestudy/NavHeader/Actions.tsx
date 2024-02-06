@@ -124,18 +124,11 @@ function Actions({
         />
       </Tooltip>
       {isManaged ? (
-        <Chip
-          label={t("study.managedStudy")}
-          variant="filled"
-          color="info"
-          size="small"
-        />
+        <Chip label={t("study.managedStudy")} color="info" size="small" />
       ) : (
-        <Chip label={study.workspace} variant="filled" size="small" />
+        <Chip label={study.workspace} size="small" />
       )}
-      {study.tags?.map((tag) => (
-        <Chip key={tag} label={tag} variant="filled" size="small" />
-      ))}
+      {study.tags?.map((tag) => <Chip key={tag} label={tag} size="small" />)}
       {isExplorer && (
         <Button
           size="small"

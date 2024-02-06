@@ -12,7 +12,7 @@ import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import { useTranslation } from "react-i18next";
 import { StudyMetadata, VariantTree } from "../../../../common/types";
-import { STUDIES_HEIGHT_HEADER } from "../../../../theme";
+import { STUDIES_HEIGHT_HEADER } from "../../theme";
 import { archiveStudy, unarchiveStudy } from "../../../../services/api/study";
 import { deleteStudy } from "../../../../redux/ducks/studies";
 import LauncherDialog from "../../Studies/LauncherDialog";
