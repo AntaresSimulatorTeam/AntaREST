@@ -505,15 +505,8 @@ class StudyService:
         logger.info("study %s metadata asked by user %s", uuid, params.get_user_id())
         # todo debounce this with a "update_study_last_access" method updating only every some seconds
         study.last_access = datetime.utcnow()
-        self.repository.save(study, update_in_listing=False)
+        self.repository.save(study)
         return self.storage_service.get_storage(study).get_study_information(study)
-
-    def invalidate_cache_listing(self, params: RequestParameters) -> None:
-        if params.user and params.user.is_site_admin():
-            self.cache_service.invalidate(CacheConstants.STUDY_LISTING.value)
-        else:
-            logger.error(f"User {params.user} is not site admin")
-            raise UserHasNotPermissionError()
 
     def update_study_information(
         self,
@@ -567,6 +560,10 @@ class StudyService:
                 permissions=PermissionInfo.from_study(study),
             )
         )
+
+        new_tags = new_metadata.tags
+        self.repository.update_tags(study, new_tags)
+
         return new_metadata
 
     def check_study_access(
@@ -676,7 +673,7 @@ class StudyService:
         study = self.get_study(study_id)
         assert_permission(params.user, study, StudyPermissionType.READ)
         study.last_access = datetime.utcnow()
-        self.repository.save(study, update_in_listing=False)
+        self.repository.save(study)
         study_storage_service = self.storage_service.get_storage(study)
         return study_storage_service.get_synthesis(study, params)
 

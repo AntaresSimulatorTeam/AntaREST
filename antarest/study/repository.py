@@ -7,11 +7,10 @@ from pydantic import BaseModel, NonNegativeInt
 from sqlalchemy import func, not_, or_  # type: ignore
 from sqlalchemy.orm import Session, joinedload, with_polymorphic  # type: ignore
 
-from antarest.core.interfaces.cache import CacheConstants, ICache
+from antarest.core.interfaces.cache import ICache
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group
-from antarest.study.common.utils import get_study_information
-from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, Study, StudyAdditionalData
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, Study, StudyAdditionalData, Tag
 
 logger = logging.getLogger(__name__)
 
@@ -126,7 +125,6 @@ class StudyMetadataRepository:
         self,
         metadata: Study,
         update_modification_date: bool = False,
-        update_in_listing: bool = True,
     ) -> Study:
         metadata_id = metadata.id or metadata.name
         logger.debug(f"Saving study {metadata_id}")
@@ -140,8 +138,6 @@ class StudyMetadataRepository:
         session.add(metadata)
         session.commit()
 
-        if update_in_listing:
-            self._update_study_from_cache_listing(metadata)
         return metadata
 
     def refresh(self, metadata: Study) -> None:
@@ -218,6 +214,7 @@ class StudyMetadataRepository:
         q = q.options(joinedload(entity.owner))
         q = q.options(joinedload(entity.groups))
         q = q.options(joinedload(entity.additional_data))
+        q = q.options(joinedload(entity.tags))
         if study_filter.managed is not None:
             if study_filter.managed:
                 q = q.filter(or_(entity.type == "variantstudy", RawStudy.workspace == DEFAULT_WORKSPACE_NAME))
@@ -230,6 +227,8 @@ class StudyMetadataRepository:
             q = q.filter(entity.owner_id.in_(study_filter.users))
         if study_filter.groups:
             q = q.join(entity.groups).filter(Group.id.in_(study_filter.groups))
+        if study_filter.tags:
+            q = q.join(entity.tags).filter(Tag.id.in_(study_filter.tags))
         if study_filter.archived is not None:
             q = q.filter(entity.archived == study_filter.archived)
         if study_filter.name:
@@ -283,34 +282,20 @@ class StudyMetadataRepository:
         u: Study = session.query(Study).get(id)
         session.delete(u)
         session.commit()
-        self._remove_study_from_cache_listing(id)
 
-    def _remove_study_from_cache_listing(self, study_id: str) -> None:
-        try:
-            cached_studies = self.cache_service.get(CacheConstants.STUDY_LISTING.value)
-            if cached_studies:
-                if study_id in cached_studies:
-                    del cached_studies[study_id]
-                self.cache_service.put(CacheConstants.STUDY_LISTING.value, cached_studies)
-        except Exception as e:
-            logger.error("Failed to update study listing cache", exc_info=e)
-            try:
-                self.cache_service.invalidate(CacheConstants.STUDY_LISTING.value)
-            except Exception as e:
-                logger.error("Failed to invalidate listing cache", exc_info=e)
+    def update_tags(self, study: Study, new_tags: t.List[str]) -> None:
+        """
+        Using the repository session we can update the study tags on the DB.
+        Thus, the tables `study_tag` and `tag` will be updated too accordingly.
 
-    def _update_study_from_cache_listing(self, study: Study) -> None:
-        try:
-            cached_studies = self.cache_service.get(CacheConstants.STUDY_LISTING.value)
-            if cached_studies:
-                if isinstance(study, RawStudy) and study.missing is not None:
-                    del cached_studies[study.id]
-                else:
-                    cached_studies[study.id] = get_study_information(study)
-                self.cache_service.put(CacheConstants.STUDY_LISTING.value, cached_studies)
-        except Exception as e:
-            logger.error("Failed to update study listing cache", exc_info=e)
-            try:
-                self.cache_service.invalidate(CacheConstants.STUDY_LISTING.value)
-            except Exception as e:
-                logger.error("Failed to invalidate listing cache", exc_info=e)
+        Args:
+            study: a pre-existing study to be updated with the new tags
+            new_tags: the new tags to be associated with the input study on the db
+
+        Returns:
+
+        """
+        logger.debug(f"Updating tags for study: {study.id}")
+        study.tags = [Tag(label=tag) for tag in new_tags]
+        self.session.merge(study)
+        self.session.commit()

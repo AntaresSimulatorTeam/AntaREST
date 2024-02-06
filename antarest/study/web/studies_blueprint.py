@@ -817,18 +817,16 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
 
     @bp.post(
         "/studies/_invalidate_cache_listing",
-        summary="Invalidate the study listing cache",
+        summary="Invalidate the study listing cache [DEPRECATED] and will be removed soon",
         tags=[APITag.study_management],
     )
     def invalidate_study_listing_cache(
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> t.Any:
         logger.info(
-            "Invalidating the study listing cache",
+            "Invalidating the study listing cache endpoint is deprecated",
             extra={"user": current_user.id},
         )
-        params = RequestParameters(user=current_user)
-        return study_service.invalidate_cache_listing(params)
 
     @bp.get(
         "/studies/{uuid}/disk-usage",

@@ -9,11 +9,14 @@ from uuid import uuid4
 from antarest.core.config import Config
 from antarest.core.exceptions import BadOutputError, StudyOutputNotFoundError
 from antarest.core.interfaces.cache import CacheConstants, ICache
-from antarest.core.model import JSON
+from antarest.core.model import JSON, PublicMode
 from antarest.core.utils.utils import StopWatch, extract_zip, unzip, zip_dir
+from antarest.login.model import GroupDTO
 from antarest.study.common.studystorage import IStudyStorageService, T
-from antarest.study.common.utils import get_study_information
 from antarest.study.model import (
+    DEFAULT_WORKSPACE_NAME,
+    OwnerInfo,
+    Patch,
     PatchOutputs,
     PatchStudy,
     StudyAdditionalData,
@@ -68,7 +71,47 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         self,
         study: T,
     ) -> StudyMetadataDTO:
-        return get_study_information(study)
+        additional_data = study.additional_data or StudyAdditionalData()
+
+        try:
+            patch = Patch.parse_raw(additional_data.patch or "{}")
+        except Exception as e:
+            logger.warning(f"Failed to parse patch for study {study.id}", exc_info=e)
+            patch = Patch()
+
+        patch_metadata = patch.study or PatchStudy()
+
+        study_workspace = getattr(study, "workspace", DEFAULT_WORKSPACE_NAME)
+        folder: Optional[str] = None
+        if hasattr(study, "folder"):
+            folder = study.folder
+
+        owner_info = (
+            OwnerInfo(id=study.owner.id, name=study.owner.name)
+            if study.owner is not None
+            else OwnerInfo(name=additional_data.author or "Unknown")
+        )
+
+        return StudyMetadataDTO(
+            id=study.id,
+            name=study.name,
+            version=int(study.version),
+            created=str(study.created_at),
+            updated=str(study.updated_at),
+            workspace=study_workspace,
+            managed=study_workspace == DEFAULT_WORKSPACE_NAME,
+            type=study.type,
+            archived=study.archived if study.archived is not None else False,
+            owner=owner_info,
+            groups=[GroupDTO(id=group.id, name=group.name) for group in study.groups],
+            public_mode=study.public_mode or PublicMode.NONE,
+            horizon=additional_data.horizon,
+            scenario=patch_metadata.scenario,
+            status=patch_metadata.status,
+            doc=patch_metadata.doc,
+            folder=folder,
+            tags=[tag.label for tag in study.tags],
+        )
 
     def get(
         self,
