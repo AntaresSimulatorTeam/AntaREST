@@ -155,6 +155,7 @@ class StudyMetadataRepository:
             self.session.query(Study)
             .options(joinedload(Study.owner))
             .options(joinedload(Study.groups))
+            .options(joinedload(Study.tags))
             .get(id)
             # fmt: on
         )
@@ -171,6 +172,7 @@ class StudyMetadataRepository:
             self.session.query(Study)
             .options(joinedload(Study.owner))
             .options(joinedload(Study.groups))
+            .options(joinedload(Study.tags))
             .filter_by(id=study_id)
             .one()
         )
@@ -228,7 +230,7 @@ class StudyMetadataRepository:
         if study_filter.groups:
             q = q.join(entity.groups).filter(Group.id.in_(study_filter.groups))
         if study_filter.tags:
-            q = q.join(entity.tags).filter(Tag.id.in_(study_filter.tags))
+            q = q.join(entity.tags).filter(Tag.label.in_(study_filter.tags))
         if study_filter.archived is not None:
             q = q.filter(entity.archived == study_filter.archived)
         if study_filter.name:
