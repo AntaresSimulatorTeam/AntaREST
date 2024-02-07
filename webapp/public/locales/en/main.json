@@ -422,7 +422,7 @@
   "study.modelization.storages.reservoirCapacity": "Stock (MWh)",
   "study.modelization.storages.reservoirCapacity.info": "Stock (MWh)",
   "study.modelization.storages.efficiency": "Efficiency (%)",
-  "study.modelization.storages.initialLevel": "Initial level",
+  "study.modelization.storages.initialLevel": "Initial level (%)",
   "study.modelization.storages.initialLevelOptim": "Initial level optimized",
   "study.modelization.wind": "Wind",
   "study.modelization.solar": "Solar",
