@@ -123,7 +123,6 @@ class StudyMetadataRepository:
         metadata: Study,
         update_modification_date: bool = False,
     ) -> Study:
-        metadata_id = metadata.id or metadata.name
         if update_modification_date:
             metadata.updated_at = datetime.datetime.utcnow()
 
@@ -185,21 +184,20 @@ class StudyMetadataRepository:
         pagination: StudyPagination = StudyPagination(),
     ) -> t.List[Study]:
         """
-        This function goal is to create a search engine throughout the studies with optimal
-        runtime.
+        Retrieve studies based on specified filters, sorting, and pagination.
 
         Args:
-            study_filter: composed of all filtering criteria
-            sort_by: how the user would like the results to be sorted
-            pagination: specifies the number of results to displayed in each page and the actually displayed page
+            study_filter: composed of all filtering criteria.
+            sort_by: how the user would like the results to be sorted.
+            pagination: specifies the number of results to displayed in each page and the actually displayed page.
 
         Returns:
-            The matching studies in proper order and pagination
+            The matching studies in proper order and pagination.
         """
         # When we fetch a study, we also need to fetch the associated owner and groups
         # to check the permissions of the current user efficiently.
         # We also need to fetch the additional data to display the study information
-        # efficiently (see: `utils.get_study_information`)
+        # efficiently (see: `AbstractStorageService.get_study_information`)
         entity = with_polymorphic(Study, "*")
 
         # noinspection PyTypeChecker
@@ -282,15 +280,12 @@ class StudyMetadataRepository:
 
     def update_tags(self, study: Study, new_tags: t.List[str]) -> None:
         """
-        Using the repository session we can update the study tags on the DB.
-        Thus, the tables `study_tag` and `tag` will be updated too accordingly.
+        Updates the tags associated with a given study in the database,
+        replacing existing tags with new ones.
 
         Args:
-            study: a pre-existing study to be updated with the new tags
-            new_tags: the new tags to be associated with the input study on the db
-
-        Returns:
-
+            study: The pre-existing study to be updated with the new tags.
+            new_tags: The new tags to be associated with the input study in the database.
         """
         existing_tags = self.session.query(Tag).filter(Tag.label.in_(new_tags)).all()
         new_labels = set(new_tags) - set([tag.label for tag in existing_tags])
