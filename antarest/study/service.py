@@ -30,7 +30,7 @@ from antarest.core.exceptions import (
 )
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
-from antarest.core.interfaces.cache import CacheConstants, ICache
+from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTGroup, JWTUser
 from antarest.core.model import JSON, SUB_JSON, PermissionInfo, PublicMode, StudyPermissionType
@@ -492,18 +492,19 @@ class StudyService:
 
     def get_study_information(self, uuid: str, params: RequestParameters) -> StudyMetadataDTO:
         """
-        Get study information
+        Retrieve study information.
+
         Args:
-            uuid: study uuid
-            params: request parameters
+            uuid: The UUID of the study.
+            params: The request parameters.
 
-        Returns: study information
-
+        Returns:
+            Information about the study.
         """
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
-        logger.info("study %s metadata asked by user %s", uuid, params.get_user_id())
-        # todo debounce this with a "update_study_last_access" method updating only every some seconds
+        logger.info("Study metadata requested for study %s by user %s", uuid, params.get_user_id())
+        # TODO: Debounce this with an "update_study_last_access" method updating only every few seconds.
         study.last_access = datetime.utcnow()
         self.repository.save(study)
         return self.storage_service.get_storage(study).get_study_information(study)
@@ -1994,14 +1995,15 @@ class StudyService:
 
     def _analyse_study(self, metadata: Study) -> StudyContentStatus:
         """
-        Analyze study integrity
+        Analyzes the integrity of a study.
+
         Args:
-            metadata: study to analyze
+            metadata: The study to analyze.
 
-        Returns: VALID if study has any integrity mistakes.
-        WARNING if studies has mistakes.
-        ERROR if tree was not able to analyse structuree without raise error.
-
+        Returns:
+            - VALID if the study has no integrity issues.
+            - WARNING if the study has some issues.
+            - ERROR if the tree was unable to analyze the structure without raising an error.
         """
         try:
             if not isinstance(metadata, RawStudy):
