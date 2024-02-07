@@ -341,7 +341,7 @@ class TestStudiesListing:
         assert res.status_code == LIST_STATUS_CODE, res.json()
         study_map: t.Dict[str, t.Dict[str, t.Any]] = res.json()
         assert len(study_map) == 1
-        assert set(study_map.get(tagged_raw_840_id).get("tags")) == {"winter_transition"}
+        assert set(study_map[tagged_raw_840_id]["tags"]) == {"winter_transition"}
 
         # create a raw study version 850 to be tagged with `decennial`
         res = client.post(
@@ -363,9 +363,9 @@ class TestStudiesListing:
             params={"name": "decennial-raw-850"},
         )
         assert res.status_code == LIST_STATUS_CODE, res.json()
-        study_map: t.Dict[str, t.Dict[str, t.Any]] = res.json()
+        study_map = res.json()
         assert len(study_map) == 1
-        assert set(study_map.get(tagged_raw_850_id).get("tags")) == {"decennial"}
+        assert set(study_map[tagged_raw_850_id]["tags"]) == {"decennial"}
 
         # create a variant study version 840 to be tagged with `decennial`
         res = client.post(
@@ -387,9 +387,9 @@ class TestStudiesListing:
             params={"name": "decennial-variant-840"},
         )
         assert res.status_code == LIST_STATUS_CODE, res.json()
-        study_map: t.Dict[str, t.Dict[str, t.Any]] = res.json()
+        study_map = res.json()
         assert len(study_map) == 1
-        assert set(study_map.get(tagged_variant_840_id).get("tags")) == {"decennial"}
+        assert set(study_map[tagged_variant_840_id]["tags"]) == {"decennial"}
 
         # create a variant study version 850 to be tagged with `winter_transition`
         res = client.post(
@@ -411,9 +411,9 @@ class TestStudiesListing:
             params={"name": "winter-transition-variant-850"},
         )
         assert res.status_code == LIST_STATUS_CODE, res.json()
-        study_map: t.Dict[str, t.Dict[str, t.Any]] = res.json()
+        study_map = res.json()
         assert len(study_map) == 1
-        assert set(study_map.get(tagged_variant_850_id).get("tags")) == {"winter_transition"}
+        assert set(study_map[tagged_variant_850_id]["tags"]) == {"winter_transition"}
 
         # ==========================
         # 2. Filtering testing
@@ -449,7 +449,7 @@ class TestStudiesListing:
             headers={"Authorization": f"Bearer {john_doe_access_token}"},
         )
         assert res.status_code == LIST_STATUS_CODE, res.json()
-        study_map: t.Dict[str, t.Dict[str, t.Any]] = res.json()
+        study_map = res.json()
         assert not all_studies.intersection(study_map)
         assert all(map(lambda x: pm(x) in [PublicMode.READ, PublicMode.FULL], study_map.values()))
 
@@ -499,7 +499,7 @@ class TestStudiesListing:
         res = client.get(STUDIES_URL, headers={"Authorization": f"Bearer {admin_access_token}"}, params={"name": "840"})
         assert res.status_code == LIST_STATUS_CODE, res.json()
         study_map = res.json()
-        assert all(map(lambda x: "840" in x.get("name"), study_map.values())) and len(study_map) >= 5
+        assert all(map(lambda x: "840" in x["name"], study_map.values())) and len(study_map) >= 5
         # test 2.b with no matching studies
         res = client.get(
             STUDIES_URL,
@@ -670,7 +670,7 @@ class TestStudiesListing:
         res = client.get(
             STUDIES_URL,
             headers={"Authorization": f"Bearer {admin_access_token}"},
-            params={"tags": f"decennial"},
+            params={"tags": "decennial"},
         )
         assert res.status_code == LIST_STATUS_CODE, res.json()
         study_map = res.json()
@@ -680,7 +680,7 @@ class TestStudiesListing:
         res = client.get(
             STUDIES_URL,
             headers={"Authorization": f"Bearer {admin_access_token}"},
-            params={"tags": f"decennial,winter_transition"},
+            params={"tags": "decennial,winter_transition"},
         )
         assert res.status_code == LIST_STATUS_CODE, res.json()
         study_map = res.json()
