@@ -41,7 +41,7 @@ from tests.db_statement_recorder import DBStatementRecorder
 def test_repository_get_all__general_case(
     db_session: Session,
     managed: t.Union[bool, None],
-    study_ids: t.List[str],
+    study_ids: t.Sequence[str],
     exists: t.Union[bool, None],
     expected_ids: t.Set[str],
 ) -> None:
@@ -317,7 +317,7 @@ def test_repository_get_all__variant_study_filter(
 )
 def test_repository_get_all__study_version_filter(
     db_session: Session,
-    versions: t.List[str],
+    versions: t.Sequence[str],
     expected_ids: t.Set[str],
 ) -> None:
     icache: Mock = Mock(spec=ICache)
@@ -359,7 +359,7 @@ def test_repository_get_all__study_version_filter(
 )
 def test_repository_get_all__study_users_filter(
     db_session: Session,
-    users: t.List["int"],
+    users: t.Sequence["int"],
     expected_ids: t.Set[str],
 ) -> None:
     icache: Mock = Mock(spec=ICache)
@@ -407,7 +407,7 @@ def test_repository_get_all__study_users_filter(
 )
 def test_repository_get_all__study_groups_filter(
     db_session: Session,
-    groups: t.List[str],
+    groups: t.Sequence[str],
     expected_ids: t.Set[str],
 ) -> None:
     icache: Mock = Mock(spec=ICache)
@@ -456,7 +456,7 @@ def test_repository_get_all__study_groups_filter(
 )
 def test_repository_get_all__study_ids_filter(
     db_session: Session,
-    study_ids: t.List[str],
+    study_ids: t.Sequence[str],
     expected_ids: t.Set[str],
 ) -> None:
     icache: Mock = Mock(spec=ICache)
@@ -623,7 +623,7 @@ def test_repository_get_all__study_folder_filter(
 )
 def test_repository_get_all__study_tags_filter(
     db_session: Session,
-    tags: t.List[str],
+    tags: t.Sequence[str],
     expected_ids: t.Set[str],
 ) -> None:
     icache: Mock = Mock(spec=ICache)

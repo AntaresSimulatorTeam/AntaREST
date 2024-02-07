@@ -1,17 +1,16 @@
 from datetime import datetime
 
-from sqlalchemy.orm import scoped_session, sessionmaker  # type: ignore
-
 from antarest.core.cache.business.local_chache import LocalCache
+from antarest.core.model import PublicMode
 from antarest.login.model import Group, User
-from antarest.study.model import DEFAULT_WORKSPACE_NAME, PublicMode, RawStudy, Study, StudyContentStatus
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, Study, StudyContentStatus
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from tests.helpers import with_db_context
 
 
 @with_db_context
-def test_cyclelife():
+def test_lifecycle() -> None:
     user = User(id=0, name="admin")
     group = Group(id="my-group", name="group")
     repo = StudyMetadataRepository(LocalCache())
@@ -62,7 +61,7 @@ def test_cyclelife():
     repo.save(c)
     repo.save(d)
     assert b.id
-    c = repo.get(a.id)
+    c = repo.one(a.id)
     assert a == c
 
     assert len(repo.get_all()) == 4
@@ -75,7 +74,7 @@ def test_cyclelife():
 
 
 @with_db_context
-def test_study_inheritance():
+def test_study_inheritance() -> None:
     user = User(id=0, name="admin")
     group = Group(id="my-group", name="group")
     repo = StudyMetadataRepository(LocalCache())
