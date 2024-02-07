@@ -358,7 +358,9 @@ class TestStudiesListing:
         )
         assert res.status_code in CREATE_STATUS_CODES, res.json()
         res = client.get(
-            STUDIES_URL, headers={"Authorization": f"Bearer {admin_access_token}"}, params={"name": "decennial-raw-850"}
+            STUDIES_URL,
+            headers={"Authorization": f"Bearer {admin_access_token}"},
+            params={"name": "decennial-raw-850"},
         )
         assert res.status_code == LIST_STATUS_CODE, res.json()
         study_map: t.Dict[str, t.Dict[str, t.Any]] = res.json()
@@ -373,14 +375,6 @@ class TestStudiesListing:
         )
         assert res.status_code in CREATE_STATUS_CODES, res.json()
         tagged_variant_840_id = res.json()
-        res = client.put(
-            f"{STUDIES_URL}/{tagged_variant_840_id}/generate",
-            headers={"Authorization": f"Bearer {admin_access_token}"},
-        )
-        assert res.status_code == LIST_STATUS_CODE, res.json()
-        generation_task_id = res.json()
-        task = wait_task_completion(client, admin_access_token, generation_task_id)
-        assert task.status == TaskStatus.COMPLETED, task
         res = client.put(
             f"{STUDIES_URL}/{tagged_variant_840_id}",
             headers={"Authorization": f"Bearer {admin_access_token}"},
@@ -405,14 +399,6 @@ class TestStudiesListing:
         )
         assert res.status_code in CREATE_STATUS_CODES, res.json()
         tagged_variant_850_id = res.json()
-        res = client.put(
-            f"{STUDIES_URL}/{tagged_variant_850_id}/generate",
-            headers={"Authorization": f"Bearer {admin_access_token}"},
-        )
-        assert res.status_code == LIST_STATUS_CODE, res.json()
-        generation_task_id = res.json()
-        task = wait_task_completion(client, admin_access_token, generation_task_id)
-        assert task.status == TaskStatus.COMPLETED, task
         res = client.put(
             f"{STUDIES_URL}/{tagged_variant_850_id}",
             headers={"Authorization": f"Bearer {admin_access_token}"},

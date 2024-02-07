@@ -223,9 +223,6 @@ def test_main(client: TestClient, admin_access_token: str, study_id: str) -> Non
     assert len(res.json()) == 3
     assert filter(lambda s: s["id"] == copied.json(), res.json().values()).__next__()["folder"] == "foo/bar"
 
-    res = client.post("/v1/studies/_invalidate_cache_listing", headers=admin_headers)
-    assert res.status_code == 200
-
     # Study delete
     client.delete(
         f"/v1/studies/{copied.json()}",

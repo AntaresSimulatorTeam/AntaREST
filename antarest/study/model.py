@@ -88,6 +88,12 @@ class Tag(Base):  # type:ignore
     def __str__(self) -> str:
         return f"[Tag] label={self.label}, css-color-code={self.color}"
 
+    def __repr__(self) -> str:
+        cls = self.__class__.__name__
+        label = getattr(self, "label", None)
+        color = getattr(self, "color", None)
+        return f"{cls}(label={label!r}, color={color!r})"
+
 
 class StudyContentStatus(enum.Enum):
     VALID = "VALID"

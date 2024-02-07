@@ -527,7 +527,7 @@ class StudyService:
             params.get_user_id(),
         )
         study = self.get_study(uuid)
-        assert_permission(params.user, study, StudyPermissionType.READ)
+        assert_permission(params.user, study, StudyPermissionType.WRITE)
 
         if metadata_patch.horizon:
             study_settings_url = "settings/generaldata/general"
@@ -550,9 +550,8 @@ class StudyService:
             study.additional_data.author = metadata_patch.author
         if metadata_patch.horizon:
             study.additional_data.horizon = metadata_patch.horizon
-
-        new_tags = metadata_patch.tags
-        self.repository.update_tags(study, new_tags)
+        if metadata_patch.tags:
+            self.repository.update_tags(study, metadata_patch.tags)
 
         new_metadata = self.storage_service.get_storage(study).patch_update_study_metadata(study, metadata_patch)
 
