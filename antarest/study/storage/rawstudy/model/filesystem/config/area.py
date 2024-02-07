@@ -1,66 +1,18 @@
 """
 Object model used to read and update area configuration.
 """
-import json
 import re
 import typing as t
 
 import typing_extensions as te
-from pydantic import BaseModel, Extra, Field, root_validator, validator
+from pydantic import Field, root_validator, validator
 
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
-
-
-class Properties(
-    BaseModel,
-    # On reading, if the configuration contains an extra field, it is ignored.
-    # This allows to read configurations that contain extra fields
-    # that are not yet managed by the code or that are deprecated.
-    extra=Extra.ignore,
-    # If a field is updated on assignment, it is also validated.
-    validate_assignment=True,
-    # On testing, we can use snake_case for field names.
-    allow_population_by_field_name=True,
-):
-    """
-    Base class for configuration sections.
-    """
-
-    def to_config(self) -> t.Mapping[str, t.Any]:
-        """
-        Convert the object to a dictionary for writing to a configuration file (`*.ini`).
-
-        Returns:
-            A dictionary with the configuration values.
-        """
-
-        config = {}
-        for field_name, field in self.__fields__.items():
-            value = getattr(self, field_name)
-            if value is None:
-                continue
-            if isinstance(value, Properties):
-                config[field.alias] = value.to_config()
-            else:
-                config[field.alias] = json.loads(json.dumps(value))
-        return config
-
-    @classmethod
-    def construct(cls, _fields_set: t.Optional[t.Set[str]] = None, **values: t.Any) -> "Properties":
-        """
-        Construct a new model instance from a dict of values, replacing aliases with real field names.
-        """
-        # The pydantic construct() function does not allow aliases to be handled.
-        aliases = {(field.alias or name): name for name, field in cls.__fields__.items()}
-        renamed_values = {aliases.get(k, k): v for k, v in values.items()}
-        if _fields_set is not None:
-            _fields_set = {aliases.get(f, f) for f in _fields_set}
-        # noinspection PyTypeChecker
-        return super().construct(_fields_set, **renamed_values)
+from antarest.study.storage.rawstudy.model.filesystem.config.ini_properties import IniProperties
 
 
 # noinspection SpellCheckingInspection
-class OptimizationProperties(Properties):
+class OptimizationProperties(IniProperties):
     """
     Object linked to `/input/areas/<area>/optimization.ini` information.
 
@@ -115,7 +67,7 @@ class OptimizationProperties(Properties):
                             'spread-unsupplied-energy-cost': 1500.0}}
     """
 
-    class FilteringSection(Properties):
+    class FilteringSection(IniProperties):
         """Configuration read from section `[filtering]` of `/input/areas/<area>/optimization.ini`."""
 
         filter_synthesis: str = Field("hourly, daily, weekly, monthly, annual", alias="filter-synthesis")
@@ -130,7 +82,7 @@ class OptimizationProperties(Properties):
             raise TypeError(f"Invalid type for filtering: {type(v)}")
 
     # noinspection SpellCheckingInspection
-    class ModalOptimizationSection(Properties):
+    class ModalOptimizationSection(IniProperties):
         """Configuration read from section `[nodal optimization]` of `/input/areas/<area>/optimization.ini`."""
 
         non_dispatchable_power: bool = Field(default=True, alias="non-dispatchable-power")
@@ -161,14 +113,14 @@ class AdequacyPatchMode(EnumIgnoreCase):
     VIRTUAL = "virtual"
 
 
-class AdequacyPathProperties(Properties):
+class AdequacyPathProperties(IniProperties):
     """
     Object linked to `/input/areas/<area>/adequacy_patch.ini` information.
 
     Only available if study version >= 830.
     """
 
-    class AdequacyPathSection(Properties):
+    class AdequacyPathSection(IniProperties):
         """Configuration read from section `[adequacy-patch]` of `/input/areas/<area>/adequacy_patch.ini`."""
 
         adequacy_patch_mode: AdequacyPatchMode = Field(default=AdequacyPatchMode.OUTSIDE, alias="adequacy-patch-mode")
@@ -176,7 +128,7 @@ class AdequacyPathProperties(Properties):
     adequacy_patch: AdequacyPathSection = Field(default_factory=AdequacyPathSection, alias="adequacy-patch")
 
 
-class AreaUI(Properties):
+class AreaUI(IniProperties):
     """
     Style of an area in the map or in a layer.
 
@@ -265,7 +217,7 @@ class AreaUI(Properties):
         }
 
 
-class UIProperties(Properties):
+class UIProperties(IniProperties):
     """
     Object linked to `/input/areas/<area>/ui.ini` information.
 
@@ -441,7 +393,7 @@ class UIProperties(Properties):
         return obj
 
 
-class AreaFolder(Properties):
+class AreaFolder(IniProperties):
     """
     Object linked to `/input/areas/<area>` information.
 
@@ -535,7 +487,7 @@ EnergyCost = te.Annotated[float, Field(ge=0, description="Energy cost (€/MWh)"
 
 
 # noinspection SpellCheckingInspection
-class ThermalAreasProperties(Properties):
+class ThermalAreasProperties(IniProperties):
     """
     Object linked to `/input/thermal/areas.ini` information.
 
