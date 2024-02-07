@@ -103,7 +103,7 @@ export const HYDRO_ROUTES: HydroRoute[] = [
 
 export const MATRICES: Matrices = {
   [HydroMatrixType.Dailypower]: {
-    title: "Credit Modulation",
+    title: "Credit Modulations",
     url: "input/hydro/common/capacity/creditmodulations_{areaId}",
     cols: generateColumns("%"),
     rows: ["Generating Power", "Pumping Power"],
@@ -111,7 +111,7 @@ export const MATRICES: Matrices = {
     enablePercentDisplay: true,
   },
   [HydroMatrixType.EnergyCredits]: {
-    title: "Standard Credit",
+    title: "Standard Credits",
     url: "input/hydro/common/capacity/maxpower_{areaId}",
     cols: [
       "Generating Max Power (MW)",
