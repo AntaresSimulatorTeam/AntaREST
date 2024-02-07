@@ -182,7 +182,7 @@ class StudyMetadataRepository:
         study_filter: StudyFilter = StudyFilter(),
         sort_by: t.Optional[StudySortBy] = None,
         pagination: StudyPagination = StudyPagination(),
-    ) -> t.List[Study]:
+    ) -> t.Sequence[Study]:
         """
         Retrieve studies based on specified filters, sorting, and pagination.
 
@@ -259,17 +259,17 @@ class StudyMetadataRepository:
         if pagination.page_nb or pagination.page_size:
             q = q.offset(pagination.page_nb * pagination.page_size).limit(pagination.page_size)
 
-        studies: t.List[Study] = q.all()
+        studies: t.Sequence[Study] = q.all()
         return studies
 
-    def get_all_raw(self, exists: t.Optional[bool] = None) -> t.List[RawStudy]:
+    def get_all_raw(self, exists: t.Optional[bool] = None) -> t.Sequence[RawStudy]:
         query = self.session.query(RawStudy)
         if exists is not None:
             if exists:
                 query = query.filter(RawStudy.missing.is_(None))
             else:
                 query = query.filter(not_(RawStudy.missing.is_(None)))
-        studies: t.List[RawStudy] = query.all()
+        studies: t.Sequence[RawStudy] = query.all()
         return studies
 
     def delete(self, id: str) -> None:
@@ -278,7 +278,7 @@ class StudyMetadataRepository:
         session.delete(u)
         session.commit()
 
-    def update_tags(self, study: Study, new_tags: t.List[str]) -> None:
+    def update_tags(self, study: Study, new_tags: t.Sequence[str]) -> None:
         """
         Updates the tags associated with a given study in the database,
         replacing existing tags with new ones.

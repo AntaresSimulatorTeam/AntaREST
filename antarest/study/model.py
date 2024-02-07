@@ -32,7 +32,7 @@ if t.TYPE_CHECKING:
 
 DEFAULT_WORKSPACE_NAME = "default"
 
-STUDY_REFERENCE_TEMPLATES: t.Dict[str, str] = {
+STUDY_REFERENCE_TEMPLATES: t.Mapping[str, str] = {
     "600": "empty_study_613.zip",
     "610": "empty_study_613.zip",
     "640": "empty_study_613.zip",
