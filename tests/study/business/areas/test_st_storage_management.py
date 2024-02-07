@@ -131,7 +131,7 @@ class TestSTStorageManager:
         manager = STStorageManager(study_storage_service)
 
         # run
-        all_storages = manager.get_all_storage_props(study)
+        all_storages = manager.get_all_storages_props(study)
 
         # Check
         actual = {area_id: [form.dict(by_alias=True) for form in forms] for area_id, forms in all_storages.items()}
@@ -204,7 +204,7 @@ class TestSTStorageManager:
 
         # run
         with pytest.raises(STStorageConfigNotFound, match="not found"):
-            manager.get_all_storage_props(study)
+            manager.get_all_storages_props(study)
 
     def test_get_st_storages__nominal_case(
         self,

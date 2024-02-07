@@ -1,13 +1,17 @@
 """
 Object model used to read and update area configuration.
 """
-import re
 import typing as t
 
 import typing_extensions as te
 from pydantic import Field, root_validator, validator
 
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
+from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import (
+    validate_filtering,
+    validate_colors,
+    validate_color_rgb,
+)
 from antarest.study.storage.rawstudy.model.filesystem.config.ini_properties import IniProperties
 
 
@@ -73,13 +77,12 @@ class OptimizationProperties(IniProperties):
         filter_synthesis: str = Field("hourly, daily, weekly, monthly, annual", alias="filter-synthesis")
         filter_year_by_year: str = Field("hourly, daily, weekly, monthly, annual", alias="filter-year-by-year")
 
-        @validator("filter_synthesis", "filter_year_by_year", pre=True)
-        def _validate_filtering(cls, v: t.Any) -> str:
-            if isinstance(v, str):
-                values = list(set(re.findall(r"hourly|daily|weekly|monthly|annual", v.lower())))
-                values.sort(key=lambda x: ["hourly", "daily", "weekly", "monthly", "annual"].index(x))
-                return ", ".join(values)
-            raise TypeError(f"Invalid type for filtering: {type(v)}")
+        _validate_filtering = validator(
+            "filter_synthesis",
+            "filter_year_by_year",
+            pre=True,
+            allow_reuse=True,
+        )(validate_filtering)
 
     # noinspection SpellCheckingInspection
     class ModalOptimizationSection(IniProperties):
@@ -158,42 +161,18 @@ class AreaUI(IniProperties):
     """
 
     x: int = Field(0, description="x coordinate of the area in the map")
-    y: int = Field(0, description="x coordinate of the area in the map")
+    y: int = Field(0, description="y coordinate of the area in the map")
     color_rgb: t.Tuple[int, int, int] = Field(
         (230, 108, 44),
         alias="colorRgb",
         description="color of the area in the map",
     )
 
+    _validate_color_rgb = validator("color_rgb", pre=True, allow_reuse=True)(validate_color_rgb)
+
     @root_validator(pre=True)
     def _validate_colors(cls, values: t.MutableMapping[str, t.Any]) -> t.Mapping[str, t.Any]:
-        # Parse the `[ui]` section (if any)
-        color_r = values.pop("color_r", None)
-        color_g = values.pop("color_g", None)
-        color_b = values.pop("color_b", None)
-        if color_r is not None and color_g is not None and color_b is not None:
-            values["color_rgb"] = color_r, color_g, color_b
-        return values
-
-    @validator("color_rgb", pre=True)
-    def _validate_color_rgb(cls, v: t.Any) -> t.Tuple[int, int, int]:
-        if isinstance(v, str):
-            if v.startswith("#"):
-                r = int(v[1:3], 16)
-                g = int(v[3:5], 16)
-                b = int(v[5:7], 16)
-            elif v.startswith("rgb("):
-                r, g, b = [int(c) for c in v[4:-1].split(",")]
-            else:
-                r, g, b = [int(c) for c in v.split(",")]
-            return r, g, b
-
-        elif isinstance(v, (list, tuple)):
-            r, g, b = v
-            return r, g, b
-
-        else:
-            raise TypeError(f"Invalid type for 'color_rgb': {type(v)}")
+        return validate_colors(values)
 
     def to_config(self) -> t.Mapping[str, t.Any]:
         """

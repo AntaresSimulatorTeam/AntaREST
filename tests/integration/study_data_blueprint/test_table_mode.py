@@ -131,6 +131,76 @@ class TestTableMode:
         actual = res.json()
         assert actual == expected
 
+        # Table Mode - Links
+        # ==================
+
+        res = client.get(
+            f"/v1/studies/{study_id}/tablemode",
+            headers=user_headers,
+            params={
+                "table_type": "link",
+                "columns": ",".join(
+                    [
+                        "hurdlesCost",
+                        "loopFlow",
+                        "usePhaseShifter",
+                        "transmissionCapacities",
+                        "assetType",
+                        "linkStyle",
+                        "linkWidth",
+                        "displayComments",
+                        "filterSynthesis",
+                        "filterYearByYear",
+                        "colorRgb",
+                    ]
+                ),
+            },
+        )
+        assert res.status_code == 200, res.json()
+        expected = {
+            "de / fr": {
+                "assetType": "ac",
+                "colorRgb": [112, 112, 112],
+                "displayComments": True,
+                "filterSynthesis": "",
+                "filterYearByYear": "hourly",
+                "hurdlesCost": True,
+                "linkStyle": "plain",
+                "linkWidth": 1,
+                "loopFlow": False,
+                "transmissionCapacities": "enabled",
+                "usePhaseShifter": False,
+            },
+            "es / fr": {
+                "assetType": "ac",
+                "colorRgb": [112, 112, 112],
+                "displayComments": True,
+                "filterSynthesis": "",
+                "filterYearByYear": "hourly",
+                "hurdlesCost": True,
+                "linkStyle": "plain",
+                "linkWidth": 1,
+                "loopFlow": False,
+                "transmissionCapacities": "enabled",
+                "usePhaseShifter": False,
+            },
+            "fr / it": {
+                "assetType": "ac",
+                "colorRgb": [112, 112, 112],
+                "displayComments": True,
+                "filterSynthesis": "",
+                "filterYearByYear": "hourly",
+                "hurdlesCost": True,
+                "linkStyle": "plain",
+                "linkWidth": 1,
+                "loopFlow": False,
+                "transmissionCapacities": "enabled",
+                "usePhaseShifter": False,
+            },
+        }
+        actual = res.json()
+        assert actual == expected
+
         # Table Mode - Thermal Clusters
         # =============================
 
@@ -343,28 +413,28 @@ class TestTableMode:
                 "injectionNominalCapacity": 1500,
                 "reservoirCapacity": 1500,
                 "withdrawalNominalCapacity": 1500,
-                "unknowColumn": "",
+                "unknowColumn": None,
             },
             "fr / tesla": {
                 "group": "Battery",
                 "injectionNominalCapacity": 1200,
                 "reservoirCapacity": 1200,
                 "withdrawalNominalCapacity": 1200,
-                "unknowColumn": "",
+                "unknowColumn": None,
             },
             "it / storage3": {
                 "group": "PSP_open",
                 "injectionNominalCapacity": 1234,
                 "reservoirCapacity": 1357,
                 "withdrawalNominalCapacity": 1020,
-                "unknowColumn": "",
+                "unknowColumn": None,
             },
             "it / storage4": {
                 "group": "PSP_open",
                 "injectionNominalCapacity": 567,
                 "reservoirCapacity": 500,
                 "withdrawalNominalCapacity": 456,
-                "unknowColumn": "",
+                "unknowColumn": None,
             },
         }
         actual = res.json()

@@ -15,6 +15,7 @@ from antarest.study.common.default_values import FilteringOptions, LinkPropertie
 from antarest.study.model import RawStudy
 from antarest.study.storage.rawstudy.model.filesystem.config.area import AdequacyPatchMode
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
+from antarest.study.storage.rawstudy.model.filesystem.config.links import TransmissionCapacity, AssetType
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import LawOption, LocalTSGenerationBehavior
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
@@ -39,20 +40,6 @@ class TableTemplateType(EnumIgnoreCase):
     RENEWABLE_CLUSTER = "renewable cluster"
     ST_STORAGE = "short-term storage"
     BINDING_CONSTRAINT = "binding constraint"
-
-
-class AssetType(EnumIgnoreCase):
-    AC = "ac"
-    DC = "dc"
-    GAZ = "gaz"
-    VIRT = "virt"
-    OTHER = "other"
-
-
-class TransmissionCapacity(EnumIgnoreCase):
-    INFINITE = "infinite"
-    IGNORE = "ignore"
-    ENABLED = "enabled"
 
 
 class BindingConstraintOperator(EnumIgnoreCase):
@@ -693,23 +680,26 @@ class TableModeManager:
             areas_map = self._area_manager.get_all_area_props(study)
             data = {area_id: area.dict(by_alias=True) for area_id, area in areas_map.items()}
         elif table_type == TableTemplateType.LINK:
-            pass
+            links_map = self._link_manager.get_all_links_props(study)
+            data = {
+                f"{area1_id} / {area2_id}": link.dict(by_alias=True) for (area1_id, area2_id), link in links_map.items()
+            }
         elif table_type == TableTemplateType.THERMAL_CLUSTER:
-            clusters_map = self._thermal_manager.get_all_thermal_props(study)
+            clusters_map = self._thermal_manager.get_all_thermals_props(study)
             data = {
                 f"{area_id} / {cluster.id}": cluster.dict(by_alias=True)
                 for area_id, clusters in clusters_map.items()
                 for cluster in clusters
             }
         elif table_type == TableTemplateType.RENEWABLE_CLUSTER:
-            clusters_map = self._renewable_manager.get_all_renewable_props(study)
+            clusters_map = self._renewable_manager.get_all_renewables_props(study)
             data = {
                 f"{area_id} / {cluster.id}": cluster.dict(by_alias=True)
                 for area_id, clusters in clusters_map.items()
                 for cluster in clusters
             }
         elif table_type == TableTemplateType.ST_STORAGE:
-            storage_map = self._st_storage_manager.get_all_storage_props(study)
+            storage_map = self._st_storage_manager.get_all_storages_props(study)
             data = {
                 f"{area_id} / {storage.id}": storage.dict(by_alias=True)
                 for area_id, storages in storage_map.items()
@@ -721,12 +711,18 @@ class TableModeManager:
         df = pd.DataFrame.from_dict(data, orient="index")
         if columns:
             # Create a new dataframe with the listed columns.
-            # If a column does not exist in the DataFrame, it is created with empty values,
-            # because NaN (or `None`) is not JSON-serializable.
+            # If a column does not exist in the DataFrame, it is created with empty values.
             df = pd.DataFrame(df, columns=columns)
-            df = df.where(pd.notna(df), other="")
+            df = df.where(pd.notna(df), other=None)
 
         obj = df.to_dict(orient="index")
+
+        # Convert NaN to `None` because it is not JSON-serializable
+        for row in obj.values():
+            for key, value in row.items():
+                if pd.isna(value):
+                    row[key] = None
+
         return obj
 
         file_study = self.storage_service.get_storage(study).get_raw(study)

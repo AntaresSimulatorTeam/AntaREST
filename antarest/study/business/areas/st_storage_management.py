@@ -333,7 +333,7 @@ class STStorageManager:
         )
         return tuple(STStorageOutput(**config.dict(by_alias=False)) for config in all_configs)
 
-    def get_all_storage_props(
+    def get_all_storages_props(
         self,
         study: Study,
     ) -> t.Mapping[str, t.Sequence[STStorageOutput]]:
