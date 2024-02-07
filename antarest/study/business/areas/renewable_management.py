@@ -146,7 +146,7 @@ class RenewableManager:
 
         return [create_renewable_output(study.version, cluster_id, cluster) for cluster_id, cluster in clusters.items()]
 
-    def get_all_renewable_props(
+    def get_all_renewables_props(
         self,
         study: Study,
     ) -> t.Mapping[str, t.Sequence[RenewableClusterOutput]]:

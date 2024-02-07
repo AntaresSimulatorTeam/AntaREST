@@ -1,6 +1,8 @@
+import re
 import typing as t
 
 _ALL_FILTERING = ["hourly", "daily", "weekly", "monthly", "annual"]
+_find_all_filtering = re.compile("|".join(_ALL_FILTERING)).findall
 
 
 def extract_filtering(v: t.Any) -> t.Sequence[str]:

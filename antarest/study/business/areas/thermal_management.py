@@ -187,7 +187,7 @@ class ThermalManager:
         study_version = study.version
         return [create_thermal_output(study_version, cluster_id, cluster) for cluster_id, cluster in clusters.items()]
 
-    def get_all_thermal_props(
+    def get_all_thermals_props(
         self,
         study: Study,
     ) -> t.Mapping[str, t.Sequence[ThermalClusterOutput]]:

@@ -2,11 +2,15 @@ import typing as t
 
 from pydantic import BaseModel
 
-from antarest.study.business.utils import execute_or_add_commands
+from antarest.core.exceptions import ConfigFileNotFound
+from antarest.study.business.utils import execute_or_add_commands, camel_case_model, AllOptionalMetaclass
 from antarest.study.model import RawStudy
+from antarest.study.storage.rawstudy.model.filesystem.config.links import LinkProperties
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.create_link import CreateLink
 from antarest.study.storage.variantstudy.model.command.remove_link import RemoveLink
+
+_ALL_LINKS_PATH = "input/links"
 
 
 class LinkUIDTO(BaseModel):
@@ -21,19 +25,11 @@ class LinkInfoDTO(BaseModel):
     ui: t.Optional[LinkUIDTO] = None
 
 
-class GenericElement(BaseModel):
-    id: str
-    name: str
-
-
-class GenericItem(BaseModel):
-    element: GenericElement
-    item_list: t.List[GenericElement]
-
-
-class AllCLustersAndLinks(BaseModel):
-    links: t.List[GenericItem]
-    clusters: t.List[GenericItem]
+@camel_case_model
+class GetLinkDTO(LinkProperties, metaclass=AllOptionalMetaclass):
+    """
+    DTO object use to get the link information.
+    """
 
 
 class LinkManager:
@@ -81,3 +77,35 @@ class LinkManager:
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
         )
         execute_or_add_commands(study, file_study, [command], self.storage_service)
+
+    def get_all_links_props(self, study: RawStudy) -> t.Mapping[t.Tuple[str, str], GetLinkDTO]:
+        """
+        Retrieves all links properties from the study.
+
+        Args:
+            study: The raw study object.
+        Returns:
+            A mapping of link IDS `(area1_id, area2_id)` to link properties.
+        Raises:
+            ConfigFileNotFound: if a configuration file is not found.
+        """
+        file_study = self.storage_service.get_storage(study).get_raw(study)
+
+        # Get the link information from the `input/links/{area1}/properties.ini` file.
+        path = _ALL_LINKS_PATH
+        try:
+            links_cfg = file_study.tree.get(path.split("/"), depth=5)
+        except KeyError:
+            raise ConfigFileNotFound(path) from None
+
+        # areas_cfg contains a dictionary where the keys are the area IDs,
+        # and the values are objects that can be converted to `LinkFolder`.
+        links_by_ids = {}
+        for area1_id, entries in links_cfg.items():
+            property_map = entries.get("properties") or {}
+            for area2_id, properties_cfg in property_map.items():
+                area1_id, area2_id = sorted([area1_id, area2_id])
+                properties = LinkProperties.parse_obj(properties_cfg)
+                links_by_ids[(area1_id, area2_id)] = GetLinkDTO.parse_obj(properties.dict(by_alias=False))
+
+        return links_by_ids

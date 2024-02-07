@@ -328,7 +328,7 @@ class STStorageManager:
         storages = [create_storage_output(study_version, storage_id, options) for storage_id, options in config.items()]
         return sorted(storages, key=order_by)
 
-    def get_all_storage_props(
+    def get_all_storages_props(
         self,
         study: Study,
     ) -> t.Mapping[str, t.Sequence[STStorageOutput]]:
