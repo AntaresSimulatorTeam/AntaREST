@@ -1,6 +1,5 @@
 import datetime
 import enum
-import logging
 import typing as t
 
 from pydantic import BaseModel, NonNegativeInt
@@ -11,8 +10,6 @@ from antarest.core.interfaces.cache import ICache
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, Study, StudyAdditionalData, Tag
-
-logger = logging.getLogger(__name__)
 
 
 def escape_like(string: str, escape_char: str = "\\") -> str:
@@ -127,7 +124,6 @@ class StudyMetadataRepository:
         update_modification_date: bool = False,
     ) -> Study:
         metadata_id = metadata.id or metadata.name
-        logger.debug(f"Saving study {metadata_id}")
         if update_modification_date:
             metadata.updated_at = datetime.datetime.utcnow()
 
@@ -279,7 +275,6 @@ class StudyMetadataRepository:
         return studies
 
     def delete(self, id: str) -> None:
-        logger.debug(f"Deleting study {id}")
         session = self.session
         u: Study = session.query(Study).get(id)
         session.delete(u)
@@ -297,7 +292,6 @@ class StudyMetadataRepository:
         Returns:
 
         """
-        logger.debug(f"Updating tags for study: {study.id}")
         existing_tags = self.session.query(Tag).filter(Tag.label.in_(new_tags)).all()
         new_labels = set(new_tags) - set([tag.label for tag in existing_tags])
         study.tags = [Tag(label=tag) for tag in new_labels] + existing_tags
