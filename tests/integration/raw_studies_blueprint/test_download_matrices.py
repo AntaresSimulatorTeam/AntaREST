@@ -110,7 +110,7 @@ class TestDownloadMatrices:
             index = not header
             res = client.get(
                 f"/v1/studies/{parent_id}/raw/download",
-                params={"path": raw_matrix_path, "format": "CSV", "header": header, "index": index},
+                params={"path": raw_matrix_path, "format": "TSV", "header": header, "index": index},
                 headers=admin_headers,
             )
             assert res.status_code == 200
@@ -129,7 +129,7 @@ class TestDownloadMatrices:
         # tests links headers before v8.2
         res = client.get(
             f"/v1/studies/{study_id}/raw/download",
-            params={"path": "input/links/de/fr", "format": "csv", "index": False},
+            params={"path": "input/links/de/fr", "format": "tsv", "index": False},
             headers=admin_headers,
         )
         assert res.status_code == 200
@@ -149,7 +149,7 @@ class TestDownloadMatrices:
         # tests links headers after v8.2
         res = client.get(
             f"/v1/studies/{parent_id}/raw/download",
-            params={"path": "input/links/de/fr_parameters", "format": "csv"},
+            params={"path": "input/links/de/fr_parameters", "format": "tsv"},
             headers=admin_headers,
         )
         assert res.status_code == 200
@@ -167,7 +167,7 @@ class TestDownloadMatrices:
         # allocation and correlation matrices
         for path in ["input/hydro/allocation", "input/hydro/correlation"]:
             res = client.get(
-                f"/v1/studies/{parent_id}/raw/download", params={"path": path, "format": "csv"}, headers=admin_headers
+                f"/v1/studies/{parent_id}/raw/download", params={"path": path, "format": "tsv"}, headers=admin_headers
             )
             assert res.status_code == 200
             content = io.BytesIO(res.content)
@@ -179,7 +179,7 @@ class TestDownloadMatrices:
         # test for empty matrix
         res = client.get(
             f"/v1/studies/{study_id}/raw/download",
-            params={"path": "input/hydro/common/capacity/waterValues_de", "format": "csv"},
+            params={"path": "input/hydro/common/capacity/waterValues_de", "format": "tsv"},
             headers=admin_headers,
         )
         assert res.status_code == 200
@@ -190,7 +190,7 @@ class TestDownloadMatrices:
         # modulation matrix
         res = client.get(
             f"/v1/studies/{parent_id}/raw/download",
-            params={"path": "input/thermal/prepro/de/01_solar/modulation", "format": "csv"},
+            params={"path": "input/thermal/prepro/de/01_solar/modulation", "format": "tsv"},
             headers=admin_headers,
         )
         assert res.status_code == 200
@@ -207,7 +207,7 @@ class TestDownloadMatrices:
             f"/v1/studies/{study_id}/raw/download",
             params={
                 "path": "output/20201014-1422eco-hello/economy/mc-ind/00001/links/de/fr/values-hourly",
-                "format": "csv",
+                "format": "tsv",
             },
             headers=admin_headers,
         )
@@ -230,7 +230,7 @@ class TestDownloadMatrices:
         # test energy matrix to test the regex
         res = client.get(
             f"/v1/studies/{study_id}/raw/download",
-            params={"path": "input/hydro/prepro/de/energy", "format": "csv"},
+            params={"path": "input/hydro/prepro/de/energy", "format": "tsv"},
             headers=admin_headers,
         )
         assert res.status_code == 200
@@ -247,7 +247,7 @@ class TestDownloadMatrices:
         # fake study_id
         res = client.get(
             f"/v1/studies/{fake_str}/raw/download",
-            params={"path": raw_matrix_path, "format": "csv"},
+            params={"path": raw_matrix_path, "format": "tsv"},
             headers=admin_headers,
         )
         assert res.status_code == 404
@@ -256,7 +256,7 @@ class TestDownloadMatrices:
         # fake path
         res = client.get(
             f"/v1/studies/{parent_id}/raw/download",
-            params={"path": f"input/links/de/{fake_str}", "format": "csv"},
+            params={"path": f"input/links/de/{fake_str}", "format": "tsv"},
             headers=admin_headers,
         )
         assert res.status_code == 404
@@ -265,7 +265,7 @@ class TestDownloadMatrices:
         # path that does not lead to a matrix
         res = client.get(
             f"/v1/studies/{parent_id}/raw/download",
-            params={"path": "settings/generaldata", "format": "csv"},
+            params={"path": "settings/generaldata", "format": "tsv"},
             headers=admin_headers,
         )
         assert res.status_code == 404
