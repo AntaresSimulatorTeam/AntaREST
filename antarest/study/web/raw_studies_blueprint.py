@@ -2,8 +2,8 @@ import http
 import io
 import json
 import logging
-import pathlib
 import typing as t
+from pathlib import Path, PurePosixPath
 
 import pandas as pd
 from fastapi import APIRouter, Body, Depends, File, HTTPException
@@ -83,6 +83,22 @@ class TableExportFormat(EnumIgnoreCase):
         else:  # pragma: no cover
             raise NotImplementedError(f"Export format '{self}' is not implemented")
 
+    def export_table(
+        self,
+        df: pd.DataFrame,
+        export_path: t.Union[str, Path],
+        *,
+        with_index: bool = True,
+        with_header: bool = True,
+    ) -> None:
+        """Export a table to a file in the given format."""
+        if self == TableExportFormat.XLSX:
+            return df.to_excel(export_path, index=with_index, header=with_header, engine="openpyxl")
+        elif self == TableExportFormat.TSV:
+            return df.to_csv(export_path, sep="\t", index=with_index, header=with_header, float_format="%.6f")
+        else:  # pragma: no cover
+            raise NotImplementedError(f"Export format '{self}' is not implemented")
+
 
 def create_raw_study_routes(
     study_service: StudyService,
@@ -134,10 +150,10 @@ def create_raw_study_routes(
 
         if isinstance(output, bytes):
             # Guess the suffix form the target data
-            resource_path = pathlib.PurePosixPath(path)
+            resource_path = PurePosixPath(path)
             parent_cfg = study_service.get(uuid, str(resource_path.parent), depth=2, formatted=True, params=parameters)
             child = parent_cfg[resource_path.name]
-            suffix = pathlib.PurePosixPath(child).suffix
+            suffix = PurePosixPath(child).suffix
 
             content_type, encoding = CONTENT_TYPES.get(suffix, (None, None))
             if content_type == "application/json":
@@ -297,7 +313,7 @@ def create_raw_study_routes(
             study_id=uuid, path=path, with_index=index, with_columns=header, parameters=parameters
         )
 
-        matrix_name = pathlib.Path(path).stem
+        matrix_name = Path(path).stem
         export_file_download = study_service.file_transfer_manager.request_download(
             f"{matrix_name}{format.suffix}",
             f"Exporting matrix '{matrix_name}' to {format} format for study '{uuid}'",
@@ -305,17 +321,17 @@ def create_raw_study_routes(
             use_notification=False,
             expiration_time_in_minutes=10,
         )
-        export_path = pathlib.Path(export_file_download.path)
+        export_path = Path(export_file_download.path)
         export_id = export_file_download.id
 
         try:
-            _create_matrix_files(df_matrix, header, index, format, export_path)
+            format.export_table(df_matrix, export_path, with_index=index, with_header=header)
             study_service.file_transfer_manager.set_ready(export_id, use_notification=False)
         except ValueError as e:
             study_service.file_transfer_manager.fail(export_id, str(e))
             raise HTTPException(
                 status_code=http.HTTPStatus.UNPROCESSABLE_ENTITY,
-                detail=f"The Excel file {export_path} already exists and cannot be replaced due to Excel policy :{str(e)}",
+                detail=f"Cannot replace '{export_path}' due to Excel policy: {e}",
             ) from e
         except FileDownloadNotFound as e:
             study_service.file_transfer_manager.fail(export_id, str(e))
@@ -331,23 +347,3 @@ def create_raw_study_routes(
         )
 
     return bp
-
-
-def _create_matrix_files(
-    df_matrix: pd.DataFrame, header: bool, index: bool, format: TableExportFormat, export_path: pathlib.Path
-) -> None:
-    if format == TableExportFormat.TSV:
-        df_matrix.to_csv(
-            export_path,
-            sep="\t",
-            header=header,
-            index=index,
-            float_format="%.6f",
-        )
-    else:
-        df_matrix.to_excel(
-            export_path,
-            header=header,
-            index=index,
-            float_format="%.6f",
-        )
