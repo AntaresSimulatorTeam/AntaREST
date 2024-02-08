@@ -571,7 +571,7 @@ def test_download_output() -> None:
     # AREA TYPE
     res_matrix = MatrixAggregationResultDTO(
         index=MatrixIndex(
-            start_date="2001-01-01 00:00:00",
+            start_date="2018-01-01 00:00:00",
             steps=1,
             first_week_size=7,
             level=StudyDownloadLevelDTO.ANNUAL,
@@ -631,7 +631,7 @@ def test_download_output() -> None:
     input_data.filter = ["east>west"]
     res_matrix = MatrixAggregationResultDTO(
         index=MatrixIndex(
-            start_date="2001-01-01 00:00:00",
+            start_date="2018-01-01 00:00:00",
             steps=1,
             first_week_size=7,
             level=StudyDownloadLevelDTO.ANNUAL,
@@ -661,7 +661,7 @@ def test_download_output() -> None:
     input_data.filterIn = "n"
     res_matrix = MatrixAggregationResultDTO(
         index=MatrixIndex(
-            start_date="2001-01-01 00:00:00",
+            start_date="2018-01-01 00:00:00",
             steps=1,
             first_week_size=7,
             level=StudyDownloadLevelDTO.ANNUAL,

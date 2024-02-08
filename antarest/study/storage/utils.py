@@ -1,4 +1,5 @@
 import calendar
+import copy
 import logging
 import math
 import os
@@ -269,6 +270,127 @@ DAY_NAMES = (
 )
 
 
+def _generate_columns(column_suffix: str) -> t.List[str]:
+    return [f"{i}{column_suffix}" for i in range(101)]
+
+
+class MatrixProfile(t.NamedTuple):
+    """
+    Matrix profile for time series or classic tables.
+    """
+
+    cols: t.List[str]
+    rows: t.List[str]
+    stats: bool
+
+
+SPECIFIC_MATRICES = {
+    "input/hydro/common/capacity/creditmodulations_*": MatrixProfile(
+        cols=_generate_columns(""),
+        rows=["Generating Power", "Pumping Power"],
+        stats=False,
+    ),
+    "input/hydro/common/capacity/maxpower_*": MatrixProfile(
+        cols=[
+            "Generating Max Power (MW)",
+            "Generating Max Energy (Hours at Pmax)",
+            "Pumping Max Power (MW)",
+            "Pumping Max Energy (Hours at Pmax)",
+        ],
+        rows=[],
+        stats=False,
+    ),
+    "input/hydro/common/capacity/reservoir_*": MatrixProfile(
+        cols=["Lev Low (p.u)", "Lev Avg (p.u)", "Lev High (p.u)"],
+        rows=[],
+        stats=False,
+    ),
+    "input/hydro/common/capacity/waterValues_*": MatrixProfile(cols=_generate_columns("%"), rows=[], stats=False),
+    "input/hydro/series/*/mod": MatrixProfile(cols=[], rows=[], stats=True),
+    "input/hydro/series/*/ror": MatrixProfile(cols=[], rows=[], stats=True),
+    "input/hydro/common/capacity/inflowPattern_*": MatrixProfile(cols=["Inflow Pattern (X)"], rows=[], stats=False),
+    "input/hydro/prepro/*/energy": MatrixProfile(
+        cols=["Expectation (MWh)", "Std Deviation (MWh)", "Min. (MWh)", "Max. (MWh)", "ROR Share"],
+        rows=[
+            "January",
+            "February",
+            "March",
+            "April",
+            "May",
+            "June",
+            "July",
+            "August",
+            "September",
+            "October",
+            "November",
+            "December",
+        ],
+        stats=False,
+    ),
+    "input/thermal/prepro/*/*/modulation": MatrixProfile(
+        cols=["Marginal cost modulation", "Market bid modulation", "Capacity modulation", "Min gen modulation"],
+        rows=[],
+        stats=False,
+    ),
+    "input/thermal/prepro/*/*/data": MatrixProfile(
+        cols=["FO Duration", "PO Duration", "FO Rate", "PO Rate", "NPO Min", "NPO Max"],
+        rows=[],
+        stats=False,
+    ),
+    "input/reserves/*": MatrixProfile(
+        cols=["Primary Res. (draft)", "Strategic Res. (draft)", "DSM", "Day Ahead"],
+        rows=[],
+        stats=False,
+    ),
+    "input/misc-gen/miscgen-*": MatrixProfile(
+        cols=["CHP", "Bio Mass", "Bio Gaz", "Waste", "GeoThermal", "Other", "PSP", "ROW Balance"],
+        rows=[],
+        stats=False,
+    ),
+    "input/bindingconstraints/*": MatrixProfile(cols=["<", ">", "="], rows=[], stats=False),
+    "input/links/*/*": MatrixProfile(
+        cols=[
+            "Capacités de transmission directes",
+            "Capacités de transmission indirectes",
+            "Hurdle costs direct",
+            "Hurdle costs indirect",
+            "Impedances",
+            "Loop flow",
+            "P.Shift Min",
+            "P.Shift Max",
+        ],
+        rows=[],
+        stats=False,
+    ),
+}
+
+
+SPECIFIC_MATRICES_820 = copy.deepcopy(SPECIFIC_MATRICES)
+SPECIFIC_MATRICES_820["input/links/*/*"] = MatrixProfile(
+    cols=[
+        "Hurdle costs direct",
+        "Hurdle costs indirect",
+        "Impedances",
+        "Loop flow",
+        "P.Shift Min",
+        "P.Shift Max",
+    ],
+    rows=[],
+    stats=False,
+)
+
+SPECIFIC_MATRICES_870 = copy.deepcopy(SPECIFIC_MATRICES_820)
+SPECIFIC_MATRICES_870["input/bindingconstraints/*"] = MatrixProfile(cols=[], rows=[], stats=False)
+
+
+def get_specific_matrices_according_to_version(study_version: int) -> t.Dict[str, MatrixProfile]:
+    if study_version < 820:
+        return SPECIFIC_MATRICES
+    elif study_version < 870:
+        return SPECIFIC_MATRICES_820
+    return SPECIFIC_MATRICES_870
+
+
 def get_start_date(
     file_study: FileStudy,
     output_id: t.Optional[str] = None,
@@ -293,7 +415,7 @@ def get_start_date(
 
     starting_month_index = MONTHS.index(starting_month.title()) + 1
     starting_day_index = DAY_NAMES.index(starting_day.title())
-    target_year = 2000
+    target_year = 2018
     while True:
         if leapyear == calendar.isleap(target_year):
             first_day = datetime(target_year, starting_month_index, 1)

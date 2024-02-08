@@ -4,6 +4,7 @@ import io
 import json
 import logging
 import os
+import re
 import time
 import typing as t
 from datetime import datetime, timedelta
@@ -12,6 +13,7 @@ from pathlib import Path, PurePosixPath
 from uuid import uuid4
 
 import numpy as np
+import pandas as pd
 from fastapi import HTTPException, UploadFile
 from markupsafe import escape
 from starlette.responses import FileResponse, Response
@@ -20,6 +22,7 @@ from antarest.core.config import Config
 from antarest.core.exceptions import (
     BadEditInstructionException,
     CommandApplicationError,
+    IncorrectPathError,
     NotAManagedStudyException,
     StudyDeletionNotAllowed,
     StudyNotFoundError,
@@ -54,6 +57,7 @@ from antarest.study.business.areas.st_storage_management import STStorageManager
 from antarest.study.business.areas.thermal_management import ThermalManager
 from antarest.study.business.binding_constraint_management import BindingConstraintManager
 from antarest.study.business.config_management import ConfigManager
+from antarest.study.business.correlation_management import CorrelationManager
 from antarest.study.business.district_manager import DistrictManager
 from antarest.study.business.general_management import GeneralManager
 from antarest.study.business.link_management import LinkInfoDTO, LinkManager
@@ -109,7 +113,14 @@ from antarest.study.storage.study_upgrader import (
     should_study_be_denormalized,
     upgrade_study,
 )
-from antarest.study.storage.utils import assert_permission, get_start_date, is_managed, remove_from_cache
+from antarest.study.storage.utils import (
+    MatrixProfile,
+    assert_permission,
+    get_specific_matrices_according_to_version,
+    get_start_date,
+    is_managed,
+    remove_from_cache,
+)
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command.update_comments import UpdateComments
@@ -139,6 +150,40 @@ def get_disk_usage(path: t.Union[str, Path]) -> int:
             elif entry.is_dir():
                 total_size += get_disk_usage(path=str(entry.path))
     return total_size
+
+
+def _handle_specific_matrices(
+    df: pd.DataFrame,
+    matrix_profile: MatrixProfile,
+    matrix_path: str,
+    *,
+    with_index: bool,
+    with_columns: bool,
+) -> pd.DataFrame:
+    if with_columns:
+        if Path(matrix_path).parts[1] == "links":
+            cols = _handle_links_columns(matrix_path, matrix_profile)
+        else:
+            cols = matrix_profile.cols
+        if cols:
+            df.columns = pd.Index(cols)
+    rows = matrix_profile.rows
+    if with_index and rows:
+        df.index = rows  # type: ignore
+    return df
+
+
+def _handle_links_columns(matrix_path: str, matrix_profile: MatrixProfile) -> t.List[str]:
+    path_parts = Path(matrix_path).parts
+    area_id_1 = path_parts[2]
+    area_id_2 = path_parts[3]
+    result = matrix_profile.cols
+    for k, col in enumerate(result):
+        if col == "Hurdle costs direct":
+            result[k] = f"{col} ({area_id_1}->{area_id_2})"
+        elif col == "Hurdle costs indirect":
+            result[k] = f"{col} ({area_id_2}->{area_id_1})"
+    return result
 
 
 class StudyUpgraderTask:
@@ -268,6 +313,7 @@ class StudyService:
         self.xpansion_manager = XpansionManager(self.storage_service)
         self.matrix_manager = MatrixManager(self.storage_service)
         self.binding_constraint_manager = BindingConstraintManager(self.storage_service)
+        self.correlation_manager = CorrelationManager(self.storage_service)
         self.cache_service = cache_service
         self.config = config
         self.on_deletion_callbacks: t.List[t.Callable[[str], None]] = []
@@ -2379,3 +2425,47 @@ class StudyService:
         study_path = self.storage_service.raw_study_service.get_study_path(study)
         # If the study is a variant, it's possible that it only exists in DB and not on disk. If so, we return 0.
         return get_disk_usage(study_path) if study_path.exists() else 0
+
+    def get_matrix_with_index_and_header(
+        self, *, study_id: str, path: str, with_index: bool, with_columns: bool, parameters: RequestParameters
+    ) -> pd.DataFrame:
+        matrix_path = Path(path)
+        study = self.get_study(study_id)
+        for aggregate in ["allocation", "correlation"]:
+            if matrix_path == Path("input") / "hydro" / aggregate:
+                all_areas = t.cast(
+                    t.List[AreaInfoDTO],
+                    self.get_all_areas(study_id, area_type=AreaType.AREA, ui=False, params=parameters),
+                )
+                if aggregate == "allocation":
+                    hydro_matrix = self.allocation_manager.get_allocation_matrix(study, all_areas)
+                else:
+                    hydro_matrix = self.correlation_manager.get_correlation_matrix(all_areas, study, [])  # type: ignore
+                return pd.DataFrame(data=hydro_matrix.data, columns=hydro_matrix.columns, index=hydro_matrix.index)
+
+        json_matrix = self.get(study_id, path, depth=3, formatted=True, params=parameters)
+        for key in ["data", "index", "columns"]:
+            if key not in json_matrix:
+                raise IncorrectPathError(f"The path filled does not correspond to a matrix : {path}")
+        if not json_matrix["data"]:
+            return pd.DataFrame()
+        df_matrix = pd.DataFrame(data=json_matrix["data"], columns=json_matrix["columns"], index=json_matrix["index"])
+
+        if with_index:
+            matrix_index = self.get_input_matrix_startdate(study_id, path, parameters)
+            time_column = pd.date_range(
+                start=matrix_index.start_date, periods=len(df_matrix), freq=matrix_index.level.value[0]
+            )
+            df_matrix.index = time_column
+
+        specific_matrices = get_specific_matrices_according_to_version(int(study.version))
+        for specific_matrix in specific_matrices:
+            if re.match(specific_matrix, path):
+                return _handle_specific_matrices(
+                    df_matrix,
+                    specific_matrices[specific_matrix],
+                    path,
+                    with_index=with_index,
+                    with_columns=with_columns,
+                )
+        return df_matrix

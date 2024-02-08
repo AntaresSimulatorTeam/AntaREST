@@ -4,12 +4,15 @@ import json
 import logging
 import pathlib
 import typing as t
+from enum import Enum
 
+import pandas as pd
 from fastapi import APIRouter, Body, Depends, File, HTTPException
 from fastapi.params import Param, Query
-from starlette.responses import JSONResponse, PlainTextResponse, Response, StreamingResponse
+from starlette.responses import FileResponse, JSONResponse, PlainTextResponse, Response, StreamingResponse
 
 from antarest.core.config import Config
+from antarest.core.filetransfer.model import FileDownloadNotFound
 from antarest.core.jwt import JWTUser
 from antarest.core.model import SUB_JSON
 from antarest.core.requests import RequestParameters
@@ -47,6 +50,11 @@ CONTENT_TYPES = {
     # (JSON)
     ".json": ("application/json", "utf-8"),
 }
+
+
+class ExpectedFormatTypes(Enum):
+    XLSX = "xlsx"
+    CSV = "csv"
 
 
 def create_raw_study_routes(
@@ -243,4 +251,75 @@ def create_raw_study_routes(
         )
         return study_service.check_errors(uuid)
 
+    @bp.get(
+        "/studies/{uuid}/raw/download",
+        summary="Download a matrix in a given format",
+        tags=[APITag.study_raw_data],
+        response_class=FileResponse,
+    )
+    def get_matrix(
+        uuid: str,
+        path: str,
+        format: ExpectedFormatTypes,
+        header: bool = True,
+        index: bool = True,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> FileResponse:
+        parameters = RequestParameters(user=current_user)
+        df_matrix = study_service.get_matrix_with_index_and_header(
+            study_id=uuid, path=path, with_index=index, with_columns=header, parameters=parameters
+        )
+
+        export_file_download = study_service.file_transfer_manager.request_download(
+            f"{pathlib.Path(path).stem}.{format.value}",
+            f"Exporting matrix {pathlib.Path(path).stem} to format {format.value} for study {uuid}",
+            current_user,
+            use_notification=False,
+            expiration_time_in_minutes=10,
+        )
+        export_path = pathlib.Path(export_file_download.path)
+        export_id = export_file_download.id
+
+        try:
+            _create_matrix_files(df_matrix, header, index, format, export_path)
+            study_service.file_transfer_manager.set_ready(export_id, use_notification=False)
+        except ValueError as e:
+            study_service.file_transfer_manager.fail(export_id, str(e))
+            raise HTTPException(
+                status_code=http.HTTPStatus.UNPROCESSABLE_ENTITY,
+                detail=f"The Excel file {export_path} already exists and cannot be replaced due to Excel policy :{str(e)}",
+            ) from e
+        except FileDownloadNotFound as e:
+            study_service.file_transfer_manager.fail(export_id, str(e))
+            raise HTTPException(
+                status_code=http.HTTPStatus.UNPROCESSABLE_ENTITY,
+                detail=f"The file download does not exist in database :{str(e)}",
+            ) from e
+
+        return FileResponse(
+            export_path,
+            headers={"Content-Disposition": f'attachment; filename="{export_file_download.filename}"'},
+            media_type="application/octet-stream",
+        )
+
     return bp
+
+
+def _create_matrix_files(
+    df_matrix: pd.DataFrame, header: bool, index: bool, format: ExpectedFormatTypes, export_path: pathlib.Path
+) -> None:
+    if format == ExpectedFormatTypes.CSV:
+        df_matrix.to_csv(
+            export_path,
+            sep="\t",
+            header=header,
+            index=index,
+            float_format="%.6f",
+        )
+    else:
+        df_matrix.to_excel(
+            export_path,
+            header=header,
+            index=index,
+            float_format="%.6f",
+        )
