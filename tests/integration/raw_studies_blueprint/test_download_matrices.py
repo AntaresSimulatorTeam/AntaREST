@@ -88,7 +88,9 @@ class TestDownloadMatrices:
 
             # check time coherence
             generated_index = dataframe.index
+            # noinspection PyUnresolvedReferences
             first_date = generated_index[0].to_pydatetime()
+            # noinspection PyUnresolvedReferences
             second_date = generated_index[1].to_pydatetime()
             assert first_date.month == second_date.month == 1 if uuid == parent_id else 7
             assert first_date.day == second_date.day == 1
@@ -206,8 +208,8 @@ class TestDownloadMatrices:
         dataframe = pd.read_csv(content, index_col=0, sep="\t")
         assert dataframe.index[0] == "2018-01-01 00:00:00"
         dataframe.index = range(len(dataframe))
-        liste_transposee = list(zip(*[8760 * [1.0], 8760 * [1.0], 8760 * [1.0], 8760 * [0.0]]))
-        expected_df = pd.DataFrame(columns=["0", "1", "2", "3"], index=range(8760), data=liste_transposee)
+        transposed_matrix = list(zip(*[8760 * [1.0], 8760 * [1.0], 8760 * [1.0], 8760 * [0.0]]))
+        expected_df = pd.DataFrame(columns=["0", "1", "2", "3"], index=range(8760), data=transposed_matrix)
         assert dataframe.equals(expected_df)
 
         # asserts endpoint returns the right columns for output matrix
@@ -222,6 +224,7 @@ class TestDownloadMatrices:
         assert res.status_code == 200
         content = io.BytesIO(res.content)
         dataframe = pd.read_csv(content, index_col=0, sep="\t")
+        # noinspection SpellCheckingInspection
         assert list(dataframe.columns) == [
             "('FLOW LIN.', 'MWh', '')",
             "('UCAP LIN.', 'MWh', '')",
