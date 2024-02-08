@@ -56,7 +56,7 @@ class TableExportFormat(EnumIgnoreCase):
     """Export format for tables."""
 
     XLSX = "xlsx"
-    CSV = "csv"
+    TSV = "tsv"
 
 
 def create_raw_study_routes(
@@ -98,7 +98,7 @@ def create_raw_study_routes(
         - `formatted`: A flag specifying whether the data should be returned in a formatted manner.
 
         Returns the fetched data: a JSON object (in most cases), a plain text file
-        or a file attachment (Microsoft Office document, CSV/TSV file...).
+        or a file attachment (Microsoft Office document, TSV/TSV file...).
         """
         logger.info(
             f"📘 Fetching data at {path} (depth={depth}) from study {uuid}",
@@ -310,7 +310,7 @@ def create_raw_study_routes(
 def _create_matrix_files(
     df_matrix: pd.DataFrame, header: bool, index: bool, format: TableExportFormat, export_path: pathlib.Path
 ) -> None:
-    if format == TableExportFormat.CSV:
+    if format == TableExportFormat.TSV:
         df_matrix.to_csv(
             export_path,
             sep="\t",
