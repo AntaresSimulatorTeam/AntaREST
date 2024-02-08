@@ -84,7 +84,7 @@ class TestDiskUsage:
         assert 6 * 1024 * 1024 < disk_usage < 7 * 1024 * 1024
 
         # Create dummy outputs for the variant
-        outputs_dir = tmp_path / "internal_workspace" / variant_id / "outputs"
+        outputs_dir = tmp_path / "internal_workspace" / variant_id / "output"
         for output in ["20240208-1200eco", "20240208-1300eco"]:
             output_dir = outputs_dir / output
             output_dir.mkdir(parents=True)
