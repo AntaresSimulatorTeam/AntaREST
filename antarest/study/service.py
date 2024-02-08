@@ -1,10 +1,10 @@
 import base64
 import contextlib
+import fnmatch
 import io
 import json
 import logging
 import os
-import re
 import time
 import typing as t
 from datetime import datetime, timedelta
@@ -116,7 +116,7 @@ from antarest.study.storage.study_upgrader import (
 from antarest.study.storage.utils import (
     MatrixProfile,
     assert_permission,
-    get_specific_matrices_according_to_version,
+    get_matrix_profile_by_version,
     get_start_date,
     is_managed,
     remove_from_cache,
@@ -2431,26 +2431,25 @@ class StudyService:
     ) -> pd.DataFrame:
         matrix_path = Path(path)
         study = self.get_study(study_id)
-        for aggregate in ["allocation", "correlation"]:
-            if matrix_path == Path("input") / "hydro" / aggregate:
-                all_areas = t.cast(
-                    t.List[AreaInfoDTO],
-                    self.get_all_areas(study_id, area_type=AreaType.AREA, ui=False, params=parameters),
-                )
-                if aggregate == "allocation":
-                    hydro_matrix = self.allocation_manager.get_allocation_matrix(study, all_areas)
-                else:
-                    hydro_matrix = self.correlation_manager.get_correlation_matrix(all_areas, study, [])  # type: ignore
-                return pd.DataFrame(data=hydro_matrix.data, columns=hydro_matrix.columns, index=hydro_matrix.index)
 
-        json_matrix = self.get(study_id, path, depth=3, formatted=True, params=parameters)
-        for key in ["data", "index", "columns"]:
-            if key not in json_matrix:
-                raise IncorrectPathError(f"The path filled does not correspond to a matrix : {path}")
-        if not json_matrix["data"]:
+        if matrix_path.parts in [("input", "hydro", "allocation"), ("input", "hydro", "correlation")]:
+            all_areas = t.cast(
+                t.List[AreaInfoDTO],
+                self.get_all_areas(study_id, area_type=AreaType.AREA, ui=False, params=parameters),
+            )
+            if matrix_path.parts[-1] == "allocation":
+                hydro_matrix = self.allocation_manager.get_allocation_matrix(study, all_areas)
+            else:
+                hydro_matrix = self.correlation_manager.get_correlation_matrix(all_areas, study, [])  # type: ignore
+            return pd.DataFrame(data=hydro_matrix.data, columns=hydro_matrix.columns, index=hydro_matrix.index)
+
+        matrix_obj = self.get(study_id, path, depth=3, formatted=True, params=parameters)
+        if set(matrix_obj) != {"data", "index", "columns"}:
+            raise IncorrectPathError(f"The provided path does not point to a valid matrix: '{path}'")
+        if not matrix_obj["data"]:
             return pd.DataFrame()
-        df_matrix = pd.DataFrame(data=json_matrix["data"], columns=json_matrix["columns"], index=json_matrix["index"])
 
+        df_matrix = pd.DataFrame(**matrix_obj)
         if with_index:
             matrix_index = self.get_input_matrix_startdate(study_id, path, parameters)
             time_column = pd.date_range(
@@ -2458,14 +2457,15 @@ class StudyService:
             )
             df_matrix.index = time_column
 
-        specific_matrices = get_specific_matrices_according_to_version(int(study.version))
-        for specific_matrix in specific_matrices:
-            if re.match(specific_matrix, path):
+        matrix_profiles = get_matrix_profile_by_version(int(study.version))
+        for pattern, matrix_profile in matrix_profiles.items():
+            if fnmatch.fnmatch(path, pattern):
                 return _handle_specific_matrices(
                     df_matrix,
-                    specific_matrices[specific_matrix],
+                    matrix_profile,
                     path,
                     with_index=with_index,
                     with_header=with_header,
                 )
+
         return df_matrix
