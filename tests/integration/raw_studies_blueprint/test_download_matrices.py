@@ -71,10 +71,11 @@ class TestDownloadMatrices:
         variant_matrix_path = f"input/load/series/load_{area_name}"
 
         for uuid, path in [(parent_id, raw_matrix_path), (variant_id, variant_matrix_path)]:
-            # get downloaded bytes
+            # Export the matrix in xlsx format (which is the default format)
+            # and retrieve it as binary content (a ZIP-like file).
             res = client.get(
                 f"/v1/studies/{uuid}/raw/download",
-                params={"path": path, "format": "xlsx"},
+                params={"path": path},
                 headers=admin_headers,
             )
             assert res.status_code == 200
@@ -82,6 +83,7 @@ class TestDownloadMatrices:
             assert res.headers["content-type"] == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
             # load into dataframe
+            # noinspection PyTypeChecker
             dataframe = pd.read_excel(io.BytesIO(res.content), index_col=0)
 
             # check time coherence

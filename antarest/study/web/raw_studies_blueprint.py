@@ -298,25 +298,32 @@ def create_raw_study_routes(
         "/studies/{uuid}/raw/download",
         summary="Download a matrix in a given format",
         tags=[APITag.study_raw_data],
-        response_class=FileResponse,
     )
     def get_matrix(
         uuid: str,
-        path: str,
-        format: TableExportFormat,
-        header: bool = True,
-        index: bool = True,
+        matrix_path: str = Query(  # type: ignore
+            ..., alias="path", description="Relative path of the matrix to download", title="Matrix Path"
+        ),
+        export_format: TableExportFormat = Query(  # type: ignore
+            TableExportFormat.XLSX, alias="format", description="Export format", title="Export Format"
+        ),
+        with_header: bool = Query(  # type: ignore
+            True, alias="header", description="Whether to include the header or not", title="With Header"
+        ),
+        with_index: bool = Query(  # type: ignore
+            True, alias="index", description="Whether to include the index or not", title="With Index"
+        ),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> FileResponse:
         parameters = RequestParameters(user=current_user)
         df_matrix = study_service.get_matrix_with_index_and_header(
-            study_id=uuid, path=path, with_index=index, with_columns=header, parameters=parameters
+            study_id=uuid, path=matrix_path, with_index=with_index, with_columns=with_header, parameters=parameters
         )
 
-        matrix_name = Path(path).stem
+        matrix_name = Path(matrix_path).stem
         export_file_download = study_service.file_transfer_manager.request_download(
-            f"{matrix_name}{format.suffix}",
-            f"Exporting matrix '{matrix_name}' to {format} format for study '{uuid}'",
+            f"{matrix_name}{export_format.suffix}",
+            f"Exporting matrix '{matrix_name}' to {export_format} format for study '{uuid}'",
             current_user,
             use_notification=False,
             expiration_time_in_minutes=10,
@@ -325,7 +332,7 @@ def create_raw_study_routes(
         export_id = export_file_download.id
 
         try:
-            format.export_table(df_matrix, export_path, with_index=index, with_header=header)
+            export_format.export_table(df_matrix, export_path, with_index=with_index, with_header=with_header)
             study_service.file_transfer_manager.set_ready(export_id, use_notification=False)
         except ValueError as e:
             study_service.file_transfer_manager.fail(export_id, str(e))
@@ -343,7 +350,7 @@ def create_raw_study_routes(
         return FileResponse(
             export_path,
             headers={"Content-Disposition": f'attachment; filename="{export_file_download.filename}"'},
-            media_type=format.media_type,
+            media_type=export_format.media_type,
         )
 
     return bp
