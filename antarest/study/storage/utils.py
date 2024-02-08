@@ -244,30 +244,9 @@ def assert_permission(
 
 MATRIX_INPUT_DAYS_COUNT = 365
 
-MONTHS = (
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
-)
+MONTHS = calendar.month_name[1:]
 
-DAY_NAMES = (
-    "Monday",
-    "Tuesday",
-    "Wednesday",
-    "Thursday",
-    "Friday",
-    "Saturday",
-    "Sunday",
-)
+DAY_NAMES = calendar.day_name[:]
 
 
 def _generate_columns(column_suffix: str) -> t.List[str]:
@@ -383,12 +362,13 @@ SPECIFIC_MATRICES_870 = copy.deepcopy(SPECIFIC_MATRICES_820)
 SPECIFIC_MATRICES_870["input/bindingconstraints/*"] = MatrixProfile(cols=[], rows=[], stats=False)
 
 
-def get_specific_matrices_according_to_version(study_version: int) -> t.Dict[str, MatrixProfile]:
+def get_matrix_profile_by_version(study_version: int) -> t.Dict[str, MatrixProfile]:
     if study_version < 820:
         return SPECIFIC_MATRICES
     elif study_version < 870:
         return SPECIFIC_MATRICES_820
-    return SPECIFIC_MATRICES_870
+    else:
+        return SPECIFIC_MATRICES_870
 
 
 def get_start_date(

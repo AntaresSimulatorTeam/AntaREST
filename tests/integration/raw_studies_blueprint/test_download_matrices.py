@@ -209,7 +209,11 @@ class TestDownloadMatrices:
         assert dataframe.index[0] == "2018-01-01 00:00:00"
         dataframe.index = range(len(dataframe))
         transposed_matrix = list(zip(*[8760 * [1.0], 8760 * [1.0], 8760 * [1.0], 8760 * [0.0]]))
-        expected_df = pd.DataFrame(columns=["0", "1", "2", "3"], index=range(8760), data=transposed_matrix)
+        expected_df = pd.DataFrame(
+            columns=["Marginal cost modulation", "Market bid modulation", "Capacity modulation", "Min gen modulation"],
+            index=range(8760),
+            data=transposed_matrix,
+        )
         assert dataframe.equals(expected_df)
 
         # asserts endpoint returns the right columns for output matrix
@@ -281,7 +285,7 @@ class TestDownloadMatrices:
         )
         assert res.status_code == 404
         assert res.json()["exception"] == "IncorrectPathError"
-        assert res.json()["description"] == "The path filled does not correspond to a matrix : settings/generaldata"
+        assert res.json()["description"] == "The provided path does not point to a valid matrix: 'settings/generaldata'"
 
         # wrong format
         res = client.get(
