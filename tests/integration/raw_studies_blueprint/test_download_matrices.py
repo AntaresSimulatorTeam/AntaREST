@@ -105,11 +105,12 @@ class TestDownloadMatrices:
         # =============================
 
         # test only few possibilities as each API call is quite long
+        # (also check that the format is case-insensitive)
         for header in [True, False]:
             index = not header
             res = client.get(
                 f"/v1/studies/{parent_id}/raw/download",
-                params={"path": raw_matrix_path, "format": "csv", "header": header, "index": index},
+                params={"path": raw_matrix_path, "format": "CSV", "header": header, "index": index},
                 headers=admin_headers,
             )
             assert res.status_code == 200

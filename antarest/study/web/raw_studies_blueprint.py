@@ -1,4 +1,3 @@
-import enum
 import http
 import io
 import json
@@ -20,6 +19,7 @@ from antarest.core.swagger import get_path_examples
 from antarest.core.utils.utils import sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
+from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.service import StudyService
 
 logger = logging.getLogger(__name__)
@@ -52,7 +52,9 @@ CONTENT_TYPES = {
 }
 
 
-class TableExportFormat(enum.Enum):
+class TableExportFormat(EnumIgnoreCase):
+    """Export format for tables."""
+
     XLSX = "xlsx"
     CSV = "csv"
 
