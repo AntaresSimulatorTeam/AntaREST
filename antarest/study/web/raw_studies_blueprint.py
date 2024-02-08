@@ -58,6 +58,31 @@ class TableExportFormat(EnumIgnoreCase):
     XLSX = "xlsx"
     TSV = "tsv"
 
+    def __str__(self) -> str:
+        """Return the format as a string for display."""
+        return self.value.title()
+
+    @property
+    def media_type(self) -> str:
+        """Return the media type used for the HTTP response."""
+        if self == TableExportFormat.XLSX:
+            # noinspection SpellCheckingInspection
+            return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        elif self == TableExportFormat.TSV:
+            return "text/tab-separated-values"
+        else:  # pragma: no cover
+            raise NotImplementedError(f"Export format '{self}' is not implemented")
+
+    @property
+    def suffix(self) -> str:
+        """Return the file suffix for the format."""
+        if self == TableExportFormat.XLSX:
+            return ".xlsx"
+        elif self == TableExportFormat.TSV:
+            return ".tsv"
+        else:  # pragma: no cover
+            raise NotImplementedError(f"Export format '{self}' is not implemented")
+
 
 def create_raw_study_routes(
     study_service: StudyService,
@@ -272,9 +297,10 @@ def create_raw_study_routes(
             study_id=uuid, path=path, with_index=index, with_columns=header, parameters=parameters
         )
 
+        matrix_name = pathlib.Path(path).stem
         export_file_download = study_service.file_transfer_manager.request_download(
-            f"{pathlib.Path(path).stem}.{format.value}",
-            f"Exporting matrix {pathlib.Path(path).stem} to format {format.value} for study {uuid}",
+            f"{matrix_name}{format.suffix}",
+            f"Exporting matrix '{matrix_name}' to {format} format for study '{uuid}'",
             current_user,
             use_notification=False,
             expiration_time_in_minutes=10,
@@ -301,7 +327,7 @@ def create_raw_study_routes(
         return FileResponse(
             export_path,
             headers={"Content-Disposition": f'attachment; filename="{export_file_download.filename}"'},
-            media_type="application/octet-stream",
+            media_type=format.media_type,
         )
 
     return bp

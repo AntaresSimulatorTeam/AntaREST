@@ -70,12 +70,16 @@ class TestDownloadMatrices:
         raw_matrix_path = r"input/load/series/load_de"
         variant_matrix_path = f"input/load/series/load_{area_name}"
 
-        for uuid, path in zip([parent_id, variant_id], [raw_matrix_path, variant_matrix_path]):
+        for uuid, path in [(parent_id, raw_matrix_path), (variant_id, variant_matrix_path)]:
             # get downloaded bytes
             res = client.get(
-                f"/v1/studies/{uuid}/raw/download", params={"path": path, "format": "xlsx"}, headers=admin_headers
+                f"/v1/studies/{uuid}/raw/download",
+                params={"path": path, "format": "xlsx"},
+                headers=admin_headers,
             )
             assert res.status_code == 200
+            # noinspection SpellCheckingInspection
+            assert res.headers["content-type"] == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
             # load into dataframe
             dataframe = pd.read_excel(io.BytesIO(res.content), index_col=0)
@@ -114,6 +118,8 @@ class TestDownloadMatrices:
                 headers=admin_headers,
             )
             assert res.status_code == 200
+            assert res.headers["content-type"] == "text/tab-separated-values; charset=utf-8"
+
             content = io.BytesIO(res.content)
             dataframe = pd.read_csv(
                 content, index_col=0 if index else None, header="infer" if header else None, sep="\t"
