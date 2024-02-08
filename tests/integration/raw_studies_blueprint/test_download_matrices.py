@@ -24,7 +24,9 @@ class TestDownloadMatrices:
 
         # Manage parent study and upgrades it to v8.2
         # This is done to test matrix headers according to different versions
-        copied = client.post(f"/v1/studies/{study_id}/copy?dest=copied&use_task=false", headers=admin_headers)
+        copied = client.post(
+            f"/v1/studies/{study_id}/copy", params={"dest": "copied", "use_task": False}, headers=admin_headers
+        )
         parent_id = copied.json()
         res = client.put(f"/v1/studies/{parent_id}/upgrade", params={"target_version": 820}, headers=admin_headers)
         assert res.status_code == 200
@@ -70,7 +72,9 @@ class TestDownloadMatrices:
 
         for uuid, path in zip([parent_id, variant_id], [raw_matrix_path, variant_matrix_path]):
             # get downloaded bytes
-            res = client.get(f"/v1/studies/{uuid}/raw/download?path={path}&format=xlsx", headers=admin_headers)
+            res = client.get(
+                f"/v1/studies/{uuid}/raw/download", params={"path": path, "format": "xlsx"}, headers=admin_headers
+            )
             assert res.status_code == 200
 
             # load into dataframe
@@ -92,7 +96,7 @@ class TestDownloadMatrices:
             actual_matrix = dataframe.to_dict(orient="split")
 
             # asserts that the result is the same as the one we get with the classic get /raw endpoint
-            res = client.get(f"/v1/studies/{uuid}/raw?path={path}&formatted=true", headers=admin_headers)
+            res = client.get(f"/v1/studies/{uuid}/raw", params={"path": path, "formatted": True}, headers=admin_headers)
             expected_matrix = res.json()
             assert actual_matrix == expected_matrix
 
@@ -104,7 +108,8 @@ class TestDownloadMatrices:
         for header in [True, False]:
             index = not header
             res = client.get(
-                f"/v1/studies/{parent_id}/raw/download?path={raw_matrix_path}&format=csv&header={header}&index={index}",
+                f"/v1/studies/{parent_id}/raw/download",
+                params={"path": raw_matrix_path, "format": "csv", "header": header, "index": index},
                 headers=admin_headers,
             )
             assert res.status_code == 200
@@ -122,7 +127,9 @@ class TestDownloadMatrices:
 
         # tests links headers before v8.2
         res = client.get(
-            f"/v1/studies/{study_id}/raw/download?path=input/links/de/fr&format=csv&index=False", headers=admin_headers
+            f"/v1/studies/{study_id}/raw/download",
+            params={"path": "input/links/de/fr", "format": "csv", "index": False},
+            headers=admin_headers,
         )
         assert res.status_code == 200
         content = io.BytesIO(res.content)
@@ -140,7 +147,9 @@ class TestDownloadMatrices:
 
         # tests links headers after v8.2
         res = client.get(
-            f"/v1/studies/{parent_id}/raw/download?path=input/links/de/fr_parameters&format=csv", headers=admin_headers
+            f"/v1/studies/{parent_id}/raw/download",
+            params={"path": "input/links/de/fr_parameters", "format": "csv"},
+            headers=admin_headers,
         )
         assert res.status_code == 200
         content = io.BytesIO(res.content)
@@ -156,7 +165,9 @@ class TestDownloadMatrices:
 
         # allocation and correlation matrices
         for path in ["input/hydro/allocation", "input/hydro/correlation"]:
-            res = client.get(f"/v1/studies/{parent_id}/raw/download?path={path}&format=csv", headers=admin_headers)
+            res = client.get(
+                f"/v1/studies/{parent_id}/raw/download", params={"path": path, "format": "csv"}, headers=admin_headers
+            )
             assert res.status_code == 200
             content = io.BytesIO(res.content)
             dataframe = pd.read_csv(content, index_col=0, sep="\t")
@@ -166,7 +177,8 @@ class TestDownloadMatrices:
 
         # test for empty matrix
         res = client.get(
-            f"/v1/studies/{study_id}/raw/download?path=input/hydro/common/capacity/waterValues_de&format=csv",
+            f"/v1/studies/{study_id}/raw/download",
+            params={"path": "input/hydro/common/capacity/waterValues_de", "format": "csv"},
             headers=admin_headers,
         )
         assert res.status_code == 200
@@ -176,7 +188,8 @@ class TestDownloadMatrices:
 
         # modulation matrix
         res = client.get(
-            f"/v1/studies/{parent_id}/raw/download?path=input/thermal/prepro/de/01_solar/modulation&format=csv",
+            f"/v1/studies/{parent_id}/raw/download",
+            params={"path": "input/thermal/prepro/de/01_solar/modulation", "format": "csv"},
             headers=admin_headers,
         )
         assert res.status_code == 200
@@ -190,7 +203,11 @@ class TestDownloadMatrices:
 
         # asserts endpoint returns the right columns for output matrix
         res = client.get(
-            f"/v1/studies/{study_id}/raw/download?path=output/20201014-1422eco-hello/economy/mc-ind/00001/links/de/fr/values-hourly&format=csv",
+            f"/v1/studies/{study_id}/raw/download",
+            params={
+                "path": "output/20201014-1422eco-hello/economy/mc-ind/00001/links/de/fr/values-hourly",
+                "format": "csv",
+            },
             headers=admin_headers,
         )
         assert res.status_code == 200
@@ -211,7 +228,8 @@ class TestDownloadMatrices:
 
         # test energy matrix to test the regex
         res = client.get(
-            f"/v1/studies/{study_id}/raw/download?path=input/hydro/prepro/de/energy&format=csv",
+            f"/v1/studies/{study_id}/raw/download",
+            params={"path": "input/hydro/prepro/de/energy", "format": "csv"},
             headers=admin_headers,
         )
         assert res.status_code == 200
@@ -227,21 +245,27 @@ class TestDownloadMatrices:
 
         # fake study_id
         res = client.get(
-            f"/v1/studies/{fake_str}/raw/download?path={raw_matrix_path}&format=csv", headers=admin_headers
+            f"/v1/studies/{fake_str}/raw/download",
+            params={"path": raw_matrix_path, "format": "csv"},
+            headers=admin_headers,
         )
         assert res.status_code == 404
         assert res.json()["exception"] == "StudyNotFoundError"
 
         # fake path
         res = client.get(
-            f"/v1/studies/{parent_id}/raw/download?path=input/links/de/{fake_str}&format=csv", headers=admin_headers
+            f"/v1/studies/{parent_id}/raw/download",
+            params={"path": f"input/links/de/{fake_str}", "format": "csv"},
+            headers=admin_headers,
         )
         assert res.status_code == 404
         assert res.json()["exception"] == "ChildNotFoundError"
 
         # path that does not lead to a matrix
         res = client.get(
-            f"/v1/studies/{parent_id}/raw/download?path=settings/generaldata&format=csv", headers=admin_headers
+            f"/v1/studies/{parent_id}/raw/download",
+            params={"path": "settings/generaldata", "format": "csv"},
+            headers=admin_headers,
         )
         assert res.status_code == 404
         assert res.json()["exception"] == "IncorrectPathError"
@@ -249,7 +273,9 @@ class TestDownloadMatrices:
 
         # wrong format
         res = client.get(
-            f"/v1/studies/{parent_id}/raw/download?path={raw_matrix_path}&format={fake_str}", headers=admin_headers
+            f"/v1/studies/{parent_id}/raw/download",
+            params={"path": raw_matrix_path, "format": fake_str},
+            headers=admin_headers,
         )
         assert res.status_code == 422
         assert res.json()["exception"] == "RequestValidationError"
