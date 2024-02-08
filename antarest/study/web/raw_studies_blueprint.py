@@ -1,10 +1,10 @@
+import enum
 import http
 import io
 import json
 import logging
 import pathlib
 import typing as t
-from enum import Enum
 
 import pandas as pd
 from fastapi import APIRouter, Body, Depends, File, HTTPException
@@ -52,7 +52,7 @@ CONTENT_TYPES = {
 }
 
 
-class ExpectedFormatTypes(Enum):
+class TableExportFormat(enum.Enum):
     XLSX = "xlsx"
     CSV = "csv"
 
@@ -260,7 +260,7 @@ def create_raw_study_routes(
     def get_matrix(
         uuid: str,
         path: str,
-        format: ExpectedFormatTypes,
+        format: TableExportFormat,
         header: bool = True,
         index: bool = True,
         current_user: JWTUser = Depends(auth.get_current_user),
@@ -306,9 +306,9 @@ def create_raw_study_routes(
 
 
 def _create_matrix_files(
-    df_matrix: pd.DataFrame, header: bool, index: bool, format: ExpectedFormatTypes, export_path: pathlib.Path
+    df_matrix: pd.DataFrame, header: bool, index: bool, format: TableExportFormat, export_path: pathlib.Path
 ) -> None:
-    if format == ExpectedFormatTypes.CSV:
+    if format == TableExportFormat.CSV:
         df_matrix.to_csv(
             export_path,
             sep="\t",
