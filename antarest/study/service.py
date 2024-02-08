@@ -158,9 +158,9 @@ def _handle_specific_matrices(
     matrix_path: str,
     *,
     with_index: bool,
-    with_columns: bool,
+    with_header: bool,
 ) -> pd.DataFrame:
-    if with_columns:
+    if with_header:
         if Path(matrix_path).parts[1] == "links":
             cols = _handle_links_columns(matrix_path, matrix_profile)
         else:
@@ -2427,7 +2427,7 @@ class StudyService:
         return get_disk_usage(study_path) if study_path.exists() else 0
 
     def get_matrix_with_index_and_header(
-        self, *, study_id: str, path: str, with_index: bool, with_columns: bool, parameters: RequestParameters
+        self, *, study_id: str, path: str, with_index: bool, with_header: bool, parameters: RequestParameters
     ) -> pd.DataFrame:
         matrix_path = Path(path)
         study = self.get_study(study_id)
@@ -2466,6 +2466,6 @@ class StudyService:
                     specific_matrices[specific_matrix],
                     path,
                     with_index=with_index,
-                    with_columns=with_columns,
+                    with_header=with_header,
                 )
         return df_matrix
