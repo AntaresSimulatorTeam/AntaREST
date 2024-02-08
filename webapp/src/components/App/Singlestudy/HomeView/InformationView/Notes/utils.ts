@@ -1,17 +1,17 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable no-param-reassign */
-/* eslint-disable no-plusplus */
 import { ContentState, convertToRaw, EditorState } from "draft-js";
 import draftToHtml from "draftjs-to-html";
 import { convertFromHTML } from "draft-convert";
 import { Element as XMLElement, js2xml, xml2json } from "xml-js";
+import theme from "../../../../../../theme";
 
 interface BlockMap {
   from: string;
   to: string;
 }
 
-const blockMap: Array<BlockMap> = [
+const blockMap: BlockMap[] = [
   { from: "ins", to: "u" },
   { from: "em", to: "i" },
   { from: "strong", to: "b" },
@@ -57,10 +57,10 @@ const parseXMLAttributes = (node: XMLElement): AttributesUtils => {
   let isList = false;
   if (node.attributes !== undefined) {
     const list = Object.keys(node.attributes);
-    for (let i = 0; i < list.length; i++) {
-      switch (list[i]) {
+    for (const attr of list) {
+      switch (attr) {
         case "fontweight":
-          if (parseInt(node.attributes[list[i]] as string, 10) > 0) {
+          if (parseInt(node.attributes[attr] as string, 10) > 0) {
             // BOLD
             openBalise += "<b>";
             closeBalise = `</b>${closeBalise}`;
@@ -71,7 +71,7 @@ const parseXMLAttributes = (node: XMLElement): AttributesUtils => {
           closeBalise = `</u>${closeBalise}`;
           break;
         case "fontstyle":
-          if (parseInt(node.attributes[list[i]] as string, 10) > 0) {
+          if (parseInt(node.attributes[attr] as string, 10) > 0) {
             // BOLD
             openBalise += "<i>";
             closeBalise = `</i>${closeBalise}`;
@@ -79,12 +79,12 @@ const parseXMLAttributes = (node: XMLElement): AttributesUtils => {
           break;
         case "liststyle":
           if (
-            node.attributes[list[i]] === "Bullet List" ||
-            node.attributes[list[i]] === "Numbered List"
+            node.attributes[attr] === "Bullet List" ||
+            node.attributes[attr] === "Numbered List"
           ) {
             // BOLD
             isList = true;
-            listType = node.attributes[list[i]] as ListType;
+            listType = node.attributes[attr] as ListType;
           }
           break;
         default:
@@ -254,7 +254,7 @@ const parseHTMLToXMLNode = (
     let resultAction: ParseHTMLToXMLNodeActions =
       ParseHTMLToXMLNodeActions.NONE;
     if (nodeElement.elements !== undefined) {
-      const actionList: Array<ParseHTMLToXMLActionList> = [];
+      const actionList: ParseHTMLToXMLActionList[] = [];
       let childAction: ParseHTMLToXMLNodeActions =
         ParseHTMLToXMLNodeActions.NONE;
       for (let i = 0; i < nodeElement.elements.length; i++) {
@@ -280,7 +280,7 @@ const parseHTMLToXMLNode = (
             elm.node.elements !== undefined &&
             elm.node.elements.length > 0
           ) {
-            let newElements: Array<XMLElement> = [];
+            let newElements: XMLElement[] = [];
             const index = nodeElement.elements.findIndex(
               (item) => item === elm.node,
             );
@@ -305,11 +305,8 @@ const parseHTMLToXMLNode = (
     return resultAction;
   };
 
-  const checkForQuote = (
-    data: string,
-    elements: Array<XMLElement>,
-  ): boolean => {
-    const quoteList: Array<string> = data.split('"');
+  const checkForQuote = (data: string, elements: XMLElement[]): boolean => {
+    const quoteList: string[] = data.split('"');
     if (quoteList.length > 1) {
       for (let j = 0; j < quoteList.length; j++) {
         if (quoteList[j].length > 0) {
@@ -467,7 +464,7 @@ const parseHTMLToXMLNode = (
         node.type = "element";
         const { text } = node;
         if (text !== undefined && typeof text === "string" && text.length > 0) {
-          const elements: Array<XMLElement> = [];
+          const elements: XMLElement[] = [];
           const tabList = text.split("&nbsp;");
           if (tabList.length > 1) {
             for (let i = 0; i < tabList.length; i++) {
@@ -567,4 +564,35 @@ export const convertDraftJSToXML = (editorState: EditorState): string => {
   htmlToXml = convertHTMLToXML(htmlToXml);
   return htmlToXml;
 };
-export default {};
+
+const BYTES_PER_KB = 1024; // 1KB = 1024 bytes
+const BYTES_PER_GB = BYTES_PER_KB ** 3; // 1GB = 1024^3 bytes
+
+export const convertSize = (bytes: number): string => {
+  const units = ["bytes", "KB", "MB", "GB", "TB"];
+
+  if (bytes < BYTES_PER_KB) {
+    return `${bytes} ${units[0]}`;
+  }
+
+  let unitIndex = 0;
+  let size = bytes;
+
+  while (size >= BYTES_PER_KB && unitIndex < units.length - 1) {
+    size /= BYTES_PER_KB;
+    unitIndex += 1;
+  }
+
+  return `${size.toFixed(2)} ${units[unitIndex]}`;
+};
+
+const sizeRanges = [
+  { limit: 0, color: "default" }, // Size is unknown or not calculated
+  { limit: 5 * BYTES_PER_GB, color: theme.palette.success.main }, // Size is 0 to 5 GB
+  { limit: 25 * BYTES_PER_GB, color: theme.palette.warning.main }, // Size is 5 GB to 25 GB
+  { limit: Infinity, color: theme.palette.error.main }, // Size is 25 GB and above
+];
+
+export const getColorForSize = (bytes: number): string => {
+  return sizeRanges.find((range) => bytes <= range.limit)?.color || "default";
+};

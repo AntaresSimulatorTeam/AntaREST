@@ -169,9 +169,7 @@ export const getConstraint = async (
   return res.data;
 };
 
-export const getAllConstraints = async (
-  uuid: string,
-): Promise<Array<string>> => {
+export const getAllConstraints = async (uuid: string): Promise<string[]> => {
   const res = await client.get(
     `/v1/studies/${uuid}/extensions/xpansion/resources/constraints`,
   );
@@ -207,7 +205,7 @@ export const getWeight = async (
   return res.data;
 };
 
-export const getAllWeights = async (uuid: string): Promise<Array<string>> => {
+export const getAllWeights = async (uuid: string): Promise<string[]> => {
   const res = await client.get(
     `/v1/studies/${uuid}/extensions/xpansion/resources/weights`,
   );
@@ -243,9 +241,7 @@ export const getCapacity = async (
   return res.data;
 };
 
-export const getAllCapacities = async (
-  uuid: string,
-): Promise<Array<string>> => {
+export const getAllCapacities = async (uuid: string): Promise<string[]> => {
   const res = await client.get(
     `/v1/studies/${uuid}/extensions/xpansion/resources/capacities`,
   );

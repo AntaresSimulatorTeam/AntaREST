@@ -6,6 +6,7 @@ export const Root = styled(Box)(({ theme }) => ({
   display: "flex",
   flexDirection: "column",
   alignItems: "center",
+  overflow: "auto",
 }));
 
 export const StyledButton = styled(Button)(({ theme }) => ({

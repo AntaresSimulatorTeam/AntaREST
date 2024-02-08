@@ -41,13 +41,15 @@ import {
 } from "./utils";
 import useDebouncedState from "../../../hooks/useDebouncedState";
 import usePrompt from "../../../hooks/usePrompt";
-import { mergeSxProp } from "../../../utils/muiUtils";
 import { SubmitHandlerPlus, UseFormReturnPlus } from "./types";
 import FormContext from "./FormContext";
 import useFormApiPlus from "./useFormApiPlus";
 import useFormUndoRedo from "./useFormUndoRedo";
 
-export type AutoSubmitConfig = { enable: boolean; wait?: number };
+export interface AutoSubmitConfig {
+  enable: boolean;
+  wait?: number;
+}
 
 export interface FormProps<
   TFieldValues extends FieldValues = FieldValues,
@@ -72,6 +74,7 @@ export interface FormProps<
     | React.ReactNode;
   submitButtonText?: string;
   submitButtonIcon?: LoadingButtonProps["startIcon"];
+  miniSubmitButton?: boolean;
   hideSubmitButton?: boolean;
   onStateChange?: (state: FormState<TFieldValues>) => void;
   autoSubmit?: boolean | AutoSubmitConfig;
@@ -94,7 +97,8 @@ function Form<TFieldValues extends FieldValues, TContext>(
     onInvalid,
     children,
     submitButtonText,
-    submitButtonIcon,
+    submitButtonIcon = <SaveIcon />,
+    miniSubmitButton,
     hideSubmitButton,
     onStateChange,
     autoSubmit,
@@ -115,9 +119,9 @@ function Form<TFieldValues extends FieldValues, TContext>(
   const fieldAutoSubmitListeners = useRef<
     Record<string, ((v: any) => any | Promise<any>) | undefined>
   >({});
-  const fieldsChangeDuringAutoSubmitting = useRef<FieldPath<TFieldValues>[]>(
-    [],
-  );
+  const fieldsChangeDuringAutoSubmitting = useRef<
+    Array<FieldPath<TFieldValues>>
+  >([]);
   const lastSubmittedData = useRef<TFieldValues>();
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   const submitSuccessfulCb = useRef(() => {});
@@ -319,7 +323,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
   return (
     <Box
       {...formProps}
-      sx={mergeSxProp({ pt: 1 }, sx)}
+      sx={sx}
       component="form"
       onSubmit={handleFormSubmit}
       className={clsx("Form", className)}
@@ -351,25 +355,24 @@ function Form<TFieldValues extends FieldValues, TContext>(
         </Box>
       )}
       {showFooter && (
-        <Box sx={{ display: "flex" }} className="Form__Footer">
+        <Box sx={{ display: "flex", pt: 1 }} className="Form__Footer">
           {showSubmitButton && (
             <>
               <LoadingButton
                 type="submit"
-                variant="contained"
                 disabled={!isSubmitAllowed}
                 loading={isSubmitting}
-                loadingPosition="start"
-                startIcon={
-                  RA.isNotUndefined(submitButtonIcon) ? (
-                    submitButtonIcon
-                  ) : (
-                    <SaveIcon />
-                  )
-                }
-              >
-                {submitButtonText || t("global.save")}
-              </LoadingButton>
+                {...(miniSubmitButton
+                  ? {
+                      children: submitButtonIcon,
+                    }
+                  : {
+                      loadingPosition: "start",
+                      startIcon: submitButtonIcon,
+                      variant: "contained",
+                      children: submitButtonText || t("global.save"),
+                    })}
+              />
               {enableUndoRedo && (
                 <Divider sx={{ mx: 2 }} orientation="vertical" flexItem />
               )}

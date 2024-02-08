@@ -18,7 +18,7 @@ interface PropTypes {
     studyId: string,
     filename: string,
   ) => Promise<MatrixType | string>;
-  listResources: (studyId: string) => Promise<Array<string> | undefined>;
+  listResources: (studyId: string) => Promise<string[] | undefined>;
   errorMessages?: {
     add?: string;
     delete?: string;

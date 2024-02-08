@@ -24,7 +24,7 @@ import BindingConstraints from "./Singlestudy/explore/Modelization/BindingConstr
 import Links from "./Singlestudy/explore/Modelization/Links";
 import Areas from "./Singlestudy/explore/Modelization/Areas";
 import Map from "./Singlestudy/explore/Modelization/Map";
-import DebugView from "./Singlestudy/explore/Modelization/DebugView";
+import Debug from "./Singlestudy/explore/Debug";
 import Xpansion from "./Singlestudy/explore/Xpansion";
 import Candidates from "./Singlestudy/explore/Xpansion/Candidates";
 import XpansionSettings from "./Singlestudy/explore/Xpansion/Settings";
@@ -41,22 +41,19 @@ import Renewables from "./Singlestudy/explore/Modelization/Areas/Renewables";
 import ResultDetails from "./Singlestudy/explore/Results/ResultDetails";
 import Constraints from "./Singlestudy/explore/Xpansion/Constraints";
 import Weights from "./Singlestudy/explore/Xpansion/Weights";
-import TableMode from "./Singlestudy/explore/Modelization/TableMode";
+import TableModeList from "./Singlestudy/explore/TableModeList";
 import ManagementOptions from "./Singlestudy/explore/Modelization/Areas/Hydro/ManagementOptions";
-import {
-  HYDRO_ROUTES,
-  HydroRoute,
-} from "./Singlestudy/explore/Modelization/Areas/Hydro/utils";
+import { HYDRO_ROUTES } from "./Singlestudy/explore/Modelization/Areas/Hydro/utils";
 import HydroMatrix from "./Singlestudy/explore/Modelization/Areas/Hydro/HydroMatrix";
 import Layers from "./Singlestudy/explore/Modelization/Map/MapConfig/Layers";
 import Districts from "./Singlestudy/explore/Modelization/Map/MapConfig/Districts";
-import InflowStructure from "./Singlestudy/explore/Modelization/Areas/Hydro/InflowStructure";
 import Allocation from "./Singlestudy/explore/Modelization/Areas/Hydro/Allocation";
 import Correlation from "./Singlestudy/explore/Modelization/Areas/Hydro/Correlation";
 import Storages from "./Singlestudy/explore/Modelization/Areas/Storages";
 import StorageForm from "./Singlestudy/explore/Modelization/Areas/Storages/Form";
 import ThermalForm from "./Singlestudy/explore/Modelization/Areas/Thermal/Form";
 import RenewablesForm from "./Singlestudy/explore/Modelization/Areas/Renewables/Form";
+import SplitHydroMatrix from "./Singlestudy/explore/Modelization/Areas/Hydro/SplitHydroMatrix";
 
 function App() {
   return (
@@ -104,10 +101,6 @@ function App() {
                                 element={<ManagementOptions />}
                               />
                               <Route
-                                path="inflowstructure"
-                                element={<InflowStructure />}
-                              />
-                              <Route
                                 path="allocation"
                                 element={<Allocation />}
                               />
@@ -115,13 +108,39 @@ function App() {
                                 path="correlation"
                                 element={<Correlation />}
                               />
-                              {HYDRO_ROUTES.map((route: HydroRoute) => (
-                                <Route
-                                  key={route.path}
-                                  path={route.path}
-                                  element={<HydroMatrix type={route.type} />}
-                                />
-                              ))}
+                              {HYDRO_ROUTES.map(
+                                ({
+                                  path,
+                                  type,
+                                  isSplitView,
+                                  splitConfig,
+                                  form,
+                                }) => {
+                                  return isSplitView && splitConfig ? (
+                                    <Route
+                                      key={path}
+                                      path={path}
+                                      element={
+                                        <SplitHydroMatrix
+                                          types={[
+                                            type,
+                                            splitConfig.partnerType,
+                                          ]}
+                                          direction={splitConfig.direction}
+                                          sizes={splitConfig.sizes}
+                                          form={form}
+                                        />
+                                      }
+                                    />
+                                  ) : (
+                                    <Route
+                                      key={path}
+                                      path={path}
+                                      element={<HydroMatrix type={type} />}
+                                    />
+                                  );
+                                },
+                              )}
                             </Route>
                             <Route path="wind" element={<Wind />} />
                             <Route path="solar" element={<Solar />} />
@@ -140,8 +159,6 @@ function App() {
                             path="bindingcontraint"
                             element={<BindingConstraints />}
                           />
-                          <Route path="debug" element={<DebugView />} />
-                          <Route path="tablemode" element={<TableMode />} />
                           <Route index element={<Map />} />
                           <Route path="*" element={<Map />} />
                         </Route>
@@ -149,6 +166,7 @@ function App() {
                           path="configuration"
                           element={<Configuration />}
                         />
+                        <Route path="tablemode" element={<TableModeList />} />
                         <Route path="xpansion" element={<Xpansion />}>
                           <Route path="candidates" element={<Candidates />} />
                           <Route
@@ -165,6 +183,7 @@ function App() {
                           <Route path=":outputId" element={<ResultDetails />} />
                           <Route index element={<Results />} />
                         </Route>
+                        <Route path="debug" element={<Debug />} />
                         <Route path="*" element={<Modelization />}>
                           <Route index element={<Map />} />
                         </Route>

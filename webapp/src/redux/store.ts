@@ -26,9 +26,9 @@ export type AppThunk<ReturnType = void> = ThunkAction<
   AnyAction
 >;
 
-export type AppAsyncThunkConfig = {
+export interface AppAsyncThunkConfig {
   state: AppState;
   dispatch: AppDispatch;
-};
+}
 
 export default store;

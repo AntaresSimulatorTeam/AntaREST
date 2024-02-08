@@ -12,6 +12,7 @@ __all__ = (
     "RenewableConfig",
     "RenewableConfigType",
     "create_renewable_config",
+    "RenewableClusterGroup",
 )
 
 

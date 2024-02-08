@@ -160,7 +160,7 @@ export const exportText = (fileData: string, filename: string): void => {
  */
 export const displayVersionName = (v: string): string => `${v[0]}.${v[1]}`;
 
-export const convertVersions = (versions: Array<string>): Array<GenericInfo> =>
+export const convertVersions = (versions: string[]): GenericInfo[] =>
   versions.map((version) => ({
     id: version,
     name: displayVersionName(version),
@@ -217,8 +217,8 @@ export const findNodeInTree = (
   if (studyId === tree.node.id) {
     return tree;
   }
-  for (let i = 0; i < tree.children.length; i += 1) {
-    const elm = findNodeInTree(studyId, tree.children[i]);
+  for (const child of tree.children) {
+    const elm = findNodeInTree(studyId, child);
     if (elm !== undefined) {
       return elm;
     }
@@ -226,10 +226,10 @@ export const findNodeInTree = (
   return undefined;
 };
 
-export const createListFromTree = (tree: VariantTree): Array<GenericInfo> => {
+export const createListFromTree = (tree: VariantTree): GenericInfo[] => {
   const { node, children } = tree;
   const { id, name } = node;
-  let res: Array<GenericInfo> = [{ id, name }];
+  let res: GenericInfo[] = [{ id, name }];
   children.forEach((elm) => {
     res = res.concat(createListFromTree(elm));
   });
@@ -302,10 +302,10 @@ export const nameToId = (name: string): string => {
 
 export const removeEmptyFields = (
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  data: { [key: string]: any },
-  fieldsToCheck: Array<string>,
+  data: Record<string, any>,
+  fieldsToCheck: string[],
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-): { [key: string]: any } => {
+): Record<string, any> => {
   const cleanData = { ...data };
 
   fieldsToCheck.forEach((fieldName) => {

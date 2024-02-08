@@ -11,7 +11,7 @@ type Props = GridChildComponentProps<{
   columnWidth: number;
   rowHeight: number;
   studyIds: StudiesListProps["studyIds"];
-  selectedStudies: Array<string>;
+  selectedStudies: string[];
   toggleSelect: (sid: string) => void;
   selectionMode: boolean;
 }>;

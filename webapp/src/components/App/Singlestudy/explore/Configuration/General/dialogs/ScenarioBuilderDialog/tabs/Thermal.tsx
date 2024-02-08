@@ -1,7 +1,7 @@
 import { useContext, useEffect, useMemo, useState } from "react";
 import useStudySynthesis from "../../../../../../../../../redux/hooks/useStudySynthesis";
 import { getAreas } from "../../../../../../../../../redux/selectors";
-import { isSearchMatching } from "../../../../../../../../../utils/textUtils";
+import { isSearchMatching } from "../../../../../../../../../utils/stringUtils";
 import PropertiesView from "../../../../../../../../common/PropertiesView";
 import SplitLayoutView from "../../../../../../../../common/SplitLayoutView";
 import UsePromiseCond from "../../../../../../../../common/utils/UsePromiseCond";

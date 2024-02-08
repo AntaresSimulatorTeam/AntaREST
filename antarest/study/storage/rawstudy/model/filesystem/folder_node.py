@@ -142,7 +142,7 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
             (name,), sub_url = self.extract_child(children, url)
             return children[name].save(data, sub_url)
         else:
-            assert isinstance(data, Dict)
+            assert isinstance(data, dict)
             for key in data:
                 children[key].save(data[key])
 

@@ -10,13 +10,9 @@ export enum ColumnOperation {
   MIN = "MIN",
 }
 
-type ColumnResult = {
-  [key: string]: number;
-};
+type ColumnResult = Record<string, number>;
 
-export interface ChipColorMap {
-  [key: string]: ChipProps["color"];
-}
+export type ChipColorMap = Record<string, ChipProps["color"]>;
 
 export interface Column {
   name: string;
@@ -25,9 +21,7 @@ export interface Column {
   operation?: ColumnOperation;
 }
 
-export interface ColumnValues {
-  [key: string]: string | number | boolean;
-}
+export type ColumnValues = Record<string, string | number | boolean>;
 
 export interface Item {
   id: string;

@@ -3,7 +3,7 @@ import * as R from "ramda";
 import * as RA from "ramda-adjunct";
 import { StudyMetadata, StudyType } from "../common/types";
 import { StudiesSortConf, StudyFilters } from "../redux/ducks/studies";
-import { isSearchMatching } from "./textUtils";
+import { isSearchMatching } from "./stringUtils";
 
 ////////////////////////////////////////////////////////////////
 // Sort
@@ -128,6 +128,6 @@ export function filterStudies(
     managedPredicate(filters.managed),
     archivedPredicate(filters.archived),
     variantPredicate(filters.variant),
-  ] as R.Pred[];
+  ] as RA.Pred[];
   return R.filter(R.allPass(predicates), studies);
 }

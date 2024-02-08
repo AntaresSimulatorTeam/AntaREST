@@ -128,7 +128,7 @@ def create_raw_study_routes(
                         detail=f"Invalid plain text configuration in path '{path}': {exc}",
                     ) from None
             elif content_type:
-                headers = {"Content-Disposition": f"attachment; filename='{resource_path.name}'"}
+                headers = {"Content-Disposition": f"attachment; filename={resource_path.name}"}
                 return StreamingResponse(
                     io.BytesIO(output),
                     media_type=content_type,

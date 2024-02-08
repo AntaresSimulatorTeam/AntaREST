@@ -104,7 +104,7 @@ function Settings() {
         await updateXpansionSettings(
           study.id,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          removeEmptyFields(value as { [key: string]: any }, [
+          removeEmptyFields(value as Record<string, any>, [
             "cut-type",
             "solver",
             "yearly-weights",

@@ -45,7 +45,7 @@ export interface StudyMapNode {
   x: number;
   y: number;
   color: string;
-  rgbColor: Array<number>;
+  rgbColor: number[];
   size: { width: number; height: number };
   highlighted?: boolean;
   layerX: AreaLayerPosition;

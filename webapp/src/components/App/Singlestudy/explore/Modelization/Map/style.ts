@@ -1,5 +1,5 @@
 import { styled, Box, Chip } from "@mui/material";
-import mapbackground from "../../../../../../assets/mapbackground.png";
+import mapbackground from "../../../../../../assets/img/mapbackground.png";
 import { getTextColor, RGB } from "./utils";
 
 ////////////////////////////////////////////////////////////////
@@ -37,10 +37,10 @@ export const NodeContainer = styled(Box)(() => ({
   marginLeft: "2px",
 }));
 
-export type NodeProps = {
+export interface NodeProps {
   nodecolor: string;
   rgbcolor: number[];
-};
+}
 
 export const NodeDefault = styled(Chip)<NodeProps>(
   ({ theme, nodecolor, rgbcolor }) => ({

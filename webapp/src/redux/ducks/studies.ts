@@ -54,18 +54,18 @@ export interface StudiesState extends AsyncEntityState<StudyMetadata> {
   sort: StudiesSortConf;
 }
 
-type StudyCreator = {
+interface StudyCreator {
   name: string;
   version?: string;
   groups?: string[];
   publicMode?: StudyPublicMode;
   tags?: string[];
-};
+}
 
-type StudyUpload = {
+interface StudyUpload {
   file: File;
   onUploadProgress?: (progress: number) => void;
-};
+}
 
 type CreateStudyArg = StudyCreator | StudyUpload | StudyMetadata;
 

@@ -12,6 +12,7 @@ class APITag:
     matrix = "Manage Matrix"
     tasks = "Manage tasks"
     misc = "Miscellaneous"
+    filesystem = "Filesystem Management"
 
 
 tags_metadata = [
@@ -53,5 +54,8 @@ tags_metadata = [
     },
     {
         "name": APITag.misc,
+    },
+    {
+        "name": APITag.filesystem,
     },
 ]

@@ -1,6 +1,5 @@
 import { CommandResultDTO } from "../../../../../common/types";
 
-/* eslint-disable camelcase */
 export interface CommandItem {
   id?: string;
   action: string;
@@ -55,17 +54,17 @@ export interface CreateBindingConstraint {
   enabled: boolean;
   time_step: TimeStep;
   operator: BindingConstraintOperator;
-  coeffs: { [st: string]: Array<number> };
-  values?: Array<Array<MatrixData>> | string;
+  coeffs: Record<string, number[]>;
+  values?: MatrixData[][] | string;
   comments?: string;
 }
 
 export interface CreateCluster {
   area_id: string;
   cluster_name: string;
-  parameters: { [str: string]: string };
-  prepro?: Array<Array<MatrixData>> | string;
-  modulation?: Array<Array<MatrixData>> | string;
+  parameters: Record<string, string>;
+  prepro?: MatrixData[][] | string;
+  modulation?: MatrixData[][] | string;
 }
 
 export enum DistrictBaseFilter {
@@ -84,8 +83,8 @@ export interface CreateDistrict {
 export interface CreateLink {
   area1: string;
   area2: string;
-  parameters?: { [str: string]: string };
-  series?: Array<Array<MatrixData>> | string;
+  parameters?: Record<string, string>;
+  series?: MatrixData[][] | string;
 }
 
 export interface RemoveArea {
@@ -112,7 +111,7 @@ export interface RemoveLink {
 
 export interface ReplaceMatrix {
   target: string;
-  matrix: Array<Array<MatrixData>> | string;
+  matrix: MatrixData[][] | string;
 }
 
 export interface UpdateBindingConstraint {
@@ -120,8 +119,8 @@ export interface UpdateBindingConstraint {
   enabled: boolean;
   time_step: TimeStep;
   operator: BindingConstraintOperator;
-  coeffs: { [str: string]: Array<number> };
-  values?: Array<Array<MatrixData>> | string;
+  coeffs: Record<string, number[]>;
+  values?: MatrixData[][] | string;
   comments?: string;
 }
 

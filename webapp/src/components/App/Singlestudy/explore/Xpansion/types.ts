@@ -8,20 +8,16 @@ export interface XpansionSettings {
   uc_type: string;
   master: string;
   optimality_gap: number;
-  max_iteration?: number | string;
+  max_iteration: number;
   "yearly-weights": string;
-  "additional-constraints"?: string;
-  "relaxed-optimality-gap"?: number | string;
-  "cut-type"?: string;
-  "ampl.solver"?: string;
-  "ampl.presolve"?: number;
-  "ampl.solve_bounds_frequency"?: number;
-  relative_gap?: number;
-  solver?: string;
-  log_level?: number;
-  timelimit?: number;
-  separation_parameter?: number;
-  batch_size?: number;
+  "additional-constraints": string;
+  relaxed_optimality_gap: number;
+  relative_gap: number;
+  solver: string;
+  log_level: number;
+  timelimit: number;
+  separation_parameter: number;
+  batch_size: number;
   sensitivity_config?: XpansionSensitivitySettings;
 }
 

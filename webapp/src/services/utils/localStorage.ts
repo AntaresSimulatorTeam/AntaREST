@@ -1,7 +1,7 @@
 import * as RA from "ramda-adjunct";
 import packages from "../../../package.json";
 import { UserInfo } from "../../common/types";
-import { TableTemplate } from "../../components/App/Singlestudy/explore/Modelization/TableMode/utils";
+import { TableTemplate } from "../../components/App/Singlestudy/explore/TableModeList/utils";
 import { StudiesSortConf, StudiesState } from "../../redux/ducks/studies";
 import { UIState } from "../../redux/ducks/ui";
 
@@ -24,7 +24,7 @@ interface TypeFromKey {
   [StorageKey.AuthUser]: UserInfo;
   [StorageKey.StudiesFavorites]: StudiesState["favorites"];
   [StorageKey.StudiesSort]: Partial<StudiesSortConf>;
-  [StorageKey.StudiesModelTableModeTemplates]: Omit<TableTemplate, "id">[];
+  [StorageKey.StudiesModelTableModeTemplates]: Array<Omit<TableTemplate, "id">>;
   [StorageKey.UIMenuCollapsed]: UIState["menuCollapsed"];
 }
 

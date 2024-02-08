@@ -125,7 +125,7 @@ export const getBindingConstraint = async (
 
 export const getBindingConstraintList = async (
   uuid: string,
-): Promise<Array<BindingConstFields>> => {
+): Promise<BindingConstFields[]> => {
   const res = await client.get(`/v1/studies/${uuid}/bindingconstraints`);
   return res.data;
 };

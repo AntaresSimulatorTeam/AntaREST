@@ -1,4 +1,3 @@
-/* eslint-disable jsx-a11y/no-static-element-interactions */
 import { memo } from "react";
 import { Typography, Box, styled } from "@mui/material";
 import AutoSizer from "react-virtualized-auto-sizer";
@@ -23,7 +22,7 @@ const StyledList = styled(FixedSizeList)(({ theme }) => ({
 }));
 
 interface PropsType {
-  datasets: Array<MatrixDataSetDTO> | undefined;
+  datasets: MatrixDataSetDTO[] | undefined;
   selectedItem: string;
   setSelectedItem: (item: string) => void;
 }
@@ -34,7 +33,6 @@ const Row = memo((props: ListChildComponentProps) => {
   const dataset = datasets[index];
 
   return (
-    // eslint-disable-next-line jsx-a11y/click-events-have-key-events
     <Box
       sx={
         selectedItem && selectedItem === dataset.id

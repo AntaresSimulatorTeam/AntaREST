@@ -11,7 +11,7 @@ import {
   getAreas,
   getLinks,
 } from "../../../../../../../../../redux/selectors";
-import FormTable from "../../../../../../../../common/FormTable";
+import TableForm from "../../../../../../../../common/TableForm";
 import ConfigContext from "../ConfigContext";
 import { updateScenarioBuilderConfig } from "../utils";
 import { SubmitHandlerPlus } from "../../../../../../../../common/Form/types";
@@ -116,7 +116,7 @@ function Table(props: Props) {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <FormTable
+    <TableForm
       key={JSON.stringify(defaultValues)}
       defaultValues={defaultValues}
       tableProps={{

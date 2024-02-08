@@ -1,4 +1,3 @@
-/* eslint-disable react/jsx-props-no-spreading */
 import { FunctionComponent, ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { NavLink } from "react-router-dom";
@@ -27,9 +26,9 @@ import {
   useTheme,
 } from "@mui/material";
 import { useMount } from "react-use";
-import logo from "../../../assets/logo.png";
+import logo from "../../../assets/img/logo.png";
 import NotificationBadge from "../../App/Tasks/NotificationBadge";
-import topRightBackground from "../../../assets/top-right-background.png";
+import topRightBackground from "../../../assets/img/top-right-background.png";
 import { setMenuCollapse } from "../../../redux/ducks/ui";
 import {
   NavDrawer,
@@ -109,7 +108,7 @@ function MenuWrapper(props: Props) {
     dispatch(fetchGroups());
   });
 
-  let navigation: Array<MenuItem> = [
+  let navigation: MenuItem[] = [
     {
       id: "studies.title",
       link: "/studies",

@@ -1,7 +1,7 @@
 import datetime
 import logging
 import time
-from typing import List, Tuple
+import typing as t
 
 from antarest.core.config import Config
 from antarest.core.exceptions import TaskAlreadyRunning
@@ -10,8 +10,8 @@ from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.requests import RequestParameters
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.study.model import RawStudy, Study
+from antarest.study.repository import StudyFilter
 from antarest.study.service import StudyService
-from antarest.study.storage.utils import is_managed
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 
 logger = logging.getLogger(__name__)
@@ -28,8 +28,8 @@ class AutoArchiveService(IService):
     def _try_archive_studies(self) -> None:
         old_date = datetime.datetime.utcnow() - datetime.timedelta(days=self.config.storage.auto_archive_threshold_days)
         with db():
-            studies: List[Study] = self.study_service.repository.get_all(managed=True, exists=False)
-            # list of study id and boolean indicating if it's a raw study (True) or a variant (False)
+            studies: t.Sequence[Study] = self.study_service.repository.get_all(study_filter=StudyFilter(managed=True))
+            # list of study IDs and boolean indicating if it's a raw study (True) or a variant (False)
             study_ids_to_archive = [
                 (study.id, isinstance(study, RawStudy))
                 for study in studies

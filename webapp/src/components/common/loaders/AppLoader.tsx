@@ -1,9 +1,8 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Box, Typography } from "@mui/material";
-import logo from "../../../assets/logo.png";
-import topRightBackground from "../../../assets/top-right-background.png";
+import logo from "../../../assets/img/logo.png";
+import topRightBackground from "../../../assets/img/top-right-background.png";
 
 function AppLoader() {
   const [t] = useTranslation();

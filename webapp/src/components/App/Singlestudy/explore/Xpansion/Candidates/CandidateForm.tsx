@@ -28,8 +28,8 @@ import SwitchFE from "../../../../../common/fieldEditors/SwitchFE";
 
 interface PropType {
   candidate: XpansionCandidate | undefined;
-  links: Array<LinkCreationInfoDTO>;
-  capacities: Array<string>;
+  links: LinkCreationInfoDTO[];
+  capacities: string[];
   deleteCandidate: (name: string | undefined) => Promise<void>;
   updateCandidate: (
     name: string | undefined,

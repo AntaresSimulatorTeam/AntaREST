@@ -25,7 +25,7 @@ function Fields() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <TableContainer sx={{ mb: 1 }}>
+    <TableContainer>
       <Table sx={{ minWidth: "1050px" }} size="small">
         <TableHead>
           <TableRow sx={{ th: { py: 1, borderBottom: "none" } }}>

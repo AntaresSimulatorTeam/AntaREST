@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from antarest.study.storage.rawstudy.io.reader import MultipleSameKeysIniReader
-from antarest.study.storage.rawstudy.io.writer.ini_writer import IniWriter
+from antarest.study.storage.rawstudy.ini_reader import IniReader
+from antarest.study.storage.rawstudy.ini_writer import IniWriter
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata import DUPLICATE_KEYS
 
@@ -10,7 +10,7 @@ GENERAL_DATA_PATH = "settings/generaldata.ini"
 
 
 def upgrade_860(study_path: Path) -> None:
-    reader = MultipleSameKeysIniReader(DUPLICATE_KEYS)
+    reader = IniReader(DUPLICATE_KEYS)
     data = reader.read(study_path / GENERAL_DATA_PATH)
     data["adequacy patch"]["enable-first-step "] = True
     writer = IniWriter(special_keys=DUPLICATE_KEYS)

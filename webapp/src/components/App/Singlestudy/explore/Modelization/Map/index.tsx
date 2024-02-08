@@ -74,13 +74,11 @@ function Map() {
     const { current } = graphRef;
     if (current) {
       if (previousNode.current) {
-        // eslint-disable-next-line no-underscore-dangle
         current._setNodeHighlightedValue(previousNode.current, false);
       }
 
       if (currentArea) {
         const timerId = setTimeout(() => {
-          // eslint-disable-next-line no-underscore-dangle
           current._setNodeHighlightedValue(currentArea.id, true);
           previousNode.current = currentArea.id;
         }, 20);

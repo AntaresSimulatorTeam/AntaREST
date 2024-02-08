@@ -41,9 +41,9 @@ import {
 import { makeLabel, makeListItems } from "./utils";
 
 interface ListFEProps<TItem, TOption> {
-  defaultValue?: ReadonlyArray<TItem>;
-  value?: ReadonlyArray<TItem>;
-  options: ReadonlyArray<TOption>;
+  defaultValue?: readonly TItem[];
+  value?: readonly TItem[];
+  options: readonly TOption[];
   label?: string;
   getOptionLabel?: (option: TOption) => string;
   getValueLabel?: (value: TItem) => string;

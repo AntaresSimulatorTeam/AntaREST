@@ -1,4 +1,3 @@
-/* eslint-disable camelcase */
 import { DependencyList, useMemo } from "react";
 import * as R from "ramda";
 import { MRT_AggregationFn } from "material-react-table";
@@ -60,13 +59,13 @@ type ClusterWithCapacity<T extends BaseCluster> = T & {
   enabledCapacity: number;
 };
 
-type UseClusterDataWithCapacityReturn<T extends BaseCluster> = {
+interface UseClusterDataWithCapacityReturn<T extends BaseCluster> {
   clusters: UsePromiseResponse<T[]>;
-  clustersWithCapacity: ClusterWithCapacity<T>[];
+  clustersWithCapacity: Array<ClusterWithCapacity<T>>;
   totalUnitCount: number;
   totalInstalledCapacity: number;
   totalEnabledCapacity: number;
-};
+}
 
 export const useClusterDataWithCapacity = <T extends BaseCluster>(
   fetchFn: () => Promise<T[]>,
@@ -81,7 +80,7 @@ export const useClusterDataWithCapacity = <T extends BaseCluster>(
     },
   );
 
-  const clustersWithCapacity: ClusterWithCapacity<T>[] = useMemo(
+  const clustersWithCapacity: Array<ClusterWithCapacity<T>> = useMemo(
     () =>
       clusters.data?.map((cluster) => {
         const { unitCount, nominalCapacity, enabled } = cluster;

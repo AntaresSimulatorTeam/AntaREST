@@ -21,7 +21,7 @@ export type ConstraintWithNullableOffset = Partial<
 interface Props {
   options: AllClustersAndLinks;
   constraint: ConstraintType;
-  constraintsTerm: Array<ConstraintType>;
+  constraintsTerm: ConstraintType[];
   saveValue: (constraint: ConstraintWithNullableOffset) => void;
   deleteTerm: () => void;
 }

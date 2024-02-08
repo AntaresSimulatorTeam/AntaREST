@@ -7,8 +7,8 @@ import { ControlPlus } from "../../../../common/Form/types";
 import { FilteringType } from "./types";
 
 interface FilterFieldValues {
-  filterSynthesis: Array<FilteringType>;
-  filterByYear: Array<FilteringType>;
+  filterSynthesis: FilteringType[];
+  filterByYear: FilteringType[];
 }
 
 interface Props<T extends FilterFieldValues> {
@@ -39,7 +39,7 @@ function OutputFilters<T extends FilterFieldValues>(props: Props<T>) {
       rules={{
         onAutoSubmit: (value) => {
           const selection = value
-            ? (value as Array<string>).filter((val) => val !== "")
+            ? (value as string[]).filter((val) => val !== "")
             : [];
           onAutoSubmit(filterName, selection.join(", "));
         },

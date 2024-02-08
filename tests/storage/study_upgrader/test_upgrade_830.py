@@ -1,4 +1,4 @@
-from antarest.study.storage.rawstudy.io.reader import IniReader
+from antarest.study.storage.rawstudy.ini_reader import IniReader
 from antarest.study.storage.study_upgrader import upgrade_830
 from tests.storage.business.test_study_version_upgrader import are_same_dir
 from tests.storage.study_upgrader.conftest import StudyAssets

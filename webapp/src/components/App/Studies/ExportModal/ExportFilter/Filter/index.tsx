@@ -13,10 +13,10 @@ import SingleLinkElement from "./SingleLinkElement";
 
 interface PropTypes {
   type: StudyOutputDownloadType;
-  areas: { [elm: string]: Area };
-  sets: { [elm: string]: Set };
-  filterValue: Array<string>;
-  setFilterValue: (elm: Array<string>) => void;
+  areas: Record<string, Area>;
+  sets: Record<string, Set>;
+  filterValue: string[];
+  setFilterValue: (elm: string[]) => void;
   filterInValue: string;
   setFilterInValue: (elm: string) => void;
   filterOutValue: string;
@@ -36,13 +36,13 @@ function Filter(props: PropTypes) {
     setFilterInValue,
     setFilterOutValue,
   } = props;
-  const [areasOrDistrictsList, setAreasOrDistrictsList] = useState<
-    Array<string>
-  >([]);
+  const [areasOrDistrictsList, setAreasOrDistrictsList] = useState<string[]>(
+    [],
+  );
 
   useEffect(() => {
-    const getAreasOrDistrictsList = (): Array<string> => {
-      let res: Array<string> = [];
+    const getAreasOrDistrictsList = (): string[] => {
+      let res: string[] = [];
       switch (type) {
         case StudyOutputDownloadType.AREAS:
           res = Object.keys(areas);
@@ -66,9 +66,7 @@ function Filter(props: PropTypes) {
         name={t("global.filter")}
         list={areasOrDistrictsList.map((elm) => ({ id: elm, name: elm }))}
         data={filterValue}
-        setValue={(elm: Array<string> | string) =>
-          setFilterValue(elm as Array<string>)
-        }
+        setValue={(elm: string[] | string) => setFilterValue(elm as string[])}
         sx={{ m: 0, mb: 2, width: "95%" }}
         required
       />

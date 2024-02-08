@@ -1,4 +1,5 @@
 import io
+import os
 from http import HTTPStatus
 from pathlib import Path
 from unittest.mock import ANY
@@ -6,6 +7,7 @@ from unittest.mock import ANY
 from starlette.testclient import TestClient
 
 from antarest.core.model import PublicMode
+from antarest.launcher.model import LauncherLoadDTO
 from antarest.study.business.adequacy_patch_management import PriceTakingOrder
 from antarest.study.business.area_management import AreaType, LayerInfoDTO
 from antarest.study.business.areas.properties_management import AdequacyPatchMode
@@ -23,10 +25,9 @@ from antarest.study.business.table_mode_management import (
     TableTemplateType,
     TransmissionCapacity,
 )
-from antarest.study.model import MatrixIndex, StudyDownloadLevelDTO
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.renewable import RenewableClusterGroup
-from antarest.study.storage.rawstudy.model.filesystem.config.thermal import LawOption, TimeSeriesGenerationOption
+from antarest.study.storage.rawstudy.model.filesystem.config.thermal import LawOption, LocalTSGenerationBehavior
 from antarest.study.storage.variantstudy.model.command.common import CommandName
 from tests.integration.assets import ASSETS_DIR
 from tests.integration.utils import wait_for
@@ -92,7 +93,6 @@ def test_main(client: TestClient, admin_access_token: str, study_id: str) -> Non
     )
     assert len(res.json()) == 1
     study_id = next(iter(res.json()))
-    comments = "<text>Hello</text>"
 
     res = client.get(
         f"/v1/studies/{study_id}/outputs",
@@ -172,37 +172,6 @@ def test_main(client: TestClient, admin_access_token: str, study_id: str) -> Non
     )
     assert res.status_code == 200
 
-    # study matrix index
-    res = client.get(
-        f"/v1/studies/{study_id}/matrixindex",
-        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
-    )
-    assert res.status_code == 200
-    assert (
-        res.json()
-        == MatrixIndex(
-            first_week_size=7,
-            start_date="2001-01-01 00:00:00",
-            steps=8760,
-            level=StudyDownloadLevelDTO.HOURLY,
-        ).dict()
-    )
-
-    res = client.get(
-        f"/v1/studies/{study_id}/matrixindex?path=output/20201014-1427eco/economy/mc-all/areas/es/details-daily",
-        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
-    )
-    assert res.status_code == 200
-    assert (
-        res.json()
-        == MatrixIndex(
-            first_week_size=7,
-            start_date="2001-01-01 00:00:00",
-            steps=7,
-            level=StudyDownloadLevelDTO.DAILY,
-        ).dict()
-    )
-
     res = client.delete(
         f"/v1/studies/{study_id}/outputs/20201014-1427eco",
         headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
@@ -253,9 +222,6 @@ def test_main(client: TestClient, admin_access_token: str, study_id: str) -> Non
     )
     assert len(res.json()) == 3
     assert filter(lambda s: s["id"] == copied.json(), res.json().values()).__next__()["folder"] == "foo/bar"
-
-    res = client.post("/v1/studies/_invalidate_cache_listing", headers=admin_headers)
-    assert res.status_code == 200
 
     # Study delete
     client.delete(
@@ -329,6 +295,15 @@ def test_main(client: TestClient, admin_access_token: str, study_id: str) -> Non
         headers={"Authorization": f'Bearer {fred_credentials["access_token"]}'},
     )
     job_id = res.json()["job_id"]
+
+    res = client.get("/v1/launcher/load", headers=admin_headers)
+    assert res.status_code == 200, res.json()
+    launcher_load = LauncherLoadDTO.parse_obj(res.json())
+    assert launcher_load.allocated_cpu_rate == 1 / (os.cpu_count() or 1)
+    assert launcher_load.cluster_load_rate == 1 / (os.cpu_count() or 1)
+    assert launcher_load.nb_queued_jobs == 0
+    assert launcher_load.launcher_status == "SUCCESS"
+
     res = client.get(
         f"/v1/launcher/jobs?study_id={study_id}",
         headers={"Authorization": f'Bearer {fred_credentials["access_token"]}'},
@@ -954,8 +929,8 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
         "congFeeAlg": True,
         "congFeeAbs": True,
         "margCost": True,
-        "congProdPlus": True,
-        "congProdMinus": True,
+        "congProbPlus": True,
+        "congProbMinus": True,
         "hurdleCost": True,
         "resGenerationByPlant": True,
         "miscDtg2": True,
@@ -1023,8 +998,8 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
             "congFeeAlg": True,
             "congFeeAbs": True,
             "margCost": True,
-            "congProdPlus": True,
-            "congProdMinus": True,
+            "congProbPlus": True,
+            "congProbMinus": True,
             "hurdleCost": True,
             "resGenerationByPlant": True,
             "miscDtg2": True,
@@ -1093,8 +1068,8 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
         "congFeeAlg": True,
         "congFeeAbs": True,
         "margCost": True,
-        "congProdPlus": True,
-        "congProdMinus": True,
+        "congProbPlus": True,
+        "congProbMinus": True,
         "hurdleCost": True,
         "resGenerationByPlant": True,
         "miscDtg2": True,
@@ -1304,7 +1279,7 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
 
     # --- TableMode START ---
 
-    table_mode_url = f"/v1/studies/{study_id}/tablemode/form"
+    table_mode_url = f"/v1/studies/{study_id}/tablemode"
 
     # Table Mode - Area
 
@@ -1494,7 +1469,7 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
             "startupCost": 0,
             "marketBidCost": 0,
             "spreadCost": 0,
-            "tsGen": "use global parameter",
+            "tsGen": "use global",
             "volatilityForced": 0,
             "volatilityPlanned": 0,
             "lawForced": "uniform",
@@ -1516,7 +1491,7 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
             "startupCost": 0,
             "marketBidCost": 0,
             "spreadCost": 0,
-            "tsGen": "use global parameter",
+            "tsGen": "use global",
             "volatilityForced": 0,
             "volatilityPlanned": 0,
             "lawForced": "uniform",
@@ -1535,7 +1510,7 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
                 "enabled": False,
                 "unitCount": 3,
                 "spinning": 8,
-                "tsGen": TimeSeriesGenerationOption.FORCE_GENERATION.value,
+                "tsGen": LocalTSGenerationBehavior.FORCE_GENERATION.value,
                 "lawPlanned": LawOption.GEOMETRIC.value,
             },
             "area 2 / cluster 2": {
@@ -1591,7 +1566,7 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
             "startupCost": 0,
             "marketBidCost": 0,
             "spreadCost": 0,
-            "tsGen": "use global parameter",
+            "tsGen": "use global",
             "volatilityForced": 0,
             "volatilityPlanned": 0,
             "lawForced": "uniform",
@@ -1783,7 +1758,7 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
         "unitCount": 3,
         "enabled": False,
         "nominalCapacity": 3,
-        "genTs": "use global parameter",
+        "genTs": "use global",
         "minStablePower": 3,
         "minUpTime": 3,
         "minDownTime": 3,

@@ -30,7 +30,7 @@ function Data() {
   const [t] = useTranslation();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { enqueueSnackbar } = useSnackbar();
-  const [dataList, setDataList] = useState<Array<MatrixDataSetDTO>>([]);
+  const [dataList, setDataList] = useState<MatrixDataSetDTO[]>([]);
   const [idForDeletion, setIdForDeletion] = useState<string>();
   const [selectedItem, setSelectedItem] = useState<string>();
   const [loaded, setLoaded] = useState(false);
@@ -87,7 +87,7 @@ function Data() {
   };
 
   const onNewDataUpdate = (newData: MatrixDataSetDTO): void => {
-    const tmpList = ([] as Array<MatrixDataSetDTO>).concat(dataList);
+    const tmpList = ([] as MatrixDataSetDTO[]).concat(dataList);
     const index = tmpList.findIndex((elm) => elm.id === newData.id);
     if (index >= 0) {
       tmpList[index] = newData;

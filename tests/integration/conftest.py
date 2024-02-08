@@ -6,7 +6,7 @@ from pathlib import Path
 import jinja2
 import pytest
 from fastapi import FastAPI
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine  # type: ignore
 from starlette.testclient import TestClient
 
 from antarest.dbmodel import Base
@@ -22,7 +22,7 @@ RUN_ON_WINDOWS = os.name == "nt"
 
 
 @pytest.fixture(name="app")
-def app_fixture(tmp_path: Path) -> FastAPI:
+def app_fixture(tmp_path: Path) -> t.Generator[FastAPI, None, None]:
     # Currently, it is impossible to use a SQLite database in memory (with "sqlite:///:memory:")
     # because the database is created by the FastAPI application during each integration test,
     # which doesn't apply the migrations (migrations are done by Alembic).
@@ -96,7 +96,7 @@ def admin_access_token_fixture(client: TestClient) -> str:
     )
     res.raise_for_status()
     credentials = res.json()
-    return credentials["access_token"]
+    return t.cast(str, credentials["access_token"])
 
 
 @pytest.fixture(name="user_access_token")
@@ -117,7 +117,7 @@ def user_access_token_fixture(
     )
     res.raise_for_status()
     credentials = res.json()
-    return credentials["access_token"]
+    return t.cast(str, credentials["access_token"])
 
 
 @pytest.fixture(name="study_id")
@@ -131,5 +131,5 @@ def study_id_fixture(
         headers={"Authorization": f"Bearer {user_access_token}"},
     )
     res.raise_for_status()
-    study_ids = res.json()
+    study_ids = t.cast(t.Iterable[str], res.json())
     return next(iter(study_ids))

@@ -1,4 +1,3 @@
-/* eslint-disable camelcase */
 import axios from "axios";
 import client from "./client";
 import { RefreshDTO as UserTokensDTO } from "../../common/types";

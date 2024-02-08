@@ -1,7 +1,8 @@
-from typing import Any, Callable, Dict, MutableSequence, Optional, Sequence, Tuple, Type, TypedDict, TypeVar
+import typing as t
 
-import pydantic
-from pydantic import BaseModel, Extra
+import pydantic.fields
+import pydantic.main
+from pydantic import BaseModel
 
 from antarest.core.exceptions import CommandApplicationError
 from antarest.core.jwt import DEFAULT_ADMIN_USER
@@ -21,11 +22,11 @@ GENERAL_DATA_PATH = "settings/generaldata"
 def execute_or_add_commands(
     study: Study,
     file_study: FileStudy,
-    commands: Sequence[ICommand],
+    commands: t.Sequence[ICommand],
     storage_service: StudyStorageService,
 ) -> None:
     if isinstance(study, RawStudy):
-        executed_commands: MutableSequence[ICommand] = []
+        executed_commands: t.MutableSequence[ICommand] = []
         for command in commands:
             result = command.apply(file_study)
             if not result.status:
@@ -58,37 +59,34 @@ def execute_or_add_commands(
         )
 
 
-class FormFieldsBaseModel(BaseModel):
+class FormFieldsBaseModel(
+    BaseModel,
+    alias_generator=to_camel_case,
+    extra="forbid",
+    validate_assignment=True,
+    allow_population_by_field_name=True,
+):
     """
     Pydantic Model for webapp form
     """
 
-    class Config:
-        alias_generator = to_camel_case
-        extra = Extra.forbid
-        validate_assignment = True
-        allow_population_by_field_name = True
 
-
-class FieldInfo(TypedDict, total=False):
+class FieldInfo(t.TypedDict, total=False):
     path: str
-    default_value: Any
-    start_version: Optional[int]
-    end_version: Optional[int]
-    # Workaround to replace Pydantic's computed values which are ignored by FastAPI.
+    default_value: t.Any
+    start_version: t.Optional[int]
+    end_version: t.Optional[int]
+    # Workaround to replace Pydantic computed values which are ignored by FastAPI.
     # TODO: check @computed_field available in Pydantic v2 to remove it
     # (value) -> encoded_value
-    encode: Optional[Callable[[Any], Any]]
+    encode: t.Optional[t.Callable[[t.Any], t.Any]]
     # (encoded_value, current_value) -> decoded_value
-    decode: Optional[Callable[[Any, Optional[Any]], Any]]
+    decode: t.Optional[t.Callable[[t.Any, t.Optional[t.Any]], t.Any]]
 
 
 class AllOptionalMetaclass(pydantic.main.ModelMetaclass):
     """
     Metaclass that makes all fields of a Pydantic model optional.
-
-    This metaclass modifies the class's annotations to make all fields
-    optional by wrapping them with the `Optional` type.
 
     Usage:
         class MyModel(BaseModel, metaclass=AllOptionalMetaclass):
@@ -96,31 +94,65 @@ class AllOptionalMetaclass(pydantic.main.ModelMetaclass):
             field2: int
             ...
 
-    The fields defined in the model will be automatically converted to optional
-    fields, allowing instances of the model to be created even if not all fields
-    are provided during initialization.
+    Instances of the model can be created even if not all fields are provided during initialization.
+    Default values, when provided, are used unless `use_none` is set to `True`.
     """
 
     def __new__(
-        cls: Type["AllOptionalMetaclass"],
+        cls: t.Type["AllOptionalMetaclass"],
         name: str,
-        bases: Tuple[Type[Any], ...],
-        namespaces: Dict[str, Any],
-        **kwargs: Dict[str, Any],
-    ) -> Any:
+        bases: t.Tuple[t.Type[t.Any], ...],
+        namespaces: t.Dict[str, t.Any],
+        use_none: bool = False,
+        **kwargs: t.Dict[str, t.Any],
+    ) -> t.Any:
+        """
+        Create a new instance of the metaclass.
+
+        Args:
+            name: Name of the class to create.
+            bases: Base classes of the class to create (a Pydantic model).
+            namespaces: namespace of the class to create that defines the fields of the model.
+            use_none: If `True`, the default value of the fields is set to `None`.
+                Note that this field is not part of the Pydantic model, but it is an extension.
+            **kwargs: Additional keyword arguments used by the metaclass.
+        """
+        # Modify the annotations of the class (but not of the ancestor classes)
+        # in order to make all fields optional.
+        # If the current model inherits from another model, the annotations of the ancestor models
+        # are not modified, because the fields are already converted to `ModelField`.
         annotations = namespaces.get("__annotations__", {})
-        for base in bases:
-            for ancestor in reversed(base.__mro__):
-                annotations.update(getattr(ancestor, "__annotations__", {}))
-        for field, field_type in annotations.items():
-            if not field.startswith("__"):
-                # Optional fields are correctly handled
-                annotations[field] = Optional[annotations[field]]
+        for field_name, field_type in annotations.items():
+            if not field_name.startswith("__"):
+                # Making already optional fields optional is not a problem (nothing is changed).
+                annotations[field_name] = t.Optional[field_type]
         namespaces["__annotations__"] = annotations
-        return super().__new__(cls, name, bases, namespaces)
+
+        if use_none:
+            # Modify the namespace fields to set their default value to `None`.
+            for field_name, field_info in namespaces.items():
+                if isinstance(field_info, pydantic.fields.FieldInfo):
+                    field_info.default = None
+                    field_info.default_factory = None
+
+        # Create the class: all annotations are converted into `ModelField`.
+        instance = super().__new__(cls, name, bases, namespaces, **kwargs)
+
+        # Modify the inherited fields of the class to make them optional
+        # and set their default value to `None`.
+        model_field: pydantic.fields.ModelField
+        for field_name, model_field in instance.__fields__.items():
+            model_field.required = False
+            model_field.allow_none = True
+            if use_none:
+                model_field.default = None
+                model_field.default_factory = None
+                model_field.field_info.default = None
+
+        return instance
 
 
-MODEL = TypeVar("MODEL", bound=Type[BaseModel])
+MODEL = t.TypeVar("MODEL", bound=t.Type[BaseModel])
 
 
 def camel_case_model(model: MODEL) -> MODEL:

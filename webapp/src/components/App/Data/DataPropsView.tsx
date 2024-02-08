@@ -5,7 +5,7 @@ import DataListing from "./DataListing";
 import { StyledListingBox } from "./styles";
 
 interface PropTypes {
-  dataset: Array<MatrixDataSetDTO>;
+  dataset: MatrixDataSetDTO[];
   selectedItem: string;
   setSelectedItem: (item: string) => void;
   onAdd?: () => void;
@@ -13,9 +13,9 @@ interface PropTypes {
 
 function DataPropsView(props: PropTypes) {
   const { dataset, selectedItem, setSelectedItem, onAdd } = props;
-  const [filteredDatas, setFilteredDatas] = useState<Array<MatrixDataSetDTO>>();
+  const [filteredDatas, setFilteredDatas] = useState<MatrixDataSetDTO[]>();
 
-  const filter = (input: string): Array<MatrixDataSetDTO> => {
+  const filter = (input: string): MatrixDataSetDTO[] => {
     return dataset.filter(
       (item) =>
         item.name.search(input) >= 0 ||

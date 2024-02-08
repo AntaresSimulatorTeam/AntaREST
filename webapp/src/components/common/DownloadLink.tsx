@@ -24,7 +24,6 @@ function DownloadLink(props: Props) {
     if (user) {
       await dispatch(refresh()).unwrap();
     }
-    // eslint-disable-next-line no-restricted-globals
     location.href = url;
   };
 

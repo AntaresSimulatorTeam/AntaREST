@@ -1,15 +1,14 @@
-/* eslint-disable no-plusplus */
 import { StudyMetadata } from "../../../common/types";
 
 export interface StudyTreeNode {
   name: string;
   path: string;
-  children: Array<StudyTreeNode>;
+  children: StudyTreeNode[];
 }
 
 const nodeProcess = (
   tree: StudyTreeNode,
-  path: Array<string>,
+  path: string[],
   folderPath: string,
 ): void => {
   const { children } = tree;
@@ -33,19 +32,17 @@ const nodeProcess = (
   }
 };
 
-export const buildStudyTree = (
-  studies: Array<StudyMetadata>,
-): StudyTreeNode => {
+export const buildStudyTree = (studies: StudyMetadata[]): StudyTreeNode => {
   const tree: StudyTreeNode = { name: "root", children: [], path: "" };
-  let path: Array<string> = [];
-  for (let i = 0; i < studies.length; i++) {
-    if (studies[i].folder !== undefined && studies[i].folder !== null) {
+  let path: string[] = [];
+  for (const study of studies) {
+    if (study.folder !== undefined && study.folder !== null) {
       path = [
-        studies[i].workspace,
-        ...(studies[i].folder as string).split("/").filter((elm) => elm !== ""),
+        study.workspace,
+        ...(study.folder as string).split("/").filter((elm) => elm !== ""),
       ];
     } else {
-      path = [studies[i].workspace];
+      path = [study.workspace];
     }
     path.reverse();
     nodeProcess(tree, path, "");

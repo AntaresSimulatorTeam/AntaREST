@@ -58,14 +58,6 @@ function Modelization() {
         label: t("study.bindingconstraints"),
         path: `${basePath}/bindingcontraint`,
       },
-      {
-        label: t("study.debug"),
-        path: `${basePath}/debug`,
-      },
-      {
-        label: t("study.modelization.tableMode"),
-        path: `${basePath}/tablemode`,
-      },
     ];
   }, [areaId, areas, dispatch, navigate, study?.id, t]);
 

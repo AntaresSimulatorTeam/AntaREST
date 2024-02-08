@@ -363,7 +363,7 @@ nominalcapacity = 456.5
 
 def test_parse_renewables(tmp_path: Path) -> None:
     study_path = build_empty_files(tmp_path)
-    study_path.joinpath("study.antares").write_text("[antares] \n version = 700")
+    study_path.joinpath("study.antares").write_text("[antares] \n version = 810")
     ini_path = study_path.joinpath("input/renewables/clusters/fr/list.ini")
 
     # Error case: `input/renewables/clusters/fr` directory is missing.

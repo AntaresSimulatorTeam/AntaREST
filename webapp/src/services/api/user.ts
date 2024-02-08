@@ -206,7 +206,7 @@ export const deleteBot = async (id: number): Promise<void> => {
   return res.data;
 };
 
-export const getAdminTokenList = async (): Promise<Array<UserToken>> => {
+export const getAdminTokenList = async (): Promise<UserToken[]> => {
   const users = await getUsers();
 
   return Promise.all(

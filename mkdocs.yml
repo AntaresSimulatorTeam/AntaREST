@@ -28,11 +28,35 @@ theme:
         name: Switch to light mode
 
 nav:
-  - Home: index.md
+  - Home: 'index.md'
   - 'User guide':
       - 'Introduction': 'user-guide/0-introduction.md'
       - 'User interface': 'user-guide/1-interface.md'
-      - 'Variant manager': 'user-guide/2-variant_manager.md'
+      - 'Study Configuration':
+          - 'Main Topics': 'user-guide/2-study.md'
+          - 'Map':
+              - 'Main Topics': 'user-guide/study/01-map.md'
+          - 'Area Configuration':
+              - 'Main Topics': 'user-guide/study/02-areas.md'
+              - 'General Properties': 'user-guide/study/areas/01-properties.md'
+              - 'Load': 'user-guide/study/areas/02-load.md'
+              - 'Thermal Clusters': 'user-guide/study/areas/03-thermals.md'
+              - 'Renewables Clusters': 'user-guide/study/areas/04-renewables.md'
+              - 'Hydraulic Generators': 'user-guide/study/areas/05-hydro.md'
+              - 'Wind Generators': 'user-guide/study/areas/06-wind.md'
+              - 'Solar Generators': 'user-guide/study/areas/07-solar.md'
+              - 'Short-Term Storages': 'user-guide/study/areas/08-st-storages.md'
+              - 'Reserves': 'user-guide/study/areas/09-reserves.md'
+              - 'Miscellaneous Generators': 'user-guide/study/areas/10-misc-gen.md'
+          - 'Links':
+              - 'Main Topics': 'user-guide/study/03-links.md'
+          - 'Binding Constraints':
+              - 'Main Topics': 'user-guide/study/04-binding-constraints.md'
+          - 'Debug':
+              - 'Main Topics': 'user-guide/study/05-debug.md'
+          - 'Table Mode':
+              - 'Main Topics': 'user-guide/study/06-table-mode.md'
+      - 'Variant manager': 'user-guide/3-variant_manager.md'
   - 'How to':
       - 'Import a study': 'how-to/studies-import.md'
       - 'Upgrade a study': 'how-to/studies-upgrade.md'
@@ -69,8 +93,8 @@ markdown_extensions:
       permalink: true
       toc_depth: 3
   - pymdownx.emoji:
-      emoji_index: !!python/name:materialx.emoji.twemoji
-      emoji_generator: !!python/name:materialx.emoji.to_svg
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
   - admonition
   - pymdownx.details
   - pymdownx.superfences

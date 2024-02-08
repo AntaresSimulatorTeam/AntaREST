@@ -14,7 +14,7 @@ import { getConfig } from "../config";
 export const getMatrixList = async (
   name = "",
   filterOwn = false,
-): Promise<Array<MatrixDataSetDTO>> => {
+): Promise<MatrixDataSetDTO[]> => {
   const res = await client.get(
     `/v1/matrixdataset/_search?name=${encodeURI(name)}&filter_own=${filterOwn}`,
   );
@@ -43,7 +43,7 @@ export const createMatrixByImportation = async (
   file: File,
   json: boolean,
   onProgress?: (progress: number) => void,
-): Promise<Array<MatrixInfoDTO>> => {
+): Promise<MatrixInfoDTO[]> => {
   const options: AxiosRequestConfig = {};
   if (onProgress) {
     options.onUploadProgress = (progressEvent): void => {
@@ -71,7 +71,7 @@ export const createMatrixByImportation = async (
 
 export const createDataSet = async (
   metadata: MatrixDataSetUpdateDTO,
-  matrices: Array<MatrixInfoDTO>,
+  matrices: MatrixInfoDTO[],
 ): Promise<MatrixDataSetDTO> => {
   const data = { metadata, matrices };
   const res = await client.post("/v1/matrixdataset", data);

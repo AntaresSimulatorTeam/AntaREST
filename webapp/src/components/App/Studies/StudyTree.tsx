@@ -15,8 +15,8 @@ function StudyTree() {
   const studiesTree = useAppSelector(getStudiesTree);
   const dispatch = useAppDispatch();
 
-  const getExpandedTab = (nodeId: string): Array<string> => {
-    const expandedTab: Array<string> = [];
+  const getExpandedTab = (nodeId: string): string[] => {
+    const expandedTab: string[] = [];
     const tab = nodeId.split("/");
     let lastnodeId = "";
     for (let i = 0; i < tab.length; i += 1) {
@@ -26,7 +26,7 @@ function StudyTree() {
     return expandedTab;
   };
 
-  const buildTree = (children: Array<StudyTreeNode>, parentId: string) =>
+  const buildTree = (children: StudyTreeNode[], parentId: string) =>
     children.map((elm) => {
       const newId = `${parentId}/${elm.name}`;
       return (

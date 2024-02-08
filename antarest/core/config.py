@@ -9,6 +9,8 @@ import yaml
 from antarest.core.model import JSON
 from antarest.core.roles import RoleType
 
+DEFAULT_WORKSPACE_NAME = "default"
+
 
 @dataclass(frozen=True)
 class ExternalAuthConfig:
@@ -252,6 +254,7 @@ class SlurmConfig:
     default_time_limit: int = 0
     default_json_db_name: str = ""
     slurm_script_path: str = ""
+    partition: str = ""
     max_cores: int = 64
     antares_versions_on_remote_server: List[str] = field(default_factory=list)
     enable_nb_cores_detection: bool = False
@@ -288,6 +291,7 @@ class SlurmConfig:
             default_time_limit=data.get("default_time_limit", defaults.default_time_limit),
             default_json_db_name=data.get("default_json_db_name", defaults.default_json_db_name),
             slurm_script_path=data.get("slurm_script_path", defaults.slurm_script_path),
+            partition=data.get("partition", defaults.partition),
             antares_versions_on_remote_server=data.get(
                 "antares_versions_on_remote_server",
                 defaults.antares_versions_on_remote_server,
@@ -547,3 +551,18 @@ class Config:
         if res is not None:
             data["resources_path"] = res
         return cls.from_dict(data)
+
+    def get_workspace_path(self, *, workspace: str = DEFAULT_WORKSPACE_NAME) -> Path:
+        """
+        Get workspace path from config file.
+
+        Args:
+            workspace: Workspace name.
+
+        Returns:
+            Absolute (or relative) path to the workspace directory.
+        """
+        try:
+            return self.storage.workspaces[workspace].path
+        except KeyError:
+            raise ValueError(f"Workspace '{workspace}' not found in config") from None

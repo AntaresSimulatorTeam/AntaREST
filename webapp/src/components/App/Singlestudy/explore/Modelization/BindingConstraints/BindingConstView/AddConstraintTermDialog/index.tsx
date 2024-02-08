@@ -1,4 +1,3 @@
-/* eslint-disable camelcase */
 import { AxiosError } from "axios";
 import { useTranslation } from "react-i18next";
 import { useSnackbar } from "notistack";

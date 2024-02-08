@@ -35,7 +35,7 @@ import Header from "./Header";
 import { getAuthUser } from "../../../../redux/selectors";
 import TokenInfoDialog from "./dialog/TokenInfoDialog";
 import useAppSelector from "../../../../redux/hooks/useAppSelector";
-import { isSearchMatching } from "../../../../utils/textUtils";
+import { isSearchMatching } from "../../../../utils/stringUtils";
 
 /**
  * Types

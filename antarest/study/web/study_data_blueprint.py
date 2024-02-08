@@ -3,13 +3,14 @@ from http import HTTPStatus
 from typing import Any, Dict, List, Optional, Sequence, Union, cast
 
 from fastapi import APIRouter, Body, Depends
-from fastapi.params import Body, Query
+from fastapi.params import Query
 from starlette.responses import RedirectResponse
 
 from antarest.core.config import Config
 from antarest.core.jwt import JWTUser
 from antarest.core.model import StudyPermissionType
 from antarest.core.requests import RequestParameters
+from antarest.core.utils.utils import sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.matrixstore.matrix_editor import MatrixEditInstruction
@@ -17,15 +18,25 @@ from antarest.study.business.adequacy_patch_management import AdequacyPatchFormF
 from antarest.study.business.advanced_parameters_management import AdvancedParamsFormFields
 from antarest.study.business.allocation_management import AllocationFormFields, AllocationMatrix
 from antarest.study.business.area_management import AreaCreationDTO, AreaInfoDTO, AreaType, AreaUI, LayerInfoDTO
-from antarest.study.business.areas.hydro_management import ManagementOptionsFormFields
+from antarest.study.business.areas.hydro_management import InflowStructure, ManagementOptionsFormFields
 from antarest.study.business.areas.properties_management import PropertiesFormFields
 from antarest.study.business.areas.renewable_management import (
     RenewableClusterCreation,
     RenewableClusterInput,
     RenewableClusterOutput,
 )
-from antarest.study.business.areas.st_storage_management import *
-from antarest.study.business.areas.thermal_management import *
+from antarest.study.business.areas.st_storage_management import (
+    STStorageCreation,
+    STStorageInput,
+    STStorageMatrix,
+    STStorageOutput,
+    STStorageTimeSeries,
+)
+from antarest.study.business.areas.thermal_management import (
+    ThermalClusterCreation,
+    ThermalClusterInput,
+    ThermalClusterOutput,
+)
 from antarest.study.business.binding_constraint_management import (
     BindingConstraintPropertiesWithName,
     ConstraintTermDTO,
@@ -42,6 +53,7 @@ from antarest.study.business.thematic_trimming_management import ThematicTrimmin
 from antarest.study.business.timeseries_config_management import TSFormFields
 from antarest.study.model import PatchArea, PatchCluster
 from antarest.study.service import StudyService
+from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 
 logger = logging.getLogger(__name__)
 
@@ -199,6 +211,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
+        uuid = sanitize_uuid(uuid)
+        area_id = transform_name_to_id(area_id)
         study_service.delete_area(uuid, area_id, params)
         return area_id
 
@@ -219,6 +233,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
+        area_from = transform_name_to_id(area_from)
+        area_to = transform_name_to_id(area_to)
         study_service.delete_link(uuid, area_from, area_to, params)
         return f"{area_from}%{area_to}"
 
@@ -416,6 +432,48 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
 
         study_service.hydro_manager.set_field_values(study, data, area_id)
+
+    # noinspection SpellCheckingInspection
+    @bp.get(
+        "/studies/{uuid}/areas/{area_id}/hydro/inflow-structure",
+        tags=[APITag.study_data],
+        summary="Get inflow structure values",
+        response_model=InflowStructure,
+    )
+    def get_inflow_structure(
+        uuid: str,
+        area_id: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> InflowStructure:
+        """Get the configuration for the hydraulic inflow structure of the given area."""
+        logger.info(
+            msg=f"Getting inflow structure values for area {area_id} of study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
+        return study_service.hydro_manager.get_inflow_structure(study, area_id)
+
+    @bp.put(
+        "/studies/{uuid}/areas/{area_id}/hydro/inflow-structure",
+        tags=[APITag.study_data],
+        summary="Update inflow structure values",
+        response_model=InflowStructure,
+    )
+    def update_inflow_structure(
+        uuid: str,
+        area_id: str,
+        values: InflowStructure,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> None:
+        """Update the configuration for the hydraulic inflow structure of the given area."""
+        logger.info(
+            msg=f"Updating inflow structure values for area {area_id} of study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
+        return study_service.hydro_manager.update_inflow_structure(study, area_id, values)
 
     @bp.put(
         "/studies/{uuid}/matrix",
@@ -751,14 +809,14 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         study_service.ts_config_manager.set_field_values(study, field_values)
 
     @bp.get(
-        path="/studies/{uuid}/tablemode/form",
+        path="/studies/{uuid}/tablemode",
         tags=[APITag.study_data],
         summary="Get table data for table form",
         # `Any` because `Union[AreaColumns, LinkColumns]` not working
         response_model=Dict[str, Dict[str, Any]],
         response_model_exclude_none=True,
     )
-    def get_table_data(
+    def get_table_mode(
         uuid: str,
         table_type: TableTemplateType,
         columns: str,
@@ -774,11 +832,11 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         return study_service.table_mode_manager.get_table_data(study, table_type, columns.split(","))
 
     @bp.put(
-        path="/studies/{uuid}/tablemode/form",
+        path="/studies/{uuid}/tablemode",
         tags=[APITag.study_data],
         summary="Set table data with values from table form",
     )
-    def set_table_data(
+    def set_table_mode(
         uuid: str,
         table_type: TableTemplateType,
         data: Dict[str, ColumnsModelTypes],
@@ -825,7 +883,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     @bp.get(
         "/studies/{uuid}/bindingconstraints/{binding_constraint_id}",
         tags=[APITag.study_data],
-        summary="Get binding constraint list",
+        summary="Get binding constraint",
         response_model=None,  # Dict[str, bool],
     )
     def get_binding_constraint(
@@ -881,45 +939,45 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     @bp.post(
         "/studies/{uuid}/bindingconstraints/{binding_constraint_id}/term",
         tags=[APITag.study_data],
-        summary="update constraint term",
+        summary="Create a binding constraint term",
     )
     def add_constraint_term(
         uuid: str,
         binding_constraint_id: str,
-        data: ConstraintTermDTO,
+        term: ConstraintTermDTO,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(
-            f"add constraint term from {binding_constraint_id} for study {uuid}",
+            f"Add constraint term {term.id} to {binding_constraint_id} for study {uuid}",
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
-        return study_service.binding_constraint_manager.add_new_constraint_term(study, binding_constraint_id, data)
+        return study_service.binding_constraint_manager.add_new_constraint_term(study, binding_constraint_id, term)
 
     @bp.put(
         "/studies/{uuid}/bindingconstraints/{binding_constraint_id}/term",
         tags=[APITag.study_data],
-        summary="update constraint term",
+        summary="Update a binding constraint term",
     )
     def update_constraint_term(
         uuid: str,
         binding_constraint_id: str,
-        data: ConstraintTermDTO,
+        term: ConstraintTermDTO,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(
-            f"update constraint term from {binding_constraint_id} for study {uuid}",
+            f"Update constraint term {term.id} from {binding_constraint_id} for study {uuid}",
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
-        return study_service.binding_constraint_manager.update_constraint_term(study, binding_constraint_id, data)
+        return study_service.binding_constraint_manager.update_constraint_term(study, binding_constraint_id, term)
 
     @bp.delete(
         "/studies/{uuid}/bindingconstraints/{binding_constraint_id}/term/{term_id}",
         tags=[APITag.study_data],
-        summary="update constraint term",
+        summary="Remove a binding constraint term",
     )
     def remove_constraint_term(
         uuid: str,
@@ -928,7 +986,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
         logger.info(
-            f"delete constraint term {term_id} from {binding_constraint_id} for study {uuid}",
+            f"Remove constraint term {term_id} from {binding_constraint_id} for study {uuid}",
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)

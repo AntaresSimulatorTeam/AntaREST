@@ -26,8 +26,8 @@ from antarest.core.utils.utils import assert_this, unzip
 from antarest.launcher.adapters.abstractlauncher import AbstractLauncher, LauncherCallbacks, LauncherInitException
 from antarest.launcher.adapters.log_manager import LogTailManager
 from antarest.launcher.model import JobStatus, LauncherParametersDTO, LogType, XpansionParametersDTO
-from antarest.study.storage.rawstudy.io.reader import IniReader
-from antarest.study.storage.rawstudy.io.writer.ini_writer import IniWriter
+from antarest.study.storage.rawstudy.ini_reader import IniReader
+from antarest.study.storage.rawstudy.ini_writer import IniWriter
 from antarest.study.storage.utils import retrieve_output_path
 
 logger = logging.getLogger(__name__)
@@ -183,6 +183,7 @@ class SlurmLauncher(AbstractLauncher):
             json_dir=local_workspace or self.slurm_config.local_workspace,
             default_json_db_name=self.slurm_config.default_json_db_name,
             slurm_script_path=self.slurm_config.slurm_script_path,
+            partition=self.slurm_config.partition,
             antares_versions_on_remote_server=self.slurm_config.antares_versions_on_remote_server,
             default_ssh_dict={
                 "username": self.slurm_config.username,

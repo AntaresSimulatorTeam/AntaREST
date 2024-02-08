@@ -1,4 +1,3 @@
-/* eslint-disable camelcase */
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { MRT_ColumnDef } from "material-react-table";
@@ -57,7 +56,7 @@ function Storages() {
       );
     }, [storages]);
 
-  const columns = useMemo<MRT_ColumnDef<Storage>[]>(
+  const columns = useMemo<Array<MRT_ColumnDef<Storage>>>(
     () => [
       {
         accessorKey: "name",

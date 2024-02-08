@@ -31,7 +31,7 @@ import Header from "./Header";
 import UpdateGroupDialog from "./dialog/UpdateGroupDialog";
 import { getAuthUser } from "../../../../redux/selectors";
 import useAppSelector from "../../../../redux/hooks/useAppSelector";
-import { isSearchMatching } from "../../../../utils/textUtils";
+import { isSearchMatching } from "../../../../utils/stringUtils";
 
 /**
  * Types

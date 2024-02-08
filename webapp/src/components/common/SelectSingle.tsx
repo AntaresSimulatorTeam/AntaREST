@@ -13,7 +13,7 @@ import { GenericInfo } from "../../common/types";
 interface Props {
   name: string;
   label?: string;
-  list: Array<GenericInfo>;
+  list: GenericInfo[];
   data: string | undefined;
   setValue?: (data: string) => void;
   sx?: SxProps<Theme> | undefined;
@@ -69,7 +69,7 @@ function SelectSingle(props: Props) {
         }
       >
         {optional && (
-          <MenuItem value="" key="None">
+          <MenuItem key="None" value="">
             {t("global.none")}
           </MenuItem>
         )}

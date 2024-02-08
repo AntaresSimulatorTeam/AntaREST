@@ -14,7 +14,7 @@ export interface StudyTree {
     depth: number;
     nbAllChildrens: number;
   };
-  children: Array<StudyTree>;
+  children: StudyTree[];
 }
 
 const buildNodeFromMetadata = (study: StudyMetadata): StudyTree => ({
@@ -69,10 +69,10 @@ export const getTreeNodes = async (tree: VariantTree): Promise<StudyTree> => {
   return root;
 };
 
-export const createListFromTree = (tree: StudyTree): Array<GenericInfo> => {
+export const createListFromTree = (tree: StudyTree): GenericInfo[] => {
   const { name, attributes, children } = tree;
   const { id } = attributes;
-  let res: Array<GenericInfo> = [{ id, name }];
+  let res: GenericInfo[] = [{ id, name }];
   children.forEach((elm) => {
     res = res.concat(createListFromTree(elm));
   });

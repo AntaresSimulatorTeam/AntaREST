@@ -31,7 +31,7 @@ import { getLauncherLoad } from "../../../services/api/study";
 import LinearProgressWithLabel from "../../common/LinearProgressWithLabel";
 
 interface PropType {
-  content: Array<TaskView>;
+  content: TaskView[];
   refresh: () => void;
 }
 

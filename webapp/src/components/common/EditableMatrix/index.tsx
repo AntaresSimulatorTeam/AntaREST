@@ -1,8 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import debug from "debug";
-import HotTable from "@handsontable/react";
-import { CellChange } from "handsontable/common";
-import { ColumnSettings } from "handsontable/settings";
+import HT from "handsontable";
 import {
   MatrixIndex,
   MatrixEditDTO,
@@ -10,15 +8,13 @@ import {
   MatrixStats,
 } from "../../../common/types";
 import "handsontable/dist/handsontable.min.css";
-import MatrixGraphView from "./MatrixGraphView";
 import { Root } from "./style";
-import "./style.css";
 import {
   computeStats,
   createDateFromIndex,
   cellChangesToMatrixEdits,
 } from "./utils";
-import Handsontable from "../Handsontable";
+import Handsontable, { HotTableClass } from "../Handsontable";
 
 const logError = debug("antares:editablematrix:error");
 
@@ -27,11 +23,11 @@ interface PropTypes {
   matrixIndex?: MatrixIndex;
   matrixTime: boolean;
   readOnly: boolean;
-  toggleView?: boolean;
   onUpdate?: (change: MatrixEditDTO[], source: string) => void;
   columnsNames?: string[];
   rowNames?: string[];
   computStats?: MatrixStats;
+  isPercentDisplayEnabled?: boolean;
 }
 
 type CellType = Array<number | string | boolean>;
@@ -54,25 +50,25 @@ function EditableMatrix(props: PropTypes) {
     matrix,
     matrixIndex,
     matrixTime,
-    toggleView,
     onUpdate,
     columnsNames,
     rowNames,
     computStats,
+    isPercentDisplayEnabled = false,
   } = props;
   const { data = [], columns = [], index = [] } = matrix;
   const prependIndex = index.length > 0 && matrixTime;
-  const [grid, setGrid] = useState<Array<CellType>>([]);
-  const [formattedColumns, setFormattedColumns] = useState<ColumnSettings[]>(
+  const [grid, setGrid] = useState<CellType[]>([]);
+  const [formattedColumns, setFormattedColumns] = useState<HT.ColumnSettings[]>(
     [],
   );
-  const hotTableComponent = useRef<HotTable>(null);
+  const hotTableComponent = useRef<HotTableClass>(null);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSlice = (changes: CellChange[], source: string) => {
+  const handleSlice = (changes: HT.CellChange[], source: string) => {
     if (!onUpdate) {
       return;
     }
@@ -83,7 +79,12 @@ function EditableMatrix(props: PropTypes) {
     );
 
     if (filteredChanges.length > 0) {
-      const edits = cellChangesToMatrixEdits(filteredChanges, matrixTime);
+      const edits = cellChangesToMatrixEdits(
+        filteredChanges,
+        matrixTime,
+        isPercentDisplayEnabled,
+      );
+
       onUpdate(edits, source);
     }
   };
@@ -125,17 +126,29 @@ function EditableMatrix(props: PropTypes) {
     ]);
 
     const tmpData = data.map((row, i) => {
-      let tmpRow = row as (string | number)[];
+      let tmpRow = row as Array<string | number>;
       if (prependIndex && matrixIndex) {
         tmpRow = [createDateFromIndex(i, matrixIndex)].concat(row);
       }
+
       if (computStats) {
         tmpRow = tmpRow.concat(
-          computeStats(computStats, row) as (string | number)[],
+          computeStats(computStats, row) as Array<string | number>,
         );
       }
+
+      if (isPercentDisplayEnabled) {
+        tmpRow = tmpRow.map((cell) => {
+          if (typeof cell === "number") {
+            return cell * 100;
+          }
+          return cell;
+        });
+      }
+
       return tmpRow;
     });
+
     setGrid(tmpData);
   }, [
     columns,
@@ -146,6 +159,7 @@ function EditableMatrix(props: PropTypes) {
     readOnly,
     matrixIndex,
     computStats,
+    isPercentDisplayEnabled,
   ]);
 
   const matrixRowNames =
@@ -157,27 +171,23 @@ function EditableMatrix(props: PropTypes) {
 
   return (
     <Root>
-      {toggleView ? (
-        <Handsontable
-          ref={hotTableComponent}
-          data={grid}
-          width="100%"
-          height="100%"
-          stretchH="all"
-          className="editableMatrix"
-          colHeaders
-          rowHeaderWidth={matrixRowNames ? 150 : undefined}
-          afterChange={(change, source) =>
-            onUpdate && handleSlice(change || [], source)
-          }
-          beforeKeyDown={(e) => handleKeyDown(e)}
-          columns={formattedColumns}
-          rowHeaders={matrixRowNames || true}
-          manualColumnResize
-        />
-      ) : (
-        <MatrixGraphView matrix={matrix} />
-      )}
+      <Handsontable
+        ref={hotTableComponent}
+        data={grid}
+        width="100%"
+        height="100%"
+        stretchH="all"
+        className="editableMatrix"
+        colHeaders
+        rowHeaderWidth={matrixRowNames ? 150 : undefined}
+        afterChange={(change, source) =>
+          onUpdate && handleSlice(change || [], source)
+        }
+        beforeKeyDown={(e) => handleKeyDown(e)}
+        columns={formattedColumns}
+        rowHeaders={matrixRowNames || true}
+        manualColumnResize
+      />
     </Root>
   );
 }

@@ -316,7 +316,7 @@ export const getCurrentClusters = (
   type: "thermals" | "renewables",
   studyId: string,
   state: AppState,
-): Array<Cluster> => {
+): Cluster[] => {
   const currentStudyState = getStudySynthesesState(state);
   const { currentArea } = currentStudyState;
   const clusters =

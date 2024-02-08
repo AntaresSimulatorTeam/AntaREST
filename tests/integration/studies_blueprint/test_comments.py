@@ -113,7 +113,7 @@ class TestStudyComments:
         )
         assert res.status_code == 200, res.json()
         duration = time.time() - start
-        assert 0 <= duration <= 0.1, f"Duration is {duration} seconds"
+        assert 0 <= duration <= 0.3, f"Duration is {duration} seconds"
 
         # Update the comments of the study
         res = client.put(

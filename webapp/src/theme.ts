@@ -192,6 +192,36 @@ const theme = createTheme({
       outlinedHoverBackground: "rgba(102, 187, 106, 0.5)",
       outlinedRestingBackground: "rgba(102, 187, 106, 0.08)",
     },
+    warning: {
+      dark: "#F57C00",
+      main: "#FF9800",
+      light: "#FFB74D",
+      contrast: "#FFFFFF",
+      containedHoverBackground:
+        "linear-gradient(0deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), #FF9800",
+      outlinedHoverBackground: "rgba(255, 152, 0, 0.08)",
+      outlinedRestingBackground: "rgba(255, 152, 0, 0.05)",
+    },
+    error: {
+      dark: "#D32F2F",
+      main: "#F44336",
+      light: "#E57373",
+      contrast: "#FFFFFF",
+      containedHoverBackground:
+        "linear-gradient(0deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), #F44336",
+      outlinedHoverBackground: "rgba(244, 67, 54, 0.08)",
+      outlinedRestingBackground: "rgba(244, 67, 54, 0.05)",
+    },
+    info: {
+      dark: "#1976D2",
+      main: "#2196F3",
+      light: "#64B5F6",
+      contrast: "#FFFFFF",
+      containedHoverBackground:
+        "linear-gradient(0deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), #2196F3",
+      outlinedHoverBackground: "rgba(33, 150, 243, 0.08)",
+      outlinedRestingBackground: "rgba(33, 150, 243, 0.05)",
+    },
     text: {
       primary: "#FFFFFF",
       secondary: "rgba(255, 255, 255, 0.7)",

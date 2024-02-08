@@ -50,7 +50,7 @@ const Row = memo((props: ListChildComponentProps) => {
 
 Row.displayName = "Row";
 
-export type DraggableListProps = {
+export interface DraggableListProps {
   items: CommandItem[];
   generationStatus: boolean;
   generationIndex: number;
@@ -62,7 +62,7 @@ export type DraggableListProps = {
   onCommandExport: (index: number) => void;
   onExpanded: (index: number, value: boolean) => void;
   expandedIndex: number;
-};
+}
 
 function CommandListView({
   items,

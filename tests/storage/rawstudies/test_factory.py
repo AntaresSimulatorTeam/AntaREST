@@ -1,4 +1,3 @@
-from pathlib import Path
 from unittest.mock import Mock
 
 from antarest.core.interfaces.cache import CacheConstants
@@ -7,10 +6,11 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import FileSt
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
+from tests.storage.rawstudies.samples import ASSETS_DIR
 
 
-def test_renewable_subtree():
-    path = Path(__file__).parent / "samples/v810/sample1"
+def test_renewable_subtree() -> None:
+    path = ASSETS_DIR / "v810/sample1"
     context: ContextServer = Mock(specs=ContextServer)
     config = build(path, "")
     assert config.get_renewable_ids("area") == ["la_rochelle", "oleron"]
@@ -41,8 +41,8 @@ def test_renewable_subtree():
     }
 
 
-def test_factory_cache():
-    path = Path(__file__).parent / "samples/v810/sample1"
+def test_factory_cache() -> None:
+    path = ASSETS_DIR / "v810/sample1"
 
     cache = Mock()
     factory = StudyFactory(matrix=Mock(), resolver=Mock(), cache=cache)

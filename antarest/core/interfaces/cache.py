@@ -19,13 +19,10 @@ class CacheConstants(Enum):
       This cache is used by the `create_from_fs` function when retrieving the configuration
       of a study from the data on the disk.
 
-    - `STUDY_LISTING`: variable used to store objects of type `StudyMetadataDTO`.
-      This cache is used by the `get_studies_information` function to store the list of studies.
     """
 
     RAW_STUDY = "RAW_STUDY"
     STUDY_FACTORY = "STUDY_FACTORY"
-    STUDY_LISTING = "STUDY_LISTING"
 
 
 class ICache:

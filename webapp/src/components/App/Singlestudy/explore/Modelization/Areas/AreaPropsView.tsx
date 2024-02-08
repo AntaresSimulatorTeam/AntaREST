@@ -15,10 +15,10 @@ function AreaPropsView(props: PropsType) {
   const { onClick, currentArea, studyId } = props;
   const areas = useAppSelector((state) => getAreas(state, studyId));
   const [areaNameFilter, setAreaNameFilter] = useState<string>();
-  const [filteredAreas, setFilteredAreas] = useState<Array<Area>>(areas || []);
+  const [filteredAreas, setFilteredAreas] = useState<Area[]>(areas || []);
 
   useEffect(() => {
-    const filter = (): Array<Area> => {
+    const filter = (): Area[] => {
       if (areas) {
         return areas.filter(
           (s) =>

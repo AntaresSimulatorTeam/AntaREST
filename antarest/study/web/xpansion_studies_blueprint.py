@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Any, List, Optional, Union
+import typing as t
 
 from fastapi import APIRouter, Depends, File, UploadFile
 from starlette.responses import Response
@@ -12,9 +12,10 @@ from antarest.core.requests import RequestParameters
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.study.business.xpansion_management import (
+    GetXpansionSettings,
+    UpdateXpansionSettings,
     XpansionCandidateDTO,
     XpansionResourceFileType,
-    XpansionSettingsDTO,
 )
 from antarest.study.service import StudyService
 
@@ -24,13 +25,10 @@ logger = logging.getLogger(__name__)
 def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRouter:
     """
     Endpoint implementation for xpansion studies management
+
     Args:
         study_service: study service facade to handle request
-        ftm: file transfer manager
         config: main server configuration
-
-    Returns:
-
     """
     bp = APIRouter(prefix="/v1")
     auth = Auth(config)
@@ -42,9 +40,9 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
     )
     def create_xpansion_configuration(
         uuid: str,
-        file: Optional[UploadFile] = File(None),
+        file: t.Optional[UploadFile] = File(None),
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    ) -> t.Any:
         logger.info(
             f"Creating Xpansion Configuration for study {uuid}",
             extra={"user": current_user.id},
@@ -60,7 +58,7 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
     def delete_xpansion_configuration(
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    ) -> t.Any:
         logger.info(
             f"Deleting Xpansion Configuration for study {uuid}",
             extra={"user": current_user.id},
@@ -72,12 +70,11 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         "/studies/{uuid}/extensions/xpansion/settings",
         tags=[APITag.xpansion_study_management],
         summary="Get Xpansion Settings",
-        response_model=XpansionSettingsDTO,
     )
     def get_settings(
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    ) -> GetXpansionSettings:
         logger.info(
             f"Fetching Xpansion Settings of the study {uuid}",
             extra={"user": current_user.id},
@@ -89,19 +86,18 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         "/studies/{uuid}/extensions/xpansion/settings",
         tags=[APITag.xpansion_study_management],
         summary="Update Xpansion Settings",
-        response_model=XpansionSettingsDTO,
     )
     def update_settings(
         uuid: str,
-        xpansion_settings_dto: XpansionSettingsDTO,
+        xpansion_settings: UpdateXpansionSettings,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    ) -> GetXpansionSettings:
         logger.info(
             f"Updating Xpansion Settings Of Study {uuid}",
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
-        return study_service.update_xpansion_settings(uuid, xpansion_settings_dto, params)
+        return study_service.update_xpansion_settings(uuid, xpansion_settings, params)
 
     @bp.put(
         "/studies/{uuid}/extensions/xpansion/settings/additional-constraints",
@@ -112,13 +108,13 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         uuid: str,
         filename: str = "",
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    ) -> GetXpansionSettings:
         logger.info(
             f"Updating Xpansion Settings Of Study {uuid} with additional constraints {filename}",
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
-        study_service.update_xpansion_constraints_settings(uuid, filename, params)
+        return study_service.update_xpansion_constraints_settings(uuid, filename, params)
 
     @bp.post(
         "/studies/{uuid}/extensions/xpansion/candidates",
@@ -129,7 +125,7 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         uuid: str,
         xpansion_candidate_dto: XpansionCandidateDTO,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    ) -> XpansionCandidateDTO:
         logger.info(
             f"Adding new candidate {xpansion_candidate_dto.dict(by_alias=True)} to study {uuid}",
             extra={"user": current_user.id},
@@ -141,13 +137,12 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         "/studies/{uuid}/extensions/xpansion/candidates/{candidate_name}",
         tags=[APITag.xpansion_study_management],
         summary="Get Xpansion Candidate",
-        response_model=XpansionCandidateDTO,
     )
     def get_candidate(
         uuid: str,
         candidate_name: str,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    ) -> XpansionCandidateDTO:
         logger.info("Fetching study list", extra={"user": current_user.id})
         params = RequestParameters(user=current_user)
         return study_service.get_candidate(uuid, candidate_name, params)
@@ -156,12 +151,11 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         "/studies/{uuid}/extensions/xpansion/candidates",
         tags=[APITag.xpansion_study_management],
         summary="Get Xpansion Candidates",
-        response_model=List[XpansionCandidateDTO],
     )
     def get_candidates(
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    ) -> t.Sequence[XpansionCandidateDTO]:
         logger.info("Fetching study list", extra={"user": current_user.id})
         params = RequestParameters(user=current_user)
         return study_service.get_candidates(uuid, params)
@@ -176,7 +170,7 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         candidate_name: str,
         xpansion_candidate_dto: XpansionCandidateDTO,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    ) -> t.Any:
         logger.info(
             f"Updating xpansion candidate {xpansion_candidate_dto.name} of the study {uuid}",
             extra={"user": current_user.id},
@@ -193,7 +187,7 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         uuid: str,
         candidate_name: str,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    ) -> t.Any:
         logger.info(
             f"Deleting candidate {candidate_name} of the study {uuid}",
             extra={"user": current_user.id},
@@ -211,7 +205,7 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         resource_type: XpansionResourceFileType,
         file: UploadFile = File(...),
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    ) -> t.Any:
         logger.info(
             f"Add xpansion {resource_type} files in the study {uuid}",
             extra={"user": current_user.id},
@@ -233,7 +227,7 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         resource_type: XpansionResourceFileType,
         filename: str,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    ) -> t.Any:
         logger.info(
             f"Deleting xpansion {resource_type} file from the study {uuid}",
             extra={"user": current_user.id},
@@ -255,7 +249,7 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         resource_type: XpansionResourceFileType,
         filename: str,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    ) -> t.Any:
         logger.info(
             f"Getting xpansion {resource_type} file {filename} from the study {uuid}",
             extra={"user": current_user.id},
@@ -265,7 +259,7 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
             StudyPermissionType.READ,
             RequestParameters(user=current_user),
         )
-        output: Union[JSON, bytes, str] = study_service.xpansion_manager.get_resource_content(
+        output: t.Union[JSON, bytes, str] = study_service.xpansion_manager.get_resource_content(
             study, resource_type, filename
         )
 
@@ -292,9 +286,9 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
     )
     def list_resources(
         uuid: str,
-        resource_type: Optional[XpansionResourceFileType] = None,
+        resource_type: t.Optional[XpansionResourceFileType] = None,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    ) -> t.Any:
         logger.info(
             f"Getting xpansion {resource_type} resources files from the study {uuid}",
             extra={"user": current_user.id},

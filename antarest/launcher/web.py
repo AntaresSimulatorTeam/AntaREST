@@ -11,8 +11,16 @@ from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.jwt import JWTUser
 from antarest.core.requests import RequestParameters
 from antarest.core.utils.web import APITag
-from antarest.launcher.model import JobCreationDTO, JobResultDTO, LauncherEnginesDTO, LauncherParametersDTO, LogType
+from antarest.launcher.model import (
+    JobCreationDTO,
+    JobResultDTO,
+    LauncherEnginesDTO,
+    LauncherLoadDTO,
+    LauncherParametersDTO,
+    LogType,
+)
 from antarest.launcher.service import LauncherService
+from antarest.launcher.ssh_client import SlurmError
 from antarest.login.auth import Auth
 
 logger = logging.getLogger(__name__)
@@ -34,12 +42,12 @@ class UnknownSolverConfig(HTTPException):
 
 
 def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
-    bp = APIRouter(prefix="/v1")
+    bp = APIRouter(prefix="/v1/launcher")
 
     auth = Auth(config)
 
     @bp.post(
-        "/launcher/run/{study_id}",
+        "/run/{study_id}",
         tags=[APITag.launcher],
         summary="Run study",
         response_model=JobCreationDTO,
@@ -69,7 +77,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         )
 
     @bp.get(
-        "/launcher/jobs",
+        "/jobs",
         tags=[APITag.launcher],
         summary="Retrieve jobs",
         response_model=List[JobResultDTO],
@@ -88,7 +96,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         return [job.to_dto() for job in service.get_jobs(study, params, filter_orphans, latest)]
 
     @bp.get(
-        "/launcher/jobs/{job_id}/logs",
+        "/jobs/{job_id}/logs",
         tags=[APITag.launcher],
         summary="Retrieve job logs from job id",
     )
@@ -102,7 +110,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         return service.get_log(job_id, log_type, params)
 
     @bp.get(
-        "/launcher/jobs/{job_id}/output",
+        "/jobs/{job_id}/output",
         tags=[APITag.launcher],
         summary="Export job output",
         response_model=FileDownloadTaskDTO,
@@ -119,7 +127,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         return service.download_output(job_id, params)
 
     @bp.post(
-        "/launcher/jobs/{job_id}/kill",
+        "/jobs/{job_id}/kill",
         tags=[APITag.launcher],
         summary="Kill job",
     )
@@ -136,7 +144,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         ).to_dto()
 
     @bp.get(
-        "/launcher/jobs/{job_id}",
+        "/jobs/{job_id}",
         tags=[APITag.launcher],
         summary="Retrieve job info from job id",
         response_model=JobResultDTO,
@@ -147,7 +155,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         return service.get_result(job_id, params).to_dto()
 
     @bp.get(
-        "/launcher/jobs/{job_id}/progress",
+        "/jobs/{job_id}/progress",
         tags=[APITag.launcher],
         summary="Retrieve job progress from job id",
         response_model=int,
@@ -161,7 +169,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         return int(service.get_launch_progress(job_id, params))
 
     @bp.delete(
-        "/launcher/jobs/{job_id}",
+        "/jobs/{job_id}",
         tags=[APITag.launcher],
         summary="Remove job",
         responses={204: {"description": "Job removed"}},
@@ -172,7 +180,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         service.remove_job(job_id, params)
 
     @bp.get(
-        "/launcher/engines",
+        "/engines",
         tags=[APITag.launcher],
         summary="Retrieve available engines",
         response_model=LauncherEnginesDTO,
@@ -182,20 +190,26 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         return LauncherEnginesDTO(engines=service.get_launchers())
 
     @bp.get(
-        "/launcher/load",
+        "/load",
         tags=[APITag.launcher],
-        summary="Get the cluster load in usage percent",
+        summary="Get the SLURM cluster or local machine load",
+        response_model=LauncherLoadDTO,
     )
-    def get_load(
-        from_cluster: bool = False,
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Dict[str, float]:
-        params = RequestParameters(user=current_user)
+    def get_load() -> LauncherLoadDTO:
         logger.info("Fetching launcher load")
-        return service.get_load(from_cluster)
+        try:
+            return service.get_load()
+        except SlurmError as e:
+            logger.warning(e, exc_info=e)
+            return LauncherLoadDTO(
+                allocated_cpu_rate=0.0,
+                cluster_load_rate=0.0,
+                nb_queued_jobs=0,
+                launcher_status=f"FAILED: {e}",
+            )
 
     @bp.get(
-        "/launcher/versions",
+        "/versions",
         tags=[APITag.launcher],
         summary="Get list of supported solver versions",
         response_model=List[str],
@@ -232,7 +246,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
 
     # noinspection SpellCheckingInspection
     @bp.get(
-        "/launcher/nbcores",  # We avoid "nb_cores" and "nb-cores" in endpoints
+        "/nbcores",  # We avoid "nb_cores" and "nb-cores" in endpoints
         tags=[APITag.launcher],
         summary="Retrieving Min, Default, and Max Core Count",
         response_model=Dict[str, int],
