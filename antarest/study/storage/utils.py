@@ -230,7 +230,12 @@ def assert_permission(
         permission_type: level of permission
         raising: raise error if permission not matched
 
-    Returns: true if permission match, false if not raising.
+    Returns:
+        `True` if the user has the required permissions, `False` otherwise.
+
+    Raises:
+        `UserHasNotPermissionError`: If the raising parameter is set to `True`
+            and the user does not have the required permissions.
     """
     studies = [study] if study else []
     return assert_permission_on_studies(user, studies, permission_type, raising=raising)
