@@ -53,6 +53,6 @@ class PatchService:
             study.additional_data.patch = patch.json()
             self.repository.save(study)
 
-        patch_content = patch.json()
         patch_path = (Path(study.path)) / "patch.json"
-        patch_path.write_text(patch_content)
+        patch_path.parent.mkdir(parents=True, exist_ok=True)
+        patch_path.write_text(patch.json())

@@ -803,7 +803,7 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
 
     @bp.put(
         "/studies/{study_id}/unarchive",
-        summary="Dearchive a study",
+        summary="Unarchive a study",
         tags=[APITag.study_management],
     )
     def unarchive_study(
@@ -814,21 +814,6 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         study_id = sanitize_uuid(study_id)
         params = RequestParameters(user=current_user)
         return study_service.unarchive(study_id, params)
-
-    @bp.post(
-        "/studies/_invalidate_cache_listing",
-        summary="Invalidate the study listing cache",
-        tags=[APITag.study_management],
-    )
-    def invalidate_study_listing_cache(
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> t.Any:
-        logger.info(
-            "Invalidating the study listing cache",
-            extra={"user": current_user.id},
-        )
-        params = RequestParameters(user=current_user)
-        return study_service.invalidate_cache_listing(params)
 
     @bp.get(
         "/studies/{uuid}/disk-usage",

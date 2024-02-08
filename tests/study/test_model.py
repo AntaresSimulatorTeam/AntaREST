@@ -120,3 +120,13 @@ class TestStudy:
             assert len(studies) == 1
             assert set(study.id for study in studies) == {study_id_1}
             assert set(tag.label for tag in studies[0].tags) == {"test-tag-1"}
+
+            # verify updating works
+            study = db_session.query(Study).get(study_id_1)
+            study.tags = [Tag(label="test-tag-2"), Tag(label="test-tag-3")]
+            db_session.merge(study)
+            db_session.commit()
+            study_tag_pairs = db_session.query(StudyTag).all()
+            assert len(study_tag_pairs) == 2
+            assert set(e.tag_label for e in study_tag_pairs) == {"test-tag-2", "test-tag-3"}
+            assert set(e.study_id for e in study_tag_pairs) == {study_id_1}

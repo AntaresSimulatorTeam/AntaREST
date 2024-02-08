@@ -32,7 +32,7 @@ if t.TYPE_CHECKING:
 
 DEFAULT_WORKSPACE_NAME = "default"
 
-STUDY_REFERENCE_TEMPLATES: t.Dict[str, str] = {
+STUDY_REFERENCE_TEMPLATES: t.Mapping[str, str] = {
     "600": "empty_study_613.zip",
     "610": "empty_study_613.zip",
     "640": "empty_study_613.zip",
@@ -61,6 +61,10 @@ groups_metadata = Table(
 class StudyTag(Base):  # type:ignore
     """
     A table to manage the many-to-many relationship between `Study` and `Tag`
+
+    Attributes:
+        study_id (str): The ID of the study associated with the tag.
+        tag_label (str): The label of the tag associated with the study.
     """
 
     __tablename__ = "study_tag"
@@ -69,13 +73,25 @@ class StudyTag(Base):  # type:ignore
     study_id: str = Column(String(36), ForeignKey("study.id", ondelete="CASCADE"), index=True, nullable=False)
     tag_label: str = Column(String(40), ForeignKey("tag.label", ondelete="CASCADE"), index=True, nullable=False)
 
-    def __str__(self) -> str:
+    def __str__(self) -> str:  # pragma: no cover
         return f"[StudyTag] study_id={self.study_id}, tag={self.tag}"
+
+    def __repr__(self) -> str:  # pragma: no cover
+        cls_name = self.__class__.__name__
+        study_id = self.study_id
+        tag = self.tag
+        return f"{cls_name}({study_id=}, {tag=})"
 
 
 class Tag(Base):  # type:ignore
     """
-    A table to store all tags
+    Represents a tag in the database.
+
+    This class is used to store tags associated with studies.
+
+    Attributes:
+        label (str): The label of the tag.
+        color (str): The color code associated with the tag.
     """
 
     __tablename__ = "tag"
@@ -85,8 +101,14 @@ class Tag(Base):  # type:ignore
 
     studies: t.List["Study"] = relationship("Study", secondary=StudyTag.__table__, back_populates="tags")
 
-    def __str__(self) -> str:
-        return f"[Tag] label={self.label}, css-color-code={self.color}"
+    def __str__(self) -> str:  # pragma: no cover
+        return t.cast(str, self.label)
+
+    def __repr__(self) -> str:  # pragma: no cover
+        cls_name = self.__class__.__name__
+        label = self.label
+        color = self.color
+        return f"{cls_name}({label=}, {color=})"
 
 
 class StudyContentStatus(enum.Enum):

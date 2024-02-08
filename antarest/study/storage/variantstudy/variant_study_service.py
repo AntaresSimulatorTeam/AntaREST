@@ -373,7 +373,6 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         self.repository.save(
             metadata=variant_study,
             update_modification_date=True,
-            update_in_listing=False,
         )
         for child in self.repository.get_children(parent_id=variant_study.id):
             self.invalidate_cache(child, invalidate_self_snapshot=True)
@@ -631,7 +630,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                 custom_event_messages=CustomTaskEventMessages(start=metadata.id, running=metadata.id, end=metadata.id),
                 request_params=RequestParameters(DEFAULT_ADMIN_USER),
             )
-            self.repository.save(metadata, update_in_listing=False)
+            self.repository.save(metadata)
             return str(metadata.generation_task)
 
     def generate(
