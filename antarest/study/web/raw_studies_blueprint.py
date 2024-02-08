@@ -317,7 +317,7 @@ def create_raw_study_routes(
     ) -> FileResponse:
         parameters = RequestParameters(user=current_user)
         df_matrix = study_service.get_matrix_with_index_and_header(
-            study_id=uuid, path=matrix_path, with_index=with_index, with_columns=with_header, parameters=parameters
+            study_id=uuid, path=matrix_path, with_index=with_index, with_header=with_header, parameters=parameters
         )
 
         matrix_name = Path(matrix_path).stem
