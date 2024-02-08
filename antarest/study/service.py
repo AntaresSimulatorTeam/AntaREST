@@ -127,6 +127,7 @@ MAX_MISSING_STUDY_TIMEOUT = 2  # days
 
 
 def get_disk_usage(path: t.Union[str, Path]) -> int:
+    """Calculate the total disk usage (in bytes) of a study in a compressed file or directory."""
     path = Path(path)
     if path.suffix.lower() in {".zip", "7z"}:
         return os.path.getsize(path)
@@ -2358,19 +2359,23 @@ class StudyService:
 
     def get_disk_usage(self, uuid: str, params: RequestParameters) -> int:
         """
-        This function computes the disk size used to store the study with
-        id=`uuid` if such study exists and user has permissions
-        otherwise it raises an error
+        Calculates the size of the disk used to store the study if the user has permissions.
+
+        The calculation of disk space concerns the entire study directory.
+        In the case of a variant, the snapshot folder must be taken into account, as well as the outputs.
 
         Args:
-            uuid: the study id
-            params: user request parameters
+            uuid: the study ID.
+            params: user request parameters.
 
-        return:
-            disk usage of the study with id = `uuid`
+        Returns:
+            Disk usage of the study in bytes.
+
+        Raises:
+            UserHasNotPermissionError: If the user does not have the READ permissions (HTTP status 403).
         """
         study = self.get_study(uuid=uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
-        study_path = self.storage_service.get_storage(study).get_study_path(study)
-        # If the study is a variant, it's possible that it only exists in db and not on disk. If so, we return 0.
-        return get_disk_usage(path=str(study_path)) if study_path.exists() else 0
+        study_path = self.storage_service.raw_study_service.get_study_path(study)
+        # If the study is a variant, it's possible that it only exists in DB and not on disk. If so, we return 0.
+        return get_disk_usage(study_path) if study_path.exists() else 0
