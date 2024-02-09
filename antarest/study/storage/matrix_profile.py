@@ -1,3 +1,4 @@
+import calendar
 import copy
 import typing as t
 from pathlib import Path
@@ -79,20 +80,7 @@ SPECIFIC_MATRICES = {
     "input/hydro/common/capacity/inflowPattern_*": MatrixProfile(cols=["Inflow Pattern (X)"], rows=[], stats=False),
     "input/hydro/prepro/*/energy": MatrixProfile(
         cols=["Expectation (MWh)", "Std Deviation (MWh)", "Min. (MWh)", "Max. (MWh)", "ROR Share"],
-        rows=[
-            "January",
-            "February",
-            "March",
-            "April",
-            "May",
-            "June",
-            "July",
-            "August",
-            "September",
-            "October",
-            "November",
-            "December",
-        ],
+        rows=calendar.month_name[1:],
         stats=False,
     ),
     "input/thermal/prepro/*/*/modulation": MatrixProfile(
