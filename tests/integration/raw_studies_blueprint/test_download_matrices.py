@@ -62,7 +62,7 @@ class TestDownloadMatrices:
         assert res.status_code == 200
 
         # Really generates the snapshot
-        client.get(f"/v1/studies/{variant_id}/areas", headers=user_headers)
+        res = client.get(f"/v1/studies/{variant_id}/areas", headers=user_headers)
         assert res.status_code == 200
 
         # =============================
