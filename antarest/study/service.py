@@ -97,6 +97,7 @@ from antarest.study.model import (
     StudySimResultDTO,
 )
 from antarest.study.repository import StudyFilter, StudyMetadataRepository, StudyPagination, StudySortBy
+from antarest.study.storage.matrix_profile import get_matrix_profiles_by_version
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import ChildNotFoundError
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
@@ -113,14 +114,7 @@ from antarest.study.storage.study_upgrader import (
     should_study_be_denormalized,
     upgrade_study,
 )
-from antarest.study.storage.utils import (
-    MatrixProfile,
-    assert_permission,
-    get_matrix_profile_by_version,
-    get_start_date,
-    is_managed,
-    remove_from_cache,
-)
+from antarest.study.storage.utils import assert_permission, get_start_date, is_managed, remove_from_cache
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command.update_comments import UpdateComments
@@ -150,40 +144,6 @@ def get_disk_usage(path: t.Union[str, Path]) -> int:
             elif entry.is_dir():
                 total_size += get_disk_usage(path=str(entry.path))
     return total_size
-
-
-def _handle_specific_matrices(
-    df: pd.DataFrame,
-    matrix_profile: MatrixProfile,
-    matrix_path: str,
-    *,
-    with_index: bool,
-    with_header: bool,
-) -> pd.DataFrame:
-    if with_header:
-        if Path(matrix_path).parts[1] == "links":
-            cols = _handle_links_columns(matrix_path, matrix_profile)
-        else:
-            cols = matrix_profile.cols
-        if cols:
-            df.columns = pd.Index(cols)
-    rows = matrix_profile.rows
-    if with_index and rows:
-        df.index = rows  # type: ignore
-    return df
-
-
-def _handle_links_columns(matrix_path: str, matrix_profile: MatrixProfile) -> t.List[str]:
-    path_parts = Path(matrix_path).parts
-    area_id_1 = path_parts[2]
-    area_id_2 = path_parts[3]
-    result = matrix_profile.cols
-    for k, col in enumerate(result):
-        if col == "Hurdle costs direct":
-            result[k] = f"{col} ({area_id_1}->{area_id_2})"
-        elif col == "Hurdle costs indirect":
-            result[k] = f"{col} ({area_id_2}->{area_id_1})"
-    return result
 
 
 class StudyUpgraderTask:
@@ -2457,12 +2417,11 @@ class StudyService:
             )
             df_matrix.index = time_column
 
-        matrix_profiles = get_matrix_profile_by_version(int(study.version))
+        matrix_profiles = get_matrix_profiles_by_version(int(study.version))
         for pattern, matrix_profile in matrix_profiles.items():
             if fnmatch.fnmatch(path, pattern):
-                return _handle_specific_matrices(
+                return matrix_profile.handle_specific_matrices(
                     df_matrix,
-                    matrix_profile,
                     path,
                     with_index=with_index,
                     with_header=with_header,
