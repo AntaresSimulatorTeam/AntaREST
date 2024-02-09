@@ -15,8 +15,8 @@ class TestDownloadMatrices:
     Checks the retrieval of matrices with the endpoint GET studies/uuid/raw/download
     """
 
-    def test_download_matrices(self, client: TestClient, admin_access_token: str, study_id: str) -> None:
-        admin_headers = {"Authorization": f"Bearer {admin_access_token}"}
+    def test_download_matrices(self, client: TestClient, user_access_token: str, study_id: str) -> None:
+        user_headers = {"Authorization": f"Bearer {user_access_token}"}
 
         # =============================
         #  STUDIES PREPARATION
@@ -25,20 +25,20 @@ class TestDownloadMatrices:
         # Manage parent study and upgrades it to v8.2
         # This is done to test matrix headers according to different versions
         copied = client.post(
-            f"/v1/studies/{study_id}/copy", params={"dest": "copied", "use_task": False}, headers=admin_headers
+            f"/v1/studies/{study_id}/copy", params={"dest": "copied", "use_task": False}, headers=user_headers
         )
         parent_id = copied.json()
-        res = client.put(f"/v1/studies/{parent_id}/upgrade", params={"target_version": 820}, headers=admin_headers)
+        res = client.put(f"/v1/studies/{parent_id}/upgrade", params={"target_version": 820}, headers=user_headers)
         assert res.status_code == 200
         task_id = res.json()
         assert task_id
-        task = wait_task_completion(client, admin_access_token, task_id, timeout=20)
+        task = wait_task_completion(client, user_access_token, task_id, timeout=20)
         assert task.status == TaskStatus.COMPLETED
 
         # Create Variant
         res = client.post(
             f"/v1/studies/{parent_id}/variants",
-            headers=admin_headers,
+            headers=user_headers,
             params={"name": "variant_1"},
         )
         assert res.status_code == 200
@@ -48,19 +48,19 @@ class TestDownloadMatrices:
         area_name = "new_area"
         res = client.post(
             f"/v1/studies/{variant_id}/areas",
-            headers=admin_headers,
+            headers=user_headers,
             json={"name": area_name, "type": "AREA", "metadata": {"country": "FR"}},
         )
         assert res.status_code in {200, 201}
 
         # Change study start_date
         res = client.put(
-            f"/v1/studies/{variant_id}/config/general/form", json={"firstMonth": "july"}, headers=admin_headers
+            f"/v1/studies/{variant_id}/config/general/form", json={"firstMonth": "july"}, headers=user_headers
         )
         assert res.status_code == 200
 
         # Really generates the snapshot
-        client.get(f"/v1/studies/{variant_id}/areas", headers=admin_headers)
+        client.get(f"/v1/studies/{variant_id}/areas", headers=user_headers)
         assert res.status_code == 200
 
         # =============================
@@ -76,7 +76,7 @@ class TestDownloadMatrices:
             res = client.get(
                 f"/v1/studies/{uuid}/raw/download",
                 params={"path": path},
-                headers=admin_headers,
+                headers=user_headers,
             )
             assert res.status_code == 200
             # noinspection SpellCheckingInspection
@@ -104,7 +104,7 @@ class TestDownloadMatrices:
             actual_matrix = dataframe.to_dict(orient="split")
 
             # asserts that the result is the same as the one we get with the classic get /raw endpoint
-            res = client.get(f"/v1/studies/{uuid}/raw", params={"path": path, "formatted": True}, headers=admin_headers)
+            res = client.get(f"/v1/studies/{uuid}/raw", params={"path": path, "formatted": True}, headers=user_headers)
             expected_matrix = res.json()
             assert actual_matrix == expected_matrix
 
@@ -119,7 +119,7 @@ class TestDownloadMatrices:
             res = client.get(
                 f"/v1/studies/{parent_id}/raw/download",
                 params={"path": raw_matrix_path, "format": "TSV", "header": header, "index": index},
-                headers=admin_headers,
+                headers=user_headers,
             )
             assert res.status_code == 200
             assert res.headers["content-type"] == "text/tab-separated-values; charset=utf-8"
@@ -140,7 +140,7 @@ class TestDownloadMatrices:
         res = client.get(
             f"/v1/studies/{study_id}/raw/download",
             params={"path": "input/links/de/fr", "format": "tsv", "index": False},
-            headers=admin_headers,
+            headers=user_headers,
         )
         assert res.status_code == 200
         content = io.BytesIO(res.content)
@@ -160,7 +160,7 @@ class TestDownloadMatrices:
         res = client.get(
             f"/v1/studies/{parent_id}/raw/download",
             params={"path": "input/links/de/fr_parameters", "format": "tsv"},
-            headers=admin_headers,
+            headers=user_headers,
         )
         assert res.status_code == 200
         content = io.BytesIO(res.content)
@@ -177,7 +177,7 @@ class TestDownloadMatrices:
         # allocation and correlation matrices
         for path in ["input/hydro/allocation", "input/hydro/correlation"]:
             res = client.get(
-                f"/v1/studies/{parent_id}/raw/download", params={"path": path, "format": "tsv"}, headers=admin_headers
+                f"/v1/studies/{parent_id}/raw/download", params={"path": path, "format": "tsv"}, headers=user_headers
             )
             assert res.status_code == 200
             content = io.BytesIO(res.content)
@@ -189,7 +189,7 @@ class TestDownloadMatrices:
         res = client.get(
             f"/v1/studies/{study_id}/raw/download",
             params={"path": "input/hydro/common/capacity/waterValues_de", "format": "tsv"},
-            headers=admin_headers,
+            headers=user_headers,
         )
         assert res.status_code == 200
         content = io.BytesIO(res.content)
@@ -200,7 +200,7 @@ class TestDownloadMatrices:
         res = client.get(
             f"/v1/studies/{parent_id}/raw/download",
             params={"path": "input/thermal/prepro/de/01_solar/modulation", "format": "tsv"},
-            headers=admin_headers,
+            headers=user_headers,
         )
         assert res.status_code == 200
         content = io.BytesIO(res.content)
@@ -222,7 +222,7 @@ class TestDownloadMatrices:
                 "path": "output/20201014-1422eco-hello/economy/mc-ind/00001/links/de/fr/values-hourly",
                 "format": "tsv",
             },
-            headers=admin_headers,
+            headers=user_headers,
         )
         assert res.status_code == 200
         content = io.BytesIO(res.content)
@@ -245,7 +245,7 @@ class TestDownloadMatrices:
         res = client.get(
             f"/v1/studies/{study_id}/raw/download",
             params={"path": "input/hydro/prepro/de/energy", "format": "tsv"},
-            headers=admin_headers,
+            headers=user_headers,
         )
         assert res.status_code == 200
         content = io.BytesIO(res.content)
@@ -262,7 +262,7 @@ class TestDownloadMatrices:
         res = client.get(
             f"/v1/studies/{fake_str}/raw/download",
             params={"path": raw_matrix_path, "format": "tsv"},
-            headers=admin_headers,
+            headers=user_headers,
         )
         assert res.status_code == 404
         assert res.json()["exception"] == "StudyNotFoundError"
@@ -271,7 +271,7 @@ class TestDownloadMatrices:
         res = client.get(
             f"/v1/studies/{parent_id}/raw/download",
             params={"path": f"input/links/de/{fake_str}", "format": "tsv"},
-            headers=admin_headers,
+            headers=user_headers,
         )
         assert res.status_code == 404
         assert res.json()["exception"] == "ChildNotFoundError"
@@ -280,7 +280,7 @@ class TestDownloadMatrices:
         res = client.get(
             f"/v1/studies/{parent_id}/raw/download",
             params={"path": "settings/generaldata", "format": "tsv"},
-            headers=admin_headers,
+            headers=user_headers,
         )
         assert res.status_code == 404
         assert res.json()["exception"] == "IncorrectPathError"
@@ -290,7 +290,7 @@ class TestDownloadMatrices:
         res = client.get(
             f"/v1/studies/{parent_id}/raw/download",
             params={"path": raw_matrix_path, "format": fake_str},
-            headers=admin_headers,
+            headers=user_headers,
         )
         assert res.status_code == 422
         assert res.json()["exception"] == "RequestValidationError"
