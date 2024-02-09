@@ -183,8 +183,7 @@ class TestDownloadMatrices:
             content = io.BytesIO(res.content)
             dataframe = pd.read_csv(content, index_col=0, sep="\t")
             assert list(dataframe.index) == list(dataframe.columns) == ["de", "es", "fr", "it"]
-            for i in range((len(dataframe))):
-                assert dataframe.iloc[i, i] == 1.0
+            assert all(dataframe.iloc[i, i] == 1.0 for i in range(len(dataframe)))
 
         # test for empty matrix
         res = client.get(
