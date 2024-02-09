@@ -49,7 +49,7 @@ class MatrixProfile(t.NamedTuple):
 
 
 # noinspection SpellCheckingInspection
-SPECIFIC_MATRICES = {
+_SPECIFIC_MATRICES = {
     "input/hydro/common/capacity/creditmodulations_*": MatrixProfile(
         cols=[str(i) for i in range(101)],
         rows=["Generating Power", "Pumping Power"],
@@ -120,8 +120,8 @@ SPECIFIC_MATRICES = {
     ),
 }
 
-SPECIFIC_MATRICES_820 = copy.deepcopy(SPECIFIC_MATRICES)
-SPECIFIC_MATRICES_820["input/links/*/*"] = MatrixProfile(
+_SPECIFIC_MATRICES_820 = copy.deepcopy(_SPECIFIC_MATRICES)
+_SPECIFIC_MATRICES_820["input/links/*/*"] = MatrixProfile(
     cols=[
         "Hurdle costs direct",
         "Hurdle costs indirect",
@@ -134,15 +134,15 @@ SPECIFIC_MATRICES_820["input/links/*/*"] = MatrixProfile(
     stats=False,
 )
 
-SPECIFIC_MATRICES_870 = copy.deepcopy(SPECIFIC_MATRICES_820)
+_SPECIFIC_MATRICES_870 = copy.deepcopy(_SPECIFIC_MATRICES_820)
 # noinspection SpellCheckingInspection
-SPECIFIC_MATRICES_870["input/bindingconstraints/*"] = MatrixProfile(cols=[], rows=[], stats=False)
+_SPECIFIC_MATRICES_870["input/bindingconstraints/*"] = MatrixProfile(cols=[], rows=[], stats=False)
 
 
 def get_matrix_profiles_by_version(study_version: int) -> t.Dict[str, MatrixProfile]:
     if study_version < 820:
-        return SPECIFIC_MATRICES
+        return _SPECIFIC_MATRICES
     elif study_version < 870:
-        return SPECIFIC_MATRICES_820
+        return _SPECIFIC_MATRICES_820
     else:
-        return SPECIFIC_MATRICES_870
+        return _SPECIFIC_MATRICES_870
