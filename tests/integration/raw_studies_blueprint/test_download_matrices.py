@@ -55,7 +55,9 @@ class TestDownloadMatrices:
 
         # Change study start_date
         res = client.put(
-            f"/v1/studies/{variant_id}/config/general/form", json={"firstMonth": "july"}, headers=user_headers
+            f"/v1/studies/{variant_id}/config/general/form",
+            json={"firstMonth": "July"},
+            headers=user_headers,
         )
         assert res.status_code == 200
 
