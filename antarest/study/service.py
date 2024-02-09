@@ -1,6 +1,5 @@
 import base64
 import contextlib
-import fnmatch
 import io
 import json
 import logging
@@ -97,7 +96,7 @@ from antarest.study.model import (
     StudySimResultDTO,
 )
 from antarest.study.repository import StudyFilter, StudyMetadataRepository, StudyPagination, StudySortBy
-from antarest.study.storage.matrix_profile import get_matrix_profiles_by_version
+from antarest.study.storage.matrix_profile import adjust_matrix_columns_index
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import ChildNotFoundError
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
@@ -2417,14 +2416,12 @@ class StudyService:
             )
             df_matrix.index = time_column
 
-        matrix_profiles = get_matrix_profiles_by_version(int(study.version))
-        for pattern, matrix_profile in matrix_profiles.items():
-            if fnmatch.fnmatch(path, pattern):
-                return matrix_profile.handle_specific_matrices(
-                    df_matrix,
-                    path,
-                    with_index=with_index,
-                    with_header=with_header,
-                )
+        adjust_matrix_columns_index(
+            df_matrix,
+            path,
+            with_index=with_index,
+            with_header=with_header,
+            study_version=int(study.version),
+        )
 
         return df_matrix
