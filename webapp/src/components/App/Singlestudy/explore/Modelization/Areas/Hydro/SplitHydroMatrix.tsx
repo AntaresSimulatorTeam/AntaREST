@@ -14,7 +14,7 @@ function SplitHydroMatrix({ types, direction, sizes, form: Form }: Props) {
   return (
     <>
       {Form && (
-        <Box sx={{ width: 1, py: 1 }}>
+        <Box sx={{ width: 1, p: 1 }}>
           <Form />
         </Box>
       )}
