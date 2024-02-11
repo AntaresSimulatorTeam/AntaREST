@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session  # type: ignore
 from antarest.core.interfaces.cache import ICache
 from antarest.login.model import Group, User
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, Tag
-from antarest.study.repository import StudyFilter, StudyMetadataRepository
+from antarest.study.repository import QueryUser, StudyFilter, StudyMetadataRepository
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from tests.db_statement_recorder import DBStatementRecorder
 
@@ -66,7 +66,10 @@ def test_repository_get_all__general_case(
     # 2- accessing studies attributes does not require additional queries to db
     # 3- having an exact total of queries equals to 1
     with DBStatementRecorder(db_session.bind) as db_recorder:
-        all_studies = repository.get_all(study_filter=StudyFilter(managed=managed, study_ids=study_ids, exists=exists))
+        all_studies = repository.get_all(
+            study_filter=StudyFilter(managed=managed, study_ids=study_ids, exists=exists),
+            query_user=QueryUser(is_admin=True),
+        )
         _ = [s.owner for s in all_studies]
         _ = [s.groups for s in all_studies]
         _ = [s.additional_data for s in all_studies]
@@ -99,7 +102,7 @@ def test_repository_get_all__incompatible_case(
     # case 1
     study_filter = StudyFilter(managed=False, variant=True)
     with DBStatementRecorder(db_session.bind) as db_recorder:
-        all_studies = repository.get_all(study_filter=study_filter)
+        all_studies = repository.get_all(study_filter=study_filter, query_user=QueryUser(is_admin=True))
         _ = [s.owner for s in all_studies]
         _ = [s.groups for s in all_studies]
         _ = [s.additional_data for s in all_studies]
@@ -110,7 +113,7 @@ def test_repository_get_all__incompatible_case(
     # case 2
     study_filter = StudyFilter(workspace=test_workspace, variant=True)
     with DBStatementRecorder(db_session.bind) as db_recorder:
-        all_studies = repository.get_all(study_filter=study_filter)
+        all_studies = repository.get_all(study_filter=study_filter, query_user=QueryUser(is_admin=True))
         _ = [s.owner for s in all_studies]
         _ = [s.groups for s in all_studies]
         _ = [s.additional_data for s in all_studies]
@@ -121,7 +124,7 @@ def test_repository_get_all__incompatible_case(
     # case 3
     study_filter = StudyFilter(exists=False, variant=True)
     with DBStatementRecorder(db_session.bind) as db_recorder:
-        all_studies = repository.get_all(study_filter=study_filter)
+        all_studies = repository.get_all(study_filter=study_filter, query_user=QueryUser(is_admin=True))
         _ = [s.owner for s in all_studies]
         _ = [s.groups for s in all_studies]
         _ = [s.additional_data for s in all_studies]
@@ -169,7 +172,7 @@ def test_repository_get_all__study_name_filter(
     # 2- accessing studies attributes does not require additional queries to db
     # 3- having an exact total of queries equals to 1
     with DBStatementRecorder(db_session.bind) as db_recorder:
-        all_studies = repository.get_all(study_filter=StudyFilter(name=name))
+        all_studies = repository.get_all(study_filter=StudyFilter(name=name), query_user=QueryUser(is_admin=True))
         _ = [s.owner for s in all_studies]
         _ = [s.groups for s in all_studies]
         _ = [s.additional_data for s in all_studies]
@@ -214,7 +217,7 @@ def test_repository_get_all__managed_study_filter(
     # 2- accessing studies attributes does not require additional queries to db
     # 3- having an exact total of queries equals to 1
     with DBStatementRecorder(db_session.bind) as db_recorder:
-        all_studies = repository.get_all(study_filter=StudyFilter(managed=managed))
+        all_studies = repository.get_all(study_filter=StudyFilter(managed=managed), query_user=QueryUser(is_admin=True))
         _ = [s.owner for s in all_studies]
         _ = [s.groups for s in all_studies]
         _ = [s.additional_data for s in all_studies]
@@ -254,7 +257,9 @@ def test_repository_get_all__archived_study_filter(
     # 2- accessing studies attributes does not require additional queries to db
     # 3- having an exact total of queries equals to 1
     with DBStatementRecorder(db_session.bind) as db_recorder:
-        all_studies = repository.get_all(study_filter=StudyFilter(archived=archived))
+        all_studies = repository.get_all(
+            study_filter=StudyFilter(archived=archived), query_user=QueryUser(is_admin=True)
+        )
         _ = [s.owner for s in all_studies]
         _ = [s.groups for s in all_studies]
         _ = [s.additional_data for s in all_studies]
@@ -294,7 +299,7 @@ def test_repository_get_all__variant_study_filter(
     # 2- accessing studies attributes does not require additional queries to db
     # 3- having an exact total of queries equals to 1
     with DBStatementRecorder(db_session.bind) as db_recorder:
-        all_studies = repository.get_all(study_filter=StudyFilter(variant=variant))
+        all_studies = repository.get_all(study_filter=StudyFilter(variant=variant), query_user=QueryUser(is_admin=True))
         _ = [s.owner for s in all_studies]
         _ = [s.groups for s in all_studies]
         _ = [s.additional_data for s in all_studies]
@@ -336,7 +341,9 @@ def test_repository_get_all__study_version_filter(
     # 2- accessing studies attributes does not require additional queries to db
     # 3- having an exact total of queries equals to 1
     with DBStatementRecorder(db_session.bind) as db_recorder:
-        all_studies = repository.get_all(study_filter=StudyFilter(versions=versions))
+        all_studies = repository.get_all(
+            study_filter=StudyFilter(versions=versions), query_user=QueryUser(is_admin=True)
+        )
         _ = [s.owner for s in all_studies]
         _ = [s.groups for s in all_studies]
         _ = [s.additional_data for s in all_studies]
@@ -384,7 +391,7 @@ def test_repository_get_all__study_users_filter(
     # 2- accessing studies attributes does not require additional queries to db
     # 3- having an exact total of queries equals to 1
     with DBStatementRecorder(db_session.bind) as db_recorder:
-        all_studies = repository.get_all(study_filter=StudyFilter(users=users))
+        all_studies = repository.get_all(study_filter=StudyFilter(users=users), query_user=QueryUser(is_admin=True))
         _ = [s.owner for s in all_studies]
         _ = [s.groups for s in all_studies]
         _ = [s.additional_data for s in all_studies]
@@ -432,7 +439,7 @@ def test_repository_get_all__study_groups_filter(
     # 2- accessing studies attributes does not require additional queries to db
     # 3- having an exact total of queries equals to 1
     with DBStatementRecorder(db_session.bind) as db_recorder:
-        all_studies = repository.get_all(study_filter=StudyFilter(groups=groups))
+        all_studies = repository.get_all(study_filter=StudyFilter(groups=groups), query_user=QueryUser(is_admin=True))
         _ = [s.owner for s in all_studies]
         _ = [s.groups for s in all_studies]
         _ = [s.additional_data for s in all_studies]
@@ -475,7 +482,9 @@ def test_repository_get_all__study_ids_filter(
     # 2- accessing studies attributes does not require additional queries to db
     # 3- having an exact total of queries equals to 1
     with DBStatementRecorder(db_session.bind) as db_recorder:
-        all_studies = repository.get_all(study_filter=StudyFilter(study_ids=study_ids))
+        all_studies = repository.get_all(
+            study_filter=StudyFilter(study_ids=study_ids), query_user=QueryUser(is_admin=True)
+        )
         _ = [s.owner for s in all_studies]
         _ = [s.groups for s in all_studies]
         _ = [s.additional_data for s in all_studies]
@@ -515,7 +524,7 @@ def test_repository_get_all__study_existence_filter(
     # 2- accessing studies attributes does not require additional queries to db
     # 3- having an exact total of queries equals to 1
     with DBStatementRecorder(db_session.bind) as db_recorder:
-        all_studies = repository.get_all(study_filter=StudyFilter(exists=exists))
+        all_studies = repository.get_all(study_filter=StudyFilter(exists=exists), query_user=QueryUser(is_admin=True))
         _ = [s.owner for s in all_studies]
         _ = [s.groups for s in all_studies]
         _ = [s.additional_data for s in all_studies]
@@ -556,7 +565,9 @@ def test_repository_get_all__study_workspace_filter(
     # 2- accessing studies attributes does not require additional queries to db
     # 3- having an exact total of queries equals to 1
     with DBStatementRecorder(db_session.bind) as db_recorder:
-        all_studies = repository.get_all(study_filter=StudyFilter(workspace=workspace))
+        all_studies = repository.get_all(
+            study_filter=StudyFilter(workspace=workspace), query_user=QueryUser(is_admin=True)
+        )
         _ = [s.owner for s in all_studies]
         _ = [s.groups for s in all_studies]
         _ = [s.additional_data for s in all_studies]
@@ -599,7 +610,7 @@ def test_repository_get_all__study_folder_filter(
     # 2- accessing studies attributes does not require additional queries to db
     # 3- having an exact total of queries equals to 1
     with DBStatementRecorder(db_session.bind) as db_recorder:
-        all_studies = repository.get_all(study_filter=StudyFilter(folder=folder))
+        all_studies = repository.get_all(study_filter=StudyFilter(folder=folder), query_user=QueryUser(is_admin=True))
         _ = [s.owner for s in all_studies]
         _ = [s.groups for s in all_studies]
         _ = [s.additional_data for s in all_studies]
@@ -650,7 +661,7 @@ def test_repository_get_all__study_tags_filter(
     # 2- accessing studies attributes does not require additional queries to db
     # 3- having an exact total of queries equals to 1
     with DBStatementRecorder(db_session.bind) as db_recorder:
-        all_studies = repository.get_all(study_filter=StudyFilter(tags=tags))
+        all_studies = repository.get_all(study_filter=StudyFilter(tags=tags), query_user=QueryUser(is_admin=True))
         _ = [s.owner for s in all_studies]
         _ = [s.groups for s in all_studies]
         _ = [s.additional_data for s in all_studies]
