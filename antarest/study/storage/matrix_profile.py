@@ -41,9 +41,11 @@ class _MatrixProfile(t.NamedTuple):
                 cols = self.cols
             if cols:
                 df.columns = pd.Index(cols)
-        rows = self.rows
-        if with_index and rows:
-            df.index = rows  # type: ignore
+            else:
+                df.columns = pd.Index([f"TS-{i}" for i in range(1, len(df.columns) + 1)])
+
+        if with_index and self.rows:
+            df.index = pd.Index(self.rows)
 
     def _process_links_columns(self, matrix_path: str) -> t.Sequence[str]:
         """Process column names specific to the links matrices."""
@@ -83,6 +85,7 @@ _SPECIFIC_MATRICES = {
         rows=[],
     ),
     "input/hydro/common/capacity/reservoir_*": _MatrixProfile(
+        # Values are displayed in % in the UI, but the actual values are in p.u. (per unit)
         cols=["Lev Low (p.u)", "Lev Avg (p.u)", "Lev High (p.u)"],
         rows=[],
     ),
@@ -130,6 +133,8 @@ _SPECIFIC_MATRICES = {
 }
 
 _SPECIFIC_MATRICES_820 = copy.deepcopy(_SPECIFIC_MATRICES)
+"""Specific matrices for study version 8.2."""
+
 _SPECIFIC_MATRICES_820["input/links/*/*"] = _MatrixProfile(
     cols=[
         "Hurdle costs direct",
@@ -142,8 +147,19 @@ _SPECIFIC_MATRICES_820["input/links/*/*"] = _MatrixProfile(
     rows=[],
 )
 
-_SPECIFIC_MATRICES_870 = copy.deepcopy(_SPECIFIC_MATRICES_820)
+# Specific matrices for study version 8.6
+_SPECIFIC_MATRICES_860 = copy.deepcopy(_SPECIFIC_MATRICES_820)
+"""Specific matrices for study version 8.6."""
+
 # noinspection SpellCheckingInspection
+#
+_SPECIFIC_MATRICES_860["input/hydro/series/*/mingen"] = _MatrixProfile(cols=[], rows=[])
+
+_SPECIFIC_MATRICES_870 = copy.deepcopy(_SPECIFIC_MATRICES_820)
+"""Specific matrices for study version 8.7."""
+
+# noinspection SpellCheckingInspection
+# Scenarized RHS for binding constraints
 _SPECIFIC_MATRICES_870["input/bindingconstraints/*"] = _MatrixProfile(cols=[], rows=[])
 
 
@@ -165,8 +181,10 @@ def adjust_matrix_columns_index(
     # Get the matrix profiles for a given study version
     if study_version < 820:
         matrix_profiles = _SPECIFIC_MATRICES
-    elif study_version < 870:
+    elif study_version < 860:
         matrix_profiles = _SPECIFIC_MATRICES_820
+    elif study_version < 870:
+        matrix_profiles = _SPECIFIC_MATRICES_860
     else:
         matrix_profiles = _SPECIFIC_MATRICES_870
 
@@ -181,6 +199,13 @@ def adjust_matrix_columns_index(
             )
             return
 
+    if fnmatch.fnmatch(matrix_path, "output/*"):
+        # Outputs already have their own column names
+        return
+
     # The matrix may be a time series, in which case we don't need to adjust anything
     # (the "Time" columns is already the index)
+    # Column names should be Monte-Carlo years: "TS-1", "TS-2", ...
+    df.columns = pd.Index([f"TS-{i}" for i in range(1, len(df.columns) + 1)])
+
     return None
