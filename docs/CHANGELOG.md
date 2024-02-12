@@ -6,32 +6,33 @@ v2.16.4 (2024-02-14)
 
 ### Features
 
-* **api-ui:** add Inflow Structure form in Hydro [`1919`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1919)
-* **db:** index tables to improve study search and sorting performance [`1902`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1902)
-* **packaging:** update the packaging script to use Antares Solver v8.8.2 [`1910`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1910)
-* **service:** use slurm `sinfo` command to improve "cluster load" indicator [`1664`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1664)
-* **study-search:** optimize the studies search engine [`1890`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1890)
-* **tags-db:** add `tag` and `study_tag` tables to the db (migration) [`1923`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1923)
-* **tags-db:** update tags related services and endpoints [`1925`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1925)
-* **ui-disk-usage:** add disk usage to study details [`1899`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1899)
+* **api-ui:** add Inflow Structure form in Hydro [`#1919`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1919)
+* **db:** index tables to improve study search and sorting performance [`#1902`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1902)
+* **packaging:** update the packaging script to use Antares Solver v8.8.2 [`#1910`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1910)
+* **service:** use slurm `sinfo` command to improve "cluster load" indicator [`#1664`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1664)
+* **study-search:** optimize the studies search engine [`#1890`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1890)
+* **tags-db:** add `tag` and `study_tag` tables to the db (migration) [`#1923`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1923)
+* **tags-db:** update tags related services and endpoints [`#1925`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1925)
+* **ui-disk-usage:** add disk usage to study details [`#1899`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1899)
 
 
 ### Bug Fixes
 
-* **api-model:** correct `AllOptionalMetaclass` for field validation in form models [`1924`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1924)
-* **bc:** correct case sensitivity for binding constraint term IDs [`1903`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1903)
-* **config:** add Swagger proxy settings in Vite configuration [`1922`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1922)
-* **disk-usage:** correct disk usage calculation for study variants with simulation results [`1926`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1926)
-* **disk-usage:** fix bug on variants [`1915`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1915)
-* **packaging:** fix packaging script for Windows (issue with Vite.js) [`1920`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1920)
-* **thermals:** correct the default value of the "gen-ts" property to use "use global" instead of "use global parameter" [`1918`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1918)
-* **ui-home:** load synthesis to get areas and links count [`1911`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1911)
-
+* **api-model:** correct `AllOptionalMetaclass` for field validation in form models [`#1924`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1924)
+* **bc:** correct case sensitivity for binding constraint term IDs [`#1903`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1903)
+* **config:** add Swagger proxy settings in Vite configuration [`#1922`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1922)
+* **disk-usage:** correct disk usage calculation for study variants with simulation results [`#1926`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1926)
+* **disk-usage:** fix bug on variants [`#1915`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1915)
+* **packaging:** fix packaging script for Windows (issue with Vite.js) [`#1920`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1920)
+* **thermals:** correct the default value of the "gen-ts" property to use "use global" instead of "use global parameter" [`#1918`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1918)
+* **ui-home:** load synthesis to get areas and links count [`#1911`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1911)
+* **ui-hydro,storage:** correct labels and units in forms [`#1928`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1928)
+* **ui-map:** reload map data on study revisit [`#1927`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1927)
 
 ### Build System
 
-* **packaging:** issue with desktop app packaging [`1912`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1912)
-* **vite:** replace create-react-app by Vite [`1905`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1905)
+* **packaging:** issue with desktop app packaging [`#1912`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1912)
+* **vite:** replace create-react-app by Vite [`#1905`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1905)
 
 
 v2.16.3 (2024-01-17)
