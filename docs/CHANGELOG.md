@@ -1,6 +1,39 @@
 Antares Web Changelog
 =====================
 
+v2.16.4 (2024-02-14)
+--------------------
+
+### Features
+
+* **api-ui:** add Inflow Structure form in Hydro [`1919`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1919)
+* **db:** index tables to improve study search and sorting performance [`1902`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1902)
+* **packaging:** update the packaging script to use Antares Solver v8.8.2 [`1910`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1910)
+* **service:** use slurm `sinfo` command to improve "cluster load" indicator [`1664`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1664)
+* **study-search:** optimize the studies search engine [`1890`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1890)
+* **tags-db:** add `tag` and `study_tag` tables to the db (migration) [`1923`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1923)
+* **tags-db:** update tags related services and endpoints [`1925`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1925)
+* **ui-disk-usage:** add disk usage to study details [`1899`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1899)
+
+
+### Bug Fixes
+
+* **api-model:** correct `AllOptionalMetaclass` for field validation in form models [`1924`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1924)
+* **bc:** correct case sensitivity for binding constraint term IDs [`1903`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1903)
+* **config:** add Swagger proxy settings in Vite configuration [`1922`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1922)
+* **disk-usage:** correct disk usage calculation for study variants with simulation results [`1926`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1926)
+* **disk-usage:** fix bug on variants [`1915`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1915)
+* **packaging:** fix packaging script for Windows (issue with Vite.js) [`1920`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1920)
+* **thermals:** correct the default value of the "gen-ts" property to use "use global" instead of "use global parameter" [`1918`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1918)
+* **ui-home:** load synthesis to get areas and links count [`1911`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1911)
+
+
+### Build System
+
+* **packaging:** issue with desktop app packaging [`1912`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1912)
+* **vite:** replace create-react-app by Vite [`1905`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1905)
+
+
 v2.16.3 (2024-01-17)
 --------------------
 
@@ -134,7 +167,7 @@ v2.16.0 (2023-11-30)
 * **launcher:** allow users with `Permission.READ` or above to unzip a study [`4568b91`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/4568b9154cc174de1a430805b6378234bc2c3584)
 * **model:** handling binding constraints frequency in study configuration parsing [`#1702`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1702)
 * **model:** add a one-to-many relationship between `Identity` and `JobResult` [`e9a10b1`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/e9a10b1e1c45e248ba4968d243cf0ea561084924)
-* **model:** handling binding constraints frequency in study configuration parsing (#1702) [`02b6ba7`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/02b6ba7a8c069ce4e3f7a765aa7aa074a4277ba5)
+* **model:** handling binding constraints frequency in study configuration parsing [`1702`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1702) [`02b6ba7`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/02b6ba7a8c069ce4e3f7a765aa7aa074a4277ba5)
 * **permission:** update permission types, replaced DELETE with WRITE for improved study control [`#1775`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1775)
 * **requirements:** add py7zr to project requirements [`e10622e`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/e10622ef2d8b75b3107c2494128c92223dda5f6d)
 * **simulation-ui:** use API to get launcher number of cores [`#1776`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1776)
@@ -365,20 +398,20 @@ v2.15.2 (2023-10-11)
 
 ### Hotfix
 
-*  **service:** user connected via tokens cannot create a study (#1757) ([f620197](https://github.com/AntaresSimulatorTeam/AntaREST/commit/f6201976a653db19739cbc42e91ea27ac790da10))
+*  **service:** user connected via tokens cannot create a study [`1757`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1757) ([f620197](https://github.com/AntaresSimulatorTeam/AntaREST/commit/f6201976a653db19739cbc42e91ea27ac790da10))
 
 
 ### Features
 
-*  **binding-constraint:** handling binding constraints frequency in study configuration parsing (#1702) ([703351a](https://github.com/AntaresSimulatorTeam/AntaREST/commit/703351a6d8d4f70491e66c3c54a92c6d28cb92ea))
+*  **binding-constraint:** handling binding constraints frequency in study configuration parsing [`1702`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1702) ([703351a](https://github.com/AntaresSimulatorTeam/AntaREST/commit/703351a6d8d4f70491e66c3c54a92c6d28cb92ea))
    - add the binding constraint series in the matrix constants generator ([e00d58b](https://github.com/AntaresSimulatorTeam/AntaREST/commit/e00d58b203023363860cb0e849576e02ed97fd81))
    - command `create_binding_constraint` can check the matrix shape ([68bf99f](https://github.com/AntaresSimulatorTeam/AntaREST/commit/68bf99f1170181f6111bc15c03ede27030f809d2))
    - command `update_binding_constraint` can check the matrix shape ([c962f73](https://github.com/AntaresSimulatorTeam/AntaREST/commit/c962f7344c7ea07c7a8c7699b2af35f90f3b853c))
    - add missing command docstring ([d277805](https://github.com/AntaresSimulatorTeam/AntaREST/commit/d277805c10d3f9c7134166e6d2f7170c7b752428))
    - reduce code duplication ([b41d957](https://github.com/AntaresSimulatorTeam/AntaREST/commit/b41d957cffa6a8dde21a022f8b6c24c8de2559a2))
    - correct `test_command_factory` unit test to ignore abstract commands ([789c2ad](https://github.com/AntaresSimulatorTeam/AntaREST/commit/789c2adfc3ef3999f3779a345e0730f2f9ad906a))
-*  **api:** add endpoint get_nb_cores (#1727) ([9cfa9f1](https://github.com/AntaresSimulatorTeam/AntaREST/commit/9cfa9f13d363ea4f73aa31ed760d525b091f04a4))
-*  **st-storage:** allow all parameters in endpoint for short term storage creation (#1736) ([853cf6b](https://github.com/AntaresSimulatorTeam/AntaREST/commit/853cf6ba48a23d39f247a0842afac440c4ea4570))
+*  **api:** add endpoint get_nb_cores [`1727`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1727) ([9cfa9f1](https://github.com/AntaresSimulatorTeam/AntaREST/commit/9cfa9f13d363ea4f73aa31ed760d525b091f04a4))
+*  **st-storage:** allow all parameters in endpoint for short term storage creation [`1736`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1736) ([853cf6b](https://github.com/AntaresSimulatorTeam/AntaREST/commit/853cf6ba48a23d39f247a0842afac440c4ea4570))
 
 
 ### Chore
@@ -691,30 +724,30 @@ v2.14.5 (2023-08-11)
 
 ### Features
 
-*  **ui-i18n:** add missing adequacy patch translations (#1680) ([8a06461](https://github.com/AntaresSimulatorTeam/AntaREST/commit/8a06461f4118227b94be7f587d37ea2430c70505))
-*  **ui:** removed the "patch" number from the list of versions in the simulation launch dialog when it's equal to 0 (#1698) ([1bc0156](https://github.com/AntaresSimulatorTeam/AntaREST/commit/1bc0156c3e08e321e9ccc396b95cadeabf1c1fc7))
+*  **ui-i18n:** add missing adequacy patch translations [`1680`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1680) ([8a06461](https://github.com/AntaresSimulatorTeam/AntaREST/commit/8a06461f4118227b94be7f587d37ea2430c70505))
+*  **ui:** removed the "patch" number from the list of versions in the simulation launch dialog when it's equal to 0 [`1698`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1698) ([1bc0156](https://github.com/AntaresSimulatorTeam/AntaREST/commit/1bc0156c3e08e321e9ccc396b95cadeabf1c1fc7))
 
 
 ### Bug Fixes
 
-*  **web:** modified API response model to prevent Watcher's ValidationError (#1526) ([b0e48d1](https://github.com/AntaresSimulatorTeam/AntaREST/commit/b0e48d1bd31463cb6ce5e9aefeff761c016d0b35))
+*  **web:** modified API response model to prevent Watcher's ValidationError [`1526`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1526) ([b0e48d1](https://github.com/AntaresSimulatorTeam/AntaREST/commit/b0e48d1bd31463cb6ce5e9aefeff761c016d0b35))
 *  **xpansion:** corrected field types for Xpansion parameters (sensitivity analysis) ([3e481b9](https://github.com/AntaresSimulatorTeam/AntaREST/commit/3e481b9c8866ecc3dc42e351552e1ded036f62ad))
 *  **variant:** fixed implementation of the method for extracting the difference between two studies ([c534785](https://github.com/AntaresSimulatorTeam/AntaREST/commit/c5347851da867a19b990e05c6516bedc7508c8ce))
-*  **api:** added missing `use_leeway` field and validation rules in the hydro configuration form (#1650) ([27e46e5](https://github.com/AntaresSimulatorTeam/AntaREST/commit/27e46e5bda77aed65c84e82931d426b4b69a43bd))
-*  **export:** ZIP outputs are no longer compressed before export (used by Xpansion) (#1656) ([cba6261](https://github.com/AntaresSimulatorTeam/AntaREST/commit/cba62613e19712240f74f417854e95bd588ba95d))
-*  **log-parser:** simplified analysis and improved accuracy in displaying simulation progress for a study (#1682) ([2442674](https://github.com/AntaresSimulatorTeam/AntaREST/commit/24426749e9b6100eb3ab4b7159f615444242b95a))
-*  **table-mode:** corrected reading of UI information when the study has only one area (#1674) ([55c4181](https://github.com/AntaresSimulatorTeam/AntaREST/commit/55c4181b64959c5e191fed2256437fc95787199f))
-*  **table-mode:** issue to read area information in the case where the study has only one area (#1690) ([87d9617](https://github.com/AntaresSimulatorTeam/AntaREST/commit/87d961703cebdc037671fe73988903eb14dd9547))
-*  **command:** improve INI reader to support API PUT `/v1/studies/{uuid}/raw` (#1461) ([9e5cf25](https://github.com/AntaresSimulatorTeam/AntaREST/commit/9e5cf25b2f69890016ea36f3be0e9ac03c7695b6))
-*  **variant:** fixed time series deletion of renewable clusters (#1693) ([4ba1b17](https://github.com/AntaresSimulatorTeam/AntaREST/commit/4ba1b17dd3c1b8ea62a5a02f39d15e94a4b9a331))
+*  **api:** added missing `use_leeway` field and validation rules in the hydro configuration form [`1650`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1650) ([27e46e5](https://github.com/AntaresSimulatorTeam/AntaREST/commit/27e46e5bda77aed65c84e82931d426b4b69a43bd))
+*  **export:** ZIP outputs are no longer compressed before export (used by Xpansion) [`1656`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1656) ([cba6261](https://github.com/AntaresSimulatorTeam/AntaREST/commit/cba62613e19712240f74f417854e95bd588ba95d))
+*  **log-parser:** simplified analysis and improved accuracy in displaying simulation progress for a study [`1682`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1682) ([2442674](https://github.com/AntaresSimulatorTeam/AntaREST/commit/24426749e9b6100eb3ab4b7159f615444242b95a))
+*  **table-mode:** corrected reading of UI information when the study has only one area [`1674`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1674) ([55c4181](https://github.com/AntaresSimulatorTeam/AntaREST/commit/55c4181b64959c5e191fed2256437fc95787199f))
+*  **table-mode:** issue to read area information in the case where the study has only one area [`1690`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1690) ([87d9617](https://github.com/AntaresSimulatorTeam/AntaREST/commit/87d961703cebdc037671fe73988903eb14dd9547))
+*  **command:** improve INI reader to support API PUT `/v1/studies/{uuid}/raw` [`1461`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1461) ([9e5cf25](https://github.com/AntaresSimulatorTeam/AntaREST/commit/9e5cf25b2f69890016ea36f3be0e9ac03c7695b6))
+*  **variant:** fixed time series deletion of renewable clusters [`1693`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1693) ([4ba1b17](https://github.com/AntaresSimulatorTeam/AntaREST/commit/4ba1b17dd3c1b8ea62a5a02f39d15e94a4b9a331))
 *  **launcher:** fixing launcher versions display and creation of the endpoint `/v1/launcher/versions` ([410afc2](https://github.com/AntaresSimulatorTeam/AntaREST/commit/410afc2e4ecbb296878985839ee27f84bc70d9d8))
-   and (#1672) ([a76f3a9](https://github.com/AntaresSimulatorTeam/AntaREST/commit/a76f3a9f01df0225d7fb54b20ba3ff599d749138))
-*  **launcher:** set the default number of cores to 22 (instead of 12) (#1695) ([2c89799](https://github.com/AntaresSimulatorTeam/AntaREST/commit/2c8979916d46a0ed46a67bc75ac9a2e365e3f164))
+   and [`1672`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1672) ([a76f3a9](https://github.com/AntaresSimulatorTeam/AntaREST/commit/a76f3a9f01df0225d7fb54b20ba3ff599d749138))
+*  **launcher:** set the default number of cores to 22 (instead of 12) [`1695`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1695) ([2c89799](https://github.com/AntaresSimulatorTeam/AntaREST/commit/2c8979916d46a0ed46a67bc75ac9a2e365e3f164))
 
 
 ### Continuous Integration
 
-* upgrade mypy to v1.4.1 and Black to v23.7.0 for improved typing and formatting (#1685) ([7cff8c5](https://github.com/AntaresSimulatorTeam/AntaREST/commit/7cff8c56c38728a1b29eae0221bcc8226e9ca80c))
+* upgrade mypy to v1.4.1 and Black to v23.7.0 for improved typing and formatting [`1685`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1685) ([7cff8c5](https://github.com/AntaresSimulatorTeam/AntaREST/commit/7cff8c56c38728a1b29eae0221bcc8226e9ca80c))
 
 
 ### Tests
@@ -735,16 +768,16 @@ v2.14.4 (2023-06-28)
 
 ### Bug Fixes
 
-*  **launcher:** take into account the `nb_cpu` in the local Solver command line (#1603) ([7bb4f0c](https://github.com/AntaresSimulatorTeam/AntaREST/commit/7bb4f0c45db8ddbaedc1a814d0bfddb9fb440aba))
-*  **api:** resolve version display issue in Desktop's `/version` endpoint (#1605) ([a0bf966](https://github.com/AntaresSimulatorTeam/AntaREST/commit/a0bf966dc0b7a0ee302b7d25ff0d95f5307d8117))
-*  **study:** fixing case sensitivity issues in reading study configuration (#1610) ([f03ad59](https://github.com/AntaresSimulatorTeam/AntaREST/commit/f03ad59f41a4d5a29a088e7ff98d20037540563b))
+*  **launcher:** take into account the `nb_cpu` in the local Solver command line [`1603`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1603) ([7bb4f0c](https://github.com/AntaresSimulatorTeam/AntaREST/commit/7bb4f0c45db8ddbaedc1a814d0bfddb9fb440aba))
+*  **api:** resolve version display issue in Desktop's `/version` endpoint [`1605`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1605) ([a0bf966](https://github.com/AntaresSimulatorTeam/AntaREST/commit/a0bf966dc0b7a0ee302b7d25ff0d95f5307d8117))
+*  **study:** fixing case sensitivity issues in reading study configuration [`1610`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1610) ([f03ad59](https://github.com/AntaresSimulatorTeam/AntaREST/commit/f03ad59f41a4d5a29a088e7ff98d20037540563b))
 *  **api:** correct `/kill` end-point implementation to work with PyInstaller ([213fb88](https://github.com/AntaresSimulatorTeam/AntaREST/commit/213fb885b05490afe573938ec4300f07b561b2dd))
-*  **fastapi:** correct URL inconsistency between the webapp and the API (#1612) ([195d22c](https://github.com/AntaresSimulatorTeam/AntaREST/commit/195d22c7005e2abad7f389164b0701a8fa24b98c))
-*  **i18n:** wrong translations and add missing keys (#1615) ([7a7019c](https://github.com/AntaresSimulatorTeam/AntaREST/commit/7a7019cc1e900feaa5681d2244a81550510e9a78))
-*  **deploy:** change example study settings to allow parallel run (#1617) ([389793e](https://github.com/AntaresSimulatorTeam/AntaREST/commit/389793e08dee0f05dfe68d952e9b85b64b3bc57e))
-*  **variant:** get synthesis now also works for level 2+ variants (#1622) ([661b856](https://github.com/AntaresSimulatorTeam/AntaREST/commit/661b856331673ac792fd2ca264d0fb45433d3ee5))
-*  **results:** refresh study outputs when job completed and add back button (#1621) ([39846c0](https://github.com/AntaresSimulatorTeam/AntaREST/commit/39846c07db0ccd540fcf73fe8a5d711012101226))
-*  **deploy:** remove unnecessary Outputs from "000 Free Data Sample" study (#1628) ([a154dac](https://github.com/AntaresSimulatorTeam/AntaREST/commit/a154dacdc11e99a38cbc2d2930c50875563b76a2))
+*  **fastapi:** correct URL inconsistency between the webapp and the API [`1612`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1612) ([195d22c](https://github.com/AntaresSimulatorTeam/AntaREST/commit/195d22c7005e2abad7f389164b0701a8fa24b98c))
+*  **i18n:** wrong translations and add missing keys [`1615`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1615) ([7a7019c](https://github.com/AntaresSimulatorTeam/AntaREST/commit/7a7019cc1e900feaa5681d2244a81550510e9a78))
+*  **deploy:** change example study settings to allow parallel run [`1617`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1617) ([389793e](https://github.com/AntaresSimulatorTeam/AntaREST/commit/389793e08dee0f05dfe68d952e9b85b64b3bc57e))
+*  **variant:** get synthesis now also works for level 2+ variants [`1622`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1622) ([661b856](https://github.com/AntaresSimulatorTeam/AntaREST/commit/661b856331673ac792fd2ca264d0fb45433d3ee5))
+*  **results:** refresh study outputs when job completed and add back button [`1621`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1621) ([39846c0](https://github.com/AntaresSimulatorTeam/AntaREST/commit/39846c07db0ccd540fcf73fe8a5d711012101226))
+*  **deploy:** remove unnecessary Outputs from "000 Free Data Sample" study [`1628`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1628) ([a154dac](https://github.com/AntaresSimulatorTeam/AntaREST/commit/a154dacdc11e99a38cbc2d2930c50875563b76a2))
 
 
 ### Documentation
@@ -770,10 +803,10 @@ v2.14.3 (2023-06-20)
 ### Bug Fixes
 
 *  **desktop:** correct Antares Desktop packaging ([95d7544](https://github.com/AntaresSimulatorTeam/AntaREST/commit/95d754473d63596fd6844cfb97d47a3f2041e2ba))
-*  **error:** improve error handling with enhanced error message (#1590) ([9e22aee](https://github.com/AntaresSimulatorTeam/AntaREST/commit/9e22aee25a812b81a323c83a043ffc36f0b1eb46))
-*  **matrix:** significant performance enhancement for Time Series update (#1588) ([220107a](https://github.com/AntaresSimulatorTeam/AntaREST/commit/220107aa2ff18be556960ecf367816cd1aa4ed3f))
+*  **error:** improve error handling with enhanced error message [`1590`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1590) ([9e22aee](https://github.com/AntaresSimulatorTeam/AntaREST/commit/9e22aee25a812b81a323c83a043ffc36f0b1eb46))
+*  **matrix:** significant performance enhancement for Time Series update [`1588`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1588) ([220107a](https://github.com/AntaresSimulatorTeam/AntaREST/commit/220107aa2ff18be556960ecf367816cd1aa4ed3f))
 *  **launcher:** correct the launching of the local Antares Solver ([8a31514](https://github.com/AntaresSimulatorTeam/AntaREST/commit/8a31514f5995d02e7e23402251396bda2ce22580))
-*  **api:** add missing "annual" key on correlation config for new areas (#1600) ([ac98a76](https://github.com/AntaresSimulatorTeam/AntaREST/commit/ac98a76ca591dc1d582eacd5d00c258bbf06ac5f))
+*  **api:** add missing "annual" key on correlation config for new areas [`1600`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1600) ([ac98a76](https://github.com/AntaresSimulatorTeam/AntaREST/commit/ac98a76ca591dc1d582eacd5d00c258bbf06ac5f))
 
 
 ### Documentation
@@ -783,7 +816,7 @@ v2.14.3 (2023-06-20)
 
 ### Features
 
-*  **common:** display a snackbar error when async default values failed in Form (#1592) ([c213437](https://github.com/AntaresSimulatorTeam/AntaREST/commit/c213437fc4ac82ac5c1aab4dcdf6638729b81497))
+*  **common:** display a snackbar error when async default values failed in Form [`1592`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1592) ([c213437](https://github.com/AntaresSimulatorTeam/AntaREST/commit/c213437fc4ac82ac5c1aab4dcdf6638729b81497))
 
 
 ### Contributors
@@ -798,17 +831,17 @@ v2.14.2 (2023-06-12)
 
 ### Bug Fixes
 
-*  **renewable:** fixing issue with missing display of renewable cluster form (#1545) ([03c7628](https://github.com/AntaresSimulatorTeam/AntaREST/commit/03c76280a88373ace47121bd44a2fe529bcd7343))
-*  **worker:** archive worker must be kept alive for processing (#1567) ([34e1675](https://github.com/AntaresSimulatorTeam/AntaREST/commit/34e1675737d5af390f4be97b47898ad1e60a7b51))
-*  **build:** fix pyinstaller build (#1566) ([2c7b899](https://github.com/AntaresSimulatorTeam/AntaREST/commit/2c7b89936afb0ebc03d79f9505daa901c1a8a003))
-*  **desktop:** correct date parsing in localized environment (#1568) ([1d9177a](https://github.com/AntaresSimulatorTeam/AntaREST/commit/1d9177af66e68983a8db3ca3858449605b24d9f9))
-*  **matrix:** check invalid params and empty matrix in matrix update (#1572) ([f80aa6b](https://github.com/AntaresSimulatorTeam/AntaREST/commit/f80aa6b2178192660d55370977f1495ed1e72f00))
-*  **model:** raise an error if the "about-the-study/parameters.ini" file is missing in the ZIP file (#1582) ([c04d467](https://github.com/AntaresSimulatorTeam/AntaREST/commit/c04d4676aaa7319e308d36d2345fb76d59d3119b))
+*  **renewable:** fixing issue with missing display of renewable cluster form [`1545`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1545) ([03c7628](https://github.com/AntaresSimulatorTeam/AntaREST/commit/03c76280a88373ace47121bd44a2fe529bcd7343))
+*  **worker:** archive worker must be kept alive for processing [`1567`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1567) ([34e1675](https://github.com/AntaresSimulatorTeam/AntaREST/commit/34e1675737d5af390f4be97b47898ad1e60a7b51))
+*  **build:** fix pyinstaller build [`1566`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1566) ([2c7b899](https://github.com/AntaresSimulatorTeam/AntaREST/commit/2c7b89936afb0ebc03d79f9505daa901c1a8a003))
+*  **desktop:** correct date parsing in localized environment [`1568`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1568) ([1d9177a](https://github.com/AntaresSimulatorTeam/AntaREST/commit/1d9177af66e68983a8db3ca3858449605b24d9f9))
+*  **matrix:** check invalid params and empty matrix in matrix update [`1572`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1572) ([f80aa6b](https://github.com/AntaresSimulatorTeam/AntaREST/commit/f80aa6b2178192660d55370977f1495ed1e72f00))
+*  **model:** raise an error if the "about-the-study/parameters.ini" file is missing in the ZIP file [`1582`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1582) ([c04d467](https://github.com/AntaresSimulatorTeam/AntaREST/commit/c04d4676aaa7319e308d36d2345fb76d59d3119b))
 
 
 ### Features
 
-*  **matrix:** improve matrix read/write using NumPy (#1562) ([2784828](https://github.com/AntaresSimulatorTeam/AntaREST/commit/2784828b7f10ff53d2f59ca594525243d97aaa6a))
+*  **matrix:** improve matrix read/write using NumPy [`1562`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1562) ([2784828](https://github.com/AntaresSimulatorTeam/AntaREST/commit/2784828b7f10ff53d2f59ca594525243d97aaa6a))
 
 
 ### Contributors
@@ -838,18 +871,18 @@ v2.14.0 (2023-05-12)
 *  **ui-hydro:** display area name instead of ID ([0df0b21](https://github.com/AntaresSimulatorTeam/AntaREST/commit/0df0b2121e761a91946452874d70bc80dbe07647))
 *  **ui-hydro:** update allocation form styles ([ac470c1](https://github.com/AntaresSimulatorTeam/AntaREST/commit/ac470c19410bf2d13b57ecc0bab650b24b77c495))
 *  **ui-matrix:** update "Time" column and add index row headers ([3d50bf9](https://github.com/AntaresSimulatorTeam/AntaREST/commit/3d50bf9617367fe8d1fcd21e6a9835834456a10f))
-*  **ui:** add @total-typescript/ts-reset lib and tsUtils (#1408) ([aa5e3e8](https://github.com/AntaresSimulatorTeam/AntaREST/commit/aa5e3e87d95b8b5061030025e89443e1fc71823d))
-*  **ui:** update react-hook-form lib and use the new API (#1444) ([1d129d9](https://github.com/AntaresSimulatorTeam/AntaREST/commit/1d129d9d6bac97deee9ebc98d3334117fe837444))
+*  **ui:** add @total-typescript/ts-reset lib and tsUtils [`1408`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1408) ([aa5e3e8](https://github.com/AntaresSimulatorTeam/AntaREST/commit/aa5e3e87d95b8b5061030025e89443e1fc71823d))
+*  **ui:** update react-hook-form lib and use the new API [`1444`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1444) ([1d129d9](https://github.com/AntaresSimulatorTeam/AntaREST/commit/1d129d9d6bac97deee9ebc98d3334117fe837444))
 
 
 ### Bug Fixes
 
-*  **common:** field array change doesn't trigger on auto submit (#1439) ([910db64](https://github.com/AntaresSimulatorTeam/AntaREST/commit/910db64ca872468a1f01ced99083962022daa05c))
-*  **matrix:** correct the frequency of some matrices (#1384) ([2644416](https://github.com/AntaresSimulatorTeam/AntaREST/commit/26444169b9ab60f54e8ee7a2d16fb10dbc4d537e))
+*  **common:** field array change doesn't trigger on auto submit [`1439`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1439) ([910db64](https://github.com/AntaresSimulatorTeam/AntaREST/commit/910db64ca872468a1f01ced99083962022daa05c))
+*  **matrix:** correct the frequency of some matrices [`1384`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1384) ([2644416](https://github.com/AntaresSimulatorTeam/AntaREST/commit/26444169b9ab60f54e8ee7a2d16fb10dbc4d537e))
 *  **ui-common:** add matrices float handling ([99ba81f](https://github.com/AntaresSimulatorTeam/AntaREST/commit/99ba81fce26bbd99340990d0207761463558d4a7))
 *  **ui-hydro:** correct column names ([e529a79](https://github.com/AntaresSimulatorTeam/AntaREST/commit/e529a799071e9c5485e2cba35eb5a7c2c18c25e7))
 *  **ui-hydro:** update hydro matrices columns ([56641d7](https://github.com/AntaresSimulatorTeam/AntaREST/commit/56641d7ad995d8b7dd6755b13f1689b32b6296d8))
-*  **ui:** fix typo on error page (#1390) ([da00131](https://github.com/AntaresSimulatorTeam/AntaREST/commit/da0013190d7e31e1afe9d8f5c3b03c378ca41507))
+*  **ui:** fix typo on error page [`1390`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1390) ([da00131](https://github.com/AntaresSimulatorTeam/AntaREST/commit/da0013190d7e31e1afe9d8f5c3b03c378ca41507))
 *  **ui:** size issue with HandsonTable ([f63edda](https://github.com/AntaresSimulatorTeam/AntaREST/commit/f63edda65345bf9848fb44a8a067a885ca5fbd83))
 
 
@@ -862,7 +895,7 @@ v2.14.0 (2023-05-12)
 ### Documentation
 
 *  **api:** add API documentation for the hydraulic allocation (and fix minor awkwardness) ([08680af](https://github.com/AntaresSimulatorTeam/AntaREST/commit/08680af4344b7dd9aa365267a0deb8d9094f0294))
-*  **study-upgrade:** add the "How to upgrade a study?" topic in the documentation (#1400) ([2d03bef](https://github.com/AntaresSimulatorTeam/AntaREST/commit/2d03befe999e558c989e1cce1f51186beff5502b))
+*  **study-upgrade:** add the "How to upgrade a study?" topic in the documentation [`1400`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1400) ([2d03bef](https://github.com/AntaresSimulatorTeam/AntaREST/commit/2d03befe999e558c989e1cce1f51186beff5502b))
 
 > IMPORTANT: The `antares-launcher` Git submodule is dropped.
 
@@ -880,7 +913,7 @@ v2.13.2 (2023-04-25)
 
 ### Bug Fixes
 
-*  **api:** fix uncaught exceptions stopping slurm launcher loop (#1477) ([2737914](https://github.com/AntaresSimulatorTeam/AntaREST/commit/27379146cfa12cc90e38f2f0d77009d80f3164db))
+*  **api:** fix uncaught exceptions stopping slurm launcher loop [`1477`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1477) ([2737914](https://github.com/AntaresSimulatorTeam/AntaREST/commit/27379146cfa12cc90e38f2f0d77009d80f3164db))
 
 ### Contributors
 
@@ -891,11 +924,11 @@ v2.13.1 (2023-04-11)
 
 ### Bug Fixes
 
-*  **desktop:** use Antares Solver v8.5 for Antares Web Desktop version (#1414) ([6979e87](https://github.com/AntaresSimulatorTeam/AntaREST/commit/6979e871dac39a34e76fe6a72b2ccf4502e8a288))
-*  **launcher:** improved reliability of task state retrieval sent to SLUM (#1417) ([101dd8c](https://github.com/AntaresSimulatorTeam/AntaREST/commit/101dd8c2a149c5112669d557d0851a9b1659d683))
-*  **api:** show Antares Launcher version in the `/version` end point (#1415) ([12bfa84](https://github.com/AntaresSimulatorTeam/AntaREST/commit/12bfa849e2232ea275851ad11407faf70bb91d2c))
-*  **desktop:** use Antares Solver v8.5.0 for Antares Web Desktop version (#1419) ([8f55667](https://github.com/AntaresSimulatorTeam/AntaREST/commit/8f55667b52eea39a7d0e646811f16ef024afbbe0))
-*  **api:** better handling of exception to catch the stacktrace (#1422) ([a2d0de0](https://github.com/AntaresSimulatorTeam/AntaREST/commit/a2d0de073582070282131b3bcd346e6fbe7315ab))
+*  **desktop:** use Antares Solver v8.5 for Antares Web Desktop version [`1414`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1414) ([6979e87](https://github.com/AntaresSimulatorTeam/AntaREST/commit/6979e871dac39a34e76fe6a72b2ccf4502e8a288))
+*  **launcher:** improved reliability of task state retrieval sent to SLUM [`1417`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1417) ([101dd8c](https://github.com/AntaresSimulatorTeam/AntaREST/commit/101dd8c2a149c5112669d557d0851a9b1659d683))
+*  **api:** show Antares Launcher version in the `/version` end point [`1415`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1415) ([12bfa84](https://github.com/AntaresSimulatorTeam/AntaREST/commit/12bfa849e2232ea275851ad11407faf70bb91d2c))
+*  **desktop:** use Antares Solver v8.5.0 for Antares Web Desktop version [`1419`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1419) ([8f55667](https://github.com/AntaresSimulatorTeam/AntaREST/commit/8f55667b52eea39a7d0e646811f16ef024afbbe0))
+*  **api:** better handling of exception to catch the stacktrace [`1422`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1422) ([a2d0de0](https://github.com/AntaresSimulatorTeam/AntaREST/commit/a2d0de073582070282131b3bcd346e6fbe7315ab))
 
 
 ### Contributors
@@ -909,19 +942,19 @@ v2.13.0 (2023-03-09)
 
 ### Features
 
-*  **ui-common:** add doc link on subsections (#1241) ([1331232](https://github.com/AntaresSimulatorTeam/AntaREST/commit/1331232e418ebfbf3cc1a82725b95cb11cf8b9bc))
-*  **api-websocket:** better handle the events in eventbus braodcasting (#1240) ([99f2590](https://github.com/AntaresSimulatorTeam/AntaREST/commit/99f25906559f782bcad857650f1b8ebfcfe584c8))
-*  **ui-commands:** add confirm dialog on delete command (#1258) ([0be70f8](https://github.com/AntaresSimulatorTeam/AntaREST/commit/0be70f87ec03c491faf1d29c8d78b29615d1da9a))
-*  **redux:** extend left menu by default (#1266) ([1c042af](https://github.com/AntaresSimulatorTeam/AntaREST/commit/1c042af7d4c713bcbd530062cb9e31ead45e1517))
-*  **ui-study:** add text ellipsis on study name (#1270) ([6938114](https://github.com/AntaresSimulatorTeam/AntaREST/commit/69381145ab1e4224e874a59dcec2297dae951b51))
-*  **launcher:** integrate Antares Solver v8.5.0. (#1282) ([57bbd3d](https://github.com/AntaresSimulatorTeam/AntaREST/commit/57bbd3d0974b104dc4b58f0f1756e40f50b2189f))
-*  **ui:** add tooltips to folded menu (#1279) ([b489dd9](https://github.com/AntaresSimulatorTeam/AntaREST/commit/b489dd9db8e5d5b3a8ab6a29721d292d3841dcce))
-*  **github:** add feature request template (#1284) ([73aa920](https://github.com/AntaresSimulatorTeam/AntaREST/commit/73aa920fa15d5a3397d49e00319acf808678d021))
-*  **github:** add bug report template  (#1283) ([8e05370](https://github.com/AntaresSimulatorTeam/AntaREST/commit/8e05370c5b1ba212545515984eb379c7a7fe6f9d))
-*  **ui-results:** add download button on results matrix (#1290) ([343df96](https://github.com/AntaresSimulatorTeam/AntaREST/commit/343df968fec3dc6658f1e41040bc656cd80a104c))
-*  **ui-redux:** add menu state in local storage (#1297) ([3160f29](https://github.com/AntaresSimulatorTeam/AntaREST/commit/3160f295ffd06312f2a77ec0ea2dd7da0c04fbed))
-*  **ui-study:** add path tooltip on study title (#1300) ([429d288](https://github.com/AntaresSimulatorTeam/AntaREST/commit/429d288ce5aa96c0c65724647b211639b4153417))
-*  **ui-map:** add layers and districts French translations (#1292) ([12f4e92](https://github.com/AntaresSimulatorTeam/AntaREST/commit/12f4e9235d5cd2256a52d9e31ec440c0756272b4))
+*  **ui-common:** add doc link on subsections [`1241`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1241) ([1331232](https://github.com/AntaresSimulatorTeam/AntaREST/commit/1331232e418ebfbf3cc1a82725b95cb11cf8b9bc))
+*  **api-websocket:** better handle the events in eventbus braodcasting [`1240`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1240) ([99f2590](https://github.com/AntaresSimulatorTeam/AntaREST/commit/99f25906559f782bcad857650f1b8ebfcfe584c8))
+*  **ui-commands:** add confirm dialog on delete command [`1258`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1258) ([0be70f8](https://github.com/AntaresSimulatorTeam/AntaREST/commit/0be70f87ec03c491faf1d29c8d78b29615d1da9a))
+*  **redux:** extend left menu by default [`1266`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1266) ([1c042af](https://github.com/AntaresSimulatorTeam/AntaREST/commit/1c042af7d4c713bcbd530062cb9e31ead45e1517))
+*  **ui-study:** add text ellipsis on study name [`1270`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1270) ([6938114](https://github.com/AntaresSimulatorTeam/AntaREST/commit/69381145ab1e4224e874a59dcec2297dae951b51))
+*  **launcher:** integrate Antares Solver v8.5.0. [`1282`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1282) ([57bbd3d](https://github.com/AntaresSimulatorTeam/AntaREST/commit/57bbd3d0974b104dc4b58f0f1756e40f50b2189f))
+*  **ui:** add tooltips to folded menu [`1279`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1279) ([b489dd9](https://github.com/AntaresSimulatorTeam/AntaREST/commit/b489dd9db8e5d5b3a8ab6a29721d292d3841dcce))
+*  **github:** add feature request template [`1284`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1284) ([73aa920](https://github.com/AntaresSimulatorTeam/AntaREST/commit/73aa920fa15d5a3397d49e00319acf808678d021))
+*  **github:** add bug report template  [`1283`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1283) ([8e05370](https://github.com/AntaresSimulatorTeam/AntaREST/commit/8e05370c5b1ba212545515984eb379c7a7fe6f9d))
+*  **ui-results:** add download button on results matrix [`1290`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1290) ([343df96](https://github.com/AntaresSimulatorTeam/AntaREST/commit/343df968fec3dc6658f1e41040bc656cd80a104c))
+*  **ui-redux:** add menu state in local storage [`1297`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1297) ([3160f29](https://github.com/AntaresSimulatorTeam/AntaREST/commit/3160f295ffd06312f2a77ec0ea2dd7da0c04fbed))
+*  **ui-study:** add path tooltip on study title [`1300`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1300) ([429d288](https://github.com/AntaresSimulatorTeam/AntaREST/commit/429d288ce5aa96c0c65724647b211639b4153417))
+*  **ui-map:** add layers and districts French translations [`1292`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1292) ([12f4e92](https://github.com/AntaresSimulatorTeam/AntaREST/commit/12f4e9235d5cd2256a52d9e31ec440c0756272b4))
 
 
 ### Code Refactoring
@@ -932,12 +965,12 @@ v2.13.0 (2023-03-09)
 
 ### Bug Fixes
 
-*  **api-workers:** Prevent scanning of the default workspace (#1244) ([06fd2bc](https://github.com/AntaresSimulatorTeam/AntaREST/commit/06fd2bca478fc4f579ba0760e37969038e560f97))
-*  **ui-study:** remove the create command button (#1251) ([463e7a7](https://github.com/AntaresSimulatorTeam/AntaREST/commit/463e7a789eebd2b28c33bd18e833bbd30dc9268a))
-*  **ui-wording:** correct wording of user messages (#1271) ([7f66c1a](https://github.com/AntaresSimulatorTeam/AntaREST/commit/7f66c1aa518bea09c2db52ae87ef36e14cd5b9e0))
-*  **ui-wording:** correct french translations (#1273) ([f4f62f2](https://github.com/AntaresSimulatorTeam/AntaREST/commit/f4f62f252d8b5556ba1cb2b6027360b9066327e0))
-*  **api:** correct the way the task completion is notified to the event bus (#1301) ([b9cea1e](https://github.com/AntaresSimulatorTeam/AntaREST/commit/b9cea1ebd644869a459cbf002661c4a833389cb2))
-*  **storage:** ignore zipped output if an unzipped version exists (#1269) ([032b581](https://github.com/AntaresSimulatorTeam/AntaREST/commit/032b58134a4e2e9da50848d6de438d23a0f00086))
+*  **api-workers:** Prevent scanning of the default workspace [`1244`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1244) ([06fd2bc](https://github.com/AntaresSimulatorTeam/AntaREST/commit/06fd2bca478fc4f579ba0760e37969038e560f97))
+*  **ui-study:** remove the create command button [`1251`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1251) ([463e7a7](https://github.com/AntaresSimulatorTeam/AntaREST/commit/463e7a789eebd2b28c33bd18e833bbd30dc9268a))
+*  **ui-wording:** correct wording of user messages [`1271`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1271) ([7f66c1a](https://github.com/AntaresSimulatorTeam/AntaREST/commit/7f66c1aa518bea09c2db52ae87ef36e14cd5b9e0))
+*  **ui-wording:** correct french translations [`1273`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1273) ([f4f62f2](https://github.com/AntaresSimulatorTeam/AntaREST/commit/f4f62f252d8b5556ba1cb2b6027360b9066327e0))
+*  **api:** correct the way the task completion is notified to the event bus [`1301`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1301) ([b9cea1e](https://github.com/AntaresSimulatorTeam/AntaREST/commit/b9cea1ebd644869a459cbf002661c4a833389cb2))
+*  **storage:** ignore zipped output if an unzipped version exists [`1269`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1269) ([032b581](https://github.com/AntaresSimulatorTeam/AntaREST/commit/032b58134a4e2e9da50848d6de438d23a0f00086))
 
 
 ### Build System
@@ -959,7 +992,7 @@ v2.13.0 (2023-03-09)
 
 ### Continuous Integration
 
-* remove Create Issue Branch app file (#1299) ([4e81fa6](https://github.com/AntaresSimulatorTeam/AntaREST/commit/4e81fa646552a58d56984171c644104d4dd79ab7))
+* remove Create Issue Branch app file [`1299`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1299) ([4e81fa6](https://github.com/AntaresSimulatorTeam/AntaREST/commit/4e81fa646552a58d56984171c644104d4dd79ab7))
 
 
 ### Contributors
