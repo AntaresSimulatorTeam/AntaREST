@@ -46,7 +46,10 @@ import FormContext from "./FormContext";
 import useFormApiPlus from "./useFormApiPlus";
 import useFormUndoRedo from "./useFormUndoRedo";
 
-export type AutoSubmitConfig = { enable: boolean; wait?: number };
+export interface AutoSubmitConfig {
+  enable: boolean;
+  wait?: number;
+}
 
 export interface FormProps<
   TFieldValues extends FieldValues = FieldValues,
@@ -71,6 +74,7 @@ export interface FormProps<
     | React.ReactNode;
   submitButtonText?: string;
   submitButtonIcon?: LoadingButtonProps["startIcon"];
+  miniSubmitButton?: boolean;
   hideSubmitButton?: boolean;
   onStateChange?: (state: FormState<TFieldValues>) => void;
   autoSubmit?: boolean | AutoSubmitConfig;
@@ -93,7 +97,8 @@ function Form<TFieldValues extends FieldValues, TContext>(
     onInvalid,
     children,
     submitButtonText,
-    submitButtonIcon,
+    submitButtonIcon = <SaveIcon />,
+    miniSubmitButton,
     hideSubmitButton,
     onStateChange,
     autoSubmit,
@@ -114,9 +119,9 @@ function Form<TFieldValues extends FieldValues, TContext>(
   const fieldAutoSubmitListeners = useRef<
     Record<string, ((v: any) => any | Promise<any>) | undefined>
   >({});
-  const fieldsChangeDuringAutoSubmitting = useRef<FieldPath<TFieldValues>[]>(
-    [],
-  );
+  const fieldsChangeDuringAutoSubmitting = useRef<
+    Array<FieldPath<TFieldValues>>
+  >([]);
   const lastSubmittedData = useRef<TFieldValues>();
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   const submitSuccessfulCb = useRef(() => {});
@@ -355,20 +360,19 @@ function Form<TFieldValues extends FieldValues, TContext>(
             <>
               <LoadingButton
                 type="submit"
-                variant="contained"
                 disabled={!isSubmitAllowed}
                 loading={isSubmitting}
-                loadingPosition="start"
-                startIcon={
-                  RA.isNotUndefined(submitButtonIcon) ? (
-                    submitButtonIcon
-                  ) : (
-                    <SaveIcon />
-                  )
-                }
-              >
-                {submitButtonText || t("global.save")}
-              </LoadingButton>
+                {...(miniSubmitButton
+                  ? {
+                      children: submitButtonIcon,
+                    }
+                  : {
+                      loadingPosition: "start",
+                      startIcon: submitButtonIcon,
+                      variant: "contained",
+                      children: submitButtonText || t("global.save"),
+                    })}
+              />
               {enableUndoRedo && (
                 <Divider sx={{ mx: 2 }} orientation="vertical" flexItem />
               )}

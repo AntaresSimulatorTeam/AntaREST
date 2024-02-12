@@ -18,7 +18,7 @@ interface Props {
   open: boolean;
   onClose: () => void;
   content?: string;
-  onSave: (content: string) => void;
+  onSave: (content: string) => Promise<void>;
 }
 
 function NoteEditorModal(props: Props) {
@@ -32,9 +32,11 @@ function NoteEditorModal(props: Props) {
 
   const onContentSave = () => {
     const value = convertDraftJSToXML(editorState);
-    if (initContent !== value) {
-      onSave(value);
+    if (initContent === value) {
+      onClose();
+      return;
     }
+    onSave(value);
   };
 
   const onStyleClick = (type: string) => {
@@ -63,7 +65,6 @@ function NoteEditorModal(props: Props) {
       );
       setInitContent(content);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [content]);
 
   return (

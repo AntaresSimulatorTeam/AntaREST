@@ -1,11 +1,10 @@
 import datetime
+import typing as t
 import zipfile
 from pathlib import Path
-from typing import List, Optional
 
 import numpy as np
 import pytest
-from sqlalchemy import create_engine  # type: ignore
 
 from antarest.core.model import PublicMode
 from antarest.core.utils.fastapi_sqlalchemy import db
@@ -67,10 +66,10 @@ class TestRawStudyService:
         study_storage_service: StudyStorageService,
         # pytest parameters
         outputs: bool,
-        output_filter: Optional[List[str]],
+        output_filter: t.Optional[t.List[str]],
         denormalize: bool,
     ) -> None:
-        ## Prepare database objects
+        # Prepare database objects
         # noinspection PyArgumentList
         user = User(id=0, name="admin")
         db.session.add(user)
@@ -100,7 +99,7 @@ class TestRawStudyService:
         db.session.add(raw_study)
         db.session.commit()
 
-        ## Prepare the RAW Study
+        # Prepare the RAW Study
         raw_study_service.create(raw_study)
         file_study = raw_study_service.get_raw(raw_study)
 
@@ -144,7 +143,7 @@ class TestRawStudyService:
             storage_service=study_storage_service,
         )
 
-        ## Prepare fake outputs
+        # Prepare fake outputs
         my_solver_outputs = ["20230802-1425eco", "20230802-1628eco.zip"]
         for filename in my_solver_outputs:
             output_path = raw_study_path / "output" / filename
@@ -163,7 +162,7 @@ class TestRawStudyService:
                 output_path.mkdir(exist_ok=True, parents=True)
                 (output_path / "simulation.log").write_text("Simulation done")
 
-        ## Collect all files by types to prepare the comparison
+        # Collect all files by types to prepare the comparison
         src_study_files = set()
         src_matrices = set()
         src_outputs = set()
@@ -176,7 +175,7 @@ class TestRawStudyService:
             else:
                 src_study_files.add(relpath)
 
-        ## Run the export
+        # Run the export
         target_path = tmp_path / raw_study_path.with_suffix(".exported").name
         raw_study_service.export_study_flat(
             raw_study,
@@ -186,7 +185,7 @@ class TestRawStudyService:
             denormalize=denormalize,
         )
 
-        ## Collect the resulting files
+        # Collect the resulting files
         res_study_files = set()
         res_matrices = set()
         res_outputs = set()
@@ -199,7 +198,7 @@ class TestRawStudyService:
             else:
                 res_study_files.add(relpath)
 
-        ## Check the matrice
+        # Check the matrice
         # If de-normalization is enabled, the previous loop won't find the matrices
         # because the matrix extensions are ".txt" instead of ".txt.link".
         # Therefore, it is necessary to move the corresponding ".txt" files
@@ -210,7 +209,7 @@ class TestRawStudyService:
             res_study_files -= res_matrices
         assert res_matrices == src_matrices
 
-        ## Check the outputs
+        # Check the outputs
         if outputs:
             # If `outputs` is True the filtering can occurs
             if output_filter is None:
@@ -224,5 +223,5 @@ class TestRawStudyService:
             # whatever the value of the `output_list_filter` is
             assert not res_outputs
 
-        ## Check the study files
+        # Check the study files
         assert res_study_files == src_study_files

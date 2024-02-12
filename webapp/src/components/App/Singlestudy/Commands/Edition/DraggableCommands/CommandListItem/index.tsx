@@ -110,7 +110,6 @@ function CommandListItem({
   };
 
   const onImport = async (json: object) => {
-    // eslint-disable-next-line dot-notation
     // setJsonData((json as any)['args']);
     const oldJson = { ...jsonData };
     try {
@@ -158,9 +157,7 @@ function CommandListItem({
 
   return (
     <ItemContainer
-      // eslint-disable-next-line react/jsx-props-no-spreading
       {...provided.draggableProps}
-      // eslint-disable-next-line react/jsx-props-no-spreading
       {...provided.dragHandleProps}
       ref={provided.innerRef}
       style={getStyle({ provided, style, isDragging })}

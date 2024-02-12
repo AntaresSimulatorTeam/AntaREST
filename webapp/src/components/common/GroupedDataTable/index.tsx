@@ -1,5 +1,3 @@
-/* eslint-disable react/jsx-pascal-case */
-/* eslint-disable camelcase */
 import Box from "@mui/material/Box";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import ControlPointDuplicateIcon from "@mui/icons-material/ControlPointDuplicate";
@@ -8,9 +6,9 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import { Button } from "@mui/material";
 import {
   MaterialReactTable,
-  MRT_RowSelectionState,
   MRT_ToggleFiltersButton,
   MRT_ToggleGlobalFilterButton,
+  type MRT_RowSelectionState,
   type MRT_ColumnDef,
 } from "material-react-table";
 import { useTranslation } from "react-i18next";
@@ -22,7 +20,7 @@ import DuplicateDialog from "./DuplicateDialog";
 
 export interface GroupedDataTableProps<TData extends TRow> {
   data: TData[];
-  columns: MRT_ColumnDef<TData>[];
+  columns: Array<MRT_ColumnDef<TData>>;
   groups: string[] | readonly string[];
   onCreate?: (values: TData) => Promise<TData>;
   onDelete?: (ids: string[]) => void;

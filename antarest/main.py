@@ -6,7 +6,6 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Sequence, Tuple, cast
 
 import pydantic
-import sqlalchemy.ext.baked  # type: ignore
 import uvicorn  # type: ignore
 import uvicorn.config  # type: ignore
 from fastapi import FastAPI, HTTPException
@@ -56,18 +55,16 @@ class PathType:
     which specify whether the path argument must exist, whether it can be a file,
     and whether it can be a directory, respectively.
 
-    Example Usage:
+    Example Usage::
 
-    ```python
-    import argparse
-    from antarest.main import PathType
+        import argparse
+        from antarest.main import PathType
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--input', type=PathType(file_ok=True, exists=True))
-    args = parser.parse_args()
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--input', type=PathType(file_ok=True, exists=True))
+        args = parser.parse_args()
 
-    print(args.input)
-    ```
+        print(args.input)
 
     In the above example, `PathType` is used to specify the type of the `--input`
     argument for the `argparse` parser. The argument must be an existing file path.
@@ -401,9 +398,11 @@ def fastapi_app(
     application.add_middleware(
         RateLimitMiddleware,
         authenticate=auth_manager.create_auth_function(),
-        backend=RedisBackend(config.redis.host, config.redis.port, 1, config.redis.password)
-        if config.redis is not None
-        else MemoryBackend(),
+        backend=(
+            MemoryBackend()
+            if config.redis is None
+            else RedisBackend(config.redis.host, config.redis.port, 1, config.redis.password)
+        ),
         config=RATE_LIMIT_CONFIG,
     )
 

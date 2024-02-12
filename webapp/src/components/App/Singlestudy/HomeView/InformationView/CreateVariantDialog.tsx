@@ -22,7 +22,7 @@ function CreateVariantDialog(props: Props) {
   const { parentId, open, tree, onClose } = props;
   const [t] = useTranslation();
   const navigate = useNavigate();
-  const [sourceList, setSourceList] = useState<Array<GenericInfo>>([]);
+  const [sourceList, setSourceList] = useState<GenericInfo[]>([]);
   const defaultValues = { name: "", sourceId: parentId };
 
   useEffect(() => {

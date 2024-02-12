@@ -1,12 +1,14 @@
 import enum
+import json
 import typing as t
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy import Column, DateTime, Enum, ForeignKey, Integer, Sequence, String  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
 
 from antarest.core.persistence import Base
+from antarest.core.utils.string import to_camel_case
 from antarest.login.model import Identity, UserInfo
 
 
@@ -31,6 +33,15 @@ class LauncherParametersDTO(BaseModel):
     output_suffix: t.Optional[str] = None
     other_options: t.Optional[str] = None
     # add extensions field here
+
+    @classmethod
+    def from_launcher_params(cls, params: t.Optional[str]) -> "LauncherParametersDTO":
+        """
+        Convert the launcher parameters from a string to a `LauncherParametersDTO` object.
+        """
+        if params is None:
+            return cls()
+        return cls.parse_obj(json.loads(params))
 
 
 class LogType(str, enum.Enum):
@@ -214,3 +225,43 @@ class JobCreationDTO(BaseModel):
 
 class LauncherEnginesDTO(BaseModel):
     engines: t.List[str]
+
+
+class LauncherLoadDTO(
+    BaseModel,
+    extra="forbid",
+    validate_assignment=True,
+    allow_population_by_field_name=True,
+    alias_generator=to_camel_case,
+):
+    """
+    DTO representing the load of the SLURM cluster or local machine.
+
+    Attributes:
+        allocated_cpu_rate: The rate of allocated CPU, in range (0, 100).
+        cluster_load_rate: The rate of cluster load, in range (0, 100).
+        nb_queued_jobs: The number of queued jobs.
+        launcher_status: The status of the launcher: "SUCCESS" or "FAILED".
+    """
+
+    allocated_cpu_rate: float = Field(
+        description="The rate of allocated CPU, in range (0, 100)",
+        ge=0,
+        le=100,
+        title="Allocated CPU Rate",
+    )
+    cluster_load_rate: float = Field(
+        description="The rate of cluster load, in range (0, 100)",
+        ge=0,
+        le=100,
+        title="Cluster Load Rate",
+    )
+    nb_queued_jobs: int = Field(
+        description="The number of queued jobs",
+        ge=0,
+        title="Number of Queued Jobs",
+    )
+    launcher_status: str = Field(
+        description="The status of the launcher: 'SUCCESS' or 'FAILED'",
+        title="Launcher Status",
+    )

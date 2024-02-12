@@ -1,25 +1,23 @@
+import json
 import re
+from unittest.mock import ANY
 
 import numpy as np
 import pytest
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskStatus
+from antarest.study.business.areas.st_storage_management import STStorageOutput
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import STStorageConfig
 from tests.integration.utils import wait_task_completion
 
-DEFAULT_PROPERTIES = {
-    # `name` field is required
-    "group": "Other1",
-    "injectionNominalCapacity": 0.0,
-    "withdrawalNominalCapacity": 0.0,
-    "reservoirCapacity": 0.0,
-    "efficiency": 1.0,
-    "initialLevel": 0.0,
-    "initialLevelOptim": False,
-}
+DEFAULT_CONFIG = json.loads(STStorageConfig(id="dummy", name="dummy").json(by_alias=True, exclude={"id", "name"}))
+
+DEFAULT_PROPERTIES = json.loads(STStorageOutput(name="dummy").json(by_alias=True, exclude={"id", "name"}))
 
 
+# noinspection SpellCheckingInspection
 @pytest.mark.unit_test
 class TestSTStorage:
     # noinspection GrazieInspection
@@ -223,7 +221,7 @@ class TestSTStorage:
             json=bad_properties,
         )
         assert res.status_code == 422, res.json()
-        assert res.json()["exception"] == "ValidationError", res.json()
+        assert res.json()["exception"] == "RequestValidationError", res.json()
 
         # The short-term storage properties should not have been updated.
         res = client.get(
@@ -395,16 +393,7 @@ class TestSTStorage:
         res = client.post(
             f"/v1/studies/{study_id}/areas/{bad_area_id}/storages",
             headers={"Authorization": f"Bearer {user_access_token}"},
-            json={
-                "name": siemens_battery,
-                "group": "Battery",
-                "initialLevel": 0.0,
-                "initialLevelOptim": False,
-                "injectionNominalCapacity": 0.0,
-                "reservoirCapacity": 0.0,
-                "withdrawalNominalCapacity": 0.0,
-                "efficiency": 1.0,
-            },
+            json={"name": siemens_battery, "group": "Battery"},
         )
         assert res.status_code == 500, res.json()
         obj = res.json()
@@ -428,15 +417,7 @@ class TestSTStorage:
         res = client.patch(
             f"/v1/studies/{study_id}/areas/{bad_area_id}/storages/{siemens_battery_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
-            json={
-                "efficiency": 1.0,
-                "initialLevel": 0.0,
-                "initialLevelOptim": True,
-                "injectionNominalCapacity": 2450,
-                "name": "New Siemens Battery",
-                "reservoirCapacity": 2500,
-                "withdrawalNominalCapacity": 2350,
-            },
+            json={"efficiency": 1.0},
         )
         assert res.status_code == 404, res.json()
         obj = res.json()
@@ -449,15 +430,7 @@ class TestSTStorage:
         res = client.patch(
             f"/v1/studies/{study_id}/areas/{area_id}/storages/{bad_storage_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
-            json={
-                "efficiency": 1.0,
-                "initialLevel": 0.0,
-                "initialLevelOptim": True,
-                "injectionNominalCapacity": 2450,
-                "name": "New Siemens Battery",
-                "reservoirCapacity": 2500,
-                "withdrawalNominalCapacity": 2350,
-            },
+            json={"efficiency": 1.0},
         )
         assert res.status_code == 404, res.json()
         obj = res.json()
@@ -470,17 +443,192 @@ class TestSTStorage:
         res = client.patch(
             f"/v1/studies/{bad_study_id}/areas/{area_id}/storages/{siemens_battery_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
-            json={
-                "efficiency": 1.0,
-                "initialLevel": 0.0,
-                "initialLevelOptim": True,
-                "injectionNominalCapacity": 2450,
-                "name": "New Siemens Battery",
-                "reservoirCapacity": 2500,
-                "withdrawalNominalCapacity": 2350,
-            },
+            json={"efficiency": 1.0},
         )
         assert res.status_code == 404, res.json()
         obj = res.json()
         description = obj["description"]
         assert bad_study_id in description
+
+    def test__default_values(
+        self,
+        client: TestClient,
+        user_access_token: str,
+    ) -> None:
+        """
+        The purpose of this integration test is to test the default values of
+        the properties of a short-term storage.
+
+        Given a new study with an area "FR", at least in version 860,
+        When I create a short-term storage with a name "Tesla Battery", with the default values,
+        Then the short-term storage is created with initialLevel = 0.0, and initialLevelOptim = False.
+        """
+        # Create a new study in version 860 (or higher)
+        res = client.post(
+            "/v1/studies",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+            params={"name": "MyStudy", "version": 860},
+        )
+        assert res.status_code in {200, 201}, res.json()
+        study_id = res.json()
+
+        # Create a new area named "FR"
+        res = client.post(
+            f"/v1/studies/{study_id}/areas",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+            json={"name": "FR", "type": "AREA"},
+        )
+        assert res.status_code in {200, 201}, res.json()
+        area_id = res.json()["id"]
+
+        # Create a new short-term storage named "Tesla Battery"
+        tesla_battery = "Tesla Battery"
+        res = client.post(
+            f"/v1/studies/{study_id}/areas/{area_id}/storages",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+            json={"name": tesla_battery, "group": "Battery"},
+        )
+        assert res.status_code == 200, res.json()
+        tesla_battery_id = res.json()["id"]
+        tesla_config = {**DEFAULT_PROPERTIES, "id": tesla_battery_id, "name": tesla_battery, "group": "Battery"}
+        assert res.json() == tesla_config
+
+        # Use the Debug mode to make sure that the initialLevel and initialLevelOptim properties
+        # are properly set in the configuration file.
+        res = client.get(
+            f"/v1/studies/{study_id}/raw",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+            params={"path": f"input/st-storage/clusters/{area_id}/list/{tesla_battery_id}"},
+        )
+        assert res.status_code == 200, res.json()
+        actual = res.json()
+        expected = {**DEFAULT_CONFIG, "name": tesla_battery, "group": "Battery"}
+        assert actual == expected
+
+        # We want to make sure that the default properties are applied to a study variant.
+        # We want to make sure that updating the initialLevel property is taken into account
+        # in the variant commands.
+
+        # Create a variant of the study
+        res = client.post(
+            f"/v1/studies/{study_id}/variants",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+            params={"name": "MyVariant"},
+        )
+        assert res.status_code in {200, 201}, res.json()
+        variant_id = res.json()
+
+        # Create a new short-term storage named "Siemens Battery"
+        siemens_battery = "Siemens Battery"
+        res = client.post(
+            f"/v1/studies/{variant_id}/areas/{area_id}/storages",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+            json={"name": siemens_battery, "group": "Battery"},
+        )
+        assert res.status_code == 200, res.json()
+
+        # Check the variant commands
+        res = client.get(
+            f"/v1/studies/{variant_id}/commands",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+        )
+        assert res.status_code == 200, res.json()
+        commands = res.json()
+        assert len(commands) == 1
+        actual = commands[0]
+        expected = {
+            "id": ANY,
+            "action": "create_st_storage",
+            "args": {
+                "area_id": "fr",
+                "parameters": {**DEFAULT_CONFIG, "name": siemens_battery, "group": "Battery"},
+                "pmax_injection": ANY,
+                "pmax_withdrawal": ANY,
+                "lower_rule_curve": ANY,
+                "upper_rule_curve": ANY,
+                "inflows": ANY,
+            },
+            "version": 1,
+        }
+        assert actual == expected
+
+        # Update the initialLevel property of the "Siemens Battery" short-term storage to 0.5
+        siemens_battery_id = transform_name_to_id(siemens_battery)
+        res = client.patch(
+            f"/v1/studies/{variant_id}/areas/{area_id}/storages/{siemens_battery_id}",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+            json={"initialLevel": 0.5},
+        )
+        assert res.status_code == 200, res.json()
+
+        # Check the variant commands
+        res = client.get(
+            f"/v1/studies/{variant_id}/commands",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+        )
+        assert res.status_code == 200, res.json()
+        commands = res.json()
+        assert len(commands) == 2
+        actual = commands[1]
+        expected = {
+            "id": ANY,
+            "action": "update_config",
+            "args": {
+                "data": "0.5",
+                "target": "input/st-storage/clusters/fr/list/siemens battery/initiallevel",
+            },
+            "version": 1,
+        }
+        assert actual == expected
+
+        # Update the initialLevel property of the "Siemens Battery" short-term storage back to 0
+        res = client.patch(
+            f"/v1/studies/{variant_id}/areas/{area_id}/storages/{siemens_battery_id}",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+            json={"initialLevel": 0.0, "injectionNominalCapacity": 1600},
+        )
+        assert res.status_code == 200, res.json()
+
+        # Check the variant commands
+        res = client.get(
+            f"/v1/studies/{variant_id}/commands",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+        )
+        assert res.status_code == 200, res.json()
+        commands = res.json()
+        assert len(commands) == 3
+        actual = commands[2]
+        expected = {
+            "id": ANY,
+            "action": "update_config",
+            "args": [
+                {
+                    "data": "1600.0",
+                    "target": "input/st-storage/clusters/fr/list/siemens battery/injectionnominalcapacity",
+                },
+                {
+                    "data": "0.0",
+                    "target": "input/st-storage/clusters/fr/list/siemens battery/initiallevel",
+                },
+            ],
+            "version": 1,
+        }
+        assert actual == expected
+
+        # Use the Debug mode to make sure that the initialLevel and initialLevelOptim properties
+        # are properly set in the configuration file.
+        res = client.get(
+            f"/v1/studies/{variant_id}/raw",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+            params={"path": f"input/st-storage/clusters/{area_id}/list/{siemens_battery_id}"},
+        )
+        assert res.status_code == 200, res.json()
+        actual = res.json()
+        expected = {
+            **DEFAULT_CONFIG,
+            "name": siemens_battery,
+            "group": "Battery",
+            "injectionnominalcapacity": 1600,
+            "initiallevel": 0.0,
+        }
+        assert actual == expected

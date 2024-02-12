@@ -13,7 +13,7 @@ import { GenericInfo } from "../../common/types";
 interface Props {
   name: string;
   label?: string;
-  list: Array<GenericInfo>;
+  list: GenericInfo[];
   data: string | undefined;
   setValue?: (data: string) => void;
   sx?: SxProps<Theme> | undefined;

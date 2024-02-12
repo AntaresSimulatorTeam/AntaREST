@@ -45,14 +45,14 @@ export interface StudyMetadataDTO extends IdentityDTO {
   workspace: string;
   managed: boolean;
   archived: boolean;
-  groups: Array<IdentityDTO>;
+  groups: IdentityDTO[];
   public_mode: StudyPublicMode;
   folder?: string;
   horizon?: string;
   scenario?: string;
   status?: string;
   doc?: string;
-  tags?: Array<string>;
+  tags?: string[];
 }
 
 export interface StudyMetadata {
@@ -73,7 +73,7 @@ export interface StudyMetadata {
   scenario?: string;
   status?: string;
   doc?: string;
-  tags?: Array<string>;
+  tags?: string[];
 }
 
 export interface StudyMetadataPatchDTO {
@@ -83,7 +83,7 @@ export interface StudyMetadataPatchDTO {
   scenario?: string;
   status?: string;
   doc?: string;
-  tags?: Array<string>;
+  tags?: string[];
 }
 
 export interface StudyOutput {
@@ -104,12 +104,12 @@ export interface StudyLayer {
 
 export interface VariantTreeDTO {
   node: StudyMetadataDTO;
-  children: Array<VariantTreeDTO>;
+  children: VariantTreeDTO[];
 }
 
 export interface VariantTree {
   node: StudyMetadata;
-  children: Array<VariantTree>;
+  children: VariantTree[];
 }
 
 export interface AdequacyPatchParams {
@@ -124,21 +124,13 @@ export interface XpansionParams {
 
 export interface LaunchOptions {
   xpansion?: XpansionParams;
-  // eslint-disable-next-line camelcase
   xpansion_r_version?: boolean;
-  // eslint-disable-next-line camelcase
   nb_cpu?: number;
-  // eslint-disable-next-line camelcase
   time_limit?: number;
-  // eslint-disable-next-line camelcase
   post_processing?: boolean;
-  // eslint-disable-next-line camelcase
   adequacy_patch?: AdequacyPatchParams;
-  // eslint-disable-next-line camelcase
   output_suffix?: string;
-  // eslint-disable-next-line camelcase
   other_options?: string;
-  // eslint-disable-next-line camelcase
   auto_unzip?: boolean;
 }
 
@@ -174,9 +166,7 @@ export interface LaunchJobProgressDTO {
   message: string;
 }
 
-export interface LaunchJobsProgress {
-  [key: string]: number;
-}
+export type LaunchJobsProgress = Record<string, number>;
 
 export enum RoleType {
   ADMIN = 40,
@@ -201,7 +191,7 @@ export interface RoleCreationDTO {
 export type UserDTO = IdentityDTO<number>;
 
 export interface UserDetailsDTO extends UserDTO {
-  roles: Array<RoleDTO>;
+  roles: RoleDTO[];
 }
 
 export interface UserRoleDTO extends IdentityDTO<number> {
@@ -228,7 +218,7 @@ export interface JWTGroup {
 
 export interface UserInfo {
   user: string;
-  groups: Array<JWTGroup>;
+  groups: JWTGroup[];
   id: number;
   impersonator: number;
   type: string;
@@ -249,7 +239,7 @@ export interface BotDTO extends IdentityDTO<number> {
 }
 
 export interface BotDetailsDTO extends BotDTO {
-  roles: Array<RoleDTO>;
+  roles: RoleDTO[];
 }
 
 export interface BotRoleCreateDTO {
@@ -260,26 +250,26 @@ export interface BotRoleCreateDTO {
 export interface BotCreateDTO {
   name: string;
   is_author: boolean;
-  roles: Array<BotRoleCreateDTO>;
+  roles: BotRoleCreateDTO[];
 }
 
 export interface UserToken {
   user: UserDTO;
-  bots: Array<BotDTO>;
+  bots: BotDTO[];
 }
 
 export interface MatrixType {
-  columns: Array<string>;
+  columns: string[];
   index: Array<string | number>;
-  data: Array<Array<number>>;
+  data: number[][];
 }
 
 export type MatrixInfoDTO = IdentityDTO;
 
 export interface MatrixDataSetDTO extends IdentityDTO {
   public: boolean;
-  groups: Array<GroupDTO>;
-  matrices: Array<MatrixInfoDTO>;
+  groups: GroupDTO[];
+  matrices: MatrixInfoDTO[];
   owner: {
     id: number;
     name: string;
@@ -290,7 +280,7 @@ export interface MatrixDataSetDTO extends IdentityDTO {
 
 export interface MatrixDataSetUpdateDTO {
   name: string;
-  groups: Array<string>;
+  groups: string[];
   public: boolean;
 }
 
@@ -298,9 +288,9 @@ export interface MatrixDTO {
   id: string;
   width: number;
   height: number;
-  index: Array<string>;
-  columns: Array<string>;
-  data: Array<Array<number>>;
+  index: string[];
+  columns: string[];
+  data: number[][];
   created_at: number;
 }
 
@@ -345,9 +335,7 @@ export interface WSLogMessage {
   study_id: string;
 }
 
-export type Components = {
-  [item: string]: () => ReactNode;
-};
+export type Components = Record<string, () => ReactNode>;
 
 export interface CommandResultDTO {
   study_id: string;
@@ -397,7 +385,7 @@ export interface TaskDTO extends IdentityDTO<string> {
   creation_date_utc: string;
   completion_date_utc?: string;
   result?: TaskResult;
-  logs?: Array<TaskLogDTO>;
+  logs?: TaskLogDTO[];
   type?: TaskType;
   ref_id?: string;
 }
@@ -414,25 +402,25 @@ export interface Cluster {
 }
 
 export interface Link {
-  filters_synthesis: Array<string>;
-  filters_year: Array<string>;
+  filters_synthesis: string[];
+  filters_year: string[];
 }
 
 export interface Area {
   name: string;
-  links: { [elm: string]: Link };
-  thermals: Array<Cluster>;
-  renewables: Array<Cluster>;
-  filters_synthesis: Array<string>;
-  filters_year: Array<string>;
+  links: Record<string, Link>;
+  thermals: Cluster[];
+  renewables: Cluster[];
+  filters_synthesis: string[];
+  filters_year: string[];
 }
 export interface Set {
   name?: string;
   inverted_set: boolean;
-  areas?: Array<string>;
+  areas?: string[];
   output: boolean;
-  filters_synthesis: Array<string>;
-  filters_year: Array<string>;
+  filters_synthesis: string[];
+  filters_year: string[];
 }
 
 export interface Simulation {
@@ -451,12 +439,12 @@ export interface FileStudyTreeConfigDTO {
   study_id: string;
   version: number;
   output_path?: string;
-  areas: { [elm: string]: Area };
-  sets: { [elm: string]: Set };
-  outputs: { [elm: string]: Simulation };
-  bindings: Array<string>;
+  areas: Record<string, Area>;
+  sets: Record<string, Set>;
+  outputs: Record<string, Simulation>;
+  bindings: string[];
   store_new_set: boolean;
-  archive_input_series: Array<string>;
+  archive_input_series: string[];
   enr_modelling: string;
 }
 export interface LinkElement {
@@ -479,15 +467,15 @@ export interface LinkClusterElement {
 
 export interface LinkClusterItem {
   element: LinkClusterElement;
-  item_list: Array<LinkClusterElement>;
+  item_list: LinkClusterElement[];
 }
 
 export interface AllClustersAndLinks {
-  links: Array<LinkClusterItem>;
-  clusters: Array<LinkClusterItem>;
+  links: LinkClusterItem[];
+  clusters: LinkClusterItem[];
 }
 
-export type LinkListElement = { [elm: string]: LinkElement };
+export type LinkListElement = Record<string, LinkElement>;
 
 export enum StudyOutputDownloadType {
   LINKS = "LINK",
@@ -505,12 +493,12 @@ export enum StudyOutputDownloadLevelDTO {
 
 export interface StudyOutputDownloadDTO {
   type: StudyOutputDownloadType;
-  years?: Array<number>;
+  years?: number[];
   level: StudyOutputDownloadLevelDTO;
   filterIn?: string;
   filterOut?: string;
-  filter?: Array<string>;
-  columns?: Array<string>;
+  filter?: string[];
+  columns?: string[];
   synthesis: boolean;
   includeClusters: boolean;
 }
@@ -565,34 +553,22 @@ export type MatrixEditDTO = MatrixSliceDTO | MatrixSingleEditDTO;
 
 export interface MatrixAggregationResult {
   index: MatrixIndex;
-  data: {
-    [id: string]: {
-      [elm: string]: {
-        [item: string]: Array<number>;
-      };
-    };
-  };
-  warnings: Array<string>;
+  data: Record<string, Record<string, Record<string, number[]>>>;
+  warnings: string[];
 }
 
-export interface LinkSynthesis {
-  [index: string]: object;
-}
+export type LinkSynthesis = Record<string, object>;
 
 export interface AreasSynthesis {
   name: string;
   links: LinkSynthesis;
   thermals: string;
-  renewables: Array<string>;
-  // eslint-disable-next-line camelcase
-  filters_synthesis: Array<string>;
-  // eslint-disable-next-line camelcase
-  filters_year: Array<string>;
+  renewables: string[];
+  filters_synthesis: string[];
+  filters_year: string[];
 }
 
-export interface AreasNameSynthesis {
-  [index: string]: AreasSynthesis;
-}
+export type AreasNameSynthesis = Record<string, AreasSynthesis>;
 
 export interface LinkProperties {
   source: string;
@@ -600,20 +576,13 @@ export interface LinkProperties {
   temp?: boolean;
 }
 
-export interface AreaLayerColor {
-  [key: string]: string;
-}
-export interface AreaLayerPosition {
-  [key: string]: number;
-}
+export type AreaLayerColor = Record<string, string>;
+export type AreaLayerPosition = Record<string, number>;
 
 export interface AreaUI {
   id: string;
-  // eslint-disable-next-line camelcase
   color_b: number;
-  // eslint-disable-next-line camelcase
   color_g: number;
-  // eslint-disable-next-line camelcase
   color_r: number;
   layers: string;
   x: number;
@@ -627,15 +596,12 @@ export interface SingleAreaConfig {
   ui: AreaUI;
 }
 
-export interface AreasConfig {
-  [areaId: string]: SingleAreaConfig;
-}
+export type AreasConfig = Record<string, SingleAreaConfig>;
 
 export interface UpdateAreaUi {
   x: number;
   y: number;
-  // eslint-disable-next-line camelcase
-  color_rgb: Array<number>;
+  color_rgb: number[];
   layerX: AreaLayerPosition;
   layerY: AreaLayerPosition;
   layerColor: AreaLayerColor;
@@ -660,12 +626,12 @@ export interface AreaCreationDTO {
   name: string;
   type: object;
   metadata?: object;
-  set?: Array<string>;
+  set?: string[];
 }
 
 export interface AreaInfoDTO extends AreaCreationDTO {
   id: string;
-  thermals: Array<object>;
+  thermals: object[];
 }
 
 export interface TaskView {

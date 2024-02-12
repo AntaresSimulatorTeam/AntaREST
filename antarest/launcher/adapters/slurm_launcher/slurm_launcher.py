@@ -182,6 +182,7 @@ class SlurmLauncher(AbstractLauncher):
             json_dir=local_workspace or self.slurm_config.local_workspace,
             default_json_db_name=self.slurm_config.default_json_db_name,
             slurm_script_path=self.slurm_config.slurm_script_path,
+            partition=self.slurm_config.partition,
             antares_versions_on_remote_server=self.slurm_config.antares_versions_on_remote_server,
             default_ssh_dict={
                 "username": self.slurm_config.username,

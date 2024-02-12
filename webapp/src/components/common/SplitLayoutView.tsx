@@ -7,6 +7,9 @@ interface Props {
   sx?: SxProps<Theme>;
 }
 
+/**
+ * @deprecated Use SplitView instead.
+ */
 function SplitLayoutView(props: Props) {
   const { left, right, sx } = props;
 

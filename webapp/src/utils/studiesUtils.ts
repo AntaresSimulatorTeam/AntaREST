@@ -128,6 +128,6 @@ export function filterStudies(
     managedPredicate(filters.managed),
     archivedPredicate(filters.archived),
     variantPredicate(filters.variant),
-  ] as R.Pred[];
+  ] as RA.Pred[];
   return R.filter(R.allPass(predicates), studies);
 }

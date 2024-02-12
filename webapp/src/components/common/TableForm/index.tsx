@@ -1,5 +1,5 @@
 import * as RA from "ramda-adjunct";
-import { ColumnSettings } from "handsontable/settings";
+import HT from "handsontable";
 import { startCase } from "lodash";
 import * as R from "ramda";
 import { Box, type SxProps } from "@mui/material";
@@ -30,8 +30,8 @@ export interface TableFormProps<
   sx?: SxProps<Theme>;
   tableProps?: Omit<TableProps, "data" | "columns" | "colHeaders"> & {
     columns?:
-      | Array<string | ColumnSettings>
-      | ((index: number) => ColumnSettings);
+      | Array<string | HT.ColumnSettings>
+      | ((index: number) => HT.ColumnSettings);
     colHeaders?: (index: number, colName: string) => string;
   };
 }
@@ -66,7 +66,7 @@ function TableForm<TFieldValues extends TableFieldValuesByRow>(
       const cols = columns || Object.keys(R.omit(["id"], firstRow));
 
       return cols.map(
-        (col, index): ColumnSettings =>
+        (col, index): HT.ColumnSettings =>
           RA.isString(col)
             ? {
                 data: col,

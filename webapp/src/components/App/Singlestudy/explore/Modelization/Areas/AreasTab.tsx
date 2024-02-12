@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 import { useEffect, useMemo } from "react";
 import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
 import { Paper } from "@mui/material";

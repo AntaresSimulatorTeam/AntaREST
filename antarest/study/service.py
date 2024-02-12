@@ -4,11 +4,11 @@ import io
 import json
 import logging
 import os
+import time
+import typing as t
 from datetime import datetime, timedelta
 from http import HTTPStatus
 from pathlib import Path, PurePosixPath
-from time import time
-from typing import Any, BinaryIO, Callable, Dict, List, Optional, Sequence, Tuple, Union, cast
 from uuid import uuid4
 
 import numpy as np
@@ -30,7 +30,7 @@ from antarest.core.exceptions import (
 )
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
-from antarest.core.interfaces.cache import CacheConstants, ICache
+from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTGroup, JWTUser
 from antarest.core.model import JSON, SUB_JSON, PermissionInfo, PublicMode, StudyPermissionType
@@ -92,7 +92,7 @@ from antarest.study.model import (
     StudyMetadataPatchDTO,
     StudySimResultDTO,
 )
-from antarest.study.repository import StudyMetadataRepository
+from antarest.study.repository import StudyFilter, StudyMetadataRepository, StudyPagination, StudySortBy
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import ChildNotFoundError
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
@@ -109,7 +109,7 @@ from antarest.study.storage.study_upgrader import (
     should_study_be_denormalized,
     upgrade_study,
 )
-from antarest.study.storage.utils import assert_permission, get_start_date, is_managed, remove_from_cache, study_matcher
+from antarest.study.storage.utils import assert_permission, get_start_date, is_managed, remove_from_cache
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command.update_comments import UpdateComments
@@ -126,7 +126,8 @@ logger = logging.getLogger(__name__)
 MAX_MISSING_STUDY_TIMEOUT = 2  # days
 
 
-def get_disk_usage(path: Union[str, Path]) -> int:
+def get_disk_usage(path: t.Union[str, Path]) -> int:
+    """Calculate the total disk usage (in bytes) of a study in a compressed file or directory."""
     path = Path(path)
     if path.suffix.lower() in {".zip", "7z"}:
         return os.path.getsize(path)
@@ -269,9 +270,9 @@ class StudyService:
         self.binding_constraint_manager = BindingConstraintManager(self.storage_service)
         self.cache_service = cache_service
         self.config = config
-        self.on_deletion_callbacks: List[Callable[[str], None]] = []
+        self.on_deletion_callbacks: t.List[t.Callable[[str], None]] = []
 
-    def add_on_deletion_callback(self, callback: Callable[[str], None]) -> None:
+    def add_on_deletion_callback(self, callback: t.Callable[[str], None]) -> None:
         self.on_deletion_callbacks.append(callback)
 
     def _on_study_delete(self, uuid: str) -> None:
@@ -311,7 +312,7 @@ class StudyService:
         job_id: str,
         err_log: bool,
         params: RequestParameters,
-    ) -> Optional[str]:
+    ) -> t.Optional[str]:
         study = self.get_study(study_id)
         assert_permission(params.user, study, StudyPermissionType.READ)
         file_study = self.storage_service.get_storage(study).get_raw(study)
@@ -331,7 +332,7 @@ class StudyService:
         empty_log = False
         for log_location in log_locations[err_log]:
             try:
-                log = cast(
+                log = t.cast(
                     bytes,
                     file_study.tree.get(log_location, depth=1, formatted=True),
                 ).decode(encoding="utf-8")
@@ -367,9 +368,9 @@ class StudyService:
                 f"{job_id}-{log_suffix}",
             ],
         )
-        stopwatch.log_elapsed(lambda t: logger.info(f"Saved logs for job {job_id} in {t}s"))
+        stopwatch.log_elapsed(lambda d: logger.info(f"Saved logs for job {job_id} in {d}s"))
 
-    def get_comments(self, study_id: str, params: RequestParameters) -> Union[str, JSON]:
+    def get_comments(self, study_id: str, params: RequestParameters) -> t.Union[str, JSON]:
         """
         Get the comments of a study.
 
@@ -382,7 +383,7 @@ class StudyService:
         study = self.get_study(study_id)
         assert_permission(params.user, study, StudyPermissionType.READ)
 
-        output: Union[str, JSON]
+        output: t.Union[str, JSON]
         raw_study_service = self.storage_service.raw_study_service
         variant_study_service = self.storage_service.variant_study_service
         if isinstance(study, RawStudy):
@@ -438,44 +439,33 @@ class StudyService:
 
     def get_studies_information(
         self,
-        managed: bool,
-        name: Optional[str],
-        workspace: Optional[str],
-        folder: Optional[str],
         params: RequestParameters,
-    ) -> Dict[str, StudyMetadataDTO]:
+        study_filter: StudyFilter,
+        sort_by: t.Optional[StudySortBy] = None,
+        pagination: StudyPagination = StudyPagination(),
+    ) -> t.Dict[str, StudyMetadataDTO]:
         """
-        Get information for all studies.
+        Get information for matching studies of a search query.
         Args:
-            managed: indicate if just managed studies should be retrieved
-            name: optional name of the study to match
-            folder: optional folder prefix of the study to match
-            workspace: optional workspace of the study to match
             params: request parameters
+            study_filter: filtering parameters
+            sort_by: how to sort the db query results
+            pagination: set offset and limit for db query
 
         Returns: List of study information
-
         """
-        logger.info("Fetching study listing")
-        studies: Dict[str, StudyMetadataDTO] = {}
-        cache_key = CacheConstants.STUDY_LISTING.value
-        cached_studies = self.cache_service.get(cache_key)
-        if cached_studies:
-            for k in cached_studies:
-                studies[k] = StudyMetadataDTO.parse_obj(cached_studies[k])
-        else:
-            if managed:
-                logger.info("Retrieving all managed studies")
-                all_studies = self.repository.get_all(managed=True)
-            else:
-                logger.info("Retrieving all studies")
-                all_studies = self.repository.get_all()
-            logger.info("Studies retrieved")
-            for study in all_studies:
-                study_metadata = self._try_get_studies_information(study)
-                if study_metadata is not None:
-                    studies[study_metadata.id] = study_metadata
-            self.cache_service.put(cache_key, studies)
+        logger.info("Retrieving matching studies")
+        studies: t.Dict[str, StudyMetadataDTO] = {}
+        matching_studies = self.repository.get_all(
+            study_filter=study_filter,
+            sort_by=sort_by,
+            pagination=pagination,
+        )
+        logger.info("Studies retrieved")
+        for study in matching_studies:
+            study_metadata = self._try_get_studies_information(study)
+            if study_metadata is not None:
+                studies[study_metadata.id] = study_metadata
         return {
             s.id: s
             for s in filter(
@@ -484,14 +474,12 @@ class StudyService:
                     study_dto,
                     StudyPermissionType.READ,
                     raising=False,
-                )
-                and study_matcher(name, workspace, folder)(study_dto)
-                and (not managed or study_dto.managed),
+                ),
                 studies.values(),
             )
         }
 
-    def _try_get_studies_information(self, study: Study) -> Optional[StudyMetadataDTO]:
+    def _try_get_studies_information(self, study: Study) -> t.Optional[StudyMetadataDTO]:
         try:
             return self.storage_service.get_storage(study).get_study_information(study)
         except Exception as e:
@@ -505,28 +493,22 @@ class StudyService:
 
     def get_study_information(self, uuid: str, params: RequestParameters) -> StudyMetadataDTO:
         """
-        Get study information
+        Retrieve study information.
+
         Args:
-            uuid: study uuid
-            params: request parameters
+            uuid: The UUID of the study.
+            params: The request parameters.
 
-        Returns: study information
-
+        Returns:
+            Information about the study.
         """
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
-        logger.info("study %s metadata asked by user %s", uuid, params.get_user_id())
-        # todo debounce this with a "update_study_last_access" method updating only every some seconds
+        logger.info("Study metadata requested for study %s by user %s", uuid, params.get_user_id())
+        # TODO: Debounce this with an "update_study_last_access" method updating only every few seconds.
         study.last_access = datetime.utcnow()
-        self.repository.save(study, update_in_listing=False)
+        self.repository.save(study)
         return self.storage_service.get_storage(study).get_study_information(study)
-
-    def invalidate_cache_listing(self, params: RequestParameters) -> None:
-        if params.user and params.user.is_site_admin():
-            self.cache_service.invalidate(CacheConstants.STUDY_LISTING.value)
-        else:
-            logger.error(f"User {params.user} is not site admin")
-            raise UserHasNotPermissionError()
 
     def update_study_information(
         self,
@@ -547,7 +529,7 @@ class StudyService:
             params.get_user_id(),
         )
         study = self.get_study(uuid)
-        assert_permission(params.user, study, StudyPermissionType.READ)
+        assert_permission(params.user, study, StudyPermissionType.WRITE)
 
         if metadata_patch.horizon:
             study_settings_url = "settings/generaldata/general"
@@ -570,6 +552,8 @@ class StudyService:
             study.additional_data.author = metadata_patch.author
         if metadata_patch.horizon:
             study.additional_data.horizon = metadata_patch.horizon
+        if metadata_patch.tags:
+            self.repository.update_tags(study, metadata_patch.tags)
 
         new_metadata = self.storage_service.get_storage(study).patch_update_study_metadata(study, metadata_patch)
 
@@ -580,6 +564,7 @@ class StudyService:
                 permissions=PermissionInfo.from_study(study),
             )
         )
+
         return new_metadata
 
     def check_study_access(
@@ -612,8 +597,8 @@ class StudyService:
     def create_study(
         self,
         study_name: str,
-        version: Optional[str],
-        group_ids: List[str],
+        version: t.Optional[str],
+        group_ids: t.List[str],
         params: RequestParameters,
     ) -> str:
         """
@@ -689,11 +674,13 @@ class StudyService:
         study = self.get_study(study_id)
         assert_permission(params.user, study, StudyPermissionType.READ)
         study.last_access = datetime.utcnow()
-        self.repository.save(study, update_in_listing=False)
+        self.repository.save(study)
         study_storage_service = self.storage_service.get_storage(study)
         return study_storage_service.get_synthesis(study, params)
 
-    def get_input_matrix_startdate(self, study_id: str, path: Optional[str], params: RequestParameters) -> MatrixIndex:
+    def get_input_matrix_startdate(
+        self, study_id: str, path: t.Optional[str], params: RequestParameters
+    ) -> MatrixIndex:
         study = self.get_study(study_id)
         assert_permission(params.user, study, StudyPermissionType.READ)
         file_study = self.storage_service.get_storage(study).get_raw(study)
@@ -709,7 +696,7 @@ class StudyService:
         return get_start_date(file_study, output_id, level)
 
     def remove_duplicates(self) -> None:
-        study_paths: Dict[str, List[str]] = {}
+        study_paths: t.Dict[str, t.List[str]] = {}
         for study in self.repository.get_all():
             if isinstance(study, RawStudy) and not study.archived:
                 path = str(study.path)
@@ -724,7 +711,7 @@ class StudyService:
                     logger.info(f"Removing study {study_name}")
                     self.repository.delete(study_name)
 
-    def sync_studies_on_disk(self, folders: List[StudyFolder], directory: Optional[Path] = None) -> None:
+    def sync_studies_on_disk(self, folders: t.List[StudyFolder], directory: t.Optional[Path] = None) -> None:
         """
         Used by watcher to send list of studies present on filesystem.
 
@@ -833,7 +820,7 @@ class StudyService:
         self,
         src_uuid: str,
         dest_study_name: str,
-        group_ids: List[str],
+        group_ids: t.List[str],
         use_task: bool,
         params: RequestParameters,
         with_outputs: bool = False,
@@ -967,7 +954,7 @@ class StudyService:
         study_uuid: str,
         output_uuid: str,
         params: RequestParameters,
-    ) -> Dict[str, List[str]]:
+    ) -> t.Dict[str, t.List[str]]:
         """
         Returns information about output variables using thematic and geographic trimming information
         Args:
@@ -1040,7 +1027,7 @@ class StudyService:
         uuid: str,
         params: RequestParameters,
         dest: Path,
-        output_list: Optional[List[str]] = None,
+        output_list: t.Optional[t.List[str]] = None,
     ) -> None:
         logger.info(f"Flat exporting study {uuid}")
         study = self.get_study(uuid)
@@ -1053,20 +1040,20 @@ class StudyService:
 
     def delete_study(self, uuid: str, children: bool, params: RequestParameters) -> None:
         """
-        Delete study
+        Delete study and all its children
+
         Args:
             uuid: study uuid
+            children: delete children or not
             params: request parameters
-
-        Returns:
-
         """
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
 
         study_info = study.to_json_summary()
 
-        # this prefetch the workspace because it is lazy loaded and the object is deleted before using workspace attribute in raw study deletion
+        # this prefetch the workspace because it is lazy loaded and the object is deleted
+        # before using workspace attribute in raw study deletion
         # see https://github.com/AntaresSimulatorTeam/AntaREST/issues/606
         if isinstance(study, RawStudy):
             _ = study.workspace
@@ -1137,8 +1124,8 @@ class StudyService:
         use_task: bool,
         filetype: ExportFormat,
         params: RequestParameters,
-        tmp_export_file: Optional[Path] = None,
-    ) -> Union[Response, FileDownloadTaskDTO, FileResponse]:
+        tmp_export_file: t.Optional[Path] = None,
+    ) -> t.Union[Response, FileDownloadTaskDTO, FileResponse]:
         """
         Download outputs
         Args:
@@ -1239,7 +1226,7 @@ class StudyService:
                 ).encode("utf-8")
                 return Response(content=json_response, media_type="application/json")
 
-    def get_study_sim_result(self, study_id: str, params: RequestParameters) -> List[StudySimResultDTO]:
+    def get_study_sim_result(self, study_id: str, params: RequestParameters) -> t.List[StudySimResultDTO]:
         """
         Get global result information
         Args:
@@ -1293,8 +1280,8 @@ class StudyService:
 
     def import_study(
         self,
-        stream: BinaryIO,
-        group_ids: List[str],
+        stream: t.BinaryIO,
+        group_ids: t.List[str],
         params: RequestParameters,
     ) -> str:
         """
@@ -1345,11 +1332,11 @@ class StudyService:
     def import_output(
         self,
         uuid: str,
-        output: Union[BinaryIO, Path],
+        output: t.Union[t.BinaryIO, Path],
         params: RequestParameters,
-        output_name_suffix: Optional[str] = None,
+        output_name_suffix: t.Optional[str] = None,
         auto_unzip: bool = True,
-    ) -> Optional[str]:
+    ) -> t.Optional[str]:
         """
         Import specific output simulation inside study
         Args:
@@ -1486,7 +1473,7 @@ class StudyService:
             # noinspection SpellCheckingInspection
             url = "study/antares/lastsave"
             last_save_node = file_study.tree.get_node(url.split("/"))
-            cmd = self._create_edit_study_command(tree_node=last_save_node, url=url, data=int(time()))
+            cmd = self._create_edit_study_command(tree_node=last_save_node, url=url, data=int(time.time()))
             cmd.apply(file_study)
 
             self.storage_service.variant_study_service.invalidate_cache(study)
@@ -1503,7 +1490,9 @@ class StudyService:
 
         return command  # for testing purpose
 
-    def apply_commands(self, uuid: str, commands: List[CommandDTO], params: RequestParameters) -> Optional[List[str]]:
+    def apply_commands(
+        self, uuid: str, commands: t.List[CommandDTO], params: RequestParameters
+    ) -> t.Optional[t.List[str]]:
         study = self.get_study(uuid)
         if isinstance(study, VariantStudy):
             return self.storage_service.variant_study_service.append_commands(uuid, commands, params)
@@ -1511,7 +1500,7 @@ class StudyService:
             file_study = self.storage_service.raw_study_service.get_raw(study)
             assert_permission(params.user, study, StudyPermissionType.WRITE)
             self._assert_study_unarchived(study)
-            parsed_commands: List[ICommand] = []
+            parsed_commands: t.List[ICommand] = []
             for command in commands:
                 parsed_commands.extend(self.storage_service.variant_study_service.command_factory.to_command(command))
             execute_or_add_commands(
@@ -1574,7 +1563,7 @@ class StudyService:
             uuid,
             params.get_user_id(),
         )
-        return cast(JSON, new)
+        return t.cast(JSON, new)
 
     def change_owner(self, study_id: str, owner_id: int, params: RequestParameters) -> None:
         """
@@ -1702,7 +1691,7 @@ class StudyService:
             params.get_user_id(),
         )
 
-    def check_errors(self, uuid: str) -> List[str]:
+    def check_errors(self, uuid: str) -> t.List[str]:
         study = self.get_study(uuid)
         self._assert_study_unarchived(study)
         return self.storage_service.raw_study_service.check_errors(study)
@@ -1710,10 +1699,10 @@ class StudyService:
     def get_all_areas(
         self,
         uuid: str,
-        area_type: Optional[AreaType],
+        area_type: t.Optional[AreaType],
         ui: bool,
         params: RequestParameters,
-    ) -> Union[List[AreaInfoDTO], Dict[str, Any]]:
+    ) -> t.Union[t.List[AreaInfoDTO], t.Dict[str, t.Any]]:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
         return self.areas.get_all_areas_ui_info(study) if ui else self.areas.get_all_areas(study, area_type)
@@ -1723,7 +1712,7 @@ class StudyService:
         uuid: str,
         with_ui: bool,
         params: RequestParameters,
-    ) -> List[LinkInfoDTO]:
+    ) -> t.List[LinkInfoDTO]:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
         return self.links.get_all_links(study, with_ui)
@@ -1803,7 +1792,7 @@ class StudyService:
         self,
         uuid: str,
         area_id: str,
-        clusters_metadata: Dict[str, PatchCluster],
+        clusters_metadata: t.Dict[str, PatchCluster],
         params: RequestParameters,
     ) -> AreaInfoDTO:
         study = self.get_study(uuid)
@@ -1938,8 +1927,8 @@ class StudyService:
     def _save_study(
         self,
         study: Study,
-        owner: Optional[JWTUser] = None,
-        group_ids: Sequence[str] = (),
+        owner: t.Optional[JWTUser] = None,
+        group_ids: t.Sequence[str] = (),
         content_status: StudyContentStatus = StudyContentStatus.VALID,
     ) -> None:
         """
@@ -1969,7 +1958,7 @@ class StudyService:
 
         study.groups.clear()
         for gid in group_ids:
-            jwt_group: Optional[JWTGroup] = next(filter(lambda g: g.id == gid, owner.groups), None)  # type: ignore
+            jwt_group: t.Optional[JWTGroup] = next(filter(lambda g: g.id == gid, owner.groups), None)  # type: ignore
             if (
                 jwt_group is None
                 or jwt_group.role is None
@@ -2007,14 +1996,15 @@ class StudyService:
 
     def _analyse_study(self, metadata: Study) -> StudyContentStatus:
         """
-        Analyze study integrity
+        Analyzes the integrity of a study.
+
         Args:
-            metadata: study to analyze
+            metadata: The study to analyze.
 
-        Returns: VALID if study has any integrity mistakes.
-        WARNING if studies has mistakes.
-        ERROR if tree was not able to analyse structuree without raise error.
-
+        Returns:
+            - VALID if the study has no integrity issues.
+            - WARNING if the study has some issues.
+            - ERROR if the tree was unable to analyze the structure without raising an error.
         """
         try:
             if not isinstance(metadata, RawStudy):
@@ -2030,13 +2020,13 @@ class StudyService:
 
     # noinspection PyUnusedLocal
     @staticmethod
-    def get_studies_versions(params: RequestParameters) -> List[str]:
+    def get_studies_versions(params: RequestParameters) -> t.List[str]:
         return list(STUDY_REFERENCE_TEMPLATES)
 
     def create_xpansion_configuration(
         self,
         uuid: str,
-        zipped_config: Optional[UploadFile],
+        zipped_config: t.Optional[UploadFile],
         params: RequestParameters,
     ) -> None:
         study = self.get_study(uuid)
@@ -2082,7 +2072,7 @@ class StudyService:
         assert_permission(params.user, study, StudyPermissionType.READ)
         return self.xpansion_manager.get_candidate(study, candidate_name)
 
-    def get_candidates(self, uuid: str, params: RequestParameters) -> List[XpansionCandidateDTO]:
+    def get_candidates(self, uuid: str, params: RequestParameters) -> t.List[XpansionCandidateDTO]:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
         return self.xpansion_manager.get_candidates(study)
@@ -2120,7 +2110,7 @@ class StudyService:
         self,
         uuid: str,
         path: str,
-        matrix_edit_instruction: List[MatrixEditInstruction],
+        matrix_edit_instruction: t.List[MatrixEditInstruction],
         params: RequestParameters,
     ) -> None:
         """
@@ -2150,7 +2140,8 @@ class StudyService:
         if params.user and not params.user.is_site_admin():
             logger.error(f"User {params.user.id} is not site admin")
             raise UserHasNotPermissionError()
-        studies = self.repository.get_all(managed=False)
+        studies = self.repository.get_all(study_filter=StudyFilter(managed=False))
+
         for study in studies:
             storage = self.storage_service.raw_study_service
             storage.check_and_update_study_version_in_database(study)
@@ -2167,7 +2158,7 @@ class StudyService:
                 self.archive_output(study_id, output, params)
 
     @staticmethod
-    def _get_output_archive_task_names(study: Study, output_id: str) -> Tuple[str, str]:
+    def _get_output_archive_task_names(study: Study, output_id: str) -> t.Tuple[str, str]:
         return (
             f"Archive output {study.id}/{output_id}",
             f"Unarchive output {study.name}/{output_id} ({study.id})",
@@ -2179,7 +2170,7 @@ class StudyService:
         output_id: str,
         params: RequestParameters,
         force: bool = False,
-    ) -> Optional[str]:
+    ) -> t.Optional[str]:
         study = self.get_study(study_id)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
@@ -2236,7 +2227,7 @@ class StudyService:
         output_id: str,
         keep_src_zip: bool,
         params: RequestParameters,
-    ) -> Optional[str]:
+    ) -> t.Optional[str]:
         study = self.get_study(study_id)
         assert_permission(params.user, study, StudyPermissionType.READ)
         self._assert_study_unarchived(study)
@@ -2276,7 +2267,7 @@ class StudyService:
                 )
                 raise e
 
-        task_id: Optional[str] = None
+        task_id: t.Optional[str] = None
         workspace = getattr(study, "workspace", DEFAULT_WORKSPACE_NAME)
         if workspace != DEFAULT_WORKSPACE_NAME:
             dest = Path(study.path) / "output" / output_id
@@ -2368,18 +2359,23 @@ class StudyService:
 
     def get_disk_usage(self, uuid: str, params: RequestParameters) -> int:
         """
-        This function computes the disk size used to store the study with
-        id=`uuid` if such study exists and user has permissions
-        otherwise it raises an error
+        Calculates the size of the disk used to store the study if the user has permissions.
+
+        The calculation of disk space concerns the entire study directory.
+        In the case of a variant, the snapshot folder must be taken into account, as well as the outputs.
 
         Args:
-            uuid: the study id
-            params: user request parameters
+            uuid: the study ID.
+            params: user request parameters.
 
-        return:
-            disk usage of the study with id = `uuid`
+        Returns:
+            Disk usage of the study in bytes.
+
+        Raises:
+            UserHasNotPermissionError: If the user does not have the READ permissions (HTTP status 403).
         """
         study = self.get_study(uuid=uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
-        path = str(self.storage_service.get_storage(study).get_study_path(study))
-        return get_disk_usage(path=path)
+        study_path = self.storage_service.raw_study_service.get_study_path(study)
+        # If the study is a variant, it's possible that it only exists in DB and not on disk. If so, we return 0.
+        return get_disk_usage(study_path) if study_path.exists() else 0

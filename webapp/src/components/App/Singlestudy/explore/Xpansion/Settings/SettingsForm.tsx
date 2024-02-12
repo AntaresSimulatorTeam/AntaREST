@@ -16,9 +16,9 @@ import SwitchFE from "../../../../../common/fieldEditors/SwitchFE";
 
 interface PropType {
   settings: XpansionSettings;
-  constraints: Array<string>;
-  weights: Array<string>;
-  candidates: Array<string>;
+  constraints: string[];
+  weights: string[];
+  candidates: string[];
   updateSettings: (value: XpansionSettings) => Promise<void>;
   onRead: (resourceType: string, filename: string) => Promise<void>;
 }

@@ -39,10 +39,13 @@ Then perform the following steps:
 
    ```shell
    cd webapp
-   npm install --legacy-peer-deps
+   npm install
    npm run build
    cd ..
    ```
+
+   > IMPORTANT : make sur the generated files are in the `dist` (or `build`) folder.
+   > Using another folder may require substantial adaptations in the CI/CD pipelines.
 
 5. Run the application
 

@@ -19,11 +19,13 @@ function Hydro() {
 
     return [
       { label: "Management options", path: `${basePath}/management` },
-      { label: "Inflow structure", path: `${basePath}/inflowstructure` },
+      { label: "Inflow structure", path: `${basePath}/inflow-structure` },
       { label: "Allocation", path: `${basePath}/allocation` },
       { label: "Correlation", path: `${basePath}/correlation` },
-      { label: "Daily Power", path: `${basePath}/dailypower` },
-      { label: "Energy Credits", path: `${basePath}/energycredits` },
+      {
+        label: "Daily Power & Energy Credits",
+        path: `${basePath}/dailypower&energy`,
+      },
       { label: "Reservoir levels", path: `${basePath}/reservoirlevels` },
       { label: "Water values", path: `${basePath}/watervalues` },
       { label: "Hydro Storage", path: `${basePath}/hydrostorage` },

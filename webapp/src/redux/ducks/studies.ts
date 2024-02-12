@@ -47,6 +47,7 @@ export interface StudiesSortConf {
 
 export interface StudiesState extends AsyncEntityState<StudyMetadata> {
   current: string;
+  prevStudyId: string;
   scrollPosition: number;
   versionList: string[];
   favorites: Array<StudyMetadata["id"]>;
@@ -54,18 +55,18 @@ export interface StudiesState extends AsyncEntityState<StudyMetadata> {
   sort: StudiesSortConf;
 }
 
-type StudyCreator = {
+interface StudyCreator {
   name: string;
   version?: string;
   groups?: string[];
   publicMode?: StudyPublicMode;
   tags?: string[];
-};
+}
 
-type StudyUpload = {
+interface StudyUpload {
   file: File;
   onUploadProgress?: (progress: number) => void;
-};
+}
 
 type CreateStudyArg = StudyCreator | StudyUpload | StudyMetadata;
 
@@ -73,6 +74,7 @@ const initialState = studiesAdapter.getInitialState({
   status: FetchStatus.Idle,
   error: null as string | null,
   current: "",
+  prevStudyId: "",
   scrollPosition: 0,
   versionList: [] as string[],
   favorites: [],
@@ -297,6 +299,7 @@ export default createReducer(initialState, (builder) => {
       draftState.versionList = action.payload;
     })
     .addCase(setCurrentStudy, (draftState, action) => {
+      draftState.prevStudyId = draftState.current;
       draftState.current = action.payload;
     })
     .addCase(setStudyScrollPosition, (draftState, action) => {

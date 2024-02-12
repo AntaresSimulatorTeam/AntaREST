@@ -1,18 +1,30 @@
 import dataclasses
 import enum
+import secrets
 import typing as t
 import uuid
 from datetime import datetime, timedelta
 from pathlib import Path
 
 from pydantic import BaseModel
-from sqlalchemy import Boolean, Column, DateTime, Enum, ForeignKey, Integer, String, Table  # type: ignore
+from sqlalchemy import (  # type: ignore
+    Boolean,
+    Column,
+    DateTime,
+    Enum,
+    ForeignKey,
+    Integer,
+    PrimaryKeyConstraint,
+    String,
+    Table,
+)
 from sqlalchemy.orm import relationship  # type: ignore
 
 from antarest.core.exceptions import ShouldNotHappenException
 from antarest.core.model import PublicMode
 from antarest.core.persistence import Base
 from antarest.login.model import Group, GroupDTO, Identity
+from antarest.study.css4_colors import COLOR_NAMES
 
 if t.TYPE_CHECKING:
     # avoid circular import
@@ -20,14 +32,7 @@ if t.TYPE_CHECKING:
 
 DEFAULT_WORKSPACE_NAME = "default"
 
-groups_metadata = Table(
-    "group_metadata",
-    Base.metadata,
-    Column("group_id", String(36), ForeignKey("groups.id")),
-    Column("study_id", String(36), ForeignKey("study.id")),
-)
-
-STUDY_REFERENCE_TEMPLATES: t.Dict[str, str] = {
+STUDY_REFERENCE_TEMPLATES: t.Mapping[str, str] = {
     "600": "empty_study_613.zip",
     "610": "empty_study_613.zip",
     "640": "empty_study_613.zip",
@@ -44,6 +49,66 @@ STUDY_REFERENCE_TEMPLATES: t.Dict[str, str] = {
 }
 
 NEW_DEFAULT_STUDY_VERSION: str = "860"
+
+groups_metadata = Table(
+    "group_metadata",
+    Base.metadata,
+    Column("group_id", String(36), ForeignKey("groups.id")),
+    Column("study_id", String(36), ForeignKey("study.id")),
+)
+
+
+class StudyTag(Base):  # type:ignore
+    """
+    A table to manage the many-to-many relationship between `Study` and `Tag`
+
+    Attributes:
+        study_id (str): The ID of the study associated with the tag.
+        tag_label (str): The label of the tag associated with the study.
+    """
+
+    __tablename__ = "study_tag"
+    __table_args__ = (PrimaryKeyConstraint("study_id", "tag_label"),)
+
+    study_id: str = Column(String(36), ForeignKey("study.id", ondelete="CASCADE"), index=True, nullable=False)
+    tag_label: str = Column(String(40), ForeignKey("tag.label", ondelete="CASCADE"), index=True, nullable=False)
+
+    def __str__(self) -> str:  # pragma: no cover
+        return f"[StudyTag] study_id={self.study_id}, tag={self.tag}"
+
+    def __repr__(self) -> str:  # pragma: no cover
+        cls_name = self.__class__.__name__
+        study_id = self.study_id
+        tag = self.tag
+        return f"{cls_name}({study_id=}, {tag=})"
+
+
+class Tag(Base):  # type:ignore
+    """
+    Represents a tag in the database.
+
+    This class is used to store tags associated with studies.
+
+    Attributes:
+        label (str): The label of the tag.
+        color (str): The color code associated with the tag.
+    """
+
+    __tablename__ = "tag"
+
+    label = Column(String(40), primary_key=True, index=True)
+    color: str = Column(String(20), index=True, default=lambda: secrets.choice(COLOR_NAMES))
+
+    studies: t.List["Study"] = relationship("Study", secondary=StudyTag.__table__, back_populates="tags")
+
+    def __str__(self) -> str:  # pragma: no cover
+        return t.cast(str, self.label)
+
+    def __repr__(self) -> str:  # pragma: no cover
+        cls_name = self.__class__.__name__
+        label = self.label
+        color = self.color
+        return f"{cls_name}({label=}, {color=})"
 
 
 class StudyContentStatus(enum.Enum):
@@ -70,7 +135,7 @@ class StudyAdditionalData(Base):  # type:ignore
     )
     author = Column(String(255), default="Unknown")
     horizon = Column(String)
-    patch = Column(String(), nullable=True)
+    patch = Column(String(), index=True, nullable=True)
 
     def __eq__(self, other: t.Any) -> bool:
         if not super().__eq__(other):
@@ -93,19 +158,21 @@ class Study(Base):  # type: ignore
         default=lambda: str(uuid.uuid4()),
         unique=True,
     )
-    name = Column(String(255))
-    type = Column(String(50))
-    version = Column(String(255))
+    name = Column(String(255), index=True)
+    type = Column(String(50), index=True)
+    version = Column(String(255), index=True)
     author = Column(String(255))
-    created_at = Column(DateTime)
-    updated_at = Column(DateTime)
+    created_at = Column(DateTime, index=True)
+    updated_at = Column(DateTime, index=True)
     last_access = Column(DateTime)
     path = Column(String())
-    folder = Column(String, nullable=True)
-    parent_id = Column(String(36), ForeignKey("study.id", name="fk_study_study_id"))
+    folder = Column(String, nullable=True, index=True)
+    parent_id = Column(String(36), ForeignKey("study.id", name="fk_study_study_id"), index=True)
     public_mode = Column(Enum(PublicMode), default=PublicMode.NONE)
-    owner_id = Column(Integer, ForeignKey(Identity.id), nullable=True)
-    archived = Column(Boolean(), default=False)
+    owner_id = Column(Integer, ForeignKey(Identity.id), nullable=True, index=True)
+    archived = Column(Boolean(), default=False, index=True)
+
+    tags: t.List[Tag] = relationship(Tag, secondary=StudyTag.__table__, back_populates="studies")
     owner = relationship(Identity, uselist=False)
     groups = relationship(Group, secondary=lambda: groups_metadata, cascade="")
     additional_data = relationship(
@@ -167,8 +234,8 @@ class RawStudy(Study):
         primary_key=True,
     )
     content_status = Column(Enum(StudyContentStatus))
-    workspace = Column(String(255), default=DEFAULT_WORKSPACE_NAME)
-    missing = Column(DateTime, nullable=True)
+    workspace = Column(String(255), default=DEFAULT_WORKSPACE_NAME, nullable=False, index=True)
+    missing = Column(DateTime, nullable=True, index=True)
 
     __mapper_args__ = {
         "polymorphic_identity": "rawstudy",

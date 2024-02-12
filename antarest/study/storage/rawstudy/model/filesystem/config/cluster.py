@@ -84,9 +84,14 @@ class ClusterProperties(ItemProperties):
 
     @property
     def installed_capacity(self) -> float:
-        """"""
+        # fields may contain `None` values if they are turned into `Optional` fields
+        if self.unit_count is None or self.nominal_capacity is None:
+            return 0.0
         return self.unit_count * self.nominal_capacity
 
     @property
     def enabled_capacity(self) -> float:
+        # fields may contain `None` values if they are turned into `Optional` fields
+        if self.enabled is None or self.installed_capacity is None:
+            return 0.0
         return self.enabled * self.installed_capacity

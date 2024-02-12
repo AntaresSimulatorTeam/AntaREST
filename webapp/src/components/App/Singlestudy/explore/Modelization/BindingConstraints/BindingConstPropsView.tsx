@@ -7,7 +7,7 @@ import { BindingConstFields } from "./BindingConstView/utils";
 
 interface Props {
   onClick: (name: string) => void;
-  list: Array<BindingConstFields>;
+  list: BindingConstFields[];
   studyId: StudyMetadata["id"];
   currentBindingConst?: string;
 }
@@ -18,11 +18,11 @@ function BindingConstPropsView(props: Props) {
     useState<string>();
   const [addBindingConst, setAddBindingConst] = useState(false);
   const [filteredBindingConst, setFilteredBindingConst] = useState<
-    Array<BindingConstFields>
+    BindingConstFields[]
   >(list || []);
 
   useEffect(() => {
-    const filter = (): Array<BindingConstFields> => {
+    const filter = (): BindingConstFields[] => {
       if (list) {
         return list.filter(
           (s) =>

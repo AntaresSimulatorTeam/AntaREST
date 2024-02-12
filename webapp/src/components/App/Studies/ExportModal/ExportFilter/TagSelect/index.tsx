@@ -4,8 +4,8 @@ import { AddIcon, InputContainer, Root, TagContainer } from "./style";
 
 interface PropTypes {
   label: string;
-  values: Array<string>;
-  onChange: (value: Array<string>) => void;
+  values: string[];
+  onChange: (value: string[]) => void;
 }
 
 function TagSelect(props: PropTypes) {

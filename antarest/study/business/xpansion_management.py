@@ -196,7 +196,7 @@ class GetXpansionSettings(XpansionSettings):
             return cls.construct(**config_obj)
 
 
-class UpdateXpansionSettings(XpansionSettings, metaclass=AllOptionalMetaclass):
+class UpdateXpansionSettings(XpansionSettings, metaclass=AllOptionalMetaclass, use_none=True):
     """
     DTO object used to update the Xpansion settings.
 

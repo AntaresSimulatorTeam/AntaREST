@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Tuple
+import typing as t
 
 from pydantic import Field
 
@@ -29,7 +29,7 @@ class RemoveSTStorage(ICommand):
     area_id: str = Field(description="Area ID", regex=r"[a-z0-9_(),& -]+")
     storage_id: str = Field(description="Short term storage ID", regex=r"[a-z0-9_(),& -]+")
 
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
         """
         Applies configuration changes to the study data: remove the storage from the storages list.
 
@@ -143,8 +143,8 @@ class RemoveSTStorage(ICommand):
         # or matrices, so that shallow and deep comparisons are identical.
         return self.__eq__(other)
 
-    def _create_diff(self, other: "ICommand") -> List["ICommand"]:
+    def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
         return []
 
-    def get_inner_matrices(self) -> List[str]:
+    def get_inner_matrices(self) -> t.List[str]:
         return []

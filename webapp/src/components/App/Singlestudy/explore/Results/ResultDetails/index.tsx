@@ -367,7 +367,6 @@ function ResultDetails() {
                       matrix={matrix}
                       matrixTime={false}
                       readOnly
-                      toggleView
                     />
                   )
                 }

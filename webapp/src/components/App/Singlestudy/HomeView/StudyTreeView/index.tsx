@@ -1,4 +1,3 @@
-/* eslint-disable react/jsx-props-no-spreading */
 import { useEffect, useMemo, useState } from "react";
 import * as React from "react";
 import { Box, styled } from "@mui/material";
@@ -80,7 +79,7 @@ export default function CustomizedTreeView(props: Props) {
     tree: StudyTree,
     i = 0,
     j = 0,
-  ): Array<React.ReactNode> => {
+  ): React.ReactNode[] => {
     const { drawOptions, name, attributes, children } = tree;
     const { id } = attributes;
     const { nbAllChildrens } = drawOptions;
@@ -100,7 +99,7 @@ export default function CustomizedTreeView(props: Props) {
 
     const cx = i * TILE_SIZE_X + DCX;
     const cy = j * TILE_SIZE_Y + DCY;
-    let res: Array<React.ReactNode> = [
+    let res: React.ReactNode[] = [
       <SVGCircle
         key={`circle-${i}-${j}`}
         cx={cx}

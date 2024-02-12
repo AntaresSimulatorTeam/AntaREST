@@ -1,9 +1,10 @@
 import { createContext, useContext } from "react";
 import type { File } from "./utils";
+import { voidFn } from "../../../../../utils/fnUtils";
 
 const initialDebugContextValue = {
-  onFileSelect: (file: File): void => {},
-  reloadTreeData: (): void => {},
+  onFileSelect: voidFn<[File]>,
+  reloadTreeData: voidFn,
 };
 
 const DebugContext = createContext(initialDebugContextValue);
