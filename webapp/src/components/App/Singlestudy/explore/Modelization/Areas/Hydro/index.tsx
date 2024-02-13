@@ -31,9 +31,9 @@ function Hydro() {
       { label: "Water values", path: `${basePath}/watervalues` },
       { label: "Hydro Storage", path: `${basePath}/hydrostorage` },
       { label: "Run of river", path: `${basePath}/ror` },
-      studyVersion >= 860 && { label: "Min Gen.", path: `${basePath}/mingen` },
+      studyVersion >= 860 && { label: "Min Gen", path: `${basePath}/mingen` },
     ].filter(Boolean);
-  }, [areaId, study?.id]);
+  }, [areaId, study?.id, studyVersion]);
 
   ////////////////////////////////////////////////////////////////
   // JSX

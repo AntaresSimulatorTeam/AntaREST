@@ -150,7 +150,7 @@ export const MATRICES: Matrices = {
     stats: MatrixStats.STATS,
   },
   [HydroMatrixType.MinGen]: {
-    title: "Min Gen.",
+    title: "Min Gen",
     url: "input/hydro/series/{areaId}/mingen",
     stats: MatrixStats.STATS,
   },
