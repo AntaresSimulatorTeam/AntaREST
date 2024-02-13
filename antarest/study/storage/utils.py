@@ -243,30 +243,9 @@ def assert_permission(
 
 MATRIX_INPUT_DAYS_COUNT = 365
 
-MONTHS = (
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
-)
+MONTHS = calendar.month_name[1:]
 
-DAY_NAMES = (
-    "Monday",
-    "Tuesday",
-    "Wednesday",
-    "Thursday",
-    "Friday",
-    "Saturday",
-    "Sunday",
-)
+DAY_NAMES = calendar.day_name[:]
 
 
 def get_start_date(
@@ -293,7 +272,7 @@ def get_start_date(
 
     starting_month_index = MONTHS.index(starting_month.title()) + 1
     starting_day_index = DAY_NAMES.index(starting_day.title())
-    target_year = 2000
+    target_year = 2018
     while True:
         if leapyear == calendar.isleap(target_year):
             first_day = datetime(target_year, starting_month_index, 1)

@@ -12,6 +12,7 @@ from pathlib import Path, PurePosixPath
 from uuid import uuid4
 
 import numpy as np
+import pandas as pd
 from fastapi import HTTPException, UploadFile
 from markupsafe import escape
 from starlette.responses import FileResponse, Response
@@ -20,6 +21,7 @@ from antarest.core.config import Config
 from antarest.core.exceptions import (
     BadEditInstructionException,
     CommandApplicationError,
+    IncorrectPathError,
     NotAManagedStudyException,
     StudyDeletionNotAllowed,
     StudyNotFoundError,
@@ -54,6 +56,7 @@ from antarest.study.business.areas.st_storage_management import STStorageManager
 from antarest.study.business.areas.thermal_management import ThermalManager
 from antarest.study.business.binding_constraint_management import BindingConstraintManager
 from antarest.study.business.config_management import ConfigManager
+from antarest.study.business.correlation_management import CorrelationManager
 from antarest.study.business.district_manager import DistrictManager
 from antarest.study.business.general_management import GeneralManager
 from antarest.study.business.link_management import LinkInfoDTO, LinkManager
@@ -93,6 +96,7 @@ from antarest.study.model import (
     StudySimResultDTO,
 )
 from antarest.study.repository import StudyFilter, StudyMetadataRepository, StudyPagination, StudySortBy
+from antarest.study.storage.matrix_profile import adjust_matrix_columns_index
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import ChildNotFoundError
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
@@ -268,6 +272,7 @@ class StudyService:
         self.xpansion_manager = XpansionManager(self.storage_service)
         self.matrix_manager = MatrixManager(self.storage_service)
         self.binding_constraint_manager = BindingConstraintManager(self.storage_service)
+        self.correlation_manager = CorrelationManager(self.storage_service)
         self.cache_service = cache_service
         self.config = config
         self.on_deletion_callbacks: t.List[t.Callable[[str], None]] = []
@@ -2379,3 +2384,44 @@ class StudyService:
         study_path = self.storage_service.raw_study_service.get_study_path(study)
         # If the study is a variant, it's possible that it only exists in DB and not on disk. If so, we return 0.
         return get_disk_usage(study_path) if study_path.exists() else 0
+
+    def get_matrix_with_index_and_header(
+        self, *, study_id: str, path: str, with_index: bool, with_header: bool, parameters: RequestParameters
+    ) -> pd.DataFrame:
+        matrix_path = Path(path)
+        study = self.get_study(study_id)
+
+        if matrix_path.parts in [("input", "hydro", "allocation"), ("input", "hydro", "correlation")]:
+            all_areas = t.cast(
+                t.List[AreaInfoDTO],
+                self.get_all_areas(study_id, area_type=AreaType.AREA, ui=False, params=parameters),
+            )
+            if matrix_path.parts[-1] == "allocation":
+                hydro_matrix = self.allocation_manager.get_allocation_matrix(study, all_areas)
+            else:
+                hydro_matrix = self.correlation_manager.get_correlation_matrix(all_areas, study, [])  # type: ignore
+            return pd.DataFrame(data=hydro_matrix.data, columns=hydro_matrix.columns, index=hydro_matrix.index)
+
+        matrix_obj = self.get(study_id, path, depth=3, formatted=True, params=parameters)
+        if set(matrix_obj) != {"data", "index", "columns"}:
+            raise IncorrectPathError(f"The provided path does not point to a valid matrix: '{path}'")
+        if not matrix_obj["data"]:
+            return pd.DataFrame()
+
+        df_matrix = pd.DataFrame(**matrix_obj)
+        if with_index:
+            matrix_index = self.get_input_matrix_startdate(study_id, path, parameters)
+            time_column = pd.date_range(
+                start=matrix_index.start_date, periods=len(df_matrix), freq=matrix_index.level.value[0]
+            )
+            df_matrix.index = time_column
+
+        adjust_matrix_columns_index(
+            df_matrix,
+            path,
+            with_index=with_index,
+            with_header=with_header,
+            study_version=int(study.version),
+        )
+
+        return df_matrix
