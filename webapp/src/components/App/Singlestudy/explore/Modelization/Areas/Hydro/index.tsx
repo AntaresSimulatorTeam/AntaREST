@@ -11,6 +11,7 @@ import { getCurrentAreaId } from "../../../../../../../redux/selectors";
 function Hydro() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const areaId = useAppSelector(getCurrentAreaId);
+  const studyVersion = parseInt(study.version, 10);
 
   const tabList = useMemo(() => {
     const basePath = `/studies/${study?.id}/explore/modelization/area/${encodeURI(
@@ -30,8 +31,9 @@ function Hydro() {
       { label: "Water values", path: `${basePath}/watervalues` },
       { label: "Hydro Storage", path: `${basePath}/hydrostorage` },
       { label: "Run of river", path: `${basePath}/ror` },
-    ];
-  }, [areaId, study?.id]);
+      studyVersion >= 860 && { label: "Min Gen", path: `${basePath}/mingen` },
+    ].filter(Boolean);
+  }, [areaId, study?.id, studyVersion]);
 
   ////////////////////////////////////////////////////////////////
   // JSX
