@@ -44,7 +44,7 @@ from antarest.study.model import (
     TimeSerie,
     TimeSeriesData,
 )
-from antarest.study.repository import StudyFilter, StudyMetadataRepository
+from antarest.study.repository import StudyFilter, StudyMetadataRepository, build_query_user_from_params
 from antarest.study.service import MAX_MISSING_STUDY_TIMEOUT, StudyService, StudyUpgraderTask, UserHasNotPermissionError
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -172,6 +172,7 @@ def test_study_listing(db_session: Session) -> None:
     config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
     repository = StudyMetadataRepository(cache_service=Mock(spec=ICache), session=db_session)
     service = build_study_service(raw_study_service, repository, config, cache_service=cache)
+    params: RequestParameters = RequestParameters(user=JWTUser(id=2, impersonator=2, type="users"))
 
     # retrieve studies that are not managed
     # use the db recorder to check that:
@@ -179,10 +180,7 @@ def test_study_listing(db_session: Session) -> None:
     # 2- having an exact total of queries equals to 1
     with DBStatementRecorder(db_session.bind) as db_recorder:
         studies = service.get_studies_information(
-            study_filter=StudyFilter(
-                managed=False,
-            ),
-            params=RequestParameters(user=JWTUser(id=2, impersonator=2, type="users")),
+            study_filter=StudyFilter(managed=False, query_user=build_query_user_from_params(params)), params=params
         )
     assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
@@ -196,10 +194,7 @@ def test_study_listing(db_session: Session) -> None:
     # 2- having an exact total of queries equals to 1
     with DBStatementRecorder(db_session.bind) as db_recorder:
         studies = service.get_studies_information(
-            study_filter=StudyFilter(
-                managed=True,
-            ),
-            params=RequestParameters(user=JWTUser(id=2, impersonator=2, type="users")),
+            study_filter=StudyFilter(managed=True, query_user=build_query_user_from_params(params)), params=params
         )
     assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
@@ -213,10 +208,7 @@ def test_study_listing(db_session: Session) -> None:
     # 2- having an exact total of queries equals to 1
     with DBStatementRecorder(db_session.bind) as db_recorder:
         studies = service.get_studies_information(
-            study_filter=StudyFilter(
-                managed=None,
-            ),
-            params=RequestParameters(user=JWTUser(id=2, impersonator=2, type="users")),
+            study_filter=StudyFilter(managed=None, query_user=build_query_user_from_params(params)), params=params
         )
     assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
@@ -230,10 +222,7 @@ def test_study_listing(db_session: Session) -> None:
     # 2- the `put` method of `cache` was never used
     with DBStatementRecorder(db_session.bind) as db_recorder:
         studies = service.get_studies_information(
-            study_filter=StudyFilter(
-                managed=None,
-            ),
-            params=RequestParameters(user=JWTUser(id=2, impersonator=2, type="users")),
+            study_filter=StudyFilter(managed=None, query_user=build_query_user_from_params(params)), params=params
         )
     assert len(db_recorder.sql_statements) == 1, str(db_recorder)
     with contextlib.suppress(AssertionError):
