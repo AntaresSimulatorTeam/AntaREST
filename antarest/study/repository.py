@@ -138,7 +138,7 @@ class StudyMetadataRepository:
     def refresh(self, metadata: Study) -> None:
         self.session.refresh(metadata)
 
-    def get(self, id: str) -> t.Optional[Study]:
+    def get(self, study_id: str) -> t.Optional[Study]:
         """Get the study by ID or return `None` if not found in database."""
         # todo: I think we should use a `entity = with_polymorphic(Study, "*")`
         #  to make sure RawStudy and VariantStudy fields are also fetched.
@@ -146,13 +146,11 @@ class StudyMetadataRepository:
         # When we fetch a study, we also need to fetch the associated owner and groups
         # to check the permissions of the current user efficiently.
         study: Study = (
-            # fmt: off
             self.session.query(Study)
             .options(joinedload(Study.owner))
             .options(joinedload(Study.groups))
             .options(joinedload(Study.tags))
-            .get(id)
-            # fmt: on
+            .get(study_id)
         )
         return study
 
