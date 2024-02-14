@@ -7,7 +7,9 @@ from sqlalchemy import func, not_, or_  # type: ignore
 from sqlalchemy.orm import Session, joinedload, with_polymorphic  # type: ignore
 
 from antarest.core.interfaces.cache import ICache
+from antarest.core.jwt import JWTUser
 from antarest.core.model import PublicMode
+from antarest.core.requests import RequestParameters
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, Study, StudyAdditionalData, Tag
@@ -35,6 +37,42 @@ def escape_like(string: str, escape_char: str = "\\") -> str:
     return string.replace(escape_char, escape_char * 2).replace("%", escape_char + "%").replace("_", escape_char + "_")
 
 
+class QueryUser(BaseModel, frozen=True, extra="forbid"):
+    """
+    This class object is build to pass on the user identity and its associated groups information
+    into the listing function get_all below
+    """
+
+    is_admin: bool = False
+    user_id: t.Optional[int] = None
+    user_groups: t.Sequence[str] = ()
+
+
+def build_query_user_from_params(params: t.Union[RequestParameters, JWTUser]) -> QueryUser:
+    """
+    This function makes it easier to pass on user ids and groups into the repository filtering function by
+    extracting the associated `QueryUser` object.
+    Args:
+        params: `RequestParameters` or `JWTUser` holding user ids and groups
+
+    Returns: `QueryUser`
+
+    """
+    if isinstance(params, RequestParameters):
+        user = params.user
+    else:
+        user = params
+
+    if user:
+        return QueryUser(
+            is_admin=user.is_site_admin() or user.is_admin_token(),
+            user_id=user.id,
+            user_groups=user.groups,
+        )
+    else:
+        return QueryUser()
+
+
 class StudyFilter(BaseModel, frozen=True, extra="forbid"):
     """Study filter class gathering the main filtering parameters
 
@@ -51,6 +89,7 @@ class StudyFilter(BaseModel, frozen=True, extra="forbid"):
         exists: if raw study missing
         workspace: optional workspace of the study
         folder: optional folder prefix of the study
+        query_user: query user id, groups and admins status
     """
 
     name: str = ""
@@ -65,17 +104,7 @@ class StudyFilter(BaseModel, frozen=True, extra="forbid"):
     exists: t.Optional[bool] = None
     workspace: str = ""
     folder: str = ""
-
-
-class QueryUser(BaseModel, frozen=True, extra="forbid"):
-    """
-    This class object is build to pass on the user identity and its associated groups information
-    into the listing function get_all below
-    """
-
-    is_admin: bool = False
-    user_id: t.Optional[int] = None
-    user_groups: t.Optional[t.Sequence[str]] = None
+    query_user: QueryUser = QueryUser()
 
 
 class StudySortBy(str, enum.Enum):
@@ -192,7 +221,6 @@ class StudyMetadataRepository:
         study_filter: StudyFilter = StudyFilter(),
         sort_by: t.Optional[StudySortBy] = None,
         pagination: StudyPagination = StudyPagination(),
-        query_user: QueryUser = QueryUser(),
     ) -> t.Sequence[Study]:
         """
         Retrieve studies based on specified filters, sorting, and pagination.
@@ -201,7 +229,6 @@ class StudyMetadataRepository:
             study_filter: composed of all filtering criteria.
             sort_by: how the user would like the results to be sorted.
             pagination: specifies the number of results to displayed in each page and the actually displayed page.
-            query_user: user id and groups info
 
         Returns:
             The matching studies in proper order and pagination.
@@ -257,11 +284,11 @@ class StudyMetadataRepository:
             q = q.filter(entity.version.in_(study_filter.versions))
 
         # permissions filtering
-        if not query_user.is_admin:
-            if query_user.user_id is not None:
+        if not study_filter.query_user.is_admin:
+            if study_filter.query_user.user_id is not None:
                 condition_1 = entity.public_mode != PublicMode.NONE
-                condition_2 = entity.owner_id == query_user.user_id
-                condition_3 = Group.id.in_(query_user.user_groups or [])
+                condition_2 = entity.owner_id == study_filter.query_user.user_id
+                condition_3 = Group.id.in_(study_filter.query_user.user_groups or [])
                 if study_filter.groups:
                     q0 = q.filter(condition_3)
                     q = q0.union(q.filter(or_(condition_1, condition_2)))

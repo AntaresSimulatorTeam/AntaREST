@@ -28,8 +28,9 @@ class AutoArchiveService(IService):
     def _try_archive_studies(self) -> None:
         old_date = datetime.datetime.utcnow() - datetime.timedelta(days=self.config.storage.auto_archive_threshold_days)
         with db():
+            # in this part full `Read` rights over studies are granted to this function
             studies: t.Sequence[Study] = self.study_service.repository.get_all(
-                study_filter=StudyFilter(managed=True), query_user=QueryUser(is_admin=True)
+                study_filter=StudyFilter(managed=True, query_user=QueryUser(is_admin=True))
             )
             # list of study IDs and boolean indicating if it's a raw study (True) or a variant (False)
             study_ids_to_archive = [

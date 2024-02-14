@@ -96,7 +96,14 @@ from antarest.study.model import (
     StudyMetadataPatchDTO,
     StudySimResultDTO,
 )
-from antarest.study.repository import QueryUser, StudyFilter, StudyMetadataRepository, StudyPagination, StudySortBy
+from antarest.study.repository import (
+    QueryUser,
+    StudyFilter,
+    StudyMetadataRepository,
+    StudyPagination,
+    StudySortBy,
+    build_query_user_from_params,
+)
 from antarest.study.storage.matrix_profile import adjust_matrix_columns_index
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import ChildNotFoundError
@@ -462,29 +469,10 @@ class StudyService:
         """
         logger.info("Retrieving matching studies")
         studies: t.Dict[str, StudyMetadataDTO] = {}
-
-        # retrieve user id and groups
-        user_id = None
-        user_groups = None
-        if params.user:
-            if params.user.id:
-                user_id = params.user.id
-            if params.user.groups:
-                user_groups = [group.id for group in params.user.groups]
-        else:
-            logger.error("FAIL permission: user is not logged")
-            raise UserHasNotPermissionError()
-
-        query_user = QueryUser(
-            is_admin=params.user.is_site_admin() or params.user.is_admin_token(),
-            user_id=user_id,
-            user_groups=user_groups,
-        )
         matching_studies = self.repository.get_all(
             study_filter=study_filter,
             sort_by=sort_by,
             pagination=pagination,
-            query_user=query_user,
         )
         logger.info("Studies retrieved")
         for study in matching_studies:
@@ -2158,10 +2146,23 @@ class StudyService:
             raise BadEditInstructionException(str(exc)) from exc
 
     def check_and_update_all_study_versions_in_database(self, params: RequestParameters) -> None:
+        """
+        This function updates studies version on the db. \n
+        **Warnings: Only users with Admins rights should be able to run this function.**
+        Args:
+            params: `RequestParameters` holding user ids and groups
+
+        Returns:
+
+        Raises: `UserHasNotPermissionError` if params user is not admin.
+
+        """
         if params.user and not params.user.is_site_admin():
             logger.error(f"User {params.user.id} is not site admin")
             raise UserHasNotPermissionError()
-        studies = self.repository.get_all(study_filter=StudyFilter(managed=False), query_user=QueryUser(is_amin=True))
+        studies = self.repository.get_all(
+            study_filter=StudyFilter(managed=False, query_user=build_query_user_from_params(params))
+        )
 
         for study in studies:
             storage = self.storage_service.raw_study_service
