@@ -67,7 +67,7 @@ def build_query_user_from_params(params: t.Union[RequestParameters, JWTUser]) ->
         return QueryUser(
             is_admin=user.is_site_admin() or user.is_admin_token(),
             user_id=user.id,
-            user_groups=user.groups,
+            user_groups=[group.id for group in user.groups],
         )
     else:
         return QueryUser()
