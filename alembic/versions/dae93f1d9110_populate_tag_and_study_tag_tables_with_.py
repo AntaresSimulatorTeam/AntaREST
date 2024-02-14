@@ -6,6 +6,7 @@ Revises: 3c70366b10ea
 Create Date: 2024-02-08 10:30:20.590919
 
 """
+import collections
 import itertools
 import json
 import secrets
@@ -36,25 +37,50 @@ def upgrade():
         obj = json.loads(patch or "{}")
         tags = frozenset(obj.get("study", {}).get("tags", ()))
         tags_by_ids[study_id] = tags
-    labels = set(itertools.chain.from_iterable(tags_by_ids.values()))
-    tags = {label: secrets.choice(COLOR_NAMES) for label in labels}
 
-    for label, color in tags.items():
-        connexion.execute(
-            sa.text("INSERT INTO tag (label, color) VALUES (:label, :color)"), {"label": label, "color": color}
-        )
+    # delete rows in tables `tag` and `study_tag`
+    connexion.execute("DELETE FROM study_tag")
+    connexion.execute("DELETE FROM tag")
+
+    # insert the tags in the `tag` table
+    labels = set(itertools.chain.from_iterable(tags_by_ids.values()))
+    bulk_tags = [{"label": label, "color": secrets.choice(COLOR_NAMES)} for label in labels]
+    sql = sa.text("INSERT INTO tag (label, color) VALUES (:label, :color)")
+    connexion.execute(sql, *bulk_tags)
 
     # Create relationships between studies and tags in the `study_tag` table
-    study_tag_data = {(study_id, label) for study_id, tags in tags_by_ids.items() for label in tags}
-    for study_id, label in study_tag_data:
-        connexion.execute(
-            sa.text("INSERT INTO study_tag (study_id, tag_label) VALUES (:study_id, :tag_label)"),
-            {"study_id": study_id, "tag_label": label},
-        )
+    bulk_study_tags = ({"study_id": id_, "tag_label": lbl} for id_, tags in tags_by_ids.items() for lbl in tags)
+    sql = sa.text("INSERT INTO study_tag (study_id, tag_label) VALUES (:study_id, :tag_label)")
+    connexion.execute(sql, *bulk_study_tags)
 
 
-def downgrade():
-    # ### Unfortunately there is no way to distinguish between the tags that have been added from additional data
-    # and those that have will be added following the data migration, using the current database scheme. Thus, we may
-    # perform no action in the downgrade and leave the `tag` and `study_tag` tables unchanged.###
-    pass
+def downgrade() -> None:
+    # ### repopulate the patches tags in `study_additional_data` from `study_tag` ###
+
+    # create a connection to the db
+    connexion: Connection = op.get_bind()
+
+    # Creating the `tags_by_ids` mapping from data in the `study_tags` table
+    tags_by_ids = collections.defaultdict(set)
+    study_tags = connexion.execute("SELECT study_id, tag_label FROM study_tag")
+    for study_id, tag_label in study_tags:
+        tags_by_ids[study_id].add(tag_label)
+
+    # Then, we read objects from the `patch` field of the `study_additional_data` table
+    objects_by_ids = {}
+    study_tags = connexion.execute("SELECT study_id, patch FROM study_additional_data")
+    for study_id, patch in study_tags:
+        obj = json.loads(patch or "{}")
+        obj["study"] = obj.get("study") or {}
+        obj["study"]["tags"] = obj["study"].get("tags") or []
+        obj["study"]["tags"] = sorted(tags_by_ids[study_id] | set(obj["study"]["tags"]))
+        objects_by_ids[study_id] = obj
+
+    # Updating objects in the `study_additional_data` table
+    sql = sa.text("UPDATE study_additional_data SET patch = :patch WHERE study_id = :study_id")
+    bulk_patches = [{"study_id": id_, "patch": json.dumps(obj)} for id_, obj in objects_by_ids.items()]
+    connexion.execute(sql, *bulk_patches)
+
+    # Deleting study_tags and tags
+    connexion.execute("DELETE FROM study_tag")
+    connexion.execute("DELETE FROM tag")
