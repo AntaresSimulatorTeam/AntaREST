@@ -25,7 +25,15 @@ depends_on = None
 
 
 def upgrade():
-    # ### This code is implemented manually to populate the `tag` and `study_tag` tables ###
+    """
+    This code is implemented manually to populate the `tag` and `study_tag` tables.\n
+    Four steps to proceed:
+        - Retrieve study-tags pairs from patches in `study_additional_data`.
+        - Delete all rows in `tag` and `study_tag`, as tag updates between revised 3c70366b10ea and this version,
+          do modify the data in patches alongside the two previous tables.
+        - Populate `tag` table using unique tag-labels and by randomly generating their associated colors.
+        - Populate `study_tag` using study-tags pairs.
+    """
 
     # create connexion to the db
     connexion: Connection = op.get_bind()
@@ -35,7 +43,8 @@ def upgrade():
     tags_by_ids = {}
     for study_id, patch in study_tags:
         obj = json.loads(patch or "{}")
-        tags = frozenset(obj.get("study", {}).get("tags", ()))
+        study = obj.get("study") or {}
+        tags = frozenset(study.get("tags") or ())
         tags_by_ids[study_id] = tags
 
     # delete rows in tables `tag` and `study_tag`
@@ -55,8 +64,13 @@ def upgrade():
 
 
 def downgrade() -> None:
-    # ### repopulate the patches tags in `study_additional_data` from `study_tag` ###
-
+    """
+    This code is implemented manually to downgrade to revised version of the db (3c70366b10ea).
+    Three steps to proceed:
+        - Retrieve study-tags pairs from `study_tag` table.
+        - Update patches study-tags in `study_additional_data` using these pairs.
+        - Delete all rows from `tag` and `study_tag`.
+    """
     # create a connection to the db
     connexion: Connection = op.get_bind()
 
