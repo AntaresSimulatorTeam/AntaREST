@@ -1,19 +1,18 @@
-"""This code is implemented manually to populate the `tag` and `study_tag` tables using
-    pre-existing patch data in `study_additional_data` table.
+"""
+Populate `tag` and `study_tag` tables from `patch` field in `study_additional_data` table
 
 Revision ID: dae93f1d9110
 Revises: 3c70366b10ea
 Create Date: 2024-02-08 10:30:20.590919
-
 """
 import collections
 import itertools
 import json
 import secrets
 
+import sqlalchemy as sa  # type: ignore
 from alembic import op
-import sqlalchemy as sa
-from sqlalchemy.engine import Connection
+from sqlalchemy.engine import Connection  # type: ignore
 
 from antarest.study.css4_colors import COLOR_NAMES
 
@@ -24,9 +23,10 @@ branch_labels = None
 depends_on = None
 
 
-def upgrade():
+def upgrade() -> None:
     """
-    This code is implemented manually to populate the `tag` and `study_tag` tables.\n
+    Populate `tag` and `study_tag` tables from `patch` field in `study_additional_data` table
+
     Four steps to proceed:
         - Retrieve study-tags pairs from patches in `study_additional_data`.
         - Delete all rows in `tag` and `study_tag`, as tag updates between revised 3c70366b10ea and this version,
@@ -65,7 +65,8 @@ def upgrade():
 
 def downgrade() -> None:
     """
-    This code is implemented manually to downgrade to revised version of the db (3c70366b10ea).
+    Restore `patch` field in `study_additional_data` from `tag` and `study_tag` tables
+
     Three steps to proceed:
         - Retrieve study-tags pairs from `study_tag` table.
         - Update patches study-tags in `study_additional_data` using these pairs.
