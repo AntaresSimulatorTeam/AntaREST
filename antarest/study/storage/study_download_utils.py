@@ -22,7 +22,7 @@ from antarest.study.model import (
     StudyDownloadType,
     TimeSerie,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.model import ENR_MODELLING, Area, FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, EnrModelling, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import ChildNotFoundError, FilterError, FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode
@@ -98,7 +98,7 @@ class StudyDownloader:
         data: StudyDownloadDTO,
     ) -> None:
         cluster_details = [f"details-{data.level.value}"]
-        if study.config.enr_modelling == ENR_MODELLING.CLUSTERS.value:
+        if study.config.enr_modelling == EnrModelling.CLUSTERS.value:
             cluster_details += [f"details-res-{data.level.value}"]
 
         files_matcher = (

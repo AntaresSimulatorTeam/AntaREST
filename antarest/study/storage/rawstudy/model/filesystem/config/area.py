@@ -8,9 +8,9 @@ from pydantic import Field, root_validator, validator
 
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import (
-    validate_filtering,
-    validate_colors,
     validate_color_rgb,
+    validate_colors,
+    validate_filtering,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.ini_properties import IniProperties
 

@@ -17,13 +17,11 @@ from antarest.study.business.optimization_management import (
     TransmissionCapacities,
     UnfeasibleProblemBehavior,
 )
-from antarest.study.business.table_mode_management import (
-    AssetType,
+from antarest.study.business.table_mode_management import AssetType, TableTemplateType, TransmissionCapacity
+from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
+    BindingConstraintFrequency,
     BindingConstraintOperator,
-    TableTemplateType,
-    TransmissionCapacity,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.renewable import RenewableClusterGroup
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import LawOption, LocalTSGenerationBehavior
 from antarest.study.storage.variantstudy.model.command.common import CommandName

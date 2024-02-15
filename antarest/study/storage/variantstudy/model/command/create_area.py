@@ -5,8 +5,8 @@ from pydantic import Field
 from antarest.core.model import JSON
 from antarest.study.common.default_values import FilteringOptions, NodalOptimization
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    ENR_MODELLING,
     Area,
+    EnrModelling,
     FileStudyTreeConfig,
     transform_name_to_id,
 )
@@ -238,7 +238,7 @@ class CreateArea(ICommand):
                 f"waterValues_{area_id}"
             ] = self.command_context.generator_matrix_constants.get_null_matrix()
 
-        if version >= 810 and study_data.config.enr_modelling == ENR_MODELLING.CLUSTERS.value:
+        if version >= 810 and study_data.config.enr_modelling == EnrModelling.CLUSTERS.value:
             new_area_data["input"]["renewables"] = {
                 "clusters": {area_id: {"list": {}}},
             }

@@ -5,10 +5,7 @@ from zipfile import ZipFile
 
 import pytest
 
-from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
-    BindingConstraintDTO,
-    BindingConstraintFrequency,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.files import (
     _parse_links,
     _parse_outputs,
@@ -20,6 +17,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.files import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
+    BindingConstraintDTO,
     DistrictSet,
     FileStudyTreeConfig,
     Link,
