@@ -14,8 +14,11 @@ from antarest.study.business.utils import AllOptionalMetaclass, FormFieldsBaseMo
 from antarest.study.common.default_values import FilteringOptions, LinkProperties, NodalOptimization
 from antarest.study.model import RawStudy
 from antarest.study.storage.rawstudy.model.filesystem.config.area import AdequacyPatchMode
-from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
-from antarest.study.storage.rawstudy.model.filesystem.config.links import TransmissionCapacity, AssetType
+from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
+    BindingConstraintFrequency,
+    BindingConstraintOperator,
+)
+from antarest.study.storage.rawstudy.model.filesystem.config.links import AssetType, TransmissionCapacity
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import LawOption, LocalTSGenerationBehavior
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
@@ -40,13 +43,6 @@ class TableTemplateType(EnumIgnoreCase):
     RENEWABLE_CLUSTER = "renewable cluster"
     ST_STORAGE = "short-term storage"
     BINDING_CONSTRAINT = "binding constraint"
-
-
-class BindingConstraintOperator(EnumIgnoreCase):
-    LESS = "less"
-    GREATER = "greater"
-    BOTH = "both"
-    EQUAL = "equal"
 
 
 class AreaColumns(FormFieldsBaseModel, metaclass=AllOptionalMetaclass):

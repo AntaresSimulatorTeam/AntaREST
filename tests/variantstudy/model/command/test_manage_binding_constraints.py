@@ -4,7 +4,10 @@ import numpy as np
 import pytest
 
 from antarest.study.storage.rawstudy.ini_reader import IniReader
-from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
+from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
+    BindingConstraintFrequency,
+    BindingConstraintOperator,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.command_extractor import CommandExtractor
 from antarest.study.storage.variantstudy.business.command_reverter import CommandReverter
@@ -15,7 +18,6 @@ from antarest.study.storage.variantstudy.business.matrix_constants.binding_const
     default_bc_hourly,
     default_bc_weekly_daily,
 )
-from antarest.study.storage.variantstudy.model.command.common import BindingConstraintOperator
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import CreateBindingConstraint
 from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster

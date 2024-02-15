@@ -4,7 +4,7 @@ import re
 import pytest
 from pydantic import ValidationError
 
-from antarest.study.storage.rawstudy.model.filesystem.config.model import ENR_MODELLING, transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.model import EnrModelling, transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.command_reverter import CommandReverter
 from antarest.study.storage.variantstudy.model.command.common import CommandName
@@ -39,7 +39,7 @@ class TestCreateRenewablesCluster:
             CreateRenewablesCluster(area_id="fr", cluster_name="%", command_context=command_context, parameters={})
 
     def test_apply(self, empty_study: FileStudy, command_context: CommandContext):
-        empty_study.config.enr_modelling = ENR_MODELLING.CLUSTERS.value
+        empty_study.config.enr_modelling = EnrModelling.CLUSTERS.value
         study_path = empty_study.config.study_path
         area_name = "DE"
         area_id = transform_name_to_id(area_name, lower=True)

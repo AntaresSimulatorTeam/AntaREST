@@ -3,7 +3,7 @@ import typing as t
 from pydantic import BaseModel
 
 from antarest.core.exceptions import ConfigFileNotFound
-from antarest.study.business.utils import execute_or_add_commands, camel_case_model, AllOptionalMetaclass
+from antarest.study.business.utils import AllOptionalMetaclass, camel_case_model, execute_or_add_commands
 from antarest.study.model import RawStudy
 from antarest.study.storage.rawstudy.model.filesystem.config.links import LinkProperties
 from antarest.study.storage.storage_service import StudyStorageService
