@@ -54,13 +54,15 @@ def upgrade() -> None:
     # insert the tags in the `tag` table
     labels = set(itertools.chain.from_iterable(tags_by_ids.values()))
     bulk_tags = [{"label": label, "color": secrets.choice(COLOR_NAMES)} for label in labels]
-    sql = sa.text("INSERT INTO tag (label, color) VALUES (:label, :color)")
-    connexion.execute(sql, *bulk_tags)
+    if bulk_tags:
+        sql = sa.text("INSERT INTO tag (label, color) VALUES (:label, :color)")
+        connexion.execute(sql, *bulk_tags)
 
     # Create relationships between studies and tags in the `study_tag` table
-    bulk_study_tags = ({"study_id": id_, "tag_label": lbl} for id_, tags in tags_by_ids.items() for lbl in tags)
-    sql = sa.text("INSERT INTO study_tag (study_id, tag_label) VALUES (:study_id, :tag_label)")
-    connexion.execute(sql, *bulk_study_tags)
+    bulk_study_tags = [{"study_id": id_, "tag_label": lbl} for id_, tags in tags_by_ids.items() for lbl in tags]
+    if bulk_study_tags:
+        sql = sa.text("INSERT INTO study_tag (study_id, tag_label) VALUES (:study_id, :tag_label)")
+        connexion.execute(sql, *bulk_study_tags)
 
 
 def downgrade() -> None:
@@ -92,9 +94,10 @@ def downgrade() -> None:
         objects_by_ids[study_id] = obj
 
     # Updating objects in the `study_additional_data` table
-    sql = sa.text("UPDATE study_additional_data SET patch = :patch WHERE study_id = :study_id")
     bulk_patches = [{"study_id": id_, "patch": json.dumps(obj)} for id_, obj in objects_by_ids.items()]
-    connexion.execute(sql, *bulk_patches)
+    if bulk_patches:
+        sql = sa.text("UPDATE study_additional_data SET patch = :patch WHERE study_id = :study_id")
+        connexion.execute(sql, *bulk_patches)
 
     # Deleting study_tags and tags
     connexion.execute("DELETE FROM study_tag")
