@@ -350,18 +350,30 @@ def test_partial_sync_studies_from_disk() -> None:
     )
 
 
-@pytest.mark.unit_test
-def test_remove_duplicate() -> None:
-    ma = RawStudy(id="a", path="a")
-    mb = RawStudy(id="b", path="a")
+@with_db_context
+def test_remove_duplicate(db_session: Session) -> None:
+    with db_session:
+        db_session.add(RawStudy(id="a", path="/path/to/a"))
+        db_session.add(RawStudy(id="b", path="/path/to/a"))
+        db_session.add(RawStudy(id="c", path="/path/to/c"))
+        db_session.commit()
+        study_count = db_session.query(RawStudy).filter(RawStudy.path == "/path/to/a").count()
+        assert study_count == 2  # there are 2 studies with same path before removing duplicates
 
-    repository = Mock()
-    repository.get_all.return_value = [ma, mb]
-    config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
-    service = build_study_service(Mock(), repository, config)
+    with db_session:
+        repository = StudyMetadataRepository(Mock(), db_session)
+        config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
+        service = build_study_service(Mock(), repository, config)
+        service.remove_duplicates()
 
-    service.remove_duplicates()
-    repository.delete.assert_called_once_with(mb.id)
+    # example with 1 duplicate with same path
+    with db_session:
+        study_count = db_session.query(RawStudy).filter(RawStudy.path == "/path/to/a").count()
+    assert study_count == 1
+    # example with no duplicates with same path
+    with db_session:
+        study_count = db_session.query(RawStudy).filter(RawStudy.path == "/path/to/c").count()
+    assert study_count == 1
 
 
 # noinspection PyArgumentList

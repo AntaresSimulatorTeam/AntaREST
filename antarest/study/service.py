@@ -1,4 +1,5 @@
 import base64
+import collections
 import contextlib
 import io
 import json
@@ -701,20 +702,16 @@ class StudyService:
         return get_start_date(file_study, output_id, level)
 
     def remove_duplicates(self) -> None:
-        study_paths: t.Dict[str, t.List[str]] = {}
-        for study in self.repository.get_all():
-            if isinstance(study, RawStudy) and not study.archived:
-                path = str(study.path)
-                if path not in study_paths:
-                    study_paths[path] = []
-                study_paths[path].append(study.id)
-
-        for studies_with_same_path in study_paths.values():
-            if len(studies_with_same_path) > 1:
-                logger.info(f"Found studies {studies_with_same_path} with same path, de duplicating")
-                for study_name in studies_with_same_path[1:]:
-                    logger.info(f"Removing study {study_name}")
-                    self.repository.delete(study_name)
+        duplicates = self.repository.list_duplicates()
+        ids: t.List[str] = []
+        # ids with same path
+        duplicates_by_path = collections.defaultdict(list)
+        for study_id, path in duplicates:
+            duplicates_by_path[path].append(study_id)
+        for path, study_ids in duplicates_by_path.items():
+            ids.extend(study_ids[1:])
+        if ids:  # Check if ids is not empty
+            self.repository.delete(*ids)
 
     def sync_studies_on_disk(self, folders: t.List[StudyFolder], directory: t.Optional[Path] = None) -> None:
         """

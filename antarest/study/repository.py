@@ -138,7 +138,7 @@ class StudyMetadataRepository:
     def refresh(self, metadata: Study) -> None:
         self.session.refresh(metadata)
 
-    def get(self, id: str) -> t.Optional[Study]:
+    def get(self, study_id: str) -> t.Optional[Study]:
         """Get the study by ID or return `None` if not found in database."""
         # todo: I think we should use a `entity = with_polymorphic(Study, "*")`
         #  to make sure RawStudy and VariantStudy fields are also fetched.
@@ -146,13 +146,11 @@ class StudyMetadataRepository:
         # When we fetch a study, we also need to fetch the associated owner and groups
         # to check the permissions of the current user efficiently.
         study: Study = (
-            # fmt: off
             self.session.query(Study)
             .options(joinedload(Study.owner))
             .options(joinedload(Study.groups))
             .options(joinedload(Study.tags))
-            .get(id)
-            # fmt: on
+            .get(study_id)
         )
         return study
 
@@ -272,10 +270,10 @@ class StudyMetadataRepository:
         studies: t.Sequence[RawStudy] = query.all()
         return studies
 
-    def delete(self, id: str) -> None:
+    def delete(self, id_: str, *ids: str) -> None:
+        ids = (id_,) + ids
         session = self.session
-        u: Study = session.query(Study).get(id)
-        session.delete(u)
+        session.query(Study).filter(Study.id.in_(ids)).delete(synchronize_session=False)
         session.commit()
 
     def update_tags(self, study: Study, new_tags: t.Sequence[str]) -> None:
@@ -292,3 +290,12 @@ class StudyMetadataRepository:
         study.tags = [Tag(label=tag) for tag in new_labels] + existing_tags
         self.session.merge(study)
         self.session.commit()
+
+    def list_duplicates(self) -> t.List[t.Tuple[str, str]]:
+        """
+        Get list of duplicates as tuples (id, path).
+        """
+        session = self.session
+        subquery = session.query(Study.path).group_by(Study.path).having(func.count() > 1).subquery()
+        query = session.query(Study.id, Study.path).filter(Study.path.in_(subquery))
+        return t.cast(t.List[t.Tuple[str, str]], query.all())

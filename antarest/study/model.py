@@ -16,7 +16,6 @@ from sqlalchemy import (  # type: ignore
     Integer,
     PrimaryKeyConstraint,
     String,
-    Table,
 )
 from sqlalchemy.orm import relationship  # type: ignore
 
@@ -50,12 +49,31 @@ STUDY_REFERENCE_TEMPLATES: t.Mapping[str, str] = {
 
 NEW_DEFAULT_STUDY_VERSION: str = "860"
 
-groups_metadata = Table(
-    "group_metadata",
-    Base.metadata,
-    Column("group_id", String(36), ForeignKey("groups.id")),
-    Column("study_id", String(36), ForeignKey("study.id")),
-)
+
+class StudyGroup(Base):  # type:ignore
+    """
+    A table to manage the many-to-many relationship between `Study` and `Group`
+
+    Attributes:
+        study_id: The ID of the study associated with the group.
+        group_id: The IS of the group associated with the study.
+    """
+
+    __tablename__ = "group_metadata"
+    __table_args__ = (PrimaryKeyConstraint("study_id", "group_id"),)
+
+    group_id: str = Column(String(36), ForeignKey("groups.id", ondelete="CASCADE"), index=True, nullable=False)
+    study_id: str = Column(String(36), ForeignKey("study.id", ondelete="CASCADE"), index=True, nullable=False)
+
+    def __str__(self) -> str:  # pragma: no cover
+        cls_name = self.__class__.__name__
+        return f"[{cls_name}] study_id={self.study_id}, group={self.group_id}"
+
+    def __repr__(self) -> str:  # pragma: no cover
+        cls_name = self.__class__.__name__
+        study_id = self.study_id
+        group_id = self.group_id
+        return f"{cls_name}({study_id=}, {group_id=})"
 
 
 class StudyTag(Base):  # type:ignore
@@ -63,8 +81,8 @@ class StudyTag(Base):  # type:ignore
     A table to manage the many-to-many relationship between `Study` and `Tag`
 
     Attributes:
-        study_id (str): The ID of the study associated with the tag.
-        tag_label (str): The label of the tag associated with the study.
+        study_id: The ID of the study associated with the tag.
+        tag_label: The label of the tag associated with the study.
     """
 
     __tablename__ = "study_tag"
@@ -74,7 +92,8 @@ class StudyTag(Base):  # type:ignore
     tag_label: str = Column(String(40), ForeignKey("tag.label", ondelete="CASCADE"), index=True, nullable=False)
 
     def __str__(self) -> str:  # pragma: no cover
-        return f"[StudyTag] study_id={self.study_id}, tag={self.tag}"
+        cls_name = self.__class__.__name__
+        return f"[{cls_name}] study_id={self.study_id}, tag={self.tag}"
 
     def __repr__(self) -> str:  # pragma: no cover
         cls_name = self.__class__.__name__
@@ -90,8 +109,8 @@ class Tag(Base):  # type:ignore
     This class is used to store tags associated with studies.
 
     Attributes:
-        label (str): The label of the tag.
-        color (str): The color code associated with the tag.
+        label: The label of the tag.
+        color: The color code associated with the tag.
     """
 
     __tablename__ = "tag"
@@ -130,7 +149,7 @@ class StudyAdditionalData(Base):  # type:ignore
 
     study_id = Column(
         String(36),
-        ForeignKey("study.id"),
+        ForeignKey("study.id", ondelete="CASCADE"),
         primary_key=True,
     )
     author = Column(String(255), default="Unknown")
@@ -174,7 +193,7 @@ class Study(Base):  # type: ignore
 
     tags: t.List[Tag] = relationship(Tag, secondary=StudyTag.__table__, back_populates="studies")
     owner = relationship(Identity, uselist=False)
-    groups = relationship(Group, secondary=lambda: groups_metadata, cascade="")
+    groups = relationship(Group, secondary=StudyGroup.__table__, cascade="")
     additional_data = relationship(
         StudyAdditionalData,
         uselist=False,
@@ -230,7 +249,7 @@ class RawStudy(Study):
 
     id = Column(
         String(36),
-        ForeignKey("study.id"),
+        ForeignKey("study.id", ondelete="CASCADE"),
         primary_key=True,
     )
     content_status = Column(Enum(StudyContentStatus))
