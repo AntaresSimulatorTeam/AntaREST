@@ -7,7 +7,7 @@ from antarest.core.cache.business.local_chache import LocalCache
 from antarest.core.model import PublicMode
 from antarest.login.model import Group, User
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, Study, StudyAdditionalData, StudyContentStatus
-from antarest.study.repository import QueryUser, StudyFilter, StudyMetadataRepository
+from antarest.study.repository import AccessPermissions, StudyFilter, StudyMetadataRepository
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 
 
@@ -69,7 +69,7 @@ def test_lifecycle(db_session: Session) -> None:
     c = repo.one(a_id)
     assert a_id == c.id
 
-    assert len(repo.get_all(study_filter=StudyFilter(query_user=QueryUser(is_admin=True)))) == 4
+    assert len(repo.get_all(study_filter=StudyFilter(access_permissions=AccessPermissions(is_admin=True)))) == 4
     assert len(repo.get_all_raw(exists=True)) == 1
     assert len(repo.get_all_raw(exists=False)) == 1
     assert len(repo.get_all_raw()) == 2

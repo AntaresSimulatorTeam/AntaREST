@@ -28,7 +28,7 @@ from antarest.study.model import (
     StudyMetadataPatchDTO,
     StudySimResultDTO,
 )
-from antarest.study.repository import StudyFilter, StudyPagination, StudySortBy, build_query_user_from_params
+from antarest.study.repository import AccessPermissions, StudyFilter, StudyPagination, StudySortBy
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 
@@ -161,7 +161,7 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
             exists=exists,
             workspace=workspace,
             folder=folder,
-            query_user=build_query_user_from_params(params),
+            access_permissions=AccessPermissions.from_params(params),
         )
 
         matching_studies = study_service.get_studies_information(

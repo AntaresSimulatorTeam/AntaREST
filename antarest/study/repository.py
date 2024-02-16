@@ -3,8 +3,8 @@ import enum
 import typing as t
 
 from pydantic import BaseModel, NonNegativeInt
-from sqlalchemy import func, not_, or_  # type: ignore
-from sqlalchemy.orm import Session, joinedload, with_polymorphic  # type: ignore
+from sqlalchemy import and_, func, not_, or_, sql  # type: ignore
+from sqlalchemy.orm import Query, Session, joinedload, with_polymorphic  # type: ignore
 
 from antarest.core.interfaces.cache import ICache
 from antarest.core.jwt import JWTUser
@@ -37,7 +37,7 @@ def escape_like(string: str, escape_char: str = "\\") -> str:
     return string.replace(escape_char, escape_char * 2).replace("%", escape_char + "%").replace("_", escape_char + "_")
 
 
-class QueryUser(BaseModel, frozen=True, extra="forbid"):
+class AccessPermissions(BaseModel, frozen=True, extra="forbid"):
     """
     This class object is build to pass on the user identity and its associated groups information
     into the listing function get_all below
@@ -47,30 +47,31 @@ class QueryUser(BaseModel, frozen=True, extra="forbid"):
     user_id: t.Optional[int] = None
     user_groups: t.Sequence[str] = ()
 
+    @classmethod
+    def from_params(cls, params: t.Union[RequestParameters, JWTUser]) -> "AccessPermissions":
+        """
+        This function makes it easier to pass on user ids and groups into the repository filtering function by
+        extracting the associated `AccessPermissions` object.
 
-def build_query_user_from_params(params: t.Union[RequestParameters, JWTUser]) -> QueryUser:
-    """
-    This function makes it easier to pass on user ids and groups into the repository filtering function by
-    extracting the associated `QueryUser` object.
-    Args:
-        params: `RequestParameters` or `JWTUser` holding user ids and groups
+        Args:
+            params: `RequestParameters` or `JWTUser` holding user ids and groups
 
-    Returns: `QueryUser`
+        Returns: `AccessPermissions`
 
-    """
-    if isinstance(params, RequestParameters):
-        user = params.user
-    else:
-        user = params
+        """
+        if isinstance(params, RequestParameters):
+            user = params.user
+        else:
+            user = params
 
-    if user:
-        return QueryUser(
-            is_admin=user.is_site_admin() or user.is_admin_token(),
-            user_id=user.id,
-            user_groups=[group.id for group in user.groups],
-        )
-    else:
-        return QueryUser()
+        if user:
+            return cls(
+                is_admin=user.is_site_admin() or user.is_admin_token(),
+                user_id=user.id,
+                user_groups=[group.id for group in user.groups],
+            )
+        else:
+            return cls()
 
 
 class StudyFilter(BaseModel, frozen=True, extra="forbid"):
@@ -89,7 +90,7 @@ class StudyFilter(BaseModel, frozen=True, extra="forbid"):
         exists: if raw study missing
         workspace: optional workspace of the study
         folder: optional folder prefix of the study
-        query_user: query user id, groups and admins status
+        access_permissions: query user ID, groups and admins status
     """
 
     name: str = ""
@@ -104,7 +105,7 @@ class StudyFilter(BaseModel, frozen=True, extra="forbid"):
     exists: t.Optional[bool] = None
     workspace: str = ""
     folder: str = ""
-    query_user: QueryUser = QueryUser()
+    access_permissions: AccessPermissions = AccessPermissions()
 
 
 class StudySortBy(str, enum.Enum):
@@ -239,65 +240,9 @@ class StudyMetadataRepository:
         # efficiently (see: `AbstractStorageService.get_study_information`)
         entity = with_polymorphic(Study, "*")
 
-        # noinspection PyTypeChecker
-        q = self.session.query(entity)
-        if study_filter.exists is not None:
-            if study_filter.exists:
-                q = q.filter(RawStudy.missing.is_(None))
-            else:
-                q = q.filter(not_(RawStudy.missing.is_(None)))
-        q = q.options(joinedload(entity.owner))
-        q = q.options(joinedload(entity.groups))
-        q = q.options(joinedload(entity.additional_data))
-        q = q.options(joinedload(entity.tags))
-        if study_filter.managed is not None:
-            if study_filter.managed:
-                q = q.filter(or_(entity.type == "variantstudy", RawStudy.workspace == DEFAULT_WORKSPACE_NAME))
-            else:
-                q = q.filter(entity.type == "rawstudy")
-                q = q.filter(RawStudy.workspace != DEFAULT_WORKSPACE_NAME)
-        if study_filter.study_ids:
-            q = q.filter(entity.id.in_(study_filter.study_ids))
-        if study_filter.users:
-            q = q.filter(entity.owner_id.in_(study_filter.users))
-        if study_filter.groups:
-            q = q.join(entity.groups).filter(Group.id.in_(study_filter.groups))
-        if study_filter.tags:
-            upper_tags = [tag.upper() for tag in study_filter.tags]
-            q = q.join(entity.tags).filter(func.upper(Tag.label).in_(upper_tags))
-        if study_filter.archived is not None:
-            q = q.filter(entity.archived == study_filter.archived)
-        if study_filter.name:
-            regex = f"%{escape_like(study_filter.name)}%"
-            q = q.filter(entity.name.ilike(regex))
-        if study_filter.folder:
-            regex = f"{escape_like(study_filter.folder)}%"
-            q = q.filter(entity.folder.ilike(regex))
-        if study_filter.workspace:
-            q = q.filter(RawStudy.workspace == study_filter.workspace)
-        if study_filter.variant is not None:
-            if study_filter.variant:
-                q = q.filter(entity.type == "variantstudy")
-            else:
-                q = q.filter(entity.type == "rawstudy")
-        if study_filter.versions:
-            q = q.filter(entity.version.in_(study_filter.versions))
+        q = self._search_studies(study_filter)
 
-        # permissions filtering
-        if not study_filter.query_user.is_admin:
-            if study_filter.query_user.user_id is not None:
-                condition_1 = entity.public_mode != PublicMode.NONE
-                condition_2 = entity.owner_id == study_filter.query_user.user_id
-                condition_3 = Group.id.in_(study_filter.query_user.user_groups or [])
-                if study_filter.groups:
-                    q0 = q.filter(condition_3)
-                    q = q0.union(q.filter(or_(condition_1, condition_2)))
-                else:
-                    q0 = q.join(entity.groups).filter(condition_3)
-                    q = q0.union(q.filter(or_(condition_1, condition_2)))
-            else:
-                return []
-
+        # sorting
         if sort_by:
             if sort_by == StudySortBy.DATE_DESC:
                 q = q.order_by(entity.created_at.desc())
@@ -316,6 +261,102 @@ class StudyMetadataRepository:
 
         studies: t.Sequence[Study] = q.all()
         return studies
+
+    def count_studies(self, study_filter: StudyFilter = StudyFilter()) -> int:
+        """
+        Count all studies matching with specified filters.
+
+        Args:
+            study_filter: composed of all filtering criteria.
+
+        Returns:
+            Integer, corresponding to total number of studies matching with specified filters.
+        """
+        q = self._search_studies(study_filter)
+
+        total: int = q.count()
+
+        return total
+
+    def _search_studies(
+        self,
+        study_filter: StudyFilter,
+    ) -> Query:
+        """
+        Build a `SQL Query` based on specified filters.
+
+        Args:
+            study_filter: composed of all filtering criteria.
+
+        Returns:
+            The `Query` corresponding to specified criteria (except for permissions).
+        """
+        # When we fetch a study, we also need to fetch the associated owner and groups
+        # to check the permissions of the current user efficiently.
+        # We also need to fetch the additional data to display the study information
+        # efficiently (see: `AbstractStorageService.get_study_information`)
+        entity = with_polymorphic(Study, "*")
+
+        # noinspection PyTypeChecker
+        q = self.session.query(entity)
+        if study_filter.exists is not None:
+            q = (
+                q.filter(RawStudy.missing.is_(None))
+                if study_filter.exists
+                else q.filter(not_(RawStudy.missing.is_(None)))
+            )
+        q = q.options(joinedload(entity.owner))
+        q = q.options(joinedload(entity.groups))
+        q = q.options(joinedload(entity.additional_data))
+        q = q.options(joinedload(entity.tags))
+        if study_filter.managed is not None:
+            q = (
+                q.filter(or_(entity.type == "variantstudy", RawStudy.workspace == DEFAULT_WORKSPACE_NAME))
+                if study_filter.managed
+                else q.filter(entity.type == "rawstudy").filter(RawStudy.workspace != DEFAULT_WORKSPACE_NAME)
+            )
+        if study_filter.study_ids:
+            q = q.filter(entity.id.in_(study_filter.study_ids)) if study_filter.study_ids else q
+        if study_filter.users:
+            q = q.filter(entity.owner_id.in_(study_filter.users))
+        if study_filter.tags:
+            upper_tags = [tag.upper() for tag in study_filter.tags]
+            q = q.join(entity.tags).filter(func.upper(Tag.label).in_(upper_tags))
+        if study_filter.archived is not None:
+            q = q.filter(entity.archived == study_filter.archived)
+        if study_filter.name:
+            regex = f"%{escape_like(study_filter.name)}%"
+            q = q.filter(entity.name.ilike(regex))
+        if study_filter.folder:
+            regex = f"{escape_like(study_filter.folder)}%"
+            q = q.filter(entity.folder.ilike(regex))
+        if study_filter.workspace:
+            q = q.filter(RawStudy.workspace == study_filter.workspace)
+        if study_filter.variant is not None:
+            q = q.filter(entity.type == "variantstudy") if study_filter.variant else q.filter(entity.type == "rawstudy")
+        if study_filter.versions:
+            q = q.filter(entity.version.in_(study_filter.versions))
+
+        # permissions + groups filtering
+        if not study_filter.access_permissions.is_admin and study_filter.access_permissions.user_id is not None:
+            condition_1 = entity.public_mode != PublicMode.NONE
+            condition_2 = entity.owner_id == study_filter.access_permissions.user_id
+            q1 = q.join(entity.groups).filter(Group.id.in_(study_filter.access_permissions.user_groups or []))
+            if study_filter.groups:
+                q2 = q.join(entity.groups).filter(Group.id.in_(study_filter.groups or []))
+                q2 = q1.intersect(q2)
+                q = q2.union(
+                    q.join(entity.groups).filter(and_(or_(condition_1, condition_2), Group.id.in_(study_filter.groups)))
+                )
+            else:
+                q = q1.union(q.filter(or_(condition_1, condition_2)))
+        elif not study_filter.access_permissions.is_admin and study_filter.access_permissions.user_id is None:
+            # return empty result
+            q = q.filter(sql.false())
+        elif study_filter.groups:
+            q = q.join(entity.groups).filter(Group.id.in_(study_filter.groups))
+
+        return q
 
     def get_all_raw(self, exists: t.Optional[bool] = None) -> t.Sequence[RawStudy]:
         query = self.session.query(RawStudy)

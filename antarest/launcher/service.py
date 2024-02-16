@@ -40,7 +40,7 @@ from antarest.launcher.model import (
 from antarest.launcher.repository import JobResultRepository
 from antarest.launcher.ssh_client import calculates_slurm_load
 from antarest.launcher.ssh_config import SSHConfigDTO
-from antarest.study.repository import QueryUser, StudyFilter, build_query_user_from_params
+from antarest.study.repository import AccessPermissions, StudyFilter
 from antarest.study.service import StudyService
 from antarest.study.storage.utils import assert_permission, extract_output_name, find_single_output_path
 
@@ -313,7 +313,9 @@ class LauncherService:
             studies = {
                 study.id: study
                 for study in self.study_service.repository.get_all(
-                    study_filter=StudyFilter(study_ids=study_ids, query_user=build_query_user_from_params(user))
+                    study_filter=StudyFilter(
+                        study_ids=study_ids, access_permissions=AccessPermissions.from_params(user)
+                    )
                 )
             }
         else:

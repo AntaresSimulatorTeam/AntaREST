@@ -97,12 +97,11 @@ from antarest.study.model import (
     StudySimResultDTO,
 )
 from antarest.study.repository import (
-    QueryUser,
+    AccessPermissions,
     StudyFilter,
     StudyMetadataRepository,
     StudyPagination,
     StudySortBy,
-    build_query_user_from_params,
 )
 from antarest.study.storage.matrix_profile import adjust_matrix_columns_index
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
@@ -2147,21 +2146,22 @@ class StudyService:
 
     def check_and_update_all_study_versions_in_database(self, params: RequestParameters) -> None:
         """
-        This function updates studies version on the db. \n
+        This function updates studies version on the db.
+
         **Warnings: Only users with Admins rights should be able to run this function.**
+
         Args:
-            params: `RequestParameters` holding user ids and groups
+            params: Request parameters holding user ID and groups
 
-        Returns:
-
-        Raises: `UserHasNotPermissionError` if params user is not admin.
+        Raises:
+            UserHasNotPermissionError: if params user is not admin.
 
         """
         if params.user and not params.user.is_site_admin():
             logger.error(f"User {params.user.id} is not site admin")
             raise UserHasNotPermissionError()
         studies = self.repository.get_all(
-            study_filter=StudyFilter(managed=False, query_user=build_query_user_from_params(params))
+            study_filter=StudyFilter(managed=False, access_permissions=AccessPermissions.from_params(params))
         )
 
         for study in studies:
