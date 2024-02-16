@@ -631,7 +631,7 @@ def test_repository_get_all__study_tags_filter(
 
     test_tag_1 = Tag(label="hidden-tag")
     test_tag_2 = Tag(label="decennial")
-    test_tag_3 = Tag(label="winter_transition")
+    test_tag_3 = Tag(label="Winter_Transition")  # note the different case
 
     study_1 = VariantStudy(id=1, tags=[test_tag_1])
     study_2 = VariantStudy(id=2, tags=[test_tag_2])
@@ -655,6 +655,7 @@ def test_repository_get_all__study_tags_filter(
         _ = [s.groups for s in all_studies]
         _ = [s.additional_data for s in all_studies]
         _ = [s.tags for s in all_studies]
+
     assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
     if expected_ids is not None:
