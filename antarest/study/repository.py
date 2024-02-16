@@ -294,6 +294,10 @@ class StudyMetadataRepository:
         study.tags = [Tag(label=tag) for tag in new_upper_tags.values()] + existing_tags
         self.session.merge(study)
         self.session.commit()
+        # Delete any tag that is not associated with any study.
+        # Note: If tags are to be associated with objects other than Study, this code must be updated.
+        self.session.query(Tag).filter(~Tag.studies.any()).delete(synchronize_session=False)  # type: ignore
+        self.session.commit()
 
     def list_duplicates(self) -> t.List[t.Tuple[str, str]]:
         """

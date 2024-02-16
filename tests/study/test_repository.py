@@ -660,3 +660,36 @@ def test_repository_get_all__study_tags_filter(
 
     if expected_ids is not None:
         assert {s.id for s in all_studies} == expected_ids
+
+
+def test_update_tags(
+    db_session: Session,
+) -> None:
+    icache: Mock = Mock(spec=ICache)
+    repository = StudyMetadataRepository(cache_service=icache, session=db_session)
+
+    study_id = 1
+    study = RawStudy(id=study_id, tags=[])
+    db_session.add(study)
+    db_session.commit()
+
+    # use the db recorder to check that:
+    # 1- finding existing tags requires 1 query
+    # 2- updating the study tags requires 4 queries (2 selects, 2 inserts)
+    # 3- deleting orphan tags requires 1 query
+    with DBStatementRecorder(db_session.bind) as db_recorder:
+        repository.update_tags(study, ["Tag1", "Tag2"])
+    assert len(db_recorder.sql_statements) == 6, str(db_recorder)
+
+    # Check that when we change the tags to ["TAG1", "Tag3"],
+    # "Tag1" is preserved, "Tag2" is deleted and "Tag3" is created
+    # 1- finding existing tags requires 1 query
+    # 2- updating the study tags requires 4 queries (2 selects, 2 inserts, 1 delete)
+    # 3- deleting orphan tags requires 1 query
+    with DBStatementRecorder(db_session.bind) as db_recorder:
+        repository.update_tags(study, ["TAG1", "Tag3"])
+    assert len(db_recorder.sql_statements) == 7, str(db_recorder)
+
+    # Check that only "Tag1" and "Tag3" are present in the database
+    tags = db_session.query(Tag).all()
+    assert {tag.label for tag in tags} == {"Tag1", "Tag3"}
