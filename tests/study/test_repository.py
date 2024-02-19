@@ -6,9 +6,7 @@ import pytest
 from sqlalchemy.orm import Session  # type: ignore
 
 from antarest.core.interfaces.cache import ICache
-from antarest.core.jwt import JWTUser
 from antarest.core.model import PublicMode
-from antarest.core.requests import RequestParameters
 from antarest.login.model import Group, User
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, Tag
 from antarest.study.repository import AccessPermissions, StudyFilter, StudyMetadataRepository
@@ -701,76 +699,44 @@ def test_get_all__study_tags_filter(
 @pytest.mark.parametrize(
     "user_id, study_groups, expected_ids",
     [
-        (
-            1,
-            [],
-            {
-                "1",
-                "2",
-                "5",
-                "6",
-                "7",
-                "8",
-                "9",
-                "10",
-                "13",
-                "14",
-                "15",
-                "16",
-                "17",
-                "18",
-                "21",
-                "22",
-                "23",
-                "24",
-                "25",
-                "26",
-                "29",
-                "30",
-                "31",
-                "32",
-            },
-        ),
-        (1, ["1"], {"1", "7", "8", "9", "17", "23", "24", "25"}),
-        (1, ["2"], {"2", "5", "6", "7", "8", "9", "18", "21", "22", "23", "24", "25"}),
-        (1, ["1", "2"], {"1", "2", "5", "6", "7", "8", "9", "17", "18", "21", "22", "23", "24", "25"}),
-        (
-            2,
-            [],
-            {
-                "1",
-                "3",
-                "4",
-                "5",
-                "7",
-                "8",
-                "9",
-                "11",
-                "13",
-                "14",
-                "15",
-                "16",
-                "17",
-                "19",
-                "20",
-                "21",
-                "23",
-                "24",
-                "25",
-                "27",
-                "29",
-                "30",
-                "31",
-                "32",
-            },
-        ),
-        (2, ["1"], {"1", "3", "4", "7", "8", "9", "17", "19", "20", "23", "24", "25"}),
-        (2, ["2"], {"5", "7", "8", "9", "21", "23", "24", "25"}),
-        (2, ["1", "2"], {"1", "3", "4", "5", "7", "8", "9", "17", "19", "20", "21", "23", "24", "25"}),
+        # fmt: off
+        (101, [], {"1", "2", "5", "6", "7", "8", "9", "10", "13", "14", "15", "16", "17", "18",
+                   "21", "22", "23", "24", "25", "26", "29", "30", "31", "32", "34"}),
+        (101, ["101"], {"1", "7", "8", "9", "17", "23", "24", "25"}),
+        (101, ["102"], {"2", "5", "6", "7", "8", "9", "18", "21", "22", "23", "24", "25", "34"}),
+        (101, ["103"], set()),
+        (101, ["101", "102"], {"1", "2", "5", "6", "7", "8", "9", "17", "18", "21", "22", "23", "24", "25", "34"}),
+        (101, ["101", "103"], {"1", "7", "8", "9", "17", "23", "24", "25"}),
+        (101, ["102", "103"], {"2", "5", "6", "7", "8", "9", "18", "21", "22", "23", "24", "25", "34"}),
+        (101, ["101", "102", "103"], {"1", "2", "5", "6", "7", "8", "9", "17", "18", "21", "22",
+                                      "23", "24", "25", "34"}),
+        (102, [], {"1", "3", "4", "5", "7", "8", "9", "11", "13", "14", "15", "16", "17", "19",
+                   "20", "21", "23", "24", "25", "27", "29", "30", "31", "32", "33"}),
+        (102, ["101"], {"1", "3", "4", "7", "8", "9", "17", "19", "20", "23", "24", "25", "33"}),
+        (102, ["102"], {"5", "7", "8", "9", "21", "23", "24", "25"}),
+        (102, ["103"], set()),
+        (102, ["101", "102"], {"1", "3", "4", "5", "7", "8", "9", "17", "19", "20", "21", "23", "24", "25", "33"}),
+        (102, ["101", "103"], {"1", "3", "4", "7", "8", "9", "17", "19", "20", "23", "24", "25", "33"}),
+        (102, ["102", "103"], {"5", "7", "8", "9", "21", "23", "24", "25"}),
+        (102, ["101", "102", "103"], {"1", "3", "4", "5", "7", "8", "9", "17", "19", "20", "21",
+                                      "23", "24", "25", "33"}),
+        (103, [], {"13", "14", "15", "16", "29", "30", "31", "32", "33", "34", "35", "36"}),
+        (103, ["101"], {"33"}),
+        (103, ["102"], {"34"}),
+        (103, ["103"], set()),
+        (103, ["101", "102"], {"33", "34"}),
+        (103, ["101", "103"], {"33"}),
+        (103, ["102", "103"], {"34"}),
+        (103, ["101", "102", "103"], {"33", "34"}),
         (None, [], set()),
-        (None, ["1"], set()),
-        (None, ["2"], set()),
-        (None, ["1", "2"], set()),
+        (None, ["101"], set()),
+        (None, ["102"], set()),
+        (None, ["103"], set()),
+        (None, ["101", "102"], set()),
+        (None, ["101", "103"], set()),
+        (None, ["102", "103"], set()),
+        (None, ["101", "102", "103"], set()),
+        # fmt: on
     ],
 )
 def test_get_all__non_admin_permissions_filter(
@@ -782,14 +748,17 @@ def test_get_all__non_admin_permissions_filter(
     icache: Mock = Mock(spec=ICache)
     repository = StudyMetadataRepository(cache_service=icache, session=db_session)
 
-    user_1 = User(id=1, name="user1")
-    user_2 = User(id=2, name="user2")
+    user_1 = User(id=101, name="user1")
+    user_2 = User(id=102, name="user2")
+    user_3 = User(id=103, name="user3")
 
-    group_1 = Group(id=1, name="group1")
-    group_2 = Group(id=2, name="group2")
+    group_1 = Group(id=101, name="group1")
+    group_2 = Group(id=102, name="group2")
+    group_3 = Group(id=103, name="group3")
 
-    user_groups_mapping = {1: [group_2.id], 2: [group_1.id]}
+    user_groups_mapping = {101: [group_2.id], 102: [group_1.id], 103: []}
 
+    # create variant studies for user_1 and user_2 that are part of some groups
     study_1 = VariantStudy(id=1, owner=user_1, groups=[group_1])
     study_2 = VariantStudy(id=2, owner=user_1, groups=[group_2])
     study_3 = VariantStudy(id=3, groups=[group_1])
@@ -801,12 +770,15 @@ def test_get_all__non_admin_permissions_filter(
     study_9 = VariantStudy(id=9, groups=[group_1, group_2])
     study_10 = VariantStudy(id=10, owner=user_1)
     study_11 = VariantStudy(id=11, owner=user_2)
+
+    # create variant studies with neither owner nor groups
     study_12 = VariantStudy(id=12)
     study_13 = VariantStudy(id=13, public_mode=PublicMode.READ)
     study_14 = VariantStudy(id=14, public_mode=PublicMode.EDIT)
     study_15 = VariantStudy(id=15, public_mode=PublicMode.EXECUTE)
     study_16 = VariantStudy(id=16, public_mode=PublicMode.FULL)
 
+    # create raw studies for user_1 and user_2 that are part of some groups
     study_17 = RawStudy(id=17, owner=user_1, groups=[group_1])
     study_18 = RawStudy(id=18, owner=user_1, groups=[group_2])
     study_19 = RawStudy(id=19, groups=[group_1])
@@ -818,47 +790,33 @@ def test_get_all__non_admin_permissions_filter(
     study_25 = RawStudy(id=25, groups=[group_1, group_2])
     study_26 = RawStudy(id=26, owner=user_1)
     study_27 = RawStudy(id=27, owner=user_2)
+
+    # create raw studies with neither owner nor groups
     study_28 = RawStudy(id=28)
     study_29 = RawStudy(id=29, public_mode=PublicMode.READ)
     study_30 = RawStudy(id=30, public_mode=PublicMode.EDIT)
     study_31 = RawStudy(id=31, public_mode=PublicMode.EXECUTE)
     study_32 = RawStudy(id=32, public_mode=PublicMode.FULL)
 
-    db_session.add_all([user_1, user_2, group_1, group_2])
+    # create studies for user_3 that is not part of any group
+    study_33 = VariantStudy(id=33, owner=user_3, groups=[group_1])
+    study_34 = RawStudy(id=34, owner=user_3, groups=[group_2])
+    study_35 = VariantStudy(id=35, owner=user_3)
+    study_36 = RawStudy(id=36, owner=user_3)
+
+    # create studies for group_3 that has no user
+    study_37 = VariantStudy(id=37, groups=[group_3])
+    study_38 = RawStudy(id=38, groups=[group_3])
+
+    db_session.add_all([user_1, user_2, user_3, group_1, group_2, group_3])
     db_session.add_all(
         [
-            study_1,
-            study_2,
-            study_3,
-            study_4,
-            study_5,
-            study_6,
-            study_7,
-            study_8,
-            study_9,
-            study_10,
-            study_11,
-            study_12,
-            study_13,
-            study_14,
-            study_15,
-            study_16,
-            study_17,
-            study_18,
-            study_19,
-            study_20,
-            study_21,
-            study_22,
-            study_23,
-            study_24,
-            study_25,
-            study_26,
-            study_27,
-            study_28,
-            study_29,
-            study_30,
-            study_31,
-            study_32,
+            # fmt: off
+            study_1, study_2, study_3, study_4, study_5, study_6, study_7, study_8, study_9, study_10,
+            study_11, study_12, study_13, study_14, study_15, study_16, study_17, study_18, study_19, study_20,
+            study_21, study_22, study_23, study_24, study_25, study_26, study_27, study_28, study_29, study_30,
+            study_31, study_32, study_33, study_34, study_35, study_36, study_37, study_38,
+            # fmt: on
         ]
     )
     db_session.commit()
@@ -893,18 +851,24 @@ def test_get_all__non_admin_permissions_filter(
 @pytest.mark.parametrize(
     "is_admin, study_groups, expected_ids",
     [
-        (True, [], {str(e) for e in range(1, 33)}),
-        (True, ["1"], {"1", "3", "4", "7", "8", "9", "17", "19", "20", "23", "24", "25"}),
-        (True, ["2"], {"2", "5", "6", "7", "8", "9", "18", "21", "22", "23", "24", "25"}),
-        (
-            True,
-            ["1", "2"],
-            {"1", "2", "3", "4", "5", "6", "7", "8", "9", "17", "18", "19", "20", "21", "22", "23", "24", "25"},
-        ),
+        # fmt: off
+        (True, [], {str(e) for e in range(1, 39)}),
+        (True, ["101"], {"1", "3", "4", "7", "8", "9", "17", "19", "20", "23", "24", "25", "33"}),
+        (True, ["102"], {"2", "5", "6", "7", "8", "9", "18", "21", "22", "23", "24", "25", "34"}),
+        (True, ["103"], {"37", "38"}),
+        (True, ["101", "102"], {"1", "2", "3", "4", "5", "6", "7", "8", "9", "17", "18", "19",
+                                "20", "21", "22", "23", "24", "25", "33", "34"}),
+        (True, ["101", "103"], {"1", "3", "4", "7", "8", "9", "17", "19", "20", "23", "24", "25", "33", "37", "38"}),
+        (True, ["101", "102", "103"], {"1", "2", "3", "4", "5", "6", "7", "8", "9", "17", "18",
+                                       "19", "20", "21", "22", "23", "24", "25", "33", "34", "37", "38"}),
         (False, [], set()),
-        (False, ["1"], set()),
-        (False, ["2"], set()),
-        (False, ["1", "2"], set()),
+        (False, ["101"], set()),
+        (False, ["102"], set()),
+        (False, ["103"], set()),
+        (False, ["101", "102"], set()),
+        (False, ["101", "103"], set()),
+        (False, ["101", "102", "103"], set()),
+        # fmt: on
     ],
 )
 def test_get_all__admin_permissions_filter(
@@ -915,13 +879,15 @@ def test_get_all__admin_permissions_filter(
 ) -> None:
     icache: Mock = Mock(spec=ICache)
     repository = StudyMetadataRepository(cache_service=icache, session=db_session)
+    user_1 = User(id=101, name="user1")
+    user_2 = User(id=102, name="user2")
+    user_3 = User(id=103, name="user3")
 
-    user_1 = User(id=1, name="user1")
-    user_2 = User(id=2, name="user2")
+    group_1 = Group(id=101, name="group1")
+    group_2 = Group(id=102, name="group2")
+    group_3 = Group(id=103, name="group3")
 
-    group_1 = Group(id=1, name="group1")
-    group_2 = Group(id=2, name="group2")
-
+    # create variant studies for user_1 and user_2 that are part of some groups
     study_1 = VariantStudy(id=1, owner=user_1, groups=[group_1])
     study_2 = VariantStudy(id=2, owner=user_1, groups=[group_2])
     study_3 = VariantStudy(id=3, groups=[group_1])
@@ -933,12 +899,15 @@ def test_get_all__admin_permissions_filter(
     study_9 = VariantStudy(id=9, groups=[group_1, group_2])
     study_10 = VariantStudy(id=10, owner=user_1)
     study_11 = VariantStudy(id=11, owner=user_2)
+
+    # create variant studies with neither owner nor groups
     study_12 = VariantStudy(id=12)
     study_13 = VariantStudy(id=13, public_mode=PublicMode.READ)
     study_14 = VariantStudy(id=14, public_mode=PublicMode.EDIT)
     study_15 = VariantStudy(id=15, public_mode=PublicMode.EXECUTE)
     study_16 = VariantStudy(id=16, public_mode=PublicMode.FULL)
 
+    # create raw studies for user_1 and user_2 that are part of some groups
     study_17 = RawStudy(id=17, owner=user_1, groups=[group_1])
     study_18 = RawStudy(id=18, owner=user_1, groups=[group_2])
     study_19 = RawStudy(id=19, groups=[group_1])
@@ -950,47 +919,33 @@ def test_get_all__admin_permissions_filter(
     study_25 = RawStudy(id=25, groups=[group_1, group_2])
     study_26 = RawStudy(id=26, owner=user_1)
     study_27 = RawStudy(id=27, owner=user_2)
+
+    # create raw studies with neither owner nor groups
     study_28 = RawStudy(id=28)
     study_29 = RawStudy(id=29, public_mode=PublicMode.READ)
     study_30 = RawStudy(id=30, public_mode=PublicMode.EDIT)
     study_31 = RawStudy(id=31, public_mode=PublicMode.EXECUTE)
     study_32 = RawStudy(id=32, public_mode=PublicMode.FULL)
 
-    db_session.add_all([user_1, user_2, group_1, group_2])
+    # create studies for user_3 that is not part of any group
+    study_33 = VariantStudy(id=33, owner=user_3, groups=[group_1])
+    study_34 = RawStudy(id=34, owner=user_3, groups=[group_2])
+    study_35 = VariantStudy(id=35, owner=user_3)
+    study_36 = RawStudy(id=36, owner=user_3)
+
+    # create studies for group_3 that has no user
+    study_37 = VariantStudy(id=37, groups=[group_3])
+    study_38 = RawStudy(id=38, groups=[group_3])
+
+    db_session.add_all([user_1, user_2, user_3, group_1, group_2, group_3])
     db_session.add_all(
         [
-            study_1,
-            study_2,
-            study_3,
-            study_4,
-            study_5,
-            study_6,
-            study_7,
-            study_8,
-            study_9,
-            study_10,
-            study_11,
-            study_12,
-            study_13,
-            study_14,
-            study_15,
-            study_16,
-            study_17,
-            study_18,
-            study_19,
-            study_20,
-            study_21,
-            study_22,
-            study_23,
-            study_24,
-            study_25,
-            study_26,
-            study_27,
-            study_28,
-            study_29,
-            study_30,
-            study_31,
-            study_32,
+            # fmt: off
+            study_1, study_2, study_3, study_4, study_5, study_6, study_7, study_8, study_9, study_10,
+            study_11, study_12, study_13, study_14, study_15, study_16, study_17, study_18, study_19, study_20,
+            study_21, study_22, study_23, study_24, study_25, study_26, study_27, study_28, study_29, study_30,
+            study_31, study_32, study_33, study_34, study_35, study_36, study_37, study_38,
+            # fmt: on
         ]
     )
     db_session.commit()
