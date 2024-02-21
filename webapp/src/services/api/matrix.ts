@@ -15,9 +15,9 @@ export const getMatrixList = async (
   name = "",
   filterOwn = false,
 ): Promise<MatrixDataSetDTO[]> => {
-  const res = await client.get(
-    `/v1/matrixdataset/_search?name=${encodeURI(name)}&filter_own=${filterOwn}`,
-  );
+  const res = await client.get(`/v1/matrixdataset/_search`, {
+    params: { name: name, filter_own: filterOwn },
+  });
   return res.data;
 };
 
@@ -28,7 +28,7 @@ export const getMatrix = async (id: string): Promise<MatrixDTO> => {
 
 export const getExportMatrixUrl = (matrixId: string): string =>
   `${
-    getConfig().downloadHostUrl ||
+    getConfig().downloadHostUrl ??
     getConfig().baseUrl + getConfig().restEndpoint
   }/v1/matrix/${matrixId}/download`;
 
@@ -48,24 +48,21 @@ export const createMatrixByImportation = async (
   if (onProgress) {
     options.onUploadProgress = (progressEvent): void => {
       const percentCompleted = Math.round(
-        (progressEvent.loaded * 100) / (progressEvent.total || 1),
+        (progressEvent.loaded * 100) / (progressEvent.total ?? 1),
       );
       onProgress(percentCompleted);
     };
   }
   const formData = new FormData();
   formData.append("file", file);
-  const restconfig = {
+  const restConfig = {
     ...options,
     headers: {
       "content-type": "multipart/form-data",
     },
+    params: { json: json },
   };
-  const res = await client.post(
-    `/v1/matrix/_import?json=${json}`,
-    formData,
-    restconfig,
-  );
+  const res = await client.post(`/v1/matrix/_import`, formData, restConfig);
   return res.data;
 };
 
@@ -96,10 +93,9 @@ export const editMatrix = async (
   path: string,
   matrixEdit: MatrixEditDTO[],
 ): Promise<void> => {
-  const res = await client.put(
-    `/v1/studies/${sid}/matrix?path=${path}`,
-    matrixEdit,
-  );
+  const res = await client.put(`/v1/studies/${sid}/matrix`, matrixEdit, {
+    params: { path: path },
+  });
   return res.data;
 };
 
@@ -107,7 +103,7 @@ export const getStudyMatrixIndex = async (
   sid: string,
   path?: string,
 ): Promise<MatrixIndex> => {
-  const query = path ? `?path=${encodeURIComponent(path)}` : "";
-  const res = await client.get(`/v1/studies/${sid}/matrixindex${query}`);
+  const restConfig = path ? { params: { path: path } } : {};
+  const res = await client.get(`/v1/studies/${sid}/matrixindex`, restConfig);
   return res.data;
 };
