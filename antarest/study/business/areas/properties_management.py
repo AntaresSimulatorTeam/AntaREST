@@ -13,28 +13,12 @@ from antarest.study.storage.variantstudy.model.command.update_config import Upda
 
 AREA_PATH = "input/areas/{area}"
 THERMAL_PATH = "input/thermal/areas/{field}/{{area}}"
-UI_PATH = f"{AREA_PATH}/ui/ui"
 OPTIMIZATION_PATH = f"{AREA_PATH}/optimization"
 NODAL_OPTIMIZATION_PATH = f"{OPTIMIZATION_PATH}/nodal optimization"
 FILTERING_PATH = f"{OPTIMIZATION_PATH}/filtering"
 # Keep the order
 FILTER_OPTIONS = ["hourly", "daily", "weekly", "monthly", "annual"]
 DEFAULT_FILTER_VALUE = FILTER_OPTIONS
-DEFAULT_UI = {
-    "color_r": 230,
-    "color_g": 108,
-    "color_b": 44,
-}
-
-
-def encode_color(ui: Dict[str, Any]) -> str:
-    data = {**DEFAULT_UI, **ui}
-    return f"{data['color_r']},{data['color_g']},{data['color_b']}"
-
-
-def decode_color(encoded_color: str, current_ui: Optional[Dict[str, int]]) -> Dict[str, Any]:
-    r, g, b = map(int, encoded_color.split(","))
-    return {**(current_ui or {}), "color_r": r, "color_g": g, "color_b": b}
 
 
 def sort_filter_options(options: Iterable[str]) -> List[str]:
@@ -60,9 +44,6 @@ class AdequacyPatchMode(EnumIgnoreCase):
 
 
 class PropertiesFormFields(FormFieldsBaseModel):
-    color: Optional[str] = Field(regex="^\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*$")
-    pos_x: Optional[float]
-    pos_y: Optional[float]
     energy_cost_unsupplied: Optional[float]
     energy_cost_spilled: Optional[float]
     non_dispatch_power: Optional[bool]
@@ -89,21 +70,6 @@ class PropertiesFormFields(FormFieldsBaseModel):
 
 
 FIELDS_INFO: Dict[str, FieldInfo] = {
-    # `color` must be before `pos_x` and `pos_y`, because they are include in the `decode_color`'s return dict value
-    "color": {
-        "path": UI_PATH,
-        "encode": encode_color,
-        "decode": decode_color,
-        "default_value": encode_color(DEFAULT_UI),
-    },
-    "pos_x": {
-        "path": f"{UI_PATH}/x",
-        "default_value": 0.0,
-    },
-    "pos_y": {
-        "path": f"{UI_PATH}/y",
-        "default_value": 0.0,
-    },
     "energy_cost_unsupplied": {
         "path": THERMAL_PATH.format(field="unserverdenergycost"),
         "default_value": 0.0,
