@@ -478,6 +478,22 @@ class StudyService:
                 studies[study_metadata.id] = study_metadata
         return studies
 
+    def count_studies(
+        self,
+        study_filter: StudyFilter,
+    ) -> int:
+        """
+        Get number of matching studies.
+        Args:
+            study_filter: filtering parameters
+
+        Returns: total number of studies matching the filtering criteria
+        """
+        total: int = self.repository.count_studies(
+            study_filter=study_filter,
+        )
+        return total
+
     def _try_get_studies_information(self, study: Study) -> t.Optional[StudyMetadataDTO]:
         try:
             return self.storage_service.get_storage(study).get_study_information(study)
