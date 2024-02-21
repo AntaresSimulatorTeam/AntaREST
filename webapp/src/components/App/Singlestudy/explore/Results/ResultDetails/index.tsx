@@ -154,9 +154,11 @@ function ResultDetails() {
 
   const handleItemTypeChange: ToggleButtonGroupProps["onChange"] = (
     _,
-    value: OutputItemType,
+    newValue: OutputItemType,
   ) => {
-    setItemType(value);
+    if (newValue && newValue !== itemType) {
+      setItemType(newValue);
+    }
   };
 
   const handleDownload = (matrixData: MatrixType, fileName: string): void => {
