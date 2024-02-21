@@ -1095,9 +1095,6 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
     res_properties_config_json["filterSynthesis"] = set(res_properties_config_json["filterSynthesis"])
     res_properties_config_json["filterByYear"] = set(res_properties_config_json["filterByYear"])
     assert res_properties_config_json == {
-        "color": "230,108,44",
-        "posX": 0.0,
-        "posY": 0.0,
         "energyCostUnsupplied": 0.0,
         "energyCostSpilled": 0.0,
         "nonDispatchPower": True,
@@ -1112,9 +1109,6 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
         f"/v1/studies/{study_id}/areas/area 1/properties/form",
         headers=admin_headers,
         json={
-            "color": "123,108,96",
-            "posX": 3.4,
-            "posY": 9.0,
             "energyCostUnsupplied": 2.0,
             "energyCostSpilled": 4.0,
             "nonDispatchPower": False,
@@ -1130,9 +1124,6 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
     res_properties_config_json["filterSynthesis"] = set(res_properties_config_json["filterSynthesis"])
     res_properties_config_json["filterByYear"] = set(res_properties_config_json["filterByYear"])
     assert res_properties_config_json == {
-        "color": "123,108,96",
-        "posX": 3.4,
-        "posY": 9.0,
         "energyCostUnsupplied": 2.0,
         "energyCostSpilled": 4.0,
         "nonDispatchPower": False,
