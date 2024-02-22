@@ -287,17 +287,18 @@ class StudyMetadataRepository:
             new_tags: The new tags to be associated with the input study in the database.
         """
         new_upper_tags = {tag.upper(): tag for tag in new_tags}
-        existing_tags = self.session.query(Tag).filter(func.upper(Tag.label).in_(new_upper_tags)).all()
+        session = self.session
+        existing_tags = session.query(Tag).filter(func.upper(Tag.label).in_(new_upper_tags)).all()
         for tag in existing_tags:
             if tag.label.upper() in new_upper_tags:
                 new_upper_tags.pop(tag.label.upper())
         study.tags = [Tag(label=tag) for tag in new_upper_tags.values()] + existing_tags
-        self.session.merge(study)
-        self.session.commit()
+        session.merge(study)
+        session.commit()
         # Delete any tag that is not associated with any study.
         # Note: If tags are to be associated with objects other than Study, this code must be updated.
-        self.session.query(Tag).filter(~Tag.studies.any()).delete(synchronize_session=False)  # type: ignore
-        self.session.commit()
+        session.query(Tag).filter(~Tag.studies.any()).delete(synchronize_session=False)  # type: ignore
+        session.commit()
 
     def list_duplicates(self) -> t.List[t.Tuple[str, str]]:
         """
