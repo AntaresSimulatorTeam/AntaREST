@@ -188,8 +188,9 @@ class Study(Base):  # type: ignore
     __mapper_args__ = {"polymorphic_identity": "study", "polymorphic_on": type}
 
     def __str__(self) -> str:
+        cls = self.__class__.__name__
         return (
-            f"[Study]"
+            f"[{cls}]"
             f" id={self.id},"
             f" type={self.type},"
             f" name={self.name},"
