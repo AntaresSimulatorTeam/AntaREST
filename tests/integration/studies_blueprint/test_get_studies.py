@@ -319,7 +319,7 @@ class TestStudiesListing:
             task = wait_task_completion(client, admin_access_token, archiving_study_task_id)
             assert task.status == TaskStatus.COMPLETED, task
 
-        # create a raw study version 840 to be tagged with `winter_transition`
+        # create a raw study version 840 to be tagged with `Winter_Transition`
         res = client.post(
             STUDIES_URL,
             headers={"Authorization": f"Bearer {admin_access_token}"},
@@ -330,7 +330,7 @@ class TestStudiesListing:
         res = client.put(
             f"{STUDIES_URL}/{tagged_raw_840_id}",
             headers={"Authorization": f"Bearer {admin_access_token}"},
-            json={"tags": ["winter_transition"]},
+            json={"tags": ["Winter_Transition"]},
         )
         assert res.status_code in CREATE_STATUS_CODES, res.json()
         res = client.get(
@@ -341,7 +341,7 @@ class TestStudiesListing:
         assert res.status_code == LIST_STATUS_CODE, res.json()
         study_map: t.Dict[str, t.Dict[str, t.Any]] = res.json()
         assert len(study_map) == 1
-        assert set(study_map[tagged_raw_840_id]["tags"]) == {"winter_transition"}
+        assert set(study_map[tagged_raw_840_id]["tags"]) == {"Winter_Transition"}
 
         # create a raw study version 850 to be tagged with `decennial`
         res = client.post(
@@ -391,7 +391,8 @@ class TestStudiesListing:
         assert len(study_map) == 1
         assert set(study_map[tagged_variant_840_id]["tags"]) == {"decennial"}
 
-        # create a variant study version 850 to be tagged with `winter_transition`
+        # create a variant study version 850 to be tagged with `winter_transition`.
+        # also test that the tag label is case-insensitive.
         res = client.post(
             f"{STUDIES_URL}/{tagged_raw_850_id}/variants",
             headers={"Authorization": f"Bearer {admin_access_token}"},
@@ -402,7 +403,7 @@ class TestStudiesListing:
         res = client.put(
             f"{STUDIES_URL}/{tagged_variant_850_id}",
             headers={"Authorization": f"Bearer {admin_access_token}"},
-            json={"tags": ["winter_transition"]},
+            json={"tags": ["winter_transition"]},  # note the tag label is in lower case
         )
         assert res.status_code in CREATE_STATUS_CODES, res.json()
         res = client.get(
@@ -413,7 +414,7 @@ class TestStudiesListing:
         assert res.status_code == LIST_STATUS_CODE, res.json()
         study_map = res.json()
         assert len(study_map) == 1
-        assert set(study_map[tagged_variant_850_id]["tags"]) == {"winter_transition"}
+        assert set(study_map[tagged_variant_850_id]["tags"]) == {"Winter_Transition"}
 
         # ==========================
         # 2. Filtering testing
@@ -670,7 +671,7 @@ class TestStudiesListing:
         res = client.get(
             STUDIES_URL,
             headers={"Authorization": f"Bearer {admin_access_token}"},
-            params={"tags": "decennial"},
+            params={"tags": "DECENNIAL"},
         )
         assert res.status_code == LIST_STATUS_CODE, res.json()
         study_map = res.json()

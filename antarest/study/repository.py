@@ -222,7 +222,8 @@ class StudyMetadataRepository:
         if study_filter.groups:
             q = q.join(entity.groups).filter(Group.id.in_(study_filter.groups))
         if study_filter.tags:
-            q = q.join(entity.tags).filter(Tag.label.in_(study_filter.tags))
+            upper_tags = [tag.upper() for tag in study_filter.tags]
+            q = q.join(entity.tags).filter(func.upper(Tag.label).in_(upper_tags))
         if study_filter.archived is not None:
             q = q.filter(entity.archived == study_filter.archived)
         if study_filter.name:
@@ -279,17 +280,25 @@ class StudyMetadataRepository:
     def update_tags(self, study: Study, new_tags: t.Sequence[str]) -> None:
         """
         Updates the tags associated with a given study in the database,
-        replacing existing tags with new ones.
+        replacing existing tags with new ones (case-insensitive).
 
         Args:
             study: The pre-existing study to be updated with the new tags.
             new_tags: The new tags to be associated with the input study in the database.
         """
-        existing_tags = self.session.query(Tag).filter(Tag.label.in_(new_tags)).all()
-        new_labels = set(new_tags) - set([tag.label for tag in existing_tags])
-        study.tags = [Tag(label=tag) for tag in new_labels] + existing_tags
-        self.session.merge(study)
-        self.session.commit()
+        new_upper_tags = {tag.upper(): tag for tag in new_tags}
+        session = self.session
+        existing_tags = session.query(Tag).filter(func.upper(Tag.label).in_(new_upper_tags)).all()
+        for tag in existing_tags:
+            if tag.label.upper() in new_upper_tags:
+                new_upper_tags.pop(tag.label.upper())
+        study.tags = [Tag(label=tag) for tag in new_upper_tags.values()] + existing_tags
+        session.merge(study)
+        session.commit()
+        # Delete any tag that is not associated with any study.
+        # Note: If tags are to be associated with objects other than Study, this code must be updated.
+        session.query(Tag).filter(~Tag.studies.any()).delete(synchronize_session=False)  # type: ignore
+        session.commit()
 
     def list_duplicates(self) -> t.List[t.Tuple[str, str]]:
         """

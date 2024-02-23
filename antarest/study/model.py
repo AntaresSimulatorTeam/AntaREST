@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 from sqlalchemy import (  # type: ignore
     Boolean,
     Column,
@@ -351,7 +351,18 @@ class StudyMetadataPatchDTO(BaseModel):
     scenario: t.Optional[str] = None
     status: t.Optional[str] = None
     doc: t.Optional[str] = None
-    tags: t.List[str] = []
+    tags: t.Sequence[str] = ()
+
+    @validator("tags", each_item=True)
+    def _normalize_tags(cls, v: str) -> str:
+        """Remove leading and trailing whitespaces, and replace consecutive whitespaces by a single one."""
+        tag = " ".join(v.split())
+        if not tag:
+            raise ValueError("Tag cannot be empty")
+        elif len(tag) > 40:
+            raise ValueError(f"Tag is too long: {tag!r}")
+        else:
+            return tag
 
 
 class StudySimSettingsDTO(BaseModel):

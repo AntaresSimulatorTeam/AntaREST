@@ -9,6 +9,7 @@ import collections
 import itertools
 import json
 import secrets
+import typing as t
 
 import sqlalchemy as sa  # type: ignore
 from alembic import op
@@ -21,6 +22,22 @@ revision = "dae93f1d9110"
 down_revision = "3c70366b10ea"
 branch_labels = None
 depends_on = None
+
+
+def _avoid_duplicates(tags: t.Iterable[str]) -> t.Sequence[str]:
+    """Avoid duplicate tags (case insensitive)"""
+
+    upper_tags = {tag.upper(): tag for tag in tags}
+    return list(upper_tags.values())
+
+
+def _load_patch_obj(patch: t.Optional[str]) -> t.MutableMapping[str, t.Any]:
+    """Load the patch object from the `patch` field in the `study_additional_data` table."""
+
+    obj: t.MutableMapping[str, t.Any] = json.loads(patch or "{}")
+    obj["study"] = obj.get("study") or {}
+    obj["study"]["tags"] = _avoid_duplicates(obj["study"].get("tags") or [])
+    return obj
 
 
 def upgrade() -> None:
@@ -39,27 +56,31 @@ def upgrade() -> None:
     connexion: Connection = op.get_bind()
 
     # retrieve the tags and the study-tag pairs from the db
-    study_tags = connexion.execute("SELECT study_id,patch FROM study_additional_data")
-    tags_by_ids = {}
+    study_tags = connexion.execute("SELECT study_id, patch FROM study_additional_data")
+    tags_by_ids: t.MutableMapping[str, t.Set[str]] = {}
     for study_id, patch in study_tags:
-        obj = json.loads(patch or "{}")
-        study = obj.get("study") or {}
-        tags = frozenset(study.get("tags") or ())
-        tags_by_ids[study_id] = tags
+        obj = _load_patch_obj(patch)
+        tags_by_ids[study_id] = obj["study"]["tags"]
 
     # delete rows in tables `tag` and `study_tag`
     connexion.execute("DELETE FROM study_tag")
     connexion.execute("DELETE FROM tag")
 
     # insert the tags in the `tag` table
-    labels = set(itertools.chain.from_iterable(tags_by_ids.values()))
-    bulk_tags = [{"label": label, "color": secrets.choice(COLOR_NAMES)} for label in labels]
+    all_labels = {lbl.upper(): lbl for lbl in itertools.chain.from_iterable(tags_by_ids.values())}
+    bulk_tags = [{"label": label, "color": secrets.choice(COLOR_NAMES)} for label in all_labels.values()]
     if bulk_tags:
         sql = sa.text("INSERT INTO tag (label, color) VALUES (:label, :color)")
         connexion.execute(sql, *bulk_tags)
 
     # Create relationships between studies and tags in the `study_tag` table
-    bulk_study_tags = [{"study_id": id_, "tag_label": lbl} for id_, tags in tags_by_ids.items() for lbl in tags]
+    bulk_study_tags = [
+        # fmt: off
+        {"study_id": id_, "tag_label": all_labels[lbl.upper()]}
+        for id_, tags in tags_by_ids.items()
+        for lbl in tags
+        # fmt: on
+    ]
     if bulk_study_tags:
         sql = sa.text("INSERT INTO study_tag (study_id, tag_label) VALUES (:study_id, :tag_label)")
         connexion.execute(sql, *bulk_study_tags)
@@ -78,7 +99,7 @@ def downgrade() -> None:
     connexion: Connection = op.get_bind()
 
     # Creating the `tags_by_ids` mapping from data in the `study_tags` table
-    tags_by_ids = collections.defaultdict(set)
+    tags_by_ids: t.MutableMapping[str, t.Set[str]] = collections.defaultdict(set)
     study_tags = connexion.execute("SELECT study_id, tag_label FROM study_tag")
     for study_id, tag_label in study_tags:
         tags_by_ids[study_id].add(tag_label)
@@ -87,10 +108,8 @@ def downgrade() -> None:
     objects_by_ids = {}
     study_tags = connexion.execute("SELECT study_id, patch FROM study_additional_data")
     for study_id, patch in study_tags:
-        obj = json.loads(patch or "{}")
-        obj["study"] = obj.get("study") or {}
-        obj["study"]["tags"] = obj["study"].get("tags") or []
-        obj["study"]["tags"] = sorted(tags_by_ids[study_id] | set(obj["study"]["tags"]))
+        obj = _load_patch_obj(patch)
+        obj["study"]["tags"] = _avoid_duplicates(tags_by_ids[study_id] | set(obj["study"]["tags"]))
         objects_by_ids[study_id] = obj
 
     # Updating objects in the `study_additional_data` table
