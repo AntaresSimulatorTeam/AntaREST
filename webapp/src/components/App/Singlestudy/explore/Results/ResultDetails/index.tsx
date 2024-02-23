@@ -368,6 +368,7 @@ function ResultDetails() {
                     <EditableMatrix
                       matrix={matrix}
                       matrixTime={false}
+                      stretch={false}
                       readOnly
                     />
                   )
