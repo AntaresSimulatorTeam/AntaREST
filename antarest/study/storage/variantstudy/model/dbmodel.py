@@ -112,3 +112,7 @@ class VariantStudy(Study):
             and (self.snapshot.created_at >= self.updated_at)
             and (self.snapshot_dir / "study.antares").is_file()
         )
+
+    def has_snapshot(self) -> bool:
+        """Check if the snapshot exists."""
+        return (self.snapshot is not None) and (self.snapshot_dir / "study.antares").is_file()
