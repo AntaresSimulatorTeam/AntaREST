@@ -49,6 +49,7 @@ import ButtonBack from "../../../../../common/ButtonBack";
 import BooleanFE from "../../../../../common/fieldEditors/BooleanFE";
 import SelectFE from "../../../../../common/fieldEditors/SelectFE";
 import NumberFE from "../../../../../common/fieldEditors/NumberFE";
+import moment from "moment";
 
 function ResultDetails() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -147,6 +148,16 @@ function ResultDetails() {
       deps: [study.id, outputId, selectedItem],
     },
   );
+
+  // !NOTE: Workaround to display the date in the correct format, to be replaced by a proper solution.
+  const dateTimeFromIndex = useMemo(() => {
+    if (!matrixRes.data) return [];
+
+    return matrixRes.data.index.map((dateTime) => {
+      const parsedDate = moment(dateTime, "MM/DD HH:mm");
+      return parsedDate.format("ddd D MMM HH:mm");
+    });
+  }, [matrixRes.data]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -368,6 +379,7 @@ function ResultDetails() {
                     <EditableMatrix
                       matrix={matrix}
                       matrixTime={false}
+                      rowNames={dateTimeFromIndex}
                       stretch={false}
                       readOnly
                     />
