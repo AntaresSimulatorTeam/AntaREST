@@ -300,21 +300,20 @@ class StudyMetadataRepository:
         # noinspection PyTypeChecker
         q = self.session.query(entity)
         if study_filter.exists is not None:
-            q = (
-                q.filter(RawStudy.missing.is_(None))
-                if study_filter.exists
-                else q.filter(not_(RawStudy.missing.is_(None)))
-            )
+            if study_filter.exists:
+                q = q.filter(RawStudy.missing.is_(None))
+            else:
+                q = q.filter(not_(RawStudy.missing.is_(None)))
         q = q.options(joinedload(entity.owner))
         q = q.options(joinedload(entity.groups))
         q = q.options(joinedload(entity.additional_data))
         q = q.options(joinedload(entity.tags))
         if study_filter.managed is not None:
-            q = (
-                q.filter(or_(entity.type == "variantstudy", RawStudy.workspace == DEFAULT_WORKSPACE_NAME))
-                if study_filter.managed
-                else q.filter(entity.type == "rawstudy").filter(RawStudy.workspace != DEFAULT_WORKSPACE_NAME)
-            )
+            if study_filter.managed:
+                q = q.filter(or_(entity.type == "variantstudy", RawStudy.workspace == DEFAULT_WORKSPACE_NAME))
+            else:
+                q = q.filter(entity.type == "rawstudy")
+                q = q.filter(RawStudy.workspace != DEFAULT_WORKSPACE_NAME)
         if study_filter.study_ids:
             q = q.filter(entity.id.in_(study_filter.study_ids)) if study_filter.study_ids else q
         if study_filter.users:
@@ -333,7 +332,10 @@ class StudyMetadataRepository:
         if study_filter.workspace:
             q = q.filter(RawStudy.workspace == study_filter.workspace)
         if study_filter.variant is not None:
-            q = q.filter(entity.type == "variantstudy") if study_filter.variant else q.filter(entity.type == "rawstudy")
+            if study_filter.variant:
+                q = q.filter(entity.type == "variantstudy")
+            else:
+                q = q.filter(entity.type == "rawstudy")
         if study_filter.versions:
             q = q.filter(entity.version.in_(study_filter.versions))
 
@@ -341,9 +343,9 @@ class StudyMetadataRepository:
         if not study_filter.access_permissions.is_admin and study_filter.access_permissions.user_id is not None:
             condition_1 = entity.public_mode != PublicMode.NONE
             condition_2 = entity.owner_id == study_filter.access_permissions.user_id
-            q1 = q.join(entity.groups).filter(Group.id.in_(study_filter.access_permissions.user_groups or []))
+            q1 = q.join(entity.groups).filter(Group.id.in_(study_filter.access_permissions.user_groups))
             if study_filter.groups:
-                q2 = q.join(entity.groups).filter(Group.id.in_(study_filter.groups or []))
+                q2 = q.join(entity.groups).filter(Group.id.in_(study_filter.groups))
                 q2 = q1.intersect(q2)
                 q = q2.union(
                     q.join(entity.groups).filter(and_(or_(condition_1, condition_2), Group.id.in_(study_filter.groups)))
@@ -352,7 +354,8 @@ class StudyMetadataRepository:
                 q = q1.union(q.filter(or_(condition_1, condition_2)))
         elif not study_filter.access_permissions.is_admin and study_filter.access_permissions.user_id is None:
             # return empty result
-            q = q.filter(sql.false())
+            # noinspection PyTypeChecker
+            q = self.session.query(entity).filter(sql.false())
         elif study_filter.groups:
             q = q.join(entity.groups).filter(Group.id.in_(study_filter.groups))
 

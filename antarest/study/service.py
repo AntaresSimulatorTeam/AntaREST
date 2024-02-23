@@ -451,7 +451,6 @@ class StudyService:
 
     def get_studies_information(
         self,
-        params: RequestParameters,
         study_filter: StudyFilter,
         sort_by: t.Optional[StudySortBy] = None,
         pagination: StudyPagination = StudyPagination(),
@@ -459,7 +458,6 @@ class StudyService:
         """
         Get information for matching studies of a search query.
         Args:
-            params: request parameters
             study_filter: filtering parameters
             sort_by: how to sort the db query results
             pagination: set offset and limit for db query
@@ -478,18 +476,7 @@ class StudyService:
             study_metadata = self._try_get_studies_information(study)
             if study_metadata is not None:
                 studies[study_metadata.id] = study_metadata
-        return {
-            s.id: s
-            for s in filter(
-                lambda study_dto: assert_permission(
-                    params.user,
-                    study_dto,
-                    StudyPermissionType.READ,
-                    raising=False,
-                ),
-                studies.values(),
-            )
-        }
+        return studies
 
     def _try_get_studies_information(self, study: Study) -> t.Optional[StudyMetadataDTO]:
         try:

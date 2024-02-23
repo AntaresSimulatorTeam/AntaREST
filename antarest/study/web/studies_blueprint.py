@@ -145,8 +145,7 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         user_list = [int(v) for v in _split_comma_separated_values(users)]
 
         if not params.user:
-            logger.error("FAIL permission: user is not logged")
-            raise UserHasNotPermissionError()
+            raise UserHasNotPermissionError("FAIL permission: user is not logged")
 
         study_filter = StudyFilter(
             name=name,
@@ -165,7 +164,6 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         )
 
         matching_studies = study_service.get_studies_information(
-            params=params,
             study_filter=study_filter,
             sort_by=sort_by,
             pagination=StudyPagination(page_nb=page_nb, page_size=page_size),
