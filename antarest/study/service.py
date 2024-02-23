@@ -96,7 +96,13 @@ from antarest.study.model import (
     StudyMetadataPatchDTO,
     StudySimResultDTO,
 )
-from antarest.study.repository import StudyFilter, StudyMetadataRepository, StudyPagination, StudySortBy
+from antarest.study.repository import (
+    AccessPermissions,
+    StudyFilter,
+    StudyMetadataRepository,
+    StudyPagination,
+    StudySortBy,
+)
 from antarest.study.storage.matrix_profile import adjust_matrix_columns_index
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import ChildNotFoundError
@@ -445,7 +451,6 @@ class StudyService:
 
     def get_studies_information(
         self,
-        params: RequestParameters,
         study_filter: StudyFilter,
         sort_by: t.Optional[StudySortBy] = None,
         pagination: StudyPagination = StudyPagination(),
@@ -453,7 +458,6 @@ class StudyService:
         """
         Get information for matching studies of a search query.
         Args:
-            params: request parameters
             study_filter: filtering parameters
             sort_by: how to sort the db query results
             pagination: set offset and limit for db query
@@ -472,18 +476,7 @@ class StudyService:
             study_metadata = self._try_get_studies_information(study)
             if study_metadata is not None:
                 studies[study_metadata.id] = study_metadata
-        return {
-            s.id: s
-            for s in filter(
-                lambda study_dto: assert_permission(
-                    params.user,
-                    study_dto,
-                    StudyPermissionType.READ,
-                    raising=False,
-                ),
-                studies.values(),
-            )
-        }
+        return studies
 
     def _try_get_studies_information(self, study: Study) -> t.Optional[StudyMetadataDTO]:
         try:
@@ -2139,10 +2132,24 @@ class StudyService:
             raise BadEditInstructionException(str(exc)) from exc
 
     def check_and_update_all_study_versions_in_database(self, params: RequestParameters) -> None:
+        """
+        This function updates studies version on the db.
+
+        **Warnings: Only users with Admins rights should be able to run this function.**
+
+        Args:
+            params: Request parameters holding user ID and groups
+
+        Raises:
+            UserHasNotPermissionError: if params user is not admin.
+
+        """
         if params.user and not params.user.is_site_admin():
             logger.error(f"User {params.user.id} is not site admin")
             raise UserHasNotPermissionError()
-        studies = self.repository.get_all(study_filter=StudyFilter(managed=False))
+        studies = self.repository.get_all(
+            study_filter=StudyFilter(managed=False, access_permissions=AccessPermissions.from_params(params))
+        )
 
         for study in studies:
             storage = self.storage_service.raw_study_service

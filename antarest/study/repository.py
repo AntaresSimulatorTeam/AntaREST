@@ -3,10 +3,13 @@ import enum
 import typing as t
 
 from pydantic import BaseModel, NonNegativeInt
-from sqlalchemy import func, not_, or_  # type: ignore
-from sqlalchemy.orm import Session, joinedload, with_polymorphic  # type: ignore
+from sqlalchemy import and_, func, not_, or_, sql  # type: ignore
+from sqlalchemy.orm import Query, Session, joinedload, with_polymorphic  # type: ignore
 
 from antarest.core.interfaces.cache import ICache
+from antarest.core.jwt import JWTUser
+from antarest.core.model import PublicMode
+from antarest.core.requests import RequestParameters
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, Study, StudyAdditionalData, Tag
@@ -34,6 +37,43 @@ def escape_like(string: str, escape_char: str = "\\") -> str:
     return string.replace(escape_char, escape_char * 2).replace("%", escape_char + "%").replace("_", escape_char + "_")
 
 
+class AccessPermissions(BaseModel, frozen=True, extra="forbid"):
+    """
+    This class object is build to pass on the user identity and its associated groups information
+    into the listing function get_all below
+    """
+
+    is_admin: bool = False
+    user_id: t.Optional[int] = None
+    user_groups: t.Sequence[str] = ()
+
+    @classmethod
+    def from_params(cls, params: t.Union[RequestParameters, JWTUser]) -> "AccessPermissions":
+        """
+        This function makes it easier to pass on user ids and groups into the repository filtering function by
+        extracting the associated `AccessPermissions` object.
+
+        Args:
+            params: `RequestParameters` or `JWTUser` holding user ids and groups
+
+        Returns: `AccessPermissions`
+
+        """
+        if isinstance(params, RequestParameters):
+            user = params.user
+        else:
+            user = params
+
+        if user:
+            return cls(
+                is_admin=user.is_site_admin() or user.is_admin_token(),
+                user_id=user.id,
+                user_groups=[group.id for group in user.groups],
+            )
+        else:
+            return cls()
+
+
 class StudyFilter(BaseModel, frozen=True, extra="forbid"):
     """Study filter class gathering the main filtering parameters
 
@@ -50,6 +90,7 @@ class StudyFilter(BaseModel, frozen=True, extra="forbid"):
         exists: if raw study missing
         workspace: optional workspace of the study
         folder: optional folder prefix of the study
+        access_permissions: query user ID, groups and admins status
     """
 
     name: str = ""
@@ -64,6 +105,7 @@ class StudyFilter(BaseModel, frozen=True, extra="forbid"):
     exists: t.Optional[bool] = None
     workspace: str = ""
     folder: str = ""
+    access_permissions: AccessPermissions = AccessPermissions()
 
 
 class StudySortBy(str, enum.Enum):
@@ -198,6 +240,63 @@ class StudyMetadataRepository:
         # efficiently (see: `AbstractStorageService.get_study_information`)
         entity = with_polymorphic(Study, "*")
 
+        q = self._search_studies(study_filter)
+
+        # sorting
+        if sort_by:
+            if sort_by == StudySortBy.DATE_DESC:
+                q = q.order_by(entity.created_at.desc())
+            elif sort_by == StudySortBy.DATE_ASC:
+                q = q.order_by(entity.created_at.asc())
+            elif sort_by == StudySortBy.NAME_DESC:
+                q = q.order_by(func.upper(entity.name).desc())
+            elif sort_by == StudySortBy.NAME_ASC:
+                q = q.order_by(func.upper(entity.name).asc())
+            else:
+                raise NotImplementedError(sort_by)
+
+        # pagination
+        if pagination.page_nb or pagination.page_size:
+            q = q.offset(pagination.page_nb * pagination.page_size).limit(pagination.page_size)
+
+        studies: t.Sequence[Study] = q.all()
+        return studies
+
+    def count_studies(self, study_filter: StudyFilter = StudyFilter()) -> int:
+        """
+        Count all studies matching with specified filters.
+
+        Args:
+            study_filter: composed of all filtering criteria.
+
+        Returns:
+            Integer, corresponding to total number of studies matching with specified filters.
+        """
+        q = self._search_studies(study_filter)
+
+        total: int = q.count()
+
+        return total
+
+    def _search_studies(
+        self,
+        study_filter: StudyFilter,
+    ) -> Query:
+        """
+        Build a `SQL Query` based on specified filters.
+
+        Args:
+            study_filter: composed of all filtering criteria.
+
+        Returns:
+            The `Query` corresponding to specified criteria (except for permissions).
+        """
+        # When we fetch a study, we also need to fetch the associated owner and groups
+        # to check the permissions of the current user efficiently.
+        # We also need to fetch the additional data to display the study information
+        # efficiently (see: `AbstractStorageService.get_study_information`)
+        entity = with_polymorphic(Study, "*")
+
         # noinspection PyTypeChecker
         q = self.session.query(entity)
         if study_filter.exists is not None:
@@ -216,11 +315,9 @@ class StudyMetadataRepository:
                 q = q.filter(entity.type == "rawstudy")
                 q = q.filter(RawStudy.workspace != DEFAULT_WORKSPACE_NAME)
         if study_filter.study_ids:
-            q = q.filter(entity.id.in_(study_filter.study_ids))
+            q = q.filter(entity.id.in_(study_filter.study_ids)) if study_filter.study_ids else q
         if study_filter.users:
             q = q.filter(entity.owner_id.in_(study_filter.users))
-        if study_filter.groups:
-            q = q.join(entity.groups).filter(Group.id.in_(study_filter.groups))
         if study_filter.tags:
             upper_tags = [tag.upper() for tag in study_filter.tags]
             q = q.join(entity.tags).filter(func.upper(Tag.label).in_(upper_tags))
@@ -242,24 +339,27 @@ class StudyMetadataRepository:
         if study_filter.versions:
             q = q.filter(entity.version.in_(study_filter.versions))
 
-        if sort_by:
-            if sort_by == StudySortBy.DATE_DESC:
-                q = q.order_by(entity.created_at.desc())
-            elif sort_by == StudySortBy.DATE_ASC:
-                q = q.order_by(entity.created_at.asc())
-            elif sort_by == StudySortBy.NAME_DESC:
-                q = q.order_by(func.upper(entity.name).desc())
-            elif sort_by == StudySortBy.NAME_ASC:
-                q = q.order_by(func.upper(entity.name).asc())
+        # permissions + groups filtering
+        if not study_filter.access_permissions.is_admin and study_filter.access_permissions.user_id is not None:
+            condition_1 = entity.public_mode != PublicMode.NONE
+            condition_2 = entity.owner_id == study_filter.access_permissions.user_id
+            q1 = q.join(entity.groups).filter(Group.id.in_(study_filter.access_permissions.user_groups))
+            if study_filter.groups:
+                q2 = q.join(entity.groups).filter(Group.id.in_(study_filter.groups))
+                q2 = q1.intersect(q2)
+                q = q2.union(
+                    q.join(entity.groups).filter(and_(or_(condition_1, condition_2), Group.id.in_(study_filter.groups)))
+                )
             else:
-                raise NotImplementedError(sort_by)
+                q = q1.union(q.filter(or_(condition_1, condition_2)))
+        elif not study_filter.access_permissions.is_admin and study_filter.access_permissions.user_id is None:
+            # return empty result
+            # noinspection PyTypeChecker
+            q = self.session.query(entity).filter(sql.false())
+        elif study_filter.groups:
+            q = q.join(entity.groups).filter(Group.id.in_(study_filter.groups))
 
-        # pagination
-        if pagination.page_nb or pagination.page_size:
-            q = q.offset(pagination.page_nb * pagination.page_size).limit(pagination.page_size)
-
-        studies: t.Sequence[Study] = q.all()
-        return studies
+        return q
 
     def get_all_raw(self, exists: t.Optional[bool] = None) -> t.Sequence[RawStudy]:
         query = self.session.query(RawStudy)

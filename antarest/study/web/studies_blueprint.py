@@ -15,7 +15,7 @@ from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.jwt import JWTUser
 from antarest.core.model import PublicMode
-from antarest.core.requests import RequestParameters
+from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.utils.utils import BadArchiveContent, sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
@@ -28,7 +28,7 @@ from antarest.study.model import (
     StudyMetadataPatchDTO,
     StudySimResultDTO,
 )
-from antarest.study.repository import StudyFilter, StudyPagination, StudySortBy
+from antarest.study.repository import AccessPermissions, StudyFilter, StudyPagination, StudySortBy
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 
@@ -144,6 +144,9 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
 
         user_list = [int(v) for v in _split_comma_separated_values(users)]
 
+        if not params.user:
+            raise UserHasNotPermissionError("FAIL permission: user is not logged")
+
         study_filter = StudyFilter(
             name=name,
             managed=managed,
@@ -157,10 +160,10 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
             exists=exists,
             workspace=workspace,
             folder=folder,
+            access_permissions=AccessPermissions.from_params(params),
         )
 
         matching_studies = study_service.get_studies_information(
-            params=params,
             study_filter=study_filter,
             sort_by=sort_by,
             pagination=StudyPagination(page_nb=page_nb, page_size=page_size),

@@ -11,6 +11,7 @@ from fastapi import FastAPI
 from starlette.testclient import TestClient
 
 from antarest.core.model import PublicMode
+from antarest.core.roles import RoleType
 from antarest.core.tasks.model import TaskStatus
 from tests.integration.assets import ASSETS_DIR
 from tests.integration.utils import wait_task_completion
@@ -801,6 +802,604 @@ class TestStudiesListing:
         study_map = res.json()
         values = list(study_map.values())
         assert values == sorted(values, key=lambda x: x["created"], reverse=True)
+
+    def test_get_studies__access_permissions(self, client: TestClient, admin_access_token: str) -> None:
+        """
+        Test the access permissions for the `GET /studies` endpoint.
+
+        Args:
+            client: client App fixture to perform the requests
+            admin_access_token: fixture to get the admin access token
+
+        Returns:
+
+        """
+        ##########################
+        # 1. Database initialization
+        ##########################
+
+        users = {"user_1": "pass_1", "user_2": "pass_2", "user_3": "pass_3"}
+        users_tokens = {}
+        users_ids = {}
+        groups = {"group_1", "group_2", "group_3"}
+        groups_ids = {}
+        user_groups_mapping = {"user_1": ["group_2"], "user_2": ["group_1"], "user_3": []}
+
+        # create users
+        for user, password in users.items():
+            res = client.post(
+                "/v1/users",
+                headers={"Authorization": f"Bearer {admin_access_token}"},
+                json={"name": user, "password": password},
+            )
+            res.raise_for_status()
+            users_ids[user] = res.json().get("id")
+
+        # create groups
+        for group in groups:
+            res = client.post(
+                "/v1/groups",
+                headers={"Authorization": f"Bearer {admin_access_token}"},
+                json={"name": group},
+            )
+            res.raise_for_status()
+            groups_ids[group] = res.json().get("id")
+
+        # associate users to groups
+        for user, groups in user_groups_mapping.items():
+            user_id = users_ids[user]
+            for group in groups:
+                group_id = groups_ids[group]
+                res = client.post(
+                    "/v1/roles",
+                    headers={"Authorization": f"Bearer {admin_access_token}"},
+                    json={"identity_id": user_id, "group_id": group_id, "type": RoleType.READER.value},
+                )
+                res.raise_for_status()
+
+        # login users
+        for user, password in users.items():
+            res = client.post(
+                "/v1/login",
+                json={"username": user, "password": password},
+            )
+            res.raise_for_status()
+            assert res.json().get("user") == users_ids[user]
+            users_tokens[user] = res.json().get("access_token")
+
+        # studies creation
+        studies_ids_mapping = {}
+
+        # create variant studies for user_1 and user_2 that are part of some groups
+        # studies that have owner and groups
+        for study, study_info in {
+            "study_1": {"owner": "user_1", "groups": ["group_1"]},
+            "study_2": {"owner": "user_1", "groups": ["group_2"]},
+            "study_4": {"owner": "user_2", "groups": ["group_1"]},
+            "study_5": {"owner": "user_2", "groups": ["group_2"]},
+            "study_7": {"owner": "user_1", "groups": ["group_1", "group_2"]},
+            "study_8": {"owner": "user_2", "groups": ["group_1", "group_2"]},
+        }.items():
+            res = client.post(
+                STUDIES_URL,
+                headers={"Authorization": f"Bearer {admin_access_token}"},
+                params={"name": f"dummy_{study}"},
+            )
+            assert res.status_code in CREATE_STATUS_CODES, res.json()
+            study_id = res.json()
+            res = client.post(
+                f"{STUDIES_URL}/{study_id}/variants",
+                headers={"Authorization": f"Bearer {admin_access_token}"},
+                params={"name": study},
+            )
+            assert res.status_code in CREATE_STATUS_CODES, res.json()
+            study_id = res.json()
+            studies_ids_mapping[study] = study_id
+            owner_id = users_ids[study_info.get("owner")]
+            res = client.put(
+                f"{STUDIES_URL}/{study_id}/owner/{owner_id}",
+                headers={"Authorization": f"Bearer {admin_access_token}"},
+            )
+            assert res.status_code == 200, res.json()
+            for group in study_info.get("groups"):
+                group_id = groups_ids[group]
+                res = client.put(
+                    f"{STUDIES_URL}/{study_id}/groups/{group_id}",
+                    headers={"Authorization": f"Bearer {admin_access_token}"},
+                )
+                assert res.status_code == 200, res.json()
+        # studies that have owner but no groups
+        for study, study_info in {
+            "study_10": {"owner": "user_1"},
+            "study_11": {"owner": "user_2"},
+        }.items():
+            res = client.post(
+                STUDIES_URL,
+                headers={"Authorization": f"Bearer {admin_access_token}"},
+                params={"name": f"dummy_{study}"},
+            )
+            assert res.status_code in CREATE_STATUS_CODES, res.json()
+            study_id = res.json()
+            res = client.post(
+                f"{STUDIES_URL}/{study_id}/variants",
+                headers={"Authorization": f"Bearer {admin_access_token}"},
+                params={"name": study},
+            )
+            assert res.status_code in CREATE_STATUS_CODES, res.json()
+            study_id = res.json()
+            studies_ids_mapping[study] = study_id
+            owner_id = users_ids[study_info.get("owner")]
+            res = client.put(
+                f"{STUDIES_URL}/{study_id}/owner/{owner_id}",
+                headers={"Authorization": f"Bearer {admin_access_token}"},
+            )
+            assert res.status_code == 200, res.json()
+        # studies that have groups but no owner
+        for study, study_info in {
+            "study_3": {"groups": ["group_1"]},
+            "study_6": {"groups": ["group_2"]},
+            "study_9": {"groups": ["group_1", "group_2"]},
+        }.items():
+            res = client.post(
+                STUDIES_URL,
+                headers={"Authorization": f"Bearer {admin_access_token}"},
+                params={"name": f"dummy_{study}"},
+            )
+            assert res.status_code in CREATE_STATUS_CODES, res.json()
+            study_id = res.json()
+            res = client.post(
+                f"{STUDIES_URL}/{study_id}/variants",
+                headers={"Authorization": f"Bearer {admin_access_token}"},
+                params={"name": study},
+            )
+            assert res.status_code in CREATE_STATUS_CODES, res.json()
+            study_id = res.json()
+            studies_ids_mapping[study] = study_id
+            for group in study_info.get("groups"):
+                group_id = groups_ids[group]
+                res = client.put(
+                    f"{STUDIES_URL}/{study_id}/groups/{group_id}",
+                    headers={"Authorization": f"Bearer {admin_access_token}"},
+                )
+                assert res.status_code == 200, res.json()
+
+        # create variant studies with neither owner nor groups
+        for study, study_info in {
+            "study_12": {"public_mode": None},
+            "study_13": {"public_mode": PublicMode.READ.value},
+            "study_14": {"public_mode": PublicMode.EDIT.value},
+            "study_15": {"public_mode": PublicMode.EXECUTE.value},
+            "study_16": {"public_mode": PublicMode.FULL.value},
+        }.items():
+            res = client.post(
+                STUDIES_URL,
+                headers={"Authorization": f"Bearer {admin_access_token}"},
+                params={"name": f"dummy_{study}"},
+            )
+            assert res.status_code in CREATE_STATUS_CODES, res.json()
+            study_id = res.json()
+            res = client.post(
+                f"{STUDIES_URL}/{study_id}/variants",
+                headers={"Authorization": f"Bearer {admin_access_token}"},
+                params={"name": study},
+            )
+            assert res.status_code in CREATE_STATUS_CODES, res.json()
+            study_id = res.json()
+            studies_ids_mapping[study] = study_id
+            public_mode = study_info.get("public_mode")
+            if public_mode:
+                res = client.put(
+                    f"{STUDIES_URL}/{study_id}/public_mode/{public_mode}",
+                    headers={"Authorization": f"Bearer {admin_access_token}"},
+                )
+                assert res.status_code == 200, res.json()
+
+        # create raw studies for user_1 and user_2 that are part of some groups
+        # studies that have owner and groups
+        for study, study_info in {
+            "study_17": {"owner": "user_1", "groups": ["group_1"]},
+            "study_18": {"owner": "user_1", "groups": ["group_2"]},
+            "study_20": {"owner": "user_2", "groups": ["group_1"]},
+            "study_21": {"owner": "user_2", "groups": ["group_2"]},
+            "study_23": {"owner": "user_1", "groups": ["group_1", "group_2"]},
+            "study_24": {"owner": "user_2", "groups": ["group_1", "group_2"]},
+        }.items():
+            res = client.post(
+                STUDIES_URL,
+                headers={"Authorization": f"Bearer {admin_access_token}"},
+                params={"name": study},
+            )
+            assert res.status_code in CREATE_STATUS_CODES, res.json()
+            study_id = res.json()
+            studies_ids_mapping[study] = study_id
+            owner = users_ids[study_info.get("owner")]
+            res = client.put(
+                f"{STUDIES_URL}/{study_id}/owner/{owner}",
+                headers={"Authorization": f"Bearer {admin_access_token}"},
+            )
+            assert res.status_code == 200, res.json()
+            for group in study_info.get("groups"):
+                group_id = groups_ids[group]
+                res = client.put(
+                    f"{STUDIES_URL}/{study_id}/groups/{group_id}",
+                    headers={"Authorization": f"Bearer {admin_access_token}"},
+                )
+                assert res.status_code == 200, res.json()
+        # studies that have owner but no groups
+        for study, study_info in {
+            "study_26": {"owner": "user_1"},
+            "study_27": {"owner": "user_2"},
+        }.items():
+            res = client.post(
+                STUDIES_URL,
+                headers={"Authorization": f"Bearer {admin_access_token}"},
+                params={"name": study},
+            )
+            assert res.status_code in CREATE_STATUS_CODES, res.json()
+            study_id = res.json()
+            studies_ids_mapping[study] = study_id
+            owner_id = users_ids[study_info.get("owner")]
+            res = client.put(
+                f"{STUDIES_URL}/{study_id}/owner/{owner_id}",
+                headers={"Authorization": f"Bearer {admin_access_token}"},
+            )
+            assert res.status_code == 200, res.json()
+        # studies that have groups but no owner
+        for study, study_info in {
+            "study_19": {"groups": ["group_1"]},
+            "study_22": {"groups": ["group_2"]},
+            "study_25": {"groups": ["group_1", "group_2"]},
+        }.items():
+            res = client.post(
+                STUDIES_URL,
+                headers={"Authorization": f"Bearer {admin_access_token}"},
+                params={"name": study},
+            )
+            assert res.status_code in CREATE_STATUS_CODES, res.json()
+            study_id = res.json()
+            studies_ids_mapping[study] = study_id
+            for group in study_info.get("groups"):
+                group_id = groups_ids[group]
+                res = client.put(
+                    f"{STUDIES_URL}/{study_id}/groups/{group_id}",
+                    headers={"Authorization": f"Bearer {admin_access_token}"},
+                )
+                assert res.status_code == 200, res.json()
+
+        # create raw studies with neither owner nor groups
+        for study, study_info in {
+            "study_28": {"public_mode": None},
+            "study_29": {"public_mode": PublicMode.READ.value},
+            "study_30": {"public_mode": PublicMode.EDIT.value},
+            "study_31": {"public_mode": PublicMode.EXECUTE.value},
+            "study_32": {"public_mode": PublicMode.FULL.value},
+        }.items():
+            res = client.post(
+                STUDIES_URL,
+                headers={"Authorization": f"Bearer {admin_access_token}"},
+                params={"name": study},
+            )
+            assert res.status_code in CREATE_STATUS_CODES, res.json()
+            study_id = res.json()
+            studies_ids_mapping[study] = study_id
+            public_mode = study_info.get("public_mode")
+            if public_mode:
+                res = client.put(
+                    f"{STUDIES_URL}/{study_id}/public_mode/{public_mode}",
+                    headers={"Authorization": f"Bearer {admin_access_token}"},
+                )
+                assert res.status_code == 200, res.json()
+
+        # create studies for user_3 that is not part of any group
+        # variant studies
+        for study, study_info in {
+            "study_33": {"groups": ["group_1"]},
+            "study_35": {"groups": []},
+        }.items():
+            res = client.post(
+                STUDIES_URL,
+                headers={"Authorization": f"Bearer {admin_access_token}"},
+                params={"name": f"dummy_{study}"},
+            )
+            assert res.status_code in CREATE_STATUS_CODES, res.json()
+            study_id = res.json()
+            res = client.post(
+                f"{STUDIES_URL}/{study_id}/variants",
+                headers={"Authorization": f"Bearer {admin_access_token}"},
+                params={"name": study},
+            )
+            assert res.status_code in CREATE_STATUS_CODES, res.json()
+            study_id = res.json()
+            studies_ids_mapping[study] = study_id
+            owner_id = users_ids["user_3"]
+            res = client.put(
+                f"{STUDIES_URL}/{study_id}/owner/{owner_id}",
+                headers={"Authorization": f"Bearer {admin_access_token}"},
+            )
+            assert res.status_code == 200, res.json()
+            for group in study_info.get("groups", []):
+                group_id = groups_ids[group]
+                res = client.put(
+                    f"{STUDIES_URL}/{study_id}/groups/{group_id}",
+                    headers={"Authorization": f"Bearer {admin_access_token}"},
+                )
+                assert res.status_code == 200, res.json()
+        # raw studies
+        for study, study_info in {
+            "study_34": {"groups": ["group_2"]},
+            "study_36": {"groups": []},
+        }.items():
+            res = client.post(
+                STUDIES_URL,
+                headers={"Authorization": f"Bearer {admin_access_token}"},
+                params={"name": study},
+            )
+            assert res.status_code in CREATE_STATUS_CODES, res.json()
+            study_id = res.json()
+            studies_ids_mapping[study] = study_id
+            owner_id = users_ids["user_3"]
+            res = client.put(
+                f"{STUDIES_URL}/{study_id}/owner/{owner_id}",
+                headers={"Authorization": f"Bearer {admin_access_token}"},
+            )
+            assert res.status_code == 200, res.json()
+            for group in study_info.get("groups"):
+                group_id = groups_ids[group]
+                res = client.put(
+                    f"{STUDIES_URL}/{study_id}/groups/{group_id}",
+                    headers={"Authorization": f"Bearer {admin_access_token}"},
+                )
+                assert res.status_code == 200, res.json()
+
+        # create studies for group_3 that has no user
+        res = client.post(
+            STUDIES_URL,
+            headers={"Authorization": f"Bearer {admin_access_token}"},
+            params={"name": "dummy_study_37"},
+        )
+        assert res.status_code in CREATE_STATUS_CODES, res.json()
+        study_id = res.json()
+        res = client.post(
+            f"{STUDIES_URL}/{study_id}/variants",
+            headers={"Authorization": f"Bearer {admin_access_token}"},
+            params={"name": "study_37"},
+        )
+        assert res.status_code in CREATE_STATUS_CODES, res.json()
+        study_id = res.json()
+        group_3_id = groups_ids["group_3"]
+        res = client.put(
+            f"{STUDIES_URL}/{study_id}/groups/{group_3_id}",
+            headers={"Authorization": f"Bearer {admin_access_token}"},
+        )
+        assert res.status_code == 200, res.json()
+        studies_ids_mapping["study_37"] = study_id
+        res = client.post(
+            STUDIES_URL,
+            headers={"Authorization": f"Bearer {admin_access_token}"},
+            params={"name": "study_38"},
+        )
+        assert res.status_code in CREATE_STATUS_CODES, res.json()
+        study_id = res.json()
+        res = client.put(
+            f"{STUDIES_URL}/{study_id}/groups/{group_3_id}",
+            headers={"Authorization": f"Bearer {admin_access_token}"},
+        )
+        assert res.status_code == 200, res.json()
+        studies_ids_mapping["study_38"] = study_id
+
+        # verify the studies creation was done correctly and that admin has access to all studies
+        all_studies = set(studies_ids_mapping.values())
+        studies_target_info = {
+            "study_1": {
+                "type": "variantstudy",
+                "owner": "user_1",
+                "groups": ["group_1"],
+                "public_mode": PublicMode.NONE,
+            },
+            "study_2": {
+                "type": "variantstudy",
+                "owner": "user_1",
+                "groups": ["group_2"],
+                "public_mode": PublicMode.NONE,
+            },
+            "study_3": {"type": "variantstudy", "owner": None, "groups": ["group_1"], "public_mode": PublicMode.NONE},
+            "study_4": {
+                "type": "variantstudy",
+                "owner": "user_2",
+                "groups": ["group_1"],
+                "public_mode": PublicMode.NONE,
+            },
+            "study_5": {
+                "type": "variantstudy",
+                "owner": "user_2",
+                "groups": ["group_2"],
+                "public_mode": PublicMode.NONE,
+            },
+            "study_6": {"type": "variantstudy", "owner": None, "groups": ["group_2"], "public_mode": PublicMode.NONE},
+            "study_7": {
+                "type": "variantstudy",
+                "owner": "user_1",
+                "groups": ["group_1", "group_2"],
+                "public_mode": PublicMode.NONE,
+            },
+            "study_8": {
+                "type": "variantstudy",
+                "owner": "user_2",
+                "groups": ["group_1", "group_2"],
+                "public_mode": PublicMode.NONE,
+            },
+            "study_9": {
+                "type": "variantstudy",
+                "owner": None,
+                "groups": ["group_1", "group_2"],
+                "public_mode": PublicMode.NONE,
+            },
+            "study_10": {"type": "variantstudy", "owner": "user_1", "groups": None, "public_mode": PublicMode.NONE},
+            "study_11": {"type": "variantstudy", "owner": "user_2", "groups": None, "public_mode": PublicMode.NONE},
+            "study_12": {"type": "variantstudy", "owner": None, "groups": None, "public_mode": PublicMode.NONE},
+            "study_13": {"type": "variantstudy", "owner": None, "groups": None, "public_mode": PublicMode.READ},
+            "study_14": {"type": "variantstudy", "owner": None, "groups": None, "public_mode": PublicMode.EDIT},
+            "study_15": {"type": "variantstudy", "owner": None, "groups": None, "public_mode": PublicMode.EXECUTE},
+            "study_16": {"type": "variantstudy", "owner": None, "groups": None, "public_mode": PublicMode.FULL},
+            "study_17": {"type": "rawstudy", "owner": "user_1", "groups": ["group_1"], "public_mode": PublicMode.NONE},
+            "study_18": {"type": "rawstudy", "owner": "user_1", "groups": ["group_2"], "public_mode": PublicMode.NONE},
+            "study_19": {"type": "rawstudy", "owner": None, "groups": ["group_1"], "public_mode": PublicMode.NONE},
+            "study_20": {"type": "rawstudy", "owner": "user_2", "groups": ["group_1"], "public_mode": PublicMode.NONE},
+            "study_21": {"type": "rawstudy", "owner": "user_2", "groups": ["group_2"], "public_mode": PublicMode.NONE},
+            "study_22": {"type": "rawstudy", "owner": None, "groups": ["group_2"], "public_mode": PublicMode.NONE},
+            "study_23": {
+                "type": "rawstudy",
+                "owner": "user_1",
+                "groups": ["group_1", "group_2"],
+                "public_mode": PublicMode.NONE,
+            },
+            "study_24": {
+                "type": "rawstudy",
+                "owner": "user_2",
+                "groups": ["group_1", "group_2"],
+                "public_mode": PublicMode.NONE,
+            },
+            "study_25": {
+                "type": "rawstudy",
+                "owner": None,
+                "groups": ["group_1", "group_2"],
+                "public_mode": PublicMode.NONE,
+            },
+            "study_26": {"type": "rawstudy", "owner": "user_1", "groups": None, "public_mode": PublicMode.NONE},
+            "study_27": {"type": "rawstudy", "owner": "user_2", "groups": None, "public_mode": PublicMode.NONE},
+            "study_28": {"type": "rawstudy", "owner": None, "groups": None, "public_mode": PublicMode.NONE},
+            "study_29": {"type": "rawstudy", "owner": None, "groups": None, "public_mode": PublicMode.READ},
+            "study_30": {"type": "rawstudy", "owner": None, "groups": None, "public_mode": PublicMode.EDIT},
+            "study_31": {"type": "rawstudy", "owner": None, "groups": None, "public_mode": PublicMode.EXECUTE},
+            "study_32": {"type": "rawstudy", "owner": None, "groups": None, "public_mode": PublicMode.FULL},
+            "study_33": {
+                "type": "variantstudy",
+                "owner": "user_3",
+                "groups": ["group_1"],
+                "public_mode": PublicMode.NONE,
+            },
+            "study_34": {"type": "rawstudy", "owner": "user_3", "groups": ["group_2"], "public_mode": PublicMode.NONE},
+            "study_35": {"type": "variantstudy", "owner": "user_3", "groups": None, "public_mode": PublicMode.NONE},
+            "study_36": {"type": "rawstudy", "owner": "user_3", "groups": None, "public_mode": PublicMode.NONE},
+            "study_37": {"type": "variantstudy", "owner": None, "groups": ["group_3"], "public_mode": PublicMode.NONE},
+            "study_38": {"type": "rawstudy", "owner": None, "groups": ["group_3"], "public_mode": PublicMode.NONE},
+        }
+        res = client.get(STUDIES_URL, headers={"Authorization": f"Bearer {admin_access_token}"})
+        assert res.status_code == LIST_STATUS_CODE, res.json()
+        study_map = res.json()
+        assert len(all_studies) == 38
+        assert not all_studies.difference(study_map)
+        for study, study_info in studies_target_info.items():
+            study_id = studies_ids_mapping[study]
+            study_data = study_map[study_id]
+            assert study_data.get("type") == study_info.get("type")
+            if study_data.get("owner") and study_info.get("owner"):
+                assert study_data["owner"]["name"] == study_info.get("owner")
+                assert study_data["owner"]["id"] == users_ids[study_info.get("owner")]
+            else:
+                assert not study_info.get("owner")
+                assert study_data["owner"]["name"] == "admin"
+            if study_data.get("groups"):
+                expected_groups = set(study_info.get("groups"))
+                assert all(
+                    (group["name"] in expected_groups) and groups_ids[group["name"]] == group["id"]
+                    for group in study_data["groups"]
+                )
+            else:
+                assert not study_info.get("groups")
+            assert study_data["public_mode"] == study_info.get("public_mode")
+
+        ##########################
+        # 2. Tests
+        ##########################
+
+        # user_1 access
+        requests_params_expected_studies = [
+            # fmt: off
+            ([], {"1", "2", "5", "6", "7", "8", "9", "10", "13", "14", "15", "16", "17",
+                  "18", "21", "22", "23", "24", "25", "26", "29", "30", "31", "32", "34"}),
+            (["1"], {"1", "7", "8", "9", "17", "23", "24", "25"}),
+            (["2"], {"2", "5", "6", "7", "8", "9", "18", "21", "22", "23", "24", "25", "34"}),
+            (["3"], set()),
+            (["1", "2"], {"1", "2", "5", "6", "7", "8", "9", "17", "18", "21", "22", "23", "24", "25", "34"}),
+            (["1", "3"], {"1", "7", "8", "9", "17", "23", "24", "25"}),
+            (["2", "3"], {"2", "5", "6", "7", "8", "9", "18", "21", "22", "23", "24", "25", "34"}),
+            (
+                ["1", "2", "3"],
+                {"1", "2", "5", "6", "7", "8", "9", "17", "18", "21", "22", "23", "24", "25", "34"},
+            ),
+        ]
+        for request_groups_numbers, expected_studies_numbers in requests_params_expected_studies:
+            request_groups_ids = [groups_ids[f"group_{group_number}"] for group_number in request_groups_numbers]
+            expected_studies = {
+                studies_ids_mapping[f"study_{study_number}"] for study_number in expected_studies_numbers
+            }
+            res = client.get(
+                STUDIES_URL,
+                headers={"Authorization": f"Bearer {users_tokens['user_1']}"},
+                params={"groups": ",".join(request_groups_ids)} if request_groups_ids else {},
+            )
+            assert res.status_code == LIST_STATUS_CODE, res.json()
+            study_map = res.json()
+            assert not expected_studies.difference(set(study_map))
+            assert not all_studies.difference(expected_studies).intersection(set(study_map))
+
+        # user_2 access
+        requests_params_expected_studies = [
+            # fmt: off
+            ([], {"1", "3", "4", "5", "7", "8", "9", "11", "13", "14", "15", "16", "17",
+                  "19", "20", "21", "23", "24", "25", "27", "29", "30", "31", "32", "33"}),
+            (["1"], {"1", "3", "4", "7", "8", "9", "17", "19", "20", "23", "24", "25", "33"}),
+            (["2"], {"5", "7", "8", "9", "21", "23", "24", "25"}),
+            (["3"], set()),
+            (["1", "2"], {"1", "3", "4", "5", "7", "8", "9", "17", "19", "20", "21", "23", "24", "25", "33"}),
+            (["1", "3"], {"1", "3", "4", "7", "8", "9", "17", "19", "20", "23", "24", "25", "33"}),
+            (["2", "3"], {"5", "7", "8", "9", "21", "23", "24", "25"}),
+            (
+                ["1", "2", "3"],
+                {"1", "3", "4", "5", "7", "8", "9", "17", "19", "20", "21", "23", "24", "25", "33"},
+            ),
+        ]
+        for request_groups_numbers, expected_studies_numbers in requests_params_expected_studies:
+            request_groups_ids = [groups_ids[f"group_{group_number}"] for group_number in request_groups_numbers]
+            expected_studies = {
+                studies_ids_mapping[f"study_{study_number}"] for study_number in expected_studies_numbers
+            }
+            res = client.get(
+                STUDIES_URL,
+                headers={"Authorization": f"Bearer {users_tokens['user_2']}"},
+                params={"groups": ",".join(request_groups_ids)} if request_groups_ids else {},
+            )
+            assert res.status_code == LIST_STATUS_CODE, res.json()
+            study_map = res.json()
+            assert not expected_studies.difference(set(study_map))
+            assert not all_studies.difference(expected_studies).intersection(set(study_map))
+
+        # user_3 access
+        requests_params_expected_studies = [
+            ([], {"13", "14", "15", "16", "29", "30", "31", "32", "33", "34", "35", "36"}),
+            (["1"], {"33"}),
+            (["2"], {"34"}),
+            (["3"], set()),
+            (["1", "2"], {"33", "34"}),
+            (["1", "3"], {"33"}),
+            (["2", "3"], {"34"}),
+            (["1", "2", "3"], {"33", "34"}),
+        ]
+        for request_groups_numbers, expected_studies_numbers in requests_params_expected_studies:
+            request_groups_ids = [groups_ids[f"group_{group_number}"] for group_number in request_groups_numbers]
+            expected_studies = {
+                studies_ids_mapping[f"study_{study_number}"] for study_number in expected_studies_numbers
+            }
+            res = client.get(
+                STUDIES_URL,
+                headers={"Authorization": f"Bearer {users_tokens['user_3']}"},
+                params={"groups": ",".join(request_groups_ids)} if request_groups_ids else {},
+            )
+            assert res.status_code == LIST_STATUS_CODE, res.json()
+            study_map = res.json()
+            assert not expected_studies.difference(set(study_map))
+            assert not all_studies.difference(expected_studies).intersection(set(study_map))
 
     def test_get_studies__invalid_parameters(
         self,
