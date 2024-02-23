@@ -1,10 +1,10 @@
 import logging
 import shutil
 import time
+import typing as t
 from datetime import datetime
 from pathlib import Path
 from threading import Thread
-from typing import BinaryIO, List, Optional, Sequence
 from uuid import uuid4
 from zipfile import ZipFile
 
@@ -61,7 +61,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         )
         self.cleanup_thread.start()
 
-    def update_from_raw_meta(self, metadata: RawStudy, fallback_on_default: Optional[bool] = False) -> None:
+    def update_from_raw_meta(self, metadata: RawStudy, fallback_on_default: t.Optional[bool] = False) -> None:
         """
         Update metadata from study raw metadata
         Args:
@@ -90,7 +90,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
                 metadata.version = metadata.version or 0
                 metadata.created_at = metadata.created_at or datetime.utcnow()
                 metadata.updated_at = metadata.updated_at or datetime.utcnow()
-                if not metadata.additional_data:
+                if metadata.additional_data is None:
                     metadata.additional_data = StudyAdditionalData()
                 metadata.additional_data.patch = metadata.additional_data.patch or Patch().json()
                 metadata.additional_data.author = metadata.additional_data.author or "Unknown"
@@ -148,7 +148,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         self,
         metadata: RawStudy,
         use_cache: bool = True,
-        output_dir: Optional[Path] = None,
+        output_dir: t.Optional[Path] = None,
     ) -> FileStudy:
         """
         Fetch a study object and its config
@@ -163,7 +163,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         study_path = self.get_study_path(metadata)
         return self.study_factory.create_from_fs(study_path, metadata.id, output_dir, use_cache=use_cache)
 
-    def get_synthesis(self, metadata: RawStudy, params: Optional[RequestParameters] = None) -> FileStudyTreeConfigDTO:
+    def get_synthesis(self, metadata: RawStudy, params: t.Optional[RequestParameters] = None) -> FileStudyTreeConfigDTO:
         self._check_study_exists(metadata)
         study_path = self.get_study_path(metadata)
         study = self.study_factory.create_from_fs(study_path, metadata.id)
@@ -206,7 +206,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         self,
         src_meta: RawStudy,
         dest_name: str,
-        groups: Sequence[str],
+        groups: t.Sequence[str],
         with_outputs: bool = False,
     ) -> RawStudy:
         """
@@ -223,7 +223,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         """
         self._check_study_exists(src_meta)
 
-        if not src_meta.additional_data:
+        if src_meta.additional_data is None:
             additional_data = StudyAdditionalData()
         else:
             additional_data = StudyAdditionalData(
@@ -295,7 +295,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             output_path.unlink(missing_ok=True)
         remove_from_cache(self.cache, metadata.id)
 
-    def import_study(self, metadata: RawStudy, stream: BinaryIO) -> Study:
+    def import_study(self, metadata: RawStudy, stream: t.BinaryIO) -> Study:
         """
         Import study in the directory of the study.
 
@@ -329,7 +329,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         metadata: RawStudy,
         dst_path: Path,
         outputs: bool = True,
-        output_list_filter: Optional[List[str]] = None,
+        output_list_filter: t.Optional[t.List[str]] = None,
         denormalize: bool = True,
     ) -> None:
         try:
@@ -352,7 +352,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
     def check_errors(
         self,
         metadata: RawStudy,
-    ) -> List[str]:
+    ) -> t.List[str]:
         """
         Check study antares data integrity
         Args:
