@@ -17,6 +17,7 @@ v2.16.5 (2024-02-29)
 * **ui-results:** prevent duplicate updates on same toggle button click [`#1945`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1945)
 * **ui-thermal:** update cluster group options to handle `Other 1` [`#1945`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1945)
 * **variants:** correct the generation of variant when a snapshot is removed [`#1947`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1947)
+* **study:** correct access to study `additional_data` [`#1949`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1949)
 
 
 v2.16.4 (2024-02-14)
