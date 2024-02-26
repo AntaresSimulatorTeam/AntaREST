@@ -12,7 +12,7 @@ PATCH_JSON = "patch.json"
 
 class PatchService:
     """
-    Handle patch file ("patch.json") for a RawStudy or VariantStudy
+    Handle patch file ('patch.json') for a RawStudy or VariantStudy
     """
 
     def __init__(self, repository: t.Optional[StudyMetadataRepository] = None):
