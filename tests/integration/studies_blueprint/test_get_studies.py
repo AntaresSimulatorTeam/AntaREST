@@ -460,10 +460,9 @@ class TestStudiesListing:
             headers={"Authorization": f"Bearer {john_doe_access_token}"},
             params={"pageNb": 1, "pageSize": 2},
         )
-        if len(study_map) > 2:
-            assert res.status_code == LIST_STATUS_CODE, res.json()
-            page_studies = res.json()
-            assert len(page_studies) == min(2, len(study_map) - 2)
+        assert res.status_code == LIST_STATUS_CODE, res.json()
+        page_studies = res.json()
+        assert len(page_studies) == max(0, min(2, len(study_map) - 2))
 
         # test 1.b for an admin user
         res = client.get(
@@ -479,10 +478,9 @@ class TestStudiesListing:
             headers={"Authorization": f"Bearer {admin_access_token}"},
             params={"pageNb": 1, "pageSize": 2},
         )
-        if len(study_map) > 2:
-            assert res.status_code == LIST_STATUS_CODE, res.json()
-            page_studies = res.json()
-            assert len(page_studies) == min(2, len(study_map) - 2)
+        assert res.status_code == LIST_STATUS_CODE, res.json()
+        page_studies = res.json()
+        assert len(page_studies) == max(0, min(len(study_map) - 2, 2))
 
         # test 1.c for a user with access to select studies
         res = client.get(
@@ -646,10 +644,9 @@ class TestStudiesListing:
             headers={"Authorization": f"Bearer {admin_access_token}"},
             params={"versions": "850,860", "pageNb": 1, "pageSize": 2},
         )
-        if len(study_map) > 2:
-            assert res.status_code == LIST_STATUS_CODE, res.json()
-            page_studies = res.json()
-            assert len(page_studies) == min(2, len(study_map) - 2)
+        assert res.status_code == LIST_STATUS_CODE, res.json()
+        page_studies = res.json()
+        assert len(page_studies) == max(0, min(len(study_map) - 2, 2))
 
         # tests (7) for users filtering
         # test 7.a to get studies for one user: James Bond
@@ -1375,16 +1372,15 @@ class TestStudiesListing:
             assert not expected_studies.difference(set(study_map))
             assert not all_studies.difference(expected_studies).intersection(set(study_map))
             # test pagination
-            if len(expected_studies) > 2:
-                res = client.get(
-                    STUDIES_URL,
-                    headers={"Authorization": f"Bearer {users_tokens['user_1']}"},
-                    params={"groups": ",".join(request_groups_ids), "pageNb": 1, "pageSize": 2}
-                    if request_groups_ids
-                    else {"pageNb": 1, "pageSize": 2},
-                )
-                assert res.status_code == LIST_STATUS_CODE, res.json()
-                assert len(res.json()) == min(2, len(expected_studies) - 2)
+            res = client.get(
+                STUDIES_URL,
+                headers={"Authorization": f"Bearer {users_tokens['user_1']}"},
+                params={"groups": ",".join(request_groups_ids), "pageNb": 1, "pageSize": 2}
+                if request_groups_ids
+                else {"pageNb": 1, "pageSize": 2},
+            )
+            assert res.status_code == LIST_STATUS_CODE, res.json()
+            assert len(res.json()) == max(0, min(2, len(expected_studies) - 2))
 
         # user_2 access
         requests_params_expected_studies = [

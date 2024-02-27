@@ -82,14 +82,13 @@ def test_get_all__general_case(
         assert {s.id for s in all_studies} == expected_ids
 
     # test pagination
-    if len(expected_ids) > 2:
-        with DBStatementRecorder(db_session.bind) as db_recorder:
-            all_studies = repository.get_all(
-                study_filter=study_filter,
-                pagination=StudyPagination(page_nb=1, page_size=2),
-            )
-            assert len(all_studies) == min(len(expected_ids) - 2, 2)
-        assert len(db_recorder.sql_statements) == 1, str(db_recorder)
+    with DBStatementRecorder(db_session.bind) as db_recorder:
+        all_studies = repository.get_all(
+            study_filter=study_filter,
+            pagination=StudyPagination(page_nb=1, page_size=2),
+        )
+        assert len(all_studies) == max(0, min(len(expected_ids) - 2, 2))
+    assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
 
 def test_get_all__incompatible_case(
@@ -205,7 +204,7 @@ def test_get_all__study_name_filter(
                 study_filter=StudyFilter(name=name, access_permissions=AccessPermissions(is_admin=True)),
                 pagination=StudyPagination(page_nb=1, page_size=2),
             )
-            assert len(all_studies) == min(len(expected_ids) - 2, 2)
+            assert len(all_studies) == max(0, min(len(expected_ids) - 2, 2))
         assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
 
@@ -262,7 +261,7 @@ def test_get_all__managed_study_filter(
                 study_filter=StudyFilter(managed=managed, access_permissions=AccessPermissions(is_admin=True)),
                 pagination=StudyPagination(page_nb=1, page_size=2),
             )
-            assert len(all_studies) == min(len(expected_ids) - 2, 2)
+            assert len(all_studies) == max(0, min(len(expected_ids) - 2, 2))
         assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
 
@@ -307,22 +306,13 @@ def test_get_all__archived_study_filter(
         assert {s.id for s in all_studies} == expected_ids
 
     # test pagination
-    if len(expected_ids) > 2:
-        with DBStatementRecorder(db_session.bind) as db_recorder:
-            all_studies = repository.get_all(
-                study_filter=study_filter,
-                pagination=StudyPagination(page_nb=1, page_size=2),
-            )
-            assert len(all_studies) == min(len(expected_ids) - 2, 2)
-        assert len(db_recorder.sql_statements) == 1, str(db_recorder)
-    elif len(expected_ids) == 2:
-        with DBStatementRecorder(db_session.bind) as db_recorder:
-            all_studies = repository.get_all(
-                study_filter=study_filter,
-                pagination=StudyPagination(page_nb=1, page_size=1),
-            )
-            assert len(all_studies) == 1
-        assert len(db_recorder.sql_statements) == 1, str(db_recorder)
+    with DBStatementRecorder(db_session.bind) as db_recorder:
+        all_studies = repository.get_all(
+            study_filter=study_filter,
+            pagination=StudyPagination(page_nb=1, page_size=1),
+        )
+        assert len(all_studies) == max(0, min(len(expected_ids) - 1, 1))
+    assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
 
 @pytest.mark.parametrize(
@@ -366,22 +356,13 @@ def test_get_all__variant_study_filter(
         assert {s.id for s in all_studies} == expected_ids
 
     # test pagination
-    if len(expected_ids) > 2:
-        with DBStatementRecorder(db_session.bind) as db_recorder:
-            all_studies = repository.get_all(
-                study_filter=study_filter,
-                pagination=StudyPagination(page_nb=1, page_size=2),
-            )
-            assert len(all_studies) == min(len(expected_ids) - 2, 2)
-        assert len(db_recorder.sql_statements) == 1, str(db_recorder)
-    elif len(expected_ids) == 2:
-        with DBStatementRecorder(db_session.bind) as db_recorder:
-            all_studies = repository.get_all(
-                study_filter=study_filter,
-                pagination=StudyPagination(page_nb=1, page_size=1),
-            )
-            assert len(all_studies) == 1
-        assert len(db_recorder.sql_statements) == 1, str(db_recorder)
+    with DBStatementRecorder(db_session.bind) as db_recorder:
+        all_studies = repository.get_all(
+            study_filter=study_filter,
+            pagination=StudyPagination(page_nb=1, page_size=1),
+        )
+        assert len(all_studies) == max(0, min(len(expected_ids) - 1, 1))
+    assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
 
 @pytest.mark.parametrize(
@@ -427,22 +408,13 @@ def test_get_all__study_version_filter(
         assert {s.id for s in all_studies} == expected_ids
 
     # test pagination
-    if len(expected_ids) > 2:
-        with DBStatementRecorder(db_session.bind) as db_recorder:
-            all_studies = repository.get_all(
-                study_filter=study_filter,
-                pagination=StudyPagination(page_nb=1, page_size=2),
-            )
-            assert len(all_studies) == min(len(expected_ids) - 2, 2)
-        assert len(db_recorder.sql_statements) == 1, str(db_recorder)
-    elif len(expected_ids) == 2:
-        with DBStatementRecorder(db_session.bind) as db_recorder:
-            all_studies = repository.get_all(
-                study_filter=study_filter,
-                pagination=StudyPagination(page_nb=1, page_size=1),
-            )
-            assert len(all_studies) == 1
-        assert len(db_recorder.sql_statements) == 1, str(db_recorder)
+    with DBStatementRecorder(db_session.bind) as db_recorder:
+        all_studies = repository.get_all(
+            study_filter=study_filter,
+            pagination=StudyPagination(page_nb=1, page_size=1),
+        )
+        assert len(all_studies) == max(0, min(len(expected_ids) - 1, 1))
+    assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
 
 @pytest.mark.parametrize(
@@ -495,14 +467,13 @@ def test_get_all__study_users_filter(
         assert {s.id for s in all_studies} == expected_ids
 
     # test pagination
-    if len(expected_ids) > 2:
-        with DBStatementRecorder(db_session.bind) as db_recorder:
-            all_studies = repository.get_all(
-                study_filter=StudyFilter(users=users, access_permissions=AccessPermissions(is_admin=True)),
-                pagination=StudyPagination(page_nb=1, page_size=2),
-            )
-            assert len(all_studies) == min(len(expected_ids) - 2, 2)
-        assert len(db_recorder.sql_statements) == 1, str(db_recorder)
+    with DBStatementRecorder(db_session.bind) as db_recorder:
+        all_studies = repository.get_all(
+            study_filter=StudyFilter(users=users, access_permissions=AccessPermissions(is_admin=True)),
+            pagination=StudyPagination(page_nb=1, page_size=2),
+        )
+        assert len(all_studies) == max(0, min(len(expected_ids) - 2, 2))
+    assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
 
 @pytest.mark.parametrize(
@@ -555,14 +526,13 @@ def test_get_all__study_groups_filter(
         assert {s.id for s in all_studies} == expected_ids
 
     # test pagination
-    if len(expected_ids) > 2:
-        with DBStatementRecorder(db_session.bind) as db_recorder:
-            all_studies = repository.get_all(
-                study_filter=StudyFilter(groups=groups, access_permissions=AccessPermissions(is_admin=True)),
-                pagination=StudyPagination(page_nb=1, page_size=2),
-            )
-            assert len(all_studies) == min(len(expected_ids) - 2, 2)
-        assert len(db_recorder.sql_statements) == 1, str(db_recorder)
+    with DBStatementRecorder(db_session.bind) as db_recorder:
+        all_studies = repository.get_all(
+            study_filter=StudyFilter(groups=groups, access_permissions=AccessPermissions(is_admin=True)),
+            pagination=StudyPagination(page_nb=1, page_size=2),
+        )
+        assert len(all_studies) == max(0, min(len(expected_ids) - 2, 2))
+    assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
 
 @pytest.mark.parametrize(
@@ -610,14 +580,13 @@ def test_get_all__study_ids_filter(
         assert {s.id for s in all_studies} == expected_ids
 
     # test pagination
-    if len(expected_ids) > 2:
-        with DBStatementRecorder(db_session.bind) as db_recorder:
-            all_studies = repository.get_all(
-                study_filter=StudyFilter(study_ids=study_ids, access_permissions=AccessPermissions(is_admin=True)),
-                pagination=StudyPagination(page_nb=1, page_size=2),
-            )
-            assert len(all_studies) == min(len(expected_ids) - 2, 2)
-        assert len(db_recorder.sql_statements) == 1, str(db_recorder)
+    with DBStatementRecorder(db_session.bind) as db_recorder:
+        all_studies = repository.get_all(
+            study_filter=StudyFilter(study_ids=study_ids, access_permissions=AccessPermissions(is_admin=True)),
+            pagination=StudyPagination(page_nb=1, page_size=2),
+        )
+        assert len(all_studies) == max(0, min(len(expected_ids) - 2, 2))
+    assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
 
 @pytest.mark.parametrize(
@@ -662,14 +631,13 @@ def test_get_all__study_existence_filter(
         assert {s.id for s in all_studies} == expected_ids
 
     # test pagination
-    if len(expected_ids) > 2:
-        with DBStatementRecorder(db_session.bind) as db_recorder:
-            all_studies = repository.get_all(
-                study_filter=StudyFilter(exists=exists, access_permissions=AccessPermissions(is_admin=True)),
-                pagination=StudyPagination(page_nb=1, page_size=2),
-            )
-            assert len(all_studies) == min(len(expected_ids) - 2, 2)
-        assert len(db_recorder.sql_statements) == 1, str(db_recorder)
+    with DBStatementRecorder(db_session.bind) as db_recorder:
+        all_studies = repository.get_all(
+            study_filter=StudyFilter(exists=exists, access_permissions=AccessPermissions(is_admin=True)),
+            pagination=StudyPagination(page_nb=1, page_size=2),
+        )
+        assert len(all_studies) == max(0, min(len(expected_ids) - 2, 2))
+    assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
 
 @pytest.mark.parametrize(
@@ -715,14 +683,13 @@ def test_get_all__study_workspace_filter(
         assert {s.id for s in all_studies} == expected_ids
 
     # test pagination
-    if len(expected_ids) > 2:
-        with DBStatementRecorder(db_session.bind) as db_recorder:
-            all_studies = repository.get_all(
-                study_filter=StudyFilter(workspace=workspace, access_permissions=AccessPermissions(is_admin=True)),
-                pagination=StudyPagination(page_nb=1, page_size=2),
-            )
-            assert len(all_studies) == min(len(expected_ids) - 2, 2)
-        assert len(db_recorder.sql_statements) == 1, str(db_recorder)
+    with DBStatementRecorder(db_session.bind) as db_recorder:
+        all_studies = repository.get_all(
+            study_filter=StudyFilter(workspace=workspace, access_permissions=AccessPermissions(is_admin=True)),
+            pagination=StudyPagination(page_nb=1, page_size=2),
+        )
+        assert len(all_studies) == max(0, min(len(expected_ids) - 2, 2))
+    assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
 
 @pytest.mark.parametrize(
@@ -770,22 +737,13 @@ def test_get_all__study_folder_filter(
         assert {s.id for s in all_studies} == expected_ids
 
     # test pagination
-    if len(expected_ids) > 2:
-        with DBStatementRecorder(db_session.bind) as db_recorder:
-            all_studies = repository.get_all(
-                study_filter=study_filter,
-                pagination=StudyPagination(page_nb=1, page_size=2),
-            )
-            assert len(all_studies) == min(len(expected_ids) - 2, 2)
-        assert len(db_recorder.sql_statements) == 1, str(db_recorder)
-    elif len(expected_ids) == 2:
-        with DBStatementRecorder(db_session.bind) as db_recorder:
-            all_studies = repository.get_all(
-                study_filter=study_filter,
-                pagination=StudyPagination(page_nb=1, page_size=1),
-            )
-            assert len(all_studies) == 1
-        assert len(db_recorder.sql_statements) == 1, str(db_recorder)
+    with DBStatementRecorder(db_session.bind) as db_recorder:
+        all_studies = repository.get_all(
+            study_filter=study_filter,
+            pagination=StudyPagination(page_nb=1, page_size=1),
+        )
+        assert len(all_studies) == max(0, min(len(expected_ids) - 1, 1))
+    assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
 
 @pytest.mark.parametrize(
@@ -841,14 +799,13 @@ def test_get_all__study_tags_filter(
         assert {s.id for s in all_studies} == expected_ids
 
     # test pagination
-    if len(expected_ids) > 2:
-        with DBStatementRecorder(db_session.bind) as db_recorder:
-            all_studies = repository.get_all(
-                study_filter=StudyFilter(tags=tags, access_permissions=AccessPermissions(is_admin=True)),
-                pagination=StudyPagination(page_nb=1, page_size=2),
-            )
-            assert len(all_studies) == min(len(expected_ids) - 2, 2)
-        assert len(db_recorder.sql_statements) == 1, str(db_recorder)
+    with DBStatementRecorder(db_session.bind) as db_recorder:
+        all_studies = repository.get_all(
+            study_filter=StudyFilter(tags=tags, access_permissions=AccessPermissions(is_admin=True)),
+            pagination=StudyPagination(page_nb=1, page_size=2),
+        )
+        assert len(all_studies) == max(0, min(len(expected_ids) - 2, 2))
+    assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
 
 @pytest.mark.parametrize(
@@ -1003,13 +960,10 @@ def test_get_all__non_admin_permissions_filter(
         assert {s.id for s in all_studies} == expected_ids
 
     # test pagination
-    if len(expected_ids) > 2:
-        with DBStatementRecorder(db_session.bind) as db_recorder:
-            all_studies = repository.get_all(
-                study_filter=study_filter, pagination=StudyPagination(page_nb=1, page_size=2)
-            )
-            assert len(all_studies) == min(len(expected_ids) - 2, 2)
-        assert len(db_recorder.sql_statements) == 1, str(db_recorder)
+    with DBStatementRecorder(db_session.bind) as db_recorder:
+        all_studies = repository.get_all(study_filter=study_filter, pagination=StudyPagination(page_nb=1, page_size=2))
+        assert len(all_studies) == max(0, min(len(expected_ids) - 2, 2))
+    assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
 
 @pytest.mark.parametrize(
@@ -1137,13 +1091,10 @@ def test_get_all__admin_permissions_filter(
         assert {s.id for s in all_studies} == expected_ids
 
     # test pagination
-    if len(expected_ids) > 2:
-        with DBStatementRecorder(db_session.bind) as db_recorder:
-            all_studies = repository.get_all(
-                study_filter=study_filter, pagination=StudyPagination(page_nb=1, page_size=2)
-            )
-            assert len(all_studies) == min(len(expected_ids) - 2, 2)
-        assert len(db_recorder.sql_statements) == 1, str(db_recorder)
+    with DBStatementRecorder(db_session.bind) as db_recorder:
+        all_studies = repository.get_all(study_filter=study_filter, pagination=StudyPagination(page_nb=1, page_size=2))
+        assert len(all_studies) == max(0, min(len(expected_ids) - 2, 2))
+    assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
 
 def test_update_tags(
