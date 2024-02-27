@@ -373,8 +373,6 @@
   "study.configuration.geographicTrimmingAreas": "Filtre géographique (zones)",
   "study.configuration.geographicTrimmingLinks": "Filtre géographique (liens)",
   "study.modelization.properties": "Propriétés",
-  "study.modelization.properties.posX": "Position X",
-  "study.modelization.properties.posY": "Position Y",
   "study.modelization.properties.energyCost": "Coût de l'énergie",
   "study.modelization.properties.unsupplied": "Non distribuée",
   "study.modelization.properties.spilled": "Non évacuée",
