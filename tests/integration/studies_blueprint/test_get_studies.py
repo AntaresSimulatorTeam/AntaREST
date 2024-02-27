@@ -481,6 +481,22 @@ class TestStudiesListing:
         assert res.status_code == LIST_STATUS_CODE, res.json()
         page_studies = res.json()
         assert len(page_studies) == max(0, min(len(study_map) - 2, 2))
+        # test pagination concatenation
+        paginated_studies = {}
+        page_number = 0
+        number_of_pages = 0
+        while len(paginated_studies) < len(study_map):
+            res = client.get(
+                STUDIES_URL,
+                headers={"Authorization": f"Bearer {admin_access_token}"},
+                params={"pageNb": page_number, "pageSize": 2},
+            )
+            assert res.status_code == LIST_STATUS_CODE, res.json()
+            paginated_studies.update(res.json())
+            page_number += 1
+            number_of_pages += 1
+        assert paginated_studies == study_map
+        assert number_of_pages == len(study_map) // 2 + len(study_map) % 2
 
         # test 1.c for a user with access to select studies
         res = client.get(
@@ -1515,18 +1531,11 @@ class TestStudiesListing:
 
 
 def test_studies_counting(client: TestClient, admin_access_token: str, user_access_token: str) -> None:
-    # test admin studies count
-    res = client.get(STUDIES_URL, headers={"Authorization": f"Bearer {admin_access_token}"})
-    assert res.status_code == 200, res.json()
-    expected_studies_count = len(res.json())
-    res = client.get(STUDIES_URL + "/count", headers={"Authorization": f"Bearer {admin_access_token}"})
-    assert res.status_code == 200, res.json()
-    assert res.json() == expected_studies_count
-
-    # test user studies count
-    res = client.get(STUDIES_URL, headers={"Authorization": f"Bearer {user_access_token}"})
-    assert res.status_code == 200, res.json()
-    expected_studies_count = len(res.json())
-    res = client.get(STUDIES_URL + "/count", headers={"Authorization": f"Bearer {user_access_token}"})
-    assert res.status_code == 200, res.json()
-    assert res.json() == expected_studies_count
+    # test admin and non admin user studies count requests
+    for access_token in [admin_access_token, user_access_token]:
+        res = client.get(STUDIES_URL, headers={"Authorization": f"Bearer {access_token}"})
+        assert res.status_code == 200, res.json()
+        expected_studies_count = len(res.json())
+        res = client.get(STUDIES_URL + "/count", headers={"Authorization": f"Bearer {access_token}"})
+        assert res.status_code == 200, res.json()
+        assert res.json() == expected_studies_count

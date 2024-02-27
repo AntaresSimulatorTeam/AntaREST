@@ -198,14 +198,13 @@ def test_get_all__study_name_filter(
         assert {s.id for s in all_studies} == expected_ids
 
     # test pagination
-    if len(expected_ids) >= 2:
-        with DBStatementRecorder(db_session.bind) as db_recorder:
-            all_studies = repository.get_all(
-                study_filter=StudyFilter(name=name, access_permissions=AccessPermissions(is_admin=True)),
-                pagination=StudyPagination(page_nb=1, page_size=2),
-            )
-            assert len(all_studies) == max(0, min(len(expected_ids) - 2, 2))
-        assert len(db_recorder.sql_statements) == 1, str(db_recorder)
+    with DBStatementRecorder(db_session.bind) as db_recorder:
+        all_studies = repository.get_all(
+            study_filter=StudyFilter(name=name, access_permissions=AccessPermissions(is_admin=True)),
+            pagination=StudyPagination(page_nb=1, page_size=2),
+        )
+        assert len(all_studies) == max(0, min(len(expected_ids) - 2, 2))
+    assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
 
 @pytest.mark.parametrize(
@@ -255,14 +254,13 @@ def test_get_all__managed_study_filter(
         assert {s.id for s in all_studies} == expected_ids
 
     # test pagination
-    if len(expected_ids) >= 2:
-        with DBStatementRecorder(db_session.bind) as db_recorder:
-            all_studies = repository.get_all(
-                study_filter=StudyFilter(managed=managed, access_permissions=AccessPermissions(is_admin=True)),
-                pagination=StudyPagination(page_nb=1, page_size=2),
-            )
-            assert len(all_studies) == max(0, min(len(expected_ids) - 2, 2))
-        assert len(db_recorder.sql_statements) == 1, str(db_recorder)
+    with DBStatementRecorder(db_session.bind) as db_recorder:
+        all_studies = repository.get_all(
+            study_filter=StudyFilter(managed=managed, access_permissions=AccessPermissions(is_admin=True)),
+            pagination=StudyPagination(page_nb=1, page_size=2),
+        )
+        assert len(all_studies) == max(0, min(len(expected_ids) - 2, 2))
+    assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
 
 @pytest.mark.parametrize(
