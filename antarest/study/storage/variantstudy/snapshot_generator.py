@@ -246,7 +246,7 @@ def search_ref_study(
     # To reuse the snapshot of the current variant, the last executed command
     # must be one of the commands of the current variant.
     curr_variant = descendants[-1]
-    if curr_variant.snapshot:
+    if curr_variant.has_snapshot():
         last_exec_cmd = curr_variant.snapshot.last_executed_command
         command_ids = [c.id for c in curr_variant.commands]
         # If the variant has no command, we can reuse the snapshot if it is recent

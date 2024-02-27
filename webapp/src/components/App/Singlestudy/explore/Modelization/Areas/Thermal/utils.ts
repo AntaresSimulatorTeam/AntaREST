@@ -16,7 +16,7 @@ export const THERMAL_GROUPS = [
   "Mixed fuel",
   "Nuclear",
   "Oil",
-  "Other",
+  "Other 1",
   "Other 2",
   "Other 3",
   "Other 4",

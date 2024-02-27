@@ -97,7 +97,7 @@ export const editMatrix = async (
   matrixEdit: MatrixEditDTO[],
 ): Promise<void> => {
   const res = await client.put(
-    `/v1/studies/${sid}/matrix?path=${path}`,
+    `/v1/studies/${sid}/matrix?path=${encodeURIComponent(path)}`,
     matrixEdit,
   );
   return res.data;
