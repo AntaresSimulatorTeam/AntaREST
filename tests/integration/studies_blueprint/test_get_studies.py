@@ -454,6 +454,15 @@ class TestStudiesListing:
         study_map = res.json()
         assert not all_studies.intersection(study_map)
         assert all(map(lambda x: pm(x) in [PublicMode.READ, PublicMode.FULL], study_map.values()))
+        # test pagination
+        res = client.get(
+            STUDIES_URL,
+            headers={"Authorization": f"Bearer {john_doe_access_token}"},
+            params={"pageNb": 1, "pageSize": 2},
+        )
+        assert res.status_code == LIST_STATUS_CODE, res.json()
+        page_studies = res.json()
+        assert len(page_studies) == max(0, min(2, len(study_map) - 2))
 
         # test 1.b for an admin user
         res = client.get(
@@ -463,6 +472,31 @@ class TestStudiesListing:
         assert res.status_code == LIST_STATUS_CODE, res.json()
         study_map = res.json()
         assert not all_studies.difference(study_map)
+        # test pagination
+        res = client.get(
+            STUDIES_URL,
+            headers={"Authorization": f"Bearer {admin_access_token}"},
+            params={"pageNb": 1, "pageSize": 2},
+        )
+        assert res.status_code == LIST_STATUS_CODE, res.json()
+        page_studies = res.json()
+        assert len(page_studies) == max(0, min(len(study_map) - 2, 2))
+        # test pagination concatenation
+        paginated_studies = {}
+        page_number = 0
+        number_of_pages = 0
+        while len(paginated_studies) < len(study_map):
+            res = client.get(
+                STUDIES_URL,
+                headers={"Authorization": f"Bearer {admin_access_token}"},
+                params={"pageNb": page_number, "pageSize": 2},
+            )
+            assert res.status_code == LIST_STATUS_CODE, res.json()
+            paginated_studies.update(res.json())
+            page_number += 1
+            number_of_pages += 1
+        assert paginated_studies == study_map
+        assert number_of_pages == len(study_map) // 2 + len(study_map) % 2
 
         # test 1.c for a user with access to select studies
         res = client.get(
@@ -620,6 +654,15 @@ class TestStudiesListing:
         study_map = res.json()
         assert not all_studies.difference(studies_version_850.union(studies_version_860)).intersection(study_map)
         assert not studies_version_850.union(studies_version_860).difference(study_map)
+        # test pagination
+        res = client.get(
+            STUDIES_URL,
+            headers={"Authorization": f"Bearer {admin_access_token}"},
+            params={"versions": "850,860", "pageNb": 1, "pageSize": 2},
+        )
+        assert res.status_code == LIST_STATUS_CODE, res.json()
+        page_studies = res.json()
+        assert len(page_studies) == max(0, min(len(study_map) - 2, 2))
 
         # tests (7) for users filtering
         # test 7.a to get studies for one user: James Bond
@@ -1318,6 +1361,7 @@ class TestStudiesListing:
             # fmt: off
             ([], {"1", "2", "5", "6", "7", "8", "9", "10", "13", "14", "15", "16", "17",
                   "18", "21", "22", "23", "24", "25", "26", "29", "30", "31", "32", "34"}),
+            # fmt: on
             (["1"], {"1", "7", "8", "9", "17", "23", "24", "25"}),
             (["2"], {"2", "5", "6", "7", "8", "9", "18", "21", "22", "23", "24", "25", "34"}),
             (["3"], set()),
@@ -1343,12 +1387,23 @@ class TestStudiesListing:
             study_map = res.json()
             assert not expected_studies.difference(set(study_map))
             assert not all_studies.difference(expected_studies).intersection(set(study_map))
+            # test pagination
+            res = client.get(
+                STUDIES_URL,
+                headers={"Authorization": f"Bearer {users_tokens['user_1']}"},
+                params={"groups": ",".join(request_groups_ids), "pageNb": 1, "pageSize": 2}
+                if request_groups_ids
+                else {"pageNb": 1, "pageSize": 2},
+            )
+            assert res.status_code == LIST_STATUS_CODE, res.json()
+            assert len(res.json()) == max(0, min(2, len(expected_studies) - 2))
 
         # user_2 access
         requests_params_expected_studies = [
             # fmt: off
             ([], {"1", "3", "4", "5", "7", "8", "9", "11", "13", "14", "15", "16", "17",
                   "19", "20", "21", "23", "24", "25", "27", "29", "30", "31", "32", "33"}),
+            # fmt: on
             (["1"], {"1", "3", "4", "7", "8", "9", "17", "19", "20", "23", "24", "25", "33"}),
             (["2"], {"5", "7", "8", "9", "21", "23", "24", "25"}),
             (["3"], set()),
@@ -1473,3 +1528,14 @@ class TestStudiesListing:
         assert res.status_code == INVALID_PARAMS_STATUS_CODE, res.json()
         description = res.json()["description"]
         assert re.search(r"could not be parsed to a boolean", description), f"{description=}"
+
+
+def test_studies_counting(client: TestClient, admin_access_token: str, user_access_token: str) -> None:
+    # test admin and non admin user studies count requests
+    for access_token in [admin_access_token, user_access_token]:
+        res = client.get(STUDIES_URL, headers={"Authorization": f"Bearer {access_token}"})
+        assert res.status_code == 200, res.json()
+        expected_studies_count = len(res.json())
+        res = client.get(STUDIES_URL + "/count", headers={"Authorization": f"Bearer {access_token}"})
+        assert res.status_code == 200, res.json()
+        assert res.json() == expected_studies_count
