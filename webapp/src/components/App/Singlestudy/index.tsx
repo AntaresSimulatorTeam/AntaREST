@@ -71,7 +71,7 @@ function SingleStudy(props: Props) {
         path: `/studies/${studyId}/explore/debug`,
       },
     ],
-    [studyId],
+    [studyId, t],
   );
 
   const updateStudyData = useCallback(async () => {
