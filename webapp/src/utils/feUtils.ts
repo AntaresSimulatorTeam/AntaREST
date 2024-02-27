@@ -1,13 +1,13 @@
 import { HTMLInputTypeAttribute } from "react";
 
-export interface FakeHTMLInputElement {
+export interface InputObject {
   value: unknown;
   checked?: boolean;
   type?: HTMLInputTypeAttribute;
   name?: string;
 }
 
-type Target = HTMLInputElement | FakeHTMLInputElement;
+type Target = HTMLInputElement | InputObject;
 
 export interface FakeChangeEventHandler {
   target: Target;
@@ -35,4 +35,12 @@ export function createFakeBlurEventHandler(
     target,
     type: "blur",
   };
+}
+
+export function createFakeInputElement(obj: InputObject): HTMLInputElement {
+  const inputElement = document.createElement("input");
+  inputElement.name = obj.name || "";
+  inputElement.value = obj.value as string;
+
+  return inputElement;
 }

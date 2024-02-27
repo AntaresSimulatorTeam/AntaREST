@@ -1,6 +1,6 @@
 {
   "name": "antares-web",
-  "version": "2.16.4",
+  "version": "2.16.5",
   "private": true,
   "type": "module",
   "scripts": {

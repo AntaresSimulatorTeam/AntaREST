@@ -28,6 +28,7 @@ interface PropTypes {
   rowNames?: string[];
   computStats?: MatrixStats;
   isPercentDisplayEnabled?: boolean;
+  stretch?: boolean;
 }
 
 type CellType = Array<number | string | boolean>;
@@ -55,6 +56,7 @@ function EditableMatrix(props: PropTypes) {
     rowNames,
     computStats,
     isPercentDisplayEnabled = false,
+    stretch = true,
   } = props;
   const { data = [], columns = [], index = [] } = matrix;
   const prependIndex = index.length > 0 && matrixTime;
@@ -176,7 +178,7 @@ function EditableMatrix(props: PropTypes) {
         data={grid}
         width="100%"
         height="100%"
-        stretchH="all"
+        stretchH={stretch ? "all" : "none"}
         className="editableMatrix"
         colHeaders
         rowHeaderWidth={matrixRowNames ? 150 : undefined}
@@ -186,7 +188,6 @@ function EditableMatrix(props: PropTypes) {
         beforeKeyDown={(e) => handleKeyDown(e)}
         columns={formattedColumns}
         rowHeaders={matrixRowNames || true}
-        manualColumnResize
       />
     </Root>
   );
