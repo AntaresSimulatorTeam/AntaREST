@@ -3,16 +3,23 @@ import AddCircleIcon from "@mui/icons-material/AddCircle";
 import FormDialog from "../../../../../common/dialogs/FormDialog";
 import StringFE from "../../../../../common/fieldEditors/StringFE";
 import { SubmitHandlerPlus } from "../../../../../common/Form/types";
+import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
+import { getAreas } from "../../../../../../redux/selectors";
+import { validateString } from "../../../../../../utils/validationUtils";
 
 interface Props {
+  studyId: string;
   open: boolean;
   onClose: () => void;
   createArea: (name: string) => void;
 }
 
 function CreateAreaDialog(props: Props) {
-  const { open, onClose, createArea } = props;
+  const { studyId, open, onClose, createArea } = props;
   const [t] = useTranslation();
+  const existingAreas = useAppSelector((state) =>
+    getAreas(state, studyId).map((area) => area.name),
+  );
 
   const defaultValues = {
     name: "",
@@ -48,8 +55,8 @@ function CreateAreaDialog(props: Props) {
           control={control}
           fullWidth
           rules={{
-            required: true,
-            validate: (val) => val.trim().length > 0,
+            validate: (v) =>
+              validateString(v, { existingEntries: existingAreas }),
           }}
         />
       )}
