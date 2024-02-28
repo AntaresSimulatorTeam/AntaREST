@@ -30,7 +30,7 @@ function CreateAreaDialog(props: Props) {
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = (data: SubmitHandlerPlus<typeof defaultValues>) => {
-    createArea(data.values.name);
+    return createArea(data.values.name.trim());
   };
 
   ////////////////////////////////////////////////////////////////
