@@ -373,8 +373,6 @@
   "study.configuration.geographicTrimmingAreas": "Geographic Trimming (areas)",
   "study.configuration.geographicTrimmingLinks": "Geographic Trimming (links)",
   "study.modelization.properties": "Properties",
-  "study.modelization.properties.posX": "Position X",
-  "study.modelization.properties.posY": "Position Y",
   "study.modelization.properties.energyCost": "Energy cost (€/Wh)",
   "study.modelization.properties.unsupplied": "Unsupplied",
   "study.modelization.properties.spilled": "Spilled",
