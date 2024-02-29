@@ -74,7 +74,7 @@ def build(study_path: Path, study_id: str, output_path: t.Optional[Path] = None)
         version=_parse_version(study_path),
         areas=_parse_areas(study_path),
         sets=_parse_sets(study_path),
-        outputs=_parse_outputs(outputs_dir),
+        outputs=parse_outputs(outputs_dir),
         bindings=_parse_bindings(study_path),
         store_new_set=sns,
         archive_input_series=asi,
@@ -232,7 +232,7 @@ def _parse_areas(root: Path) -> t.Dict[str, Area]:
     return {transform_name_to_id(a): parse_area(root, a) for a in areas}
 
 
-def _parse_outputs(output_path: Path) -> t.Dict[str, Simulation]:
+def parse_outputs(output_path: Path) -> t.Dict[str, Simulation]:
     if not output_path.is_dir():
         return {}
     sims = {}

@@ -14,7 +14,7 @@ v2.16.8 (unreleased)
 * **st-storages (ui):** change matrix titles [`#1994`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1994)
 * **st-storages:** use command when updating matrices [`#1971`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1971)
 * **variants:** avoid recursive error when creating big variant tree [`#1967`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1967)
-
+* **outputs:** build outputs config even when using cache [`#1958`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1958)
 
 v2.16.7 (2024-03-05)
 --------------------
