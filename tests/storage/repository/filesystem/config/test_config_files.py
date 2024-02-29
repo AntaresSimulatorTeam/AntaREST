@@ -11,12 +11,12 @@ from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint 
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.files import (
     _parse_links,
-    _parse_outputs,
     _parse_renewables,
     _parse_sets,
     _parse_st_storage,
     _parse_thermal,
     build,
+    parse_outputs,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
@@ -222,7 +222,7 @@ def test_parse_outputs__nominal(tmp_path: Path, assets_name: str, expected: Dict
     with ZipFile(pkg_dir) as zf:
         zf.extractall(tmp_path)
     output_path = tmp_path.joinpath("output")
-    actual = _parse_outputs(output_path)
+    actual = parse_outputs(output_path)
     assert actual == expected
 
 
