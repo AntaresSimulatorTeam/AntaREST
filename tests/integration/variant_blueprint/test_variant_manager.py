@@ -1,10 +1,13 @@
+import io
 import logging
+import time
 import typing as t
 
 import pytest
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskDTO, TaskStatus
+from tests.integration.assets import ASSETS_DIR
 
 
 @pytest.fixture(name="base_study_id")
@@ -251,3 +254,54 @@ def test_recursive_variant_tree(client: TestClient, admin_access_token: str):
     # Asserts that we do not trigger a Recursive Exception
     res = client.get(f"/v1/studies/{parent_id}/variants", headers=admin_headers)
     assert res.status_code == 200
+
+
+def test_outputs(client: TestClient, admin_access_token: str, tmp_path: str) -> None:
+    # =======================
+    #  SET UP
+    # =======================
+
+    admin_headers = {"Authorization": f"Bearer {admin_access_token}"}
+    res = client.post(f"/v1/studies?name=foo", headers=admin_headers)
+    parent_id = res.json()
+    res = client.post(f"/v1/studies/{parent_id}/variants?name=variant_foo", headers=admin_headers)
+    variant_id = res.json()
+
+    # Only done to generate the variant folder
+    res = client.post(f"/v1/launcher/run/{variant_id}", headers=admin_headers)
+    job_id = res.json()["job_id"]
+    status = client.get(f"/v1/launcher/jobs/{job_id}", headers=admin_headers).json()["status"]
+    while status != "failed":
+        time.sleep(0.2)
+        status = client.get(f"/v1/launcher/jobs/{job_id}", headers=admin_headers).json()["status"]
+
+    # Import an output to the study folder
+    output_path_zip = ASSETS_DIR / "output_adq.zip"
+    client.post(
+        f"/v1/studies/{variant_id}/output",
+        headers=admin_headers,
+        files={"output": io.BytesIO(output_path_zip.read_bytes())},
+    )
+
+    # =======================
+    #  ASSERTS GENERATING THE VARIANT DOES NOT `HIDE` OUTPUTS FROM THE ENDPOINT
+    # =======================
+
+    # Get output
+    res = client.get(f"/v1/studies/{variant_id}/outputs", headers=admin_headers).json()
+    assert len(res) == 1
+
+    # Generates the study
+    res = client.put(f"/v1/studies/{variant_id}/generate?denormalize=false&from_scratch=true", headers=admin_headers)
+    task_id = res.json()
+    # Wait for task completion
+    res = client.get(f"/v1/tasks/{task_id}", headers=admin_headers, params={"wait_for_completion": True})
+    assert res.status_code == 200
+    task_result = TaskDTO.parse_obj(res.json())
+    assert task_result.status == TaskStatus.COMPLETED
+    assert task_result.result is not None
+    assert task_result.result.success
+
+    # Get outputs again
+    res = client.get(f"/v1/studies/{variant_id}/outputs", headers=admin_headers).json()
+    assert len(res) == 1
