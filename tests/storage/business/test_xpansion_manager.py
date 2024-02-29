@@ -81,6 +81,14 @@ def make_link_and_areas(empty_study: FileStudy) -> None:
     make_link(empty_study)
 
 
+def set_up_xpansion_manager(tmp_path: Path) -> t.Tuple[FileStudy, RawStudy, XpansionManager]:
+    empty_study = make_empty_study(tmp_path, 810)
+    study = RawStudy(id="1", path=str(empty_study.config.study_path), version="810")
+    xpansion_manager = make_xpansion_manager(empty_study)
+    xpansion_manager.create_xpansion_configuration(study)
+    return empty_study, study, xpansion_manager
+
+
 @pytest.mark.unit_test
 @pytest.mark.parametrize(
     "version, expected_output",
@@ -117,7 +125,7 @@ def test_create_configuration(tmp_path: Path, version: int, expected_output: JSO
     Test the creation of a configuration.
     """
     empty_study = make_empty_study(tmp_path, version)
-    study = RawStudy(id="1", path=empty_study.config.study_path, version=version)
+    study = RawStudy(id="1", path=str(empty_study.config.study_path), version=str(version))
     xpansion_manager = make_xpansion_manager(empty_study)
 
     with pytest.raises(ChildNotFoundError):
@@ -135,7 +143,7 @@ def test_delete_xpansion_configuration(tmp_path: Path) -> None:
     Test the deletion of a configuration.
     """
     empty_study = make_empty_study(tmp_path, 810)
-    study = RawStudy(id="1", path=empty_study.config.study_path, version=810)
+    study = RawStudy(id="1", path=str(empty_study.config.study_path), version="810")
     xpansion_manager = make_xpansion_manager(empty_study)
 
     with pytest.raises(ChildNotFoundError):
@@ -183,7 +191,7 @@ def test_get_xpansion_settings(tmp_path: Path, version: int, expected_output: JS
     """
 
     empty_study = make_empty_study(tmp_path, version)
-    study = RawStudy(id="1", path=empty_study.config.study_path, version=version)
+    study = RawStudy(id="1", path=str(empty_study.config.study_path), version=str(version))
     xpansion_manager = make_xpansion_manager(empty_study)
 
     xpansion_manager.create_xpansion_configuration(study)
@@ -197,12 +205,7 @@ def test_update_xpansion_settings(tmp_path: Path) -> None:
     """
     Test the retrieval of the xpansion settings.
     """
-
-    empty_study = make_empty_study(tmp_path, 810)
-    study = RawStudy(id="1", path=empty_study.config.study_path, version=810)
-    xpansion_manager = make_xpansion_manager(empty_study)
-
-    xpansion_manager.create_xpansion_configuration(study)
+    _, study, xpansion_manager = set_up_xpansion_manager(tmp_path)
 
     new_settings_obj = {
         "optimality_gap": 4.0,
@@ -246,10 +249,7 @@ def test_update_xpansion_settings(tmp_path: Path) -> None:
 
 @pytest.mark.unit_test
 def test_add_candidate(tmp_path: Path) -> None:
-    empty_study = make_empty_study(tmp_path, 810)
-    study = RawStudy(id="1", path=empty_study.config.study_path, version=810)
-    xpansion_manager = make_xpansion_manager(empty_study)
-    xpansion_manager.create_xpansion_configuration(study)
+    empty_study, study, xpansion_manager = set_up_xpansion_manager(tmp_path)
 
     actual = empty_study.tree.get(["user", "expansion", "candidates"])
     assert actual == {}
@@ -298,10 +298,7 @@ def test_add_candidate(tmp_path: Path) -> None:
 
 @pytest.mark.unit_test
 def test_get_candidate(tmp_path: Path) -> None:
-    empty_study = make_empty_study(tmp_path, 810)
-    study = RawStudy(id="1", path=empty_study.config.study_path, version=810)
-    xpansion_manager = make_xpansion_manager(empty_study)
-    xpansion_manager.create_xpansion_configuration(study)
+    empty_study, study, xpansion_manager = set_up_xpansion_manager(tmp_path)
 
     assert empty_study.tree.get(["user", "expansion", "candidates"]) == {}
 
@@ -334,10 +331,7 @@ def test_get_candidate(tmp_path: Path) -> None:
 
 @pytest.mark.unit_test
 def test_get_candidates(tmp_path: Path) -> None:
-    empty_study = make_empty_study(tmp_path, 810)
-    study = RawStudy(id="1", path=empty_study.config.study_path, version=810)
-    xpansion_manager = make_xpansion_manager(empty_study)
-    xpansion_manager.create_xpansion_configuration(study)
+    empty_study, study, xpansion_manager = set_up_xpansion_manager(tmp_path)
 
     assert empty_study.tree.get(["user", "expansion", "candidates"]) == {}
 
@@ -372,10 +366,7 @@ def test_get_candidates(tmp_path: Path) -> None:
 
 @pytest.mark.unit_test
 def test_update_candidates(tmp_path: Path) -> None:
-    empty_study = make_empty_study(tmp_path, 810)
-    study = RawStudy(id="1", path=empty_study.config.study_path, version=810)
-    xpansion_manager = make_xpansion_manager(empty_study)
-    xpansion_manager.create_xpansion_configuration(study)
+    empty_study, study, xpansion_manager = set_up_xpansion_manager(tmp_path)
 
     assert empty_study.tree.get(["user", "expansion", "candidates"]) == {}
 
@@ -406,10 +397,7 @@ def test_update_candidates(tmp_path: Path) -> None:
 
 @pytest.mark.unit_test
 def test_delete_candidate(tmp_path: Path) -> None:
-    empty_study = make_empty_study(tmp_path, 810)
-    study = RawStudy(id="1", path=empty_study.config.study_path, version=810)
-    xpansion_manager = make_xpansion_manager(empty_study)
-    xpansion_manager.create_xpansion_configuration(study)
+    empty_study, study, xpansion_manager = set_up_xpansion_manager(tmp_path)
 
     assert empty_study.tree.get(["user", "expansion", "candidates"]) == {}
 
@@ -442,10 +430,7 @@ def test_delete_candidate(tmp_path: Path) -> None:
 
 @pytest.mark.unit_test
 def test_update_constraints(tmp_path: Path) -> None:
-    empty_study = make_empty_study(tmp_path, 810)
-    study = RawStudy(id="1", path=empty_study.config.study_path, version=810)
-    xpansion_manager = make_xpansion_manager(empty_study)
-    xpansion_manager.create_xpansion_configuration(study)
+    empty_study, study, xpansion_manager = set_up_xpansion_manager(tmp_path)
 
     with pytest.raises(XpansionFileNotFoundError):
         xpansion_manager.update_xpansion_constraints_settings(study=study, constraints_file_name="non_existent_file")
@@ -464,10 +449,7 @@ def test_update_constraints(tmp_path: Path) -> None:
 
 @pytest.mark.unit_test
 def test_add_resources(tmp_path: Path) -> None:
-    empty_study = make_empty_study(tmp_path, 810)
-    study = RawStudy(id="1", path=empty_study.config.study_path, version=810)
-    xpansion_manager = make_xpansion_manager(empty_study)
-    xpansion_manager.create_xpansion_configuration(study)
+    empty_study, study, xpansion_manager = set_up_xpansion_manager(tmp_path)
 
     filename1 = "constraints1.txt"
     filename2 = "constraints2.txt"
@@ -520,10 +502,8 @@ def test_add_resources(tmp_path: Path) -> None:
 
 @pytest.mark.unit_test
 def test_list_root_resources(tmp_path: Path) -> None:
-    empty_study = make_empty_study(tmp_path, 810)
-    study = RawStudy(id="1", path=empty_study.config.study_path, version=810)
-    xpansion_manager = make_xpansion_manager(empty_study)
-    xpansion_manager.create_xpansion_configuration(study)
+    empty_study, study, xpansion_manager = set_up_xpansion_manager(tmp_path)
+
     constraints_file_content = b"0"
     constraints_file_name = "unknownfile.txt"
 
@@ -533,10 +513,7 @@ def test_list_root_resources(tmp_path: Path) -> None:
 
 @pytest.mark.unit_test
 def test_get_single_constraints(tmp_path: Path) -> None:
-    empty_study = make_empty_study(tmp_path, 810)
-    study = RawStudy(id="1", path=empty_study.config.study_path, version=810)
-    xpansion_manager = make_xpansion_manager(empty_study)
-    xpansion_manager.create_xpansion_configuration(study)
+    empty_study, study, xpansion_manager = set_up_xpansion_manager(tmp_path)
 
     constraints_file_content = b"0"
     constraints_file_name = "constraints.txt"
@@ -550,11 +527,17 @@ def test_get_single_constraints(tmp_path: Path) -> None:
 
 
 @pytest.mark.unit_test
+def test_get_settings_without_sensitivity(tmp_path: Path) -> None:
+    empty_study, study, xpansion_manager = set_up_xpansion_manager(tmp_path)
+
+    empty_study.tree.delete(["user", "expansion", "sensitivity"])
+    # should not fail even if the folder doesn't exist as it's optional
+    xpansion_manager.get_xpansion_settings(study)
+
+
+@pytest.mark.unit_test
 def test_get_all_constraints(tmp_path: Path) -> None:
-    empty_study = make_empty_study(tmp_path, 810)
-    study = RawStudy(id="1", path=empty_study.config.study_path, version=810)
-    xpansion_manager = make_xpansion_manager(empty_study)
-    xpansion_manager.create_xpansion_configuration(study)
+    _, study, xpansion_manager = set_up_xpansion_manager(tmp_path)
 
     filename1 = "constraints1.txt"
     filename2 = "constraints2.txt"
@@ -576,10 +559,7 @@ def test_get_all_constraints(tmp_path: Path) -> None:
 
 @pytest.mark.unit_test
 def test_add_capa(tmp_path: Path) -> None:
-    empty_study = make_empty_study(tmp_path, 810)
-    study = RawStudy(id="1", path=empty_study.config.study_path, version=810)
-    xpansion_manager = make_xpansion_manager(empty_study)
-    xpansion_manager.create_xpansion_configuration(study)
+    empty_study, study, xpansion_manager = set_up_xpansion_manager(tmp_path)
 
     filename1 = "capa1.txt"
     filename2 = "capa2.txt"
@@ -610,10 +590,7 @@ def test_add_capa(tmp_path: Path) -> None:
 
 @pytest.mark.unit_test
 def test_delete_capa(tmp_path: Path) -> None:
-    empty_study = make_empty_study(tmp_path, 810)
-    study = RawStudy(id="1", path=empty_study.config.study_path, version=810)
-    xpansion_manager = make_xpansion_manager(empty_study)
-    xpansion_manager.create_xpansion_configuration(study)
+    empty_study, study, xpansion_manager = set_up_xpansion_manager(tmp_path)
 
     filename1 = "capa1.txt"
     filename2 = "capa2.txt"
@@ -636,10 +613,7 @@ def test_delete_capa(tmp_path: Path) -> None:
 
 @pytest.mark.unit_test
 def test_get_single_capa(tmp_path: Path) -> None:
-    empty_study = make_empty_study(tmp_path, 810)
-    study = RawStudy(id="1", path=empty_study.config.study_path, version=810)
-    xpansion_manager = make_xpansion_manager(empty_study)
-    xpansion_manager.create_xpansion_configuration(study)
+    _, study, xpansion_manager = set_up_xpansion_manager(tmp_path)
 
     filename1 = "capa1.txt"
     filename2 = "capa2.txt"
@@ -664,10 +638,7 @@ def test_get_single_capa(tmp_path: Path) -> None:
 
 @pytest.mark.unit_test
 def test_get_all_capa(tmp_path: Path) -> None:
-    empty_study = make_empty_study(tmp_path, 810)
-    study = RawStudy(id="1", path=empty_study.config.study_path, version=810)
-    xpansion_manager = make_xpansion_manager(empty_study)
-    xpansion_manager.create_xpansion_configuration(study)
+    _, study, xpansion_manager = set_up_xpansion_manager(tmp_path)
 
     filename1 = "capa1.txt"
     filename2 = "capa2.txt"
