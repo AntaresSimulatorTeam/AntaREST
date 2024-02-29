@@ -365,7 +365,7 @@ class XpansionManager:
         logger.info(f"Getting xpansion settings for study '{study.id}'")
         file_study = self.study_storage_service.get_storage(study).get_raw(study)
         config_obj = file_study.tree.get(["user", "expansion", "settings"])
-        with contextlib.suppress(KeyError):
+        with contextlib.suppress(ChildNotFoundError):
             config_obj["sensitivity_config"] = file_study.tree.get(
                 ["user", "expansion", "sensitivity", "sensitivity_in"]
             )
