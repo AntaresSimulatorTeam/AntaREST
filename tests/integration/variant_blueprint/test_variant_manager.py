@@ -5,16 +5,18 @@ from starlette.testclient import TestClient
 from antarest.core.tasks.model import TaskDTO, TaskStatus
 
 
+def _set_up_variant_manager(client: TestClient, admin_access_token: str) -> str:
+    admin_headers = {"Authorization": f"Bearer {admin_access_token}"}
+    base_study_res = client.post("/v1/studies?name=foo", headers=admin_headers)
+    base_study_id = base_study_res.json()
+    res = client.post(f"/v1/studies/{base_study_id}/variants?name=foo", headers=admin_headers)
+    variant_id = res.json()
+    return admin_headers, base_study_id, variant_id
+
+
 def test_variant_manager(client: TestClient, admin_access_token: str, study_id: str, caplog) -> None:
     with caplog.at_level(level=logging.WARNING):
-        admin_headers = {"Authorization": f"Bearer {admin_access_token}"}
-
-        base_study_res = client.post("/v1/studies?name=foo", headers=admin_headers)
-
-        base_study_id = base_study_res.json()
-
-        res = client.post(f"/v1/studies/{base_study_id}/variants?name=foo", headers=admin_headers)
-        variant_id = res.json()
+        admin_headers, base_study_id, variant_id = _set_up_variant_manager(client, admin_access_token)
 
         client.post(f"/v1/launcher/run/{variant_id}", headers=admin_headers)
 
@@ -186,3 +188,31 @@ def test_variant_manager(client: TestClient, admin_access_token: str, study_id: 
 
         res = client.get(f"/v1/studies/{variant_id}", headers=admin_headers)
         assert res.status_code == 404
+
+
+def test_comments(client: TestClient, admin_access_token: str, tmp_path: str) -> None:
+    admin_headers, _, variant_id = _set_up_variant_manager(client, admin_access_token)
+
+    # Put comments
+    comment = "updated comment"
+    res = client.put(f"/v1/studies/{variant_id}/comments", json={"comments": comment}, headers=admin_headers)
+    assert res.status_code == 204
+
+    # Asserts comments are updated
+    res = client.get(f"/v1/studies/{variant_id}/comments", headers=admin_headers)
+    assert res.json() == comment
+
+    # Generates the study
+    res = client.put(f"/v1/studies/{variant_id}/generate?denormalize=false&from_scratch=true", headers=admin_headers)
+    task_id = res.json()
+    # Wait for task completion
+    res = client.get(f"/v1/tasks/{task_id}", headers=admin_headers, params={"wait_for_completion": True})
+    assert res.status_code == 200
+    task_result = TaskDTO.parse_obj(res.json())
+    assert task_result.status == TaskStatus.COMPLETED
+    assert task_result.result is not None
+    assert task_result.result.success
+
+    # Asserts comments did not disappear
+    res = client.get(f"/v1/studies/{variant_id}/comments", headers=admin_headers)
+    assert res.json() == comment
