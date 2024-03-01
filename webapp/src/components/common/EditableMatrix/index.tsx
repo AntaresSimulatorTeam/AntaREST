@@ -178,7 +178,7 @@ function EditableMatrix(props: PropTypes) {
         height="100%"
         className="editableMatrix"
         colHeaders
-        rowHeaderWidth={matrixRowNames ? 150 : undefined}
+        rowHeaderWidth={rowNames ? 150 : 50}
         afterChange={(change, source) =>
           onUpdate && handleSlice(change || [], source)
         }
