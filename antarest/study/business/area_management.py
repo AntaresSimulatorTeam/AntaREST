@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from pydantic import BaseModel
 
-from antarest.core.exceptions import LayerNotAllowedToBeDeleted, LayerNotFound
+from antarest.core.exceptions import DuplicateAreaName, LayerNotAllowedToBeDeleted, LayerNotFound
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import Patch, PatchArea, PatchCluster, RawStudy, Study
 from antarest.study.repository import StudyMetadataRepository
@@ -318,12 +318,21 @@ class AreaManager:
 
     def create_area(self, study: Study, area_creation_info: AreaCreationDTO) -> AreaInfoDTO:
         file_study = self.storage_service.get_storage(study).get_raw(study)
+
+        # check if area already exists
+        existing_area_ids = set(file_study.config.areas)
+        area_id = transform_name_to_id(area_creation_info.name)
+        if area_id in existing_area_ids:
+            raise DuplicateAreaName(area_creation_info.name)
+
+        # Create area and apply changes in the study
         command = CreateArea(
             area_name=area_creation_info.name,
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
         )
         execute_or_add_commands(study, file_study, [command], self.storage_service)
-        area_id = transform_name_to_id(area_creation_info.name)
+
+        # Update metadata
         patch = self.patch_service.get(study)
         patch.areas = patch.areas or {}
         patch.areas[area_id] = area_creation_info.metadata or PatchArea()
