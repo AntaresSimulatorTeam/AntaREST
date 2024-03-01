@@ -32,7 +32,6 @@ function HydroMatrix({ type }: Props) {
         fetchFn={hydroMatrix.fetchFn}
         disableEdit={hydroMatrix.disableEdit}
         enablePercentDisplay={hydroMatrix.enablePercentDisplay}
-        stretch={hydroMatrix.stretch}
       />
     </Root>
   );

@@ -28,7 +28,6 @@ interface PropTypes {
   rowNames?: string[];
   computStats?: MatrixStats;
   isPercentDisplayEnabled?: boolean;
-  stretch?: boolean;
 }
 
 type CellType = Array<number | string | boolean>;
@@ -56,7 +55,6 @@ function EditableMatrix(props: PropTypes) {
     rowNames,
     computStats,
     isPercentDisplayEnabled = false,
-    stretch = true,
   } = props;
   const { data = [], columns = [], index = [] } = matrix;
   const prependIndex = index.length > 0 && matrixTime;
