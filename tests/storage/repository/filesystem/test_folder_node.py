@@ -1,9 +1,14 @@
+import json
+import textwrap
+import typing as t
 from pathlib import Path
 from unittest.mock import Mock
 
 import pytest
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import ChildNotFoundError
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
@@ -11,7 +16,7 @@ from antarest.study.storage.rawstudy.model.filesystem.root.input.areas.list impo
 from tests.storage.repository.filesystem.utils import TestMiddleNode, TestSubNode
 
 
-def build_tree() -> INode:
+def build_tree() -> INode[t.Any, t.Any, t.Any]:
     config = Mock()
     config.path.exist.return_value = True
     config.zip_path = None
@@ -26,7 +31,7 @@ def build_tree() -> INode:
 
 
 @pytest.mark.unit_test
-def test_get():
+def test_get() -> None:
     tree = build_tree()
 
     res = tree.get(["input"])
@@ -37,7 +42,98 @@ def test_get():
 
 
 @pytest.mark.unit_test
-def test_get_depth():
+def test_get_input_areas_sets(tmp_path: Path) -> None:
+    """
+    Read the content of the `sets.ini` file in the `input/areas` directory.
+    The goal of this test is to verify the behavior of the `get` method of the `FileStudyTree` class
+    for the case where the subdirectories or the INI file do not exist.
+    """
+
+    study_factory = StudyFactory(Mock(), Mock(), Mock())
+    study_id = "c5633166-afe1-4ce5-9305-75bc2779aad6"
+    file_study = study_factory.create_from_fs(tmp_path, study_id, use_cache=False)
+    url = ["input", "areas", "sets"]  # sets.ini
+
+    # Empty study tree structure
+    actual = file_study.tree.get(url)
+    assert actual == {}
+
+    # Add the "settings" directory
+    tmp_path.joinpath("input").mkdir()
+    actual = file_study.tree.get(url)
+    assert actual == {}
+
+    # Add the "areas" directory
+    tmp_path.joinpath("input/areas").mkdir()
+    actual = file_study.tree.get(url)
+    assert actual == {}
+
+    # Add the "sets.ini" file
+    sets = textwrap.dedent(
+        """\
+        [all areas]
+        caption = All areas
+        comments = Spatial aggregates on all areas
+        output = false
+        apply-filter = add-all
+        """
+    )
+    tmp_path.joinpath("input/areas/sets.ini").write_text(sets)
+    actual = file_study.tree.get(url)
+    expected = {
+        "all areas": {
+            "caption": "All areas",
+            "comments": "Spatial aggregates on all areas",
+            "output": False,
+            "apply-filter": "add-all",
+        }
+    }
+    assert actual == expected
+
+
+@pytest.mark.unit_test
+def test_get_user_expansion_sensitivity_sensitivity_in(tmp_path: Path) -> None:
+    """
+    Read the content of the `sensitivity_in.json` file in the `user/expansion/sensitivity` directory.
+    The goal of this test is to verify the behavior of the `get` method of the `FileStudyTree` class
+    for the case where the subdirectories or the JSON file do not exist.
+    """
+
+    study_factory = StudyFactory(Mock(), Mock(), Mock())
+    study_id = "616ac707-c108-47af-9e02-c37cc043511a"
+    file_study = study_factory.create_from_fs(tmp_path, study_id, use_cache=False)
+    url = ["user", "expansion", "sensitivity", "sensitivity_in"]
+
+    # Empty study tree structure
+    # fixme: bad error message
+    with pytest.raises(ChildNotFoundError, match=r"'expansion' not a child of User"):
+        file_study.tree.get(url)
+
+    # Add the "user" directory
+    tmp_path.joinpath("user").mkdir()
+    with pytest.raises(ChildNotFoundError, match=r"'expansion' not a child of User"):
+        file_study.tree.get(url)
+
+    # Add the "expansion" directory
+    tmp_path.joinpath("user/expansion").mkdir()
+    with pytest.raises(ChildNotFoundError, match=r"'sensitivity' not a child of Expansion"):
+        file_study.tree.get(url)
+
+    # Add the "sensitivity" directory
+    tmp_path.joinpath("user/expansion/sensitivity").mkdir()
+    # fixme: we should have `{}`
+    with pytest.raises(FileNotFoundError, match=r"No such file or directory"):
+        file_study.tree.get(url)
+
+    # Add the "sensitivity_in.json" file
+    sensitivity_obj = {"epsilon": 10000.0, "projection": ["pv", "battery"], "capex": True}
+    tmp_path.joinpath("user/expansion/sensitivity/sensitivity_in.json").write_text(json.dumps(sensitivity_obj))
+    actual_obj = file_study.tree.get(url)
+    assert actual_obj == sensitivity_obj
+
+
+@pytest.mark.unit_test
+def test_get_depth() -> None:
     config = Mock()
     config.path.exist.return_value = True
     tree = TestMiddleNode(
@@ -46,7 +142,7 @@ def test_get_depth():
         children={"childA": build_tree(), "childB": build_tree()},
     )
 
-    expected = {
+    expected: t.Dict[str, t.Dict[str, t.Any]] = {
         "childA": {},
         "childB": {},
     }
@@ -54,7 +150,7 @@ def test_get_depth():
     assert tree.get(depth=1) == expected
 
 
-def test_validate():
+def test_validate() -> None:
     config = Mock()
     config.path.exist.return_value = True
     tree = TestMiddleNode(
@@ -77,7 +173,7 @@ def test_validate():
 
 
 @pytest.mark.unit_test
-def test_save():
+def test_save() -> None:
     tree = build_tree()
 
     tree.save(105, ["output"])
@@ -88,7 +184,7 @@ def test_save():
 
 
 @pytest.mark.unit_test
-def test_filter():
+def test_filter() -> None:
     tree = build_tree()
 
     expected_json = {
@@ -100,7 +196,7 @@ def test_filter():
     assert tree.get(["*", "value"]) == expected_json
 
 
-def test_delete(tmp_path: Path):
+def test_delete(tmp_path: Path) -> None:
     folder_node = tmp_path / "folder_node"
     folder_node.mkdir()
     sub_folder = folder_node / "sub_folder"
@@ -124,7 +220,7 @@ def test_delete(tmp_path: Path):
     assert folder_node.exists()
     assert sub_folder.exists()
 
-    config = FileStudyTreeConfig(study_path=tmp_path, path=folder_node, study_id=-1, version=-1)
+    config = FileStudyTreeConfig(study_path=tmp_path, path=folder_node, study_id="-1", version=-1)
     tree_node = TestMiddleNode(
         context=Mock(),
         config=config,
