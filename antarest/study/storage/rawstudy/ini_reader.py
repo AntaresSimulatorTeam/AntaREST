@@ -109,7 +109,7 @@ class IniReader(IReader):
                     sections = self._parse_ini_file(f)
             except FileNotFoundError:
                 # If the file is missing, an empty dictionary is returned.
-                # This is required tp mimic the behavior of `configparser.ConfigParser`.
+                # This is required to mimic the behavior of `configparser.ConfigParser`.
                 return {}
 
         elif hasattr(path, "read"):

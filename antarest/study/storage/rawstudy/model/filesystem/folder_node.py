@@ -1,7 +1,7 @@
 import shutil
 from abc import ABC, abstractmethod
 from http import HTTPStatus
-from typing import Dict, List, Optional, Tuple, Union
+from typing import List, Optional, Tuple, Union
 
 from fastapi import HTTPException
 
@@ -208,6 +208,6 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
         for name in names:
             if name not in children:
                 raise ChildNotFoundError(f"'{name}' not a child of {self.__class__.__name__}")
-            if type(children[name]) != child_class:
+            if not isinstance(children[name], child_class):
                 raise FilterError("Filter selection has different classes")
         return names, sub_url
