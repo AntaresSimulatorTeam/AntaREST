@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from typing import Any, Dict, Optional, cast
+import typing as t
 
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.ini_reader import IReader
@@ -11,13 +11,41 @@ from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFi
 
 
 class JsonReader(IReader):
-    def read(self, path: Any) -> JSON:
-        if isinstance(path, Path):
-            return cast(JSON, json.loads(path.read_text(encoding="utf-8")))
-        return cast(JSON, json.loads(path))
+    """
+    JSON file reader.
+    """
+
+    def read(self, path: t.Any) -> JSON:
+        content: t.Union[str, bytes]
+
+        if isinstance(path, (Path, str)):
+            try:
+                with open(path, mode="r", encoding="utf-8") as f:
+                    content = f.read()
+            except FileNotFoundError:
+                # If the file is missing, an empty dictionary is returned,
+                # to mimic the behavior of `configparser.ConfigParser`.
+                return {}
+
+        elif hasattr(path, "read"):
+            with path:
+                content = path.read()
+
+        else:  # pragma: no cover
+            raise TypeError(repr(type(path)))
+
+        try:
+            return t.cast(JSON, json.loads(content))
+        except json.JSONDecodeError as exc:
+            err_msg = f"Failed to parse JSON file '{path}'"
+            raise ValueError(err_msg) from exc
 
 
 class JsonWriter(IniWriter):
+    """
+    JSON file writer.
+    """
+
     def write(self, data: JSON, path: Path) -> None:
         with open(path, "w") as fh:
             json.dump(data, fh)
@@ -28,6 +56,6 @@ class JsonFileNode(IniFileNode):
         self,
         context: ContextServer,
         config: FileStudyTreeConfig,
-        types: Optional[Dict[str, Any]] = None,
+        types: t.Optional[t.Dict[str, t.Any]] = None,
     ) -> None:
         super().__init__(context, config, types, JsonReader(), JsonWriter())

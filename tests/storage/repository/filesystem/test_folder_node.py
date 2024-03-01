@@ -121,9 +121,8 @@ def test_get_user_expansion_sensitivity_sensitivity_in(tmp_path: Path) -> None:
 
     # Add the "sensitivity" directory
     tmp_path.joinpath("user/expansion/sensitivity").mkdir()
-    # fixme: we should have `{}`
-    with pytest.raises(FileNotFoundError, match=r"No such file or directory"):
-        file_study.tree.get(url)
+    actual = file_study.tree.get(url)
+    assert actual == {}
 
     # Add the "sensitivity_in.json" file
     sensitivity_obj = {"epsilon": 10000.0, "projection": ["pv", "battery"], "capex": True}
