@@ -287,9 +287,11 @@ export const launchStudy = async (
   return res.data;
 };
 
-interface LauncherLoadDTO {
-  slurm: number;
-  local: number;
+interface LauncherMetrics {
+  allocatedCpuRate: number;
+  clusterLoadRate: number;
+  nbQueuedJobs: number;
+  status: string;
 }
 
 export const getLauncherVersions = async (): Promise<string[]> => {
@@ -302,7 +304,7 @@ export const getLauncherCores = async (): Promise<Record<string, number>> => {
   return res.data;
 };
 
-export const getLauncherLoad = async (): Promise<LauncherLoadDTO> => {
+export const getLauncherMetrics = async (): Promise<LauncherMetrics> => {
   const res = await client.get("/v1/launcher/load");
   return res.data;
 };

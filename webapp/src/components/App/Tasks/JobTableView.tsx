@@ -19,6 +19,7 @@ import {
   Checkbox,
   FormControlLabel,
   Typography,
+  Skeleton,
 } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import RefreshIcon from "@mui/icons-material/Refresh";
@@ -27,8 +28,9 @@ import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import { grey } from "@mui/material/colors";
 import { TaskView, TaskType } from "../../../common/types";
 import usePromiseWithSnackbarError from "../../../hooks/usePromiseWithSnackbarError";
-import { getLauncherLoad } from "../../../services/api/study";
+import { getLauncherMetrics } from "../../../services/api/study";
 import LinearProgressWithLabel from "../../common/LinearProgressWithLabel";
+import UsePromiseCond from "../../common/utils/UsePromiseCond";
 
 interface PropType {
   content: TaskView[];
@@ -44,11 +46,13 @@ function JobTableView(props: PropType) {
     useState<boolean>(false);
   const [currentContent, setCurrentContent] = useState<TaskView[]>(content);
 
-  const { data: load, reload: reloadLauncherLoad } =
-    usePromiseWithSnackbarError(() => getLauncherLoad(), {
+  const laucherMetrics = usePromiseWithSnackbarError(
+    () => getLauncherMetrics(),
+    {
       errorMessage: t("study.error.launchLoad"),
       deps: [],
-    });
+    },
+  );
 
   const applyFilter = useCallback(
     (taskList: TaskView[]) => {
@@ -109,21 +113,38 @@ function JobTableView(props: PropType) {
       >
         <Box
           sx={{
-            width: "30%",
+            width: "60%",
             display: "flex",
-            justifyContent: "flex-start",
-            alignItems: "flex-end",
+            alignContent: "center",
+            alignSelf: "center",
+            gap: 1,
           }}
         >
-          <Typography sx={{ mr: 2 }}>{t("study.clusterLoad")}</Typography>
-          {load && (
-            <LinearProgressWithLabel
-              indicator={load.slurm * 100}
-              size="60%"
-              tooltip={t("study.clusterLoad")}
-              gradiant
-            />
-          )}
+          <UsePromiseCond
+            response={laucherMetrics}
+            ifResolved={(data) => (
+              <>
+                <Typography>{t("study.allocatedCpuRate")}</Typography>
+                <LinearProgressWithLabel
+                  indicator={Math.floor(data.allocatedCpuRate)}
+                  size="20%"
+                  tooltip={t("study.allocatedCpuRate")}
+                  gradiant
+                />
+                <Typography>{t("study.clusterLoadRate")}</Typography>
+                <LinearProgressWithLabel
+                  indicator={Math.floor(data.clusterLoadRate)}
+                  size="20%"
+                  tooltip={t("study.clusterLoadRate")}
+                  gradiant
+                />
+                <Typography>
+                  {t("study.nbQueuedJobs")}: {data.nbQueuedJobs}
+                </Typography>
+              </>
+            )}
+            ifPending={() => <Skeleton width={300} />}
+          />
         </Box>
         <Box display="flex" alignItems="center">
           <Tooltip title={t("tasks.refresh") as string} sx={{ mr: 4 }}>
@@ -131,7 +152,7 @@ function JobTableView(props: PropType) {
               color="primary"
               onClick={() => {
                 refresh();
-                reloadLauncherLoad();
+                laucherMetrics.reload();
               }}
               variant="outlined"
             >
