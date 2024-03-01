@@ -178,7 +178,6 @@ function EditableMatrix(props: PropTypes) {
         data={grid}
         width="100%"
         height="100%"
-        stretchH={stretch ? "all" : "none"}
         className="editableMatrix"
         colHeaders
         rowHeaderWidth={matrixRowNames ? 150 : undefined}
