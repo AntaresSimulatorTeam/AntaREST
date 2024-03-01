@@ -380,7 +380,6 @@ function ResultDetails() {
                       matrix={matrix}
                       matrixTime={false}
                       rowNames={dateTimeFromIndex}
-                      stretch={false}
                       readOnly
                     />
                   )
