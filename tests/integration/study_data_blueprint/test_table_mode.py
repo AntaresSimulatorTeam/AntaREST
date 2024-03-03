@@ -439,3 +439,82 @@ class TestTableMode:
         }
         actual = res.json()
         assert actual == expected
+
+        # Table Mode - Binding Constraints
+        # ================================
+
+        # Prepare data for binding constraints tests
+        # Create a cluster in fr
+        fr_id = "fr"
+        res = client.post(
+            f"/v1/studies/{study_id}/areas/{fr_id}/clusters/thermal",
+            headers=user_headers,
+            json={
+                "name": "Cluster 1",
+                "group": "Nuclear",
+            },
+        )
+        assert res.status_code == 200, res.json()
+        cluster_id = res.json()["id"]
+        assert cluster_id == "Cluster 1"
+
+        # Create Binding Constraints
+        res = client.post(
+            f"/v1/studies/{study_id}/bindingconstraints",
+            json={
+                "name": "Binding Constraint 1",
+                "enabled": True,
+                "time_step": "hourly",
+                "operator": "less",
+                "coeffs": {},
+            },
+            headers=user_headers,
+        )
+        assert res.status_code == 200, res.json()
+
+        res = client.post(
+            f"/v1/studies/{study_id}/bindingconstraints",
+            json={
+                "name": "Binding Constraint 2",
+                "enabled": False,
+                "time_step": "daily",
+                "operator": "greater",
+                "coeffs": {},
+                "comments": "This is a binding constraint",
+                "filter_synthesis": "hourly, daily, weekly",
+            },
+            headers=user_headers,
+        )
+        assert res.status_code == 200, res.json()
+
+        res = client.get(
+            f"/v1/studies/{study_id}/tablemode",
+            headers=user_headers,
+            params={
+                "table_type": "binding constraint",
+                "columns": "",
+            },
+        )
+        assert res.status_code == 200, res.json()
+        expected = {
+            "binding constraint 1": {
+                "comments": "",
+                "enabled": True,
+                "filterSynthesis": "hourly, daily, weekly, monthly, " "annual",
+                "filterYearByYear": "hourly, daily, weekly, monthly, " "annual",
+                "name": "Binding Constraint 1",
+                "operator": "less",
+                "timeStep": "hourly",
+            },
+            "binding constraint 2": {
+                "comments": "This is a binding constraint",
+                "enabled": False,
+                "filterSynthesis": "hourly, daily, weekly",
+                "filterYearByYear": "hourly, daily, weekly, monthly, " "annual",
+                "name": "Binding Constraint 2",
+                "operator": "greater",
+                "timeStep": "daily",
+            },
+        }
+        actual = res.json()
+        assert actual == expected

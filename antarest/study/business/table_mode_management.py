@@ -702,7 +702,10 @@ class TableModeManager:
                 for storage in storages
             }
         elif table_type == TableTemplateType.BINDING_CONSTRAINT:
-            pass
+            bc_map = self._binding_constraint_manager.get_all_binding_constraints_props(study)
+            data = {bc_id: bc.dict(by_alias=True) for bc_id, bc in bc_map.items()}
+        else:  # pragma: no cover
+            raise NotImplementedError(f"Table type {table_type} not implemented")
 
         df = pd.DataFrame.from_dict(data, orient="index")
         if columns:
