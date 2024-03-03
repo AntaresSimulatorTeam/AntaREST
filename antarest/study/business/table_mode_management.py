@@ -724,41 +724,6 @@ class TableModeManager:
 
         return obj
 
-        file_study = self.storage_service.get_storage(study).get_raw(study)
-        columns_model = COLUMNS_MODELS_BY_TYPE[table_type]
-        glob_object = _get_glob_object(file_study, table_type)
-        schema_columns = columns_model.schema()["properties"]
-
-        def get_column_value(col: str, data: t.Dict[str, t.Any]) -> t.Any:
-            schema = schema_columns[col]
-            relative_path = _get_relative_path(table_type, schema["path"])
-            return _get_value(relative_path, data, schema["default"])
-
-        if table_type == TableTemplateType.AREA:
-            return {
-                area_id: columns_model.construct(
-                    **{col: get_column_value(col, data) for col in columns}
-                )  # type: ignore
-                for area_id, data in glob_object.items()
-            }
-
-        if table_type == TableTemplateType.BINDING_CONSTRAINT:
-            return {
-                data["id"]: columns_model.construct(
-                    **{col: get_column_value(col, data) for col in columns}
-                )  # type: ignore
-                for data in glob_object.values()
-            }
-
-        obj: t.Dict[str, t.Any] = {}
-        for id_1, value_1 in glob_object.items():
-            for id_2, value_2 in value_1.items():
-                obj[f"{id_1} / {id_2}"] = columns_model.construct(
-                    **{col: get_column_value(col, value_2) for col in columns}
-                )
-
-        return obj
-
     def set_table_data(
         self,
         study: RawStudy,
