@@ -4,7 +4,7 @@ Object model used to read and update binding constraint configuration.
 import json
 import typing as t
 
-from pydantic import Field, validator, root_validator
+from pydantic import Field, root_validator, validator
 
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import validate_filtering
@@ -53,7 +53,7 @@ class AbstractTerm(IniProperties):
     """
 
     weight: float = 0.0
-    offset: float = 0.0
+    offset: int = 0
 
     def __str__(self) -> str:
         """String representation used in configuration files."""
@@ -231,7 +231,7 @@ class BindingConstraintProperties(IniProperties):
       'operator': <BindingConstraintOperator.LESS: 'less'>,
       'terms': {'at.at_dsr 0': {'area': 'at',
                                 'cluster': 'at_dsr 0',
-                                'offset': 0.0,
+                                'offset': 0,
                                 'weight': 6.5}},
       'type': <BindingConstraintFrequency.DAILY: 'daily'>},
      {'comments': '',
@@ -243,7 +243,7 @@ class BindingConstraintProperties(IniProperties):
       'operator': <BindingConstraintOperator.GREATER: 'greater'>,
       'terms': {'be.be_dsr 0': {'area': 'be',
                                 'cluster': 'be_dsr 0',
-                                'offset': 0.0,
+                                'offset': 0,
                                 'weight': 8.3}},
       'type': <BindingConstraintFrequency.DAILY: 'daily'>}]
     """
@@ -268,7 +268,7 @@ class BindingConstraintProperties(IniProperties):
         ...     "at.cl1": 1,
         ...     "de.cl2": "-88.77%7",
         ...     "at%de": -0.06,
-        ...     "at%es": "8.5%0.5",
+        ...     "at%es": "8.5%5",
         ... }
 
         >>> bc = BindingConstraintProperties.BindingConstraintSection.parse_obj(obj)
@@ -282,19 +282,16 @@ class BindingConstraintProperties(IniProperties):
          'operator': <BindingConstraintOperator.LESS: 'less'>,
          'terms': {'at%de': {'area1': 'at',
                              'area2': 'de',
-                             'offset': 0.0,
+                             'offset': 0,
                              'weight': -0.06},
-                   'at%es': {'area1': 'at',
-                             'area2': 'es',
-                             'offset': 0.5,
-                             'weight': 8.5},
+                   'at%es': {'area1': 'at', 'area2': 'es', 'offset': 5, 'weight': 8.5},
                    'at.cl1': {'area': 'at',
                               'cluster': 'cl1',
-                              'offset': 0.0,
+                              'offset': 0,
                               'weight': 1.0},
                    'de.cl2': {'area': 'de',
                               'cluster': 'cl2',
-                              'offset': 7.0,
+                              'offset': 7,
                               'weight': -88.77}},
          'type': <BindingConstraintFrequency.HOURLY: 'hourly'>}
 
@@ -308,10 +305,10 @@ class BindingConstraintProperties(IniProperties):
 
         >>> pprint(bc2.to_config())
         {'at%de': '-0.06',
-         'at%es': '8.5%0.5',
+         'at%es': '8.5%5',
          'at.cl1': '1.0',
          'comments': '',
-         'de.cl2': '-88.77%7.0',
+         'de.cl2': '-88.77%7',
          'enabled': True,
          'filter-synthesis': 'hourly, annual',
          'filter-year-by-year': '',
@@ -324,7 +321,7 @@ class BindingConstraintProperties(IniProperties):
         id: str
         name: str
         enabled: bool = True
-        type: BindingConstraintFrequency = BindingConstraintFrequency.HOURLY
+        time_step: BindingConstraintFrequency = Field(default=BindingConstraintFrequency.HOURLY, alias="type")
         operator: BindingConstraintOperator = BindingConstraintOperator.EQUAL
         comments: str = ""
         filter_synthesis: str = Field(default="hourly, daily, weekly, monthly, annual", alias="filter-synthesis")
@@ -343,7 +340,7 @@ class BindingConstraintProperties(IniProperties):
                 "id": values.pop("id", None),
                 "name": values.pop("name", None),
                 "enabled": values.pop("enabled", None),
-                "type": values.pop("type", None),
+                "type": values.pop("time_step", None),
                 "operator": values.pop("operator", None),
                 "comments": values.pop("comments", None),
                 "filter-synthesis": values.pop("filter_synthesis", None),
@@ -352,6 +349,8 @@ class BindingConstraintProperties(IniProperties):
 
             if new_values["id"] is None:
                 new_values["id"] = _generate_bc_id(new_values["name"])
+            if new_values["type"] is None:
+                new_values["type"] = values.pop("type", None)
             if new_values["filter-synthesis"] is None:
                 new_values["filter-synthesis"] = values.pop("filter-synthesis", None)
             if new_values["filter-year-by-year"] is None:
@@ -386,7 +385,7 @@ class BindingConstraintProperties(IniProperties):
                 "id": self.id,
                 "name": self.name,
                 "enabled": self.enabled,
-                "type": self.type,
+                "type": self.time_step,
                 "operator": self.operator,
                 "comments": self.comments,
                 "filter-synthesis": self.filter_synthesis,
