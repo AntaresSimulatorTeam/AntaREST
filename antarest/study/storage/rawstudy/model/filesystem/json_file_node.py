@@ -1,6 +1,6 @@
 import json
-from pathlib import Path
 import typing as t
+from pathlib import Path
 
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.ini_reader import IReader

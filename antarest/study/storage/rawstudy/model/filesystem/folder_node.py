@@ -1,7 +1,7 @@
 import shutil
+import typing as t
 from abc import ABC, abstractmethod
 from http import HTTPStatus
-from typing import List, Optional, Tuple, Union
 
 from fastapi import HTTPException
 
@@ -38,7 +38,7 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
         self,
         context: ContextServer,
         config: FileStudyTreeConfig,
-        children_glob_exceptions: Optional[List[str]] = None,
+        children_glob_exceptions: t.Optional[t.List[str]] = None,
     ) -> None:
         super().__init__(config)
         self.context = context
@@ -50,11 +50,11 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
 
     def _forward_get(
         self,
-        url: List[str],
+        url: t.List[str],
         depth: int = -1,
         formatted: bool = True,
         get_node: bool = False,
-    ) -> Union[JSON, INode[JSON, SUB_JSON, JSON]]:
+    ) -> t.Union[JSON, INode[JSON, SUB_JSON, JSON]]:
         children = self.build()
         names, sub_url = self.extract_child(children, url)
 
@@ -84,7 +84,7 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
 
     def _expand_get(
         self, depth: int = -1, formatted: bool = True, get_node: bool = False
-    ) -> Union[JSON, INode[JSON, SUB_JSON, JSON]]:
+    ) -> t.Union[JSON, INode[JSON, SUB_JSON, JSON]]:
         if get_node:
             return self
 
@@ -99,11 +99,11 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
 
     def _get(
         self,
-        url: Optional[List[str]] = None,
+        url: t.Optional[t.List[str]] = None,
         depth: int = -1,
         formatted: bool = True,
         get_node: bool = False,
-    ) -> Union[JSON, INode[JSON, SUB_JSON, JSON]]:
+    ) -> t.Union[JSON, INode[JSON, SUB_JSON, JSON]]:
         if url and url != [""]:
             return self._forward_get(url, depth, formatted, get_node)
         else:
@@ -111,7 +111,7 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
 
     def get(
         self,
-        url: Optional[List[str]] = None,
+        url: t.Optional[t.List[str]] = None,
         depth: int = -1,
         expanded: bool = False,
         formatted: bool = True,
@@ -122,7 +122,7 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
 
     def get_node(
         self,
-        url: Optional[List[str]] = None,
+        url: t.Optional[t.List[str]] = None,
     ) -> INode[JSON, SUB_JSON, JSON]:
         output = self._get(url=url, get_node=True)
         assert isinstance(output, INode)
@@ -131,7 +131,7 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
     def save(
         self,
         data: SUB_JSON,
-        url: Optional[List[str]] = None,
+        url: t.Optional[t.List[str]] = None,
     ) -> None:
         self._assert_not_in_zipped_file()
         children = self.build()
@@ -146,7 +146,7 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
             for key in data:
                 children[key].save(data[key])
 
-    def delete(self, url: Optional[List[str]] = None) -> None:
+    def delete(self, url: t.Optional[t.List[str]] = None) -> None:
         if url and url != [""]:
             children = self.build()
             names, sub_url = self.extract_child(children, url)
@@ -158,16 +158,16 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
     def check_errors(
         self,
         data: JSON,
-        url: Optional[List[str]] = None,
+        url: t.Optional[t.List[str]] = None,
         raising: bool = False,
-    ) -> List[str]:
+    ) -> t.List[str]:
         children = self.build()
 
         if url and url != [""]:
             (name,), sub_url = self.extract_child(children, url)
             return children[name].check_errors(data, sub_url, raising)
         else:
-            errors: List[str] = []
+            errors: t.List[str] = []
             for key in data:
                 if key not in children:
                     msg = f"key={key} not in {list(children.keys())} for {self.__class__.__name__}"
@@ -186,7 +186,7 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
         for child in self.build().values():
             child.denormalize()
 
-    def extract_child(self, children: TREE, url: List[str]) -> Tuple[List[str], List[str]]:
+    def extract_child(self, children: TREE, url: t.List[str]) -> t.Tuple[t.List[str], t.List[str]]:
         names, sub_url = url[0].split(","), url[1:]
         names = (
             list(
