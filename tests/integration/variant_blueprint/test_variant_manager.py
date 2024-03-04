@@ -238,3 +238,16 @@ def test_comments(client: TestClient, admin_access_token: str, variant_id: str) 
     # Asserts comments did not disappear
     res = client.get(f"/v1/studies/{variant_id}/comments", headers=admin_headers)
     assert res.json() == comment
+
+
+def test_recursive_variant_tree(client: TestClient, admin_access_token: str):
+    admin_headers = {"Authorization": f"Bearer {admin_access_token}"}
+    base_study_res = client.post("/v1/studies?name=foo", headers=admin_headers)
+    base_study_id = base_study_res.json()
+    parent_id = base_study_res.json()
+    for k in range(150):
+        res = client.post(f"/v1/studies/{base_study_id}/variants?name=variant_{k}", headers=admin_headers)
+        base_study_id = res.json()
+    # Asserts that we do not trigger a Recursive Exception
+    res = client.get(f"/v1/studies/{parent_id}/variants", headers=admin_headers)
+    assert res.status_code == 200
