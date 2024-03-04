@@ -657,7 +657,8 @@ class LauncherService:
             for job in self.job_result_repository.get_running()
         )
 
-        cluster_load_approx = min(1.0, local_used_cpus / (os.cpu_count() or 1))
+        # The cluster load is approximated by the percentage of used CPUs.
+        cluster_load_approx = min(100.0, 100 * local_used_cpus / (os.cpu_count() or 1))
 
         return LauncherLoadDTO(
             allocated_cpu_rate=cluster_load_approx,
