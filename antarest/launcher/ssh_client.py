@@ -32,7 +32,7 @@ def execute_command(ssh_config: SSHConfigDTO, args: List[str]) -> Any:
     command = " ".join(args)
     try:
         with ssh_client(ssh_config) as client:  # type: ignore
-            stdin, stdout, stderr = client.exec_command(command, timeout=10)
+            _, stdout, stderr = client.exec_command(command, timeout=10)
             output = stdout.read().decode("utf-8").strip()
             error = stderr.read().decode("utf-8").strip()
     except (
@@ -77,6 +77,15 @@ def parse_cpu_load(sinfo_output: str) -> float:
 def calculates_slurm_load(ssh_config: SSHConfigDTO, partition: str) -> Tuple[float, float, int]:
     """
     Returns the used/oad of the SLURM cluster or local machine in percentage and the number of queued jobs.
+
+    Args:
+        ssh_config: SSH configuration to connect to the SLURM server.
+        partition: Name of the partition to query, or empty string to query all partitions.
+
+    Returns:
+        - percentage of used CPUs in the cluster, in range [0, 100]
+        - percentage of CPU load in the cluster, in range [0, 100]
+        - number of queued jobs
     """
     partition_arg = f"--partition={partition}" if partition else ""
 
