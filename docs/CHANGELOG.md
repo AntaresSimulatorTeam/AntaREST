@@ -1,6 +1,22 @@
 Antares Web Changelog
 =====================
 
+v2.16.6 (2024-03-04)
+--------------------
+
+### Features
+
+* **ui-tasks:** add launcher metrics [`#1960`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1960)
+* **ui-tasks:** auto refresh launcher metrics [`#1963`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1963)
+
+
+### Bug Fixes
+
+* **ui-results:** adjust date times for accurate frequency display [`#1960`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1960)
+* **ui-common:** matrices display issues [`#1960`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1960)
+* **ui-common:** download latest value of matrices [`#1962`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1962)
+
+
 v2.16.5 (2024-02-29)
 --------------------
 
@@ -18,7 +34,7 @@ v2.16.5 (2024-02-29)
 * **ui-hydro:** disable stretch to fix display issue on some matrices [`#1945`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1945)
 * **variants:** correct the generation of variant when a snapshot is removed [`#1947`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1947)
 * **tags:** resolve issue with `study.additional_data.patch` attribute reading [`#1944`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1944)
-* **study:** correct access to study `additional_data` (#1949) [`#1949`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1949)
+* **study:** correct access to study `additional_data` [`#1949`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1949)
 * **ui-tablemode:** create modal is frozen when submitting without column [`#1946`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1946)
 * **ui-tablemode:** 'co2' column not working [`#1952`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1952)
 * **ui:**  add missing i18n dependency [`#1954`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1954)
