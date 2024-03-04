@@ -320,9 +320,8 @@ class AreaManager:
         file_study = self.storage_service.get_storage(study).get_raw(study)
 
         # check if area already exists
-        existing_area_ids = set(file_study.config.areas)
         area_id = transform_name_to_id(area_creation_info.name)
-        if area_id in existing_area_ids:
+        if area_id in set(file_study.config.areas):
             raise DuplicateAreaName(area_creation_info.name)
 
         # Create area and apply changes in the study
