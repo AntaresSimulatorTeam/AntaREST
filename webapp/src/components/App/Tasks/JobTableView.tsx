@@ -31,6 +31,7 @@ import usePromiseWithSnackbarError from "../../../hooks/usePromiseWithSnackbarEr
 import { getLauncherMetrics } from "../../../services/api/study";
 import LinearProgressWithLabel from "../../common/LinearProgressWithLabel";
 import UsePromiseCond from "../../common/utils/UsePromiseCond";
+import { useInterval } from "react-use";
 
 interface PropType {
   content: TaskView[];
@@ -46,13 +47,10 @@ function JobTableView(props: PropType) {
     useState<boolean>(false);
   const [currentContent, setCurrentContent] = useState<TaskView[]>(content);
 
-  const laucherMetrics = usePromiseWithSnackbarError(
-    () => getLauncherMetrics(),
-    {
-      errorMessage: t("study.error.launchLoad"),
-      deps: [],
-    },
-  );
+  const launcherMetrics = usePromiseWithSnackbarError(getLauncherMetrics, {
+    errorMessage: t("study.error.launchLoad"),
+    deps: [],
+  });
 
   const applyFilter = useCallback(
     (taskList: TaskView[]) => {
@@ -91,6 +89,9 @@ function JobTableView(props: PropType) {
     setCurrentContent(applyFilter(content));
   }, [content, applyFilter]);
 
+  // Refresh launcher metrics every minute
+  useInterval(launcherMetrics.reload, 60_000);
+
   return (
     <Box
       sx={{
@@ -121,7 +122,8 @@ function JobTableView(props: PropType) {
           }}
         >
           <UsePromiseCond
-            response={laucherMetrics}
+            response={launcherMetrics}
+            keepLastResolvedOnReload
             ifResolved={(data) => (
               <>
                 <Typography>{t("study.allocatedCpuRate")}</Typography>
@@ -152,7 +154,7 @@ function JobTableView(props: PropType) {
               color="primary"
               onClick={() => {
                 refresh();
-                laucherMetrics.reload();
+                launcherMetrics.reload();
               }}
               variant="outlined"
             >
