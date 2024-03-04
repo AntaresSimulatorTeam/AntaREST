@@ -37,7 +37,6 @@ export interface HydroMatrixProps {
   fetchFn?: fetchMatrixFn;
   disableEdit?: boolean;
   enablePercentDisplay?: boolean;
-  stretch?: boolean; // TODO: Remove this once the `EditableMatrix` component is refactored
 }
 
 type Matrices = Record<HydroMatrixType, HydroMatrixProps>;
@@ -126,7 +125,6 @@ export const MATRICES: Matrices = {
       "Pumping Max Energy (Hours at Pmax)",
     ],
     stats: MatrixStats.NOCOL,
-    stretch: false,
   },
   [HydroMatrixType.ReservoirLevels]: {
     title: "Reservoir Levels",
@@ -187,7 +185,6 @@ export const MATRICES: Matrices = {
       "December",
     ],
     stats: MatrixStats.NOCOL,
-    stretch: false,
   },
   [HydroMatrixType.Allocation]: {
     title: "Allocation",

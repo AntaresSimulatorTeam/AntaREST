@@ -153,11 +153,36 @@ function ResultDetails() {
   const dateTimeFromIndex = useMemo(() => {
     if (!matrixRes.data) return [];
 
-    return matrixRes.data.index.map((dateTime) => {
-      const parsedDate = moment(dateTime, "MM/DD HH:mm");
-      return parsedDate.format("ddd D MMM HH:mm");
-    });
-  }, [matrixRes.data]);
+    // Annual format has a static string
+    if (timestep === Timestep.Annual) {
+      return ["Annual"];
+    }
+
+    // Original date/time format mapping for moment parsing
+    const parseFormat = {
+      [Timestep.Hourly]: "MM/DD HH:mm",
+      [Timestep.Daily]: "MM/DD",
+      [Timestep.Weekly]: "WW",
+      [Timestep.Monthly]: "MM",
+    }[timestep];
+
+    // Output formats for each timestep to match legacy UI requirements
+    const outputFormat = {
+      [Timestep.Hourly]: "DD MMM HH:mm  I",
+      [Timestep.Daily]: "DD MMM  I",
+      [Timestep.Weekly]: "WW",
+      [Timestep.Monthly]: "MMM",
+    }[timestep];
+
+    const needsIndex =
+      timestep === Timestep.Hourly || timestep === Timestep.Daily;
+
+    return matrixRes.data.index.map((dateTime, i) =>
+      moment(dateTime, parseFormat).format(
+        outputFormat.replace("I", needsIndex ? ` - ${i + 1}` : ""),
+      ),
+    );
+  }, [matrixRes.data, timestep]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -380,7 +405,6 @@ function ResultDetails() {
                       matrix={matrix}
                       matrixTime={false}
                       rowNames={dateTimeFromIndex}
-                      stretch={false}
                       readOnly
                     />
                   )
