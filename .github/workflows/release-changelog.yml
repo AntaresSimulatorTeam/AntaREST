@@ -1,0 +1,35 @@
+name: Release Changelog
+
+on:
+  pull_request:
+    branches:
+      - master
+    types: [opened, synchronize]
+
+jobs:
+  release-changelog:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # Important pour s'assurer que tous les commits sont récupérés
+
+      - name: Generate changelog
+        id: generate_changelog
+        run: |
+          # Utilisez git pour extraire les messages de commit entre cette branche et master
+          CHANGELOG=$(git log origin/master.. --oneline --no-merges)
+          # Formatage pour Markdown (commentaire GitHub)
+          CHANGELOG="${CHANGELOG//'%'/'%25'}"
+          CHANGELOG="${CHANGELOG//$'\n'/'%0A'}"
+          CHANGELOG="${CHANGELOG//$'\r'/'%0D'}"
+          echo "::set-output name=changelog::$CHANGELOG"
+
+      - name: Comment on PR
+        uses: thollander/actions-comment-pull-request@v1
+        with:
+          message: |
+            ## Changelog
+            ${{ steps.generate_changelog.outputs.changelog }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
