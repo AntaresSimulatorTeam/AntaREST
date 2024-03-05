@@ -435,7 +435,7 @@ class StudyService:
             command = [
                 UpdateRawFile(
                     target="settings/comments",
-                    b64Data=base64.b64encode(bytes(data.comments, "utf-8")),
+                    b64Data=base64.b64encode(data.comments.encode("utf-8")).decode("utf-8"),
                     command_context=variant_study_service.command_factory.command_context,
                 )
             ]
