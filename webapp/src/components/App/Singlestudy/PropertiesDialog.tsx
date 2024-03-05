@@ -166,7 +166,7 @@ function PropertiesDialog(props: Props) {
             />
           </Fieldset>
 
-          <Fieldset legend="Metadatsddwefwefwefa" fullFieldWidth>
+          <Fieldset legend="Metadatsddwefddwefwefa" fullFieldWidth>
             <CheckboxesTagsFE
               options={[]}
               label={t("studies.enterTag")}
