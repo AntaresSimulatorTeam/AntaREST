@@ -5,7 +5,6 @@ It determines the appropriate study storage service based on the type of study p
 
 from typing import Union
 
-from antarest.core.exceptions import StudyTypeUnsupported
 from antarest.study.common.studystorage import IStudyStorageService
 from antarest.study.model import RawStudy, Study
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
@@ -49,13 +48,5 @@ class StudyStorageService:
 
         Returns:
             The study storage service associated with the study type.
-
-        Raises:
-            StudyTypeUnsupported: If the study type is not supported by the available storage services.
         """
-        if isinstance(study, RawStudy):
-            return self.raw_study_service
-        elif isinstance(study, VariantStudy):
-            return self.variant_study_service
-        else:
-            raise StudyTypeUnsupported(study.id, study.type)
+        return self.raw_study_service if isinstance(study, RawStudy) else self.variant_study_service
