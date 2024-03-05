@@ -1,4 +1,4 @@
-from typing import List, NamedTuple, Optional, Tuple, Union
+from typing import List, Optional, Tuple, Union
 
 from pydantic import BaseModel
 
@@ -26,7 +26,8 @@ class CommandResultDTO(BaseModel):
     message: str
 
 
-class VariantTreeDTO(NamedTuple):
+class VariantTreeDTO:
     # Don't use BaseModel as this could trigger Recursion exceptions, since we're using Pydantic with a version prior to v2.
-    node: StudyMetadataDTO
-    children: List["VariantTreeDTO"]
+    def __init__(self, node: StudyMetadataDTO, children: List["VariantTreeDTO"]) -> None:
+        self.node = node
+        self.children = children
