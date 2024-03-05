@@ -11,16 +11,19 @@ from pydantic import ValidationError
 from sqlalchemy.orm.session import Session  # type: ignore
 
 from antarest.core.exceptions import (
+    AreaNotFound,
     STStorageConfigNotFoundError,
     STStorageFieldsNotFoundError,
     STStorageMatrixNotFoundError,
+    STStorageNotFoundError,
 )
 from antarest.core.model import PublicMode
 from antarest.login.model import Group, User
 from antarest.study.business.areas.st_storage_management import STStorageInput, STStorageManager
 from antarest.study.model import RawStudy, Study, StudyContentStatus
 from antarest.study.storage.rawstudy.ini_reader import IniReader
-from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import STStorageGroup
+from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import STStorageConfig, STStorageGroup
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
@@ -287,11 +290,29 @@ class TestSTStorageManager:
             get_node=Mock(return_value=ini_file_node),
         )
 
+        area = Mock(spec=Area)
+        mock_config = Mock(spec=FileStudyTreeConfig, study_id=study.id)
+        file_study.config = mock_config
+
         # Given the following arguments
         manager = STStorageManager(study_storage_service)
-
-        # Run the method being tested
         edit_form = STStorageInput(initial_level=0, initial_level_optim=False)
+
+        # Test behavior for area not in study
+        mock_config.areas = {"fake_area": area}
+        with pytest.raises(AreaNotFound) as ctx:
+            manager.update_storage(study, area_id="West", storage_id="storage1", form=edit_form)
+        assert ctx.value.detail == "Area is not found: 'West'"
+
+        # Test behavior for st_storage not in study
+        mock_config.areas = {"West": area}
+        area.st_storages = [STStorageConfig(name="fake_name", group="battery")]
+        with pytest.raises(STStorageNotFoundError) as ctx:
+            manager.update_storage(study, area_id="West", storage_id="storage1", form=edit_form)
+        assert ctx.value.detail == "Short-term storage 'storage1' not found in area 'West'"
+
+        # Test behavior for nominal case
+        area.st_storages = [STStorageConfig(name="storage1", group="battery")]
         manager.update_storage(study, area_id="West", storage_id="storage1", form=edit_form)
 
         # Assert that the storage fields have been updated
