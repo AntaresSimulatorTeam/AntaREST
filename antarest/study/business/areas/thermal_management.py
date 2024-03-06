@@ -3,9 +3,10 @@ import typing as t
 
 from pydantic import validator
 
-from antarest.core.exceptions import ClusterConfigNotFound, ClusterNotFound
+from antarest.core.exceptions import ClusterAlreadyExists, ClusterConfigNotFound, ClusterNotFound
 from antarest.study.business.utils import AllOptionalMetaclass, camel_case_model, execute_or_add_commands
 from antarest.study.model import Study
+from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
     Thermal860Config,
     Thermal860Properties,
@@ -16,6 +17,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
 from antarest.study.storage.variantstudy.model.command.remove_cluster import RemoveCluster
+from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 
 __all__ = (
@@ -286,3 +288,39 @@ class ThermalManager:
         ]
 
         execute_or_add_commands(study, file_study, commands, self.storage_service)
+
+    def duplicate_cluster(self, study: Study, area_id: str, source_id: str, new_name: str) -> ThermalClusterOutput:
+        new_id = transform_name_to_id(new_name, lower=False)
+        existing_ids = [cluster.id for cluster in self.get_clusters(study, area_id)]
+        if new_id in existing_ids:
+            raise ClusterAlreadyExists("Thermal", new_id)
+        # Cluster creation
+        current_cluster = self.get_cluster(study, area_id, source_id)
+        current_cluster.name = new_name
+        creation_form = ThermalClusterCreation(**current_cluster.dict(by_alias=False, exclude={"id"}))
+        new_cluster = self.create_cluster(study, area_id, creation_form)
+        # Matrix edition
+        lower_source_id = source_id.lower()
+        lower_new_id = new_id.lower()
+        paths = [
+            f"input/thermal/series/{area_id}/{lower_source_id}/series",
+            f"input/thermal/prepro/{area_id}/{lower_source_id}/modulation",
+            f"input/thermal/prepro/{area_id}/{lower_source_id}/data",
+        ]
+        new_paths = [
+            f"input/thermal/series/{area_id}/{lower_new_id}/series",
+            f"input/thermal/prepro/{area_id}/{lower_new_id}/modulation",
+            f"input/thermal/prepro/{area_id}/{lower_new_id}/data",
+        ]
+        commands = []
+        storage_service = self.storage_service
+        for k, matrix_path in enumerate(paths):
+            current_matrix = storage_service.raw_study_service.get(study, matrix_path)
+            command = ReplaceMatrix(
+                target=new_paths[k],
+                matrix=current_matrix["data"],
+                command_context=storage_service.variant_study_service.command_factory.command_context,
+            )
+            commands.append(command)
+        execute_or_add_commands(study, self._get_file_study(study), commands, storage_service)
+        return new_cluster

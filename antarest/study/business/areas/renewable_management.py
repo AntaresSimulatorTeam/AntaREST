@@ -3,10 +3,11 @@ import typing as t
 
 from pydantic import validator
 
-from antarest.core.exceptions import ClusterConfigNotFound, ClusterNotFound
+from antarest.core.exceptions import ClusterAlreadyExists, ClusterConfigNotFound, ClusterNotFound
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.utils import AllOptionalMetaclass, camel_case_model, execute_or_add_commands
 from antarest.study.model import Study
+from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.renewable import (
     RenewableConfig,
     RenewableConfigType,
@@ -17,6 +18,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.create_renewables_cluster import CreateRenewablesCluster
 from antarest.study.storage.variantstudy.model.command.remove_renewables_cluster import RemoveRenewablesCluster
+from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 
 __all__ = (
@@ -273,3 +275,27 @@ class RenewableManager:
         ]
 
         execute_or_add_commands(study, file_study, commands, self.storage_service)
+
+    def duplicate_cluster(self, study: Study, area_id: str, source_id: str, new_name: str) -> RenewableClusterOutput:
+        new_id = transform_name_to_id(new_name, lower=False)
+        existing_ids = [cluster.id for cluster in self.get_clusters(study, area_id)]
+        if new_id in existing_ids:
+            raise ClusterAlreadyExists("Renewable", new_id)
+        # Cluster creation
+        current_cluster = self.get_cluster(study, area_id, source_id)
+        current_cluster.name = new_name
+        creation_form = RenewableClusterCreation(**current_cluster.dict(by_alias=False, exclude={"id"}))
+        new_cluster = self.create_cluster(study, area_id, creation_form)
+        # Matrix edition
+        current_path = f"input/renewables/series/{area_id}/{source_id.lower()}/series"
+        new_path = f"input/renewables/series/{area_id}/{new_id.lower()}/series"
+        current_matrix = self.storage_service.raw_study_service.get(study, current_path)
+        command = [
+            ReplaceMatrix(
+                target=new_path,
+                matrix=current_matrix["data"],
+                command_context=self.storage_service.variant_study_service.command_factory.command_context,
+            )
+        ]
+        execute_or_add_commands(study, self._get_file_study(study), command, self.storage_service)
+        return new_cluster

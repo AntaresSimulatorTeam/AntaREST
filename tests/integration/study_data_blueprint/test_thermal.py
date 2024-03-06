@@ -27,6 +27,7 @@ We should test the following end poins:
 * delete a cluster (or several clusters)
 * validate the consistency of the matrices (and properties)
 """
+import copy
 import json
 import re
 
@@ -537,6 +538,22 @@ class TestThermal:
         assert res.json() == fr_gas_conventional_cfg
 
         # =============================
+        #  THERMAL CLUSTER DUPLICATION
+        # =============================
+
+        new_name = "Duplicate of Fr_Gas_Conventional"
+        res = client.post(
+            f"/v1/studies/{study_id}/areas/{area_id}/thermal/{fr_gas_conventional_id}?new_cluster_name={new_name}",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+        )
+        assert res.status_code in {200, 201}
+        duplicated_config = copy.deepcopy(fr_gas_conventional_cfg)
+        duplicated_config["name"] = new_name  # type: ignore
+        duplicated_id = transform_name_to_id(new_name, lower=False)
+        duplicated_config["id"] = duplicated_id  # type: ignore
+        assert res.json() == duplicated_config
+
+        # =============================
         #  THERMAL CLUSTER DELETION
         # =============================
 
@@ -573,18 +590,15 @@ class TestThermal:
         assert res.status_code == 204, res.json()
         assert res.text in {"", "null"}  # Old FastAPI versions return 'null'.
 
-        # The list of thermal clusters should be empty.
+        # The list of thermal clusters should not contain the deleted ones.
         res = client.get(
             f"/v1/studies/{study_id}/areas/{area_id}/clusters/thermal",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code == 200, res.json()
-        expected = [
-            c
-            for c in EXISTING_CLUSTERS
-            if transform_name_to_id(c["name"], lower=False) not in [other_cluster_id1, other_cluster_id2]
-        ]
-        assert res.json() == expected
+        deleted_clusters = [other_cluster_id1, other_cluster_id2, fr_gas_conventional_id]
+        for cluster in res.json():
+            assert transform_name_to_id(cluster["name"], lower=False) not in deleted_clusters
 
         # ===========================
         #  THERMAL CLUSTER ERRORS
@@ -748,3 +762,24 @@ class TestThermal:
         obj = res.json()
         description = obj["description"]
         assert bad_study_id in description
+
+        # Cannot duplicate a fake cluster
+        fake_id = "fake_id"
+        res = client.post(
+            f"/v1/studies/{study_id}/areas/{area_id}/thermal/{fake_id}?new_cluster_name=duplicata",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+        )
+        assert res.status_code == 404
+        obj = res.json()
+        assert obj["description"] == f"Cluster: '{fake_id}' not found"
+        assert obj["exception"] == "ClusterNotFound"
+
+        # Cannot duplicate with an existing id
+        res = client.post(
+            f"/v1/studies/{study_id}/areas/{area_id}/thermal/{duplicated_id}?new_cluster_name={duplicated_id}",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+        )
+        assert res.status_code == 409
+        obj = res.json()
+        assert obj["description"] == f"Thermal cluster {duplicated_id} already exists and could not be created"
+        assert obj["exception"] == "ClusterAlreadyExists"

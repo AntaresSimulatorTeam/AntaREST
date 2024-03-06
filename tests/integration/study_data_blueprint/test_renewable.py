@@ -23,6 +23,7 @@ We should test the following end poins:
 * delete a cluster (or several clusters)
 * validate the consistency of the matrices (and properties)
 """
+import copy
 import json
 import re
 
@@ -212,6 +213,22 @@ class TestRenewable:
         assert res.json() == fr_solar_pv_cfg
 
         # =============================
+        #  RENEWABLE CLUSTER DUPLICATION
+        # =============================
+
+        new_name = "Duplicate of SolarPV"
+        res = client.post(
+            f"/v1/studies/{study_id}/areas/{area_id}/renewable/{fr_solar_pv_id}?new_cluster_name={new_name}",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+        )
+        assert res.status_code in {200, 201}
+        duplicated_config = copy.deepcopy(fr_solar_pv_cfg)
+        duplicated_config["name"] = new_name
+        duplicated_id = transform_name_to_id(new_name, lower=False)
+        duplicated_config["id"] = duplicated_id
+        assert res.json() == duplicated_config
+
+        # =============================
         #  RENEWABLE CLUSTER DELETION
         # =============================
 
@@ -253,28 +270,24 @@ class TestRenewable:
         assert res.status_code == 200, res.json()
         other_cluster_id2 = res.json()["id"]
 
-        # We can delete the two renewable clusters at once.
+        # We can delete two renewable clusters at once.
         res = client.request(
             "DELETE",
             f"/v1/studies/{study_id}/areas/{area_id}/clusters/renewable",
             headers={"Authorization": f"Bearer {user_access_token}"},
-            json=[other_cluster_id1, other_cluster_id2],
+            json=[other_cluster_id2, duplicated_id],
         )
         assert res.status_code == 204, res.json()
         assert res.text in {"", "null"}  # Old FastAPI versions return 'null'.
 
-        # The list of renewable clusters should be empty.
+        # There should only be one remaining cluster
         res = client.get(
             f"/v1/studies/{study_id}/areas/{area_id}/clusters/renewable",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
-        assert res.status_code == 200, res.json()
-        expected = [
-            c
-            for c in EXISTING_CLUSTERS
-            if transform_name_to_id(c["name"], lower=False) not in [other_cluster_id1, other_cluster_id2]
-        ]
-        assert res.json() == expected
+        assert res.status_code == 200
+        obj = res.json()
+        assert len(obj) == 1
 
         # ===========================
         #  RENEWABLE CLUSTER ERRORS
@@ -422,3 +435,24 @@ class TestRenewable:
         obj = res.json()
         description = obj["description"]
         assert bad_study_id in description
+
+        # Cannot duplicate a fake cluster
+        fake_id = "fake_id"
+        res = client.post(
+            f"/v1/studies/{study_id}/areas/{area_id}/renewable/{fake_id}?new_cluster_name=duplicata",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+        )
+        assert res.status_code == 404
+        obj = res.json()
+        assert obj["description"] == f"Cluster: '{fake_id}' not found"
+        assert obj["exception"] == "ClusterNotFound"
+
+        # Cannot duplicate with an existing id
+        res = client.post(
+            f"/v1/studies/{study_id}/areas/{area_id}/renewable/{other_cluster_id1}?new_cluster_name={other_cluster_id1}",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+        )
+        assert res.status_code == 409
+        obj = res.json()
+        assert obj["description"] == f"Renewable cluster {other_cluster_id1} already exists and could not be created"
+        assert obj["exception"] == "ClusterAlreadyExists"

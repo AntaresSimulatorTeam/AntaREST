@@ -1,3 +1,4 @@
+import copy
 import json
 import re
 from unittest.mock import ANY
@@ -232,6 +233,21 @@ class TestSTStorage:
         assert res.json() == siemens_config
 
         # =============================
+        #  SHORT-TERM STORAGE DUPLICATION
+        # =============================
+
+        new_name = "Duplicate of Siemens"
+        res = client.post(
+            f"/v1/studies/{study_id}/areas/{area_id}/storages/{siemens_battery_id}?new_cluster_name={new_name}",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+        )
+        assert res.status_code in {200, 201}
+        duplicated_config = copy.deepcopy(siemens_config)
+        duplicated_config["name"] = new_name  # type: ignore
+        duplicated_config["id"] = transform_name_to_id(new_name)  # type: ignore
+        assert res.json() == duplicated_config
+
+        # =============================
         #  SHORT-TERM STORAGE DELETION
         # =============================
 
@@ -303,25 +319,25 @@ class TestSTStorage:
         assert res.status_code == 200, res.json()
         siemens_config = {**DEFAULT_PROPERTIES, **siemens_properties, "id": siemens_battery_id}
         grand_maison_config = {**DEFAULT_PROPERTIES, **grand_maison_properties, "id": grand_maison_id}
-        assert res.json() == [siemens_config, grand_maison_config]
+        assert res.json() == [duplicated_config, siemens_config, grand_maison_config]
 
-        # We can delete the two short-term storages at once.
+        # We can delete the three short-term storages at once.
         res = client.request(
             "DELETE",
             f"/v1/studies/{study_id}/areas/{area_id}/storages",
             headers={"Authorization": f"Bearer {user_access_token}"},
-            json=[siemens_battery_id, grand_maison_id],
+            json=[grand_maison_id, duplicated_config["id"]],
         )
         assert res.status_code == 204, res.json()
         assert res.text in {"", "null"}  # Old FastAPI versions return 'null'.
 
-        # The list of short-term storages should be empty.
+        # Only one st-storage should remain.
         res = client.get(
             f"/v1/studies/{study_id}/areas/{area_id}/storages",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code == 200, res.json()
-        assert res.json() == []
+        assert len(res.json()) == 1
 
         # ===========================
         #  SHORT-TERM STORAGE ERRORS
@@ -449,6 +465,30 @@ class TestSTStorage:
         obj = res.json()
         description = obj["description"]
         assert bad_study_id in description
+
+        # Cannot duplicate a fake st-storage
+        fake_id = "fake_id"
+        res = client.post(
+            f"/v1/studies/{study_id}/areas/{area_id}/storages/{fake_id}?new_cluster_name=duplicata",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+        )
+        assert res.status_code == 404
+        obj = res.json()
+        assert obj["description"] == f"Fields of storage '{fake_id}' not found"
+        assert obj["exception"] == "STStorageFieldsNotFoundError"
+
+        # Cannot duplicate with an existing id
+        res = client.post(
+            f"/v1/studies/{study_id}/areas/{area_id}/storages/{siemens_battery_id}?new_cluster_name={siemens_battery_id}",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+        )
+        assert res.status_code == 409
+        obj = res.json()
+        assert (
+            obj["description"]
+            == f"Short term storage cluster {siemens_battery_id} already exists and could not be created"
+        )
+        assert obj["exception"] == "ClusterAlreadyExists"
 
     def test__default_values(
         self,

@@ -8,12 +8,14 @@ from pydantic import BaseModel, Extra, root_validator, validator
 from typing_extensions import Literal
 
 from antarest.core.exceptions import (
+    ClusterAlreadyExists,
     STStorageConfigNotFoundError,
     STStorageFieldsNotFoundError,
     STStorageMatrixNotFoundError,
 )
 from antarest.study.business.utils import AllOptionalMetaclass, camel_case_model, execute_or_add_commands
 from antarest.study.model import Study
+from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
     STStorageConfig,
     STStorageGroup,
@@ -417,6 +419,22 @@ class STStorageManager:
             )
             file_study = self._get_file_study(study)
             execute_or_add_commands(study, file_study, [command], self.storage_service)
+
+    def duplicate_cluster(self, study: Study, area_id: str, source_id: str, new_name: str) -> STStorageOutput:
+        new_id = transform_name_to_id(new_name)
+        existing_ids = [storage.id for storage in self.get_storages(study, area_id)]
+        if new_id in existing_ids:
+            raise ClusterAlreadyExists("Short term storage", new_id)
+        # Cluster creation
+        current_cluster = self.get_storage(study, area_id, source_id)
+        current_cluster.name = new_name
+        creation_form = STStorageCreation(**current_cluster.dict(by_alias=False, exclude={"id"}))
+        new_storage = self.create_storage(study, area_id, creation_form)
+        # Matrix edition
+        for ts_name in STStorageTimeSeries.__args__:  # type: ignore
+            ts = self.get_matrix(study, area_id, source_id, ts_name)
+            self.update_matrix(study, area_id, new_id, ts_name, ts)
+        return new_storage
 
     def get_matrix(
         self,

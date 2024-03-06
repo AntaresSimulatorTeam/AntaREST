@@ -8,6 +8,7 @@ from antarest.core.exceptions import CommandApplicationError
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.requests import RequestParameters
 from antarest.core.utils.string import to_camel_case
+from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.model import RawStudy, Study
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.storage_service import StudyStorageService
@@ -17,6 +18,12 @@ from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 
 # noinspection SpellCheckingInspection
 GENERAL_DATA_PATH = "settings/generaldata"
+
+
+class ClusterType(EnumIgnoreCase):
+    ST_STORAGE = "storages"
+    RENEWABLE = "renewable"
+    THERMAL = "thermal"
 
 
 def execute_or_add_commands(
