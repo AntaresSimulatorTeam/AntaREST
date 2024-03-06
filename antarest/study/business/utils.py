@@ -21,7 +21,7 @@ GENERAL_DATA_PATH = "settings/generaldata"
 
 
 class ClusterType(EnumIgnoreCase):
-    ST_STORAGE = "storages"
+    ST_STORAGE = "st-storage"
     RENEWABLE = "renewable"
     THERMAL = "thermal"
 
