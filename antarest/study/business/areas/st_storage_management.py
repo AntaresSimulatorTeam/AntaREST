@@ -205,7 +205,7 @@ class STStorageMatrices(BaseModel):
             upper_array = np.array(upper_rule_curve.data, dtype=np.float64)
             # noinspection PyUnresolvedReferences
             if (lower_array > upper_array).any():
-                raise ValueError("Each 'lower_rule_curve' value must be lower" " or equal to each 'upper_rule_curve'")
+                raise ValueError("Each 'lower_rule_curve' value must be lower or equal to each 'upper_rule_curve'")
         return values
 
 
@@ -421,15 +421,32 @@ class STStorageManager:
             execute_or_add_commands(study, file_study, [command], self.storage_service)
 
     def duplicate_cluster(self, study: Study, area_id: str, source_id: str, new_name: str) -> STStorageOutput:
+        """
+        Creates a duplicate cluster within the study area with a new name.
+
+        Args:
+            study: The study in which the cluster will be duplicated.
+            area_id: The identifier of the area where the cluster will be duplicated.
+            source_id: The identifier of the cluster to be duplicated.
+            new_name: The new name for the duplicated cluster.
+
+        Returns:
+            The duplicated cluster configuration.
+
+        Raises:
+            ClusterAlreadyExists: If a cluster with the new name already exists in the area.
+        """
         new_id = transform_name_to_id(new_name)
         existing_ids = [storage.id for storage in self.get_storages(study, area_id)]
         if new_id in existing_ids:
             raise ClusterAlreadyExists("Short term storage", new_id)
-        # Cluster creation
+
+        # Cluster duplication
         current_cluster = self.get_storage(study, area_id, source_id)
         current_cluster.name = new_name
         creation_form = STStorageCreation(**current_cluster.dict(by_alias=False, exclude={"id"}))
         new_storage = self.create_storage(study, area_id, creation_form)
+
         # Matrix edition
         for ts_name in STStorageTimeSeries.__args__:  # type: ignore
             ts = self.get_matrix(study, area_id, source_id, ts_name)

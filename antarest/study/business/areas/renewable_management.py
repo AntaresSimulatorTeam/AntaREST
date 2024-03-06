@@ -277,15 +277,32 @@ class RenewableManager:
         execute_or_add_commands(study, file_study, commands, self.storage_service)
 
     def duplicate_cluster(self, study: Study, area_id: str, source_id: str, new_name: str) -> RenewableClusterOutput:
+        """
+        Creates a duplicate cluster within the study area with a new name.
+
+        Args:
+            study: The study in which the cluster will be duplicated.
+            area_id: The identifier of the area where the cluster will be duplicated.
+            source_id: The identifier of the cluster to be duplicated.
+            new_name: The new name for the duplicated cluster.
+
+        Returns:
+            The duplicated cluster configuration.
+
+        Raises:
+            ClusterAlreadyExists: If a cluster with the new name already exists in the area.
+        """
         new_id = transform_name_to_id(new_name, lower=False)
         existing_ids = [cluster.id for cluster in self.get_clusters(study, area_id)]
         if new_id in existing_ids:
             raise ClusterAlreadyExists("Renewable", new_id)
-        # Cluster creation
+
+        # Cluster duplication
         current_cluster = self.get_cluster(study, area_id, source_id)
         current_cluster.name = new_name
         creation_form = RenewableClusterCreation(**current_cluster.dict(by_alias=False, exclude={"id"}))
         new_cluster = self.create_cluster(study, area_id, creation_form)
+
         # Matrix edition
         current_path = f"input/renewables/series/{area_id}/{source_id.lower()}/series"
         new_path = f"input/renewables/series/{area_id}/{new_id.lower()}/series"
@@ -298,4 +315,5 @@ class RenewableManager:
             )
         ]
         execute_or_add_commands(study, self._get_file_study(study), command, self.storage_service)
+
         return new_cluster
