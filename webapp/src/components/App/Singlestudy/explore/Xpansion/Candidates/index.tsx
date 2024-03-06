@@ -250,6 +250,7 @@ function Candidates() {
           onClose={onClose}
           onSave={createCandidate}
           links={capaLinks?.links || []}
+          candidates={candidates ?? []}
         />
       )}
       {!!capacityViewDialog && (

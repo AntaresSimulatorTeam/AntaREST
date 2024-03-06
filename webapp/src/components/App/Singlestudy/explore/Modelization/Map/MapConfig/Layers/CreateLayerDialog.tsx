@@ -12,6 +12,7 @@ import useAppDispatch from "../../../../../../../../redux/hooks/useAppDispatch";
 import useEnqueueErrorSnackbar from "../../../../../../../../hooks/useEnqueueErrorSnackbar";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
 import { getStudyMapLayersById } from "../../../../../../../../redux/selectors";
+import { validateString } from "../../../../../../../../utils/validationUtils";
 
 interface Props {
   open: boolean;
@@ -31,7 +32,7 @@ function CreateLayerDialog(props: Props) {
   const layersById = useAppSelector(getStudyMapLayersById);
 
   const existingLayers = useMemo(
-    () => Object.values(layersById).map((layer) => layer.name.toLowerCase()),
+    () => Object.values(layersById).map(({ name }) => name),
     [layersById],
   );
 
@@ -73,15 +74,8 @@ function CreateLayerDialog(props: Props) {
           control={control}
           fullWidth
           rules={{
-            required: { value: true, message: t("form.field.required") },
-            validate: (v) => {
-              if (v.trim().length <= 0) {
-                return false;
-              }
-              if (existingLayers.includes(v.toLowerCase())) {
-                return `The layer "${v}" already exists`;
-              }
-            },
+            validate: (v) =>
+              validateString(v, { existingValues: existingLayers }),
           }}
         />
       )}

@@ -31,15 +31,17 @@ import {
 import { GroupDTO, RoleType } from "../../../../../../common/types";
 import { roleToString, sortByName } from "../../../../../../services/utils";
 import usePromise from "../../../../../../hooks/usePromise";
-import { getGroups } from "../../../../../../services/api/user";
+import { getGroups, getUsers } from "../../../../../../services/api/user";
 import { UserFormDialogProps } from ".";
 import { UseFormReturnPlus } from "../../../../../common/Form/types";
+import {
+  validatePassword,
+  validateString,
+} from "../../../../../../utils/validationUtils";
 
 interface Props extends UseFormReturnPlus {
   onlyPermissions?: UserFormDialogProps["onlyPermissions"];
 }
-
-const PASSWORD_MIN_LENGTH = 8;
 
 function UserForm(props: Props) {
   const {
@@ -50,14 +52,19 @@ function UserForm(props: Props) {
     onlyPermissions,
   } = props;
 
+  const { t } = useTranslation();
   const groupLabelId = useRef(uuidv4()).current;
+  const [selectedGroup, setSelectedGroup] = useState<GroupDTO>();
+  const { data: groups, isLoading: isGroupsLoading } = usePromise(getGroups);
+  const { data: users } = usePromise(getUsers);
+
+  const existingUsers = useMemo(() => users?.map(({ name }) => name), [users]);
+
   const { fields, append, remove } = useFieldArray({
     control,
     name: "permissions",
   });
-  const [selectedGroup, setSelectedGroup] = useState<GroupDTO>();
-  const { data: groups, isLoading: isGroupsLoading } = usePromise(getGroups);
-  const { t } = useTranslation();
+
   const commonTextFieldProps = {
     required: true,
     sx: { mx: 0 },
@@ -104,12 +111,11 @@ function UserForm(props: Props) {
             helperText={errors.username?.message?.toString()}
             {...commonTextFieldProps}
             {...register("username", {
-              required: t("form.field.required") as string,
-              validate: (value) => {
-                if (RESERVED_USER_NAMES.includes(value)) {
-                  return t("form.field.notAllowedValue") as string;
-                }
-              },
+              validate: (v) =>
+                validateString(v, {
+                  existingValues: existingUsers,
+                  excludedValues: RESERVED_USER_NAMES,
+                }) || undefined,
             })}
           />
           <TextField
@@ -119,11 +125,18 @@ function UserForm(props: Props) {
             helperText={errors.password?.message?.toString()}
             {...commonTextFieldProps}
             {...register("password", {
-              required: t("form.field.required") as string,
-              minLength: {
-                value: PASSWORD_MIN_LENGTH,
-                message: t("form.field.minLength", { 0: PASSWORD_MIN_LENGTH }),
-              },
+              validate: (v) => validatePassword(v) || undefined,
+            })}
+          />
+          <TextField
+            label={t("global.confirmPassword")}
+            type="password"
+            spellCheck
+            error={!!errors.confirmPassword}
+            helperText={errors.confirmPassword?.message?.toString()}
+            {...commonTextFieldProps}
+            {...register("confirmPassword", {
+              validate: (v) => validatePassword(v, getValues("password")),
             })}
           />
         </>

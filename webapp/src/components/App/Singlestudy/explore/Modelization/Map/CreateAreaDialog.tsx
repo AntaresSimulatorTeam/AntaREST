@@ -56,7 +56,7 @@ function CreateAreaDialog(props: Props) {
           fullWidth
           rules={{
             validate: (v) =>
-              validateString(v, { existingEntries: existingAreas }),
+              validateString(v, { existingValues: existingAreas }),
           }}
         />
       )}
