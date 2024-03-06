@@ -27,6 +27,7 @@ import copy
 import json
 import re
 
+import numpy as np
 import pytest
 from starlette.testclient import TestClient
 
@@ -133,7 +134,23 @@ class TestRenewable:
         #  RENEWABLE CLUSTER MATRICES
         # =============================
 
-        # TODO: add unit tests for renewable cluster matrices
+        matrix = np.random.randint(0, 2, size=(8760, 1)).tolist()
+        matrix_path = f"input/renewables/series/{area_id}/{fr_solar_pv_id.lower()}/series"
+        args = {"target": matrix_path, "matrix": matrix}
+        res = client.post(
+            f"/v1/studies/{study_id}/commands",
+            json=[{"action": "replace_matrix", "args": args}],
+            headers={"Authorization": f"Bearer {user_access_token}"},
+        )
+        assert res.status_code in {200, 201}, res.json()
+
+        res = client.get(
+            f"/v1/studies/{study_id}/raw",
+            params={"path": matrix_path},
+            headers={"Authorization": f"Bearer {user_access_token}"},
+        )
+        assert res.status_code == 200
+        assert res.json()["data"] == matrix
 
         # ==================================
         #  RENEWABLE CLUSTER LIST / GROUPS
@@ -221,12 +238,23 @@ class TestRenewable:
             f"/v1/studies/{study_id}/areas/{area_id}/renewable/{fr_solar_pv_id}?new_cluster_name={new_name}",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
+        # asserts the config is the same
         assert res.status_code in {200, 201}
         duplicated_config = copy.deepcopy(fr_solar_pv_cfg)
         duplicated_config["name"] = new_name
         duplicated_id = transform_name_to_id(new_name, lower=False)
         duplicated_config["id"] = duplicated_id
         assert res.json() == duplicated_config
+
+        # asserts the matrix has also been duplicated
+        new_cluster_matrix_path = f"input/renewables/series/{area_id}/{duplicated_id.lower()}/series"
+        res = client.get(
+            f"/v1/studies/{study_id}/raw",
+            params={"path": new_cluster_matrix_path},
+            headers={"Authorization": f"Bearer {user_access_token}"},
+        )
+        assert res.status_code == 200
+        assert res.json()["data"] == matrix
 
         # =============================
         #  RENEWABLE CLUSTER DELETION

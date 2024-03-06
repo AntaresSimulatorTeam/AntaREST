@@ -31,6 +31,7 @@ import copy
 import json
 import re
 
+import numpy as np
 import pytest
 from starlette.testclient import TestClient
 
@@ -456,7 +457,23 @@ class TestThermal:
         #  THERMAL CLUSTER MATRICES
         # =============================
 
-        # TODO: add unit tests for thermal cluster matrices
+        matrix = np.random.randint(0, 2, size=(8760, 1)).tolist()
+        matrix_path = f"input/thermal/prepro/{area_id}/{fr_gas_conventional_id.lower()}/data"
+        args = {"target": matrix_path, "matrix": matrix}
+        res = client.post(
+            f"/v1/studies/{study_id}/commands",
+            json=[{"action": "replace_matrix", "args": args}],
+            headers={"Authorization": f"Bearer {user_access_token}"},
+        )
+        assert res.status_code in {200, 201}, res.json()
+
+        res = client.get(
+            f"/v1/studies/{study_id}/raw",
+            params={"path": matrix_path},
+            headers={"Authorization": f"Bearer {user_access_token}"},
+        )
+        assert res.status_code == 200
+        assert res.json()["data"] == matrix
 
         # ==================================
         #  THERMAL CLUSTER LIST / GROUPS
@@ -547,11 +564,22 @@ class TestThermal:
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code in {200, 201}
+        # asserts the config is the same
         duplicated_config = copy.deepcopy(fr_gas_conventional_cfg)
         duplicated_config["name"] = new_name  # type: ignore
         duplicated_id = transform_name_to_id(new_name, lower=False)
         duplicated_config["id"] = duplicated_id  # type: ignore
         assert res.json() == duplicated_config
+
+        # asserts the matrix has also been duplicated
+        new_cluster_matrix_path = f"input/thermal/prepro/{area_id}/{duplicated_id.lower()}/data"
+        res = client.get(
+            f"/v1/studies/{study_id}/raw",
+            params={"path": new_cluster_matrix_path},
+            headers={"Authorization": f"Bearer {user_access_token}"},
+        )
+        assert res.status_code == 200
+        assert res.json()["data"] == matrix
 
         # =============================
         #  THERMAL CLUSTER DELETION

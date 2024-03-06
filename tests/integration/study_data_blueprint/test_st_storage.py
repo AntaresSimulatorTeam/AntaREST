@@ -124,14 +124,15 @@ class TestSTStorage:
         # =============================
 
         # updating the matrix of a short-term storage
-        array = np.random.rand(8760, 1) * 1000
+        array = np.random.randint(0, 1000, size=(8760, 1))
+        array_list = array.tolist()
         res = client.put(
             f"/v1/studies/{study_id}/areas/{area_id}/storages/{siemens_battery_id}/series/inflows",
             headers={"Authorization": f"Bearer {user_access_token}"},
             json={
                 "index": list(range(array.shape[0])),
                 "columns": list(range(array.shape[1])),
-                "data": array.tolist(),
+                "data": array_list,
             },
         )
         assert res.status_code == 200, res.json()
@@ -242,10 +243,20 @@ class TestSTStorage:
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code in {200, 201}
+        # asserts the config is the same
         duplicated_config = copy.deepcopy(siemens_config)
         duplicated_config["name"] = new_name  # type: ignore
-        duplicated_config["id"] = transform_name_to_id(new_name)  # type: ignore
+        duplicated_id = transform_name_to_id(new_name)
+        duplicated_config["id"] = duplicated_id  # type: ignore
         assert res.json() == duplicated_config
+
+        # asserts the matrix has also been duplicated
+        res = client.get(
+            f"/v1/studies/{study_id}/areas/{area_id}/storages/{duplicated_id}/series/inflows",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+        )
+        assert res.status_code == 200
+        assert res.json()["data"] == array_list
 
         # =============================
         #  SHORT-TERM STORAGE DELETION
