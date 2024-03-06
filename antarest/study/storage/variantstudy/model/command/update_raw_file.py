@@ -26,6 +26,15 @@ class UpdateRawFile(ICommand):
     target: str
     b64Data: str
 
+    def __repr__(self) -> str:
+        cls = self.__class__.__name__
+        target = self.target
+        try:
+            data = base64.decodebytes(self.b64Data.encode("utf-8")).decode("utf-8")
+            return f"{cls}(target={target!r}, data={data!r})"
+        except (ValueError, TypeError):
+            return f"{cls}(target={target!r}, b64Data={self.b64Data!r})"
+
     def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         return CommandOutput(status=True, message="ok"), {}
 

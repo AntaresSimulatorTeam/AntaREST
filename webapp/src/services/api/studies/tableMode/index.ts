@@ -1,10 +1,10 @@
-import { snakeCase } from "lodash";
 import { DeepPartial } from "react-hook-form";
 import { StudyMetadata } from "../../../../common/types";
 import client from "../../client";
 import { format } from "../../../../utils/stringUtils";
 import { TABLE_MODE_API_URL } from "../../constants";
 import type { TableData, TableModeColumnsForType, TableModeType } from "./type";
+import { toColumnApiName } from "./utils";
 
 export async function getTableMode<T extends TableModeType>(
   studyId: StudyMetadata["id"],
@@ -15,7 +15,7 @@ export async function getTableMode<T extends TableModeType>(
   const res = await client.get(url, {
     params: {
       table_type: type,
-      columns: columns.map(snakeCase).join(","),
+      columns: columns.map(toColumnApiName).join(","),
     },
   });
   return res.data;

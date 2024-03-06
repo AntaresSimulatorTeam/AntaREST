@@ -3,10 +3,13 @@ import enum
 import typing as t
 
 from pydantic import BaseModel, NonNegativeInt
-from sqlalchemy import func, not_, or_  # type: ignore
-from sqlalchemy.orm import Session, joinedload, with_polymorphic  # type: ignore
+from sqlalchemy import and_, func, not_, or_, sql  # type: ignore
+from sqlalchemy.orm import Query, Session, joinedload, with_polymorphic  # type: ignore
 
 from antarest.core.interfaces.cache import ICache
+from antarest.core.jwt import JWTUser
+from antarest.core.model import PublicMode
+from antarest.core.requests import RequestParameters
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, Study, StudyAdditionalData, Tag
@@ -34,6 +37,43 @@ def escape_like(string: str, escape_char: str = "\\") -> str:
     return string.replace(escape_char, escape_char * 2).replace("%", escape_char + "%").replace("_", escape_char + "_")
 
 
+class AccessPermissions(BaseModel, frozen=True, extra="forbid"):
+    """
+    This class object is build to pass on the user identity and its associated groups information
+    into the listing function get_all below
+    """
+
+    is_admin: bool = False
+    user_id: t.Optional[int] = None
+    user_groups: t.Sequence[str] = ()
+
+    @classmethod
+    def from_params(cls, params: t.Union[RequestParameters, JWTUser]) -> "AccessPermissions":
+        """
+        This function makes it easier to pass on user ids and groups into the repository filtering function by
+        extracting the associated `AccessPermissions` object.
+
+        Args:
+            params: `RequestParameters` or `JWTUser` holding user ids and groups
+
+        Returns: `AccessPermissions`
+
+        """
+        if isinstance(params, RequestParameters):
+            user = params.user
+        else:
+            user = params
+
+        if user:
+            return cls(
+                is_admin=user.is_site_admin() or user.is_admin_token(),
+                user_id=user.id,
+                user_groups=[group.id for group in user.groups],
+            )
+        else:
+            return cls()
+
+
 class StudyFilter(BaseModel, frozen=True, extra="forbid"):
     """Study filter class gathering the main filtering parameters
 
@@ -50,6 +90,7 @@ class StudyFilter(BaseModel, frozen=True, extra="forbid"):
         exists: if raw study missing
         workspace: optional workspace of the study
         folder: optional folder prefix of the study
+        access_permissions: query user ID, groups and admins status
     """
 
     name: str = ""
@@ -64,6 +105,7 @@ class StudyFilter(BaseModel, frozen=True, extra="forbid"):
     exists: t.Optional[bool] = None
     workspace: str = ""
     folder: str = ""
+    access_permissions: AccessPermissions = AccessPermissions()
 
 
 class StudySortBy(str, enum.Enum):
@@ -138,7 +180,7 @@ class StudyMetadataRepository:
     def refresh(self, metadata: Study) -> None:
         self.session.refresh(metadata)
 
-    def get(self, id: str) -> t.Optional[Study]:
+    def get(self, study_id: str) -> t.Optional[Study]:
         """Get the study by ID or return `None` if not found in database."""
         # todo: I think we should use a `entity = with_polymorphic(Study, "*")`
         #  to make sure RawStudy and VariantStudy fields are also fetched.
@@ -146,13 +188,11 @@ class StudyMetadataRepository:
         # When we fetch a study, we also need to fetch the associated owner and groups
         # to check the permissions of the current user efficiently.
         study: Study = (
-            # fmt: off
             self.session.query(Study)
             .options(joinedload(Study.owner))
             .options(joinedload(Study.groups))
             .options(joinedload(Study.tags))
-            .get(id)
-            # fmt: on
+            .get(study_id)
         )
         return study
 
@@ -200,49 +240,9 @@ class StudyMetadataRepository:
         # efficiently (see: `AbstractStorageService.get_study_information`)
         entity = with_polymorphic(Study, "*")
 
-        # noinspection PyTypeChecker
-        q = self.session.query(entity)
-        if study_filter.exists is not None:
-            if study_filter.exists:
-                q = q.filter(RawStudy.missing.is_(None))
-            else:
-                q = q.filter(not_(RawStudy.missing.is_(None)))
-        q = q.options(joinedload(entity.owner))
-        q = q.options(joinedload(entity.groups))
-        q = q.options(joinedload(entity.additional_data))
-        q = q.options(joinedload(entity.tags))
-        if study_filter.managed is not None:
-            if study_filter.managed:
-                q = q.filter(or_(entity.type == "variantstudy", RawStudy.workspace == DEFAULT_WORKSPACE_NAME))
-            else:
-                q = q.filter(entity.type == "rawstudy")
-                q = q.filter(RawStudy.workspace != DEFAULT_WORKSPACE_NAME)
-        if study_filter.study_ids:
-            q = q.filter(entity.id.in_(study_filter.study_ids))
-        if study_filter.users:
-            q = q.filter(entity.owner_id.in_(study_filter.users))
-        if study_filter.groups:
-            q = q.join(entity.groups).filter(Group.id.in_(study_filter.groups))
-        if study_filter.tags:
-            q = q.join(entity.tags).filter(Tag.label.in_(study_filter.tags))
-        if study_filter.archived is not None:
-            q = q.filter(entity.archived == study_filter.archived)
-        if study_filter.name:
-            regex = f"%{escape_like(study_filter.name)}%"
-            q = q.filter(entity.name.ilike(regex))
-        if study_filter.folder:
-            regex = f"{escape_like(study_filter.folder)}%"
-            q = q.filter(entity.folder.ilike(regex))
-        if study_filter.workspace:
-            q = q.filter(RawStudy.workspace == study_filter.workspace)
-        if study_filter.variant is not None:
-            if study_filter.variant:
-                q = q.filter(entity.type == "variantstudy")
-            else:
-                q = q.filter(entity.type == "rawstudy")
-        if study_filter.versions:
-            q = q.filter(entity.version.in_(study_filter.versions))
+        q = self._search_studies(study_filter)
 
+        # sorting
         if sort_by:
             if sort_by == StudySortBy.DATE_DESC:
                 q = q.order_by(entity.created_at.desc())
@@ -262,6 +262,105 @@ class StudyMetadataRepository:
         studies: t.Sequence[Study] = q.all()
         return studies
 
+    def count_studies(self, study_filter: StudyFilter = StudyFilter()) -> int:
+        """
+        Count all studies matching with specified filters.
+
+        Args:
+            study_filter: composed of all filtering criteria.
+
+        Returns:
+            Integer, corresponding to total number of studies matching with specified filters.
+        """
+        q = self._search_studies(study_filter)
+
+        total: int = q.count()
+
+        return total
+
+    def _search_studies(
+        self,
+        study_filter: StudyFilter,
+    ) -> Query:
+        """
+        Build a `SQL Query` based on specified filters.
+
+        Args:
+            study_filter: composed of all filtering criteria.
+
+        Returns:
+            The `Query` corresponding to specified criteria (except for permissions).
+        """
+        # When we fetch a study, we also need to fetch the associated owner and groups
+        # to check the permissions of the current user efficiently.
+        # We also need to fetch the additional data to display the study information
+        # efficiently (see: `AbstractStorageService.get_study_information`)
+        entity = with_polymorphic(Study, "*")
+
+        # noinspection PyTypeChecker
+        q = self.session.query(entity)
+        if study_filter.exists is not None:
+            if study_filter.exists:
+                q = q.filter(RawStudy.missing.is_(None))
+            else:
+                q = q.filter(not_(RawStudy.missing.is_(None)))
+        q = q.options(joinedload(entity.owner))
+        q = q.options(joinedload(entity.groups))
+        q = q.options(joinedload(entity.additional_data))
+        q = q.options(joinedload(entity.tags))
+        if study_filter.managed is not None:
+            if study_filter.managed:
+                q = q.filter(or_(entity.type == "variantstudy", RawStudy.workspace == DEFAULT_WORKSPACE_NAME))
+            else:
+                q = q.filter(entity.type == "rawstudy")
+                q = q.filter(RawStudy.workspace != DEFAULT_WORKSPACE_NAME)
+        if study_filter.study_ids:
+            q = q.filter(entity.id.in_(study_filter.study_ids)) if study_filter.study_ids else q
+        if study_filter.users:
+            q = q.filter(entity.owner_id.in_(study_filter.users))
+        if study_filter.tags:
+            upper_tags = [tag.upper() for tag in study_filter.tags]
+            q = q.join(entity.tags).filter(func.upper(Tag.label).in_(upper_tags))
+        if study_filter.archived is not None:
+            q = q.filter(entity.archived == study_filter.archived)
+        if study_filter.name:
+            regex = f"%{escape_like(study_filter.name)}%"
+            q = q.filter(entity.name.ilike(regex))
+        if study_filter.folder:
+            regex = f"{escape_like(study_filter.folder)}%"
+            q = q.filter(entity.folder.ilike(regex))
+        if study_filter.workspace:
+            q = q.filter(RawStudy.workspace == study_filter.workspace)
+        if study_filter.variant is not None:
+            if study_filter.variant:
+                q = q.filter(entity.type == "variantstudy")
+            else:
+                q = q.filter(entity.type == "rawstudy")
+        if study_filter.versions:
+            q = q.filter(entity.version.in_(study_filter.versions))
+
+        # permissions + groups filtering
+        if not study_filter.access_permissions.is_admin and study_filter.access_permissions.user_id is not None:
+            condition_1 = entity.public_mode != PublicMode.NONE
+            condition_2 = entity.owner_id == study_filter.access_permissions.user_id
+            q1 = q.join(entity.groups).filter(Group.id.in_(study_filter.access_permissions.user_groups))
+            if study_filter.groups:
+                q2 = q.join(entity.groups).filter(Group.id.in_(study_filter.groups))
+                q2 = q1.intersect(q2)
+                q = q2.union(
+                    q.join(entity.groups).filter(and_(or_(condition_1, condition_2), Group.id.in_(study_filter.groups)))
+                )
+            else:
+                q = q1.union(q.filter(or_(condition_1, condition_2)))
+        elif not study_filter.access_permissions.is_admin and study_filter.access_permissions.user_id is None:
+            # return empty result
+            # noinspection PyTypeChecker
+            q = self.session.query(entity).filter(sql.false())
+        elif study_filter.groups:
+            q = q.join(entity.groups).filter(Group.id.in_(study_filter.groups))
+
+        return q
+
     def get_all_raw(self, exists: t.Optional[bool] = None) -> t.Sequence[RawStudy]:
         query = self.session.query(RawStudy)
         if exists is not None:
@@ -272,23 +371,40 @@ class StudyMetadataRepository:
         studies: t.Sequence[RawStudy] = query.all()
         return studies
 
-    def delete(self, id: str) -> None:
+    def delete(self, id_: str, *ids: str) -> None:
+        ids = (id_,) + ids
         session = self.session
-        u: Study = session.query(Study).get(id)
-        session.delete(u)
+        session.query(Study).filter(Study.id.in_(ids)).delete(synchronize_session=False)
         session.commit()
 
     def update_tags(self, study: Study, new_tags: t.Sequence[str]) -> None:
         """
         Updates the tags associated with a given study in the database,
-        replacing existing tags with new ones.
+        replacing existing tags with new ones (case-insensitive).
 
         Args:
             study: The pre-existing study to be updated with the new tags.
             new_tags: The new tags to be associated with the input study in the database.
         """
-        existing_tags = self.session.query(Tag).filter(Tag.label.in_(new_tags)).all()
-        new_labels = set(new_tags) - set([tag.label for tag in existing_tags])
-        study.tags = [Tag(label=tag) for tag in new_labels] + existing_tags
-        self.session.merge(study)
-        self.session.commit()
+        new_upper_tags = {tag.upper(): tag for tag in new_tags}
+        session = self.session
+        existing_tags = session.query(Tag).filter(func.upper(Tag.label).in_(new_upper_tags)).all()
+        for tag in existing_tags:
+            if tag.label.upper() in new_upper_tags:
+                new_upper_tags.pop(tag.label.upper())
+        study.tags = [Tag(label=tag) for tag in new_upper_tags.values()] + existing_tags
+        session.merge(study)
+        session.commit()
+        # Delete any tag that is not associated with any study.
+        # Note: If tags are to be associated with objects other than Study, this code must be updated.
+        session.query(Tag).filter(~Tag.studies.any()).delete(synchronize_session=False)  # type: ignore
+        session.commit()
+
+    def list_duplicates(self) -> t.List[t.Tuple[str, str]]:
+        """
+        Get list of duplicates as tuples (id, path).
+        """
+        session = self.session
+        subquery = session.query(Study.path).group_by(Study.path).having(func.count() > 1).subquery()
+        query = session.query(Study.id, Study.path).filter(Study.path.in_(subquery))
+        return t.cast(t.List[t.Tuple[str, str]], query.all())

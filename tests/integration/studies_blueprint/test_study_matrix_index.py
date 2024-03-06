@@ -33,7 +33,7 @@ class TestStudyMatrixIndex:
         expected = {
             "first_week_size": 7,
             "level": "hourly",
-            "start_date": "2001-01-01 00:00:00",
+            "start_date": "2018-01-01 00:00:00",
             "steps": 8760,
         }
         assert actual == expected
@@ -50,7 +50,7 @@ class TestStudyMatrixIndex:
         expected = {
             "first_week_size": 7,
             "level": "daily",
-            "start_date": "2001-01-01 00:00:00",
+            "start_date": "2018-01-01 00:00:00",
             "steps": 365,
         }
         assert actual == expected
@@ -67,7 +67,7 @@ class TestStudyMatrixIndex:
         expected = {
             "first_week_size": 7,
             "level": "hourly",
-            "start_date": "2001-01-01 00:00:00",
+            "start_date": "2018-01-01 00:00:00",
             "steps": 8760,
         }
         assert actual == expected
@@ -80,7 +80,7 @@ class TestStudyMatrixIndex:
         actual = res.json()
         expected = {
             "first_week_size": 7,
-            "start_date": "2001-01-01 00:00:00",
+            "start_date": "2018-01-01 00:00:00",
             "steps": 8760,
             "level": "hourly",
         }
@@ -96,5 +96,5 @@ class TestStudyMatrixIndex:
         )
         assert res.status_code == 200
         actual = res.json()
-        expected = {"first_week_size": 7, "start_date": "2001-01-01 00:00:00", "steps": 7, "level": "daily"}
+        expected = {"first_week_size": 7, "start_date": "2018-01-01 00:00:00", "steps": 7, "level": "daily"}
         assert actual == expected

@@ -34,9 +34,10 @@ import reactHookFormSupport, {
 import {
   createFakeBlurEventHandler,
   createFakeChangeEventHandler,
+  createFakeInputElement,
   FakeBlurEventHandler,
   FakeChangeEventHandler,
-  FakeHTMLInputElement,
+  InputObject,
 } from "../../../../utils/feUtils";
 import { makeLabel, makeListItems } from "./utils";
 
@@ -97,7 +98,7 @@ function ListFE<TItem, TOption>(props: ListFEProps<TItem, TOption>) {
   // Trigger event handlers
   useUpdateEffect(() => {
     if (onChange || onBlur) {
-      const fakeInputElement: FakeHTMLInputElement = {
+      const fakeInputElement: InputObject = {
         value: listItems.map((item) => item.value),
         name,
       };
@@ -108,10 +109,10 @@ function ListFE<TItem, TOption>(props: ListFEProps<TItem, TOption>) {
 
   // Set ref
   useEffect(() => {
-    const fakeInputElement: FakeHTMLInputElement = {
+    const fakeInputElement = createFakeInputElement({
       value: listItems.map((item) => item.value),
       name,
-    };
+    });
     setRef(inputRef, fakeInputElement);
   }, [inputRef, listItems, name]);
 

@@ -49,6 +49,7 @@ import ButtonBack from "../../../../../common/ButtonBack";
 import BooleanFE from "../../../../../common/fieldEditors/BooleanFE";
 import SelectFE from "../../../../../common/fieldEditors/SelectFE";
 import NumberFE from "../../../../../common/fieldEditors/NumberFE";
+import moment from "moment";
 
 function ResultDetails() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -148,15 +149,52 @@ function ResultDetails() {
     },
   );
 
+  // !NOTE: Workaround to display the date in the correct format, to be replaced by a proper solution.
+  const dateTimeFromIndex = useMemo(() => {
+    if (!matrixRes.data) return [];
+
+    // Annual format has a static string
+    if (timestep === Timestep.Annual) {
+      return ["Annual"];
+    }
+
+    // Original date/time format mapping for moment parsing
+    const parseFormat = {
+      [Timestep.Hourly]: "MM/DD HH:mm",
+      [Timestep.Daily]: "MM/DD",
+      [Timestep.Weekly]: "WW",
+      [Timestep.Monthly]: "MM",
+    }[timestep];
+
+    // Output formats for each timestep to match legacy UI requirements
+    const outputFormat = {
+      [Timestep.Hourly]: "DD MMM HH:mm  I",
+      [Timestep.Daily]: "DD MMM  I",
+      [Timestep.Weekly]: "WW",
+      [Timestep.Monthly]: "MMM",
+    }[timestep];
+
+    const needsIndex =
+      timestep === Timestep.Hourly || timestep === Timestep.Daily;
+
+    return matrixRes.data.index.map((dateTime, i) =>
+      moment(dateTime, parseFormat).format(
+        outputFormat.replace("I", needsIndex ? ` - ${i + 1}` : ""),
+      ),
+    );
+  }, [matrixRes.data, timestep]);
+
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
   const handleItemTypeChange: ToggleButtonGroupProps["onChange"] = (
     _,
-    value: OutputItemType,
+    newValue: OutputItemType,
   ) => {
-    setItemType(value);
+    if (newValue && newValue !== itemType) {
+      setItemType(newValue);
+    }
   };
 
   const handleDownload = (matrixData: MatrixType, fileName: string): void => {
@@ -366,6 +404,7 @@ function ResultDetails() {
                     <EditableMatrix
                       matrix={matrix}
                       matrixTime={false}
+                      rowNames={dateTimeFromIndex}
                       readOnly
                     />
                   )

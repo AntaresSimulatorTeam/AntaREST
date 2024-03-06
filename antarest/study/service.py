@@ -1,4 +1,5 @@
 import base64
+import collections
 import contextlib
 import io
 import json
@@ -12,6 +13,7 @@ from pathlib import Path, PurePosixPath
 from uuid import uuid4
 
 import numpy as np
+import pandas as pd
 from fastapi import HTTPException, UploadFile
 from markupsafe import escape
 from starlette.responses import FileResponse, Response
@@ -20,6 +22,7 @@ from antarest.core.config import Config
 from antarest.core.exceptions import (
     BadEditInstructionException,
     CommandApplicationError,
+    IncorrectPathError,
     NotAManagedStudyException,
     StudyDeletionNotAllowed,
     StudyNotFoundError,
@@ -54,6 +57,7 @@ from antarest.study.business.areas.st_storage_management import STStorageManager
 from antarest.study.business.areas.thermal_management import ThermalManager
 from antarest.study.business.binding_constraint_management import BindingConstraintManager
 from antarest.study.business.config_management import ConfigManager
+from antarest.study.business.correlation_management import CorrelationManager
 from antarest.study.business.district_manager import DistrictManager
 from antarest.study.business.general_management import GeneralManager
 from antarest.study.business.link_management import LinkInfoDTO, LinkManager
@@ -80,7 +84,6 @@ from antarest.study.model import (
     MatrixIndex,
     PatchArea,
     PatchCluster,
-    PatchStudy,
     RawStudy,
     Study,
     StudyAdditionalData,
@@ -92,7 +95,14 @@ from antarest.study.model import (
     StudyMetadataPatchDTO,
     StudySimResultDTO,
 )
-from antarest.study.repository import StudyFilter, StudyMetadataRepository, StudyPagination, StudySortBy
+from antarest.study.repository import (
+    AccessPermissions,
+    StudyFilter,
+    StudyMetadataRepository,
+    StudyPagination,
+    StudySortBy,
+)
+from antarest.study.storage.matrix_profile import adjust_matrix_columns_index
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import ChildNotFoundError
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
@@ -110,6 +120,7 @@ from antarest.study.storage.study_upgrader import (
     upgrade_study,
 )
 from antarest.study.storage.utils import assert_permission, get_start_date, is_managed, remove_from_cache
+from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command.update_comments import UpdateComments
@@ -127,6 +138,7 @@ MAX_MISSING_STUDY_TIMEOUT = 2  # days
 
 
 def get_disk_usage(path: t.Union[str, Path]) -> int:
+    """Calculate the total disk usage (in bytes) of a study in a compressed file or directory."""
     path = Path(path)
     if path.suffix.lower() in {".zip", "7z"}:
         return os.path.getsize(path)
@@ -267,6 +279,7 @@ class StudyService:
         self.xpansion_manager = XpansionManager(self.storage_service)
         self.matrix_manager = MatrixManager(self.storage_service)
         self.binding_constraint_manager = BindingConstraintManager(self.storage_service)
+        self.correlation_manager = CorrelationManager(self.storage_service)
         self.cache_service = cache_service
         self.config = config
         self.on_deletion_callbacks: t.List[t.Callable[[str], None]] = []
@@ -382,17 +395,7 @@ class StudyService:
         study = self.get_study(study_id)
         assert_permission(params.user, study, StudyPermissionType.READ)
 
-        output: t.Union[str, JSON]
-        raw_study_service = self.storage_service.raw_study_service
-        variant_study_service = self.storage_service.variant_study_service
-        if isinstance(study, RawStudy):
-            output = raw_study_service.get(metadata=study, url="/settings/comments")
-        elif isinstance(study, VariantStudy):
-            patch = raw_study_service.patch_service.get(study)
-            patch_study = PatchStudy() if patch.study is None else patch.study
-            output = patch_study.comments or variant_study_service.get(metadata=study, url="/settings/comments")
-        else:
-            raise StudyTypeUnsupported(study.id, study.type)
+        output = self.storage_service.get_storage(study).get(metadata=study, url="/settings/comments")
 
         with contextlib.suppress(AttributeError, UnicodeDecodeError):
             output = output.decode("utf-8")  # type: ignore
@@ -427,18 +430,23 @@ class StudyService:
                 new=bytes(data.comments, "utf-8"),
                 params=params,
             )
-        elif isinstance(study, VariantStudy):
-            patch = self.storage_service.raw_study_service.patch_service.get(study)
-            patch_study = patch.study or PatchStudy()
-            patch_study.comments = data.comments
-            patch.study = patch_study
-            self.storage_service.raw_study_service.patch_service.save(study, patch)
         else:
-            raise StudyTypeUnsupported(study.id, study.type)
+            variant_study_service = self.storage_service.variant_study_service
+            command = [
+                UpdateRawFile(
+                    target="settings/comments",
+                    b64Data=base64.b64encode(data.comments.encode("utf-8")).decode("utf-8"),
+                    command_context=variant_study_service.command_factory.command_context,
+                )
+            ]
+            variant_study_service.append_commands(
+                study.id,
+                transform_command_to_dto(command, force_aggregate=True),
+                RequestParameters(user=params.user),
+            )
 
     def get_studies_information(
         self,
-        params: RequestParameters,
         study_filter: StudyFilter,
         sort_by: t.Optional[StudySortBy] = None,
         pagination: StudyPagination = StudyPagination(),
@@ -446,7 +454,6 @@ class StudyService:
         """
         Get information for matching studies of a search query.
         Args:
-            params: request parameters
             study_filter: filtering parameters
             sort_by: how to sort the db query results
             pagination: set offset and limit for db query
@@ -465,18 +472,23 @@ class StudyService:
             study_metadata = self._try_get_studies_information(study)
             if study_metadata is not None:
                 studies[study_metadata.id] = study_metadata
-        return {
-            s.id: s
-            for s in filter(
-                lambda study_dto: assert_permission(
-                    params.user,
-                    study_dto,
-                    StudyPermissionType.READ,
-                    raising=False,
-                ),
-                studies.values(),
-            )
-        }
+        return studies
+
+    def count_studies(
+        self,
+        study_filter: StudyFilter,
+    ) -> int:
+        """
+        Get number of matching studies.
+        Args:
+            study_filter: filtering parameters
+
+        Returns: total number of studies matching the filtering criteria
+        """
+        total: int = self.repository.count_studies(
+            study_filter=study_filter,
+        )
+        return total
 
     def _try_get_studies_information(self, study: Study) -> t.Optional[StudyMetadataDTO]:
         try:
@@ -695,20 +707,16 @@ class StudyService:
         return get_start_date(file_study, output_id, level)
 
     def remove_duplicates(self) -> None:
-        study_paths: t.Dict[str, t.List[str]] = {}
-        for study in self.repository.get_all():
-            if isinstance(study, RawStudy) and not study.archived:
-                path = str(study.path)
-                if path not in study_paths:
-                    study_paths[path] = []
-                study_paths[path].append(study.id)
-
-        for studies_with_same_path in study_paths.values():
-            if len(studies_with_same_path) > 1:
-                logger.info(f"Found studies {studies_with_same_path} with same path, de duplicating")
-                for study_name in studies_with_same_path[1:]:
-                    logger.info(f"Removing study {study_name}")
-                    self.repository.delete(study_name)
+        duplicates = self.repository.list_duplicates()
+        ids: t.List[str] = []
+        # ids with same path
+        duplicates_by_path = collections.defaultdict(list)
+        for study_id, path in duplicates:
+            duplicates_by_path[path].append(study_id)
+        for path, study_ids in duplicates_by_path.items():
+            ids.extend(study_ids[1:])
+        if ids:  # Check if ids is not empty
+            self.repository.delete(*ids)
 
     def sync_studies_on_disk(self, folders: t.List[StudyFolder], directory: t.Optional[Path] = None) -> None:
         """
@@ -2136,10 +2144,24 @@ class StudyService:
             raise BadEditInstructionException(str(exc)) from exc
 
     def check_and_update_all_study_versions_in_database(self, params: RequestParameters) -> None:
+        """
+        This function updates studies version on the db.
+
+        **Warnings: Only users with Admins rights should be able to run this function.**
+
+        Args:
+            params: Request parameters holding user ID and groups
+
+        Raises:
+            UserHasNotPermissionError: if params user is not admin.
+
+        """
         if params.user and not params.user.is_site_admin():
             logger.error(f"User {params.user.id} is not site admin")
             raise UserHasNotPermissionError()
-        studies = self.repository.get_all(study_filter=StudyFilter(managed=False))
+        studies = self.repository.get_all(
+            study_filter=StudyFilter(managed=False, access_permissions=AccessPermissions.from_params(params))
+        )
 
         for study in studies:
             storage = self.storage_service.raw_study_service
@@ -2358,19 +2380,64 @@ class StudyService:
 
     def get_disk_usage(self, uuid: str, params: RequestParameters) -> int:
         """
-        This function computes the disk size used to store the study with
-        id=`uuid` if such study exists and user has permissions
-        otherwise it raises an error
+        Calculates the size of the disk used to store the study if the user has permissions.
+
+        The calculation of disk space concerns the entire study directory.
+        In the case of a variant, the snapshot folder must be taken into account, as well as the outputs.
 
         Args:
-            uuid: the study id
-            params: user request parameters
+            uuid: the study ID.
+            params: user request parameters.
 
-        return:
-            disk usage of the study with id = `uuid`
+        Returns:
+            Disk usage of the study in bytes.
+
+        Raises:
+            UserHasNotPermissionError: If the user does not have the READ permissions (HTTP status 403).
         """
         study = self.get_study(uuid=uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
-        study_path = self.storage_service.get_storage(study).get_study_path(study)
-        # If the study is a variant, it's possible that it only exists in db and not on disk. If so, we return 0.
-        return get_disk_usage(path=str(study_path)) if study_path.exists() else 0
+        study_path = self.storage_service.raw_study_service.get_study_path(study)
+        # If the study is a variant, it's possible that it only exists in DB and not on disk. If so, we return 0.
+        return get_disk_usage(study_path) if study_path.exists() else 0
+
+    def get_matrix_with_index_and_header(
+        self, *, study_id: str, path: str, with_index: bool, with_header: bool, parameters: RequestParameters
+    ) -> pd.DataFrame:
+        matrix_path = Path(path)
+        study = self.get_study(study_id)
+
+        if matrix_path.parts in [("input", "hydro", "allocation"), ("input", "hydro", "correlation")]:
+            all_areas = t.cast(
+                t.List[AreaInfoDTO],
+                self.get_all_areas(study_id, area_type=AreaType.AREA, ui=False, params=parameters),
+            )
+            if matrix_path.parts[-1] == "allocation":
+                hydro_matrix = self.allocation_manager.get_allocation_matrix(study, all_areas)
+            else:
+                hydro_matrix = self.correlation_manager.get_correlation_matrix(all_areas, study, [])  # type: ignore
+            return pd.DataFrame(data=hydro_matrix.data, columns=hydro_matrix.columns, index=hydro_matrix.index)
+
+        matrix_obj = self.get(study_id, path, depth=3, formatted=True, params=parameters)
+        if set(matrix_obj) != {"data", "index", "columns"}:
+            raise IncorrectPathError(f"The provided path does not point to a valid matrix: '{path}'")
+        if not matrix_obj["data"]:
+            return pd.DataFrame()
+
+        df_matrix = pd.DataFrame(**matrix_obj)
+        if with_index:
+            matrix_index = self.get_input_matrix_startdate(study_id, path, parameters)
+            time_column = pd.date_range(
+                start=matrix_index.start_date, periods=len(df_matrix), freq=matrix_index.level.value[0]
+            )
+            df_matrix.index = time_column
+
+        adjust_matrix_columns_index(
+            df_matrix,
+            path,
+            with_index=with_index,
+            with_header=with_header,
+            study_version=int(study.version),
+        )
+
+        return df_matrix

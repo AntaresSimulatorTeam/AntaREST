@@ -21,7 +21,7 @@ class VariantStudySnapshot(Base):  # type: ignore
 
     id: str = Column(
         String(36),
-        ForeignKey("variantstudy.id"),
+        ForeignKey("variantstudy.id", ondelete="CASCADE"),
         primary_key=True,
     )
     created_at: datetime.date = Column(DateTime)
@@ -48,7 +48,7 @@ class CommandBlock(Base):  # type: ignore
         default=lambda: str(uuid.uuid4()),
         unique=True,
     )
-    study_id: str = Column(String(36), ForeignKey("variantstudy.id"))
+    study_id: str = Column(String(36), ForeignKey("variantstudy.id", ondelete="CASCADE"))
     index: int = Column(Integer)
     command: str = Column(String(255))
     version: int = Column(Integer)
@@ -77,7 +77,7 @@ class VariantStudy(Study):
 
     id: str = Column(
         String(36),
-        ForeignKey("study.id"),
+        ForeignKey("study.id", ondelete="CASCADE"),
         primary_key=True,
     )
     generation_task: t.Optional[str] = Column(String(), nullable=True)
@@ -112,3 +112,7 @@ class VariantStudy(Study):
             and (self.snapshot.created_at >= self.updated_at)
             and (self.snapshot_dir / "study.antares").is_file()
         )
+
+    def has_snapshot(self) -> bool:
+        """Check if the snapshot exists."""
+        return (self.snapshot is not None) and (self.snapshot_dir / "study.antares").is_file()

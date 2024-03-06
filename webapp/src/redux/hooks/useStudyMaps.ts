@@ -15,47 +15,57 @@ import usePromise, { PromiseStatus } from "../../hooks/usePromise";
 
 interface Props<T> {
   studyId: StudyMetadata["id"];
-  selector?: (state: AppState, studyId: StudyMetadata["id"]) => T;
+  selector: (state: AppState, studyId: StudyMetadata["id"]) => T;
 }
 
-export default function useStudyMaps<T>(props: Props<T>): Response<T> {
-  const { studyId, selector } = props;
-  const synthesisRes = useStudySynthesis({ studyId });
-  const isMapsExist = useAppSelector((state) => !!getStudyMap(state, studyId));
-  const data = useAppSelector((state) =>
-    isMapsExist && selector ? selector(state, studyId) : undefined,
-  );
-  const dispatch = useAppDispatch();
+export default function useStudyMaps<T>({
+  studyId,
+  selector,
+}: Props<T>): Response<T> {
   const [status, setStatus] = useState(PromiseStatus.Idle);
   const [error, setError] = useState<Response["error"]>();
+  const dispatch = useAppDispatch();
+  const synthesis = useStudySynthesis({ studyId });
+  const isMapsExists = useAppSelector((state) => !!getStudyMap(state, studyId));
+  const data = useAppSelector((state) => selector(state, studyId) || undefined);
+  const prevStudyId = useAppSelector((state) => state.studies.prevStudyId);
 
   usePromise(async () => {
-    if (synthesisRes.status === PromiseStatus.Rejected) {
-      setError(synthesisRes.error);
+    if (synthesis.status === PromiseStatus.Rejected) {
+      setError(synthesis.error);
       setStatus(PromiseStatus.Rejected);
       return;
     }
 
-    if (synthesisRes.status !== PromiseStatus.Resolved) {
+    if (synthesis.status !== PromiseStatus.Resolved) {
       setStatus(PromiseStatus.Pending);
       return;
     }
 
-    if (!isMapsExist) {
-      setStatus(PromiseStatus.Pending);
+    setStatus(PromiseStatus.Pending);
 
-      try {
-        await dispatch(fetchStudyMapLayers(studyId)).unwrap();
-        await dispatch(fetchStudyMapDistricts(studyId)).unwrap();
-        await dispatch(createStudyMap(studyId)).unwrap();
-      } catch (e) {
-        setError(e as Error);
-        setStatus(PromiseStatus.Rejected);
+    try {
+      /*
+       * Conditionally fetch study map data to address two scenarios:
+       * 1. The map data does not exist for the current study (isMapsExist is false).
+       * 2. The user has navigated to a different study than previously viewed (prevStudyId !== studyId).
+       *
+       * Particularly critical for accuracy when users return to a previously viewed study.
+       */
+      if (!isMapsExists || prevStudyId !== studyId) {
+        await Promise.all([
+          dispatch(fetchStudyMapLayers(studyId)).unwrap(),
+          dispatch(fetchStudyMapDistricts(studyId)).unwrap(),
+          dispatch(createStudyMap(studyId)).unwrap(),
+        ]);
       }
-    } else {
+
       setStatus(PromiseStatus.Resolved);
+    } catch (err) {
+      setError(err as Error);
+      setStatus(PromiseStatus.Rejected);
     }
-  }, [isMapsExist, studyId, synthesisRes.status]);
+  }, [isMapsExists, studyId, synthesis.status]);
 
   return { data, status, error };
 }

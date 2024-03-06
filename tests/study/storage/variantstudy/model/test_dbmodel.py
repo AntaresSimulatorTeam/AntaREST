@@ -188,7 +188,7 @@ class TestVariantStudy:
         obj: VariantStudy = db_session.query(VariantStudy).filter(VariantStudy.id == variant_study_id).one()
 
         # check Study representation
-        assert str(obj).startswith(f"[Study] id={variant_study_id}")
+        assert str(obj).startswith(f"[VariantStudy] id={variant_study_id}")
 
         # check Study fields
         assert obj.id == variant_study_id

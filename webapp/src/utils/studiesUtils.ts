@@ -64,7 +64,9 @@ const tagsPredicate = R.curry(
     if (!study.tags || study.tags.length === 0) {
       return false;
     }
-    return R.intersection(study.tags, tags).length > 0;
+    const upperCaseTags = tags.map((tag) => tag.toUpperCase());
+    const upperCaseStudyTags = study.tags.map((tag) => tag.toUpperCase());
+    return R.intersection(upperCaseStudyTags, upperCaseTags).length > 0;
   },
 );
 

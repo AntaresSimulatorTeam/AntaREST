@@ -176,17 +176,15 @@ function EditableMatrix(props: PropTypes) {
         data={grid}
         width="100%"
         height="100%"
-        stretchH="all"
         className="editableMatrix"
         colHeaders
-        rowHeaderWidth={matrixRowNames ? 150 : undefined}
+        rowHeaderWidth={rowNames ? 150 : 50}
         afterChange={(change, source) =>
           onUpdate && handleSlice(change || [], source)
         }
         beforeKeyDown={(e) => handleKeyDown(e)}
         columns={formattedColumns}
         rowHeaders={matrixRowNames || true}
-        manualColumnResize
       />
     </Root>
   );

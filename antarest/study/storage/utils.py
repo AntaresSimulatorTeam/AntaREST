@@ -52,7 +52,7 @@ def update_antares_info(metadata: Study, study_tree: FileStudyTree, *, update_au
     study_data_info["antares"]["created"] = metadata.created_at.timestamp()
     study_data_info["antares"]["lastsave"] = metadata.updated_at.timestamp()
     study_data_info["antares"]["version"] = metadata.version
-    if update_author:
+    if update_author and metadata.additional_data:
         study_data_info["antares"]["author"] = metadata.additional_data.author
     study_tree.save(study_data_info, ["study"])
 
@@ -235,7 +235,12 @@ def assert_permission(
         permission_type: level of permission
         raising: raise error if permission not matched
 
-    Returns: true if permission match, false if not raising.
+    Returns:
+        `True` if the user has the required permissions, `False` otherwise.
+
+    Raises:
+        `UserHasNotPermissionError`: If the raising parameter is set to `True`
+            and the user does not have the required permissions.
     """
     studies = [study] if study else []
     return assert_permission_on_studies(user, studies, permission_type, raising=raising)
@@ -243,30 +248,9 @@ def assert_permission(
 
 MATRIX_INPUT_DAYS_COUNT = 365
 
-MONTHS = (
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
-)
+MONTHS = calendar.month_name[1:]
 
-DAY_NAMES = (
-    "Monday",
-    "Tuesday",
-    "Wednesday",
-    "Thursday",
-    "Friday",
-    "Saturday",
-    "Sunday",
-)
+DAY_NAMES = calendar.day_name[:]
 
 
 def get_start_date(
@@ -293,7 +277,7 @@ def get_start_date(
 
     starting_month_index = MONTHS.index(starting_month.title()) + 1
     starting_day_index = DAY_NAMES.index(starting_day.title())
-    target_year = 2000
+    target_year = 2018
     while True:
         if leapyear == calendar.isleap(target_year):
             first_day = datetime(target_year, starting_month_index, 1)

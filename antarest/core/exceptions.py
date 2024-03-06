@@ -253,6 +253,14 @@ class AreaNotFound(HTTPException):
         super().__init__(HTTPStatus.NOT_FOUND, msg)
 
 
+class DuplicateAreaName(HTTPException):
+    """Exception raised when trying to create an area with an already existing name."""
+
+    def __init__(self, area_name: str) -> None:
+        msg = f"Area '{area_name}' already exists and could not be created"
+        super().__init__(HTTPStatus.CONFLICT, msg)
+
+
 class DistrictNotFound(HTTPException):
     def __init__(self, *district_ids: str) -> None:
         count = len(district_ids)

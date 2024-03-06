@@ -104,7 +104,7 @@ def test_output_downloads_export(tmp_path: Path):
             },
             StudyDownloadLevelDTO.WEEKLY,
             MatrixIndex(
-                start_date=str(datetime.datetime(2001, 1, 1)),
+                start_date=str(datetime.datetime(2018, 1, 1)),
                 steps=51,
                 first_week_size=7,
                 level=StudyDownloadLevelDTO.WEEKLY,
@@ -121,7 +121,7 @@ def test_output_downloads_export(tmp_path: Path):
             },
             StudyDownloadLevelDTO.WEEKLY,
             MatrixIndex(
-                start_date=str(datetime.datetime(2002, 7, 5)),
+                start_date=str(datetime.datetime(2019, 7, 5)),
                 steps=48,
                 first_week_size=5,
                 level=StudyDownloadLevelDTO.WEEKLY,
@@ -138,7 +138,7 @@ def test_output_downloads_export(tmp_path: Path):
             },
             StudyDownloadLevelDTO.MONTHLY,
             MatrixIndex(
-                start_date=str(datetime.datetime(2002, 7, 1)),
+                start_date=str(datetime.datetime(2019, 7, 1)),
                 steps=7,
                 first_week_size=7,
                 level=StudyDownloadLevelDTO.MONTHLY,
@@ -155,7 +155,7 @@ def test_output_downloads_export(tmp_path: Path):
             },
             StudyDownloadLevelDTO.MONTHLY,
             MatrixIndex(
-                start_date=str(datetime.datetime(2002, 7, 1)),
+                start_date=str(datetime.datetime(2019, 7, 1)),
                 steps=4,
                 first_week_size=7,
                 level=StudyDownloadLevelDTO.MONTHLY,
@@ -172,7 +172,7 @@ def test_output_downloads_export(tmp_path: Path):
             },
             StudyDownloadLevelDTO.HOURLY,
             MatrixIndex(
-                start_date=str(datetime.datetime(2010, 3, 5)),
+                start_date=str(datetime.datetime(2021, 3, 5)),
                 steps=2304,
                 first_week_size=3,
                 level=StudyDownloadLevelDTO.HOURLY,
@@ -189,7 +189,7 @@ def test_output_downloads_export(tmp_path: Path):
             },
             StudyDownloadLevelDTO.ANNUAL,
             MatrixIndex(
-                start_date=str(datetime.datetime(2010, 3, 5)),
+                start_date=str(datetime.datetime(2021, 3, 5)),
                 steps=1,
                 first_week_size=3,
                 level=StudyDownloadLevelDTO.ANNUAL,
@@ -206,7 +206,7 @@ def test_output_downloads_export(tmp_path: Path):
             },
             StudyDownloadLevelDTO.DAILY,
             MatrixIndex(
-                start_date=str(datetime.datetime(2009, 3, 3)),
+                start_date=str(datetime.datetime(2026, 3, 3)),
                 steps=98,
                 first_week_size=3,
                 level=StudyDownloadLevelDTO.DAILY,

@@ -3,10 +3,10 @@ import json
 import logging
 import re
 import shutil
+import typing as t
 from datetime import datetime
 from functools import reduce
 from pathlib import Path
-from typing import Callable, List, Optional, Sequence, Tuple, cast
 from uuid import uuid4
 
 from fastapi import HTTPException
@@ -101,11 +101,11 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
 
         try:
             index = [command.id for command in study.commands].index(command_id)  # Maybe add Try catch for this
-            return cast(CommandDTO, study.commands[index].to_dto())
+            return t.cast(CommandDTO, study.commands[index].to_dto())
         except ValueError:
             raise CommandNotFoundError(f"Command with id {command_id} not found") from None
 
-    def get_commands(self, study_id: str, params: RequestParameters) -> List[CommandDTO]:
+    def get_commands(self, study_id: str, params: RequestParameters) -> t.List[CommandDTO]:
         """
         Get command lists
         Args:
@@ -116,8 +116,8 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         study = self._get_variant_study(study_id, params)
         return [command.to_dto() for command in study.commands]
 
-    def _check_commands_validity(self, study_id: str, commands: List[CommandDTO]) -> List[ICommand]:
-        command_objects: List[ICommand] = []
+    def _check_commands_validity(self, study_id: str, commands: t.List[CommandDTO]) -> t.List[ICommand]:
+        command_objects: t.List[ICommand] = []
         for i, command in enumerate(commands):
             try:
                 command_objects.extend(self.command_factory.to_command(command))
@@ -157,9 +157,9 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
     def append_commands(
         self,
         study_id: str,
-        commands: List[CommandDTO],
+        commands: t.List[CommandDTO],
         params: RequestParameters,
-    ) -> List[str]:
+    ) -> t.List[str]:
         """
         Add command to list of commands (at the end)
         Args:
@@ -196,7 +196,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
     def replace_commands(
         self,
         study_id: str,
-        commands: List[CommandDTO],
+        commands: t.List[CommandDTO],
         params: RequestParameters,
     ) -> str:
         """
@@ -320,13 +320,13 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                 lambda: reduce(
                     lambda m, c: m + c.get_inner_matrices(),
                     self.command_factory.to_command(command.to_dto()),
-                    cast(List[str], []),
+                    t.cast(t.List[str], []),
                 ),
                 lambda e: logger.warning(f"Failed to parse command {command}", exc_info=e),
             )
             or []
         }
-        return cast(MatrixService, self.command_factory.command_context.matrix_service).download_matrix_list(
+        return t.cast(MatrixService, self.command_factory.command_context.matrix_service).download_matrix_list(
             list(matrices), f"{study.name}_{study.id}_matrices", params
         )
 
@@ -410,7 +410,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
     def walk_children(
         self,
         parent_id: str,
-        fun: Callable[[VariantStudy], None],
+        fun: t.Callable[[VariantStudy], None],
         bottom_first: bool,
     ) -> None:
         study = self._get_variant_study(
@@ -426,13 +426,13 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         if bottom_first:
             fun(study)
 
-    def get_variants_parents(self, id: str, params: RequestParameters) -> List[StudyMetadataDTO]:
-        output_list: List[StudyMetadataDTO] = self._get_variants_parents(id, params)
+    def get_variants_parents(self, id: str, params: RequestParameters) -> t.List[StudyMetadataDTO]:
+        output_list: t.List[StudyMetadataDTO] = self._get_variants_parents(id, params)
         if output_list:
             output_list = output_list[1:]
         return output_list
 
-    def get_direct_parent(self, id: str, params: RequestParameters) -> Optional[StudyMetadataDTO]:
+    def get_direct_parent(self, id: str, params: RequestParameters) -> t.Optional[StudyMetadataDTO]:
         study = self._get_variant_study(id, params, raw_study_accepted=True)
         if study.parent_id is not None:
             parent = self._get_variant_study(study.parent_id, params, raw_study_accepted=True)
@@ -447,7 +447,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             )
         return None
 
-    def _get_variants_parents(self, id: str, params: RequestParameters) -> List[StudyMetadataDTO]:
+    def _get_variants_parents(self, id: str, params: RequestParameters) -> t.List[StudyMetadataDTO]:
         study = self._get_variant_study(id, params, raw_study_accepted=True)
         metadata = (
             self.get_study_information(
@@ -458,7 +458,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                 study,
             )
         )
-        output_list: List[StudyMetadataDTO] = [metadata]
+        output_list: t.List[StudyMetadataDTO] = [metadata]
         if study.parent_id is not None:
             output_list.extend(
                 self._get_variants_parents(
@@ -530,16 +530,15 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         assert_permission(params.user, study, StudyPermissionType.READ)
         new_id = str(uuid4())
         study_path = str(self.config.get_workspace_path() / new_id)
-        if study.additional_data:
-            # noinspection PyArgumentList
+        if study.additional_data is None:
+            additional_data = StudyAdditionalData()
+        else:
             additional_data = StudyAdditionalData(
                 horizon=study.additional_data.horizon,
                 author=study.additional_data.author,
                 patch=study.additional_data.patch,
             )
-        else:
-            additional_data = StudyAdditionalData()
-        # noinspection PyArgumentList
+
         variant_study = VariantStudy(
             id=new_id,
             name=name,
@@ -653,7 +652,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         self,
         variant_study_id: str,
         params: RequestParameters,
-    ) -> Tuple[GenerationResultInfoDTO, FileStudyTreeConfig]:
+    ) -> t.Tuple[GenerationResultInfoDTO, FileStudyTreeConfig]:
         # Get variant study
         variant_study = self._get_variant_study(variant_study_id, params)
 
@@ -667,8 +666,8 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         self,
         original_study: VariantStudy,
         metadata: VariantStudy,
-        config: Optional[FileStudyTreeConfig],
-    ) -> Tuple[GenerationResultInfoDTO, FileStudyTreeConfig]:
+        config: t.Optional[FileStudyTreeConfig],
+    ) -> t.Tuple[GenerationResultInfoDTO, FileStudyTreeConfig]:
         parent_study = self.repository.get(metadata.parent_id)
         if parent_study is None:
             raise StudyNotFoundError(metadata.parent_id)
@@ -698,9 +697,9 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         variant_study: VariantStudy,
         notifier: TaskUpdateNotifier,
         from_index: int = 0,
-    ) -> Tuple[List[List[ICommand]], Callable[[int, bool, str], None]]:
+    ) -> t.Tuple[t.List[t.List[ICommand]], t.Callable[[int, bool, str], None]]:
         # Generate
-        commands: List[List[ICommand]] = self._to_commands(variant_study, from_index)
+        commands: t.List[t.List[ICommand]] = self._to_commands(variant_study, from_index)
 
         def notify(command_index: int, command_result: bool, command_message: str) -> None:
             try:
@@ -727,8 +726,8 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
 
         return commands, notify
 
-    def _to_commands(self, metadata: VariantStudy, from_index: int = 0) -> List[List[ICommand]]:
-        commands: List[List[ICommand]] = [
+    def _to_commands(self, metadata: VariantStudy, from_index: int = 0) -> t.List[t.List[ICommand]]:
+        commands: t.List[t.List[ICommand]] = [
             self.command_factory.to_command(command_block.to_dto())
             for index, command_block in enumerate(metadata.commands)
             if from_index <= index
@@ -740,7 +739,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         variant_study: VariantStudy,
         config: FileStudyTreeConfig,
         notifier: TaskUpdateNotifier = noop_notifier,
-    ) -> Tuple[GenerationResultInfoDTO, FileStudyTreeConfig]:
+    ) -> t.Tuple[GenerationResultInfoDTO, FileStudyTreeConfig]:
         commands, notify = self._get_commands_and_notifier(variant_study=variant_study, notifier=notifier)
         return self.generator.generate_config(commands, config, variant_study, notifier=notify)
 
@@ -809,7 +808,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         self,
         src_meta: VariantStudy,
         dest_name: str,
-        groups: Sequence[str],
+        groups: t.Sequence[str],
         with_outputs: bool = False,
     ) -> VariantStudy:
         """
@@ -826,16 +825,14 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         """
         new_id = str(uuid4())
         study_path = str(self.config.get_workspace_path() / new_id)
-        if src_meta.additional_data:
-            # noinspection PyArgumentList
+        if src_meta.additional_data is None:
+            additional_data = StudyAdditionalData()
+        else:
             additional_data = StudyAdditionalData(
                 horizon=src_meta.additional_data.horizon,
                 author=src_meta.additional_data.author,
                 patch=src_meta.additional_data.patch,
             )
-        else:
-            additional_data = StudyAdditionalData()
-        # noinspection PyArgumentList
         dst_meta = VariantStudy(
             id=new_id,
             name=dest_name,
@@ -893,7 +890,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
     @staticmethod
     def _get_snapshot_last_executed_command_index(
         study: VariantStudy,
-    ) -> Optional[int]:
+    ) -> t.Optional[int]:
         if study.snapshot and study.snapshot.last_executed_command:
             last_executed_command_index = [command.id for command in study.commands].index(
                 study.snapshot.last_executed_command
@@ -905,7 +902,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         self,
         metadata: VariantStudy,
         use_cache: bool = True,
-        output_dir: Optional[Path] = None,
+        output_dir: t.Optional[Path] = None,
     ) -> FileStudy:
         """
         Fetch a study raw tree object and its config
@@ -925,7 +922,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             use_cache=use_cache,
         )
 
-    def get_study_sim_result(self, study: VariantStudy) -> List[StudySimResultDTO]:
+    def get_study_sim_result(self, study: VariantStudy) -> t.List[StudySimResultDTO]:
         """
         Get global result information
         Args:
@@ -988,7 +985,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         metadata: VariantStudy,
         dst_path: Path,
         outputs: bool = True,
-        output_list_filter: Optional[List[str]] = None,
+        output_list_filter: t.Optional[t.List[str]] = None,
         denormalize: bool = True,
     ) -> None:
         self._safe_generation(metadata)
@@ -1009,7 +1006,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
     def get_synthesis(
         self,
         metadata: VariantStudy,
-        params: Optional[RequestParameters] = None,
+        params: t.Optional[RequestParameters] = None,
     ) -> FileStudyTreeConfigDTO:
         """
         Return study synthesis

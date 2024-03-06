@@ -15,6 +15,7 @@ export enum HydroMatrixType {
   WaterValues,
   HydroStorage,
   RunOfRiver,
+  MinGen,
   InflowPattern,
   OverallMonthlyHydro,
   Allocation,
@@ -99,11 +100,15 @@ export const HYDRO_ROUTES: HydroRoute[] = [
     path: "ror",
     type: HydroMatrixType.RunOfRiver,
   },
+  {
+    path: "mingen",
+    type: HydroMatrixType.MinGen,
+  },
 ];
 
 export const MATRICES: Matrices = {
   [HydroMatrixType.Dailypower]: {
-    title: "Credit Modulation",
+    title: "Credit Modulations",
     url: "input/hydro/common/capacity/creditmodulations_{areaId}",
     cols: generateColumns("%"),
     rows: ["Generating Power", "Pumping Power"],
@@ -111,7 +116,7 @@ export const MATRICES: Matrices = {
     enablePercentDisplay: true,
   },
   [HydroMatrixType.EnergyCredits]: {
-    title: "Standard Credit",
+    title: "Standard Credits",
     url: "input/hydro/common/capacity/maxpower_{areaId}",
     cols: [
       "Generating Max Power (MW)",
@@ -142,6 +147,11 @@ export const MATRICES: Matrices = {
   [HydroMatrixType.RunOfRiver]: {
     title: "Run Of River",
     url: "input/hydro/series/{areaId}/ror",
+    stats: MatrixStats.STATS,
+  },
+  [HydroMatrixType.MinGen]: {
+    title: "Min Gen",
+    url: "input/hydro/series/{areaId}/mingen",
     stats: MatrixStats.STATS,
   },
   [HydroMatrixType.InflowPattern]: {

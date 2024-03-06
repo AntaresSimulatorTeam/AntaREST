@@ -51,7 +51,7 @@ class TestPatchService:
     @with_db_context
     @pytest.mark.parametrize("get_from_file", [True, False])
     @pytest.mark.parametrize("file_data", ["", PATCH_CONTENT])
-    @pytest.mark.parametrize("patch_data", ["", PATCH_CONTENT])
+    @pytest.mark.parametrize("patch_data", [None, "", PATCH_CONTENT])
     def test_get(
         self,
         tmp_path: Path,
@@ -67,7 +67,15 @@ class TestPatchService:
             patch_json.write_text(file_data, encoding="utf-8")
 
         # Prepare a RAW study
-        # noinspection PyArgumentList
+        additional_data = (
+            None
+            if patch_data is None
+            else StudyAdditionalData(
+                author="john.doe",
+                horizon="foo-horizon",
+                patch=patch_data,
+            )
+        )
         raw_study = RawStudy(
             id=study_id,
             name="my_study",
@@ -76,11 +84,7 @@ class TestPatchService:
             created_at=datetime.now(timezone.utc),
             updated_at=datetime.now(timezone.utc),
             version="840",
-            additional_data=StudyAdditionalData(
-                author="john.doe",
-                horizon="foo-horizon",
-                patch=patch_data,
-            ),
+            additional_data=additional_data,
             archived=False,
             owner=None,
             groups=[],

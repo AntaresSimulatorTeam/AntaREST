@@ -71,3 +71,9 @@ This tab allows you to configure the hydro storage time series of the hydraulic 
 ## Run of River
 
 This tab allows you to configure the run of river time series of the hydraulic generators.
+
+## Minimum Generation
+
+The "Min Gen." tab is dedicated to configuring the minimum generation levels of the hydraulic generators. This tab presents a time series that represents the minimum hourly production for one or more Monte-Carlo years.
+
+![05-hydro.min-generation.series.png](../../../assets/media/user-guide/study/areas/05-hydro.min-generation.series.png)

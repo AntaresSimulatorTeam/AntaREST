@@ -25,6 +25,7 @@ import ImportDialog from "../dialogs/ImportDialog";
 import MatrixAssignDialog from "./MatrixAssignDialog";
 import { downloadMatrix } from "../../../utils/matrixUtils";
 import { fetchMatrixFn } from "../../App/Singlestudy/explore/Modelization/Areas/Hydro/utils";
+import { LoadingButton } from "@mui/lab";
 
 const logErr = debug("antares:createimportform:error");
 
@@ -56,29 +57,16 @@ function MatrixInput({
   const [t] = useTranslation();
   const [openImportDialog, setOpenImportDialog] = useState(false);
   const [openMatrixAsignDialog, setOpenMatrixAsignDialog] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   const {
     data: matrixData,
     isLoading,
     reload: reloadMatrix,
-  } = usePromiseWithSnackbarError(
-    async () => {
-      const res = fetchFn
-        ? await fetchFn(study.id)
-        : await getStudyData(study.id, url);
-      if (typeof res === "string") {
-        const fixed = res
-          .replace(/NaN/g, '"NaN"')
-          .replace(/Infinity/g, '"Infinity"');
-        return JSON.parse(fixed);
-      }
-      return res;
-    },
-    {
-      errorMessage: t("data.error.matrix"),
-      deps: [study, url],
-    },
-  );
+  } = usePromiseWithSnackbarError(fetchMatrixData, {
+    errorMessage: t("data.error.matrix"),
+    deps: [study.id, url, fetchFn],
+  });
 
   const { data: matrixIndex } = usePromiseWithSnackbarError(
     async () => {
@@ -98,6 +86,23 @@ function MatrixInput({
    * Otherwise, default row numbers and timestamps are displayed using initialRowNames.
    */
   const rowNames = fetchFn ? matrixIndex : initialRowNames;
+
+  ////////////////////////////////////////////////////////////////
+  // Utils
+  ////////////////////////////////////////////////////////////////
+
+  async function fetchMatrixData() {
+    const res = fetchFn
+      ? await fetchFn(study.id)
+      : await getStudyData(study.id, url);
+    if (typeof res === "string") {
+      const fixed = res
+        .replace(/NaN/g, '"NaN"')
+        .replace(/Infinity/g, '"Infinity"');
+      return JSON.parse(fixed);
+    }
+    return res;
+  }
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -133,8 +138,14 @@ function MatrixInput({
     }
   };
 
-  const handleDownload = (matrixData: MatrixType, fileName: string): void => {
-    downloadMatrix(matrixData, fileName);
+  const handleDownload = async (matrixData: MatrixType, fileName: string) => {
+    setIsDownloading(true);
+
+    // Re-fetch to get latest data
+    const data = await fetchMatrixData();
+    downloadMatrix(data, fileName);
+
+    setIsDownloading(false);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -179,10 +190,12 @@ function MatrixInput({
             </Button>
 
             {matrixData?.columns?.length >= 1 && (
-              <Button
+              <LoadingButton
                 sx={{
                   ml: 2,
                 }}
+                loadingPosition="start"
+                loading={isDownloading}
                 variant="outlined"
                 color="primary"
                 startIcon={<DownloadOutlinedIcon />}
@@ -194,7 +207,7 @@ function MatrixInput({
                 }
               >
                 {t("global.download")}
-              </Button>
+              </LoadingButton>
             )}
           </Box>
         </Header>

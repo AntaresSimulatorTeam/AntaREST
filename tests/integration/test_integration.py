@@ -9,7 +9,7 @@ from starlette.testclient import TestClient
 from antarest.core.model import PublicMode
 from antarest.launcher.model import LauncherLoadDTO
 from antarest.study.business.adequacy_patch_management import PriceTakingOrder
-from antarest.study.business.area_management import AreaType, LayerInfoDTO
+from antarest.study.business.area_management import LayerInfoDTO
 from antarest.study.business.areas.properties_management import AdequacyPatchMode
 from antarest.study.business.areas.renewable_management import TimeSeriesInterpretation
 from antarest.study.business.general_management import Mode
@@ -420,23 +420,26 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
         headers=admin_headers,
         json={
             "name": "area 1",
-            "type": AreaType.AREA.value,
+            "type": "AREA",
             "metadata": {"country": "FR", "tags": ["a"]},
         },
     )
+    assert res.status_code == 200, res.json()
+
+    # Test area creation with duplicate name
     res = client.post(
         f"/v1/studies/{study_id}/areas",
         headers=admin_headers,
         json={
-            "name": "area 1",
-            "type": AreaType.AREA.value,
+            "name": "Area 1",  # Same name but with different case
+            "type": "AREA",
             "metadata": {"country": "FR"},
         },
     )
-    assert res.status_code == 500
+    assert res.status_code == 409, res.json()
     assert res.json() == {
-        "description": "Area 'area 1' already exists and could not be created",
-        "exception": "CommandApplicationError",
+        "description": "Area 'Area 1' already exists and could not be created",
+        "exception": "DuplicateAreaName",
     }
 
     client.post(
@@ -444,7 +447,7 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
         headers=admin_headers,
         json={
             "name": "area 2",
-            "type": AreaType.AREA.value,
+            "type": "AREA",
             "metadata": {"country": "DE"},
         },
     )
@@ -1095,9 +1098,6 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
     res_properties_config_json["filterSynthesis"] = set(res_properties_config_json["filterSynthesis"])
     res_properties_config_json["filterByYear"] = set(res_properties_config_json["filterByYear"])
     assert res_properties_config_json == {
-        "color": "230,108,44",
-        "posX": 0.0,
-        "posY": 0.0,
         "energyCostUnsupplied": 0.0,
         "energyCostSpilled": 0.0,
         "nonDispatchPower": True,
@@ -1112,9 +1112,6 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
         f"/v1/studies/{study_id}/areas/area 1/properties/form",
         headers=admin_headers,
         json={
-            "color": "123,108,96",
-            "posX": 3.4,
-            "posY": 9.0,
             "energyCostUnsupplied": 2.0,
             "energyCostSpilled": 4.0,
             "nonDispatchPower": False,
@@ -1130,9 +1127,6 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
     res_properties_config_json["filterSynthesis"] = set(res_properties_config_json["filterSynthesis"])
     res_properties_config_json["filterByYear"] = set(res_properties_config_json["filterByYear"])
     assert res_properties_config_json == {
-        "color": "123,108,96",
-        "posX": 3.4,
-        "posY": 9.0,
         "energyCostUnsupplied": 2.0,
         "energyCostSpilled": 4.0,
         "nonDispatchPower": False,

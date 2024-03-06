@@ -41,6 +41,7 @@ export interface UsePromiseCondProps<T> {
   ifPending?: () => React.ReactNode;
   ifRejected?: (error: Response["error"]) => React.ReactNode;
   ifResolved?: (data: T) => React.ReactNode;
+  keepLastResolvedOnReload?: boolean;
 }
 
 function UsePromiseCond<T>(props: UsePromiseCondProps<T>) {
@@ -49,12 +50,31 @@ function UsePromiseCond<T>(props: UsePromiseCondProps<T>) {
     ifPending = () => <SimpleLoader />,
     ifRejected = (error) => <SimpleContent title={error?.toString()} />,
     ifResolved,
+    keepLastResolvedOnReload = false,
   } = props;
   const { status, data, error } = response;
+
+  ////////////////////////////////////////////////////////////////
+  // Utils
+  ////////////////////////////////////////////////////////////////
+
+  const hasToKeepLastResolved = () => {
+    return data !== undefined && keepLastResolvedOnReload;
+  };
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
 
   return (
     <>
       {R.cond([
+        // Resolved
+        [
+          R.either(R.equals(PromiseStatus.Resolved), hasToKeepLastResolved),
+          () => ifResolved?.(data as T),
+        ],
+        // Pending
         [
           R.either(
             R.equals(PromiseStatus.Idle),
@@ -62,8 +82,8 @@ function UsePromiseCond<T>(props: UsePromiseCondProps<T>) {
           ),
           () => ifPending(),
         ],
+        // Rejected
         [R.equals(PromiseStatus.Rejected), () => ifRejected(error)],
-        [R.equals(PromiseStatus.Resolved), () => ifResolved?.(data as T)],
       ])(status)}
     </>
   );
