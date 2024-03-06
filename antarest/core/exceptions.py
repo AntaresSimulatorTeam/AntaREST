@@ -315,9 +315,10 @@ class ClusterConfigNotFound(HTTPException):
 
 
 class ClusterAlreadyExists(HTTPException):
-    """Exception raised when trying to create a cluster with an already existing id."""
+    """Exception raised when attempting to create a cluster with an already existing ID."""
 
     def __init__(self, cluster_type: str, cluster_id: str) -> None:
         super().__init__(
-            HTTPStatus.CONFLICT, f"{cluster_type} cluster {cluster_id} already exists and could not be created"
+            HTTPStatus.CONFLICT,
+            f"{cluster_type} cluster with ID '{cluster_id}' already exists and could not be created.",
         )
