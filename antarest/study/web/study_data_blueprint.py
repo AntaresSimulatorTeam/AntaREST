@@ -66,14 +66,14 @@ class ClusterType(str, enum.Enum):
     """
     Cluster type:
 
-    - `STORAGE`: short-term storage
-    - `RENEWABLE`: renewable cluster
-    - `THERMAL`: thermal cluster
+    - `STORAGE`: short-term storages
+    - `RENEWABLES`: renewable clusters
+    - `THERMALS`: thermal clusters
     """
 
-    ST_STORAGE = "storage"
-    RENEWABLE = "renewable"
-    THERMAL = "thermal"
+    ST_STORAGES = "storages"
+    RENEWABLES = "renewables"
+    THERMALS = "thermals"
 
 
 def create_study_data_routes(study_service: StudyService, config: Config) -> APIRouter:
@@ -2058,11 +2058,11 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
 
         manager: Union[STStorageManager, RenewableManager, ThermalManager]
-        if cluster_type == ClusterType.ST_STORAGE:
+        if cluster_type == ClusterType.ST_STORAGES:
             manager = STStorageManager(study_service.storage_service)
-        elif cluster_type == ClusterType.RENEWABLE:
+        elif cluster_type == ClusterType.RENEWABLES:
             manager = RenewableManager(study_service.storage_service)
-        elif cluster_type == ClusterType.THERMAL:
+        elif cluster_type == ClusterType.THERMALS:
             manager = ThermalManager(study_service.storage_service)
         else:  # pragma: no cover
             raise NotImplementedError(f"Cluster type {cluster_type} not implemented")

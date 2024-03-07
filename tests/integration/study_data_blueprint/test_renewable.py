@@ -235,7 +235,7 @@ class TestRenewable:
 
         new_name = "Duplicate of SolarPV"
         res = client.post(
-            f"/v1/studies/{study_id}/areas/{area_id}/renewable/{fr_solar_pv_id}?new_cluster_name={new_name}",
+            f"/v1/studies/{study_id}/areas/{area_id}/renewables/{fr_solar_pv_id}?new_cluster_name={new_name}",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         # asserts the config is the same
@@ -467,7 +467,7 @@ class TestRenewable:
         # Cannot duplicate a fake cluster
         fake_id = "fake_id"
         res = client.post(
-            f"/v1/studies/{study_id}/areas/{area_id}/renewable/{fake_id}?new_cluster_name=duplicata",
+            f"/v1/studies/{study_id}/areas/{area_id}/renewables/{fake_id}?new_cluster_name=duplicata",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code == 404
@@ -477,7 +477,7 @@ class TestRenewable:
 
         # Cannot duplicate with an existing id
         res = client.post(
-            f"/v1/studies/{study_id}/areas/{area_id}/renewable/{other_cluster_id1}?new_cluster_name={other_cluster_id1}",
+            f"/v1/studies/{study_id}/areas/{area_id}/renewables/{other_cluster_id1}?new_cluster_name={other_cluster_id1}",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code == 409

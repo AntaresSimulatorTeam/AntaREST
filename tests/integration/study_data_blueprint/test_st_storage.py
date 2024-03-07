@@ -239,7 +239,7 @@ class TestSTStorage:
 
         new_name = "Duplicate of Siemens"
         res = client.post(
-            f"/v1/studies/{study_id}/areas/{area_id}/storage/{siemens_battery_id}?new_cluster_name={new_name}",
+            f"/v1/studies/{study_id}/areas/{area_id}/storages/{siemens_battery_id}?new_cluster_name={new_name}",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code in {200, 201}
@@ -480,7 +480,7 @@ class TestSTStorage:
         # Cannot duplicate a fake st-storage
         fake_id = "fake_id"
         res = client.post(
-            f"/v1/studies/{study_id}/areas/{area_id}/storage/{fake_id}?new_cluster_name=duplicata",
+            f"/v1/studies/{study_id}/areas/{area_id}/storages/{fake_id}?new_cluster_name=duplicata",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code == 404
@@ -490,7 +490,7 @@ class TestSTStorage:
 
         # Cannot duplicate with an existing id
         res = client.post(
-            f"/v1/studies/{study_id}/areas/{area_id}/storage/{siemens_battery_id}?new_cluster_name={siemens_battery_id}",
+            f"/v1/studies/{study_id}/areas/{area_id}/storages/{siemens_battery_id}?new_cluster_name={siemens_battery_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code == 409

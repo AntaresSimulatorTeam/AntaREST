@@ -560,7 +560,7 @@ class TestThermal:
 
         new_name = "Duplicate of Fr_Gas_Conventional"
         res = client.post(
-            f"/v1/studies/{study_id}/areas/{area_id}/thermal/{fr_gas_conventional_id}?new_cluster_name={new_name}",
+            f"/v1/studies/{study_id}/areas/{area_id}/thermals/{fr_gas_conventional_id}?new_cluster_name={new_name}",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code in {200, 201}
@@ -794,7 +794,7 @@ class TestThermal:
         # Cannot duplicate a fake cluster
         fake_id = "fake_id"
         res = client.post(
-            f"/v1/studies/{study_id}/areas/{area_id}/thermal/{fake_id}?new_cluster_name=duplicata",
+            f"/v1/studies/{study_id}/areas/{area_id}/thermals/{fake_id}?new_cluster_name=duplicata",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code == 404
@@ -804,7 +804,7 @@ class TestThermal:
 
         # Cannot duplicate with an existing id
         res = client.post(
-            f"/v1/studies/{study_id}/areas/{area_id}/thermal/{duplicated_id}?new_cluster_name={duplicated_id}",
+            f"/v1/studies/{study_id}/areas/{area_id}/thermals/{duplicated_id}?new_cluster_name={duplicated_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code == 409
