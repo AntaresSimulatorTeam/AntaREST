@@ -1,3 +1,4 @@
+import enum
 import logging
 from http import HTTPStatus
 from typing import Any, Dict, List, Optional, Sequence, Union, cast
@@ -54,12 +55,25 @@ from antarest.study.business.playlist_management import PlaylistColumns
 from antarest.study.business.table_mode_management import ColumnsModelTypes, TableTemplateType
 from antarest.study.business.thematic_trimming_management import ThematicTrimmingFormFields
 from antarest.study.business.timeseries_config_management import TSFormFields
-from antarest.study.business.utils import ClusterType
 from antarest.study.model import PatchArea, PatchCluster
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 
 logger = logging.getLogger(__name__)
+
+
+class ClusterType(str, enum.Enum):
+    """
+    Cluster type:
+
+    - `STORAGE`: short-term storage
+    - `RENEWABLE`: renewable cluster
+    - `THERMAL`: thermal cluster
+    """
+
+    ST_STORAGE = "storage"
+    RENEWABLE = "renewable"
+    THERMAL = "thermal"
 
 
 def create_study_data_routes(study_service: StudyService, config: Config) -> APIRouter:
@@ -2048,8 +2062,10 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
             manager = STStorageManager(study_service.storage_service)
         elif cluster_type == ClusterType.RENEWABLE:
             manager = RenewableManager(study_service.storage_service)
-        else:
+        elif cluster_type == ClusterType.THERMAL:
             manager = ThermalManager(study_service.storage_service)
+        else:  # pragma: no cover
+            raise NotImplementedError(f"Cluster type {cluster_type} not implemented")
 
         return manager.duplicate_cluster(study, area_id, source_cluster_id, new_cluster_name)
 
