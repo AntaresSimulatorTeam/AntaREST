@@ -1,6 +1,14 @@
 Antares Web Changelog
 =====================
 
+v2.16.7 (2024-03-05)
+--------------------
+
+### Bug Fixes
+
+* **desktop:** correct configuration and launcher load indicator for Antares Web Desktop [`#1969`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1969)
+
+
 v2.16.6 (2024-03-04)
 --------------------
 

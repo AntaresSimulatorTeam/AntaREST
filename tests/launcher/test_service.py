@@ -937,8 +937,8 @@ class TestLauncherService:
                     ),
                 ],
                 {
-                    "allocated_cpu_rate": min(1.0, 8.0 / (os.cpu_count() or 1)),
-                    "cluster_load_rate": min(1.0, 8.0 / (os.cpu_count() or 1)),
+                    "allocated_cpu_rate": min(100.0, 800 / (os.cpu_count() or 1)),
+                    "cluster_load_rate": min(100.0, 800 / (os.cpu_count() or 1)),
                     "nb_queued_jobs": 0,
                     "launcher_status": "SUCCESS",
                 },
