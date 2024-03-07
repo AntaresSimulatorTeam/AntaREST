@@ -306,8 +306,7 @@ class ThermalManager:
             ClusterAlreadyExists: If a cluster with the new name already exists in the area.
         """
         new_id = transform_name_to_id(new_name, lower=False)
-        existing_ids = [cluster.id for cluster in self.get_clusters(study, area_id)]
-        if new_id in existing_ids:
+        if any(new_id.lower() == cluster.id.lower() for cluster in self.get_clusters(study, area_id)):
             raise ClusterAlreadyExists("Thermal", new_id)
 
         # Cluster duplication

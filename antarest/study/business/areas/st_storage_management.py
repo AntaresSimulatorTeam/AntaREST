@@ -437,9 +437,8 @@ class STStorageManager:
             ClusterAlreadyExists: If a cluster with the new name already exists in the area.
         """
         new_id = transform_name_to_id(new_name)
-        existing_ids = [storage.id for storage in self.get_storages(study, area_id)]
-        if new_id in existing_ids:
-            raise ClusterAlreadyExists("Short term storage", new_id)
+        if any(new_id.lower() == storage.id.lower() for storage in self.get_storages(study, area_id)):
+            raise ClusterAlreadyExists("Short-term storage", new_id)
 
         # Cluster duplication
         current_cluster = self.get_storage(study, area_id, source_id)
@@ -450,7 +449,8 @@ class STStorageManager:
         # Matrix edition
         for ts_name in STStorageTimeSeries.__args__:  # type: ignore
             ts = self.get_matrix(study, area_id, source_id, ts_name)
-            self.update_matrix(study, area_id, new_id, ts_name, ts)
+            self.update_matrix(study, area_id, new_id.lower(), ts_name, ts)
+
         return new_storage
 
     def get_matrix(

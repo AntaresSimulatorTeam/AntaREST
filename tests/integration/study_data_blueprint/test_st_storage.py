@@ -239,10 +239,11 @@ class TestSTStorage:
 
         new_name = "Duplicate of Siemens"
         res = client.post(
-            f"/v1/studies/{study_id}/areas/{area_id}/storages/{siemens_battery_id}?new_cluster_name={new_name}",
+            f"/v1/studies/{study_id}/areas/{area_id}/storages/{siemens_battery_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
+            params={"newName": new_name},
         )
-        assert res.status_code in {200, 201}
+        assert res.status_code in {200, 201}, res.json()
         # asserts the config is the same
         duplicated_config = copy.deepcopy(siemens_config)
         duplicated_config["name"] = new_name  # type: ignore
@@ -478,25 +479,27 @@ class TestSTStorage:
         assert bad_study_id in description
 
         # Cannot duplicate a fake st-storage
-        fake_id = "fake_id"
+        unknown_id = "unknown"
         res = client.post(
-            f"/v1/studies/{study_id}/areas/{area_id}/storages/{fake_id}?new_cluster_name=duplicata",
+            f"/v1/studies/{study_id}/areas/{area_id}/storages/{unknown_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
+            params={"newName": "duplicata"},
         )
-        assert res.status_code == 404
+        assert res.status_code == 404, res.json()
         obj = res.json()
-        assert obj["description"] == f"Fields of storage '{fake_id}' not found"
+        assert obj["description"] == f"Fields of storage '{unknown_id}' not found"
         assert obj["exception"] == "STStorageFieldsNotFoundError"
 
         # Cannot duplicate with an existing id
         res = client.post(
-            f"/v1/studies/{study_id}/areas/{area_id}/storages/{siemens_battery_id}?new_cluster_name={siemens_battery_id}",
+            f"/v1/studies/{study_id}/areas/{area_id}/storages/{siemens_battery_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
+            params={"newName": siemens_battery.upper()},  # different case, but same ID
         )
-        assert res.status_code == 409
+        assert res.status_code == 409, res.json()
         obj = res.json()
         description = obj["description"]
-        assert f"'{siemens_battery_id}'" in description
+        assert siemens_battery.lower() in description
         assert obj["exception"] == "ClusterAlreadyExists"
 
     def test__default_values(

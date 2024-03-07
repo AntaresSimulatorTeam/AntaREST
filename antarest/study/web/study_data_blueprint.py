@@ -2047,7 +2047,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         area_id: str,
         cluster_type: ClusterType,
         source_cluster_id: str,
-        new_cluster_name: str,
+        new_cluster_name: str = Query(..., alias="newName"),  # type: ignore
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Union[STStorageOutput, ThermalClusterOutput, RenewableClusterOutput]:
         logger.info(

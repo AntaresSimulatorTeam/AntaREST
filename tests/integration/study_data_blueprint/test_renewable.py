@@ -235,11 +235,12 @@ class TestRenewable:
 
         new_name = "Duplicate of SolarPV"
         res = client.post(
-            f"/v1/studies/{study_id}/areas/{area_id}/renewables/{fr_solar_pv_id}?new_cluster_name={new_name}",
+            f"/v1/studies/{study_id}/areas/{area_id}/renewables/{fr_solar_pv_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
+            params={"newName": new_name},
         )
         # asserts the config is the same
-        assert res.status_code in {200, 201}
+        assert res.status_code in {200, 201}, res.json()
         duplicated_config = copy.deepcopy(fr_solar_pv_cfg)
         duplicated_config["name"] = new_name
         duplicated_id = transform_name_to_id(new_name, lower=False)
@@ -282,10 +283,11 @@ class TestRenewable:
 
         # It's possible to delete multiple renewable clusters at once.
         # Create two clusters
+        other_cluster_name = "Other Cluster 1"
         res = client.post(
             f"/v1/studies/{study_id}/areas/{area_id}/clusters/renewable",
             headers={"Authorization": f"Bearer {user_access_token}"},
-            json={"name": "Other Cluster 1"},
+            json={"name": other_cluster_name},
         )
         assert res.status_code == 200, res.json()
         other_cluster_id1 = res.json()["id"]
@@ -465,23 +467,25 @@ class TestRenewable:
         assert bad_study_id in description
 
         # Cannot duplicate a fake cluster
-        fake_id = "fake_id"
+        unknown_id = "unknown"
         res = client.post(
-            f"/v1/studies/{study_id}/areas/{area_id}/renewables/{fake_id}?new_cluster_name=duplicata",
+            f"/v1/studies/{study_id}/areas/{area_id}/renewables/{unknown_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
+            params={"newName": "duplicata"},
         )
         assert res.status_code == 404
         obj = res.json()
-        assert obj["description"] == f"Cluster: '{fake_id}' not found"
+        assert obj["description"] == f"Cluster: '{unknown_id}' not found"
         assert obj["exception"] == "ClusterNotFound"
 
         # Cannot duplicate with an existing id
         res = client.post(
-            f"/v1/studies/{study_id}/areas/{area_id}/renewables/{other_cluster_id1}?new_cluster_name={other_cluster_id1}",
+            f"/v1/studies/{study_id}/areas/{area_id}/renewables/{other_cluster_id1}",
             headers={"Authorization": f"Bearer {user_access_token}"},
+            params={"newName": other_cluster_name.upper()},  # different case, but same ID
         )
-        assert res.status_code == 409
+        assert res.status_code == 409, res.json()
         obj = res.json()
         description = obj["description"]
-        assert f"'{other_cluster_id1}'" in description
+        assert other_cluster_name.upper() in description
         assert obj["exception"] == "ClusterAlreadyExists"
