@@ -1,4 +1,3 @@
-import copy
 import json
 import re
 from unittest.mock import ANY
@@ -245,7 +244,7 @@ class TestSTStorage:
         )
         assert res.status_code in {200, 201}, res.json()
         # asserts the config is the same
-        duplicated_config = copy.deepcopy(siemens_config)
+        duplicated_config = dict(siemens_config)
         duplicated_config["name"] = new_name  # type: ignore
         duplicated_id = transform_name_to_id(new_name)
         duplicated_config["id"] = duplicated_id  # type: ignore

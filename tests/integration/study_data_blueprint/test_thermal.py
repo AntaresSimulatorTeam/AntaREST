@@ -27,7 +27,6 @@ We should test the following end poins:
 * delete a cluster (or several clusters)
 * validate the consistency of the matrices (and properties)
 """
-import copy
 import json
 import re
 
@@ -566,7 +565,7 @@ class TestThermal:
         )
         assert res.status_code in {200, 201}, res.json()
         # asserts the config is the same
-        duplicated_config = copy.deepcopy(fr_gas_conventional_cfg)
+        duplicated_config = dict(fr_gas_conventional_cfg)
         duplicated_config["name"] = new_name  # type: ignore
         duplicated_id = transform_name_to_id(new_name, lower=False)
         duplicated_config["id"] = duplicated_id  # type: ignore
