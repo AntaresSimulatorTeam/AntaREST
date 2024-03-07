@@ -9,7 +9,7 @@
 set -e
 
 ANTARES_SOLVER_VERSION="8.8"
-ANTARES_SOLVER_FULL_VERSION="8.8.2"
+ANTARES_SOLVER_FULL_VERSION="8.8.3"
 ANTARES_SOLVER_VERSION_INT="880"
 
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd -P)
@@ -30,6 +30,10 @@ LINK="https://github.com/AntaresSimulatorTeam/Antares_Simulator/releases/downloa
 echo "INFO: Preparing the Git Commit ID..."
 git log -1 HEAD --format=%H > ${RESOURCES_DIR}/commit_id
 
+echo "INFO: Remove the previous build if any..."
+# Avoid the accumulation of files from previous builds (in development).
+rm -rf ${DIST_DIR}
+
 echo "INFO: Generating the Desktop version of the Web Application..."
 if [[ "$OSTYPE" == "msys"* ]]; then
   pushd ${PROJECT_DIR}
@@ -49,9 +53,13 @@ popd
 echo "INFO: Creating destination directory '${ANTARES_SOLVER_DIR}'..."
 mkdir -p "${ANTARES_SOLVER_DIR}"
 
-echo "INFO: Downloading '$ANTARES_SOLVER_ZIPFILE_NAME' in '$ANTARES_SOLVER_DIR'..."
-cd "$ANTARES_SOLVER_DIR" || exit
-wget $LINK
+if [ -f "$ANTARES_SOLVER_ZIPFILE_NAME" ]; then
+  echo "INFO: Using existing '$ANTARES_SOLVER_ZIPFILE_NAME' in '$ANTARES_SOLVER_DIR'..."
+else
+  echo "INFO: Downloading '$ANTARES_SOLVER_ZIPFILE_NAME' in '$ANTARES_SOLVER_DIR'..."
+  cd "$ANTARES_SOLVER_DIR" || exit
+  wget $LINK
+fi
 
 echo "INFO: Uncompressing '$ANTARES_SOLVER_ZIPFILE_NAME'..."
 if [[ "$OSTYPE" == "msys"* ]]; then

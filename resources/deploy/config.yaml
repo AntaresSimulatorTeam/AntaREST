@@ -48,5 +48,10 @@ debug: false
 
 root_path: "api"
 
+server:
+  worker_threadpool_size: 12
+  services:
+    - watcher
+
 logging:
   logfile: ./tmp/antarest.log

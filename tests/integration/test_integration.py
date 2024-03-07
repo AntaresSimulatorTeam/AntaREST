@@ -299,8 +299,8 @@ def test_main(client: TestClient, admin_access_token: str, study_id: str) -> Non
     res = client.get("/v1/launcher/load", headers=admin_headers)
     assert res.status_code == 200, res.json()
     launcher_load = LauncherLoadDTO.parse_obj(res.json())
-    assert launcher_load.allocated_cpu_rate == 1 / (os.cpu_count() or 1)
-    assert launcher_load.cluster_load_rate == 1 / (os.cpu_count() or 1)
+    assert launcher_load.allocated_cpu_rate == 100 / (os.cpu_count() or 1)
+    assert launcher_load.cluster_load_rate == 100 / (os.cpu_count() or 1)
     assert launcher_load.nb_queued_jobs == 0
     assert launcher_load.launcher_status == "SUCCESS"
 
