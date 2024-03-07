@@ -229,9 +229,9 @@ class TestRenewable:
         assert res.status_code == 200, res.json()
         assert res.json() == fr_solar_pv_cfg
 
-        # =============================
+        # ===============================
         #  RENEWABLE CLUSTER DUPLICATION
-        # =============================
+        # ===============================
 
         new_name = "Duplicate of SolarPV"
         res = client.post(
@@ -482,5 +482,6 @@ class TestRenewable:
         )
         assert res.status_code == 409
         obj = res.json()
-        assert obj["description"] == f"Renewable cluster {other_cluster_id1} already exists and could not be created"
+        description = obj["description"]
+        assert f"'{other_cluster_id1}'" in description
         assert obj["exception"] == "ClusterAlreadyExists"

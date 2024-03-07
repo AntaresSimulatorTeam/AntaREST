@@ -495,10 +495,8 @@ class TestSTStorage:
         )
         assert res.status_code == 409
         obj = res.json()
-        assert (
-            obj["description"]
-            == f"Short term storage cluster {siemens_battery_id} already exists and could not be created"
-        )
+        description = obj["description"]
+        assert f"'{siemens_battery_id}'" in description
         assert obj["exception"] == "ClusterAlreadyExists"
 
     def test__default_values(

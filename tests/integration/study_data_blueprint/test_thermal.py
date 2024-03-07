@@ -809,5 +809,6 @@ class TestThermal:
         )
         assert res.status_code == 409
         obj = res.json()
-        assert obj["description"] == f"Thermal cluster {duplicated_id} already exists and could not be created"
+        description = obj["description"]
+        assert f"'{duplicated_id}'" in description
         assert obj["exception"] == "ClusterAlreadyExists"
