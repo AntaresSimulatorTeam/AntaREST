@@ -20,17 +20,21 @@ export const saveField = R.curry(
 
 /**
  * Custom aggregation function summing the values of each row,
- * to display enabled and installed capacity in the same cell.
- * @param colHeader - the column header
- * @param rows - the column rows to aggregate
- * @returns a string with the sum of enabled and installed capacity.
- * @example "100/200"
- * @see https://www.material-react-table.com/docs/guides/aggregation-and-grouping#custom-aggregation-functions
+ * to display enabled and installed capacity in the same cell. This function is
+ * designed for use with Material React Table's custom aggregation feature, allowing
+ * the combination of enabled and installed capacities into a single cell.
+ *
+ * @returns A string representing the sum of enabled and installed capacity in the format "enabled/installed".
+ * @example
+ * Assuming an aggregation of rows where enabled capacities sum to 100 and installed capacities sum to 200
+ * "100/200"
+ *
+ * @see https://www.material-react-table.com/docs/guides/aggregation-and-grouping#custom-aggregation-functions for more information on custom aggregation functions in Material React Table.
  */
 export const capacityAggregationFn = <
   T extends ThermalClusterWithCapacity | RenewableClusterWithCapacity,
 >(): MRT_AggregationFn<T> => {
-  return (colHeader, rows) => {
+  return (_colHeader, rows) => {
     const { enabledCapacitySum, installedCapacitySum } = rows.reduce(
       (acc, row) => {
         acc.enabledCapacitySum += row.original.enabledCapacity ?? 0;

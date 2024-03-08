@@ -210,7 +210,8 @@ export const MATRICES: Matrices = {
 
 /**
  * Generates an array of column names from 0 to 100, optionally with a suffix.
- * @param columnSuffix The suffix to append to the column names.
+ *
+ * @param columnSuffix - The suffix to append to the column names.
  * @returns An array of strings representing column names from 0 to 100.
  */
 function generateColumns(columnSuffix = ""): string[] {

@@ -21,7 +21,13 @@ export interface TableTemplate<T extends TableModeType = TableModeType> {
 ////////////////////////////////////////////////////////////////
 
 /**
- * Allows to check columns validity for specified type.
+ * Allows to check columns validity for specified type. Creates a table template with unique ID, name, type, and columns configuration.
+ * This function is intended to define the structure and type of data that a table can hold.
+ *
+ * @param name - The name of the table template.
+ * @param type - The type of the table, determining the allowed columns and their configuration based on the table mode type.
+ * @param columns - The configuration of columns specific to the table mode type.
+ * @returns A table template object including a unique ID, name, type, and columns configuration.
  */
 export function createTableTemplate<T extends TableModeType>(
   name: string,
