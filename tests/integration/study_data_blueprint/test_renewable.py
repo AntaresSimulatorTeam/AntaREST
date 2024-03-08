@@ -25,6 +25,7 @@ We should test the following end poins:
 """
 import json
 import re
+import typing as t
 
 import numpy as np
 import pytest
@@ -488,3 +489,144 @@ class TestRenewable:
         description = obj["description"]
         assert other_cluster_name.upper() in description
         assert obj["exception"] == "ClusterAlreadyExists"
+
+    @pytest.fixture(name="base_study_id")
+    def base_study_id_fixture(self, request: t.Any, client: TestClient, user_access_token: str) -> str:
+        """Prepare a managed study for the variant study tests."""
+        params = request.param
+        res = client.post(
+            "/v1/studies",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+            params=params,
+        )
+        assert res.status_code in {200, 201}, res.json()
+        study_id: str = res.json()
+        return study_id
+
+    @pytest.fixture(name="variant_id")
+    def variant_id_fixture(self, request: t.Any, client: TestClient, user_access_token: str, base_study_id: str) -> str:
+        """Prepare a variant study for the variant study tests."""
+        name = request.param
+        res = client.post(
+            f"/v1/studies/{base_study_id}/variants",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+            params={"name": name},
+        )
+        assert res.status_code in {200, 201}, res.json()
+        study_id: str = res.json()
+        return study_id
+
+    # noinspection PyTestParametrized
+    @pytest.mark.parametrize("base_study_id", [{"name": "Base Study", "version": 860}], indirect=True)
+    @pytest.mark.parametrize("variant_id", ["Variant Study"], indirect=True)
+    def test_variant_lifecycle(self, client: TestClient, user_access_token: str, variant_id: str) -> None:
+        """
+        In this test, we want to check that renewable clusters can be managed
+        in the context of a "variant" study.
+        """
+        # Create an area
+        area_name = "France"
+        res = client.post(
+            f"/v1/studies/{variant_id}/areas",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+            json={"name": area_name, "type": "AREA"},
+        )
+        assert res.status_code in {200, 201}, res.json()
+        area_cfg = res.json()
+        area_id = area_cfg["id"]
+
+        # Create a renewable cluster
+        cluster_name = "Th1"
+        res = client.post(
+            f"/v1/studies/{variant_id}/areas/{area_id}/clusters/renewable",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+            json={
+                "name": cluster_name,
+                "group": "Wind Offshore",
+                "unitCount": 13,
+                "nominalCapacity": 42500,
+            },
+        )
+        assert res.status_code in {200, 201}, res.json()
+        cluster_id: str = res.json()["id"]
+
+        # Update the renewable cluster
+        res = client.patch(
+            f"/v1/studies/{variant_id}/areas/{area_id}/clusters/renewable/{cluster_id}",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+            json={"unitCount": 15},
+        )
+        assert res.status_code == 200, res.json()
+        cluster_cfg = res.json()
+        assert cluster_cfg["unitCount"] == 15
+
+        # Update the series matrix
+        matrix = np.random.randint(0, 2, size=(8760, 1)).tolist()
+        matrix_path = f"input/renewables/series/{area_id}/{cluster_id.lower()}/series"
+        args = {"target": matrix_path, "matrix": matrix}
+        res = client.post(
+            f"/v1/studies/{variant_id}/commands",
+            json=[{"action": "replace_matrix", "args": args}],
+            headers={"Authorization": f"Bearer {user_access_token}"},
+        )
+        assert res.status_code in {200, 201}, res.json()
+
+        # Duplicate the renewable cluster
+        new_name = "Th2"
+        res = client.post(
+            f"/v1/studies/{variant_id}/areas/{area_id}/renewables/{cluster_id}",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+            params={"newName": new_name},
+        )
+        assert res.status_code in {200, 201}, res.json()
+        cluster_cfg = res.json()
+        assert cluster_cfg["name"] == new_name
+        new_id = cluster_cfg["id"]
+
+        # Check that the duplicate has the right properties
+        res = client.get(
+            f"/v1/studies/{variant_id}/areas/{area_id}/clusters/renewable/{new_id}",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+        )
+        assert res.status_code == 200, res.json()
+        cluster_cfg = res.json()
+        assert cluster_cfg["group"] == "Wind Offshore"
+        assert cluster_cfg["unitCount"] == 15
+        assert cluster_cfg["nominalCapacity"] == 42500
+
+        # Check that the duplicate has the right matrix
+        new_cluster_matrix_path = f"input/renewables/series/{area_id}/{new_id.lower()}/series"
+        res = client.get(
+            f"/v1/studies/{variant_id}/raw",
+            params={"path": new_cluster_matrix_path},
+            headers={"Authorization": f"Bearer {user_access_token}"},
+        )
+        assert res.status_code == 200
+        assert res.json()["data"] == matrix
+
+        # Delete the renewable cluster
+        res = client.delete(
+            f"/v1/studies/{variant_id}/areas/{area_id}/clusters/renewable",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+            json=[cluster_id],
+        )
+        assert res.status_code == 204, res.json()
+
+        # Check the list of variant commands
+        res = client.get(
+            f"/v1/studies/{variant_id}/commands",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+        )
+        assert res.status_code == 200, res.json()
+        commands = res.json()
+        assert len(commands) == 7
+        actions = [command["action"] for command in commands]
+        assert actions == [
+            "create_area",
+            "create_renewables_cluster",
+            "update_config",
+            "replace_matrix",
+            "create_renewables_cluster",
+            "replace_matrix",
+            "remove_renewables_cluster",
+        ]
