@@ -26,6 +26,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
 from antarest.study.storage.variantstudy.model.command.remove_st_storage import RemoveSTStorage
+from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 
 __all__ = (
@@ -74,8 +75,8 @@ class STStorageCreation(STStorageInput):
             raise ValueError("'name' must not be empty")
         return name
 
-    @property
-    def to_config(self) -> STStorageConfig:
+    # noinspection PyUnusedLocal
+    def to_config(self, study_version: t.Union[str, int]) -> STStorageConfig:
         values = self.dict(by_alias=False, exclude_none=True)
         return STStorageConfig(**values)
 
@@ -259,21 +260,25 @@ class STStorageManager:
         Returns:
             The ID of the newly created short-term storage.
         """
-        storage = form.to_config
-        command = CreateSTStorage(
-            area_id=area_id,
-            parameters=storage,
-            command_context=self.storage_service.variant_study_service.command_factory.command_context,
-        )
         file_study = self._get_file_study(study)
+        storage = form.to_config(study.version)
+        command = self._make_create_cluster_cmd(area_id, storage)
         execute_or_add_commands(
             study,
             file_study,
             [command],
             self.storage_service,
         )
+        output = self.get_storage(study, area_id, storage_id=storage.id)
+        return output
 
-        return self.get_storage(study, area_id, storage_id=storage.id)
+    def _make_create_cluster_cmd(self, area_id: str, cluster: STStorageConfig) -> CreateSTStorage:
+        command = CreateSTStorage(
+            area_id=area_id,
+            parameters=cluster,
+            command_context=self.storage_service.variant_study_service.command_factory.command_context,
+        )
+        return command
 
     def get_storages(
         self,
@@ -420,7 +425,7 @@ class STStorageManager:
             file_study = self._get_file_study(study)
             execute_or_add_commands(study, file_study, [command], self.storage_service)
 
-    def duplicate_cluster(self, study: Study, area_id: str, source_id: str, new_name: str) -> STStorageOutput:
+    def duplicate_cluster(self, study: Study, area_id: str, source_id: str, new_cluster_name: str) -> STStorageOutput:
         """
         Creates a duplicate cluster within the study area with a new name.
 
@@ -428,7 +433,7 @@ class STStorageManager:
             study: The study in which the cluster will be duplicated.
             area_id: The identifier of the area where the cluster will be duplicated.
             source_id: The identifier of the cluster to be duplicated.
-            new_name: The new name for the duplicated cluster.
+            new_cluster_name: The new name for the duplicated cluster.
 
         Returns:
             The duplicated cluster configuration.
@@ -436,22 +441,42 @@ class STStorageManager:
         Raises:
             ClusterAlreadyExists: If a cluster with the new name already exists in the area.
         """
-        new_id = transform_name_to_id(new_name)
-        if any(new_id.lower() == storage.id.lower() for storage in self.get_storages(study, area_id)):
+        new_id = transform_name_to_id(new_cluster_name)
+        lower_new_id = new_id.lower()
+        if any(lower_new_id == storage.id.lower() for storage in self.get_storages(study, area_id)):
             raise ClusterAlreadyExists("Short-term storage", new_id)
 
         # Cluster duplication
         current_cluster = self.get_storage(study, area_id, source_id)
-        current_cluster.name = new_name
+        current_cluster.name = new_cluster_name
         creation_form = STStorageCreation(**current_cluster.dict(by_alias=False, exclude={"id"}))
-        new_storage = self.create_storage(study, area_id, creation_form)
+        new_config = creation_form.to_config(study.version)
+        create_cluster_cmd = self._make_create_cluster_cmd(area_id, new_config)
 
         # Matrix edition
-        for ts_name in STStorageTimeSeries.__args__:  # type: ignore
-            ts = self.get_matrix(study, area_id, source_id, ts_name)
-            self.update_matrix(study, area_id, new_id.lower(), ts_name, ts)
+        lower_source_id = source_id.lower()
+        ts_names = ["pmax_injection", "pmax_withdrawal", "lower_rule_curve", "upper_rule_curve", "inflows"]
+        source_paths = [
+            STORAGE_SERIES_PATH.format(area_id=area_id, storage_id=lower_source_id, ts_name=ts_name)
+            for ts_name in ts_names
+        ]
+        new_paths = [
+            STORAGE_SERIES_PATH.format(area_id=area_id, storage_id=lower_new_id, ts_name=ts_name)
+            for ts_name in ts_names
+        ]
 
-        return new_storage
+        # Prepare and execute commands
+        commands: t.List[t.Union[CreateSTStorage, ReplaceMatrix]] = [create_cluster_cmd]
+        storage_service = self.storage_service.get_storage(study)
+        command_context = self.storage_service.variant_study_service.command_factory.command_context
+        for source_path, new_path in zip(source_paths, new_paths):
+            current_matrix = storage_service.get(study, source_path)["data"]
+            command = ReplaceMatrix(target=new_path, matrix=current_matrix, command_context=command_context)
+            commands.append(command)
+
+        execute_or_add_commands(study, self._get_file_study(study), commands, self.storage_service)
+
+        return STStorageOutput(**new_config.dict(by_alias=False))
 
     def get_matrix(
         self,
@@ -519,12 +544,11 @@ class STStorageManager:
         ts_name: STStorageTimeSeries,
         matrix_obj: t.Dict[str, t.Any],
     ) -> None:
-        file_study = self._get_file_study(study)
         path = STORAGE_SERIES_PATH.format(area_id=area_id, storage_id=storage_id, ts_name=ts_name)
-        try:
-            file_study.tree.save(matrix_obj, path.split("/"))
-        except KeyError:
-            raise STStorageMatrixNotFoundError(study.id, area_id, storage_id, ts_name) from None
+        matrix = matrix_obj["data"]
+        command_context = self.storage_service.variant_study_service.command_factory.command_context
+        command = ReplaceMatrix(target=path, matrix=matrix, command_context=command_context)
+        execute_or_add_commands(study, self._get_file_study(study), [command], self.storage_service)
 
     def validate_matrices(
         self,

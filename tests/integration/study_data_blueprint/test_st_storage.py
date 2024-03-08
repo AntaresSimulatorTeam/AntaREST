@@ -1,5 +1,6 @@
 import json
 import re
+import typing as t
 from unittest.mock import ANY
 
 import numpy as np
@@ -683,3 +684,146 @@ class TestSTStorage:
             "initiallevel": 0.0,
         }
         assert actual == expected
+
+    @pytest.fixture(name="base_study_id")
+    def base_study_id_fixture(self, request: t.Any, client: TestClient, user_access_token: str) -> str:
+        """Prepare a managed study for the variant study tests."""
+        params = request.param
+        res = client.post(
+            "/v1/studies",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+            params=params,
+        )
+        assert res.status_code in {200, 201}, res.json()
+        study_id: str = res.json()
+        return study_id
+
+    @pytest.fixture(name="variant_id")
+    def variant_id_fixture(self, request: t.Any, client: TestClient, user_access_token: str, base_study_id: str) -> str:
+        """Prepare a variant study for the variant study tests."""
+        name = request.param
+        res = client.post(
+            f"/v1/studies/{base_study_id}/variants",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+            params={"name": name},
+        )
+        assert res.status_code in {200, 201}, res.json()
+        study_id: str = res.json()
+        return study_id
+
+    # noinspection PyTestParametrized
+    @pytest.mark.parametrize("base_study_id", [{"name": "Base Study", "version": 860}], indirect=True)
+    @pytest.mark.parametrize("variant_id", ["Variant Study"], indirect=True)
+    def test_variant_lifecycle(self, client: TestClient, user_access_token: str, variant_id: str) -> None:
+        """
+        In this test, we want to check that short-term storages can be managed
+        in the context of a "variant" study.
+        """
+        # Create an area
+        area_name = "France"
+        res = client.post(
+            f"/v1/studies/{variant_id}/areas",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+            json={"name": area_name, "type": "AREA"},
+        )
+        assert res.status_code in {200, 201}, res.json()
+        area_cfg = res.json()
+        area_id = area_cfg["id"]
+
+        # Create a short-term storage
+        cluster_name = "Tesla1"
+        res = client.post(
+            f"/v1/studies/{variant_id}/areas/{area_id}/storages",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+            json={
+                "name": cluster_name,
+                "group": "Battery",
+                "injectionNominalCapacity": 4500,
+                "withdrawalNominalCapacity": 4230,
+                "reservoirCapacity": 5700,
+            },
+        )
+        assert res.status_code in {200, 201}, res.json()
+        cluster_id: str = res.json()["id"]
+
+        # Update the short-term storage
+        res = client.patch(
+            f"/v1/studies/{variant_id}/areas/{area_id}/storages/{cluster_id}",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+            json={"reservoirCapacity": 5600},
+        )
+        assert res.status_code == 200, res.json()
+        cluster_cfg = res.json()
+        assert cluster_cfg["reservoirCapacity"] == 5600
+
+        # Update the series matrix
+        matrix = np.random.randint(0, 2, size=(8760, 1)).tolist()
+        matrix_path = f"input/st-storage/series/{area_id}/{cluster_id.lower()}/pmax_injection"
+        args = {"target": matrix_path, "matrix": matrix}
+        res = client.post(
+            f"/v1/studies/{variant_id}/commands",
+            json=[{"action": "replace_matrix", "args": args}],
+            headers={"Authorization": f"Bearer {user_access_token}"},
+        )
+        assert res.status_code in {200, 201}, res.json()
+
+        # Duplicate the short-term storage
+        new_name = "Tesla2"
+        res = client.post(
+            f"/v1/studies/{variant_id}/areas/{area_id}/storages/{cluster_id}",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+            params={"newName": new_name},
+        )
+        assert res.status_code in {200, 201}, res.json()
+        cluster_cfg = res.json()
+        assert cluster_cfg["name"] == new_name
+        new_id = cluster_cfg["id"]
+
+        # Check that the duplicate has the right properties
+        res = client.get(
+            f"/v1/studies/{variant_id}/areas/{area_id}/storages/{new_id}",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+        )
+        assert res.status_code == 200, res.json()
+        cluster_cfg = res.json()
+        assert cluster_cfg["group"] == "Battery"
+        assert cluster_cfg["injectionNominalCapacity"] == 4500
+        assert cluster_cfg["withdrawalNominalCapacity"] == 4230
+        assert cluster_cfg["reservoirCapacity"] == 5600
+
+        # Check that the duplicate has the right matrix
+        new_cluster_matrix_path = f"input/st-storage/series/{area_id}/{new_id.lower()}/pmax_injection"
+        res = client.get(
+            f"/v1/studies/{variant_id}/raw",
+            params={"path": new_cluster_matrix_path},
+            headers={"Authorization": f"Bearer {user_access_token}"},
+        )
+        assert res.status_code == 200
+        assert res.json()["data"] == matrix
+
+        # Delete the short-term storage
+        res = client.delete(
+            f"/v1/studies/{variant_id}/areas/{area_id}/storages",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+            json=[cluster_id],
+        )
+        assert res.status_code == 204, res.json()
+
+        # Check the list of variant commands
+        res = client.get(
+            f"/v1/studies/{variant_id}/commands",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+        )
+        assert res.status_code == 200, res.json()
+        commands = res.json()
+        assert len(commands) == 7
+        actions = [command["action"] for command in commands]
+        assert actions == [
+            "create_area",
+            "create_st_storage",
+            "update_config",
+            "replace_matrix",
+            "create_st_storage",
+            "replace_matrix",
+            "remove_st_storage",
+        ]
