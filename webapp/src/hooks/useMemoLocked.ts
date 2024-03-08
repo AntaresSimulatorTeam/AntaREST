@@ -10,6 +10,7 @@ import { useState } from "react";
 */
 
 function useMemoLocked<T>(factory: () => T): T {
+  // eslint-disable-next-line react/hook-use-state
   const [state] = useState(factory);
   return state;
 }

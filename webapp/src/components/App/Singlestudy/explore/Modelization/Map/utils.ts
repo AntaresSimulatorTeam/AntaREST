@@ -83,7 +83,15 @@ export const getTextColor = (bgColor: RGB): string => {
 ////////////////////////////////////////////////////////////////
 
 /**
- * Sets the graph nodes from the nodes data
+ * Custom hook to compute and return nodes with adjusted positions based on the current layer and view settings.
+ * It adjusts node positions to ensure they are correctly positioned in the graph based on the current zoom level and layer.
+ * Additionally, it calculates the color for each node, supporting layer-specific color adjustments.
+ *
+ * @param nodes - Array of nodes to render.
+ * @param width - Width of the rendering area.
+ * @param height - Height of the rendering area.
+ * @param currentLayerId - The ID of the current layer, used to adjust node positions and colors.
+ * @returns Array of nodes with updated positions and colors for rendering.
  */
 export function useRenderNodes(
   nodes: StudyMapNode[],

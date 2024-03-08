@@ -20,9 +20,9 @@ export interface TRow {
  * If the base value is found in the list of existing values, it appends a number
  * in the format `(n)` to the base value, incrementing `n` until a unique value is found.
  *
- * @param {string} baseValue - The original base value to check.
- * @param {string[]} existingValues - The list of existing values to check against.
- * @returns {string} A unique value.
+ * @param baseValue - The original base value to check for uniqueness.
+ * @param existingValues - The list of existing values to check against for duplicates.
+ * @returns A unique value derived from the base value by appending a number in parentheses, if necessary.
  */
 export const generateNextValue = (
   baseValue: string,
@@ -54,14 +54,14 @@ export const generateNextValue = (
  * based on the given original value and the existing values in tableData.
  *
  * If the property is "name", the function appends " - copy" to the original value.
- * If the property is "id", the function uses nameToId to get the base value.
+ * If the property is "id", the function uses `nameToId` to get the base value.
  *
- * This function leverages generateNextValue to ensure the uniqueness of the value.
+ * This function leverages `generateNextValue` to ensure the uniqueness of the value.
  *
- * @param {"name" | "id"} property - The property for which the unique value is generated.
- * @param {string} originalValue - The original value of the specified property.
- * @param {TRow[]} tableData - The existing table data to check against.
- * @returns {string} A unique value for the specified property.
+ * @param property - The property for which the unique value is generated, either "name" or "id".
+ * @param originalValue - The original value of the specified property.
+ * @param tableData - The existing table data to check against for ensuring uniqueness.
+ * @returns A unique value for the specified property.
  */
 export const generateUniqueValue = (
   property: "name" | "id",

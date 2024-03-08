@@ -22,9 +22,7 @@ export type TreeData = Record<string, any> | string;
 // Utils
 ////////////////////////////////////////////////////////////////
 
-/**
- * Maps file types and folder to their corresponding icon components.
- */
+//Maps file types and folder to their corresponding icon components.
 const iconByFileType: Record<FileType | "folder", SvgIconComponent> = {
   matrix: DatasetIcon,
   json: DataObjectIcon,
@@ -34,8 +32,9 @@ const iconByFileType: Record<FileType | "folder", SvgIconComponent> = {
 
 /**
  * Gets the icon component for a given file type or folder.
- * @param {FileType | "folder"} type - The type of the file or "folder".
- * @returns {SvgIconComponent} The corresponding icon component.
+ *
+ * @param type - The type of the file or "folder".
+ * @returns The corresponding icon component.
  */
 export const getFileIcon = (type: FileType | "folder"): SvgIconComponent => {
   return iconByFileType[type] || TextSnippetIcon;
@@ -43,8 +42,9 @@ export const getFileIcon = (type: FileType | "folder"): SvgIconComponent => {
 
 /**
  * Determines the file type based on the tree data.
- * @param {TreeData} treeData - The data of the tree item.
- * @returns {FileType | "folder"} The determined file type or "folder".
+ *
+ * @param treeData - The data of the tree item.
+ * @returns The determined file type or "folder".
  */
 export const determineFileType = (treeData: TreeData): FileType | "folder" => {
   if (typeof treeData === "string") {
@@ -63,8 +63,9 @@ export const determineFileType = (treeData: TreeData): FileType | "folder" => {
 
 /**
  * Filters out specific keys from the tree data.
- * @param {TreeData} data - The original tree data.
- * @returns {TreeData} The filtered tree data.
+ *
+ * @param data - The original tree data.
+ * @returns The filtered tree data.
  */
 export const filterTreeData = (data: TreeData): TreeData => {
   const excludedKeys = new Set(["Desktop", "study", "logs"]);

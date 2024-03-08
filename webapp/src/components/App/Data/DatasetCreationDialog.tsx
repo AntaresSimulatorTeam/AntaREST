@@ -50,9 +50,9 @@ function DatasetCreationDialog(props: PropTypes) {
   const [name, setName] = useState<string>("");
   const [isJson, setIsJson] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
-  const [currentFile, setFile] = useState<File | undefined>();
+  const [currentFile, setCurrentFile] = useState<File | undefined>();
   const [importing, setImporting] = useState(false);
-  const [publicStatus, setPublic] = useState<boolean>(false);
+  const [publicStatus, setPublicStatus] = useState<boolean>(false);
 
   const onSave = async () => {
     let closeModal = true;
@@ -93,7 +93,7 @@ function DatasetCreationDialog(props: PropTypes) {
   const onUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const { target } = e;
     if (target && target.files && target.files.length === 1) {
-      setFile(target.files[0]);
+      setCurrentFile(target.files[0]);
     }
   };
 
@@ -116,7 +116,7 @@ function DatasetCreationDialog(props: PropTypes) {
 
         if (data) {
           setSelectedGroupList(data.groups);
-          setPublic(data.public);
+          setPublicStatus(data.public);
           setName(data.name);
         }
       } catch (e) {
@@ -249,7 +249,7 @@ function DatasetCreationDialog(props: PropTypes) {
             <ParamTitle>{t("global.public")}</ParamTitle>
             <Checkbox
               checked={publicStatus}
-              onChange={() => setPublic(!publicStatus)}
+              onChange={() => setPublicStatus(!publicStatus)}
               inputProps={{ "aria-label": "primary checkbox" }}
             />
           </BoxParamHeader>

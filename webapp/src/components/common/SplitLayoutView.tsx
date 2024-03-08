@@ -8,7 +8,13 @@ interface Props {
 }
 
 /**
- * @deprecated Use SplitView instead.
+ * Renders a split layout view with a fixed left column and a flexible right column.
+ * This component is deprecated and should be replaced with the `SplitView` component for enhanced functionality and flexibility.
+ *
+ * @deprecated Use `SplitView` instead for better layout management and customization options.
+ *
+ * @param props - The component props including `left` and `right` components to render in the split layout, and `sx` for styling.
+ * @returns A React component that displays a split layout with left and right sections.
  */
 function SplitLayoutView(props: Props) {
   const { left, right, sx } = props;

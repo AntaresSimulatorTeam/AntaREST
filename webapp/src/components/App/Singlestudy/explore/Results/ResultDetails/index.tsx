@@ -62,7 +62,7 @@ function ResultDetails() {
 
   const { data: output } = outputRes;
   const [dataType, setDataType] = useState(DataType.General);
-  const [timestep, setTimeStep] = useState(Timestep.Hourly);
+  const [timestep, setTimestep] = useState(Timestep.Hourly);
   const [year, setYear] = useState(-1);
   const [itemType, setItemType] = useState(OutputItemType.Areas);
   const [selectedItemId, setSelectedItemId] = useState("");
@@ -151,7 +151,9 @@ function ResultDetails() {
 
   // !NOTE: Workaround to display the date in the correct format, to be replaced by a proper solution.
   const dateTimeFromIndex = useMemo(() => {
-    if (!matrixRes.data) return [];
+    if (!matrixRes.data) {
+      return [];
+    }
 
     // Annual format has a static string
     if (timestep === Timestep.Annual) {
@@ -359,7 +361,7 @@ function ResultDetails() {
                         size="small"
                         variant="outlined"
                         onChange={(event) => {
-                          setTimeStep(event?.target.value as Timestep);
+                          setTimestep(event?.target.value as Timestep);
                         }}
                       />
                     ),

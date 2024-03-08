@@ -11,8 +11,8 @@ export interface SplitViewProps {
 }
 
 /**
- * Renders a resizable split view layout. It can be configured
- * for both horizontal and vertical directions.
+ * Renders a resizable split view layout, configurable for both horizontal and vertical directions.
+ *
  * @see {@link SplitViewProps} for the properties it accepts.
  *
  * @example
@@ -20,6 +20,13 @@ export interface SplitViewProps {
  *   <ComponentOne />
  *   <ComponentTwo />
  * </SplitView>
+ *
+ * @param props - The component props.
+ * @param props.children - Child components to be rendered within the split views.
+ * @param props.direction - The orientation of the split view ("horizontal" or "vertical").
+ * @param props.sizes - Initial sizes of each view in percentages. The array must sum to 100 and match the number of children.
+ * @param props.gutterSize - The size of the gutter between split views. Defaults to 4.
+ * @returns A React component displaying a split layout view with resizable panes.
  */
 function SplitView({
   children,
