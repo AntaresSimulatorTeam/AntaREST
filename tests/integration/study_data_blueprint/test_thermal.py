@@ -29,7 +29,9 @@ We should test the following end poins:
 """
 import json
 import re
+import typing as t
 
+import numpy as np
 import pytest
 from starlette.testclient import TestClient
 
@@ -455,7 +457,23 @@ class TestThermal:
         #  THERMAL CLUSTER MATRICES
         # =============================
 
-        # TODO: add unit tests for thermal cluster matrices
+        matrix = np.random.randint(0, 2, size=(8760, 1)).tolist()
+        matrix_path = f"input/thermal/prepro/{area_id}/{fr_gas_conventional_id.lower()}/data"
+        args = {"target": matrix_path, "matrix": matrix}
+        res = client.post(
+            f"/v1/studies/{study_id}/commands",
+            json=[{"action": "replace_matrix", "args": args}],
+            headers={"Authorization": f"Bearer {user_access_token}"},
+        )
+        assert res.status_code in {200, 201}, res.json()
+
+        res = client.get(
+            f"/v1/studies/{study_id}/raw",
+            params={"path": matrix_path},
+            headers={"Authorization": f"Bearer {user_access_token}"},
+        )
+        assert res.status_code == 200
+        assert res.json()["data"] == matrix
 
         # ==================================
         #  THERMAL CLUSTER LIST / GROUPS
@@ -537,6 +555,34 @@ class TestThermal:
         assert res.json() == fr_gas_conventional_cfg
 
         # =============================
+        #  THERMAL CLUSTER DUPLICATION
+        # =============================
+
+        new_name = "Duplicate of Fr_Gas_Conventional"
+        res = client.post(
+            f"/v1/studies/{study_id}/areas/{area_id}/thermals/{fr_gas_conventional_id}",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+            params={"newName": new_name},
+        )
+        assert res.status_code in {200, 201}, res.json()
+        # asserts the config is the same
+        duplicated_config = dict(fr_gas_conventional_cfg)
+        duplicated_config["name"] = new_name
+        duplicated_id = transform_name_to_id(new_name, lower=False)
+        duplicated_config["id"] = duplicated_id
+        assert res.json() == duplicated_config
+
+        # asserts the matrix has also been duplicated
+        new_cluster_matrix_path = f"input/thermal/prepro/{area_id}/{duplicated_id.lower()}/data"
+        res = client.get(
+            f"/v1/studies/{study_id}/raw",
+            params={"path": new_cluster_matrix_path},
+            headers={"Authorization": f"Bearer {user_access_token}"},
+        )
+        assert res.status_code == 200
+        assert res.json()["data"] == matrix
+
+        # =============================
         #  THERMAL CLUSTER DELETION
         # =============================
 
@@ -573,18 +619,15 @@ class TestThermal:
         assert res.status_code == 204, res.json()
         assert res.text in {"", "null"}  # Old FastAPI versions return 'null'.
 
-        # The list of thermal clusters should be empty.
+        # The list of thermal clusters should not contain the deleted ones.
         res = client.get(
             f"/v1/studies/{study_id}/areas/{area_id}/clusters/thermal",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code == 200, res.json()
-        expected = [
-            c
-            for c in EXISTING_CLUSTERS
-            if transform_name_to_id(c["name"], lower=False) not in [other_cluster_id1, other_cluster_id2]
-        ]
-        assert res.json() == expected
+        deleted_clusters = [other_cluster_id1, other_cluster_id2, fr_gas_conventional_id]
+        for cluster in res.json():
+            assert transform_name_to_id(cluster["name"], lower=False) not in deleted_clusters
 
         # ===========================
         #  THERMAL CLUSTER ERRORS
@@ -748,3 +791,172 @@ class TestThermal:
         obj = res.json()
         description = obj["description"]
         assert bad_study_id in description
+
+        # Cannot duplicate a fake cluster
+        unknown_id = "unknown"
+        res = client.post(
+            f"/v1/studies/{study_id}/areas/{area_id}/thermals/{unknown_id}",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+            params={"newName": "duplicate"},
+        )
+        assert res.status_code == 404, res.json()
+        obj = res.json()
+        assert obj["description"] == f"Cluster: '{unknown_id}' not found"
+        assert obj["exception"] == "ClusterNotFound"
+
+        # Cannot duplicate with an existing id
+        res = client.post(
+            f"/v1/studies/{study_id}/areas/{area_id}/thermals/{duplicated_id}",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+            params={"newName": new_name.upper()},  # different case but same ID
+        )
+        assert res.status_code == 409, res.json()
+        obj = res.json()
+        description = obj["description"]
+        assert new_name.upper() in description
+        assert obj["exception"] == "ClusterAlreadyExists"
+
+    @pytest.fixture(name="base_study_id")
+    def base_study_id_fixture(self, request: t.Any, client: TestClient, user_access_token: str) -> str:
+        """Prepare a managed study for the variant study tests."""
+        params = request.param
+        res = client.post(
+            "/v1/studies",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+            params=params,
+        )
+        assert res.status_code in {200, 201}, res.json()
+        study_id: str = res.json()
+        return study_id
+
+    @pytest.fixture(name="variant_id")
+    def variant_id_fixture(self, request: t.Any, client: TestClient, user_access_token: str, base_study_id: str) -> str:
+        """Prepare a variant study for the variant study tests."""
+        name = request.param
+        res = client.post(
+            f"/v1/studies/{base_study_id}/variants",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+            params={"name": name},
+        )
+        assert res.status_code in {200, 201}, res.json()
+        study_id: str = res.json()
+        return study_id
+
+    # noinspection PyTestParametrized
+    @pytest.mark.parametrize("base_study_id", [{"name": "Base Study", "version": 860}], indirect=True)
+    @pytest.mark.parametrize("variant_id", ["Variant Study"], indirect=True)
+    def test_variant_lifecycle(self, client: TestClient, user_access_token: str, variant_id: str) -> None:
+        """
+        In this test, we want to check that thermal clusters can be managed
+        in the context of a "variant" study.
+        """
+        # Create an area
+        area_name = "France"
+        res = client.post(
+            f"/v1/studies/{variant_id}/areas",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+            json={"name": area_name, "type": "AREA"},
+        )
+        assert res.status_code in {200, 201}, res.json()
+        area_cfg = res.json()
+        area_id = area_cfg["id"]
+
+        # Create a thermal cluster
+        cluster_name = "Th1"
+        res = client.post(
+            f"/v1/studies/{variant_id}/areas/{area_id}/clusters/thermal",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+            json={
+                "name": cluster_name,
+                "group": "Nuclear",
+                "unitCount": 13,
+                "nominalCapacity": 42500,
+                "marginalCost": 0.1,
+            },
+        )
+        assert res.status_code in {200, 201}, res.json()
+        cluster_id: str = res.json()["id"]
+
+        # Update the thermal cluster
+        res = client.patch(
+            f"/v1/studies/{variant_id}/areas/{area_id}/clusters/thermal/{cluster_id}",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+            json={
+                "marginalCost": 0.2,
+            },
+        )
+        assert res.status_code == 200, res.json()
+        cluster_cfg = res.json()
+        assert cluster_cfg["marginalCost"] == 0.2
+
+        # Update the prepro matrix
+        matrix = np.random.randint(0, 2, size=(8760, 1)).tolist()
+        matrix_path = f"input/thermal/prepro/{area_id}/{cluster_id.lower()}/data"
+        args = {"target": matrix_path, "matrix": matrix}
+        res = client.post(
+            f"/v1/studies/{variant_id}/commands",
+            json=[{"action": "replace_matrix", "args": args}],
+            headers={"Authorization": f"Bearer {user_access_token}"},
+        )
+        assert res.status_code in {200, 201}, res.json()
+
+        # Duplicate the thermal cluster
+        new_name = "Th2"
+        res = client.post(
+            f"/v1/studies/{variant_id}/areas/{area_id}/thermals/{cluster_id}",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+            params={"newName": new_name},
+        )
+        assert res.status_code in {200, 201}, res.json()
+        cluster_cfg = res.json()
+        assert cluster_cfg["name"] == new_name
+        new_id = cluster_cfg["id"]
+
+        # Check that the duplicate has the right properties
+        res = client.get(
+            f"/v1/studies/{variant_id}/areas/{area_id}/clusters/thermal/{new_id}",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+        )
+        assert res.status_code == 200, res.json()
+        cluster_cfg = res.json()
+        assert cluster_cfg["group"] == "Nuclear"
+        assert cluster_cfg["unitCount"] == 13
+        assert cluster_cfg["nominalCapacity"] == 42500
+        assert cluster_cfg["marginalCost"] == 0.2
+
+        # Check that the duplicate has the right matrix
+        new_cluster_matrix_path = f"input/thermal/prepro/{area_id}/{new_id.lower()}/data"
+        res = client.get(
+            f"/v1/studies/{variant_id}/raw",
+            params={"path": new_cluster_matrix_path},
+            headers={"Authorization": f"Bearer {user_access_token}"},
+        )
+        assert res.status_code == 200
+        assert res.json()["data"] == matrix
+
+        # Delete the thermal cluster
+        res = client.delete(
+            f"/v1/studies/{variant_id}/areas/{area_id}/clusters/thermal",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+            json=[cluster_id],
+        )
+        assert res.status_code == 204, res.json()
+
+        # Check the list of variant commands
+        res = client.get(
+            f"/v1/studies/{variant_id}/commands",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+        )
+        assert res.status_code == 200, res.json()
+        commands = res.json()
+        assert len(commands) == 7
+        actions = [command["action"] for command in commands]
+        assert actions == [
+            "create_area",
+            "create_cluster",
+            "update_config",
+            "replace_matrix",
+            "create_cluster",
+            "replace_matrix",
+            "remove_cluster",
+        ]

@@ -3,9 +3,10 @@ import typing as t
 
 from pydantic import validator
 
-from antarest.core.exceptions import ClusterConfigNotFound, ClusterNotFound
+from antarest.core.exceptions import ClusterAlreadyExists, ClusterConfigNotFound, ClusterNotFound
 from antarest.study.business.utils import AllOptionalMetaclass, camel_case_model, execute_or_add_commands
 from antarest.study.model import Study
+from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
     Thermal860Config,
     Thermal860Properties,
@@ -16,6 +17,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
 from antarest.study.storage.variantstudy.model.command.remove_cluster import RemoveCluster
+from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 
 __all__ = (
@@ -40,7 +42,7 @@ class ThermalClusterInput(Thermal860Properties, metaclass=AllOptionalMetaclass, 
         def schema_extra(schema: t.MutableMapping[str, t.Any]) -> None:
             schema["example"] = ThermalClusterInput(
                 group="Gas",
-                name="2 avail and must 1",
+                name="Gas Cluster XY",
                 enabled=False,
                 unitCount=100,
                 nominalCapacity=1000.0,
@@ -79,9 +81,9 @@ class ThermalClusterOutput(Thermal860Config, metaclass=AllOptionalMetaclass, use
         @staticmethod
         def schema_extra(schema: t.MutableMapping[str, t.Any]) -> None:
             schema["example"] = ThermalClusterOutput(
-                id="2 avail and must 1",
+                id="Gas cluster YZ",
                 group="Gas",
-                name="2 avail and must 1",
+                name="Gas Cluster YZ",
                 enabled=False,
                 unitCount=100,
                 nominalCapacity=1000.0,
@@ -190,16 +192,8 @@ class ThermalManager:
         """
 
         file_study = self._get_file_study(study)
-        study_version = study.version
-        cluster = cluster_data.to_config(study_version)
-        # NOTE: currently, in the `CreateCluster` class, there is a confusion
-        # between the cluster name and the cluster ID (which is a section name).
-        command = CreateCluster(
-            area_id=area_id,
-            cluster_name=cluster.id,
-            parameters=cluster.dict(by_alias=True, exclude={"id"}),
-            command_context=self.storage_service.variant_study_service.command_factory.command_context,
-        )
+        cluster = cluster_data.to_config(study.version)
+        command = self._make_create_cluster_cmd(area_id, cluster)
         execute_or_add_commands(
             study,
             file_study,
@@ -208,6 +202,17 @@ class ThermalManager:
         )
         output = self.get_cluster(study, area_id, cluster.id)
         return output
+
+    def _make_create_cluster_cmd(self, area_id: str, cluster: ThermalConfigType) -> CreateCluster:
+        # NOTE: currently, in the `CreateCluster` class, there is a confusion
+        # between the cluster name and the cluster ID (which is a section name).
+        command = CreateCluster(
+            area_id=area_id,
+            cluster_name=cluster.id,
+            parameters=cluster.dict(by_alias=True, exclude={"id"}),
+            command_context=self.storage_service.variant_study_service.command_factory.command_context,
+        )
+        return command
 
     def update_cluster(
         self,
@@ -286,3 +291,63 @@ class ThermalManager:
         ]
 
         execute_or_add_commands(study, file_study, commands, self.storage_service)
+
+    def duplicate_cluster(
+        self,
+        study: Study,
+        area_id: str,
+        source_id: str,
+        new_cluster_name: str,
+    ) -> ThermalClusterOutput:
+        """
+        Creates a duplicate cluster within the study area with a new name.
+
+        Args:
+            study: The study in which the cluster will be duplicated.
+            area_id: The identifier of the area where the cluster will be duplicated.
+            source_id: The identifier of the cluster to be duplicated.
+            new_cluster_name: The new name for the duplicated cluster.
+
+        Returns:
+            The duplicated cluster configuration.
+
+        Raises:
+            ClusterAlreadyExists: If a cluster with the new name already exists in the area.
+        """
+        new_id = transform_name_to_id(new_cluster_name, lower=False)
+        lower_new_id = new_id.lower()
+        if any(lower_new_id == cluster.id.lower() for cluster in self.get_clusters(study, area_id)):
+            raise ClusterAlreadyExists("Thermal", new_id)
+
+        # Cluster duplication
+        source_cluster = self.get_cluster(study, area_id, source_id)
+        source_cluster.name = new_cluster_name
+        creation_form = ThermalClusterCreation(**source_cluster.dict(by_alias=False, exclude={"id"}))
+        new_config = creation_form.to_config(study.version)
+        create_cluster_cmd = self._make_create_cluster_cmd(area_id, new_config)
+
+        # Matrix edition
+        lower_source_id = source_id.lower()
+        source_paths = [
+            f"input/thermal/series/{area_id}/{lower_source_id}/series",
+            f"input/thermal/prepro/{area_id}/{lower_source_id}/modulation",
+            f"input/thermal/prepro/{area_id}/{lower_source_id}/data",
+        ]
+        new_paths = [
+            f"input/thermal/series/{area_id}/{lower_new_id}/series",
+            f"input/thermal/prepro/{area_id}/{lower_new_id}/modulation",
+            f"input/thermal/prepro/{area_id}/{lower_new_id}/data",
+        ]
+
+        # Prepare and execute commands
+        commands: t.List[t.Union[CreateCluster, ReplaceMatrix]] = [create_cluster_cmd]
+        storage_service = self.storage_service.get_storage(study)
+        command_context = self.storage_service.variant_study_service.command_factory.command_context
+        for source_path, new_path in zip(source_paths, new_paths):
+            current_matrix = storage_service.get(study, source_path)["data"]
+            command = ReplaceMatrix(target=new_path, matrix=current_matrix, command_context=command_context)
+            commands.append(command)
+
+        execute_or_add_commands(study, self._get_file_study(study), commands, self.storage_service)
+
+        return ThermalClusterOutput(**new_config.dict(by_alias=False))
