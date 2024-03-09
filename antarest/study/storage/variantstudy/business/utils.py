@@ -52,10 +52,13 @@ def get_or_create_section(json_ini: JSON, section: str) -> JSON:
 
 
 def remove_none_args(command_dto: CommandDTO) -> CommandDTO:
-    if isinstance(command_dto.args, list):
-        command_dto.args = [{k: v for k, v in args.items() if v is not None} for args in command_dto.args]
+    args = command_dto.args
+    if isinstance(args, list):
+        command_dto.args = [{k: v for k, v in args.items() if v is not None} for args in args]
+    elif isinstance(args, dict):
+        command_dto.args = {k: v for k, v in args.items() if v is not None}
     else:
-        command_dto.args = {k: v for k, v in command_dto.args.items() if v is not None}
+        raise TypeError(f"Invalid type for args: {type(args)}")
     return command_dto
 
 
