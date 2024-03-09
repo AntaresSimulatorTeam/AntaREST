@@ -34,8 +34,30 @@ class STStorageConfigNotFoundError(HTTPException):
     """Configuration for short-term storage is not found"""
 
     def __init__(self, study_id: str, area_id: str) -> None:
-        detail = f"The short-term storage configuration of area '{area_id}' not found:"
+        detail = f"The short-term storage configuration of area '{area_id}' not found"
         super().__init__(HTTPStatus.NOT_FOUND, detail)
+
+    def __str__(self) -> str:
+        return self.detail
+
+
+class STStorageNotFoundError(HTTPException):
+    """Short-term storage is not found"""
+
+    def __init__(self, study_id: str, area_id: str, st_storage_id: str) -> None:
+        detail = f"Short-term storage '{st_storage_id}' not found in area '{area_id}'"
+        super().__init__(HTTPStatus.NOT_FOUND, detail)
+
+    def __str__(self) -> str:
+        return self.detail
+
+
+class DuplicateSTStorageId(HTTPException):
+    """Exception raised when trying to create a short-term storage with an already existing id."""
+
+    def __init__(self, study_id: str, area_id: str, st_storage_id: str) -> None:
+        detail = f"Short term storage '{st_storage_id}' already exists in area '{area_id}'"
+        super().__init__(HTTPStatus.CONFLICT, detail)
 
     def __str__(self) -> str:
         return self.detail
