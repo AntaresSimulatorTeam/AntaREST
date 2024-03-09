@@ -3,10 +3,11 @@ import typing as t
 
 from pydantic import validator
 
-from antarest.core.exceptions import ClusterConfigNotFound, ClusterNotFound
+from antarest.core.exceptions import ClusterAlreadyExists, ClusterConfigNotFound, ClusterNotFound
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.utils import AllOptionalMetaclass, camel_case_model, execute_or_add_commands
 from antarest.study.model import Study
+from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.renewable import (
     RenewableConfig,
     RenewableConfigType,
@@ -17,6 +18,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.create_renewables_cluster import CreateRenewablesCluster
 from antarest.study.storage.variantstudy.model.command.remove_renewables_cluster import RemoveRenewablesCluster
+from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 
 __all__ = (
@@ -47,7 +49,7 @@ class RenewableClusterInput(RenewableProperties, metaclass=AllOptionalMetaclass,
         def schema_extra(schema: t.MutableMapping[str, t.Any]) -> None:
             schema["example"] = RenewableClusterInput(
                 group="Gas",
-                name="2 avail and must 1",
+                name="Gas Cluster XY",
                 enabled=False,
                 unitCount=100,
                 nominalCapacity=1000.0,
@@ -85,9 +87,9 @@ class RenewableClusterOutput(RenewableConfig, metaclass=AllOptionalMetaclass, us
         @staticmethod
         def schema_extra(schema: t.MutableMapping[str, t.Any]) -> None:
             schema["example"] = RenewableClusterOutput(
-                id="2 avail and must 1",
+                id="Gas cluster YZ",
                 group="Gas",
-                name="2 avail and must 1",
+                name="Gas Cluster YZ",
                 enabled=False,
                 unitCount=100,
                 nominalCapacity=1000.0,
@@ -157,23 +159,25 @@ class RenewableManager:
             The newly created cluster.
         """
         file_study = self._get_file_study(study)
-        study_version = study.version
-        cluster = cluster_data.to_config(study_version)
-
-        command = CreateRenewablesCluster(
-            area_id=area_id,
-            cluster_name=cluster.id,
-            parameters=cluster.dict(by_alias=True, exclude={"id"}),
-            command_context=self.storage_service.variant_study_service.command_factory.command_context,
-        )
+        cluster = cluster_data.to_config(study.version)
+        command = self._make_create_cluster_cmd(area_id, cluster)
         execute_or_add_commands(
             study,
             file_study,
             [command],
             self.storage_service,
         )
+        output = self.get_cluster(study, area_id, cluster.id)
+        return output
 
-        return self.get_cluster(study, area_id, cluster.id)
+    def _make_create_cluster_cmd(self, area_id: str, cluster: RenewableConfigType) -> CreateRenewablesCluster:
+        command = CreateRenewablesCluster(
+            area_id=area_id,
+            cluster_name=cluster.id,
+            parameters=cluster.dict(by_alias=True, exclude={"id"}),
+            command_context=self.storage_service.variant_study_service.command_factory.command_context,
+        )
+        return command
 
     def get_cluster(self, study: Study, area_id: str, cluster_id: str) -> RenewableClusterOutput:
         """
@@ -273,3 +277,53 @@ class RenewableManager:
         ]
 
         execute_or_add_commands(study, file_study, commands, self.storage_service)
+
+    def duplicate_cluster(
+        self,
+        study: Study,
+        area_id: str,
+        source_id: str,
+        new_cluster_name: str,
+    ) -> RenewableClusterOutput:
+        """
+        Creates a duplicate cluster within the study area with a new name.
+
+        Args:
+            study: The study in which the cluster will be duplicated.
+            area_id: The identifier of the area where the cluster will be duplicated.
+            source_id: The identifier of the cluster to be duplicated.
+            new_cluster_name: The new name for the duplicated cluster.
+
+        Returns:
+            The duplicated cluster configuration.
+
+        Raises:
+            ClusterAlreadyExists: If a cluster with the new name already exists in the area.
+        """
+        new_id = transform_name_to_id(new_cluster_name, lower=False)
+        lower_new_id = new_id.lower()
+        if any(lower_new_id == cluster.id.lower() for cluster in self.get_clusters(study, area_id)):
+            raise ClusterAlreadyExists("Renewable", new_id)
+
+        # Cluster duplication
+        current_cluster = self.get_cluster(study, area_id, source_id)
+        current_cluster.name = new_cluster_name
+        creation_form = RenewableClusterCreation(**current_cluster.dict(by_alias=False, exclude={"id"}))
+        new_config = creation_form.to_config(study.version)
+        create_cluster_cmd = self._make_create_cluster_cmd(area_id, new_config)
+
+        # Matrix edition
+        lower_source_id = source_id.lower()
+        source_path = f"input/renewables/series/{area_id}/{lower_source_id}/series"
+        new_path = f"input/renewables/series/{area_id}/{lower_new_id}/series"
+
+        # Prepare and execute commands
+        storage_service = self.storage_service.get_storage(study)
+        command_context = self.storage_service.variant_study_service.command_factory.command_context
+        current_matrix = storage_service.get(study, source_path)["data"]
+        replace_matrix_cmd = ReplaceMatrix(target=new_path, matrix=current_matrix, command_context=command_context)
+        commands = [create_cluster_cmd, replace_matrix_cmd]
+
+        execute_or_add_commands(study, self._get_file_study(study), commands, self.storage_service)
+
+        return RenewableClusterOutput(**new_config.dict(by_alias=False))
