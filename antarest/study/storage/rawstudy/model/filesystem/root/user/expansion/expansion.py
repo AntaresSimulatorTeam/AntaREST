@@ -14,11 +14,7 @@ from antarest.study.storage.rawstudy.model.filesystem.root.user.expansion.settin
 
 class Expansion(BucketNode):
     registered_files = [
-        RegisteredFile(
-            key="candidates",
-            node=ExpansionCandidates,
-            filename="candidates.ini",
-        ),
+        RegisteredFile(key="candidates", node=ExpansionCandidates, filename="candidates.ini"),
         RegisteredFile(key="settings", node=ExpansionSettings, filename="settings.ini"),
         RegisteredFile(key="capa", node=ExpansionMatrixResources),
         RegisteredFile(key="weights", node=ExpansionMatrixResources),

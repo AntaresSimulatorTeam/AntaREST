@@ -3,10 +3,10 @@ import re
 import shutil
 import tempfile
 import time
+import typing as t
 from http import HTTPStatus
 from http.client import HTTPException
 from pathlib import Path
-from typing import Callable, List, NamedTuple
 
 from antarest.core.exceptions import StudyValidationError
 
@@ -23,40 +23,27 @@ from .upgrader_860 import upgrade_860
 logger = logging.getLogger(__name__)
 
 
-class UpgradeMethod(NamedTuple):
+class UpgradeMethod(t.NamedTuple):
     """Raw study upgrade method (old version, new version, upgrade function)."""
 
     old: str
     new: str
-    method: Callable[[Path], None]
-    files: List[Path]
+    method: t.Callable[[Path], None]
+    files: t.List[Path]
 
+
+_GENERAL_DATA_PATH = Path("settings/generaldata.ini")
 
 UPGRADE_METHODS = [
-    UpgradeMethod("700", "710", upgrade_710, [Path("settings/generaldata.ini")]),
+    UpgradeMethod("700", "710", upgrade_710, [_GENERAL_DATA_PATH]),
     UpgradeMethod("710", "720", upgrade_720, []),
-    UpgradeMethod("720", "800", upgrade_800, [Path("settings/generaldata.ini")]),
-    UpgradeMethod(
-        "800",
-        "810",
-        upgrade_810,
-        [Path("settings/generaldata.ini"), Path("input")],
-    ),
+    UpgradeMethod("720", "800", upgrade_800, [_GENERAL_DATA_PATH]),
+    UpgradeMethod("800", "810", upgrade_810, [_GENERAL_DATA_PATH, Path("input")]),
     UpgradeMethod("810", "820", upgrade_820, [Path("input/links")]),
-    UpgradeMethod(
-        "820",
-        "830",
-        upgrade_830,
-        [Path("settings/generaldata.ini"), Path("input/areas")],
-    ),
-    UpgradeMethod("830", "840", upgrade_840, [Path("settings/generaldata.ini")]),
-    UpgradeMethod("840", "850", upgrade_850, [Path("settings/generaldata.ini")]),
-    UpgradeMethod(
-        "850",
-        "860",
-        upgrade_860,
-        [Path("input"), Path("settings/generaldata.ini")],
-    ),
+    UpgradeMethod("820", "830", upgrade_830, [_GENERAL_DATA_PATH, Path("input/areas")]),
+    UpgradeMethod("830", "840", upgrade_840, [_GENERAL_DATA_PATH]),
+    UpgradeMethod("840", "850", upgrade_850, [_GENERAL_DATA_PATH]),
+    UpgradeMethod("850", "860", upgrade_860, [Path("input"), _GENERAL_DATA_PATH]),
 ]
 
 
@@ -127,7 +114,7 @@ def get_current_version(study_path: Path) -> str:
     )
 
 
-def can_upgrade_version(from_version: str, to_version: str) -> List[Path]:
+def can_upgrade_version(from_version: str, to_version: str) -> t.List[Path]:
     """
     Checks if upgrading from one version to another is possible.
 
@@ -190,7 +177,7 @@ def _update_study_antares_file(target_version: str, study_path: Path) -> None:
     file.write_text(content, encoding="utf-8")
 
 
-def _copies_only_necessary_files(files_to_upgrade: List[Path], study_path: Path, tmp_path: Path) -> List[Path]:
+def _copies_only_necessary_files(files_to_upgrade: t.List[Path], study_path: Path, tmp_path: Path) -> t.List[Path]:
     """
     Copies files concerned by the version upgrader into a temporary directory.
     Args:
@@ -221,7 +208,7 @@ def _copies_only_necessary_files(files_to_upgrade: List[Path], study_path: Path,
     return files_to_retrieve
 
 
-def _filters_out_children_files(files_to_upgrade: List[Path]) -> List[Path]:
+def _filters_out_children_files(files_to_upgrade: t.List[Path]) -> t.List[Path]:
     """
     Filters out children paths of "input" if "input" is already in the list.
     Args:
@@ -237,7 +224,7 @@ def _filters_out_children_files(files_to_upgrade: List[Path]) -> List[Path]:
     return files_to_upgrade
 
 
-def _replace_safely_original_files(files_to_replace: List[Path], study_path: Path, tmp_path: Path) -> None:
+def _replace_safely_original_files(files_to_replace: t.List[Path], study_path: Path, tmp_path: Path) -> None:
     """
     Replace files/folders of the study that should be upgraded by their copy already upgraded in the tmp directory.
     It uses Path.rename() and an intermediary tmp directory to swap the folders safely.
