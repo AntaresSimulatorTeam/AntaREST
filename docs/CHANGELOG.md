@@ -16,6 +16,7 @@ v2.16.8 (unreleased)
 * **variants:** avoid recursive error when creating big variant tree [`#1967`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1967)
 * **outputs:** build outputs config even when using cache [`#1958`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1958)
 * **comments:** use a command to update comments on a variant [`#1959`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1959)
+* **outputs (ui):** correct weekly data formatting to support 53-week years [`#1975`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1975)
 
 
 v2.16.7 (2024-03-05)

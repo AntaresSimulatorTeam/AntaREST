@@ -158,11 +158,16 @@ function ResultDetails() {
       return ["Annual"];
     }
 
+    // Directly use API's week index (handles 53 weeks) as no formatting is required.
+    // !NOTE: Suboptimal: Assumes API consistency, lacks flexibility.
+    if (timestep === Timestep.Weekly) {
+      return matrixRes.data.index.map((weekNumber) => weekNumber.toString());
+    }
+
     // Original date/time format mapping for moment parsing
     const parseFormat = {
       [Timestep.Hourly]: "MM/DD HH:mm",
       [Timestep.Daily]: "MM/DD",
-      [Timestep.Weekly]: "WW",
       [Timestep.Monthly]: "MM",
     }[timestep];
 
@@ -170,7 +175,6 @@ function ResultDetails() {
     const outputFormat = {
       [Timestep.Hourly]: "DD MMM HH:mm  I",
       [Timestep.Daily]: "DD MMM  I",
-      [Timestep.Weekly]: "WW",
       [Timestep.Monthly]: "MMM",
     }[timestep];
 
