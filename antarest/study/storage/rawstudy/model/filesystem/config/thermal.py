@@ -7,14 +7,16 @@ from antarest.study.storage.rawstudy.model.filesystem.config.cluster import Clus
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import IgnoreCaseIdentifier
 
 __all__ = (
-    "LocalTSGenerationBehavior",
     "LawOption",
-    "ThermalClusterGroup",
-    "ThermalProperties",
-    "ThermalConfig",
+    "LocalTSGenerationBehavior",
     "Thermal860Config",
     "Thermal870Config",
+    "Thermal870Properties",
+    "ThermalClusterGroup",
+    "ThermalConfig",
     "ThermalConfigType",
+    "ThermalCostGeneration",
+    "ThermalProperties",
     "create_thermal_config",
 )
 
