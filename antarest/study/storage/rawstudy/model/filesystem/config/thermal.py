@@ -36,7 +36,7 @@ class LocalTSGenerationBehavior(EnumIgnoreCase):
     FORCE_NO_GENERATION = "force no generation"
     FORCE_GENERATION = "force generation"
 
-    def __repr__(self) -> str:
+    def __repr__(self) -> str:  # pragma: no cover
         return f"{self.__class__.__name__}.{self.name}"
 
 
@@ -49,7 +49,7 @@ class LawOption(EnumIgnoreCase):
     UNIFORM = "uniform"
     GEOMETRIC = "geometric"
 
-    def __repr__(self) -> str:
+    def __repr__(self) -> str:  # pragma: no cover
         return f"{self.__class__.__name__}.{self.name}"
 
 
@@ -70,7 +70,7 @@ class ThermalClusterGroup(EnumIgnoreCase):
     OTHER3 = "Other 3"
     OTHER4 = "Other 4"
 
-    def __repr__(self) -> str:
+    def __repr__(self) -> str:  # pragma: no cover
         return f"{self.__class__.__name__}.{self.name}"
 
     @classmethod
@@ -274,16 +274,29 @@ class Thermal860Properties(ThermalProperties):
     )
 
 
+# noinspection SpellCheckingInspection
 class Thermal870Properties(Thermal860Properties):
     """
     Thermal cluster configuration model for study in version 8.7 or above.
     """
 
-    costgeneration: ThermalCostGeneration = Field(default=ThermalCostGeneration.SET_MANUALLY)
-    efficiency: float = Field(default=100.0, ge=0, description="Efficiency (%)")
-    variableomcost: float = Field(
-        default=0, description="Operating and Maintenance Cost (€/MWh)"
-    )  # Even if it's a cost it could be negative.
+    cost_generation: ThermalCostGeneration = Field(
+        default=ThermalCostGeneration.SET_MANUALLY,
+        alias="costgeneration",
+        description="Cost generation option",
+    )
+    efficiency: float = Field(
+        default=100.0,
+        ge=0,
+        le=100,
+        description="Efficiency (%)",
+    )
+    # Even if `variableomcost` is a cost it could be negative.
+    variable_o_m_cost: float = Field(
+        default=0.0,
+        description="Operating and Maintenance Cost (€/MWh)",
+        alias="variableomcost",
+    )
 
 
 class ThermalConfig(ThermalProperties, IgnoreCaseIdentifier):
@@ -350,6 +363,10 @@ class Thermal870Config(Thermal870Properties, IgnoreCaseIdentifier):
     0.0
     >>> cl.efficiency
     97.0
+    >>> cl.variable_o_m_cost
+    0.0
+    >>> cl.cost_generation == ThermalCostGeneration.SET_MANUALLY
+    True
     """
 
 

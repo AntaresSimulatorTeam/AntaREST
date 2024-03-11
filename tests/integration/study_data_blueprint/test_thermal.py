@@ -289,25 +289,26 @@ class TestThermal:
 
             assert task.status == TaskStatus.COMPLETED, task
 
-        # =============================
+        # =================================
         #  UPDATE EXPECTED POLLUTANTS LIST
-        # =============================
+        # =================================
 
+        # noinspection SpellCheckingInspection
         pollutants_names = ["nh3", "nmvoc", "nox", "op1", "op2", "op3", "op4", "op5", "pm10", "pm25", "pm5", "so2"]
         pollutants_values = 0.0 if version >= 860 else None
         for existing_cluster in EXISTING_CLUSTERS:
             existing_cluster.update({p: pollutants_values for p in pollutants_names})
             existing_cluster.update(
                 {
-                    "costgeneration": "SetManually" if version == 870 else None,
+                    "costGeneration": "SetManually" if version == 870 else None,
                     "efficiency": 100.0 if version == 870 else None,
-                    "variableomcost": 0.0 if version == 870 else None,
+                    "variableOMCost": 0.0 if version == 870 else None,
                 }
             )
 
-        # =============================
+        # ==========================
         #  THERMAL CLUSTER CREATION
-        # =============================
+        # ==========================
 
         area_id = transform_name_to_id("FR")
         fr_gas_conventional = "FR_Gas conventional"
@@ -358,9 +359,9 @@ class TestThermal:
         fr_gas_conventional_cfg = {
             **fr_gas_conventional_cfg,
             **{
-                "costgeneration": "SetManually" if version == 870 else None,
+                "costGeneration": "SetManually" if version == 870 else None,
                 "efficiency": 100.0 if version == 870 else None,
-                "variableomcost": 0.0 if version == 870 else None,
+                "variableOMCost": 0.0 if version == 870 else None,
             },
         }
         assert res.json() == fr_gas_conventional_cfg
@@ -373,9 +374,9 @@ class TestThermal:
         assert res.status_code == 200, res.json()
         assert res.json() == fr_gas_conventional_cfg
 
-        # =============================
+        # ==========================
         #  THERMAL CLUSTER MATRICES
-        # =============================
+        # ==========================
 
         matrix = np.random.randint(0, 2, size=(8760, 1)).tolist()
         matrix_path = f"input/thermal/prepro/{area_id}/{fr_gas_conventional_id.lower()}/data"
