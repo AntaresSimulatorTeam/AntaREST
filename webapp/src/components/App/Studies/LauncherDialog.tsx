@@ -39,7 +39,8 @@ import { convertVersions } from "../../../services/utils";
 import UsePromiseCond from "../../common/utils/UsePromiseCond";
 import SwitchFE from "../../common/fieldEditors/SwitchFE";
 
-const LAUNCH_LOAD_DEFAULT = 22;
+const DEFAULT_NB_CPU = 22;
+const DEFAULT_TIME_LIMIT = 240 * 3600; // 240 hours in seconds
 
 interface Props {
   open: boolean;
@@ -53,8 +54,9 @@ function LauncherDialog(props: Props) {
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [options, setOptions] = useState<LaunchOptions>({
-    nb_cpu: LAUNCH_LOAD_DEFAULT,
+    nb_cpu: DEFAULT_NB_CPU,
     auto_unzip: true,
+    time_limit: DEFAULT_TIME_LIMIT,
   });
   const [solverVersion, setSolverVersion] = useState<string>();
   const [isLaunching, setIsLaunching] = useState(false);
