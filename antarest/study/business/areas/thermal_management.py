@@ -8,8 +8,8 @@ from antarest.study.business.utils import AllOptionalMetaclass, camel_case_model
 from antarest.study.model import Study
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
-    Thermal860Config,
-    Thermal860Properties,
+    Thermal870Config,
+    Thermal870Properties,
     ThermalConfigType,
     create_thermal_config,
 )
@@ -32,7 +32,7 @@ _CLUSTERS_PATH = "input/thermal/clusters/{area_id}/list"
 
 
 @camel_case_model
-class ThermalClusterInput(Thermal860Properties, metaclass=AllOptionalMetaclass, use_none=True):
+class ThermalClusterInput(Thermal870Properties, metaclass=AllOptionalMetaclass, use_none=True):
     """
     Model representing the data structure required to edit an existing thermal cluster within a study.
     """
@@ -72,7 +72,7 @@ class ThermalClusterCreation(ThermalClusterInput):
 
 
 @camel_case_model
-class ThermalClusterOutput(Thermal860Config, metaclass=AllOptionalMetaclass, use_none=True):
+class ThermalClusterOutput(Thermal870Config, metaclass=AllOptionalMetaclass, use_none=True):
     """
     Model representing the output data structure to display the details of a thermal cluster within a study.
     """

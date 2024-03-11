@@ -1,3 +1,6 @@
+import glob
+import os
+from pathlib import Path
 from typing import Any, Callable, Dict, Optional
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
@@ -89,6 +92,23 @@ class HydroMatrixList(FolderNode):
             "storage": self.matrix_class(self.context, self.config.next_file("storage.txt")),
         }
         return children
+
+
+class BindingConstraintMatrixList(FolderNode):
+    def __init__(
+        self,
+        context: ContextServer,
+        config: FileStudyTreeConfig,
+        matrix_class: Callable[[ContextServer, FileStudyTreeConfig], INode[Any, Any, Any]],
+    ):
+        super().__init__(context, config)
+        self.matrix_class = matrix_class
+
+    def build(self) -> TREE:
+        return {
+            Path(file).stem: self.matrix_class(self.context, self.config.next_file(Path(file).name))
+            for file in glob.glob(os.path.join(self.config.path, "*.txt"))
+        }
 
 
 class ThermalMatrixList(FolderNode):

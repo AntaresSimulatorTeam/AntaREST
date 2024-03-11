@@ -28,12 +28,13 @@ def test_end_to_end_upgrades(tmp_path: Path):
     shutil.copytree(study_dir, before_upgrade_dir, dirs_exist_ok=True)
     old_values = get_old_settings_values(study_dir)
     old_areas_values = get_old_area_values(study_dir)
+    old_binding_constraint_values = get_old_binding_constraint_values(study_dir)
     # Only checks if the study_upgrader can go from the first supported version to the last one
-    target_version = "860"
+    target_version = "870"
     upgrade_study(study_dir, target_version)
     assert_study_antares_file_is_updated(study_dir, target_version)
     assert_settings_are_updated(study_dir, old_values)
-    assert_inputs_are_updated(study_dir, old_areas_values)
+    assert_inputs_are_updated(study_dir, old_areas_values, old_binding_constraint_values)
     assert not are_same_dir(study_dir, before_upgrade_dir)
 
 
@@ -138,7 +139,17 @@ def get_old_area_values(tmp_path: Path) -> dict:
     return dico
 
 
-def assert_inputs_are_updated(tmp_path: Path, dico: dict) -> None:
+def get_old_binding_constraint_values(tmp_path: Path) -> dict:
+    dico = {}
+    bd_list = glob.glob(str(tmp_path / "input" / "bindingconstraints" / "*.txt"))
+    for txt_file in bd_list:
+        path_txt = Path(txt_file)
+        df = pandas.read_csv(path_txt, sep="\t", header=None)
+        dico[str(path_txt.stem)] = df
+    return dico
+
+
+def assert_inputs_are_updated(tmp_path: Path, old_area_values: dict, old_binding_constraint_values: dict) -> None:
     input_path = tmp_path / "input"
 
     # tests 8.1 upgrade
@@ -152,7 +163,7 @@ def assert_inputs_are_updated(tmp_path: Path, dico: dict) -> None:
             path_txt = Path(txt)
             old_txt = str(Path(path_txt.parent.name).joinpath(path_txt.stem)).replace("_parameters", "")
             df = pandas.read_csv(txt, sep="\t", header=None)
-            assert df.values.all() == dico[old_txt].iloc[:, 2:8].values.all()
+            assert df.values.all() == old_area_values[old_txt].iloc[:, 2:8].values.all()
         capacities = glob.glob(str(folder_path / "capacities" / "*"))
         for direction_txt in capacities:
             df_capacities = pandas.read_csv(direction_txt, sep="\t", header=None)
@@ -160,10 +171,10 @@ def assert_inputs_are_updated(tmp_path: Path, dico: dict) -> None:
             old_txt = str(Path(direction_path.parent.parent.name).joinpath(direction_path.name))
             if "indirect" in old_txt:
                 new_txt = old_txt.replace("_indirect.txt", "")
-                assert df_capacities[0].values.all() == dico[new_txt].iloc[:, 0].values.all()
+                assert df_capacities[0].values.all() == old_area_values[new_txt].iloc[:, 0].values.all()
             else:
                 new_txt = old_txt.replace("_direct.txt", "")
-                assert df_capacities[0].values.all() == dico[new_txt].iloc[:, 1].values.all()
+                assert df_capacities[0].values.all() == old_area_values[new_txt].iloc[:, 1].values.all()
 
     # tests 8.3 upgrade
     areas = glob.glob(str(tmp_path / "input" / "areas" / "*"))
@@ -183,6 +194,28 @@ def assert_inputs_are_updated(tmp_path: Path, dico: dict) -> None:
         assert st_storage_path.is_dir()
         assert (st_storage_path / "list.ini").exists()
         assert input_path.joinpath("hydro", "series", area_id, "mingen.txt").exists()
+
+    # tests 8.7 upgrade
+    # binding constraint part
+    reader = IniReader(DUPLICATE_KEYS)
+    data = reader.read(input_path / "bindingconstraints" / "bindingconstraints.ini")
+    binding_constraints_list = list(data.keys())
+    for bd in binding_constraints_list:
+        bd_id = data[bd]["id"]
+        assert data[bd]["group"] == "default"
+        for k, term in enumerate(["lt", "gt", "eq"]):
+            term_path = input_path / "bindingconstraints" / f"{bd_id}_{term}.txt"
+            df = pandas.read_csv(term_path, sep="\t", header=None)
+            assert df.values.all() == old_binding_constraint_values[bd_id].iloc[:, k].values.all()
+
+    # thermal cluster part
+    for area in list_areas:
+        reader = IniReader(DUPLICATE_KEYS)
+        thermal_cluster_list = reader.read(tmp_path / "input" / "thermal" / "clusters" / area / "list.ini")
+        for cluster in thermal_cluster_list:
+            assert thermal_cluster_list[cluster]["costgeneration"] == "SetManually"
+            assert thermal_cluster_list[cluster]["efficiency"] == 100
+            assert thermal_cluster_list[cluster]["variableomcost"] == 0
 
 
 def assert_folder_is_created(path: Path) -> None:

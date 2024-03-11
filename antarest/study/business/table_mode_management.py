@@ -112,6 +112,7 @@ class BindingConstraintColumns(FormFieldsBaseModel):
     type: Optional[BindingConstraintFrequency]
     operator: Optional[BindingConstraintOperator]
     enabled: Optional[StrictBool]
+    group: Optional[StrictStr]
 
 
 class ColumnInfo(TypedDict):
@@ -342,6 +343,10 @@ FIELDS_INFO_BY_TYPE: Dict[TableTemplateType, Dict[str, ColumnInfo]] = {
             "path": f"{BINDING_CONSTRAINT_PATH}/enabled",
             "default_value": True,
         },
+        "group": {
+            "path": f"{BINDING_CONSTRAINT_PATH}/group",
+            "default_value": None,
+        },
     },
 }
 
@@ -477,7 +482,9 @@ class TableModeManager:
 
                 if current_binding:
                     col_values = columns.dict(exclude_none=True)
-                    current_binding_dto = BindingConstraintManager.process_constraint(current_binding)
+                    current_binding_dto = BindingConstraintManager.process_constraint(
+                        current_binding, int(study.version)
+                    )
 
                     commands.append(
                         UpdateBindingConstraint(

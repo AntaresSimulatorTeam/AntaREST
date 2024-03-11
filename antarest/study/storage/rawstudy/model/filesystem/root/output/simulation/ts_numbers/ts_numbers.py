@@ -1,6 +1,7 @@
 from antarest.study.storage.rawstudy.model.filesystem.common.area_matrix_list import (
     AreaMatrixList,
     AreaMultipleMatrixList,
+    BindingConstraintMatrixList,
     ThermalMatrixList,
 )
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
@@ -41,11 +42,15 @@ class OutputSimulationTsNumbers(FolderNode):
        │   ├── ch [...]
        │   ├── pompage [...]
        │   └── turbinage [...]
-       └── wind
-           ├── at.txt
-           ├── ch.txt
-           ├── pompage.txt
-           └── turbinage.txt
+       ├── wind
+       │   ├── at.txt
+       │   ├── ch.txt
+       │   ├── pompage.txt
+       │   └── turbinage.txt
+       ├── bindingconstraints
+           ├── group_1.txt
+           ├── group_2.txt
+           └── [...]
     """
 
     def build(self) -> TREE:
@@ -77,4 +82,8 @@ class OutputSimulationTsNumbers(FolderNode):
                 TsNumbersVector,
             ),
         }
+        if self.config.version >= 870:
+            children["bindingconstraints"] = BindingConstraintMatrixList(
+                self.context, self.config.next_file("bindingconstraints"), matrix_class=TsNumbersVector
+            )
         return children

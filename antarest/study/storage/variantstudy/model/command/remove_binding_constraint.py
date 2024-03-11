@@ -43,7 +43,11 @@ class RemoveBindingConstraint(ICommand):
             new_binding_constraints,
             ["input", "bindingconstraints", "bindingconstraints"],
         )
-        study_data.tree.delete(["input", "bindingconstraints", self.id])
+        if study_data.config.version < 870:
+            study_data.tree.delete(["input", "bindingconstraints", self.id])
+        else:
+            for term in ["lt", "gt", "eq"]:
+                study_data.tree.delete(["input", "bindingconstraints", f"{self.id}_{term}"])
         output, _ = self._apply_config(study_data.config)
         return output
 

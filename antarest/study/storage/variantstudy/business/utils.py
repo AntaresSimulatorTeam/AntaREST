@@ -69,6 +69,22 @@ def strip_matrix_protocol(matrix_uri: Union[List[List[float]], str, None]) -> st
     return matrix_uri
 
 
+def get_matrix_id(matrix: Union[List[List[float]], str], matrix_service: ISimpleMatrixService) -> str:
+    """
+    If the matrix is a str: Removes its prefix ("matrix://")
+    If it's an array: Stores it in the matrices repository and returns a reference to the stored array.
+
+    Raises:
+    TypeError: If the provided matrix is neither a matrix nor a link to a matrix.
+    """
+    if isinstance(matrix, str):
+        return strip_matrix_protocol(matrix)
+    elif isinstance(matrix, list):
+        return matrix_service.create(matrix)
+    # pragma: no cover
+    raise TypeError(repr(matrix))
+
+
 class AliasDecoder:
     @staticmethod
     def links_series(alias: str, study: FileStudy) -> str:

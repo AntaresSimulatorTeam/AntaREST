@@ -37,13 +37,11 @@ from starlette.testclient import TestClient
 
 from antarest.core.utils.string import to_camel_case
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
-from antarest.study.storage.rawstudy.model.filesystem.config.thermal import Thermal860Properties, ThermalProperties
+from antarest.study.storage.rawstudy.model.filesystem.config.thermal import ThermalProperties
+from tests.integration.utils import wait_task_completion
 
 DEFAULT_PROPERTIES = json.loads(ThermalProperties(name="Dummy").json())
 DEFAULT_PROPERTIES = {to_camel_case(k): v for k, v in DEFAULT_PROPERTIES.items() if k != "name"}
-
-DEFAULT_860_PROPERTIES = json.loads(Thermal860Properties(name="Dummy").json())
-DEFAULT_860_PROPERTIES = {to_camel_case(k): v for k, v in DEFAULT_860_PROPERTIES.items() if k != "name"}
 
 # noinspection SpellCheckingInspection
 EXISTING_CLUSTERS = [
@@ -63,19 +61,7 @@ EXISTING_CLUSTERS = [
         "minUpTime": 1,
         "mustRun": False,
         "name": "01_solar",
-        "nh3": None,
-        "nmvoc": None,
         "nominalCapacity": 1000000.0,
-        "nox": None,
-        "op1": None,
-        "op2": None,
-        "op3": None,
-        "op4": None,
-        "op5": None,
-        "pm10": None,
-        "pm25": None,
-        "pm5": None,
-        "so2": None,
         "spinning": 0.0,
         "spreadCost": 0.0,
         "startupCost": 0.0,
@@ -99,19 +85,7 @@ EXISTING_CLUSTERS = [
         "minUpTime": 1,
         "mustRun": False,
         "name": "02_wind_on",
-        "nh3": None,
-        "nmvoc": None,
         "nominalCapacity": 1000000.0,
-        "nox": None,
-        "op1": None,
-        "op2": None,
-        "op3": None,
-        "op4": None,
-        "op5": None,
-        "pm10": None,
-        "pm25": None,
-        "pm5": None,
-        "so2": None,
         "spinning": 0.0,
         "spreadCost": 0.0,
         "startupCost": 0.0,
@@ -135,19 +109,7 @@ EXISTING_CLUSTERS = [
         "minUpTime": 1,
         "mustRun": False,
         "name": "03_wind_off",
-        "nh3": None,
-        "nmvoc": None,
         "nominalCapacity": 1000000.0,
-        "nox": None,
-        "op1": None,
-        "op2": None,
-        "op3": None,
-        "op4": None,
-        "op5": None,
-        "pm10": None,
-        "pm25": None,
-        "pm5": None,
-        "so2": None,
         "spinning": 0.0,
         "spreadCost": 0.0,
         "startupCost": 0.0,
@@ -171,19 +133,7 @@ EXISTING_CLUSTERS = [
         "minUpTime": 1,
         "mustRun": False,
         "name": "04_res",
-        "nh3": None,
-        "nmvoc": None,
         "nominalCapacity": 1000000.0,
-        "nox": None,
-        "op1": None,
-        "op2": None,
-        "op3": None,
-        "op4": None,
-        "op5": None,
-        "pm10": None,
-        "pm25": None,
-        "pm5": None,
-        "so2": None,
         "spinning": 0.0,
         "spreadCost": 0.0,
         "startupCost": 0.0,
@@ -207,19 +157,7 @@ EXISTING_CLUSTERS = [
         "minUpTime": 1,
         "mustRun": False,
         "name": "05_nuclear",
-        "nh3": None,
-        "nmvoc": None,
         "nominalCapacity": 1000000.0,
-        "nox": None,
-        "op1": None,
-        "op2": None,
-        "op3": None,
-        "op4": None,
-        "op5": None,
-        "pm10": None,
-        "pm25": None,
-        "pm5": None,
-        "so2": None,
         "spinning": 0.0,
         "spreadCost": 0.0,
         "startupCost": 0.0,
@@ -243,19 +181,7 @@ EXISTING_CLUSTERS = [
         "minUpTime": 1,
         "mustRun": False,
         "name": "06_coal",
-        "nh3": None,
-        "nmvoc": None,
         "nominalCapacity": 1000000.0,
-        "nox": None,
-        "op1": None,
-        "op2": None,
-        "op3": None,
-        "op4": None,
-        "op5": None,
-        "pm10": None,
-        "pm25": None,
-        "pm5": None,
-        "so2": None,
         "spinning": 0.0,
         "spreadCost": 0.0,
         "startupCost": 0.0,
@@ -279,19 +205,7 @@ EXISTING_CLUSTERS = [
         "minUpTime": 1,
         "mustRun": False,
         "name": "07_gas",
-        "nh3": None,
-        "nmvoc": None,
         "nominalCapacity": 1000000.0,
-        "nox": None,
-        "op1": None,
-        "op2": None,
-        "op3": None,
-        "op4": None,
-        "op5": None,
-        "pm10": None,
-        "pm25": None,
-        "pm5": None,
-        "so2": None,
         "spinning": 0.0,
         "spreadCost": 0.0,
         "startupCost": 0.0,
@@ -315,19 +229,7 @@ EXISTING_CLUSTERS = [
         "minUpTime": 1,
         "mustRun": False,
         "name": "08_non-res",
-        "nh3": None,
-        "nmvoc": None,
         "nominalCapacity": 1000000.0,
-        "nox": None,
-        "op1": None,
-        "op2": None,
-        "op3": None,
-        "op4": None,
-        "op5": None,
-        "pm10": None,
-        "pm25": None,
-        "pm5": None,
-        "so2": None,
         "spinning": 0.0,
         "spreadCost": 0.0,
         "startupCost": 0.0,
@@ -351,19 +253,7 @@ EXISTING_CLUSTERS = [
         "minUpTime": 1,
         "mustRun": False,
         "name": "09_hydro_pump",
-        "nh3": None,
-        "nmvoc": None,
         "nominalCapacity": 1000000.0,
-        "nox": None,
-        "op1": None,
-        "op2": None,
-        "op3": None,
-        "op4": None,
-        "op5": None,
-        "pm10": None,
-        "pm25": None,
-        "pm5": None,
-        "so2": None,
         "spinning": 0.0,
         "spreadCost": 0.0,
         "startupCost": 0.0,
@@ -376,12 +266,45 @@ EXISTING_CLUSTERS = [
 
 @pytest.mark.unit_test
 class TestThermal:
+    @pytest.mark.parametrize(
+        "version", [pytest.param(0, id="No Upgrade"), pytest.param(860, id="v8.6"), pytest.param(870, id="v8.7")]
+    )
     def test_lifecycle(
-        self,
-        client: TestClient,
-        user_access_token: str,
-        study_id: str,
+        self, client: TestClient, user_access_token: str, study_id: str, admin_access_token: str, version: int
     ) -> None:
+        # =============================
+        #  STUDY UPGRADE
+        # =============================
+
+        if version != 0:
+            res = client.put(
+                f"/v1/studies/{study_id}/upgrade",
+                headers={"Authorization": f"Bearer {admin_access_token}"},
+                params={"target_version": version},
+            )
+            res.raise_for_status()
+            task_id = res.json()
+            task = wait_task_completion(client, admin_access_token, task_id)
+            from antarest.core.tasks.model import TaskStatus
+
+            assert task.status == TaskStatus.COMPLETED, task
+
+        # =============================
+        #  UPDATE EXPECTED POLLUTANTS LIST
+        # =============================
+
+        pollutants_names = ["nh3", "nmvoc", "nox", "op1", "op2", "op3", "op4", "op5", "pm10", "pm25", "pm5", "so2"]
+        pollutants_values = 0.0 if version >= 860 else None
+        for existing_cluster in EXISTING_CLUSTERS:
+            existing_cluster.update({p: pollutants_values for p in pollutants_names})
+            existing_cluster.update(
+                {
+                    "costgeneration": "SetManually" if version == 870 else None,
+                    "efficiency": 100.0 if version == 870 else None,
+                    "variableomcost": 0.0 if version == 870 else None,
+                }
+            )
+
         # =============================
         #  THERMAL CLUSTER CREATION
         # =============================
@@ -430,18 +353,15 @@ class TestThermal:
         fr_gas_conventional_cfg = {
             **fr_gas_conventional_props,
             "id": fr_gas_conventional_id,
-            "nh3": None,
-            "nmvoc": None,
-            "nox": None,
-            "op1": None,
-            "op2": None,
-            "op3": None,
-            "op4": None,
-            "op5": None,
-            "pm10": None,
-            "pm25": None,
-            "pm5": None,
-            "so2": None,
+            **{p: pollutants_values for p in pollutants_names},
+        }
+        fr_gas_conventional_cfg = {
+            **fr_gas_conventional_cfg,
+            **{
+                "costgeneration": "SetManually" if version == 870 else None,
+                "efficiency": 100.0 if version == 870 else None,
+                "variableomcost": 0.0 if version == 870 else None,
+            },
         }
         assert res.json() == fr_gas_conventional_cfg
 
@@ -554,6 +474,24 @@ class TestThermal:
         assert res.status_code == 200, res.json()
         assert res.json() == fr_gas_conventional_cfg
 
+        # Update with a pollutant. Should succeed even with versions prior to v8.6
+        res = client.patch(
+            f"/v1/studies/{study_id}/areas/{area_id}/clusters/thermal/{fr_gas_conventional_id}",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+            json={"nox": 10.0},
+        )
+        assert res.status_code == 200
+        assert res.json()["nox"] == 10.0
+
+        # Update with the field `efficiency`. Should succeed even with versions prior to v8.7
+        res = client.patch(
+            f"/v1/studies/{study_id}/areas/{area_id}/clusters/thermal/{fr_gas_conventional_id}",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+            json={"efficiency": 97.0},
+        )
+        assert res.status_code == 200
+        assert res.json()["efficiency"] == 97.0
+
         # =============================
         #  THERMAL CLUSTER DUPLICATION
         # =============================
@@ -570,6 +508,11 @@ class TestThermal:
         duplicated_config["name"] = new_name
         duplicated_id = transform_name_to_id(new_name, lower=False)
         duplicated_config["id"] = duplicated_id
+        # takes the update into account
+        if version >= 860:
+            duplicated_config["nox"] = 10
+        if version >= 870:
+            duplicated_config["efficiency"] = 97.0
         assert res.json() == duplicated_config
 
         # asserts the matrix has also been duplicated

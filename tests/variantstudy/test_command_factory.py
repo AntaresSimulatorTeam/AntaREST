@@ -410,19 +410,21 @@ class TestCommandFactory:
         commands = command_factory.to_command(command_dto=command_dto)
 
         if isinstance(command_dto.args, dict):
-            exp_action_args_list = [(command_dto.action, command_dto.args)]
+            exp_action_args_list = [(command_dto.action, command_dto.args, command_dto.version)]
         else:
-            exp_action_args_list = [(command_dto.action, args) for args in command_dto.args]
+            exp_action_args_list = [(command_dto.action, args, command_dto.version) for args in command_dto.args]
 
         actual_cmd: ICommand
-        for actual_cmd, exp_action_args in itertools.zip_longest(commands, exp_action_args_list):
-            assert actual_cmd is not None, f"Missing action/args for {exp_action_args=}"
-            assert exp_action_args is not None, f"Missing command for {actual_cmd=}"
-            expected_action, expected_args = exp_action_args
+        for actual_cmd, exp_action_args_version in itertools.zip_longest(commands, exp_action_args_list):
+            assert actual_cmd is not None, f"Missing action/args for {exp_action_args_version=}"
+            assert exp_action_args_version is not None, f"Missing command for {actual_cmd=}"
+            expected_action, expected_args, expected_version = exp_action_args_version
             actual_dto = actual_cmd.to_dto()
             actual_args = {k: v for k, v in actual_dto.args.items() if v is not None}
+            actual_version = actual_dto.version
             assert actual_dto.action == expected_action
             assert actual_args == expected_args
+            assert actual_version == expected_version
 
         self.command_class_set.discard(type(commands[0]).__name__)
 

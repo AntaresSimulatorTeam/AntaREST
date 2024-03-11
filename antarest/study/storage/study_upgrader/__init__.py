@@ -7,6 +7,7 @@ import typing as t
 from http import HTTPStatus
 from http.client import HTTPException
 from pathlib import Path
+from typing import Callable, List, NamedTuple
 
 from antarest.core.exceptions import StudyValidationError
 
@@ -19,6 +20,7 @@ from .upgrader_830 import upgrade_830
 from .upgrader_840 import upgrade_840
 from .upgrader_850 import upgrade_850
 from .upgrader_860 import upgrade_860
+from .upgrader_870 import upgrade_870
 
 logger = logging.getLogger(__name__)
 
@@ -44,6 +46,7 @@ UPGRADE_METHODS = [
     UpgradeMethod("830", "840", upgrade_840, [_GENERAL_DATA_PATH]),
     UpgradeMethod("840", "850", upgrade_850, [_GENERAL_DATA_PATH]),
     UpgradeMethod("850", "860", upgrade_860, [Path("input"), _GENERAL_DATA_PATH]),
+    UpgradeMethod("860", "870", upgrade_870, [Path("input/thermal"), Path("input/bindingconstraints")]),
 ]
 
 
@@ -273,6 +276,5 @@ def should_study_be_denormalized(src_version: str, target_version: str) -> bool:
         if curr_version == old and curr_version != target_version:
             list_of_upgrades.append(new)
             curr_version = new
-    # For now, the only upgrade that impacts study matrices is the upgrade from v8.1 to v8.2
-    # In a near future, the upgrade from v8.6 to v8.7 will also require denormalization
-    return "820" in list_of_upgrades
+    # These upgrades alter matrices so the study needs to be denormalized
+    return "820" in list_of_upgrades or "870" in list_of_upgrades

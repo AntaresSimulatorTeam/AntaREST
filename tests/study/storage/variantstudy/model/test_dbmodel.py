@@ -156,7 +156,7 @@ class TestCommandBlock:
             "id": command_id,
             "action": command,
             "args": json.loads(args),
-            "version": 1,
+            "version": 42,
         }
 
 

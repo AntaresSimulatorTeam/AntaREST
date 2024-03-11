@@ -83,7 +83,13 @@ class RemoveArea(ICommand):
         id_to_remove = {bc_id for bc_id, bc in binding_constraints.items() for key in bc if self.id in key}
 
         for bc_id in id_to_remove:
-            study_data.tree.delete(["input", "bindingconstraints", binding_constraints[bc_id]["id"]])
+            if study_data.config.version < 870:
+                study_data.tree.delete(["input", "bindingconstraints", binding_constraints[bc_id]["id"]])
+            else:
+                for name in ["lt", "gt", "eq"]:
+                    study_data.tree.delete(
+                        ["input", "bindingconstraints", f"{binding_constraints[bc_id]['id']}_{name}"]
+                    )
             del binding_constraints[bc_id]
 
         study_data.tree.save(binding_constraints, ["input", "bindingconstraints", "bindingconstraints"])

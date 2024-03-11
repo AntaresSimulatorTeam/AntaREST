@@ -141,6 +141,10 @@ class TestThermalManager:
             "op3": None,
             "op4": None,
             "op5": None,
+            # These values are also None as they are defined in v8.7+
+            "costgeneration": None,
+            "efficiency": None,
+            "variableomcost": None,
         }
         assert actual == expected
 
@@ -203,6 +207,9 @@ class TestThermalManager:
                 "op3": None,
                 "op4": None,
                 "op5": None,
+                "costgeneration": None,
+                "efficiency": None,
+                "variableomcost": None,
             },
             {
                 "id": "on and must 2",
@@ -239,6 +246,9 @@ class TestThermalManager:
                 "op3": None,
                 "op4": None,
                 "op5": None,
+                "costgeneration": None,
+                "efficiency": None,
+                "variableomcost": None,
             },
             {
                 "id": "2 avail and must 2",
@@ -275,6 +285,9 @@ class TestThermalManager:
                 "op3": None,
                 "op4": None,
                 "op5": None,
+                "costgeneration": None,
+                "efficiency": None,
+                "variableomcost": None,
             },
         ]
         assert actual == expected
@@ -343,6 +356,9 @@ class TestThermalManager:
                 "pm25": None,
                 "pm5": None,
                 "so2": None,
+                "costgeneration": None,
+                "efficiency": None,
+                "variableomcost": None,
                 "spinning": 0.0,
                 "spreadCost": 0.0,
                 "startupCost": 0.0,
@@ -407,6 +423,10 @@ class TestThermalManager:
                 "op3": None,
                 "op4": None,
                 "op5": None,
+                # These values are also None as they are defined in v8.7+
+                "costgeneration": None,
+                "efficiency": None,
+                "variableomcost": None,
             }
             assert actual == expected
 

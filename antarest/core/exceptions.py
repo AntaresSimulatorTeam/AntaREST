@@ -221,6 +221,16 @@ class InvalidConstraintName(HTTPException):
         super().__init__(HTTPStatus.BAD_REQUEST, message)
 
 
+class InvalidFieldForVersionError(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, message)
+
+
+class IncoherenceBetweenMatricesLength(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, message)
+
+
 class MissingDataError(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.NOT_FOUND, message)

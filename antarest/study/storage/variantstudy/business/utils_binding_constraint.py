@@ -23,9 +23,14 @@ def apply_binding_constraint(
     operator: BindingConstraintOperator,
     coeffs: Dict[str, List[float]],
     values: Optional[Union[List[List[MatrixData]], str]],
+    less_term_matrix: Optional[Union[List[List[MatrixData]], str]],
+    greater_term_matrix: Optional[Union[List[List[MatrixData]], str]],
+    equal_term_matrix: Optional[Union[List[List[MatrixData]], str]],
     filter_year_by_year: Optional[str] = None,
     filter_synthesis: Optional[str] = None,
+    group: Optional[str] = None,
 ) -> CommandOutput:
+    version = study_data.config.version
     binding_constraints[new_key] = {
         "name": name,
         "id": bd_id,
@@ -33,7 +38,9 @@ def apply_binding_constraint(
         "type": freq.value,
         "operator": operator.value,
     }
-    if study_data.config.version >= 830:
+    if group:
+        binding_constraints[new_key]["group"] = group
+    if version >= 830:
         if filter_year_by_year:
             binding_constraints[new_key]["filter-year-by-year"] = filter_year_by_year
         if filter_synthesis:
@@ -76,7 +83,18 @@ def apply_binding_constraint(
     if values:
         if not isinstance(values, str):  # pragma: no cover
             raise TypeError(repr(values))
-        study_data.tree.save(values, ["input", "bindingconstraints", bd_id])
+        if version < 870:
+            study_data.tree.save(values, ["input", "bindingconstraints", bd_id])
+    for matrix_term, matrix_name, matrix_alias in zip(
+        [less_term_matrix, greater_term_matrix, equal_term_matrix],
+        ["less_term_matrix", "greater_term_matrix", "equal_term_matrix"],
+        ["lt", "gt", "eq"],
+    ):
+        if matrix_term:
+            if not isinstance(matrix_term, str):  # pragma: no cover
+                raise TypeError(repr(matrix_term))
+            if version >= 870:
+                study_data.tree.save(matrix_term, ["input", "bindingconstraints", f"{bd_id}_{matrix_alias}"])
     return CommandOutput(status=True)
 
 

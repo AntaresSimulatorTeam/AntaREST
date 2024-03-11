@@ -42,7 +42,7 @@ from antarest.study.business.areas.thermal_management import (
     ThermalManager,
 )
 from antarest.study.business.binding_constraint_management import (
-    BindingConstraintPropertiesWithName,
+    BindingConstraintCreation,
     ConstraintTermDTO,
     UpdateBindingConstProps,
 )
@@ -944,7 +944,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         response_model=None,
     )
     def create_binding_constraint(
-        uuid: str, data: BindingConstraintPropertiesWithName, current_user: JWTUser = Depends(auth.get_current_user)
+        uuid: str, data: BindingConstraintCreation, current_user: JWTUser = Depends(auth.get_current_user)
     ) -> None:
         logger.info(
             f"Creating a new binding constraint for study {uuid}",
@@ -953,6 +953,23 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
         return study_service.binding_constraint_manager.create_binding_constraint(study, data)
+
+    @bp.delete(
+        "/studies/{uuid}/bindingconstraints/{binding_constraint_id}",
+        tags=[APITag.study_data],
+        summary="Delete a binding constraint",
+        response_model=None,
+    )
+    def delete_binding_constraint(
+        uuid: str, binding_constraint_id: str, current_user: JWTUser = Depends(auth.get_current_user)
+    ) -> None:
+        logger.info(
+            f"Deleting the binding constraint {binding_constraint_id} for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
+        return study_service.binding_constraint_manager.remove_binding_constraint(study, binding_constraint_id)
 
     @bp.post(
         "/studies/{uuid}/bindingconstraints/{binding_constraint_id}/term",
@@ -1457,7 +1474,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         - `cluster_data`: the properties used for creation:
           "name" and "group".
 
-        Returns: The properties of the newly-created renewable clusters.
+        Returns: The properties of the newly-created renewable cluster.
         """
         logger.info(
             f"Creating renewable cluster for study '{uuid}' and area '{area_id}'",
@@ -1631,7 +1648,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         - `cluster_data`: the properties used for creation:
           "name" and "group".
 
-        Returns: The properties of the newly-created thermal clusters.
+        Returns: The properties of the newly-created thermal cluster.
         """
         logger.info(
             f"Creating thermal cluster for study '{uuid}' and area '{area_id}'",

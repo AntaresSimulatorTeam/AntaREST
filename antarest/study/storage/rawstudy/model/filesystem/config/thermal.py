@@ -11,9 +11,9 @@ __all__ = (
     "LawOption",
     "ThermalClusterGroup",
     "ThermalProperties",
-    "Thermal860Properties",
     "ThermalConfig",
     "Thermal860Config",
+    "Thermal870Config",
     "ThermalConfigType",
     "create_thermal_config",
 )
@@ -85,6 +85,16 @@ class ThermalClusterGroup(EnumIgnoreCase):
             # Note that 'OTHER' is an alias for 'OTHER1'.
             return cls.OTHER1
         return t.cast(t.Optional["ThermalClusterGroup"], super()._missing_(value))
+
+
+class ThermalCostGeneration(EnumIgnoreCase):
+    """
+    Specifies how to generate thermal cluster cost.
+    The value `SetManually` is used by default.
+    """
+
+    SET_MANUALLY = "SetManually"
+    USE_COST_TIME_SERIES = "useCostTimeseries"
 
 
 class ThermalProperties(ClusterProperties):
@@ -262,6 +272,18 @@ class Thermal860Properties(ThermalProperties):
     )
 
 
+class Thermal870Properties(Thermal860Properties):
+    """
+    Thermal cluster configuration model for study in version 8.7 or above.
+    """
+
+    costgeneration: ThermalCostGeneration = Field(default=ThermalCostGeneration.SET_MANUALLY)
+    efficiency: float = Field(default=100.0, ge=0, description="Efficiency (%)")
+    variableomcost: float = Field(
+        default=0, description="Operating and Maintenance Cost (€/MWh)"
+    )  # Even if it's a cost it could be negative.
+
+
 class ThermalConfig(ThermalProperties, IgnoreCaseIdentifier):
     """
     Thermal properties with section ID.
@@ -285,7 +307,7 @@ class ThermalConfig(ThermalProperties, IgnoreCaseIdentifier):
 
 class Thermal860Config(Thermal860Properties, IgnoreCaseIdentifier):
     """
-    Thermal properties for study in version 8.6 or above.
+    Thermal properties for study in version 860
 
     Usage:
 
@@ -305,9 +327,33 @@ class Thermal860Config(Thermal860Properties, IgnoreCaseIdentifier):
     """
 
 
+class Thermal870Config(Thermal870Properties, IgnoreCaseIdentifier):
+    """
+    Thermal properties for study in version 8.7 or above.
+
+    Usage:
+
+    >>> from antarest.study.storage.rawstudy.model.filesystem.config.thermal import Thermal870Config
+
+    >>> cl = Thermal870Config(name="cluster 01!", group="Nuclear", co2=123, nh3=456, efficiency=97)
+    >>> cl.id
+    'cluster 01'
+    >>> cl.group == ThermalClusterGroup.NUCLEAR
+    True
+    >>> cl.co2
+    123.0
+    >>> cl.nh3
+    456.0
+    >>> cl.op1
+    0.0
+    >>> cl.efficiency
+    97.0
+    """
+
+
 # NOTE: In the following Union, it is important to place the most specific type first,
 # because the type matching generally occurs sequentially from left to right within the union.
-ThermalConfigType = t.Union[Thermal860Config, ThermalConfig]
+ThermalConfigType = t.Union[Thermal870Config, Thermal860Config, ThermalConfig]
 
 
 def create_thermal_config(study_version: t.Union[str, int], **kwargs: t.Any) -> ThermalConfigType:
@@ -325,7 +371,9 @@ def create_thermal_config(study_version: t.Union[str, int], **kwargs: t.Any) -> 
         ValueError: If the study version is not supported.
     """
     version = int(study_version)
-    if version >= 860:
+    if version >= 870:
+        return Thermal870Config(**kwargs)
+    elif version == 860:
         return Thermal860Config(**kwargs)
     else:
         return ThermalConfig(**kwargs)

@@ -5,7 +5,7 @@ from typing import Callable, Dict, List
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import ChildNotFoundError
-from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol
+from antarest.study.storage.variantstudy.business.utils import get_matrix_id
 from antarest.study.storage.variantstudy.model.command.common import CommandName
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import CreateBindingConstraint
@@ -100,20 +100,22 @@ class CommandReverter:
             if isinstance(command, UpdateBindingConstraint) and command.id == base_command.id:
                 return [command]
             elif isinstance(command, CreateBindingConstraint) and transform_name_to_id(command.name) == base_command.id:
-                return [
-                    UpdateBindingConstraint(
-                        id=base_command.id,
-                        enabled=command.enabled,
-                        time_step=command.time_step,
-                        operator=command.operator,
-                        coeffs=command.coeffs,
-                        values=strip_matrix_protocol(command.values),
-                        filter_year_by_year=command.filter_year_by_year,
-                        filter_synthesis=command.filter_synthesis,
-                        comments=command.comments,
-                        command_context=command.command_context,
-                    )
-                ]
+                args = {
+                    "id": base_command.id,
+                    "enabled": command.enabled,
+                    "time_step": command.time_step,
+                    "operator": command.operator,
+                    "coeffs": command.coeffs,
+                    "filter_year_by_year": command.filter_year_by_year,
+                    "filter_synthesis": command.filter_synthesis,
+                    "comments": command.comments,
+                    "command_context": command.command_context,
+                }
+                for matrix_name in ["values", "less_term_matrix", "equal_term_matrix", "greater_term_matrix"]:
+                    matrix = command.__getattribute__(matrix_name)
+                    if matrix is not None:
+                        args[matrix_name] = get_matrix_id(matrix, command.command_context.matrix_service)
+                return [UpdateBindingConstraint(**args)]
 
         return base_command.get_command_extractor().extract_binding_constraint(base, base_command.id)
 
