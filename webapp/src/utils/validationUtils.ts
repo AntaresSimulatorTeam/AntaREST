@@ -127,28 +127,28 @@ export function validatePassword(
     return t("form.field.required");
   }
 
-  if (!/(?=.*[a-z])/.test(trimmedPassword)) {
-    return t("form.field.requireLowercase");
-  }
-
-  if (!/(?=.*[A-Z])/.test(trimmedPassword)) {
-    return t("form.field.requireUppercase");
-  }
-
-  if (!/(?=.*\d)/.test(trimmedPassword)) {
-    return t("form.field.requireDigit");
-  }
-
-  if (!/(?=.*[^\w\s])/.test(trimmedPassword)) {
-    return t("form.field.requireSpecialChars");
-  }
-
   if (trimmedPassword.length < 8) {
     return t("form.field.minValue", { 0: 8 });
   }
 
-  if (trimmedPassword.length > 30) {
-    return t("form.field.maxValue", { 0: 30 });
+  if (trimmedPassword.length > 50) {
+    return t("form.field.maxValue", { 0: 50 });
+  }
+
+  if (!/[a-z]/.test(trimmedPassword)) {
+    return t("form.field.requireLowercase");
+  }
+
+  if (!/[A-Z]/.test(trimmedPassword)) {
+    return t("form.field.requireUppercase");
+  }
+
+  if (!/\d/.test(trimmedPassword)) {
+    return t("form.field.requireDigit");
+  }
+
+  if (!/[^\w\s]/.test(trimmedPassword)) {
+    return t("form.field.requireSpecialChars");
   }
 
   if (
