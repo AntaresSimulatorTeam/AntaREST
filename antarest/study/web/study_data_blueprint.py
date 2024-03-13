@@ -846,7 +846,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     def get_table_mode(
         uuid: str,
         table_type: TableTemplateType,
-        columns: str,
+        columns: str = "",
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> TableDataDTO:
         logger.info(
