@@ -59,23 +59,7 @@ class TestTableMode:
         res = client.get(
             f"/v1/studies/{study_id}/tablemode",
             headers=user_headers,
-            params={
-                "table_type": "area",
-                "columns": ",".join(
-                    [
-                        "nonDispatchablePower",
-                        "dispatchableHydroPower",
-                        "otherDispatchablePower",
-                        "averageUnsuppliedEnergyCost",
-                        "spreadUnsuppliedEnergyCost",
-                        "averageSpilledEnergyCost",
-                        "spreadSpilledEnergyCost",
-                        "filterSynthesis",
-                        "filterYearByYear",
-                        "adequacyPatchMode",
-                    ]
-                ),
-            },
+            params={"table_type": "area"},
         )
         assert res.status_code == 200, res.json()
         expected = {
