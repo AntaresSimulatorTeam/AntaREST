@@ -37,7 +37,7 @@ def launcher_config(tmp_path: Path) -> Config:
         "key_password": "password",
         "password": "password",
         "default_wait_time": 10,
-        "default_time_limit": 20,
+        "default_time_limit": 860400,  # 240 hours (in seconds)
         "default_json_db_name": "antares.db",
         "slurm_script_path": "/path/to/slurm/launcher.sh",
         "partition": "fake_partition",
