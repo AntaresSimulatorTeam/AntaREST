@@ -56,7 +56,7 @@ function Matrix({ study, areaId, storageId }: Props) {
                     study={study}
                     url={`input/st-storage/series/${areaId}/${storageId}/pmax_injection`}
                     computStats={MatrixStats.NOCOL}
-                    title={t("study.modelization.storages.chargeCapacity")}
+                    title={t("study.modelization.storages.injectionCapacity")}
                   />
                 }
                 right={
@@ -64,7 +64,7 @@ function Matrix({ study, areaId, storageId }: Props) {
                     study={study}
                     url={`input/st-storage/series/${areaId}/${storageId}/pmax_withdrawal`}
                     computStats={MatrixStats.NOCOL}
-                    title={t("study.modelization.storages.dischargeCapacity")}
+                    title={t("study.modelization.storages.withdrawalCapacity")}
                   />
                 }
                 sx={{

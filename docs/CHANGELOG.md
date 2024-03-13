@@ -4,6 +4,11 @@ Antares Web Changelog
 v2.16.8 (unreleased)
 --------------------
 
+### Bug Fixes
+
+* **st-storages (ui):** correction of incorrect wording between "withdrawal" and "injection" [`#1977`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1977)
+* **st-storages (ui):** change matrix titles [`#1994`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1994)
+
 
 v2.16.7 (2024-03-05)
 --------------------
