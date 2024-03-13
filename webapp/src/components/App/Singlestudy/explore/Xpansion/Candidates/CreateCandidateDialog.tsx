@@ -82,7 +82,7 @@ function CreateCandidateDialog(props: PropType) {
                   validateString(v, {
                     existingValues: existingCandidates,
                     allowSpaces: false,
-                    allowedChars: "&_*",
+                    specialChars: "&_*",
                   }),
               }}
               sx={{ mx: 0 }}

@@ -115,7 +115,7 @@ function UserForm(props: Props) {
                 validateString(v, {
                   existingValues: existingUsers,
                   excludedValues: RESERVED_USER_NAMES,
-                }) || undefined,
+                }),
             })}
           />
           <TextField
@@ -125,18 +125,20 @@ function UserForm(props: Props) {
             helperText={errors.password?.message?.toString()}
             {...commonTextFieldProps}
             {...register("password", {
-              validate: (v) => validatePassword(v) || undefined,
+              validate: (v) => validatePassword(v),
             })}
           />
           <TextField
-            label={t("global.confirmPassword")}
+            label={t("settings.user.form.confirmPassword")}
             type="password"
             spellCheck
             error={!!errors.confirmPassword}
             helperText={errors.confirmPassword?.message?.toString()}
             {...commonTextFieldProps}
             {...register("confirmPassword", {
-              validate: (v) => validatePassword(v, getValues("password")),
+              validate: (v) =>
+                v === getValues("password") ||
+                t("settings.user.form.error.passwordMismatch"),
             })}
           />
         </>
