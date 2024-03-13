@@ -38,6 +38,7 @@ import CheckBoxFE from "../../common/fieldEditors/CheckBoxFE";
 import { convertVersions } from "../../../services/utils";
 import UsePromiseCond from "../../common/utils/UsePromiseCond";
 import SwitchFE from "../../common/fieldEditors/SwitchFE";
+import moment from "moment";
 
 const DEFAULT_NB_CPU = 22;
 const DEFAULT_TIME_LIMIT = 240 * 3600; // 240 hours in seconds
@@ -172,12 +173,16 @@ function LauncherDialog(props: Props) {
   // Utils
   ////////////////////////////////////////////////////////////////
 
-  const timeLimitParse = (value: string): number => {
-    try {
-      return parseInt(value, 10) * 3600;
-    } catch {
-      return 48 * 3600;
-    }
+  /**
+   * Parses an hour value from a string and converts it to seconds.
+   * If the input is invalid, returns a default value.
+   *
+   * @param hourString - A string representing the number of hours.
+   * @returns The equivalent number of seconds, or a default value for invalid inputs.
+   */
+  const parseHoursToSeconds = (hourString: string): number => {
+    const seconds = moment.duration(hourString, "hours").asSeconds();
+    return seconds > 0 ? seconds : DEFAULT_TIME_LIMIT;
   };
 
   ////////////////////////////////////////////////////////////////
@@ -267,9 +272,10 @@ function LauncherDialog(props: Props) {
             label={t("study.timeLimit")}
             type="number"
             variant="filled"
-            value={(options.time_limit ?? 864000) / 3600} // 240 hours default
+            // Convert from seconds to hours the displayed value
+            value={(options.time_limit ?? DEFAULT_TIME_LIMIT) / 3600}
             onChange={(e) =>
-              handleChange("time_limit", timeLimitParse(e.target.value))
+              handleChange("time_limit", parseHoursToSeconds(e.target.value))
             }
             InputLabelProps={{
               shrink: true,
