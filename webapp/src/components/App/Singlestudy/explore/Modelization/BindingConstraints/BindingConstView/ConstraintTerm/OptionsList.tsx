@@ -2,14 +2,14 @@ import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { AllClustersAndLinks } from "../../../../../../../../common/types";
 import SelectSingle from "../../../../../../../common/SelectSingle";
-import { ConstraintType, dataToId, isTermExist } from "../utils";
+import { ConstraintTerm, dataToId, isTermExist } from "../utils";
 
 interface Props {
   list: AllClustersAndLinks;
   isLink: boolean;
-  constraint: ConstraintType;
-  constraintsTerm: ConstraintType[];
-  saveValue: (constraint: Partial<ConstraintType>) => void;
+  term: ConstraintTerm;
+  constraintTerms: ConstraintTerm[];
+  saveValue: (constraint: Partial<ConstraintTerm>) => void;
   value1: string;
   value2: string;
   setValue1: (value: string) => void;
@@ -20,10 +20,10 @@ export default function OptionsList(props: Props) {
   const {
     list,
     isLink,
-    constraint,
+    term,
     value1,
     value2,
-    constraintsTerm,
+    constraintTerms,
     saveValue,
     setValue1,
     setValue2,
@@ -50,7 +50,7 @@ export default function OptionsList(props: Props) {
         (elm) =>
           elm.id === value2 ||
           !isTermExist(
-            constraintsTerm,
+            constraintTerms,
             dataToId(
               isLink
                 ? {
@@ -66,7 +66,7 @@ export default function OptionsList(props: Props) {
         id: elm.id.toLowerCase(),
       }));
     return tmp;
-  }, [constraintsTerm, isLink, options, value1, value2]);
+  }, [constraintTerms, isLink, options, value1, value2]);
 
   const getFirstValue2 = useCallback(
     (value: string): string => {
@@ -87,7 +87,7 @@ export default function OptionsList(props: Props) {
     (value: string) => {
       const v2 = getFirstValue2(value);
       saveValue({
-        id: constraint.id,
+        id: term.id,
         data: isLink
           ? {
               area1: value,
@@ -101,14 +101,14 @@ export default function OptionsList(props: Props) {
       setValue1(value);
       setValue2(v2);
     },
-    [constraint.id, getFirstValue2, isLink, saveValue, setValue1, setValue2],
+    [term.id, getFirstValue2, isLink, saveValue, setValue1, setValue2],
   );
 
   const handleValue2 = useCallback(
     (value: string) => {
       setValue2(value);
       saveValue({
-        id: constraint.id,
+        id: term.id,
         data: isLink
           ? {
               area1: value1,
@@ -120,7 +120,7 @@ export default function OptionsList(props: Props) {
             },
       });
     },
-    [constraint.id, isLink, saveValue, setValue2, value1],
+    [term.id, isLink, saveValue, setValue2, value1],
   );
 
   ////////////////////////////////////////////////////////////////
