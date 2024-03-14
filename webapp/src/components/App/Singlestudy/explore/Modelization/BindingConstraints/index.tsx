@@ -21,21 +21,25 @@ import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
 
 function BindingConstraints() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
+  const dispatch = useAppDispatch();
+
+  const currentConstraintId = useAppSelector(getCurrentBindingConstId);
+
   const bindingConstraints = useAppSelector((state) =>
     getBindingConst(state, study.id),
   );
-  const res = usePromise(
+
+  // TODO find better name
+  const constraints = usePromise(
     () => getBindingConstraintList(study.id),
     [study.id, bindingConstraints],
   );
-  const currentBindingConst = useAppSelector(getCurrentBindingConstId);
-  const dispatch = useAppDispatch();
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleBindingConstClick = (bindingConstId: string): void => {
+  const handleConstraintChange = (bindingConstId: string): void => {
     dispatch(setCurrentBindingConst(bindingConstId));
   };
 
@@ -43,19 +47,20 @@ function BindingConstraints() {
   // JSX
   ////////////////////////////////////////////////////////////////
 
+  // TODO use Split + Refactor logic to be simpler and select the first contraint by default
   return (
     <SplitLayoutView
       left={
         <UsePromiseCond
-          response={res}
+          response={constraints}
           ifPending={() => <SimpleLoader />}
           ifResolved={(data) => (
             <Box width="100%" height="100%">
               <BindingConstPropsView
-                onClick={handleBindingConstClick}
+                onClick={handleConstraintChange}
                 list={data || []}
                 studyId={study.id}
-                currentBindingConst={currentBindingConst || undefined}
+                currentBindingConst={currentConstraintId || undefined}
               />
             </Box>
           )}
@@ -66,10 +71,10 @@ function BindingConstraints() {
           {R.cond([
             // Binding constraints list
             [
-              () => !!currentBindingConst && res.data !== undefined,
+              () => !!currentConstraintId && constraints.data !== undefined,
               () =>
                 (
-                  <BindingConstView bindingConst={currentBindingConst} />
+                  <BindingConstView constraintId={currentConstraintId} />
                 ) as ReactNode,
             ],
             // No Areas

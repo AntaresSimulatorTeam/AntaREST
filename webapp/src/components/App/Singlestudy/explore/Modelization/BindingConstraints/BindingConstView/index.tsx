@@ -12,16 +12,17 @@ import useStudySynthesis from "../../../../../../../redux/hooks/useStudySynthesi
 import { getLinksAndClusters } from "../../../../../../../redux/selectors";
 
 interface Props {
-  bindingConst: string;
+  constraintId: string;
 }
 
-function BindingConstView(props: Props) {
+function BindingConstView({ constraintId }: Props) {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
-  const { bindingConst } = props;
+
   const defaultValuesRes = usePromise(
-    () => getDefaultValues(study.id, bindingConst),
-    [study.id, bindingConst],
+    () => getDefaultValues(study.id, constraintId),
+    [study.id, constraintId],
   );
+
   const optionsRes = useStudySynthesis({
     studyId: study.id,
     selector: (state) => getLinksAndClusters(state, study.id),
@@ -38,10 +39,10 @@ function BindingConstView(props: Props) {
           response={mergeResponses(defaultValuesRes, optionsRes)}
           ifResolved={([defaultValues, options]) => (
             <Form autoSubmit config={{ defaultValues }}>
-              {bindingConst && (
+              {constraintId && (
                 <BindingConstForm
                   study={study}
-                  bindingConst={bindingConst}
+                  constraintId={constraintId}
                   options={options}
                 />
               )}
