@@ -6,9 +6,17 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import Matri
 from antarest.study.storage.rawstudy.model.filesystem.root.input.bindingconstraints.bindingconstraints_ini import (
     BindingConstraintsIni,
 )
-from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series import (
-    default_bc_hourly,
-    default_bc_weekly_daily,
+from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series_after_v87 import (
+    default_bc_hourly as default_bc_hourly_87,
+)
+from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series_after_v87 import (
+    default_bc_weekly_daily as default_bc_weekly_daily_87,
+)
+from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series_before_v87 import (
+    default_bc_hourly as default_bc_hourly_86,
+)
+from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series_before_v87 import (
+    default_bc_weekly_daily as default_bc_weekly_daily_86,
 )
 
 
@@ -19,23 +27,40 @@ class BindingConstraints(FolderNode):
     """
 
     def build(self) -> TREE:
-        default_matrices = {
-            BindingConstraintFrequency.HOURLY: default_bc_hourly,
-            BindingConstraintFrequency.DAILY: default_bc_weekly_daily,
-            BindingConstraintFrequency.WEEKLY: default_bc_weekly_daily,
-        }
-        children: TREE = {
-            binding.id: InputSeriesMatrix(
-                self.context,
-                self.config.next_file(f"{binding.id}.txt"),
-                freq=MatrixFrequency(binding.time_step),
-                nb_columns=3,
-                default_empty=default_matrices[binding.time_step],
-            )
-            for binding in self.config.bindings
-        }
-
-        # noinspection SpellCheckingInspection
+        cfg = self.config
+        if cfg.version < 870:
+            default_matrices = {
+                BindingConstraintFrequency.HOURLY: default_bc_hourly_86,
+                BindingConstraintFrequency.DAILY: default_bc_weekly_daily_86,
+                BindingConstraintFrequency.WEEKLY: default_bc_weekly_daily_86,
+            }
+            children: TREE = {
+                binding.id: InputSeriesMatrix(
+                    self.context,
+                    self.config.next_file(f"{binding.id}.txt"),
+                    freq=MatrixFrequency(binding.time_step),
+                    nb_columns=3,
+                    default_empty=default_matrices[binding.time_step],
+                )
+                for binding in self.config.bindings
+            }
+        else:
+            default_matrices = {
+                BindingConstraintFrequency.HOURLY: default_bc_hourly_87,
+                BindingConstraintFrequency.DAILY: default_bc_weekly_daily_87,
+                BindingConstraintFrequency.WEEKLY: default_bc_weekly_daily_87,
+            }
+            children = {}
+            for binding in self.config.bindings:
+                for term in ["lt", "gt", "eq"]:
+                    matrix_id = f"{binding.id}_{term}"
+                    children[matrix_id] = InputSeriesMatrix(
+                        self.context,
+                        self.config.next_file(f"{matrix_id}.txt"),
+                        freq=MatrixFrequency(binding.time_step),
+                        nb_columns=1 if term in ["lt", "gt"] else None,
+                        default_empty=default_matrices[binding.time_step],
+                    )
         children["bindingconstraints"] = BindingConstraintsIni(
             self.context, self.config.next_file("bindingconstraints.ini")
         )

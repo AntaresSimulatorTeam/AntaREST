@@ -1,6 +1,7 @@
 from antarest.study.storage.rawstudy.model.filesystem.common.area_matrix_list import (
     AreaMatrixList,
     AreaMultipleMatrixList,
+    BindingConstraintMatrixList,
     ThermalMatrixList,
 )
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
@@ -10,17 +11,24 @@ from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.ts_
 )
 
 
+# noinspection SpellCheckingInspection
 class OutputSimulationTsNumbers(FolderNode):
     """
     Represents a folder structure, which contains several time series folders
     (one for each generator type: "hydro", "load", "solar" and "wind")
     and a specific folder structure for the thermal clusters (one for each area).
 
+    Since v8.7, it also contains a folder for the binding constraints.
+
     Example of tree structure:
 
     .. code-block:: text
 
        output/20230323-1540adq/ts-numbers/
+       ├── bindingconstraints
+       │   ├── group_1.txt
+       │   ├── group_2.txt
+       │   └── [...]
        ├── hydro
        │   ├── at.txt
        │   ├── ch.txt
@@ -77,4 +85,10 @@ class OutputSimulationTsNumbers(FolderNode):
                 TsNumbersVector,
             ),
         }
+        if self.config.version >= 870:
+            children["bindingconstraints"] = BindingConstraintMatrixList(
+                self.context,
+                self.config.next_file("bindingconstraints"),
+                matrix_class=TsNumbersVector,
+            )
         return children

@@ -7,7 +7,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint 
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.command_extractor import CommandExtractor
 from antarest.study.storage.variantstudy.business.command_reverter import CommandReverter
-from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series import (
+from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series_before_v87 import (
     default_bc_hourly,
     default_bc_weekly_daily,
 )
@@ -350,13 +350,14 @@ def test_create_diff(command_context: CommandContext):
     )
 
     values_b = np.random.rand(8784, 3).tolist()
+    matrix_b_id = command_context.matrix_service.create(values_b)
     other_match = CreateBindingConstraint(
         name="foo",
         enabled=True,
         time_step=BindingConstraintFrequency.HOURLY,
         operator=BindingConstraintOperator.EQUAL,
         coeffs={"b": [0.3]},
-        values=values_b,
+        values=matrix_b_id,
         command_context=command_context,
     )
     assert base.create_diff(other_match) == [
@@ -366,7 +367,7 @@ def test_create_diff(command_context: CommandContext):
             time_step=BindingConstraintFrequency.HOURLY,
             operator=BindingConstraintOperator.EQUAL,
             coeffs={"b": [0.3]},
-            values=values_b,
+            values=matrix_b_id,
             command_context=command_context,
         )
     ]

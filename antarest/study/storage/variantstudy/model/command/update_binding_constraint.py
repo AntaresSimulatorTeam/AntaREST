@@ -1,18 +1,12 @@
-from typing import Any, Dict, List, Optional, Tuple, Union
-
-from pydantic import validator
+from typing import Any, Dict, List, Optional, Tuple
 
 from antarest.core.model import JSON
 from antarest.matrixstore.model import MatrixData
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.business.utils import validate_matrix
 from antarest.study.storage.variantstudy.business.utils_binding_constraint import apply_binding_constraint
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
-from antarest.study.storage.variantstudy.model.command.create_binding_constraint import (
-    AbstractBindingConstraintCommand,
-    check_matrix_values,
-)
+from antarest.study.storage.variantstudy.model.command.create_binding_constraint import AbstractBindingConstraintCommand
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -38,26 +32,6 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
     # Properties of the `UPDATE_BINDING_CONSTRAINT` command:
     id: str
 
-    @validator("values", always=True)
-    def validate_series(
-        cls,
-        v: Optional[Union[MatrixType, str]],
-        values: Dict[str, Any],
-    ) -> Optional[Union[MatrixType, str]]:
-        time_step = values["time_step"]
-        if v is None:
-            # The matrix is not updated
-            return None
-        if isinstance(v, str):
-            # Check the matrix link
-            return validate_matrix(v, values)
-        if isinstance(v, list):
-            check_matrix_values(time_step, v)
-            return validate_matrix(v, values)
-        # Invalid datatype
-        # pragma: no cover
-        raise TypeError(repr(v))
-
     def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         return CommandOutput(status=True), {}
 
@@ -77,6 +51,11 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
                 message="Failed to retrieve existing binding constraint",
             )
 
+        # fmt: off
+        updated_matrices = [term for term in ["less_term_matrix", "equal_term_matrix", "greater_term_matrix"] if self.__getattribute__(term)]
+        self.validates_and_fills_matrices(specific_matrices=updated_matrices or None, version=study_data.config.version, create=False)
+        # fmt: on
+
         return apply_binding_constraint(
             study_data,
             binding_constraints,
@@ -89,8 +68,12 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
             self.operator,
             self.coeffs,
             self.values,
+            self.less_term_matrix,
+            self.greater_term_matrix,
+            self.equal_term_matrix,
             self.filter_year_by_year,
             self.filter_synthesis,
+            self.group,
         )
 
     def to_dto(self) -> CommandDTO:
@@ -114,7 +97,13 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
             and self.operator == other.operator
             and self.coeffs == other.coeffs
             and self.values == other.values
+            and self.less_term_matrix == other.less_term_matrix
+            and self.greater_term_matrix == other.greater_term_matrix
+            and self.equal_term_matrix == other.equal_term_matrix
             and self.comments == other.comments
+            and self.group == other.group
+            and self.filter_synthesis == other.filter_synthesis
+            and self.filter_year_by_year == other.filter_year_by_year
         )
 
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:

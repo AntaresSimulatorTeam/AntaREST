@@ -1780,6 +1780,9 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
         "op3": 3,
         "op4": 2.4,
         "op5": 0,
+        "costGeneration": "SetManually",
+        "efficiency": 100.0,
+        "variableOMCost": 0.0,
     }
     res = client.put(
         # This URL is deprecated, but we must check it for backward compatibility.

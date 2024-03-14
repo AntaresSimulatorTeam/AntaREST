@@ -27,7 +27,12 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.renewable import RenewableConfig
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import STStorageConfig, STStorageGroup
-from antarest.study.storage.rawstudy.model.filesystem.config.thermal import Thermal860Config, ThermalConfig
+from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
+    Thermal860Config,
+    Thermal870Config,
+    ThermalConfig,
+    ThermalCostGeneration,
+)
 from tests.storage.business.assets import ASSETS_DIR
 
 
@@ -333,10 +338,24 @@ def test_parse_thermal_860(tmp_path: Path, version, caplog) -> None:
     ini_path.write_text(THERMAL_860_LIST_INI)
     with caplog.at_level(logging.WARNING):
         actual = _parse_thermal(study_path, "fr")
-    if version >= 860:
+    if version == 860:
         expected = [
             Thermal860Config(id="t1", name="t1"),
             Thermal860Config(id="t2", name="t2", co2=156, nh3=456),
+        ]
+        assert not caplog.text
+    elif version == 870:
+        expected = [
+            Thermal870Config(id="t1", name="t1"),
+            Thermal870Config(
+                id="t2",
+                name="t2",
+                co2=156,
+                nh3=456,
+                cost_generation=ThermalCostGeneration.SET_MANUALLY,
+                efficiency=100.0,
+                variable_o_m_cost=0,
+            ),
         ]
         assert not caplog.text
     else:

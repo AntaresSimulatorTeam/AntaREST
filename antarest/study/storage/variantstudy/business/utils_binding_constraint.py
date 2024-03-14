@@ -1,4 +1,4 @@
-from typing import Dict, List, Literal, Mapping, Optional, Sequence, Union
+import typing as t
 
 from antarest.core.model import JSON
 from antarest.matrixstore.model import MatrixData
@@ -17,15 +17,20 @@ def apply_binding_constraint(
     new_key: str,
     bd_id: str,
     name: str,
-    comments: Optional[str],
+    comments: t.Optional[str],
     enabled: bool,
     freq: BindingConstraintFrequency,
     operator: BindingConstraintOperator,
-    coeffs: Dict[str, List[float]],
-    values: Optional[Union[List[List[MatrixData]], str]],
-    filter_year_by_year: Optional[str] = None,
-    filter_synthesis: Optional[str] = None,
+    coeffs: t.Dict[str, t.List[float]],
+    values: t.Union[t.List[t.List[MatrixData]], str, None],
+    less_term_matrix: t.Union[t.List[t.List[MatrixData]], str, None],
+    greater_term_matrix: t.Union[t.List[t.List[MatrixData]], str, None],
+    equal_term_matrix: t.Union[t.List[t.List[MatrixData]], str, None],
+    filter_year_by_year: t.Optional[str] = None,
+    filter_synthesis: t.Optional[str] = None,
+    group: t.Optional[str] = None,
 ) -> CommandOutput:
+    version = study_data.config.version
     binding_constraints[new_key] = {
         "name": name,
         "id": bd_id,
@@ -33,7 +38,9 @@ def apply_binding_constraint(
         "type": freq.value,
         "operator": operator.value,
     }
-    if study_data.config.version >= 830:
+    if group:
+        binding_constraints[new_key]["group"] = group
+    if version >= 830:
         if filter_year_by_year:
             binding_constraints[new_key]["filter-year-by-year"] = filter_year_by_year
         if filter_synthesis:
@@ -76,14 +83,25 @@ def apply_binding_constraint(
     if values:
         if not isinstance(values, str):  # pragma: no cover
             raise TypeError(repr(values))
-        study_data.tree.save(values, ["input", "bindingconstraints", bd_id])
+        if version < 870:
+            study_data.tree.save(values, ["input", "bindingconstraints", bd_id])
+    for matrix_term, matrix_name, matrix_alias in zip(
+        [less_term_matrix, greater_term_matrix, equal_term_matrix],
+        ["less_term_matrix", "greater_term_matrix", "equal_term_matrix"],
+        ["lt", "gt", "eq"],
+    ):
+        if matrix_term:
+            if not isinstance(matrix_term, str):  # pragma: no cover
+                raise TypeError(repr(matrix_term))
+            if version >= 870:
+                study_data.tree.save(matrix_term, ["input", "bindingconstraints", f"{bd_id}_{matrix_alias}"])
     return CommandOutput(status=True)
 
 
 def parse_bindings_coeffs_and_save_into_config(
     bd_id: str,
     study_data_config: FileStudyTreeConfig,
-    coeffs: Mapping[str, Union[Literal["hourly", "daily", "weekly"], Sequence[float]]],
+    coeffs: t.Mapping[str, t.Union[t.Literal["hourly", "daily", "weekly"], t.Sequence[float]]],
 ) -> None:
     if bd_id not in [bind.id for bind in study_data_config.bindings]:
         areas_set = set()
