@@ -25,7 +25,7 @@ class LauncherParametersDTO(BaseModel):
     adequacy_patch: t.Optional[t.Dict[str, t.Any]] = None
     nb_cpu: t.Optional[int] = None
     post_processing: bool = False
-    time_limit: t.Optional[int] = 240 * 3600  # Default value set to 240 hours (in seconds)
+    time_limit: int = 240 * 3600  # Default value set to 240 hours (in seconds)
     xpansion: t.Union[XpansionParametersDTO, bool, None] = None
     xpansion_r_version: bool = False
     archive_output: bool = True
