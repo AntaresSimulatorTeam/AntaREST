@@ -513,22 +513,15 @@ class SlurmLauncher(AbstractLauncher):
                 ):
                     other_options.append("xpansion_sensitivity")
 
-            time_limit = launcher_params.time_limit
-            if time_limit is not None:
-                if MIN_TIME_LIMIT > time_limit:
-                    logger.warning(
-                        f"Invalid slurm launcher time limit ({time_limit}),"
-                        f" should be higher than {MIN_TIME_LIMIT}. Using min limit."
-                    )
-                    launcher_args.time_limit = MIN_TIME_LIMIT
-                elif time_limit >= MAX_TIME_LIMIT:
-                    logger.warning(
-                        f"Invalid slurm launcher time limit ({time_limit}),"
-                        f" should be lower than {MAX_TIME_LIMIT}. Using max limit."
-                    )
-                    launcher_args.time_limit = MAX_TIME_LIMIT - 3600
-                else:
-                    launcher_args.time_limit = time_limit
+            # The `time_limit` parameter could be `None`, in that case, the default value is used.
+            time_limit = launcher_params.time_limit or MIN_TIME_LIMIT
+            time_limit = min(max(time_limit, MIN_TIME_LIMIT), MAX_TIME_LIMIT)
+            if launcher_args.time_limit != time_limit:
+                logger.warning(
+                    f"Invalid slurm launcher time_limit ({time_limit}),"
+                    f" should be between {MIN_TIME_LIMIT} and {MAX_TIME_LIMIT}"
+                )
+            launcher_args.time_limit = time_limit
 
             post_processing = launcher_params.post_processing
             if post_processing is not None:
