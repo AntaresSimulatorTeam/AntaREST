@@ -9,7 +9,7 @@ import { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
 import useEnqueueErrorSnackbar from "../../../../../../../../hooks/useEnqueueErrorSnackbar";
 import {
   BindingConstFields,
-  ConstraintType,
+  ConstraintTerm,
   dataToId,
   isDataLink,
   isOptionExist,
@@ -27,9 +27,9 @@ import { getLinksAndClusters } from "../../../../../../../../redux/selectors";
 
 interface Props extends Omit<FormDialogProps, "children" | "handleSubmit"> {
   studyId: string;
-  bindingConstraint: string;
+  constraintId: string;
   append: UseFieldArrayAppend<BindingConstFields, "constraints">;
-  constraintsTerm: BindingConstFields["constraints"];
+  constraintTerms: BindingConstFields["constraints"];
   options: AllClustersAndLinks;
 }
 
@@ -39,14 +39,14 @@ function AddConstraintTermDialog(props: Props) {
   const { enqueueSnackbar } = useSnackbar();
   const {
     studyId,
-    bindingConstraint,
+    constraintId,
     options,
-    constraintsTerm,
+    constraintTerms,
     append,
     ...dialogProps
   } = props;
   const { onCancel } = dialogProps;
-  const defaultValues: ConstraintType = {
+  const defaultValues: ConstraintTerm = {
     id: "",
     weight: 0,
     offset: 0,
@@ -66,7 +66,7 @@ function AddConstraintTermDialog(props: Props) {
 
   const handleSubmit = async (values: SubmitHandlerPlus) => {
     try {
-      const tmpValues = values.dirtyValues as ConstraintType;
+      const tmpValues = values.dirtyValues as ConstraintTerm;
       const isLink = isDataLink(tmpValues.data);
       if (tmpValues.weight === undefined) {
         tmpValues.weight = 0.0;
@@ -103,7 +103,7 @@ function AddConstraintTermDialog(props: Props) {
 
       // Verify if this term already exist in current term list
       const termId = dataToId(data);
-      if (isTermExist(constraintsTerm, termId)) {
+      if (isTermExist(constraintTerms, termId)) {
         enqueueSnackbar(t("study.error.termAlreadyExist"), {
           variant: "error",
         });
@@ -114,12 +114,12 @@ function AddConstraintTermDialog(props: Props) {
       // Send
       await addConstraintTerm(
         studyId,
-        bindingConstraint,
-        values.dirtyValues as ConstraintType,
+        constraintId,
+        values.dirtyValues as ConstraintTerm,
       );
 
       // Add to current UX
-      append(tmpValues as ConstraintType);
+      append(tmpValues as ConstraintTerm);
       enqueueSnackbar(t("study.success.addConstraintTerm"), {
         variant: "success",
       });
@@ -144,7 +144,7 @@ function AddConstraintTermDialog(props: Props) {
       {optionsItems && (
         <AddConstraintTermForm
           options={optionsItems}
-          constraintsTerm={constraintsTerm}
+          constraintTerms={constraintTerms}
         />
       )}
     </FormDialog>

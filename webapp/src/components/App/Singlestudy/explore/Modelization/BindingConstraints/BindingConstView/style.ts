@@ -1,24 +1,18 @@
 import { Box, Tabs, styled } from "@mui/material";
 
-export const ConstraintList = styled(Box)(({ theme }) => ({
+export const TermsList = styled(Box)(({ theme }) => ({
   display: "flex",
   width: "100%",
   flexDirection: "column",
   marginBottom: theme.spacing(1),
 }));
 
-export const ConstraintHeader = styled(Box)(({ theme }) => ({
+export const TermsHeader = styled(Box)(({ theme }) => ({
   width: "100%",
   display: "flex",
   justifyContent: "flex-end",
   alignItems: "center",
   marginBottom: theme.spacing(2),
-}));
-
-export const ConstraintTerm = styled(Box)(({ theme }) => ({
-  display: "flex",
-  width: "100%",
-  flexDirection: "column",
 }));
 
 export const MatrixContainer = styled(Box)(({ theme }) => ({

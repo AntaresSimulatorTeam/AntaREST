@@ -3,41 +3,40 @@ import { Box, Button, TextField, Typography } from "@mui/material";
 import AddCircleOutlineRoundedIcon from "@mui/icons-material/AddCircleOutlineRounded";
 import DeleteRoundedIcon from "@mui/icons-material/DeleteRounded";
 import { useTranslation } from "react-i18next";
-import { ConstraintType, isDataLink } from "../utils";
+import { ConstraintTerm, isDataLink } from "../utils";
 import {
   AllClustersAndLinks,
   ClusterElement,
   LinkCreationInfoDTO,
 } from "../../../../../../../../common/types";
 import OptionsList from "./OptionsList";
-import { ConstraintItemRoot } from "./style";
 import ConstraintElement from "../constraintviews/ConstraintElement";
 import OffsetInput from "../constraintviews/OffsetInput";
 
 export type ConstraintWithNullableOffset = Partial<
-  Omit<ConstraintType, "offset"> & { offset: number | null | undefined }
+  Omit<ConstraintTerm, "offset"> & { offset: number | null | undefined }
 >;
 
 interface Props {
   options: AllClustersAndLinks;
-  constraint: ConstraintType;
-  constraintsTerm: ConstraintType[];
-  saveValue: (constraint: ConstraintWithNullableOffset) => void;
+  term: ConstraintTerm;
+  constraintTerms: ConstraintTerm[];
+  saveValue: (term: ConstraintWithNullableOffset) => void;
   deleteTerm: () => void;
 }
 
-export default function ConstraintItem(props: Props) {
-  const { options, constraint, constraintsTerm, saveValue, deleteTerm } = props;
+function ConstraintTermItem(props: Props) {
+  const { options, term, constraintTerms, saveValue, deleteTerm } = props;
   const [t] = useTranslation();
-  const [weight, setWeight] = useState(constraint.weight);
-  const [offset, setOffset] = useState(constraint.offset);
-  const isLink = useMemo(() => isDataLink(constraint.data), [constraint.data]);
+  const [weight, setWeight] = useState(term.weight);
+  const [offset, setOffset] = useState(term.offset);
+  const isLink = useMemo(() => isDataLink(term.data), [term.data]);
   const initValue1 = isLink
-    ? (constraint.data as LinkCreationInfoDTO).area1
-    : (constraint.data as ClusterElement).area;
+    ? (term.data as LinkCreationInfoDTO).area1
+    : (term.data as ClusterElement).area;
   const initValue2 = isLink
-    ? (constraint.data as LinkCreationInfoDTO).area2
-    : (constraint.data as ClusterElement).cluster;
+    ? (term.data as LinkCreationInfoDTO).area2
+    : (term.data as ClusterElement).cluster;
   const [value1, setValue1] = useState(initValue1);
   const [value2, setValue2] = useState(initValue2);
 
@@ -62,11 +61,11 @@ export default function ConstraintItem(props: Props) {
         setOffset(pValue);
       }
       saveValue({
-        id: constraint.id,
+        id: term.id,
         [name]: value === null ? value : pValue,
       });
     },
-    [constraint.id, saveValue],
+    [term.id, saveValue],
   );
 
   ////////////////////////////////////////////////////////////////
@@ -74,7 +73,14 @@ export default function ConstraintItem(props: Props) {
   /// /////////////////////////////////////////////////////////////
 
   return (
-    <ConstraintItemRoot>
+    <Box
+      sx={{
+        display: "flex",
+        width: "100%",
+        padding: 0,
+        alignItems: "center",
+      }}
+    >
       <ConstraintElement
         title="Weight"
         left={
@@ -91,13 +97,13 @@ export default function ConstraintItem(props: Props) {
             <OptionsList
               isLink={isLink}
               list={options}
-              constraint={constraint}
+              term={term}
               saveValue={saveValue}
               value1={value1}
               value2={value2}
               setValue1={setValue1}
               setValue2={setValue2}
-              constraintsTerm={constraintsTerm}
+              constraintTerms={constraintTerms}
             />
           </Box>
         }
@@ -142,6 +148,8 @@ export default function ConstraintItem(props: Props) {
       >
         {t("global.delete")}
       </Button>
-    </ConstraintItemRoot>
+    </Box>
   );
 }
+
+export default ConstraintTermItem;

@@ -6,9 +6,24 @@ import {
 import { getBindingConstraint } from "../../../../../../../services/api/studydata";
 import { FilteringType } from "../../../common/types";
 
-type OperatorType = "less" | "equal" | "greater" | "both";
+////////////////////////////////////////////////////////////////
+// Constants
+////////////////////////////////////////////////////////////////
 
-export interface ConstraintType {
+export const BC_PATH = `input/bindingconstraints/bindingconstraints`;
+export const OPERATORS = ["less", "equal", "greater", "both"] as const;
+export const TIME_STEPS = ["hourly", "daily", "weekly"] as const;
+export const ACTIVE_WINDOWS_DOC_PATH =
+  "https://antares-simulator.readthedocs.io/en/latest/reference-guide/04-active_windows/";
+
+////////////////////////////////////////////////////////////////
+// Types
+////////////////////////////////////////////////////////////////
+
+export type Operator = (typeof OPERATORS)[number];
+export type TimeStep = (typeof TIME_STEPS)[number];
+
+export interface ConstraintTerm {
   id: string;
   weight: number;
   offset?: number;
@@ -25,27 +40,31 @@ export interface BindingConstFields {
   name: string;
   id: string;
   enabled: boolean;
-  time_step: Exclude<FilteringType, "monthly" | "annual">;
-  operator: OperatorType;
+  time_step: TimeStep;
+  operator: Operator;
   comments?: string;
   filterByYear: FilteringType[];
   filterSynthesis: FilteringType[];
-  constraints: ConstraintType[];
+  constraints: ConstraintTerm[];
 }
 
 export interface BindingConstFieldsDTO {
   name: string;
   id: string;
   enabled: boolean;
-  time_step: Exclude<FilteringType, "monthly" | "annual">;
-  operator: OperatorType;
+  time_step: TimeStep;
+  operator: Operator;
   comments?: string;
   filter_year_by_year?: string;
   filter_synthesis?: string;
-  constraints: ConstraintType[];
+  constraints: ConstraintTerm[];
 }
 
 export type BindingConstPath = Record<keyof BindingConstFields, string>;
+
+////////////////////////////////////////////////////////////////
+// Functions
+////////////////////////////////////////////////////////////////
 
 export async function getDefaultValues(
   studyId: string,
@@ -104,11 +123,8 @@ export const isOptionExist = (
 };
 
 export const isTermExist = (
-  list: ConstraintType[],
+  terms: ConstraintTerm[],
   termId: string,
 ): boolean => {
-  return list.findIndex((item) => item.id === termId) >= 0;
+  return terms.findIndex((term) => term.id === termId) >= 0;
 };
-
-export const ACTIVE_WINDOWS_DOC_PATH =
-  "https://antares-simulator.readthedocs.io/en/latest/reference-guide/04-active_windows/";

@@ -6,20 +6,19 @@ import { AllClustersAndLinks } from "../../../../../../../../../common/types";
 import OptionsList from "./OptionsList";
 import NumberFE from "../../../../../../../../common/fieldEditors/NumberFE";
 import { useFormContextPlus } from "../../../../../../../../common/Form";
-import { ConstraintItemRoot } from "../../ConstraintTerm/style";
-import { BindingConstFields, ConstraintType } from "../../utils";
+import { BindingConstFields, ConstraintTerm } from "../../utils";
 import ConstraintElement from "../../constraintviews/ConstraintElement";
 import OffsetInput from "../../constraintviews/OffsetInput";
 
 interface Props {
   options: AllClustersAndLinks;
-  constraintsTerm: BindingConstFields["constraints"];
+  constraintTerms: BindingConstFields["constraints"];
 }
 
 export default function AddConstraintTermForm(props: Props) {
-  const { options, constraintsTerm } = props;
+  const { options, constraintTerms } = props;
   const { control, watch, unregister, setValue } =
-    useFormContextPlus<ConstraintType>();
+    useFormContextPlus<ConstraintTerm>();
 
   const [t] = useTranslation();
   const [isLink, setIsLink] = useState(true);
@@ -34,7 +33,14 @@ export default function AddConstraintTermForm(props: Props) {
         width: "100%",
       }}
     >
-      <ConstraintItemRoot>
+      <Box
+        sx={{
+          display: "flex",
+          width: "100%",
+          padding: 0,
+          alignItems: "center",
+        }}
+      >
         <ConstraintElement
           title="Weight"
           isLink={isLink}
@@ -55,7 +61,7 @@ export default function AddConstraintTermForm(props: Props) {
               <OptionsList
                 isLink={isLink}
                 list={options}
-                constraintsTerm={constraintsTerm}
+                constraintTerms={constraintTerms}
                 control={control}
                 watch={watch}
                 setValue={setValue}
@@ -97,7 +103,7 @@ export default function AddConstraintTermForm(props: Props) {
             {t("study.modelization.bindingConst.offset")}
           </Button>
         )}
-      </ConstraintItemRoot>
+      </Box>
     </Box>
   );
 }

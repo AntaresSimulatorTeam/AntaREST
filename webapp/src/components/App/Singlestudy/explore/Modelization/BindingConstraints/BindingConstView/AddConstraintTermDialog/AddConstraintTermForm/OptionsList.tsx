@@ -10,7 +10,7 @@ import SelectFE from "../../../../../../../../common/fieldEditors/SelectFE";
 import { ControlPlus } from "../../../../../../../../common/Form/types";
 import {
   BindingConstFields,
-  ConstraintType,
+  ConstraintTerm,
   dataToId,
   isTermExist,
 } from "../../utils";
@@ -18,11 +18,11 @@ import {
 interface Props {
   list: AllClustersAndLinks;
   isLink: boolean;
-  control: ControlPlus<ConstraintType>;
-  watch: UseFormWatch<ConstraintType>;
-  constraintsTerm: BindingConstFields["constraints"];
-  setValue: UseFormSetValue<ConstraintType>;
-  unregister: UseFormUnregister<ConstraintType>;
+  control: ControlPlus<ConstraintTerm>;
+  watch: UseFormWatch<ConstraintTerm>;
+  constraintTerms: BindingConstFields["constraints"];
+  setValue: UseFormSetValue<ConstraintTerm>;
+  unregister: UseFormUnregister<ConstraintTerm>;
 }
 
 export default function OptionsList(props: Props) {
@@ -30,7 +30,7 @@ export default function OptionsList(props: Props) {
     list,
     isLink,
     control,
-    constraintsTerm,
+    constraintTerms,
     watch,
     setValue,
     unregister,
@@ -71,7 +71,7 @@ export default function OptionsList(props: Props) {
           .filter(
             (elm) =>
               !isTermExist(
-                constraintsTerm,
+                constraintTerms,
                 dataToId(
                   isLink
                     ? {
