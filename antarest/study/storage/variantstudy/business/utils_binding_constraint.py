@@ -1,4 +1,4 @@
-from typing import Dict, List, Literal, Mapping, Optional, Sequence, Union
+import typing as t
 
 from antarest.core.model import JSON
 from antarest.matrixstore.model import MatrixData
@@ -17,18 +17,18 @@ def apply_binding_constraint(
     new_key: str,
     bd_id: str,
     name: str,
-    comments: Optional[str],
+    comments: t.Optional[str],
     enabled: bool,
     freq: BindingConstraintFrequency,
     operator: BindingConstraintOperator,
-    coeffs: Dict[str, List[float]],
-    values: Optional[Union[List[List[MatrixData]], str]],
-    less_term_matrix: Optional[Union[List[List[MatrixData]], str]],
-    greater_term_matrix: Optional[Union[List[List[MatrixData]], str]],
-    equal_term_matrix: Optional[Union[List[List[MatrixData]], str]],
-    filter_year_by_year: Optional[str] = None,
-    filter_synthesis: Optional[str] = None,
-    group: Optional[str] = None,
+    coeffs: t.Dict[str, t.List[float]],
+    values: t.Union[t.List[t.List[MatrixData]], str, None],
+    less_term_matrix: t.Union[t.List[t.List[MatrixData]], str, None],
+    greater_term_matrix: t.Union[t.List[t.List[MatrixData]], str, None],
+    equal_term_matrix: t.Union[t.List[t.List[MatrixData]], str, None],
+    filter_year_by_year: t.Optional[str] = None,
+    filter_synthesis: t.Optional[str] = None,
+    group: t.Optional[str] = None,
 ) -> CommandOutput:
     version = study_data.config.version
     binding_constraints[new_key] = {
@@ -101,7 +101,7 @@ def apply_binding_constraint(
 def parse_bindings_coeffs_and_save_into_config(
     bd_id: str,
     study_data_config: FileStudyTreeConfig,
-    coeffs: Mapping[str, Union[Literal["hourly", "daily", "weekly"], Sequence[float]]],
+    coeffs: t.Mapping[str, t.Union[t.Literal["hourly", "daily", "weekly"], t.Sequence[float]]],
 ) -> None:
     if bd_id not in [bind.id for bind in study_data_config.bindings]:
         areas_set = set()
