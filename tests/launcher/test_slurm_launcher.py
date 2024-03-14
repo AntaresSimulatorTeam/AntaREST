@@ -10,7 +10,6 @@ import pytest
 from antareslauncher.data_repo.data_repo_tinydb import DataRepoTinydb
 from antareslauncher.main import MainParameters
 from antareslauncher.study_dto import StudyDTO
-from sqlalchemy.orm import Session  # type: ignore
 
 from antarest.core.config import Config, LauncherConfig, NbCoresConfig, SlurmConfig
 from antarest.launcher.adapters.abstractlauncher import LauncherInitException
@@ -37,7 +36,7 @@ def launcher_config(tmp_path: Path) -> Config:
         "key_password": "password",
         "password": "password",
         "default_wait_time": 10,
-        "default_time_limit": 860400,  # 240 hours (in seconds)
+        "default_time_limit": MAX_TIME_LIMIT,
         "default_json_db_name": "antares.db",
         "slurm_script_path": "/path/to/slurm/launcher.sh",
         "partition": "fake_partition",
@@ -203,11 +202,14 @@ def test_extra_parameters(launcher_config: Config) -> None:
     launcher_params = apply_params(LauncherParametersDTO(nb_cpu=999))
     assert launcher_params.n_cpu == slurm_config.nb_cores.default  # out of range
 
+    launcher_params = apply_params(LauncherParametersDTO.construct(time_limit=None))
+    assert launcher_params.time_limit == MIN_TIME_LIMIT
+
     launcher_params = apply_params(LauncherParametersDTO(time_limit=10))
     assert launcher_params.time_limit == MIN_TIME_LIMIT
 
     launcher_params = apply_params(LauncherParametersDTO(time_limit=999999999))
-    assert launcher_params.time_limit == MAX_TIME_LIMIT - 3600
+    assert launcher_params.time_limit == MAX_TIME_LIMIT
 
     launcher_params = apply_params(LauncherParametersDTO(time_limit=99999))
     assert launcher_params.time_limit == 99999
