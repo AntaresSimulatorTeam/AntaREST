@@ -1,5 +1,5 @@
+import typing as t
 from abc import ABCMeta
-from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 import numpy as np
 from pydantic import BaseModel, Extra, Field, root_validator
@@ -31,7 +31,7 @@ __all__ = (
     "BindingConstraintMatrices",
 )
 
-MatrixType = List[List[MatrixData]]
+MatrixType = t.List[t.List[MatrixData]]
 
 
 def check_matrix_values(time_step: BindingConstraintFrequency, values: MatrixType, version: int) -> None:
@@ -48,7 +48,7 @@ def check_matrix_values(time_step: BindingConstraintFrequency, values: MatrixTyp
             If the matrix shape does not match the expected shape for the given time step.
             If the matrix values contain NaN (Not-a-Number).
     """
-    # Matrices shapes for binding constraints are different from usual shapes,
+    # Matrix shapes for binding constraints are different from usual shapes,
     # because we need to take leap years into account, which contains 366 days and 8784 hours.
     # Also, we use the same matrices for "weekly" and "daily" frequencies,
     # because the solver calculates the weekly matrix from the daily matrix.
@@ -75,13 +75,13 @@ class BindingConstraintProperties(BaseModel, extra=Extra.forbid):
     enabled: bool = True
     time_step: BindingConstraintFrequency
     operator: BindingConstraintOperator
-    filter_year_by_year: Optional[str] = None
-    filter_synthesis: Optional[str] = None
-    comments: Optional[str] = None
+    filter_year_by_year: t.Optional[str] = None
+    filter_synthesis: t.Optional[str] = None
+    comments: t.Optional[str] = None
 
 
 class BindingConstraintProperties870(BindingConstraintProperties):
-    group: Optional[str] = None
+    group: t.Optional[str] = None
 
 
 class BindingConstraintMatrices(BaseModel, extra=Extra.forbid):
@@ -89,27 +89,27 @@ class BindingConstraintMatrices(BaseModel, extra=Extra.forbid):
     Class used to store the matrices of a binding constraint.
     """
 
-    values: Optional[Union[MatrixType, str]] = Field(
+    values: t.Optional[t.Union[MatrixType, str]] = Field(
         None,
         description="2nd member matrix for studies before v8.7",
     )
-    less_term_matrix: Optional[Union[MatrixType, str]] = Field(
+    less_term_matrix: t.Optional[t.Union[MatrixType, str]] = Field(
         None,
         description="less term matrix for v8.7+ studies",
     )
-    greater_term_matrix: Optional[Union[MatrixType, str]] = Field(
+    greater_term_matrix: t.Optional[t.Union[MatrixType, str]] = Field(
         None,
         description="greater term matrix for v8.7+ studies",
     )
-    equal_term_matrix: Optional[Union[MatrixType, str]] = Field(
+    equal_term_matrix: t.Optional[t.Union[MatrixType, str]] = Field(
         None,
         description="equal term matrix for v8.7+ studies",
     )
 
     @root_validator(pre=True)
     def check_matrices(
-        cls, values: Dict[str, Optional[Union[MatrixType, str]]]
-    ) -> Dict[str, Optional[Union[MatrixType, str]]]:
+        cls, values: t.Dict[str, t.Optional[t.Union[MatrixType, str]]]
+    ) -> t.Dict[str, t.Optional[t.Union[MatrixType, str]]]:
         values_matrix = values.get("values") or None
         less_term_matrix = values.get("less_term_matrix") or None
         greater_term_matrix = values.get("greater_term_matrix") or None
@@ -129,7 +129,7 @@ class AbstractBindingConstraintCommand(
     Abstract class for binding constraint commands.
     """
 
-    coeffs: Dict[str, List[float]]
+    coeffs: t.Dict[str, t.List[float]]
 
     def to_dto(self) -> CommandDTO:
         args = {
@@ -154,7 +154,7 @@ class AbstractBindingConstraintCommand(
 
         return CommandDTO(action=self.command_name.value, args=args, version=self.version)
 
-    def get_inner_matrices(self) -> List[str]:
+    def get_inner_matrices(self) -> t.List[str]:
         matrix_service = self.command_context.matrix_service
         return [
             matrix_service.get_matrix_id(matrix)
@@ -168,8 +168,8 @@ class AbstractBindingConstraintCommand(
         ]
 
     def get_corresponding_matrices(
-        self, v: Optional[Union[MatrixType, str]], version: int, create: bool
-    ) -> Optional[str]:
+        self, v: t.Optional[t.Union[MatrixType, str]], version: int, create: bool
+    ) -> t.Optional[str]:
         constants: GeneratorMatrixConstants
         constants = self.command_context.generator_matrix_constants
         time_step = self.time_step
@@ -203,7 +203,7 @@ class AbstractBindingConstraintCommand(
         raise TypeError(repr(v))
 
     def validates_and_fills_matrices(
-        self, *, specific_matrices: Optional[List[str]], version: int, create: bool
+        self, *, specific_matrices: t.Optional[t.List[str]], version: int, create: bool
     ) -> None:
         if version < 870:
             self.values = self.get_corresponding_matrices(self.values, version, create)
@@ -227,7 +227,7 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
     # Properties of the `CREATE_BINDING_CONSTRAINT` command:
     name: str
 
-    def _apply_config(self, study_data_config: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
+    def _apply_config(self, study_data_config: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
         bd_id = transform_name_to_id(self.name)
         parse_bindings_coeffs_and_save_into_config(bd_id, study_data_config, self.coeffs)
         return CommandOutput(status=True), {}
@@ -288,10 +288,10 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
             and self.filter_year_by_year == other.filter_year_by_year
         )
 
-    def _create_diff(self, other: "ICommand") -> List["ICommand"]:
+    def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
         from antarest.study.storage.variantstudy.model.command.update_binding_constraint import UpdateBindingConstraint
 
-        other = cast(CreateBindingConstraint, other)
+        other = t.cast(CreateBindingConstraint, other)
         bd_id = transform_name_to_id(self.name)
 
         args = {
