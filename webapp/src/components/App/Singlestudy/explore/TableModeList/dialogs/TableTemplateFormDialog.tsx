@@ -9,6 +9,8 @@ import SelectFE from "../../../../../common/fieldEditors/SelectFE";
 import StringFE from "../../../../../common/fieldEditors/StringFE";
 import { getTableColumnsForType, type TableTemplate } from "../utils";
 import { TABLE_MODE_TYPES } from "../../../../../../services/api/studies/tableMode/constants";
+import { validateString } from "../../../../../../utils/validationUtils";
+import { useMemo } from "react";
 
 export interface TableTemplateFormDialogProps
   extends Pick<
@@ -22,6 +24,15 @@ function TableTemplateFormDialog(props: TableTemplateFormDialogProps) {
   const { open, title, titleIcon, config, onSubmit, onCancel, templates } =
     props;
   const { t } = useTranslation();
+
+  const existingTables = useMemo(
+    () => templates.map(({ name }) => name),
+    [templates],
+  );
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
 
   return (
     <FormDialog
@@ -47,16 +58,11 @@ function TableTemplateFormDialog(props: TableTemplateFormDialogProps) {
             autoFocus
             control={control}
             rules={{
-              validate: (value) => {
-                const id = getValues("id");
-                const hasDuplicate = templates.find(
-                  (tp) => tp.id !== id && tp.name.trim() === value.trim(),
-                );
-                if (hasDuplicate) {
-                  return t("form.field.notAllowedValue") as string;
-                }
-              },
-              required: true,
+              validate: (v) =>
+                validateString(v, {
+                  existingValues: existingTables,
+                  editedValue: config?.defaultValues?.name,
+                }),
             }}
           />
           <SelectFE

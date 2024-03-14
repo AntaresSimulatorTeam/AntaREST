@@ -116,10 +116,13 @@ function Map() {
   ////////////////////////////////////////////////////////////////
 
   const handleCreateArea = async (name: string) => {
-    setOpenDialog(false);
     try {
       if (study) {
-        dispatch(createStudyMapNode({ studyId: study.id, name }));
+        return dispatch(createStudyMapNode({ studyId: study.id, name }))
+          .unwrap()
+          .then(() => {
+            setOpenDialog(false);
+          });
       }
     } catch (e) {
       enqueueErrorSnackbar(t("study.error.createArea"), e as AxiosError);
@@ -206,6 +209,7 @@ function Map() {
           />
           {openDialog && (
             <CreateAreaDialog
+              studyId={study.id}
               open={openDialog}
               onClose={handleClose}
               createArea={handleCreateArea}

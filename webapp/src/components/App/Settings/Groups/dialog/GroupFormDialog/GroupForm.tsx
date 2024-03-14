@@ -31,10 +31,11 @@ import {
 import { RoleType, UserDTO } from "../../../../../../common/types";
 import { roleToString, sortByName } from "../../../../../../services/utils";
 import usePromise from "../../../../../../hooks/usePromise";
-import { getUsers } from "../../../../../../services/api/user";
+import { getGroups, getUsers } from "../../../../../../services/api/user";
 import { getAuthUser } from "../../../../../../redux/selectors";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 import { UseFormReturnPlus } from "../../../../../common/Form/types";
+import { validateString } from "../../../../../../utils/validationUtils";
 
 function GroupForm(props: UseFormReturnPlus) {
   const {
@@ -44,15 +45,23 @@ function GroupForm(props: UseFormReturnPlus) {
     formState: { errors, defaultValues },
   } = props;
 
+  const { t } = useTranslation();
+  const authUser = useAppSelector(getAuthUser);
   const userLabelId = useRef(uuidv4()).current;
+  const [selectedUser, setSelectedUser] = useState<UserDTO>();
+  const { data: users, isLoading: isUsersLoading } = usePromise(getUsers);
+  const { data: groups } = usePromise(getGroups);
+
+  const existingGroups = useMemo(
+    () => groups?.map((group) => group.name),
+    [groups],
+  );
+
   const { fields, append, remove } = useFieldArray({
     control,
     name: "permissions",
   });
-  const [selectedUser, setSelectedUser] = useState<UserDTO>();
-  const { data: users, isLoading: isUsersLoading } = usePromise(getUsers);
-  const { t } = useTranslation();
-  const authUser = useAppSelector(getAuthUser);
+
   const allowToAddPermission =
     selectedUser &&
     !getValues("permissions").some(
@@ -63,6 +72,7 @@ function GroupForm(props: UseFormReturnPlus) {
     if (!users) {
       return [];
     }
+
     return sortByName(
       users.filter(
         (user) =>
@@ -101,12 +111,11 @@ function GroupForm(props: UseFormReturnPlus) {
         }
         fullWidth
         {...register("name", {
-          required: t("form.field.required") as string,
-          validate: (value) => {
-            if (RESERVED_GROUP_NAMES.includes(value)) {
-              return t("form.field.notAllowedValue") as string;
-            }
-          },
+          validate: (v) =>
+            validateString(v, {
+              existingValues: existingGroups,
+              excludedValues: RESERVED_GROUP_NAMES,
+            }),
         })}
       />
       {/* Permissions */}
