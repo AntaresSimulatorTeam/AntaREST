@@ -9,7 +9,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
-from antarest.study.storage.variantstudy.business.utils import get_matrix_id, validate_matrix
+from antarest.study.storage.variantstudy.business.utils import validate_matrix
 from antarest.study.storage.variantstudy.business.utils_binding_constraint import (
     apply_binding_constraint,
     parse_bindings_coeffs_and_save_into_config,
@@ -85,23 +85,40 @@ class BindingConstraintProperties870(BindingConstraintProperties):
 
 
 class BindingConstraintMatrices(BaseModel, extra=Extra.forbid):
-    values: Optional[Union[MatrixType, str]] = Field(None, description="2nd member matrix for studies before v8.7")
-    less_term_matrix: Optional[Union[MatrixType, str]] = Field(None, description="less term matrix for v8.7+ studies")
-    greater_term_matrix: Optional[Union[MatrixType, str]] = Field(
-        None, description="greater term matrix for v8.7+ studies"
-    )
-    equal_term_matrix: Optional[Union[MatrixType, str]] = Field(None, description="equal term matrix for v8.7+ studies")
+    """
+    Class used to store the matrices of a binding constraint.
+    """
 
-    @root_validator()
+    values: Optional[Union[MatrixType, str]] = Field(
+        None,
+        description="2nd member matrix for studies before v8.7",
+    )
+    less_term_matrix: Optional[Union[MatrixType, str]] = Field(
+        None,
+        description="less term matrix for v8.7+ studies",
+    )
+    greater_term_matrix: Optional[Union[MatrixType, str]] = Field(
+        None,
+        description="greater term matrix for v8.7+ studies",
+    )
+    equal_term_matrix: Optional[Union[MatrixType, str]] = Field(
+        None,
+        description="equal term matrix for v8.7+ studies",
+    )
+
+    @root_validator(pre=True)
     def check_matrices(
         cls, values: Dict[str, Optional[Union[MatrixType, str]]]
     ) -> Dict[str, Optional[Union[MatrixType, str]]]:
-        if values["values"]:
-            for term in ["less_term_matrix", "greater_term_matrix", "equal_term_matrix"]:
-                if values[term]:
-                    raise ValueError(
-                        f"You cannot fill 'values' (matrix before v8.7) and a matrix term: {term} (matrices since v8.7)"
-                    )
+        values_matrix = values.get("values") or None
+        less_term_matrix = values.get("less_term_matrix") or None
+        greater_term_matrix = values.get("greater_term_matrix") or None
+        equal_term_matrix = values.get("equal_term_matrix") or None
+        if values_matrix and (less_term_matrix or greater_term_matrix or equal_term_matrix):
+            raise ValueError(
+                "You cannot fill 'values' (matrix before v8.7) and a matrix term:"
+                " 'less_term_matrix', 'greater_term_matrix' or 'equal_term_matrix' (matrices since v8.7)"
+            )
         return values
 
 
@@ -124,17 +141,23 @@ class AbstractBindingConstraintCommand(
             "filter_year_by_year": self.filter_year_by_year,
             "filter_synthesis": self.filter_synthesis,
         }
+
+        # The `group` attribute is only available for studies since v8.7
         if self.group:
             args["group"] = self.group
+
+        matrix_service = self.command_context.matrix_service
         for matrix_name in ["values", "less_term_matrix", "greater_term_matrix", "equal_term_matrix"]:
             matrix_attr = getattr(self, matrix_name, None)
             if matrix_attr is not None:
-                args[matrix_name] = get_matrix_id(matrix_attr, self.command_context.matrix_service)
+                args[matrix_name] = matrix_service.get_matrix_id(matrix_attr)
+
         return CommandDTO(action=self.command_name.value, args=args, version=self.version)
 
     def get_inner_matrices(self) -> List[str]:
+        matrix_service = self.command_context.matrix_service
         return [
-            get_matrix_id(matrix, self.command_context.matrix_service)
+            matrix_service.get_matrix_id(matrix)
             for matrix in [
                 self.values,
                 self.less_term_matrix,
@@ -186,9 +209,7 @@ class AbstractBindingConstraintCommand(
             self.values = self.get_corresponding_matrices(self.values, version, create)
         elif specific_matrices:
             for matrix in specific_matrices:
-                self.__setattr__(
-                    matrix, self.get_corresponding_matrices(self.__getattribute__(matrix), version, create)
-                )
+                setattr(self, matrix, self.get_corresponding_matrices(getattr(self, matrix), version, create))
         else:
             self.less_term_matrix = self.get_corresponding_matrices(self.less_term_matrix, version, create)
             self.greater_term_matrix = self.get_corresponding_matrices(self.greater_term_matrix, version, create)
@@ -285,10 +306,12 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
             "command_context": other.command_context,
             "group": other.group,
         }
+
+        matrix_service = self.command_context.matrix_service
         for matrix_name in ["values", "less_term_matrix", "equal_term_matrix", "greater_term_matrix"]:
-            self_matrix = self.__getattribute__(matrix_name)
-            other_matrix = other.__getattribute__(matrix_name)
+            self_matrix = getattr(self, matrix_name)
+            other_matrix = getattr(other, matrix_name)
             if self_matrix != other_matrix:
-                args[matrix_name] = get_matrix_id(other_matrix, self.command_context.matrix_service)
+                args[matrix_name] = matrix_service.get_matrix_id(other_matrix)
 
         return [UpdateBindingConstraint(**args)]

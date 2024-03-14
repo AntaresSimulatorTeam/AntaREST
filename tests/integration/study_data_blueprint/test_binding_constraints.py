@@ -511,10 +511,11 @@ class TestBindingConstraints:
             headers=user_headers,
         )
         assert res.status_code == 422
-        assert (
-            res.json()["description"]
-            == "You cannot fill 'values' (matrix before v8.7) and a matrix term: less_term_matrix (matrices since v8.7)"
-        )
+        description = res.json()["description"]
+        assert "cannot fill 'values'" in description
+        assert "'less_term_matrix'" in description
+        assert "'greater_term_matrix'" in description
+        assert "'equal_term_matrix'" in description
 
         # Creation with wrong matrix according to version: Should fail
         res = client.post(
@@ -531,7 +532,8 @@ class TestBindingConstraints:
             headers=user_headers,
         )
         assert res.status_code == 422
-        assert res.json()["description"] == "You cannot fill a 'matrix_term' as these values refer to v8.7+ studies"
+        description = res.json()["description"]
+        assert description == "You cannot fill a 'matrix_term' as these values refer to v8.7+ studies"
 
         # Wrong matrix shape
         wrong_matrix = np.ones((352, 3))

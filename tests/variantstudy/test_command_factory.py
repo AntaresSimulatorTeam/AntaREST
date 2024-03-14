@@ -402,9 +402,12 @@ class TestCommandFactory:
     )
     @pytest.mark.unit_test
     def test_command_factory(self, command_dto: CommandDTO):
+        def get_matrix_id(matrix: str) -> str:
+            return matrix.lstrip("matrix://")
+
         command_factory = CommandFactory(
             generator_matrix_constants=Mock(spec=GeneratorMatrixConstants),
-            matrix_service=Mock(spec=MatrixService),
+            matrix_service=Mock(spec=MatrixService, get_matrix_id=get_matrix_id),
             patch_service=Mock(spec=PatchService),
         )
         commands = command_factory.to_command(command_dto=command_dto)

@@ -5,7 +5,6 @@ from typing import Callable, Dict, List
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import ChildNotFoundError
-from antarest.study.storage.variantstudy.business.utils import get_matrix_id
 from antarest.study.storage.variantstudy.model.command.common import CommandName
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import CreateBindingConstraint
@@ -111,10 +110,13 @@ class CommandReverter:
                     "comments": command.comments,
                     "command_context": command.command_context,
                 }
+
+                matrix_service = command.command_context.matrix_service
                 for matrix_name in ["values", "less_term_matrix", "equal_term_matrix", "greater_term_matrix"]:
                     matrix = command.__getattribute__(matrix_name)
                     if matrix is not None:
-                        args[matrix_name] = get_matrix_id(matrix, command.command_context.matrix_service)
+                        args[matrix_name] = matrix_service.get_matrix_id(matrix)
+
                 return [UpdateBindingConstraint(**args)]
 
         return base_command.get_command_extractor().extract_binding_constraint(base, base_command.id)
