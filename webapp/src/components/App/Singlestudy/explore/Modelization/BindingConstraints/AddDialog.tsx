@@ -14,6 +14,7 @@ import SelectFE from "../../../../../common/fieldEditors/SelectFE";
 import StringFE from "../../../../../common/fieldEditors/StringFE";
 import SwitchFE from "../../../../../common/fieldEditors/SwitchFE";
 import { StudyMetadata } from "../../../../../../common/types";
+import { validateString } from "../../../../../../utils/validationUtils";
 
 interface Props {
   studyId: StudyMetadata["id"];
@@ -102,14 +103,8 @@ function AddDialog({ studyId, existingConstraints, open, onClose }: Props) {
             label={t("global.name")}
             control={control}
             rules={{
-              validate: (v) => {
-                if (v.trim().length <= 0) {
-                  return t("form.field.required");
-                }
-                if (existingConstraints.includes(v.trim().toLowerCase())) {
-                  return t("form.field.duplicate", { 0: v });
-                }
-              },
+              validate: (v) =>
+                validateString(v, { existingValues: existingConstraints }),
             }}
           />
           <StringFE

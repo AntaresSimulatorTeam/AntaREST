@@ -7,6 +7,7 @@ import { SubmitHandlerPlus } from "../Form/types";
 import SelectFE from "../fieldEditors/SelectFE";
 import { nameToId } from "../../../services/utils";
 import { TRow } from "./utils";
+import { validateString } from "../../../utils/validationUtils";
 
 interface Props<TData extends TRow> {
   open: boolean;
@@ -65,19 +66,8 @@ function CreateDialog<TData extends TRow>({
             control={control}
             fullWidth
             rules={{
-              required: { value: true, message: t("form.field.required") },
-              validate: (v) => {
-                const regex = /^[a-zA-Z0-9_\-() &]+$/;
-                if (!regex.test(v.trim())) {
-                  return t("form.field.specialChars", { 0: "&()_-" });
-                }
-                if (v.trim().length <= 0) {
-                  return t("form.field.required");
-                }
-                if (existingNames.includes(v.trim().toLowerCase())) {
-                  return t("form.field.duplicate", { 0: v });
-                }
-              },
+              validate: (v) =>
+                validateString(v, { existingValues: existingNames }),
             }}
             sx={{ m: 0 }}
           />

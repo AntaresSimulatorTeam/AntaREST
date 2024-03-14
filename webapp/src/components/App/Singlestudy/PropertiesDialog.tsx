@@ -23,6 +23,7 @@ import Fieldset from "../../common/Fieldset";
 import { SubmitHandlerPlus } from "../../common/Form/types";
 import useAppDispatch from "../../../redux/hooks/useAppDispatch";
 import { updateStudy } from "../../../redux/ducks/studies";
+import { validateString } from "../../../utils/validationUtils";
 
 const logErr = debug("antares:createstudyform:error");
 
@@ -137,7 +138,7 @@ function PropertiesDialog(props: Props) {
             label={t("studies.studyName")}
             name="name"
             control={control}
-            rules={{ required: true, validate: (val) => val.trim().length > 0 }}
+            rules={{ validate: (v) => validateString(v) }}
             sx={{ mx: 0 }}
             fullWidth
           />

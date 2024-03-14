@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Button, ButtonGroup } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
@@ -11,18 +11,25 @@ import Fieldset from "../../../../../common/Fieldset";
 import SelectFE from "../../../../../common/fieldEditors/SelectFE";
 import NumberFE from "../../../../../common/fieldEditors/NumberFE";
 import { SubmitHandlerPlus } from "../../../../../common/Form/types";
+import { validateString } from "../../../../../../utils/validationUtils";
 
 interface PropType {
   open: boolean;
   links: LinkCreationInfoDTO[];
   onClose: () => void;
   onSave: (candidate: XpansionCandidate) => void;
+  candidates: XpansionCandidate[];
 }
 
 function CreateCandidateDialog(props: PropType) {
-  const { open, links, onClose, onSave } = props;
+  const { open, links, onClose, onSave, candidates } = props;
   const [t] = useTranslation();
   const [isToggled, setToggle] = useState(true);
+
+  const existingCandidates = useMemo(
+    () => candidates.map(({ name }) => name),
+    [candidates],
+  );
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -70,7 +77,14 @@ function CreateCandidateDialog(props: PropType) {
               label={t("global.name")}
               name="name"
               control={control}
-              rules={{ required: t("form.field.required") }}
+              rules={{
+                validate: (v) =>
+                  validateString(v, {
+                    existingValues: existingCandidates,
+                    allowSpaces: false,
+                    specialChars: "&_*",
+                  }),
+              }}
               sx={{ mx: 0 }}
             />
             <SelectFE

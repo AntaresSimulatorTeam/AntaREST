@@ -4,6 +4,7 @@ import Fieldset from "../Fieldset";
 import FormDialog from "../dialogs/FormDialog";
 import { SubmitHandlerPlus } from "../Form/types";
 import StringFE from "../fieldEditors/StringFE";
+import { validateString } from "../../../utils/validationUtils";
 
 interface Props {
   open: boolean;
@@ -51,19 +52,8 @@ function DuplicateDialog(props: Props) {
             control={control}
             fullWidth
             rules={{
-              required: { value: true, message: t("form.field.required") },
-              validate: (v) => {
-                const regex = /^[a-zA-Z0-9_\-() &]+$/;
-                if (!regex.test(v.trim())) {
-                  return t("form.field.specialChars", { 0: "&()_-" });
-                }
-                if (v.trim().length <= 0) {
-                  return t("form.field.required");
-                }
-                if (existingNames.includes(v.trim().toLowerCase())) {
-                  return t("form.field.duplicate", { 0: v });
-                }
-              },
+              validate: (v) =>
+                validateString(v, { existingValues: existingNames }),
             }}
             sx={{ m: 0 }}
           />

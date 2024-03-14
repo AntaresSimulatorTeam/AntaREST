@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
@@ -10,6 +10,7 @@ import StringFE from "../../../../common/fieldEditors/StringFE";
 import Fieldset from "../../../../common/Fieldset";
 import SelectFE from "../../../../common/fieldEditors/SelectFE";
 import { SubmitHandlerPlus } from "../../../../common/Form/types";
+import { validateString } from "../../../../../utils/validationUtils";
 
 interface Props {
   parentId: string;
@@ -24,6 +25,11 @@ function CreateVariantDialog(props: Props) {
   const navigate = useNavigate();
   const [sourceList, setSourceList] = useState<GenericInfo[]>([]);
   const defaultValues = { name: "", sourceId: parentId };
+
+  const existingVariants = useMemo(
+    () => sourceList.map((variant) => variant.name),
+    [sourceList],
+  );
 
   useEffect(() => {
     setSourceList(createListFromTree(tree));
@@ -67,8 +73,8 @@ function CreateVariantDialog(props: Props) {
             name="name"
             control={control}
             rules={{
-              required: true,
-              validate: (val) => val.trim().length > 0,
+              validate: (v) =>
+                validateString(v, { existingValues: existingVariants }),
             }}
           />
           <SelectFE
