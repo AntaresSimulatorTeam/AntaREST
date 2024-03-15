@@ -86,8 +86,13 @@ class ISimpleMatrixService(ABC):
         Raises:
             TypeError: If the provided matrix is neither a matrix nor a link to a matrix.
         """
+        # noinspection SpellCheckingInspection
         if isinstance(matrix, str):
-            return matrix.lstrip("matrix://")
+            # str.removeprefix() is not available in Python 3.8
+            prefix = "matrix://"
+            if matrix.startswith(prefix):
+                return matrix[len(prefix) :]
+            return matrix
         elif isinstance(matrix, list):
             return self.create(matrix)
         else:
