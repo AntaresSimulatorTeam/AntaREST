@@ -3,8 +3,8 @@ import * as RA from "ramda-adjunct";
 import { v4 as uuidv4 } from "uuid";
 import { FieldValues, FormState, Path } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { SxProps, Theme } from "@mui/material";
-import { Fragment, ReactNode, useMemo } from "react";
+import { Box, SxProps, Theme } from "@mui/material";
+import { ReactNode, useMemo } from "react";
 import SelectFE, { SelectFEProps } from "../fieldEditors/SelectFE";
 import StringFE from "../fieldEditors/StringFE";
 import Fieldset from "../Fieldset";
@@ -73,6 +73,7 @@ function formateFieldset<T extends FieldValues>(fieldset: IFieldsetType<T>) {
   return { ...otherProps, fields: formattedFields, id: uuidv4() };
 }
 
+// TODO Refactor BindingConstraints Form and remove this garbage code ASAP.
 export default function FormGenerator<T extends FieldValues>(
   props: FormGeneratorProps<T>,
 ) {
@@ -95,6 +96,7 @@ export default function FormGenerator<T extends FieldValues>(
           legend={
             RA.isString(fieldset.legend) ? t(fieldset.legend) : fieldset.legend
           }
+          sx={{ py: 1 }}
         >
           {fieldset.fields.map((field) => {
             const { id, path, rules, type, required, ...otherProps } = field;
@@ -102,16 +104,24 @@ export default function FormGenerator<T extends FieldValues>(
               ? rules(field.name, path, required, defaultValues)
               : undefined;
             return (
-              <Fragment key={id}>
+              <Box
+                key={id}
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                }}
+              >
                 {R.cond([
                   [
                     R.equals("text"),
                     () => (
                       <StringFE
                         {...otherProps}
-                        variant="filled"
+                        variant="outlined"
+                        size="small"
                         control={control}
                         rules={vRules}
+                        sx={{ m: 0 }}
                       />
                     ),
                   ],
@@ -120,7 +130,8 @@ export default function FormGenerator<T extends FieldValues>(
                     () => (
                       <NumberFE
                         {...otherProps}
-                        variant="filled"
+                        variant="outlined"
+                        size="small"
                         control={control}
                         rules={vRules}
                       />
@@ -141,7 +152,8 @@ export default function FormGenerator<T extends FieldValues>(
                     () => (
                       <BooleanFE
                         {...otherProps}
-                        variant="filled"
+                        variant="outlined"
+                        size="small"
                         control={control}
                         rules={vRules}
                       />
@@ -156,14 +168,15 @@ export default function FormGenerator<T extends FieldValues>(
                             .options || []
                         }
                         {...otherProps}
-                        variant="filled"
+                        variant="outlined"
+                        size="small"
                         control={control}
                         rules={vRules}
                       />
                     ),
                   ],
                 ])(type)}
-              </Fragment>
+              </Box>
             );
           })}
         </Fieldset>
