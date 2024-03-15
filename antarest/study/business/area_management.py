@@ -5,7 +5,7 @@ import typing as t
 
 from pydantic import BaseModel, Extra, Field
 
-from antarest.core.exceptions import DuplicateAreaName, ConfigFileNotFound, LayerNotAllowedToBeDeleted, LayerNotFound
+from antarest.core.exceptions import ConfigFileNotFound, DuplicateAreaName, LayerNotAllowedToBeDeleted, LayerNotFound
 from antarest.study.business.utils import AllOptionalMetaclass, camel_case_model, execute_or_add_commands
 from antarest.study.model import Patch, PatchArea, PatchCluster, RawStudy, Study
 from antarest.study.repository import StudyMetadataRepository

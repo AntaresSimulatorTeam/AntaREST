@@ -366,7 +366,7 @@ class WritingInsideZippedFileException(HTTPException):
         super().__init__(HTTPStatus.BAD_REQUEST, message)
 
 
-class BindingConstraintNotFoundError(HTTPException):
+class BindingConstraintNotFound(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.NOT_FOUND, message)
 

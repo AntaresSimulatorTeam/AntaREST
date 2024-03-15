@@ -14,6 +14,7 @@ from antarest.core.exceptions import (
     ConstraintAlreadyExistError,
     ConstraintIdNotFoundError,
     DuplicateConstraintName,
+    IncoherenceBetweenMatricesLength,
     InvalidConstraintName,
     InvalidFieldForVersionError,
     MatrixWidthMismatchError,
@@ -28,7 +29,6 @@ from antarest.study.model import Study
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     BindingConstraintFrequency,
     BindingConstraintOperator,
-    BindingConstraintProperties as ConfigBCProperties,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -45,7 +45,6 @@ from antarest.study.storage.variantstudy.business.matrix_constants.binding_const
 from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series_before_v87 import (
     default_bc_weekly_daily as default_bc_weekly_daily_86,
 )
-from antarest.study.storage.variantstudy.model.command.common import BindingConstraintOperator
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import (
     DEFAULT_GROUP,
     EXPECTED_MATRIX_SHAPES,
@@ -868,34 +867,6 @@ class BindingConstraintManager:
         term_id: str,
     ) -> None:
         return self.update_constraint_term(study, binding_constraint_id, term_id)  # type: ignore
-
-    def get_all_binding_constraints_props(
-        self,
-        study: Study,
-    ) -> t.Mapping[str, ConstraintOutput]:
-        """
-        Retrieve all binding constraints properties from the study.
-
-        Args:
-            study: Study from which to retrieve the storages.
-
-        Returns:
-            A mapping of binding constraint IDs to their properties.
-
-        # Raises:
-        #     STStorageConfigNotFound: If no storages are found in the specified area.
-        """
-        file_study = self.storage_service.get_storage(study).get_raw(study)
-
-        path = _ALL_BINDING_CONSTRAINTS_PATH
-        try:
-            bc_config = file_study.tree.get(path.split("/"), depth=3)
-        except KeyError:
-            raise ConfigFileNotFound(path) from None
-
-        bc_props = ConfigBCProperties.parse_obj(bc_config)
-        bc_map = {bc_id: GetBindingConstraintDTO.create_dto(bc) for bc_id, bc in bc_props.constraints.items()}
-        return bc_map
 
 
 def _replace_matrices_according_to_frequency_and_version(

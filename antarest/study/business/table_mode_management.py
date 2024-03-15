@@ -681,29 +681,29 @@ class TableModeManager:
                 f"{area1_id} / {area2_id}": link.dict(by_alias=True) for (area1_id, area2_id), link in links_map.items()
             }
         elif table_type == TableTemplateType.THERMAL_CLUSTER:
-            clusters_map = self._thermal_manager.get_all_thermals_props(study)
+            thermals_map = self._thermal_manager.get_all_thermals_props(study)
             data = {
                 f"{area_id} / {cluster.id}": cluster.dict(by_alias=True)
-                for area_id, clusters in clusters_map.items()
+                for area_id, clusters in thermals_map.items()
                 for cluster in clusters
             }
         elif table_type == TableTemplateType.RENEWABLE_CLUSTER:
-            clusters_map = self._renewable_manager.get_all_renewables_props(study)
+            renewables_map = self._renewable_manager.get_all_renewables_props(study)
             data = {
                 f"{area_id} / {cluster.id}": cluster.dict(by_alias=True)
-                for area_id, clusters in clusters_map.items()
+                for area_id, clusters in renewables_map.items()
                 for cluster in clusters
             }
         elif table_type == TableTemplateType.ST_STORAGE:
-            storage_map = self._st_storage_manager.get_all_storages_props(study)
+            storages_map = self._st_storage_manager.get_all_storages_props(study)
             data = {
                 f"{area_id} / {storage.id}": storage.dict(by_alias=True)
-                for area_id, storages in storage_map.items()
+                for area_id, storages in storages_map.items()
                 for storage in storages
             }
         elif table_type == TableTemplateType.BINDING_CONSTRAINT:
-            bc_map = self._binding_constraint_manager.get_all_binding_constraints_props(study)
-            data = {bc_id: bc.dict(by_alias=True) for bc_id, bc in bc_map.items()}
+            bc_seq = self._binding_constraint_manager.get_binding_constraints(study)
+            data = {bc.id: bc.dict(by_alias=True, exclude={"id", "name", "terms"}) for bc in bc_seq}
         else:  # pragma: no cover
             raise NotImplementedError(f"Table type {table_type} not implemented")
 

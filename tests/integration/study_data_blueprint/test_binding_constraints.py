@@ -543,7 +543,7 @@ class TestBindingConstraints:
             },
             headers=user_headers,
         )
-        assert res.status_code == 422
+        assert res.status_code == 422, res.json()
         description = res.json()["description"]
         assert "cannot fill 'values'" in description
         assert "'less_term_matrix'" in description
@@ -560,11 +560,11 @@ class TestBindingConstraints:
                 "operator": "less",
                 "terms": [],
                 "comments": "Incoherent matrix with version",
-                "less_term_matrix": [[]],
+                "lessTermMatrix": [[]],
             },
             headers=user_headers,
         )
-        assert res.status_code == 422
+        assert res.status_code == 422, res.json()
         description = res.json()["description"]
         assert description == "You cannot fill a 'matrix_term' as these values refer to v8.7+ studies"
 
