@@ -73,7 +73,6 @@ function formateFieldset<T extends FieldValues>(fieldset: IFieldsetType<T>) {
   return { ...otherProps, fields: formattedFields, id: uuidv4() };
 }
 
-// TODO Refactor BindingConstraints Form and remove this garbage code ASAP.
 export default function FormGenerator<T extends FieldValues>(
   props: FormGeneratorProps<T>,
 ) {

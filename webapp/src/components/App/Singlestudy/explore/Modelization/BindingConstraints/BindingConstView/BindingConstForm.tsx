@@ -19,7 +19,6 @@ import {
 } from "./utils";
 import {
   AllClustersAndLinks,
-  MatrixStats,
   StudyMetadata,
 } from "../../../../../../../common/types";
 import { IFormGenerator } from "../../../../../../common/FormGenerator";
@@ -36,7 +35,6 @@ import {
 import TextSeparator from "../../../../../../common/TextSeparator";
 import { MatrixContainer, StyledTab, TermsHeader, TermsList } from "./style";
 import AddConstraintTermDialog from "./AddConstraintTermDialog";
-import MatrixInput from "../../../../../../common/MatrixInput";
 import ConfirmationDialog from "../../../../../../common/dialogs/ConfirmationDialog";
 import useDebounce from "../../../../../../../hooks/useDebounce";
 import { appendCommands } from "../../../../../../../services/api/variant";
@@ -45,6 +43,7 @@ import useAppDispatch from "../../../../../../../redux/hooks/useAppDispatch";
 import { setCurrentBindingConst } from "../../../../../../../redux/ducks/studySyntheses";
 import OutputFilters from "../../../common/OutputFilters";
 import DocLink from "../../../../../../common/DocLink";
+import Matrix from "./Matrix";
 
 interface Props {
   study: StudyMetadata;
@@ -88,7 +87,7 @@ function BindingConstForm({ study, options, constraintId }: Props) {
   );
 
   const currentOperator = getValues("operator");
-  console.log("currentOperator", currentOperator);
+  const currentTimeStep = getValues("time_step");
 
   const typeOptions = useMemo(
     () =>
@@ -104,8 +103,6 @@ function BindingConstForm({ study, options, constraintId }: Props) {
   ////////////////////////////////////////////////////////////////
 
   const handleSaveValue = async (filter: string, data: unknown) => {
-    console.log("filter", filter);
-    console.log("data", data);
     try {
       await updateBindingConstraint(studyId, constraintId, {
         key: filter,
@@ -246,7 +243,7 @@ function BindingConstForm({ study, options, constraintId }: Props) {
           },
           {
             type: "text",
-            name: "comments", // TODO group
+            name: "test", // TODO group
             path: `${BC_PATH}/group`,
             label: t("global.group"),
             sx: { maxWidth: 200 },
@@ -303,7 +300,7 @@ function BindingConstForm({ study, options, constraintId }: Props) {
 
       <StyledTab value={tabValue} onChange={handleTabChange}>
         <Tab label={t("study.modelization.bindingConst.constraintTerm")} />
-        <Tab label={t("global.matrix")} />
+        <Tab label={t("study.modelization.bindingConst.timeSeries")} />
       </StyledTab>
 
       <Box
@@ -347,12 +344,11 @@ function BindingConstForm({ study, options, constraintId }: Props) {
 
         {tabValue === 1 && (
           <MatrixContainer>
-            <MatrixInput
+            <Matrix
               study={study}
-              title={t("global.matrix")}
-              url={`input/bindingconstraints/${constraintId}`}
-              columnsNames={["<", ">", "="]}
-              computStats={MatrixStats.NOCOL}
+              operator={currentOperator}
+              timeStep={currentTimeStep}
+              constraintId={constraintId}
             />
           </MatrixContainer>
         )}
