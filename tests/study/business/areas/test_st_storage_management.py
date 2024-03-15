@@ -10,20 +10,14 @@ import pytest
 from pydantic import ValidationError
 from sqlalchemy.orm.session import Session  # type: ignore
 
-from antarest.core.exceptions import (
-    AreaNotFound,
-    STStorageConfigNotFoundError,
-    STStorageFieldsNotFoundError,
-    STStorageMatrixNotFoundError,
-    STStorageNotFoundError,
-)
+from antarest.core.exceptions import AreaNotFound, STStorageConfigNotFound, STStorageMatrixNotFound, STStorageNotFound
 from antarest.core.model import PublicMode
 from antarest.login.model import Group, User
 from antarest.study.business.areas.st_storage_management import STStorageInput, STStorageManager
 from antarest.study.model import RawStudy, Study, StudyContentStatus
 from antarest.study.storage.rawstudy.ini_reader import IniReader
-from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import STStorageConfig, STStorageGroup
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import STStorageGroup
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
@@ -183,7 +177,7 @@ class TestSTStorageManager:
         This test verifies that when the `get_storages` method is called
         with a study and area ID, and the corresponding configuration is not found
         (indicated by the `KeyError` raised by the mock), it correctly
-        raises the `STStorageConfigNotFoundError` exception with the expected error
+        raises the `STStorageConfigNotFound` exception with the expected error
         message containing the study ID and area ID.
         """
         # The study must be fetched from the database
@@ -201,7 +195,7 @@ class TestSTStorageManager:
         manager = STStorageManager(study_storage_service)
 
         # run
-        with pytest.raises(STStorageConfigNotFoundError, match="not found") as ctx:
+        with pytest.raises(STStorageConfigNotFound, match="not found") as ctx:
             manager.get_storages(study, area_id="West")
 
         # ensure the error message contains at least the study ID and area ID
@@ -286,11 +280,10 @@ class TestSTStorageManager:
         ini_file_node = IniFileNode(context=Mock(), config=Mock())
         file_study.tree = Mock(
             spec=FileStudyTree,
-            get=Mock(return_value=LIST_CFG["storage1"]),
+            get=Mock(return_value=LIST_CFG),
             get_node=Mock(return_value=ini_file_node),
         )
 
-        area = Mock(spec=Area)
         mock_config = Mock(spec=FileStudyTreeConfig, study_id=study.id)
         file_study.config = mock_config
 
@@ -299,20 +292,22 @@ class TestSTStorageManager:
         edit_form = STStorageInput(initial_level=0, initial_level_optim=False)
 
         # Test behavior for area not in study
-        mock_config.areas = {"fake_area": area}
-        with pytest.raises(AreaNotFound) as ctx:
-            manager.update_storage(study, area_id="West", storage_id="storage1", form=edit_form)
-        assert ctx.value.detail == "Area is not found: 'West'"
+        # noinspection PyTypeChecker
+        file_study.tree.get.return_value = {}
+        with pytest.raises((AreaNotFound, STStorageNotFound)) as ctx:
+            manager.update_storage(study, area_id="unknown_area", storage_id="storage1", form=edit_form)
+        assert "unknown_area" in ctx.value.detail
+        assert "storage1" in ctx.value.detail
 
         # Test behavior for st_storage not in study
-        mock_config.areas = {"West": area}
-        area.st_storages = [STStorageConfig(name="fake_name", group="battery")]
-        with pytest.raises(STStorageNotFoundError) as ctx:
-            manager.update_storage(study, area_id="West", storage_id="storage1", form=edit_form)
-        assert ctx.value.detail == "Short-term storage 'storage1' not found in area 'West'"
+        file_study.tree.get.return_value = {"storage1": LIST_CFG["storage1"]}
+        with pytest.raises(STStorageNotFound) as ctx:
+            manager.update_storage(study, area_id="West", storage_id="unknown_storage", form=edit_form)
+        assert "West" in ctx.value.detail
+        assert "unknown_storage" in ctx.value.detail
 
         # Test behavior for nominal case
-        area.st_storages = [STStorageConfig(name="storage1", group="battery")]
+        file_study.tree.get.return_value = LIST_CFG
         manager.update_storage(study, area_id="West", storage_id="storage1", form=edit_form)
 
         # Assert that the storage fields have been updated
@@ -351,7 +346,7 @@ class TestSTStorageManager:
         """
         Test the `get_st_storage` method of the `STStorageManager` class when the configuration is not found.
 
-        This test verifies that the `get_st_storage` method raises an `STStorageFieldsNotFoundError`
+        This test verifies that the `get_st_storage` method raises an `STStorageNotFound`
         exception when the configuration for the provided study, area, and storage ID combination is not found.
 
         Args:
@@ -375,7 +370,7 @@ class TestSTStorageManager:
         manager = STStorageManager(study_storage_service)
 
         # Run the method being tested and expect an exception
-        with pytest.raises(STStorageFieldsNotFoundError, match="not found") as ctx:
+        with pytest.raises(STStorageNotFound, match="not found") as ctx:
             manager.get_storage(study, area_id="West", storage_id="storage1")
         # ensure the error message contains at least the study ID, area ID and storage ID
         err_msg = str(ctx.value)
@@ -436,7 +431,7 @@ class TestSTStorageManager:
         """
         Test the `get_matrix` method of the `STStorageManager` class when the time series is not found.
 
-        This test verifies that the `get_matrix` method raises an `STStorageFieldsNotFoundError`
+        This test verifies that the `get_matrix` method raises an `STStorageNotFound`
         exception when the configuration for the provided study, area, time series,
         and storage ID combination is not found.
 
@@ -461,7 +456,7 @@ class TestSTStorageManager:
         manager = STStorageManager(study_storage_service)
 
         # Run the method being tested and expect an exception
-        with pytest.raises(STStorageMatrixNotFoundError, match="not found") as ctx:
+        with pytest.raises(STStorageMatrixNotFound, match="not found") as ctx:
             manager.get_matrix(study, area_id="West", storage_id="storage1", ts_name="inflows")
         # ensure the error message contains at least the study ID, area ID and storage ID
         err_msg = str(ctx.value)
@@ -477,7 +472,7 @@ class TestSTStorageManager:
         """
         Test the `get_matrix` method of the `STStorageManager` class when the time series is not found.
 
-        This test verifies that the `get_matrix` method raises an `STStorageFieldsNotFoundError`
+        This test verifies that the `get_matrix` method raises an `STStorageNotFound`
         exception when the configuration for the provided study, area, time series,
         and storage ID combination is not found.
 

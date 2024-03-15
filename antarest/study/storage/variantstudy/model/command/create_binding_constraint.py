@@ -312,9 +312,11 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
 
         matrix_service = self.command_context.matrix_service
         for matrix_name in ["values", "less_term_matrix", "equal_term_matrix", "greater_term_matrix"]:
-            self_matrix = getattr(self, matrix_name)
-            other_matrix = getattr(other, matrix_name)
-            if self_matrix != other_matrix:
-                args[matrix_name] = matrix_service.get_matrix_id(other_matrix)
+            self_matrix = getattr(self, matrix_name)  # matrix, ID or `None`
+            other_matrix = getattr(other, matrix_name)  # matrix, ID or `None`
+            self_matrix_id = None if self_matrix is None else matrix_service.get_matrix_id(self_matrix)
+            other_matrix_id = None if other_matrix is None else matrix_service.get_matrix_id(other_matrix)
+            if self_matrix_id != other_matrix_id:
+                args[matrix_name] = other_matrix_id
 
         return [UpdateBindingConstraint(**args)]

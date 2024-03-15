@@ -3,7 +3,7 @@ import typing as t
 
 from pydantic import validator
 
-from antarest.core.exceptions import ClusterAlreadyExists, ClusterConfigNotFound, ClusterNotFound
+from antarest.core.exceptions import DuplicateRenewableCluster, RenewableClusterConfigNotFound, RenewableClusterNotFound
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.utils import AllOptionalMetaclass, camel_case_model, execute_or_add_commands
 from antarest.study.model import Study
@@ -132,7 +132,7 @@ class RenewableManager:
             List of cluster output for all clusters.
 
         Raises:
-            ClusterConfigNotFound: If the clusters configuration for the specified area is not found.
+            RenewableClusterConfigNotFound: If the clusters configuration for the specified area is not found.
         """
         file_study = self._get_file_study(study)
         path = _CLUSTERS_PATH.format(area_id=area_id)
@@ -140,7 +140,7 @@ class RenewableManager:
         try:
             clusters = file_study.tree.get(path.split("/"), depth=3)
         except KeyError:
-            raise ClusterConfigNotFound(area_id)
+            raise RenewableClusterConfigNotFound(path, area_id)
 
         return [create_renewable_output(study.version, cluster_id, cluster) for cluster_id, cluster in clusters.items()]
 
@@ -192,14 +192,14 @@ class RenewableManager:
             The cluster output representation.
 
         Raises:
-            ClusterNotFound: If the specified cluster is not found within the area.
+            RenewableClusterNotFound: If the specified cluster is not found within the area.
         """
         file_study = self._get_file_study(study)
         path = _CLUSTER_PATH.format(area_id=area_id, cluster_id=cluster_id)
         try:
             cluster = file_study.tree.get(path.split("/"), depth=1)
         except KeyError:
-            raise ClusterNotFound(cluster_id)
+            raise RenewableClusterNotFound(path, cluster_id)
         return create_renewable_output(study.version, cluster_id, cluster)
 
     def update_cluster(
@@ -222,7 +222,7 @@ class RenewableManager:
             The updated cluster configuration.
 
         Raises:
-            ClusterNotFound: If the cluster to update is not found.
+            RenewableClusterNotFound: If the cluster to update is not found.
         """
 
         study_version = study.version
@@ -232,7 +232,7 @@ class RenewableManager:
         try:
             values = file_study.tree.get(path.split("/"), depth=1)
         except KeyError:
-            raise ClusterNotFound(cluster_id) from None
+            raise RenewableClusterNotFound(path, cluster_id) from None
         else:
             old_config = create_renewable_config(study_version, **values)
 
@@ -298,12 +298,12 @@ class RenewableManager:
             The duplicated cluster configuration.
 
         Raises:
-            ClusterAlreadyExists: If a cluster with the new name already exists in the area.
+            DuplicateRenewableCluster: If a cluster with the new name already exists in the area.
         """
         new_id = transform_name_to_id(new_cluster_name, lower=False)
         lower_new_id = new_id.lower()
         if any(lower_new_id == cluster.id.lower() for cluster in self.get_clusters(study, area_id)):
-            raise ClusterAlreadyExists("Renewable", new_id)
+            raise DuplicateRenewableCluster(area_id, new_id)
 
         # Cluster duplication
         current_cluster = self.get_cluster(study, area_id, source_id)

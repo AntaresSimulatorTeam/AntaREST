@@ -3,7 +3,7 @@ import typing as t
 
 from pydantic import validator
 
-from antarest.core.exceptions import ClusterAlreadyExists, ClusterConfigNotFound, ClusterNotFound
+from antarest.core.exceptions import DuplicateThermalCluster, ThermalClusterConfigNotFound, ThermalClusterNotFound
 from antarest.study.business.utils import AllOptionalMetaclass, camel_case_model, execute_or_add_commands
 from antarest.study.model import Study
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
@@ -138,7 +138,7 @@ class ThermalManager:
             The cluster with the specified ID.
 
         Raises:
-            ClusterNotFound: If the specified cluster does not exist.
+            ThermalClusterNotFound: If the specified cluster does not exist.
         """
 
         file_study = self._get_file_study(study)
@@ -146,7 +146,7 @@ class ThermalManager:
         try:
             cluster = file_study.tree.get(path.split("/"), depth=1)
         except KeyError:
-            raise ClusterNotFound(cluster_id)
+            raise ThermalClusterNotFound(path, cluster_id) from None
         study_version = study.version
         return create_thermal_output(study_version, cluster_id, cluster)
 
@@ -166,7 +166,7 @@ class ThermalManager:
             A list of thermal clusters within the specified area.
 
         Raises:
-            ClusterConfigNotFound: If no clusters are found in the specified area.
+            ThermalClusterConfigNotFound: If no clusters are found in the specified area.
         """
 
         file_study = self._get_file_study(study)
@@ -174,7 +174,7 @@ class ThermalManager:
         try:
             clusters = file_study.tree.get(path.split("/"), depth=3)
         except KeyError:
-            raise ClusterConfigNotFound(area_id)
+            raise ThermalClusterConfigNotFound(path, area_id) from None
         study_version = study.version
         return [create_thermal_output(study_version, cluster_id, cluster) for cluster_id, cluster in clusters.items()]
 
@@ -235,7 +235,7 @@ class ThermalManager:
             The updated cluster.
 
         Raises:
-            ClusterNotFound: If the provided `cluster_id` does not match the ID of the cluster
+            ThermalClusterNotFound: If the provided `cluster_id` does not match the ID of the cluster
             in the provided cluster_data.
         """
 
@@ -245,7 +245,7 @@ class ThermalManager:
         try:
             values = file_study.tree.get(path.split("/"), depth=1)
         except KeyError:
-            raise ClusterNotFound(cluster_id) from None
+            raise ThermalClusterNotFound(path, cluster_id) from None
         else:
             old_config = create_thermal_config(study_version, **values)
 
@@ -317,7 +317,7 @@ class ThermalManager:
         new_id = transform_name_to_id(new_cluster_name, lower=False)
         lower_new_id = new_id.lower()
         if any(lower_new_id == cluster.id.lower() for cluster in self.get_clusters(study, area_id)):
-            raise ClusterAlreadyExists("Thermal", new_id)
+            raise DuplicateThermalCluster(area_id, new_id)
 
         # Cluster duplication
         source_cluster = self.get_cluster(study, area_id, source_id)

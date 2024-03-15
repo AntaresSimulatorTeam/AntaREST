@@ -1,3 +1,4 @@
+import re
 from http import HTTPStatus
 from typing import Optional
 
@@ -8,64 +9,227 @@ class ShouldNotHappenException(Exception):
     pass
 
 
-class STStorageFieldsNotFoundError(HTTPException):
-    """Fields of the short-term storage are not found"""
+# ============================================================
+# Exceptions related to the study configuration (`.ini` files)
+# ============================================================
 
-    def __init__(self, storage_id: str) -> None:
-        detail = f"Fields of storage '{storage_id}' not found"
+# Naming convention for exceptions related to the study configuration:
+#
+# | Topic         | NotFound (404)        | Duplicate (409)        | Invalid (422)        |
+# |---------------|-----------------------|------------------------|----------------------|
+# | ConfigFile    | ConfigFileNotFound    | N/A                    | InvalidConfigFile    |
+# | ConfigSection | ConfigSectionNotFound | DuplicateConfigSection | InvalidConfigSection |
+# | ConfigOption  | ConfigOptionNotFound  | DuplicateConfigOption  | InvalidConfigOption  |
+# | Matrix        | MatrixNotFound        | DuplicateMatrix        | InvalidMatrix        |
+
+
+THERMAL_CLUSTER = "thermal cluster"
+RENEWABLE_CLUSTER = "renewable cluster"
+SHORT_TERM_STORAGE = "short-term storage"
+
+# ============================================================
+# NotFound (404)
+# ============================================================
+
+_match_input_path = re.compile(r"input(?:/[\w*-]+)+").fullmatch
+
+
+class ConfigFileNotFound(HTTPException):
+    """
+    Exception raised when a configuration file is not found (404 Not Found).
+
+    Notes:
+        The study ID is not provided because it is implicit.
+
+    Attributes:
+        path: Path of the missing file(s) relative to the study directory.
+        area_ids: Sequence of area IDs for which the file(s) is/are missing.
+    """
+
+    object_name = ""
+    """Name of the object that is not found: thermal, renewables, etc."""
+
+    def __init__(self, path: str, *area_ids: str):
+        assert _match_input_path(path), f"Invalid path: '{path}'"
+        self.path = path
+        self.area_ids = area_ids
+        ids = ", ".join(f"'{a}'" for a in area_ids)
+        detail = {
+            0: f"Path '{path}' not found",
+            1: f"Path '{path}' not found for area {ids}",
+            2: f"Path '{path}' not found for areas {ids}",
+        }[min(len(area_ids), 2)]
+        if self.object_name:
+            detail = f"{self.object_name.title()} {detail}"
+        super().__init__(HTTPStatus.NOT_FOUND, detail)
+
+    def __str__(self) -> str:
+        """Return a string representation of the exception."""
+        return self.detail
+
+
+class ThermalClusterConfigNotFound(ConfigFileNotFound):
+    """Configuration for thermal cluster is not found (404 Not Found)"""
+
+    object_name = THERMAL_CLUSTER
+
+
+class RenewableClusterConfigNotFound(ConfigFileNotFound):
+    """Configuration for renewable cluster is not found (404 Not Found)"""
+
+    object_name = RENEWABLE_CLUSTER
+
+
+class STStorageConfigNotFound(ConfigFileNotFound):
+    """Configuration for short-term storage is not found (404 Not Found)"""
+
+    object_name = SHORT_TERM_STORAGE
+
+
+class ConfigSectionNotFound(HTTPException):
+    """
+    Exception raised when a configuration section is not found (404 Not Found).
+
+    Notes:
+        The study ID is not provided because it is implicit.
+
+    Attributes:
+        path: Path of the missing file(s) relative to the study directory.
+        section_id: ID of the missing section.
+    """
+
+    object_name = ""
+    """Name of the object that is not found: thermal, renewables, etc."""
+
+    def __init__(self, path: str, section_id: str):
+        assert _match_input_path(path), f"Invalid path: '{path}'"
+        self.path = path
+        self.section_id = section_id
+        object_name = self.object_name or "section"
+        detail = f"{object_name.title()} '{section_id}' not found in '{path}'"
+        super().__init__(HTTPStatus.NOT_FOUND, detail)
+
+    def __str__(self) -> str:
+        """Return a string representation of the exception."""
+        return self.detail
+
+
+class ThermalClusterNotFound(ConfigSectionNotFound):
+    """Thermal cluster is not found (404 Not Found)"""
+
+    object_name = THERMAL_CLUSTER
+
+
+class RenewableClusterNotFound(ConfigSectionNotFound):
+    """Renewable cluster is not found (404 Not Found)"""
+
+    object_name = RENEWABLE_CLUSTER
+
+
+class STStorageNotFound(ConfigSectionNotFound):
+    """Short-term storage is not found (404 Not Found)"""
+
+    object_name = SHORT_TERM_STORAGE
+
+
+class MatrixNotFound(HTTPException):
+    """
+    Exception raised when a matrix is not found (404 Not Found).
+
+    Notes:
+        The study ID is not provided because it is implicit.
+
+    Attributes:
+        path: Path of the missing file(s) relative to the study directory.
+    """
+
+    object_name = ""
+    """Name of the object that is not found: thermal, renewables, etc."""
+
+    def __init__(self, path: str):
+        assert _match_input_path(path), f"Invalid path: '{path}'"
+        self.path = path
+        detail = f"Matrix '{path}' not found"
+        if self.object_name:
+            detail = f"{self.object_name.title()} {detail}"
         super().__init__(HTTPStatus.NOT_FOUND, detail)
 
     def __str__(self) -> str:
         return self.detail
 
 
-class STStorageMatrixNotFoundError(HTTPException):
-    """Matrix of the short-term storage is not found"""
+class ThermalClusterMatrixNotFound(MatrixNotFound):
+    """Matrix of the thermal cluster is not found (404 Not Found)"""
 
-    def __init__(self, study_id: str, area_id: str, storage_id: str, ts_name: str) -> None:
-        detail = f"Time series '{ts_name}' of storage '{storage_id}' not found"
-        super().__init__(HTTPStatus.NOT_FOUND, detail)
-
-    def __str__(self) -> str:
-        return self.detail
+    object_name = THERMAL_CLUSTER
 
 
-class STStorageConfigNotFoundError(HTTPException):
-    """Configuration for short-term storage is not found"""
+class RenewableClusterMatrixNotFound(MatrixNotFound):
+    """Matrix of the renewable cluster is not found (404 Not Found)"""
 
-    def __init__(self, study_id: str, area_id: str) -> None:
-        detail = f"The short-term storage configuration of area '{area_id}' not found"
-        super().__init__(HTTPStatus.NOT_FOUND, detail)
-
-    def __str__(self) -> str:
-        return self.detail
+    object_name = RENEWABLE_CLUSTER
 
 
-class STStorageNotFoundError(HTTPException):
-    """Short-term storage is not found"""
+class STStorageMatrixNotFound(MatrixNotFound):
+    """Matrix of the short-term storage is not found (404 Not Found)"""
 
-    def __init__(self, study_id: str, area_id: str, st_storage_id: str) -> None:
-        detail = f"Short-term storage '{st_storage_id}' not found in area '{area_id}'"
-        super().__init__(HTTPStatus.NOT_FOUND, detail)
-
-    def __str__(self) -> str:
-        return self.detail
+    object_name = SHORT_TERM_STORAGE
 
 
-class DuplicateSTStorageId(HTTPException):
-    """Exception raised when trying to create a short-term storage with an already existing id."""
+# ============================================================
+# Duplicate (409)
+# ============================================================
 
-    def __init__(self, study_id: str, area_id: str, st_storage_id: str) -> None:
-        detail = f"Short term storage '{st_storage_id}' already exists in area '{area_id}'"
+
+class DuplicateConfigSection(HTTPException):
+    """
+    Exception raised when a configuration section is duplicated (409 Conflict).
+
+    Notes:
+        The study ID is not provided because it is implicit.
+
+    Attributes:
+        area_id: ID of the area in which the section is duplicated.
+        duplicates: Sequence of duplicated IDs.
+    """
+
+    object_name = ""
+    """Name of the object that is duplicated: thermal, renewables, etc."""
+
+    def __init__(self, area_id: str, *duplicates: str):
+        self.area_id = area_id
+        self.duplicates = duplicates
+        ids = ", ".join(f"'{a}'" for a in duplicates)
+        detail = {
+            0: f"Duplicates found in '{area_id}'",
+            1: f"Duplicate found in '{area_id}': {ids}",
+            2: f"Duplicates found in '{area_id}': {ids}",
+        }[min(len(duplicates), 2)]
+        if self.object_name:
+            detail = f"{self.object_name.title()} {detail}"
         super().__init__(HTTPStatus.CONFLICT, detail)
 
     def __str__(self) -> str:
+        """Return a string representation of the exception."""
         return self.detail
 
 
-class UnknownModuleError(Exception):
-    def __init__(self, message: str) -> None:
-        super(UnknownModuleError, self).__init__(message)
+class DuplicateThermalCluster(DuplicateConfigSection):
+    """Duplicate Thermal cluster (409 Conflict)"""
+
+    object_name = THERMAL_CLUSTER
+
+
+class DuplicateRenewableCluster(DuplicateConfigSection):
+    """Duplicate Renewable cluster (409 Conflict)"""
+
+    object_name = RENEWABLE_CLUSTER
+
+
+class DuplicateSTStorage(DuplicateConfigSection):
+    """Duplicate Short-term storage (409 Conflict)"""
+
+    object_name = SHORT_TERM_STORAGE
 
 
 class StudyNotFoundError(HTTPException):
@@ -106,11 +270,6 @@ class CommandApplicationError(HTTPException):
 class CommandUpdateAuthorizationError(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.LOCKED, message)
-
-
-class StudyAlreadyExistError(HTTPException):
-    def __init__(self, message: str) -> None:
-        super().__init__(HTTPStatus.CONFLICT, message)
 
 
 class StudyValidationError(HTTPException):
@@ -327,30 +486,4 @@ class CannotScanInternalWorkspace(HTTPException):
         super().__init__(
             HTTPStatus.BAD_REQUEST,
             "You cannot scan the default internal workspace",
-        )
-
-
-class ClusterNotFound(HTTPException):
-    def __init__(self, cluster_id: str) -> None:
-        super().__init__(
-            HTTPStatus.NOT_FOUND,
-            f"Cluster: '{cluster_id}' not found",
-        )
-
-
-class ClusterConfigNotFound(HTTPException):
-    def __init__(self, area_id: str) -> None:
-        super().__init__(
-            HTTPStatus.NOT_FOUND,
-            f"Cluster configuration for area: '{area_id}' not found",
-        )
-
-
-class ClusterAlreadyExists(HTTPException):
-    """Exception raised when attempting to create a cluster with an already existing ID."""
-
-    def __init__(self, cluster_type: str, cluster_id: str) -> None:
-        super().__init__(
-            HTTPStatus.CONFLICT,
-            f"{cluster_type} cluster with ID '{cluster_id}' already exists and could not be created.",
         )
