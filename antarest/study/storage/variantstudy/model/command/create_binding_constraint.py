@@ -84,7 +84,7 @@ class BindingConstraintProperties870(BindingConstraintProperties):
     group: t.Optional[str] = None
 
 
-class BindingConstraintMatrices(BaseModel, extra=Extra.forbid):
+class BindingConstraintMatrices(BaseModel, extra=Extra.forbid, allow_population_by_field_name=True):
     """
     Class used to store the matrices of a binding constraint.
     """
@@ -96,14 +96,17 @@ class BindingConstraintMatrices(BaseModel, extra=Extra.forbid):
     less_term_matrix: t.Optional[t.Union[MatrixType, str]] = Field(
         None,
         description="less term matrix for v8.7+ studies",
+        alias="lessTermMatrix",
     )
     greater_term_matrix: t.Optional[t.Union[MatrixType, str]] = Field(
         None,
         description="greater term matrix for v8.7+ studies",
+        alias="greaterTermMatrix",
     )
     equal_term_matrix: t.Optional[t.Union[MatrixType, str]] = Field(
         None,
         description="equal term matrix for v8.7+ studies",
+        alias="equalTermMatrix",
     )
 
     @root_validator(pre=True)
