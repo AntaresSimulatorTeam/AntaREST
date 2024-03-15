@@ -93,6 +93,7 @@ class RemoveArea(ICommand):
 
             Instead, we decide to remove the binding constraints that are related to the area.
         """
+        # See also `RemoveArea`
         # noinspection SpellCheckingInspection
         url = ["input", "bindingconstraints", "bindingconstraints"]
         binding_constraints = study_data.tree.get(url)
@@ -100,6 +101,7 @@ class RemoveArea(ICommand):
         # Collect the binding constraints that are related to the area to remove
         # by searching the terms that contain the ID of the area.
         bc_to_remove = {}
+        lower_area_id = self.id.lower()
         for bc_index, bc in list(binding_constraints.items()):
             for key in bc:
                 # Term IDs are in the form `area1%area2` or `area.cluster`
@@ -110,7 +112,8 @@ class RemoveArea(ICommand):
                 else:
                     # This key belongs to the set of properties, it isn't a term ID, so we skip it
                     continue
-                if self.id.lower() in related_areas:
+                related_areas = [area.lower() for area in related_areas]
+                if lower_area_id in related_areas:
                     bc_to_remove[bc_index] = binding_constraints.pop(bc_index)
                     break
 
