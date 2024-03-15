@@ -19,9 +19,7 @@ export const MatrixContainer = styled(Box)(({ theme }) => ({
   display: "flex",
   flexDirection: "column",
   width: "100%",
-  height: "500px",
-  paddingRight: theme.spacing(2),
-  marginBottom: theme.spacing(6),
+  height: 650,
 }));
 
 export const StyledTab = styled(Tabs)({
