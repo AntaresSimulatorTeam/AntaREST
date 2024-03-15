@@ -3,24 +3,26 @@ import typing as t
 from pydantic import BaseModel, validator
 
 from antarest.core.exceptions import (
-    BindingConstraintNotFoundError,
+    BindingConstraintNotFound,
     CommandApplicationError,
+    ConfigFileNotFound,
     ConstraintAlreadyExistError,
     ConstraintIdNotFoundError,
     DuplicateConstraintName,
+    IncoherenceBetweenMatricesLength,
     InvalidConstraintName,
     InvalidFieldForVersionError,
     MissingDataError,
     NoConstraintError,
-    ConfigFileNotFound,
-    IncoherenceBetweenMatricesLength,
 )
 from antarest.matrixstore.model import MatrixData
-from antarest.study.business.utils import execute_or_add_commands, AllOptionalMetaclass, camel_case_model
+from antarest.study.business.utils import AllOptionalMetaclass, camel_case_model, execute_or_add_commands
 from antarest.study.model import Study
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     BindingConstraintFrequency,
     BindingConstraintOperator,
+)
+from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     BindingConstraintProperties as ConfigBCProperties,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
@@ -355,7 +357,7 @@ class BindingConstraintManager:
         if not isinstance(constraint, BindingConstraintConfig) and not isinstance(
             constraint, BindingConstraintConfig870
         ):
-            raise BindingConstraintNotFoundError(study.id)
+            raise BindingConstraintNotFound(study.id)
 
         if study_version >= 870:
             validates_matrices_coherence(file_study, binding_constraint_id, constraint.group or "default", data)  # type: ignore
@@ -398,7 +400,7 @@ class BindingConstraintManager:
 
         # Needed when the study is a variant because we only append the command to the list
         if isinstance(study, VariantStudy) and not self.get_binding_constraint(study, binding_constraint_id):
-            raise CommandApplicationError("Binding constraint not found")
+            raise CommandApplicationError(f"Binding constraint not found: '{binding_constraint_id}'")
 
         execute_or_add_commands(study, file_study, [command], self.storage_service)
 
@@ -412,7 +414,7 @@ class BindingConstraintManager:
         constraint = self.get_binding_constraint(study, binding_constraint_id)
 
         if not isinstance(constraint, BindingConstraintConfig) and not isinstance(constraint, BindingConstraintConfig):
-            raise BindingConstraintNotFoundError(study.id)
+            raise BindingConstraintNotFound(study.id)
 
         constraint_terms = constraint.constraints  # existing constraint terms
         if constraint_terms is None:
@@ -463,7 +465,7 @@ class BindingConstraintManager:
         file_study = self.storage_service.get_storage(study).get_raw(study)
         constraint = self.get_binding_constraint(study, binding_constraint_id)
         if not isinstance(constraint, BindingConstraintConfig) and not isinstance(constraint, BindingConstraintConfig):
-            raise BindingConstraintNotFoundError(study.id)
+            raise BindingConstraintNotFound(study.id)
 
         if constraint_term.data is None:
             raise MissingDataError("Add new constraint term : data is missing")
