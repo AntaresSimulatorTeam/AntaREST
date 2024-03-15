@@ -4,13 +4,14 @@ import {
   MenuItem,
   Select,
   SelectChangeEvent,
+  SelectProps,
   SxProps,
   Theme,
 } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { GenericInfo } from "../../common/types";
 
-interface Props {
+interface Props extends SelectProps {
   name: string;
   label?: string;
   list: GenericInfo[];
@@ -40,12 +41,9 @@ function SelectSingle(props: Props) {
   } = props;
   const [t] = useTranslation();
 
-  const basicHandleChange = (event: SelectChangeEvent<string>) => {
-    const {
-      target: { value },
-    } = event;
+  const basicHandleChange = (e: SelectChangeEvent<unknown>) => {
     if (setValue) {
-      setValue(value);
+      setValue(e.target.value as string);
     }
   };
 
@@ -57,6 +55,7 @@ function SelectSingle(props: Props) {
     <FormControl variant={variant} sx={sx} required={required}>
       <InputLabel id={`single-checkbox-label-${name}`}>{label}</InputLabel>
       <Select
+        {...props}
         labelId={`single-checkbox-label-${name}`}
         id={`single-checkbox-${name}`}
         value={data}
@@ -64,7 +63,8 @@ function SelectSingle(props: Props) {
         disabled={disabled}
         onChange={
           handleChange
-            ? (e) => handleChange(name, e.target.value as string)
+            ? (e: SelectChangeEvent<unknown>) =>
+                handleChange(name, e.target.value as string)
             : basicHandleChange
         }
       >

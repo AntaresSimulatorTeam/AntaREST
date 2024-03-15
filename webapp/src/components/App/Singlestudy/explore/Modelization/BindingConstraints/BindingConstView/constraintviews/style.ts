@@ -5,6 +5,7 @@ export const ConstraintElementRoot = styled(Paper)(({ theme }) => ({
   display: "flex",
   flexDirection: "column",
   padding: theme.spacing(1),
+  borderRadius: 5,
   backgroundColor: PAPER_BACKGROUND_NO_TRANSPARENCY,
 }));
 

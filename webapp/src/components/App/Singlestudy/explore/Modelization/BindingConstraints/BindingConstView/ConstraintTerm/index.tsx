@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Box, Button, TextField, Typography } from "@mui/material";
 import AddCircleOutlineRoundedIcon from "@mui/icons-material/AddCircleOutlineRounded";
 import DeleteRoundedIcon from "@mui/icons-material/DeleteRounded";
@@ -44,52 +44,51 @@ function ConstraintTermItem(props: Props) {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleChange = useCallback(
-    (name: "weight" | "offset", value: string | number | null) => {
-      let pValue = 0;
-      if (value !== null) {
-        try {
-          pValue = typeof value === "number" ? value : parseFloat(value);
-          pValue = Number.isNaN(pValue) ? 0 : pValue;
-        } catch (e) {
-          pValue = 0;
-        }
+  const handleChange = (
+    name: "weight" | "offset",
+    value: string | number | null,
+  ) => {
+    let pValue = 0;
+    if (value !== null) {
+      try {
+        pValue = typeof value === "number" ? value : parseFloat(value);
+        pValue = Number.isNaN(pValue) ? 0 : pValue;
+      } catch (e) {
+        pValue = 0;
       }
-      if (name === "weight") {
-        setWeight(pValue);
-      } else {
-        setOffset(pValue);
-      }
-      saveValue({
-        id: term.id,
-        [name]: value === null ? value : pValue,
-      });
-    },
-    [term.id, saveValue],
-  );
+    }
+    if (name === "weight") {
+      setWeight(pValue);
+    } else {
+      setOffset(pValue);
+    }
+    saveValue({
+      id: term.id,
+      [name]: value === null ? value : pValue,
+    });
+  };
 
   ////////////////////////////////////////////////////////////////
-  // JSX
-  /// /////////////////////////////////////////////////////////////
+  // Utils
+  ////////////////////////////////////////////////////////////////
 
   return (
     <Box
       sx={{
         display: "flex",
-        width: "100%",
-        padding: 0,
         alignItems: "center",
       }}
     >
       <ConstraintElement
-        title="Weight"
         left={
           <TextField
             label={t("study.modelization.bindingConst.weight")}
-            variant="filled"
+            variant="outlined"
+            size="small"
             type="number"
             value={weight}
             onChange={(e) => handleChange("weight", e.target.value)}
+            sx={{ maxWidth: 150, mx: 0 }}
           />
         }
         right={
@@ -108,46 +107,54 @@ function ConstraintTermItem(props: Props) {
           </Box>
         }
       />
-      {offset !== undefined && offset !== null ? (
-        <>
-          <Typography sx={{ mx: 1 }}>x</Typography>
-          <ConstraintElement
-            title="Offset"
-            operator="+"
-            left={<Typography>t</Typography>}
-            right={
-              <OffsetInput onRemove={() => handleChange("offset", null)}>
-                <TextField
-                  label={t("study.modelization.bindingConst.offset")}
-                  variant="filled"
-                  type="number"
-                  value={offset}
-                  onChange={(e) => handleChange("offset", e.target.value)}
-                />
-              </OffsetInput>
-            }
-          />
-        </>
-      ) : (
+
+      <Box sx={{ display: "flex", alignItems: "center" }}>
+        {offset !== undefined && offset !== null ? (
+          <>
+            <Typography sx={{ mx: 1 }}>x</Typography>
+            <ConstraintElement
+              operator="+"
+              left={<Typography>t</Typography>}
+              right={
+                <OffsetInput onRemove={() => handleChange("offset", null)}>
+                  <TextField
+                    label={t("study.modelization.bindingConst.offset")}
+                    variant="outlined"
+                    size="small"
+                    type="number"
+                    value={offset}
+                    onChange={(e) => handleChange("offset", e.target.value)}
+                    sx={{ maxWidth: 100 }}
+                  />
+                </OffsetInput>
+              }
+            />
+          </>
+        ) : (
+          <Button
+            variant="outlined"
+            color="secondary"
+            size="small"
+            startIcon={<AddCircleOutlineRoundedIcon />}
+            onClick={() => handleChange("offset", 0)}
+            sx={{ ml: 3.5 }}
+          >
+            {t("study.modelization.bindingConst.offset")}
+          </Button>
+        )}
+      </Box>
+
+      <Box sx={{ display: "flex", alignItems: "center", ml: "auto" }}>
         <Button
-          variant="text"
-          color="secondary"
-          startIcon={<AddCircleOutlineRoundedIcon />}
-          sx={{ ml: 1 }}
-          onClick={() => handleChange("offset", 0)}
+          variant="outlined"
+          color="error"
+          size="small"
+          startIcon={<DeleteRoundedIcon />}
+          onClick={deleteTerm}
         >
-          {t("study.modelization.bindingConst.offset")}
+          {t("global.delete")}
         </Button>
-      )}
-      <Button
-        variant="text"
-        color="error"
-        sx={{ mx: 1 }}
-        startIcon={<DeleteRoundedIcon />}
-        onClick={deleteTerm}
-      >
-        {t("global.delete")}
-      </Button>
+      </Box>
     </Box>
   );
 }

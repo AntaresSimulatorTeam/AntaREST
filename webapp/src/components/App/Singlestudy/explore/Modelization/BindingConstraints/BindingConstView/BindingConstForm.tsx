@@ -2,6 +2,7 @@ import { AxiosError } from "axios";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Box, Button, Tab, Typography } from "@mui/material";
+import AddCircleOutlineRoundedIcon from "@mui/icons-material/AddCircleOutlineRounded";
 import { useFieldArray } from "react-hook-form";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { useSnackbar } from "notistack";
@@ -151,7 +152,7 @@ function BindingConstForm({ study, options, constraintId }: Props) {
         );
       }
     },
-    200,
+    500,
   );
 
   const handleDeleteTerm = async (termToDelete: number) => {
@@ -241,12 +242,21 @@ function BindingConstForm({ study, options, constraintId }: Props) {
             label: t("global.name"),
             disabled: true,
             required: t("form.field.required"),
+            sx: { maxWidth: 200 },
+          },
+          {
+            type: "text",
+            name: "comments", // TODO group
+            path: `${BC_PATH}/group`,
+            label: t("global.group"),
+            sx: { maxWidth: 200 },
           },
           {
             type: "text",
             name: "comments",
             path: `${BC_PATH}/comments`,
             label: t("study.modelization.bindingConst.comments"),
+            sx: { maxWidth: 200 },
           },
           {
             type: "select",
@@ -254,6 +264,7 @@ function BindingConstForm({ study, options, constraintId }: Props) {
             path: `${BC_PATH}/type`,
             label: t("study.modelization.bindingConst.type"),
             options: typeOptions,
+            sx: { maxWidth: 120 },
           },
           {
             type: "select",
@@ -261,6 +272,7 @@ function BindingConstForm({ study, options, constraintId }: Props) {
             path: `${BC_PATH}/operator`,
             label: t("study.modelization.bindingConst.operator"),
             options: operatorOptions,
+            sx: { maxWidth: 120 },
           },
           {
             type: "switch",
@@ -305,8 +317,10 @@ function BindingConstForm({ study, options, constraintId }: Props) {
           <TermsList>
             <TermsHeader>
               <Button
-                variant="text"
+                variant="contained"
+                size="small"
                 color="primary"
+                startIcon={<AddCircleOutlineRoundedIcon />}
                 onClick={() => setOpenConstraintTermDialog(true)}
               >
                 {t("study.modelization.bindingConst.addConstraintTerm")}

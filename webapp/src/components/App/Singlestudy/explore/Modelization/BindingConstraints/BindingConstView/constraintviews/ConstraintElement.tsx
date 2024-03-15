@@ -7,7 +7,7 @@ import {
 } from "./style";
 
 interface ElementProps {
-  title: string;
+  title?: string;
   left: ReactNode;
   right: ReactNode;
   operator?: string;

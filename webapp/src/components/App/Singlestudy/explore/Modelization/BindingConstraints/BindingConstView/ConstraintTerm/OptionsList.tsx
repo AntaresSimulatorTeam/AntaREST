@@ -132,25 +132,25 @@ export default function OptionsList(props: Props) {
         name="value1"
         list={options1}
         label={t(`study.${name1}`)}
+        size="small"
+        variant="outlined"
         data={value1}
         handleChange={(key, value) => handleValue1(value as string)}
         sx={{
-          flexGrow: 1,
-          minWidth: "200px",
-          height: "60px",
+          width: 200,
+          mr: 1,
         }}
       />
       <SelectSingle
         name="value2"
         list={options2}
         label={t(`study.${name2}`)}
+        size="small"
+        variant="outlined"
         data={value2.toLowerCase()}
         handleChange={(key, value) => handleValue2(value as string)}
         sx={{
-          flexGrow: 1,
-          minWidth: "200px",
-          height: "60px",
-          ml: 1,
+          width: 200,
         }}
       />
     </>
