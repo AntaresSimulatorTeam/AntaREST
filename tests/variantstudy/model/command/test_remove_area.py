@@ -3,7 +3,6 @@ import pytest
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.study_upgrader import upgrade_study
 from antarest.study.storage.variantstudy.model.command.common import BindingConstraintOperator
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import CreateBindingConstraint
@@ -18,13 +17,8 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 
 
 class TestRemoveArea:
-    @pytest.mark.parametrize("version", [810, 840])
-    def test_apply(
-        self,
-        empty_study: FileStudy,
-        command_context: CommandContext,
-        version: int,
-    ):
+    @pytest.mark.parametrize("empty_study", ["empty_study_810.zip", "empty_study_840.zip"], indirect=True)
+    def test_apply(self, empty_study: FileStudy, command_context: CommandContext):
         # noinspection SpellCheckingInspection
         empty_study.tree.save(
             {
@@ -72,10 +66,8 @@ class TestRemoveArea:
 
         ########################################################################################
 
-        upgrade_study(empty_study.config.study_path, str(version))
-
         empty_study_cfg = empty_study.tree.get(depth=999)
-        if version >= 830:
+        if empty_study.config.version >= 830:
             empty_study_cfg["input"]["areas"][area_id]["adequacy_patch"] = {
                 "adequacy-patch": {"adequacy-patch-mode": "outside"}
             }
@@ -84,7 +76,6 @@ class TestRemoveArea:
         area_name2 = "Area2"
         area_id2 = transform_name_to_id(area_name2)
 
-        empty_study.config.version = version
         create_area_command: ICommand = CreateArea.parse_obj(
             {
                 "area_name": area_name2,

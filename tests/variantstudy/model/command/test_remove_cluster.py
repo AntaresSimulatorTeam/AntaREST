@@ -1,3 +1,5 @@
+import numpy as np
+import pytest
 from checksumdir import dirhash
 
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
@@ -13,6 +15,7 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 
 
 class TestRemoveCluster:
+    @pytest.mark.parametrize("empty_study", ["empty_study_720.zip", "empty_study_870.zip"], indirect=True)
     def test_apply(self, empty_study: FileStudy, command_context: CommandContext):
         area_name = "Area_name"
         area_id = transform_name_to_id(area_name)
@@ -39,6 +42,15 @@ class TestRemoveCluster:
             modulation=[[0]],
         ).apply(empty_study)
 
+        # Binding constraint 2nd member: array of shape (8784, 3)
+        array = np.random.rand(8784, 3) * 1000
+        if empty_study.config.version < 870:
+            values = array.tolist()
+            less_term_matrix = None
+        else:
+            values = None
+            less_term_matrix = array.tolist()
+
         bind1_cmd = CreateBindingConstraint(
             name="BD 1",
             time_step=BindingConstraintFrequency.HOURLY,
@@ -48,6 +60,8 @@ class TestRemoveCluster:
             },
             comments="Hello",
             command_context=command_context,
+            values=values,
+            less_term_matrix=less_term_matrix,
         )
         output = bind1_cmd.apply(study_data=empty_study)
         assert output.status

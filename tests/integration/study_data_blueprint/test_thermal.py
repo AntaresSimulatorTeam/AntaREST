@@ -530,6 +530,29 @@ class TestThermal:
         #  THERMAL CLUSTER DELETION
         # =============================
 
+        # Here is a Binding Constraint that references the thermal cluster.:
+        bc_obj = {
+            "name": "Binding Constraint",
+            "enabled": True,
+            "time_step": "hourly",
+            "operator": "less",
+            "coeffs": {f"{area_id}.{fr_gas_conventional_id.lower()}": [2.0, 4]},
+            "comments": "New API",
+        }
+        matrix = np.random.randint(0, 1000, size=(8784, 3))
+        if version < 870:
+            bc_obj["values"] = matrix.tolist()
+        else:
+            bc_obj["lessTermMatrix"] = matrix.tolist()
+
+        # noinspection SpellCheckingInspection
+        res = client.post(
+            f"/v1/studies/{study_id}/bindingconstraints",
+            json=bc_obj,
+            headers={"Authorization": f"Bearer {user_access_token}"},
+        )
+        assert res.status_code in {200, 201}, res.json()
+
         # To delete a thermal cluster, we need to provide its ID.
         res = client.request(
             "DELETE",
@@ -539,6 +562,15 @@ class TestThermal:
         )
         assert res.status_code == 204, res.json()
         assert res.text in {"", "null"}  # Old FastAPI versions return 'null'.
+
+        # When we delete a thermal cluster, we should also delete the binding constraints that reference it.
+        # noinspection SpellCheckingInspection
+        res = client.get(
+            f"/v1/studies/{study_id}/bindingconstraints",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+        )
+        assert res.status_code == 200, res.json()
+        assert len(res.json()) == 0
 
         # If the thermal cluster list is empty, the deletion should be a no-op.
         res = client.request(
