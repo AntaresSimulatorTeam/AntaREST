@@ -1,3 +1,4 @@
+import collections
 import http
 import io
 import json
@@ -20,9 +21,12 @@ from antarest.core.utils.utils import sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
+from antarest.study.common.default_values import QueryFile
 from antarest.study.service import StudyService
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 
 logger = logging.getLogger(__name__)
+
 
 # noinspection SpellCheckingInspection
 
@@ -50,6 +54,15 @@ CONTENT_TYPES = {
     # (JSON)
     ".json": ("application/json", "utf-8"),
 }
+
+
+def _split_comma_separated_values(value: str, *, default: t.Sequence[str] = ()) -> t.Sequence[str]:
+    """Split a comma-separated list of values into an ordered set of strings."""
+    values = value.split(",") if value else default
+    # drop whitespace around values
+    values = [v.strip() for v in values]
+    # remove duplicates and preserve order (to have a deterministic result for unit tests).
+    return list(collections.OrderedDict.fromkeys(values))
 
 
 class TableExportFormat(EnumIgnoreCase):
@@ -202,6 +215,57 @@ def create_raw_study_routes(
             separators=(",", ":"),
         ).encode("utf-8")
         return Response(content=json_response, media_type="application/json")
+
+    @bp.get(
+        "/studies/{uuid}/aggregate",
+        tags=[APITag.study_raw_data],
+        summary="Retrieve Aggregated Raw Data from Study Output",
+    )
+    def aggregate_raw_data(
+        uuid: str,
+        output_name: str,
+        query_file: QueryFile,
+        frequency: MatrixFrequency,
+        mc_years: str = "",
+        areas_names: str = "",
+        columns_names: str = "",
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> t.Any:
+        """
+        Create an aggregation of raw data
+
+        Args:
+            uuid: study id
+            output_name:
+            query_file:
+            frequency:
+            mc_years:
+            areas_names:
+            columns_names:
+            current_user:
+
+
+        Returns:
+            DF like matrix summarizing the aggregation results
+
+        """
+        logger.info(
+            f"Aggregate raw data at {query_file} (output name = {output_name}) from study {uuid}",
+            extra={"user": current_user.id},
+        )
+        parameters = RequestParameters(user=current_user)
+        output = study_service.aggregate(
+            uuid,
+            output_name=output_name,
+            query_file=query_file,
+            frequency=frequency,
+            mc_years=_split_comma_separated_values(mc_years),
+            areas_names=_split_comma_separated_values(areas_names),
+            columns_names=_split_comma_separated_values(columns_names),
+            params=parameters,
+        )
+
+        return output
 
     @bp.post(
         "/studies/{uuid}/raw",
