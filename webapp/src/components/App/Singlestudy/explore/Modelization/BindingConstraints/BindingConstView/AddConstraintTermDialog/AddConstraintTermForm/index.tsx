@@ -6,13 +6,13 @@ import { AllClustersAndLinks } from "../../../../../../../../../common/types";
 import OptionsList from "./OptionsList";
 import NumberFE from "../../../../../../../../common/fieldEditors/NumberFE";
 import { useFormContextPlus } from "../../../../../../../../common/Form";
-import { BindingConstFields, ConstraintTerm } from "../../utils";
+import { BindingConstraint, ConstraintTerm } from "../../utils";
 import ConstraintElement from "../../constraintviews/ConstraintElement";
 import OffsetInput from "../../constraintviews/OffsetInput";
 
 interface Props {
   options: AllClustersAndLinks;
-  constraintTerms: BindingConstFields["constraints"];
+  constraintTerms: BindingConstraint["constraints"];
 }
 
 export default function AddConstraintTermForm(props: Props) {

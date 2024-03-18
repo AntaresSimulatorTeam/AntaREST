@@ -4,12 +4,9 @@ import {
   LinkInfoWithUI,
   UpdateAreaUi,
 } from "../../common/types";
-import { CreateBindingConstraint } from "../../components/App/Singlestudy/Commands/Edition/commandTypes";
 import {
-  BindingConstFields,
-  BindingConstFieldsDTO,
+  BindingConstraint,
   ConstraintTerm,
-  UpdateBindingConstraint,
 } from "../../components/App/Singlestudy/explore/Modelization/BindingConstraints/BindingConstView/utils";
 import { StudyMapNode } from "../../redux/ducks/studyMaps";
 import client from "./client";
@@ -114,7 +111,7 @@ export const deleteConstraintTerm = async (
 export const getBindingConstraint = async (
   studyId: string,
   constraintId: string,
-): Promise<BindingConstFieldsDTO> => {
+): Promise<BindingConstraint> => {
   const res = await client.get(
     `/v1/studies/${studyId}/bindingconstraints/${encodeURIComponent(
       constraintId,
@@ -125,7 +122,7 @@ export const getBindingConstraint = async (
 
 export const getBindingConstraintList = async (
   studyId: string,
-): Promise<BindingConstFields[]> => {
+): Promise<BindingConstraint[]> => {
   const res = await client.get(`/v1/studies/${studyId}/bindingconstraints`);
   return res.data;
 };
@@ -133,7 +130,7 @@ export const getBindingConstraintList = async (
 export const updateBindingConstraint = async (
   studyId: string,
   constraintId: string,
-  data: UpdateBindingConstraint,
+  data: BindingConstraint,
 ): Promise<void> => {
   const res = await client.put(
     `/v1/studies/${studyId}/bindingconstraints/${encodeURIComponent(
@@ -146,7 +143,7 @@ export const updateBindingConstraint = async (
 
 export const createBindingConstraint = async (
   studyId: string,
-  data: CreateBindingConstraint,
+  data: Partial<BindingConstraint>,
 ): Promise<void> => {
   const res = await client.post(
     `/v1/studies/${studyId}/bindingconstraints`,

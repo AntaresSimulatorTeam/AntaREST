@@ -3,26 +3,27 @@ import { StudyMetadata } from "../../../../../../common/types";
 import PropertiesView from "../../../../../common/PropertiesView";
 import ListElement from "../../common/ListElement";
 import AddDialog from "./AddDialog";
-import { BindingConstFields } from "./BindingConstView/utils";
+import { BindingConstraint } from "./BindingConstView/utils";
 
 interface Props {
   onClick: (name: string) => void;
-  list: BindingConstFields[];
+  list: BindingConstraint[];
   studyId: StudyMetadata["id"];
   currentBindingConst?: string;
 }
 
+// TODO rename ConstraintsList
 function BindingConstPropsView(props: Props) {
   const { onClick, currentBindingConst, studyId, list } = props;
   const [bindingConstNameFilter, setBindingConstNameFilter] =
     useState<string>();
   const [addBindingConst, setAddBindingConst] = useState(false);
   const [filteredBindingConst, setFilteredBindingConst] = useState<
-    BindingConstFields[]
+    BindingConstraint[]
   >(list || []);
 
   useEffect(() => {
-    const filter = (): BindingConstFields[] => {
+    const filter = (): BindingConstraint[] => {
       if (list) {
         return list.filter(
           (s) =>
