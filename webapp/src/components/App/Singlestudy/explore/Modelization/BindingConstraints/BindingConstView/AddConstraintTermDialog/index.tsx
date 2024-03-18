@@ -8,7 +8,7 @@ import FormDialog, {
 import { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
 import useEnqueueErrorSnackbar from "../../../../../../../../hooks/useEnqueueErrorSnackbar";
 import {
-  BindingConstFields,
+  BindingConstraint,
   ConstraintTerm,
   dataToId,
   isDataLink,
@@ -28,8 +28,8 @@ import { getLinksAndClusters } from "../../../../../../../../redux/selectors";
 interface Props extends Omit<FormDialogProps, "children" | "handleSubmit"> {
   studyId: string;
   constraintId: string;
-  append: UseFieldArrayAppend<BindingConstFields, "constraints">;
-  constraintTerms: BindingConstFields["constraints"];
+  append: UseFieldArrayAppend<BindingConstraint, "constraints">;
+  constraintTerms: BindingConstraint["constraints"];
   options: AllClustersAndLinks;
 }
 

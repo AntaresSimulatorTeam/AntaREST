@@ -8,7 +8,7 @@ import {
   TimeStep,
 } from "../../../Commands/Edition/commandTypes";
 import { SubmitHandlerPlus } from "../../../../../common/Form/types";
-import { BindingConstFields } from "./BindingConstView/utils";
+import { BindingConstraint } from "./BindingConstView/utils";
 import { createBindingConstraint } from "../../../../../../services/api/studydata";
 import SelectFE from "../../../../../common/fieldEditors/SelectFE";
 import StringFE from "../../../../../common/fieldEditors/StringFE";
@@ -18,11 +18,13 @@ import { validateString } from "../../../../../../utils/validationUtils";
 
 interface Props {
   studyId: StudyMetadata["id"];
-  existingConstraints: Array<BindingConstFields["id"]>;
+  existingConstraints: Array<BindingConstraint["id"]>;
   open: boolean;
   onClose: VoidFunction;
 }
 
+// TODO rename AddConstraintDialog
+// TODO refactor and add group field
 function AddDialog({ studyId, existingConstraints, open, onClose }: Props) {
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
