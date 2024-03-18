@@ -35,11 +35,13 @@ from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskResu
 from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT, ITaskService, TaskUpdateNotifier, noop_notifier
 from antarest.core.utils.utils import assert_this, suppress_exception
 from antarest.matrixstore.service import MatrixService
+from antarest.study.common.default_values import QueryFile
 from antarest.study.model import RawStudy, Study, StudyAdditionalData, StudyMetadataDTO, StudySimResultDTO
 from antarest.study.storage.abstract_storage_service import AbstractStorageService
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.utils import assert_permission, export_study_flat, is_managed, remove_from_cache
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
@@ -490,6 +492,36 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             depth=depth,
             formatted=formatted,
             use_cache=use_cache,
+        )
+
+    def aggregate_data(
+        self,
+        metadata: Study,
+        output_name: str,
+        query_file: QueryFile,
+        frequency: MatrixFrequency,
+        mc_years: t.Sequence[str],
+        areas_names: t.Sequence[str],
+        columns_names: t.Sequence[str],
+    ) -> t.Any:
+        """
+        Entry point to fetch data inside study.
+        Args:
+            metadata: study
+            output_name:
+            query_file:
+            frequency:
+            mc_years:
+            areas_names:
+            columns_names:
+
+        Returns: study data formatted in json
+
+        """
+        self._safe_generation(metadata, timeout=60)
+        self.repository.refresh(metadata)
+        return super().aggregate_data(
+            metadata, output_name, query_file, frequency, mc_years, areas_names, columns_names
         )
 
     def create_variant_study(self, uuid: str, name: str, params: RequestParameters) -> VariantStudy:

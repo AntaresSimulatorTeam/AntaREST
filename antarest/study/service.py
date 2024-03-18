@@ -75,6 +75,7 @@ from antarest.study.business.xpansion_management import (
     XpansionCandidateDTO,
     XpansionManager,
 )
+from antarest.study.common.default_values import QueryFile
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     NEW_DEFAULT_STUDY_VERSION,
@@ -108,6 +109,7 @@ from antarest.study.storage.rawstudy.model.filesystem.folder_node import ChildNo
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import OutputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
@@ -316,6 +318,40 @@ class StudyService:
         assert_permission(params.user, study, StudyPermissionType.READ)
 
         return self.storage_service.get_storage(study).get(study, url, depth, formatted)
+
+    def aggregate(
+        self,
+        uuid: str,
+        output_name: str,
+        query_file: QueryFile,
+        frequency: MatrixFrequency,
+        mc_years: t.Sequence[str],
+        areas_names: t.Sequence[str],
+        columns_names: t.Sequence[str],
+        params: RequestParameters,
+    ) -> t.Any:
+        """
+        Get study data inside filesystem
+        Args:
+            uuid: study uuid
+            output_name: simulation output id
+            query_file: which types of data to retrieve
+            frequency: yearly, monthly, weekly, daily or hourly.
+            mc_years: list of monte-carlo years, if empty, all years are selected
+            areas_names: list of areas names, if empty, all areas are selected
+            columns_names: columns to be selected, if empty, all columns are selected
+            params: request parameters
+
+        Returns: data study formatted in json
+
+        """
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.READ)
+        output = self.storage_service.get_storage(study).aggregate_data(
+            study, output_name, query_file, frequency, mc_years, areas_names, columns_names
+        )
+
+        return output
 
     def get_logs(
         self,

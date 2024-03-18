@@ -1,18 +1,20 @@
+import typing as t
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import BinaryIO, Generic, List, Optional, Sequence, TypeVar, Union
 
 from antarest.core.exceptions import StudyNotFoundError
 from antarest.core.model import JSON
 from antarest.core.requests import RequestParameters
+from antarest.study.common.default_values import QueryFile
 from antarest.study.model import Study, StudyMetadataDTO, StudyMetadataPatchDTO, StudySimResultDTO
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 
-T = TypeVar("T", bound=Study)
+T = t.TypeVar("T", bound=Study)
 
 
-class IStudyStorageService(ABC, Generic[T]):
+class IStudyStorageService(ABC, t.Generic[T]):
     @abstractmethod
     def create(self, metadata: T) -> T:
         """
@@ -47,6 +49,34 @@ class IStudyStorageService(ABC, Generic[T]):
         raise NotImplementedError()
 
     @abstractmethod
+    def aggregate_data(
+        self,
+        metadata: T,
+        output_name: str,
+        query_file: QueryFile,
+        frequency: MatrixFrequency,
+        mc_years: t.Sequence[str],
+        areas_names: t.Sequence[str],
+        columns_names: t.Sequence[str],
+    ) -> t.Any:
+        """
+        Entry point to fetch data inside study.
+
+        Args:
+            metadata:
+            output_name:
+            query_file: QueryFile,
+            frequency: MatrixFrequency,
+            mc_years: t.Sequence[str],
+            areas_names: t.Sequence[str],
+            columns_names: t.Sequence[str],
+
+        Returns: study data formatted in json
+
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
     def exists(self, metadata: T) -> bool:
         """
         Check study exist.
@@ -59,7 +89,7 @@ class IStudyStorageService(ABC, Generic[T]):
         raise NotImplementedError()
 
     @abstractmethod
-    def copy(self, src_meta: T, dest_name: str, groups: Sequence[str], with_outputs: bool = False) -> T:
+    def copy(self, src_meta: T, dest_name: str, groups: t.Sequence[str], with_outputs: bool = False) -> T:
         """
         Create a new study by copying a reference study.
 
@@ -91,9 +121,9 @@ class IStudyStorageService(ABC, Generic[T]):
     def import_output(
         self,
         study: T,
-        output: Union[BinaryIO, Path],
-        output_name: Optional[str] = None,
-    ) -> Optional[str]:
+        output: t.Union[t.BinaryIO, Path],
+        output_name: t.Optional[str] = None,
+    ) -> t.Optional[str]:
         """
         Import an output
         Args:
@@ -113,7 +143,7 @@ class IStudyStorageService(ABC, Generic[T]):
         self,
         metadata: T,
         use_cache: bool = True,
-        output_dir: Optional[Path] = None,
+        output_dir: t.Optional[Path] = None,
     ) -> FileStudy:
         """
         Fetch a study raw tree object and its config
@@ -127,7 +157,7 @@ class IStudyStorageService(ABC, Generic[T]):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_study_sim_result(self, metadata: T) -> List[StudySimResultDTO]:
+    def get_study_sim_result(self, metadata: T) -> t.List[StudySimResultDTO]:
         """
         Get global result information
 
@@ -236,7 +266,7 @@ class IStudyStorageService(ABC, Generic[T]):
         metadata: T,
         dst_path: Path,
         outputs: bool = True,
-        output_list_filter: Optional[List[str]] = None,
+        output_list_filter: t.Optional[t.List[str]] = None,
         denormalize: bool = True,
     ) -> None:
         """
@@ -252,7 +282,7 @@ class IStudyStorageService(ABC, Generic[T]):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_synthesis(self, metadata: T, params: Optional[RequestParameters] = None) -> FileStudyTreeConfigDTO:
+    def get_synthesis(self, metadata: T, params: t.Optional[RequestParameters] = None) -> FileStudyTreeConfigDTO:
         """
         Return study synthesis
         Args:
