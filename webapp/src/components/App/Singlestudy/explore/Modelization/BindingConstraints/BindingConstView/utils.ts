@@ -3,18 +3,24 @@ import {
   LinkClusterItem,
   LinkCreationInfoDTO,
 } from "../../../../../../../common/types";
-import { getBindingConstraint } from "../../../../../../../services/api/studydata";
-import { FilteringType } from "../../../common/types";
 
 ////////////////////////////////////////////////////////////////
 // Constants
 ////////////////////////////////////////////////////////////////
 
+export const ACTIVE_WINDOWS_DOC_PATH =
+  "https://antares-simulator.readthedocs.io/en/latest/reference-guide/04-active_windows/";
+
 export const BC_PATH = `input/bindingconstraints/bindingconstraints`;
 export const OPERATORS = ["less", "equal", "greater", "both"] as const;
 export const TIME_STEPS = ["hourly", "daily", "weekly"] as const;
-export const ACTIVE_WINDOWS_DOC_PATH =
-  "https://antares-simulator.readthedocs.io/en/latest/reference-guide/04-active_windows/";
+export const OUTPUT_FILTERS = [
+  "hourly",
+  "daily",
+  "weekly",
+  "monthly",
+  "annual",
+] as const;
 
 ////////////////////////////////////////////////////////////////
 // Types
@@ -22,73 +28,33 @@ export const ACTIVE_WINDOWS_DOC_PATH =
 
 export type Operator = (typeof OPERATORS)[number];
 export type TimeStep = (typeof TIME_STEPS)[number];
+export type OutputFilter = (typeof OUTPUT_FILTERS)[number];
 
 export interface ConstraintTerm {
   id: string;
   weight: number;
   offset?: number;
-  data: LinkCreationInfoDTO | ClusterElement;
+  data: LinkCreationInfoDTO | ClusterElement; // TODO remove, and create better types
 }
 
-export interface UpdateBindingConstraint {
-  key: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  value: any;
-}
-
-export interface BindingConstFields {
-  name: string;
+export interface BindingConstraint {
   id: string;
+  name: string;
+  group: string;
   enabled: boolean;
   time_step: TimeStep;
   operator: Operator;
   comments?: string;
-  filterByYear: FilteringType[];
-  filterSynthesis: FilteringType[];
+  filter_synthesis: OutputFilter[];
+  filter_year_by_year: OutputFilter[];
   constraints: ConstraintTerm[];
 }
-
-export interface BindingConstFieldsDTO {
-  name: string;
-  id: string;
-  enabled: boolean;
-  time_step: TimeStep;
-  operator: Operator;
-  comments?: string;
-  filter_year_by_year?: string;
-  filter_synthesis?: string;
-  constraints: ConstraintTerm[];
-}
-
-export type BindingConstPath = Record<keyof BindingConstFields, string>;
 
 ////////////////////////////////////////////////////////////////
 // Functions
 ////////////////////////////////////////////////////////////////
 
-export async function getDefaultValues(
-  studyId: string,
-  bindingConstId: string,
-): Promise<BindingConstFields> {
-  // Fetch fields
-  const fields: BindingConstFieldsDTO = await getBindingConstraint(
-    studyId,
-    bindingConstId,
-  );
-  return {
-    ...fields,
-    comments: fields.comments || "",
-    filterByYear: (fields.filter_year_by_year || "").split(",").map((elm) => {
-      const sElm = elm.replace(/\s+/g, "");
-      return sElm as FilteringType;
-    }),
-    filterSynthesis: (fields.filter_synthesis || "").split(",").map((elm) => {
-      const sElm = elm.replace(/\s+/g, "");
-      return sElm as FilteringType;
-    }),
-  };
-}
-
+//TODO optimize utils
 export function isDataLink(
   data: LinkCreationInfoDTO | ClusterElement,
 ): data is LinkCreationInfoDTO {

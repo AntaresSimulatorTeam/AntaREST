@@ -9,7 +9,7 @@ import { AllClustersAndLinks } from "../../../../../../../../../common/types";
 import SelectFE from "../../../../../../../../common/fieldEditors/SelectFE";
 import { ControlPlus } from "../../../../../../../../common/Form/types";
 import {
-  BindingConstFields,
+  BindingConstraint,
   ConstraintTerm,
   dataToId,
   isTermExist,
@@ -20,7 +20,7 @@ interface Props {
   isLink: boolean;
   control: ControlPlus<ConstraintTerm>;
   watch: UseFormWatch<ConstraintTerm>;
-  constraintTerms: BindingConstFields["constraints"];
+  constraintTerms: BindingConstraint["constraints"];
   setValue: UseFormSetValue<ConstraintTerm>;
   unregister: UseFormUnregister<ConstraintTerm>;
 }
