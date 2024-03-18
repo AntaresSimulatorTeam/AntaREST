@@ -43,8 +43,8 @@ from antarest.study.business.areas.thermal_management import (
 )
 from antarest.study.business.binding_constraint_management import (
     BindingConstraintCreation,
+    BindingConstraintEdition,
     ConstraintTermDTO,
-    UpdateBindingConstProps,
 )
 from antarest.study.business.correlation_management import CorrelationFormFields, CorrelationManager, CorrelationMatrix
 from antarest.study.business.district_manager import DistrictCreationDTO, DistrictInfoDTO, DistrictUpdateDTO
@@ -926,7 +926,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     def update_binding_constraint(
         uuid: str,
         binding_constraint_id: str,
-        data: UpdateBindingConstProps,
+        data: BindingConstraintEdition,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(
@@ -936,6 +936,35 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
         return study_service.binding_constraint_manager.update_binding_constraint(study, binding_constraint_id, data)
+
+    @bp.get(
+        "/studies/{uuid}/bindingconstraints/{binding_constraint_id}/validate",
+        tags=[APITag.study_data],
+        summary="Validate binding constraint configuration",
+        response_model=None,
+    )
+    def validate_binding_constraint(
+        uuid: str,
+        binding_constraint_id: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Any:
+        """
+        Validates the binding constraint configuration.
+
+        Parameters:
+        - `uuid`: The study UUID.
+        - `binding_constraint_id`: The binding constraint id to validate
+
+        For studies version prior to v8.7, does nothing.
+        Else, it checks the coherence between the group and the size of its columns.
+        """
+        logger.info(
+            f"Validating binding constraint {binding_constraint_id} for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
+        return study_service.binding_constraint_manager.validate_binding_constraint(study, binding_constraint_id)
 
     @bp.post(
         "/studies/{uuid}/bindingconstraints",

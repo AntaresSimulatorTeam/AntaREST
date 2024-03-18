@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Union, cast
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, validator
 
@@ -32,6 +32,7 @@ from antarest.study.storage.variantstudy.business.matrix_constants.binding_const
 from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series_before_v87 import (
     default_bc_weekly_daily as default_bc_weekly_daily_86,
 )
+from antarest.study.storage.variantstudy.model.command.common import BindingConstraintOperator
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import (
     BindingConstraintMatrices,
     BindingConstraintProperties,
@@ -111,9 +112,15 @@ class ConstraintTermDTO(BaseModel):
         return self.data.generate_id()
 
 
-class UpdateBindingConstProps(BaseModel):
-    key: str
-    value: Any
+class BindingConstraintEdition(BindingConstraintMatrices):
+    group: Optional[str] = None
+    enabled: Optional[bool] = None
+    time_step: Optional[BindingConstraintFrequency] = None
+    operator: Optional[BindingConstraintOperator] = None
+    filter_year_by_year: Optional[str] = None
+    filter_synthesis: Optional[str] = None
+    comments: Optional[str] = None
+    coeffs: Optional[Dict[str, List[float]]] = None
 
 
 class BindingConstraintCreation(BindingConstraintMatrices, BindingConstraintProperties870):
@@ -239,6 +246,21 @@ class BindingConstraintManager:
             binding_constraint.append(new_config)
         return binding_constraint
 
+    def validate_binding_constraint(self, study: Study, constraint_id: str) -> None:
+        if int(study.version) < 870:
+            return  # There's nothing to check for constraints before v8.7
+        file_study = self.storage_service.get_storage(study).get_raw(study)
+        config = file_study.tree.get(["input", "bindingconstraints", "bindingconstraints"])
+        group = next((value["group"] for value in config.values() if value["id"] == constraint_id), None)
+        if not group:
+            raise BindingConstraintNotFoundError(study.id)
+        matrix_terms = {
+            "eq": get_matrix_data(file_study, constraint_id, "eq"),
+            "lt": get_matrix_data(file_study, constraint_id, "lt"),
+            "gt": get_matrix_data(file_study, constraint_id, "gt"),
+        }
+        check_matrices_coherence(file_study, group, constraint_id, matrix_terms)
+
     def create_binding_constraint(
         self,
         study: Study,
@@ -253,22 +275,17 @@ class BindingConstraintManager:
         if bc_id in {bc.id for bc in self.get_binding_constraint(study, None)}:  # type: ignore
             raise DuplicateConstraintName(f"A binding constraint with the same name already exists: {bc_id}.")
 
-        if data.group and version < 870:
-            raise InvalidFieldForVersionError(
-                f"You cannot specify a group as your study version is older than v8.7: {data.group}"
-            )
+        check_attributes_coherence(data, version)
 
-        if version >= 870 and not data.group:
-            data.group = "default"
-
-        matrix_terms_list = {"eq": data.equal_term_matrix, "lt": data.less_term_matrix, "gt": data.greater_term_matrix}
         file_study = self.storage_service.get_storage(study).get_raw(study)
         if version >= 870:
-            if data.values is not None:
-                raise InvalidFieldForVersionError("You cannot fill 'values' as it refers to the matrix before v8.7")
-            check_matrices_coherence(file_study, data.group or "default", bc_id, matrix_terms_list, {})
-        elif any(matrix_terms_list.values()):
-            raise InvalidFieldForVersionError("You cannot fill a 'matrix_term' as these values refer to v8.7+ studies")
+            data.group = data.group or "default"
+            matrix_terms_list = {
+                "eq": data.equal_term_matrix,
+                "lt": data.less_term_matrix,
+                "gt": data.greater_term_matrix,
+            }
+            check_matrices_coherence(file_study, data.group, bc_id, matrix_terms_list)
 
         command = CreateBindingConstraint(
             name=data.name,
@@ -297,7 +314,7 @@ class BindingConstraintManager:
         self,
         study: Study,
         binding_constraint_id: str,
-        data: UpdateBindingConstProps,
+        data: BindingConstraintEdition,
     ) -> None:
         file_study = self.storage_service.get_storage(study).get_raw(study)
         constraint = self.get_binding_constraint(study, binding_constraint_id)
@@ -307,35 +324,42 @@ class BindingConstraintManager:
         ):
             raise BindingConstraintNotFoundError(study.id)
 
-        if study_version >= 870:
-            validates_matrices_coherence(file_study, binding_constraint_id, constraint.group or "default", data)  # type: ignore
+        check_attributes_coherence(data, study_version)
 
+        # Because the update_binding_constraint command requires every attribute we have to fill them all.
+        # This creates a `big` command even though we only updated one field.
+        # fixme : Change the architecture to avoid this type of misconception
         args = {
             "id": binding_constraint_id,
-            "enabled": data.value if data.key == "enabled" else constraint.enabled,
-            "time_step": data.value if data.key == "time_step" else constraint.time_step,
-            "operator": data.value if data.key == "operator" else constraint.operator,
-            "coeffs": BindingConstraintManager.constraints_to_coeffs(constraint),
-            "filter_year_by_year": data.value if data.key == "filterByYear" else constraint.filter_year_by_year,
-            "filter_synthesis": data.value if data.key == "filterSynthesis" else constraint.filter_synthesis,
-            "comments": data.value if data.key == "comments" else constraint.comments,
+            "enabled": data.enabled or constraint.enabled,
+            "time_step": data.time_step or constraint.time_step,
+            "operator": data.operator or constraint.operator,
+            "coeffs": data.coeffs or BindingConstraintManager.constraints_to_coeffs(constraint),
+            "filter_year_by_year": data.filter_year_by_year or constraint.filter_year_by_year,
+            "filter_synthesis": data.filter_synthesis or constraint.filter_synthesis,
+            "comments": data.comments or constraint.comments,
             "command_context": self.storage_service.variant_study_service.command_factory.command_context,
         }
+        for term in ["values", "less_term_matrix", "equal_term_matrix", "greater_term_matrix"]:
+            if matrices_to_update := getattr(data, term):
+                args[term] = matrices_to_update
 
-        args = _fill_group_value(data, constraint, study_version, args)
-        args = _fill_matrices_according_to_version(data, study_version, args)
+        if study_version >= 870:
+            args["group"] = data.group or constraint.group  # type: ignore
 
-        if data.key == "time_step" and data.value != constraint.time_step:
+        if data.time_step is not None and data.time_step != constraint.time_step:
             # The user changed the time step, we need to update the matrix accordingly
-            args = _replace_matrices_according_to_frequency_and_version(data, study_version, args)
+            args = _replace_matrices_according_to_frequency_and_version(data.time_step, study_version, args)
 
         command = UpdateBindingConstraint(**args)
         # Validates the matrices. Needed when the study is a variant because we only append the command to the list
         if isinstance(study, VariantStudy):
-            updated_matrix = None
-            if data.key in ["less_term_matrix", "equal_term_matrix", "greater_term_matrix"]:
-                updated_matrix = [data.key]
-            command.validates_and_fills_matrices(specific_matrices=updated_matrix, version=study_version, create=False)
+            updated_matrices = [
+                term for term in ["less_term_matrix", "equal_term_matrix", "greater_term_matrix"] if getattr(data, term)
+            ]
+            command.validates_and_fills_matrices(
+                specific_matrices=updated_matrices, version=study_version, create=False
+            )
 
         execute_or_add_commands(study, file_study, [command], self.storage_service)
 
@@ -460,56 +484,22 @@ class BindingConstraintManager:
         return self.update_constraint_term(study, binding_constraint_id, term_id)
 
 
-def _fill_group_value(
-    data: UpdateBindingConstProps, constraint: BindingConstraintConfigType, version: int, args: Dict[str, Any]
-) -> Dict[str, Any]:
-    if version < 870:
-        if data.key == "group":
-            raise InvalidFieldForVersionError(
-                f"You cannot specify a group as your study version is older than v8.7: {data.value}"
-            )
-    else:
-        # cast to 870 to use the attribute group
-        constraint = cast(BindingConstraintConfig870, constraint)
-        args["group"] = data.value if data.key == "group" else constraint.group
-    return args
-
-
-def _fill_matrices_according_to_version(
-    data: UpdateBindingConstProps, version: int, args: Dict[str, Any]
-) -> Dict[str, Any]:
-    if data.key == "values":
-        if version >= 870:
-            raise InvalidFieldForVersionError("You cannot fill 'values' as it refers to the matrix before v8.7")
-        args["values"] = data.value
-        return args
-    for matrix in ["less_term_matrix", "equal_term_matrix", "greater_term_matrix"]:
-        if data.key == matrix:
-            if version < 870:
-                raise InvalidFieldForVersionError(
-                    "You cannot fill a 'matrix_term' as these values refer to v8.7+ studies"
-                )
-            args[matrix] = data.value
-            return args
-    return args
-
-
 def _replace_matrices_according_to_frequency_and_version(
-    data: UpdateBindingConstProps, version: int, args: Dict[str, Any]
+    frequency: BindingConstraintFrequency, version: int, args: Dict[str, Any]
 ) -> Dict[str, Any]:
     if version < 870:
         matrix = {
             BindingConstraintFrequency.HOURLY.value: default_bc_hourly_86,
             BindingConstraintFrequency.DAILY.value: default_bc_weekly_daily_86,
             BindingConstraintFrequency.WEEKLY.value: default_bc_weekly_daily_86,
-        }[data.value].tolist()
+        }[frequency].tolist()
         args["values"] = matrix
     else:
         matrix = {
             BindingConstraintFrequency.HOURLY.value: default_bc_hourly_87,
             BindingConstraintFrequency.DAILY.value: default_bc_weekly_daily_87,
             BindingConstraintFrequency.WEEKLY.value: default_bc_weekly_daily_87,
-        }[data.value].tolist()
+        }[frequency].tolist()
         args["less_term_matrix"] = matrix
         args["equal_term_matrix"] = matrix
         args["greater_term_matrix"] = matrix
@@ -531,11 +521,7 @@ def get_binding_constraint_of_a_given_group(file_study: FileStudy, group_id: str
 
 
 def check_matrices_coherence(
-    file_study: FileStudy,
-    group_id: str,
-    binding_constraint_id: str,
-    matrix_terms: Dict[str, Any],
-    matrix_to_avoid: Dict[str, str],
+    file_study: FileStudy, group_id: str, binding_constraint_id: str, matrix_terms: Dict[str, Any]
 ) -> None:
     given_number_of_cols = set()
     for term_str, term_data in matrix_terms.items():
@@ -551,57 +537,26 @@ def check_matrices_coherence(
         given_size = list(given_number_of_cols)[0]
         for bd_id in get_binding_constraint_of_a_given_group(file_study, group_id):
             for term in list(matrix_terms.keys()):
-                if (
-                    bd_id not in matrix_to_avoid or matrix_to_avoid[bd_id] != term
-                ):  # avoids to check the matrix that will be replaced
-                    matrix_file = file_study.tree.get(url=["input", "bindingconstraints", f"{bd_id}_{term}"])
-                    column_size = len(matrix_file["data"][0])
-                    if column_size > 1 and column_size != given_size:
-                        raise IncoherenceBetweenMatricesLength(
-                            f"The matrices of the group {group_id} do not have the same number of columns"
-                        )
+                matrix_file = file_study.tree.get(url=["input", "bindingconstraints", f"{bd_id}_{term}"])
+                column_size = len(matrix_file["data"][0])
+                if column_size > 1 and column_size != given_size:
+                    raise IncoherenceBetweenMatricesLength(
+                        f"The matrices of the group {group_id} do not have the same number of columns"
+                    )
 
 
-def validates_matrices_coherence(
-    file_study: FileStudy, binding_constraint_id: str, group: str, data: UpdateBindingConstProps
+def check_attributes_coherence(
+    data: Union[BindingConstraintCreation, BindingConstraintEdition], study_version: int
 ) -> None:
-    if data.key == "group":
-        matrix_terms = {
-            "eq": get_matrix_data(file_study, binding_constraint_id, "eq"),
-            "lt": get_matrix_data(file_study, binding_constraint_id, "lt"),
-            "gt": get_matrix_data(file_study, binding_constraint_id, "gt"),
-        }
-        check_matrices_coherence(file_study, data.value, binding_constraint_id, matrix_terms, {})
-
-    if data.key in ["less_term_matrix", "equal_term_matrix", "greater_term_matrix"]:
-        if isinstance(data.value, str):
-            raise NotImplementedError(
-                f"We do not currently handle binding constraint update for {data.key} with a string value. Please provide a matrix"
+    if study_version < 870:
+        if data.group:
+            raise InvalidFieldForVersionError(
+                f"You cannot specify a group as your study version is older than v8.7: {data.group}"
             )
-        if data.key == "less_term_matrix":
-            term_to_avoid = "lt"
-            matrix_terms = {
-                "lt": data.value,
-                "eq": get_matrix_data(file_study, binding_constraint_id, "eq"),
-                "gt": get_matrix_data(file_study, binding_constraint_id, "gt"),
-            }
-        elif data.key == "greater_term_matrix":
-            term_to_avoid = "gt"
-            matrix_terms = {
-                "gt": data.value,
-                "eq": get_matrix_data(file_study, binding_constraint_id, "eq"),
-                "lt": get_matrix_data(file_study, binding_constraint_id, "lt"),
-            }
-        else:
-            term_to_avoid = "eq"
-            matrix_terms = {
-                "eq": data.value,
-                "gt": get_matrix_data(file_study, binding_constraint_id, "gt"),
-                "lt": get_matrix_data(file_study, binding_constraint_id, "lt"),
-            }
-        check_matrices_coherence(
-            file_study, group, binding_constraint_id, matrix_terms, {binding_constraint_id: term_to_avoid}
-        )
+        if any([data.less_term_matrix, data.equal_term_matrix, data.greater_term_matrix]):
+            raise InvalidFieldForVersionError("You cannot fill a 'matrix_term' as these values refer to v8.7+ studies")
+    elif data.values:
+        raise InvalidFieldForVersionError("You cannot fill 'values' as it refers to the matrix before v8.7")
 
 
 def get_matrix_data(file_study: FileStudy, binding_constraint_id: str, keyword: str) -> List[Any]:
