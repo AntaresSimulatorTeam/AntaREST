@@ -14,7 +14,7 @@ from antarest.core.exceptions import (
     MissingDataError,
     NoConstraintError,
 )
-from antarest.study.business.utils import execute_or_add_commands
+from antarest.study.business.utils import AllOptionalMetaclass, execute_or_add_commands
 from antarest.study.model import Study
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
@@ -112,15 +112,19 @@ class ConstraintTermDTO(BaseModel):
         return self.data.generate_id()
 
 
-class BindingConstraintEdition(BindingConstraintMatrices):
-    group: Optional[str] = None
-    enabled: Optional[bool] = None
-    time_step: Optional[BindingConstraintFrequency] = None
-    operator: Optional[BindingConstraintOperator] = None
-    filter_year_by_year: Optional[str] = None
-    filter_synthesis: Optional[str] = None
-    comments: Optional[str] = None
-    coeffs: Optional[Dict[str, List[float]]] = None
+class BindingConstraintForm(BaseModel, metaclass=AllOptionalMetaclass):
+    group: str
+    enabled: bool
+    time_step: BindingConstraintFrequency
+    operator: BindingConstraintOperator
+    filter_year_by_year: str
+    filter_synthesis: str
+    comments: str
+    coeffs: Dict[str, List[float]]
+
+
+class BindingConstraintEdition(BindingConstraintMatrices, BindingConstraintForm):
+    pass
 
 
 class BindingConstraintCreation(BindingConstraintMatrices, BindingConstraintProperties870):
@@ -265,7 +269,7 @@ class BindingConstraintManager:
         self,
         study: Study,
         data: BindingConstraintCreation,
-    ) -> None:
+    ) -> BindingConstraintConfigType:
         bc_id = transform_name_to_id(data.name)
         version = int(study.version)
 
@@ -287,35 +291,43 @@ class BindingConstraintManager:
             }
             check_matrices_coherence(file_study, data.group, bc_id, matrix_terms_list)
 
+        args = {
+            "name": data.name,
+            "enabled": data.enabled,
+            "time_step": data.time_step,
+            "operator": data.operator,
+            "coeffs": data.coeffs,
+            "values": data.values,
+            "less_term_matrix": data.less_term_matrix,
+            "equal_term_matrix": data.equal_term_matrix,
+            "greater_term_matrix": data.greater_term_matrix,
+            "filter_year_by_year": data.filter_year_by_year,
+            "filter_synthesis": data.filter_synthesis,
+            "comments": data.comments or "",
+        }
+        if version >= 870:
+            args["group"] = data.group
+
         command = CreateBindingConstraint(
-            name=data.name,
-            enabled=data.enabled,
-            time_step=data.time_step,
-            operator=data.operator,
-            coeffs=data.coeffs,
-            values=data.values,
-            less_term_matrix=data.less_term_matrix,
-            equal_term_matrix=data.equal_term_matrix,
-            greater_term_matrix=data.greater_term_matrix,
-            filter_year_by_year=data.filter_year_by_year,
-            filter_synthesis=data.filter_synthesis,
-            comments=data.comments or "",
-            group=data.group,
-            command_context=self.storage_service.variant_study_service.command_factory.command_context,
+            **args, command_context=self.storage_service.variant_study_service.command_factory.command_context
         )
 
         # Validates the matrices. Needed when the study is a variant because we only append the command to the list
         if isinstance(study, VariantStudy):
             command.validates_and_fills_matrices(specific_matrices=None, version=version, create=True)
-
         execute_or_add_commands(study, file_study, [command], self.storage_service)
+
+        # Processes the constraints to add them inside the endpoint response.
+        args["id"] = bc_id
+        args["type"] = data.time_step
+        return BindingConstraintManager.process_constraint(args, version)
 
     def update_binding_constraint(
         self,
         study: Study,
         binding_constraint_id: str,
         data: BindingConstraintEdition,
-    ) -> None:
+    ) -> BindingConstraintConfigType:
         file_study = self.storage_service.get_storage(study).get_raw(study)
         constraint = self.get_binding_constraint(study, binding_constraint_id)
         study_version = int(study.version)
@@ -329,7 +341,7 @@ class BindingConstraintManager:
         # Because the update_binding_constraint command requires every attribute we have to fill them all.
         # This creates a `big` command even though we only updated one field.
         # fixme : Change the architecture to avoid this type of misconception
-        args = {
+        binding_constraint_output = {
             "id": binding_constraint_id,
             "enabled": data.enabled or constraint.enabled,
             "time_step": data.time_step or constraint.time_step,
@@ -338,14 +350,17 @@ class BindingConstraintManager:
             "filter_year_by_year": data.filter_year_by_year or constraint.filter_year_by_year,
             "filter_synthesis": data.filter_synthesis or constraint.filter_synthesis,
             "comments": data.comments or constraint.comments,
+        }
+        if study_version >= 870:
+            binding_constraint_output["group"] = data.group or constraint.group  # type: ignore
+
+        args = {
+            **binding_constraint_output,
             "command_context": self.storage_service.variant_study_service.command_factory.command_context,
         }
         for term in ["values", "less_term_matrix", "equal_term_matrix", "greater_term_matrix"]:
             if matrices_to_update := getattr(data, term):
                 args[term] = matrices_to_update
-
-        if study_version >= 870:
-            args["group"] = data.group or constraint.group  # type: ignore
 
         if data.time_step is not None and data.time_step != constraint.time_step:
             # The user changed the time step, we need to update the matrix accordingly
@@ -360,8 +375,12 @@ class BindingConstraintManager:
             command.validates_and_fills_matrices(
                 specific_matrices=updated_matrices, version=study_version, create=False
             )
-
         execute_or_add_commands(study, file_study, [command], self.storage_service)
+
+        # Processes the constraints to add them inside the endpoint response.
+        binding_constraint_output["name"] = constraint.name
+        binding_constraint_output["type"] = binding_constraint_output["time_step"]
+        return BindingConstraintManager.process_constraint(binding_constraint_output, study_version)
 
     def remove_binding_constraint(self, study: Study, binding_constraint_id: str) -> None:
         command = RemoveBindingConstraint(

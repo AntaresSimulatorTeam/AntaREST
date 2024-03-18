@@ -402,17 +402,8 @@ class TestBindingConstraints:
             json={"comments": new_comment},
             headers=user_headers,
         )
-        assert res.status_code == 200, res.json()
-
-        # Get Binding Constraint
-        res = client.get(
-            f"/v1/studies/{study_id}/bindingconstraints/{bc_id}",
-            headers=user_headers,
-        )
-        binding_constraint = res.json()
-        comments = binding_constraint["comments"]
-        assert res.status_code == 200, res.json()
-        assert comments == new_comment
+        assert res.status_code == 200
+        assert res.json()["comments"] == new_comment
 
         # The user change the time_step to daily instead of hourly.
         # We must check that the matrix is a daily/weekly matrix.
@@ -421,7 +412,8 @@ class TestBindingConstraints:
             json={"time_step": "daily"},
             headers=user_headers,
         )
-        assert res.status_code == 200, res.json()
+        assert res.status_code == 200
+        assert res.json()["time_step"] == "daily"
 
         # Check the last command is a change time_step
         if study_type == "variant":
@@ -629,9 +621,7 @@ class TestBindingConstraints:
             json={"name": bc_id_wo_group, **args},
             headers=admin_headers,
         )
-        assert res.status_code in {200, 201}, res.json()
-
-        res = client.get(f"/v1/studies/{study_id}/bindingconstraints/{bc_id_wo_group}", headers=admin_headers)
+        assert res.status_code in {200, 201}
         assert res.json()["group"] == "default"
 
         # Creation of bc with a group
@@ -641,9 +631,7 @@ class TestBindingConstraints:
             json={"name": bc_id_w_group, "group": "specific_grp", **args},
             headers=admin_headers,
         )
-        assert res.status_code in {200, 201}, res.json()
-
-        res = client.get(f"/v1/studies/{study_id}/bindingconstraints/{bc_id_w_group}", headers=admin_headers)
+        assert res.status_code in {200, 201}
         assert res.json()["group"] == "specific_grp"
 
         # Creation of bc with a matrix
@@ -690,10 +678,7 @@ class TestBindingConstraints:
             json={"group": grp_name},
             headers=admin_headers,
         )
-        assert res.status_code == 200, res.json()
-
-        # Asserts the groupe is created
-        res = client.get(f"/v1/studies/{study_id}/bindingconstraints/{bc_id_w_matrix}", headers=admin_headers)
+        assert res.status_code == 200
         assert res.json()["group"] == grp_name
 
         # Update matrix_term
@@ -814,8 +799,6 @@ class TestBindingConstraints:
             res.json()["description"]
             == "The matrices of binding_constraint_with_wrong_matrix must have the same number of columns, currently {2, 3}"
         )
-
-        # fixme: a changer
 
         #
         # Creation of 2 bc inside the same group with different columns size

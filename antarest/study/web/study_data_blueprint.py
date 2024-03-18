@@ -42,6 +42,7 @@ from antarest.study.business.areas.thermal_management import (
     ThermalManager,
 )
 from antarest.study.business.binding_constraint_management import (
+    BindingConstraintConfigType,
     BindingConstraintCreation,
     BindingConstraintEdition,
     ConstraintTermDTO,
@@ -921,14 +922,13 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/bindingconstraints/{binding_constraint_id}",
         tags=[APITag.study_data],
         summary="Update binding constraint",
-        response_model=None,  # Dict[str, bool],
     )
     def update_binding_constraint(
         uuid: str,
         binding_constraint_id: str,
         data: BindingConstraintEdition,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    ) -> BindingConstraintConfigType:
         logger.info(
             f"Update binding constraint {binding_constraint_id} for study {uuid}",
             extra={"user": current_user.id},
@@ -966,15 +966,10 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
         return study_service.binding_constraint_manager.validate_binding_constraint(study, binding_constraint_id)
 
-    @bp.post(
-        "/studies/{uuid}/bindingconstraints",
-        tags=[APITag.study_data],
-        summary="Create a binding constraint",
-        response_model=None,
-    )
+    @bp.post("/studies/{uuid}/bindingconstraints", tags=[APITag.study_data], summary="Create a binding constraint")
     def create_binding_constraint(
         uuid: str, data: BindingConstraintCreation, current_user: JWTUser = Depends(auth.get_current_user)
-    ) -> None:
+    ) -> BindingConstraintConfigType:
         logger.info(
             f"Creating a new binding constraint for study {uuid}",
             extra={"user": current_user.id},
