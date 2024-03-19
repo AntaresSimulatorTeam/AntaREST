@@ -58,7 +58,7 @@ class IStudyStorageService(ABC, t.Generic[T]):
         mc_years: t.Sequence[str],
         areas_names: t.Sequence[str],
         columns_names: t.Sequence[str],
-    ) -> t.Any:
+    ) -> t.Dict[str, t.Any]:
         """
         Entry point to fetch data inside study.
 
