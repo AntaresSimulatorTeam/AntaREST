@@ -112,7 +112,7 @@ class ConstraintTermDTO(BaseModel):
         return self.data.generate_id()
 
 
-class BindingConstraintForm(BaseModel, metaclass=AllOptionalMetaclass):
+class BindingConstraintEditionModel(BaseModel, metaclass=AllOptionalMetaclass):
     group: str
     enabled: bool
     time_step: BindingConstraintFrequency
@@ -123,7 +123,7 @@ class BindingConstraintForm(BaseModel, metaclass=AllOptionalMetaclass):
     coeffs: Dict[str, List[float]]
 
 
-class BindingConstraintEdition(BindingConstraintMatrices, BindingConstraintForm):
+class BindingConstraintEdition(BindingConstraintMatrices, BindingConstraintEditionModel):
     pass
 
 
@@ -364,7 +364,7 @@ class BindingConstraintManager:
 
         if data.time_step is not None and data.time_step != constraint.time_step:
             # The user changed the time step, we need to update the matrix accordingly
-            args = _replace_matrices_according_to_frequency_and_version(data.time_step, study_version, args)
+            args = _replace_matrices_according_to_frequency_and_version(data, study_version, args)
 
         command = UpdateBindingConstraint(**args)
         # Validates the matrices. Needed when the study is a variant because we only append the command to the list
@@ -504,24 +504,25 @@ class BindingConstraintManager:
 
 
 def _replace_matrices_according_to_frequency_and_version(
-    frequency: BindingConstraintFrequency, version: int, args: Dict[str, Any]
+    data: BindingConstraintEdition, version: int, args: Dict[str, Any]
 ) -> Dict[str, Any]:
     if version < 870:
-        matrix = {
-            BindingConstraintFrequency.HOURLY.value: default_bc_hourly_86,
-            BindingConstraintFrequency.DAILY.value: default_bc_weekly_daily_86,
-            BindingConstraintFrequency.WEEKLY.value: default_bc_weekly_daily_86,
-        }[frequency].tolist()
-        args["values"] = matrix
+        if "values" not in args:
+            matrix = {
+                BindingConstraintFrequency.HOURLY.value: default_bc_hourly_86,
+                BindingConstraintFrequency.DAILY.value: default_bc_weekly_daily_86,
+                BindingConstraintFrequency.WEEKLY.value: default_bc_weekly_daily_86,
+            }[data.time_step].tolist()
+            args["values"] = matrix
     else:
         matrix = {
             BindingConstraintFrequency.HOURLY.value: default_bc_hourly_87,
             BindingConstraintFrequency.DAILY.value: default_bc_weekly_daily_87,
             BindingConstraintFrequency.WEEKLY.value: default_bc_weekly_daily_87,
-        }[frequency].tolist()
-        args["less_term_matrix"] = matrix
-        args["equal_term_matrix"] = matrix
-        args["greater_term_matrix"] = matrix
+        }[data.time_step].tolist()
+        for term in ["less_term_matrix", "equal_term_matrix", "greater_term_matrix"]:
+            if term not in args:
+                args[term] = matrix
     return args
 
 
