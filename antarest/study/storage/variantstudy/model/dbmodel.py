@@ -55,7 +55,9 @@ class CommandBlock(Base):  # type: ignore
     args: str = Column(String())
 
     def to_dto(self) -> CommandDTO:
-        return CommandDTO(id=self.id, action=self.command, args=json.loads(self.args), version=self.version)
+        # Database may lack a version number, defaulting to 1 if so.
+        version = self.version or 1
+        return CommandDTO(id=self.id, action=self.command, args=json.loads(self.args), version=version)
 
     def __str__(self) -> str:
         return (
