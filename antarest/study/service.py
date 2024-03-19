@@ -329,7 +329,7 @@ class StudyService:
         areas_names: t.Sequence[str],
         columns_names: t.Sequence[str],
         params: RequestParameters,
-    ) -> t.Any:
+    ) -> JSON:
         """
         Get study data inside filesystem
         Args:

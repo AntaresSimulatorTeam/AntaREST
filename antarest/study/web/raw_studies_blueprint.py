@@ -230,7 +230,7 @@ def create_raw_study_routes(
         areas_names: str = "",
         columns_names: str = "",
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> t.Any:
+    ) -> t.Dict[str, t.Any]:
         """
         Create an aggregation of raw data
 
