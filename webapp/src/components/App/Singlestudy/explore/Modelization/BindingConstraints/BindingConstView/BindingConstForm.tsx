@@ -8,7 +8,11 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import { useSnackbar } from "notistack";
 import { useNavigate } from "react-router-dom";
 import useEnqueueErrorSnackbar from "../../../../../../../hooks/useEnqueueErrorSnackbar";
-import { type ConstraintTerm, dataToId, BindingConstraint } from "./utils";
+import {
+  type ConstraintTerm,
+  generateTermId,
+  BindingConstraint,
+} from "./utils";
 import {
   AllClustersAndLinks,
   StudyMetadata,
@@ -61,7 +65,7 @@ function BindingConstForm({ study, options, constraintId }: Props) {
   });
 
   const constraintTerms = useMemo(
-    () => fields.map((term) => ({ ...term, id: dataToId(term.data) })),
+    () => fields.map((term) => ({ ...term, id: generateTermId(term.data) })),
     [fields],
   );
 
@@ -85,7 +89,7 @@ function BindingConstForm({ study, options, constraintId }: Props) {
           offset: newTerm.offset || prevTerm.offset,
         };
 
-        updatedTerm.id = dataToId(updatedTerm.data);
+        updatedTerm.id = generateTermId(updatedTerm.data);
 
         await updateConstraintTerm(study.id, constraintId, {
           ...newTerm,
@@ -105,7 +109,7 @@ function BindingConstForm({ study, options, constraintId }: Props) {
 
   const handleDeleteTerm = async (termToDelete: number) => {
     try {
-      const termId = dataToId(constraintTerms[termToDelete].data);
+      const termId = generateTermId(constraintTerms[termToDelete].data);
       await deleteConstraintTerm(study.id, constraintId, termId);
       remove(termToDelete);
     } catch (error) {

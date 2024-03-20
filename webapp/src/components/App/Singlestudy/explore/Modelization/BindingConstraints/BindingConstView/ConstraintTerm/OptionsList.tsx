@@ -2,7 +2,7 @@ import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { AllClustersAndLinks } from "../../../../../../../../common/types";
 import SelectSingle from "../../../../../../../common/SelectSingle";
-import { ConstraintTerm, dataToId, isTermExist } from "../utils";
+import { ConstraintTerm, generateTermId, isTermExist } from "../utils";
 
 interface Props {
   list: AllClustersAndLinks;
@@ -51,7 +51,7 @@ export default function OptionsList(props: Props) {
           elm.id === value2 ||
           !isTermExist(
             constraintTerms,
-            dataToId(
+            generateTermId(
               isLink
                 ? {
                     area1: value1,

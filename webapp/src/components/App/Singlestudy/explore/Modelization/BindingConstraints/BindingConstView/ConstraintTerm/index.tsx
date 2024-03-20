@@ -3,12 +3,8 @@ import { Box, Button, TextField, Typography } from "@mui/material";
 import AddCircleOutlineRoundedIcon from "@mui/icons-material/AddCircleOutlineRounded";
 import DeleteRoundedIcon from "@mui/icons-material/DeleteRounded";
 import { useTranslation } from "react-i18next";
-import { ConstraintTerm, isDataLink } from "../utils";
-import {
-  AllClustersAndLinks,
-  ClusterElement,
-  LinkCreationInfoDTO,
-} from "../../../../../../../../common/types";
+import { ConstraintTerm, isLinkTerm } from "../utils";
+import { AllClustersAndLinks } from "../../../../../../../../common/types";
 import OptionsList from "./OptionsList";
 import ConstraintElement from "../constraintviews/ConstraintElement";
 import OffsetInput from "../constraintviews/OffsetInput";
@@ -25,20 +21,30 @@ interface Props {
   deleteTerm: () => void;
 }
 
-function ConstraintTermItem(props: Props) {
-  const { options, term, constraintTerms, saveValue, deleteTerm } = props;
+function ConstraintTermItem({
+  options,
+  term,
+  constraintTerms,
+  saveValue,
+  deleteTerm,
+}: Props) {
   const [t] = useTranslation();
   const [weight, setWeight] = useState(term.weight);
   const [offset, setOffset] = useState(term.offset);
-  const isLink = useMemo(() => isDataLink(term.data), [term.data]);
-  const initValue1 = isLink
-    ? (term.data as LinkCreationInfoDTO).area1
-    : (term.data as ClusterElement).area;
-  const initValue2 = isLink
-    ? (term.data as LinkCreationInfoDTO).area2
-    : (term.data as ClusterElement).cluster;
-  const [value1, setValue1] = useState(initValue1);
-  const [value2, setValue2] = useState(initValue2);
+  const isLink = useMemo(() => isLinkTerm(term.data), [term.data]);
+
+  const [value1, value2] = useMemo(() => {
+    if (isLinkTerm(term.data)) {
+      const { area1, area2 } = term.data;
+      return [area1, area2];
+    } else {
+      const { area, cluster } = term.data;
+      return [area, cluster];
+    }
+  }, [term.data]);
+
+  const [selectedValue1, setSelectedValue1] = useState(value1);
+  const [selectedValue2, setSelectedValue2] = useState(value2);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -98,10 +104,10 @@ function ConstraintTermItem(props: Props) {
               list={options}
               term={term}
               saveValue={saveValue}
-              value1={value1}
-              value2={value2}
-              setValue1={setValue1}
-              setValue2={setValue2}
+              value1={selectedValue1}
+              value2={selectedValue2}
+              setValue1={setSelectedValue1}
+              setValue2={setSelectedValue2}
               constraintTerms={constraintTerms}
             />
           </Box>

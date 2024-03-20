@@ -1,9 +1,3 @@
-import {
-  ClusterElement,
-  LinkClusterItem,
-  LinkCreationInfoDTO,
-} from "../../../../../../../common/types";
-
 ////////////////////////////////////////////////////////////////
 // Constants
 ////////////////////////////////////////////////////////////////
@@ -11,7 +5,6 @@ import {
 export const ACTIVE_WINDOWS_DOC_PATH =
   "https://antares-simulator.readthedocs.io/en/latest/reference-guide/04-active_windows/";
 
-export const BC_PATH = `input/bindingconstraints/bindingconstraints`;
 export const OPERATORS = ["less", "equal", "greater", "both"] as const;
 export const TIME_STEPS = ["hourly", "daily", "weekly"] as const;
 export const OUTPUT_FILTERS = [
@@ -29,14 +22,39 @@ export const OUTPUT_FILTERS = [
 export type Operator = (typeof OPERATORS)[number];
 export type TimeStep = (typeof TIME_STEPS)[number];
 export type OutputFilter = (typeof OUTPUT_FILTERS)[number];
+// ID of a LinkTerm, expecting the "%" separator
+export type LinkTermId = `${string}%${string}`;
+// ID of a ClusterTerm, expecting the "." separator
+export type ClusterTermId = `${string}.${string}`;
 
-export interface ConstraintTerm {
-  id: string;
-  weight: number;
-  offset?: number;
-  data: LinkCreationInfoDTO | ClusterElement; // TODO remove, and create better types
+export interface LinkTerm {
+  id: LinkTermId;
+  data: {
+    area1: string;
+    area2: string;
+  };
 }
 
+export interface ClusterTerm {
+  id: ClusterTermId;
+  data: {
+    area: string;
+    cluster: string;
+  };
+}
+
+export interface ConstraintTerm {
+  id: LinkTermId | ClusterTermId;
+  weight: number;
+  offset?: number;
+  data: LinkTerm["data"] | ClusterTerm["data"];
+}
+
+/**
+ * @deprecated
+ * !TODO: Refactor this invalid snake_case interface.
+ * This is necessary because the API currently provides these fields in a wrong format.
+ */
 export interface BindingConstraint {
   id: string;
   name: string;
@@ -54,46 +72,47 @@ export interface BindingConstraint {
 // Functions
 ////////////////////////////////////////////////////////////////
 
-//TODO optimize utils
-export function isDataLink(
-  data: LinkCreationInfoDTO | ClusterElement,
-): data is LinkCreationInfoDTO {
-  return (data as LinkCreationInfoDTO).area1 !== undefined;
+/**
+ * Checks if the given term data represents a link term.
+ *
+ * @param termData - The term data to check, which could represent either a link term or a cluster term.
+ * @returns True if the term data represents a link term, false otherwise.
+ */
+export function isLinkTerm(
+  termData: LinkTerm["data"] | ClusterTerm["data"],
+): termData is LinkTerm["data"] {
+  return "area1" in termData && "area2" in termData;
 }
 
-export function dataToId(data: LinkCreationInfoDTO | ClusterElement): string {
-  if (isDataLink(data)) {
-    const link = data;
-    return `${link.area1}%${link.area2}`;
+/**
+ * Generates a unique identifier from the given term.
+ * The term can be either a link term (2 areas) or a cluster term (area + cluster).
+ * For a link term, the identifier format is "area1%area2".
+ * For a cluster term, the identifier format is "area.cluster".
+ *
+ * @param termData - The term data from which to generate the identifier.
+ * @returns The generated unique identifier.
+ */
+export function generateTermId(
+  termData: LinkTerm["data"] | ClusterTerm["data"],
+): LinkTermId | ClusterTermId {
+  if (isLinkTerm(termData)) {
+    return `${termData.area1}%${termData.area2}`;
   }
-  const cluster = data;
-  return `${cluster.area}.${cluster.cluster}`;
+  return `${termData.area}.${termData.cluster}`;
 }
 
-export const isOptionExist = (
-  list: LinkClusterItem[],
-  value1: string,
-  value2: string,
-): boolean => {
-  const index1 = list.findIndex((item) => item.element.id === value1);
-  if (index1 < 0) {
-    return false;
-  }
-
-  const index2 = list[index1].item_list.findIndex((item) => item.id === value2);
-  if (index2 < 0) {
-    return false;
-  }
-
-  return true;
-};
-
+/**
+ * Checks if a term with the specified ID exists in the list of terms.
+ *
+ * @param terms - The array of ConstraintTerm objects to search through.
+ * @param termId - The unique identifier of the term, either a LinkTermId or a ClusterTermId.
+ * @returns True if a term with the specified ID exists; otherwise, false.
+ */
 export const isTermExist = (
   terms: ConstraintTerm[],
-  termId: string,
-): boolean => {
-  return terms.findIndex((term) => term.id === termId) >= 0;
-};
+  termId: LinkTermId | ClusterTermId,
+): boolean => terms.some(({ id }) => id === termId);
 
 /**
  * !WARNING: Temporary Workaround (Model adapter)
