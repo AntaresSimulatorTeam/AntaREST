@@ -1,21 +1,19 @@
 import { useTranslation } from "react-i18next";
 import { MatrixStats, StudyMetadata } from "../../../../../../../common/types";
 import MatrixInput from "../../../../../../common/MatrixInput";
-import { Operator, TimeStep } from "./utils";
+import { Operator } from "./utils";
 import SplitView from "../../../../../../common/SplitView";
 
 interface Props {
   study: StudyMetadata;
   operator: Operator;
-  timeStep: TimeStep;
   constraintId: string;
 }
 
-function Matrix({ study, operator, timeStep, constraintId }: Props) {
+function Matrix({ study, operator, constraintId }: Props) {
   const { t } = useTranslation();
-  const studyVersion = Number(study.version);
 
-  if (studyVersion >= 870) {
+  if (study.version >= "870") {
     return (
       <>
         {operator === "less" && (

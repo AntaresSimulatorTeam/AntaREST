@@ -1,12 +1,12 @@
 import { Box, Paper, styled } from "@mui/material";
-import { PAPER_BACKGROUND_NO_TRANSPARENCY } from "../../../../../../../../theme";
 
 export const ConstraintElementRoot = styled(Paper)(({ theme }) => ({
   display: "flex",
   flexDirection: "column",
   padding: theme.spacing(1),
   borderRadius: 5,
-  backgroundColor: PAPER_BACKGROUND_NO_TRANSPARENCY,
+  backgroundImage:
+    "linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05))",
 }));
 
 export const ConstraintElementHeader = styled(Box)(({ theme }) => ({

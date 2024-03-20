@@ -1,56 +1,89 @@
-import { Box, Paper } from "@mui/material";
+import { Paper } from "@mui/material";
 import { useOutletContext } from "react-router";
 import { StudyMetadata } from "../../../../../../../common/types";
 import usePromise from "../../../../../../../hooks/usePromise";
 import Form from "../../../../../../common/Form";
 import BindingConstForm from "./BindingConstForm";
-import { getDefaultValues } from "./utils";
 import UsePromiseCond, {
   mergeResponses,
 } from "../../../../../../common/utils/UsePromiseCond";
 import useStudySynthesis from "../../../../../../../redux/hooks/useStudySynthesis";
 import { getLinksAndClusters } from "../../../../../../../redux/selectors";
+import { getBindingConstraint } from "../../../../../../../services/api/studydata";
+import ConstraintFields from "./ConstraintFields";
+import { BindingConstraint } from "./utils";
+import { SubmitHandlerPlus } from "../../../../../../common/Form/types";
 
 interface Props {
   constraintId: string;
 }
 
+// TODO rename ConstraintForm
 function BindingConstView({ constraintId }: Props) {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
 
-  const defaultValuesRes = usePromise(
-    () => getDefaultValues(study.id, constraintId),
+  const bindingConstraint = usePromise(
+    () => getBindingConstraint(study.id, constraintId),
     [study.id, constraintId],
   );
 
-  const optionsRes = useStudySynthesis({
+  const linksAndClusters = useStudySynthesis({
     studyId: study.id,
     selector: (state) => getLinksAndClusters(state, study.id),
   });
+
+  ////////////////////////////////////////////////////////////////
+  // Event handlers
+  ////////////////////////////////////////////////////////////////
+
+  const handleSubmitConstraint = ({
+    values,
+  }: SubmitHandlerPlus<BindingConstraint>) => {
+    // TODO exclude name and id
+    console.log("values", values);
+    // return updateBindingConstraint(study.id, constraintId, values);
+  };
 
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
 
   return (
-    <Box sx={{ width: 1, height: 1, overflowY: "auto" }}>
-      <Paper sx={{ width: 1, height: 1, pt: 1, p: 2, overflow: "auto" }}>
-        <UsePromiseCond
-          response={mergeResponses(defaultValuesRes, optionsRes)}
-          ifResolved={([defaultValues, options]) => (
-            <Form autoSubmit config={{ defaultValues }}>
-              {constraintId && (
-                <BindingConstForm
-                  study={study}
-                  constraintId={constraintId}
-                  options={options}
-                />
-              )}
+    <Paper
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        overflow: "auto",
+        width: 1,
+        height: 1,
+        p: 2,
+      }}
+    >
+      <UsePromiseCond
+        response={mergeResponses(bindingConstraint, linksAndClusters)}
+        ifResolved={([defaultValues, linksAndClusters]) => (
+          <>
+            {/* Constraint properties form */}
+            <Form
+              autoSubmit
+              config={{ defaultValues }}
+              onSubmit={handleSubmitConstraint}
+            >
+              <ConstraintFields study={study} />
             </Form>
-          )}
-        />
-      </Paper>
-    </Box>
+            {/* Constraint terms form */}
+            <Form autoSubmit config={{ defaultValues }}>
+              <BindingConstForm
+                study={study}
+                constraintId={constraintId}
+                // TODO rename: represents a constraint terms list options of areas/links.
+                options={linksAndClusters}
+              />
+            </Form>
+          </>
+        )}
+      />
+    </Paper>
   );
 }
 
