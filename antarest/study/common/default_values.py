@@ -35,6 +35,6 @@ class QueryFile(str, Enum):
     AREAS_VALUES = "areas/values"
     LINKS_DETAILS = "links/details"
     AREAS_DETAILS = "areas/details"
-    AREAS_DETAILS_ST_STORAGE = "areas/details-ST-storage"
+    AREAS_DETAILS_ST_STORAGE = "areas/details-st-storage"
     AREAS_DETAILS_RES = "areas/details-res"
     BINDING_CONSTRAINTS = "binding_constraints/binding-constraints"

@@ -42,7 +42,7 @@ from antarest.study.storage.utils import extract_output_name, fix_study_root, re
 
 logger = logging.getLogger(__name__)
 
-TEMPLATE_PARTS = "output,{sim_id},economy,mc-ind"
+TEMPLATE_PARTS = "output/{sim_id}/economy/mc-ind"
 # noinspection SpellCheckingInspection
 MCYEAR_COL = "mcYear"
 MC_YEAR_INDEX = 0
@@ -348,7 +348,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         """
         self._check_study_exists(metadata)
         study = self.get_raw(metadata)
-        parts = TEMPLATE_PARTS.format(sim_id=output_name.replace(",", "")).split(",")
+        parts = TEMPLATE_PARTS.format(sim_id=output_name).split("/")
         file_type_1, _, all_paths = parts_query_file_filtering(flatten_tree(study.tree.get(parts)), query_file)
         if mc_years:
             all_paths = [path_parts for path_parts in all_paths if path_parts[MC_YEAR_INDEX] in mc_years]
