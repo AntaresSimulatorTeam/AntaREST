@@ -11,7 +11,7 @@ import { ControlPlus } from "../../../../../../../../common/Form/types";
 import {
   BindingConstraint,
   ConstraintTerm,
-  dataToId,
+  generateTermId,
   isTermExist,
 } from "../../utils";
 
@@ -72,7 +72,7 @@ export default function OptionsList(props: Props) {
             (elm) =>
               !isTermExist(
                 constraintTerms,
-                dataToId(
+                generateTermId(
                   isLink
                     ? {
                         area1: watchSelect1,

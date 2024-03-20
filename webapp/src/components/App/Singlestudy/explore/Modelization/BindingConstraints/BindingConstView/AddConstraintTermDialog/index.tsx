@@ -7,21 +7,10 @@ import FormDialog, {
 } from "../../../../../../../common/dialogs/FormDialog";
 import { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
 import useEnqueueErrorSnackbar from "../../../../../../../../hooks/useEnqueueErrorSnackbar";
-import {
-  BindingConstraint,
-  ConstraintTerm,
-  dataToId,
-  isDataLink,
-  isOptionExist,
-  isTermExist,
-} from "../utils";
+import { BindingConstraint } from "../utils";
 import AddConstraintTermForm from "./AddConstraintTermForm";
 import { addConstraintTerm } from "../../../../../../../../services/api/studydata";
-import {
-  AllClustersAndLinks,
-  ClusterElement,
-  LinkCreationInfoDTO,
-} from "../../../../../../../../common/types";
+import { AllClustersAndLinks } from "../../../../../../../../common/types";
 import useStudySynthesis from "../../../../../../../../redux/hooks/useStudySynthesis";
 import { getLinksAndClusters } from "../../../../../../../../redux/selectors";
 
@@ -46,7 +35,7 @@ function AddConstraintTermDialog(props: Props) {
     ...dialogProps
   } = props;
   const { onCancel } = dialogProps;
-  const defaultValues: ConstraintTerm = {
+  const defaultValues = {
     id: "",
     weight: 0,
     offset: 0,
@@ -64,62 +53,13 @@ function AddConstraintTermDialog(props: Props) {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = async (values: SubmitHandlerPlus) => {
+  // TODO fix type
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleSubmit = async ({ values }: SubmitHandlerPlus<any>) => {
     try {
-      const tmpValues = values.dirtyValues as ConstraintTerm;
-      const isLink = isDataLink(tmpValues.data);
-      if (tmpValues.weight === undefined) {
-        tmpValues.weight = 0.0;
-      }
-      let data: LinkCreationInfoDTO | ClusterElement;
-      // Verify if this link/cluster combination is allowed
-      if (isLink) {
-        data = tmpValues.data as LinkCreationInfoDTO;
-        if (!isOptionExist(options.links, data.area1, data.area2)) {
-          enqueueSnackbar(
-            t("study.error.missingData", {
-              0: t("study.area1"),
-              1: t("study.area2"),
-            }),
-            { variant: "error" },
-          );
-          onCancel();
-          return;
-        }
-      } else {
-        data = tmpValues.data as ClusterElement;
-        if (!isOptionExist(options.clusters, data.area, data.cluster)) {
-          enqueueSnackbar(
-            t("study.error.missingData", {
-              0: t("study.area"),
-              1: t("study.cluster"),
-            }),
-            { variant: "error" },
-          );
-          onCancel();
-          return;
-        }
-      }
+      await addConstraintTerm(studyId, constraintId, values);
 
-      // Verify if this term already exist in current term list
-      const termId = dataToId(data);
-      if (isTermExist(constraintTerms, termId)) {
-        enqueueSnackbar(t("study.error.termAlreadyExist"), {
-          variant: "error",
-        });
-        onCancel();
-        return;
-      }
-
-      // Send
-      await addConstraintTerm(
-        studyId,
-        constraintId,
-        values.dirtyValues as ConstraintTerm,
-      );
-
-      // Add to current UX
-      append(tmpValues as ConstraintTerm);
+      append(values);
       enqueueSnackbar(t("study.success.addConstraintTerm"), {
         variant: "success",
       });
