@@ -85,8 +85,8 @@ export const updateConstraintTerm = async (
 export const addConstraintTerm = async (
   studyId: string,
   constraintId: string,
-  term: ConstraintTerm,
-): Promise<ConstraintTerm | null> => {
+  term: Omit<ConstraintTerm, "id">,
+): Promise<null> => {
   const res = await client.post(
     `/v1/studies/${studyId}/bindingconstraints/${encodeURIComponent(
       constraintId,
