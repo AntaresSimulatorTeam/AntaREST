@@ -7,6 +7,7 @@ import {
 import {
   BindingConstraint,
   ConstraintTerm,
+  bindingConstraintModelAdapter,
 } from "../../components/App/Singlestudy/explore/Modelization/BindingConstraints/BindingConstView/utils";
 import { StudyMapNode } from "../../redux/ducks/studyMaps";
 import client from "./client";
@@ -117,7 +118,8 @@ export const getBindingConstraint = async (
       constraintId,
     )}`,
   );
-  return res.data;
+
+  return bindingConstraintModelAdapter(res.data);
 };
 
 export const getBindingConstraintList = async (
@@ -132,11 +134,13 @@ export const updateBindingConstraint = async (
   constraintId: string,
   data: BindingConstraint,
 ): Promise<void> => {
+  const adaptedData = bindingConstraintModelAdapter(data);
+
   const res = await client.put(
     `/v1/studies/${studyId}/bindingconstraints/${encodeURIComponent(
       constraintId,
     )}`,
-    data,
+    adaptedData,
   );
   return res.data;
 };
