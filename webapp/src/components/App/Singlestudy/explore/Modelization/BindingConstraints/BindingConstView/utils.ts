@@ -94,3 +94,94 @@ export const isTermExist = (
 ): boolean => {
   return terms.findIndex((term) => term.id === termId) >= 0;
 };
+
+/**
+ * !WARNING: Temporary Workaround (Model adapter)
+ * The following functions serves as a workaround to align the API's data model with the UI's requirements due to the current mismatch
+ * between the expected data formats. Specifically, it toggles the input format between a string and an array of strings
+ * (or in this context, OutputFilters) to accommodate the UI's handling of these fields.
+ *
+ * This transformation is necessary because the API currently provides these fields in a format not directly usable by the UI,
+ * necessitating their conversion. It is important to note that this approach may introduce maintenance overhead and potential
+ * points of failure, as it relies on the specific current structure of the API responses and UI expectations.
+ *
+ * Ideally, this transformation should be removed once the API's model is updated to natively support the data formats
+ * required by the UI, thereby eliminating the need for such manual conversions and ensuring a more robust and direct
+ * data flow between the API and the UI components.
+ *
+ * TODO: Monitor the API model updates and remove this workaround when possible, ensuring direct compatibility.
+ */
+
+/**
+ * Checks if a given array consists only of valid OutputFilter values.
+ *
+ * @param array - The array to be checked.
+ * @returns True if all items in the array are valid OutputFilter values, false otherwise.
+ */
+function isValidOutputFilterInput(array: string[]): array is OutputFilter[] {
+  return array.every((item) => OUTPUT_FILTERS.includes(item as OutputFilter));
+}
+
+/**
+ * Converts between a string and an array of OutputFilter values, depending on the input type.
+ *
+ * @param data - The data to be converted.
+ * @returns The converted data.
+ * @throws If the input is neither a string nor an array of OutputFilter values.
+ */
+function adaptOutputFilterFormat(
+  data: string | OutputFilter[],
+): string | OutputFilter[] {
+  // Handle empty string as an empty array of filters.
+  if (typeof data === "string") {
+    if (data.length === 0) {
+      return [];
+    }
+
+    // Convert filters string to array.
+    const filtersArray = data.split(", ");
+
+    if (isValidOutputFilterInput(filtersArray)) {
+      return filtersArray;
+    } else {
+      throw new Error("String contains invalid output filters values");
+    }
+  }
+
+  // Convert filters array to string, handling empty array as an empty string.
+  if (Array.isArray(data)) {
+    if (data.length === 0) {
+      return "";
+    }
+
+    if (isValidOutputFilterInput(data)) {
+      return data.join(", ");
+    } else {
+      throw new Error("Array contains invalid output filters values");
+    }
+  }
+
+  throw new Error(
+    "Invalid input: Expected a string or an array of OutputFilter values",
+  );
+}
+
+/**
+ * Adapts fields within a BindingConstraint object to match the expected data formats, facilitating
+ * the alignment of API data with UI requirements.
+ *
+ * @param data - The BindingConstraint object to transform.
+ * @returns The transformed BindingConstraint object.
+ */
+export function bindingConstraintModelAdapter(
+  data: BindingConstraint,
+): BindingConstraint {
+  const filterSynthesis = adaptOutputFilterFormat(data.filter_synthesis);
+  const filterYearByYear = adaptOutputFilterFormat(data.filter_year_by_year);
+
+  return {
+    ...data,
+    filter_synthesis: filterSynthesis as typeof data.filter_synthesis,
+    filter_year_by_year: filterYearByYear as typeof data.filter_year_by_year,
+  };
+}
