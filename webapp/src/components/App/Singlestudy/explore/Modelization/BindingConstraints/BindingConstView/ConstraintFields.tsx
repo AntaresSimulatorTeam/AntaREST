@@ -12,6 +12,7 @@ import { useFormContextPlus } from "../../../../../../common/Form";
 import { useMemo } from "react";
 import { StudyMetadata } from "../../../../../../../common/types";
 import SwitchFE from "../../../../../../common/fieldEditors/SwitchFE";
+import { validateString } from "../../../../../../../utils/validationUtils";
 
 interface Props {
   study: StudyMetadata;
@@ -40,44 +41,57 @@ function Fields({ study }: Props) {
         <StringFE
           disabled
           name="name"
-          label="Name"
+          label={t("global.name")}
           size="small"
           control={control}
+          rules={{ validate: (v) => validateString(v) }}
           sx={{ m: 0 }} // TODO: Remove when updating MUI Theme
         />
         <StringFE
           name="group"
-          label="Group"
+          label={t("global.group")}
           size="small"
           control={control}
+          rules={{
+            validate: (v) =>
+              validateString(v, {
+                specialChars: "-",
+                min: 1,
+                max: 15,
+              }),
+          }}
           sx={{ m: 0 }} // TODO: Remove when updating MUI Theme
         />
         <StringFE
           name="comments"
-          label="Comments"
+          label={t("study.modelization.bindingConst.comments")}
           size="small"
           control={control}
           sx={{ m: 0 }} // TODO: Remove when updating MUI Theme
         />
         <SelectFE
           name="time_step"
-          label="Type"
+          label={t("study.modelization.bindingConst.type")}
           size="small"
           variant="outlined"
           options={TIME_STEPS}
           control={control}
+          rules={{ validate: (v) => validateString(v) }}
         />
         <SelectFE
           name="operator"
-          label="Operator"
+          label={t("study.modelization.bindingConst.operator")}
           size="small"
           variant="outlined"
           options={OPERATORS}
           control={control}
         />
-        <SwitchFE name="enabled" label="Enabled" control={control} />
+        <SwitchFE
+          name="enabled"
+          label={t("study.modelization.bindingConst.enabled")}
+          control={control}
+        />
       </Fieldset>
-
       {study.version >= "840" && (
         <Fieldset legend={t("study.outputFilters")}>
           <SelectFE
