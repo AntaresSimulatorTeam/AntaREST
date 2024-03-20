@@ -1,35 +1,24 @@
 import { AxiosError } from "axios";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Box, Button, Tab, Typography } from "@mui/material";
+import { Box, Button, Tab } from "@mui/material";
 import AddCircleOutlineRoundedIcon from "@mui/icons-material/AddCircleOutlineRounded";
 import { useFieldArray } from "react-hook-form";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { useSnackbar } from "notistack";
 import { useNavigate } from "react-router-dom";
 import useEnqueueErrorSnackbar from "../../../../../../../hooks/useEnqueueErrorSnackbar";
-import {
-  ACTIVE_WINDOWS_DOC_PATH,
-  BC_PATH,
-  BindingConstFields,
-  type ConstraintTerm,
-  OPERATORS,
-  dataToId,
-  TIME_STEPS,
-} from "./utils";
+import { type ConstraintTerm, dataToId, BindingConstraint } from "./utils";
 import {
   AllClustersAndLinks,
   StudyMetadata,
 } from "../../../../../../../common/types";
-import { IFormGenerator } from "../../../../../../common/FormGenerator";
-import AutoSubmitGeneratorForm from "../../../../../../common/FormGenerator/AutoSubmitGenerator";
 import ConstraintTermItem, {
   ConstraintWithNullableOffset,
 } from "./ConstraintTerm";
 import { useFormContextPlus } from "../../../../../../common/Form";
 import {
   deleteConstraintTerm,
-  updateBindingConstraint,
   updateConstraintTerm,
 } from "../../../../../../../services/api/studydata";
 import TextSeparator from "../../../../../../common/TextSeparator";
@@ -41,8 +30,6 @@ import { appendCommands } from "../../../../../../../services/api/variant";
 import { CommandEnum } from "../../../../Commands/Edition/commandTypes";
 import useAppDispatch from "../../../../../../../redux/hooks/useAppDispatch";
 import { setCurrentBindingConst } from "../../../../../../../redux/ducks/studySyntheses";
-import OutputFilters from "../../../common/OutputFilters";
-import DocLink from "../../../../../../common/DocLink";
 import Matrix from "./Matrix";
 
 interface Props {
@@ -51,8 +38,9 @@ interface Props {
   options: AllClustersAndLinks;
 }
 
+// TODO rename ConstraintTermsFields
 function BindingConstForm({ study, options, constraintId }: Props) {
-  const { version: studyVersion, id: studyId } = study;
+  const { id: studyId } = study;
   const [t] = useTranslation();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
@@ -65,7 +53,7 @@ function BindingConstForm({ study, options, constraintId }: Props) {
   const [openConstraintTermDialog, setOpenConstraintTermDialog] =
     useState(false);
 
-  const { control, getValues } = useFormContextPlus<BindingConstFields>();
+  const { control, getValues } = useFormContextPlus<BindingConstraint>();
 
   const { fields, update, append, remove } = useFieldArray({
     control,
@@ -77,48 +65,11 @@ function BindingConstForm({ study, options, constraintId }: Props) {
     [fields],
   );
 
-  const operatorOptions = useMemo(
-    () =>
-      OPERATORS.map((operator) => ({
-        label: t(`study.modelization.bindingConst.operator.${operator}`),
-        value: operator,
-      })),
-    [t],
-  );
-
   const currentOperator = getValues("operator");
-  const currentTimeStep = getValues("time_step");
-
-  const typeOptions = useMemo(
-    () =>
-      TIME_STEPS.map((timeStep) => ({
-        label: t(`global.time.${timeStep}`),
-        value: timeStep,
-      })),
-    [t],
-  );
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
-
-  const handleSaveValue = async (filter: string, data: unknown) => {
-    try {
-      await updateBindingConstraint(studyId, constraintId, {
-        key: filter,
-        value: data,
-      });
-    } catch (error) {
-      enqueueErrorSnackbar(t("study.error.updateUI"), error as AxiosError);
-    }
-  };
-
-  const handleSaveFormValue = async (
-    name: string,
-    _path: string,
-    _defaultValues: unknown,
-    data: unknown,
-  ) => handleSaveValue(name, data);
 
   const handleUpdateTerm = useDebounce(
     async (
@@ -197,112 +148,35 @@ function BindingConstForm({ study, options, constraintId }: Props) {
   };
 
   ////////////////////////////////////////////////////////////////
-  // Utils
-  ////////////////////////////////////////////////////////////////
-
-  const jsonGenerator: IFormGenerator<BindingConstFields> = useMemo(
-    () => [
-      {
-        legend: (
-          <Box
-            sx={{
-              width: "100%",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <Typography
-              variant="h5"
-              sx={{ fontSize: "1.25rem", fontWeight: 400, lineHeight: 1.334 }}
-            >
-              {t("global.general")}
-            </Typography>
-
-            <Box sx={{ display: "flex" }}>
-              <Button
-                startIcon={<DeleteIcon />}
-                color="error"
-                onClick={() => setConstraintToDelete(true)}
-              >
-                {t("global.delete")}
-              </Button>
-              <DocLink to={`${ACTIVE_WINDOWS_DOC_PATH}#binding-constraints`} />
-            </Box>
-          </Box>
-        ),
-        fields: [
-          {
-            type: "text",
-            name: "name",
-            path: `${BC_PATH}/name`,
-            label: t("global.name"),
-            disabled: true,
-            required: t("form.field.required"),
-            sx: { maxWidth: 200 },
-          },
-          {
-            type: "text",
-            name: "test", // TODO group
-            path: `${BC_PATH}/group`,
-            label: t("global.group"),
-            sx: { maxWidth: 200 },
-          },
-          {
-            type: "text",
-            name: "comments",
-            path: `${BC_PATH}/comments`,
-            label: t("study.modelization.bindingConst.comments"),
-            sx: { maxWidth: 200 },
-          },
-          {
-            type: "select",
-            name: "time_step",
-            path: `${BC_PATH}/type`,
-            label: t("study.modelization.bindingConst.type"),
-            options: typeOptions,
-            sx: { maxWidth: 120 },
-          },
-          {
-            type: "select",
-            name: "operator",
-            path: `${BC_PATH}/operator`,
-            label: t("study.modelization.bindingConst.operator"),
-            options: operatorOptions,
-            sx: { maxWidth: 120 },
-          },
-          {
-            type: "switch",
-            name: "enabled",
-            path: `${BC_PATH}/enabled`,
-            label: t("study.modelization.bindingConst.enabled"),
-          },
-        ],
-      },
-    ],
-    [t, operatorOptions, typeOptions],
-  );
-
-  ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
 
   return (
     <>
-      <AutoSubmitGeneratorForm
-        jsonTemplate={jsonGenerator}
-        saveField={handleSaveFormValue}
-      />
+      {/*   <Box
+        sx={{
+          width: "100%",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <Box sx={{ display: "flex" }}>
+          <DocLink to={`${ACTIVE_WINDOWS_DOC_PATH}#binding-constraints`} />
 
-      {studyVersion >= "840" && (
-        <OutputFilters control={control} onAutoSubmit={handleSaveValue} />
-      )}
-
+          <Button
+            startIcon={<DeleteIcon />}
+            color="error"
+            onClick={() => setConstraintToDelete(true)}
+          >
+            {t("global.delete")}
+          </Button>
+        </Box>
+      </Box> */}
       <StyledTab value={tabValue} onChange={handleTabChange}>
         <Tab label={t("study.modelization.bindingConst.constraintTerm")} />
         <Tab label={t("study.modelization.bindingConst.timeSeries")} />
       </StyledTab>
-
       <Box
         sx={{
           display: "flex",
@@ -347,13 +221,11 @@ function BindingConstForm({ study, options, constraintId }: Props) {
             <Matrix
               study={study}
               operator={currentOperator}
-              timeStep={currentTimeStep}
               constraintId={constraintId}
             />
           </MatrixContainer>
         )}
       </Box>
-
       {openConstraintTermDialog && (
         <AddConstraintTermDialog
           open={openConstraintTermDialog}
@@ -366,7 +238,6 @@ function BindingConstForm({ study, options, constraintId }: Props) {
           options={options}
         />
       )}
-
       {termToDelete !== undefined && (
         <ConfirmationDialog
           titleIcon={DeleteIcon}
@@ -378,7 +249,6 @@ function BindingConstForm({ study, options, constraintId }: Props) {
           {t("study.modelization.bindingConst.question.deleteConstraintTerm")}
         </ConfirmationDialog>
       )}
-
       {constraintToDelete && (
         <ConfirmationDialog
           titleIcon={DeleteIcon}
