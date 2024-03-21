@@ -3,8 +3,7 @@ import logging
 from http import HTTPStatus
 from typing import Any, Dict, List, Optional, Sequence, Union, cast
 
-from fastapi import APIRouter, Body, Depends
-from fastapi.params import Query
+from fastapi import APIRouter, Body, Depends, Query
 from starlette.responses import RedirectResponse
 
 from antarest.core.config import Config
@@ -45,6 +44,7 @@ from antarest.study.business.binding_constraint_management import (
     BindingConstraintConfigType,
     BindingConstraintCreation,
     BindingConstraintEdition,
+    BindingConstraintFilter,
     ConstraintTermDTO,
 )
 from antarest.study.business.correlation_management import CorrelationFormFields, CorrelationManager, CorrelationMatrix
@@ -53,11 +53,16 @@ from antarest.study.business.general_management import GeneralFormFields
 from antarest.study.business.link_management import LinkInfoDTO
 from antarest.study.business.optimization_management import OptimizationFormFields
 from antarest.study.business.playlist_management import PlaylistColumns
-from antarest.study.business.table_mode_management import ColumnsModelTypes, TableTemplateType
+from antarest.study.business.table_mode_management import (
+    BindingConstraintOperator,
+    ColumnsModelTypes,
+    TableTemplateType,
+)
 from antarest.study.business.thematic_trimming_management import ThematicTrimmingFormFields
 from antarest.study.business.timeseries_config_management import TSFormFields
 from antarest.study.model import PatchArea, PatchCluster
 from antarest.study.service import StudyService
+from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 
 logger = logging.getLogger(__name__)
@@ -889,6 +894,35 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     )
     def get_binding_constraint_list(
         uuid: str,
+        enabled: Optional[bool] = Query(None, description="Filter results based on enabled status"),
+        operator: Optional[BindingConstraintOperator] = Query(None, description="Filter results based on operator"),
+        comments: str = Query("", description="Filter results based on comments (word match)"),
+        group: str = Query("", description="filter binding constraints based on group name (exact match)"),
+        time_step: Optional[BindingConstraintFrequency] = Query(
+            None,
+            description="Filter results based on time step",
+            alias="timeStep",
+        ),
+        area_name: str = Query(
+            "",
+            description="Filter results based on area name (word match)",
+            alias="areaName",
+        ),
+        cluster_name: str = Query(
+            "",
+            description="Filter results based on cluster name (word match)",
+            alias="clusterName",
+        ),
+        link_id: str = Query(
+            "",
+            description="Filter results based on link ID ('area1%area2')",
+            alias="linkId",
+        ),
+        cluster_id: str = Query(
+            "",
+            description="Filter results based on cluster ID ('area.cluster')",
+            alias="clusterId",
+        ),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(
@@ -897,7 +931,18 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
-        return study_service.binding_constraint_manager.get_binding_constraint(study, None)
+        bc_filter = BindingConstraintFilter(
+            enabled=enabled,
+            operator=operator,
+            comments=comments,
+            group=group,
+            time_step=time_step,
+            area_name=area_name,
+            cluster_name=cluster_name,
+            link_id=link_id,
+            cluster_id=cluster_id,
+        )
+        return study_service.binding_constraint_manager.get_binding_constraint(study, bc_filter)
 
     @bp.get(
         "/studies/{uuid}/bindingconstraints/{binding_constraint_id}",
@@ -916,7 +961,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
-        return study_service.binding_constraint_manager.get_binding_constraint(study, binding_constraint_id)
+        bc_filter = BindingConstraintFilter(bc_id=binding_constraint_id)
+        return study_service.binding_constraint_manager.get_binding_constraint(study, bc_filter)
 
     @bp.put(
         "/studies/{uuid}/bindingconstraints/{binding_constraint_id}",
@@ -968,7 +1014,9 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
 
     @bp.post("/studies/{uuid}/bindingconstraints", tags=[APITag.study_data], summary="Create a binding constraint")
     def create_binding_constraint(
-        uuid: str, data: BindingConstraintCreation, current_user: JWTUser = Depends(auth.get_current_user)
+        uuid: str,
+        data: BindingConstraintCreation,
+        current_user: JWTUser = Depends(auth.get_current_user),
     ) -> BindingConstraintConfigType:
         logger.info(
             f"Creating a new binding constraint for study {uuid}",
@@ -1171,7 +1219,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
                     "value": "north,east",
                 },
             },
-        ),  # type: ignore
+        ),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> CorrelationMatrix:
         """
@@ -2088,7 +2136,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         area_id: str,
         cluster_type: ClusterType,
         source_cluster_id: str,
-        new_cluster_name: str = Query(..., alias="newName", title="New Cluster Name"),  # type: ignore
+        new_cluster_name: str = Query(..., alias="newName", title="New Cluster Name"),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Union[STStorageOutput, ThermalClusterOutput, RenewableClusterOutput]:
         logger.info(
