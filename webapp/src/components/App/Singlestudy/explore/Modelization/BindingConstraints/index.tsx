@@ -18,6 +18,7 @@ import BindingConstView from "./BindingConstView";
 import usePromise from "../../../../../../hooks/usePromise";
 import { getBindingConstraintList } from "../../../../../../services/api/studydata";
 import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
+import { useEffect } from "react";
 
 function BindingConstraints() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -34,6 +35,13 @@ function BindingConstraints() {
     () => getBindingConstraintList(study.id),
     [study.id, bindingConstraints],
   );
+
+  useEffect(() => {
+    if (constraints.data && !currentConstraintId) {
+      const firstConstraintId = constraints.data[0].id;
+      dispatch(setCurrentBindingConst(firstConstraintId));
+    }
+  }, [constraints, currentConstraintId, dispatch]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
