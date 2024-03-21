@@ -112,6 +112,103 @@ class ConstraintTermDTO(BaseModel):
         return self.data.generate_id()
 
 
+class BindingConstraintFilter(BaseModel, frozen=True, extra="forbid"):
+    """
+    Binding Constraint Filter gathering the main filtering parameters.
+
+    Attributes:
+        bc_id: binding constraint ID (exact match)
+        enabled: enabled status
+        operator: operator
+        comments: comments (word match, case-insensitive)
+        group: on group name (exact match, case-insensitive)
+        time_step: time step
+        area_name: area name (word match, case-insensitive)
+        cluster_name: cluster name (word match, case-insensitive)
+        link_id: link ID ('area1%area2') in at least one term.
+        cluster_id: cluster ID ('area.cluster') in at least one term.
+    """
+
+    bc_id: str = ""
+    enabled: Optional[bool] = None
+    operator: Optional[BindingConstraintOperator] = None
+    comments: str = ""
+    group: str = ""
+    time_step: Optional[BindingConstraintFrequency] = None
+    area_name: str = ""
+    cluster_name: str = ""
+    link_id: str = ""
+    cluster_id: str = ""
+
+    def accept(self, constraint: "BindingConstraintConfigType") -> bool:
+        """
+        Check if the constraint matches the filter.
+
+        Args:
+            constraint: the constraint to check
+
+        Returns:
+            True if the constraint matches the filter, False otherwise
+        """
+        if self.bc_id and self.bc_id != constraint.id:
+            return False
+        if self.enabled is not None and self.enabled != constraint.enabled:
+            return False
+        if self.operator is not None and self.operator != constraint.operator:
+            return False
+        if self.comments:
+            comments = constraint.comments or ""
+            if self.comments.upper() not in comments.upper():
+                return False
+        if self.group:
+            group = getattr(constraint, "group") or ""
+            if self.group.upper() != group.upper():
+                return False
+        if self.time_step is not None and self.time_step != constraint.time_step:
+            return False
+
+        # Filter on terms
+        terms = constraint.constraints or []
+
+        if self.area_name:
+            all_areas = []
+            for term in terms:
+                if term.data is None:
+                    continue
+                if isinstance(term.data, AreaLinkDTO):
+                    all_areas.extend([term.data.area1, term.data.area2])
+                elif isinstance(term.data, AreaClusterDTO):
+                    all_areas.append(term.data.area)
+                else:  # pragma: no cover
+                    raise NotImplementedError(f"Unknown term data type: {type(term.data)}")
+            upper_area_name = self.area_name.upper()
+            if all_areas and not any(upper_area_name in area.upper() for area in all_areas):
+                return False
+
+        if self.cluster_name:
+            all_clusters = []
+            for term in terms:
+                if term.data is None:
+                    continue
+                if isinstance(term.data, AreaClusterDTO):
+                    all_clusters.append(term.data.cluster)
+            upper_cluster_name = self.cluster_name.upper()
+            if all_clusters and not any(upper_cluster_name in cluster.upper() for cluster in all_clusters):
+                return False
+
+        if self.link_id:
+            all_link_ids = [term.data.generate_id() for term in terms if isinstance(term.data, AreaLinkDTO)]
+            if not any(self.link_id.lower() == link_id.lower() for link_id in all_link_ids):
+                return False
+
+        if self.cluster_id:
+            all_cluster_ids = [term.data.generate_id() for term in terms if isinstance(term.data, AreaClusterDTO)]
+            if not any(self.cluster_id.lower() == cluster_id.lower() for cluster_id in all_cluster_ids):
+                return False
+
+        return True
+
+
 class BindingConstraintEditionModel(BaseModel, metaclass=AllOptionalMetaclass):
     group: str
     enabled: bool
@@ -229,26 +326,27 @@ class BindingConstraintManager:
         return coeffs
 
     def get_binding_constraint(
-        self, study: Study, constraint_id: Optional[str]
+        self,
+        study: Study,
+        bc_filter: BindingConstraintFilter = BindingConstraintFilter(),
     ) -> Union[BindingConstraintConfigType, List[BindingConstraintConfigType], None]:
         storage_service = self.storage_service.get_storage(study)
         file_study = storage_service.get_raw(study)
         config = file_study.tree.get(["input", "bindingconstraints", "bindingconstraints"])
-        config_values = list(config.values())
-        study_version = int(study.version)
-        if constraint_id:
-            try:
-                index = [value["id"] for value in config_values].index(constraint_id)
-                config_value = config_values[index]
-                return BindingConstraintManager.process_constraint(config_value, study_version)
-            except ValueError:
-                return None
 
-        binding_constraint = []
-        for config_value in config_values:
-            new_config = BindingConstraintManager.process_constraint(config_value, study_version)
-            binding_constraint.append(new_config)
-        return binding_constraint
+        bc_by_ids: Dict[str, BindingConstraintConfigType] = {}
+        for value in config.values():
+            new_config = BindingConstraintManager.process_constraint(value, int(study.version))
+            bc_by_ids[new_config.id] = new_config
+
+        result = {bc_id: bc for bc_id, bc in bc_by_ids.items() if bc_filter.accept(bc)}
+
+        # If a specific bc_id is provided, we return a single element
+        if bc_filter.bc_id:
+            return result.get(bc_filter.bc_id)
+
+        # Else we return all the matching elements
+        return list(result.values())
 
     def validate_binding_constraint(self, study: Study, constraint_id: str) -> None:
         if int(study.version) < 870:
@@ -276,7 +374,7 @@ class BindingConstraintManager:
         if not bc_id:
             raise InvalidConstraintName(f"Invalid binding constraint name: {data.name}.")
 
-        if bc_id in {bc.id for bc in self.get_binding_constraint(study, None)}:  # type: ignore
+        if bc_id in {bc.id for bc in self.get_binding_constraint(study)}:  # type: ignore
             raise DuplicateConstraintName(f"A binding constraint with the same name already exists: {bc_id}.")
 
         check_attributes_coherence(data, version)
@@ -329,7 +427,7 @@ class BindingConstraintManager:
         data: BindingConstraintEdition,
     ) -> BindingConstraintConfigType:
         file_study = self.storage_service.get_storage(study).get_raw(study)
-        constraint = self.get_binding_constraint(study, binding_constraint_id)
+        constraint = self.get_binding_constraint(study, BindingConstraintFilter(bc_id=binding_constraint_id))
         study_version = int(study.version)
         if not isinstance(constraint, BindingConstraintConfig) and not isinstance(
             constraint, BindingConstraintConfig870
@@ -390,7 +488,9 @@ class BindingConstraintManager:
         file_study = self.storage_service.get_storage(study).get_raw(study)
 
         # Needed when the study is a variant because we only append the command to the list
-        if isinstance(study, VariantStudy) and not self.get_binding_constraint(study, binding_constraint_id):
+        if isinstance(study, VariantStudy) and not self.get_binding_constraint(
+            study, BindingConstraintFilter(bc_id=binding_constraint_id)
+        ):
             raise CommandApplicationError("Binding constraint not found")
 
         execute_or_add_commands(study, file_study, [command], self.storage_service)
@@ -402,7 +502,7 @@ class BindingConstraintManager:
         term: Union[ConstraintTermDTO, str],
     ) -> None:
         file_study = self.storage_service.get_storage(study).get_raw(study)
-        constraint = self.get_binding_constraint(study, binding_constraint_id)
+        constraint = self.get_binding_constraint(study, BindingConstraintFilter(bc_id=binding_constraint_id))
 
         if not isinstance(constraint, BindingConstraintConfig) and not isinstance(constraint, BindingConstraintConfig):
             raise BindingConstraintNotFoundError(study.id)
@@ -454,7 +554,7 @@ class BindingConstraintManager:
         constraint_term: ConstraintTermDTO,
     ) -> None:
         file_study = self.storage_service.get_storage(study).get_raw(study)
-        constraint = self.get_binding_constraint(study, binding_constraint_id)
+        constraint = self.get_binding_constraint(study, BindingConstraintFilter(bc_id=binding_constraint_id))
         if not isinstance(constraint, BindingConstraintConfig) and not isinstance(constraint, BindingConstraintConfig):
             raise BindingConstraintNotFoundError(study.id)
 
