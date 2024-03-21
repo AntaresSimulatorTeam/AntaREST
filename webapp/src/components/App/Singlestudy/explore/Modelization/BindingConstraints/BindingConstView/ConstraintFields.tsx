@@ -37,7 +37,7 @@ function Fields({ study }: Props) {
 
   return (
     <>
-      <Fieldset legend={t("global.general")} fieldWidth={180}>
+      <Fieldset legend={t("global.general")} fieldWidth={180} sx={{ pb: 1 }}>
         <StringFE
           disabled
           name="name"
@@ -92,8 +92,9 @@ function Fields({ study }: Props) {
           control={control}
         />
       </Fieldset>
+
       {study.version >= "840" && (
-        <Fieldset legend={t("study.outputFilters")}>
+        <Fieldset legend={t("study.outputFilters")} sx={{ pb: 1 }}>
           <SelectFE
             name="filter_year_by_year"
             label={t("study.outputFilters.filterByYear")}

@@ -13,8 +13,12 @@ interface Props {
 }
 
 // TODO rename ConstraintsList
-function BindingConstPropsView(props: Props) {
-  const { onClick, currentBindingConst, studyId, list } = props;
+function BindingConstPropsView({
+  onClick,
+  currentBindingConst,
+  studyId,
+  list = [],
+}: Props) {
   const [bindingConstNameFilter, setBindingConstNameFilter] =
     useState<string>();
   const [addBindingConst, setAddBindingConst] = useState(false);
@@ -73,9 +77,5 @@ function BindingConstPropsView(props: Props) {
     </>
   );
 }
-
-BindingConstPropsView.defaultProps = {
-  currentBindingConst: undefined,
-};
 
 export default BindingConstPropsView;

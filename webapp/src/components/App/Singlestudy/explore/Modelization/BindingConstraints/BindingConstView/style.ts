@@ -1,4 +1,4 @@
-import { Box, Tabs, styled } from "@mui/material";
+import { Box, styled } from "@mui/material";
 
 export const TermsList = styled(Box)(({ theme }) => ({
   display: "flex",
@@ -10,20 +10,8 @@ export const TermsList = styled(Box)(({ theme }) => ({
 export const TermsHeader = styled(Box)(({ theme }) => ({
   width: "100%",
   display: "flex",
-  justifyContent: "flex-end",
+  gap: 15,
   alignItems: "center",
-  marginBottom: theme.spacing(2),
+  justifyContent: "flex-end",
+  marginBottom: theme.spacing(1),
 }));
-
-export const MatrixContainer = styled(Box)(({ theme }) => ({
-  display: "flex",
-  flexDirection: "column",
-  width: "100%",
-  height: 650,
-}));
-
-export const StyledTab = styled(Tabs)({
-  width: "100%",
-  borderBottom: 1,
-  borderColor: "divider",
-});

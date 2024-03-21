@@ -500,6 +500,7 @@
   "study.modelization.bindingConst.timeSeries.greater": "Supérieur",
   "study.modelization.bindingConst.newConstraintTerm": "Nouveau terme",
   "study.modelization.bindingConst.addConstraintTerm": "Ajouter un terme",
+  "study.modelization.bindingConst.deleteConstraint": "Supprimer contrainte",
   "study.modelization.bindingConst.weight": "Poids",
   "study.modelization.bindingConst.offset": "Décalage",
   "study.modelization.bindingConst.question.deleteConstraintTerm": "Êtes-vous sûr de vouloir supprimer ce terme ?",
