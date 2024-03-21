@@ -1001,8 +1001,10 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         - `uuid`: The study UUID.
         - `binding_constraint_id`: The binding constraint id to validate
 
-        For studies version prior to v8.7, does nothing.
-        Else, it checks the coherence between the group and the size of its columns.
+        For studies with versions prior to v8.7, no validation is performed.
+        For studies with version 8.7 or later, the endpoint checks if the dimensions
+        of the right-hand side matrices are consistent with the dimensions of the
+        binding constraint matrices within the same group.
         """
         logger.info(
             f"Validating binding constraint {binding_constraint_id} for study {uuid}",
