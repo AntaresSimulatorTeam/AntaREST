@@ -7,7 +7,6 @@ import { StudyMetadata } from "../../../../../../../common/types";
 import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../../redux/selectors";
 import GroupedDataTable from "../../../../../../common/GroupedDataTable";
-import SimpleLoader from "../../../../../../common/loaders/SimpleLoader";
 import {
   Storage,
   getStorages,
@@ -15,8 +14,6 @@ import {
   createStorage,
   STORAGE_GROUPS,
 } from "./utils";
-import SimpleContent from "../../../../../../common/page/SimpleContent";
-import UsePromiseCond from "../../../../../../common/utils/UsePromiseCond";
 import usePromiseWithSnackbarError from "../../../../../../../hooks/usePromiseWithSnackbarError";
 
 function Storages() {
@@ -27,7 +24,7 @@ function Storages() {
   const areaId = useAppSelector(getCurrentAreaId);
   const columnHelper = createMRTColumnHelper<Storage>();
 
-  const storages = usePromiseWithSnackbarError(
+  const { data: storages, isLoading } = usePromiseWithSnackbarError(
     () => getStorages(study.id, areaId),
     {
       errorMessage: t("studies.error.retrieveData"),
@@ -37,14 +34,14 @@ function Storages() {
 
   const { totalWithdrawalNominalCapacity, totalInjectionNominalCapacity } =
     useMemo(() => {
-      if (!storages.data) {
+      if (!storages) {
         return {
           totalWithdrawalNominalCapacity: 0,
           totalInjectionNominalCapacity: 0,
         };
       }
 
-      return storages.data.reduce(
+      return storages.reduce(
         (acc, { withdrawalNominalCapacity, injectionNominalCapacity }) => {
           acc.totalWithdrawalNominalCapacity += withdrawalNominalCapacity;
           acc.totalInjectionNominalCapacity += injectionNominalCapacity;
@@ -176,20 +173,14 @@ function Storages() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <UsePromiseCond
-      response={storages}
-      ifPending={() => <SimpleLoader />}
-      ifResolved={(data) => (
-        <GroupedDataTable
-          data={data}
-          columns={columns}
-          groups={STORAGE_GROUPS}
-          onCreate={handleCreateRow}
-          onDelete={handleDeleteSelection}
-          onNameClick={handleNameClick}
-        />
-      )}
-      ifRejected={(error) => <SimpleContent title={error?.toString()} />}
+    <GroupedDataTable
+      isLoading={isLoading}
+      data={storages || []}
+      columns={columns}
+      groups={STORAGE_GROUPS}
+      onCreate={handleCreateRow}
+      onDelete={handleDeleteSelection}
+      onNameClick={handleNameClick}
     />
   );
 }

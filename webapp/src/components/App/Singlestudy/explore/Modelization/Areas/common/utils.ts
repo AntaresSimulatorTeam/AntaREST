@@ -6,7 +6,6 @@ import { editStudy } from "../../../../../../../services/api/study";
 import { ThermalClusterWithCapacity } from "../Thermal/utils";
 import { RenewableClusterWithCapacity } from "../Renewables/utils";
 import usePromiseWithSnackbarError from "../../../../../../../hooks/usePromiseWithSnackbarError";
-import { UsePromiseResponse } from "../../../../../../../hooks/usePromise";
 
 export const saveField = R.curry(
   (
@@ -64,11 +63,11 @@ type ClusterWithCapacity<T extends BaseCluster> = T & {
 };
 
 interface UseClusterDataWithCapacityReturn<T extends BaseCluster> {
-  clusters: UsePromiseResponse<T[]>;
   clustersWithCapacity: Array<ClusterWithCapacity<T>>;
   totalUnitCount: number;
   totalInstalledCapacity: number;
   totalEnabledCapacity: number;
+  isLoading: boolean;
 }
 
 export const useClusterDataWithCapacity = <T extends BaseCluster>(
@@ -76,23 +75,20 @@ export const useClusterDataWithCapacity = <T extends BaseCluster>(
   errorMessage: string,
   deps: DependencyList,
 ): UseClusterDataWithCapacityReturn<T> => {
-  const clusters: UsePromiseResponse<T[]> = usePromiseWithSnackbarError(
-    fetchFn,
-    {
-      errorMessage,
-      deps,
-    },
-  );
+  const { data: clusters, isLoading } = usePromiseWithSnackbarError(fetchFn, {
+    errorMessage,
+    deps,
+  });
 
   const clustersWithCapacity: Array<ClusterWithCapacity<T>> = useMemo(
     () =>
-      clusters.data?.map((cluster) => {
+      clusters?.map((cluster) => {
         const { unitCount, nominalCapacity, enabled } = cluster;
         const installedCapacity = unitCount * nominalCapacity;
         const enabledCapacity = enabled ? installedCapacity : 0;
         return { ...cluster, installedCapacity, enabledCapacity };
       }) || [],
-    [clusters.data],
+    [clusters],
   );
 
   const { totalUnitCount, totalInstalledCapacity, totalEnabledCapacity } =
@@ -113,10 +109,10 @@ export const useClusterDataWithCapacity = <T extends BaseCluster>(
     }, [clustersWithCapacity]);
 
   return {
-    clusters,
     clustersWithCapacity,
     totalUnitCount: Math.floor(totalUnitCount),
     totalInstalledCapacity: Math.floor(totalInstalledCapacity),
     totalEnabledCapacity: Math.floor(totalEnabledCapacity),
+    isLoading,
   };
 };

@@ -19,9 +19,6 @@ import {
   capacityAggregationFn,
   useClusterDataWithCapacity,
 } from "../common/utils";
-import SimpleLoader from "../../../../../../common/loaders/SimpleLoader";
-import SimpleContent from "../../../../../../common/page/SimpleContent";
-import UsePromiseCond from "../../../../../../common/utils/UsePromiseCond";
 
 function Renewables() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -32,11 +29,11 @@ function Renewables() {
   const columnHelper = createMRTColumnHelper<RenewableClusterWithCapacity>();
 
   const {
-    clusters,
     clustersWithCapacity,
     totalUnitCount,
     totalInstalledCapacity,
     totalEnabledCapacity,
+    isLoading,
   } = useClusterDataWithCapacity<RenewableCluster>(
     () => getRenewableClusters(study.id, areaId),
     t("studies.error.retrieveData"),
@@ -130,20 +127,14 @@ function Renewables() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <UsePromiseCond
-      response={clusters}
-      ifPending={() => <SimpleLoader />}
-      ifResolved={() => (
-        <GroupedDataTable
-          data={clustersWithCapacity}
-          columns={columns}
-          groups={RENEWABLE_GROUPS}
-          onCreate={handleCreateRow}
-          onDelete={handleDeleteSelection}
-          onNameClick={handleNameClick}
-        />
-      )}
-      ifRejected={(error) => <SimpleContent title={error?.toString()} />}
+    <GroupedDataTable
+      isLoading={isLoading}
+      data={clustersWithCapacity}
+      columns={columns}
+      groups={RENEWABLE_GROUPS}
+      onCreate={handleCreateRow}
+      onDelete={handleDeleteSelection}
+      onNameClick={handleNameClick}
     />
   );
 }
