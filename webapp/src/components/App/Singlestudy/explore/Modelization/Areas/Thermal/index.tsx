@@ -15,13 +15,10 @@ import {
 import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../../redux/selectors";
 import GroupedDataTable from "../../../../../../common/GroupedDataTable";
-import SimpleLoader from "../../../../../../common/loaders/SimpleLoader";
-import SimpleContent from "../../../../../../common/page/SimpleContent";
 import {
   capacityAggregationFn,
   useClusterDataWithCapacity,
 } from "../common/utils";
-import UsePromiseCond from "../../../../../../common/utils/UsePromiseCond";
 
 function Thermal() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -32,11 +29,11 @@ function Thermal() {
   const columnHelper = createMRTColumnHelper<ThermalClusterWithCapacity>();
 
   const {
-    clusters,
     clustersWithCapacity,
     totalUnitCount,
     totalInstalledCapacity,
     totalEnabledCapacity,
+    isLoading,
   } = useClusterDataWithCapacity<ThermalCluster>(
     () => getThermalClusters(study.id, areaId),
     t("studies.error.retrieveData"),
@@ -144,20 +141,14 @@ function Thermal() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <UsePromiseCond
-      response={clusters}
-      ifPending={() => <SimpleLoader />}
-      ifResolved={() => (
-        <GroupedDataTable
-          data={clustersWithCapacity}
-          columns={columns}
-          groups={THERMAL_GROUPS}
-          onCreate={handleCreateRow}
-          onDelete={handleDeleteSelection}
-          onNameClick={handleNameClick}
-        />
-      )}
-      ifRejected={(error) => <SimpleContent title={error?.toString()} />}
+    <GroupedDataTable
+      isLoading={isLoading}
+      data={clustersWithCapacity}
+      columns={columns}
+      groups={THERMAL_GROUPS}
+      onCreate={handleCreateRow}
+      onDelete={handleDeleteSelection}
+      onNameClick={handleNameClick}
     />
   );
 }
