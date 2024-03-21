@@ -7,6 +7,7 @@ v2.16.8 (unreleased)
 ### Features
 
 * **clusters:** add new endpoint for clusters duplication [`#1972`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1972)
+* **clusters (ui):** implement new duplication endpoint and optimistic update [`#1984`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1984)
 * **configuration:** turn Thematic Trimming variable names in upper case
 * **configuration (ui):** replace underscore with space in Thematic Trimming variable names [`#2010`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2010)
 
