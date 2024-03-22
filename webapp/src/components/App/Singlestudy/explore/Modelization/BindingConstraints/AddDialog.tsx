@@ -15,19 +15,29 @@ import StringFE from "../../../../../common/fieldEditors/StringFE";
 import SwitchFE from "../../../../../common/fieldEditors/SwitchFE";
 import { StudyMetadata } from "../../../../../../common/types";
 import { validateString } from "../../../../../../utils/validationUtils";
+import { setCurrentBindingConst } from "../../../../../../redux/ducks/studySyntheses";
+import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
 
 interface Props {
   studyId: StudyMetadata["id"];
-  existingConstraints: Array<BindingConstraint["id"]>;
   open: boolean;
   onClose: VoidFunction;
+  existingConstraints: Array<BindingConstraint["id"]>;
+  reloadConstraintsList: VoidFunction;
 }
 
 // TODO rename AddConstraintDialog
 // TODO refactor and add group field
-function AddDialog({ studyId, existingConstraints, open, onClose }: Props) {
+function AddDialog({
+  studyId,
+  open,
+  onClose,
+  existingConstraints,
+  reloadConstraintsList,
+}: Props) {
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
+  const dispatch = useAppDispatch();
 
   const defaultValues = {
     name: "",
@@ -66,10 +76,18 @@ function AddDialog({ studyId, existingConstraints, open, onClose }: Props) {
     return createBindingConstraint(studyId, data.values);
   };
 
-  const handleSubmitSuccessful = () => {
+  const handleSubmitSuccessful = (
+    data: SubmitHandlerPlus<typeof defaultValues>,
+    createdConstraint: BindingConstraint,
+  ) => {
+    reloadConstraintsList();
+    dispatch(setCurrentBindingConst(createdConstraint.id));
+
     enqueueSnackbar(t("study.success.addBindingConst"), {
       variant: "success",
+      autoHideDuration: 1500,
     });
+
     onClose();
   };
 
