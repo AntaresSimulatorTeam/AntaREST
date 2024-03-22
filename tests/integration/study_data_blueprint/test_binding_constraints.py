@@ -258,8 +258,8 @@ class TestBindingConstraints:
 
         bc_id = binding_constraints_list[0]["id"]
 
-        # Asserts binding constraint configuration is always valid.
-        res = client.get(f"/v1/studies/{study_id}/bindingconstraints/{bc_id}/validate", headers=user_headers)
+        # Asserts binding constraint configuration is valid.
+        res = client.get(f"/v1/studies/{study_id}/constraint-groups", headers=user_headers)
         assert res.status_code == 200, res.json()
 
         # =============================
@@ -834,11 +834,15 @@ class TestBindingConstraints:
         assert res.status_code in {200, 201}, res.json()
         second_bc_id = res.json()["id"]
 
-        # todo: validate the BC group "Group 1"
-        #  res = client.get(f"/v1/studies/{study_id}/bindingconstraints/Group 1/validate", headers=admin_headers)
-        #  assert res.status_code == 422
-        #  assert res.json()["exception"] == "IncoherenceBetweenMatricesLength"
-        #  assert res.json()["description"] == "Mismatched column count in 'Group 1'".
+        # validate the BC group "Group 1"
+        res = client.get(f"/v1/studies/{study_id}/constraint-groups/Group 1/validate", headers=admin_headers)
+        assert res.status_code == 422
+        assert res.json()["exception"] == "IncoherenceBetweenMatricesLength"
+        description = res.json()["description"]
+        assert description == {
+            "invalid_constraints": {"second bc": ["'second bc_gt' (8784, 4)"]},
+            "msg": "Matrix shapes mismatch in binding constraints group. Expected shape: (8784, 3)",
+        }
 
         # So, we correct the shape of the matrix of the Second BC
         res = client.put(
@@ -877,11 +881,15 @@ class TestBindingConstraints:
         # This should succeed but cause the validation endpoint to fail.
         assert res.status_code in {200, 201}, res.json()
 
-        # todo: validate the BC group "Group 1"
-        #  res = client.get(f"/v1/studies/{study_id}/bindingconstraints/Group 1/validate", headers=admin_headers)
-        #  assert res.status_code == 422
-        #  assert res.json()["exception"] == "IncoherenceBetweenMatricesLength"
-        #  assert res.json()["description"] == "Mismatched column count in 'Group 1'".
+        # validate the BC group "Group 1"
+        res = client.get(f"/v1/studies/{study_id}/constraint-groups/Group 1/validate", headers=admin_headers)
+        assert res.status_code == 422
+        assert res.json()["exception"] == "IncoherenceBetweenMatricesLength"
+        description = res.json()["description"]
+        assert description == {
+            "invalid_constraints": {"third bc": ["'third bc_lt' (8784, 4)"]},
+            "msg": "Matrix shapes mismatch in binding constraints group. Expected shape: (8784, 3)",
+        }
 
         # So, we correct the shape of the matrix of the Second BC
         res = client.put(
@@ -904,22 +912,47 @@ class TestBindingConstraints:
         )
         assert res.status_code in {200, 201}, res.json()
 
-        # todo: validate the "Group 2"
-        #  # For the moment the bc is valid
-        #  res = client.get(f"/v1/studies/{study_id}/bindingconstraints/Group 2/validate", headers=admin_headers)
-        #  assert res.status_code in {200, 201}, res.json()
+        # validate the "Group 2": for the moment the BC is valid
+        res = client.get(f"/v1/studies/{study_id}/constraint-groups/Group 2/validate", headers=admin_headers)
+        assert res.status_code in {200, 201}, res.json()
 
         res = client.put(
             f"v1/studies/{study_id}/bindingconstraints/{second_bc_id}",
-            json={"greater_term_matrix": matrix_lt3.tolist()},
+            json={"greater_term_matrix": matrix_gt4.tolist()},
             headers=admin_headers,
         )
         # This should succeed but cause the validation endpoint to fail.
         assert res.status_code in {200, 201}, res.json()
 
-        # For the moment the "Group 2" is valid
-        # todo: validate the "Group 2"
-        #  res = client.get(f"/v1/studies/{study_id}/bindingconstraints/Group 2/validate", headers=admin_headers)
-        #  assert res.status_code == 422
-        #  assert res.json()["exception"] == "IncoherenceBetweenMatricesLength"
-        #  assert res.json()["description"] == "Mismatched column count in 'Group 2'".
+        # Collect all the binding constraints groups
+        res = client.get(f"/v1/studies/{study_id}/constraint-groups", headers=admin_headers)
+        assert res.status_code in {200, 201}, res.json()
+        groups = res.json()
+        assert set(groups) == {"default", "random_grp", "Group 1", "Group 2"}
+        assert groups["Group 2"] == [
+            {
+                "comments": "New API",
+                "constraints": None,
+                "enabled": True,
+                "filter_synthesis": "",
+                "filter_year_by_year": "",
+                "group": "Group 2",
+                "id": "second bc",
+                "name": "Second BC",
+                "operator": "less",
+                "time_step": "hourly",
+            }
+        ]
+
+        # Validate all binding constraints groups
+        res = client.get(f"/v1/studies/{study_id}/constraint-groups/validate-all", headers=admin_headers)
+        assert res.status_code == 422, res.json()
+        exception = res.json()["exception"]
+        description = res.json()["description"]
+        assert exception == "IncoherenceBetweenMatricesLength"
+        assert description == {
+            "Group 1": {
+                "msg": "Matrix shapes mismatch in binding constraints group. Expected shape: (8784, 3)",
+                "invalid_constraints": {"third bc": ["'third bc_lt' (8784, 4)"]},
+            }
+        }
