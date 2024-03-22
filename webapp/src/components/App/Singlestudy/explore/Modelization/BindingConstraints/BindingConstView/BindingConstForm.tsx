@@ -36,6 +36,7 @@ import useAppDispatch from "../../../../../../../redux/hooks/useAppDispatch";
 import { setCurrentBindingConst } from "../../../../../../../redux/ducks/studySyntheses";
 import Matrix from "./Matrix";
 import DocLink from "../../../../../../common/DocLink";
+import Fieldset from "../../../../../../common/Fieldset";
 
 interface Props {
   study: StudyMetadata;
@@ -153,53 +154,58 @@ function BindingConstForm({ study, options, constraintId }: Props) {
 
   return (
     <>
-      <TermsList>
-        <TermsHeader>
-          <Button
-            variant="contained"
-            size="small"
-            color="secondary"
-            startIcon={<DatasetIcon />}
-            onClick={() => setMatrixDialogOpen(true)}
-          >
-            {t("study.modelization.bindingConst.timeSeries")}
-          </Button>
-          <Button
-            variant="contained"
-            size="small"
-            color="primary"
-            startIcon={<AddCircleOutlineRoundedIcon />}
-            onClick={() => setOpenConstraintTermDialog(true)}
-          >
-            {t("study.modelization.bindingConst.addConstraintTerm")}
-          </Button>
-          <Button
-            variant="outlined"
-            size="small"
-            startIcon={<DeleteIcon />}
-            color="error"
-            onClick={() => setConstraintToDelete(true)}
-          >
-            {t("study.modelization.bindingConst.deleteConstraint")}
-          </Button>
-          <DocLink to={`${ACTIVE_WINDOWS_DOC_PATH}#binding-constraints`} />
-        </TermsHeader>
+      <Fieldset
+        legend={t("study.modelization.bindingConst.constraintTerm")}
+        sx={{ pb: 1 }}
+      >
+        <TermsList>
+          <TermsHeader>
+            <Button
+              variant="contained"
+              size="small"
+              color="secondary"
+              startIcon={<DatasetIcon />}
+              onClick={() => setMatrixDialogOpen(true)}
+            >
+              {t("study.modelization.bindingConst.timeSeries")}
+            </Button>
+            <Button
+              variant="contained"
+              size="small"
+              color="primary"
+              startIcon={<AddCircleOutlineRoundedIcon />}
+              onClick={() => setOpenConstraintTermDialog(true)}
+            >
+              {t("study.modelization.bindingConst.createConstraintTerm")}
+            </Button>
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<DeleteIcon />}
+              color="error"
+              onClick={() => setConstraintToDelete(true)}
+            >
+              {t("study.modelization.bindingConst.deleteConstraint")}
+            </Button>
+            <DocLink to={`${ACTIVE_WINDOWS_DOC_PATH}#binding-constraints`} />
+          </TermsHeader>
 
-        {constraintTerms.map((term: ConstraintTerm, index: number) => (
-          <Box key={term.id}>
-            {index > 0 && (
-              <TextSeparator text="+" textStyle={{ fontSize: "16px" }} />
-            )}
-            <ConstraintTermItem
-              options={options}
-              saveValue={(newTerm) => handleUpdateTerm(index, term, newTerm)}
-              term={term}
-              deleteTerm={() => setTermToDelete(index)}
-              constraintTerms={constraintTerms}
-            />
-          </Box>
-        ))}
-      </TermsList>
+          {constraintTerms.map((term: ConstraintTerm, index: number) => (
+            <Box key={term.id}>
+              {index > 0 && (
+                <TextSeparator text="+" textStyle={{ fontSize: "16px" }} />
+              )}
+              <ConstraintTermItem
+                options={options}
+                saveValue={(newTerm) => handleUpdateTerm(index, term, newTerm)}
+                term={term}
+                deleteTerm={() => setTermToDelete(index)}
+                constraintTerms={constraintTerms}
+              />
+            </Box>
+          ))}
+        </TermsList>
+      </Fieldset>
 
       {matrixDialogOpen && (
         <Matrix
@@ -216,7 +222,7 @@ function BindingConstForm({ study, options, constraintId }: Props) {
           open={openConstraintTermDialog}
           studyId={studyId}
           constraintId={constraintId}
-          title={t("study.modelization.bindingConst.newBindingConst")}
+          title={t("study.modelization.bindingConst.createConstraintTerm")}
           onCancel={() => setOpenConstraintTermDialog(false)}
           append={append}
           constraintTerms={constraintTerms}

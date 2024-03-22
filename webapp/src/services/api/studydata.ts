@@ -82,11 +82,11 @@ export const updateConstraintTerm = async (
   return res.data;
 };
 
-export const addConstraintTerm = async (
+export const createConstraintTerm = async (
   studyId: string,
   constraintId: string,
-  term: Omit<ConstraintTerm, "id">,
-): Promise<null> => {
+  term: ConstraintTerm,
+): Promise<void> => {
   const res = await client.post(
     `/v1/studies/${studyId}/bindingconstraints/${encodeURIComponent(
       constraintId,

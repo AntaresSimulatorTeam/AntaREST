@@ -1,117 +1,89 @@
-import { useEffect, useMemo, useState } from "react";
-import {
-  UseFormSetValue,
-  UseFormUnregister,
-  UseFormWatch,
-} from "react-hook-form";
+import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { AllClustersAndLinks } from "../../../../../../../../../common/types";
+import { useFormContext } from "react-hook-form";
 import SelectFE from "../../../../../../../../common/fieldEditors/SelectFE";
-import { ControlPlus } from "../../../../../../../../common/Form/types";
-import {
-  BindingConstraint,
-  ConstraintTerm,
-  generateTermId,
-  isTermExist,
-} from "../../utils";
+import { AllClustersAndLinks } from "../../../../../../../../../common/types";
+import { ConstraintTerm, isTermExist, generateTermId } from "../../utils";
 
 interface Props {
   list: AllClustersAndLinks;
   isLink: boolean;
-  control: ControlPlus<ConstraintTerm>;
-  watch: UseFormWatch<ConstraintTerm>;
-  constraintTerms: BindingConstraint["constraints"];
-  setValue: UseFormSetValue<ConstraintTerm>;
-  unregister: UseFormUnregister<ConstraintTerm>;
+  constraintTerms: ConstraintTerm[];
 }
 
-export default function OptionsList(props: Props) {
-  const {
-    list,
-    isLink,
-    control,
-    constraintTerms,
-    watch,
-    setValue,
-    unregister,
-  } = props;
+export default function OptionsList({ list, isLink, constraintTerms }: Props) {
   const [t] = useTranslation();
-  const name1 = isLink ? "area1" : "area";
-  const name2 = isLink ? "area2" : "cluster";
-  const linksOrClusters = isLink ? list.links : list.clusters;
-  const options1 = useMemo(() => {
-    return linksOrClusters.map((elm) => ({
-      label: elm.element.name,
-      value: elm.element.id,
-    }));
-  }, [linksOrClusters]);
+  const { control, setValue, watch, getValues } =
+    useFormContext<ConstraintTerm>();
 
-  const [options2, setOptions2] = useState<
-    Array<{ label: string; value: string }>
-  >([]);
+  // Determines the correct set of options based on whether the term is a link or a cluster.
+  const options = isLink ? list.links : list.clusters;
 
-  const watchSelect1 = watch(`data.${name1}`);
+  const primaryOptions = options.map(({ element }) => ({
+    label: element.name,
+    value: element.id,
+  }));
+
+  // Watching changes to the primary selection to update secondary options accordingly.
+  const primarySelection = watch(isLink ? "data.area1" : "data.area");
 
   useEffect(() => {
-    unregister(
-      isLink ? ["data.area", "data.cluster"] : ["data.area1", "data.area2"],
-    );
-    setValue(`data.${name1}`, "");
-    setValue(`data.${name2}`, "");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLink]);
+    setValue(isLink ? "data.area2" : "data.cluster", "");
+  }, [primarySelection, isLink, setValue]);
 
-  useEffect(() => {
-    const index = linksOrClusters.findIndex(
-      (elm) => elm.element.id === watchSelect1,
+  const getSecondaryOptions = () => {
+    const selectedPrimary = getValues(isLink ? "data.area1" : "data.area");
+
+    const foundOption = options.find(
+      (option) => option.element.id === selectedPrimary,
     );
-    if (index >= 0) {
-      setOptions2(
-        linksOrClusters[index].item_list
-          .filter(
-            (elm) =>
-              !isTermExist(
-                constraintTerms,
-                generateTermId(
-                  isLink
-                    ? {
-                        area1: watchSelect1,
-                        area2: elm.id,
-                      }
-                    : { area: watchSelect1, cluster: elm.id },
-                ),
-              ),
-          )
-          .map((elm) => ({
-            label: elm.name,
-            value: elm.id,
-          })),
-      );
+
+    if (!foundOption) {
+      return [];
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [watchSelect1]);
+
+    return foundOption.item_list
+      .filter(
+        ({ id }) =>
+          !isTermExist(
+            constraintTerms,
+            generateTermId(
+              isLink
+                ? { area1: selectedPrimary, area2: id }
+                : { area: selectedPrimary, cluster: id },
+            ),
+          ),
+      )
+      .map(({ name, id }) => ({
+        label: name,
+        value: id,
+      }));
+  };
+
+  const secondaryOptions = getSecondaryOptions();
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
 
   return (
     <>
       <SelectFE
-        name={`data.${name1}` as const}
-        label={t(`study.${name1}`)}
-        options={options1}
+        variant="outlined"
+        name={isLink ? "data.area1" : "data.area"}
+        label={t(`study.${isLink ? "area1" : "area"}`)}
+        options={primaryOptions}
         control={control}
-        rules={{
-          required: t("form.field.required") as string,
-        }}
-        sx={{ minWidth: "200px", height: "60px" }}
+        sx={{ width: 250 }}
       />
+
       <SelectFE
-        name={`data.${name2}` as const}
-        label={t(`study.${name2}`)}
-        options={options2}
+        variant="outlined"
+        name={isLink ? "data.area2" : "data.cluster"}
+        label={t(`study.${isLink ? "area2" : "cluster"}`)}
+        options={secondaryOptions}
         control={control}
-        rules={{
-          required: t("form.field.required") as string,
-        }}
-        sx={{ minWidth: "200px", ml: 1, height: "60px" }}
+        sx={{ width: 250, ml: 1, mr: 3 }}
       />
     </>
   );

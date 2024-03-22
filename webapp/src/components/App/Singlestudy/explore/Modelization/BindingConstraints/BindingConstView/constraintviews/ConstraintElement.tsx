@@ -1,13 +1,9 @@
 import { FormControlLabel, Switch, Typography } from "@mui/material";
 import { ReactNode } from "react";
-import {
-  ConstraintElementData,
-  ConstraintElementHeader,
-  ConstraintElementRoot,
-} from "./style";
+import { ConstraintElementData, ConstraintElementRoot } from "./style";
+import { useTranslation } from "react-i18next";
 
 interface ElementProps {
-  title?: string;
   left: ReactNode;
   right: ReactNode;
   operator?: string;
@@ -15,29 +11,26 @@ interface ElementProps {
   onToggleType?: () => void;
 }
 
-export default function ConstraintElement(props: ElementProps) {
-  const { title, isLink, left, right, operator, onToggleType } = props;
+export default function ConstraintElement({
+  isLink,
+  left,
+  right,
+  operator,
+  onToggleType,
+}: ElementProps) {
+  const { t } = useTranslation();
+
   return (
     <ConstraintElementRoot>
-      <ConstraintElementHeader>
-        <Typography
-          sx={{
-            color: "grey.400",
-            fontSize: "16px",
-          }}
-        >
-          {title}
-        </Typography>
+      <ConstraintElementData>
         {onToggleType !== undefined && (
           <FormControlLabel
             control={<Switch checked={isLink === true} />}
             onChange={(event, checked) => onToggleType()}
-            label={isLink ? "Link" : "Cluster"}
-            labelPlacement="end"
+            label={isLink ? t("study.link") : t("study.cluster")}
+            labelPlacement="bottom"
           />
         )}
-      </ConstraintElementHeader>
-      <ConstraintElementData>
         {left}
         <Typography sx={{ mx: 1 }}>{operator}</Typography>
         {right}

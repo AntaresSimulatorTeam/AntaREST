@@ -58,7 +58,7 @@ function BindingConstraints() {
       response={constraints}
       ifPending={() => <SimpleLoader />}
       ifResolved={(data) => (
-        <SplitView direction="horizontal" sizes={[10, 90]}>
+        <SplitView direction="horizontal" sizes={[10, 90]} gutterSize={2}>
           <Box>
             <BindingConstPropsView // TODO rename ConstraintsList
               onClick={handleConstraintChange}

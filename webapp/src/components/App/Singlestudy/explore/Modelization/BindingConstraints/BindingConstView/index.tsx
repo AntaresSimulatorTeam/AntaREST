@@ -51,7 +51,7 @@ function BindingConstView({ constraintId }: Props) {
   return (
     <Paper
       sx={{
-        p: 1,
+        p: 2,
         width: 1,
         height: 1,
         display: "flex",
