@@ -1,7 +1,7 @@
 import enum
 import logging
 from http import HTTPStatus
-from typing import Any, Dict, List, Optional, Sequence, Union, cast
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Union, cast
 
 from fastapi import APIRouter, Body, Depends, Query
 from starlette.responses import RedirectResponse
@@ -984,35 +984,129 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         return study_service.binding_constraint_manager.update_binding_constraint(study, binding_constraint_id, data)
 
     @bp.get(
-        "/studies/{uuid}/bindingconstraints/{binding_constraint_id}/validate",
+        "/studies/{uuid}/constraint-groups",
         tags=[APITag.study_data],
-        summary="Validate binding constraint configuration",
-        response_model=None,
+        summary="Get the list of binding constraint groups",
     )
-    def validate_binding_constraint(
+    def get_binding_constraint_groups(
         uuid: str,
-        binding_constraint_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    ) -> Mapping[str, Sequence[BindingConstraintConfigType]]:
         """
-        Validates the binding constraint configuration.
+        Get the list of binding constraint groups for the study.
 
-        Parameters:
-        - `uuid`: The study UUID.
-        - `binding_constraint_id`: The binding constraint id to validate
+        Args:
+        - `uuid`: The UUID of the study.
 
-        For studies with versions prior to v8.7, no validation is performed.
-        For studies with version 8.7 or later, the endpoint checks if the dimensions
-        of the right-hand side matrices are consistent with the dimensions of the
-        binding constraint matrices within the same group.
+        Returns:
+        - The list of binding constraints for each group.
         """
         logger.info(
-            f"Validating binding constraint {binding_constraint_id} for study {uuid}",
+            f"Fetching binding constraint groups for study {uuid}",
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
-        return study_service.binding_constraint_manager.validate_binding_constraint(study, binding_constraint_id)
+        result = study_service.binding_constraint_manager.get_binding_constraint_groups(study)
+        return result
+
+    @bp.get(
+        # We use "validate-all" because it is unlikely to conflict with a group name.
+        "/studies/{uuid}/constraint-groups/validate-all",
+        tags=[APITag.study_data],
+        summary="Validate all binding constraint groups",
+        response_model=None,
+    )
+    def validate_binding_constraint_groups(
+        uuid: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> bool:
+        """
+        Checks if the dimensions of the right-hand side matrices are consistent with
+        the dimensions of the binding constraint matrices within the same group.
+
+        Args:
+        - `uuid`: The study UUID.
+
+        Returns:
+        - `true` if all groups are valid.
+
+        Raises:
+        - HTTPException(422) if any group is invalid.
+        """
+        logger.info(
+            f"Validating all binding constraint groups for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
+        return study_service.binding_constraint_manager.validate_binding_constraint_groups(study)
+
+    @bp.get(
+        "/studies/{uuid}/constraint-groups/{group}",
+        tags=[APITag.study_data],
+        summary="Get the binding constraint group",
+    )
+    def get_binding_constraint_group(
+        uuid: str,
+        group: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Sequence[BindingConstraintConfigType]:
+        """
+        Get the binding constraint group for the study.
+
+        Args:
+        - `uuid`: The UUID of the study.
+        - `group`: The name of the binding constraint group (case-insensitive).
+
+        Returns:
+        - The list of binding constraints in the group.
+
+        Raises:
+        - HTTPException(404) if the group does not exist.
+        """
+        logger.info(
+            f"Fetching binding constraint group '{group}' for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
+        result = study_service.binding_constraint_manager.get_binding_constraint_group(study, group)
+        return result
+
+    @bp.get(
+        "/studies/{uuid}/constraint-groups/{group}/validate",
+        tags=[APITag.study_data],
+        summary="Validate the binding constraint group",
+        response_model=None,
+    )
+    def validate_binding_constraint_group(
+        uuid: str,
+        group: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> bool:
+        """
+        Checks if the dimensions of the right-hand side matrices are consistent with
+        the dimensions of the binding constraint matrices within the same group.
+
+        Args:
+        - `uuid`: The study UUID.
+        - `group`: The name of the binding constraint group (case-insensitive).
+
+        Returns:
+        - `true` if the group is valid.
+
+        Raises:
+        - HTTPException(404) if the group does not exist.
+        - HTTPException(422) if the group is invalid.
+        """
+        logger.info(
+            f"Validating binding constraint group '{group}' for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
+        return study_service.binding_constraint_manager.validate_binding_constraint_group(study, group)
 
     @bp.post("/studies/{uuid}/bindingconstraints", tags=[APITag.study_data], summary="Create a binding constraint")
     def create_binding_constraint(
@@ -1115,7 +1209,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         """
         Get the hydraulic allocation matrix for all areas.
 
-        Parameters:
+        Args:
         - `uuid`: The study UUID.
 
         Returns the data frame matrix, where:
@@ -1145,7 +1239,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         """
         Get the form fields used for the allocation form.
 
-        Parameters:
+        Args:
         - `uuid`: The study UUID,
         - `area_id`: the area ID.
 
@@ -1183,7 +1277,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         """
         Update the hydraulic allocation of a given area.
 
-        Parameters:
+        Args:
         - `uuid`: The study UUID,
         - `area_id`: the area ID.
 
@@ -1227,7 +1321,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         """
         Get the hydraulic/load/solar/wind correlation matrix of a study.
 
-        Parameters:
+        Args:
         - `uuid`: The UUID of the study.
         - `columns`: a filter on the area identifiers:
           - Use no parameter to select all areas.
@@ -1279,7 +1373,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         """
         Set the hydraulic/load/solar/wind correlation matrix of a study.
 
-        Parameters:
+        Args:
         - `uuid`: The UUID of the study.
         - `index`: a list of all study areas.
         - `columns`: a list of selected production areas.
@@ -1310,7 +1404,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         """
         Get the form fields used for the correlation form.
 
-        Parameters:
+        Args:
         - `uuid`: The UUID of the study.
         - `area_id`: the area ID.
 
@@ -1349,7 +1443,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         """
         Update the hydraulic/load/solar/wind correlation of a given area.
 
-        Parameters:
+        Args:
         - `uuid`: The UUID of the study.
         - `area_id`: the area ID.
 

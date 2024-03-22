@@ -1,6 +1,6 @@
 import re
 from http import HTTPStatus
-from typing import Optional
+from typing import Any, Optional
 
 from fastapi.exceptions import HTTPException
 
@@ -386,8 +386,8 @@ class InvalidFieldForVersionError(HTTPException):
 
 
 class IncoherenceBetweenMatricesLength(HTTPException):
-    def __init__(self, message: str) -> None:
-        super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, message)
+    def __init__(self, detail: Any) -> None:
+        super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, detail)
 
 
 class MissingDataError(HTTPException):
