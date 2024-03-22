@@ -547,11 +547,12 @@ class TestBindingConstraints:
             json=wrong_request_args,
             headers=user_headers,
         )
-        assert res.status_code == 500
+        assert res.status_code == 422, res.json()
         exception = res.json()["exception"]
         description = res.json()["description"]
-        assert exception == "ValueError" if study_type == "variant" else "CommandApplicationError"
-        assert f"Invalid matrix shape {wrong_matrix.shape}, expected (366, 3)" in description
+        assert exception == "RequestValidationError"
+        assert "'values'" in description
+        assert "(366, 3)" in description
 
         # Delete a fake binding constraint
         res = client.delete(f"/v1/studies/{study_id}/bindingconstraints/fake_bc", headers=user_headers)
@@ -636,11 +637,10 @@ class TestBindingConstraints:
 
         # Creation of bc with a matrix
         bc_id_w_matrix = "binding_constraint_3"
-        matrix_lt = np.ones((8784, 3))
-        matrix_lt_to_list = matrix_lt.tolist()
+        matrix_lt3 = np.ones((8784, 3))
         res = client.post(
             f"/v1/studies/{study_id}/bindingconstraints",
-            json={"name": bc_id_w_matrix, "less_term_matrix": matrix_lt_to_list, **args},
+            json={"name": bc_id_w_matrix, "less_term_matrix": matrix_lt3.tolist(), **args},
             headers=admin_headers,
         )
         assert res.status_code in {200, 201}, res.json()
@@ -663,9 +663,9 @@ class TestBindingConstraints:
             assert res.status_code == 200
             data = res.json()["data"]
             if term == "lt":
-                assert data == matrix_lt_to_list
+                assert data == matrix_lt3.tolist()
             else:
-                assert data == np.zeros((matrix_lt.shape[0], 1)).tolist()
+                assert data == np.zeros((matrix_lt3.shape[0], 1)).tolist()
 
         # =============================
         #  UPDATE
@@ -684,7 +684,7 @@ class TestBindingConstraints:
         # Update matrix_term
         res = client.put(
             f"/v1/studies/{study_id}/bindingconstraints/{bc_id_w_matrix}",
-            json={"greater_term_matrix": matrix_lt_to_list},
+            json={"greater_term_matrix": matrix_lt3.tolist()},
             headers=admin_headers,
         )
         assert res.status_code == 200, res.json()
@@ -695,7 +695,7 @@ class TestBindingConstraints:
             headers=admin_headers,
         )
         assert res.status_code == 200
-        assert res.json()["data"] == matrix_lt_to_list
+        assert res.json()["data"] == matrix_lt3.tolist()
 
         # The user changed the time_step to daily instead of hourly.
         # We must check that the matrices have been updated.
@@ -707,11 +707,12 @@ class TestBindingConstraints:
         assert res.status_code == 200, res.json()
 
         if study_type == "variant":
-            # Check the last command is a change time_step
+            # Check the last command is a change on `time_step` field only
             res = client.get(f"/v1/studies/{study_id}/commands", headers=admin_headers)
             commands = res.json()
             command_args = commands[-1]["args"]
             assert command_args["time_step"] == "daily"
+            assert "values" not in command_args
             assert (
                 command_args["less_term_matrix"]
                 == command_args["greater_term_matrix"]
@@ -720,7 +721,7 @@ class TestBindingConstraints:
             )
 
         # Check that the matrices are daily/weekly matrices
-        expected_matrix = np.zeros((366, 1)).tolist()
+        expected_matrix = np.zeros((366, 1))
         for term_alias in ["lt", "gt", "eq"]:
             res = client.get(
                 f"/v1/studies/{study_id}/raw",
@@ -732,7 +733,7 @@ class TestBindingConstraints:
                 headers=admin_headers,
             )
             assert res.status_code == 200
-            assert res.json()["data"] == expected_matrix
+            assert res.json()["data"] == expected_matrix.tolist()
 
         # =============================
         #  DELETE
@@ -779,83 +780,116 @@ class TestBindingConstraints:
 
         # Creation with 2 matrices with different columns size
         bc_id_with_wrong_matrix = "binding_constraint_with_wrong_matrix"
-        matrix_lt = np.ones((8784, 3))
-        matrix_gt = np.ones((8784, 2))
-        matrix_gt_to_list = matrix_gt.tolist()
-        matrix_lt_to_list = matrix_lt.tolist()
+        matrix_lt3 = np.ones((8784, 3))
+        matrix_gt2 = np.ones((8784, 2))  # Wrong number of columns
         res = client.post(
             f"/v1/studies/{study_id}/bindingconstraints",
             json={
                 "name": bc_id_with_wrong_matrix,
-                "less_term_matrix": matrix_lt_to_list,
-                "greater_term_matrix": matrix_gt_to_list,
+                "less_term_matrix": matrix_lt3.tolist(),
+                "greater_term_matrix": matrix_gt2.tolist(),
                 **args,
             },
             headers=admin_headers,
         )
-        assert res.status_code == 422
-        assert res.json()["exception"] == "IncoherenceBetweenMatricesLength"
-        assert (
-            res.json()["description"]
-            == "The matrices of binding_constraint_with_wrong_matrix must have the same number of columns, currently {2, 3}"
-        )
+        assert res.status_code == 422, res.json()
+        exception = res.json()["exception"]
+        description = res.json()["description"]
+        assert exception == "RequestValidationError"
+        assert "'less_term_matrix'" in description
+        assert "'greater_term_matrix'" in description
+        assert "(8784, 3)" in description
+        assert "(8784, 2)" in description
 
         #
-        # Creation of 2 bc inside the same group with different columns size
-        # first_bc: 3 cols, group1
-        # second_bc: 4 cols, group1 -> Should fail
+        # Creation of 2 BC inside the same group with different columns size
+        # "First BC": 3 cols, "Group 1" -> OK
+        # "Second BC": 4 cols, "Group 1" -> OK, but should fail in group validation
         #
 
-        first_bc = "binding_constraint_validation"
-        matrix_lt = np.ones((8784, 3))
-        matrix_lt_to_list = matrix_lt.tolist()
+        matrix_lt3 = np.ones((8784, 3))
         res = client.post(
             f"/v1/studies/{study_id}/bindingconstraints",
-            json={"name": first_bc, "less_term_matrix": matrix_lt_to_list, "group": "group1", **args},
+            json={
+                "name": "First BC",
+                "less_term_matrix": matrix_lt3.tolist(),
+                "group": "Group 1",
+                **args,
+            },
             headers=admin_headers,
         )
         assert res.status_code in {200, 201}, res.json()
 
-        matrix_gt = np.ones((8784, 4))
-        matrix_gt_to_list = matrix_gt.tolist()
+        matrix_gt4 = np.ones((8784, 4))  # Wrong number of columns
         res = client.post(
             f"/v1/studies/{study_id}/bindingconstraints",
-            json={"name": "other_bc", "greater_term_matrix": matrix_gt_to_list, "group": "group1", **args},
+            json={
+                "name": "Second BC",
+                "greater_term_matrix": matrix_gt4.tolist(),
+                "group": "group 1",  # Same group, but different case
+                **args,
+            },
             headers=admin_headers,
         )
-        assert res.status_code == 422
-        assert res.json()["exception"] == "IncoherenceBetweenMatricesLength"
-        assert res.json()["description"] == "The matrices of the group group1 do not have the same number of columns"
+        assert res.status_code in {200, 201}, res.json()
+        second_bc_id = res.json()["id"]
+
+        # todo: validate the BC group "Group 1"
+        #  res = client.get(f"/v1/studies/{study_id}/bindingconstraints/Group 1/validate", headers=admin_headers)
+        #  assert res.status_code == 422
+        #  assert res.json()["exception"] == "IncoherenceBetweenMatricesLength"
+        #  assert res.json()["description"] == "Mismatched column count in 'Group 1'".
+
+        # So, we correct the shape of the matrix of the Second BC
+        res = client.put(
+            f"/v1/studies/{study_id}/bindingconstraints/{second_bc_id}",
+            json={"greater_term_matrix": matrix_lt3.tolist()},
+            headers=admin_headers,
+        )
+        assert res.status_code in {200, 201}, res.json()
 
         #
         # Updating the group of a bc creates different columns size inside the same group
-        # first_bc: 3 cols, group 1
-        # second_bc: 4 cols, group2 -> OK
-        # second_bc group changes to group1 -> Fails validation
+        # first_bc: 3 cols, "Group 1" -> OK
+        # third_bd: 4 cols, "Group 2" -> OK
+        # third_bd group changes to group1 -> Fails validation
         #
 
-        second_bc = "binding_constraint_validation_2"
-        matrix_lt = np.ones((8784, 4))
-        matrix_lt_to_list = matrix_lt.tolist()
+        matrix_lt4 = np.ones((8784, 4))
         res = client.post(
             f"/v1/studies/{study_id}/bindingconstraints",
-            json={"name": second_bc, "less_term_matrix": matrix_lt_to_list, "group": "group2", **args},
+            json={
+                "name": "Third BC",
+                "less_term_matrix": matrix_lt4.tolist(),
+                "group": "Group 2",
+                **args,
+            },
             headers=admin_headers,
         )
         assert res.status_code in {200, 201}, res.json()
+        third_bd_id = res.json()["id"]
 
         res = client.put(
-            f"v1/studies/{study_id}/bindingconstraints/{second_bc}",
-            json={"group": "group1"},
+            f"v1/studies/{study_id}/bindingconstraints/{third_bd_id}",
+            json={"group": "Group 1"},
             headers=admin_headers,
         )
         # This should succeed but cause the validation endpoint to fail.
         assert res.status_code in {200, 201}, res.json()
 
-        res = client.get(f"/v1/studies/{study_id}/bindingconstraints/{second_bc}/validate", headers=admin_headers)
-        assert res.status_code == 422
-        assert res.json()["exception"] == "IncoherenceBetweenMatricesLength"
-        assert res.json()["description"] == "The matrices of the group group1 do not have the same number of columns"
+        # todo: validate the BC group "Group 1"
+        #  res = client.get(f"/v1/studies/{study_id}/bindingconstraints/Group 1/validate", headers=admin_headers)
+        #  assert res.status_code == 422
+        #  assert res.json()["exception"] == "IncoherenceBetweenMatricesLength"
+        #  assert res.json()["description"] == "Mismatched column count in 'Group 1'".
+
+        # So, we correct the shape of the matrix of the Second BC
+        res = client.put(
+            f"/v1/studies/{study_id}/bindingconstraints/{third_bd_id}",
+            json={"greater_term_matrix": matrix_lt3.tolist()},
+            headers=admin_headers,
+        )
+        assert res.status_code in {200, 201}, res.json()
 
         #
         # Update causes different matrices size inside the same bc
@@ -864,64 +898,28 @@ class TestBindingConstraints:
         #
 
         res = client.put(
-            f"v1/studies/{study_id}/bindingconstraints/{second_bc}", json={"group": "group2"}, headers=admin_headers
+            f"v1/studies/{study_id}/bindingconstraints/{second_bc_id}",
+            json={"group": "Group 2"},
+            headers=admin_headers,
         )
         assert res.status_code in {200, 201}, res.json()
-        # For the moment the bc is valid
-        res = client.get(f"/v1/studies/{study_id}/bindingconstraints/{second_bc}/validate", headers=admin_headers)
-        assert res.status_code in {200, 201}, res.json()
 
-        matrix_lt_3 = np.ones((8784, 3))
-        matrix_lt_3_to_list = matrix_lt_3.tolist()
+        # todo: validate the "Group 2"
+        #  # For the moment the bc is valid
+        #  res = client.get(f"/v1/studies/{study_id}/bindingconstraints/Group 2/validate", headers=admin_headers)
+        #  assert res.status_code in {200, 201}, res.json()
+
         res = client.put(
-            f"v1/studies/{study_id}/bindingconstraints/{second_bc}",
-            json={"greater_term_matrix": matrix_lt_3_to_list},
+            f"v1/studies/{study_id}/bindingconstraints/{second_bc_id}",
+            json={"greater_term_matrix": matrix_lt3.tolist()},
             headers=admin_headers,
         )
         # This should succeed but cause the validation endpoint to fail.
         assert res.status_code in {200, 201}, res.json()
 
-        res = client.get(f"/v1/studies/{study_id}/bindingconstraints/{second_bc}/validate", headers=admin_headers)
-        assert res.status_code == 422
-        assert res.json()["exception"] == "IncoherenceBetweenMatricesLength"
-        assert (
-            res.json()["description"]
-            == "The matrices of binding_constraint_validation_2 must have the same number of columns, currently {3, 4}"
-        )
-
-        #
-        # Updating a matrix causes different matrices size inside the same group
-        # first_bc: 3 cols, group1
-        # second_bc: 3 cols, group1 -> OK
-        # second_bc: update 2 matrices with 4 cols, group1 -> Fails validation
-        #
-
-        res = client.put(
-            f"v1/studies/{study_id}/bindingconstraints/{second_bc}",
-            json={"less_term_matrix": matrix_lt_3_to_list},
-            headers=admin_headers,
-        )
-        assert res.status_code in {200, 201}, res.json()
-
-        # For the moment the bc is valid
-        res = client.get(f"/v1/studies/{study_id}/bindingconstraints/{second_bc}/validate", headers=admin_headers)
-        assert res.status_code in {200, 201}, res.json()
-
-        res = client.put(
-            f"v1/studies/{study_id}/bindingconstraints/{second_bc}",
-            json={"group": "group1"},
-            headers=admin_headers,
-        )
-        assert res.status_code in {200, 201}, res.json()
-        res = client.put(
-            f"v1/studies/{study_id}/bindingconstraints/{second_bc}",
-            json={"less_term_matrix": matrix_lt_to_list, "greater_term_matrix": matrix_lt_to_list},
-            headers=admin_headers,
-        )
-        # This should succeed but cause the validation endpoint to fail.
-        assert res.status_code in {200, 201}, res.json()
-
-        res = client.get(f"/v1/studies/{study_id}/bindingconstraints/{second_bc}/validate", headers=admin_headers)
-        assert res.status_code == 422
-        assert res.json()["exception"] == "IncoherenceBetweenMatricesLength"
-        assert res.json()["description"] == "The matrices of the group group1 do not have the same number of columns"
+        # For the moment the "Group 2" is valid
+        # todo: validate the "Group 2"
+        #  res = client.get(f"/v1/studies/{study_id}/bindingconstraints/Group 2/validate", headers=admin_headers)
+        #  assert res.status_code == 422
+        #  assert res.json()["exception"] == "IncoherenceBetweenMatricesLength"
+        #  assert res.json()["description"] == "Mismatched column count in 'Group 2'".

@@ -1,6 +1,7 @@
 from typing import Any, Dict, List, Optional, Union
 
-from pydantic import BaseModel, validator
+import numpy as np
+from pydantic import BaseModel, validator, root_validator
 
 from antarest.core.exceptions import (
     BindingConstraintNotFoundError,
@@ -228,6 +229,57 @@ class BindingConstraintCreation(BindingConstraintMatrices, BindingConstraintProp
     name: str
     coeffs: Dict[str, List[float]]
 
+    # Ajout d'un root validator pour valider les dimensions des matrices
+    @root_validator(pre=True)
+    def check_matrices_dimensions(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        # The dimensions of the matrices depend on the frequency and the version of the study.
+        if values.get("time_step") is None:
+            return values
+        _time_step = BindingConstraintFrequency(values["time_step"])
+
+        # Matrix shapes for binding constraints are different from usual shapes,
+        # because we need to take leap years into account, which contains 366 days and 8784 hours.
+        # Also, we use the same matrices for "weekly" and "daily" frequencies,
+        # because the solver calculates the weekly matrix from the daily matrix.
+        # See https://github.com/AntaresSimulatorTeam/AntaREST/issues/1843
+        expected_rows = {
+            BindingConstraintFrequency.HOURLY: 8784,
+            BindingConstraintFrequency.DAILY: 366,
+            BindingConstraintFrequency.WEEKLY: 366,
+        }[_time_step]
+
+        # Collect the matrix shapes
+        matrix_shapes = {}
+        for _field_name in ["values", "less_term_matrix", "equal_term_matrix", "greater_term_matrix"]:
+            if _matrix := values.get(_field_name):
+                _array = np.array(_matrix)
+                # We only store the shape if the array is not empty
+                if _array.size != 0:
+                    matrix_shapes[_field_name] = _array.shape
+
+        # We don't know the exact version of the study here, but we can rely on the matrix field names.
+        if not matrix_shapes:
+            return values
+        elif "values" in matrix_shapes:
+            expected_cols = 3
+        else:
+            # pick the first matrix column as the expected column
+            expected_cols = next(iter(matrix_shapes.values()))[1]
+
+        if all(shape == (expected_rows, expected_cols) for shape in matrix_shapes.values()):
+            return values
+
+        # Prepare a clear error message
+        _field_names = ", ".join(f"'{n}'" for n in matrix_shapes)
+        if len(matrix_shapes) == 1:
+            err_msg = f"Matrix {_field_names} must have the shape ({expected_rows}, {expected_cols})"
+        else:
+            _shapes = list({(expected_rows, s[1]) for s in matrix_shapes.values()})
+            _shapes_msg = ", ".join(f"{s}" for s in _shapes[:-1]) + " or " + f"{_shapes[-1]}"
+            err_msg = f"Matrices {_field_names} must have the same shape: {_shapes_msg}"
+
+        raise ValueError(err_msg)
+
 
 class BindingConstraintConfig(BindingConstraintProperties):
     id: str
@@ -379,16 +431,6 @@ class BindingConstraintManager:
 
         check_attributes_coherence(data, version)
 
-        file_study = self.storage_service.get_storage(study).get_raw(study)
-        if version >= 870:
-            data.group = data.group or "default"
-            matrix_terms_list = {
-                "eq": data.equal_term_matrix,
-                "lt": data.less_term_matrix,
-                "gt": data.greater_term_matrix,
-            }
-            check_matrices_coherence(file_study, data.group, bc_id, matrix_terms_list)
-
         args = {
             "name": data.name,
             "enabled": data.enabled,
@@ -404,7 +446,7 @@ class BindingConstraintManager:
             "comments": data.comments or "",
         }
         if version >= 870:
-            args["group"] = data.group
+            args["group"] = data.group or "default"
 
         command = CreateBindingConstraint(
             **args, command_context=self.storage_service.variant_study_service.command_factory.command_context
@@ -413,6 +455,8 @@ class BindingConstraintManager:
         # Validates the matrices. Needed when the study is a variant because we only append the command to the list
         if isinstance(study, VariantStudy):
             command.validates_and_fills_matrices(specific_matrices=None, version=version, create=True)
+
+        file_study = self.storage_service.get_storage(study).get_raw(study)
         execute_or_add_commands(study, file_study, [command], self.storage_service)
 
         # Processes the constraints to add them inside the endpoint response.
