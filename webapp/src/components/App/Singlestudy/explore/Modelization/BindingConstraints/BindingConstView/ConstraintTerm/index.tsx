@@ -148,7 +148,7 @@ function ConstraintTermItem({
             type="number"
             value={weight}
             onChange={(e) => handleWeightChange(e)}
-            sx={{ maxWidth: 150, mx: 0 }}
+            sx={{ maxWidth: 150, mr: 0 }}
           />
         }
         right={
@@ -157,6 +157,8 @@ function ConstraintTermItem({
               isLink={isLinkTerm(term.data)}
               list={options}
               term={term}
+              // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+              //@ts-expect-error
               saveValue={saveValue} // TODO fix type issue
               selectedArea={selectedArea}
               selectedClusterOrArea2={selectedClusterOrArea2}

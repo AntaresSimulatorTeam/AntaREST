@@ -7,43 +7,45 @@ import FormDialog, {
 } from "../../../../../../../common/dialogs/FormDialog";
 import { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
 import useEnqueueErrorSnackbar from "../../../../../../../../hooks/useEnqueueErrorSnackbar";
-import { BindingConstraint } from "../utils";
+import { type BindingConstraint, type ConstraintTerm } from "../utils";
 import AddConstraintTermForm from "./AddConstraintTermForm";
-import { addConstraintTerm } from "../../../../../../../../services/api/studydata";
+import { createConstraintTerm } from "../../../../../../../../services/api/studydata";
 import { AllClustersAndLinks } from "../../../../../../../../common/types";
 import useStudySynthesis from "../../../../../../../../redux/hooks/useStudySynthesis";
 import { getLinksAndClusters } from "../../../../../../../../redux/selectors";
+import { BaseSyntheticEvent } from "react";
 
 interface Props extends Omit<FormDialogProps, "children" | "handleSubmit"> {
   studyId: string;
   constraintId: string;
   append: UseFieldArrayAppend<BindingConstraint, "constraints">;
-  constraintTerms: BindingConstraint["constraints"];
+  constraintTerms: ConstraintTerm[];
   options: AllClustersAndLinks;
 }
 
-function AddConstraintTermDialog(props: Props) {
+const defaultValues = {
+  id: "",
+  weight: 0,
+  offset: undefined,
+  data: {
+    area1: "",
+    area2: "",
+  },
+} as const;
+
+function AddConstraintTermDialog({
+  studyId,
+  constraintId,
+  options,
+  constraintTerms,
+  append,
+  ...dialogProps
+}: Props) {
   const [t] = useTranslation();
-  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
-  const { enqueueSnackbar } = useSnackbar();
-  const {
-    studyId,
-    constraintId,
-    options,
-    constraintTerms,
-    append,
-    ...dialogProps
-  } = props;
   const { onCancel } = dialogProps;
-  const defaultValues = {
-    id: "",
-    weight: 0,
-    offset: 0,
-    data: {
-      area1: "",
-      area2: "",
-    },
-  };
+  const { enqueueSnackbar } = useSnackbar();
+  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
+
   const { data: optionsItems } = useStudySynthesis({
     studyId,
     selector: (state) => getLinksAndClusters(state, studyId),
@@ -53,18 +55,26 @@ function AddConstraintTermDialog(props: Props) {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  // TODO fix type
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleSubmit = async ({ values }: SubmitHandlerPlus<any>) => {
+  const handleSubmit = async (
+    { values }: SubmitHandlerPlus<Record<string, unknown>>,
+    _event?: BaseSyntheticEvent,
+  ) => {
     try {
-      await addConstraintTerm(studyId, constraintId, values);
+      const constraintTermValues = values as unknown as ConstraintTerm;
 
-      append(values);
-      enqueueSnackbar(t("study.success.addConstraintTerm"), {
+      await createConstraintTerm(studyId, constraintId, constraintTermValues);
+
+      append(constraintTermValues);
+
+      enqueueSnackbar(t("study.success.createConstraintTerm"), {
         variant: "success",
+        autoHideDuration: 2000,
       });
     } catch (e) {
-      enqueueErrorSnackbar(t("study.error.addConstraintTerm"), e as AxiosError);
+      enqueueErrorSnackbar(
+        t("study.error.createConstraintTerm"),
+        e as AxiosError,
+      );
     } finally {
       onCancel();
     }
@@ -76,7 +86,7 @@ function AddConstraintTermDialog(props: Props) {
 
   return (
     <FormDialog
-      maxWidth="md"
+      maxWidth="lg"
       config={{ defaultValues }}
       onSubmit={handleSubmit}
       {...dialogProps}
