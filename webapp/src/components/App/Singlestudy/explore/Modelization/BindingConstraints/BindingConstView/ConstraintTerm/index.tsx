@@ -157,7 +157,7 @@ function ConstraintTermItem({
               isLink={isLinkTerm(term.data)}
               list={options}
               term={term}
-              saveValue={saveValue}
+              saveValue={saveValue} // TODO fix type issue
               selectedArea={selectedArea}
               selectedClusterOrArea2={selectedClusterOrArea2}
               setSelectedArea={setSelectedArea}

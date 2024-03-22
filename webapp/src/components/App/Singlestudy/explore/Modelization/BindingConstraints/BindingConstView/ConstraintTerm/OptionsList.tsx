@@ -10,27 +10,27 @@ interface Props {
   term: ConstraintTerm;
   constraintTerms: ConstraintTerm[];
   saveValue: (constraint: Partial<ConstraintTerm>) => void;
-  value1: string;
-  value2: string;
-  setValue1: (value: string) => void;
-  setValue2: (value: string) => void;
+  selectedArea: string;
+  selectedClusterOrArea2: string;
+  setSelectedArea: (value: string) => void;
+  setSelectedClusterOrArea2: (value: string) => void;
 }
 
-export default function OptionsList(props: Props) {
-  const {
-    list,
-    isLink,
-    term,
-    value1,
-    value2,
-    constraintTerms,
-    saveValue,
-    setValue1,
-    setValue2,
-  } = props;
+export default function OptionsList({
+  list,
+  isLink,
+  term,
+  constraintTerms,
+  saveValue,
+  selectedArea,
+  selectedClusterOrArea2,
+  setSelectedArea,
+  setSelectedClusterOrArea2,
+}: Props) {
   const [t] = useTranslation();
-  const name1 = isLink ? "area1" : "area";
-  const name2 = isLink ? "area2" : "cluster";
+  const primaryLabel = isLink ? "area1" : "area";
+  const secondaryLabel = isLink ? "area2" : "cluster";
+
   const options = isLink ? list.links : list.clusters;
   const options1 = useMemo(() => {
     return options.map((elm) => ({
@@ -40,7 +40,7 @@ export default function OptionsList(props: Props) {
   }, [options]);
 
   const options2 = useMemo(() => {
-    const index = options.findIndex((elm) => elm.element.id === value1);
+    const index = options.findIndex((elm) => elm.element.id === selectedArea);
     if (index < 0) {
       return [];
     }
@@ -48,16 +48,16 @@ export default function OptionsList(props: Props) {
     const tmp = options[index].item_list
       .filter(
         (elm) =>
-          elm.id === value2 ||
+          elm.id === selectedClusterOrArea2 ||
           !isTermExist(
             constraintTerms,
             generateTermId(
               isLink
                 ? {
-                    area1: value1,
+                    area1: selectedArea,
                     area2: elm.id,
                   }
-                : { area: value1, cluster: elm.id },
+                : { area: selectedArea, cluster: elm.id },
             ),
           ),
       )
@@ -66,7 +66,7 @@ export default function OptionsList(props: Props) {
         id: elm.id.toLowerCase(),
       }));
     return tmp;
-  }, [constraintTerms, isLink, options, value1, value2]);
+  }, [constraintTerms, isLink, options, selectedArea, selectedClusterOrArea2]);
 
   const getFirstValue2 = useCallback(
     (value: string): string => {
@@ -98,29 +98,36 @@ export default function OptionsList(props: Props) {
               cluster: v2,
             },
       });
-      setValue1(value);
-      setValue2(v2);
+      setSelectedArea(value);
+      setSelectedClusterOrArea2(v2);
     },
-    [term.id, getFirstValue2, isLink, saveValue, setValue1, setValue2],
+    [
+      term.id,
+      getFirstValue2,
+      isLink,
+      saveValue,
+      setSelectedArea,
+      setSelectedClusterOrArea2,
+    ],
   );
 
   const handleValue2 = useCallback(
     (value: string) => {
-      setValue2(value);
+      setSelectedClusterOrArea2(value);
       saveValue({
         id: term.id,
         data: isLink
           ? {
-              area1: value1,
+              area1: selectedArea,
               area2: value,
             }
           : {
-              area: value1,
+              area: selectedArea,
               cluster: value,
             },
       });
     },
-    [term.id, isLink, saveValue, setValue2, value1],
+    [term.id, isLink, saveValue, setSelectedClusterOrArea2, selectedArea],
   );
 
   ////////////////////////////////////////////////////////////////
@@ -129,12 +136,13 @@ export default function OptionsList(props: Props) {
   return (
     <>
       <SelectSingle
-        name="value1"
+        name="selectedArea"
+        disabled
         list={options1}
-        label={t(`study.${name1}`)}
+        label={t(`study.${primaryLabel}`)}
         size="small"
         variant="outlined"
-        data={value1}
+        data={selectedArea}
         handleChange={(key, value) => handleValue1(value as string)}
         sx={{
           width: 200,
@@ -142,12 +150,12 @@ export default function OptionsList(props: Props) {
         }}
       />
       <SelectSingle
-        name="value2"
+        name="selectedClusterOrArea2"
         list={options2}
-        label={t(`study.${name2}`)}
+        label={t(`study.${secondaryLabel}`)}
         size="small"
         variant="outlined"
-        data={value2.toLowerCase()}
+        data={selectedClusterOrArea2.toLowerCase()}
         handleChange={(key, value) => handleValue2(value as string)}
         sx={{
           width: 200,
