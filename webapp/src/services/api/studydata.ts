@@ -148,7 +148,7 @@ export const updateBindingConstraint = async (
 export const createBindingConstraint = async (
   studyId: string,
   data: Partial<BindingConstraint>,
-): Promise<void> => {
+): Promise<BindingConstraint> => {
   const res = await client.post(
     `/v1/studies/${studyId}/bindingconstraints`,
     data,
