@@ -114,7 +114,8 @@ function Renewables() {
     return createRenewableCluster(study.id, areaId, cluster);
   };
 
-  const handleDeleteSelection = (ids: string[]) => {
+  const handleDelete = (rows: RenewableClusterWithCapacity[]) => {
+    const ids = rows.map((row) => row.id);
     return deleteRenewableClusters(study.id, areaId, ids);
   };
 
@@ -133,7 +134,7 @@ function Renewables() {
       columns={columns}
       groups={RENEWABLE_GROUPS}
       onCreate={handleCreateRow}
-      onDelete={handleDeleteSelection}
+      onDelete={handleDelete}
       onNameClick={handleNameClick}
       deleteConfirmationMessage={(count) =>
         t("studies.modelization.clusters.question.delete", { count })
