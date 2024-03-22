@@ -96,7 +96,7 @@ function BindingConstForm({ study, options, constraintId }: Props) {
 
         enqueueSnackbar("Constraint term updated", {
           variant: "success",
-          autoHideDuration: 1000,
+          autoHideDuration: 1500,
         });
       } catch (error) {
         enqueueErrorSnackbar(
@@ -136,6 +136,7 @@ function BindingConstForm({ study, options, constraintId }: Props) {
 
       enqueueSnackbar(t("study.success.deleteConstraint"), {
         variant: "success",
+        autoHideDuration: 3000,
       });
 
       dispatch(setCurrentBindingConst(""));

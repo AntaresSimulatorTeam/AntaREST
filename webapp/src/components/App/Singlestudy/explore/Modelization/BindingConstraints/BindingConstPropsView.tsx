@@ -6,18 +6,20 @@ import AddDialog from "./AddDialog";
 import { BindingConstraint } from "./BindingConstView/utils";
 
 interface Props {
-  onClick: (name: string) => void;
-  list: BindingConstraint[];
   studyId: StudyMetadata["id"];
+  list: BindingConstraint[];
+  onClick: (name: string) => void;
   currentBindingConst?: string;
+  reloadConstraintsList: VoidFunction;
 }
 
 // TODO rename ConstraintsList
 function BindingConstPropsView({
+  studyId,
+  list,
   onClick,
   currentBindingConst,
-  studyId,
-  list = [],
+  reloadConstraintsList,
 }: Props) {
   const [bindingConstNameFilter, setBindingConstNameFilter] =
     useState<string>();
@@ -68,9 +70,10 @@ function BindingConstPropsView({
       />
       {addBindingConst && (
         <AddDialog
-          open={addBindingConst}
           studyId={studyId}
+          open={addBindingConst}
           existingConstraints={existingConstraints}
+          reloadConstraintsList={reloadConstraintsList}
           onClose={() => setAddBindingConst(false)}
         />
       )}
