@@ -93,7 +93,8 @@ function ConstraintTermItem({
    *    which could be a cluster (for ClusterTerm) or a second area (for LinkTerm).
    */
   const [selectedArea, setSelectedArea] = useState(area);
-  const [selectedClusterOrArea2, setSelectedClusterOrArea2] =
+
+  const [selectedClusterOrArea, setSelectedClusterOrArea] =
     useState(areaOrCluster);
 
   ////////////////////////////////////////////////////////////////
@@ -129,7 +130,7 @@ function ConstraintTermItem({
   };
 
   ////////////////////////////////////////////////////////////////
-  // Utils
+  // JSX
   ////////////////////////////////////////////////////////////////
 
   return (
@@ -157,13 +158,11 @@ function ConstraintTermItem({
               isLink={isLinkTerm(term.data)}
               list={options}
               term={term}
-              // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-              //@ts-expect-error
-              saveValue={saveValue} // TODO fix type issue
+              saveValue={saveValue}
               selectedArea={selectedArea}
-              selectedClusterOrArea2={selectedClusterOrArea2}
+              selectedClusterOrArea={selectedClusterOrArea}
               setSelectedArea={setSelectedArea}
-              setSelectedClusterOrArea2={setSelectedClusterOrArea2}
+              setSelectedClusterOrArea={setSelectedClusterOrArea}
               constraintTerms={constraintTerms}
             />
           </Box>
