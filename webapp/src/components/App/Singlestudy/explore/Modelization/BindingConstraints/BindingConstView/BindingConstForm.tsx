@@ -19,9 +19,7 @@ import {
   AllClustersAndLinks,
   StudyMetadata,
 } from "../../../../../../../common/types";
-import ConstraintTermItem, {
-  ConstraintWithNullableOffset,
-} from "./ConstraintTerm";
+import ConstraintTermItem from "./ConstraintTerm";
 import { useFormContextPlus } from "../../../../../../common/Form";
 import {
   deleteConstraintTerm,
@@ -81,24 +79,24 @@ function BindingConstForm({ study, options, constraintId }: Props) {
     async (
       index: number,
       prevTerm: ConstraintTerm,
-      newTerm: ConstraintWithNullableOffset,
+      newTerm: ConstraintTerm,
     ) => {
       try {
         const updatedTerm = {
           ...prevTerm,
           weight: newTerm.weight || prevTerm.weight,
           data: newTerm.data || prevTerm.data,
-          offset: newTerm.offset || prevTerm.offset,
+          offset: newTerm.offset || undefined,
         };
 
-        updatedTerm.id = generateTermId(updatedTerm.data);
-
-        await updateConstraintTerm(study.id, constraintId, {
-          ...newTerm,
-          offset: updatedTerm.offset,
-        });
+        await updateConstraintTerm(study.id, constraintId, updatedTerm);
 
         update(index, updatedTerm);
+
+        enqueueSnackbar("Constraint term updated", {
+          variant: "success",
+          autoHideDuration: 1000,
+        });
       } catch (error) {
         enqueueErrorSnackbar(
           t("study.error.updateConstraintTerm"),
