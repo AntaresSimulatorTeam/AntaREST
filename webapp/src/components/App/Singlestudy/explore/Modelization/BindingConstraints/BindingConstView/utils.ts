@@ -159,7 +159,6 @@ function adaptOutputFilterFormat(
 
     // Convert filters string to array.
     const filtersArray = data.split(/\s*,\s*/);
-    console.log("filtersArray", filtersArray);
 
     if (isValidOutputFilterInput(filtersArray)) {
       return filtersArray;

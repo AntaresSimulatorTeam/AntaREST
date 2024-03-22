@@ -37,7 +37,7 @@ function Fields({ study }: Props) {
 
   return (
     <>
-      <Fieldset legend={t("global.general")} fieldWidth={180} sx={{ pb: 2 }}>
+      <Fieldset legend={t("global.general")} fieldWidth={200} sx={{ pb: 2 }}>
         <StringFE
           disabled
           name="name"
@@ -52,14 +52,6 @@ function Fields({ study }: Props) {
           label={t("global.group")}
           size="small"
           control={control}
-          rules={{
-            validate: (v) =>
-              validateString(v, {
-                specialChars: "-",
-                min: 1,
-                max: 15,
-              }),
-          }}
           sx={{ m: 0 }} // TODO: Remove when updating MUI Theme
         />
         <StringFE
@@ -76,7 +68,6 @@ function Fields({ study }: Props) {
           variant="outlined"
           options={TIME_STEPS}
           control={control}
-          rules={{ validate: (v) => validateString(v) }}
         />
         <SelectFE
           name="operator"

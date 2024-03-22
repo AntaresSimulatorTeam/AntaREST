@@ -41,6 +41,7 @@ function BindingConstView({ constraintId }: Props) {
   }: SubmitHandlerPlus<BindingConstraint>) => {
     // TODO exclude name and id
     console.log("values", values);
+
     // return updateBindingConstraint(study.id, constraintId, values);
   };
 
