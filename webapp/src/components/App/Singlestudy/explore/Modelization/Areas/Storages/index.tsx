@@ -14,6 +14,7 @@ import {
   createStorage,
   STORAGE_GROUPS,
   StorageGroup,
+  duplicateStorage,
 } from "./utils";
 import usePromiseWithSnackbarError from "../../../../../../../hooks/usePromiseWithSnackbarError";
 import type { TRow } from "../../../../../../common/GroupedDataTable/types";
@@ -162,6 +163,10 @@ function Storages() {
     return createStorage(study.id, areaId, values);
   };
 
+  const handleDuplicate = (row: Storage, newName: string) => {
+    return duplicateStorage(study.id, areaId, row.id, newName);
+  };
+
   const handleDelete = (rows: Storage[]) => {
     const ids = rows.map((row) => row.id);
     return deleteStorages(study.id, areaId, ids);
@@ -182,6 +187,7 @@ function Storages() {
       columns={columns}
       groups={[...STORAGE_GROUPS]}
       onCreate={handleCreate}
+      onDuplicate={handleDuplicate}
       onDelete={handleDelete}
       onNameClick={handleNameClick}
       deleteConfirmationMessage={(count) =>
