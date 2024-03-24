@@ -1,5 +1,6 @@
 import * as R from "ramda";
 import { nameToId } from "../../../services/utils";
+import { TableCellProps } from "@mui/material";
 
 ////////////////////////////////////////////////////////////////
 // Types
@@ -79,3 +80,11 @@ export const generateUniqueValue = (
   const existingValues = tableData.map((row) => row[property]);
   return generateNextValue(baseValue, existingValues);
 };
+
+export function getTableOptionsForAlign(align: TableCellProps["align"]) {
+  return {
+    muiTableHeadCellProps: { align },
+    muiTableBodyCellProps: { align },
+    muiTableFooterCellProps: { align },
+  };
+}
