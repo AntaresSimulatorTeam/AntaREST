@@ -202,7 +202,7 @@ class TestBindingConstraints:
             json={
                 "name": "binding_constraint_3",
                 "enabled": True,
-                "time_step": "hourly",
+                "timeStep": "hourly",
                 "operator": "less",
                 "coeffs": {},
                 "comments": "New API",
@@ -222,36 +222,36 @@ class TestBindingConstraints:
         expected = [
             {
                 "comments": "",
-                "constraints": None,
+                "constraints": [],  # should be renamed to `terms` in the future.
                 "enabled": True,
-                "filter_synthesis": "",
-                "filter_year_by_year": "",
+                "filterSynthesis": "",
+                "filterYearByYear": "",
                 "id": "binding_constraint_1",
                 "name": "binding_constraint_1",
                 "operator": "less",
-                "time_step": "hourly",
+                "timeStep": "hourly",
             },
             {
                 "comments": "",
-                "constraints": None,
+                "constraints": [],  # should be renamed to `terms` in the future.
                 "enabled": True,
-                "filter_synthesis": "",
-                "filter_year_by_year": "",
+                "filterSynthesis": "",
+                "filterYearByYear": "",
                 "id": "binding_constraint_2",
                 "name": "binding_constraint_2",
                 "operator": "less",
-                "time_step": "hourly",
+                "timeStep": "hourly",
             },
             {
                 "comments": "New API",
-                "constraints": None,
+                "constraints": [],  # should be renamed to `terms` in the future.
                 "enabled": True,
-                "filter_synthesis": "",
-                "filter_year_by_year": "",
+                "filterSynthesis": "",
+                "filterYearByYear": "",
                 "id": "binding_constraint_3",
                 "name": "binding_constraint_3",
                 "operator": "less",
-                "time_step": "hourly",
+                "timeStep": "hourly",
             },
         ]
         assert binding_constraints_list == expected
@@ -301,7 +301,7 @@ class TestBindingConstraints:
         )
         assert res.status_code == 200, res.json()
         binding_constraint = res.json()
-        constraint_terms = binding_constraint["constraints"]
+        constraint_terms = binding_constraint["constraints"]  # should be renamed to `terms` in the future.
         expected = [
             {
                 "data": {"area1": area1_id, "area2": area2_id},
@@ -336,7 +336,7 @@ class TestBindingConstraints:
         )
         assert res.status_code == 200, res.json()
         binding_constraint = res.json()
-        constraint_terms = binding_constraint["constraints"]
+        constraint_terms = binding_constraint["constraints"]  # should be renamed to `terms` in the future.
         expected = [
             {
                 "data": {"area1": area1_id, "area2": area2_id},
@@ -405,17 +405,17 @@ class TestBindingConstraints:
         assert res.status_code == 200
         assert res.json()["comments"] == new_comment
 
-        # The user change the time_step to daily instead of hourly.
+        # The user change the timeStep to daily instead of hourly.
         # We must check that the matrix is a daily/weekly matrix.
         res = client.put(
             f"/v1/studies/{study_id}/bindingconstraints/{bc_id}",
-            json={"time_step": "daily"},
+            json={"timeStep": "daily"},
             headers=user_headers,
         )
-        assert res.status_code == 200
-        assert res.json()["time_step"] == "daily"
+        assert res.status_code == 200, res.json()
+        assert res.json()["timeStep"] == "daily"
 
-        # Check the last command is a change time_step
+        # Check that the command corresponds to a change in `time_step`
         if study_type == "variant":
             res = client.get(f"/v1/studies/{study_id}/commands", headers=user_headers)
             commands = res.json()
@@ -444,7 +444,7 @@ class TestBindingConstraints:
             json={
                 "name": "  ",
                 "enabled": True,
-                "time_step": "hourly",
+                "timeStep": "hourly",
                 "operator": "less",
                 "coeffs": {},
                 "comments": "New API",
@@ -463,7 +463,7 @@ class TestBindingConstraints:
             json={
                 "name": "%%**",
                 "enabled": True,
-                "time_step": "hourly",
+                "timeStep": "hourly",
                 "operator": "less",
                 "coeffs": {},
                 "comments": "New API",
@@ -482,7 +482,7 @@ class TestBindingConstraints:
             json={
                 "name": bc_id,
                 "enabled": True,
-                "time_step": "hourly",
+                "timeStep": "hourly",
                 "operator": "less",
                 "coeffs": {},
                 "comments": "",
@@ -497,7 +497,7 @@ class TestBindingConstraints:
             json={
                 "name": "binding_constraint_x",
                 "enabled": True,
-                "time_step": "hourly",
+                "timeStep": "hourly",
                 "operator": "less",
                 "coeffs": {},
                 "comments": "2 types of matrices",
@@ -519,7 +519,7 @@ class TestBindingConstraints:
             json={
                 "name": "binding_constraint_x",
                 "enabled": True,
-                "time_step": "hourly",
+                "timeStep": "hourly",
                 "operator": "less",
                 "coeffs": {},
                 "comments": "Incoherent matrix with version",
@@ -536,7 +536,7 @@ class TestBindingConstraints:
         wrong_request_args = {
             "name": "binding_constraint_5",
             "enabled": True,
-            "time_step": "daily",
+            "timeStep": "daily",
             "operator": "less",
             "coeffs": {},
             "comments": "Creation with matrix",
@@ -616,7 +616,7 @@ class TestBindingConstraints:
 
         # Creation of a bc without group
         bc_id_wo_group = "binding_constraint_1"
-        args = {"enabled": True, "time_step": "hourly", "operator": "less", "coeffs": {}, "comments": "New API"}
+        args = {"enabled": True, "timeStep": "hourly", "operator": "less", "coeffs": {}, "comments": "New API"}
         res = client.post(
             f"/v1/studies/{study_id}/bindingconstraints",
             json={"name": bc_id_wo_group, **args},
@@ -697,11 +697,11 @@ class TestBindingConstraints:
         assert res.status_code == 200
         assert res.json()["data"] == matrix_lt3.tolist()
 
-        # The user changed the time_step to daily instead of hourly.
+        # The user changed the timeStep to daily instead of hourly.
         # We must check that the matrices have been updated.
         res = client.put(
             f"/v1/studies/{study_id}/bindingconstraints/{bc_id_w_matrix}",
-            json={"time_step": "daily"},
+            json={"timeStep": "daily"},
             headers=admin_headers,
         )
         assert res.status_code == 200, res.json()
@@ -757,7 +757,7 @@ class TestBindingConstraints:
             json={
                 "name": "binding_constraint_700",
                 "enabled": True,
-                "time_step": "hourly",
+                "timeStep": "hourly",
                 "operator": "less",
                 "coeffs": {},
                 "comments": "New API",
@@ -932,15 +932,15 @@ class TestBindingConstraints:
         assert groups["Group 2"] == [
             {
                 "comments": "New API",
-                "constraints": None,
+                "constraints": [],
                 "enabled": True,
-                "filter_synthesis": "",
-                "filter_year_by_year": "",
+                "filterSynthesis": "",
+                "filterYearByYear": "",
                 "group": "Group 2",
                 "id": "second bc",
                 "name": "Second BC",
                 "operator": "less",
-                "time_step": "hourly",
+                "timeStep": "hourly",
             }
         ]
 

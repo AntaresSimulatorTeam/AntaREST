@@ -1,8 +1,10 @@
 import enum
 import logging
+import warnings
 from http import HTTPStatus
 from typing import Any, Dict, List, Mapping, Optional, Sequence, Union, cast
 
+import typing_extensions as te
 from fastapi import APIRouter, Body, Depends, Query
 from starlette.responses import RedirectResponse
 
@@ -66,6 +68,13 @@ from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 
 logger = logging.getLogger(__name__)
+
+
+class BCKeyValueType(te.TypedDict):
+    """Deprecated type for binding constraint key-value pair (used for update)"""
+
+    key: str
+    value: Union[str, int, float, bool]
 
 
 class ClusterType(str, enum.Enum):
@@ -972,7 +981,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     def update_binding_constraint(
         uuid: str,
         binding_constraint_id: str,
-        data: BindingConstraintEdition,
+        data: Union[BCKeyValueType, BindingConstraintEdition],
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> BindingConstraintConfigType:
         logger.info(
@@ -981,6 +990,18 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
+
+        if isinstance(data, dict):
+            warnings.warn(
+                "Using key / value format for binding constraint data is deprecated."
+                " Please use the BindingConstraintEdition format instead.",
+                DeprecationWarning,
+            )
+            _obj = {data["key"]: data["value"]}
+            if "filterByYear" in _obj:
+                _obj["filterYearByYear"] = _obj.pop("filterByYear")
+            data = BindingConstraintEdition(**_obj)
+
         return study_service.binding_constraint_manager.update_binding_constraint(study, binding_constraint_id, data)
 
     @bp.get(
