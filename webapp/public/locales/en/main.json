@@ -484,7 +484,6 @@
   "study.modelization.clusters.matrix.timeSeries": "Time-Series",
   "study.modelization.clusters.backClusterList": "Back to cluster list",
   "study.modelization.clusters.tsInterpretation": "TS interpretation",
-  "study.modelization.clusters.group": "Group",
   "studies.modelization.clusters.question.delete_one": "Are you sure you want to delete this cluster?",
   "studies.modelization.clusters.question.delete_other": "Are you sure you want to delete these {{count}} clusters?",
   "study.modelization.bindingConst.comments": "Comments",

@@ -72,7 +72,7 @@ function CreateDialog<TData extends TRow>({
             sx={{ m: 0 }}
           />
           <SelectFE
-            label={t("study.modelization.clusters.group")}
+            label={t("global.group")}
             name="group"
             control={control}
             options={groups}
