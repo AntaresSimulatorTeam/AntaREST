@@ -71,13 +71,13 @@ def check_matrix_values(time_step: BindingConstraintFrequency, values: MatrixTyp
         raise ValueError("Matrix values cannot contain NaN")
 
 
-class BindingConstraintProperties(BaseModel, extra=Extra.forbid):
+class BindingConstraintProperties(BaseModel, extra=Extra.forbid, allow_population_by_field_name=True):
     enabled: bool = True
-    time_step: BindingConstraintFrequency
-    operator: BindingConstraintOperator
-    filter_year_by_year: t.Optional[str] = None
-    filter_synthesis: t.Optional[str] = None
-    comments: t.Optional[str] = None
+    time_step: BindingConstraintFrequency = BindingConstraintFrequency.HOURLY
+    operator: BindingConstraintOperator = BindingConstraintOperator.EQUAL
+    comments: str = ""
+    filter_year_by_year: str = ""
+    filter_synthesis: str = ""
 
 
 class BindingConstraintProperties870(BindingConstraintProperties):

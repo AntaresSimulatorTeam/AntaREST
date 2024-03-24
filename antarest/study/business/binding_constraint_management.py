@@ -1,10 +1,10 @@
 import collections
 import itertools
 import logging
-from typing import Any, Dict, List, Mapping, Optional, Sequence, Union
+from typing import Any, Dict, List, Mapping, MutableSequence, Optional, Sequence, Union
 
 import numpy as np
-from pydantic import BaseModel, root_validator, validator
+from pydantic import BaseModel, Field, root_validator, validator
 from requests.utils import CaseInsensitiveDict
 
 from antarest.core.exceptions import (
@@ -19,7 +19,8 @@ from antarest.core.exceptions import (
     MissingDataError,
     NoConstraintError,
 )
-from antarest.study.business.utils import AllOptionalMetaclass, execute_or_add_commands
+from antarest.core.utils.string import to_camel_case
+from antarest.study.business.utils import AllOptionalMetaclass, camel_case_model, execute_or_add_commands
 from antarest.study.model import Study
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
@@ -178,7 +179,7 @@ class BindingConstraintFilter(BaseModel, frozen=True, extra="forbid"):
             return False
 
         # Filter on terms
-        terms = constraint.constraints or []
+        terms = constraint.terms or []
 
         if self.area_name:
             all_areas = []
@@ -219,21 +220,17 @@ class BindingConstraintFilter(BaseModel, frozen=True, extra="forbid"):
         return True
 
 
-class BindingConstraintEditionModel(BaseModel, metaclass=AllOptionalMetaclass):
-    group: str
-    enabled: bool
-    time_step: BindingConstraintFrequency
-    operator: BindingConstraintOperator
-    filter_year_by_year: str
-    filter_synthesis: str
-    comments: str
+@camel_case_model
+class BindingConstraintEditionModel(BindingConstraintProperties870, metaclass=AllOptionalMetaclass, use_none=True):
     coeffs: Dict[str, List[float]]
 
 
+@camel_case_model
 class BindingConstraintEdition(BindingConstraintMatrices, BindingConstraintEditionModel):
     pass
 
 
+@camel_case_model
 class BindingConstraintCreation(BindingConstraintMatrices, BindingConstraintProperties870):
     name: str
     coeffs: Dict[str, List[float]]
@@ -241,6 +238,10 @@ class BindingConstraintCreation(BindingConstraintMatrices, BindingConstraintProp
     # Ajout d'un root validator pour valider les dimensions des matrices
     @root_validator(pre=True)
     def check_matrices_dimensions(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        for _key in ["time_step", "less_term_matrix", "equal_term_matrix", "greater_term_matrix"]:
+            _camel = to_camel_case(_key)
+            values[_key] = values.pop(_camel, values.get(_key))
+
         # The dimensions of the matrices depend on the frequency and the version of the study.
         if values.get("time_step") is None:
             return values
@@ -290,10 +291,18 @@ class BindingConstraintCreation(BindingConstraintMatrices, BindingConstraintProp
         raise ValueError(err_msg)
 
 
-class BindingConstraintConfig(BindingConstraintProperties):
+@camel_case_model
+class _BindingConstraintConfig(BindingConstraintProperties):
     id: str
     name: str
-    constraints: Optional[List[ConstraintTermDTO]]
+
+
+class BindingConstraintConfig(_BindingConstraintConfig):
+    terms: MutableSequence[ConstraintTermDTO] = Field(
+        default_factory=lambda: [],
+        alias="constraints",  # only for backport compatibility
+        title="Constraint terms",
+    )
 
 
 class BindingConstraintConfig870(BindingConstraintConfig):
@@ -361,9 +370,9 @@ class BindingConstraintManager:
                 if len(weight_and_offset) == 2:
                     weight = float(weight_and_offset[0])
                     offset = float(weight_and_offset[1])
-            if new_config.constraints is None:
-                new_config.constraints = []
-            new_config.constraints.append(
+            if new_config.terms is None:
+                new_config.terms = []
+            new_config.terms.append(
                 ConstraintTermDTO(
                     id=key,
                     weight=weight,
@@ -387,18 +396,17 @@ class BindingConstraintManager:
         args = {
             "id": constraint_value["id"],
             "name": constraint_value["name"],
-            "enabled": constraint_value["enabled"],
-            "time_step": constraint_value["type"],
-            "operator": constraint_value["operator"],
-            "comments": constraint_value.get("comments", None),
+            "enabled": constraint_value.get("enabled", True),
+            "time_step": constraint_value.get("type", BindingConstraintFrequency.HOURLY),
+            "operator": constraint_value.get("operator", BindingConstraintOperator.EQUAL),
+            "comments": constraint_value.get("comments", ""),
             "filter_year_by_year": constraint_value.get("filter-year-by-year", ""),
             "filter_synthesis": constraint_value.get("filter-synthesis", ""),
-            "constraints": None,
         }
         if version < 870:
             new_config: BindingConstraintConfigType = BindingConstraintConfig(**args)
         else:
-            args["group"] = constraint_value.get("group")
+            args["group"] = constraint_value.get("group", DEFAULT_GROUP)
             new_config = BindingConstraintConfig870(**args)
 
         for key, value in constraint_value.items():
@@ -413,8 +421,8 @@ class BindingConstraintManager:
         constraint: BindingConstraintConfigType,
     ) -> Dict[str, List[float]]:
         coeffs: Dict[str, List[float]] = {}
-        if constraint.constraints is not None:
-            for term in constraint.constraints:
+        if constraint.terms is not None:
+            for term in constraint.terms:
                 if term.id is not None and term.weight is not None:
                     coeffs[term.id] = [term.weight]
                     if term.offset is not None:
@@ -640,7 +648,7 @@ class BindingConstraintManager:
         if not isinstance(constraint, BindingConstraintConfig) and not isinstance(constraint, BindingConstraintConfig):
             raise BindingConstraintNotFoundError(study.id)
 
-        constraint_terms = constraint.constraints  # existing constraint terms
+        constraint_terms = constraint.terms  # existing constraint terms
         if constraint_terms is None:
             raise NoConstraintError(study.id)
 
@@ -695,11 +703,11 @@ class BindingConstraintManager:
             raise MissingDataError("Add new constraint term : data is missing")
 
         constraint_id = constraint_term.data.generate_id()
-        constraints_term = constraint.constraints or []
-        if find_constraint_term_id(constraints_term, constraint_id) >= 0:
+        constraint_terms = constraint.terms or []
+        if find_constraint_term_id(constraint_terms, constraint_id) >= 0:
             raise ConstraintAlreadyExistError(study.id)
 
-        constraints_term.append(
+        constraint_terms.append(
             ConstraintTermDTO(
                 id=constraint_id,
                 weight=constraint_term.weight if constraint_term.weight is not None else 0.0,
@@ -708,7 +716,7 @@ class BindingConstraintManager:
             )
         )
         coeffs = {}
-        for term in constraints_term:
+        for term in constraint_terms:
             coeffs[term.id] = [term.weight]
             if term.offset is not None:
                 coeffs[term.id].append(term.offset)
@@ -759,7 +767,7 @@ def _replace_matrices_according_to_frequency_and_version(
     return args
 
 
-def find_constraint_term_id(constraints_term: List[ConstraintTermDTO], constraint_term_id: str) -> int:
+def find_constraint_term_id(constraints_term: Sequence[ConstraintTermDTO], constraint_term_id: str) -> int:
     try:
         index = [elm.id for elm in constraints_term].index(constraint_term_id)
         return index
