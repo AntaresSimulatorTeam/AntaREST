@@ -62,7 +62,7 @@ function Fields({ study }: Props) {
           sx={{ m: 0 }} // TODO: Remove when updating MUI Theme
         />
         <SelectFE
-          name="time_step"
+          name="timeStep"
           label={t("study.modelization.bindingConst.type")}
           size="small"
           variant="outlined"
@@ -87,7 +87,7 @@ function Fields({ study }: Props) {
       {study.version >= "840" && (
         <Fieldset legend={t("study.outputFilters")} sx={{ pb: 2 }}>
           <SelectFE
-            name="filter_year_by_year"
+            name="filterYearByYear"
             label={t("study.outputFilters.filterByYear")}
             size="small"
             variant="outlined"
@@ -96,7 +96,7 @@ function Fields({ study }: Props) {
             control={control}
           />
           <SelectFE
-            name="filter_synthesis"
+            name="filterSynthesis"
             label={t("study.outputFilters.filterSynthesis")}
             size="small"
             variant="outlined"
