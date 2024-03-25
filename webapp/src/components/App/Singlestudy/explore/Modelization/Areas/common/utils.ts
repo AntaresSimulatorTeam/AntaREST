@@ -81,23 +81,17 @@ export const useClusterDataWithCapacity = <T extends BaseCluster>(
   });
 
   const clustersWithCapacity: Array<ClusterWithCapacity<T>> = useMemo(
-    () =>
-      clusters?.map((cluster) => {
-        const { unitCount, nominalCapacity, enabled } = cluster;
-        const installedCapacity = unitCount * nominalCapacity;
-        const enabledCapacity = enabled ? installedCapacity : 0;
-        return { ...cluster, installedCapacity, enabledCapacity };
-      }) || [],
+    () => clusters?.map(addCapacity) || [],
     [clusters],
   );
 
   const { totalUnitCount, totalInstalledCapacity, totalEnabledCapacity } =
     useMemo(() => {
       return clustersWithCapacity.reduce(
-        (acc, { unitCount, nominalCapacity, enabled }) => {
+        (acc, { unitCount, installedCapacity, enabledCapacity }) => {
           acc.totalUnitCount += unitCount;
-          acc.totalInstalledCapacity += unitCount * nominalCapacity;
-          acc.totalEnabledCapacity += enabled ? unitCount * nominalCapacity : 0;
+          acc.totalInstalledCapacity += installedCapacity;
+          acc.totalEnabledCapacity += enabledCapacity;
           return acc;
         },
         {
@@ -116,3 +110,16 @@ export const useClusterDataWithCapacity = <T extends BaseCluster>(
     isLoading,
   };
 };
+
+/**
+ * Adds the installed and enabled capacity fields to a cluster.
+ *
+ * @param cluster - The cluster to add the capacity fields to.
+ * @returns The cluster with the installed and enabled capacity fields added.
+ */
+export function addCapacity<T extends BaseCluster>(cluster: T) {
+  const { unitCount, nominalCapacity, enabled } = cluster;
+  const installedCapacity = unitCount * nominalCapacity;
+  const enabledCapacity = enabled ? installedCapacity : 0;
+  return { ...cluster, installedCapacity, enabledCapacity };
+}

@@ -11,14 +11,17 @@ import {
   ThermalClusterWithCapacity,
   THERMAL_GROUPS,
   ThermalCluster,
+  ThermalGroup,
 } from "./utils";
 import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../../redux/selectors";
 import GroupedDataTable from "../../../../../../common/GroupedDataTable";
 import {
+  addCapacity,
   capacityAggregationFn,
   useClusterDataWithCapacity,
 } from "../common/utils";
+import { TRow } from "../../../../../../common/GroupedDataTable/types";
 
 function Thermal() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -95,8 +98,8 @@ function Thermal() {
         ),
         Cell: ({ row }) => (
           <>
-            {Math.floor(row.original.enabledCapacity ?? 0)} /{" "}
-            {Math.floor(row.original.installedCapacity ?? 0)}
+            {Math.floor(row.original.enabledCapacity)} /{" "}
+            {Math.floor(row.original.installedCapacity)}
           </>
         ),
         Footer: () => (
@@ -119,13 +122,9 @@ function Thermal() {
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleCreateRow = ({
-    id,
-    installedCapacity,
-    enabledCapacity,
-    ...cluster
-  }: ThermalClusterWithCapacity) => {
-    return createThermalCluster(study.id, areaId, cluster);
+  const handleCreate = async (values: TRow<ThermalGroup>) => {
+    const cluster = await createThermalCluster(study.id, areaId, values);
+    return addCapacity(cluster);
   };
 
   const handleDelete = (rows: ThermalClusterWithCapacity[]) => {
@@ -146,8 +145,8 @@ function Thermal() {
       isLoading={isLoading}
       data={clustersWithCapacity}
       columns={columns}
-      groups={THERMAL_GROUPS}
-      onCreate={handleCreateRow}
+      groups={[...THERMAL_GROUPS]}
+      onCreate={handleCreate}
       onDelete={handleDelete}
       onNameClick={handleNameClick}
       deleteConfirmationMessage={(count) =>

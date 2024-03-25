@@ -1,16 +1,6 @@
 import * as R from "ramda";
-import { nameToId } from "../../../services/utils";
 import { TableCellProps } from "@mui/material";
-
-////////////////////////////////////////////////////////////////
-// Types
-////////////////////////////////////////////////////////////////
-
-export interface TRow {
-  id: string;
-  name: string;
-  group: string;
-}
+import type { TRow } from "./types";
 
 ////////////////////////////////////////////////////////////////
 // Functions
@@ -59,26 +49,16 @@ export const generateNextValue = (
  *
  * This function leverages `generateNextValue` to ensure the uniqueness of the value.
  *
- * @param property - The property for which the unique value is generated, either "name" or "id".
  * @param originalValue - The original value of the specified property.
  * @param tableData - The existing table data to check against for ensuring uniqueness.
  * @returns A unique value for the specified property.
  */
 export const generateUniqueValue = (
-  property: "name" | "id",
   originalValue: string,
   tableData: TRow[],
 ): string => {
-  let baseValue: string;
-
-  if (property === "name") {
-    baseValue = `${originalValue} - copy`;
-  } else {
-    baseValue = nameToId(originalValue);
-  }
-
-  const existingValues = tableData.map((row) => row[property]);
-  return generateNextValue(baseValue, existingValues);
+  const existingValues = tableData.map((row) => row.name);
+  return generateNextValue(`${originalValue} - copy`, existingValues);
 };
 
 export function getTableOptionsForAlign(align: TableCellProps["align"]) {

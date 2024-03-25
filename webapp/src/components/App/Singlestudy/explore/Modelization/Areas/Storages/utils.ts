@@ -1,5 +1,6 @@
 import { StudyMetadata, Area } from "../../../../../../../common/types";
 import client from "../../../../../../../services/api/client";
+import type { PartialExceptFor } from "../../../../../../../utils/tsUtils";
 
 ////////////////////////////////////////////////////////////////
 // Constants
@@ -87,11 +88,11 @@ export async function updateStorage(
   );
 }
 
-export async function createStorage(
+export function createStorage(
   studyId: StudyMetadata["id"],
   areaId: Area["name"],
-  data: Partial<Storage>,
-): Promise<Storage> {
+  data: PartialExceptFor<Storage, "name">,
+) {
   return makeRequest<Storage>("post", getStoragesUrl(studyId, areaId), data);
 }
 
