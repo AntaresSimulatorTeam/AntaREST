@@ -44,9 +44,11 @@ module.exports = {
       },
     ],
     curly: "error",
+    "jsdoc/no-defaults": "off",
     "jsdoc/require-hyphen-before-param-description": "warn",
     "jsdoc/require-jsdoc": "off",
     "jsdoc/tag-lines": ["warn", "any", { "startLines": 1 }], // Expected 1 line after block description
+    "no-console": "error",
     "no-param-reassign": [
       "error",
       {
@@ -74,5 +76,6 @@ module.exports = {
     "react/hook-use-state": "error",
     "react/prop-types": "off",
     "react/self-closing-comp": "error",
+    "require-await": "warn", // TODO: switch to "error" when the quantity of warning will be low
   },
 };
