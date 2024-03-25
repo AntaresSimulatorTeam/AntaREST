@@ -132,9 +132,9 @@ export const getBindingConstraintList = async (
 export const updateBindingConstraint = async (
   studyId: string,
   constraintId: string,
-  data: BindingConstraint,
+  data: Omit<BindingConstraint, "id" | "name" | "constraints">,
 ): Promise<void> => {
-  const adaptedData = bindingConstraintModelAdapter(data);
+  const adaptedData = bindingConstraintModelAdapter(data); // TODO fix type
 
   const res = await client.put(
     `/v1/studies/${studyId}/bindingconstraints/${encodeURIComponent(

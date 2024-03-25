@@ -9,10 +9,13 @@ import UsePromiseCond, {
 } from "../../../../../../common/utils/UsePromiseCond";
 import useStudySynthesis from "../../../../../../../redux/hooks/useStudySynthesis";
 import { getLinksAndClusters } from "../../../../../../../redux/selectors";
-import { getBindingConstraint } from "../../../../../../../services/api/studydata";
+import {
+  getBindingConstraint,
+  updateBindingConstraint,
+} from "../../../../../../../services/api/studydata";
 import ConstraintFields from "./ConstraintFields";
-import { BindingConstraint } from "./utils";
 import { SubmitHandlerPlus } from "../../../../../../common/Form/types";
+import { BindingConstraint } from "./utils";
 
 interface Props {
   constraintId: string;
@@ -39,10 +42,9 @@ function BindingConstView({ constraintId }: Props) {
   const handleSubmitConstraint = ({
     values,
   }: SubmitHandlerPlus<BindingConstraint>) => {
-    // TODO exclude name and id
-    console.log("values", values);
+    const { id, name, constraints, ...updatedConstraint } = values;
 
-    // return updateBindingConstraint(study.id, constraintId, values);
+    return updateBindingConstraint(study.id, constraintId, updatedConstraint);
   };
 
   ////////////////////////////////////////////////////////////////
