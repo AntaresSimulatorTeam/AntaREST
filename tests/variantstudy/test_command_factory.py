@@ -132,6 +132,9 @@ class TestCommandFactory:
                     "operator": "equal",
                     "coeffs": {},
                     "values": "values",
+                    "comments": "",
+                    "filter_synthesis": "",
+                    "filter_year_by_year": "",
                 },
             ),
             CommandDTO(
@@ -144,7 +147,10 @@ class TestCommandFactory:
                         "operator": "equal",
                         "coeffs": {},
                         "values": "values",
-                    }
+                        "comments": "",
+                        "filter_synthesis": "",
+                        "filter_year_by_year": "",
+                    },
                 ],
             ),
             CommandDTO(
@@ -156,6 +162,9 @@ class TestCommandFactory:
                     "operator": "equal",
                     "coeffs": {},
                     "values": "values",
+                    "comments": "",
+                    "filter_synthesis": "",
+                    "filter_year_by_year": "",
                 },
             ),
             CommandDTO(
@@ -167,6 +176,9 @@ class TestCommandFactory:
                         "time_step": "hourly",
                         "operator": "equal",
                         "coeffs": {},
+                        "comments": "",
+                        "filter_synthesis": "",
+                        "filter_year_by_year": "",
                     }
                 ],
             ),

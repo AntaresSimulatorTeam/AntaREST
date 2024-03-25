@@ -75,9 +75,9 @@ class BindingConstraintProperties(BaseModel, extra=Extra.forbid, allow_populatio
     enabled: bool = True
     time_step: BindingConstraintFrequency = BindingConstraintFrequency.HOURLY
     operator: BindingConstraintOperator = BindingConstraintOperator.EQUAL
-    comments: str = ""
-    filter_year_by_year: str = ""
-    filter_synthesis: str = ""
+    comments: t.Optional[str] = None
+    filter_year_by_year: t.Optional[str] = None
+    filter_synthesis: t.Optional[str] = None
 
 
 class BindingConstraintProperties870(BindingConstraintProperties):
