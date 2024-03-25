@@ -53,8 +53,6 @@ function BindingConstraints() {
   // JSX
   ////////////////////////////////////////////////////////////////
 
-  console.log("constraintsRes", constraintsRes);
-
   return (
     <UsePromiseCond
       response={constraintsRes}
@@ -63,7 +61,6 @@ function BindingConstraints() {
         <SplitView direction="horizontal" sizes={[10, 90]} gutterSize={3}>
           <Box>
             <BindingConstPropsView // TODO rename ConstraintsList
-              studyId={study.id}
               list={data}
               onClick={handleConstraintChange}
               currentBindingConst={currentConstraintId}
