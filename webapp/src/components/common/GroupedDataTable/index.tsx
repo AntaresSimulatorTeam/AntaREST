@@ -22,6 +22,7 @@ import DuplicateDialog from "./DuplicateDialog";
 import { translateWithColon } from "../../../utils/i18nUtils";
 import useAutoUpdateRef from "../../../hooks/useAutoUpdateRef";
 import * as R from "ramda";
+import * as RA from "ramda-adjunct";
 import { usePrevious } from "react-use";
 import useUpdateEffectOnce from "../../../hooks/useUpdateEffectOnce";
 
@@ -34,6 +35,7 @@ export interface GroupedDataTableProps<TData extends TRow> {
   onDelete?: (ids: string[]) => void;
   onNameClick?: (row: MRT_Row<TData>) => void;
   isLoading?: boolean;
+  deleteConfirmationMessage?: string | ((count: number) => string);
 }
 
 // Use ids to identify default columns (instead of `accessorKey`),
@@ -50,6 +52,7 @@ function GroupedDataTable<TData extends TRow>({
   onDelete,
   onNameClick,
   isLoading,
+  deleteConfirmationMessage,
 }: GroupedDataTableProps<TData>) {
   const { t } = useTranslation();
   const [openDialog, setOpenDialog] = useState<
@@ -306,7 +309,9 @@ function GroupedDataTable<TData extends TRow>({
           onConfirm={handleDelete}
           alert="warning"
         >
-          {t("studies.modelization.clusters.question.delete")}
+          {RA.isFunction(deleteConfirmationMessage)
+            ? deleteConfirmationMessage(selectedRows.length)
+            : deleteConfirmationMessage ?? t("dialog.message.confirmDelete")}
         </ConfirmationDialog>
       )}
     </>
