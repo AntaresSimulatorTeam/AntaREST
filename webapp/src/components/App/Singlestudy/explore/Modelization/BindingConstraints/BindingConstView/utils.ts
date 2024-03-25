@@ -50,21 +50,16 @@ export interface ConstraintTerm {
   data: LinkTerm["data"] | ClusterTerm["data"];
 }
 
-/**
- * @deprecated
- * !TODO: Refactor this invalid snake_case interface.
- * This is necessary because the API currently provides these fields in a wrong format.
- */
 export interface BindingConstraint {
   id: string;
   name: string;
   group: string;
   enabled: boolean;
-  time_step: TimeStep;
+  timeStep: TimeStep;
   operator: Operator;
   comments?: string;
-  filter_synthesis: OutputFilter[];
-  filter_year_by_year: OutputFilter[];
+  filterSynthesis: OutputFilter[];
+  filterYearByYear: OutputFilter[];
   constraints: ConstraintTerm[];
 }
 
@@ -195,12 +190,12 @@ function adaptOutputFilterFormat(
 export function bindingConstraintModelAdapter(
   data: BindingConstraint,
 ): BindingConstraint {
-  const filterSynthesis = adaptOutputFilterFormat(data.filter_synthesis);
-  const filterYearByYear = adaptOutputFilterFormat(data.filter_year_by_year);
+  const filterSynthesis = adaptOutputFilterFormat(data.filterSynthesis);
+  const filterYearByYear = adaptOutputFilterFormat(data.filterYearByYear);
 
   return {
     ...data,
-    filter_synthesis: filterSynthesis as typeof data.filter_synthesis,
-    filter_year_by_year: filterYearByYear as typeof data.filter_year_by_year,
+    filterSynthesis: filterSynthesis as typeof data.filterSynthesis,
+    filterYearByYear: filterYearByYear as typeof data.filterYearByYear,
   };
 }
