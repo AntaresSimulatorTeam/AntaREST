@@ -304,10 +304,15 @@ class StudyMetadataRepository:
                 q = q.filter(RawStudy.missing.is_(None))
             else:
                 q = q.filter(not_(RawStudy.missing.is_(None)))
-        q = q.options(joinedload(entity.owner))
-        q = q.options(joinedload(entity.groups))
+
+        if study_filter.users is not None:
+            q = q.options(joinedload(entity.owner))
+        if study_filter.groups is not None:
+            q = q.options(joinedload(entity.groups))
+        if study_filter.tags is not None:
+            q = q.options(joinedload(entity.tags))
         q = q.options(joinedload(entity.additional_data))
-        q = q.options(joinedload(entity.tags))
+
         if study_filter.managed is not None:
             if study_filter.managed:
                 q = q.filter(or_(entity.type == "variantstudy", RawStudy.workspace == DEFAULT_WORKSPACE_NAME))
