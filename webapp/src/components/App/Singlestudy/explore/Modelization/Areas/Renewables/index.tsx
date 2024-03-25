@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { MRT_ColumnDef } from "material-react-table";
+import { createMRTColumnHelper, type MRT_Row } from "material-react-table";
 import { Box, Chip } from "@mui/material";
 import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -26,9 +26,10 @@ import UsePromiseCond from "../../../../../../common/utils/UsePromiseCond";
 function Renewables() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const [t] = useTranslation();
-  const areaId = useAppSelector(getCurrentAreaId);
   const navigate = useNavigate();
   const location = useLocation();
+  const areaId = useAppSelector(getCurrentAreaId);
+  const columnHelper = createMRTColumnHelper<RenewableClusterWithCapacity>();
 
   const {
     clusters,
@@ -42,97 +43,48 @@ function Renewables() {
     [study.id, areaId],
   );
 
-  const columns = useMemo<Array<MRT_ColumnDef<RenewableClusterWithCapacity>>>(
+  const columns = useMemo(
     () => [
-      {
-        accessorKey: "name",
-        header: "Name",
-        muiTableHeadCellProps: {
-          align: "left",
-        },
-        muiTableBodyCellProps: {
-          align: "left",
-        },
-        size: 100,
-        Cell: ({ renderedCellValue, row }) => {
-          const clusterId = row.original.id;
-          return (
-            <Box
-              sx={{
-                cursor: "pointer",
-                "&:hover": {
-                  color: "primary.main",
-                  textDecoration: "underline",
-                },
-              }}
-              onClick={() => navigate(`${location.pathname}/${clusterId}`)}
-            >
-              {renderedCellValue}
-            </Box>
-          );
-        },
-      },
-      {
-        accessorKey: "group",
-        header: "Group",
-        size: 50,
-        filterVariant: "select",
-        filterSelectOptions: [...RENEWABLE_GROUPS],
-        muiTableHeadCellProps: {
-          align: "left",
-        },
-        muiTableBodyCellProps: {
-          align: "left",
-        },
-        Footer: () => (
-          <Box sx={{ display: "flex", alignItems: "flex-start" }}>Total:</Box>
-        ),
-      },
-      {
-        accessorKey: "enabled",
+      columnHelper.accessor("enabled", {
         header: "Enabled",
         size: 50,
         filterVariant: "checkbox",
         Cell: ({ cell }) => (
           <Chip
-            label={cell.getValue<boolean>() ? t("button.yes") : t("button.no")}
-            color={cell.getValue<boolean>() ? "success" : "error"}
+            label={cell.getValue() ? t("button.yes") : t("button.no")}
+            color={cell.getValue() ? "success" : "error"}
             size="small"
             sx={{ minWidth: 40 }}
           />
         ),
-      },
-      {
-        accessorKey: "tsInterpretation",
+      }),
+      columnHelper.accessor("tsInterpretation", {
         header: "TS Interpretation",
         size: 50,
-      },
-      {
-        accessorKey: "unitCount",
+      }),
+      columnHelper.accessor("unitCount", {
         header: "Unit Count",
         size: 50,
         aggregationFn: "sum",
         AggregatedCell: ({ cell }) => (
           <Box sx={{ color: "info.main", fontWeight: "bold" }}>
-            {cell.getValue<number>()}
+            {cell.getValue()}
           </Box>
         ),
         Footer: () => <Box color="warning.main">{totalUnitCount}</Box>,
-      },
-      {
-        accessorKey: "nominalCapacity",
+      }),
+      columnHelper.accessor("nominalCapacity", {
         header: "Nominal Capacity (MW)",
-        size: 200,
-        Cell: ({ cell }) => Math.floor(cell.getValue<number>()),
-      },
-      {
-        accessorKey: "installedCapacity",
+        size: 220,
+        Cell: ({ cell }) => Math.floor(cell.getValue()),
+      }),
+      columnHelper.accessor("installedCapacity", {
         header: "Enabled / Installed (MW)",
-        size: 200,
+        size: 220,
         aggregationFn: capacityAggregationFn(),
         AggregatedCell: ({ cell }) => (
           <Box sx={{ color: "info.main", fontWeight: "bold" }}>
-            {cell.getValue<string>() ?? ""}
+            {cell.getValue() ?? ""}
           </Box>
         ),
         Cell: ({ row }) => (
@@ -146,16 +98,10 @@ function Renewables() {
             {totalEnabledCapacity} / {totalInstalledCapacity}
           </Box>
         ),
-      },
+      }),
     ],
-    [
-      location.pathname,
-      navigate,
-      t,
-      totalEnabledCapacity,
-      totalInstalledCapacity,
-      totalUnitCount,
-    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [t, totalEnabledCapacity, totalInstalledCapacity, totalUnitCount],
   );
 
   ////////////////////////////////////////////////////////////////
@@ -175,6 +121,10 @@ function Renewables() {
     return deleteRenewableClusters(study.id, areaId, ids);
   };
 
+  const handleNameClick = (row: MRT_Row<RenewableClusterWithCapacity>) => {
+    navigate(`${location.pathname}/${row.original.id}`);
+  };
+
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
@@ -190,6 +140,7 @@ function Renewables() {
           groups={RENEWABLE_GROUPS}
           onCreate={handleCreateRow}
           onDelete={handleDeleteSelection}
+          onNameClick={handleNameClick}
         />
       )}
       ifRejected={(error) => <SimpleContent title={error?.toString()} />}
