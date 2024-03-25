@@ -81,7 +81,11 @@ def matrix_service_fixture() -> MatrixService:
         Get the matrix ID from a matrix or a matrix link.
         """
         if isinstance(matrix, str):
-            return matrix.lstrip("matrix://")
+            # str.removeprefix() is not available in Python 3.8
+            prefix = "matrix://"
+            if matrix.startswith(prefix):
+                return matrix[len(prefix) :]
+            return matrix
         elif isinstance(matrix, list):
             return create(matrix)
         else:
