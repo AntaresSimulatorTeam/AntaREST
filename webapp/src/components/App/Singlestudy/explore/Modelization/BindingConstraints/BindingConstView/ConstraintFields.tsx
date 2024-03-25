@@ -31,6 +31,24 @@ function Fields({ study }: Props) {
     [t],
   );
 
+  const operatorOptions = useMemo(
+    () =>
+      OPERATORS.map((operator) => ({
+        label: t(`study.modelization.bindingConst.operator.${operator}`),
+        value: operator,
+      })),
+    [t],
+  );
+
+  const timeStepOptions = useMemo(
+    () =>
+      TIME_STEPS.map((timeStep) => ({
+        label: t(`global.time.${timeStep}`),
+        value: timeStep,
+      })),
+    [t],
+  );
+
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
@@ -66,7 +84,7 @@ function Fields({ study }: Props) {
           label={t("study.modelization.bindingConst.type")}
           size="small"
           variant="outlined"
-          options={TIME_STEPS}
+          options={timeStepOptions}
           control={control}
         />
         <SelectFE
@@ -74,7 +92,7 @@ function Fields({ study }: Props) {
           label={t("study.modelization.bindingConst.operator")}
           size="small"
           variant="outlined"
-          options={OPERATORS}
+          options={operatorOptions}
           control={control}
         />
         <SwitchFE
