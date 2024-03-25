@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { MRT_ColumnDef } from "material-react-table";
+import { createMRTColumnHelper, type MRT_Row } from "material-react-table";
 import { Box, Chip } from "@mui/material";
 import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -29,6 +29,7 @@ function Thermal() {
   const navigate = useNavigate();
   const location = useLocation();
   const areaId = useAppSelector(getCurrentAreaId);
+  const columnHelper = createMRTColumnHelper<ThermalClusterWithCapacity>();
 
   const {
     clusters,
@@ -42,106 +43,57 @@ function Thermal() {
     [study.id, areaId],
   );
 
-  const columns = useMemo<Array<MRT_ColumnDef<ThermalClusterWithCapacity>>>(
+  const columns = useMemo(
     () => [
-      {
-        accessorKey: "name",
-        header: "Name",
-        size: 100,
-        muiTableHeadCellProps: {
-          align: "left",
-        },
-        muiTableBodyCellProps: {
-          align: "left",
-        },
-        Cell: ({ renderedCellValue, row }) => {
-          const clusterId = row.original.id;
-          return (
-            <Box
-              sx={{
-                cursor: "pointer",
-                "&:hover": {
-                  color: "primary.main",
-                  textDecoration: "underline",
-                },
-              }}
-              onClick={() => navigate(`${location.pathname}/${clusterId}`)}
-            >
-              {renderedCellValue}
-            </Box>
-          );
-        },
-      },
-      {
-        accessorKey: "group",
-        header: "Group",
-        size: 50,
-        filterVariant: "select",
-        filterSelectOptions: [...THERMAL_GROUPS],
-        muiTableHeadCellProps: {
-          align: "left",
-        },
-        muiTableBodyCellProps: {
-          align: "left",
-        },
-        Footer: () => (
-          <Box sx={{ display: "flex", alignItems: "flex-start" }}>Total:</Box>
-        ),
-      },
-      {
-        accessorKey: "enabled",
+      columnHelper.accessor("enabled", {
         header: "Enabled",
         size: 50,
         filterVariant: "checkbox",
         Cell: ({ cell }) => (
           <Chip
-            label={cell.getValue<boolean>() ? t("button.yes") : t("button.no")}
-            color={cell.getValue<boolean>() ? "success" : "error"}
+            label={cell.getValue() ? t("button.yes") : t("button.no")}
+            color={cell.getValue() ? "success" : "error"}
             size="small"
             sx={{ minWidth: 40 }}
           />
         ),
-      },
-      {
-        accessorKey: "mustRun",
+      }),
+      columnHelper.accessor("mustRun", {
         header: "Must Run",
         size: 50,
         filterVariant: "checkbox",
         Cell: ({ cell }) => (
           <Chip
-            label={cell.getValue<boolean>() ? t("button.yes") : t("button.no")}
-            color={cell.getValue<boolean>() ? "success" : "error"}
+            label={cell.getValue() ? t("button.yes") : t("button.no")}
+            color={cell.getValue() ? "success" : "error"}
             size="small"
             sx={{ minWidth: 40 }}
           />
         ),
-      },
-      {
-        accessorKey: "unitCount",
+      }),
+      columnHelper.accessor("unitCount", {
         header: "Unit Count",
         size: 50,
         aggregationFn: "sum",
         AggregatedCell: ({ cell }) => (
           <Box sx={{ color: "info.main", fontWeight: "bold" }}>
-            {cell.getValue<number>()}
+            {cell.getValue()}
           </Box>
         ),
         Footer: () => <Box color="warning.main">{totalUnitCount}</Box>,
-      },
-      {
-        accessorKey: "nominalCapacity",
+      }),
+      columnHelper.accessor("nominalCapacity", {
         header: "Nominal Capacity (MW)",
-        size: 200,
-        Cell: ({ cell }) => cell.getValue<number>().toFixed(1),
-      },
-      {
-        accessorKey: "installedCapacity",
+        size: 220,
+        Cell: ({ cell }) => cell.getValue().toFixed(1),
+      }),
+      columnHelper.accessor("installedCapacity", {
         header: "Enabled / Installed (MW)",
-        size: 200,
+        size: 220,
         aggregationFn: capacityAggregationFn(),
         AggregatedCell: ({ cell }) => (
           <Box sx={{ color: "info.main", fontWeight: "bold" }}>
-            {cell.getValue<string>() ?? ""}
+            {cell.getValue() ?? ""}
           </Box>
         ),
         Cell: ({ row }) => (
@@ -155,22 +107,15 @@ function Thermal() {
             {totalEnabledCapacity} / {totalInstalledCapacity}
           </Box>
         ),
-      },
-      {
-        accessorKey: "marketBidCost",
+      }),
+      columnHelper.accessor("marketBidCost", {
         header: "Market Bid (€/MWh)",
         size: 50,
-        Cell: ({ cell }) => <>{cell.getValue<number>().toFixed(2)}</>,
-      },
+        Cell: ({ cell }) => <>{cell.getValue().toFixed(2)}</>,
+      }),
     ],
-    [
-      location.pathname,
-      navigate,
-      t,
-      totalEnabledCapacity,
-      totalInstalledCapacity,
-      totalUnitCount,
-    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [t, totalEnabledCapacity, totalInstalledCapacity, totalUnitCount],
   );
 
   ////////////////////////////////////////////////////////////////
@@ -190,6 +135,10 @@ function Thermal() {
     return deleteThermalClusters(study.id, areaId, ids);
   };
 
+  const handleNameClick = (row: MRT_Row<ThermalClusterWithCapacity>) => {
+    navigate(`${location.pathname}/${row.original.id}`);
+  };
+
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
@@ -205,6 +154,7 @@ function Thermal() {
           groups={THERMAL_GROUPS}
           onCreate={handleCreateRow}
           onDelete={handleDeleteSelection}
+          onNameClick={handleNameClick}
         />
       )}
       ifRejected={(error) => <SimpleContent title={error?.toString()} />}
