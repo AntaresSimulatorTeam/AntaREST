@@ -35,7 +35,7 @@ from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskResu
 from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT, ITaskService, TaskUpdateNotifier, noop_notifier
 from antarest.core.utils.utils import assert_this, suppress_exception
 from antarest.matrixstore.service import MatrixService
-from antarest.study.common.default_values import QueryFile
+from antarest.study.common.default_values import AreasQueryFile, LinksQueryFile
 from antarest.study.model import RawStudy, Study, StudyAdditionalData, StudyMetadataDTO, StudySimResultDTO
 from antarest.study.storage.abstract_storage_service import AbstractStorageService
 from antarest.study.storage.patch_service import PatchService
@@ -494,11 +494,11 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             use_cache=use_cache,
         )
 
-    def aggregate_data(
+    def aggregate_areas_data(
         self,
         metadata: Study,
         output_name: str,
-        query_file: QueryFile,
+        query_file: AreasQueryFile,
         frequency: MatrixFrequency,
         mc_years: t.Sequence[str],
         areas_names: t.Sequence[str],
@@ -520,7 +520,37 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         """
         self._safe_generation(metadata, timeout=60)
         self.repository.refresh(metadata)
-        return super().aggregate_data(
+        return super().aggregate_areas_data(
+            metadata, output_name, query_file, frequency, mc_years, areas_names, columns_names
+        )
+
+    def aggregate_links_data(
+        self,
+        metadata: Study,
+        output_name: str,
+        query_file: LinksQueryFile,
+        frequency: MatrixFrequency,
+        mc_years: t.Sequence[str],
+        areas_names: t.Sequence[str],
+        columns_names: t.Sequence[str],
+    ) -> t.Dict[str, t.Any]:
+        """
+        Entry point to fetch data inside study.
+        Args:
+            metadata: study
+            output_name:
+            query_file:
+            frequency:
+            mc_years:
+            areas_names:
+            columns_names:
+
+        Returns: study data formatted in json
+
+        """
+        self._safe_generation(metadata, timeout=60)
+        self.repository.refresh(metadata)
+        return super().aggregate_links_data(
             metadata, output_name, query_file, frequency, mc_years, areas_names, columns_names
         )
 

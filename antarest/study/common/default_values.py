@@ -30,11 +30,13 @@ class LinkProperties:
     COLORB: int = 112
 
 
-class QueryFile(str, Enum):
-    LINKS_VALUES = "links/values"
-    AREAS_VALUES = "areas/values"
-    LINKS_DETAILS = "links/details"
-    AREAS_DETAILS = "areas/details"
-    AREAS_DETAILS_ST_STORAGE = "areas/details-st-storage"
-    AREAS_DETAILS_RES = "areas/details-res"
-    BINDING_CONSTRAINTS = "binding_constraints/binding-constraints"
+class AreasQueryFile(str, Enum):
+    AREAS_VALUES = "values"
+    AREAS_DETAILS = "details"
+    AREAS_DETAILS_ST_STORAGE = "details-st-storage"
+    AREAS_DETAILS_RES = "details-res"
+
+
+class LinksQueryFile(str, Enum):
+    VALUES = "values"
+    LINKS_DETAILS = "details"

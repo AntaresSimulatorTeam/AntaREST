@@ -21,7 +21,7 @@ from antarest.core.utils.utils import sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
-from antarest.study.common.default_values import QueryFile
+from antarest.study.common.default_values import AreasQueryFile, LinksQueryFile
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 
@@ -217,14 +217,14 @@ def create_raw_study_routes(
         return Response(content=json_response, media_type="application/json")
 
     @bp.get(
-        "/studies/{uuid}/aggregate",
+        "/studies/{uuid}/areas/aggregate",
         tags=[APITag.study_raw_data],
-        summary="Retrieve Aggregated Raw Data from Study Output",
+        summary="Retrieve Aggregated Areas Raw Data from Study Output",
     )
-    def aggregate_raw_data(
+    def aggregate_areas_raw_data(
         uuid: str,
         output_name: str,
-        query_file: QueryFile,
+        query_file: AreasQueryFile,
         frequency: MatrixFrequency,
         mc_years: str = "",
         areas_names: str = "",
@@ -254,7 +254,58 @@ def create_raw_study_routes(
             extra={"user": current_user.id},
         )
         parameters = RequestParameters(user=current_user)
-        output = study_service.aggregate(
+        output = study_service.aggregate_areas_data(
+            uuid,
+            output_name=output_name,
+            query_file=query_file,
+            frequency=frequency,
+            mc_years=_split_comma_separated_values(mc_years),
+            areas_names=_split_comma_separated_values(areas_names),
+            columns_names=_split_comma_separated_values(columns_names),
+            params=parameters,
+        )
+
+        return output
+
+    @bp.get(
+        "/studies/{uuid}/links/aggregate",
+        tags=[APITag.study_raw_data],
+        summary="Retrieve Aggregated Areas Raw Data from Study Output",
+    )
+    def aggregate_links_raw_data(
+        uuid: str,
+        output_name: str,
+        query_file: LinksQueryFile,
+        frequency: MatrixFrequency,
+        mc_years: str = "",
+        areas_names: str = "",
+        columns_names: str = "",
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> t.Dict[str, t.Any]:
+        """
+        Create an aggregation of raw data
+
+        Args:
+            uuid: study id
+            output_name:
+            query_file:
+            frequency:
+            mc_years:
+            areas_names:
+            columns_names:
+            current_user:
+
+
+        Returns:
+            DF like matrix summarizing the aggregation results
+
+        """
+        logger.info(
+            f"Aggregate raw data at {query_file} (output name = {output_name}) from study {uuid}",
+            extra={"user": current_user.id},
+        )
+        parameters = RequestParameters(user=current_user)
+        output = study_service.aggregate_links_data(
             uuid,
             output_name=output_name,
             query_file=query_file,

@@ -75,7 +75,7 @@ from antarest.study.business.xpansion_management import (
     XpansionCandidateDTO,
     XpansionManager,
 )
-from antarest.study.common.default_values import QueryFile
+from antarest.study.common.default_values import AreasQueryFile, LinksQueryFile
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     NEW_DEFAULT_STUDY_VERSION,
@@ -319,11 +319,11 @@ class StudyService:
 
         return self.storage_service.get_storage(study).get(study, url, depth, formatted)
 
-    def aggregate(
+    def aggregate_areas_data(
         self,
         uuid: str,
         output_name: str,
-        query_file: QueryFile,
+        query_file: AreasQueryFile,
         frequency: MatrixFrequency,
         mc_years: t.Sequence[str],
         areas_names: t.Sequence[str],
@@ -347,7 +347,41 @@ class StudyService:
         """
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
-        output = self.storage_service.get_storage(study).aggregate_data(
+        output = self.storage_service.get_storage(study).aggregate_areas_data(
+            study, output_name, query_file, frequency, mc_years, areas_names, columns_names
+        )
+
+        return output
+
+    def aggregate_links_data(
+        self,
+        uuid: str,
+        output_name: str,
+        query_file: LinksQueryFile,
+        frequency: MatrixFrequency,
+        mc_years: t.Sequence[str],
+        areas_names: t.Sequence[str],
+        columns_names: t.Sequence[str],
+        params: RequestParameters,
+    ) -> JSON:
+        """
+        Get study data inside filesystem
+        Args:
+            uuid: study uuid
+            output_name: simulation output id
+            query_file: which types of data to retrieve
+            frequency: yearly, monthly, weekly, daily or hourly.
+            mc_years: list of monte-carlo years, if empty, all years are selected
+            areas_names: list of areas names, if empty, all areas are selected
+            columns_names: columns to be selected, if empty, all columns are selected
+            params: request parameters
+
+        Returns: data study formatted in json
+
+        """
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.READ)
+        output = self.storage_service.get_storage(study).aggregate_links_data(
             study, output_name, query_file, frequency, mc_years, areas_names, columns_names
         )
 

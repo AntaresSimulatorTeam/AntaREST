@@ -5,7 +5,7 @@ from pathlib import Path
 from antarest.core.exceptions import StudyNotFoundError
 from antarest.core.model import JSON
 from antarest.core.requests import RequestParameters
-from antarest.study.common.default_values import QueryFile
+from antarest.study.common.default_values import AreasQueryFile, LinksQueryFile
 from antarest.study.model import Study, StudyMetadataDTO, StudyMetadataPatchDTO, StudySimResultDTO
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -49,11 +49,39 @@ class IStudyStorageService(ABC, t.Generic[T]):
         raise NotImplementedError()
 
     @abstractmethod
-    def aggregate_data(
+    def aggregate_areas_data(
         self,
         metadata: T,
         output_name: str,
-        query_file: QueryFile,
+        query_file: AreasQueryFile,
+        frequency: MatrixFrequency,
+        mc_years: t.Sequence[str],
+        areas_names: t.Sequence[str],
+        columns_names: t.Sequence[str],
+    ) -> t.Dict[str, t.Any]:
+        """
+        Entry point to fetch data inside study.
+
+        Args:
+            metadata:
+            output_name:
+            query_file: QueryFile,
+            frequency: MatrixFrequency,
+            mc_years: t.Sequence[str],
+            areas_names: t.Sequence[str],
+            columns_names: t.Sequence[str],
+
+        Returns: study data formatted in json
+
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def aggregate_links_data(
+        self,
+        metadata: T,
+        output_name: str,
+        query_file: LinksQueryFile,
         frequency: MatrixFrequency,
         mc_years: t.Sequence[str],
         areas_names: t.Sequence[str],

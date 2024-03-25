@@ -17,7 +17,7 @@ from antarest.core.interfaces.cache import CacheConstants, ICache
 from antarest.core.model import JSON, PublicMode
 from antarest.core.utils.utils import StopWatch, extract_zip, unzip, zip_dir
 from antarest.login.model import GroupDTO
-from antarest.study.common.default_values import QueryFile
+from antarest.study.common.default_values import AreasQueryFile, LinksQueryFile
 from antarest.study.common.studystorage import IStudyStorageService, T
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
@@ -109,96 +109,6 @@ def flatten_tree(path_tree: t.Dict[str, t.Any]) -> t.List[t.Tuple[str, ...]]:
         else:
             result.append((key, value))
     return result
-
-
-def parts_query_file_filtering(
-    parts: t.List[t.Tuple[str, ...]], query_file: QueryFile
-) -> t.Tuple[FileType1, FileType2, t.List[t.Tuple[str, ...]]]:
-    """
-    Filter parts list
-    Args:
-        parts: list of tuple with all tree paths parts
-        query_file: query file to filter
-
-    Returns: filtered list of tuple with all tree paths parts
-
-    """
-    if query_file == QueryFile.LINKS_VALUES:
-        return (
-            FileType1.LINKS,
-            FileType2.VALUES,
-            [
-                path_parts
-                for path_parts in parts
-                if path_parts[FILE_TYPE_1_INDEX] == FileType1.LINKS
-                and path_parts[FILE_TYPE_2_INDEX].startswith(FileType2.VALUES)
-            ],
-        )
-    if query_file == QueryFile.LINKS_DETAILS:
-        return (
-            FileType1.LINKS,
-            FileType2.DETAILS,
-            [
-                path_parts
-                for path_parts in parts
-                if path_parts[FILE_TYPE_1_INDEX] == FileType1.LINKS
-                and path_parts[FILE_TYPE_2_INDEX].startswith(FileType2.DETAILS)
-            ],
-        )
-    if query_file == QueryFile.AREAS_VALUES:
-        return (
-            FileType1.AREAS,
-            FileType2.VALUES,
-            [
-                path_parts
-                for path_parts in parts
-                if path_parts[FILE_TYPE_1_INDEX] == FileType1.AREAS
-                and path_parts[FILE_TYPE_2_INDEX].startswith(FileType2.VALUES)
-            ],
-        )
-    if query_file == QueryFile.AREAS_DETAILS:
-        return (
-            FileType1.AREAS,
-            FileType2.DETAILS,
-            [
-                path_parts
-                for path_parts in parts
-                if path_parts[FILE_TYPE_1_INDEX] == FileType1.AREAS
-                and path_parts[FILE_TYPE_2_INDEX].startswith(FileType2.DETAILS)
-                and not path_parts[FILE_TYPE_2_INDEX].startswith(FileType2.DETAILS_ST_STORAGE)
-                and not path_parts[FILE_TYPE_2_INDEX].startswith(FileType2.DETAILS_RES)
-            ],
-        )
-    if query_file == QueryFile.AREAS_DETAILS_ST_STORAGE:
-        return (
-            FileType1.AREAS,
-            FileType2.DETAILS_ST_STORAGE,
-            [
-                path_parts
-                for path_parts in parts
-                if path_parts[FILE_TYPE_1_INDEX] == FileType1.AREAS
-                and path_parts[FILE_TYPE_2_INDEX].startswith(FileType2.DETAILS_ST_STORAGE)
-            ],
-        )
-    if query_file == QueryFile.AREAS_DETAILS_RES:
-        return (
-            FileType1.AREAS,
-            FileType2.DETAILS_RES,
-            [
-                path_parts
-                for path_parts in parts
-                if path_parts[FILE_TYPE_1_INDEX] == FileType1.AREAS
-                and path_parts[FILE_TYPE_2_INDEX].startswith(FileType2.DETAILS_RES)
-            ],
-        )
-    if query_file == QueryFile.BINDING_CONSTRAINTS:
-        return (
-            FileType1.BINDING_CONSTRAINTS,
-            FileType2.BINDING_CONSTRAINTS,
-            [path_parts for path_parts in parts if path_parts[FILE_TYPE_1_INDEX] == FileType1.BINDING_CONSTRAINTS],
-        )
-
-    raise ValueError(f"Unknown query file {query_file}")
 
 
 class AbstractStorageService(IStudyStorageService[T], ABC):
@@ -322,11 +232,11 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         del study
         return data
 
-    def aggregate_data(
+    def aggregate_areas_data(
         self,
         metadata: T,
         output_name: str,
-        query_file: QueryFile,
+        query_file: AreasQueryFile,
         frequency: MatrixFrequency,
         mc_years: t.Sequence[str],
         areas_names: t.Sequence[str],
@@ -349,37 +259,100 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         self._check_study_exists(metadata)
         study = self.get_raw(metadata)
         parts = TEMPLATE_PARTS.format(sim_id=output_name).split("/")
-        file_type_1, _, all_paths = parts_query_file_filtering(flatten_tree(study.tree.get(parts)), query_file)
-        if mc_years:
-            all_paths = [path_parts for path_parts in all_paths if path_parts[MC_YEAR_INDEX] in mc_years]
-        if areas_names and file_type_1 != FileType1.AREAS:
-            raise ValueError(f"You specified areas names for a query file that does not support it: {query_file}")
-        elif areas_names:
-            all_paths = [path_parts for path_parts in all_paths if path_parts[AREA_NAME_INDEX] in areas_names]
-        all_paths = [path_parts for path_parts in all_paths if frequency.value in path_parts[FREQUENCY_INDEX]]
+        mc_years_parts = flatten_tree(study.tree.get(parts, depth=1))
 
-        final_df = None
-        for path_parts in all_paths:
-            try:
-                node_data = study.tree.get(parts + list(path_parts[:-1]))
-            except ChildNotFoundError:
-                continue
+        return {}
+        # file_type_1, _, all_paths = parts_query_file_filtering(flatten_tree(study.tree.get(parts)), query_file)
+        # if mc_years:
+        #     all_paths = [path_parts for path_parts in all_paths if path_parts[MC_YEAR_INDEX] in mc_years]
+        # if areas_names and file_type_1 != FileType1.AREAS:
+        #     raise ValueError(f"You specified areas names for a query file that does not support it: {query_file}")
+        # elif areas_names:
+        #     all_paths = [path_parts for path_parts in all_paths if path_parts[AREA_NAME_INDEX] in areas_names]
+        # all_paths = [path_parts for path_parts in all_paths if frequency.value in path_parts[FREQUENCY_INDEX]]
+        #
+        # final_df = None
+        # for path_parts in all_paths:
+        #     try:
+        #         node_data = study.tree.get(parts + list(path_parts[:-1]))
+        #     except ChildNotFoundError:
+        #         continue
+        #
+        #     columns, matrix = node_data["columns"], np.array(node_data["data"]).T.tolist()
+        #     columns = [stringify(col) for col in columns]
+        #     kept_columns = [col for col in columns if col in columns_names] if columns_names else columns
+        #     node_data = (
+        #         {file_type_1.value: [path_parts[FILE_TYPE_1_INDEX + 1]] * len(matrix[0])}
+        #         if file_type_1 != FileType1.BINDING_CONSTRAINTS
+        #         else {}
+        #     )
+        #     node_data.update({MCYEAR_COL: [path_parts[MC_YEAR_INDEX]] * len(matrix[0])})
+        #     node_data.update({col: vals for col, vals in zip(columns, matrix) if col in kept_columns})
+        #
+        #     df = pd.DataFrame(node_data)
+        #     final_df = df if final_df is None else pd.concat([final_df, df], ignore_index=True)  # type: ignore
+        #
+        # return {} if final_df is None else final_df.fillna("N/A").to_dict(orient="list")  # type: ignore
 
-            columns, matrix = node_data["columns"], np.array(node_data["data"]).T.tolist()
-            columns = [stringify(col) for col in columns]
-            kept_columns = [col for col in columns if col in columns_names] if columns_names else columns
-            node_data = (
-                {file_type_1.value: [path_parts[FILE_TYPE_1_INDEX + 1]] * len(matrix[0])}
-                if file_type_1 != FileType1.BINDING_CONSTRAINTS
-                else {}
-            )
-            node_data.update({MCYEAR_COL: [path_parts[MC_YEAR_INDEX]] * len(matrix[0])})
-            node_data.update({col: vals for col, vals in zip(columns, matrix) if col in kept_columns})
+    def aggregate_links_data(
+        self,
+        metadata: T,
+        output_name: str,
+        query_file: LinksQueryFile,
+        frequency: MatrixFrequency,
+        mc_years: t.Sequence[str],
+        areas_names: t.Sequence[str],
+        columns_names: t.Sequence[str],
+    ) -> t.Dict[str, t.Any]:
+        """
+        Entry point to fetch data inside study.
+        Args:
+            metadata: study
+            output_name:
+            query_file:
+            frequency:
+            mc_years:
+            areas_names:
+            columns_names:
 
-            df = pd.DataFrame(node_data)
-            final_df = df if final_df is None else pd.concat([final_df, df], ignore_index=True)  # type: ignore
+        Returns: study data formatted in json
 
-        return {} if final_df is None else final_df.fillna("N/A").to_dict(orient="list")  # type: ignore
+        """
+        self._check_study_exists(metadata)
+        study = self.get_raw(metadata)
+        parts = TEMPLATE_PARTS.format(sim_id=output_name).split("/")
+        return {}
+        # file_type_1, _, all_paths = parts_query_file_filtering(flatten_tree(study.tree.get(parts)), query_file)
+        # if mc_years:
+        #     all_paths = [path_parts for path_parts in all_paths if path_parts[MC_YEAR_INDEX] in mc_years]
+        # if areas_names and file_type_1 != FileType1.AREAS:
+        #     raise ValueError(f"You specified areas names for a query file that does not support it: {query_file}")
+        # elif areas_names:
+        #     all_paths = [path_parts for path_parts in all_paths if path_parts[AREA_NAME_INDEX] in areas_names]
+        # all_paths = [path_parts for path_parts in all_paths if frequency.value in path_parts[FREQUENCY_INDEX]]
+        #
+        # final_df = None
+        # for path_parts in all_paths:
+        #     try:
+        #         node_data = study.tree.get(parts + list(path_parts[:-1]))
+        #     except ChildNotFoundError:
+        #         continue
+        #
+        #     columns, matrix = node_data["columns"], np.array(node_data["data"]).T.tolist()
+        #     columns = [stringify(col) for col in columns]
+        #     kept_columns = [col for col in columns if col in columns_names] if columns_names else columns
+        #     node_data = (
+        #         {file_type_1.value: [path_parts[FILE_TYPE_1_INDEX + 1]] * len(matrix[0])}
+        #         if file_type_1 != FileType1.BINDING_CONSTRAINTS
+        #         else {}
+        #     )
+        #     node_data.update({MCYEAR_COL: [path_parts[MC_YEAR_INDEX]] * len(matrix[0])})
+        #     node_data.update({col: vals for col, vals in zip(columns, matrix) if col in kept_columns})
+        #
+        #     df = pd.DataFrame(node_data)
+        #     final_df = df if final_df is None else pd.concat([final_df, df], ignore_index=True)  # type: ignore
+        #
+        # return {} if final_df is None else final_df.fillna("N/A").to_dict(orient="list")  # type: ignore
 
     def get_study_sim_result(
         self,
