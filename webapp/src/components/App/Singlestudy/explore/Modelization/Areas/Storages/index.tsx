@@ -181,6 +181,9 @@ function Storages() {
       onCreate={handleCreateRow}
       onDelete={handleDeleteSelection}
       onNameClick={handleNameClick}
+      deleteConfirmationMessage={(count) =>
+        t("studies.modelization.clusters.question.delete", { count })
+      }
     />
   );
 }
