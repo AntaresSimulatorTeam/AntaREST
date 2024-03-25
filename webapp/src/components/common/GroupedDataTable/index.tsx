@@ -45,6 +45,9 @@ export interface GroupedDataTableProps<
   onNameClick?: (row: MRT_Row<TData>) => void;
   isLoading?: boolean;
   deleteConfirmationMessage?: string | ((count: number) => string);
+  fillPendingRow?: (
+    pendingRow: TRow<TGroups[number]>,
+  ) => TRow<TGroups[number]> & Partial<TData>;
 }
 
 // Use ids to identify default columns (instead of `accessorKey`),
@@ -66,6 +69,7 @@ function GroupedDataTable<
   onNameClick,
   isLoading,
   deleteConfirmationMessage,
+  fillPendingRow,
 }: GroupedDataTableProps<TGroups, TData>) {
   const { t } = useTranslation();
   const [openDialog, setOpenDialog] = useState<
@@ -273,14 +277,18 @@ function GroupedDataTable<
   ////////////////////////////////////////////////////////////////
 
   const addPendingRow = (row: TRow<TGroups[number]>) => {
-    pendingRows.current.push(row);
-    // Type can be asserted as `TData` because the row will be checked in cell renders
-    setTableData((prev) => [...prev, row as TData]);
-  };
+    const pendingRow = fillPendingRow?.(row) || row;
 
-  const removePendingRow = (row: TRow<TGroups[number]>) => {
-    pendingRows.current = pendingRows.current.filter((r) => r !== row);
-    setTableData((prev) => prev.filter((r) => r !== row));
+    pendingRows.current.push(pendingRow);
+
+    // Type can be asserted as `TData` because the row will be checked in cell renders
+    // and `fillPendingRow` allows to add needed data
+    setTableData((prev) => [...prev, pendingRow as TData]);
+
+    return function removePendingRow() {
+      pendingRows.current = pendingRows.current.filter((r) => r !== pendingRow);
+      setTableData((prev) => prev.filter((r) => r !== pendingRow));
+    };
   };
 
   function isPendingRow(row: TData) {
@@ -305,7 +313,7 @@ function GroupedDataTable<
     }
 
     createOps.increment();
-    addPendingRow(values);
+    const removePendingRow = addPendingRow(values);
 
     try {
       const newRow = await onCreate(values);
@@ -314,7 +322,7 @@ function GroupedDataTable<
       enqueueErrorSnackbar(t("global.error.createFailed"), toError(error));
     }
 
-    removePendingRow(values);
+    removePendingRow();
     createOps.decrement();
   };
 
@@ -333,7 +341,7 @@ function GroupedDataTable<
     };
 
     createOps.increment();
-    addPendingRow(duplicatedRow);
+    const removePendingRow = addPendingRow(duplicatedRow);
 
     try {
       const newRow = await onDuplicate(selectedRow, newName);
@@ -342,7 +350,7 @@ function GroupedDataTable<
       enqueueErrorSnackbar(t("global.error.createFailed"), toError(error));
     }
 
-    removePendingRow(duplicatedRow);
+    removePendingRow();
     createOps.decrement();
   };
 

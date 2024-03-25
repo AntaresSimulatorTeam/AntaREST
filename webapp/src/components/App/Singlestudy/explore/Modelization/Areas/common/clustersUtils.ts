@@ -1,21 +1,8 @@
 import { DependencyList, useMemo } from "react";
-import * as R from "ramda";
 import { MRT_AggregationFn } from "material-react-table";
-import { StudyMetadata } from "../../../../../../../common/types";
-import { editStudy } from "../../../../../../../services/api/study";
 import { ThermalClusterWithCapacity } from "../Thermal/utils";
 import { RenewableClusterWithCapacity } from "../Renewables/utils";
 import usePromiseWithSnackbarError from "../../../../../../../hooks/usePromiseWithSnackbarError";
-
-export const saveField = R.curry(
-  (
-    studyId: StudyMetadata["id"],
-    path: string,
-    data: Record<string, unknown>,
-  ): Promise<void> => {
-    return editStudy(data, studyId, path);
-  },
-);
 
 /**
  * Custom aggregation function summing the values of each row,
@@ -33,11 +20,12 @@ export const saveField = R.curry(
 export const capacityAggregationFn = <
   T extends ThermalClusterWithCapacity | RenewableClusterWithCapacity,
 >(): MRT_AggregationFn<T> => {
-  return (_colHeader, rows) => {
-    const { enabledCapacitySum, installedCapacitySum } = rows.reduce(
+  return (columnId, leafRows) => {
+    const { enabledCapacitySum, installedCapacitySum } = leafRows.reduce(
       (acc, row) => {
-        acc.enabledCapacitySum += row.original.enabledCapacity ?? 0;
-        acc.installedCapacitySum += row.original.installedCapacity ?? 0;
+        acc.enabledCapacitySum += row.original.enabledCapacity;
+        acc.installedCapacitySum += row.original.installedCapacity;
+
         return acc;
       },
       { enabledCapacitySum: 0, installedCapacitySum: 0 },
