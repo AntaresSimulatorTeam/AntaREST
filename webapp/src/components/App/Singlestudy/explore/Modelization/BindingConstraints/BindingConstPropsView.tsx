@@ -1,12 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { StudyMetadata } from "../../../../../../common/types";
 import PropertiesView from "../../../../../common/PropertiesView";
 import ListElement from "../../common/ListElement";
 import AddDialog from "./AddDialog";
 import { BindingConstraint } from "./BindingConstView/utils";
 
 interface Props {
-  studyId: StudyMetadata["id"];
   list: BindingConstraint[];
   onClick: (name: string) => void;
   currentBindingConst?: string;
@@ -15,7 +13,6 @@ interface Props {
 
 // TODO rename ConstraintsList
 function BindingConstPropsView({
-  studyId,
   list,
   onClick,
   currentBindingConst,
@@ -70,7 +67,6 @@ function BindingConstPropsView({
       />
       {addBindingConst && (
         <AddDialog
-          studyId={studyId}
           open={addBindingConst}
           existingConstraints={existingConstraints}
           reloadConstraintsList={reloadConstraintsList}
