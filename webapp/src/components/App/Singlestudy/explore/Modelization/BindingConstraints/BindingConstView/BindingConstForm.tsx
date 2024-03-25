@@ -94,7 +94,7 @@ function BindingConstForm({ study, options, constraintId }: Props) {
 
         update(index, updatedTerm);
 
-        enqueueSnackbar("Constraint term updated", {
+        enqueueSnackbar(t("global.update.success"), {
           variant: "success",
           autoHideDuration: 1500,
         });
@@ -134,14 +134,14 @@ function BindingConstForm({ study, options, constraintId }: Props) {
         },
       ]);
 
-      enqueueSnackbar(t("study.success.deleteConstraint"), {
-        variant: "success",
-        autoHideDuration: 3000,
-      });
-
       dispatch(setCurrentBindingConst(""));
 
       navigate(`/studies/${study.id}/explore/modelization/bindingcontraint`);
+
+      enqueueSnackbar(t("study.success.deleteConstraint"), {
+        variant: "success",
+        autoHideDuration: 1500,
+      });
     } catch (e) {
       enqueueErrorSnackbar(t("study.error.deleteConstraint"), e as AxiosError);
     } finally {
@@ -161,34 +161,39 @@ function BindingConstForm({ study, options, constraintId }: Props) {
       >
         <TermsList>
           <TermsHeader>
-            <Button
-              variant="contained"
-              size="small"
-              color="secondary"
-              startIcon={<DatasetIcon />}
-              onClick={() => setMatrixDialogOpen(true)}
-            >
-              {t("study.modelization.bindingConst.timeSeries")}
-            </Button>
-            <Button
-              variant="contained"
-              size="small"
-              color="primary"
-              startIcon={<AddCircleOutlineRoundedIcon />}
-              onClick={() => setOpenConstraintTermDialog(true)}
-            >
-              {t("study.modelization.bindingConst.createConstraintTerm")}
-            </Button>
-            <Button
-              variant="outlined"
-              size="small"
-              startIcon={<DeleteIcon />}
-              color="error"
-              onClick={() => setConstraintToDelete(true)}
-            >
-              {t("study.modelization.bindingConst.deleteConstraint")}
-            </Button>
-            <DocLink to={`${ACTIVE_WINDOWS_DOC_PATH}#binding-constraints`} />
+            <Box>
+              <Button
+                variant="contained"
+                size="small"
+                color="secondary"
+                startIcon={<DatasetIcon />}
+                onClick={() => setMatrixDialogOpen(true)}
+                sx={{ mr: 2 }}
+              >
+                {t("study.modelization.bindingConst.timeSeries")}
+              </Button>
+              <Button
+                variant="contained"
+                size="small"
+                color="primary"
+                startIcon={<AddCircleOutlineRoundedIcon />}
+                onClick={() => setOpenConstraintTermDialog(true)}
+              >
+                {t("study.modelization.bindingConst.createConstraintTerm")}
+              </Button>
+            </Box>
+            <Box>
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<DeleteIcon />}
+                color="error"
+                onClick={() => setConstraintToDelete(true)}
+              >
+                {t("global.delete.all")}
+              </Button>
+              <DocLink to={`${ACTIVE_WINDOWS_DOC_PATH}#binding-constraints`} />
+            </Box>
           </TermsHeader>
 
           {constraintTerms.map((term: ConstraintTerm, index: number) => (
