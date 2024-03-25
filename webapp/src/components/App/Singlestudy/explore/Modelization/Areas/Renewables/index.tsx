@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { createMRTColumnHelper, type MRT_Row } from "material-react-table";
-import { Box, Chip } from "@mui/material";
+import { Box } from "@mui/material";
 import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { StudyMetadata } from "../../../../../../../common/types";
@@ -23,6 +23,7 @@ import {
   useClusterDataWithCapacity,
 } from "../common/clustersUtils";
 import { TRow } from "../../../../../../common/GroupedDataTable/types";
+import BooleanCell from "../../../../../../common/GroupedDataTable/cellRenderers/BooleanCell";
 
 function Renewables() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -50,14 +51,7 @@ function Renewables() {
         header: "Enabled",
         size: 50,
         filterVariant: "checkbox",
-        Cell: ({ cell }) => (
-          <Chip
-            label={cell.getValue() ? t("button.yes") : t("button.no")}
-            color={cell.getValue() ? "success" : "error"}
-            size="small"
-            sx={{ minWidth: 40 }}
-          />
-        ),
+        Cell: BooleanCell,
       }),
       columnHelper.accessor("tsInterpretation", {
         header: "TS Interpretation",

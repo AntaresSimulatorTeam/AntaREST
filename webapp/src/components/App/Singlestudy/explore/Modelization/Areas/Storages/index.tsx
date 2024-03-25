@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { createMRTColumnHelper, type MRT_Row } from "material-react-table";
-import { Box, Chip, Tooltip } from "@mui/material";
+import { Box, Tooltip } from "@mui/material";
 import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
 import { StudyMetadata } from "../../../../../../../common/types";
 import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
@@ -18,6 +18,7 @@ import {
 } from "./utils";
 import usePromiseWithSnackbarError from "../../../../../../../hooks/usePromiseWithSnackbarError";
 import type { TRow } from "../../../../../../common/GroupedDataTable/types";
+import BooleanCell from "../../../../../../common/GroupedDataTable/cellRenderers/BooleanCell";
 
 function Storages() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -141,14 +142,7 @@ function Storages() {
         header: t("study.modelization.storages.initialLevelOptim"),
         size: 200,
         filterVariant: "checkbox",
-        Cell: ({ cell }) => (
-          <Chip
-            label={cell.getValue() ? t("button.yes") : t("button.no")}
-            color={cell.getValue() ? "success" : "error"}
-            size="small"
-            sx={{ minWidth: 40 }}
-          />
-        ),
+        Cell: BooleanCell,
       }),
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
