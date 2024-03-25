@@ -10,8 +10,7 @@ export const TermsList = styled(Box)(({ theme }) => ({
 export const TermsHeader = styled(Box)(({ theme }) => ({
   width: "100%",
   display: "flex",
-  gap: 15,
   alignItems: "center",
-  justifyContent: "flex-end",
-  marginBottom: theme.spacing(1),
+  justifyContent: "space-between",
+  marginBottom: theme.spacing(2),
 }));
