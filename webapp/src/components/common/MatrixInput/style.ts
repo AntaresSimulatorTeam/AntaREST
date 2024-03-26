@@ -13,7 +13,8 @@ export const Root = styled(Box)(({ theme }) => ({
 export const Header = styled(Box)(({ theme }) => ({
   width: "100%",
   display: "flex",
-  flexFlow: "row nowrap",
+  flexFlow: "row wrap",
+  gap: theme.spacing(1),
   justifyContent: "space-between",
   alignItems: "flex-end",
 }));

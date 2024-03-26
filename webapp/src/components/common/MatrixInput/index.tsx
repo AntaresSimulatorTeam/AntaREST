@@ -3,14 +3,13 @@ import { useSnackbar } from "notistack";
 import { useState } from "react";
 import { AxiosError } from "axios";
 import debug from "debug";
-import { Typography, Box, Button, Divider, Tooltip } from "@mui/material";
+import { Typography, Box, Button, Divider } from "@mui/material";
 import UploadOutlinedIcon from "@mui/icons-material/UploadOutlined";
-import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
-import InventoryIcon from "@mui/icons-material/Inventory";
+import FileUploadIcon from "@mui/icons-material/FileUpload";
+import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import {
   MatrixEditDTO,
   MatrixStats,
-  MatrixType,
   StudyMetadata,
 } from "../../../common/types";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
@@ -23,11 +22,17 @@ import SimpleContent from "../page/SimpleContent";
 import EditableMatrix from "../EditableMatrix";
 import ImportDialog from "../dialogs/ImportDialog";
 import MatrixAssignDialog from "./MatrixAssignDialog";
-import { downloadMatrix } from "../../../utils/matrixUtils";
+import { downloadMatrix } from "../../../services/api/studies/raw";
 import { fetchMatrixFn } from "../../App/Singlestudy/explore/Modelization/Areas/Hydro/utils";
-import { LoadingButton } from "@mui/lab";
+import SplitButton, { SlitButtonProps } from "../buttons/SplitButton";
+import { downloadFile } from "../../../utils/fileUtils";
 
 const logErr = debug("antares:createimportform:error");
+
+const EXPORT_OPTIONS = [
+  { label: "TSV", value: "tsv" },
+  { label: "Excel", value: "xlsx" },
+] as const;
 
 interface Props {
   study: StudyMetadata;
@@ -86,6 +91,7 @@ function MatrixInput({
    * Otherwise, default row numbers and timestamps are displayed using initialRowNames.
    */
   const rowNames = fetchFn ? matrixIndex : initialRowNames;
+  const columnsLength = matrixData?.columns?.length ?? 0;
 
   ////////////////////////////////////////////////////////////////
   // Utils
@@ -138,14 +144,32 @@ function MatrixInput({
     }
   };
 
-  const handleDownload = async (matrixData: MatrixType, fileName: string) => {
+  const handleDownload: SlitButtonProps<
+    (typeof EXPORT_OPTIONS)[number]["value"]
+  >["onClick"] = async (value) => {
     setIsDownloading(true);
 
-    // Re-fetch to get latest data
-    const data = await fetchMatrixData();
-    downloadMatrix(data, fileName);
+    await new Promise((res) => {
+      setTimeout(() => {
+        res(1);
+      }, 2000);
+    });
 
-    setIsDownloading(false);
+    const isExcel = value === "xlsx";
+
+    downloadMatrix(study.id, url, value, isExcel, isExcel)
+      .then((res) => {
+        downloadFile(
+          res,
+          `matrix_${study.id}_${url.replace("/", "_")}.${value}`,
+        );
+      })
+      .catch((err) => {
+        enqueueErrorSnackbar(t("matrix.error.failedToDownloadMatrix"), err);
+      })
+      .finally(() => {
+        setIsDownloading(false);
+      });
   };
 
   ////////////////////////////////////////////////////////////////
@@ -166,38 +190,14 @@ function MatrixInput({
           >
             {title || t("xpansion.timeSeries")}
           </Typography>
-          <Box sx={{ display: "flex", alignItems: "center" }}>
-            <Button
-              sx={{
-                mx: 2,
-              }}
-              variant="outlined"
-              color="primary"
-              onClick={() => setOpenMatrixAsignDialog(true)}
-            >
-              <Tooltip title={t("data.assignMatrix") as string}>
-                <InventoryIcon />
-              </Tooltip>
-            </Button>
-
-            <Button
-              variant="outlined"
-              color="primary"
-              startIcon={<UploadOutlinedIcon />}
-              onClick={() => setOpenImportDialog(true)}
-            >
-              {t("global.import")}
-            </Button>
-
-            {matrixData?.columns?.length >= 1 && (
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            {/* {matrixData?.columns?.length >= 1 && (
               <LoadingButton
-                sx={{
-                  ml: 2,
-                }}
                 loadingPosition="start"
                 loading={isDownloading}
                 variant="outlined"
                 color="primary"
+                size="small"
                 startIcon={<DownloadOutlinedIcon />}
                 onClick={() =>
                   handleDownload(
@@ -208,12 +208,44 @@ function MatrixInput({
               >
                 {t("global.download")}
               </LoadingButton>
-            )}
+            )} */}
+
+            <SplitButton
+              options={["Depuis un fichier", "Depuis la base de donnée"]}
+              onClick={(_, index) => {
+                if (index === 0) {
+                  setOpenImportDialog(true);
+                } else {
+                  setOpenMatrixAsignDialog(true);
+                }
+              }}
+              size="small"
+              ButtonProps={{
+                startIcon: <FileDownloadIcon />,
+              }}
+            >
+              Importer
+            </SplitButton>
+
+            <SplitButton
+              variant="contained"
+              options={[...EXPORT_OPTIONS]}
+              onClick={handleDownload}
+              size="small"
+              disabled={columnsLength === 0}
+              ButtonProps={{
+                startIcon: <FileUploadIcon />,
+                loadingPosition: "start",
+                loading: isDownloading,
+              }}
+            >
+              Exporter
+            </SplitButton>
           </Box>
         </Header>
         <Divider sx={{ width: "100%", mt: 1, mb: 2 }} />
         {isLoading && <SimpleLoader />}
-        {!isLoading && matrixData?.columns?.length >= 1 && matrixIndex ? (
+        {!isLoading && columnsLength >= 1 && matrixIndex ? (
           <EditableMatrix
             matrix={matrixData}
             matrixTime={!rowNames}
