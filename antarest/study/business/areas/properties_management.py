@@ -2,7 +2,7 @@ import re
 from builtins import sorted
 from typing import Any, Dict, Iterable, List, Optional, Set, cast
 
-from pydantic import Field, root_validator
+from pydantic import root_validator
 
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.utils import FieldInfo, FormFieldsBaseModel, execute_or_add_commands
