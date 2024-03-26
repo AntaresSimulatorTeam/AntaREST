@@ -4,6 +4,7 @@ import {
   StudyMetadata,
 } from "../../../../../../../common/types";
 import client from "../../../../../../../services/api/client";
+import type { PartialExceptFor } from "../../../../../../../utils/tsUtils";
 
 ////////////////////////////////////////////////////////////////
 // Constants
@@ -51,7 +52,8 @@ export const TS_LAW_OPTIONS = ["geometric", "uniform"] as const;
 // Types
 ////////////////////////////////////////////////////////////////
 
-type ThermalGroup = (typeof THERMAL_GROUPS)[number];
+export type ThermalGroup = (typeof THERMAL_GROUPS)[number];
+
 type LocalTSGenerationBehavior = (typeof TS_GENERATION_OPTIONS)[number];
 type TimeSeriesLawOption = (typeof TS_LAW_OPTIONS)[number];
 
@@ -106,9 +108,10 @@ const getClusterUrl = (
 async function makeRequest<T>(
   method: "get" | "post" | "patch" | "delete",
   url: string,
-  data?: Partial<ThermalCluster> | { data: Array<Cluster["id"]> },
+  data?: Partial<ThermalCluster> | { data: Array<Cluster["id"]> } | null,
+  params?: Record<string, string>,
 ): Promise<T> {
-  const res = await client[method]<T>(url, data);
+  const res = await client[method]<T>(url, data, params && { params });
   return res.data;
 }
 
@@ -143,15 +146,29 @@ export async function updateThermalCluster(
   );
 }
 
-export async function createThermalCluster(
+export function createThermalCluster(
   studyId: StudyMetadata["id"],
   areaId: Area["name"],
-  data: Partial<ThermalCluster>,
-): Promise<ThermalClusterWithCapacity> {
-  return makeRequest<ThermalClusterWithCapacity>(
+  data: PartialExceptFor<ThermalCluster, "name">,
+) {
+  return makeRequest<ThermalCluster>(
     "post",
     getClustersUrl(studyId, areaId),
     data,
+  );
+}
+
+export function duplicateThermalCluster(
+  studyId: StudyMetadata["id"],
+  areaId: Area["name"],
+  clusterIdSource: ThermalCluster["id"],
+  newName: ThermalCluster["name"],
+) {
+  return makeRequest<ThermalCluster>(
+    "post",
+    `/v1/studies/${studyId}/areas/${areaId}/thermals/${clusterIdSource}`,
+    null,
+    { newName },
   );
 }
 

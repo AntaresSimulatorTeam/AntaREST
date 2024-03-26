@@ -4,6 +4,7 @@ import {
   StudyMetadata,
 } from "../../../../../../../common/types";
 import client from "../../../../../../../services/api/client";
+import type { PartialExceptFor } from "../../../../../../../utils/tsUtils";
 
 ////////////////////////////////////////////////////////////////
 // Constants
@@ -30,8 +31,9 @@ export const TS_INTERPRETATION_OPTIONS = [
 // Types
 ////////////////////////////////////////////////////////////////
 
+export type RenewableGroup = (typeof RENEWABLE_GROUPS)[number];
+
 type TimeSeriesInterpretation = (typeof TS_INTERPRETATION_OPTIONS)[number];
-type RenewableGroup = (typeof RENEWABLE_GROUPS)[number];
 
 export interface RenewableFormFields {
   name: string;
@@ -75,9 +77,10 @@ const getClusterUrl = (
 async function makeRequest<T>(
   method: "get" | "post" | "patch" | "delete",
   url: string,
-  data?: Partial<RenewableCluster> | { data: Array<Cluster["id"]> },
+  data?: Partial<RenewableCluster> | { data: Array<Cluster["id"]> } | null,
+  params?: Record<string, string>,
 ): Promise<T> {
-  const res = await client[method]<T>(url, data);
+  const res = await client[method]<T>(url, data, params && { params });
   return res.data;
 }
 
@@ -115,15 +118,29 @@ export async function updateRenewableCluster(
   );
 }
 
-export async function createRenewableCluster(
+export function createRenewableCluster(
   studyId: StudyMetadata["id"],
   areaId: Area["name"],
-  data: Partial<RenewableCluster>,
-): Promise<RenewableClusterWithCapacity> {
-  return makeRequest<RenewableClusterWithCapacity>(
+  data: PartialExceptFor<RenewableCluster, "name">,
+) {
+  return makeRequest<RenewableCluster>(
     "post",
     getClustersUrl(studyId, areaId),
     data,
+  );
+}
+
+export function duplicateRenewableCluster(
+  studyId: StudyMetadata["id"],
+  areaId: Area["name"],
+  clusterIdSource: RenewableCluster["id"],
+  newName: RenewableCluster["name"],
+) {
+  return makeRequest<RenewableCluster>(
+    "post",
+    `/v1/studies/${studyId}/areas/${areaId}/renewables/${clusterIdSource}`,
+    null,
+    { newName },
   );
 }
 

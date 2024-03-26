@@ -99,7 +99,7 @@ export function validateString(
 
   // Check for duplication against existing values.
   if (existingValues.map(normalize).includes(comparisonValue)) {
-    return t("form.field.duplicate", { 0: value });
+    return t("form.field.duplicate");
   }
 
   // Check for inclusion in the list of excluded values.

@@ -1,5 +1,6 @@
 import { StudyMetadata, Area } from "../../../../../../../common/types";
 import client from "../../../../../../../services/api/client";
+import type { PartialExceptFor } from "../../../../../../../utils/tsUtils";
 
 ////////////////////////////////////////////////////////////////
 // Constants
@@ -53,9 +54,10 @@ const getStorageUrl = (
 async function makeRequest<T>(
   method: "get" | "post" | "patch" | "delete",
   url: string,
-  data?: Partial<Storage> | { data: Array<Storage["id"]> },
+  data?: Partial<Storage> | { data: Array<Storage["id"]> } | null,
+  params?: Record<string, string>,
 ): Promise<T> {
-  const res = await client[method]<T>(url, data);
+  const res = await client[method]<T>(url, data, params && { params });
   return res.data;
 }
 
@@ -87,12 +89,26 @@ export async function updateStorage(
   );
 }
 
-export async function createStorage(
+export function createStorage(
   studyId: StudyMetadata["id"],
   areaId: Area["name"],
-  data: Partial<Storage>,
-): Promise<Storage> {
+  data: PartialExceptFor<Storage, "name">,
+) {
   return makeRequest<Storage>("post", getStoragesUrl(studyId, areaId), data);
+}
+
+export function duplicateStorage(
+  studyId: StudyMetadata["id"],
+  areaId: Area["name"],
+  clusterIdSource: Storage["id"],
+  newName: Storage["name"],
+) {
+  return makeRequest<Storage>(
+    "post",
+    `/v1/studies/${studyId}/areas/${areaId}/storages/${clusterIdSource}`,
+    null,
+    { newName },
+  );
 }
 
 export function deleteStorages(
