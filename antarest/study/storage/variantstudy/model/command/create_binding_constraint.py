@@ -241,7 +241,7 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
         bd_id = transform_name_to_id(self.name)
         self.validates_and_fills_matrices(specific_matrices=None, version=study_data.config.version, create=True)
 
-        return apply_binding_constraint(
+        err_msg = apply_binding_constraint(
             study_data,
             binding_constraints,
             str(new_key),
@@ -260,6 +260,7 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
             self.filter_synthesis,
             self.group,
         )
+        return CommandOutput(status=not err_msg, message=err_msg)
 
     def to_dto(self) -> CommandDTO:
         dto = super().to_dto()

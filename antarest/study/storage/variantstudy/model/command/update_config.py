@@ -27,7 +27,7 @@ class UpdateConfig(ICommand):
     data: Union[str, int, float, bool, JSON, None]
 
     def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
-        return CommandOutput(status=True, message="ok"), dict()
+        return CommandOutput(status=True, message="ok"), {}
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
         url = self.target.split("/")
