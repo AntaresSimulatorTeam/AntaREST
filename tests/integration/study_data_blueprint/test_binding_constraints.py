@@ -2,10 +2,10 @@ import numpy as np
 import pytest
 from starlette.testclient import TestClient
 
-from antarest.study.business.binding_constraint_management import AreaClusterDTO, AreaLinkDTO, ConstraintTermDTO
+from antarest.study.business.binding_constraint_management import ClusterTerm, LinkTerm, ConstraintTerm
 
 
-class TestAreaLinkDTO:
+class TestLinkTerm:
     @pytest.mark.parametrize(
         "area1, area2, expected",
         [
@@ -16,11 +16,11 @@ class TestAreaLinkDTO:
         ],
     )
     def test_constraint_id(self, area1: str, area2: str, expected: str) -> None:
-        info = AreaLinkDTO(area1=area1, area2=area2)
+        info = LinkTerm(area1=area1, area2=area2)
         assert info.generate_id() == expected
 
 
-class TestAreaClusterDTO:
+class TestClusterTerm:
     @pytest.mark.parametrize(
         "area, cluster, expected",
         [
@@ -30,31 +30,31 @@ class TestAreaClusterDTO:
         ],
     )
     def test_constraint_id(self, area: str, cluster: str, expected: str) -> None:
-        info = AreaClusterDTO(area=area, cluster=cluster)
+        info = ClusterTerm(area=area, cluster=cluster)
         assert info.generate_id() == expected
 
 
-class TestConstraintTermDTO:
+class TestConstraintTerm:
     def test_constraint_id__link(self):
-        term = ConstraintTermDTO(
+        term = ConstraintTerm(
             id="foo",
             weight=3.14,
             offset=123,
-            data=AreaLinkDTO(area1="Area 1", area2="Area 2"),
+            data=LinkTerm(area1="Area 1", area2="Area 2"),
         )
         assert term.generate_id() == term.data.generate_id()
 
     def test_constraint_id__cluster(self):
-        term = ConstraintTermDTO(
+        term = ConstraintTerm(
             id="foo",
             weight=3.14,
             offset=123,
-            data=AreaClusterDTO(area="Area 1", cluster="Cluster X"),
+            data=ClusterTerm(area="Area 1", cluster="Cluster X"),
         )
         assert term.generate_id() == term.data.generate_id()
 
     def test_constraint_id__other(self):
-        term = ConstraintTermDTO(
+        term = ConstraintTerm(
             id="foo",
             weight=3.14,
             offset=123,
