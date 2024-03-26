@@ -43,11 +43,11 @@ from antarest.study.business.areas.thermal_management import (
     ThermalManager,
 )
 from antarest.study.business.binding_constraint_management import (
-    BindingConstraintConfigType,
-    BindingConstraintCreation,
-    BindingConstraintEdition,
-    BindingConstraintFilter,
-    ConstraintTermDTO,
+    ConstraintOutput,
+    ConstraintCreation,
+    ConstraintInput,
+    ConstraintFilters,
+    ConstraintTerm,
 )
 from antarest.study.business.correlation_management import CorrelationFormFields, CorrelationManager, CorrelationMatrix
 from antarest.study.business.district_manager import DistrictCreationDTO, DistrictInfoDTO, DistrictUpdateDTO
@@ -899,7 +899,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/bindingconstraints",
         tags=[APITag.study_data],
         summary="Get binding constraint list",
-        response_model=None,  # Dict[str, bool],
+        response_model=Union[ConstraintOutput, List[ConstraintOutput]],
     )
     def get_binding_constraint_list(
         uuid: str,
@@ -933,14 +933,14 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
             alias="clusterId",
         ),
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    ) -> Union[ConstraintOutput, List[ConstraintOutput]]:
         logger.info(
             f"Fetching binding constraint list for study {uuid}",
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
-        bc_filter = BindingConstraintFilter(
+        filters = ConstraintFilters(
             enabled=enabled,
             operator=operator,
             comments=comments,
@@ -951,27 +951,27 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
             link_id=link_id,
             cluster_id=cluster_id,
         )
-        return study_service.binding_constraint_manager.get_binding_constraint(study, bc_filter)
+        return study_service.binding_constraint_manager.get_binding_constraint(study, filters)
 
     @bp.get(
         "/studies/{uuid}/bindingconstraints/{binding_constraint_id}",
         tags=[APITag.study_data],
         summary="Get binding constraint",
-        response_model=None,  # Dict[str, bool],
+        response_model=ConstraintOutput,
     )
     def get_binding_constraint(
         uuid: str,
         binding_constraint_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    ) -> ConstraintOutput:
         logger.info(
             f"Fetching binding constraint {binding_constraint_id} for study {uuid}",
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
-        bc_filter = BindingConstraintFilter(bc_id=binding_constraint_id)
-        return study_service.binding_constraint_manager.get_binding_constraint(study, bc_filter)
+        filters = ConstraintFilters(bc_id=binding_constraint_id)
+        return study_service.binding_constraint_manager.get_binding_constraint(study, filters)
 
     @bp.put(
         "/studies/{uuid}/bindingconstraints/{binding_constraint_id}",
@@ -981,9 +981,9 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     def update_binding_constraint(
         uuid: str,
         binding_constraint_id: str,
-        data: Union[BCKeyValueType, BindingConstraintEdition],
+        data: Union[BCKeyValueType, ConstraintInput],
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> BindingConstraintConfigType:
+    ) -> ConstraintOutput:
         logger.info(
             f"Update binding constraint {binding_constraint_id} for study {uuid}",
             extra={"user": current_user.id},
@@ -994,13 +994,13 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         if isinstance(data, dict):
             warnings.warn(
                 "Using key / value format for binding constraint data is deprecated."
-                " Please use the BindingConstraintEdition format instead.",
+                " Please use the ConstraintInput format instead.",
                 DeprecationWarning,
             )
             _obj = {data["key"]: data["value"]}
             if "filterByYear" in _obj:
                 _obj["filterYearByYear"] = _obj.pop("filterByYear")
-            data = BindingConstraintEdition(**_obj)
+            data = ConstraintInput(**_obj)
 
         return study_service.binding_constraint_manager.update_binding_constraint(study, binding_constraint_id, data)
 
@@ -1009,10 +1009,10 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         tags=[APITag.study_data],
         summary="Get the list of binding constraint groups",
     )
-    def get_binding_constraint_groups(
+    def get_grouped_constraints(
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Mapping[str, Sequence[BindingConstraintConfigType]]:
+    ) -> Mapping[str, Sequence[ConstraintOutput]]:
         """
         Get the list of binding constraint groups for the study.
 
@@ -1028,7 +1028,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
-        result = study_service.binding_constraint_manager.get_binding_constraint_groups(study)
+        result = study_service.binding_constraint_manager.get_grouped_constraints(study)
         return result
 
     @bp.get(
@@ -1038,7 +1038,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         summary="Validate all binding constraint groups",
         response_model=None,
     )
-    def validate_binding_constraint_groups(
+    def validate_constraint_groups(
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> bool:
@@ -1061,18 +1061,18 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
-        return study_service.binding_constraint_manager.validate_binding_constraint_groups(study)
+        return study_service.binding_constraint_manager.validate_constraint_groups(study)
 
     @bp.get(
         "/studies/{uuid}/constraint-groups/{group}",
         tags=[APITag.study_data],
         summary="Get the binding constraint group",
     )
-    def get_binding_constraint_group(
+    def get_constraints_by_group(
         uuid: str,
         group: str,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Sequence[BindingConstraintConfigType]:
+    ) -> Sequence[ConstraintOutput]:
         """
         Get the binding constraint group for the study.
 
@@ -1092,7 +1092,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
-        result = study_service.binding_constraint_manager.get_binding_constraint_group(study, group)
+        result = study_service.binding_constraint_manager.get_constraints_by_group(study, group)
         return result
 
     @bp.get(
@@ -1101,7 +1101,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         summary="Validate the binding constraint group",
         response_model=None,
     )
-    def validate_binding_constraint_group(
+    def validate_constraint_group(
         uuid: str,
         group: str,
         current_user: JWTUser = Depends(auth.get_current_user),
@@ -1127,14 +1127,14 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
-        return study_service.binding_constraint_manager.validate_binding_constraint_group(study, group)
+        return study_service.binding_constraint_manager.validate_constraint_group(study, group)
 
     @bp.post("/studies/{uuid}/bindingconstraints", tags=[APITag.study_data], summary="Create a binding constraint")
     def create_binding_constraint(
         uuid: str,
-        data: BindingConstraintCreation,
+        data: ConstraintCreation,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> BindingConstraintConfigType:
+    ) -> ConstraintOutput:
         logger.info(
             f"Creating a new binding constraint for study {uuid}",
             extra={"user": current_user.id},
@@ -1168,7 +1168,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     def add_constraint_term(
         uuid: str,
         binding_constraint_id: str,
-        term: ConstraintTermDTO,
+        term: ConstraintTerm,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(
@@ -1177,7 +1177,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
-        return study_service.binding_constraint_manager.add_new_constraint_term(study, binding_constraint_id, term)
+        return study_service.binding_constraint_manager.create_constraint_term(study, binding_constraint_id, term)
 
     @bp.put(
         "/studies/{uuid}/bindingconstraints/{binding_constraint_id}/term",
@@ -1187,7 +1187,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     def update_constraint_term(
         uuid: str,
         binding_constraint_id: str,
-        term: ConstraintTermDTO,
+        term: ConstraintTerm,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(

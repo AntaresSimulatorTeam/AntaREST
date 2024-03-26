@@ -482,7 +482,7 @@ class TableModeManager:
 
                 if current_binding:
                     col_values = columns.dict(exclude_none=True)
-                    current_binding_dto = BindingConstraintManager.process_constraint(
+                    current_binding_dto = BindingConstraintManager.constraint_model_adapter(
                         current_binding, int(study.version)
                     )
 
