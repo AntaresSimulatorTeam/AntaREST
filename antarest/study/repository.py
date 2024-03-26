@@ -257,9 +257,17 @@ class StudyMetadataRepository:
 
         # pagination
         if pagination.page_nb or pagination.page_size:
-            q = q.offset(pagination.page_nb * pagination.page_size).limit(pagination.page_size)
+            limit = pagination.page_size
+            offset = pagination.page_nb * pagination.page_size
+            end = offset + limit
+            if sort_by is None:
+                q = q.order_by(entity.name.asc())
+            if study_filter.groups or study_filter.tags:
+                studies: t.Sequence[Study] = q.all()[offset:end]
+                return studies
+            q = q.offset(offset).limit(limit)
 
-        studies: t.Sequence[Study] = q.all()
+        studies = q.all()
         return studies
 
     def count_studies(self, study_filter: StudyFilter = StudyFilter()) -> int:
@@ -305,12 +313,9 @@ class StudyMetadataRepository:
             else:
                 q = q.filter(not_(RawStudy.missing.is_(None)))
 
-        if study_filter.users is not None:
-            q = q.options(joinedload(entity.owner))
-        if study_filter.groups is not None:
-            q = q.options(joinedload(entity.groups))
-        if study_filter.tags is not None:
-            q = q.options(joinedload(entity.tags))
+        q = q.options(joinedload(entity.owner))
+        q = q.options(joinedload(entity.groups))
+        q = q.options(joinedload(entity.tags))
         q = q.options(joinedload(entity.additional_data))
 
         if study_filter.managed is not None:
