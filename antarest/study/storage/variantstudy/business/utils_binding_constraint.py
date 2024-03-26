@@ -8,7 +8,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint 
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.model.command.common import BindingConstraintOperator, CommandOutput
+from antarest.study.storage.variantstudy.model.command.common import BindingConstraintOperator
 
 
 def apply_binding_constraint(
@@ -29,7 +29,7 @@ def apply_binding_constraint(
     filter_year_by_year: t.Optional[str] = None,
     filter_synthesis: t.Optional[str] = None,
     group: t.Optional[str] = None,
-) -> CommandOutput:
+) -> str:
     version = study_data.config.version
     binding_constraints[new_key] = {
         "name": name,
@@ -52,19 +52,13 @@ def apply_binding_constraint(
         if "%" in link_or_cluster:
             area_1, area_2 = link_or_cluster.split("%")
             if area_1 not in study_data.config.areas or area_2 not in study_data.config.areas[area_1].links:
-                return CommandOutput(
-                    status=False,
-                    message=f"Link '{link_or_cluster}' does not exist in binding constraint '{bd_id}'",
-                )
+                return f"Link '{link_or_cluster}' does not exist in binding constraint '{bd_id}'"
         elif "." in link_or_cluster:
             # Cluster IDs are stored in lower case in the binding constraints file.
             area, cluster_id = link_or_cluster.split(".")
             thermal_ids = {thermal.id.lower() for thermal in study_data.config.areas[area].thermals}
             if area not in study_data.config.areas or cluster_id.lower() not in thermal_ids:
-                return CommandOutput(
-                    status=False,
-                    message=f"Cluster '{link_or_cluster}' does not exist in binding constraint '{bd_id}'",
-                )
+                return f"Cluster '{link_or_cluster}' does not exist in binding constraint '{bd_id}'"
         else:
             raise NotImplementedError(f"Invalid link or thermal ID: {link_or_cluster}")
 
@@ -95,7 +89,7 @@ def apply_binding_constraint(
                 raise TypeError(repr(matrix_term))
             if version >= 870:
                 study_data.tree.save(matrix_term, ["input", "bindingconstraints", f"{bd_id}_{matrix_alias}"])
-    return CommandOutput(status=True)
+    return ""  # success
 
 
 def parse_bindings_coeffs_and_save_into_config(

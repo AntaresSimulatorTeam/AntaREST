@@ -1,4 +1,4 @@
-from typing import List
+import typing as t
 
 from antarest.core.model import JSON
 from antarest.matrixstore.service import ISimpleMatrixService
@@ -74,14 +74,19 @@ class CommandFactory:
             patch_service=patch_service,
         )
 
-    def _to_single_command(self, action: str, args: JSON, version: int) -> ICommand:
+    def _to_single_command(self, command_id: t.Optional[str], action: str, args: JSON, version: int) -> ICommand:
         """Convert a single CommandDTO to ICommand."""
         if action in COMMAND_MAPPING:
             command_class = COMMAND_MAPPING[action]
-            return command_class(**args, command_context=self.command_context, version=version)  # type: ignore
+            return command_class(  # type: ignore
+                **args,
+                command_context=self.command_context,
+                version=version,
+                command_id=command_id,
+            )
         raise NotImplementedError(action)
 
-    def to_command(self, command_dto: CommandDTO) -> List[ICommand]:
+    def to_command(self, command_dto: CommandDTO) -> t.List[ICommand]:
         """
         Convert a CommandDTO to a list of ICommand.
 
@@ -96,12 +101,15 @@ class CommandFactory:
         """
         args = command_dto.args
         if isinstance(args, dict):
-            return [self._to_single_command(command_dto.action, args, command_dto.version)]
+            return [self._to_single_command(command_dto.id, command_dto.action, args, command_dto.version)]
         elif isinstance(args, list):
-            return [self._to_single_command(command_dto.action, argument, command_dto.version) for argument in args]
+            return [
+                self._to_single_command(command_dto.id, command_dto.action, argument, command_dto.version)
+                for argument in args
+            ]
         raise NotImplementedError()
 
-    def to_commands(self, cmd_dto_list: List[CommandDTO]) -> List[ICommand]:
+    def to_commands(self, cmd_dto_list: t.List[CommandDTO]) -> t.List[ICommand]:
         """
         Convert a list of CommandDTO to a list of ICommand.
 
