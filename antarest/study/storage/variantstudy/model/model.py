@@ -12,7 +12,8 @@ class GenerationResultInfoDTO(BaseModel):
 
     Attributes:
         success: A boolean indicating whether the generation process was successful.
-        details: A list of tuples containing detailed information about the generation process.
+        details: A list of tuples containing detailed information about the generation process:
+            (``name``, ``output_status``, ``output_message``).
     """
 
     success: bool
