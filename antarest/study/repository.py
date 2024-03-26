@@ -23,9 +23,7 @@ def escape_like(string: str, escape_char: str = "\\") -> str:
 
         from sqlalchemy_utils import escape_like
 
-        query = session.query(User).filter(
-            User.name.ilike(escape_like('John'))
-        )
+        query = session.query(User).filter(User.name.ilike(escape_like("John")))
 
     Args:
         string: a string to escape
