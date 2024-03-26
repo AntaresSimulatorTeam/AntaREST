@@ -10,7 +10,6 @@ from antarest.core.model import PublicMode
 from antarest.launcher.model import LauncherLoadDTO
 from antarest.study.business.adequacy_patch_management import PriceTakingOrder
 from antarest.study.business.area_management import LayerInfoDTO
-from antarest.study.business.areas.properties_management import AdequacyPatchMode
 from antarest.study.business.areas.renewable_management import TimeSeriesInterpretation
 from antarest.study.business.general_management import Mode
 from antarest.study.business.optimization_management import (
@@ -18,14 +17,11 @@ from antarest.study.business.optimization_management import (
     TransmissionCapacities,
     UnfeasibleProblemBehavior,
 )
-from antarest.study.business.table_mode_management import (
-    FIELDS_INFO_BY_TYPE,
-    AssetType,
+from antarest.study.business.table_mode_management import AssetType, TableTemplateType, TransmissionCapacity
+from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
+    BindingConstraintFrequency,
     BindingConstraintOperator,
-    TableTemplateType,
-    TransmissionCapacity,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.renewable import RenewableClusterGroup
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import LawOption, LocalTSGenerationBehavior
 from antarest.study.storage.variantstudy.model.command.common import CommandName
@@ -1105,7 +1101,7 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
         "otherDispatchPower": True,
         "filterSynthesis": {"hourly", "daily", "weekly", "monthly", "annual"},
         "filterByYear": {"hourly", "daily", "weekly", "monthly", "annual"},
-        "adequacyPatchMode": AdequacyPatchMode.OUTSIDE.value,
+        "adequacyPatchMode": "outside",
     }
 
     client.put(
@@ -1119,7 +1115,7 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
             "otherDispatchPower": False,
             "filterSynthesis": ["monthly", "annual"],
             "filterByYear": ["hourly", "daily", "annual"],
-            "adequacyPatchMode": AdequacyPatchMode.INSIDE.value,
+            "adequacyPatchMode": "inside",
         },
     )
     res_properties_config = client.get(f"/v1/studies/{study_id}/areas/area 1/properties/form", headers=admin_headers)
@@ -1134,7 +1130,7 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
         "otherDispatchPower": False,
         "filterSynthesis": {"monthly", "annual"},
         "filterByYear": {"hourly", "daily", "annual"},
-        "adequacyPatchMode": AdequacyPatchMode.INSIDE.value,
+        "adequacyPatchMode": "inside",
     }
 
     # Hydro form
@@ -1297,7 +1293,7 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
             "spreadSpilledEnergyCost": 0.0,
             "filterSynthesis": "monthly, annual",
             "filterYearByYear": "hourly, daily, annual",
-            "adequacyPatchMode": AdequacyPatchMode.INSIDE.value,
+            "adequacyPatchMode": "inside",
         },
         "area 2": {
             "nonDispatchablePower": True,
@@ -1309,7 +1305,7 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
             "spreadSpilledEnergyCost": 0.0,
             "filterSynthesis": "hourly, daily, weekly, monthly, annual",
             "filterYearByYear": "hourly, daily, weekly, monthly, annual",
-            "adequacyPatchMode": AdequacyPatchMode.OUTSIDE.value,
+            "adequacyPatchMode": "outside",
         },
     }
 
@@ -1324,13 +1320,13 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
                 "nonDispatchablePower": True,
                 "spreadSpilledEnergyCost": 1.1,
                 "filterYearByYear": "monthly, annual",
-                "adequacyPatchMode": AdequacyPatchMode.OUTSIDE.value,
+                "adequacyPatchMode": "outside",
             },
             "area 2": {
                 "nonDispatchablePower": False,
                 "spreadSpilledEnergyCost": 3.0,
                 "filterSynthesis": "hourly",
-                "adequacyPatchMode": AdequacyPatchMode.INSIDE.value,
+                "adequacyPatchMode": "inside",
             },
         },
     )
@@ -1354,7 +1350,7 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
             "spreadSpilledEnergyCost": 1.1,
             "filterSynthesis": "monthly, annual",
             "filterYearByYear": "monthly, annual",
-            "adequacyPatchMode": AdequacyPatchMode.OUTSIDE.value,
+            "adequacyPatchMode": "outside",
         },
         "area 2": {
             "nonDispatchablePower": False,
@@ -1366,7 +1362,7 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
             "spreadSpilledEnergyCost": 3.0,
             "filterSynthesis": "hourly",
             "filterYearByYear": "hourly, daily, weekly, monthly, annual",
-            "adequacyPatchMode": AdequacyPatchMode.INSIDE.value,
+            "adequacyPatchMode": "inside",
         },
     }
 
@@ -1441,8 +1437,8 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
         table_mode_url,
         headers=admin_headers,
         params={
-            "table_type": TableTemplateType.CLUSTER.value,
-            "columns": ",".join(FIELDS_INFO_BY_TYPE[TableTemplateType.CLUSTER]),
+            "table_type": TableTemplateType.THERMAL_CLUSTER,
+            "columns": ",".join(FIELDS_INFO_BY_TYPE[TableTemplateType.THERMAL_CLUSTER]),
         },
     )
     res_table_data_json = res_table_data.json()
@@ -1497,7 +1493,7 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
         table_mode_url,
         headers=admin_headers,
         params={
-            "table_type": TableTemplateType.CLUSTER.value,
+            "table_type": TableTemplateType.THERMAL_CLUSTER,
         },
         json={
             "area 1 / cluster 1": {
@@ -1516,8 +1512,8 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
         table_mode_url,
         headers=admin_headers,
         params={
-            "table_type": TableTemplateType.CLUSTER.value,
-            "columns": ",".join(FIELDS_INFO_BY_TYPE[TableTemplateType.CLUSTER]),
+            "table_type": TableTemplateType.THERMAL_CLUSTER,
+            "columns": ",".join(FIELDS_INFO_BY_TYPE[TableTemplateType.THERMAL_CLUSTER]),
         },
     )
     res_table_data_json = res_table_data.json()
@@ -1574,8 +1570,8 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
         table_mode_url,
         headers=admin_headers,
         params={
-            "table_type": TableTemplateType.RENEWABLE.value,
-            "columns": ",".join(FIELDS_INFO_BY_TYPE[TableTemplateType.RENEWABLE]),
+            "table_type": TableTemplateType.RENEWABLE_CLUSTER,
+            "columns": ",".join(FIELDS_INFO_BY_TYPE[TableTemplateType.RENEWABLE_CLUSTER]),
         },
     )
     res_table_data_json = res_table_data.json()
@@ -1600,7 +1596,7 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
         table_mode_url,
         headers=admin_headers,
         params={
-            "table_type": TableTemplateType.RENEWABLE.value,
+            "table_type": TableTemplateType.RENEWABLE_CLUSTER,
         },
         json={
             "area 1 / cluster renewable 1": {
@@ -1617,8 +1613,8 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
         table_mode_url,
         headers=admin_headers,
         params={
-            "table_type": TableTemplateType.RENEWABLE.value,
-            "columns": ",".join(FIELDS_INFO_BY_TYPE[TableTemplateType.RENEWABLE]),
+            "table_type": TableTemplateType.RENEWABLE_CLUSTER,
+            "columns": ",".join(FIELDS_INFO_BY_TYPE[TableTemplateType.RENEWABLE_CLUSTER]),
         },
     )
     res_table_data_json = res_table_data.json()

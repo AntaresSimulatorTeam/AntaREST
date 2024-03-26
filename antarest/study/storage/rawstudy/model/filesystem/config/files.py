@@ -10,16 +10,14 @@ from pathlib import Path
 
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.ini_reader import IniReader
-from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
-    BindingConstraintDTO,
-    BindingConstraintFrequency,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.exceptions import (
     SimulationParsingError,
     XpansionParsingError,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
+    BindingConstraintDTO,
     DistrictSet,
     FileStudyTreeConfig,
     Link,

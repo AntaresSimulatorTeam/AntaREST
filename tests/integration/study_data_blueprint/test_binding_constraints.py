@@ -230,6 +230,7 @@ class TestBindingConstraints:
                 "name": "binding_constraint_1",
                 "operator": "less",
                 "time_step": "hourly",
+                "values": None,
             },
             {
                 "comments": "",
@@ -241,6 +242,7 @@ class TestBindingConstraints:
                 "name": "binding_constraint_2",
                 "operator": "less",
                 "time_step": "hourly",
+                "values": None,
             },
             {
                 "comments": "New API",
@@ -252,6 +254,7 @@ class TestBindingConstraints:
                 "name": "binding_constraint_3",
                 "operator": "less",
                 "time_step": "hourly",
+                "values": None,
             },
         ]
         assert binding_constraints_list == expected
@@ -510,7 +513,7 @@ class TestBindingConstraints:
             },
             headers=user_headers,
         )
-        assert res.status_code == 422
+        assert res.status_code == 422, res.json()
         description = res.json()["description"]
         assert "cannot fill 'values'" in description
         assert "'less_term_matrix'" in description
@@ -527,11 +530,11 @@ class TestBindingConstraints:
                 "operator": "less",
                 "coeffs": {},
                 "comments": "Incoherent matrix with version",
-                "less_term_matrix": [[]],
+                "lessTermMatrix": [[]],
             },
             headers=user_headers,
         )
-        assert res.status_code == 422
+        assert res.status_code == 422, res.json()
         description = res.json()["description"]
         assert description == "You cannot fill a 'matrix_term' as these values refer to v8.7+ studies"
 
@@ -558,10 +561,10 @@ class TestBindingConstraints:
         assert f"Invalid matrix shape {wrong_matrix.shape}, expected (366, 3)" in description
 
         # Delete a fake binding constraint
-        res = client.delete(f"/v1/studies/{study_id}/bindingconstraints/fake_bc", headers=user_headers)
-        assert res.status_code == 500
+        res = client.delete(f"/v1/studies/{study_id}/bindingconstraints/unknown_bc", headers=user_headers)
+        assert res.status_code == 500, res.json()
         assert res.json()["exception"] == "CommandApplicationError"
-        assert res.json()["description"] == "Binding constraint not found"
+        assert res.json()["description"] == "Binding constraint not found: 'unknown_bc'"
 
         # Add a group before v8.7
         grp_name = "random_grp"
@@ -570,7 +573,7 @@ class TestBindingConstraints:
             json={"key": "group", "value": grp_name},
             headers=user_headers,
         )
-        assert res.status_code == 422
+        assert res.status_code == 422, res.json()
         assert res.json()["exception"] == "InvalidFieldForVersionError"
         assert (
             res.json()["description"]
@@ -583,7 +586,7 @@ class TestBindingConstraints:
             json={"key": "less_term_matrix", "value": [[]]},
             headers=user_headers,
         )
-        assert res.status_code == 422
+        assert res.status_code == 422, res.json()
         assert res.json()["exception"] == "InvalidFieldForVersionError"
         assert res.json()["description"] == "You cannot fill a 'matrix_term' as these values refer to v8.7+ studies"
 
@@ -775,7 +778,7 @@ class TestBindingConstraints:
             },
             headers=admin_headers,
         )
-        assert res.status_code == 422
+        assert res.status_code == 422, res.json()
         assert res.json()["description"] == "You cannot fill 'values' as it refers to the matrix before v8.7"
 
         # Update with old matrices
@@ -784,7 +787,7 @@ class TestBindingConstraints:
             json={"key": "values", "value": [[]]},
             headers=admin_headers,
         )
-        assert res.status_code == 422
+        assert res.status_code == 422, res.json()
         assert res.json()["exception"] == "InvalidFieldForVersionError"
         assert res.json()["description"] == "You cannot fill 'values' as it refers to the matrix before v8.7"
 
@@ -804,7 +807,7 @@ class TestBindingConstraints:
             },
             headers=admin_headers,
         )
-        assert res.status_code == 422
+        assert res.status_code == 422, res.json()
         assert res.json()["exception"] == "IncoherenceBetweenMatricesLength"
         assert (
             res.json()["description"]
@@ -829,7 +832,7 @@ class TestBindingConstraints:
             json={"name": "other_bc", "greater_term_matrix": matrix_gt_to_list, "group": "group1", **args},
             headers=admin_headers,
         )
-        assert res.status_code == 422
+        assert res.status_code == 422, res.json()
         assert res.json()["exception"] == "IncoherenceBetweenMatricesLength"
         assert res.json()["description"] == "The matrices of the group group1 do not have the same number of columns"
 
@@ -849,7 +852,7 @@ class TestBindingConstraints:
             json={"key": "group", "value": "group1"},
             headers=admin_headers,
         )
-        assert res.status_code == 422
+        assert res.status_code == 422, res.json()
         assert res.json()["exception"] == "IncoherenceBetweenMatricesLength"
         assert res.json()["description"] == "The matrices of the group group1 do not have the same number of columns"
 
@@ -861,7 +864,7 @@ class TestBindingConstraints:
             json={"key": "greater_term_matrix", "value": matrix_lt_3_to_list},
             headers=admin_headers,
         )
-        assert res.status_code == 422
+        assert res.status_code == 422, res.json()
         assert res.json()["exception"] == "IncoherenceBetweenMatricesLength"
         assert (
             res.json()["description"]
@@ -886,6 +889,6 @@ class TestBindingConstraints:
             json={"key": "less_term_matrix", "value": matrix_lt_to_list},
             headers=admin_headers,
         )
-        assert res.status_code == 422
+        assert res.status_code == 422, res.json()
         assert res.json()["exception"] == "IncoherenceBetweenMatricesLength"
         assert res.json()["description"] == "The matrices of the group group1 do not have the same number of columns"

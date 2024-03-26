@@ -1,21 +1,20 @@
 import re
-from enum import Enum
+import typing as t
 from pathlib import Path
-from typing import Dict, List, Optional
 
-from pydantic import Extra
-from pydantic.main import BaseModel
+from pydantic import BaseModel, Extra
 
 from antarest.core.model import JSON
 from antarest.core.utils.utils import DTO
+from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 
-from .binding_constraint import BindingConstraintDTO
+from .binding_constraint import BindingConstraintFrequency
 from .renewable import RenewableConfigType
 from .st_storage import STStorageConfigType
 from .thermal import ThermalConfigType
 
 
-class ENR_MODELLING(Enum):
+class EnrModelling(EnumIgnoreCase):
     AGGREGATED = "aggregated"
     CLUSTERS = "clusters"
 
@@ -25,8 +24,8 @@ class Link(BaseModel):
     Object linked to /input/links/<link>/properties.ini information
     """
 
-    filters_synthesis: List[str]
-    filters_year: List[str]
+    filters_synthesis: t.List[str]
+    filters_year: t.List[str]
 
     @staticmethod
     def from_json(properties: JSON) -> "Link":
@@ -36,7 +35,7 @@ class Link(BaseModel):
         )
 
     @staticmethod
-    def split(line: str) -> List[str]:
+    def split(line: str) -> t.List[str]:
         return [token.strip() for token in line.split(",") if token.strip() != ""]
 
 
@@ -49,13 +48,13 @@ class Area(BaseModel):
         extra = Extra.forbid
 
     name: str
-    links: Dict[str, Link]
-    thermals: List[ThermalConfigType]
-    renewables: List[RenewableConfigType]
-    filters_synthesis: List[str]
-    filters_year: List[str]
+    links: t.Dict[str, Link]
+    thermals: t.List[ThermalConfigType]
+    renewables: t.List[RenewableConfigType]
+    filters_synthesis: t.List[str]
+    filters_year: t.List[str]
     # since v8.6
-    st_storages: List[STStorageConfigType] = []
+    st_storages: t.List[STStorageConfigType] = []
 
 
 class DistrictSet(BaseModel):
@@ -64,14 +63,14 @@ class DistrictSet(BaseModel):
     """
 
     ALL = ["hourly", "daily", "weekly", "monthly", "annual"]
-    name: Optional[str] = None
+    name: t.Optional[str] = None
     inverted_set: bool = False
-    areas: Optional[List[str]] = None
+    areas: t.Optional[t.List[str]] = None
     output: bool = True
-    filters_synthesis: List[str] = ALL
-    filters_year: List[str] = ALL
+    filters_synthesis: t.List[str] = ALL
+    filters_year: t.List[str] = ALL
 
-    def get_areas(self, all_areas: List[str]) -> List[str]:
+    def get_areas(self, all_areas: t.List[str]) -> t.List[str]:
         if self.inverted_set:
             return list(set(all_areas).difference(set(self.areas or [])))
         return self.areas or []
@@ -89,7 +88,7 @@ class Simulation(BaseModel):
     synthesis: bool
     by_year: bool
     error: bool
-    playlist: Optional[List[int]]
+    playlist: t.Optional[t.List[int]]
     archived: bool = False
     xpansion: str
 
@@ -97,6 +96,13 @@ class Simulation(BaseModel):
         modes = {"economy": "eco", "adequacy": "adq", "draft": "dft"}
         dash = "-" if self.name else ""
         return f"{self.date}{modes[self.mode]}{dash}{self.name}"
+
+
+class BindingConstraintDTO(BaseModel):
+    id: str
+    areas: t.Set[str]
+    clusters: t.Set[str]
+    time_step: BindingConstraintFrequency
 
 
 class FileStudyTreeConfig(DTO):
@@ -110,16 +116,16 @@ class FileStudyTreeConfig(DTO):
         path: Path,
         study_id: str,
         version: int,
-        output_path: Optional[Path] = None,
-        areas: Optional[Dict[str, Area]] = None,
-        sets: Optional[Dict[str, DistrictSet]] = None,
-        outputs: Optional[Dict[str, Simulation]] = None,
-        bindings: Optional[List[BindingConstraintDTO]] = None,
+        output_path: t.Optional[Path] = None,
+        areas: t.Optional[t.Dict[str, Area]] = None,
+        sets: t.Optional[t.Dict[str, DistrictSet]] = None,
+        outputs: t.Optional[t.Dict[str, Simulation]] = None,
+        bindings: t.Optional[t.List[BindingConstraintDTO]] = None,
         store_new_set: bool = False,
-        archive_input_series: Optional[List[str]] = None,
-        enr_modelling: str = ENR_MODELLING.AGGREGATED.value,
-        cache: Optional[Dict[str, List[str]]] = None,
-        zip_path: Optional[Path] = None,
+        archive_input_series: t.Optional[t.List[str]] = None,
+        enr_modelling: str = EnrModelling.AGGREGATED.value,
+        cache: t.Optional[t.Dict[str, t.List[str]]] = None,
+        zip_path: t.Optional[Path] = None,
     ):
         self.study_path = study_path
         self.path = path
@@ -138,7 +144,7 @@ class FileStudyTreeConfig(DTO):
 
     def next_file(self, name: str, is_output: bool = False) -> "FileStudyTreeConfig":
         if is_output and name in self.outputs and self.outputs[name].archived:
-            zip_path: Optional[Path] = self.path / f"{name}.zip"
+            zip_path: t.Optional[Path] = self.path / f"{name}.zip"
         else:
             zip_path = self.zip_path
 
@@ -176,43 +182,43 @@ class FileStudyTreeConfig(DTO):
             cache=self.cache,
         )
 
-    def area_names(self) -> List[str]:
+    def area_names(self) -> t.List[str]:
         return self.cache.get("%areas", list(self.areas.keys()))
 
-    def set_names(self, only_output: bool = True) -> List[str]:
+    def set_names(self, only_output: bool = True) -> t.List[str]:
         return self.cache.get(
             f"%districts%{only_output}",
             [k for k, v in self.sets.items() if v.output or not only_output],
         )
 
-    def get_thermal_ids(self, area: str) -> List[str]:
+    def get_thermal_ids(self, area: str) -> t.List[str]:
         """
         Returns a list of thermal cluster IDs for a given area.
         Note that IDs may not be in lower case (but series IDs are).
         """
         return self.cache.get(f"%thermal%{area}%{area}", [th.id for th in self.areas[area].thermals])
 
-    def get_renewable_ids(self, area: str) -> List[str]:
+    def get_renewable_ids(self, area: str) -> t.List[str]:
         """
         Returns a list of renewable cluster IDs for a given area.
         Note that IDs may not be in lower case (but series IDs are).
         """
         return self.cache.get(f"%renewable%{area}", [r.id for r in self.areas[area].renewables])
 
-    def get_st_storage_ids(self, area: str) -> List[str]:
+    def get_st_storage_ids(self, area: str) -> t.List[str]:
         return self.cache.get(f"%st-storage%{area}", [s.id for s in self.areas[area].st_storages])
 
-    def get_links(self, area: str) -> List[str]:
+    def get_links(self, area: str) -> t.List[str]:
         return self.cache.get(f"%links%{area}", list(self.areas[area].links.keys()))
 
-    def get_filters_synthesis(self, area: str, link: Optional[str] = None) -> List[str]:
+    def get_filters_synthesis(self, area: str, link: t.Optional[str] = None) -> t.List[str]:
         if link:
             return self.areas[area].links[link].filters_synthesis
         if area in self.sets and self.sets[area].output:
             return self.sets[area].filters_synthesis
         return self.areas[area].filters_synthesis
 
-    def get_filters_year(self, area: str, link: Optional[str] = None) -> List[str]:
+    def get_filters_year(self, area: str, link: t.Optional[str] = None) -> t.List[str]:
         if link:
             return self.areas[area].links[link].filters_year
         if area in self.sets and self.sets[area].output:
@@ -245,15 +251,15 @@ class FileStudyTreeConfigDTO(BaseModel):
     path: Path
     study_id: str
     version: int
-    output_path: Optional[Path] = None
-    areas: Dict[str, Area] = dict()
-    sets: Dict[str, DistrictSet] = dict()
-    outputs: Dict[str, Simulation] = dict()
-    bindings: List[BindingConstraintDTO] = list()
+    output_path: t.Optional[Path] = None
+    areas: t.Dict[str, Area] = dict()
+    sets: t.Dict[str, DistrictSet] = dict()
+    outputs: t.Dict[str, Simulation] = dict()
+    bindings: t.List[BindingConstraintDTO] = list()
     store_new_set: bool = False
-    archive_input_series: List[str] = list()
-    enr_modelling: str = ENR_MODELLING.AGGREGATED.value
-    zip_path: Optional[Path] = None
+    archive_input_series: t.List[str] = list()
+    enr_modelling: str = EnrModelling.AGGREGATED.value
+    zip_path: t.Optional[Path] = None
 
     @staticmethod
     def from_build_config(

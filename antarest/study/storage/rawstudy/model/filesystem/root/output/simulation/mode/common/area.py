@@ -53,7 +53,7 @@ class OutputSimulationAreaItem(FolderNode):
                     self.area,
                 )
 
-            # has_enr_clusters = self.config.enr_modelling == ENR_MODELLING.CLUSTERS.value and
+            # has_enr_clusters = self.config.enr_modelling == EnrModelling.CLUSTERS.value and
             # len(self.config.get_renewable_ids(self.area)) > 0
             # todo get the config related to this output (now this may fail if input has changed since the launch)
             has_enr_clusters = True

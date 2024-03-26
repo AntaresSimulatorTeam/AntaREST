@@ -30,7 +30,7 @@ class RemoveBindingConstraint(ICommand):
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
         if self.id not in [bind.id for bind in study_data.config.bindings]:
-            return CommandOutput(status=False, message="Binding constraint not found")
+            return CommandOutput(status=False, message=f"Binding constraint not found: '{self.id}'")
         binding_constraints = study_data.tree.get(["input", "bindingconstraints", "bindingconstraints"])
         new_binding_constraints: JSON = {}
         index = 0

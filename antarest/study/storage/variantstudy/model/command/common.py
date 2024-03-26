@@ -8,13 +8,6 @@ class CommandOutput:
     message: str = ""
 
 
-class BindingConstraintOperator(Enum):
-    BOTH = "both"
-    EQUAL = "equal"
-    GREATER = "greater"
-    LESS = "less"
-
-
 class CoeffType(Enum):
     THERMAL = "thermal"
     LINK = "link"

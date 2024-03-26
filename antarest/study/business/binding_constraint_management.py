@@ -1,10 +1,11 @@
-from typing import Any, Dict, List, Optional, Union, cast
+import typing as t
 
 from pydantic import BaseModel, validator
 
 from antarest.core.exceptions import (
-    BindingConstraintNotFoundError,
+    BindingConstraintNotFound,
     CommandApplicationError,
+    ConfigFileNotFound,
     ConstraintAlreadyExistError,
     ConstraintIdNotFoundError,
     DuplicateConstraintName,
@@ -14,9 +15,16 @@ from antarest.core.exceptions import (
     MissingDataError,
     NoConstraintError,
 )
-from antarest.study.business.utils import execute_or_add_commands
+from antarest.matrixstore.model import MatrixData
+from antarest.study.business.utils import AllOptionalMetaclass, camel_case_model, execute_or_add_commands
 from antarest.study.model import Study
-from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
+from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
+    BindingConstraintFrequency,
+    BindingConstraintOperator,
+)
+from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
+    BindingConstraintProperties as ConfigBCProperties,
+)
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.storage_service import StudyStorageService
@@ -92,13 +100,13 @@ class ConstraintTermDTO(BaseModel):
         data: the constraint term data (link or cluster), if any.
     """
 
-    id: Optional[str]
-    weight: Optional[float]
-    offset: Optional[float]
-    data: Optional[Union[AreaLinkDTO, AreaClusterDTO]]
+    id: t.Optional[str]
+    weight: t.Optional[float]
+    offset: t.Optional[float]
+    data: t.Optional[t.Union[AreaLinkDTO, AreaClusterDTO]]
 
     @validator("id")
-    def id_to_lower(cls, v: Optional[str]) -> Optional[str]:
+    def id_to_lower(cls, v: t.Optional[str]) -> t.Optional[str]:
         """Ensure the ID is lower case."""
         if v is None:
             return None
@@ -113,25 +121,70 @@ class ConstraintTermDTO(BaseModel):
 
 class UpdateBindingConstProps(BaseModel):
     key: str
-    value: Any
+    value: t.Any
 
 
 class BindingConstraintCreation(BindingConstraintMatrices, BindingConstraintProperties870):
     name: str
-    coeffs: Dict[str, List[float]]
+    coeffs: t.Dict[str, t.List[float]]
 
 
 class BindingConstraintConfig(BindingConstraintProperties):
     id: str
     name: str
-    constraints: Optional[List[ConstraintTermDTO]]
+    enabled: bool = True
+    time_step: BindingConstraintFrequency
+    operator: BindingConstraintOperator
+    values: t.Optional[t.Union[t.List[t.List[MatrixData]], str]] = None
+    comments: t.Optional[str] = None
+    filter_year_by_year: t.Optional[str] = None
+    filter_synthesis: t.Optional[str] = None
+    constraints: t.Optional[t.List[ConstraintTermDTO]]
+
+
+# noinspection SpellCheckingInspection
+_ALL_BINDING_CONSTRAINTS_PATH = "input/bindingconstraints/bindingconstraints"
+
+
+class _BaseBindingConstraintDTO(
+    BaseModel,
+    extra="forbid",
+    validate_assignment=True,
+    allow_population_by_field_name=True,
+):
+    name: str
+    enabled: bool = True
+    time_step: BindingConstraintFrequency = BindingConstraintFrequency.HOURLY
+    operator: BindingConstraintOperator = BindingConstraintOperator.EQUAL
+    comments: str = ""
+    filter_synthesis: str = "hourly, daily, weekly, monthly, annual"
+    filter_year_by_year: str = "hourly, daily, weekly, monthly, annual"
+
+
+@camel_case_model
+class GetBindingConstraintDTO(_BaseBindingConstraintDTO, metaclass=AllOptionalMetaclass, use_none=True):
+    """
+    DTO object used to get the binding constraint properties.
+    """
+
+    @classmethod
+    def create_dto(cls, bc_section: ConfigBCProperties.BindingConstraintSection) -> "GetBindingConstraintDTO":
+        return cls(
+            name=bc_section.name,
+            enabled=bc_section.enabled,
+            time_step=bc_section.time_step,
+            operator=bc_section.operator,
+            comments=bc_section.comments,
+            filter_synthesis=bc_section.filter_synthesis,
+            filter_year_by_year=bc_section.filter_year_by_year,
+        )
 
 
 class BindingConstraintConfig870(BindingConstraintConfig):
-    group: Optional[str] = None
+    group: t.Optional[str] = None
 
 
-BindingConstraintConfigType = Union[BindingConstraintConfig870, BindingConstraintConfig]
+BindingConstraintConfigType = t.Union[BindingConstraintConfig870, BindingConstraintConfig]
 
 
 class BindingConstraintManager:
@@ -178,7 +231,7 @@ class BindingConstraintManager:
         return False
 
     @staticmethod
-    def process_constraint(constraint_value: Dict[str, Any], version: int) -> BindingConstraintConfigType:
+    def process_constraint(constraint_value: t.Dict[str, t.Any], version: int) -> BindingConstraintConfigType:
         args = {
             "id": constraint_value["id"],
             "name": constraint_value["name"],
@@ -195,7 +248,6 @@ class BindingConstraintManager:
         else:
             args["group"] = constraint_value.get("group")
             new_config = BindingConstraintConfig870(**args)
-
         for key, value in constraint_value.items():
             if BindingConstraintManager.parse_constraint(key, value, "%", new_config):
                 continue
@@ -206,8 +258,8 @@ class BindingConstraintManager:
     @staticmethod
     def constraints_to_coeffs(
         constraint: BindingConstraintConfigType,
-    ) -> Dict[str, List[float]]:
-        coeffs: Dict[str, List[float]] = {}
+    ) -> t.Dict[str, t.List[float]]:
+        coeffs: t.Dict[str, t.List[float]] = {}
         if constraint.constraints is not None:
             for term in constraint.constraints:
                 if term.id is not None and term.weight is not None:
@@ -218,8 +270,8 @@ class BindingConstraintManager:
         return coeffs
 
     def get_binding_constraint(
-        self, study: Study, constraint_id: Optional[str]
-    ) -> Union[BindingConstraintConfigType, List[BindingConstraintConfigType], None]:
+        self, study: Study, constraint_id: t.Optional[str]
+    ) -> t.Union[BindingConstraintConfigType, t.List[BindingConstraintConfigType], None]:
         storage_service = self.storage_service.get_storage(study)
         file_study = storage_service.get_raw(study)
         config = file_study.tree.get(["input", "bindingconstraints", "bindingconstraints"])
@@ -305,7 +357,7 @@ class BindingConstraintManager:
         if not isinstance(constraint, BindingConstraintConfig) and not isinstance(
             constraint, BindingConstraintConfig870
         ):
-            raise BindingConstraintNotFoundError(study.id)
+            raise BindingConstraintNotFound(study.id)
 
         if study_version >= 870:
             validates_matrices_coherence(file_study, binding_constraint_id, constraint.group or "default", data)  # type: ignore
@@ -348,7 +400,7 @@ class BindingConstraintManager:
 
         # Needed when the study is a variant because we only append the command to the list
         if isinstance(study, VariantStudy) and not self.get_binding_constraint(study, binding_constraint_id):
-            raise CommandApplicationError("Binding constraint not found")
+            raise CommandApplicationError(f"Binding constraint not found: '{binding_constraint_id}'")
 
         execute_or_add_commands(study, file_study, [command], self.storage_service)
 
@@ -356,13 +408,13 @@ class BindingConstraintManager:
         self,
         study: Study,
         binding_constraint_id: str,
-        term: Union[ConstraintTermDTO, str],
+        term: t.Union[ConstraintTermDTO, str],
     ) -> None:
         file_study = self.storage_service.get_storage(study).get_raw(study)
         constraint = self.get_binding_constraint(study, binding_constraint_id)
 
         if not isinstance(constraint, BindingConstraintConfig) and not isinstance(constraint, BindingConstraintConfig):
-            raise BindingConstraintNotFoundError(study.id)
+            raise BindingConstraintNotFound(study.id)
 
         constraint_terms = constraint.constraints  # existing constraint terms
         if constraint_terms is None:
@@ -413,7 +465,7 @@ class BindingConstraintManager:
         file_study = self.storage_service.get_storage(study).get_raw(study)
         constraint = self.get_binding_constraint(study, binding_constraint_id)
         if not isinstance(constraint, BindingConstraintConfig) and not isinstance(constraint, BindingConstraintConfig):
-            raise BindingConstraintNotFoundError(study.id)
+            raise BindingConstraintNotFound(study.id)
 
         if constraint_term.data is None:
             raise MissingDataError("Add new constraint term : data is missing")
@@ -459,10 +511,38 @@ class BindingConstraintManager:
     ) -> None:
         return self.update_constraint_term(study, binding_constraint_id, term_id)
 
+    def get_all_binding_constraints_props(
+        self,
+        study: Study,
+    ) -> t.Mapping[str, GetBindingConstraintDTO]:
+        """
+        Retrieve all binding constraints properties from the study.
+
+        Args:
+            study: Study from which to retrieve the storages.
+
+        Returns:
+            A mapping of binding constraint IDs to their properties.
+
+        # Raises:
+        #     STStorageConfigNotFound: If no storages are found in the specified area.
+        """
+        file_study = self.storage_service.get_storage(study).get_raw(study)
+
+        path = _ALL_BINDING_CONSTRAINTS_PATH
+        try:
+            bc_config = file_study.tree.get(path.split("/"), depth=3)
+        except KeyError:
+            raise ConfigFileNotFound(path) from None
+
+        bc_props = ConfigBCProperties.parse_obj(bc_config)
+        bc_map = {bc_id: GetBindingConstraintDTO.create_dto(bc) for bc_id, bc in bc_props.constraints.items()}
+        return bc_map
+
 
 def _fill_group_value(
-    data: UpdateBindingConstProps, constraint: BindingConstraintConfigType, version: int, args: Dict[str, Any]
-) -> Dict[str, Any]:
+    data: UpdateBindingConstProps, constraint: BindingConstraintConfigType, version: int, args: t.Dict[str, t.Any]
+) -> t.Dict[str, t.Any]:
     if version < 870:
         if data.key == "group":
             raise InvalidFieldForVersionError(
@@ -470,14 +550,14 @@ def _fill_group_value(
             )
     else:
         # cast to 870 to use the attribute group
-        constraint = cast(BindingConstraintConfig870, constraint)
+        constraint = t.cast(BindingConstraintConfig870, constraint)
         args["group"] = data.value if data.key == "group" else constraint.group
     return args
 
 
 def _fill_matrices_according_to_version(
-    data: UpdateBindingConstProps, version: int, args: Dict[str, Any]
-) -> Dict[str, Any]:
+    data: UpdateBindingConstProps, version: int, args: t.Dict[str, t.Any]
+) -> t.Dict[str, t.Any]:
     if data.key == "values":
         if version >= 870:
             raise InvalidFieldForVersionError("You cannot fill 'values' as it refers to the matrix before v8.7")
@@ -495,8 +575,8 @@ def _fill_matrices_according_to_version(
 
 
 def _replace_matrices_according_to_frequency_and_version(
-    data: UpdateBindingConstProps, version: int, args: Dict[str, Any]
-) -> Dict[str, Any]:
+    data: UpdateBindingConstProps, version: int, args: t.Dict[str, t.Any]
+) -> t.Dict[str, t.Any]:
     if version < 870:
         matrix = {
             BindingConstraintFrequency.HOURLY.value: default_bc_hourly_86,
@@ -516,7 +596,7 @@ def _replace_matrices_according_to_frequency_and_version(
     return args
 
 
-def find_constraint_term_id(constraints_term: List[ConstraintTermDTO], constraint_term_id: str) -> int:
+def find_constraint_term_id(constraints_term: t.List[ConstraintTermDTO], constraint_term_id: str) -> int:
     try:
         index = [elm.id for elm in constraints_term].index(constraint_term_id)
         return index
@@ -524,7 +604,7 @@ def find_constraint_term_id(constraints_term: List[ConstraintTermDTO], constrain
         return -1
 
 
-def get_binding_constraint_of_a_given_group(file_study: FileStudy, group_id: str) -> List[str]:
+def get_binding_constraint_of_a_given_group(file_study: FileStudy, group_id: str) -> t.List[str]:
     config = file_study.tree.get(["input", "bindingconstraints", "bindingconstraints"])
     config_values = list(config.values())
     return [bd["id"] for bd in config_values if bd["group"] == group_id]
@@ -534,8 +614,8 @@ def check_matrices_coherence(
     file_study: FileStudy,
     group_id: str,
     binding_constraint_id: str,
-    matrix_terms: Dict[str, Any],
-    matrix_to_avoid: Dict[str, str],
+    matrix_terms: t.Dict[str, t.Any],
+    matrix_to_avoid: t.Dict[str, str],
 ) -> None:
     given_number_of_cols = set()
     for term_str, term_data in matrix_terms.items():
@@ -604,5 +684,5 @@ def validates_matrices_coherence(
         )
 
 
-def get_matrix_data(file_study: FileStudy, binding_constraint_id: str, keyword: str) -> List[Any]:
+def get_matrix_data(file_study: FileStudy, binding_constraint_id: str, keyword: str) -> t.List[t.Any]:
     return file_study.tree.get(url=["input", "bindingconstraints", f"{binding_constraint_id}_{keyword}"])["data"]  # type: ignore
