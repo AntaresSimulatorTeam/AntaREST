@@ -76,7 +76,15 @@ export interface BindingConstraint {
 export function isLinkTerm(
   termData: LinkTerm["data"] | ClusterTerm["data"],
 ): termData is LinkTerm["data"] {
-  return "area1" in termData && "area2" in termData;
+  if (!termData) {
+    return false;
+  }
+
+  if (!("area1" in termData && "area2" in termData)) {
+    return false;
+  }
+
+  return termData.area1 !== "" && termData.area2 !== "";
 }
 
 /**

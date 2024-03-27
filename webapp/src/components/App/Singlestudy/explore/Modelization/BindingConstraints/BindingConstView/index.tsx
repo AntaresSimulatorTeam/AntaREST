@@ -149,6 +149,7 @@ function BindingConstView({ constraintId }: Props) {
                 </Button>
                 <DocLink
                   to={`${ACTIVE_WINDOWS_DOC_PATH}#binding-constraints`}
+                  sx={{ pr: 0 }}
                 />
               </Box>
             </Box>
