@@ -1,6 +1,7 @@
 import logging
+import typing as t
+import uuid
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Dict, List, Tuple
 
 from pydantic import BaseModel, Extra
 
@@ -11,7 +12,7 @@ from antarest.study.storage.variantstudy.model.command.common import CommandName
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
-if TYPE_CHECKING:  # False at runtime, for mypy
+if t.TYPE_CHECKING:  # False at runtime, for mypy
     from antarest.study.storage.variantstudy.business.command_extractor import CommandExtractor
 
 MATCH_SIGNATURE_SEPARATOR = "%"
@@ -19,12 +20,23 @@ logger = logging.getLogger(__name__)
 
 
 class ICommand(ABC, BaseModel, extra=Extra.forbid, arbitrary_types_allowed=True):
+    """
+    Interface for all commands that can be applied to a study.
+
+    Attributes:
+        command_id: The ID of the command extracted from the database, if any.
+        command_name: The name of the command.
+        version: The version of the command (currently always equal to 1).
+        command_context: The context of the command.
+    """
+
+    command_id: t.Optional[uuid.UUID] = None
     command_name: CommandName
     version: int
     command_context: CommandContext
 
     @abstractmethod
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
         """
         Applies configuration changes to the study data.
 
@@ -112,7 +124,7 @@ class ICommand(ABC, BaseModel, extra=Extra.forbid, arbitrary_types_allowed=True)
         raise NotImplementedError()
 
     @abstractmethod
-    def _create_diff(self, other: "ICommand") -> List["ICommand"]:
+    def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
         """
         Creates a list of commands representing the differences between
         the current instance and another `ICommand` object.
@@ -126,7 +138,7 @@ class ICommand(ABC, BaseModel, extra=Extra.forbid, arbitrary_types_allowed=True)
         """
         raise NotImplementedError()
 
-    def create_diff(self, other: "ICommand") -> List["ICommand"]:
+    def create_diff(self, other: "ICommand") -> t.List["ICommand"]:
         """
         Creates a list of commands representing the differences between
         the current instance and another `ICommand` object.
@@ -142,7 +154,7 @@ class ICommand(ABC, BaseModel, extra=Extra.forbid, arbitrary_types_allowed=True)
         return self._create_diff(other)
 
     @abstractmethod
-    def get_inner_matrices(self) -> List[str]:
+    def get_inner_matrices(self) -> t.List[str]:
         """
         Retrieves the list of matrix IDs.
         """

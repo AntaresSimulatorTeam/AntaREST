@@ -101,9 +101,7 @@ def init_db_engine(
     return engine
 
 
-def create_event_bus(
-    application: Optional[FastAPI], config: Config
-) -> Tuple[IEventBus, Optional[redis.Redis]]:  # type: ignore
+def create_event_bus(application: Optional[FastAPI], config: Config) -> Tuple[IEventBus, Optional[redis.Redis]]:  # type: ignore
     redis_client = new_redis_instance(config.redis) if config.redis is not None else None
     return (
         build_eventbus(application, config, True, redis_client),

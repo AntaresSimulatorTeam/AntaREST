@@ -26,7 +26,7 @@ class RemoveBindingConstraint(ICommand):
                 dict(),
             )
         study_data.bindings.remove(next(iter([bind for bind in study_data.bindings if bind.id == self.id])))
-        return CommandOutput(status=True), dict()
+        return CommandOutput(status=True), {}
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
         if self.id not in [bind.id for bind in study_data.config.bindings]:

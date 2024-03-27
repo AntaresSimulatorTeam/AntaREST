@@ -1,6 +1,6 @@
 import typing as t
 
-from sqlalchemy.orm import Session, joinedload, subqueryload  # type: ignore
+from sqlalchemy.orm import Session, joinedload  # type: ignore
 
 from antarest.core.interfaces.cache import ICache
 from antarest.core.utils.fastapi_sqlalchemy import db
