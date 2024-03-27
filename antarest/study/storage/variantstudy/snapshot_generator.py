@@ -175,8 +175,15 @@ class SnapshotGenerator:
         if not results.success:
             message = f"Failed to generate variant study {variant_study.id}"
             if results.details:
-                detail: t.Tuple[str, bool, str] = results.details[-1]
-                message += f": {detail[2]}"
+                detail = results.details[-1]
+                if isinstance(detail, (tuple, list)):
+                    # old format: LegacyDetailsDTO
+                    message += f": {detail[2]}"
+                elif isinstance(detail, dict):
+                    # new format since v2.17: NewDetailsDTO
+                    message += f": {detail['msg']}"
+                else:  # pragma: no cover
+                    raise NotImplementedError(f"Unexpected detail type: {type(detail)}")
             raise VariantGenerationError(message)
         return results
 

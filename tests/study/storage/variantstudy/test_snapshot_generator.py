@@ -21,11 +21,27 @@ from antarest.login.model import Group, Role, User
 from antarest.study.model import RawStudy, Study, StudyAdditionalData
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy, VariantStudySnapshot
-from antarest.study.storage.variantstudy.model.model import CommandDTO, GenerationResultInfoDTO
+from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.snapshot_generator import SnapshotGenerator, search_ref_study
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 from tests.db_statement_recorder import DBStatementRecorder
 from tests.helpers import with_db_context
+
+
+class AnyUUID:
+    """Mock object to match any UUID."""
+
+    def __init__(self, as_string: bool = False):
+        self.as_string = as_string
+
+    def __eq__(self, other):
+        if self.as_string:
+            try:
+                uuid.UUID(other)
+                return True
+            except ValueError:
+                return False
+        return isinstance(other, uuid.UUID)
 
 
 def _create_variant(
@@ -851,15 +867,35 @@ class TestSnapshotGenerator:
         assert len(db_recorder.sql_statements) == 5, str(db_recorder)
 
         # Check: the variant generation must succeed.
-        assert results == GenerationResultInfoDTO(
-            success=True,
-            details=[
-                ("create_area", True, "Area 'North' created"),
-                ("create_area", True, "Area 'South' created"),
-                ("create_link", True, "Link between 'north' and 'south' created"),
-                ("create_cluster", True, "Thermal cluster 'gas_cluster' added to area 'south'."),
+        assert results.dict() == {
+            "success": True,
+            "details": [
+                {
+                    "id": AnyUUID(),
+                    "name": "create_area",
+                    "status": True,
+                    "msg": "Area 'North' created",
+                },
+                {
+                    "id": AnyUUID(),
+                    "name": "create_area",
+                    "status": True,
+                    "msg": "Area 'South' created",
+                },
+                {
+                    "id": AnyUUID(),
+                    "name": "create_link",
+                    "status": True,
+                    "msg": "Link between 'north' and 'south' created",
+                },
+                {
+                    "id": AnyUUID(),
+                    "name": "create_cluster",
+                    "status": True,
+                    "msg": "Thermal cluster 'gas_cluster' added to area 'south'.",
+                },
             ],
-        )
+        }
 
         # Check: the variant is correctly generated and all commands are applied.
         snapshot_dir = variant_study.snapshot_dir
@@ -907,13 +943,33 @@ class TestSnapshotGenerator:
         assert list(snapshot_dir.parent.iterdir()) == [snapshot_dir]
 
         # Check: the notifications are correctly registered.
-        assert notifier.notifications == [  # type: ignore
+        assert notifier.notifications == [
             {
                 "details": [
-                    ["create_area", True, "Area 'North' created"],
-                    ["create_area", True, "Area 'South' created"],
-                    ["create_link", True, "Link between 'north' and 'south' created"],
-                    ["create_cluster", True, "Thermal cluster 'gas_cluster' added to area 'south'."],
+                    {
+                        "id": AnyUUID(as_string=True),
+                        "msg": "Area 'North' created",
+                        "name": "create_area",
+                        "status": True,
+                    },
+                    {
+                        "id": AnyUUID(as_string=True),
+                        "msg": "Area 'South' created",
+                        "name": "create_area",
+                        "status": True,
+                    },
+                    {
+                        "id": AnyUUID(as_string=True),
+                        "msg": "Link between 'north' and 'south' created",
+                        "name": "create_link",
+                        "status": True,
+                    },
+                    {
+                        "id": AnyUUID(as_string=True),
+                        "msg": "Thermal cluster 'gas_cluster' added to area 'south'.",
+                        "name": "create_cluster",
+                        "status": True,
+                    },
                 ],
                 "success": True,
             }
@@ -996,15 +1052,35 @@ class TestSnapshotGenerator:
         )
 
         # Check the results
-        assert results == GenerationResultInfoDTO(
-            success=True,
-            details=[
-                ("create_area", True, "Area 'North' created"),
-                ("create_area", True, "Area 'South' created"),
-                ("create_link", True, "Link between 'north' and 'south' created"),
-                ("create_cluster", True, "Thermal cluster 'gas_cluster' added to area 'south'."),
+        assert results.dict() == {
+            "success": True,
+            "details": [
+                {
+                    "id": AnyUUID(),
+                    "name": "create_area",
+                    "status": True,
+                    "msg": "Area 'North' created",
+                },
+                {
+                    "id": AnyUUID(),
+                    "name": "create_area",
+                    "status": True,
+                    "msg": "Area 'South' created",
+                },
+                {
+                    "id": AnyUUID(),
+                    "name": "create_link",
+                    "status": True,
+                    "msg": "Link between 'north' and 'south' created",
+                },
+                {
+                    "id": AnyUUID(),
+                    "name": "create_cluster",
+                    "status": True,
+                    "msg": "Thermal cluster 'gas_cluster' added to area 'south'.",
+                },
             ],
-        )
+        }
 
         # Check: the matrices are denormalized (we should have TSV files).
         snapshot_dir = variant_study.snapshot_dir
@@ -1099,15 +1175,35 @@ class TestSnapshotGenerator:
             )
 
         # Check the results
-        assert results == GenerationResultInfoDTO(
-            success=True,
-            details=[
-                ("create_area", True, "Area 'North' created"),
-                ("create_area", True, "Area 'South' created"),
-                ("create_link", True, "Link between 'north' and 'south' created"),
-                ("create_cluster", True, "Thermal cluster 'gas_cluster' added to area 'south'."),
+        assert results.dict() == {
+            "success": True,
+            "details": [
+                {
+                    "id": AnyUUID(),
+                    "name": "create_area",
+                    "status": True,
+                    "msg": "Area 'North' created",
+                },
+                {
+                    "id": AnyUUID(),
+                    "name": "create_area",
+                    "status": True,
+                    "msg": "Area 'South' created",
+                },
+                {
+                    "id": AnyUUID(),
+                    "name": "create_link",
+                    "status": True,
+                    "msg": "Link between 'north' and 'south' created",
+                },
+                {
+                    "id": AnyUUID(),
+                    "name": "create_cluster",
+                    "status": True,
+                    "msg": "Thermal cluster 'gas_cluster' added to area 'south'.",
+                },
             ],
-        )
+        }
 
         # Check th logs
         assert "Something went wrong" in caplog.text
@@ -1161,4 +1257,14 @@ class TestSnapshotGenerator:
         )
 
         # Check the results
-        assert results == GenerationResultInfoDTO(success=True, details=[("create_area", True, "Area 'East' created")])
+        assert results.dict() == {
+            "success": True,
+            "details": [
+                {
+                    "id": AnyUUID(),
+                    "name": "create_area",
+                    "status": True,
+                    "msg": "Area 'East' created",
+                },
+            ],
+        }
