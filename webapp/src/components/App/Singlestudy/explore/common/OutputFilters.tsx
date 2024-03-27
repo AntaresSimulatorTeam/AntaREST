@@ -35,6 +35,8 @@ function OutputFilters<T extends FilterFieldValues>(props: Props<T>) {
       multiple
       options={filterOptions}
       label={t(`study.outputFilters.${filterName}`)}
+      size="small"
+      variant="outlined"
       control={control}
       rules={{
         onAutoSubmit: (value) => {
@@ -44,11 +46,12 @@ function OutputFilters<T extends FilterFieldValues>(props: Props<T>) {
           onAutoSubmit(filterName, selection.join(", "));
         },
       }}
+      sx={{ maxWidth: 220 }}
     />
   );
 
   return (
-    <Fieldset legend={t("study.outputFilters")}>
+    <Fieldset legend={t("study.outputFilters")} sx={{ py: 1 }}>
       {renderFilter("filterSynthesis")}
       {renderFilter("filterByYear")}
     </Fieldset>
