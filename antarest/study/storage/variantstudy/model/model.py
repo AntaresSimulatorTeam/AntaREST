@@ -2,7 +2,6 @@ import typing as t
 import uuid
 
 import typing_extensions as te
-
 from pydantic import BaseModel
 
 from antarest.core.model import JSON
@@ -25,7 +24,7 @@ class NewDetailsDTO(te.TypedDict):
         msg: message de la génération de la commande ou message d'erreur (si le statut est false).
     """
 
-    id: uuid.UUID
+    id: t.Optional[uuid.UUID]
     name: str
     status: bool
     msg: str
