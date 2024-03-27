@@ -18,7 +18,7 @@ import { BaseSyntheticEvent } from "react";
 interface Props extends Omit<FormDialogProps, "children" | "handleSubmit"> {
   studyId: string;
   constraintId: string;
-  append: UseFieldArrayAppend<BindingConstraint, "constraints">;
+  append: UseFieldArrayAppend<BindingConstraint, "terms">;
   constraintTerms: ConstraintTerm[];
   options: AllClustersAndLinks;
 }
@@ -56,7 +56,7 @@ function AddConstraintTermDialog({
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = async (
-    { values }: SubmitHandlerPlus<Record<string, unknown>>,
+    { values }: SubmitHandlerPlus<Record<string, unknown>>, // TODO fix type
     _event?: BaseSyntheticEvent,
   ) => {
     try {

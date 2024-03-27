@@ -60,7 +60,7 @@ export interface BindingConstraint {
   comments?: string;
   filterSynthesis: OutputFilter[];
   filterYearByYear: OutputFilter[];
-  constraints: ConstraintTerm[];
+  terms: ConstraintTerm[];
 }
 
 ////////////////////////////////////////////////////////////////
