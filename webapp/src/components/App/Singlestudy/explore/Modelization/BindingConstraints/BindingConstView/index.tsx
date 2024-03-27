@@ -119,6 +119,7 @@ function BindingConstView({ constraintId }: Props) {
         response={mergeResponses(constraint, linksAndClusters)}
         ifResolved={([defaultValues, linksAndClusters]) => (
           <>
+            {/* Header controls */}
             <Box
               sx={{
                 pt: 1,
@@ -153,6 +154,7 @@ function BindingConstView({ constraintId }: Props) {
                 />
               </Box>
             </Box>
+            {/* Constraint properties form */}
             <Box sx={{ display: "flex", width: 1 }}>
               <Form
                 config={{ defaultValues }}
@@ -167,6 +169,7 @@ function BindingConstView({ constraintId }: Props) {
                 />
               </Form>
             </Box>
+            {/* Constraint terms form */}
             <Box sx={{ display: "flex", flexGrow: 1 }}>
               <Form autoSubmit config={{ defaultValues }} sx={{ flexGrow: 1 }}>
                 <BindingConstForm

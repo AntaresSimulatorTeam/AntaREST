@@ -7,7 +7,7 @@ import { BindingConstraint } from "./BindingConstView/utils";
 interface Props {
   list: BindingConstraint[];
   onClick: (name: string) => void;
-  currentBindingConst?: string;
+  currentConstraint?: string;
   reloadConstraintsList: VoidFunction;
 }
 
@@ -15,32 +15,32 @@ interface Props {
 function BindingConstPropsView({
   list,
   onClick,
-  currentBindingConst,
+  currentConstraint,
   reloadConstraintsList,
 }: Props) {
-  const [bindingConstNameFilter, setBindingConstNameFilter] =
-    useState<string>();
+  const [searchedConstraint, setSearchedConstraint] = useState("");
   const [addBindingConst, setAddBindingConst] = useState(false);
-  const [filteredBindingConst, setFilteredBindingConst] = useState<
-    BindingConstraint[]
-  >(list || []);
+  const [filteredConstraints, setFilteredConstraints] = useState(list);
 
   useEffect(() => {
-    const filter = (): BindingConstraint[] => {
-      if (list) {
-        return list.filter(
-          (s) =>
-            !bindingConstNameFilter ||
-            s.name.search(new RegExp(bindingConstNameFilter, "i")) !== -1,
-        );
-      }
-      return [];
-    };
-    setFilteredBindingConst(filter());
-  }, [list, bindingConstNameFilter]);
+    if (!list) {
+      setFilteredConstraints([]);
+      return;
+    }
+
+    if (!searchedConstraint) {
+      setFilteredConstraints(list);
+      return;
+    }
+
+    const pattern = new RegExp(searchedConstraint, "i");
+    const filtered = list.filter((s) => pattern.test(s.name));
+
+    setFilteredConstraints(filtered);
+  }, [list, searchedConstraint]);
 
   const existingConstraints = useMemo(
-    () => list.map(({ name }) => name.toLowerCase()),
+    () => list.map(({ name }) => name),
     [list],
   );
 
@@ -53,17 +53,17 @@ function BindingConstPropsView({
       <PropertiesView
         mainContent={
           <ListElement
-            list={filteredBindingConst.map((item) => ({
-              label: item.name,
-              name: item.id,
+            list={filteredConstraints.map((constraint) => ({
+              label: constraint.name,
+              name: constraint.id,
             }))}
-            currentElement={currentBindingConst}
+            currentElement={currentConstraint}
             setSelectedItem={(elm) => onClick(elm.name)}
           />
         }
         secondaryContent={<div />}
         onAdd={() => setAddBindingConst(true)}
-        onSearchFilterChange={(e) => setBindingConstNameFilter(e as string)}
+        onSearchFilterChange={(e) => setSearchedConstraint(e)}
       />
       {addBindingConst && (
         <AddDialog

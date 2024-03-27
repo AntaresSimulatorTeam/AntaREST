@@ -29,24 +29,24 @@ function BindingConstraints() {
   );
 
   // TODO find better name
-  const constraintsRes = usePromise(
+  const constraints = usePromise(
     () => getBindingConstraintList(study.id),
     [study.id, bindingConstraints],
   );
 
   useEffect(() => {
-    if (constraintsRes.data && !currentConstraintId) {
-      const firstConstraintId = constraintsRes.data[0].id;
+    if (constraints.data && !currentConstraintId) {
+      const firstConstraintId = constraints.data[0].id;
       dispatch(setCurrentBindingConst(firstConstraintId));
     }
-  }, [constraintsRes, currentConstraintId, dispatch]);
+  }, [constraints, currentConstraintId, dispatch]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleConstraintChange = (bindingConstId: string): void => {
-    dispatch(setCurrentBindingConst(bindingConstId));
+  const handleConstraintChange = (constraintId: string): void => {
+    dispatch(setCurrentBindingConst(constraintId));
   };
 
   ////////////////////////////////////////////////////////////////
@@ -55,7 +55,7 @@ function BindingConstraints() {
 
   return (
     <UsePromiseCond
-      response={constraintsRes}
+      response={constraints}
       ifPending={() => <SimpleLoader />}
       ifResolved={(data) => (
         <SplitView direction="horizontal" sizes={[10, 90]} gutterSize={3}>
@@ -63,8 +63,8 @@ function BindingConstraints() {
             <BindingConstPropsView // TODO rename ConstraintsList
               list={data}
               onClick={handleConstraintChange}
-              currentBindingConst={currentConstraintId}
-              reloadConstraintsList={constraintsRes.reload}
+              currentConstraint={currentConstraintId}
+              reloadConstraintsList={constraints.reload}
             />
           </Box>
           <Box>

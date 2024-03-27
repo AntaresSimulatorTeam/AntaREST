@@ -111,7 +111,7 @@ function Fields({ study, constraintId, isMatrixOpen, onCloseMatrix }: Props) {
           control={control}
         />
 
-        {study.version >= "840" && (
+        {Number(study.version) >= 840 && (
           <Box sx={{ width: 1 }}>
             <SelectFE
               name="filterYearByYear"

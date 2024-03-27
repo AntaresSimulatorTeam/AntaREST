@@ -37,10 +37,9 @@ const defaultValues = {
   timeStep: TimeStep.HOURLY,
   operator: BindingConstraintOperator.LESS,
   comments: "",
-} as const;
+};
 
 // TODO rename AddConstraintDialog
-// TODO refactor and add group field
 function AddDialog({
   open,
   onClose,
@@ -88,17 +87,17 @@ function AddDialog({
      * !WARNING: Current Implementation Issues & Future Directions
      *
      * Issues Identified:
-     * 1. **State vs. Router**: Utilizes global state for navigation-related concerns better suited for URL routing, reducing shareability and persistence.
-     * 2. **Full List Reload**: Inefficiently reloads the entire list after adding an item, leading to unnecessary network use and performance hits.
-     * 3. **Global State Overuse**: Over-relies on global state for operations that could be localized, complicating the application unnecessarily.
+     * 1. State vs. Router: Utilizes global state for navigation-related concerns better suited for URL routing, reducing shareability and persistence.
+     * 2. Full List Reload: Inefficiently reloads the entire list after adding an item, leading to unnecessary network use and performance hits.
+     * 3. Global State Overuse: Over-relies on global state for operations that could be localized, complicating the application unnecessarily.
      *
      * Future Solutions:
-     * - **React Router Integration**: Leverage URL parameters for selecting and displaying binding constraints, improving UX and state persistence.
-     * - **React Query for State Management**: Utilize React Query for data fetching and state management. This introduces benefits like:
-     *    - **Automatic Revalidation**: Only fetches data when needed, reducing unnecessary network requests.
-     *    - **Optimistic Updates**: Immediately reflect changes in the UI while the backend processes the request, enhancing perceived performance.
-     *    - **Cache Management**: Efficiently manage and invalidate cache, ensuring data consistency without manual reloads.
-     * - **Efficient State Updates**: Post-creation, append the new item to the existing list or use React Query's mutation to update the list optimally.
+     * - React Router Integration: Leverage URL parameters for selecting and displaying binding constraints, improving UX and state persistence.
+     * - React Query for State Management: Utilize React Query for data fetching and state management. This introduces benefits like:
+     *    - Automatic Revalidation: Only fetches data when needed, reducing unnecessary network requests.
+     *    - Optimistic Updates: Immediately reflect changes in the UI while the backend processes the request, enhancing perceived performance.
+     *    - Cache Management: Efficiently manage and invalidate cache, ensuring data consistency without manual reloads.
+     * - Efficient State Updates: Post-creation, append the new item to the existing list or use React Query's mutation to update the list optimally.
      *
      * Adopting these strategies will significantly enhance efficiency, maintainability, and UX, addressing current architectural weaknesses.
      */
