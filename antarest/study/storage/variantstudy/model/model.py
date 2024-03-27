@@ -1,9 +1,37 @@
 import typing as t
+import uuid
+
+import typing_extensions as te
 
 from pydantic import BaseModel
 
 from antarest.core.model import JSON
 from antarest.study.model import StudyMetadataDTO
+
+LegacyDetailsDTO = t.Tuple[str, bool, str]
+"""
+Legacy details DTO: triplet of name, output status and output message.
+"""
+
+
+class NewDetailsDTO(te.TypedDict):
+    """
+    New details DTO: dictionary with keys 'id', 'name', 'status' and 'msg'.
+
+    Attributes:
+        id: identifiant de la commande (UUID),
+        name: nom de la commande,
+        status: statut de la commande (true ou false),
+        msg: message de la génération de la commande ou message d'erreur (si le statut est false).
+    """
+
+    id: uuid.UUID
+    name: str
+    status: bool
+    msg: str
+
+
+DetailsDTO = t.Union[LegacyDetailsDTO, NewDetailsDTO]
 
 
 class GenerationResultInfoDTO(BaseModel):
@@ -12,12 +40,11 @@ class GenerationResultInfoDTO(BaseModel):
 
     Attributes:
         success: A boolean indicating whether the generation process was successful.
-        details: A list of tuples containing detailed information about the generation process:
-            (``name``, ``output_status``, ``output_message``).
+        details: Objects containing detailed information about the generation process.
     """
 
     success: bool
-    details: t.MutableSequence[t.Tuple[str, bool, str]]
+    details: t.MutableSequence[DetailsDTO]
 
 
 class CommandDTO(BaseModel):
