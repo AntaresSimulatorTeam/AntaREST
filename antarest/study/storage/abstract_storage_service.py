@@ -2,10 +2,14 @@ import json
 import logging
 import shutil
 import tempfile
+import typing as t
 from abc import ABC
+from enum import Enum
 from pathlib import Path
-from typing import BinaryIO, List, Optional, Union
 from uuid import uuid4
+
+import numpy as np
+import pandas as pd
 
 from antarest.core.config import Config
 from antarest.core.exceptions import BadOutputError, StudyOutputNotFoundError
@@ -13,6 +17,7 @@ from antarest.core.interfaces.cache import CacheConstants, ICache
 from antarest.core.model import JSON, PublicMode
 from antarest.core.utils.utils import StopWatch, extract_zip, unzip, zip_dir
 from antarest.login.model import GroupDTO
+from antarest.study.common.default_values import QueryFile
 from antarest.study.common.studystorage import IStudyStorageService, T
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
@@ -30,10 +35,170 @@ from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.files import get_playlist
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Simulation
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import ChildNotFoundError
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
 from antarest.study.storage.utils import extract_output_name, fix_study_root, remove_from_cache
 
 logger = logging.getLogger(__name__)
+
+TEMPLATE_PARTS = "output,{sim_id},economy,mc-ind"
+# noinspection SpellCheckingInspection
+MCYEAR_COL = "mcYear"
+MC_YEAR_INDEX = 0
+FILE_TYPE_1_INDEX = 1
+"""
+Index in path parts starting from the Monte Carlo year to determine the if we fetch links, areas or binding constraints.
+"""
+FILE_TYPE_2_INDEX = -2
+"""Index in path parts starting from the Monte Carlo year to determine the if we fetch values, details etc ."""
+AREA_NAME_INDEX = 2
+"""Index in path parts starting from the Monte Carlo year to determine the area name."""
+FREQUENCY_INDEX = -2
+"""Index in path parts starting from the Monte Carlo year to determine matrix frequency."""
+
+
+class FileType1(str, Enum):
+    """
+    Enum to determine the type of file we want to fetch in the study
+    """
+
+    LINKS = "links"
+    AREAS = "areas"
+    BINDING_CONSTRAINTS = "binding_constraints"
+
+
+class FileType2(str, Enum):
+    """
+    Enum to determine the type of file we want to fetch in the study
+    """
+
+    VALUES = "values"
+    DETAILS = "details"
+    # noinspection SpellCheckingInspection
+    DETAILS_ST_STORAGE = "details-STstorage"
+    DETAILS_RES = "details-res"
+    BINDING_CONSTRAINTS = "binding-constraints"
+
+
+def stringify(col: t.Union[str, t.Tuple[str, ...]]) -> str:
+    """
+    Convert a column name from Generic Hashable to a string without comers
+    Args:
+        col: column name to convert
+
+    Returns:  column name as string
+
+    """
+    return "|".join(col) if isinstance(col, tuple) else col
+
+
+def flatten_tree(path_tree: t.Dict[str, t.Any]) -> t.List[t.Tuple[str, ...]]:
+    """
+    Flatten paths tree
+    Args:
+        path_tree: tree to flatten
+
+    Returns: list of tuple with all tree paths parts
+
+    """
+    result = []
+    for key, value in path_tree.items():
+        if isinstance(value, dict):
+            result.extend([(key,) + sub for sub in flatten_tree(value)])
+        else:
+            result.append((key, value))
+    return result
+
+
+def parts_query_file_filtering(
+    parts: t.List[t.Tuple[str, ...]], query_file: QueryFile
+) -> t.Tuple[FileType1, FileType2, t.List[t.Tuple[str, ...]]]:
+    """
+    Filter parts list
+    Args:
+        parts: list of tuple with all tree paths parts
+        query_file: query file to filter
+
+    Returns: filtered list of tuple with all tree paths parts
+
+    """
+    if query_file == QueryFile.LINKS_VALUES:
+        return (
+            FileType1.LINKS,
+            FileType2.VALUES,
+            [
+                path_parts
+                for path_parts in parts
+                if path_parts[FILE_TYPE_1_INDEX] == FileType1.LINKS
+                and path_parts[FILE_TYPE_2_INDEX].startswith(FileType2.VALUES)
+            ],
+        )
+    if query_file == QueryFile.LINKS_DETAILS:
+        return (
+            FileType1.LINKS,
+            FileType2.DETAILS,
+            [
+                path_parts
+                for path_parts in parts
+                if path_parts[FILE_TYPE_1_INDEX] == FileType1.LINKS
+                and path_parts[FILE_TYPE_2_INDEX].startswith(FileType2.DETAILS)
+            ],
+        )
+    if query_file == QueryFile.AREAS_VALUES:
+        return (
+            FileType1.AREAS,
+            FileType2.VALUES,
+            [
+                path_parts
+                for path_parts in parts
+                if path_parts[FILE_TYPE_1_INDEX] == FileType1.AREAS
+                and path_parts[FILE_TYPE_2_INDEX].startswith(FileType2.VALUES)
+            ],
+        )
+    if query_file == QueryFile.AREAS_DETAILS:
+        return (
+            FileType1.AREAS,
+            FileType2.DETAILS,
+            [
+                path_parts
+                for path_parts in parts
+                if path_parts[FILE_TYPE_1_INDEX] == FileType1.AREAS
+                and path_parts[FILE_TYPE_2_INDEX].startswith(FileType2.DETAILS)
+                and not path_parts[FILE_TYPE_2_INDEX].startswith(FileType2.DETAILS_ST_STORAGE)
+                and not path_parts[FILE_TYPE_2_INDEX].startswith(FileType2.DETAILS_RES)
+            ],
+        )
+    if query_file == QueryFile.AREAS_DETAILS_ST_STORAGE:
+        return (
+            FileType1.AREAS,
+            FileType2.DETAILS_ST_STORAGE,
+            [
+                path_parts
+                for path_parts in parts
+                if path_parts[FILE_TYPE_1_INDEX] == FileType1.AREAS
+                and path_parts[FILE_TYPE_2_INDEX].startswith(FileType2.DETAILS_ST_STORAGE)
+            ],
+        )
+    if query_file == QueryFile.AREAS_DETAILS_RES:
+        return (
+            FileType1.AREAS,
+            FileType2.DETAILS_RES,
+            [
+                path_parts
+                for path_parts in parts
+                if path_parts[FILE_TYPE_1_INDEX] == FileType1.AREAS
+                and path_parts[FILE_TYPE_2_INDEX].startswith(FileType2.DETAILS_RES)
+            ],
+        )
+    if query_file == QueryFile.BINDING_CONSTRAINTS:
+        return (
+            FileType1.BINDING_CONSTRAINTS,
+            FileType2.BINDING_CONSTRAINTS,
+            [path_parts for path_parts in parts if path_parts[FILE_TYPE_1_INDEX] == FileType1.BINDING_CONSTRAINTS],
+        )
+
+    raise ValueError(f"Unknown query file {query_file}")
 
 
 class AbstractStorageService(IStudyStorageService[T], ABC):
@@ -85,7 +250,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         patch_metadata = patch.study or PatchStudy()
 
         study_workspace = getattr(study, "workspace", DEFAULT_WORKSPACE_NAME)
-        folder: Optional[str] = None
+        folder: t.Optional[str] = None
         if hasattr(study, "folder"):
             folder = study.folder
 
@@ -142,7 +307,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
 
         if url == "" and depth == -1:
             cache_id = f"{CacheConstants.RAW_STUDY}/{metadata.id}"
-            from_cache: Optional[JSON] = None
+            from_cache: t.Optional[JSON] = None
             if use_cache:
                 from_cache = self.cache.get(cache_id)
             if from_cache is not None:
@@ -157,10 +322,69 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         del study
         return data
 
+    def aggregate_data(
+        self,
+        metadata: T,
+        output_name: str,
+        query_file: QueryFile,
+        frequency: MatrixFrequency,
+        mc_years: t.Sequence[str],
+        areas_names: t.Sequence[str],
+        columns_names: t.Sequence[str],
+    ) -> t.Dict[str, t.Any]:
+        """
+        Entry point to fetch data inside study.
+        Args:
+            metadata: study
+            output_name:
+            query_file:
+            frequency:
+            mc_years:
+            areas_names:
+            columns_names:
+
+        Returns: study data formatted in json
+
+        """
+        self._check_study_exists(metadata)
+        study = self.get_raw(metadata)
+        parts = TEMPLATE_PARTS.format(sim_id=output_name.replace(",", "")).split(",")
+        file_type_1, _, all_paths = parts_query_file_filtering(flatten_tree(study.tree.get(parts)), query_file)
+        if mc_years:
+            all_paths = [path_parts for path_parts in all_paths if path_parts[MC_YEAR_INDEX] in mc_years]
+        if areas_names and file_type_1 != FileType1.AREAS:
+            raise ValueError(f"You specified areas names for a query file that does not support it: {query_file}")
+        elif areas_names:
+            all_paths = [path_parts for path_parts in all_paths if path_parts[AREA_NAME_INDEX] in areas_names]
+        all_paths = [path_parts for path_parts in all_paths if frequency.value in path_parts[FREQUENCY_INDEX]]
+
+        final_df = None
+        for path_parts in all_paths:
+            try:
+                node_data = study.tree.get(parts + list(path_parts[:-1]))
+            except ChildNotFoundError:
+                continue
+
+            columns, matrix = node_data["columns"], np.array(node_data["data"]).T.tolist()
+            columns = [stringify(col) for col in columns]
+            kept_columns = [col for col in columns if col in columns_names] if columns_names else columns
+            node_data = (
+                {file_type_1.value: [path_parts[FILE_TYPE_1_INDEX + 1]] * len(matrix[0])}
+                if file_type_1 != FileType1.BINDING_CONSTRAINTS
+                else {}
+            )
+            node_data.update({MCYEAR_COL: [path_parts[MC_YEAR_INDEX]] * len(matrix[0])})
+            node_data.update({col: vals for col, vals in zip(columns, matrix) if col in kept_columns})
+
+            df = pd.DataFrame(node_data)
+            final_df = df if final_df is None else pd.concat([final_df, df], ignore_index=True)  # type: ignore
+
+        return {} if final_df is None else final_df.fillna("N/A").to_dict(orient="list")  # type: ignore
+
     def get_study_sim_result(
         self,
         study: T,
-    ) -> List[StudySimResultDTO]:
+    ) -> t.List[StudySimResultDTO]:
         """
         Get global result information
         Args:
@@ -169,7 +393,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         """
         study_data = self.get_raw(study)
         patch_metadata = self.patch_service.get(study)
-        results: List[StudySimResultDTO] = []
+        results: t.List[StudySimResultDTO] = []
         if study_data.config.outputs is not None:
             reference = (patch_metadata.outputs or PatchOutputs()).reference
             for output in study_data.config.outputs:
@@ -209,9 +433,9 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
     def import_output(
         self,
         metadata: T,
-        output: Union[BinaryIO, Path],
-        output_name: Optional[str] = None,
-    ) -> Optional[str]:
+        output: t.Union[t.BinaryIO, Path],
+        output_name: t.Optional[str] = None,
+    ) -> t.Optional[str]:
         """
         Import additional output in an existing study.
 
@@ -229,7 +453,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         path_output = Path(metadata.path) / "output" / f"imported_output_{str(uuid4())}"
         study_id = metadata.id
         path_output.mkdir(parents=True)
-        output_full_name: Optional[str]
+        output_full_name: t.Optional[str]
         is_zipped = False
         stopwatch = StopWatch()
         try:
