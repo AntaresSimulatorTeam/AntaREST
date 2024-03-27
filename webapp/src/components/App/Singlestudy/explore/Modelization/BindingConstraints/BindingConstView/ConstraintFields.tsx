@@ -1,26 +1,33 @@
-import Fieldset from "../../../../../../common/Fieldset";
-import SelectFE from "../../../../../../common/fieldEditors/SelectFE";
-import StringFE from "../../../../../../common/fieldEditors/StringFE";
-import { useTranslation } from "react-i18next";
 import {
   BindingConstraint,
   OPERATORS,
   OUTPUT_FILTERS,
   TIME_STEPS,
 } from "./utils";
-import { useFormContextPlus } from "../../../../../../common/Form";
-import { useMemo } from "react";
+
+import Fieldset from "../../../../../../common/Fieldset";
+import SelectFE from "../../../../../../common/fieldEditors/SelectFE";
+import StringFE from "../../../../../../common/fieldEditors/StringFE";
 import { StudyMetadata } from "../../../../../../../common/types";
 import SwitchFE from "../../../../../../common/fieldEditors/SwitchFE";
+import { useFormContextPlus } from "../../../../../../common/Form";
+import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { validateString } from "../../../../../../../utils/validationUtils";
+import Matrix from "./Matrix";
+import { Box } from "@mui/material";
 
 interface Props {
   study: StudyMetadata;
+  constraintId: string;
+  isMatrixOpen: boolean;
+  onCloseMatrix: VoidFunction;
 }
 
-function Fields({ study }: Props) {
+function Fields({ study, constraintId, isMatrixOpen, onCloseMatrix }: Props) {
   const { t } = useTranslation();
-  const { control } = useFormContextPlus<BindingConstraint>();
+  const { control, getValues } = useFormContextPlus<BindingConstraint>();
+  const currentOperator = getValues("operator");
 
   const outputFilterOptions = useMemo(
     () =>
@@ -55,7 +62,10 @@ function Fields({ study }: Props) {
 
   return (
     <>
-      <Fieldset legend={t("global.general")} fieldWidth={200} sx={{ pb: 2 }}>
+      <Fieldset
+        fieldWidth={200}
+        sx={{ py: 1, display: "flex", flexWrap: "wrap" }}
+      >
         <StringFE
           disabled
           name="name"
@@ -100,29 +110,40 @@ function Fields({ study }: Props) {
           label={t("study.modelization.bindingConst.enabled")}
           control={control}
         />
+
+        {study.version >= "840" && (
+          <Box sx={{ width: 1 }}>
+            <SelectFE
+              name="filterYearByYear"
+              label={t("study.outputFilters.filterByYear")}
+              size="small"
+              variant="outlined"
+              options={outputFilterOptions}
+              multiple
+              control={control}
+              sx={{ mr: 2 }}
+            />
+            <SelectFE
+              name="filterSynthesis"
+              label={t("study.outputFilters.filterSynthesis")}
+              size="small"
+              variant="outlined"
+              options={outputFilterOptions}
+              multiple
+              control={control}
+            />
+          </Box>
+        )}
       </Fieldset>
 
-      {study.version >= "840" && (
-        <Fieldset legend={t("study.outputFilters")} sx={{ pb: 2 }}>
-          <SelectFE
-            name="filterYearByYear"
-            label={t("study.outputFilters.filterByYear")}
-            size="small"
-            variant="outlined"
-            options={outputFilterOptions}
-            multiple
-            control={control}
-          />
-          <SelectFE
-            name="filterSynthesis"
-            label={t("study.outputFilters.filterSynthesis")}
-            size="small"
-            variant="outlined"
-            options={outputFilterOptions}
-            multiple
-            control={control}
-          />
-        </Fieldset>
+      {isMatrixOpen && (
+        <Matrix
+          study={study}
+          constraintId={constraintId}
+          operator={currentOperator}
+          open={isMatrixOpen}
+          onClose={onCloseMatrix}
+        />
       )}
     </>
   );
