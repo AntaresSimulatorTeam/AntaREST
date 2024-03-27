@@ -465,10 +465,6 @@ export interface LinkClusterElement {
   name: string;
 }
 
-// TODO wrong types
-// LinkWithClusters
-// ClusterWithLinks
-// Combine both
 export interface LinkClusterItem {
   element: LinkClusterElement;
   item_list: LinkClusterElement[];

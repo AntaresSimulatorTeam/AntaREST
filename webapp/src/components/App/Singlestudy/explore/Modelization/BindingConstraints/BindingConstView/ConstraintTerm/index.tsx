@@ -113,7 +113,7 @@ function ConstraintTermItem({
     event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const value = event.target.value;
-    const newOffset = value === "" ? undefined : parseFloat(value);
+    const newOffset = value === "" ? undefined : parseInt(value, 10);
     setOffset(newOffset);
     saveValue({ ...term, offset: newOffset });
   };
@@ -148,7 +148,7 @@ function ConstraintTermItem({
             size="small"
             type="number"
             value={weight}
-            onChange={(e) => handleWeightChange(e)}
+            onChange={handleWeightChange}
             sx={{ maxWidth: 150, mr: 0 }}
           />
         }
@@ -184,7 +184,7 @@ function ConstraintTermItem({
                     size="small"
                     type="number"
                     value={offset}
-                    onChange={(e) => handleOffsetChange(e)}
+                    onChange={handleOffsetChange}
                     sx={{ maxWidth: 100 }}
                   />
                 </OffsetInput>
