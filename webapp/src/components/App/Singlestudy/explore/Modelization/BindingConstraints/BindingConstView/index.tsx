@@ -29,7 +29,6 @@ import usePromise from "../../../../../../../hooks/usePromise";
 import { useSnackbar } from "notistack";
 import { useState } from "react";
 import useStudySynthesis from "../../../../../../../redux/hooks/useStudySynthesis";
-import { Dataset } from "@mui/icons-material";
 
 interface Props {
   constraintId: string;
@@ -41,7 +40,6 @@ function BindingConstView({ constraintId }: Props) {
   const dispatch = useAppDispatch();
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
-  const [matrixDialogOpen, setMatrixDialogOpen] = useState(false);
   const [deleteConstraintDialogOpen, setDeleteConstraintDialogOpen] =
     useState(false);
 
@@ -107,7 +105,7 @@ function BindingConstView({ constraintId }: Props) {
   return (
     <Paper
       sx={{
-        px: 2,
+        p: 2,
         width: 1,
         height: 1,
         display: "flex",
@@ -119,54 +117,33 @@ function BindingConstView({ constraintId }: Props) {
         response={mergeResponses(constraint, linksAndClusters)}
         ifResolved={([defaultValues, linksAndClusters]) => (
           <>
-            <Box
-              sx={{
-                pt: 1,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}
-            >
+            <Box sx={{ position: "absolute", right: 15 }}>
               <Button
-                variant="contained"
+                variant="outlined"
                 size="small"
-                color="secondary"
-                startIcon={<Dataset />}
-                onClick={() => setMatrixDialogOpen(true)}
-                sx={{ mr: 2 }}
+                startIcon={<Delete />}
+                color="error"
+                onClick={() => setDeleteConstraintDialogOpen(true)}
               >
-                {t("study.modelization.bindingConst.timeSeries")}
+                {t("global.delete.all")}
               </Button>
-              <Box>
-                <Button
-                  variant="outlined"
-                  size="small"
-                  startIcon={<Delete />}
-                  color="error"
-                  onClick={() => setDeleteConstraintDialogOpen(true)}
-                >
-                  {t("global.delete.all")}
-                </Button>
-                <DocLink
-                  to={`${ACTIVE_WINDOWS_DOC_PATH}#binding-constraints`}
-                  sx={{ pr: 0 }}
-                />
-              </Box>
+              <DocLink
+                to={`${ACTIVE_WINDOWS_DOC_PATH}#binding-constraints`}
+                sx={{ pr: 0 }}
+              />
             </Box>
+            {/* Constraint properties form */}
             <Box sx={{ display: "flex", width: 1 }}>
               <Form
+                autoSubmit
                 config={{ defaultValues }}
                 onSubmit={handleSubmitConstraint}
                 sx={{ flexGrow: 1 }}
               >
-                <ConstraintFields
-                  study={study}
-                  constraintId={constraintId}
-                  isMatrixOpen={matrixDialogOpen}
-                  onCloseMatrix={() => setMatrixDialogOpen(false)}
-                />
+                <ConstraintFields study={study} constraintId={constraintId} />
               </Form>
             </Box>
+            {/* Constraint terms form */}
             <Box sx={{ display: "flex", flexGrow: 1 }}>
               <Form autoSubmit config={{ defaultValues }} sx={{ flexGrow: 1 }}>
                 <BindingConstForm

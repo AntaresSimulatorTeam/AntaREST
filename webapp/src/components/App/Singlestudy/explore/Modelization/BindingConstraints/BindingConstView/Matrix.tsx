@@ -29,6 +29,10 @@ function Matrix({ study, operator, constraintId, open, onClose }: Props) {
     ),
   };
 
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
+
   return (
     <BasicDialog
       contentProps={{
@@ -38,7 +42,7 @@ function Matrix({ study, operator, constraintId, open, onClose }: Props) {
       maxWidth="xl"
       {...dialogProps}
     >
-      {study.version >= "870" ? (
+      {Number(study.version) >= 870 ? (
         <>
           {operator === "less" && (
             <MatrixInput
@@ -74,7 +78,6 @@ function Matrix({ study, operator, constraintId, open, onClose }: Props) {
                   computStats={MatrixStats.NOCOL}
                 />
               </Box>
-
               <Box sx={{ px: 2 }}>
                 <MatrixInput
                   study={study}
