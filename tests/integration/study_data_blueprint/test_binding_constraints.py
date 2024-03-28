@@ -35,7 +35,7 @@ class TestClusterTerm:
 
 
 class TestConstraintTerm:
-    def test_constraint_id__link(self):
+    def test_constraint_id__link(self) -> bool:
         term = ConstraintTerm(
             id="foo",
             weight=3.14,
@@ -204,7 +204,7 @@ class TestBindingConstraints:
                 "enabled": True,
                 "timeStep": "hourly",
                 "operator": "less",
-                "coeffs": {},
+                "terms": {},
                 "comments": "New API",
             },
             headers=user_headers,
@@ -222,7 +222,7 @@ class TestBindingConstraints:
         expected = [
             {
                 "comments": "",
-                "constraints": [],  # should be renamed to `terms` in the future.
+                "terms": [],  
                 "enabled": True,
                 "filterSynthesis": "",
                 "filterYearByYear": "",
@@ -233,7 +233,7 @@ class TestBindingConstraints:
             },
             {
                 "comments": "",
-                "constraints": [],  # should be renamed to `terms` in the future.
+                "terms": [],  
                 "enabled": True,
                 "filterSynthesis": "",
                 "filterYearByYear": "",
@@ -244,7 +244,7 @@ class TestBindingConstraints:
             },
             {
                 "comments": "New API",
-                "constraints": [],  # should be renamed to `terms` in the future.
+                "terms": [],  
                 "enabled": True,
                 "filterSynthesis": "",
                 "filterYearByYear": "",
@@ -301,7 +301,7 @@ class TestBindingConstraints:
         )
         assert res.status_code == 200, res.json()
         binding_constraint = res.json()
-        constraint_terms = binding_constraint["constraints"]  # should be renamed to `terms` in the future.
+        constraint_terms = binding_constraint["terms"]  
         expected = [
             {
                 "data": {"area1": area1_id, "area2": area2_id},
@@ -336,7 +336,7 @@ class TestBindingConstraints:
         )
         assert res.status_code == 200, res.json()
         binding_constraint = res.json()
-        constraint_terms = binding_constraint["constraints"]  # should be renamed to `terms` in the future.
+        constraint_terms = binding_constraint["terms"]  
         expected = [
             {
                 "data": {"area1": area1_id, "area2": area2_id},
@@ -426,7 +426,7 @@ class TestBindingConstraints:
         # Check that the matrix is a daily/weekly matrix
         res = client.get(
             f"/v1/studies/{study_id}/raw",
-            params={"path": f"input/bindingconstraints/{bc_id}", "depth": 1, "formatted": True},
+            params={"path": f"input/bindingconstraints/{bc_id}", "depth": 1, "formatted": True}, #type: ignore
             headers=user_headers,
         )
         assert res.status_code == 200, res.json()
@@ -446,7 +446,7 @@ class TestBindingConstraints:
                 "enabled": True,
                 "timeStep": "hourly",
                 "operator": "less",
-                "coeffs": {},
+                "terms": {},
                 "comments": "New API",
             },
             headers=user_headers,
@@ -465,7 +465,7 @@ class TestBindingConstraints:
                 "enabled": True,
                 "timeStep": "hourly",
                 "operator": "less",
-                "coeffs": {},
+                "terms": {},
                 "comments": "New API",
             },
             headers=user_headers,
@@ -484,7 +484,7 @@ class TestBindingConstraints:
                 "enabled": True,
                 "timeStep": "hourly",
                 "operator": "less",
-                "coeffs": {},
+                "terms": {},
                 "comments": "",
             },
             headers=user_headers,
@@ -499,7 +499,7 @@ class TestBindingConstraints:
                 "enabled": True,
                 "timeStep": "hourly",
                 "operator": "less",
-                "coeffs": {},
+                "terms": {},
                 "comments": "2 types of matrices",
                 "values": [[]],
                 "less_term_matrix": [[]],
@@ -521,7 +521,7 @@ class TestBindingConstraints:
                 "enabled": True,
                 "timeStep": "hourly",
                 "operator": "less",
-                "coeffs": {},
+                "terms": {},
                 "comments": "Incoherent matrix with version",
                 "less_term_matrix": [[]],
             },
@@ -538,7 +538,7 @@ class TestBindingConstraints:
             "enabled": True,
             "timeStep": "daily",
             "operator": "less",
-            "coeffs": {},
+            "terms": {},
             "comments": "Creation with matrix",
             "values": wrong_matrix.tolist(),
         }
@@ -616,7 +616,7 @@ class TestBindingConstraints:
 
         # Creation of a bc without group
         bc_id_wo_group = "binding_constraint_1"
-        args = {"enabled": True, "timeStep": "hourly", "operator": "less", "coeffs": {}, "comments": "New API"}
+        args = {"enabled": True, "timeStep": "hourly", "operator": "less", "terms": {}, "comments": "New API"}
         res = client.post(
             f"/v1/studies/{study_id}/bindingconstraints",
             json={"name": bc_id_wo_group, **args},
@@ -657,7 +657,7 @@ class TestBindingConstraints:
         for term in ["lt", "gt", "eq"]:
             res = client.get(
                 f"/v1/studies/{study_id}/raw",
-                params={"path": f"input/bindingconstraints/{bc_id_w_matrix}_{term}", "depth": 1, "formatted": True},
+                params={"path": f"input/bindingconstraints/{bc_id_w_matrix}_{term}", "depth": 1, "formatted": True}, #type: ignore
                 headers=admin_headers,
             )
             assert res.status_code == 200
@@ -729,7 +729,7 @@ class TestBindingConstraints:
                     "path": f"input/bindingconstraints/{bc_id_w_matrix}_{term_alias}",
                     "depth": 1,
                     "formatted": True,
-                },
+                }, # type: ignore
                 headers=admin_headers,
             )
             assert res.status_code == 200
@@ -759,7 +759,7 @@ class TestBindingConstraints:
                 "enabled": True,
                 "timeStep": "hourly",
                 "operator": "less",
-                "coeffs": {},
+                "terms": {},
                 "comments": "New API",
                 "values": [[]],
             },
@@ -932,7 +932,7 @@ class TestBindingConstraints:
         assert groups["Group 2"] == [
             {
                 "comments": "New API",
-                "constraints": [],
+                "terms": [],
                 "enabled": True,
                 "filterSynthesis": "",
                 "filterYearByYear": "",

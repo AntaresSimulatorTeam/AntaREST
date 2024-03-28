@@ -523,7 +523,7 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
                     "enabled": True,
                     "time_step": BindingConstraintFrequency.HOURLY.value,
                     "operator": BindingConstraintOperator.LESS.value,
-                    "coeffs": {"area 1.cluster 1": [2.0, 4]},
+                    "terms": {"area 1.cluster 1": [2.0, 4]},
                 },
             }
         ],
@@ -541,7 +541,7 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
                     "enabled": True,
                     "time_step": BindingConstraintFrequency.HOURLY.value,
                     "operator": BindingConstraintOperator.LESS.value,
-                    "coeffs": {},
+                    "terms": {},
                 },
             }
         ],
