@@ -190,7 +190,7 @@ def test_create_diff(command_context: CommandContext):
     )
     assert base.create_diff(other_match) == [
         UpdateConfig(
-            target=f"input/renewables/clusters/foo/list/foo",
+            target="input/renewables/clusters/foo/list/foo",
             data={"a": "b"},
             command_context=command_context,
         ),

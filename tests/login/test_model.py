@@ -1,7 +1,4 @@
-import contextlib
-
 from sqlalchemy.engine.base import Engine  # type: ignore
-from sqlalchemy.exc import IntegrityError  # type: ignore
 from sqlalchemy.orm import sessionmaker  # type: ignore
 
 from antarest.login.model import (
