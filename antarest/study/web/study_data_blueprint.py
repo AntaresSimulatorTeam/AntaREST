@@ -899,7 +899,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/bindingconstraints",
         tags=[APITag.study_data],
         summary="Get binding constraint list",
-        response_model=Union[ConstraintOutput, List[ConstraintOutput]],
+        response_model=Union[ConstraintOutput, List[ConstraintOutput]],  # type: ignore
     )
     def get_binding_constraint_list(
         uuid: str,
@@ -957,13 +957,13 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/bindingconstraints/{binding_constraint_id}",
         tags=[APITag.study_data],
         summary="Get binding constraint",
-        response_model=ConstraintOutput,
+        response_model=ConstraintOutput,  # type: ignore
     )
     def get_binding_constraint(
         uuid: str,
         binding_constraint_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> ConstraintOutput:
+    ) -> Union[ConstraintOutput, List[ConstraintOutput]]:
         logger.info(
             f"Fetching binding constraint {binding_constraint_id} for study {uuid}",
             extra={"user": current_user.id},

@@ -492,7 +492,7 @@ class TableModeManager:
                             enabled=col_values.get("enabled", current_binding_dto.enabled),
                             time_step=col_values.get("type", current_binding_dto.time_step),
                             operator=col_values.get("operator", current_binding_dto.operator),
-                            coeffs=BindingConstraintManager.constraints_to_coeffs(current_binding_dto),
+                            coeffs=BindingConstraintManager.terms_to_coeffs(current_binding_dto.terms),
                             command_context=command_context,
                         )
                     )

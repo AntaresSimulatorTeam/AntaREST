@@ -391,7 +391,7 @@ class BindingConstraintManager:
         return False
 
     @staticmethod
-    def constraint_model_adapter(constraint: ConstraintInput, version: int) -> ConstraintOutput:
+    def constraint_model_adapter(constraint: Mapping[str, Any], version: int) -> ConstraintOutput:
         """
         Adapts a constraint configuration to the appropriate version-specific format.
 
@@ -479,10 +479,10 @@ class BindingConstraintManager:
 
         # If a specific constraint ID is provided, we return that constraint
         if filters.bc_id:
-            return filtered_constraints.get(filters.bc_id)
+            return filtered_constraints.get(filters.bc_id) # type: ignore
 
         # Else we return all the matching constraints, based on the given filters
-        return list(filtered_constraints.values())
+        return list(filtered_constraints.values())  
 
     def get_grouped_constraints(self, study: Study) -> Mapping[str, Sequence[ConstraintOutput]]:
         """
@@ -677,7 +677,7 @@ class BindingConstraintManager:
         }
 
         if study_version >= 870:
-            updated_constraint["group"] = data.group or existing_constraint.group
+            updated_constraint["group"] = data.group or existing_constraint.group  # type: ignore
 
         args = {
             **updated_constraint,
@@ -836,7 +836,7 @@ class BindingConstraintManager:
         binding_constraint_id: str,
         term_id: str,
     ) -> None:
-        return self.update_constraint_term(study, binding_constraint_id, term_id)
+        return self.update_constraint_term(study, binding_constraint_id, term_id)  # type: ignore
 
 
 def _replace_matrices_according_to_frequency_and_version(
