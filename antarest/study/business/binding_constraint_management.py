@@ -416,8 +416,8 @@ class BindingConstraintManager:
             "time_step": constraint.get("type", BindingConstraintFrequency.HOURLY),
             "operator": constraint.get("operator", BindingConstraintOperator.EQUAL),
             "comments": constraint.get("comments", ""),
-            "filter_year_by_year": constraint.get("filter_year_by_year", ""),
-            "filter_synthesis": constraint.get("filter_synthesis", ""),
+            "filter_year_by_year": constraint.get("filter_year_by_year") or constraint.get("filter-year-by-year"),
+            "filter_synthesis": constraint.get("filter_synthesis") or constraint.get("filter-synthesis"),
             "terms": constraint.get("terms", []),
         }
 
@@ -473,10 +473,10 @@ class BindingConstraintManager:
 
         # If a specific constraint ID is provided, we return that constraint
         if filters.bc_id:
-            return filtered_constraints.get(filters.bc_id) # type: ignore
+            return filtered_constraints.get(filters.bc_id)  # type: ignore
 
         # Else we return all the matching constraints, based on the given filters
-        return list(filtered_constraints.values())  
+        return list(filtered_constraints.values())
 
     def get_grouped_constraints(self, study: Study) -> Mapping[str, Sequence[ConstraintOutput]]:
         """
