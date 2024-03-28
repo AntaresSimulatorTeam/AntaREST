@@ -112,7 +112,7 @@ def test_save_uri(tmp_path: Path):
     context = ContextServer(matrix=Mock(), resolver=resolver)
     node = MockLazyNode(context=context, config=config)
 
-    uri = f"matrix://id"
+    uri = "matrix://id"
     node.save(uri)
     assert (file.parent / f"{file.name}.link").read_text() == uri
     assert not file.exists()

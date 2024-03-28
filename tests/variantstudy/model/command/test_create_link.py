@@ -254,12 +254,12 @@ def test_create_diff(command_context: CommandContext):
 
     assert base.create_diff(other_match) == [
         UpdateConfig(
-            target=f"input/links/bar/properties/foo",
+            target="input/links/bar/properties/foo",
             data=CreateLink.generate_link_properties({"hurdles-cost": "true"}),
             command_context=command_context,
         ),
         ReplaceMatrix(
-            target=f"@links_series/bar/foo",
+            target="@links_series/bar/foo",
             matrix=series_b,
             command_context=command_context,
         ),

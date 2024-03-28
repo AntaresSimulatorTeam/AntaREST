@@ -1,5 +1,5 @@
 import pytest
-from sqlalchemy.orm import Session, scoped_session, sessionmaker  # type: ignore
+from sqlalchemy.orm import Session  # type: ignore
 
 from antarest.login.model import Bot, Group, Password, Role, RoleType, User, UserLdap
 from antarest.login.repository import BotRepository, GroupRepository, RoleRepository, UserLdapRepository, UserRepository

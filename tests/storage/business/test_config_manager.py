@@ -1,8 +1,8 @@
 from pathlib import Path
 from unittest.mock import Mock
 
+from antarest.study.business.thematic_trimming_field_infos import FIELDS_INFO
 from antarest.study.business.thematic_trimming_management import (
-    FIELDS_INFO,
     ThematicTrimmingFormFields,
     ThematicTrimmingManager,
     get_fields_info,
@@ -112,4 +112,4 @@ def test_thematic_trimming_config() -> None:
         )
     )
 
-    assert len(FIELDS_INFO) == 63
+    assert len(FIELDS_INFO) == 94

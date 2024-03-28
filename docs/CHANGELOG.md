@@ -17,6 +17,7 @@ v2.16.8 (2024-04-19)
 * **outputs:** build outputs config even when using cache [`#1958`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1958)
 * **comments:** use a command to update comments on a variant [`#1959`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1959)
 * **outputs (ui):** correct weekly data formatting to support 53-week years [`#1975`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1975)
+* **configuration:** add missing variables in Thematic Trimming for studies in version v8.6 or above [`#1992`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1992)
 
 
 v2.16.7 (2024-03-05)
