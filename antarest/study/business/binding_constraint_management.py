@@ -178,36 +178,32 @@ class ConstraintFilters(BaseModel, frozen=True, extra="forbid"):
         if self.time_step is not None and self.time_step != constraint.time_step:
             return False
 
-        # Filter on terms
         terms = constraint.terms or []
 
         if self.area_name:
             matching_terms = []
-
             for term in terms:
                 if term.data:
                     if isinstance(term.data, LinkTerm):
-                        # Check if either area in the link matches the specified area_name
+                        # Check if either area in the link term matches the specified area_name.
                         if self.area_name.upper() in (term.data.area1.upper(), term.data.area2.upper()):
                             matching_terms.append(term)
                     elif isinstance(term.data, ClusterTerm):
-                        # Check if the cluster's area matches the specified area_name
+                        # Check if the area matches the specified area_name for a cluster term.
                         if self.area_name.upper() == term.data.area.upper():
                             matching_terms.append(term)
-
-            # If no terms match, the constraint should not pass
             if not matching_terms:
                 return False
 
         if self.cluster_name:
-            all_clusters = []
+            matching_terms = []
             for term in terms:
                 if term.data is None:
                     continue
-                if isinstance(term.data, ClusterTerm):
-                    all_clusters.append(term.data.cluster)
-            upper_cluster_name = self.cluster_name.upper()
-            if all_clusters and not any(upper_cluster_name in cluster.upper() for cluster in all_clusters):
+                if term.data and isinstance(term.data, ClusterTerm):
+                    if self.cluster_name.upper() == term.data.cluster.upper():
+                        matching_terms.append(term)
+            if not matching_terms:
                 return False
 
         if self.link_id:
@@ -448,14 +444,12 @@ class BindingConstraintManager:
         :return: A dictionary of term IDs mapped to a list of their coefficients.
         """
         coeffs = {}
-
         if terms is not None:
             for term in terms:
                 if term.id and term.weight is not None:
                     coeffs[term.id] = [term.weight]
                     if term.offset is not None:
                         coeffs[term.id].append(term.offset)
-
             return coeffs
 
     def get_binding_constraint(
