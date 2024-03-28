@@ -8,11 +8,5 @@ def test_integration_xpansion(app: FastAPI, tmp_path: str):
     admin_credentials = res.json()
     headers = {"Authorization": f'Bearer {admin_credentials["access_token"]}'}
 
-    client.post(
-        f"/v1/watcher/_scan",
-        headers=headers,
-    )
-    client.post(
-        f"/v1/watcher/_scan?path=/tmp",
-        headers=headers,
-    )
+    client.post("/v1/watcher/_scan", headers=headers)
+    client.post("/v1/watcher/_scan?path=/tmp", headers=headers)
