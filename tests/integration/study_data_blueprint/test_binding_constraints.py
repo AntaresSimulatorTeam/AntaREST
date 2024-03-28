@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 from starlette.testclient import TestClient
 
-from antarest.study.business.binding_constraint_management import ClusterTerm, LinkTerm, ConstraintTerm
+from antarest.study.business.binding_constraint_management import ClusterTerm, ConstraintTerm, LinkTerm
 
 
 class TestLinkTerm:

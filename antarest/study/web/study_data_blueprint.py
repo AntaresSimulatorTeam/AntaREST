@@ -43,10 +43,10 @@ from antarest.study.business.areas.thermal_management import (
     ThermalManager,
 )
 from antarest.study.business.binding_constraint_management import (
-    ConstraintOutput,
     ConstraintCreation,
-    ConstraintInput,
     ConstraintFilters,
+    ConstraintInput,
+    ConstraintOutput,
     ConstraintTerm,
 )
 from antarest.study.business.correlation_management import CorrelationFormFields, CorrelationManager, CorrelationMatrix
