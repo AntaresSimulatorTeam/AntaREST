@@ -10,7 +10,6 @@ from unittest.mock import Mock
 
 import numpy as np
 import pytest
-from sqlalchemy import event  # type: ignore
 
 from antarest.core.exceptions import VariantGenerationError
 from antarest.core.interfaces.cache import CacheConstants
