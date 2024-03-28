@@ -247,17 +247,17 @@ def test_create_diff(command_context: CommandContext):
 
     assert base.create_diff(other_match) == [
         ReplaceMatrix(
-            target=f"input/thermal/prepro/foo/foo/data",
+            target="input/thermal/prepro/foo/foo/data",
             matrix=prepro_b,
             command_context=command_context,
         ),
         ReplaceMatrix(
-            target=f"input/thermal/prepro/foo/foo/modulation",
+            target="input/thermal/prepro/foo/foo/modulation",
             matrix=modulation_b,
             command_context=command_context,
         ),
         UpdateConfig(
-            target=f"input/thermal/clusters/foo/list/foo",
+            target="input/thermal/clusters/foo/list/foo",
             data={"nominalcapacity": "2400"},
             command_context=command_context,
         ),

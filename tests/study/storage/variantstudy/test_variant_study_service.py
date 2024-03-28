@@ -5,7 +5,6 @@ from unittest.mock import Mock
 
 import numpy as np
 import pytest
-from sqlalchemy import create_engine  # type: ignore
 
 from antarest.core.model import PublicMode
 from antarest.core.requests import RequestParameters

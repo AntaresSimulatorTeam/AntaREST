@@ -84,7 +84,7 @@ class TestStudySynthesis:
         res = client.post(
             f"/v1/studies/{base_study_id}/variants",
             headers={"Authorization": f"Bearer {user_access_token}"},
-            params={"name": f"Variant XYZ"},
+            params={"name": "Variant XYZ"},
         )
         assert res.status_code == 200, res.json()  # should be CREATED
         variant_id = res.json()
