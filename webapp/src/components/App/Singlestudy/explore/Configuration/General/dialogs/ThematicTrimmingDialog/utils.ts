@@ -2,7 +2,6 @@ import * as R from "ramda";
 import { StudyMetadata } from "../../../../../../../../common/types";
 import client from "../../../../../../../../services/api/client";
 
-// noinspection SpellCheckingInspection
 export interface ThematicTrimmingFormFields {
   ovCost: boolean;
   opCost: boolean;
@@ -103,7 +102,6 @@ export interface ThematicTrimmingFormFields {
   other5Level?: boolean;
 }
 
-// noinspection SpellCheckingInspection
 const keysMap: Record<keyof ThematicTrimmingFormFields, string> = {
   ovCost: "OV. COST",
   opCost: "OP. COST",
