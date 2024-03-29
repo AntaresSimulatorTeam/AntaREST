@@ -1,7 +1,7 @@
 import collections
 import itertools
 import logging
-from typing import Any, Dict, List, Mapping, MutableSequence, Optional, Sequence, Union
+from typing import Any, Dict, List, Mapping, MutableSequence, Optional, Sequence, Type, Union
 
 import numpy as np
 from pydantic import BaseModel, Field, root_validator, validator
@@ -351,40 +351,35 @@ class BindingConstraintManager:
         self.storage_service = storage_service
 
     @staticmethod
-    def parse_constraint(key: str, value: str, char: str, new_config: ConstraintOutput) -> bool:
-        split = key.split(char)
-        if len(split) == 2:
-            value1 = split[0]
-            value2 = split[1]
-            weight = 0.0
-            offset = None
-            try:
-                weight = float(value)
-            except ValueError:
-                weight_and_offset = value.split("%")
-                if len(weight_and_offset) == 2:
-                    weight = float(weight_and_offset[0])
-                    offset = float(weight_and_offset[1])
-            if new_config.terms is None:
-                new_config.terms = []
-            new_config.terms.append(
-                ConstraintTerm(
-                    id=key,
-                    weight=weight,
-                    offset=offset if offset is not None else None,
-                    data=LinkTerm(
-                        area1=value1,
-                        area2=value2,
+    def parse_and_add_terms(
+        key: str, value: Any, adapted_constraint: Union[ConstraintOutputBase, ConstraintOutput870]
+    ) -> None:
+        """Parse a single term from the constraint dictionary and add it to the adapted_constraint model."""
+        if "%" in key or "." in key:
+            separator = "%" if "%" in key else "."
+            term_data = key.split(separator)
+            weight, offset = (value, None) if isinstance(value, (float, int)) else map(float, value.split("%"))
+
+            if separator == "%":
+                # Link term
+                adapted_constraint.terms.append(
+                    ConstraintTerm(
+                        id=key,
+                        weight=weight,
+                        offset=offset,
+                        data={
+                            "area1": term_data[0],
+                            "area2": term_data[1],
+                        },
                     )
-                    if char == "%"
-                    else ClusterTerm(
-                        area=value1,
-                        cluster=value2,
-                    ),
                 )
-            )
-            return True
-        return False
+            # Cluster term
+            else:
+                adapted_constraint.terms.append(
+                    ConstraintTerm(
+                        id=key, weight=weight, offset=offset, data={"area": term_data[0], "cluster": term_data[1]}
+                    )
+                )
 
     @staticmethod
     def constraint_model_adapter(constraint: Mapping[str, Any], version: int) -> ConstraintOutput:
@@ -409,6 +404,10 @@ class BindingConstraintManager:
         ensures data integrity when storing or retrieving constraint configurations from the database.
         """
 
+        ConstraintModel: Type[Union[ConstraintOutputBase, ConstraintOutput870]] = (
+            ConstraintOutput870 if version >= 870 else ConstraintOutputBase
+        )
+
         constraint_output = {
             "id": constraint["id"],
             "name": constraint["name"],
@@ -416,22 +415,28 @@ class BindingConstraintManager:
             "time_step": constraint.get("type", BindingConstraintFrequency.HOURLY),
             "operator": constraint.get("operator", BindingConstraintOperator.EQUAL),
             "comments": constraint.get("comments", ""),
-            "filter_year_by_year": constraint.get("filter_year_by_year") or constraint.get("filter-year-by-year"),
-            "filter_synthesis": constraint.get("filter_synthesis") or constraint.get("filter-synthesis"),
             "terms": constraint.get("terms", []),
         }
 
-        if version < 870:
-            adapted_constraint = ConstraintOutputBase(**constraint_output)
-        else:
-            constraint_output["group"] = constraint.get("group", DEFAULT_GROUP)
-            adapted_constraint = ConstraintOutput870(**constraint_output)
+        if version >= 840:
+            constraint_output["filter_year_by_year"] = constraint.get("filter_year_by_year", "") or constraint.get(
+                "filter-year-by-year", ""
+            )
+            constraint_output["filter_synthesis"] = constraint.get("filter_synthesis", "") or constraint.get(
+                "filter-synthesis", ""
+            )
 
-        for key, value in constraint.items():
-            if BindingConstraintManager.parse_constraint(key, value, "%", adapted_constraint):
-                continue
-            if BindingConstraintManager.parse_constraint(key, value, ".", adapted_constraint):
-                continue
+        if version >= 870:
+            constraint_output["group"] = constraint.get("group", DEFAULT_GROUP)
+
+        adapted_constraint = ConstraintModel(**constraint_output)
+
+        # If 'terms' were not directly provided in the input, parse and add terms dynamically
+        if not constraint.get("terms"):
+            for key, value in constraint.items():
+                if key not in constraint_output:  # Avoid re-processing keys already included
+                    BindingConstraintManager.parse_and_add_terms(key, value, adapted_constraint)
+
         return adapted_constraint
 
     @staticmethod
