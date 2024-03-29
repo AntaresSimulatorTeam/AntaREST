@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { createMRTColumnHelper, type MRT_Row } from "material-react-table";
+import { createMRTColumnHelper } from "material-react-table";
 import { Box } from "@mui/material";
 import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -134,8 +134,8 @@ function Thermal() {
     return deleteThermalClusters(study.id, areaId, ids);
   };
 
-  const handleNameClick = (row: MRT_Row<ThermalClusterWithCapacity>) => {
-    navigate(`${location.pathname}/${row.original.id}`);
+  const handleNameClick = (row: ThermalClusterWithCapacity) => {
+    navigate(`${location.pathname}/${row.id}`);
   };
 
   ////////////////////////////////////////////////////////////////

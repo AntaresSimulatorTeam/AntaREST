@@ -11,7 +11,6 @@ import {
   useMaterialReactTable,
   type MRT_RowSelectionState,
   type MRT_ColumnDef,
-  type MRT_Row,
 } from "material-react-table";
 import { useTranslation } from "react-i18next";
 import { useMemo, useRef, useState } from "react";
@@ -42,7 +41,7 @@ export interface GroupedDataTableProps<
   onCreate?: (values: TRow<TGroups[number]>) => Promise<TData>;
   onDuplicate?: (row: TData, newName: string) => Promise<TData>;
   onDelete?: (rows: TData[]) => PromiseAny | void;
-  onNameClick?: (row: MRT_Row<TData>) => void;
+  onNameClick?: (row: TData) => void;
   isLoading?: boolean;
   deleteConfirmationMessage?: string | ((count: number) => string);
   fillPendingRow?: (
@@ -132,7 +131,7 @@ function GroupedDataTable<
                     textDecoration: "underline",
                   },
                 }}
-                onClick={() => callbacksRef.current.onNameClick?.(row)}
+                onClick={() => callbacksRef.current.onNameClick?.(row.original)}
               >
                 {renderedCellValue}
               </Box>

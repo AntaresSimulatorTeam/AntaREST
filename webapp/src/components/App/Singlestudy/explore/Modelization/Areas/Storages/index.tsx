@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { createMRTColumnHelper, type MRT_Row } from "material-react-table";
+import { createMRTColumnHelper } from "material-react-table";
 import { Box, Tooltip } from "@mui/material";
 import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
 import { StudyMetadata } from "../../../../../../../common/types";
@@ -166,8 +166,8 @@ function Storages() {
     return deleteStorages(study.id, areaId, ids);
   };
 
-  const handleNameClick = (row: MRT_Row<Storage>) => {
-    navigate(`${location.pathname}/${row.original.id}`);
+  const handleNameClick = (row: Storage) => {
+    navigate(`${location.pathname}/${row.id}`);
   };
 
   ////////////////////////////////////////////////////////////////
