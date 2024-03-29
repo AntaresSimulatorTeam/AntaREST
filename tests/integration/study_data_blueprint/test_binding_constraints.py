@@ -35,7 +35,7 @@ class TestClusterTerm:
 
 
 class TestConstraintTerm:
-    def test_constraint_id__link(self) -> bool:
+    def test_constraint_id__link(self) -> None:
         term = ConstraintTerm(
             id="foo",
             weight=3.14,
@@ -44,7 +44,7 @@ class TestConstraintTerm:
         )
         assert term.generate_id() == term.data.generate_id()
 
-    def test_constraint_id__cluster(self):
+    def test_constraint_id__cluster(self) -> None:
         term = ConstraintTerm(
             id="foo",
             weight=3.14,
@@ -53,7 +53,7 @@ class TestConstraintTerm:
         )
         assert term.generate_id() == term.data.generate_id()
 
-    def test_constraint_id__other(self):
+    def test_constraint_id__other(self) -> None:
         term = ConstraintTerm(
             id="foo",
             weight=3.14,
@@ -306,13 +306,13 @@ class TestBindingConstraints:
             {
                 "data": {"area1": area1_id, "area2": area2_id},
                 "id": f"{area1_id}%{area2_id}",
-                "offset": 2.0,
+                "offset": 2,
                 "weight": 1.0,
             },
             {
                 "data": {"area": area1_id, "cluster": cluster_id.lower()},
                 "id": f"{area1_id}.{cluster_id.lower()}",
-                "offset": 2.0,
+                "offset": 2,
                 "weight": 1.0,
             },
         ]
@@ -341,7 +341,7 @@ class TestBindingConstraints:
             {
                 "data": {"area1": area1_id, "area2": area2_id},
                 "id": f"{area1_id}%{area2_id}",
-                "offset": 2.0,
+                "offset": 2,
                 "weight": 1.0,
             },
             {
@@ -556,9 +556,9 @@ class TestBindingConstraints:
 
         # Delete a fake binding constraint
         res = client.delete(f"/v1/studies/{study_id}/bindingconstraints/fake_bc", headers=user_headers)
-        assert res.status_code == 500
-        assert res.json()["exception"] == "CommandApplicationError"
-        assert res.json()["description"] == "Binding constraint not found"
+        assert res.status_code == 404, res.json()
+        assert res.json()["exception"] == "BindingConstraintNotFoundError"
+        assert res.json()["description"] == "Binding constraint 'fake_bc' not found"
 
         # Add a group before v8.7
         grp_name = "random_grp"
@@ -567,7 +567,7 @@ class TestBindingConstraints:
             json={"group": grp_name},
             headers=user_headers,
         )
-        assert res.status_code == 422
+        assert res.status_code == 422, res.json()
         assert res.json()["exception"] == "InvalidFieldForVersionError"
         assert (
             res.json()["description"]
@@ -580,7 +580,7 @@ class TestBindingConstraints:
             json={"less_term_matrix": [[]]},
             headers=user_headers,
         )
-        assert res.status_code == 422
+        assert res.status_code == 422, res.json()
         assert res.json()["exception"] == "InvalidFieldForVersionError"
         assert res.json()["description"] == "You cannot fill a 'matrix_term' as these values refer to v8.7+ studies"
 
@@ -660,7 +660,7 @@ class TestBindingConstraints:
                 params={"path": f"input/bindingconstraints/{bc_id_w_matrix}_{term}", "depth": 1, "formatted": True},  # type: ignore
                 headers=admin_headers,
             )
-            assert res.status_code == 200
+            assert res.status_code == 200, res.json()
             data = res.json()["data"]
             if term == "lt":
                 assert data == matrix_lt3.tolist()
@@ -678,7 +678,7 @@ class TestBindingConstraints:
             json={"group": grp_name},
             headers=admin_headers,
         )
-        assert res.status_code == 200
+        assert res.status_code == 200, res.json()
         assert res.json()["group"] == grp_name
 
         # Update matrix_term
@@ -694,7 +694,7 @@ class TestBindingConstraints:
             params={"path": f"input/bindingconstraints/{bc_id_w_matrix}_gt"},
             headers=admin_headers,
         )
-        assert res.status_code == 200
+        assert res.status_code == 200, res.json()
         assert res.json()["data"] == matrix_lt3.tolist()
 
         # The user changed the timeStep to daily instead of hourly.
@@ -732,7 +732,7 @@ class TestBindingConstraints:
                 },  # type: ignore
                 headers=admin_headers,
             )
-            assert res.status_code == 200
+            assert res.status_code == 200, res.json()
             assert res.json()["data"] == expected_matrix.tolist()
 
         # =============================
@@ -765,7 +765,7 @@ class TestBindingConstraints:
             },
             headers=admin_headers,
         )
-        assert res.status_code == 422
+        assert res.status_code == 422, res.json()
         assert res.json()["description"] == "You cannot fill 'values' as it refers to the matrix before v8.7"
 
         # Update with old matrices
@@ -774,7 +774,7 @@ class TestBindingConstraints:
             json={"values": [[]]},
             headers=admin_headers,
         )
-        assert res.status_code == 422
+        assert res.status_code == 422, res.json()
         assert res.json()["exception"] == "InvalidFieldForVersionError"
         assert res.json()["description"] == "You cannot fill 'values' as it refers to the matrix before v8.7"
 
@@ -836,7 +836,7 @@ class TestBindingConstraints:
 
         # validate the BC group "Group 1"
         res = client.get(f"/v1/studies/{study_id}/constraint-groups/Group 1/validate", headers=admin_headers)
-        assert res.status_code == 422
+        assert res.status_code == 422, res.json()
         assert res.json()["exception"] == "IncoherenceBetweenMatricesLength"
         description = res.json()["description"]
         assert description == {
@@ -883,7 +883,7 @@ class TestBindingConstraints:
 
         # validate the BC group "Group 1"
         res = client.get(f"/v1/studies/{study_id}/constraint-groups/Group 1/validate", headers=admin_headers)
-        assert res.status_code == 422
+        assert res.status_code == 422, res.json()
         assert res.json()["exception"] == "IncoherenceBetweenMatricesLength"
         description = res.json()["description"]
         assert description == {

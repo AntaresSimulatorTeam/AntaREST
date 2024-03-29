@@ -1,7 +1,7 @@
 import collections
 import itertools
 import logging
-from typing import Any, Dict, List, Mapping, MutableSequence, Optional, Sequence, Type, Union
+from typing import Any, Dict, List, Mapping, MutableSequence, Optional, Sequence, Union
 
 import numpy as np
 from pydantic import BaseModel, Field, root_validator, validator
@@ -9,7 +9,6 @@ from requests.utils import CaseInsensitiveDict
 
 from antarest.core.exceptions import (
     BindingConstraintNotFoundError,
-    CommandApplicationError,
     ConstraintAlreadyExistError,
     ConstraintIdNotFoundError,
     DuplicateConstraintName,
@@ -409,10 +408,6 @@ class BindingConstraintManager:
         ensures data integrity when storing or retrieving constraint configurations from the database.
         """
 
-        ConstraintModel: Type[Union[ConstraintOutputBase, ConstraintOutput870]] = (
-            ConstraintOutput870 if version >= 870 else ConstraintOutputBase
-        )
-
         constraint_output = {
             "id": constraint["id"],
             "name": constraint["name"],
@@ -424,17 +419,19 @@ class BindingConstraintManager:
         }
 
         if version >= 840:
-            constraint_output["filter_year_by_year"] = constraint.get("filter_year_by_year", "") or constraint.get(
+            constraint_output["filter_year_by_year"] = constraint.get("filter_year_by_year") or constraint.get(
                 "filter-year-by-year", ""
             )
-            constraint_output["filter_synthesis"] = constraint.get("filter_synthesis", "") or constraint.get(
+            constraint_output["filter_synthesis"] = constraint.get("filter_synthesis") or constraint.get(
                 "filter-synthesis", ""
             )
 
+        adapted_constraint: Union[ConstraintOutputBase, ConstraintOutput870]
         if version >= 870:
             constraint_output["group"] = constraint.get("group", DEFAULT_GROUP)
-
-        adapted_constraint = ConstraintModel(**constraint_output)
+            adapted_constraint = ConstraintOutput870(**constraint_output)
+        else:
+            adapted_constraint = ConstraintOutputBase(**constraint_output)
 
         # If 'terms' were not directly provided in the input, parse and add terms dynamically
         if not constraint.get("terms"):
@@ -462,32 +459,54 @@ class BindingConstraintManager:
                         coeffs[term.id].append(term.offset)
             return coeffs
 
-    def get_binding_constraint(
-        self,
-        study: Study,
-        filters: ConstraintFilters = ConstraintFilters(),
-    ) -> Union[ConstraintOutput, List[ConstraintOutput]]:
+    def get_binding_constraint(self, study: Study, bc_id: str) -> ConstraintOutput:
+        """
+        Retrieves a binding constraint by its ID within a given study.
+
+        Args:
+            study: The study from which to retrieve the constraint.
+            bc_id: The ID of the binding constraint to retrieve.
+
+        Returns:
+            A ConstraintOutput object representing the binding constraint with the specified ID.
+
+        Raises:
+            BindingConstraintNotFoundError: If no binding constraint with the specified ID is found.
+        """
         storage_service = self.storage_service.get_storage(study)
         file_study = storage_service.get_raw(study)
         config = file_study.tree.get(["input", "bindingconstraints", "bindingconstraints"])
 
-        # TODO: if a single constraint ID is passed, and don't exist in the config raise an execption => 404
-
-        constraints_by_id: Dict[str, ConstraintOutput] = {}
+        constraints_by_id: Dict[str, ConstraintOutput] = CaseInsensitiveDict()  # type: ignore
 
         for constraint in config.values():
             constraint_config = self.constraint_model_adapter(constraint, int(study.version))
             constraints_by_id[constraint_config.id] = constraint_config
 
-        filtered_constraints = {bc_id: bc for bc_id, bc in constraints_by_id.items() if filters.match_filters(bc)}
+        if bc_id not in constraints_by_id:
+            raise BindingConstraintNotFoundError(f"Binding constraint '{bc_id}' not found")
 
-        # If a specific constraint ID is provided, we return that constraint
-        if filters.bc_id:
-            #
-            return filtered_constraints.get(filters.bc_id)  # type: ignore
+        return constraints_by_id[bc_id]
 
-        # Else we return all the matching constraints, based on the given filters
-        return list(filtered_constraints.values())
+    def get_binding_constraints(
+        self, study: Study, filters: ConstraintFilters = ConstraintFilters()
+    ) -> Sequence[ConstraintOutput]:
+        """
+        Retrieves all binding constraints within a given study, optionally filtered by specific criteria.
+
+        Args:
+            study: The study from which to retrieve the constraints.
+            filters: The filters to apply when retrieving the constraints.
+
+        Returns:
+            A list of ConstraintOutput objects representing the binding constraints that match the specified filters.
+        """
+        storage_service = self.storage_service.get_storage(study)
+        file_study = storage_service.get_raw(study)
+        config = file_study.tree.get(["input", "bindingconstraints", "bindingconstraints"])
+        outputs = [self.constraint_model_adapter(c, int(study.version)) for c in config.values()]
+        filtered_constraints = list(filter(lambda c: filters.match_filters(c), outputs))
+        return filtered_constraints
 
     def get_grouped_constraints(self, study: Study) -> Mapping[str, Sequence[ConstraintOutput]]:
         """
@@ -574,7 +593,7 @@ class BindingConstraintManager:
 
         This method checks each group of binding constraints for validity based on specific criteria
         (e.g., coherence between matrices lengths). If any group fails the validation, an aggregated
-        error detailing all incoherences is raised.
+        error detailing all incoherence is raised.
 
         Args:
             study: The study object containing binding constraints.
@@ -612,7 +631,7 @@ class BindingConstraintManager:
         if not bc_id:
             raise InvalidConstraintName(f"Invalid binding constraint name: {data.name}.")
 
-        if bc_id in {bc.id for bc in self.get_binding_constraint(study)}:  # type: ignore
+        if bc_id in {bc.id for bc in self.get_binding_constraints(study)}:
             raise DuplicateConstraintName(f"A binding constraint with the same name already exists: {bc_id}.")
 
         check_attributes_coherence(data, version)
@@ -658,34 +677,31 @@ class BindingConstraintManager:
         data: ConstraintInput,
     ) -> ConstraintOutput:
         file_study = self.storage_service.get_storage(study).get_raw(study)
-        existing_constraint = self.get_binding_constraint(study, ConstraintFilters(bc_id=binding_constraint_id))
+        existing_constraint = self.get_binding_constraint(study, binding_constraint_id)
         study_version = int(study.version)
-        if not isinstance(existing_constraint, ConstraintOutputBase) and not isinstance(
-            existing_constraint, ConstraintOutput870
-        ):
-            raise BindingConstraintNotFoundError(study.id)
-
         check_attributes_coherence(data, study_version)
 
         # Because the update_binding_constraint command requires every attribute we have to fill them all.
         # This creates a `big` command even though we only updated one field.
         # fixme : Change the architecture to avoid this type of misconception
-        updated_constraint = {
+        upd_constraint = {
             "id": binding_constraint_id,
             "enabled": data.enabled if data.enabled is not None else existing_constraint.enabled,
             "time_step": data.time_step or existing_constraint.time_step,
             "operator": data.operator or existing_constraint.operator,
             "coeffs": self.terms_to_coeffs(data.terms) or self.terms_to_coeffs(existing_constraint.terms),
-            "filter_year_by_year": data.filter_year_by_year or existing_constraint.filter_year_by_year,
-            "filter_synthesis": data.filter_synthesis or existing_constraint.filter_synthesis,
             "comments": data.comments or existing_constraint.comments,
         }
 
+        if study_version >= 840:
+            upd_constraint["filter_year_by_year"] = data.filter_year_by_year or existing_constraint.filter_year_by_year
+            upd_constraint["filter_synthesis"] = data.filter_synthesis or existing_constraint.filter_synthesis
+
         if study_version >= 870:
-            updated_constraint["group"] = data.group or existing_constraint.group  # type: ignore
+            upd_constraint["group"] = data.group or existing_constraint.group  # type: ignore
 
         args = {
-            **updated_constraint,
+            **upd_constraint,
             "command_context": self.storage_service.variant_study_service.command_factory.command_context,
         }
 
@@ -711,27 +727,30 @@ class BindingConstraintManager:
         execute_or_add_commands(study, file_study, [command], self.storage_service)
 
         # Processes the constraints to add them inside the endpoint response.
-        updated_constraint["name"] = existing_constraint.name
-        updated_constraint["type"] = updated_constraint["time_step"]
+        upd_constraint["name"] = existing_constraint.name
+        upd_constraint["type"] = upd_constraint["time_step"]
         # Replace coeffs by the terms
-        del updated_constraint["coeffs"]
-        updated_constraint["terms"] = data.terms or existing_constraint.terms
+        del upd_constraint["coeffs"]
+        upd_constraint["terms"] = data.terms or existing_constraint.terms
 
-        return self.constraint_model_adapter(updated_constraint, study_version)
+        return self.constraint_model_adapter(upd_constraint, study_version)
 
     def remove_binding_constraint(self, study: Study, binding_constraint_id: str) -> None:
-        command = RemoveBindingConstraint(
-            id=binding_constraint_id,
-            command_context=self.storage_service.variant_study_service.command_factory.command_context,
-        )
+        """
+        Removes a binding constraint from a study.
+
+        Args:
+            study: The study from which to remove the constraint.
+            binding_constraint_id: The ID of the binding constraint to remove.
+
+        Raises:
+            BindingConstraintNotFoundError: If no binding constraint with the specified ID is found.
+        """
+        # Check the existence of the binding constraint before removing it
+        bc = self.get_binding_constraint(study, binding_constraint_id)
+        command_context = self.storage_service.variant_study_service.command_factory.command_context
         file_study = self.storage_service.get_storage(study).get_raw(study)
-
-        # Needed when the study is a variant because we only append the command to the list
-        if isinstance(study, VariantStudy) and not self.get_binding_constraint(
-            study, ConstraintFilters(bc_id=binding_constraint_id)
-        ):
-            raise CommandApplicationError("Binding constraint not found")
-
+        command = RemoveBindingConstraint(id=bc.id, command_context=command_context)
         execute_or_add_commands(study, file_study, [command], self.storage_service)
 
     def update_constraint_term(
@@ -741,13 +760,9 @@ class BindingConstraintManager:
         term: ConstraintTerm,
     ) -> None:
         file_study = self.storage_service.get_storage(study).get_raw(study)
-        constraint = self.get_binding_constraint(study, ConstraintFilters(bc_id=binding_constraint_id))
-
-        if not isinstance(constraint, ConstraintOutputBase) and not isinstance(constraint, ConstraintOutputBase):
-            raise BindingConstraintNotFoundError(study.id)
-
+        constraint = self.get_binding_constraint(study, binding_constraint_id)
         constraint_terms = constraint.terms  # existing constraint terms
-        if constraint_terms is None:
+        if not constraint_terms:
             raise NoConstraintError(study.id)
 
         term_id = term.id if isinstance(term, ConstraintTerm) else term
@@ -793,9 +808,7 @@ class BindingConstraintManager:
         constraint_term: ConstraintTerm,
     ) -> None:
         file_study = self.storage_service.get_storage(study).get_raw(study)
-        constraint = self.get_binding_constraint(study, ConstraintFilters(bc_id=binding_constraint_id))
-        if not isinstance(constraint, ConstraintOutputBase) and not isinstance(constraint, ConstraintOutputBase):
-            raise BindingConstraintNotFoundError(study.id)
+        constraint = self.get_binding_constraint(study, binding_constraint_id)
 
         if constraint_term.data is None:
             raise MissingDataError("Add new constraint term : data is missing")

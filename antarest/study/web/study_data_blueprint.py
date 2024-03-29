@@ -899,7 +899,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/bindingconstraints",
         tags=[APITag.study_data],
         summary="Get binding constraint list",
-        response_model=Union[ConstraintOutput, List[ConstraintOutput]],  # type: ignore
+        response_model=List[ConstraintOutput],
     )
     def get_binding_constraint_list(
         uuid: str,
@@ -933,7 +933,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
             alias="clusterId",
         ),
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Union[ConstraintOutput, List[ConstraintOutput]]:
+    ) -> Sequence[ConstraintOutput]:
         logger.info(
             f"Fetching binding constraint list for study {uuid}",
             extra={"user": current_user.id},
@@ -951,7 +951,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
             link_id=link_id,
             cluster_id=cluster_id,
         )
-        return study_service.binding_constraint_manager.get_binding_constraint(study, filters)
+        return study_service.binding_constraint_manager.get_binding_constraints(study, filters)
 
     @bp.get(
         "/studies/{uuid}/bindingconstraints/{binding_constraint_id}",
@@ -963,15 +963,14 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         uuid: str,
         binding_constraint_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Union[ConstraintOutput, List[ConstraintOutput]]:
+    ) -> ConstraintOutput:
         logger.info(
             f"Fetching binding constraint {binding_constraint_id} for study {uuid}",
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
-        filters = ConstraintFilters(bc_id=binding_constraint_id)
-        return study_service.binding_constraint_manager.get_binding_constraint(study, filters)
+        return study_service.binding_constraint_manager.get_binding_constraint(study, binding_constraint_id)
 
     @bp.put(
         "/studies/{uuid}/bindingconstraints/{binding_constraint_id}",
