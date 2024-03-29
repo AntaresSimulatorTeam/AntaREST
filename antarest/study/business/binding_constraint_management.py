@@ -162,16 +162,19 @@ class ConstraintFilters(BaseModel, frozen=True, extra="forbid"):
             True if the constraint matches the filters, False otherwise
         """
         if self.bc_id and self.bc_id != constraint.id:
+            # The `bc_id` filter is a case-sensitive exact match.
             return False
         if self.enabled is not None and self.enabled != constraint.enabled:
             return False
         if self.operator is not None and self.operator != constraint.operator:
             return False
         if self.comments:
+            # The `comments` filter is a case-insensitive substring match.
             comments = constraint.comments or ""
             if self.comments.upper() not in comments.upper():
                 return False
         if self.group:
+            # The `group` filter is a case-insensitive exact match.
             group = getattr(constraint, "group", DEFAULT_GROUP)
             if self.group.upper() != group.upper():
                 return False
@@ -181,39 +184,41 @@ class ConstraintFilters(BaseModel, frozen=True, extra="forbid"):
         terms = constraint.terms or []
 
         if self.area_name:
-            matching_terms = []
-            for term in terms:
-                if term.data:
-                    if isinstance(term.data, LinkTerm):
-                        # Check if either area in the link term matches the specified area_name.
-                        if self.area_name.upper() in (term.data.area1.upper(), term.data.area2.upper()):
-                            matching_terms.append(term)
-                    elif isinstance(term.data, ClusterTerm):
-                        # Check if the area matches the specified area_name for a cluster term.
-                        if self.area_name.upper() == term.data.area.upper():
-                            matching_terms.append(term)
-            if not matching_terms:
+            # The `area_name` filter is a case-insensitive substring match.
+            area_name_upper = self.area_name.upper()
+            for data in (term.data for term in terms if term.data):
+                # fmt: off
+                if (
+                    isinstance(data, LinkTerm)
+                    and (area_name_upper in data.area1.upper() or area_name_upper in data.area2.upper())
+                ) or (
+                    isinstance(data, ClusterTerm)
+                    and area_name_upper in data.area.upper()
+                ):
+                    break
+                # fmt: on
+            else:
                 return False
 
         if self.cluster_name:
-            matching_terms = []
-            for term in terms:
-                if term.data is None:
-                    continue
-                if term.data and isinstance(term.data, ClusterTerm):
-                    if self.cluster_name.upper() == term.data.cluster.upper():
-                        matching_terms.append(term)
-            if not matching_terms:
+            # The `cluster_name` filter is a case-insensitive substring match.
+            cluster_name_upper = self.cluster_name.upper()
+            for data in (term.data for term in terms if term.data):
+                if isinstance(data, ClusterTerm) and cluster_name_upper in data.cluster.upper():
+                    break
+            else:
                 return False
 
         if self.link_id:
+            # The `link_id` filter is a case-insensitive exact match.
             all_link_ids = [term.data.generate_id() for term in terms if isinstance(term.data, LinkTerm)]
-            if not any(self.link_id.lower() == link_id.lower() for link_id in all_link_ids):
+            if self.link_id.lower() not in all_link_ids:
                 return False
 
         if self.cluster_id:
+            # The `cluster_id` filter is a case-insensitive exact match.
             all_cluster_ids = [term.data.generate_id() for term in terms if isinstance(term.data, ClusterTerm)]
-            if not any(self.cluster_id.lower() == cluster_id.lower() for cluster_id in all_cluster_ids):
+            if self.cluster_id.lower() not in all_cluster_ids:
                 return False
 
         return True
@@ -301,7 +306,7 @@ class ConstraintOutputBase(BindingConstraintProperties):
 
 @camel_case_model
 class ConstraintOutput870(ConstraintOutputBase):
-    group: str
+    group: str = DEFAULT_GROUP
 
 
 ConstraintOutput = Union[ConstraintOutputBase, ConstraintOutput870]
@@ -466,7 +471,7 @@ class BindingConstraintManager:
         file_study = storage_service.get_raw(study)
         config = file_study.tree.get(["input", "bindingconstraints", "bindingconstraints"])
 
-        # TODO: if a single constraint ID is passed, and don't exist in the config raise an execption
+        # TODO: if a single constraint ID is passed, and don't exist in the config raise an execption => 404
 
         constraints_by_id: Dict[str, ConstraintOutput] = {}
 
@@ -478,6 +483,7 @@ class BindingConstraintManager:
 
         # If a specific constraint ID is provided, we return that constraint
         if filters.bc_id:
+            #
             return filtered_constraints.get(filters.bc_id)  # type: ignore
 
         # Else we return all the matching constraints, based on the given filters
