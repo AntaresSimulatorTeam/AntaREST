@@ -1706,10 +1706,10 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
     binding_constraint_1 = res.json()
     assert res.status_code == 200
 
-    constraint = binding_constraint_1["constraints"][0]  # should be renamed to `terms` in the future.
-    assert constraint["id"] == "area 1.cluster 1"
-    assert constraint["weight"] == 2.0
-    assert constraint["offset"] == 4.0
+    term = binding_constraint_1["terms"][0]
+    assert term["id"] == "area 1.cluster 1"
+    assert term["weight"] == 2.0
+    assert term["offset"] == 4.0
 
     # --- TableMode END ---
 
