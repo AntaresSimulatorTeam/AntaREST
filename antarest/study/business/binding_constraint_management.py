@@ -105,7 +105,7 @@ class ConstraintTerm(BaseModel):
 
     id: Optional[str]
     weight: Optional[float]
-    offset: Optional[float]
+    offset: Optional[int]
     data: Optional[Union[LinkTerm, ClusterTerm]]
 
     @validator("id")
@@ -362,7 +362,12 @@ class BindingConstraintManager:
         if "%" in key or "." in key:
             separator = "%" if "%" in key else "."
             term_data = key.split(separator)
-            weight, offset = (value, None) if isinstance(value, (float, int)) else map(float, value.split("%"))
+            if isinstance(value, (float, int)):
+                weight, offset = (float(value), None)
+            else:
+                _parts = value.partition("%")
+                weight = float(_parts[0])
+                offset = int(_parts[2]) if _parts[2] else None
 
             if separator == "%":
                 # Link term
@@ -455,7 +460,7 @@ class BindingConstraintManager:
             for term in terms:
                 if term.id and term.weight is not None:
                     coeffs[term.id] = [term.weight]
-                    if term.offset is not None:
+                    if term.offset:
                         coeffs[term.id].append(term.offset)
             return coeffs
 
@@ -831,7 +836,7 @@ class BindingConstraintManager:
 
         for term in constraint_terms:
             coeffs[term.id] = [term.weight]
-            if term.offset is not None:
+            if term.offset:
                 coeffs[term.id].append(term.offset)
 
         command = UpdateBindingConstraint(
