@@ -1704,12 +1704,12 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
 
     res = client.get(f"/v1/studies/{study_id}/bindingconstraints/binding constraint 1", headers=admin_headers)
     binding_constraint_1 = res.json()
-    assert res.status_code == 200
+    assert res.status_code == 200, res.json()
 
-    constraint = binding_constraint_1["constraints"][0]
-    assert constraint["id"] == "area 1.cluster 1"
-    assert constraint["weight"] == 2.0
-    assert constraint["offset"] == 4.0
+    term = binding_constraint_1["terms"][0]
+    assert term["id"] == "area 1.cluster 1"
+    assert term["weight"] == 2.0
+    assert term["offset"] == 4
 
     # --- TableMode END ---
 

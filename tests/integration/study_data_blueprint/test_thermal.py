@@ -27,6 +27,7 @@ We should test the following end poins:
 * delete a cluster (or several clusters)
 * validate the consistency of the matrices (and properties)
 """
+
 import json
 import re
 import typing as t
@@ -536,7 +537,14 @@ class TestThermal:
             "enabled": True,
             "time_step": "hourly",
             "operator": "less",
-            "coeffs": {f"{area_id}.{fr_gas_conventional_id.lower()}": [2.0, 4]},
+            "terms": [
+                {
+                    "id": f"{area_id}.{fr_gas_conventional_id.lower()}",
+                    "weight": 2,
+                    "offset": 5,
+                    "data": {"area": area_id, "cluster": fr_gas_conventional_id.lower()},
+                }
+            ],
             "comments": "New API",
         }
         matrix = np.random.randint(0, 1000, size=(8784, 3))

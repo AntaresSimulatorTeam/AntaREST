@@ -482,7 +482,7 @@ class TableModeManager:
 
                 if current_binding:
                     col_values = columns.dict(exclude_none=True)
-                    current_binding_dto = BindingConstraintManager.process_constraint(
+                    current_binding_dto = BindingConstraintManager.constraint_model_adapter(
                         current_binding, int(study.version)
                     )
 
@@ -492,7 +492,7 @@ class TableModeManager:
                             enabled=col_values.get("enabled", current_binding_dto.enabled),
                             time_step=col_values.get("type", current_binding_dto.time_step),
                             operator=col_values.get("operator", current_binding_dto.operator),
-                            coeffs=BindingConstraintManager.constraints_to_coeffs(current_binding_dto),
+                            coeffs=BindingConstraintManager.terms_to_coeffs(current_binding_dto.terms),
                             command_context=command_context,
                         )
                     )

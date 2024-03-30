@@ -1,10 +1,11 @@
 import enum
 import logging
+import warnings
 from http import HTTPStatus
-from typing import Any, Dict, List, Optional, Sequence, Union, cast
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Union, cast
 
-from fastapi import APIRouter, Body, Depends
-from fastapi.params import Query
+import typing_extensions as te
+from fastapi import APIRouter, Body, Depends, Query
 from starlette.responses import RedirectResponse
 
 from antarest.core.config import Config
@@ -42,9 +43,11 @@ from antarest.study.business.areas.thermal_management import (
     ThermalManager,
 )
 from antarest.study.business.binding_constraint_management import (
-    BindingConstraintCreation,
-    ConstraintTermDTO,
-    UpdateBindingConstProps,
+    ConstraintCreation,
+    ConstraintFilters,
+    ConstraintInput,
+    ConstraintOutput,
+    ConstraintTerm,
 )
 from antarest.study.business.correlation_management import CorrelationFormFields, CorrelationManager, CorrelationMatrix
 from antarest.study.business.district_manager import DistrictCreationDTO, DistrictInfoDTO, DistrictUpdateDTO
@@ -52,14 +55,26 @@ from antarest.study.business.general_management import GeneralFormFields
 from antarest.study.business.link_management import LinkInfoDTO
 from antarest.study.business.optimization_management import OptimizationFormFields
 from antarest.study.business.playlist_management import PlaylistColumns
-from antarest.study.business.table_mode_management import ColumnsModelTypes, TableTemplateType
+from antarest.study.business.table_mode_management import (
+    BindingConstraintOperator,
+    ColumnsModelTypes,
+    TableTemplateType,
+)
 from antarest.study.business.thematic_trimming_management import ThematicTrimmingFormFields
 from antarest.study.business.timeseries_config_management import TSFormFields
 from antarest.study.model import PatchArea, PatchCluster
 from antarest.study.service import StudyService
+from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 
 logger = logging.getLogger(__name__)
+
+
+class BCKeyValueType(te.TypedDict):
+    """Deprecated type for binding constraint key-value pair (used for update)"""
+
+    key: str
+    value: Union[str, int, float, bool]
 
 
 class ClusterType(str, enum.Enum):
@@ -884,31 +899,71 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/bindingconstraints",
         tags=[APITag.study_data],
         summary="Get binding constraint list",
-        response_model=None,  # Dict[str, bool],
+        response_model=List[ConstraintOutput],
     )
     def get_binding_constraint_list(
         uuid: str,
+        enabled: Optional[bool] = Query(None, description="Filter results based on enabled status"),
+        operator: Optional[BindingConstraintOperator] = Query(None, description="Filter results based on operator"),
+        comments: str = Query("", description="Filter results based on comments (word match)"),
+        group: str = Query("", description="filter binding constraints based on group name (exact match)"),
+        time_step: Optional[BindingConstraintFrequency] = Query(
+            None,
+            description="Filter results based on time step",
+            alias="timeStep",
+        ),
+        area_name: str = Query(
+            "",
+            description="Filter results based on area name (word match)",
+            alias="areaName",
+        ),
+        cluster_name: str = Query(
+            "",
+            description="Filter results based on cluster name (word match)",
+            alias="clusterName",
+        ),
+        link_id: str = Query(
+            "",
+            description="Filter results based on link ID ('area1%area2')",
+            alias="linkId",
+        ),
+        cluster_id: str = Query(
+            "",
+            description="Filter results based on cluster ID ('area.cluster')",
+            alias="clusterId",
+        ),
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    ) -> Sequence[ConstraintOutput]:
         logger.info(
             f"Fetching binding constraint list for study {uuid}",
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
-        return study_service.binding_constraint_manager.get_binding_constraint(study, None)
+        filters = ConstraintFilters(
+            enabled=enabled,
+            operator=operator,
+            comments=comments,
+            group=group,
+            time_step=time_step,
+            area_name=area_name,
+            cluster_name=cluster_name,
+            link_id=link_id,
+            cluster_id=cluster_id,
+        )
+        return study_service.binding_constraint_manager.get_binding_constraints(study, filters)
 
     @bp.get(
         "/studies/{uuid}/bindingconstraints/{binding_constraint_id}",
         tags=[APITag.study_data],
         summary="Get binding constraint",
-        response_model=None,  # Dict[str, bool],
+        response_model=ConstraintOutput,  # type: ignore
     )
     def get_binding_constraint(
         uuid: str,
         binding_constraint_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    ) -> ConstraintOutput:
         logger.info(
             f"Fetching binding constraint {binding_constraint_id} for study {uuid}",
             extra={"user": current_user.id},
@@ -921,31 +976,164 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/bindingconstraints/{binding_constraint_id}",
         tags=[APITag.study_data],
         summary="Update binding constraint",
-        response_model=None,  # Dict[str, bool],
     )
     def update_binding_constraint(
         uuid: str,
         binding_constraint_id: str,
-        data: UpdateBindingConstProps,
+        data: Union[BCKeyValueType, ConstraintInput],
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    ) -> ConstraintOutput:
         logger.info(
             f"Update binding constraint {binding_constraint_id} for study {uuid}",
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
+
+        if isinstance(data, dict):
+            warnings.warn(
+                "Using key / value format for binding constraint data is deprecated."
+                " Please use the ConstraintInput format instead.",
+                DeprecationWarning,
+            )
+            _obj = {data["key"]: data["value"]}
+            if "filterByYear" in _obj:
+                _obj["filterYearByYear"] = _obj.pop("filterByYear")
+            data = ConstraintInput(**_obj)
+
         return study_service.binding_constraint_manager.update_binding_constraint(study, binding_constraint_id, data)
 
-    @bp.post(
-        "/studies/{uuid}/bindingconstraints",
+    @bp.get(
+        "/studies/{uuid}/constraint-groups",
         tags=[APITag.study_data],
-        summary="Create a binding constraint",
+        summary="Get the list of binding constraint groups",
+    )
+    def get_grouped_constraints(
+        uuid: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Mapping[str, Sequence[ConstraintOutput]]:
+        """
+        Get the list of binding constraint groups for the study.
+
+        Args:
+        - `uuid`: The UUID of the study.
+
+        Returns:
+        - The list of binding constraints for each group.
+        """
+        logger.info(
+            f"Fetching binding constraint groups for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
+        result = study_service.binding_constraint_manager.get_grouped_constraints(study)
+        return result
+
+    @bp.get(
+        # We use "validate-all" because it is unlikely to conflict with a group name.
+        "/studies/{uuid}/constraint-groups/validate-all",
+        tags=[APITag.study_data],
+        summary="Validate all binding constraint groups",
         response_model=None,
     )
+    def validate_constraint_groups(
+        uuid: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> bool:
+        """
+        Checks if the dimensions of the right-hand side matrices are consistent with
+        the dimensions of the binding constraint matrices within the same group.
+
+        Args:
+        - `uuid`: The study UUID.
+
+        Returns:
+        - `true` if all groups are valid.
+
+        Raises:
+        - HTTPException(422) if any group is invalid.
+        """
+        logger.info(
+            f"Validating all binding constraint groups for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
+        return study_service.binding_constraint_manager.validate_constraint_groups(study)
+
+    @bp.get(
+        "/studies/{uuid}/constraint-groups/{group}",
+        tags=[APITag.study_data],
+        summary="Get the binding constraint group",
+    )
+    def get_constraints_by_group(
+        uuid: str,
+        group: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Sequence[ConstraintOutput]:
+        """
+        Get the binding constraint group for the study.
+
+        Args:
+        - `uuid`: The UUID of the study.
+        - `group`: The name of the binding constraint group (case-insensitive).
+
+        Returns:
+        - The list of binding constraints in the group.
+
+        Raises:
+        - HTTPException(404) if the group does not exist.
+        """
+        logger.info(
+            f"Fetching binding constraint group '{group}' for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
+        result = study_service.binding_constraint_manager.get_constraints_by_group(study, group)
+        return result
+
+    @bp.get(
+        "/studies/{uuid}/constraint-groups/{group}/validate",
+        tags=[APITag.study_data],
+        summary="Validate the binding constraint group",
+        response_model=None,
+    )
+    def validate_constraint_group(
+        uuid: str,
+        group: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> bool:
+        """
+        Checks if the dimensions of the right-hand side matrices are consistent with
+        the dimensions of the binding constraint matrices within the same group.
+
+        Args:
+        - `uuid`: The study UUID.
+        - `group`: The name of the binding constraint group (case-insensitive).
+
+        Returns:
+        - `true` if the group is valid.
+
+        Raises:
+        - HTTPException(404) if the group does not exist.
+        - HTTPException(422) if the group is invalid.
+        """
+        logger.info(
+            f"Validating binding constraint group '{group}' for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
+        return study_service.binding_constraint_manager.validate_constraint_group(study, group)
+
+    @bp.post("/studies/{uuid}/bindingconstraints", tags=[APITag.study_data], summary="Create a binding constraint")
     def create_binding_constraint(
-        uuid: str, data: BindingConstraintCreation, current_user: JWTUser = Depends(auth.get_current_user)
-    ) -> None:
+        uuid: str,
+        data: ConstraintCreation,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> ConstraintOutput:
         logger.info(
             f"Creating a new binding constraint for study {uuid}",
             extra={"user": current_user.id},
@@ -979,7 +1167,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     def add_constraint_term(
         uuid: str,
         binding_constraint_id: str,
-        term: ConstraintTermDTO,
+        term: ConstraintTerm,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(
@@ -988,7 +1176,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
-        return study_service.binding_constraint_manager.add_new_constraint_term(study, binding_constraint_id, term)
+        return study_service.binding_constraint_manager.create_constraint_term(study, binding_constraint_id, term)
 
     @bp.put(
         "/studies/{uuid}/bindingconstraints/{binding_constraint_id}/term",
@@ -998,7 +1186,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     def update_constraint_term(
         uuid: str,
         binding_constraint_id: str,
-        term: ConstraintTermDTO,
+        term: ConstraintTerm,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(
@@ -1041,7 +1229,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         """
         Get the hydraulic allocation matrix for all areas.
 
-        Parameters:
+        Args:
         - `uuid`: The study UUID.
 
         Returns the data frame matrix, where:
@@ -1071,7 +1259,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         """
         Get the form fields used for the allocation form.
 
-        Parameters:
+        Args:
         - `uuid`: The study UUID,
         - `area_id`: the area ID.
 
@@ -1109,7 +1297,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         """
         Update the hydraulic allocation of a given area.
 
-        Parameters:
+        Args:
         - `uuid`: The study UUID,
         - `area_id`: the area ID.
 
@@ -1147,13 +1335,13 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
                     "value": "north,east",
                 },
             },
-        ),  # type: ignore
+        ),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> CorrelationMatrix:
         """
         Get the hydraulic/load/solar/wind correlation matrix of a study.
 
-        Parameters:
+        Args:
         - `uuid`: The UUID of the study.
         - `columns`: a filter on the area identifiers:
           - Use no parameter to select all areas.
@@ -1205,7 +1393,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         """
         Set the hydraulic/load/solar/wind correlation matrix of a study.
 
-        Parameters:
+        Args:
         - `uuid`: The UUID of the study.
         - `index`: a list of all study areas.
         - `columns`: a list of selected production areas.
@@ -1236,7 +1424,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         """
         Get the form fields used for the correlation form.
 
-        Parameters:
+        Args:
         - `uuid`: The UUID of the study.
         - `area_id`: the area ID.
 
@@ -1275,7 +1463,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         """
         Update the hydraulic/load/solar/wind correlation of a given area.
 
-        Parameters:
+        Args:
         - `uuid`: The UUID of the study.
         - `area_id`: the area ID.
 
@@ -2064,7 +2252,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         area_id: str,
         cluster_type: ClusterType,
         source_cluster_id: str,
-        new_cluster_name: str = Query(..., alias="newName", title="New Cluster Name"),  # type: ignore
+        new_cluster_name: str = Query(..., alias="newName", title="New Cluster Name"),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Union[STStorageOutput, ThermalClusterOutput, RenewableClusterOutput]:
         logger.info(

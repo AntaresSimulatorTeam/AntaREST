@@ -1,10 +1,14 @@
-from typing import Any, Dict, List, Optional, Union, cast
+import collections
+import itertools
+import logging
+from typing import Any, Dict, List, Mapping, MutableSequence, Optional, Sequence, Union
 
-from pydantic import BaseModel, validator
+import numpy as np
+from pydantic import BaseModel, Field, root_validator, validator
+from requests.utils import CaseInsensitiveDict
 
 from antarest.core.exceptions import (
     BindingConstraintNotFoundError,
-    CommandApplicationError,
     ConstraintAlreadyExistError,
     ConstraintIdNotFoundError,
     DuplicateConstraintName,
@@ -14,7 +18,8 @@ from antarest.core.exceptions import (
     MissingDataError,
     NoConstraintError,
 )
-from antarest.study.business.utils import execute_or_add_commands
+from antarest.core.utils.string import to_camel_case
+from antarest.study.business.utils import AllOptionalMetaclass, camel_case_model, execute_or_add_commands
 from antarest.study.model import Study
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
@@ -32,6 +37,7 @@ from antarest.study.storage.variantstudy.business.matrix_constants.binding_const
 from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series_before_v87 import (
     default_bc_weekly_daily as default_bc_weekly_daily_86,
 )
+from antarest.study.storage.variantstudy.model.command.common import BindingConstraintOperator
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import (
     BindingConstraintMatrices,
     BindingConstraintProperties,
@@ -42,8 +48,13 @@ from antarest.study.storage.variantstudy.model.command.remove_binding_constraint
 from antarest.study.storage.variantstudy.model.command.update_binding_constraint import UpdateBindingConstraint
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 
+logger = logging.getLogger(__name__)
 
-class AreaLinkDTO(BaseModel):
+DEFAULT_GROUP = "default"
+"""Default group name for binding constraints if missing or empty."""
+
+
+class LinkTerm(BaseModel):
     """
     DTO for a constraint term on a link between two areas.
 
@@ -62,7 +73,7 @@ class AreaLinkDTO(BaseModel):
         return "%".join(ids)
 
 
-class AreaClusterDTO(BaseModel):
+class ClusterTerm(BaseModel):
     """
     DTO for a constraint term on a cluster in an area.
 
@@ -81,7 +92,7 @@ class AreaClusterDTO(BaseModel):
         return ".".join(ids)
 
 
-class ConstraintTermDTO(BaseModel):
+class ConstraintTerm(BaseModel):
     """
     DTO for a constraint term.
 
@@ -94,8 +105,8 @@ class ConstraintTermDTO(BaseModel):
 
     id: Optional[str]
     weight: Optional[float]
-    offset: Optional[float]
-    data: Optional[Union[AreaLinkDTO, AreaClusterDTO]]
+    offset: Optional[int]
+    data: Optional[Union[LinkTerm, ClusterTerm]]
 
     @validator("id")
     def id_to_lower(cls, v: Optional[str]) -> Optional[str]:
@@ -111,27 +122,229 @@ class ConstraintTermDTO(BaseModel):
         return self.data.generate_id()
 
 
-class UpdateBindingConstProps(BaseModel):
-    key: str
-    value: Any
+class ConstraintFilters(BaseModel, frozen=True, extra="forbid"):
+    """
+    Binding Constraint Filters gathering the main filtering parameters.
+
+    Attributes:
+        bc_id: binding constraint ID (exact match)
+        enabled: enabled status
+        operator: operator
+        comments: comments (word match, case-insensitive)
+        group: on group name (exact match, case-insensitive)
+        time_step: time step
+        area_name: area name (word match, case-insensitive)
+        cluster_name: cluster name (word match, case-insensitive)
+        link_id: link ID ('area1%area2') in at least one term.
+        cluster_id: cluster ID ('area.cluster') in at least one term.
+    """
+
+    bc_id: str = ""
+    enabled: Optional[bool] = None
+    operator: Optional[BindingConstraintOperator] = None
+    comments: str = ""
+    group: str = ""
+    time_step: Optional[BindingConstraintFrequency] = None
+    area_name: str = ""
+    cluster_name: str = ""
+    link_id: str = ""
+    cluster_id: str = ""
+
+    def match_filters(self, constraint: "ConstraintOutput") -> bool:
+        """
+        Check if the constraint matches the filters.
+
+        Args:
+            constraint: the constraint to check
+
+        Returns:
+            True if the constraint matches the filters, False otherwise
+        """
+        if self.bc_id and self.bc_id != constraint.id:
+            # The `bc_id` filter is a case-sensitive exact match.
+            return False
+        if self.enabled is not None and self.enabled != constraint.enabled:
+            return False
+        if self.operator is not None and self.operator != constraint.operator:
+            return False
+        if self.comments:
+            # The `comments` filter is a case-insensitive substring match.
+            comments = constraint.comments or ""
+            if self.comments.upper() not in comments.upper():
+                return False
+        if self.group:
+            # The `group` filter is a case-insensitive exact match.
+            group = getattr(constraint, "group", DEFAULT_GROUP)
+            if self.group.upper() != group.upper():
+                return False
+        if self.time_step is not None and self.time_step != constraint.time_step:
+            return False
+
+        terms = constraint.terms or []
+
+        if self.area_name:
+            # The `area_name` filter is a case-insensitive substring match.
+            area_name_upper = self.area_name.upper()
+            for data in (term.data for term in terms if term.data):
+                # fmt: off
+                if (
+                    isinstance(data, LinkTerm)
+                    and (area_name_upper in data.area1.upper() or area_name_upper in data.area2.upper())
+                ) or (
+                    isinstance(data, ClusterTerm)
+                    and area_name_upper in data.area.upper()
+                ):
+                    break
+                # fmt: on
+            else:
+                return False
+
+        if self.cluster_name:
+            # The `cluster_name` filter is a case-insensitive substring match.
+            cluster_name_upper = self.cluster_name.upper()
+            for data in (term.data for term in terms if term.data):
+                if isinstance(data, ClusterTerm) and cluster_name_upper in data.cluster.upper():
+                    break
+            else:
+                return False
+
+        if self.link_id:
+            # The `link_id` filter is a case-insensitive exact match.
+            all_link_ids = [term.data.generate_id() for term in terms if isinstance(term.data, LinkTerm)]
+            if self.link_id.lower() not in all_link_ids:
+                return False
+
+        if self.cluster_id:
+            # The `cluster_id` filter is a case-insensitive exact match.
+            all_cluster_ids = [term.data.generate_id() for term in terms if isinstance(term.data, ClusterTerm)]
+            if self.cluster_id.lower() not in all_cluster_ids:
+                return False
+
+        return True
 
 
-class BindingConstraintCreation(BindingConstraintMatrices, BindingConstraintProperties870):
+@camel_case_model
+class ConstraintInput870(BindingConstraintProperties870, metaclass=AllOptionalMetaclass, use_none=True):
+    pass
+
+
+@camel_case_model
+class ConstraintInput(BindingConstraintMatrices, ConstraintInput870):
+    terms: MutableSequence[ConstraintTerm] = Field(
+        default_factory=lambda: [],
+    )
+
+
+@camel_case_model
+class ConstraintCreation(ConstraintInput):
     name: str
-    coeffs: Dict[str, List[float]]
+
+    @root_validator(pre=True)
+    def check_matrices_dimensions(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        for _key in ["time_step", "less_term_matrix", "equal_term_matrix", "greater_term_matrix"]:
+            _camel = to_camel_case(_key)
+            values[_key] = values.pop(_camel, values.get(_key))
+
+        # The dimensions of the matrices depend on the frequency and the version of the study.
+        if values.get("time_step") is None:
+            return values
+        _time_step = BindingConstraintFrequency(values["time_step"])
+
+        # Matrix shapes for binding constraints are different from usual shapes,
+        # because we need to take leap years into account, which contains 366 days and 8784 hours.
+        # Also, we use the same matrices for "weekly" and "daily" frequencies,
+        # because the solver calculates the weekly matrix from the daily matrix.
+        # See https://github.com/AntaresSimulatorTeam/AntaREST/issues/1843
+        expected_rows = {
+            BindingConstraintFrequency.HOURLY: 8784,
+            BindingConstraintFrequency.DAILY: 366,
+            BindingConstraintFrequency.WEEKLY: 366,
+        }[_time_step]
+
+        # Collect the matrix shapes
+        matrix_shapes = {}
+        for _field_name in ["values", "less_term_matrix", "equal_term_matrix", "greater_term_matrix"]:
+            if _matrix := values.get(_field_name):
+                _array = np.array(_matrix)
+                # We only store the shape if the array is not empty
+                if _array.size != 0:
+                    matrix_shapes[_field_name] = _array.shape
+
+        # We don't know the exact version of the study here, but we can rely on the matrix field names.
+        if not matrix_shapes:
+            return values
+        elif "values" in matrix_shapes:
+            expected_cols = 3
+        else:
+            # pick the first matrix column as the expected column
+            expected_cols = next(iter(matrix_shapes.values()))[1]
+
+        if all(shape == (expected_rows, expected_cols) for shape in matrix_shapes.values()):
+            return values
+
+        # Prepare a clear error message
+        _field_names = ", ".join(f"'{n}'" for n in matrix_shapes)
+        if len(matrix_shapes) == 1:
+            err_msg = f"Matrix {_field_names} must have the shape ({expected_rows}, {expected_cols})"
+        else:
+            _shapes = list({(expected_rows, s[1]) for s in matrix_shapes.values()})
+            _shapes_msg = ", ".join(f"{s}" for s in _shapes[:-1]) + " or " + f"{_shapes[-1]}"
+            err_msg = f"Matrices {_field_names} must have the same shape: {_shapes_msg}"
+
+        raise ValueError(err_msg)
 
 
-class BindingConstraintConfig(BindingConstraintProperties):
+@camel_case_model
+class ConstraintOutputBase(BindingConstraintProperties):
     id: str
     name: str
-    constraints: Optional[List[ConstraintTermDTO]]
+    terms: MutableSequence[ConstraintTerm] = Field(
+        default_factory=lambda: [],
+    )
 
 
-class BindingConstraintConfig870(BindingConstraintConfig):
-    group: Optional[str] = None
+@camel_case_model
+class ConstraintOutput870(ConstraintOutputBase):
+    group: str = DEFAULT_GROUP
 
 
-BindingConstraintConfigType = Union[BindingConstraintConfig870, BindingConstraintConfig]
+ConstraintOutput = Union[ConstraintOutputBase, ConstraintOutput870]
+
+
+def _validate_binding_constraints(file_study: FileStudy, bcs: Sequence[ConstraintOutput]) -> bool:
+    if int(file_study.config.version) < 870:
+        matrix_id_fmts = {"{bc_id}"}
+    else:
+        matrix_id_fmts = {"{bc_id}_eq", "{bc_id}_lt", "{bc_id}_gt"}
+
+    references_by_shapes = collections.defaultdict(list)
+    _total = len(bcs) * len(matrix_id_fmts)
+    for _index, (bc, fmt) in enumerate(itertools.product(bcs, matrix_id_fmts), 1):
+        matrix_id = fmt.format(bc_id=bc.id)
+        logger.info(f"⏲ Validating BC '{bc.id}': {matrix_id=} [{_index}/{_total}]")
+        _obj = file_study.tree.get(url=["input", "bindingconstraints", matrix_id])
+        _array = np.array(_obj["data"], dtype=float)
+        if _array.size == 0 or _array.shape[1] == 1:
+            continue
+        references_by_shapes[_array.shape].append((bc.id, matrix_id))
+        del _obj
+        del _array
+
+    if len(references_by_shapes) > 1:
+        most_common = collections.Counter(references_by_shapes.keys()).most_common()
+        invalid_constraints = collections.defaultdict(list)
+        for shape, _ in most_common[1:]:
+            references = references_by_shapes[shape]
+            for bc_id, matrix_id in references:
+                invalid_constraints[bc_id].append(f"'{matrix_id}' {shape}")
+        expected_shape = most_common[0][0]
+        detail = {
+            "msg": f"Matrix shapes mismatch in binding constraints group. Expected shape: {expected_shape}",
+            "invalid_constraints": dict(invalid_constraints),
+        }
+        raise IncoherenceBetweenMatricesLength(detail)
+
+    return True
 
 
 class BindingConstraintManager:
@@ -142,233 +355,422 @@ class BindingConstraintManager:
         self.storage_service = storage_service
 
     @staticmethod
-    def parse_constraint(key: str, value: str, char: str, new_config: BindingConstraintConfigType) -> bool:
-        split = key.split(char)
-        if len(split) == 2:
-            value1 = split[0]
-            value2 = split[1]
-            weight = 0.0
-            offset = None
-            try:
-                weight = float(value)
-            except ValueError:
-                weight_and_offset = value.split("%")
-                if len(weight_and_offset) == 2:
-                    weight = float(weight_and_offset[0])
-                    offset = float(weight_and_offset[1])
-            if new_config.constraints is None:
-                new_config.constraints = []
-            new_config.constraints.append(
-                ConstraintTermDTO(
-                    id=key,
-                    weight=weight,
-                    offset=offset if offset is not None else None,
-                    data=AreaLinkDTO(
-                        area1=value1,
-                        area2=value2,
+    def parse_and_add_terms(
+        key: str, value: Any, adapted_constraint: Union[ConstraintOutputBase, ConstraintOutput870]
+    ) -> None:
+        """Parse a single term from the constraint dictionary and add it to the adapted_constraint model."""
+        if "%" in key or "." in key:
+            separator = "%" if "%" in key else "."
+            term_data = key.split(separator)
+            if isinstance(value, (float, int)):
+                weight, offset = (float(value), None)
+            else:
+                _parts = value.partition("%")
+                weight = float(_parts[0])
+                offset = int(_parts[2]) if _parts[2] else None
+
+            if separator == "%":
+                # Link term
+                adapted_constraint.terms.append(
+                    ConstraintTerm(
+                        id=key,
+                        weight=weight,
+                        offset=offset,
+                        data={
+                            "area1": term_data[0],
+                            "area2": term_data[1],
+                        },
                     )
-                    if char == "%"
-                    else AreaClusterDTO(
-                        area=value1,
-                        cluster=value2,
-                    ),
                 )
-            )
-            return True
-        return False
+            # Cluster term
+            else:
+                adapted_constraint.terms.append(
+                    ConstraintTerm(
+                        id=key, weight=weight, offset=offset, data={"area": term_data[0], "cluster": term_data[1]}
+                    )
+                )
 
     @staticmethod
-    def process_constraint(constraint_value: Dict[str, Any], version: int) -> BindingConstraintConfigType:
-        args = {
-            "id": constraint_value["id"],
-            "name": constraint_value["name"],
-            "enabled": constraint_value["enabled"],
-            "time_step": constraint_value["type"],
-            "operator": constraint_value["operator"],
-            "comments": constraint_value.get("comments", None),
-            "filter_year_by_year": constraint_value.get("filter-year-by-year", ""),
-            "filter_synthesis": constraint_value.get("filter-synthesis", ""),
-            "constraints": None,
+    def constraint_model_adapter(constraint: Mapping[str, Any], version: int) -> ConstraintOutput:
+        """
+        Adapts a constraint configuration to the appropriate version-specific format.
+
+        Parameters:
+        - constraint: A dictionary or model representing the constraint to be adapted.
+                    This can either be a dictionary coming from client input or an existing
+                    model that needs reformatting.
+        - version: An integer indicating the target version of the study configuration. This is used to
+                determine which model class to instantiate and which default values to apply.
+
+        Returns:
+        - A new instance of either `ConstraintOutputBase` or `ConstraintOutput870`,
+        populated with the adapted values from the input constraint, and conforming to the
+        structure expected by the specified version.
+
+        Note:
+        This method is crucial for ensuring backward compatibility and future-proofing the application
+        as it evolves. It allows client-side data to be accurately represented within the config and
+        ensures data integrity when storing or retrieving constraint configurations from the database.
+        """
+
+        constraint_output = {
+            "id": constraint["id"],
+            "name": constraint["name"],
+            "enabled": constraint.get("enabled", True),
+            "time_step": constraint.get("type", BindingConstraintFrequency.HOURLY),
+            "operator": constraint.get("operator", BindingConstraintOperator.EQUAL),
+            "comments": constraint.get("comments", ""),
+            "terms": constraint.get("terms", []),
         }
-        if version < 870:
-            new_config: BindingConstraintConfigType = BindingConstraintConfig(**args)
-        else:
-            args["group"] = constraint_value.get("group")
-            new_config = BindingConstraintConfig870(**args)
 
-        for key, value in constraint_value.items():
-            if BindingConstraintManager.parse_constraint(key, value, "%", new_config):
-                continue
-            if BindingConstraintManager.parse_constraint(key, value, ".", new_config):
-                continue
-        return new_config
+        if version >= 840:
+            constraint_output["filter_year_by_year"] = constraint.get("filter_year_by_year") or constraint.get(
+                "filter-year-by-year", ""
+            )
+            constraint_output["filter_synthesis"] = constraint.get("filter_synthesis") or constraint.get(
+                "filter-synthesis", ""
+            )
+
+        adapted_constraint: Union[ConstraintOutputBase, ConstraintOutput870]
+        if version >= 870:
+            constraint_output["group"] = constraint.get("group", DEFAULT_GROUP)
+            adapted_constraint = ConstraintOutput870(**constraint_output)
+        else:
+            adapted_constraint = ConstraintOutputBase(**constraint_output)
+
+        # If 'terms' were not directly provided in the input, parse and add terms dynamically
+        if not constraint.get("terms"):
+            for key, value in constraint.items():
+                if key not in constraint_output:  # Avoid re-processing keys already included
+                    BindingConstraintManager.parse_and_add_terms(key, value, adapted_constraint)
+
+        return adapted_constraint
 
     @staticmethod
-    def constraints_to_coeffs(
-        constraint: BindingConstraintConfigType,
-    ) -> Dict[str, List[float]]:
-        coeffs: Dict[str, List[float]] = {}
-        if constraint.constraints is not None:
-            for term in constraint.constraints:
-                if term.id is not None and term.weight is not None:
+    def terms_to_coeffs(terms: Sequence[ConstraintTerm]) -> Dict[str, List[float]]:
+        """
+        Converts a sequence of terms into a dictionary mapping each term's ID to its coefficients,
+        including the weight and, optionally, the offset.
+
+        :param terms: A sequence of terms to be converted.
+        :return: A dictionary of term IDs mapped to a list of their coefficients.
+        """
+        coeffs = {}
+        if terms is not None:
+            for term in terms:
+                if term.id and term.weight is not None:
                     coeffs[term.id] = [term.weight]
-                    if term.offset is not None:
+                    if term.offset:
                         coeffs[term.id].append(term.offset)
+            return coeffs
 
-        return coeffs
+    def get_binding_constraint(self, study: Study, bc_id: str) -> ConstraintOutput:
+        """
+        Retrieves a binding constraint by its ID within a given study.
 
-    def get_binding_constraint(
-        self, study: Study, constraint_id: Optional[str]
-    ) -> Union[BindingConstraintConfigType, List[BindingConstraintConfigType], None]:
+        Args:
+            study: The study from which to retrieve the constraint.
+            bc_id: The ID of the binding constraint to retrieve.
+
+        Returns:
+            A ConstraintOutput object representing the binding constraint with the specified ID.
+
+        Raises:
+            BindingConstraintNotFoundError: If no binding constraint with the specified ID is found.
+        """
         storage_service = self.storage_service.get_storage(study)
         file_study = storage_service.get_raw(study)
         config = file_study.tree.get(["input", "bindingconstraints", "bindingconstraints"])
-        config_values = list(config.values())
-        study_version = int(study.version)
-        if constraint_id:
-            try:
-                index = [value["id"] for value in config_values].index(constraint_id)
-                config_value = config_values[index]
-                return BindingConstraintManager.process_constraint(config_value, study_version)
-            except ValueError:
-                return None
 
-        binding_constraint = []
-        for config_value in config_values:
-            new_config = BindingConstraintManager.process_constraint(config_value, study_version)
-            binding_constraint.append(new_config)
-        return binding_constraint
+        constraints_by_id: Dict[str, ConstraintOutput] = CaseInsensitiveDict()  # type: ignore
+
+        for constraint in config.values():
+            constraint_config = self.constraint_model_adapter(constraint, int(study.version))
+            constraints_by_id[constraint_config.id] = constraint_config
+
+        if bc_id not in constraints_by_id:
+            raise BindingConstraintNotFoundError(f"Binding constraint '{bc_id}' not found")
+
+        return constraints_by_id[bc_id]
+
+    def get_binding_constraints(
+        self, study: Study, filters: ConstraintFilters = ConstraintFilters()
+    ) -> Sequence[ConstraintOutput]:
+        """
+        Retrieves all binding constraints within a given study, optionally filtered by specific criteria.
+
+        Args:
+            study: The study from which to retrieve the constraints.
+            filters: The filters to apply when retrieving the constraints.
+
+        Returns:
+            A list of ConstraintOutput objects representing the binding constraints that match the specified filters.
+        """
+        storage_service = self.storage_service.get_storage(study)
+        file_study = storage_service.get_raw(study)
+        config = file_study.tree.get(["input", "bindingconstraints", "bindingconstraints"])
+        outputs = [self.constraint_model_adapter(c, int(study.version)) for c in config.values()]
+        filtered_constraints = list(filter(lambda c: filters.match_filters(c), outputs))
+        return filtered_constraints
+
+    def get_grouped_constraints(self, study: Study) -> Mapping[str, Sequence[ConstraintOutput]]:
+        """
+         Retrieves and groups all binding constraints by their group names within a given study.
+
+        This method organizes binding constraints into a dictionary where each key corresponds to a group name,
+        and the value is a list of ConstraintOutput objects associated with that group.
+
+        Args:
+            study: the study
+
+        Returns:
+            A dictionary mapping group names to lists of binding constraints associated with each group.
+
+        Notes:
+        The grouping considers the exact group name, implying case sensitivity. If case-insensitive grouping
+        is required, normalization of group names to a uniform case (e.g., all lower or upper) should be performed.
+        """
+        storage_service = self.storage_service.get_storage(study)
+        file_study = storage_service.get_raw(study)
+        config = file_study.tree.get(["input", "bindingconstraints", "bindingconstraints"])
+        grouped_constraints = CaseInsensitiveDict()  # type: ignore
+
+        for constraint in config.values():
+            constraint_config = self.constraint_model_adapter(constraint, int(study.version))
+            constraint_group = getattr(constraint_config, "group", DEFAULT_GROUP)
+            grouped_constraints.setdefault(constraint_group, []).append(constraint_config)
+
+        return grouped_constraints
+
+    def get_constraints_by_group(self, study: Study, group_name: str) -> Sequence[ConstraintOutput]:
+        """
+         Retrieve all binding constraints belonging to a specified group within a study.
+
+        Args:
+            study: The study from which to retrieve the constraints.
+            group_name: The name of the group (case-insensitive).
+
+        Returns:
+            A list of ConstraintOutput objects that belong to the specified group.
+
+        Raises:
+            BindingConstraintNotFoundError: If the specified group name is not found among the constraint groups.
+        """
+        grouped_constraints = self.get_grouped_constraints(study)
+
+        if group_name not in grouped_constraints:
+            raise BindingConstraintNotFoundError(f"Group '{group_name}' not found")
+
+        return grouped_constraints[group_name]
+
+    def validate_constraint_group(self, study: Study, group_name: str) -> bool:
+        """
+        Validates if the specified group name exists within the study's binding constraints
+        and checks the validity of the constraints within that group.
+
+        This method performs a case-insensitive search to match the specified group name against
+        existing groups of binding constraints. It ensures that the group exists and then
+        validates the constraints within that found group.
+
+        Args:
+            study: The study object containing binding constraints.
+            group_name: The name of the group (case-insensitive).
+
+        Returns:
+            True if the group exists and the constraints within the group are valid; False otherwise.
+
+        Raises:
+            BindingConstraintNotFoundError: If no matching group name is found in a case-insensitive manner.
+        """
+        storage_service = self.storage_service.get_storage(study)
+        file_study = storage_service.get_raw(study)
+        grouped_constraints = self.get_grouped_constraints(study)
+
+        if group_name not in grouped_constraints:
+            raise BindingConstraintNotFoundError(f"Group '{group_name}' not found")
+
+        constraints = grouped_constraints[group_name]
+        return _validate_binding_constraints(file_study, constraints)
+
+    def validate_constraint_groups(self, study: Study) -> bool:
+        """
+        Validates all groups of binding constraints within the given study.
+
+        This method checks each group of binding constraints for validity based on specific criteria
+        (e.g., coherence between matrices lengths). If any group fails the validation, an aggregated
+        error detailing all incoherence is raised.
+
+        Args:
+            study: The study object containing binding constraints.
+
+        Returns:
+            True if all constraint groups are valid.
+
+        Raises:
+            IncoherenceBetweenMatricesLength: If any validation checks fail.
+        """
+        storage_service = self.storage_service.get_storage(study)
+        file_study = storage_service.get_raw(study)
+        grouped_constraints = self.get_grouped_constraints(study)
+        invalid_groups = {}
+
+        for group_name, bcs in grouped_constraints.items():
+            try:
+                _validate_binding_constraints(file_study, bcs)
+            except IncoherenceBetweenMatricesLength as e:
+                invalid_groups[group_name] = e.detail
+
+        if invalid_groups:
+            raise IncoherenceBetweenMatricesLength(invalid_groups)
+
+        return True
 
     def create_binding_constraint(
         self,
         study: Study,
-        data: BindingConstraintCreation,
-    ) -> None:
+        data: ConstraintCreation,
+    ) -> ConstraintOutput:
         bc_id = transform_name_to_id(data.name)
         version = int(study.version)
 
         if not bc_id:
             raise InvalidConstraintName(f"Invalid binding constraint name: {data.name}.")
 
-        if bc_id in {bc.id for bc in self.get_binding_constraint(study, None)}:  # type: ignore
+        if bc_id in {bc.id for bc in self.get_binding_constraints(study)}:
             raise DuplicateConstraintName(f"A binding constraint with the same name already exists: {bc_id}.")
 
-        if data.group and version < 870:
-            raise InvalidFieldForVersionError(
-                f"You cannot specify a group as your study version is older than v8.7: {data.group}"
-            )
+        check_attributes_coherence(data, version)
 
-        if version >= 870 and not data.group:
-            data.group = "default"
+        new_constraint = {
+            "name": data.name,
+            "enabled": data.enabled,
+            "time_step": data.time_step,
+            "operator": data.operator,
+            "coeffs": self.terms_to_coeffs(data.terms),
+            "values": data.values,
+            "less_term_matrix": data.less_term_matrix,
+            "equal_term_matrix": data.equal_term_matrix,
+            "greater_term_matrix": data.greater_term_matrix,
+            "filter_year_by_year": data.filter_year_by_year,
+            "filter_synthesis": data.filter_synthesis,
+            "comments": data.comments or "",
+        }
 
-        matrix_terms_list = {"eq": data.equal_term_matrix, "lt": data.less_term_matrix, "gt": data.greater_term_matrix}
-        file_study = self.storage_service.get_storage(study).get_raw(study)
         if version >= 870:
-            if data.values is not None:
-                raise InvalidFieldForVersionError("You cannot fill 'values' as it refers to the matrix before v8.7")
-            check_matrices_coherence(file_study, data.group or "default", bc_id, matrix_terms_list, {})
-        elif any(matrix_terms_list.values()):
-            raise InvalidFieldForVersionError("You cannot fill a 'matrix_term' as these values refer to v8.7+ studies")
+            new_constraint["group"] = data.group or DEFAULT_GROUP
 
         command = CreateBindingConstraint(
-            name=data.name,
-            enabled=data.enabled,
-            time_step=data.time_step,
-            operator=data.operator,
-            coeffs=data.coeffs,
-            values=data.values,
-            less_term_matrix=data.less_term_matrix,
-            equal_term_matrix=data.equal_term_matrix,
-            greater_term_matrix=data.greater_term_matrix,
-            filter_year_by_year=data.filter_year_by_year,
-            filter_synthesis=data.filter_synthesis,
-            comments=data.comments or "",
-            group=data.group,
-            command_context=self.storage_service.variant_study_service.command_factory.command_context,
+            **new_constraint, command_context=self.storage_service.variant_study_service.command_factory.command_context
         )
 
         # Validates the matrices. Needed when the study is a variant because we only append the command to the list
         if isinstance(study, VariantStudy):
             command.validates_and_fills_matrices(specific_matrices=None, version=version, create=True)
 
+        file_study = self.storage_service.get_storage(study).get_raw(study)
         execute_or_add_commands(study, file_study, [command], self.storage_service)
+
+        # Processes the constraints to add them inside the endpoint response.
+        new_constraint["id"] = bc_id
+        new_constraint["type"] = data.time_step
+        return self.constraint_model_adapter(new_constraint, version)
 
     def update_binding_constraint(
         self,
         study: Study,
         binding_constraint_id: str,
-        data: UpdateBindingConstProps,
-    ) -> None:
+        data: ConstraintInput,
+    ) -> ConstraintOutput:
         file_study = self.storage_service.get_storage(study).get_raw(study)
-        constraint = self.get_binding_constraint(study, binding_constraint_id)
+        existing_constraint = self.get_binding_constraint(study, binding_constraint_id)
         study_version = int(study.version)
-        if not isinstance(constraint, BindingConstraintConfig) and not isinstance(
-            constraint, BindingConstraintConfig870
-        ):
-            raise BindingConstraintNotFoundError(study.id)
+        check_attributes_coherence(data, study_version)
+
+        # Because the update_binding_constraint command requires every attribute we have to fill them all.
+        # This creates a `big` command even though we only updated one field.
+        # fixme : Change the architecture to avoid this type of misconception
+        upd_constraint = {
+            "id": binding_constraint_id,
+            "enabled": data.enabled if data.enabled is not None else existing_constraint.enabled,
+            "time_step": data.time_step or existing_constraint.time_step,
+            "operator": data.operator or existing_constraint.operator,
+            "coeffs": self.terms_to_coeffs(data.terms) or self.terms_to_coeffs(existing_constraint.terms),
+            "comments": data.comments or existing_constraint.comments,
+        }
+
+        if study_version >= 840:
+            upd_constraint["filter_year_by_year"] = data.filter_year_by_year or existing_constraint.filter_year_by_year
+            upd_constraint["filter_synthesis"] = data.filter_synthesis or existing_constraint.filter_synthesis
 
         if study_version >= 870:
-            validates_matrices_coherence(file_study, binding_constraint_id, constraint.group or "default", data)  # type: ignore
+            upd_constraint["group"] = data.group or existing_constraint.group  # type: ignore
 
         args = {
-            "id": binding_constraint_id,
-            "enabled": data.value if data.key == "enabled" else constraint.enabled,
-            "time_step": data.value if data.key == "time_step" else constraint.time_step,
-            "operator": data.value if data.key == "operator" else constraint.operator,
-            "coeffs": BindingConstraintManager.constraints_to_coeffs(constraint),
-            "filter_year_by_year": data.value if data.key == "filterByYear" else constraint.filter_year_by_year,
-            "filter_synthesis": data.value if data.key == "filterSynthesis" else constraint.filter_synthesis,
-            "comments": data.value if data.key == "comments" else constraint.comments,
+            **upd_constraint,
             "command_context": self.storage_service.variant_study_service.command_factory.command_context,
         }
 
-        args = _fill_group_value(data, constraint, study_version, args)
-        args = _fill_matrices_according_to_version(data, study_version, args)
+        for term in ["values", "less_term_matrix", "equal_term_matrix", "greater_term_matrix"]:
+            if matrices_to_update := getattr(data, term):
+                args[term] = matrices_to_update
 
-        if data.key == "time_step" and data.value != constraint.time_step:
+        if data.time_step is not None and data.time_step != existing_constraint.time_step:
             # The user changed the time step, we need to update the matrix accordingly
             args = _replace_matrices_according_to_frequency_and_version(data, study_version, args)
 
         command = UpdateBindingConstraint(**args)
+
         # Validates the matrices. Needed when the study is a variant because we only append the command to the list
         if isinstance(study, VariantStudy):
-            updated_matrix = None
-            if data.key in ["less_term_matrix", "equal_term_matrix", "greater_term_matrix"]:
-                updated_matrix = [data.key]
-            command.validates_and_fills_matrices(specific_matrices=updated_matrix, version=study_version, create=False)
+            updated_matrices = [
+                term for term in ["less_term_matrix", "equal_term_matrix", "greater_term_matrix"] if getattr(data, term)
+            ]
+            command.validates_and_fills_matrices(
+                specific_matrices=updated_matrices, version=study_version, create=False
+            )
 
         execute_or_add_commands(study, file_study, [command], self.storage_service)
 
+        # Processes the constraints to add them inside the endpoint response.
+        upd_constraint["name"] = existing_constraint.name
+        upd_constraint["type"] = upd_constraint["time_step"]
+        # Replace coeffs by the terms
+        del upd_constraint["coeffs"]
+        upd_constraint["terms"] = data.terms or existing_constraint.terms
+
+        return self.constraint_model_adapter(upd_constraint, study_version)
+
     def remove_binding_constraint(self, study: Study, binding_constraint_id: str) -> None:
-        command = RemoveBindingConstraint(
-            id=binding_constraint_id,
-            command_context=self.storage_service.variant_study_service.command_factory.command_context,
-        )
+        """
+        Removes a binding constraint from a study.
+
+        Args:
+            study: The study from which to remove the constraint.
+            binding_constraint_id: The ID of the binding constraint to remove.
+
+        Raises:
+            BindingConstraintNotFoundError: If no binding constraint with the specified ID is found.
+        """
+        # Check the existence of the binding constraint before removing it
+        bc = self.get_binding_constraint(study, binding_constraint_id)
+        command_context = self.storage_service.variant_study_service.command_factory.command_context
         file_study = self.storage_service.get_storage(study).get_raw(study)
-
-        # Needed when the study is a variant because we only append the command to the list
-        if isinstance(study, VariantStudy) and not self.get_binding_constraint(study, binding_constraint_id):
-            raise CommandApplicationError("Binding constraint not found")
-
+        command = RemoveBindingConstraint(id=bc.id, command_context=command_context)
         execute_or_add_commands(study, file_study, [command], self.storage_service)
 
     def update_constraint_term(
         self,
         study: Study,
         binding_constraint_id: str,
-        term: Union[ConstraintTermDTO, str],
+        term: ConstraintTerm,
     ) -> None:
         file_study = self.storage_service.get_storage(study).get_raw(study)
         constraint = self.get_binding_constraint(study, binding_constraint_id)
-
-        if not isinstance(constraint, BindingConstraintConfig) and not isinstance(constraint, BindingConstraintConfig):
-            raise BindingConstraintNotFoundError(study.id)
-
-        constraint_terms = constraint.constraints  # existing constraint terms
-        if constraint_terms is None:
+        constraint_terms = constraint.terms  # existing constraint terms
+        if not constraint_terms:
             raise NoConstraintError(study.id)
 
-        term_id = term.id if isinstance(term, ConstraintTermDTO) else term
+        term_id = term.id if isinstance(term, ConstraintTerm) else term
         if term_id is None:
             raise ConstraintIdNotFoundError(study.id)
 
@@ -376,11 +778,11 @@ class BindingConstraintManager:
         if term_id_index < 0:
             raise ConstraintIdNotFoundError(study.id)
 
-        if isinstance(term, ConstraintTermDTO):
+        if isinstance(term, ConstraintTerm):
             updated_term_id = term.data.generate_id() if term.data else term_id
             current_constraint = constraint_terms[term_id_index]
 
-            constraint_terms[term_id_index] = ConstraintTermDTO(
+            constraint_terms[term_id_index] = ConstraintTerm(
                 id=updated_term_id,
                 weight=term.weight or current_constraint.weight,
                 offset=term.offset,
@@ -404,37 +806,37 @@ class BindingConstraintManager:
         )
         execute_or_add_commands(study, file_study, [command], self.storage_service)
 
-    def add_new_constraint_term(
+    def create_constraint_term(
         self,
         study: Study,
         binding_constraint_id: str,
-        constraint_term: ConstraintTermDTO,
+        constraint_term: ConstraintTerm,
     ) -> None:
         file_study = self.storage_service.get_storage(study).get_raw(study)
         constraint = self.get_binding_constraint(study, binding_constraint_id)
-        if not isinstance(constraint, BindingConstraintConfig) and not isinstance(constraint, BindingConstraintConfig):
-            raise BindingConstraintNotFoundError(study.id)
 
         if constraint_term.data is None:
             raise MissingDataError("Add new constraint term : data is missing")
 
         constraint_id = constraint_term.data.generate_id()
-        constraints_term = constraint.constraints or []
-        if find_constraint_term_id(constraints_term, constraint_id) >= 0:
+        constraint_terms = constraint.terms or []
+        if find_constraint_term_id(constraint_terms, constraint_id) >= 0:
             raise ConstraintAlreadyExistError(study.id)
 
-        constraints_term.append(
-            ConstraintTermDTO(
+        constraint_terms.append(
+            ConstraintTerm(
                 id=constraint_id,
                 weight=constraint_term.weight if constraint_term.weight is not None else 0.0,
                 offset=constraint_term.offset,
                 data=constraint_term.data,
             )
         )
+
         coeffs = {}
-        for term in constraints_term:
+
+        for term in constraint_terms:
             coeffs[term.id] = [term.weight]
-            if term.offset is not None:
+            if term.offset:
                 coeffs[term.id].append(term.offset)
 
         command = UpdateBindingConstraint(
@@ -457,66 +859,33 @@ class BindingConstraintManager:
         binding_constraint_id: str,
         term_id: str,
     ) -> None:
-        return self.update_constraint_term(study, binding_constraint_id, term_id)
-
-
-def _fill_group_value(
-    data: UpdateBindingConstProps, constraint: BindingConstraintConfigType, version: int, args: Dict[str, Any]
-) -> Dict[str, Any]:
-    if version < 870:
-        if data.key == "group":
-            raise InvalidFieldForVersionError(
-                f"You cannot specify a group as your study version is older than v8.7: {data.value}"
-            )
-    else:
-        # cast to 870 to use the attribute group
-        constraint = cast(BindingConstraintConfig870, constraint)
-        args["group"] = data.value if data.key == "group" else constraint.group
-    return args
-
-
-def _fill_matrices_according_to_version(
-    data: UpdateBindingConstProps, version: int, args: Dict[str, Any]
-) -> Dict[str, Any]:
-    if data.key == "values":
-        if version >= 870:
-            raise InvalidFieldForVersionError("You cannot fill 'values' as it refers to the matrix before v8.7")
-        args["values"] = data.value
-        return args
-    for matrix in ["less_term_matrix", "equal_term_matrix", "greater_term_matrix"]:
-        if data.key == matrix:
-            if version < 870:
-                raise InvalidFieldForVersionError(
-                    "You cannot fill a 'matrix_term' as these values refer to v8.7+ studies"
-                )
-            args[matrix] = data.value
-            return args
-    return args
+        return self.update_constraint_term(study, binding_constraint_id, term_id)  # type: ignore
 
 
 def _replace_matrices_according_to_frequency_and_version(
-    data: UpdateBindingConstProps, version: int, args: Dict[str, Any]
+    data: ConstraintInput, version: int, args: Dict[str, Any]
 ) -> Dict[str, Any]:
     if version < 870:
-        matrix = {
-            BindingConstraintFrequency.HOURLY.value: default_bc_hourly_86,
-            BindingConstraintFrequency.DAILY.value: default_bc_weekly_daily_86,
-            BindingConstraintFrequency.WEEKLY.value: default_bc_weekly_daily_86,
-        }[data.value].tolist()
-        args["values"] = matrix
+        if "values" not in args:
+            matrix = {
+                BindingConstraintFrequency.HOURLY.value: default_bc_hourly_86,
+                BindingConstraintFrequency.DAILY.value: default_bc_weekly_daily_86,
+                BindingConstraintFrequency.WEEKLY.value: default_bc_weekly_daily_86,
+            }[data.time_step].tolist()
+            args["values"] = matrix
     else:
         matrix = {
             BindingConstraintFrequency.HOURLY.value: default_bc_hourly_87,
             BindingConstraintFrequency.DAILY.value: default_bc_weekly_daily_87,
             BindingConstraintFrequency.WEEKLY.value: default_bc_weekly_daily_87,
-        }[data.value].tolist()
-        args["less_term_matrix"] = matrix
-        args["equal_term_matrix"] = matrix
-        args["greater_term_matrix"] = matrix
+        }[data.time_step].tolist()
+        for term in ["less_term_matrix", "equal_term_matrix", "greater_term_matrix"]:
+            if term not in args:
+                args[term] = matrix
     return args
 
 
-def find_constraint_term_id(constraints_term: List[ConstraintTermDTO], constraint_term_id: str) -> int:
+def find_constraint_term_id(constraints_term: Sequence[ConstraintTerm], constraint_term_id: str) -> int:
     try:
         index = [elm.id for elm in constraints_term].index(constraint_term_id)
         return index
@@ -524,85 +893,13 @@ def find_constraint_term_id(constraints_term: List[ConstraintTermDTO], constrain
         return -1
 
 
-def get_binding_constraint_of_a_given_group(file_study: FileStudy, group_id: str) -> List[str]:
-    config = file_study.tree.get(["input", "bindingconstraints", "bindingconstraints"])
-    config_values = list(config.values())
-    return [bd["id"] for bd in config_values if bd["group"] == group_id]
-
-
-def check_matrices_coherence(
-    file_study: FileStudy,
-    group_id: str,
-    binding_constraint_id: str,
-    matrix_terms: Dict[str, Any],
-    matrix_to_avoid: Dict[str, str],
-) -> None:
-    given_number_of_cols = set()
-    for term_str, term_data in matrix_terms.items():
-        if term_data:
-            nb_cols = len(term_data[0])
-            if nb_cols > 1:
-                given_number_of_cols.add(nb_cols)
-    if len(given_number_of_cols) > 1:
-        raise IncoherenceBetweenMatricesLength(
-            f"The matrices of {binding_constraint_id} must have the same number of columns, currently {given_number_of_cols}"
-        )
-    if len(given_number_of_cols) == 1:
-        given_size = list(given_number_of_cols)[0]
-        for bd_id in get_binding_constraint_of_a_given_group(file_study, group_id):
-            for term in list(matrix_terms.keys()):
-                if (
-                    bd_id not in matrix_to_avoid or matrix_to_avoid[bd_id] != term
-                ):  # avoids to check the matrix that will be replaced
-                    matrix_file = file_study.tree.get(url=["input", "bindingconstraints", f"{bd_id}_{term}"])
-                    column_size = len(matrix_file["data"][0])
-                    if column_size > 1 and column_size != given_size:
-                        raise IncoherenceBetweenMatricesLength(
-                            f"The matrices of the group {group_id} do not have the same number of columns"
-                        )
-
-
-def validates_matrices_coherence(
-    file_study: FileStudy, binding_constraint_id: str, group: str, data: UpdateBindingConstProps
-) -> None:
-    if data.key == "group":
-        matrix_terms = {
-            "eq": get_matrix_data(file_study, binding_constraint_id, "eq"),
-            "lt": get_matrix_data(file_study, binding_constraint_id, "lt"),
-            "gt": get_matrix_data(file_study, binding_constraint_id, "gt"),
-        }
-        check_matrices_coherence(file_study, data.value, binding_constraint_id, matrix_terms, {})
-
-    if data.key in ["less_term_matrix", "equal_term_matrix", "greater_term_matrix"]:
-        if isinstance(data.value, str):
-            raise NotImplementedError(
-                f"We do not currently handle binding constraint update for {data.key} with a string value. Please provide a matrix"
+def check_attributes_coherence(data: Union[ConstraintCreation, ConstraintInput], study_version: int) -> None:
+    if study_version < 870:
+        if data.group:
+            raise InvalidFieldForVersionError(
+                f"You cannot specify a group as your study version is older than v8.7: {data.group}"
             )
-        if data.key == "less_term_matrix":
-            term_to_avoid = "lt"
-            matrix_terms = {
-                "lt": data.value,
-                "eq": get_matrix_data(file_study, binding_constraint_id, "eq"),
-                "gt": get_matrix_data(file_study, binding_constraint_id, "gt"),
-            }
-        elif data.key == "greater_term_matrix":
-            term_to_avoid = "gt"
-            matrix_terms = {
-                "gt": data.value,
-                "eq": get_matrix_data(file_study, binding_constraint_id, "eq"),
-                "lt": get_matrix_data(file_study, binding_constraint_id, "lt"),
-            }
-        else:
-            term_to_avoid = "eq"
-            matrix_terms = {
-                "eq": data.value,
-                "gt": get_matrix_data(file_study, binding_constraint_id, "gt"),
-                "lt": get_matrix_data(file_study, binding_constraint_id, "lt"),
-            }
-        check_matrices_coherence(
-            file_study, group, binding_constraint_id, matrix_terms, {binding_constraint_id: term_to_avoid}
-        )
-
-
-def get_matrix_data(file_study: FileStudy, binding_constraint_id: str, keyword: str) -> List[Any]:
-    return file_study.tree.get(url=["input", "bindingconstraints", f"{binding_constraint_id}_{keyword}"])["data"]  # type: ignore
+        if any([data.less_term_matrix, data.equal_term_matrix, data.greater_term_matrix]):
+            raise InvalidFieldForVersionError("You cannot fill a 'matrix_term' as these values refer to v8.7+ studies")
+    elif data.values:
+        raise InvalidFieldForVersionError("You cannot fill 'values' as it refers to the matrix before v8.7")
