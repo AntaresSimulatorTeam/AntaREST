@@ -56,11 +56,7 @@ class TestTableMode:
         # Table Mode - Area
         # =================
 
-        res = client.get(
-            f"/v1/studies/{study_id}/tablemode",
-            headers=user_headers,
-            params={"table_type": "area"},
-        )
+        res = client.get(f"/v1/studies/{study_id}/table-mode/areas", headers=user_headers)
         assert res.status_code == 200, res.json()
         expected = {
             "de": {
@@ -119,10 +115,9 @@ class TestTableMode:
         # ==================
 
         res = client.get(
-            f"/v1/studies/{study_id}/tablemode",
+            f"/v1/studies/{study_id}/table-mode/links",
             headers=user_headers,
             params={
-                "table_type": "link",
                 "columns": ",".join(
                     [
                         "hurdlesCost",
@@ -189,12 +184,9 @@ class TestTableMode:
         # =============================
 
         res = client.get(
-            f"/v1/studies/{study_id}/tablemode",
+            f"/v1/studies/{study_id}/table-mode/thermals",
             headers=user_headers,
-            params={
-                "table_type": "thermal cluster",
-                "columns": ",".join(["group", "unitCount", "nominalCapacity", "so2"]),
-            },
+            params={"columns": ",".join(["group", "unitCount", "nominalCapacity", "so2"])},
         )
         assert res.status_code == 200, res.json()
         expected = {
@@ -302,12 +294,9 @@ class TestTableMode:
                 res.raise_for_status()
 
         res = client.get(
-            f"/v1/studies/{study_id}/tablemode",
+            f"/v1/studies/{study_id}/table-mode/renewables",
             headers=user_headers,
-            params={
-                "table_type": "renewable cluster",
-                "columns": ",".join(["group", "enabled", "unitCount", "nominalCapacity"]),
-            },
+            params={"columns": ",".join(["group", "enabled", "unitCount", "nominalCapacity"])},
         )
         assert res.status_code == 200, res.json()
         expected = {
@@ -375,10 +364,9 @@ class TestTableMode:
                 res.raise_for_status()
 
         res = client.get(
-            f"/v1/studies/{study_id}/tablemode",
+            f"/v1/studies/{study_id}/table-mode/storages",
             headers=user_headers,
             params={
-                "table_type": "short-term storage",
                 "columns": ",".join(
                     [
                         "group",
@@ -470,12 +458,9 @@ class TestTableMode:
         assert res.status_code == 200, res.json()
 
         res = client.get(
-            f"/v1/studies/{study_id}/tablemode",
+            f"/v1/studies/{study_id}/table-mode/constraints",
             headers=user_headers,
-            params={
-                "table_type": "binding constraint",
-                "columns": "",
-            },
+            params={"columns": ""},
         )
         assert res.status_code == 200, res.json()
         expected = {

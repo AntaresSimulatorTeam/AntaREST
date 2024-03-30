@@ -841,7 +841,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         study_service.ts_config_manager.set_field_values(study, field_values)
 
     @bp.get(
-        path="/studies/{uuid}/tablemode",
+        path="/studies/{uuid}/table-mode/{table_type}",
         tags=[APITag.study_data],
         summary="Get table data for table form",
     )
@@ -862,7 +862,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         return table_data
 
     @bp.put(
-        path="/studies/{uuid}/tablemode",
+        path="/studies/{uuid}/table-mode/{table_type}",
         tags=[APITag.study_data],
         summary="Set table data with values from table form",
     )

@@ -37,12 +37,12 @@ BINDING_CONSTRAINT_PATH = "input/bindingconstraints/bindingconstraints"
 
 
 class TableTemplateType(EnumIgnoreCase):
-    AREA = "area"
-    LINK = "link"
-    THERMAL_CLUSTER = "thermal cluster"
-    RENEWABLE_CLUSTER = "renewable cluster"
-    ST_STORAGE = "short-term storage"
-    BINDING_CONSTRAINT = "binding constraint"
+    AREA = "areas"
+    LINK = "links"
+    THERMAL_CLUSTER = "thermals"
+    RENEWABLE_CLUSTER = "renewables"
+    ST_STORAGE = "storages"
+    BINDING_CONSTRAINT = "constraints"
 
 
 class AreaColumns(FormFieldsBaseModel, metaclass=AllOptionalMetaclass):
