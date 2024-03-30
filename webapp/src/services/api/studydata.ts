@@ -4,12 +4,10 @@ import {
   LinkInfoWithUI,
   UpdateAreaUi,
 } from "../../common/types";
-import { CreateBindingConstraint } from "../../components/App/Singlestudy/Commands/Edition/commandTypes";
 import {
-  BindingConstFields,
-  BindingConstFieldsDTO,
-  ConstraintType,
-  UpdateBindingConstraint,
+  BindingConstraint,
+  ConstraintTerm,
+  bindingConstraintModelAdapter,
 } from "../../components/App/Singlestudy/explore/Modelization/BindingConstraints/BindingConstView/utils";
 import { StudyMapNode } from "../../redux/ducks/studyMaps";
 import client from "./client";
@@ -71,83 +69,86 @@ export const deleteLink = async (
 };
 
 export const updateConstraintTerm = async (
-  uuid: string,
-  bindingConst: string,
-  constraint: Partial<ConstraintType>,
+  studyId: string,
+  constraintId: string,
+  term: Partial<ConstraintTerm>,
 ): Promise<string> => {
   const res = await client.put(
-    `/v1/studies/${uuid}/bindingconstraints/${encodeURIComponent(
-      bindingConst,
+    `/v1/studies/${studyId}/bindingconstraints/${encodeURIComponent(
+      constraintId,
     )}/term`,
-    constraint,
+    term,
   );
   return res.data;
 };
 
-export const addConstraintTerm = async (
-  uuid: string,
-  bindingConst: string,
-  constraint: ConstraintType,
-): Promise<ConstraintType | null> => {
+export const createConstraintTerm = async (
+  studyId: string,
+  constraintId: string,
+  term: ConstraintTerm,
+): Promise<void> => {
   const res = await client.post(
-    `/v1/studies/${uuid}/bindingconstraints/${encodeURIComponent(
-      bindingConst,
+    `/v1/studies/${studyId}/bindingconstraints/${encodeURIComponent(
+      constraintId,
     )}/term`,
-    constraint,
+    term,
   );
   return res.data;
 };
 
 export const deleteConstraintTerm = async (
-  uuid: string,
-  bindingConst: string,
-  termId: ConstraintType["id"],
+  studyId: string,
+  constraintId: string,
+  termId: ConstraintTerm["id"],
 ): Promise<void> => {
   const res = await client.delete(
-    `/v1/studies/${uuid}/bindingconstraints/${encodeURIComponent(
-      bindingConst,
+    `/v1/studies/${studyId}/bindingconstraints/${encodeURIComponent(
+      constraintId,
     )}/term/${encodeURIComponent(termId)}`,
   );
   return res.data;
 };
 
 export const getBindingConstraint = async (
-  uuid: string,
-  bindingConst: string,
-): Promise<BindingConstFieldsDTO> => {
+  studyId: string,
+  constraintId: string,
+): Promise<BindingConstraint> => {
   const res = await client.get(
-    `/v1/studies/${uuid}/bindingconstraints/${encodeURIComponent(
-      bindingConst,
+    `/v1/studies/${studyId}/bindingconstraints/${encodeURIComponent(
+      constraintId,
     )}`,
   );
-  return res.data;
+
+  return bindingConstraintModelAdapter(res.data);
 };
 
 export const getBindingConstraintList = async (
-  uuid: string,
-): Promise<BindingConstFields[]> => {
-  const res = await client.get(`/v1/studies/${uuid}/bindingconstraints`);
+  studyId: string,
+): Promise<BindingConstraint[]> => {
+  const res = await client.get(`/v1/studies/${studyId}/bindingconstraints`);
   return res.data;
 };
 
 export const updateBindingConstraint = async (
-  uuid: string,
-  bindingConst: string,
-  data: UpdateBindingConstraint,
+  studyId: string,
+  constraintId: string,
+  data: Omit<BindingConstraint, "id" | "name">,
 ): Promise<void> => {
+  const adaptedData = bindingConstraintModelAdapter(data as BindingConstraint); // TODO fix type
+
   const res = await client.put(
-    `/v1/studies/${uuid}/bindingconstraints/${encodeURIComponent(
-      bindingConst,
+    `/v1/studies/${studyId}/bindingconstraints/${encodeURIComponent(
+      constraintId,
     )}`,
-    data,
+    adaptedData,
   );
   return res.data;
 };
 
 export const createBindingConstraint = async (
   studyId: string,
-  data: CreateBindingConstraint,
-): Promise<void> => {
+  data: Partial<BindingConstraint>,
+): Promise<BindingConstraint> => {
   const res = await client.post(
     `/v1/studies/${studyId}/bindingconstraints`,
     data,

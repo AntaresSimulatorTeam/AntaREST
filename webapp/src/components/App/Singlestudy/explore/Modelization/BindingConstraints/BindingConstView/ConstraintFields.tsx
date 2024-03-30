@@ -1,0 +1,175 @@
+import {
+  BindingConstraint,
+  OPERATORS,
+  OUTPUT_FILTERS,
+  TIME_STEPS,
+} from "./utils";
+
+import Fieldset from "../../../../../../common/Fieldset";
+import SelectFE from "../../../../../../common/fieldEditors/SelectFE";
+import StringFE from "../../../../../../common/fieldEditors/StringFE";
+import { StudyMetadata } from "../../../../../../../common/types";
+import SwitchFE from "../../../../../../common/fieldEditors/SwitchFE";
+import { useFormContextPlus } from "../../../../../../common/Form";
+import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { validateString } from "../../../../../../../utils/validationUtils";
+import Matrix from "./Matrix";
+import { Box, Button } from "@mui/material";
+import { Dataset } from "@mui/icons-material";
+
+interface Props {
+  study: StudyMetadata;
+  constraintId: string;
+}
+
+function Fields({ study, constraintId }: Props) {
+  const { t } = useTranslation();
+  const { control, getValues } = useFormContextPlus<BindingConstraint>();
+  const [matrixDialogOpen, setMatrixDialogOpen] = useState(false);
+  const currentOperator = getValues("operator");
+
+  const outputFilterOptions = useMemo(
+    () =>
+      OUTPUT_FILTERS.map((filter) => ({
+        label: t(`global.time.${filter}`),
+        value: filter,
+      })),
+    [t],
+  );
+
+  const operatorOptions = useMemo(
+    () =>
+      OPERATORS.map((operator) => ({
+        label: t(`study.modelization.bindingConst.operator.${operator}`),
+        value: operator,
+      })),
+    [t],
+  );
+
+  const timeStepOptions = useMemo(
+    () =>
+      TIME_STEPS.map((timeStep) => ({
+        label: t(`global.time.${timeStep}`),
+        value: timeStep,
+      })),
+    [t],
+  );
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
+
+  return (
+    <>
+      <Fieldset
+        legend={t("global.general")}
+        fieldWidth={280}
+        sx={{ py: 1, flexWrap: "wrap" }}
+      >
+        <SwitchFE
+          name="enabled"
+          label={t("study.modelization.bindingConst.enabled")}
+          control={control}
+        />
+        <StringFE
+          disabled
+          name="name"
+          label={t("global.name")}
+          size="small"
+          control={control}
+          rules={{ validate: (v) => validateString(v) }}
+          sx={{ m: 0, minWidth: 280 }} // TODO: Remove margin reset when updating MUI Theme
+        />
+        {Number(study.version) >= 870 && (
+          <StringFE
+            name="group"
+            label={t("global.group")}
+            size="small"
+            control={control}
+            rules={{
+              validate: (v) =>
+                validateString(v, {
+                  max: 20,
+                  specialChars: "-",
+                }),
+            }}
+            sx={{ m: 0, minWidth: 280 }} // TODO: Remove margin reset when updating MUI Theme
+          />
+        )}
+        <SelectFE
+          name="timeStep"
+          label={t("study.modelization.bindingConst.type")}
+          size="small"
+          variant="outlined"
+          options={timeStepOptions}
+          control={control}
+          sx={{ maxWidth: 180 }}
+        />
+        <SelectFE
+          name="operator"
+          label={t("study.modelization.bindingConst.operator")}
+          size="small"
+          variant="outlined"
+          options={operatorOptions}
+          control={control}
+          sx={{ maxWidth: 150 }}
+        />
+        {Number(study.version) >= 840 && (
+          <Box sx={{ display: "flex", gap: 2, width: 1 }}>
+            <SelectFE
+              name="filterYearByYear"
+              label={t("study.outputFilters.filterByYear")}
+              size="small"
+              variant="outlined"
+              options={outputFilterOptions}
+              multiple
+              control={control}
+            />
+            <SelectFE
+              name="filterSynthesis"
+              label={t("study.outputFilters.filterSynthesis")}
+              size="small"
+              variant="outlined"
+              options={outputFilterOptions}
+              multiple
+              control={control}
+            />
+            <StringFE
+              name="comments"
+              label={t("study.modelization.bindingConst.comments")}
+              size="small"
+              control={control}
+              required={false}
+              sx={{ m: 0, minWidth: 280 }} // TODO: Remove margin reset when updating MUI Theme
+            />
+          </Box>
+        )}
+      </Fieldset>
+      <Box>
+        <Button
+          variant="contained"
+          size="small"
+          color="secondary"
+          startIcon={<Dataset />}
+          onClick={() => setMatrixDialogOpen(true)}
+          sx={{ mt: 2 }}
+        >
+          {t("study.modelization.bindingConst.timeSeries")}
+        </Button>
+      </Box>
+
+      {matrixDialogOpen && (
+        <Matrix
+          study={study}
+          constraintId={constraintId}
+          operator={currentOperator}
+          open={matrixDialogOpen}
+          onClose={() => setMatrixDialogOpen(false)}
+        />
+      )}
+    </>
+  );
+}
+
+export default Fields;

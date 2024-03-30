@@ -20,8 +20,8 @@ export default function OffsetInput(props: PropsWithChildren<Props>) {
       <HighlightOffIcon
         sx={{
           position: "absolute",
-          top: "-25px",
-          right: "0px",
+          top: "-15px",
+          right: "-25px",
           color: "error.main",
           cursor: "pointer",
           "&:hover": {

@@ -1,42 +1,46 @@
 import { useEffect, useMemo, useState } from "react";
-import { StudyMetadata } from "../../../../../../common/types";
 import PropertiesView from "../../../../../common/PropertiesView";
 import ListElement from "../../common/ListElement";
 import AddDialog from "./AddDialog";
-import { BindingConstFields } from "./BindingConstView/utils";
+import { BindingConstraint } from "./BindingConstView/utils";
 
 interface Props {
+  list: BindingConstraint[];
   onClick: (name: string) => void;
-  list: BindingConstFields[];
-  studyId: StudyMetadata["id"];
-  currentBindingConst?: string;
+  currentConstraint?: string;
+  reloadConstraintsList: VoidFunction;
 }
 
-function BindingConstPropsView(props: Props) {
-  const { onClick, currentBindingConst, studyId, list } = props;
-  const [bindingConstNameFilter, setBindingConstNameFilter] =
-    useState<string>();
+// TODO rename ConstraintsList
+function BindingConstPropsView({
+  list,
+  onClick,
+  currentConstraint,
+  reloadConstraintsList,
+}: Props) {
+  const [searchedConstraint, setSearchedConstraint] = useState("");
   const [addBindingConst, setAddBindingConst] = useState(false);
-  const [filteredBindingConst, setFilteredBindingConst] = useState<
-    BindingConstFields[]
-  >(list || []);
+  const [filteredConstraints, setFilteredConstraints] = useState(list);
 
   useEffect(() => {
-    const filter = (): BindingConstFields[] => {
-      if (list) {
-        return list.filter(
-          (s) =>
-            !bindingConstNameFilter ||
-            s.name.search(new RegExp(bindingConstNameFilter, "i")) !== -1,
-        );
-      }
-      return [];
-    };
-    setFilteredBindingConst(filter());
-  }, [list, bindingConstNameFilter]);
+    if (!list) {
+      setFilteredConstraints([]);
+      return;
+    }
+
+    if (!searchedConstraint) {
+      setFilteredConstraints(list);
+      return;
+    }
+
+    const pattern = new RegExp(searchedConstraint, "i");
+    const filtered = list.filter((s) => pattern.test(s.name));
+
+    setFilteredConstraints(filtered);
+  }, [list, searchedConstraint]);
 
   const existingConstraints = useMemo(
-    () => list.map(({ name }) => name.toLowerCase()),
+    () => list.map(({ name }) => name),
     [list],
   );
 
@@ -49,32 +53,28 @@ function BindingConstPropsView(props: Props) {
       <PropertiesView
         mainContent={
           <ListElement
-            list={filteredBindingConst.map((item) => ({
-              label: item.name,
-              name: item.id,
+            list={filteredConstraints.map((constraint) => ({
+              label: constraint.name,
+              name: constraint.id,
             }))}
-            currentElement={currentBindingConst}
+            currentElement={currentConstraint}
             setSelectedItem={(elm) => onClick(elm.name)}
           />
         }
         secondaryContent={<div />}
         onAdd={() => setAddBindingConst(true)}
-        onSearchFilterChange={(e) => setBindingConstNameFilter(e as string)}
+        onSearchFilterChange={(e) => setSearchedConstraint(e)}
       />
       {addBindingConst && (
         <AddDialog
           open={addBindingConst}
-          studyId={studyId}
           existingConstraints={existingConstraints}
+          reloadConstraintsList={reloadConstraintsList}
           onClose={() => setAddBindingConst(false)}
         />
       )}
     </>
   );
 }
-
-BindingConstPropsView.defaultProps = {
-  currentBindingConst: undefined,
-};
 
 export default BindingConstPropsView;
