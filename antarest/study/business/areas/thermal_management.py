@@ -223,6 +223,38 @@ class ThermalManager:
         }
         return all_clusters
 
+    def update_thermals_props(
+        self,
+        study: Study,
+        update_thermals_by_areas: t.Mapping[str, t.Sequence[ThermalClusterOutput]],
+    ) -> t.Mapping[str, t.Sequence[ThermalClusterOutput]]:
+        old_thermals_by_areas = self.get_all_thermals_props(study)
+        new_thermals_by_names: t.MutableMapping[str, t.MutableSequence[ThermalClusterOutput]] = {}
+        file_study = self.storage_service.get_storage(study).get_raw(study)
+        commands = []
+        for area_id, update_thermals in update_thermals_by_areas.items():
+            old_thermals = old_thermals_by_areas.get(area_id, [])
+            old_thermals_by_id = {cluster.id: cluster for cluster in old_thermals}
+            update_thermals_by_id = {cluster.id: cluster for cluster in update_thermals}
+            for cluster_id, update_cluster in update_thermals_by_id.items():
+                # Update the thermal cluster properties.
+                old_cluster = old_thermals_by_id[cluster_id]
+                new_cluster = old_cluster.copy(update=update_cluster.dict(by_alias=False, exclude_none=True))
+                new_thermals_by_names.setdefault(area_id, []).append(new_cluster)
+
+                # Convert the DTO to a configuration object and update the configuration file.
+                properties = create_thermal_config(study.version, **new_cluster.dict(by_alias=False, exclude_none=True))
+                path = _CLUSTER_PATH.format(area_id=area_id, cluster_id=cluster_id)
+                cmd = UpdateConfig(
+                    target=path,
+                    data=json.loads(properties.json(by_alias=True, exclude={"id"})),
+                    command_context=self.storage_service.variant_study_service.command_factory.command_context,
+                )
+                commands.append(cmd)
+
+        execute_or_add_commands(study, file_study, commands, self.storage_service)
+        return new_thermals_by_names
+
     def create_cluster(self, study: Study, area_id: str, cluster_data: ThermalClusterCreation) -> ThermalClusterOutput:
         """
         Create a new cluster.
