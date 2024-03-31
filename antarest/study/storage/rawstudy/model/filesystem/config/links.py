@@ -80,11 +80,11 @@ class LinkProperties(IniProperties):
     ...     "filter-year-by-year": "hourly, daily, weekly, monthly, annual",
     ... }
 
-    >>> opt = LinkProperties.parse_obj(obj)
+    >>> opt = LinkProperties(**obj)
 
     >>> pprint(opt.dict(by_alias=True), width=80)
     {'asset-type': <AssetType.AC: 'ac'>,
-     'colorRgb': (80, 192, 255),
+     'colorRgb': '#50C0FF',
      'display-comments': True,
      'filter-synthesis': 'hourly, daily, weekly, monthly, annual',
      'filter-year-by-year': 'hourly, daily, weekly, monthly, annual',
@@ -108,10 +108,10 @@ class LinkProperties(IniProperties):
     display_comments: bool = Field(default=True, alias="display-comments")
     filter_synthesis: str = Field(default="hourly, daily, weekly, monthly, annual", alias="filter-synthesis")
     filter_year_by_year: str = Field(default="hourly, daily, weekly, monthly, annual", alias="filter-year-by-year")
-    color_rgb: t.Tuple[int, int, int] = Field(
-        (112, 112, 112),
+    color_rgb: str = Field(
+        "#707070",
         alias="colorRgb",
-        description="color of the link in the map",
+        description="color of the area in the map",
     )
 
     _validate_filtering = validator(

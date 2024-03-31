@@ -1,6 +1,7 @@
 """
 Object model used to read and update area configuration.
 """
+
 import typing as t
 
 import typing_extensions as te
@@ -40,7 +41,7 @@ class OptimizationProperties(IniProperties):
     ...     },
     ... }
 
-    >>> opt = OptimizationProperties.parse_obj(obj)
+    >>> opt = OptimizationProperties(**obj)
 
     >>> pprint(opt.dict(by_alias=True), width=80)
     {'filtering': {'filter-synthesis': 'hourly, daily, weekly, monthly, annual',
@@ -149,21 +150,21 @@ class AreaUI(IniProperties):
     ...     "color_g": 128,
     ...     "color_b": 255,
     ... }
-    >>> ui = AreaUI.parse_obj(obj)
+    >>> ui = AreaUI(**obj)
     >>> pprint(ui.dict(by_alias=True), width=80)
-    {'colorRgb': (0, 128, 255), 'x': 1148, 'y': 144}
+    {'colorRgb': '#0080FF', 'x': 1148, 'y': 144}
 
     Update the color:
 
     >>> ui.color_rgb = (192, 168, 127)
     >>> pprint(ui.dict(by_alias=True), width=80)
-    {'colorRgb': (192, 168, 127), 'x': 1148, 'y': 144}
+    {'colorRgb': '#C0A87F', 'x': 1148, 'y': 144}
     """
 
     x: int = Field(0, description="x coordinate of the area in the map")
     y: int = Field(0, description="y coordinate of the area in the map")
-    color_rgb: t.Tuple[int, int, int] = Field(
-        (230, 108, 44),
+    color_rgb: str = Field(
+        "#E66C2C",
         alias="colorRgb",
         description="color of the area in the map",
     )
@@ -183,17 +184,14 @@ class AreaUI(IniProperties):
         >>> from antarest.study.storage.rawstudy.model.filesystem.config.area import AreaUI
         >>> from pprint import pprint
 
-        >>> ui = AreaUI(x=1148, y=144, color_rgb=(0, 128, 255))
+        >>> ui = AreaUI(x=1148, y=144, color_rgb='#0080FF')
         >>> pprint(ui.to_config(), width=80)
         {'color_b': 255, 'color_g': 128, 'color_r': 0, 'x': 1148, 'y': 144}
         """
-        return {
-            "x": self.x,
-            "y": self.y,
-            "color_r": self.color_rgb[0],
-            "color_g": self.color_rgb[1],
-            "color_b": self.color_rgb[2],
-        }
+        r = int(self.color_rgb[1:3], 16)
+        g = int(self.color_rgb[3:5], 16)
+        b = int(self.color_rgb[5:7], 16)
+        return {"x": self.x, "y": self.y, "color_r": r, "color_g": g, "color_b": b}
 
 
 class UIProperties(IniProperties):
@@ -209,9 +207,9 @@ class UIProperties(IniProperties):
 
     >>> ui = UIProperties()
     >>> pprint(ui.dict(), width=80)
-    {'layer_styles': {0: {'color_rgb': (230, 108, 44), 'x': 0, 'y': 0}},
+    {'layer_styles': {0: {'color_rgb': '#E66C2C', 'x': 0, 'y': 0}},
      'layers': {0},
-     'style': {'color_rgb': (230, 108, 44), 'x': 0, 'y': 0}}
+     'style': {'color_rgb': '#E66C2C', 'x': 0, 'y': 0}}
 
     Create and validate a new UI object from a dictionary read from a configuration file.
 
@@ -235,15 +233,15 @@ class UIProperties(IniProperties):
     ...     },
     ... }
 
-    >>> ui = UIProperties.parse_obj(obj)
+    >>> ui = UIProperties(**obj)
     >>> pprint(ui.dict(), width=80)
-    {'layer_styles': {0: {'color_rgb': (0, 128, 255), 'x': 1148, 'y': 144},
-                      4: {'color_rgb': (0, 128, 255), 'x': 1148, 'y': 144},
-                      6: {'color_rgb': (192, 168, 99), 'x': 1148, 'y': 144},
-                      7: {'color_rgb': (0, 128, 255), 'x': 18, 'y': -22},
-                      8: {'color_rgb': (0, 128, 255), 'x': 1148, 'y': 144}},
+    {'layer_styles': {0: {'color_rgb': '#0080FF', 'x': 1148, 'y': 144},
+                      4: {'color_rgb': '#0080FF', 'x': 1148, 'y': 144},
+                      6: {'color_rgb': '#C0A863', 'x': 1148, 'y': 144},
+                      7: {'color_rgb': '#0080FF', 'x': 18, 'y': -22},
+                      8: {'color_rgb': '#0080FF', 'x': 1148, 'y': 144}},
      'layers': {0, 7},
-     'style': {'color_rgb': (0, 128, 255), 'x': 1148, 'y': 144}}
+     'style': {'color_rgb': '#0080FF', 'x': 1148, 'y': 144}}
 
     """
 
@@ -343,7 +341,7 @@ class UIProperties(IniProperties):
         ...     style=AreaUI(x=1148, y=144, color_rgb=(0, 128, 255)),
         ...     layers={0, 7},
         ...     layer_styles={
-        ...         6: AreaUI(x=1148, y=144, color_rgb=(192, 168, 99)),
+        ...         6: AreaUI(x=1148, y=144, color_rgb='#C0A863'),
         ...         7: AreaUI(x=18, y=-22, color_rgb=(0, 128, 255)),
         ...     })
         >>> pprint(ui.to_config(), width=80)
@@ -368,7 +366,10 @@ class UIProperties(IniProperties):
         for layer, style in self.layer_styles.items():
             obj["layerX"][str(layer)] = style.x
             obj["layerY"][str(layer)] = style.y
-            obj["layerColor"][str(layer)] = ", ".join(str(c) for c in style.color_rgb)
+            r = int(style.color_rgb[1:3], 16)
+            g = int(style.color_rgb[3:5], 16)
+            b = int(style.color_rgb[5:7], 16)
+            obj["layerColor"][str(layer)] = f"{r}, {g}, {b}"
         return obj
 
 
@@ -395,9 +396,9 @@ class AreaFolder(IniProperties):
                                              'other_dispatchable_power': True,
                                              'spread_spilled_energy_cost': 0.0,
                                              'spread_unsupplied_energy_cost': 0.0}},
-     'ui': {'layer_styles': {0: {'color_rgb': (230, 108, 44), 'x': 0, 'y': 0}},
+     'ui': {'layer_styles': {0: {'color_rgb': '#E66C2C', 'x': 0, 'y': 0}},
             'layers': {0},
-            'style': {'color_rgb': (230, 108, 44), 'x': 0, 'y': 0}}}
+            'style': {'color_rgb': '#E66C2C', 'x': 0, 'y': 0}}}
 
     >>> pprint(obj.to_config(), width=80)
     {'optimization': {'filtering': {'filter-synthesis': 'hourly, daily, weekly, '
@@ -497,7 +498,7 @@ class ThermalAreasProperties(IniProperties):
     ...         "cz": "100.0",
     ...     },
     ... }
-    >>> area = ThermalAreasProperties.parse_obj(obj)
+    >>> area = ThermalAreasProperties(**obj)
     >>> pprint(area.dict(), width=80)
     {'spilled_energy_cost': {'cz': 100.0},
      'unserverd_energy_cost': {'at': 4000.8,
