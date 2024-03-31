@@ -538,7 +538,7 @@ class BindingConstraintManager:
         if bc_id not in constraints_by_id:
             raise BindingConstraintNotFound(f"Binding constraint '{bc_id}' not found")
 
-        return constraints_by_id[bc_id]
+        return t.cast(ConstraintOutput, constraints_by_id[bc_id])
 
     def get_binding_constraints(
         self, study: Study, filters: ConstraintFilters = ConstraintFilters()
