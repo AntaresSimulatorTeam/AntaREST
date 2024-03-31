@@ -94,6 +94,21 @@ class LinkProperties(IniProperties):
      'loop-flow': False,
      'transmission-capacities': <TransmissionCapacity.INFINITE: 'infinite'>,
      'use-phase-shifter': False}
+
+    >>> pprint(opt.to_config(), width=80)
+    {'asset-type': 'ac',
+     'colorb': 255,
+     'colorg': 192,
+     'colorr': 80,
+     'display-comments': True,
+     'filter-synthesis': 'hourly, daily, weekly, monthly, annual',
+     'filter-year-by-year': 'hourly, daily, weekly, monthly, annual',
+     'hurdles-cost': False,
+     'link-style': 'plain',
+     'link-width': 1,
+     'loop-flow': False,
+     'transmission-capacities': 'infinite',
+     'use-phase-shifter': False}
     """
 
     hurdles_cost: bool = Field(default=False, alias="hurdles-cost")
@@ -133,10 +148,10 @@ class LinkProperties(IniProperties):
         Convert the object to a dictionary for writing to a configuration file.
         """
         obj = dict(super().to_config())
-        color_rgb = obj.pop("color_rgb", (112, 112, 112))
+        color_rgb = obj.pop("colorRgb", "#707070")
         return {
-            "colorr": color_rgb[0],
-            "colorg": color_rgb[1],
-            "colorb": color_rgb[2],
+            "colorr": int(color_rgb[1:3], 16),
+            "colorg": int(color_rgb[3:5], 16),
+            "colorb": int(color_rgb[5:7], 16),
             **obj,
         }

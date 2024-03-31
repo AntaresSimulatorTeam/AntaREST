@@ -56,6 +56,24 @@ class TestTableMode:
         # Table Mode - Area
         # =================
 
+        # res = client.put(
+        #     f"/v1/studies/{study_id}/table-mode/areas",
+        #     headers=user_headers,
+        #     json={
+        #         "de": {
+        #             "averageUnsuppliedEnergyCost": 3456,
+        #             "dispatchableHydroPower": False,
+        #             "filterSynthesis": "daily, monthly",
+        #             "filterYearByYear": "weekly, annual",
+        #         },
+        #         "es": {
+        #             "adequacyPatchMode": "inside",
+        #             "spreadSpilledEnergyCost": None,  # not changed
+        #         },
+        #     },
+        # )
+        # assert res.status_code == 200, res.json()
+
         res = client.get(f"/v1/studies/{study_id}/table-mode/areas", headers=user_headers)
         assert res.status_code == 200, res.json()
         expected = {
@@ -114,58 +132,69 @@ class TestTableMode:
         # Table Mode - Links
         # ==================
 
-        res = client.get(
+        res = client.put(
             f"/v1/studies/{study_id}/table-mode/links",
             headers=user_headers,
-            params={
-                "columns": ",".join(
-                    [
-                        "hurdlesCost",
-                        "loopFlow",
-                        "usePhaseShifter",
-                        "transmissionCapacities",
-                        "assetType",
-                        "linkStyle",
-                        "linkWidth",
-                        "displayComments",
-                        "filterSynthesis",
-                        "filterYearByYear",
-                        "colorRgb",
-                    ]
-                ),
+            json={
+                "de / fr": {
+                    "colorRgb": "#FFA500",
+                    "displayComments": False,
+                    "filterSynthesis": "hourly, daily, weekly, annual",
+                    "filterYearByYear": "hourly, daily, monthly, annual",
+                    "hurdlesCost": True,
+                    "linkStyle": "plain",
+                    "linkWidth": 2,
+                    "loopFlow": False,
+                    "transmissionCapacities": "ignore",
+                },
+                "es / fr": {
+                    "colorRgb": "#FF6347",
+                    "displayComments": True,
+                    "filterSynthesis": "hourly, daily, weekly, monthly, annual, annual",  # duplicate is ignored
+                    "filterYearByYear": "hourly, daily, weekly, annual",
+                    "hurdlesCost": True,
+                    "linkStyle": "plain",
+                    "linkWidth": 1,
+                    "loopFlow": False,
+                    "transmissionCapacities": "enabled",
+                    "usePhaseShifter": True,
+                },
+                "fr / it": {
+                    "assetType": "DC",  # case-insensitive
+                },
             },
         )
         assert res.status_code == 200, res.json()
-        expected = {
+        expected_links = {
             "de / fr": {
                 "assetType": "ac",
-                "colorRgb": [112, 112, 112],
-                "displayComments": True,
-                "filterSynthesis": "",
-                "filterYearByYear": "hourly",
+                "colorRgb": "#FFA500",
+                "displayComments": False,
+                "filterSynthesis": "hourly, daily, weekly, annual",
+                "filterYearByYear": "hourly, daily, monthly, annual",
                 "hurdlesCost": True,
                 "linkStyle": "plain",
-                "linkWidth": 1,
+                "linkWidth": 2,
                 "loopFlow": False,
-                "transmissionCapacities": "enabled",
+                "transmissionCapacities": "ignore",
                 "usePhaseShifter": False,
             },
             "es / fr": {
                 "assetType": "ac",
-                "colorRgb": [112, 112, 112],
+                "colorRgb": "#FF6347",
                 "displayComments": True,
-                "filterSynthesis": "",
-                "filterYearByYear": "hourly",
+                "filterSynthesis": "hourly, daily, weekly, monthly, annual",
+                "filterYearByYear": "hourly, daily, weekly, annual",
                 "hurdlesCost": True,
                 "linkStyle": "plain",
                 "linkWidth": 1,
                 "loopFlow": False,
                 "transmissionCapacities": "enabled",
-                "usePhaseShifter": False,
+                "usePhaseShifter": True,
             },
             "fr / it": {
-                "assetType": "ac",
-                "colorRgb": [112, 112, 112],
+                "assetType": "dc",
+                "colorRgb": "#707070",
                 "displayComments": True,
                 "filterSynthesis": "",
                 "filterYearByYear": "hourly",
@@ -178,7 +207,12 @@ class TestTableMode:
             },
         }
         actual = res.json()
-        assert actual == expected
+        assert actual == expected_links
+
+        res = client.get(f"/v1/studies/{study_id}/table-mode/links", headers=user_headers)
+        assert res.status_code == 200, res.json()
+        actual = res.json()
+        assert actual == expected_links
 
         # Table Mode - Thermal Clusters
         # =============================

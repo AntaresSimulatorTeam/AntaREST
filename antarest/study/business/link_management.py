@@ -9,6 +9,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.links import LinkPr
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.create_link import CreateLink
 from antarest.study.storage.variantstudy.model.command.remove_link import RemoveLink
+from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 
 _ALL_LINKS_PATH = "input/links"
 
@@ -26,7 +27,7 @@ class LinkInfoDTO(BaseModel):
 
 
 @camel_case_model
-class GetLinkDTO(LinkProperties, metaclass=AllOptionalMetaclass):
+class GetLinkDTO(LinkProperties, metaclass=AllOptionalMetaclass, use_none=True):
     """
     DTO object use to get the link information.
     """
@@ -105,7 +106,35 @@ class LinkManager:
             property_map = entries.get("properties") or {}
             for area2_id, properties_cfg in property_map.items():
                 area1_id, area2_id = sorted([area1_id, area2_id])
-                properties = LinkProperties.parse_obj(properties_cfg)
-                links_by_ids[(area1_id, area2_id)] = GetLinkDTO.parse_obj(properties.dict(by_alias=False))
+                properties = LinkProperties(**properties_cfg)
+                links_by_ids[(area1_id, area2_id)] = GetLinkDTO(**properties.dict(by_alias=False))
 
         return links_by_ids
+
+    def update_links_props(
+        self,
+        study: RawStudy,
+        update_links_by_ids: t.Mapping[t.Tuple[str, str], GetLinkDTO],
+    ) -> t.Mapping[t.Tuple[str, str], GetLinkDTO]:
+        old_links_by_ids = self.get_all_links_props(study)
+        new_links_by_ids = {}
+        file_study = self.storage_service.get_storage(study).get_raw(study)
+        commands = []
+        for (area1, area2), update_link_dto in update_links_by_ids.items():
+            # Update the link properties.
+            old_link_dto = old_links_by_ids[(area1, area2)]
+            new_link_dto = old_link_dto.copy(update=update_link_dto.dict(by_alias=False, exclude_none=True))
+            new_links_by_ids[(area1, area2)] = new_link_dto
+
+            # Convert the DTO to a configuration object and update the configuration file.
+            properties = LinkProperties(**new_link_dto.dict(by_alias=False))
+            path = f"{_ALL_LINKS_PATH}/{area1}/properties"
+            cmd = UpdateConfig(
+                target=path,
+                data={area2: properties.to_config()},
+                command_context=self.storage_service.variant_study_service.command_factory.command_context,
+            )
+            commands.append(cmd)
+
+        execute_or_add_commands(study, file_study, commands, self.storage_service)
+        return new_links_by_ids

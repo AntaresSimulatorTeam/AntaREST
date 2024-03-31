@@ -9,8 +9,8 @@ from antarest.study.business.areas.st_storage_management import STStorageManager
 from antarest.study.business.areas.thermal_management import ThermalManager
 from antarest.study.business.binding_constraint_management import BindingConstraintManager
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
-from antarest.study.business.link_management import LinkManager
-from antarest.study.business.utils import AllOptionalMetaclass, FormFieldsBaseModel, execute_or_add_commands
+from antarest.study.business.link_management import GetLinkDTO, LinkManager
+from antarest.study.business.utils import AllOptionalMetaclass, FormFieldsBaseModel
 from antarest.study.common.default_values import FilteringOptions, LinkProperties, NodalOptimization
 from antarest.study.model import RawStudy
 from antarest.study.storage.rawstudy.model.filesystem.config.area import AdequacyPatchMode
@@ -21,9 +21,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint 
 from antarest.study.storage.rawstudy.model.filesystem.config.links import AssetType, TransmissionCapacity
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import LawOption, LocalTSGenerationBehavior
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.model.command.icommand import ICommand
-from antarest.study.storage.variantstudy.model.command.update_binding_constraint import UpdateBindingConstraint
-from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 
 AREA_PATH = "input/areas/{area}"
 THERMAL_PATH = "input/thermal/areas"
@@ -711,7 +708,7 @@ class TableModeManager:
         if columns:
             # Create a new dataframe with the listed columns.
             # If a column does not exist in the DataFrame, it is created with empty values.
-            df = pd.DataFrame(df, columns=columns)
+            df = pd.DataFrame(df, columns=columns)  # type: ignore
             df = df.where(pd.notna(df), other=None)
 
         obj = df.to_dict(orient="index")
@@ -722,7 +719,7 @@ class TableModeManager:
                 if pd.isna(value):
                     row[key] = None
 
-        return obj
+        return t.cast(TableDataDTO, obj)
 
         file_study = self.storage_service.get_storage(study).get_raw(study)
         columns_model = COLUMNS_MODELS_BY_TYPE[table_type]
@@ -759,50 +756,25 @@ class TableModeManager:
         self,
         study: RawStudy,
         table_type: TableTemplateType,
-        data: t.Dict[str, ColumnsModelTypes],
-    ) -> None:
-        commands: t.List[ICommand] = []
-        bindings_by_id = None
-        command_context = self.storage_service.variant_study_service.command_factory.command_context
-
-        for key, columns in data.items():
-            path_vars = _get_path_vars_from_key(table_type, key)
-
-            if table_type == TableTemplateType.BINDING_CONSTRAINT:
-                file_study = self.storage_service.get_storage(study).get_raw(study)
-                bindings_by_id = bindings_by_id or {
-                    binding["id"]: binding for binding in _get_glob_object(file_study, table_type).values()
-                }
-                binding_id = path_vars["id"]
-                current_binding = bindings_by_id.get(binding_id, None)
-
-                if current_binding:
-                    col_values = columns.dict(exclude_none=True)
-                    current_binding_dto = BindingConstraintManager.constraint_model_adapter(
-                        current_binding, int(study.version)
-                    )
-
-                    commands.append(
-                        UpdateBindingConstraint(
-                            id=binding_id,
-                            enabled=col_values.get("enabled", current_binding_dto.enabled),
-                            time_step=col_values.get("type", current_binding_dto.time_step),
-                            operator=col_values.get("operator", current_binding_dto.operator),
-                            coeffs=BindingConstraintManager.terms_to_coeffs(current_binding_dto.terms),
-                            command_context=command_context,
-                        )
-                    )
-            else:
-                for col, val in columns.__iter__():
-                    if val is not None:
-                        commands.append(
-                            UpdateConfig(
-                                target=_get_column_path(table_type, col, path_vars),
-                                data=val,
-                                command_context=command_context,
-                            )
-                        )
-
-        if commands:
-            file_study = self.storage_service.get_storage(study).get_raw(study)
-            execute_or_add_commands(study, file_study, commands, self.storage_service)
+        data: TableDataDTO,
+    ) -> TableDataDTO:
+        if table_type == TableTemplateType.AREA:
+            return {}
+        elif table_type == TableTemplateType.LINK:
+            links_map = {tuple(key.split(" / ")): GetLinkDTO(**values) for key, values in data.items()}
+            updated_map = self._link_manager.update_links_props(study, links_map)  # type: ignore
+            data = {
+                f"{area1_id} / {area2_id}": link.dict(by_alias=True)
+                for (area1_id, area2_id), link in updated_map.items()
+            }
+            return data
+        elif table_type == TableTemplateType.THERMAL_CLUSTER:
+            return {}
+        elif table_type == TableTemplateType.RENEWABLE_CLUSTER:
+            return {}
+        elif table_type == TableTemplateType.ST_STORAGE:
+            return {}
+        elif table_type == TableTemplateType.BINDING_CONSTRAINT:
+            return {}
+        else:  # pragma: no cover
+            raise NotImplementedError(f"Table type {table_type} not implemented")
