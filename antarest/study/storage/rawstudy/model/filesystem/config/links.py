@@ -106,8 +106,8 @@ class LinkProperties(IniProperties):
     link_style: str = Field(default="plain", alias="link-style")
     link_width: int = Field(default=1, alias="link-width")
     display_comments: bool = Field(default=True, alias="display-comments")
-    filter_synthesis: str = Field(default="hourly, daily, weekly, monthly, annual", alias="filter-synthesis")
-    filter_year_by_year: str = Field(default="hourly, daily, weekly, monthly, annual", alias="filter-year-by-year")
+    filter_synthesis: str = Field(default="", alias="filter-synthesis")
+    filter_year_by_year: str = Field(default="", alias="filter-year-by-year")
     color_rgb: str = Field(
         "#707070",
         alias="colorRgb",

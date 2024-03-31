@@ -75,8 +75,8 @@ class OptimizationProperties(IniProperties):
     class FilteringSection(IniProperties):
         """Configuration read from section `[filtering]` of `/input/areas/<area>/optimization.ini`."""
 
-        filter_synthesis: str = Field("hourly, daily, weekly, monthly, annual", alias="filter-synthesis")
-        filter_year_by_year: str = Field("hourly, daily, weekly, monthly, annual", alias="filter-year-by-year")
+        filter_synthesis: str = Field("", alias="filter-synthesis")
+        filter_year_by_year: str = Field("", alias="filter-year-by-year")
 
         _validate_filtering = validator(
             "filter_synthesis",
@@ -387,10 +387,8 @@ class AreaFolder(IniProperties):
     >>> obj = AreaFolder()
     >>> pprint(obj.dict(), width=80)
     {'adequacy_patch': None,
-     'optimization': {'filtering': {'filter_synthesis': 'hourly, daily, weekly, '
-                                                        'monthly, annual',
-                                    'filter_year_by_year': 'hourly, daily, weekly, '
-                                                           'monthly, annual'},
+     'optimization': {'filtering': {'filter_synthesis': '',
+                                    'filter_year_by_year': ''},
                       'nodal_optimization': {'dispatchable_hydro_power': True,
                                              'non_dispatchable_power': True,
                                              'other_dispatchable_power': True,
@@ -401,10 +399,8 @@ class AreaFolder(IniProperties):
             'style': {'color_rgb': '#E66C2C', 'x': 0, 'y': 0}}}
 
     >>> pprint(obj.to_config(), width=80)
-    {'optimization': {'filtering': {'filter-synthesis': 'hourly, daily, weekly, '
-                                                        'monthly, annual',
-                                    'filter-year-by-year': 'hourly, daily, weekly, '
-                                                           'monthly, annual'},
+    {'optimization': {'filtering': {'filter-synthesis': '',
+                                    'filter-year-by-year': ''},
                       'nodal optimization': {'dispatchable-hydro-power': True,
                                              'non-dispatchable-power': True,
                                              'other-dispatchable-power': True,
