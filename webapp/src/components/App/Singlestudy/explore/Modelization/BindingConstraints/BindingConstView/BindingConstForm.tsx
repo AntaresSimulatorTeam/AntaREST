@@ -79,7 +79,6 @@ function BindingConstForm({ study, options, constraintId }: Props) {
 
         enqueueSnackbar(t("global.update.success"), {
           variant: "success",
-          autoHideDuration: 1500,
         });
       } catch (error) {
         enqueueErrorSnackbar(

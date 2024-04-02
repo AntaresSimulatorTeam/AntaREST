@@ -89,7 +89,6 @@ function BindingConstView({ constraintId }: Props) {
 
       enqueueSnackbar(t("study.success.deleteConstraint"), {
         variant: "success",
-        autoHideDuration: 1500,
       });
     } catch (e) {
       enqueueErrorSnackbar(t("study.error.deleteConstraint"), e as AxiosError);
