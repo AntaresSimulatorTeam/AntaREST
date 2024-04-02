@@ -8,48 +8,63 @@ import {
   TimeStep,
 } from "../../../Commands/Edition/commandTypes";
 import { SubmitHandlerPlus } from "../../../../../common/Form/types";
-import { BindingConstFields } from "./BindingConstView/utils";
+import {
+  BindingConstraint,
+  OPERATORS,
+  TIME_STEPS,
+} from "./BindingConstView/utils";
 import { createBindingConstraint } from "../../../../../../services/api/studydata";
 import SelectFE from "../../../../../common/fieldEditors/SelectFE";
 import StringFE from "../../../../../common/fieldEditors/StringFE";
 import SwitchFE from "../../../../../common/fieldEditors/SwitchFE";
 import { StudyMetadata } from "../../../../../../common/types";
 import { validateString } from "../../../../../../utils/validationUtils";
+import { setCurrentBindingConst } from "../../../../../../redux/ducks/studySyntheses";
+import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
+import { useOutletContext } from "react-router";
 
 interface Props {
-  studyId: StudyMetadata["id"];
-  existingConstraints: Array<BindingConstFields["id"]>;
   open: boolean;
   onClose: VoidFunction;
+  existingConstraints: Array<BindingConstraint["id"]>;
+  reloadConstraintsList: VoidFunction;
 }
 
-function AddDialog({ studyId, existingConstraints, open, onClose }: Props) {
-  const [t] = useTranslation();
-  const { enqueueSnackbar } = useSnackbar();
+const defaultValues = {
+  name: "",
+  group: "default",
+  enabled: true,
+  timeStep: TimeStep.HOURLY,
+  operator: BindingConstraintOperator.LESS,
+  comments: "",
+};
 
-  const defaultValues = {
-    name: "",
-    enabled: true,
-    time_step: TimeStep.HOURLY,
-    operator: BindingConstraintOperator.LESS,
-    comments: "",
-    coeffs: {},
-  };
+// TODO rename AddConstraintDialog
+function AddDialog({
+  open,
+  onClose,
+  existingConstraints,
+  reloadConstraintsList,
+}: Props) {
+  const { study } = useOutletContext<{ study: StudyMetadata }>();
+  const { enqueueSnackbar } = useSnackbar();
+  const dispatch = useAppDispatch();
+  const [t] = useTranslation();
 
   const operatorOptions = useMemo(
     () =>
-      ["less", "equal", "greater", "both"].map((item) => ({
-        label: t(`study.modelization.bindingConst.operator.${item}`),
-        value: item,
+      OPERATORS.map((operator) => ({
+        label: t(`study.modelization.bindingConst.operator.${operator}`),
+        value: operator,
       })),
     [t],
   );
 
-  const typeOptions = useMemo(
+  const timeStepOptions = useMemo(
     () =>
-      ["hourly", "daily", "weekly"].map((item) => ({
-        label: t(`global.time.${item}`),
-        value: item,
+      TIME_STEPS.map((timeStep) => ({
+        label: t(`global.time.${timeStep}`),
+        value: timeStep,
       })),
     [t],
   );
@@ -58,15 +73,39 @@ function AddDialog({ studyId, existingConstraints, open, onClose }: Props) {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = async (
-    data: SubmitHandlerPlus<typeof defaultValues>,
-  ) => {
-    return createBindingConstraint(studyId, data.values);
+  const handleSubmit = ({
+    values,
+  }: SubmitHandlerPlus<typeof defaultValues>) => {
+    return createBindingConstraint(study.id, values);
   };
 
-  const handleSubmitSuccessful = () => {
+  const handleSubmitSuccessful = (
+    data: SubmitHandlerPlus<typeof defaultValues>,
+    createdConstraint: BindingConstraint,
+  ) => {
+    /**
+     * !WARNING: Current Implementation Issues & Future Directions
+     *
+     * Issues Identified:
+     * 1. State vs. Router: Utilizes global state for navigation-related concerns better suited for URL routing, reducing shareability and persistence.
+     * 2. Full List Reload: Inefficiently reloads the entire list after adding an item, leading to unnecessary network use and performance hits.
+     * 3. Global State Overuse: Over-relies on global state for operations that could be localized, complicating the application unnecessarily.
+     *
+     * Future Solutions:
+     * - React Router Integration: Leverage URL parameters for selecting and displaying binding constraints, improving UX and state persistence.
+     * - React Query for State Management: Utilize React Query for data fetching and state management. This introduces benefits like:
+     *    - Automatic Revalidation: Only fetches data when needed, reducing unnecessary network requests.
+     *    - Optimistic Updates: Immediately reflect changes in the UI while the backend processes the request, enhancing perceived performance.
+     *    - Cache Management: Efficiently manage and invalidate cache, ensuring data consistency without manual reloads.
+     * - Efficient State Updates: Post-creation, append the new item to the existing list or use React Query's mutation to update the list optimally.
+     *
+     * Adopting these strategies will significantly enhance efficiency, maintainability, and UX, addressing current architectural weaknesses.
+     */
+    reloadConstraintsList();
+    dispatch(setCurrentBindingConst(createdConstraint.id));
     enqueueSnackbar(t("study.success.addBindingConst"), {
       variant: "success",
+      autoHideDuration: 1500,
     });
     onClose();
   };
@@ -77,7 +116,7 @@ function AddDialog({ studyId, existingConstraints, open, onClose }: Props) {
 
   return (
     <FormDialog
-      key={studyId}
+      key={study.id}
       title={t("study.modelization.bindingConst.newBindingConst")}
       config={{ defaultValues }}
       onSubmit={handleSubmit}
@@ -107,21 +146,35 @@ function AddDialog({ studyId, existingConstraints, open, onClose }: Props) {
                 validateString(v, { existingValues: existingConstraints }),
             }}
           />
+          {Number(study.version) >= 870 && (
+            <StringFE
+              name="group"
+              label={t("global.group")}
+              control={control}
+              rules={{
+                validate: (v) =>
+                  validateString(v, {
+                    max: 20,
+                    specialChars: "-",
+                  }),
+              }}
+            />
+          )}
           <StringFE
             name="comments"
             label={t("study.modelization.bindingConst.comments")}
             control={control}
           />
           <SelectFE
-            name="time_step"
+            name="timeStep"
             label={t("study.modelization.bindingConst.type")}
             variant="outlined"
-            options={typeOptions}
+            options={timeStepOptions}
             control={control}
           />
           <SelectFE
             name="operator"
-            label={t(t("study.modelization.bindingConst.operator"))}
+            label={t("study.modelization.bindingConst.operator")}
             variant="outlined"
             options={operatorOptions}
             control={control}

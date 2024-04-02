@@ -1,147 +1,223 @@
-import { useCallback, useMemo, useState } from "react";
+import { ChangeEvent, useMemo, useState } from "react";
 import { Box, Button, TextField, Typography } from "@mui/material";
 import AddCircleOutlineRoundedIcon from "@mui/icons-material/AddCircleOutlineRounded";
 import DeleteRoundedIcon from "@mui/icons-material/DeleteRounded";
 import { useTranslation } from "react-i18next";
-import { ConstraintType, isDataLink } from "../utils";
-import {
-  AllClustersAndLinks,
-  ClusterElement,
-  LinkCreationInfoDTO,
-} from "../../../../../../../../common/types";
+import { ConstraintTerm, isLinkTerm } from "../utils";
+import { AllClustersAndLinks } from "../../../../../../../../common/types";
 import OptionsList from "./OptionsList";
-import { ConstraintItemRoot } from "./style";
 import ConstraintElement from "../constraintviews/ConstraintElement";
 import OffsetInput from "../constraintviews/OffsetInput";
 
-export type ConstraintWithNullableOffset = Partial<
-  Omit<ConstraintType, "offset"> & { offset: number | null | undefined }
->;
-
 interface Props {
   options: AllClustersAndLinks;
-  constraint: ConstraintType;
-  constraintsTerm: ConstraintType[];
-  saveValue: (constraint: ConstraintWithNullableOffset) => void;
+  term: ConstraintTerm;
+  constraintTerms: ConstraintTerm[];
+  saveValue: (term: ConstraintTerm) => void;
   deleteTerm: () => void;
 }
 
-export default function ConstraintItem(props: Props) {
-  const { options, constraint, constraintsTerm, saveValue, deleteTerm } = props;
+/**
+ * Represents a single constraint term item within the UI, allowing users to
+ * modify weight, offset, and select areas or clusters based on the term type.
+ *
+ * Additionally, the refactor will address the need to incorporate uncontrolled components
+ * with `react-hook-form` for better form management practices.
+ *
+ * @deprecated This component is deprecated due to an upcoming redesign aimed at improving modularity and maintainability.
+ * It remains functional for current implementations but will be replaced by a more
+ * modular design. Future versions will introduce separate components for handling cluster terms and link terms more efficiently.
+ *
+ * Additionally, the refactor will address the need to incorporate uncontrolled components
+ * with `react-hook-form` for better form management practices.
+ *
+ * @param  props - The props @see {Props}
+ * @param  props.options - The available options for areas and clusters.
+ * @param  props.term - The current term being edited, containing its data.
+ * @param  props.constraintTerms - All current terms for validation and to prevent duplicates.
+ * @param  props.saveValue - Callback function to save the updated term to the global state.
+ * @param  props.deleteTerm - Callback function to delete the current term.
+ *
+ * @example
+ * <ConstraintTermItem
+ *   options={allClustersAndLinks}
+ *   term={currentTerm}
+ *   constraintTerms={allTerms}
+ *   saveValue={handleSaveValue}
+ *   deleteTerm={handleDeleteTerm}
+ * />
+ *
+ * @returns Constraint Term component of type link or cluster
+ */
+function ConstraintTermItem({
+  options,
+  term,
+  constraintTerms,
+  saveValue,
+  deleteTerm,
+}: Props) {
   const [t] = useTranslation();
-  const [weight, setWeight] = useState(constraint.weight);
-  const [offset, setOffset] = useState(constraint.offset);
-  const isLink = useMemo(() => isDataLink(constraint.data), [constraint.data]);
-  const initValue1 = isLink
-    ? (constraint.data as LinkCreationInfoDTO).area1
-    : (constraint.data as ClusterElement).area;
-  const initValue2 = isLink
-    ? (constraint.data as LinkCreationInfoDTO).area2
-    : (constraint.data as ClusterElement).cluster;
-  const [value1, setValue1] = useState(initValue1);
-  const [value2, setValue2] = useState(initValue2);
+  const [weight, setWeight] = useState(term.weight);
+  const [offset, setOffset] = useState(term.offset);
+
+  /**
+   * Determines the type of constraint term (link or cluster) and initializes
+   * the relevant states for the area and cluster or the two areas in case of a link.
+   *
+   * The component supports two types of terms:
+   * - LinkTerm: Represents a link between two areas (`area1` and `area2`).
+   * - ClusterTerm: Represents a cluster within an area (`area` and `cluster`).
+   *
+   * The `useMemo` hook is utilized to compute and remember the values based on `term.data`.
+   * This memoization helps in avoiding unnecessary recalculations during re-renders.
+   *
+   * @returns An array where:
+   *   - The first element (`area`) represents the primary area for both link and cluster terms.
+   *   - The second element (`areaOrCluster`) represents either the second area for link terms
+   *     or the cluster for cluster terms.
+   */
+  const [area, areaOrCluster] = useMemo(() => {
+    // Using isLinkTerm to check if the term's data matches the structure of a LinkTerm
+    // and accordingly returning the appropriate areas or area and cluster.
+    return isLinkTerm(term.data)
+      ? [term.data.area1, term.data.area2] // For LinkTerm: Extracting both areas.
+      : [term.data.area, term.data.cluster]; // For ClusterTerm: Extracting area and cluster.
+  }, [term.data]);
+
+  /**
+   * State hooks for managing the selected area and cluster (or second area for links),
+   * enabling user interaction and updates to these fields.
+   *
+   * - `selectedArea`: State for managing the primary area selection.
+   * - `selectedClusterOrArea2`: State for managing the secondary selection,
+   *    which could be a cluster (for ClusterTerm) or a second area (for LinkTerm).
+   */
+  const [selectedArea, setSelectedArea] = useState(area);
+
+  const [selectedClusterOrArea, setSelectedClusterOrArea] =
+    useState(areaOrCluster);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleChange = useCallback(
-    (name: "weight" | "offset", value: string | number | null) => {
-      let pValue = 0;
-      if (value !== null) {
-        try {
-          pValue = typeof value === "number" ? value : parseFloat(value);
-          pValue = Number.isNaN(pValue) ? 0 : pValue;
-        } catch (e) {
-          pValue = 0;
-        }
-      }
-      if (name === "weight") {
-        setWeight(pValue);
-      } else {
-        setOffset(pValue);
-      }
-      saveValue({
-        id: constraint.id,
-        [name]: value === null ? value : pValue,
-      });
-    },
-    [constraint.id, saveValue],
-  );
+  const handleWeightChange = (
+    event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
+    const newWeight = parseFloat(event.target.value) || 0;
+    setWeight(newWeight);
+    saveValue({ ...term, weight: newWeight });
+  };
+
+  const handleOffsetChange = (
+    event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
+    const value = event.target.value;
+    const newOffset = value === "" ? undefined : parseInt(value, 10);
+    setOffset(newOffset);
+    saveValue({ ...term, offset: newOffset });
+  };
+
+  const handleOffsetRemove = () => {
+    if (offset !== undefined && offset > 0) {
+      saveValue({ ...term, offset: undefined });
+    }
+    setOffset(undefined);
+  };
+
+  const handleOffsetAdd = () => {
+    setOffset(0);
+  };
 
   ////////////////////////////////////////////////////////////////
   // JSX
-  /// /////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////
 
   return (
-    <ConstraintItemRoot>
+    <Box
+      sx={{
+        display: "flex",
+        alignItems: "center",
+      }}
+    >
       <ConstraintElement
-        title="Weight"
         left={
           <TextField
             label={t("study.modelization.bindingConst.weight")}
-            variant="filled"
+            variant="outlined"
+            size="small"
             type="number"
             value={weight}
-            onChange={(e) => handleChange("weight", e.target.value)}
+            onChange={handleWeightChange}
+            sx={{ maxWidth: 150, mr: 0 }}
           />
         }
         right={
           <Box sx={{ display: "flex", alignItems: "center" }}>
             <OptionsList
-              isLink={isLink}
+              isLink={isLinkTerm(term.data)}
               list={options}
-              constraint={constraint}
+              term={term}
               saveValue={saveValue}
-              value1={value1}
-              value2={value2}
-              setValue1={setValue1}
-              setValue2={setValue2}
-              constraintsTerm={constraintsTerm}
+              selectedArea={selectedArea}
+              selectedClusterOrArea={selectedClusterOrArea}
+              setSelectedArea={setSelectedArea}
+              setSelectedClusterOrArea={setSelectedClusterOrArea}
+              constraintTerms={constraintTerms}
             />
           </Box>
         }
       />
-      {offset !== undefined && offset !== null ? (
-        <>
-          <Typography sx={{ mx: 1 }}>x</Typography>
-          <ConstraintElement
-            title="Offset"
-            operator="+"
-            left={<Typography>t</Typography>}
-            right={
-              <OffsetInput onRemove={() => handleChange("offset", null)}>
-                <TextField
-                  label={t("study.modelization.bindingConst.offset")}
-                  variant="filled"
-                  type="number"
-                  value={offset}
-                  onChange={(e) => handleChange("offset", e.target.value)}
-                />
-              </OffsetInput>
-            }
-          />
-        </>
-      ) : (
+
+      <Box sx={{ display: "flex", alignItems: "center" }}>
+        {offset !== undefined && offset !== null ? (
+          <>
+            <Typography sx={{ mx: 1 }}>x</Typography>
+            <ConstraintElement
+              operator="+"
+              left={<Typography>t</Typography>}
+              right={
+                <OffsetInput onRemove={handleOffsetRemove}>
+                  <TextField
+                    label={t("study.modelization.bindingConst.offset")}
+                    variant="outlined"
+                    size="small"
+                    type="number"
+                    value={offset}
+                    onChange={handleOffsetChange}
+                    sx={{ maxWidth: 100 }}
+                  />
+                </OffsetInput>
+              }
+            />
+          </>
+        ) : (
+          <Button
+            variant="outlined"
+            color="secondary"
+            size="small"
+            startIcon={<AddCircleOutlineRoundedIcon />}
+            onClick={handleOffsetAdd}
+            sx={{ ml: 3.5 }}
+          >
+            {t("study.modelization.bindingConst.offset")}
+          </Button>
+        )}
+      </Box>
+
+      <Box sx={{ display: "flex", alignItems: "center", ml: "auto" }}>
         <Button
-          variant="text"
-          color="secondary"
-          startIcon={<AddCircleOutlineRoundedIcon />}
-          sx={{ ml: 1 }}
-          onClick={() => handleChange("offset", 0)}
+          variant="outlined"
+          color="error"
+          size="small"
+          startIcon={<DeleteRoundedIcon />}
+          onClick={deleteTerm}
         >
-          {t("study.modelization.bindingConst.offset")}
+          {t("global.delete")}
         </Button>
-      )}
-      <Button
-        variant="text"
-        color="error"
-        sx={{ mx: 1 }}
-        startIcon={<DeleteRoundedIcon />}
-        onClick={deleteTerm}
-      >
-        {t("global.delete")}
-      </Button>
-    </ConstraintItemRoot>
+      </Box>
+    </Box>
   );
 }
+
+export default ConstraintTermItem;
