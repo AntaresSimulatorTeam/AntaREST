@@ -100,7 +100,7 @@ def test_jobs() -> None:
     assert res.status_code == 200
     assert [JobResultDTO.parse_obj(j) for j in res.json()] == [result.to_dto()]
 
-    res = client.get(f"/v1/launcher/jobs")
+    res = client.get("/v1/launcher/jobs")
     assert res.status_code == 200
     assert [JobResultDTO.parse_obj(j) for j in res.json()] == [result.to_dto()]
     service.get_jobs.assert_has_calls(
