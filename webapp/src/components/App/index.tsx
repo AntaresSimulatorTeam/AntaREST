@@ -5,8 +5,8 @@ import {
   Routes,
   Outlet,
 } from "react-router-dom";
-import { CssBaseline, ThemeProvider } from "@mui/material";
-import { SnackbarProvider } from "notistack";
+import { CssBaseline, IconButton, ThemeProvider } from "@mui/material";
+import { SnackbarKey, SnackbarProvider, useSnackbar } from "notistack";
 import maintheme from "../../theme";
 import MenuWrapper from "../wrappers/MenuWrapper";
 import Studies from "./Studies";
@@ -54,12 +54,28 @@ import StorageForm from "./Singlestudy/explore/Modelization/Areas/Storages/Form"
 import ThermalForm from "./Singlestudy/explore/Modelization/Areas/Thermal/Form";
 import RenewablesForm from "./Singlestudy/explore/Modelization/Areas/Renewables/Form";
 import SplitHydroMatrix from "./Singlestudy/explore/Modelization/Areas/Hydro/SplitHydroMatrix";
+import CloseIcon from "@mui/icons-material/Close";
+
+// TODO: replace 'notistack' by 'sonner' (https://sonner.emilkowal.ski/)
+function SnackbarCloseButton({ snackbarKey }: { snackbarKey: SnackbarKey }) {
+  const { closeSnackbar } = useSnackbar();
+
+  return (
+    <IconButton onClick={() => closeSnackbar(snackbarKey)}>
+      <CloseIcon />
+    </IconButton>
+  );
+}
 
 function App() {
   return (
     <Router>
       <ThemeProvider theme={maintheme}>
-        <SnackbarProvider maxSnack={5}>
+        <SnackbarProvider
+          maxSnack={5}
+          autoHideDuration={3000}
+          action={(key) => <SnackbarCloseButton snackbarKey={key} />}
+        >
           <CssBaseline />
           <MaintenanceWrapper>
             <LoginWrapper>

@@ -105,7 +105,6 @@ function AddDialog({
     dispatch(setCurrentBindingConst(createdConstraint.id));
     enqueueSnackbar(t("study.success.addBindingConst"), {
       variant: "success",
-      autoHideDuration: 1500,
     });
     onClose();
   };

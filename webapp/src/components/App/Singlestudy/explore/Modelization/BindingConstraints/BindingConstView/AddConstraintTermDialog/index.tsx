@@ -125,7 +125,6 @@ function AddConstraintTermDialog({
 
       enqueueSnackbar(t("study.success.createConstraintTerm"), {
         variant: "success",
-        autoHideDuration: 2000,
       });
     } catch (e) {
       enqueueErrorSnackbar(
