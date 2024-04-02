@@ -35,10 +35,14 @@ function BindingConstraints() {
   );
 
   useEffect(() => {
-    if (constraints.data && !currentConstraintId) {
-      const firstConstraintId = constraints.data[0].id;
-      dispatch(setCurrentBindingConst(firstConstraintId));
+    const { data } = constraints;
+
+    if (!data || data.length === 0 || currentConstraintId) {
+      return;
     }
+
+    const firstConstraintId = data[0].id;
+    dispatch(setCurrentBindingConst(firstConstraintId));
   }, [constraints, currentConstraintId, dispatch]);
 
   ////////////////////////////////////////////////////////////////
