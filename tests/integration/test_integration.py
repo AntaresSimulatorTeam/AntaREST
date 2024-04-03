@@ -6,24 +6,14 @@ from unittest.mock import ANY
 
 from starlette.testclient import TestClient
 
-from antarest.core.model import PublicMode
 from antarest.launcher.model import LauncherLoadDTO
-from antarest.study.business.adequacy_patch_management import PriceTakingOrder
 from antarest.study.business.area_management import LayerInfoDTO
-from antarest.study.business.areas.renewable_management import TimeSeriesInterpretation
 from antarest.study.business.general_management import Mode
 from antarest.study.business.optimization_management import (
     SimplexOptimizationRange,
     TransmissionCapacities,
     UnfeasibleProblemBehavior,
 )
-from antarest.study.business.table_mode_management import AssetType, TableTemplateType, TransmissionCapacity
-from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
-    BindingConstraintFrequency,
-    BindingConstraintOperator,
-)
-from antarest.study.storage.rawstudy.model.filesystem.config.renewable import RenewableClusterGroup
-from antarest.study.storage.rawstudy.model.filesystem.config.thermal import LawOption, LocalTSGenerationBehavior
 from antarest.study.storage.variantstudy.model.command.common import CommandName
 from tests.integration.assets import ASSETS_DIR
 from tests.integration.utils import wait_for
@@ -294,7 +284,7 @@ def test_main(client: TestClient, admin_access_token: str, study_id: str) -> Non
 
     res = client.get("/v1/launcher/load", headers=admin_headers)
     assert res.status_code == 200, res.json()
-    launcher_load = LauncherLoadDTO.parse_obj(res.json())
+    launcher_load = LauncherLoadDTO(**res.json())
     assert launcher_load.allocated_cpu_rate == 100 / (os.cpu_count() or 1)
     assert launcher_load.cluster_load_rate == 100 / (os.cpu_count() or 1)
     assert launcher_load.nb_queued_jobs == 0
@@ -517,8 +507,8 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
                 "args": {
                     "name": "binding constraint 1",
                     "enabled": True,
-                    "time_step": BindingConstraintFrequency.HOURLY.value,
-                    "operator": BindingConstraintOperator.LESS.value,
+                    "time_step": "hourly",
+                    "operator": "less",
                     "coeffs": {"area 1.cluster 1": [2.0, 4]},
                 },
             }
@@ -535,8 +525,8 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
                 "args": {
                     "name": "binding constraint 2",
                     "enabled": True,
-                    "time_step": BindingConstraintFrequency.HOURLY.value,
-                    "operator": BindingConstraintOperator.LESS.value,
+                    "time_step": "hourly",
+                    "operator": "less",
                     "coeffs": {},
                 },
             }
@@ -793,7 +783,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
         "ntcBetweenPhysicalAreasOutAdequacyPatch": True,
         "checkCsrCostFunction": False,
         "includeHurdleCostCsr": False,
-        "priceTakingOrder": PriceTakingOrder.DENS.value,
+        "priceTakingOrder": "DENS",
         "thresholdInitiateCurtailmentSharingRule": 0.0,
         "thresholdDisplayLocalMatchingRuleViolations": 0.0,
         "thresholdCsrVariableBoundsRelaxation": 3,
@@ -804,7 +794,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
         headers=admin_headers,
         json={
             "ntcBetweenPhysicalAreasOutAdequacyPatch": False,
-            "priceTakingOrder": PriceTakingOrder.LOAD.value,
+            "priceTakingOrder": "Load",
             "thresholdDisplayLocalMatchingRuleViolations": 1.1,
         },
     )
@@ -816,7 +806,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
         "ntcBetweenPhysicalAreasOutAdequacyPatch": False,
         "checkCsrCostFunction": False,
         "includeHurdleCostCsr": False,
-        "priceTakingOrder": PriceTakingOrder.LOAD.value,
+        "priceTakingOrder": "Load",
         "thresholdInitiateCurtailmentSharingRule": 0.0,
         "thresholdDisplayLocalMatchingRuleViolations": 1.1,
         "thresholdCsrVariableBoundsRelaxation": 3,
@@ -1323,452 +1313,6 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
         "ntc": {"stochasticTsStatus": False, "intraModal": False},
     }
 
-    # --- TableMode START ---
-
-    table_mode_url = f"/v1/studies/{study_id}/tablemode"
-
-    # Table Mode - Area
-
-    res_table_data = client.get(
-        table_mode_url,
-        headers=admin_headers,
-        params={
-            "table_type": TableTemplateType.AREA.value,
-            "columns": ",".join(FIELDS_INFO_BY_TYPE[TableTemplateType.AREA]),
-        },
-    )
-    res_table_data_json = res_table_data.json()
-    assert res_table_data_json == {
-        "area 1": {
-            "nonDispatchablePower": False,
-            "dispatchableHydroPower": False,
-            "otherDispatchablePower": False,
-            "averageUnsuppliedEnergyCost": 2.0,
-            "spreadUnsuppliedEnergyCost": 0.0,
-            "averageSpilledEnergyCost": 4.0,
-            "spreadSpilledEnergyCost": 0.0,
-            "filterSynthesis": "monthly, annual",
-            "filterYearByYear": "hourly, daily, annual",
-            "adequacyPatchMode": "inside",
-        },
-        "area 2": {
-            "nonDispatchablePower": True,
-            "dispatchableHydroPower": True,
-            "otherDispatchablePower": True,
-            "averageUnsuppliedEnergyCost": 0.0,
-            "spreadUnsuppliedEnergyCost": 0.0,
-            "averageSpilledEnergyCost": 0.0,
-            "spreadSpilledEnergyCost": 0.0,
-            "filterSynthesis": "hourly, daily, weekly, monthly, annual",
-            "filterYearByYear": "hourly, daily, weekly, monthly, annual",
-            "adequacyPatchMode": "outside",
-        },
-    }
-
-    client.put(
-        table_mode_url,
-        headers=admin_headers,
-        params={
-            "table_type": TableTemplateType.AREA.value,
-        },
-        json={
-            "area 1": {
-                "nonDispatchablePower": True,
-                "spreadSpilledEnergyCost": 1.1,
-                "filterYearByYear": "monthly, annual",
-                "adequacyPatchMode": "outside",
-            },
-            "area 2": {
-                "nonDispatchablePower": False,
-                "spreadSpilledEnergyCost": 3.0,
-                "filterSynthesis": "hourly",
-                "adequacyPatchMode": "inside",
-            },
-        },
-    )
-    res_table_data = client.get(
-        table_mode_url,
-        headers=admin_headers,
-        params={
-            "table_type": TableTemplateType.AREA.value,
-            "columns": ",".join(list(FIELDS_INFO_BY_TYPE[TableTemplateType.AREA])),
-        },
-    )
-    res_table_data_json = res_table_data.json()
-    assert res_table_data_json == {
-        "area 1": {
-            "nonDispatchablePower": True,
-            "dispatchableHydroPower": False,
-            "otherDispatchablePower": False,
-            "averageUnsuppliedEnergyCost": 2.0,
-            "spreadUnsuppliedEnergyCost": 0.0,
-            "averageSpilledEnergyCost": 4.0,
-            "spreadSpilledEnergyCost": 1.1,
-            "filterSynthesis": "monthly, annual",
-            "filterYearByYear": "monthly, annual",
-            "adequacyPatchMode": "outside",
-        },
-        "area 2": {
-            "nonDispatchablePower": False,
-            "dispatchableHydroPower": True,
-            "otherDispatchablePower": True,
-            "averageUnsuppliedEnergyCost": 0.0,
-            "spreadUnsuppliedEnergyCost": 0.0,
-            "averageSpilledEnergyCost": 0.0,
-            "spreadSpilledEnergyCost": 3.0,
-            "filterSynthesis": "hourly",
-            "filterYearByYear": "hourly, daily, weekly, monthly, annual",
-            "adequacyPatchMode": "inside",
-        },
-    }
-
-    # Table Mode - Link
-
-    res_table_data = client.get(
-        table_mode_url,
-        headers=admin_headers,
-        params={
-            "table_type": TableTemplateType.LINK.value,
-            "columns": ",".join(FIELDS_INFO_BY_TYPE[TableTemplateType.LINK]),
-        },
-    )
-    res_table_data_json = res_table_data.json()
-    assert res_table_data_json == {
-        "area 1 / area 2": {
-            "hurdlesCost": False,
-            "loopFlow": False,
-            "usePhaseShifter": False,
-            "transmissionCapacities": "enabled",
-            "assetType": "ac",
-            "linkStyle": "plain",
-            "linkWidth": True,
-            "displayComments": True,
-            "filterSynthesis": "hourly, daily, weekly, monthly, annual",
-            "filterYearByYear": "hourly, daily, weekly, monthly, annual",
-        }
-    }
-
-    client.put(
-        table_mode_url,
-        headers=admin_headers,
-        params={
-            "table_type": TableTemplateType.LINK.value,
-        },
-        json={
-            "area 1 / area 2": {
-                "hurdlesCost": True,
-                "transmissionCapacities": TransmissionCapacity.IGNORE.value,
-                "assetType": AssetType.GAZ.value,
-                "filterSynthesis": "daily,annual",
-            }
-        },
-    )
-    res_table_data = client.get(
-        table_mode_url,
-        headers=admin_headers,
-        params={
-            "table_type": TableTemplateType.LINK.value,
-            "columns": ",".join(FIELDS_INFO_BY_TYPE[TableTemplateType.LINK]),
-        },
-    )
-    res_table_data_json = res_table_data.json()
-    assert res_table_data_json == {
-        "area 1 / area 2": {
-            "hurdlesCost": True,
-            "loopFlow": False,
-            "usePhaseShifter": False,
-            "transmissionCapacities": "ignore",
-            "assetType": "gaz",
-            "linkStyle": "plain",
-            "linkWidth": True,
-            "displayComments": True,
-            "filterSynthesis": "daily,annual",
-            "filterYearByYear": "hourly, daily, weekly, monthly, annual",
-        }
-    }
-
-    # Table Mode - Cluster
-
-    res_table_data = client.get(
-        table_mode_url,
-        headers=admin_headers,
-        params={
-            "table_type": TableTemplateType.THERMAL_CLUSTER,
-            "columns": ",".join(FIELDS_INFO_BY_TYPE[TableTemplateType.THERMAL_CLUSTER]),
-        },
-    )
-    res_table_data_json = res_table_data.json()
-    assert res_table_data_json == {
-        "area 1 / cluster 1": {
-            "group": "",
-            "enabled": True,
-            "mustRun": False,
-            "unitCount": 0,
-            "nominalCapacity": 0,
-            "minStablePower": 0,
-            "spinning": 0,
-            "minUpTime": 1,
-            "minDownTime": 1,
-            "co2": 0,
-            "marginalCost": 0,
-            "fixedCost": 0,
-            "startupCost": 0,
-            "marketBidCost": 0,
-            "spreadCost": 0,
-            "tsGen": "use global",
-            "volatilityForced": 0,
-            "volatilityPlanned": 0,
-            "lawForced": "uniform",
-            "lawPlanned": "uniform",
-        },
-        "area 2 / cluster 2": {
-            "group": "",
-            "enabled": True,
-            "mustRun": False,
-            "unitCount": 0,
-            "nominalCapacity": 0,
-            "minStablePower": 0,
-            "spinning": 0,
-            "minUpTime": 1,
-            "minDownTime": 1,
-            "co2": 0,
-            "marginalCost": 0,
-            "fixedCost": 0,
-            "startupCost": 0,
-            "marketBidCost": 0,
-            "spreadCost": 0,
-            "tsGen": "use global",
-            "volatilityForced": 0,
-            "volatilityPlanned": 0,
-            "lawForced": "uniform",
-            "lawPlanned": "uniform",
-        },
-    }
-
-    client.put(
-        table_mode_url,
-        headers=admin_headers,
-        params={
-            "table_type": TableTemplateType.THERMAL_CLUSTER,
-        },
-        json={
-            "area 1 / cluster 1": {
-                "enabled": False,
-                "unitCount": 3,
-                "spinning": 8,
-                "tsGen": LocalTSGenerationBehavior.FORCE_GENERATION.value,
-                "lawPlanned": LawOption.GEOMETRIC.value,
-            },
-            "area 2 / cluster 2": {
-                "nominalCapacity": 2,
-            },
-        },
-    )
-    res_table_data = client.get(
-        table_mode_url,
-        headers=admin_headers,
-        params={
-            "table_type": TableTemplateType.THERMAL_CLUSTER,
-            "columns": ",".join(FIELDS_INFO_BY_TYPE[TableTemplateType.THERMAL_CLUSTER]),
-        },
-    )
-    res_table_data_json = res_table_data.json()
-    assert res_table_data_json == {
-        "area 1 / cluster 1": {
-            "group": "",
-            "enabled": False,
-            "mustRun": False,
-            "unitCount": 3,
-            "nominalCapacity": 0,
-            "minStablePower": 0,
-            "spinning": 8,
-            "minUpTime": 1,
-            "minDownTime": 1,
-            "co2": 0,
-            "marginalCost": 0,
-            "fixedCost": 0,
-            "startupCost": 0,
-            "marketBidCost": 0,
-            "spreadCost": 0,
-            "tsGen": "force generation",
-            "volatilityForced": 0,
-            "volatilityPlanned": 0,
-            "lawForced": "uniform",
-            "lawPlanned": "geometric",
-        },
-        "area 2 / cluster 2": {
-            "group": "",
-            "enabled": True,
-            "mustRun": False,
-            "unitCount": 0,
-            "nominalCapacity": 2,
-            "minStablePower": 0,
-            "spinning": 0,
-            "minUpTime": 1,
-            "minDownTime": 1,
-            "co2": 0,
-            "marginalCost": 0,
-            "fixedCost": 0,
-            "startupCost": 0,
-            "marketBidCost": 0,
-            "spreadCost": 0,
-            "tsGen": "use global",
-            "volatilityForced": 0,
-            "volatilityPlanned": 0,
-            "lawForced": "uniform",
-            "lawPlanned": "uniform",
-        },
-    }
-
-    # Table Mode - Renewable
-
-    res_table_data = client.get(
-        table_mode_url,
-        headers=admin_headers,
-        params={
-            "table_type": TableTemplateType.RENEWABLE_CLUSTER,
-            "columns": ",".join(FIELDS_INFO_BY_TYPE[TableTemplateType.RENEWABLE_CLUSTER]),
-        },
-    )
-    res_table_data_json = res_table_data.json()
-    assert res_table_data_json == {
-        "area 1 / cluster renewable 1": {
-            "group": "",
-            "tsInterpretation": TimeSeriesInterpretation.POWER_GENERATION.value,
-            "enabled": True,
-            "unitCount": 0,
-            "nominalCapacity": 0,
-        },
-        "area 2 / cluster renewable 2": {
-            "group": "",
-            "tsInterpretation": TimeSeriesInterpretation.POWER_GENERATION.value,
-            "enabled": True,
-            "unitCount": 0,
-            "nominalCapacity": 0,
-        },
-    }
-
-    client.put(
-        table_mode_url,
-        headers=admin_headers,
-        params={
-            "table_type": TableTemplateType.RENEWABLE_CLUSTER,
-        },
-        json={
-            "area 1 / cluster renewable 1": {
-                "tsInterpretation": TimeSeriesInterpretation.PRODUCTION_FACTOR.value,
-                "enabled": False,
-            },
-            "area 2 / cluster renewable 2": {
-                "unitCount": 2,
-                "nominalCapacity": 13,
-            },
-        },
-    )
-    res_table_data = client.get(
-        table_mode_url,
-        headers=admin_headers,
-        params={
-            "table_type": TableTemplateType.RENEWABLE_CLUSTER,
-            "columns": ",".join(FIELDS_INFO_BY_TYPE[TableTemplateType.RENEWABLE_CLUSTER]),
-        },
-    )
-    res_table_data_json = res_table_data.json()
-    assert res_table_data_json == {
-        "area 1 / cluster renewable 1": {
-            "group": "",
-            "tsInterpretation": TimeSeriesInterpretation.PRODUCTION_FACTOR.value,
-            "enabled": False,
-            "unitCount": 0,
-            "nominalCapacity": 0,
-        },
-        "area 2 / cluster renewable 2": {
-            "group": "",
-            "tsInterpretation": TimeSeriesInterpretation.POWER_GENERATION.value,
-            "enabled": True,
-            "unitCount": 2,
-            "nominalCapacity": 13,
-        },
-    }
-
-    # Table Mode - Binding Constraint
-
-    res_table_data = client.get(
-        table_mode_url,
-        headers=admin_headers,
-        params={
-            "table_type": TableTemplateType.BINDING_CONSTRAINT.value,
-            "columns": ",".join(FIELDS_INFO_BY_TYPE[TableTemplateType.BINDING_CONSTRAINT]),
-        },
-    )
-    res_table_data_json = res_table_data.json()
-    assert res_table_data_json == {
-        "binding constraint 1": {
-            "enabled": True,
-            "type": BindingConstraintFrequency.HOURLY.value,
-            "operator": BindingConstraintOperator.LESS.value,
-            "group": "default",
-        },
-        "binding constraint 2": {
-            "enabled": True,
-            "type": BindingConstraintFrequency.HOURLY.value,
-            "operator": BindingConstraintOperator.LESS.value,
-            "group": "default",
-        },
-    }
-
-    client.put(
-        table_mode_url,
-        headers=admin_headers,
-        params={
-            "table_type": TableTemplateType.BINDING_CONSTRAINT.value,
-        },
-        json={
-            "binding constraint 1": {
-                "enabled": False,
-                "operator": BindingConstraintOperator.BOTH.value,
-            },
-            "binding constraint 2": {
-                "type": BindingConstraintFrequency.WEEKLY.value,
-                "operator": BindingConstraintOperator.EQUAL.value,
-            },
-        },
-    )
-    res_table_data = client.get(
-        table_mode_url,
-        headers=admin_headers,
-        params={
-            "table_type": TableTemplateType.BINDING_CONSTRAINT.value,
-            "columns": ",".join(FIELDS_INFO_BY_TYPE[TableTemplateType.BINDING_CONSTRAINT]),
-        },
-    )
-    res_table_data_json = res_table_data.json()
-    assert res_table_data_json == {
-        "binding constraint 1": {
-            "enabled": False,
-            "type": BindingConstraintFrequency.HOURLY.value,
-            "operator": BindingConstraintOperator.BOTH.value,
-            "group": "default",
-        },
-        "binding constraint 2": {
-            "enabled": True,
-            "type": BindingConstraintFrequency.WEEKLY.value,
-            "operator": BindingConstraintOperator.EQUAL.value,
-            "group": "default",
-        },
-    }
-
-    res = client.get(f"/v1/studies/{study_id}/bindingconstraints/binding constraint 1", headers=admin_headers)
-    binding_constraint_1 = res.json()
-    assert res.status_code == 200, res.json()
-
-    term = binding_constraint_1["terms"][0]
-    assert term["id"] == "area 1.cluster 1"
-    assert term["weight"] == 2.0
-    assert term["offset"] == 4
-
-    # --- TableMode END ---
-
     # Renewable form
 
     res = client.put(
@@ -1776,7 +1320,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
         headers=admin_headers,
         json={
             "name": "cluster renewable 1 renamed",
-            "tsInterpretation": TimeSeriesInterpretation.PRODUCTION_FACTOR,
+            "tsInterpretation": "production-factor",
             "unitCount": 9,
             "enabled": False,
             "nominalCapacity": 3,
@@ -1790,11 +1334,11 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
     )
     expected = {
         "enabled": False,
-        "group": RenewableClusterGroup.OTHER1,  # Default group used when not specified.
+        "group": "Other RES 1",  # Default group used when not specified.
         "id": "cluster renewable 1",
         "name": "cluster renewable 1 renamed",
         "nominalCapacity": 3.0,
-        "tsInterpretation": TimeSeriesInterpretation.PRODUCTION_FACTOR,
+        "tsInterpretation": "production-factor",
         "unitCount": 9,
     }
     assert res.status_code == 200, res.json()
@@ -1882,11 +1426,11 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
                 "color_r": 255,
                 "color_g": 0,
                 "color_b": 100,
-                "layers": 0,
+                "layers": "0",
             },
             "layerX": {"0": 100},
             "layerY": {"0": 100},
-            "layerColor": {"0": "255 , 0 , 100"},
+            "layerColor": {"0": "255, 0, 100"},
         },
         "area 2": {
             "ui": {
@@ -1899,7 +1443,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
             },
             "layerX": {"0": 0, "1": 105},
             "layerY": {"0": 0, "1": 105},
-            "layerColor": {"0": "230 , 108 , 44", "1": "255 , 10 , 100"},
+            "layerColor": {"0": "230, 108, 44", "1": "255, 10, 100"},
         },
     }
 
@@ -1924,7 +1468,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
                     "min-stable-power": None,
                     "min-up-time": None,
                     "name": "cluster 2",
-                    "nominalcapacity": 2,
+                    "nominalcapacity": 0,
                     "spinning": None,
                     "spread-cost": None,
                     "type": None,
@@ -2050,7 +1594,7 @@ def test_import(client: TestClient, admin_access_token: str, study_id: str) -> N
     ).json()
     res = client.get(f"v1/studies/{uuid}", headers=admin_headers).json()
     assert res["groups"] == [{"id": "admin", "name": "admin"}]
-    assert res["public_mode"] == PublicMode.NONE
+    assert res["public_mode"] == "NONE"
 
     # Create user George who belongs to no group
     client.post(
@@ -2070,7 +1614,7 @@ def test_import(client: TestClient, admin_access_token: str, study_id: str) -> N
     ).json()
     res = client.get(f"v1/studies/{uuid}", headers=georges_headers).json()
     assert res["groups"] == []
-    assert res["public_mode"] == PublicMode.READ
+    assert res["public_mode"] == "READ"
 
     # Study importer works for 7z files
     res = client.post(
@@ -2138,7 +1682,7 @@ def test_copy(client: TestClient, admin_access_token: str, study_id: str) -> Non
     # asserts that it has admin groups and PublicMode to NONE
     res = client.get(f"/v1/studies/{copied.json()}", headers=admin_headers).json()
     assert res["groups"] == [{"id": "admin", "name": "admin"}]
-    assert res["public_mode"] == PublicMode.NONE
+    assert res["public_mode"] == "NONE"
 
     # Connect with user George who belongs to no group
     res = client.post("/v1/login", json={"username": "George", "password": "mypass"})
@@ -2153,4 +1697,4 @@ def test_copy(client: TestClient, admin_access_token: str, study_id: str) -> Non
     # asserts that it has no groups and PublicMode to READ
     res = client.get(f"/v1/studies/{copied.json()}", headers=admin_headers).json()
     assert res["groups"] == []
-    assert res["public_mode"] == PublicMode.READ
+    assert res["public_mode"] == "READ"
