@@ -1,5 +1,6 @@
 import configparser
 import re
+from unittest import mock
 
 import pytest
 from pydantic import ValidationError
@@ -16,7 +17,8 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 
 
 class TestCreateRenewablesCluster:
-    def test_init(self, command_context: CommandContext):
+    # noinspection SpellCheckingInspection
+    def test_init(self, command_context: CommandContext) -> None:
         cl = CreateRenewablesCluster(
             area_id="foo",
             cluster_name="Cluster1",
@@ -34,12 +36,13 @@ class TestCreateRenewablesCluster:
         assert cl.cluster_name == "Cluster1"
         assert cl.parameters == {"group": "Solar Thermal", "nominalcapacity": "2400", "unitcount": "2"}
 
-    def test_validate_cluster_name(self, command_context: CommandContext):
+    def test_validate_cluster_name(self, command_context: CommandContext) -> None:
         with pytest.raises(ValidationError, match="cluster_name"):
             CreateRenewablesCluster(area_id="fr", cluster_name="%", command_context=command_context, parameters={})
 
-    def test_apply(self, empty_study: FileStudy, command_context: CommandContext):
+    def test_apply(self, empty_study: FileStudy, command_context: CommandContext) -> None:
         empty_study.config.enr_modelling = EnrModelling.CLUSTERS.value
+        empty_study.config.version = 810
         study_path = empty_study.config.study_path
         area_name = "DE"
         area_id = transform_name_to_id(area_name, lower=True)
@@ -107,7 +110,8 @@ class TestCreateRenewablesCluster:
             flags=re.IGNORECASE,
         )
 
-    def test_to_dto(self, command_context: CommandContext):
+    # noinspection SpellCheckingInspection
+    def test_to_dto(self, command_context: CommandContext) -> None:
         command = CreateRenewablesCluster(
             area_id="foo",
             cluster_name="Cluster1",
@@ -127,7 +131,7 @@ class TestCreateRenewablesCluster:
         }
 
 
-def test_match(command_context: CommandContext):
+def test_match(command_context: CommandContext) -> None:
     base = CreateRenewablesCluster(
         area_id="foo",
         cluster_name="foo",
@@ -159,23 +163,25 @@ def test_match(command_context: CommandContext):
     assert base.get_inner_matrices() == []
 
 
-def test_revert(command_context: CommandContext):
+def test_revert(command_context: CommandContext) -> None:
     base = CreateRenewablesCluster(
-        area_id="foo",
-        cluster_name="foo",
+        area_id="area_foo",
+        cluster_name="cl1",
         parameters={},
         command_context=command_context,
     )
-    assert CommandReverter().revert(base, [], None) == [
+    file_study = mock.MagicMock(spec=FileStudy)
+    revert_cmd = CommandReverter().revert(base, [], file_study)
+    assert revert_cmd == [
         RemoveRenewablesCluster(
-            area_id="foo",
-            cluster_id="foo",
+            area_id="area_foo",
+            cluster_id="cl1",
             command_context=command_context,
         )
     ]
 
 
-def test_create_diff(command_context: CommandContext):
+def test_create_diff(command_context: CommandContext) -> None:
     base = CreateRenewablesCluster(
         area_id="foo",
         cluster_name="foo",
