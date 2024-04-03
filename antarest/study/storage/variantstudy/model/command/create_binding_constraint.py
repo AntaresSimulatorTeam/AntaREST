@@ -75,13 +75,13 @@ class BindingConstraintProperties(BaseModel, extra=Extra.forbid, allow_populatio
     enabled: bool = True
     time_step: BindingConstraintFrequency = BindingConstraintFrequency.HOURLY
     operator: BindingConstraintOperator = BindingConstraintOperator.EQUAL
-    comments: t.Optional[str] = None
-    filter_year_by_year: t.Optional[str] = None
-    filter_synthesis: t.Optional[str] = None
+    comments: t.Optional[str] = ""
+    filter_year_by_year: t.Optional[str] = ""
+    filter_synthesis: t.Optional[str] = ""
 
 
 class BindingConstraintProperties870(BindingConstraintProperties):
-    group: t.Optional[str] = None
+    group: t.Optional[str] = ""
 
 
 class BindingConstraintMatrices(BaseModel, extra=Extra.forbid, allow_population_by_field_name=True):
