@@ -594,7 +594,7 @@ class TestBindingConstraints:
         # Delete a fake binding constraint
         res = client.delete(f"/v1/studies/{study_id}/bindingconstraints/fake_bc", headers=user_headers)
         assert res.status_code == 404, res.json()
-        assert res.json()["exception"] == "BindingConstraintNotFoundError"
+        assert res.json()["exception"] == "BindingConstraintNotFound"
         assert res.json()["description"] == "Binding constraint 'fake_bc' not found"
 
         # Add a group before v8.7

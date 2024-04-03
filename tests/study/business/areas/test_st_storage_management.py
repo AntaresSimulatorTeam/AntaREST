@@ -134,7 +134,10 @@ class TestSTStorageManager:
         all_storages = manager.get_all_storages_props(study)
 
         # Check
-        actual = {area_id: [form.dict(by_alias=True) for form in forms] for area_id, forms in all_storages.items()}
+        actual = {
+            area_id: [form.dict(by_alias=True) for form in clusters_by_ids.values()]
+            for area_id, clusters_by_ids in all_storages.items()
+        }
         expected = {
             "west": [
                 {
@@ -171,7 +174,6 @@ class TestSTStorageManager:
                     "initialLevelOptim": False,
                 },
             ],
-            "east": [],
         }
         assert actual == expected
 

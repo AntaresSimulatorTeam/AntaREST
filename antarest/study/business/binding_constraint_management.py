@@ -22,6 +22,7 @@ from antarest.core.exceptions import (
     NoConstraintError,
     WrongMatrixHeightError,
 )
+from antarest.core.model import JSON
 from antarest.core.utils.string import to_camel_case
 from antarest.study.business.all_optional_meta import camel_case_model
 from antarest.study.business.utils import execute_or_add_commands
@@ -529,7 +530,7 @@ class BindingConstraintManager:
         file_study = storage_service.get_raw(study)
         config = file_study.tree.get(["input", "bindingconstraints", "bindingconstraints"])
 
-        constraints_by_id: Dict[str, ConstraintOutput] = CaseInsensitiveDict()  # type: ignore
+        constraints_by_id: t.Dict[str, ConstraintOutput] = CaseInsensitiveDict()  # type: ignore
 
         for constraint in config.values():
             constraint_config = self.constraint_model_adapter(constraint, int(study.version))
@@ -538,7 +539,7 @@ class BindingConstraintManager:
         if bc_id not in constraints_by_id:
             raise BindingConstraintNotFound(f"Binding constraint '{bc_id}' not found")
 
-        return t.cast(ConstraintOutput, constraints_by_id[bc_id])
+        return constraints_by_id[bc_id]
 
     def get_binding_constraints(
         self, study: Study, filters: ConstraintFilters = ConstraintFilters()
@@ -765,6 +766,29 @@ class BindingConstraintManager:
                 upd_constraint[field] = getattr(data, field) or getattr(existing_constraint, field)
         return self.constraint_model_adapter(upd_constraint, study_version)
 
+    def update_binding_constraints(
+        self,
+        study: Study,
+        bcs_by_ids: t.Mapping[str, ConstraintInput],
+    ) -> t.Mapping[str, ConstraintOutput]:
+        """
+        Updates multiple binding constraints within a study.
+
+        Args:
+            study: The study from which to update the constraints.
+            bcs_by_ids: A mapping of binding constraint IDs to their updated configurations.
+
+        Returns:
+            A dictionary of the updated binding constraints, indexed by their IDs.
+
+        Raises:
+            BindingConstraintNotFound: If any of the specified binding constraint IDs are not found.
+        """
+        updated_constraints = {}
+        for bc_id, data in bcs_by_ids.items():
+            updated_constraints[bc_id] = self.update_binding_constraint(study, bc_id, data)
+        return updated_constraints
+
     def remove_binding_constraint(self, study: Study, binding_constraint_id: str) -> None:
         """
         Removes a binding constraint from a study.
@@ -867,6 +891,10 @@ class BindingConstraintManager:
         term_id: str,
     ) -> None:
         return self.update_constraint_term(study, binding_constraint_id, term_id)  # type: ignore
+
+    @staticmethod
+    def get_table_schema() -> JSON:
+        return ConstraintOutput870.schema()
 
 
 def _replace_matrices_according_to_frequency_and_version(

@@ -139,6 +139,25 @@ class OptionalProperties(BindingConstraintProperties870, metaclass=AllOptionalMe
 # =================================================================================
 
 
+BindingConstraintPropertiesType = t.Union[BindingConstraintProperties870, BindingConstraintProperties]
+
+
+def get_binding_constraint_config_cls(study_version: t.Union[str, int]) -> t.Type[BindingConstraintPropertiesType]:
+    """
+    Retrieves the short-term storage configuration class based on the study version.
+
+    Args:
+        study_version: The version of the study.
+
+    Returns:
+        The short-term storage configuration class.
+    """
+    version = int(study_version)
+    if version >= 870:
+        return BindingConstraintProperties870
+    return BindingConstraintProperties
+
+
 class BindingConstraintMatrices(BaseModel, extra=Extra.forbid, allow_population_by_field_name=True):
     """
     Class used to store the matrices of a binding constraint.

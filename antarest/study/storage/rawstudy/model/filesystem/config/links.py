@@ -1,6 +1,7 @@
 """
 Object model used to read and update link configuration.
 """
+
 import typing as t
 
 from pydantic import Field, root_validator, validator

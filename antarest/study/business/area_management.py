@@ -6,6 +6,7 @@ import typing as t
 from pydantic import BaseModel, Extra, Field
 
 from antarest.core.exceptions import ConfigFileNotFound, DuplicateAreaName, LayerNotAllowedToBeDeleted, LayerNotFound
+from antarest.core.model import JSON
 from antarest.study.business.utils import AllOptionalMetaclass, camel_case_model, execute_or_add_commands
 from antarest.study.model import Patch, PatchArea, PatchCluster, RawStudy, Study
 from antarest.study.repository import StudyMetadataRepository
@@ -16,6 +17,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.area import (
     AreaUI,
     OptimizationProperties,
     ThermalAreasProperties,
+    UIProperties,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, DistrictSet, transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -40,6 +42,7 @@ class AreaCreationDTO(BaseModel):
     set: t.Optional[t.List[str]]
 
 
+# review: is this class necessary?
 class ClusterInfoDTO(PatchCluster):
     id: str
     name: str
@@ -85,7 +88,9 @@ def _get_ui_info_map(file_study: FileStudy, area_ids: t.Sequence[str]) -> t.Dict
     # instead of raising an obscure exception.
     if not area_ids:
         return {}
+
     ui_info_map = file_study.tree.get(["input", "areas", ",".join(area_ids), "ui"])
+
     # If there is only one ID in the `area_ids`, the result returned from
     # the `file_study.tree.get` call will be a single UI object.
     # On the other hand, if there are multiple values in `area_ids`,
@@ -93,6 +98,10 @@ def _get_ui_info_map(file_study: FileStudy, area_ids: t.Sequence[str]) -> t.Dict
     # and the values are the corresponding UI objects.
     if len(area_ids) == 1:
         ui_info_map = {area_ids[0]: ui_info_map}
+
+    # Convert to UIProperties to ensure that the UI object is valid.
+    ui_info_map = {area_id: UIProperties(**ui_info).to_config() for area_id, ui_info in ui_info_map.items()}
+
     return ui_info_map
 
 
@@ -133,19 +142,19 @@ class _BaseAreaDTO(
 
 # noinspection SpellCheckingInspection
 @camel_case_model
-class GetAreaDTO(_BaseAreaDTO, metaclass=AllOptionalMetaclass):
+class AreaOutput(_BaseAreaDTO, metaclass=AllOptionalMetaclass, use_none=True):
     """
     DTO object use to get the area information using a flat structure.
     """
 
     @classmethod
-    def create_area_dto(
+    def from_model(
         cls,
         area_folder: AreaFolder,
         *,
         average_unsupplied_energy_cost: float,
         average_spilled_energy_cost: float,
-    ) -> "GetAreaDTO":
+    ) -> "AreaOutput":
         """
         Creates a `GetAreaDTO` object from configuration data.
 
@@ -165,6 +174,30 @@ class GetAreaDTO(_BaseAreaDTO, metaclass=AllOptionalMetaclass):
             **(area_folder.adequacy_patch.adequacy_patch.dict(by_alias=False) if area_folder.adequacy_patch else {}),
         }
         return cls(**obj)
+
+    def _to_optimization(self) -> OptimizationProperties:
+        obj = {name: getattr(self, name) for name in OptimizationProperties.FilteringSection.__fields__}
+        filtering_section = OptimizationProperties.FilteringSection(**obj)
+        obj = {name: getattr(self, name) for name in OptimizationProperties.ModalOptimizationSection.__fields__}
+        nodal_optimization_section = OptimizationProperties.ModalOptimizationSection(**obj)
+        return OptimizationProperties(
+            filtering=filtering_section,
+            nodal_optimization=nodal_optimization_section,
+        )
+
+    def _to_adequacy_patch(self) -> AdequacyPathProperties:
+        obj = {name: getattr(self, name) for name in AdequacyPathProperties.AdequacyPathSection.__fields__}
+        adequacy_path_section = AdequacyPathProperties.AdequacyPathSection(**obj)
+        return AdequacyPathProperties(adequacy_patch=adequacy_path_section)
+
+    @property
+    def area_folder(self) -> AreaFolder:
+        area_folder = AreaFolder(
+            optimization=self._to_optimization(),
+            adequacy_patch=self._to_adequacy_patch(),
+            # ui properties are not included in the AreaFolder.
+        )
+        return area_folder
 
 
 class AreaManager:
@@ -194,7 +227,7 @@ class AreaManager:
         self.patch_service = PatchService(repository=repository)
 
     # noinspection SpellCheckingInspection
-    def get_all_area_props(self, study: RawStudy) -> t.Mapping[str, GetAreaDTO]:
+    def get_all_area_props(self, study: RawStudy) -> t.Mapping[str, AreaOutput]:
         """
         Retrieves all areas of a study.
 
@@ -232,13 +265,86 @@ class AreaManager:
         area_map = {}
         for area_id, area_cfg in areas_cfg.items():
             area_folder = AreaFolder(**area_cfg)
-            area_map[area_id] = GetAreaDTO.create_area_dto(
+            area_map[area_id] = AreaOutput.from_model(
                 area_folder,
                 average_unsupplied_energy_cost=thermal_areas.unserverd_energy_cost.get(area_id, 0.0),
                 average_spilled_energy_cost=thermal_areas.spilled_energy_cost.get(area_id, 0.0),
             )
 
         return area_map
+
+    # noinspection SpellCheckingInspection
+    def update_areas_props(
+        self, study: RawStudy, update_areas_by_ids: t.Mapping[str, AreaOutput]
+    ) -> t.Mapping[str, AreaOutput]:
+        """
+        Update the properties of ares.
+
+        Args:
+            study: The raw study object.
+            update_areas_by_ids: A mapping of area IDs to area properties.
+
+        Returns:
+            A mapping of ALL area IDs to area properties.
+        """
+        old_areas_by_ids = self.get_all_area_props(study)
+        new_areas_by_ids = {k: v for k, v in old_areas_by_ids.items()}
+
+        # Prepare the commands to update the thermal clusters.
+        commands = []
+        command_context = self.storage_service.variant_study_service.command_factory.command_context
+
+        for area_id, update_area in update_areas_by_ids.items():
+            # Update the area properties.
+            old_area = old_areas_by_ids[area_id]
+            new_area = old_area.copy(update=update_area.dict(by_alias=False, exclude_none=True))
+            new_areas_by_ids[area_id] = new_area
+
+            # Convert the DTO to a configuration object and update the configuration file.
+            old_area_folder = old_area.area_folder
+            new_area_folder = new_area.area_folder
+
+            if old_area_folder.optimization != new_area_folder.optimization:
+                commands.append(
+                    UpdateConfig(
+                        target=f"input/areas/{area_id}/optimization",
+                        data=new_area_folder.optimization.to_config(),
+                        command_context=command_context,
+                    )
+                )
+            if old_area_folder.adequacy_patch != new_area_folder.adequacy_patch:
+                commands.append(
+                    UpdateConfig(
+                        target=f"input/areas/{area_id}/adequacy_patch",
+                        data=new_area_folder.adequacy_patch.to_config(),
+                        command_context=command_context,
+                    )
+                )
+            if old_area.average_unsupplied_energy_cost != new_area.average_unsupplied_energy_cost:
+                commands.append(
+                    UpdateConfig(
+                        target=f"input/thermal/areas/unserverdenergycost/{area_id}",
+                        data=new_area.average_unsupplied_energy_cost,
+                        command_context=command_context,
+                    )
+                )
+            if old_area.average_spilled_energy_cost != new_area.average_spilled_energy_cost:
+                commands.append(
+                    UpdateConfig(
+                        target=f"input/thermal/areas/spilledenergycost:{area_id}",
+                        data=new_area.average_spilled_energy_cost,
+                        command_context=command_context,
+                    )
+                )
+
+        file_study = self.storage_service.get_storage(study).get_raw(study)
+        execute_or_add_commands(study, file_study, commands, self.storage_service)
+
+        return new_areas_by_ids
+
+    @staticmethod
+    def get_table_schema() -> JSON:
+        return AreaOutput.schema()
 
     def get_all_areas(self, study: RawStudy, area_type: t.Optional[AreaType] = None) -> t.List[AreaInfoDTO]:
         """
@@ -496,32 +602,33 @@ class AreaManager:
         )
 
     def update_area_ui(self, study: Study, area_id: str, area_ui: AreaUI, layer: str = "0") -> None:
+        obj = area_ui.to_config()
         file_study = self.storage_service.get_storage(study).get_raw(study)
         commands = (
             [
                 UpdateConfig(
                     target=f"input/areas/{area_id}/ui/ui/x",
-                    data=area_ui.x,
+                    data=obj["x"],
                     command_context=self.storage_service.variant_study_service.command_factory.command_context,
                 ),
                 UpdateConfig(
                     target=f"input/areas/{area_id}/ui/ui/y",
-                    data=area_ui.y,
+                    data=obj["y"],
                     command_context=self.storage_service.variant_study_service.command_factory.command_context,
                 ),
                 UpdateConfig(
                     target=f"input/areas/{area_id}/ui/ui/color_r",
-                    data=area_ui.color_rgb[0],
+                    data=obj["color_r"],
                     command_context=self.storage_service.variant_study_service.command_factory.command_context,
                 ),
                 UpdateConfig(
                     target=f"input/areas/{area_id}/ui/ui/color_g",
-                    data=area_ui.color_rgb[1],
+                    data=obj["color_g"],
                     command_context=self.storage_service.variant_study_service.command_factory.command_context,
                 ),
                 UpdateConfig(
                     target=f"input/areas/{area_id}/ui/ui/color_b",
-                    data=area_ui.color_rgb[2],
+                    data=obj["color_b"],
                     command_context=self.storage_service.variant_study_service.command_factory.command_context,
                 ),
             ]
@@ -532,17 +639,17 @@ class AreaManager:
             [
                 UpdateConfig(
                     target=f"input/areas/{area_id}/ui/layerX/{layer}",
-                    data=area_ui.x,
+                    data=obj["x"],
                     command_context=self.storage_service.variant_study_service.command_factory.command_context,
                 ),
                 UpdateConfig(
                     target=f"input/areas/{area_id}/ui/layerY/{layer}",
-                    data=area_ui.y,
+                    data=obj["y"],
                     command_context=self.storage_service.variant_study_service.command_factory.command_context,
                 ),
                 UpdateConfig(
                     target=f"input/areas/{area_id}/ui/layerColor/{layer}",
-                    data=f"{str(area_ui.color_rgb[0])} , {str(area_ui.color_rgb[1])} , {str(area_ui.color_rgb[2])}",
+                    data=f"{obj['color_r']},{obj['color_g']},{obj['color_b']}",
                     command_context=self.storage_service.variant_study_service.command_factory.command_context,
                 ),
             ]
@@ -593,11 +700,8 @@ class AreaManager:
     def _get_clusters(file_study: FileStudy, area: str, metadata_patch: Patch) -> t.List[ClusterInfoDTO]:
         thermal_clusters_data = file_study.tree.get(["input", "thermal", "clusters", area, "list"])
         cluster_patch = metadata_patch.thermal_clusters or {}
-        return [
-            AreaManager._update_with_cluster_metadata(
-                area,
-                ClusterInfoDTO.parse_obj({**thermal_clusters_data[tid], "id": tid}),
-                cluster_patch,
-            )
-            for tid in thermal_clusters_data
+        result = [
+            AreaManager._update_with_cluster_metadata(area, ClusterInfoDTO(id=tid, **obj), cluster_patch)
+            for tid, obj in thermal_clusters_data.items()
         ]
+        return result

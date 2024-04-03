@@ -9,7 +9,7 @@ from starlette.responses import RedirectResponse
 
 from antarest.core.config import Config
 from antarest.core.jwt import JWTUser
-from antarest.core.model import StudyPermissionType
+from antarest.core.model import JSON, StudyPermissionType
 from antarest.core.requests import RequestParameters
 from antarest.core.utils.utils import sanitize_uuid
 from antarest.core.utils.web import APITag
@@ -861,6 +861,19 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         table_data = study_service.table_mode_manager.get_table_data(study, table_type, column_list)
         return table_data
 
+    @bp.get(
+        path="/table-schema/{table_type}",
+        tags=[APITag.study_data],
+        summary="Get table schema",
+    )
+    def get_table_schema(
+        table_type: TableTemplateType,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> JSON:
+        logger.info("Getting table schema", extra={"user": current_user.id})
+        model_schema = study_service.table_mode_manager.get_table_schema(table_type)
+        return model_schema
+
     @bp.put(
         path="/studies/{uuid}/table-mode/{table_type}",
         tags=[APITag.study_data],
@@ -878,7 +891,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
-        table_data = study_service.table_mode_manager.set_table_data(study, table_type, data)
+        table_data = study_service.table_mode_manager.update_table_data(study, table_type, data)
         return table_data
 
     @bp.post(

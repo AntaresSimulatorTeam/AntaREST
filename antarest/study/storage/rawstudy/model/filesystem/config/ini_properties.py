@@ -6,10 +6,10 @@ from pydantic import BaseModel, Extra
 
 class IniProperties(
     BaseModel,
-    # On reading, if the configuration contains an extra field, it is ignored.
-    # This allows to read configurations that contain extra fields
-    # that are not yet managed by the code or that are deprecated.
-    extra=Extra.ignore,
+    # On reading, if the configuration contains an extra field, it is better
+    # to forbid it, because it allows errors to be detected early.
+    # Ignoring extra attributes can hide errors.
+    extra=Extra.forbid,
     # If a field is updated on assignment, it is also validated.
     validate_assignment=True,
     # On testing, we can use snake_case for field names.

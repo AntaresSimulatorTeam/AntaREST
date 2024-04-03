@@ -6,16 +6,6 @@ from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.storage.rawstudy.model.filesystem.config.cluster import ClusterProperties
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import IgnoreCaseIdentifier
 
-__all__ = (
-    "RenewableClusterGroup",
-    "RenewableConfig",
-    "RenewableConfigType",
-    "RenewableProperties",
-    "TimeSeriesInterpretation",
-    "create_renewable_config",
-    "RenewableClusterGroup",
-)
-
 
 class TimeSeriesInterpretation(EnumIgnoreCase):
     """
@@ -74,11 +64,13 @@ class RenewableProperties(ClusterProperties):
     """
 
     group: RenewableClusterGroup = Field(
+        title="Renewable Cluster Group",
         default=RenewableClusterGroup.OTHER1,
         description="Renewable Cluster Group",
     )
 
     ts_interpretation: TimeSeriesInterpretation = Field(
+        title="Time Series Interpretation",
         default=TimeSeriesInterpretation.POWER_GENERATION,
         description="Time series interpretation",
         alias="ts-interpretation",
@@ -106,6 +98,22 @@ class RenewableConfig(RenewableProperties, IgnoreCaseIdentifier):
 RenewableConfigType = RenewableConfig
 
 
+def get_renewable_config_cls(study_version: t.Union[str, int]) -> t.Type[RenewableConfig]:
+    """
+    Retrieves the renewable configuration class based on the study version.
+
+    Args:
+        study_version: The version of the study.
+
+    Returns:
+        The renewable configuration class.
+    """
+    version = int(study_version)
+    if version >= 810:
+        return RenewableConfig
+    raise ValueError(f"Unsupported study version {study_version}, required 810 or above.")
+
+
 def create_renewable_config(study_version: t.Union[str, int], **kwargs: t.Any) -> RenewableConfigType:
     """
     Factory method to create a renewable configuration model.
@@ -120,4 +128,5 @@ def create_renewable_config(study_version: t.Union[str, int], **kwargs: t.Any) -
     Raises:
         ValueError: If the study version is not supported.
     """
-    return RenewableConfig(**kwargs)
+    cls = get_renewable_config_cls(study_version)
+    return cls(**kwargs)

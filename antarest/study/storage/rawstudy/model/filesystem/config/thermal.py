@@ -6,20 +6,6 @@ from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.storage.rawstudy.model.filesystem.config.cluster import ClusterProperties
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import IgnoreCaseIdentifier
 
-__all__ = (
-    "LawOption",
-    "LocalTSGenerationBehavior",
-    "Thermal860Config",
-    "Thermal870Config",
-    "Thermal870Properties",
-    "ThermalClusterGroup",
-    "ThermalConfig",
-    "ThermalConfigType",
-    "ThermalCostGeneration",
-    "ThermalProperties",
-    "create_thermal_config",
-)
-
 
 class LocalTSGenerationBehavior(EnumIgnoreCase):
     """
@@ -108,17 +94,20 @@ class ThermalProperties(ClusterProperties):
     group: ThermalClusterGroup = Field(
         default=ThermalClusterGroup.OTHER1,
         description="Thermal Cluster Group",
+        title="Thermal Cluster Group",
     )
 
     gen_ts: LocalTSGenerationBehavior = Field(
         default=LocalTSGenerationBehavior.USE_GLOBAL,
         description="Time Series Generation Option",
         alias="gen-ts",
+        title="Time Series Generation",
     )
     min_stable_power: float = Field(
         default=0.0,
         description="Min. Stable Power (MW)",
         alias="min-stable-power",
+        title="Min. Stable Power",
     )
     min_up_time: int = Field(
         default=1,
@@ -126,6 +115,7 @@ class ThermalProperties(ClusterProperties):
         le=168,
         description="Min. Up time (h)",
         alias="min-up-time",
+        title="Min. Up Time",
     )
     min_down_time: int = Field(
         default=1,
@@ -133,17 +123,20 @@ class ThermalProperties(ClusterProperties):
         le=168,
         description="Min. Down time (h)",
         alias="min-down-time",
+        title="Min. Down Time",
     )
     must_run: bool = Field(
         default=False,
         description="Must run flag",
         alias="must-run",
+        title="Must Run",
     )
     spinning: float = Field(
         default=0.0,
         ge=0,
         le=100,
         description="Spinning (%)",
+        title="Spinning",
     )
     volatility_forced: float = Field(
         default=0.0,
@@ -151,6 +144,7 @@ class ThermalProperties(ClusterProperties):
         le=1,
         description="Forced Volatility",
         alias="volatility.forced",
+        title="Forced Volatility",
     )
     volatility_planned: float = Field(
         default=0.0,
@@ -158,51 +152,60 @@ class ThermalProperties(ClusterProperties):
         le=1,
         description="Planned volatility",
         alias="volatility.planned",
+        title="Planned Volatility",
     )
     law_forced: LawOption = Field(
         default=LawOption.UNIFORM,
         description="Forced Law (ts-generator)",
         alias="law.forced",
+        title="Forced Law",
     )
     law_planned: LawOption = Field(
         default=LawOption.UNIFORM,
         description="Planned Law (ts-generator)",
         alias="law.planned",
+        title="Planned Law",
     )
     marginal_cost: float = Field(
         default=0.0,
         ge=0,
         description="Marginal cost (euros/MWh)",
         alias="marginal-cost",
+        title="Marginal Cost",
     )
     spread_cost: float = Field(
         default=0.0,
         ge=0,
         description="Spread (euros/MWh)",
         alias="spread-cost",
+        title="Spread Cost",
     )
     fixed_cost: float = Field(
         default=0.0,
         ge=0,
         description="Fixed cost (euros/hour)",
         alias="fixed-cost",
+        title="Fixed Cost",
     )
     startup_cost: float = Field(
         default=0.0,
         ge=0,
         description="Startup cost (euros/startup)",
         alias="startup-cost",
+        title="Startup Cost",
     )
     market_bid_cost: float = Field(
         default=0.0,
         ge=0,
         description="Market bid cost (euros/MWh)",
         alias="market-bid-cost",
+        title="Market Bid Cost",
     )
     co2: float = Field(
         default=0.0,
         ge=0,
         description="Emission rate of CO2 (t/MWh)",
+        title="Emission rate of CO2",
     )
 
 
@@ -215,62 +218,74 @@ class Thermal860Properties(ThermalProperties):
         default=0.0,
         ge=0,
         description="Emission rate of NH3 (t/MWh)",
+        title="Emission rate of NH3",
     )
     so2: float = Field(
         default=0.0,
         ge=0,
         description="Emission rate of SO2 (t/MWh)",
+        title="Emission rate of SO2",
     )
     nox: float = Field(
         default=0.0,
         ge=0,
         description="Emission rate of NOX (t/MWh)",
+        title="Emission rate of NOX",
     )
     pm2_5: float = Field(
         default=0.0,
         ge=0,
         description="Emission rate of PM 2.5 (t/MWh)",
+        title="Emission rate of PM 2.5",
         alias="pm2_5",
     )
     pm5: float = Field(
         default=0.0,
         ge=0,
         description="Emission rate of PM 5 (t/MWh)",
+        title="Emission rate of PM 5",
     )
     pm10: float = Field(
         default=0.0,
         ge=0,
         description="Emission rate of PM 10 (t/MWh)",
+        title="Emission rate of PM 10",
     )
     nmvoc: float = Field(
         default=0.0,
         ge=0,
         description="Emission rate of NMVOC (t/MWh)",
+        title="Emission rate of NMVOC",
     )
     op1: float = Field(
         default=0.0,
         ge=0,
         description="Emission rate of pollutant 1 (t/MWh)",
+        title="Emission rate of pollutant 1",
     )
     op2: float = Field(
         default=0.0,
         ge=0,
         description="Emission rate of pollutant 2 (t/MWh)",
+        title="Emission rate of pollutant 2",
     )
     op3: float = Field(
         default=0.0,
         ge=0,
         description="Emission rate of pollutant 3 (t/MWh)",
+        title="Emission rate of pollutant 3",
     )
     op4: float = Field(
         default=0.0,
         ge=0,
         description="Emission rate of pollutant 4 (t/MWh)",
+        title="Emission rate of pollutant 4",
     )
     op5: float = Field(
         default=0.0,
         ge=0,
         description="Emission rate of pollutant 5 (t/MWh)",
+        title="Emission rate of pollutant 5",
     )
 
 
@@ -284,18 +299,21 @@ class Thermal870Properties(Thermal860Properties):
         default=ThermalCostGeneration.SET_MANUALLY,
         alias="costgeneration",
         description="Cost generation option",
+        title="Cost Generation",
     )
     efficiency: float = Field(
         default=100.0,
         ge=0,
         le=100,
         description="Efficiency (%)",
+        title="Efficiency",
     )
     # Even if `variableomcost` is a cost it could be negative.
     variable_o_m_cost: float = Field(
         default=0.0,
         description="Operating and Maintenance Cost (€/MWh)",
         alias="variableomcost",
+        title="Variable O&M Cost",
     )
 
 
@@ -375,6 +393,25 @@ class Thermal870Config(Thermal870Properties, IgnoreCaseIdentifier):
 ThermalConfigType = t.Union[Thermal870Config, Thermal860Config, ThermalConfig]
 
 
+def get_thermal_config_cls(study_version: t.Union[str, int]) -> t.Type[ThermalConfigType]:
+    """
+    Retrieves the thermal configuration class based on the study version.
+
+    Args:
+        study_version: The version of the study.
+
+    Returns:
+        The thermal configuration class.
+    """
+    version = int(study_version)
+    if version >= 870:
+        return Thermal870Config
+    elif version == 860:
+        return Thermal860Config
+    else:
+        return ThermalConfig
+
+
 def create_thermal_config(study_version: t.Union[str, int], **kwargs: t.Any) -> ThermalConfigType:
     """
     Factory method to create a thermal configuration model.
@@ -389,10 +426,5 @@ def create_thermal_config(study_version: t.Union[str, int], **kwargs: t.Any) -> 
     Raises:
         ValueError: If the study version is not supported.
     """
-    version = int(study_version)
-    if version >= 870:
-        return Thermal870Config(**kwargs)
-    elif version == 860:
-        return Thermal860Config(**kwargs)
-    else:
-        return ThermalConfig(**kwargs)
+    cls = get_thermal_config_cls(study_version)
+    return cls(**kwargs)

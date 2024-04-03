@@ -195,7 +195,7 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
                     },
                     {
                         "target": "input/areas/test/ui/layerColor/0",
-                        "data": "255 , 0 , 100",
+                        "data": "255,0,100",
                     },
                 ],
             ),

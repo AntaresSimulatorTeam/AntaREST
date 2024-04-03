@@ -1,9 +1,11 @@
+import collections
 import json
 import typing as t
 
 from pydantic import validator
 
 from antarest.core.exceptions import DuplicateRenewableCluster, RenewableClusterConfigNotFound, RenewableClusterNotFound
+from antarest.core.model import JSON
 from antarest.study.business.all_optional_meta import AllOptionalMetaclass, camel_case_model
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.utils import execute_or_add_commands
@@ -21,14 +23,6 @@ from antarest.study.storage.variantstudy.model.command.create_renewables_cluster
 from antarest.study.storage.variantstudy.model.command.remove_renewables_cluster import RemoveRenewablesCluster
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
-
-__all__ = (
-    "RenewableClusterInput",
-    "RenewableClusterCreation",
-    "RenewableClusterOutput",
-    "RenewableManager",
-    "TimeSeriesInterpretation",
-)
 
 _CLUSTER_PATH = "input/renewables/clusters/{area_id}/list/{cluster_id}"
 _CLUSTERS_PATH = "input/renewables/clusters/{area_id}/list"
@@ -149,7 +143,7 @@ class RenewableManager:
     def get_all_renewables_props(
         self,
         study: Study,
-    ) -> t.Mapping[str, t.Sequence[RenewableClusterOutput]]:
+    ) -> t.Mapping[str, t.Mapping[str, RenewableClusterOutput]]:
         """
         Retrieve all renewable clusters from all areas within a study.
 
@@ -157,7 +151,7 @@ class RenewableManager:
             study: Study from which to retrieve the clusters.
 
         Returns:
-            A mapping of area IDs to lists of renewable clusters within the specified area.
+            A mapping of area IDs to a mapping of cluster IDs to cluster output.
 
         Raises:
             RenewableClusterConfigNotFound: If no clusters are found in the specified area.
@@ -174,14 +168,13 @@ class RenewableManager:
             raise RenewableClusterConfigNotFound(path)
 
         study_version = study.version
-        all_clusters = {
-            area_id: [
-                create_renewable_output(study_version, cluster_id, cluster)
-                for cluster_id, cluster in cluster_obj.items()
-            ]
-            for area_id, cluster_obj in clusters.items()
-        }
-        return all_clusters
+        renewables_by_areas: t.MutableMapping[str, t.MutableMapping[str, RenewableClusterOutput]]
+        renewables_by_areas = collections.defaultdict(dict)
+        for area_id, cluster_obj in clusters.items():
+            for cluster_id, cluster in cluster_obj.items():
+                renewables_by_areas[area_id][cluster_id] = create_renewable_output(study_version, cluster_id, cluster)
+
+        return renewables_by_areas
 
     def create_cluster(
         self, study: Study, area_id: str, cluster_data: RenewableClusterCreation
@@ -366,3 +359,42 @@ class RenewableManager:
         execute_or_add_commands(study, self._get_file_study(study), commands, self.storage_service)
 
         return RenewableClusterOutput(**new_config.dict(by_alias=False))
+
+    def update_renewables_props(
+        self,
+        study: Study,
+        update_renewables_by_areas: t.Mapping[str, t.Mapping[str, RenewableClusterInput]],
+    ) -> t.Mapping[str, t.Mapping[str, RenewableClusterOutput]]:
+        old_renewables_by_areas = self.get_all_renewables_props(study)
+        new_renewables_by_areas = {area_id: dict(clusters) for area_id, clusters in old_renewables_by_areas.items()}
+
+        # Prepare the commands to update the renewable clusters.
+        commands = []
+        for area_id, update_renewables_by_ids in update_renewables_by_areas.items():
+            old_renewables_by_ids = old_renewables_by_areas[area_id]
+            for renewable_id, update_cluster in update_renewables_by_ids.items():
+                # Update the renewable cluster properties.
+                old_cluster = old_renewables_by_ids[renewable_id]
+                new_cluster = old_cluster.copy(update=update_cluster.dict(by_alias=False, exclude_none=True))
+                new_renewables_by_areas[area_id][renewable_id] = new_cluster
+
+                # Convert the DTO to a configuration object and update the configuration file.
+                properties = create_renewable_config(
+                    study.version, **new_cluster.dict(by_alias=False, exclude_none=True)
+                )
+                path = _CLUSTER_PATH.format(area_id=area_id, cluster_id=renewable_id)
+                cmd = UpdateConfig(
+                    target=path,
+                    data=json.loads(properties.json(by_alias=True, exclude={"id"})),
+                    command_context=self.storage_service.variant_study_service.command_factory.command_context,
+                )
+                commands.append(cmd)
+
+        file_study = self.storage_service.get_storage(study).get_raw(study)
+        execute_or_add_commands(study, file_study, commands, self.storage_service)
+
+        return new_renewables_by_areas
+
+    @staticmethod
+    def get_table_schema() -> JSON:
+        return RenewableClusterOutput.schema()

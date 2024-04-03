@@ -184,7 +184,7 @@ class AreaUI(IniProperties):
         >>> from antarest.study.storage.rawstudy.model.filesystem.config.area import AreaUI
         >>> from pprint import pprint
 
-        >>> ui = AreaUI(x=1148, y=144, color_rgb='#0080FF')
+        >>> ui = AreaUI(x=1148, y=144, color_rgb="#0080FF")
         >>> pprint(ui.to_config(), width=80)
         {'color_b': 255, 'color_g': 128, 'color_r': 0, 'x': 1148, 'y': 144}
         """
@@ -260,8 +260,8 @@ class UIProperties(IniProperties):
     )
 
     @root_validator(pre=True)
-    def _validate_layers(cls, values: t.MutableMapping[str, t.Any]) -> t.Mapping[str, t.Any]:
-        # Defined the default style if missing
+    def _set_default_style(cls, values: t.MutableMapping[str, t.Any]) -> t.Mapping[str, t.Any]:
+        """Defined the default style if missing."""
         style = values.get("style")
         if style is None:
             values["style"] = AreaUI()
@@ -269,13 +269,19 @@ class UIProperties(IniProperties):
             values["style"] = AreaUI(**style)
         else:
             values["style"] = AreaUI(**style.dict())
+        return values
 
-        # Define the default layers if missing
-        layers = values.get("layers")
-        if layers is None:
+    @root_validator(pre=True)
+    def _set_default_layers(cls, values: t.MutableMapping[str, t.Any]) -> t.Mapping[str, t.Any]:
+        """Define the default layers if missing."""
+        _layers = values.get("layers")
+        if _layers is None:
             values["layers"] = {0}
+        return values
 
-        # Define the default layer styles if missing
+    @root_validator(pre=True)
+    def _set_default_layer_styles(cls, values: t.MutableMapping[str, t.Any]) -> t.Mapping[str, t.Any]:
+        """Define the default layer styles if missing."""
         layer_styles = values.get("layer_styles")
         if layer_styles is None:
             values["layer_styles"] = {0: AreaUI()}
@@ -289,7 +295,10 @@ class UIProperties(IniProperties):
                     values["layer_styles"][key] = AreaUI(**style.dict())
         else:
             raise TypeError(f"Invalid type for layer_styles: {type(layer_styles)}")
+        return values
 
+    @root_validator(pre=True)
+    def _validate_layers(cls, values: t.MutableMapping[str, t.Any]) -> t.Mapping[str, t.Any]:
         # Parse the `[ui]` section (if any)
         ui_section = values.pop("ui", {})
         if ui_section:
@@ -341,9 +350,10 @@ class UIProperties(IniProperties):
         ...     style=AreaUI(x=1148, y=144, color_rgb=(0, 128, 255)),
         ...     layers={0, 7},
         ...     layer_styles={
-        ...         6: AreaUI(x=1148, y=144, color_rgb='#C0A863'),
+        ...         6: AreaUI(x=1148, y=144, color_rgb="#C0A863"),
         ...         7: AreaUI(x=18, y=-22, color_rgb=(0, 128, 255)),
-        ...     })
+        ...     },
+        ... )
         >>> pprint(ui.to_config(), width=80)
         {'layerColor': {'0': '230, 108, 44', '6': '192, 168, 99', '7': '0, 128, 255'},
          'layerX': {'0': 0, '6': 1148, '7': 18},

@@ -3,6 +3,7 @@ import typing as t
 from pydantic import BaseModel
 
 from antarest.core.exceptions import ConfigFileNotFound
+from antarest.core.model import JSON
 from antarest.study.business.utils import AllOptionalMetaclass, camel_case_model, execute_or_add_commands
 from antarest.study.model import RawStudy
 from antarest.study.storage.rawstudy.model.filesystem.config.links import LinkProperties
@@ -27,7 +28,7 @@ class LinkInfoDTO(BaseModel):
 
 
 @camel_case_model
-class GetLinkDTO(LinkProperties, metaclass=AllOptionalMetaclass, use_none=True):
+class LinkOutput(LinkProperties, metaclass=AllOptionalMetaclass, use_none=True):
     """
     DTO object use to get the link information.
     """
@@ -79,7 +80,7 @@ class LinkManager:
         )
         execute_or_add_commands(study, file_study, [command], self.storage_service)
 
-    def get_all_links_props(self, study: RawStudy) -> t.Mapping[t.Tuple[str, str], GetLinkDTO]:
+    def get_all_links_props(self, study: RawStudy) -> t.Mapping[t.Tuple[str, str], LinkOutput]:
         """
         Retrieves all links properties from the study.
 
@@ -107,15 +108,15 @@ class LinkManager:
             for area2_id, properties_cfg in property_map.items():
                 area1_id, area2_id = sorted([area1_id, area2_id])
                 properties = LinkProperties(**properties_cfg)
-                links_by_ids[(area1_id, area2_id)] = GetLinkDTO(**properties.dict(by_alias=False))
+                links_by_ids[(area1_id, area2_id)] = LinkOutput(**properties.dict(by_alias=False))
 
         return links_by_ids
 
     def update_links_props(
         self,
         study: RawStudy,
-        update_links_by_ids: t.Mapping[t.Tuple[str, str], GetLinkDTO],
-    ) -> t.Mapping[t.Tuple[str, str], GetLinkDTO]:
+        update_links_by_ids: t.Mapping[t.Tuple[str, str], LinkOutput],
+    ) -> t.Mapping[t.Tuple[str, str], LinkOutput]:
         old_links_by_ids = self.get_all_links_props(study)
         new_links_by_ids = {}
         file_study = self.storage_service.get_storage(study).get_raw(study)
@@ -138,3 +139,7 @@ class LinkManager:
 
         execute_or_add_commands(study, file_study, commands, self.storage_service)
         return new_links_by_ids
+
+    @staticmethod
+    def get_table_schema() -> JSON:
+        return LinkOutput.schema()

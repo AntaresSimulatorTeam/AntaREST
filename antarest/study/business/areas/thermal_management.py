@@ -1,3 +1,4 @@
+import collections
 import json
 import typing as t
 from pathlib import Path
@@ -11,6 +12,7 @@ from antarest.core.exceptions import (
     ThermalClusterNotFound,
     WrongMatrixHeightError,
 )
+from antarest.core.model import JSON
 from antarest.study.business.all_optional_meta import AllOptionalMetaclass, camel_case_model
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import Study
@@ -190,7 +192,7 @@ class ThermalManager:
     def get_all_thermals_props(
         self,
         study: Study,
-    ) -> t.Mapping[str, t.Sequence[ThermalClusterOutput]]:
+    ) -> t.Mapping[str, t.Mapping[str, ThermalClusterOutput]]:
         """
         Retrieve all thermal clusters from all areas within a study.
 
@@ -198,7 +200,7 @@ class ThermalManager:
             study: Study from which to retrieve the clusters.
 
         Returns:
-            A mapping of area IDs to lists of thermal clusters within the specified area.
+            A mapping of area IDs to a mapping of cluster IDs to thermal cluster configurations.
 
         Raises:
             ThermalClusterConfigNotFound: If no clusters are found in the specified area.
@@ -215,36 +217,35 @@ class ThermalManager:
             raise ThermalClusterConfigNotFound(path) from None
 
         study_version = study.version
-        all_clusters = {
-            area_id: [
-                create_thermal_output(study_version, cluster_id, cluster) for cluster_id, cluster in cluster_obj.items()
-            ]
-            for area_id, cluster_obj in clusters.items()
-        }
-        return all_clusters
+        thermals_by_areas: t.MutableMapping[str, t.MutableMapping[str, ThermalClusterOutput]]
+        thermals_by_areas = collections.defaultdict(dict)
+        for area_id, cluster_obj in clusters.items():
+            for cluster_id, cluster in cluster_obj.items():
+                thermals_by_areas[area_id][cluster_id] = create_thermal_output(study_version, cluster_id, cluster)
+
+        return thermals_by_areas
 
     def update_thermals_props(
         self,
         study: Study,
-        update_thermals_by_areas: t.Mapping[str, t.Sequence[ThermalClusterOutput]],
-    ) -> t.Mapping[str, t.Sequence[ThermalClusterOutput]]:
+        update_thermals_by_areas: t.Mapping[str, t.Mapping[str, ThermalClusterInput]],
+    ) -> t.Mapping[str, t.Mapping[str, ThermalClusterOutput]]:
         old_thermals_by_areas = self.get_all_thermals_props(study)
-        new_thermals_by_names: t.MutableMapping[str, t.MutableSequence[ThermalClusterOutput]] = {}
-        file_study = self.storage_service.get_storage(study).get_raw(study)
+        new_thermals_by_areas = {area_id: dict(clusters) for area_id, clusters in old_thermals_by_areas.items()}
+
+        # Prepare the commands to update the thermal clusters.
         commands = []
-        for area_id, update_thermals in update_thermals_by_areas.items():
-            old_thermals = old_thermals_by_areas.get(area_id, [])
-            old_thermals_by_id = {cluster.id: cluster for cluster in old_thermals}
-            update_thermals_by_id = {cluster.id: cluster for cluster in update_thermals}
-            for cluster_id, update_cluster in update_thermals_by_id.items():
+        for area_id, update_thermals_by_ids in update_thermals_by_areas.items():
+            old_thermals_by_ids = old_thermals_by_areas[area_id]
+            for thermal_id, update_cluster in update_thermals_by_ids.items():
                 # Update the thermal cluster properties.
-                old_cluster = old_thermals_by_id[cluster_id]
+                old_cluster = old_thermals_by_ids[thermal_id]
                 new_cluster = old_cluster.copy(update=update_cluster.dict(by_alias=False, exclude_none=True))
-                new_thermals_by_names.setdefault(area_id, []).append(new_cluster)
+                new_thermals_by_areas[area_id][thermal_id] = new_cluster
 
                 # Convert the DTO to a configuration object and update the configuration file.
                 properties = create_thermal_config(study.version, **new_cluster.dict(by_alias=False, exclude_none=True))
-                path = _CLUSTER_PATH.format(area_id=area_id, cluster_id=cluster_id)
+                path = _CLUSTER_PATH.format(area_id=area_id, cluster_id=thermal_id)
                 cmd = UpdateConfig(
                     target=path,
                     data=json.loads(properties.json(by_alias=True, exclude={"id"})),
@@ -252,8 +253,14 @@ class ThermalManager:
                 )
                 commands.append(cmd)
 
+        file_study = self.storage_service.get_storage(study).get_raw(study)
         execute_or_add_commands(study, file_study, commands, self.storage_service)
-        return new_thermals_by_names
+
+        return new_thermals_by_areas
+
+    @staticmethod
+    def get_table_schema() -> JSON:
+        return ThermalClusterOutput.schema()
 
     def create_cluster(self, study: Study, area_id: str, cluster_data: ThermalClusterCreation) -> ThermalClusterOutput:
         """
