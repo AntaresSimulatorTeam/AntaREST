@@ -143,7 +143,10 @@ function AddDialog({
             control={control}
             rules={{
               validate: (v) =>
-                validateString(v, { existingValues: existingConstraints }),
+                validateString(v, {
+                  existingValues: existingConstraints,
+                  specialChars: "@&_-()",
+                }),
             }}
           />
           {studyVersion >= 870 && (
