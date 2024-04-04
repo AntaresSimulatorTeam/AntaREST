@@ -30,15 +30,6 @@ interface Props {
   reloadConstraintsList: VoidFunction;
 }
 
-const defaultValues = {
-  name: "",
-  group: "default",
-  enabled: true,
-  timeStep: TimeStep.HOURLY,
-  operator: BindingConstraintOperator.LESS,
-  comments: "",
-};
-
 // TODO rename AddConstraintDialog
 function AddDialog({
   open,
@@ -50,6 +41,16 @@ function AddDialog({
   const { enqueueSnackbar } = useSnackbar();
   const dispatch = useAppDispatch();
   const [t] = useTranslation();
+  const studyVersion = Number(study.version);
+
+  const defaultValues = {
+    name: "",
+    group: studyVersion >= 870 ? "default" : "",
+    enabled: true,
+    timeStep: TimeStep.HOURLY,
+    operator: BindingConstraintOperator.LESS,
+    comments: "",
+  };
 
   const operatorOptions = useMemo(
     () =>
@@ -142,10 +143,13 @@ function AddDialog({
             control={control}
             rules={{
               validate: (v) =>
-                validateString(v, { existingValues: existingConstraints }),
+                validateString(v, {
+                  existingValues: existingConstraints,
+                  specialChars: "@&_-()",
+                }),
             }}
           />
-          {Number(study.version) >= 870 && (
+          {studyVersion >= 870 && (
             <StringFE
               name="group"
               label={t("global.group")}

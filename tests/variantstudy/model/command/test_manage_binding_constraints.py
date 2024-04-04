@@ -92,6 +92,7 @@ def test_manage_binding_constraint(empty_study: FileStudy, command_context: Comm
         "name": "BD 2",
         "id": "bd 2",
         "enabled": False,
+        "comments": "",
         "area1.cluster": 50.0,
         "operator": "both",
         "type": "daily",
@@ -127,6 +128,7 @@ def test_manage_binding_constraint(empty_study: FileStudy, command_context: Comm
         "id": "bd 1",
         "enabled": False,
         "area1%area2": "800.0%30",
+        "comments": "",
         "operator": "both",
         "type": "weekly",
     }
@@ -151,6 +153,7 @@ def test_manage_binding_constraint(empty_study: FileStudy, command_context: Comm
         "id": "bd 2",
         "enabled": False,
         "area1.cluster": 50.0,
+        "comments": "",
         "operator": "both",
         "type": "daily",
     }
@@ -338,7 +341,7 @@ def test_revert(command_context: CommandContext):
             operator=BindingConstraintOperator.EQUAL,
             coeffs={"a": [0.3]},
             values=hourly_matrix_id,
-            comments=None,
+            comments="",
             command_context=command_context,
         )
     ]

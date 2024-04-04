@@ -423,6 +423,7 @@ class BindingConstraintManager:
             "terms": constraint.get("terms", []),
         }
 
+        # TODO: Implement a model for version-specific fields. Output filters are sent regardless of the version.
         if version >= 840:
             constraint_output["filter_year_by_year"] = constraint.get("filter_year_by_year") or constraint.get(
                 "filter-year-by-year", ""
