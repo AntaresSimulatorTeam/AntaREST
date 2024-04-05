@@ -27,12 +27,13 @@ We should test the following end poins:
 * delete a cluster (or several clusters)
 * validate the consistency of the matrices (and properties)
 """
-
+import io
 import json
 import re
 import typing as t
 
 import numpy as np
+import pandas as pd
 import pytest
 from starlette.testclient import TestClient
 
@@ -263,6 +264,21 @@ EXISTING_CLUSTERS = [
         "volatilityPlanned": 0.0,
     },
 ]
+
+
+def _upload_matrix(
+    client: TestClient, user_access_token: str, study_id: str, matrix_path: str, df: pd.DataFrame
+) -> None:
+    tsv = io.BytesIO()
+    df.to_csv(tsv, sep="\t", index=False, header=False)
+    tsv.seek(0)
+    res = client.put(
+        f"/v1/studies/{study_id}/raw",
+        params={"path": matrix_path},
+        headers={"Authorization": f"Bearer {user_access_token}"},
+        files={"file": tsv},
+    )
+    res.raise_for_status()
 
 
 @pytest.mark.unit_test
@@ -526,6 +542,77 @@ class TestThermal:
         )
         assert res.status_code == 200
         assert res.json()["data"] == matrix
+
+        # =============================
+        #  THERMAL CLUSTER VALIDATION
+        # =============================
+
+        # Everything is fine at the beginning
+        res = client.get(
+            f"/v1/studies/{study_id}/areas/{area_id}/clusters/thermal/{fr_gas_conventional_id}/validate",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+        )
+        assert res.status_code == 200
+        assert res.json() is True
+
+        # Modifies series matrix with wrong length (!= 8760)
+        _upload_matrix(
+            client,
+            user_access_token,
+            study_id,
+            f"input/thermal/series/{area_id}/{fr_gas_conventional_id.lower()}/series",
+            pd.DataFrame(np.random.randint(0, 10, size=(4, 1))),
+        )
+
+        # Validation should fail
+        res = client.get(
+            f"/v1/studies/{study_id}/areas/{area_id}/clusters/thermal/{fr_gas_conventional_id}/validate",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+        )
+        assert res.status_code == 422
+        obj = res.json()
+        assert obj["exception"] == "IncoherenceBetweenMatricesLength"
+        assert obj["description"] == "The matrix series should have 8760 rows, currently: 4"
+
+        # Update with the right length
+        _upload_matrix(
+            client,
+            user_access_token,
+            study_id,
+            f"input/thermal/series/{area_id}/{fr_gas_conventional_id.lower()}/series",
+            pd.DataFrame(np.random.randint(0, 10, size=(8760, 4))),
+        )
+
+        # Validation should succeed again
+        res = client.get(
+            f"/v1/studies/{study_id}/areas/{area_id}/clusters/thermal/{fr_gas_conventional_id}/validate",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+        )
+        assert res.status_code == 200
+        assert res.json() is True
+
+        if version >= 870:
+            # Adds a CO2Cost matrix with different columns size
+            _upload_matrix(
+                client,
+                user_access_token,
+                study_id,
+                f"input/thermal/series/{area_id}/{fr_gas_conventional_id.lower()}/CO2Cost",
+                pd.DataFrame(np.random.randint(0, 10, size=(8760, 3))),
+            )
+
+            # Validation should fail
+            res = client.get(
+                f"/v1/studies/{study_id}/areas/{area_id}/clusters/thermal/{fr_gas_conventional_id}/validate",
+                headers={"Authorization": f"Bearer {user_access_token}"},
+            )
+            assert res.status_code == 422
+            obj = res.json()
+            assert obj["exception"] == "IncoherenceBetweenMatricesLength"
+            assert (
+                obj["description"]
+                == "Matrix columns mismatch in thermal cluster 'FR_Gas conventional' series. Columns size are [4, 3, 1]"
+            )
 
         # =============================
         #  THERMAL CLUSTER DELETION
