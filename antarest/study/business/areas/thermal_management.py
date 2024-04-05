@@ -375,7 +375,7 @@ class ThermalManager:
             matrix = self.storage_service.get_storage(study).get(study, matrix_path)
             matrix_data = matrix["data"]
             matrix_length = len(matrix_data)
-            if matrix_length > 0 and matrix_length != 8760:
+            if matrix_data != [[]] and matrix_length != 8760:
                 raise IncoherenceBetweenMatricesLength(
                     f"The matrix {Path(matrix_path).name} should have 8760 rows, currently: {matrix_length}"
                 )
