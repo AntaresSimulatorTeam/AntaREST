@@ -1,9 +1,15 @@
 import json
 import typing as t
+from pathlib import Path
 
 from pydantic import validator
 
-from antarest.core.exceptions import DuplicateThermalCluster, ThermalClusterConfigNotFound, ThermalClusterNotFound
+from antarest.core.exceptions import (
+    DuplicateThermalCluster,
+    IncoherenceBetweenMatricesLength,
+    ThermalClusterConfigNotFound,
+    ThermalClusterNotFound,
+)
 from antarest.study.business.utils import AllOptionalMetaclass, camel_case_model, execute_or_add_commands
 from antarest.study.model import Study
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
@@ -338,6 +344,11 @@ class ThermalManager:
             f"input/thermal/prepro/{area_id}/{lower_new_id}/modulation",
             f"input/thermal/prepro/{area_id}/{lower_new_id}/data",
         ]
+        if int(study.version) >= 870:
+            source_paths.append(f"input/thermal/series/{area_id}/{lower_source_id}/CO2Cost")
+            source_paths.append(f"input/thermal/series/{area_id}/{lower_source_id}/fuelCost")
+            new_paths.append(f"input/thermal/series/{area_id}/{lower_new_id}/CO2Cost")
+            new_paths.append(f"input/thermal/series/{area_id}/{lower_new_id}/fuelCost")
 
         # Prepare and execute commands
         commands: t.List[t.Union[CreateCluster, ReplaceMatrix]] = [create_cluster_cmd]
@@ -351,3 +362,30 @@ class ThermalManager:
         execute_or_add_commands(study, self._get_file_study(study), commands, self.storage_service)
 
         return ThermalClusterOutput(**new_config.dict(by_alias=False))
+
+    def validate_series(self, study: Study, area_id: str, cluster_id: str) -> bool:
+        cluster_id_lowered = cluster_id.lower()
+        matrices_path = [f"input/thermal/series/{area_id}/{cluster_id_lowered}/series"]
+        if int(study.version) >= 870:
+            matrices_path.append(f"input/thermal/series/{area_id}/{cluster_id_lowered}/CO2Cost")
+            matrices_path.append(f"input/thermal/series/{area_id}/{cluster_id_lowered}/fuelCost")
+
+        matrices_width = []
+        for matrix_path in matrices_path:
+            matrix = self.storage_service.get_storage(study).get(study, matrix_path)
+            matrix_data = matrix["data"]
+            matrix_length = len(matrix_data)
+            if matrix_length > 0 and matrix_length != 8760:
+                raise IncoherenceBetweenMatricesLength(
+                    f"The matrix {Path(matrix_path).name} should have 8760 rows, currently: {matrix_length}"
+                )
+            matrices_width.append(len(matrix_data[0]))
+        comparison_set = set(matrices_width)
+        comparison_set.discard(0)
+        comparison_set.discard(1)
+        if len(comparison_set) > 1:
+            raise IncoherenceBetweenMatricesLength(
+                f"Matrix columns mismatch in thermal cluster '{cluster_id}' series. Columns size are {matrices_width}"
+            )
+
+        return True

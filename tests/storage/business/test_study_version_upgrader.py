@@ -211,8 +211,11 @@ def assert_inputs_are_updated(tmp_path: Path, old_area_values: dict, old_binding
     # thermal cluster part
     for area in list_areas:
         reader = IniReader(DUPLICATE_KEYS)
+        thermal_series_path = tmp_path / "input" / "thermal" / "series" / area
         thermal_cluster_list = reader.read(tmp_path / "input" / "thermal" / "clusters" / area / "list.ini")
         for cluster in thermal_cluster_list:
+            assert (thermal_series_path / cluster.lower() / "fuelCost.txt").exists()
+            assert (thermal_series_path / cluster.lower() / "CO2Cost.txt").exists()
             assert thermal_cluster_list[cluster]["costgeneration"] == "SetManually"
             assert thermal_cluster_list[cluster]["efficiency"] == 100
             assert thermal_cluster_list[cluster]["variableomcost"] == 0
