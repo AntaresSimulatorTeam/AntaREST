@@ -531,7 +531,6 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         query_file: LinksQueryFile,
         frequency: MatrixFrequency,
         mc_years: t.Sequence[str],
-        areas_names: t.Sequence[str],
         columns_names: t.Sequence[str],
     ) -> t.Dict[str, t.Any]:
         """
@@ -542,7 +541,6 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             query_file:
             frequency:
             mc_years:
-            areas_names:
             columns_names:
 
         Returns: study data formatted in json
@@ -550,9 +548,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         """
         self._safe_generation(metadata, timeout=60)
         self.repository.refresh(metadata)
-        return super().aggregate_links_data(
-            metadata, output_name, query_file, frequency, mc_years, areas_names, columns_names
-        )
+        return super().aggregate_links_data(metadata, output_name, query_file, frequency, mc_years, columns_names)
 
     def create_variant_study(self, uuid: str, name: str, params: RequestParameters) -> VariantStudy:
         """

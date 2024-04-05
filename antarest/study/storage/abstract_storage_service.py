@@ -48,10 +48,14 @@ MCYEAR_COL = "mcYear"
 """Column name for the Monte Carlo year."""
 AREA_COL = "area"
 """Column name for the area."""
+LINK_COL = "link"
+"""Column name for the link."""
 MC_YEAR_INDEX = 0
 """Index in path parts starting from the Monte Carlo year to determine the Monte Carlo year."""
 AREA_INDEX = 2
 """Index in path parts starting from the Monte Carlo year to determine the area name."""
+LINK_INDEX = 2
+"""Index in path parts starting from the Monte Carlo year to determine the link name."""
 QUERY_FILE_INDEX = -2
 """Index in path parts starting from the Monte Carlo year to determine the if we fetch values, details etc ."""
 FREQUENCY_INDEX = -2
@@ -282,15 +286,20 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
 
             data_columns = [stringify(col) for col in node_data["columns"]]
             df = pd.DataFrame(node_data["data"], columns=data_columns, index=node_data["index"])
-            df[MCYEAR_COL] = [int(path_parts[MC_YEAR_INDEX])] * len(df)
-            df[AREA_COL] = [path_parts[AREA_INDEX]] * len(df)
             # columns filtering
             if columns_names:
+                # noinspection PyTypeChecker
                 df = df[[col for col in data_columns if col in columns_names]]
+            new_column_order = df.columns.values.tolist()
+            df[MCYEAR_COL] = [int(path_parts[MC_YEAR_INDEX])] * len(df)
+            df[AREA_COL] = [path_parts[AREA_INDEX]] * len(df)
+            new_column_order = [AREA_COL, MCYEAR_COL] + new_column_order
+            # Reorganize the columns
+            df = df.reindex(columns=new_column_order)
+
             final_df = pd.concat([final_df, df], ignore_index=True)
 
-        final_df = {str(k): v for k, v in (final_df.fillna("N/A").to_dict(orient="list")).items()}
-        return final_df
+        return {str(k): v for k, v in (final_df.fillna("N/A").to_dict(orient="split")).items()}
 
     def aggregate_links_data(
         self,
@@ -343,15 +352,20 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
 
             data_columns = [stringify(col) for col in node_data["columns"]]
             df = pd.DataFrame(node_data["data"], columns=data_columns, index=node_data["index"])
-            df[MCYEAR_COL] = [int(path_parts[MC_YEAR_INDEX])] * len(df)
-            df[AREA_COL] = [path_parts[AREA_INDEX]] * len(df)
             # columns filtering
             if columns_names:
+                # noinspection PyTypeChecker
                 df = df[[col for col in data_columns if col in columns_names]]
+            new_column_order = df.columns.values.tolist()
+            df[MCYEAR_COL] = [int(path_parts[MC_YEAR_INDEX])] * len(df)
+            df[LINK_COL] = [path_parts[LINK_INDEX]] * len(df)
+            new_column_order = [LINK_COL, MCYEAR_COL] + new_column_order
+            # Reorganize the columns
+            df = df.reindex(columns=new_column_order)
+
             final_df = pd.concat([final_df, df], ignore_index=True)
 
-        final_df = {str(k): v for k, v in (final_df.fillna("N/A").to_dict(orient="list")).items()}
-        return final_df
+        return {str(k): v for k, v in (final_df.fillna("N/A").to_dict(orient="split")).items()}
 
     def get_study_sim_result(
         self,

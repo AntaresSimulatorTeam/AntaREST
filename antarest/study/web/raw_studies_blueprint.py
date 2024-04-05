@@ -226,9 +226,9 @@ def create_raw_study_routes(
         output_name: str,
         query_file: AreasQueryFile,
         frequency: MatrixFrequency,
-        mc_years: str = Query("", description="Which Monte Carlo years to be selected if empty all are selected."),
-        areas_names: str = Query("", description="Which areas to be selected if empty all are selected."),
-        columns_names: str = Query("", description="Which columns to be selected if empty all are selected."),
+        mc_years: str = "",
+        areas_names: str = "",
+        columns_names: str = "",
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> t.Dict[str, t.Any]:
         """
@@ -250,7 +250,7 @@ def create_raw_study_routes(
 
         """
         logger.info(
-            f"Aggregate raw data at {query_file} (output name = {output_name}) from study {uuid}",
+            f"Aggregate areas raw data at {query_file} (output name = {output_name}) from study {uuid}",
             extra={"user": current_user.id},
         )
         parameters = RequestParameters(user=current_user)
@@ -277,8 +277,8 @@ def create_raw_study_routes(
         output_name: str,
         query_file: LinksQueryFile,
         frequency: MatrixFrequency,
-        mc_years: str = Query("", description="Which Monte Carlo years to be selected if empty all are selected."),
-        columns_names: str = Query("", description="Which columns to be selected if empty all are selected."),
+        mc_years: str = "",
+        columns_names: str = "",
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> t.Dict[str, t.Any]:
         """
@@ -298,7 +298,7 @@ def create_raw_study_routes(
 
         """
         logger.info(
-            f"Aggregate raw data at {query_file} (output name = {output_name}) from study {uuid}",
+            f"Aggregate links raw data at {query_file} (output name = {output_name}) from study {uuid}",
             extra={"user": current_user.id},
         )
         parameters = RequestParameters(user=current_user)
