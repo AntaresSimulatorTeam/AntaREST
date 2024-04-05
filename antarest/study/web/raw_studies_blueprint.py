@@ -226,23 +226,23 @@ def create_raw_study_routes(
         output_name: str,
         query_file: AreasQueryFile,
         frequency: MatrixFrequency,
-        mc_years: str = "",
-        areas_names: str = "",
-        columns_names: str = "",
+        mc_years: str = Query("", description="Which Monte Carlo years to be selected if empty all are selected."),
+        areas_names: str = Query("", description="Which areas to be selected if empty all are selected."),
+        columns_names: str = Query("", description="Which columns to be selected if empty all are selected."),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> t.Dict[str, t.Any]:
         """
-        Create an aggregation of raw data
+        Create an aggregation of areas raw data
 
         Args:
             uuid: study id
-            output_name:
-            query_file:
-            frequency:
-            mc_years:
-            areas_names:
-            columns_names:
-            current_user:
+            output_name: the output name aka the simulation id
+            query_file: details vs values
+            frequency: hourly, daily, monthly, yearly ...
+            mc_years: which Monte Carlo years to be selected if empty all are selected (comma separated)
+            areas_names: which areas to be selected if empty all are selected (comma separated)
+            columns_names: which columns to be selected if empty all are selected (comma separated)
+            current_user: the current user login info
 
 
         Returns:
@@ -277,24 +277,21 @@ def create_raw_study_routes(
         output_name: str,
         query_file: LinksQueryFile,
         frequency: MatrixFrequency,
-        mc_years: str = "",
-        areas_names: str = "",
-        columns_names: str = "",
+        mc_years: str = Query("", description="Which Monte Carlo years to be selected if empty all are selected."),
+        columns_names: str = Query("", description="Which columns to be selected if empty all are selected."),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> t.Dict[str, t.Any]:
         """
-        Create an aggregation of raw data
+        Create an aggregation of links raw data
 
         Args:
             uuid: study id
-            output_name:
-            query_file:
-            frequency:
-            mc_years:
-            areas_names:
-            columns_names:
-            current_user:
-
+            output_name: the output name aka the simulation id
+            query_file: details vs values
+            frequency: hourly, daily, monthly, yearly ...
+            mc_years: which Monte Carlo years to be selected if empty all are selected (comma separated)
+            columns_names: which columns to be selected if empty all are selected (comma separated)
+            current_user: the current user login info
 
         Returns:
             DF like matrix summarizing the aggregation results
@@ -311,7 +308,6 @@ def create_raw_study_routes(
             query_file=query_file,
             frequency=frequency,
             mc_years=_split_comma_separated_values(mc_years),
-            areas_names=_split_comma_separated_values(areas_names),
             columns_names=_split_comma_separated_values(columns_names),
             params=parameters,
         )

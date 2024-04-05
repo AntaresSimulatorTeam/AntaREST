@@ -84,11 +84,10 @@ class IStudyStorageService(ABC, t.Generic[T]):
         query_file: LinksQueryFile,
         frequency: MatrixFrequency,
         mc_years: t.Sequence[str],
-        areas_names: t.Sequence[str],
         columns_names: t.Sequence[str],
     ) -> t.Dict[str, t.Any]:
         """
-        Entry point to fetch data inside study.
+        Entry point to fetch links raw data inside study.
 
         Args:
             metadata:
@@ -96,10 +95,9 @@ class IStudyStorageService(ABC, t.Generic[T]):
             query_file: QueryFile,
             frequency: MatrixFrequency,
             mc_years: t.Sequence[str],
-            areas_names: t.Sequence[str],
             columns_names: t.Sequence[str],
 
-        Returns: study data formatted in json
+        Returns: the aggregated data
 
         """
         raise NotImplementedError()

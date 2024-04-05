@@ -45,40 +45,26 @@ logger = logging.getLogger(__name__)
 TEMPLATE_PARTS = "output/{sim_id}/economy/mc-ind"
 # noinspection SpellCheckingInspection
 MCYEAR_COL = "mcYear"
+"""Column name for the Monte Carlo year."""
+AREA_COL = "area"
+"""Column name for the area."""
 MC_YEAR_INDEX = 0
-FILE_TYPE_1_INDEX = 1
-"""
-Index in path parts starting from the Monte Carlo year to determine the if we fetch links, areas or binding constraints.
-"""
-FILE_TYPE_2_INDEX = -2
-"""Index in path parts starting from the Monte Carlo year to determine the if we fetch values, details etc ."""
-AREA_NAME_INDEX = 2
+"""Index in path parts starting from the Monte Carlo year to determine the Monte Carlo year."""
+AREA_INDEX = 2
 """Index in path parts starting from the Monte Carlo year to determine the area name."""
+QUERY_FILE_INDEX = -2
+"""Index in path parts starting from the Monte Carlo year to determine the if we fetch values, details etc ."""
 FREQUENCY_INDEX = -2
 """Index in path parts starting from the Monte Carlo year to determine matrix frequency."""
 
 
-class FileType1(str, Enum):
+class AggregateType(str, Enum):
     """
-    Enum to determine the type of file we want to fetch in the study
+    Enum to determine the type for the aggregation: areas/links.
     """
 
     LINKS = "links"
     AREAS = "areas"
-    BINDING_CONSTRAINTS = "binding_constraints"
-
-
-class FileType2(str, Enum):
-    """
-    Enum to determine the type of file we want to fetch in the study
-    """
-
-    VALUES = "values"
-    DETAILS = "details"
-    # noinspection SpellCheckingInspection
-    DETAILS_ST_STORAGE = "details-STstorage"
-    DETAILS_RES = "details-res"
-    BINDING_CONSTRAINTS = "binding-constraints"
 
 
 def stringify(col: t.Union[str, t.Tuple[str, ...]]) -> str:
@@ -90,7 +76,7 @@ def stringify(col: t.Union[str, t.Tuple[str, ...]]) -> str:
     Returns:  column name as string
 
     """
-    return "|".join(col) if isinstance(col, tuple) else col
+    return "/".join(col) if isinstance(col, tuple) else col
 
 
 def flatten_tree(path_tree: t.Dict[str, t.Any]) -> t.List[t.Tuple[str, ...]]:
@@ -102,12 +88,16 @@ def flatten_tree(path_tree: t.Dict[str, t.Any]) -> t.List[t.Tuple[str, ...]]:
     Returns: list of tuple with all tree paths parts
 
     """
+
     result = []
+
     for key, value in path_tree.items():
-        if isinstance(value, dict):
+        if isinstance(value, dict) and value:
             result.extend([(key,) + sub for sub in flatten_tree(value)])
-        else:
+        elif value:
             result.append((key, value))
+        else:
+            result.append((key,))
     return result
 
 
@@ -243,56 +233,64 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         columns_names: t.Sequence[str],
     ) -> t.Dict[str, t.Any]:
         """
-        Entry point to fetch data inside study.
+        Entry point to fetch areas raw data.
         Args:
-            metadata: study
-            output_name:
-            query_file:
-            frequency:
-            mc_years:
-            areas_names:
-            columns_names:
+            metadata: study file
+            output_name: simulation id
+            query_file: values | details | ...
+            frequency: hourly | daily | monthly | yearly | ...
+            mc_years: list of Monte Carlo years to be selected (empty list means all)
+            areas_names: list of areas names to be selected (empty list means all)
+            columns_names: list of columns names to be selected (empty list means all)
 
-        Returns: study data formatted in json
+        Returns: DF like data representing the aggregated areas data
 
         """
         self._check_study_exists(metadata)
         study = self.get_raw(metadata)
         parts = TEMPLATE_PARTS.format(sim_id=output_name).split("/")
         mc_years_parts = flatten_tree(study.tree.get(parts, depth=1))
+        # Monte Carlo years filtering
+        if mc_years:
+            int_mc_years = [int(mc_year) for mc_year in mc_years]
+            mc_years_parts = [
+                mc_year_parts for mc_year_parts in mc_years_parts if int(mc_year_parts[0]) in int_mc_years
+            ]
+        mc_years_parts = [mc_year_parts + (AggregateType.AREAS.value,) for mc_year_parts in mc_years_parts]
+        full_areas_parts = []
+        for mc_year_parts in mc_years_parts:
+            areas_parts = flatten_tree(study.tree.get(parts + list(mc_year_parts), depth=1))
+            # Areas names filtering
+            if areas_names:
+                areas_parts = [area_parts for area_parts in areas_parts if area_parts[0] in areas_names]
+            full_areas_parts.extend([mc_year_parts + area_parts for area_parts in areas_parts])
+        all_paths_parts = []
+        for mc_year_area_parts in full_areas_parts:
+            files_parts = flatten_tree(study.tree.get(parts + list(mc_year_area_parts), depth=-1))
+            all_paths_parts.extend([mc_year_area_parts + file_parts for file_parts in files_parts])
+        # Frequency filtering
+        all_paths_parts = [path_parts for path_parts in all_paths_parts if frequency in path_parts[FREQUENCY_INDEX]]
+        # query file filtering
+        all_paths_parts = [path_parts for path_parts in all_paths_parts if query_file in path_parts[QUERY_FILE_INDEX]]
 
-        return {}
-        # file_type_1, _, all_paths = parts_query_file_filtering(flatten_tree(study.tree.get(parts)), query_file)
-        # if mc_years:
-        #     all_paths = [path_parts for path_parts in all_paths if path_parts[MC_YEAR_INDEX] in mc_years]
-        # if areas_names and file_type_1 != FileType1.AREAS:
-        #     raise ValueError(f"You specified areas names for a query file that does not support it: {query_file}")
-        # elif areas_names:
-        #     all_paths = [path_parts for path_parts in all_paths if path_parts[AREA_NAME_INDEX] in areas_names]
-        # all_paths = [path_parts for path_parts in all_paths if frequency.value in path_parts[FREQUENCY_INDEX]]
-        #
-        # final_df = None
-        # for path_parts in all_paths:
-        #     try:
-        #         node_data = study.tree.get(parts + list(path_parts[:-1]))
-        #     except ChildNotFoundError:
-        #         continue
-        #
-        #     columns, matrix = node_data["columns"], np.array(node_data["data"]).T.tolist()
-        #     columns = [stringify(col) for col in columns]
-        #     kept_columns = [col for col in columns if col in columns_names] if columns_names else columns
-        #     node_data = (
-        #         {file_type_1.value: [path_parts[FILE_TYPE_1_INDEX + 1]] * len(matrix[0])}
-        #         if file_type_1 != FileType1.BINDING_CONSTRAINTS
-        #         else {}
-        #     )
-        #     node_data.update({MCYEAR_COL: [path_parts[MC_YEAR_INDEX]] * len(matrix[0])})
-        #     node_data.update({col: vals for col, vals in zip(columns, matrix) if col in kept_columns})
-        #
-        #     df = pd.DataFrame(node_data)
-        #     final_df = df if final_df is None else pd.concat([final_df, df], ignore_index=True)  # type: ignore
-        #
-        # return {} if final_df is None else final_df.fillna("N/A").to_dict(orient="list")  # type: ignore
+        final_df = pd.DataFrame()
+        for path_parts in all_paths_parts:
+            try:
+                node_data = study.tree.get(parts + list(path_parts[:-1]))
+            except ChildNotFoundError:
+                continue
+
+            data_columns = [stringify(col) for col in node_data["columns"]]
+            df = pd.DataFrame(node_data["data"], columns=data_columns, index=node_data["index"])
+            df[MCYEAR_COL] = [int(path_parts[MC_YEAR_INDEX])] * len(df)
+            df[AREA_COL] = [path_parts[AREA_INDEX]] * len(df)
+            # columns filtering
+            if columns_names:
+                df = df[[col for col in data_columns if col in columns_names]]
+            final_df = pd.concat([final_df, df], ignore_index=True)
+
+        final_df = {str(k): v for k, v in (final_df.fillna("N/A").to_dict(orient="list")).items()}
+        return final_df
 
     def aggregate_links_data(
         self,
@@ -301,58 +299,59 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         query_file: LinksQueryFile,
         frequency: MatrixFrequency,
         mc_years: t.Sequence[str],
-        areas_names: t.Sequence[str],
         columns_names: t.Sequence[str],
     ) -> t.Dict[str, t.Any]:
         """
-        Entry point to fetch data inside study.
+        Entry point to fetch links raw data.
         Args:
-            metadata: study
-            output_name:
-            query_file:
-            frequency:
-            mc_years:
-            areas_names:
-            columns_names:
+            metadata: study file
+            output_name: simulation id
+            query_file: values | details | ...
+            frequency: hourly | daily | monthly | yearly | ...
+            mc_years: list of Monte Carlo years to be selected (empty list means all)
+            columns_names: list of columns names to be selected (empty list means all)
 
-        Returns: study data formatted in json
+        Returns: DF like data representing the aggregated links data
 
         """
         self._check_study_exists(metadata)
         study = self.get_raw(metadata)
         parts = TEMPLATE_PARTS.format(sim_id=output_name).split("/")
-        return {}
-        # file_type_1, _, all_paths = parts_query_file_filtering(flatten_tree(study.tree.get(parts)), query_file)
-        # if mc_years:
-        #     all_paths = [path_parts for path_parts in all_paths if path_parts[MC_YEAR_INDEX] in mc_years]
-        # if areas_names and file_type_1 != FileType1.AREAS:
-        #     raise ValueError(f"You specified areas names for a query file that does not support it: {query_file}")
-        # elif areas_names:
-        #     all_paths = [path_parts for path_parts in all_paths if path_parts[AREA_NAME_INDEX] in areas_names]
-        # all_paths = [path_parts for path_parts in all_paths if frequency.value in path_parts[FREQUENCY_INDEX]]
-        #
-        # final_df = None
-        # for path_parts in all_paths:
-        #     try:
-        #         node_data = study.tree.get(parts + list(path_parts[:-1]))
-        #     except ChildNotFoundError:
-        #         continue
-        #
-        #     columns, matrix = node_data["columns"], np.array(node_data["data"]).T.tolist()
-        #     columns = [stringify(col) for col in columns]
-        #     kept_columns = [col for col in columns if col in columns_names] if columns_names else columns
-        #     node_data = (
-        #         {file_type_1.value: [path_parts[FILE_TYPE_1_INDEX + 1]] * len(matrix[0])}
-        #         if file_type_1 != FileType1.BINDING_CONSTRAINTS
-        #         else {}
-        #     )
-        #     node_data.update({MCYEAR_COL: [path_parts[MC_YEAR_INDEX]] * len(matrix[0])})
-        #     node_data.update({col: vals for col, vals in zip(columns, matrix) if col in kept_columns})
-        #
-        #     df = pd.DataFrame(node_data)
-        #     final_df = df if final_df is None else pd.concat([final_df, df], ignore_index=True)  # type: ignore
-        #
-        # return {} if final_df is None else final_df.fillna("N/A").to_dict(orient="list")  # type: ignore
+        mc_years_parts = flatten_tree(study.tree.get(parts, depth=1))
+        # Monte Carlo years filtering
+        if mc_years:
+            int_mc_years = [int(mc_year) for mc_year in mc_years]
+            mc_years_parts = [
+                mc_year_parts for mc_year_parts in mc_years_parts if int(mc_year_parts[0]) in int_mc_years
+            ]
+        mc_years_parts = [mc_year_parts + (AggregateType.LINKS.value,) for mc_year_parts in mc_years_parts]
+        all_paths_parts = []
+        for mc_year_parts in mc_years_parts:
+            files_parts = flatten_tree(study.tree.get(parts + list(mc_year_parts), depth=-1))
+            all_paths_parts.extend([mc_year_parts + file_parts for file_parts in files_parts])
+        # Frequency filtering
+        all_paths_parts = [path_parts for path_parts in all_paths_parts if frequency in path_parts[FREQUENCY_INDEX]]
+        # query file filtering
+        all_paths_parts = [path_parts for path_parts in all_paths_parts if query_file in path_parts[QUERY_FILE_INDEX]]
+
+        final_df = pd.DataFrame()
+        for path_parts in all_paths_parts:
+            try:
+                node_data = study.tree.get(parts + list(path_parts[:-1]))
+            except ChildNotFoundError:
+                continue
+
+            data_columns = [stringify(col) for col in node_data["columns"]]
+            df = pd.DataFrame(node_data["data"], columns=data_columns, index=node_data["index"])
+            df[MCYEAR_COL] = [int(path_parts[MC_YEAR_INDEX])] * len(df)
+            df[AREA_COL] = [path_parts[AREA_INDEX]] * len(df)
+            # columns filtering
+            if columns_names:
+                df = df[[col for col in data_columns if col in columns_names]]
+            final_df = pd.concat([final_df, df], ignore_index=True)
+
+        final_df = {str(k): v for k, v in (final_df.fillna("N/A").to_dict(orient="list")).items()}
+        return final_df
 
     def get_study_sim_result(
         self,
