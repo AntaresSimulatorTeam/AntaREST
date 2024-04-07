@@ -106,13 +106,25 @@ class TableModeManager:
         table_type: TableModeType,
         columns: t.Sequence[_TableColumn],
     ) -> TableDataDTO:
+        """
+        Get the table data of the specified type for the given study.
+
+        Args:
+            study: The study to get the table data from.
+            table_type: The type of the table.
+            columns: The columns to include in the table. If empty, all columns are included.
+
+        Returns:
+            The table data as a dictionary of dictionaries.
+            Where keys are the row names and values are dictionaries of column names and cell values.
+        """
         try:
             data = self._get_table_data_unsafe(study, table_type)
         except ChildNotFoundError:
             # It's better to return an empty table than raising an 404 error
             return {}
 
-        df = pd.DataFrame.from_dict(data, orient="index")   # type: ignore
+        df = pd.DataFrame.from_dict(data, orient="index")  # type: ignore
         if columns:
             # Create a new dataframe with the listed columns.
             df = pd.DataFrame(df, columns=columns)  # type: ignore
@@ -168,6 +180,18 @@ class TableModeManager:
         table_type: TableModeType,
         data: TableDataDTO,
     ) -> TableDataDTO:
+        """
+        Update the properties of the objects in the study using the provided data.
+
+        Args:
+            study: The study to update the objects in.
+            table_type: The type of the table.
+            data: The new properties of the objects as a dictionary of dictionaries.
+                Where keys are the row names and values are dictionaries of column names and cell values.
+
+        Returns:
+            The updated properties of the objects including the old ones.
+        """
         if table_type == TableModeType.AREA:
             # Use AreaOutput to update properties of areas
             area_props_by_ids = {key: AreaOutput(**values) for key, values in data.items()}

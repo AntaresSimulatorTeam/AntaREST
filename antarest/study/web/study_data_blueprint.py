@@ -841,27 +841,6 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         study_service.ts_config_manager.set_field_values(study, field_values)
 
     @bp.get(
-        path="/studies/{uuid}/table-mode/{table_type}",
-        tags=[APITag.study_data],
-        summary="Get table data for table form",
-    )
-    def get_table_mode(
-        uuid: str,
-        table_type: TableModeType,
-        columns: str = "",
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> TableDataDTO:
-        logger.info(
-            f"Getting template table data for study {uuid}",
-            extra={"user": current_user.id},
-        )
-        params = RequestParameters(user=current_user)
-        study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
-        column_list = columns.split(",") if columns else []
-        table_data = study_service.table_mode_manager.get_table_data(study, table_type, column_list)
-        return table_data
-
-    @bp.get(
         path="/table-schema/{table_type}",
         tags=[APITag.study_data],
         summary="Get table schema",
@@ -870,21 +849,79 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         table_type: TableModeType,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> JSON:
+        """
+        Get the properties of the table columns.
+
+        Args:
+        - `table_type`: The type of table to get the schema for.
+        """
         logger.info("Getting table schema", extra={"user": current_user.id})
         model_schema = study_service.table_mode_manager.get_table_schema(table_type)
         return model_schema
 
+    @bp.get(
+        path="/studies/{uuid}/table-mode/{table_type}",
+        tags=[APITag.study_data],
+        summary="Get table data for table form",
+    )
+    def get_table_mode(
+        uuid: str,
+        table_type: TableModeType,
+        columns: str = Query("", description="A comma-separated list of columns to include in the table data"),
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> TableDataDTO:
+        """
+        Get the table data for the given study and table type.
+
+        Args:
+        - uuid: The UUID of the study.
+        - table_type: The type of table to get the data for.
+        """
+        logger.info(
+            f"Getting table data for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
+        column_list = columns.split(",") if columns else []
+        table_data = study_service.table_mode_manager.get_table_data(study, table_type, column_list)
+        return table_data
+
     @bp.put(
         path="/studies/{uuid}/table-mode/{table_type}",
         tags=[APITag.study_data],
-        summary="Set table data with values from table form",
+        summary="Update table data with values from table form",
     )
-    def set_table_mode(
+    def update_table_mode(
         uuid: str,
         table_type: TableModeType,
-        data: TableDataDTO,
+        data: TableDataDTO = Body(
+            ...,
+            example={
+                "de / nuclear_cl1": {
+                    "enabled": True,
+                    "group": "Nuclear",
+                    "unitCount": 17,
+                    "nominalCapacity": 123,
+                },
+                "de / gas_cl1": {
+                    "enabled": True,
+                    "group": "Gas",
+                    "unitCount": 15,
+                    "nominalCapacity": 456,
+                },
+            },
+        ),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> TableDataDTO:
+        """
+        Update the table data for the given study and table type.
+
+        Args:
+        - uuid: The UUID of the study.
+        - table_type: The type of table to update.
+        - data: The table data to update.
+        """
         logger.info(
             f"Updating table data for study {uuid}",
             extra={"user": current_user.id},
