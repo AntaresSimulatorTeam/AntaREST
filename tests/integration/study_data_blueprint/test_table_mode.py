@@ -58,7 +58,7 @@ class TestTableMode:
 
         # Get the schema of the areas table
         res = client.get(
-            f"/v1/table-schema/areas",
+            "/v1/table-schema/areas",
             headers=user_headers,
         )
         assert res.status_code == 200, res.json()
@@ -89,7 +89,7 @@ class TestTableMode:
                     "averageUnsuppliedEnergyCost": 3456,
                     "dispatchableHydroPower": False,
                     "filterSynthesis": "daily, monthly",  # not changed
-                    "filterYearByYear": "weekly, annual",
+                    "filterYearByYear": "prout",
                 },
                 "es": {
                     "adequacyPatchMode": "inside",
@@ -168,7 +168,7 @@ class TestTableMode:
 
         # Get the schema of the links table
         res = client.get(
-            f"/v1/table-schema/links",
+            "/v1/table-schema/links",
             headers=user_headers,
         )
         assert res.status_code == 200, res.json()
@@ -279,7 +279,7 @@ class TestTableMode:
 
         # Get the schema of the thermals table
         res = client.get(
-            f"/v1/table-schema/thermals",
+            "/v1/table-schema/thermals",
             headers=user_headers,
         )
         assert res.status_code == 200, res.json()
@@ -542,7 +542,7 @@ class TestTableMode:
 
         # Get the schema of the renewables table
         res = client.get(
-            f"/v1/table-schema/renewables",
+            "/v1/table-schema/renewables",
             headers=user_headers,
         )
         assert res.status_code == 200, res.json()
@@ -569,6 +569,7 @@ class TestTableMode:
                 "it / Pouilles": {"group": "Wind Onshore"},
             },
         )
+        assert res.status_code == 200, res.json()
 
         res = client.get(
             f"/v1/studies/{study_id}/table-mode/renewables",
@@ -592,7 +593,7 @@ class TestTableMode:
 
         # Get the schema of the short-term storages table
         res = client.get(
-            f"/v1/table-schema/st-storages",
+            "/v1/table-schema/st-storages",
             headers=user_headers,
         )
         assert res.status_code == 200, res.json()
@@ -816,7 +817,7 @@ class TestTableMode:
 
         # Get the schema of the binding constraints table
         res = client.get(
-            f"/v1/table-schema/binding-constraints",
+            "/v1/table-schema/binding-constraints",
             headers=user_headers,
         )
         assert res.status_code == 200, res.json()

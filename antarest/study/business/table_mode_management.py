@@ -63,7 +63,7 @@ class TableModeManager:
         self._st_storage_manager = st_storage_manager
         self._binding_constraint_manager = binding_constraint_manager
 
-    def _get_table_data_unsafe(self, study, table_type):
+    def _get_table_data_unsafe(self, study: RawStudy, table_type: TableModeType) -> TableDataDTO:
         if table_type == TableModeType.AREA:
             areas_map = self._area_manager.get_all_area_props(study)
             data = {area_id: area.dict(by_alias=True) for area_id, area in areas_map.items()}
@@ -112,7 +112,7 @@ class TableModeManager:
             # It's better to return an empty table than raising an 404 error
             return {}
 
-        df = pd.DataFrame.from_dict(data, orient="index")
+        df = pd.DataFrame.from_dict(data, orient="index")   # type: ignore
         if columns:
             # Create a new dataframe with the listed columns.
             df = pd.DataFrame(df, columns=columns)  # type: ignore
