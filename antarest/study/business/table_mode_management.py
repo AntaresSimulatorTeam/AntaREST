@@ -12,6 +12,7 @@ from antarest.study.business.binding_constraint_management import BindingConstra
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.link_management import LinkManager, LinkOutput
 from antarest.study.model import RawStudy
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import ChildNotFoundError
 
 _TableIndex = str  # row name
 _TableColumn = str  # column name
@@ -62,12 +63,7 @@ class TableModeManager:
         self._st_storage_manager = st_storage_manager
         self._binding_constraint_manager = binding_constraint_manager
 
-    def get_table_data(
-        self,
-        study: RawStudy,
-        table_type: TableModeType,
-        columns: t.Sequence[_TableColumn],
-    ) -> TableDataDTO:
+    def _get_table_data_unsafe(self, study, table_type):
         if table_type == TableModeType.AREA:
             areas_map = self._area_manager.get_all_area_props(study)
             data = {area_id: area.dict(by_alias=True) for area_id, area in areas_map.items()}
@@ -102,14 +98,28 @@ class TableModeManager:
             data = {bc.id: bc.dict(by_alias=True, exclude={"id", "name", "terms"}) for bc in bc_seq}
         else:  # pragma: no cover
             raise NotImplementedError(f"Table type {table_type} not implemented")
+        return data
+
+    def get_table_data(
+        self,
+        study: RawStudy,
+        table_type: TableModeType,
+        columns: t.Sequence[_TableColumn],
+    ) -> TableDataDTO:
+        try:
+            data = self._get_table_data_unsafe(study, table_type)
+        except ChildNotFoundError:
+            # It's better to return an empty table than raising an 404 error
+            return {}
 
         df = pd.DataFrame.from_dict(data, orient="index")
         if columns:
             # Create a new dataframe with the listed columns.
-            # If a column does not exist in the DataFrame, it is created with empty values.
             df = pd.DataFrame(df, columns=columns)  # type: ignore
+
+            # If a column does not exist in the DataFrame, it is created with empty values.
             # noinspection PyTypeChecker
-            df = df.where(pd.notna(df), other=None)  #
+            df = df.where(pd.notna(df), other=None)
 
         obj = df.to_dict(orient="index")
 
