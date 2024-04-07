@@ -89,7 +89,7 @@ class TestTableMode:
                     "averageUnsuppliedEnergyCost": 3456,
                     "dispatchableHydroPower": False,
                     "filterSynthesis": "daily, monthly",  # not changed
-                    "filterYearByYear": "prout",
+                    "filterYearByYear": "annual, weekly",
                 },
                 "es": {
                     "adequacyPatchMode": "inside",
