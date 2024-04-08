@@ -731,7 +731,7 @@ class TestTableMode:
                         "injectionNominalCapacity",
                         "withdrawalNominalCapacity",
                         "reservoirCapacity",
-                        "unknowColumn",
+                        "unknowColumn",  # should be ignored
                     ]
                 ),
             },
@@ -742,28 +742,24 @@ class TestTableMode:
                 "group": "Battery",
                 "injectionNominalCapacity": 1550,
                 "reservoirCapacity": 1500,
-                "unknowColumn": None,
                 "withdrawalNominalCapacity": 1550,
             },
             "fr / tesla": {
                 "group": "Battery",
                 "injectionNominalCapacity": 1200,
                 "reservoirCapacity": 1200,
-                "unknowColumn": None,
                 "withdrawalNominalCapacity": 1200,
             },
             "it / storage3": {
                 "group": "Pondage",
                 "injectionNominalCapacity": 1234,
                 "reservoirCapacity": 1357,
-                "unknowColumn": None,
                 "withdrawalNominalCapacity": 1020,
             },
             "it / storage4": {
                 "group": "PSP_open",
                 "injectionNominalCapacity": 567,
                 "reservoirCapacity": 500,
-                "unknowColumn": None,
                 "withdrawalNominalCapacity": 456,
             },
         }

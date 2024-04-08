@@ -129,9 +129,9 @@ class TableModeManager:
             # Create a new dataframe with the listed columns.
             df = pd.DataFrame(df, columns=columns)  # type: ignore
 
-            # If a column does not exist in the DataFrame, it is created with empty values.
-            # noinspection PyTypeChecker
-            df = df.where(pd.notna(df), other=None)
+        # According to the study version, some properties may not be present,
+        # so we need to drop columns that are all NaN.
+        df = df.dropna(axis=1, how="all")
 
         obj = df.to_dict(orient="index")
 
