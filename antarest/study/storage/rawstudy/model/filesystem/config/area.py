@@ -78,12 +78,9 @@ class OptimizationProperties(IniProperties):
         filter_synthesis: str = Field("", alias="filter-synthesis")
         filter_year_by_year: str = Field("", alias="filter-year-by-year")
 
-        _validate_filtering = validator(
-            "filter_synthesis",
-            "filter_year_by_year",
-            pre=True,
-            allow_reuse=True,
-        )(validate_filtering)
+        @validator("filter_synthesis", "filter_year_by_year", pre=True)
+        def _validate_filtering(cls, v: t.Any) -> str:
+            return validate_filtering(v)
 
     # noinspection SpellCheckingInspection
     class ModalOptimizationSection(IniProperties):

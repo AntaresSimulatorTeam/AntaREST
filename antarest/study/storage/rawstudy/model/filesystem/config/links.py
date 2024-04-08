@@ -134,12 +134,9 @@ class LinkProperties(IniProperties):
         description="color of the area in the map",
     )
 
-    _validate_filtering = validator(
-        "filter_synthesis",
-        "filter_year_by_year",
-        pre=True,
-        allow_reuse=True,
-    )(validate_filtering)
+    @validator("filter_synthesis", "filter_year_by_year", pre=True)
+    def _validate_filtering(cls, v: t.Any) -> str:
+        return validate_filtering(v)
 
     _validate_color_rgb = validator("color_rgb", pre=True, allow_reuse=True)(validate_color_rgb)
 
