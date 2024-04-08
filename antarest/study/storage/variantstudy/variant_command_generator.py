@@ -1,5 +1,6 @@
 import logging
 import shutil
+import uuid
 from pathlib import Path
 from typing import Callable, List, Optional, Tuple, Union, cast
 
@@ -65,8 +66,9 @@ class VariantCommandGenerator:
                 )
                 logger.error(output.message, exc_info=e)
 
+            # noinspection PyTypeChecker
             detail: NewDetailsDTO = {
-                "id": cmd.command_id,
+                "id": uuid.UUID(int=0) if cmd.command_id is None else cmd.command_id,
                 "name": cmd.command_name.value,
                 "status": output.status,
                 "msg": output.message,

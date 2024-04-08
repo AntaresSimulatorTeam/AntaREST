@@ -18,13 +18,13 @@ class NewDetailsDTO(te.TypedDict):
     New details DTO: dictionary with keys 'id', 'name', 'status' and 'msg'.
 
     Attributes:
-        id: identifiant de la commande (UUID),
-        name: nom de la commande,
-        status: statut de la commande (true ou false),
-        msg: message de la génération de la commande ou message d'erreur (si le statut est false).
+        id: command identifier (UUID) if it exists.
+        name: command name.
+        status: command status (true or false).
+        msg: command generation message or error message (if the status is false).
     """
 
-    id: t.Optional[uuid.UUID]
+    id: uuid.UUID
     name: str
     status: bool
     msg: str
