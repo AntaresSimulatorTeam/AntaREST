@@ -74,7 +74,7 @@ class CommandFactory:
             patch_service=patch_service,
         )
 
-    def _to_single_command(self, command_id: t.Optional[str], action: str, args: JSON, version: int) -> ICommand:
+    def _to_single_command(self, action: str, args: JSON, version: int, command_id: t.Optional[str]) -> ICommand:
         """Convert a single CommandDTO to ICommand."""
         if action in COMMAND_MAPPING:
             command_class = COMMAND_MAPPING[action]
@@ -101,10 +101,10 @@ class CommandFactory:
         """
         args = command_dto.args
         if isinstance(args, dict):
-            return [self._to_single_command(command_dto.id, command_dto.action, args, command_dto.version)]
+            return [self._to_single_command(command_dto.action, args, command_dto.version, command_dto.id)]
         elif isinstance(args, list):
             return [
-                self._to_single_command(command_dto.id, command_dto.action, argument, command_dto.version)
+                self._to_single_command(command_dto.action, argument, command_dto.version, command_dto.id)
                 for argument in args
             ]
         raise NotImplementedError()
