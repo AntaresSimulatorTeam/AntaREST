@@ -24,9 +24,8 @@ from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, Vari
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.snapshot_generator import SnapshotGenerator, search_ref_study
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
-from helpers import AnyUUID
 from tests.db_statement_recorder import DBStatementRecorder
-from tests.helpers import with_db_context
+from tests.helpers import AnyUUID, with_db_context
 
 
 def _create_variant(
