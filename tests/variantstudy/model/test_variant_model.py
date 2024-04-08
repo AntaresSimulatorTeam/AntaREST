@@ -15,14 +15,7 @@ from antarest.study.storage.variantstudy.business.matrix_constants_generator imp
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.snapshot_generator import SnapshotGenerator
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
-from tests.helpers import with_db_context
-
-
-class AnyUUID:
-    """Mock object to match any UUID."""
-
-    def __eq__(self, other):
-        return isinstance(other, uuid.UUID)
+from tests.helpers import AnyUUID, with_db_context
 
 
 class TestVariantStudyService:

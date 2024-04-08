@@ -24,24 +24,9 @@ from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, Vari
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.snapshot_generator import SnapshotGenerator, search_ref_study
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
+from helpers import AnyUUID
 from tests.db_statement_recorder import DBStatementRecorder
 from tests.helpers import with_db_context
-
-
-class AnyUUID:
-    """Mock object to match any UUID."""
-
-    def __init__(self, as_string: bool = False):
-        self.as_string = as_string
-
-    def __eq__(self, other):
-        if self.as_string:
-            try:
-                uuid.UUID(other)
-                return True
-            except ValueError:
-                return False
-        return isinstance(other, uuid.UUID)
 
 
 def _create_variant(
