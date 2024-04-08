@@ -508,14 +508,14 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         Entry point to fetch data inside study.
         Args:
             metadata: study
-            output_name:
-            query_file:
-            frequency:
-            mc_years:
-            areas_names:
-            columns_names:
+            output_name: the simulation id
+            query_file: details | values | ...
+            frequency: hourly | daily | monthly | yearly ...
+            mc_years: list of Monte Carlo years to be selected, if empty, all years are selected
+            areas_names: list of areas to be selected, if empty, all areas are selected
+            columns_names: list of columns to be selected, if empty, all columns are selected
 
-        Returns: study data formatted in json
+        Returns: the aggregated data for areas in JSON (DataFrame.to_dict(orient='split'))
 
         """
         self._safe_generation(metadata, timeout=60)
@@ -536,14 +536,14 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         """
         Entry point to fetch data inside study.
         Args:
-            metadata: study
-            output_name:
-            query_file:
-            frequency:
-            mc_years:
-            columns_names:
+            metadata: study for which we want to aggregate output links raw data
+            output_name: the simulation id
+            query_file: details | values
+            frequency: hourly | daily | monthly | yearly ...
+            mc_years: list of Monte Carlo years to be selected, if empty, all years are selected
+            columns_names: list of columns to be selected, if empty, all columns are selected
 
-        Returns: study data formatted in json
+        Returns: the aggregated data for links in JSON (DataFrame.to_dict(orient='split'))
 
         """
         self._safe_generation(metadata, timeout=60)

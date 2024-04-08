@@ -60,18 +60,18 @@ class IStudyStorageService(ABC, t.Generic[T]):
         columns_names: t.Sequence[str],
     ) -> t.Dict[str, t.Any]:
         """
-        Entry point to fetch data inside study.
+        Entry point to fetch areas data inside study's output.
 
         Args:
-            metadata:
-            output_name:
-            query_file: QueryFile,
-            frequency: MatrixFrequency,
-            mc_years: t.Sequence[str],
-            areas_names: t.Sequence[str],
-            columns_names: t.Sequence[str],
+            metadata: study for which we want to perform the aggregation
+            output_name: simulation id
+            query_file: details | values ...
+            frequency: hourly | daily | monthly | yearly ...
+            mc_years: list of Monte Carlo years to consider, if empty, all years are considered
+            areas_names: list of areas to consider, if empty, all areas are considered
+            columns_names: list of columns to consider, if empty, all columns are considered
 
-        Returns: study data formatted in json
+        Returns: the areas aggregated data in a JSON format
 
         """
         raise NotImplementedError()
@@ -87,17 +87,17 @@ class IStudyStorageService(ABC, t.Generic[T]):
         columns_names: t.Sequence[str],
     ) -> t.Dict[str, t.Any]:
         """
-        Entry point to fetch links raw data inside study.
+        Entry point to fetch links raw data inside study's output.
 
         Args:
-            metadata:
-            output_name:
-            query_file: QueryFile,
-            frequency: MatrixFrequency,
-            mc_years: t.Sequence[str],
-            columns_names: t.Sequence[str],
+            metadata: study for which we want to perform the aggregation
+            output_name: simulation id
+            query_file: details | values ...
+            frequency: hourly | daily | monthly | yearly ...
+            mc_years: list of Monte Carlo years to consider, if empty, all years are considered
+            columns_names: list of columns to consider, if empty, all columns are considered
 
-        Returns: the aggregated data
+        Returns: the links aggregated data in a JSON format
 
         """
         raise NotImplementedError()

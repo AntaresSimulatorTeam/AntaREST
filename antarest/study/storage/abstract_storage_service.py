@@ -247,7 +247,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
             areas_names: list of areas names to be selected (empty list means all)
             columns_names: list of columns names to be selected (empty list means all)
 
-        Returns: DF like data representing the aggregated areas data
+        Returns: JSON (DF like matrix) representing the aggregated areas data
 
         """
         self._check_study_exists(metadata)
@@ -320,7 +320,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
             mc_years: list of Monte Carlo years to be selected (empty list means all)
             columns_names: list of columns names to be selected (empty list means all)
 
-        Returns: DF like data representing the aggregated links data
+        Returns: JSON (DF like matrix) representing the aggregated links data
 
         """
         self._check_study_exists(metadata)

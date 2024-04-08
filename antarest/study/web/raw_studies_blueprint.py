@@ -246,7 +246,7 @@ def create_raw_study_routes(
 
 
         Returns:
-            DF like matrix summarizing the aggregation results
+            JSON (DF like matrix) object with the aggregated raw output data  for areas
 
         """
         logger.info(
@@ -294,7 +294,7 @@ def create_raw_study_routes(
             current_user: the current user login info
 
         Returns:
-            DF like matrix summarizing the aggregation results
+            JSON (DF like matrix)  with the aggregated links raw data
 
         """
         logger.info(
