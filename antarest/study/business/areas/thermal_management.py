@@ -391,7 +391,7 @@ class ThermalManager:
             # fmt: on
             raise IncoherenceBetweenMatricesLength(
                 f"Column mismatch : The '{first_matrix_name}' matrix has {first_matrix_width} columns "
-                f"while the '{second_matrix_name}' matrix has {second_matrix_width}."
+                f"whereas the '{second_matrix_name}' matrix has {second_matrix_width}."
             )
 
         return True
