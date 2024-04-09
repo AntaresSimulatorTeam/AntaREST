@@ -3,7 +3,7 @@ import typing as t
 from abc import ABCMeta
 
 import numpy as np
-from pydantic import BaseModel, Extra, Field, root_validator
+from pydantic import BaseModel, Extra, Field, root_validator, validator
 
 from antarest.matrixstore.model import MatrixData
 from antarest.study.business.all_optional_meta import AllOptionalMetaclass
@@ -11,6 +11,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint 
     BindingConstraintFrequency,
     BindingConstraintOperator,
 )
+from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import validate_filtering
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
@@ -128,6 +129,10 @@ def create_binding_constraint_config(study_version: t.Union[str, int], **kwargs:
     """
     cls = get_binding_constraint_config_cls(study_version)
     return cls.from_dict(**kwargs)
+
+    @validator("filter_synthesis", "filter_year_by_year", pre=True)
+    def _validate_filtering(cls, v: t.Any) -> str:
+        return validate_filtering(v)
 
 
 class OptionalProperties(BindingConstraintProperties870, metaclass=AllOptionalMetaclass, use_none=True):
