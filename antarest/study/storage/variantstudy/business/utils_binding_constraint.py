@@ -1,95 +1,10 @@
 import typing as t
 
-from antarest.core.model import JSON
-from antarest.matrixstore.model import MatrixData
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     BindingConstraintDTO,
     BindingConstraintFrequency,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.model.command.common import BindingConstraintOperator
-
-
-def apply_binding_constraint(
-    study_data: FileStudy,
-    binding_constraints: JSON,
-    new_key: str,
-    bd_id: str,
-    name: str,
-    comments: t.Optional[str],
-    enabled: bool,
-    freq: BindingConstraintFrequency,
-    operator: BindingConstraintOperator,
-    coeffs: t.Dict[str, t.List[float]],
-    values: t.Union[t.List[t.List[MatrixData]], str, None],
-    less_term_matrix: t.Union[t.List[t.List[MatrixData]], str, None],
-    greater_term_matrix: t.Union[t.List[t.List[MatrixData]], str, None],
-    equal_term_matrix: t.Union[t.List[t.List[MatrixData]], str, None],
-    filter_year_by_year: t.Optional[str] = None,
-    filter_synthesis: t.Optional[str] = None,
-    group: t.Optional[str] = None,
-) -> str:
-    version = study_data.config.version
-    binding_constraints[new_key] = {
-        "name": name,
-        "id": bd_id,
-        "enabled": enabled,
-        "type": freq.value,
-        "operator": operator.value,
-    }
-    if group:
-        binding_constraints[new_key]["group"] = group
-    if version >= 830:
-        if filter_year_by_year:
-            binding_constraints[new_key]["filter-year-by-year"] = filter_year_by_year
-        if filter_synthesis:
-            binding_constraints[new_key]["filter-synthesis"] = filter_synthesis
-    if comments is not None:
-        binding_constraints[new_key]["comments"] = comments
-
-    for link_or_cluster in coeffs:
-        if "%" in link_or_cluster:
-            area_1, area_2 = link_or_cluster.split("%")
-            if area_1 not in study_data.config.areas or area_2 not in study_data.config.areas[area_1].links:
-                return f"Link '{link_or_cluster}' does not exist in binding constraint '{bd_id}'"
-        elif "." in link_or_cluster:
-            # Cluster IDs are stored in lower case in the binding constraints file.
-            area, cluster_id = link_or_cluster.split(".")
-            thermal_ids = {thermal.id.lower() for thermal in study_data.config.areas[area].thermals}
-            if area not in study_data.config.areas or cluster_id.lower() not in thermal_ids:
-                return f"Cluster '{link_or_cluster}' does not exist in binding constraint '{bd_id}'"
-        else:
-            raise NotImplementedError(f"Invalid link or thermal ID: {link_or_cluster}")
-
-        # this is weird because Antares Simulator only accept int as offset
-        if len(coeffs[link_or_cluster]) == 2:
-            coeffs[link_or_cluster][1] = int(coeffs[link_or_cluster][1])
-
-        binding_constraints[new_key][link_or_cluster] = "%".join(
-            [str(coeff_val) for coeff_val in coeffs[link_or_cluster]]
-        )
-    parse_bindings_coeffs_and_save_into_config(bd_id, study_data.config, coeffs)
-    study_data.tree.save(
-        binding_constraints,
-        ["input", "bindingconstraints", "bindingconstraints"],
-    )
-    if values:
-        if not isinstance(values, str):  # pragma: no cover
-            raise TypeError(repr(values))
-        if version < 870:
-            study_data.tree.save(values, ["input", "bindingconstraints", bd_id])
-    for matrix_term, matrix_name, matrix_alias in zip(
-        [less_term_matrix, greater_term_matrix, equal_term_matrix],
-        ["less_term_matrix", "greater_term_matrix", "equal_term_matrix"],
-        ["lt", "gt", "eq"],
-    ):
-        if matrix_term:
-            if not isinstance(matrix_term, str):  # pragma: no cover
-                raise TypeError(repr(matrix_term))
-            if version >= 870:
-                study_data.tree.save(matrix_term, ["input", "bindingconstraints", f"{bd_id}_{matrix_alias}"])
-    return ""  # success
 
 
 def parse_bindings_coeffs_and_save_into_config(

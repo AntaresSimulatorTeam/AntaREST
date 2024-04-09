@@ -3,7 +3,7 @@ import typing as t
 import pytest
 from pydantic import BaseModel, Field, ValidationError
 
-from antarest.study.business.utils import AllOptionalMetaclass
+from antarest.study.business.all_optional_meta import AllOptionalMetaclass
 
 # ==============================================
 # Classic way to use default and optional values

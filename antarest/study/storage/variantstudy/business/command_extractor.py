@@ -9,13 +9,11 @@ from antarest.core.utils.utils import StopWatch
 from antarest.matrixstore.model import MatrixData
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.storage.patch_service import PatchService
-from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.files import get_playlist
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol
-from antarest.study.storage.variantstudy.model.command.common import BindingConstraintOperator
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import CreateBindingConstraint
 from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
@@ -344,26 +342,42 @@ class CommandExtractor(ICommandExtractor):
     ) -> List[ICommand]:
         study_tree = study.tree
         binding: JSON = _find_binding_config(binding_id, study_tree) if bindings_data is None else bindings_data
-        binding_constraint_command = CreateBindingConstraint(
-            name=binding["name"],
-            enabled=binding["enabled"],
-            time_step=BindingConstraintFrequency(binding["type"]),
-            operator=BindingConstraintOperator(binding["operator"]),
-            coeffs={
-                coeff: [float(el) for el in str(value).split("%")]
-                for coeff, value in binding.items()
-                if "%" in coeff or "." in coeff
-            },
-            comments=binding.get("comments", None),
-            command_context=self.command_context,
-        )
-        study_commands: List[ICommand] = [
-            binding_constraint_command,
-            self.generate_replace_matrix(
-                study_tree,
-                ["input", "bindingconstraints", binding["id"]],
-            ),
+
+        args = {"name": binding["name"]}
+        properties = [
+            "enabled",
+            "comments",
+            "filter_synthesis",
+            "filter_year_by_year",
+            "group",
+            "time_step",
+            "operator",
         ]
+        for prop in properties:
+            if prop in binding:
+                args[prop] = binding[prop]
+        args["coeffs"] = {
+            coeff: [float(el) for el in str(value).split("%")]
+            for coeff, value in binding.items()
+            if "%" in coeff or "." in coeff
+        }
+
+        study_commands: List[ICommand] = [CreateBindingConstraint(**args, command_context=self.command_context)]
+        if study.config.version < 870:
+            study_commands.append(
+                self.generate_replace_matrix(study_tree, ["input", "bindingconstraints", binding["id"]])
+            )
+        else:
+            study_commands.append(
+                self.generate_replace_matrix(study_tree, ["input", "bindingconstraints", f"{binding['id']}_lt"])
+            )
+            study_commands.append(
+                self.generate_replace_matrix(study_tree, ["input", "bindingconstraints", f"{binding['id']}_gt"])
+            )
+            study_commands.append(
+                self.generate_replace_matrix(study_tree, ["input", "bindingconstraints", f"{binding['id']}_eq"])
+            )
+
         return study_commands
 
     def generate_update_config(

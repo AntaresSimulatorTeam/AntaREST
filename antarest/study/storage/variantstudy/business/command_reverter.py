@@ -7,7 +7,10 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import ChildNotFoundError
 from antarest.study.storage.variantstudy.model.command.common import CommandName
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
-from antarest.study.storage.variantstudy.model.command.create_binding_constraint import CreateBindingConstraint
+from antarest.study.storage.variantstudy.model.command.create_binding_constraint import (
+    TERM_MATRICES,
+    CreateBindingConstraint,
+)
 from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
 from antarest.study.storage.variantstudy.model.command.create_district import CreateDistrict
 from antarest.study.storage.variantstudy.model.command.create_link import CreateLink
@@ -112,8 +115,8 @@ class CommandReverter:
                 }
 
                 matrix_service = command.command_context.matrix_service
-                for matrix_name in ["values", "less_term_matrix", "equal_term_matrix", "greater_term_matrix"]:
-                    matrix = command.__getattribute__(matrix_name)
+                for matrix_name in ["values"] + TERM_MATRICES:
+                    matrix = getattr(command, matrix_name)
                     if matrix is not None:
                         args[matrix_name] = matrix_service.get_matrix_id(matrix)
 

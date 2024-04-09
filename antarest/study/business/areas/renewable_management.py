@@ -4,8 +4,9 @@ import typing as t
 from pydantic import validator
 
 from antarest.core.exceptions import DuplicateRenewableCluster, RenewableClusterConfigNotFound, RenewableClusterNotFound
+from antarest.study.business.all_optional_meta import AllOptionalMetaclass, camel_case_model
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
-from antarest.study.business.utils import AllOptionalMetaclass, camel_case_model, execute_or_add_commands
+from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import Study
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.renewable import (
