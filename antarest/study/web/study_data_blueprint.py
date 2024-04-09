@@ -1898,7 +1898,6 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/areas/{area_id}/clusters/thermal/{cluster_id}/validate",
         tags=[APITag.study_data],
         summary="Validates the thermal cluster series",
-        response_model=None,
     )
     def validate_cluster_series(
         uuid: str,

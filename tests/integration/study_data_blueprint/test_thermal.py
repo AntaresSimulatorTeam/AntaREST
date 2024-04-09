@@ -609,10 +609,8 @@ class TestThermal:
             assert res.status_code == 422
             obj = res.json()
             assert obj["exception"] == "IncoherenceBetweenMatricesLength"
-            assert (
-                obj["description"]
-                == "Matrix columns mismatch in thermal cluster 'FR_Gas conventional' series. Columns size are [4, 3, 1]"
-            )
+            pattern = ".*'series'.*4.*'CO2Cost'.*3"
+            assert re.match(pattern, obj["description"])
 
         # =============================
         #  THERMAL CLUSTER DELETION

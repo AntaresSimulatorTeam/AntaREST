@@ -364,28 +364,34 @@ class ThermalManager:
         return ThermalClusterOutput(**new_config.dict(by_alias=False))
 
     def validate_series(self, study: Study, area_id: str, cluster_id: str) -> bool:
-        cluster_id_lowered = cluster_id.lower()
-        matrices_path = [f"input/thermal/series/{area_id}/{cluster_id_lowered}/series"]
+        lower_cluster_id = cluster_id.lower()
+        thermal_cluster_path = Path(f"input/thermal/series/{area_id}/{lower_cluster_id}")
+        series_path = [thermal_cluster_path / "series"]
         if int(study.version) >= 870:
-            matrices_path.append(f"input/thermal/series/{area_id}/{cluster_id_lowered}/CO2Cost")
-            matrices_path.append(f"input/thermal/series/{area_id}/{cluster_id_lowered}/fuelCost")
+            series_path.append(thermal_cluster_path / "CO2Cost")
+            series_path.append(thermal_cluster_path / "fuelCost")
 
-        matrices_width = []
-        for matrix_path in matrices_path:
-            matrix = self.storage_service.get_storage(study).get(study, matrix_path)
+        ts_widths = {}
+        for ts_path in series_path:
+            matrix = self.storage_service.get_storage(study).get(study, str(ts_path))
             matrix_data = matrix["data"]
-            matrix_length = len(matrix_data)
-            if matrix_data != [[]] and matrix_length != 8760:
+            matrix_height = len(matrix_data)
+            # We ignore empty matrices as there are default matrices for the simulator.
+            if matrix_data != [[]] and matrix_height != 8760:
                 raise IncoherenceBetweenMatricesLength(
-                    f"The matrix {Path(matrix_path).name} should have 8760 rows, currently: {matrix_length}"
+                    f"The matrix {ts_path.name} should have 8760 rows, currently: {matrix_height}"
                 )
-            matrices_width.append(len(matrix_data[0]))
-        comparison_set = set(matrices_width)
-        comparison_set.discard(0)
-        comparison_set.discard(1)
-        if len(comparison_set) > 1:
+            matrix_width = len(matrix_data[0])
+            if matrix_width > 1:
+                ts_widths[matrix_width] = ts_path.name
+
+        if len(ts_widths) > 1:
+            # fmt: off
+            (first_matrix_width, first_matrix_name), (second_matrix_width, second_matrix_name) = list(ts_widths.items())[:2]
+            # fmt: on
             raise IncoherenceBetweenMatricesLength(
-                f"Matrix columns mismatch in thermal cluster '{cluster_id}' series. Columns size are {matrices_width}"
+                f"Column mismatch : The '{first_matrix_name}' matrix has {first_matrix_width} columns "
+                f"while the '{second_matrix_name}' matrix has {second_matrix_width}."
             )
 
         return True

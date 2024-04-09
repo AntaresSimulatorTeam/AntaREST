@@ -1,5 +1,6 @@
 import filecmp
 import glob
+import os
 import re
 import shutil
 import zipfile
@@ -163,7 +164,7 @@ def assert_inputs_are_updated(tmp_path: Path, old_area_values: dict, old_binding
             path_txt = Path(txt)
             old_txt = str(Path(path_txt.parent.name).joinpath(path_txt.stem)).replace("_parameters", "")
             df = pandas.read_csv(txt, sep="\t", header=None)
-            assert df.values.all() == old_area_values[old_txt].iloc[:, 2:8].values.all()
+            assert df.to_numpy().all() == old_area_values[old_txt].iloc[:, 2:8].values.all()
         capacities = glob.glob(str(folder_path / "capacities" / "*"))
         for direction_txt in capacities:
             df_capacities = pandas.read_csv(direction_txt, sep="\t", header=None)
@@ -206,7 +207,7 @@ def assert_inputs_are_updated(tmp_path: Path, old_area_values: dict, old_binding
         for k, term in enumerate(["lt", "gt", "eq"]):
             term_path = input_path / "bindingconstraints" / f"{bd_id}_{term}.txt"
             df = pandas.read_csv(term_path, sep="\t", header=None)
-            assert df.values.all() == old_binding_constraint_values[bd_id].iloc[:, k].values.all()
+            assert df.to_numpy().all() == old_binding_constraint_values[bd_id].iloc[:, k].values.all()
 
     # thermal cluster part
     for area in list_areas:
@@ -214,8 +215,11 @@ def assert_inputs_are_updated(tmp_path: Path, old_area_values: dict, old_binding
         thermal_series_path = tmp_path / "input" / "thermal" / "series" / area
         thermal_cluster_list = reader.read(tmp_path / "input" / "thermal" / "clusters" / area / "list.ini")
         for cluster in thermal_cluster_list:
-            assert (thermal_series_path / cluster.lower() / "fuelCost.txt").exists()
-            assert (thermal_series_path / cluster.lower() / "CO2Cost.txt").exists()
+            fuel_cost_path = thermal_series_path / cluster.lower() / "fuelCost.txt"
+            co2_cost_path = thermal_series_path / cluster.lower() / "CO2Cost.txt"
+            for path in [fuel_cost_path, co2_cost_path]:
+                assert path.exists()
+                assert os.path.getsize(path) == 0
             assert thermal_cluster_list[cluster]["costgeneration"] == "SetManually"
             assert thermal_cluster_list[cluster]["efficiency"] == 100
             assert thermal_cluster_list[cluster]["variableomcost"] == 0

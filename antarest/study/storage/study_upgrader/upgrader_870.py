@@ -54,7 +54,7 @@ def upgrade_870(study_path: Path) -> None:
     for ini_file_path in ini_files:
         data = IniReader().read(ini_file_path)
         area_id = ini_file_path.parent.name
-        for cluster in data.keys():
+        for cluster in data:
             new_thermal_path = thermal_path / area_id / cluster.lower()
             (new_thermal_path / "CO2Cost.txt").touch()
             (new_thermal_path / "fuelCost.txt").touch()

@@ -115,6 +115,7 @@ class CreateCluster(ICommand):
 
         # Series identifiers are in lower case.
         series_id = cluster_id.lower()
+        null_matrix = self.command_context.generator_matrix_constants.get_null_matrix()
         new_cluster_data: JSON = {
             "input": {
                 "thermal": {
@@ -127,21 +128,13 @@ class CreateCluster(ICommand):
                             }
                         }
                     },
-                    "series": {
-                        self.area_id: {
-                            series_id: {"series": self.command_context.generator_matrix_constants.get_null_matrix()}
-                        }
-                    },
+                    "series": {self.area_id: {series_id: {"series": null_matrix}}},
                 }
             }
         }
         if study_data.config.version >= 870:
-            new_cluster_data["input"]["thermal"]["series"][self.area_id][series_id][
-                "CO2Cost"
-            ] = self.command_context.generator_matrix_constants.get_null_matrix()
-            new_cluster_data["input"]["thermal"]["series"][self.area_id][series_id][
-                "fuelCost"
-            ] = self.command_context.generator_matrix_constants.get_null_matrix()
+            new_cluster_data["input"]["thermal"]["series"][self.area_id][series_id]["CO2Cost"] = null_matrix
+            new_cluster_data["input"]["thermal"]["series"][self.area_id][series_id]["fuelCost"] = null_matrix
         study_data.tree.save(new_cluster_data)
 
         return output
