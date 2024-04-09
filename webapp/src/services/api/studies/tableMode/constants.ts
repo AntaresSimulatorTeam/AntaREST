@@ -15,8 +15,6 @@ export const TABLE_MODE_TYPES = [
 
 export const TABLE_MODE_COLUMNS_BY_TYPE = {
   [AREAS]: [
-    // UI
-    "colorRgb",
     // Optimization - Nodal optimization
     "nonDispatchablePower",
     "dispatchableHydroPower",

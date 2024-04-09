@@ -130,16 +130,11 @@ class _BaseAreaDTO(
     Aggregates the fields of the `OptimizationProperties` and `AdequacyPathProperties` classes,
     but without the `UIProperties` fields.
 
-    Add the `color_rgb` field extracted from `/input/areas/<area>/ui.ini` information.
-
     Add the fields extracted from the `/input/thermal/areas.ini` information:
 
     - `average_unsupplied_energy_cost` is extracted from `unserverd_energy_cost`,
     - `average_spilled_energy_cost` is extracted from `spilled_energy_cost`.
     """
-
-    # Extra field which represents the Area color
-    color_rgb: str = Field("#E66C2C", description="color of the area in the map")
 
     average_unsupplied_energy_cost: float = Field(0.0, description="average unserverd energy cost (€/MWh)")
     average_spilled_energy_cost: float = Field(0.0, description="average spilled energy cost (€/MWh)")
@@ -171,7 +166,6 @@ class AreaOutput(_BaseAreaDTO, metaclass=AllOptionalMetaclass, use_none=True):
             The `GetAreaDTO` object.
         """
         obj = {
-            "color_rgb": area_folder.ui.style.color_rgb,
             "average_unsupplied_energy_cost": average_unsupplied_energy_cost,
             "average_spilled_energy_cost": average_spilled_energy_cost,
             **area_folder.optimization.filtering.dict(by_alias=False),
@@ -196,17 +190,12 @@ class AreaOutput(_BaseAreaDTO, metaclass=AllOptionalMetaclass, use_none=True):
         adequacy_path_section = AdequacyPathProperties.AdequacyPathSection(**obj)
         return AdequacyPathProperties(adequacy_patch=adequacy_path_section)
 
-    def _to_ui(self) -> UIProperties:
-        """Construct a partially initialized UI object with only the Area color."""
-        style_section = AreaUI(color_rgb=self.color_rgb)
-        return UIProperties(style=style_section)
-
     @property
     def area_folder(self) -> AreaFolder:
         area_folder = AreaFolder(
             optimization=self._to_optimization(),
             adequacy_patch=self._to_adequacy_patch(),
-            ui=self._to_ui(),
+            # UI properties are not configurable in Table Mode
         )
         return area_folder
 
@@ -331,18 +320,6 @@ class AreaManager:
                         command_context=command_context,
                     )
                 )
-            if old_area_folder.ui != new_area_folder.ui:
-                # update only the color fields, one by one
-                _color_fields = {"color_r", "color_g", "color_b"}
-                _data = new_area_folder.ui.style.to_config()
-                for _color_field in _color_fields:
-                    commands.append(
-                        UpdateConfig(
-                            target=f"input/areas/{area_id}/ui/ui/{_color_field}",
-                            data=_data[_color_field],
-                            command_context=command_context,
-                        )
-                    )
             if old_area.average_unsupplied_energy_cost != new_area.average_unsupplied_energy_cost:
                 commands.append(
                     UpdateConfig(
