@@ -371,7 +371,7 @@ class ThermalManager:
             series_path.append(thermal_cluster_path / "CO2Cost")
             series_path.append(thermal_cluster_path / "fuelCost")
 
-        ts_widths = {}
+        ts_widths: t.MutableMapping[int, t.MutableSequence[str]] = {}
         for ts_path in series_path:
             matrix = self.storage_service.get_storage(study).get(study, str(ts_path))
             matrix_data = matrix["data"]
@@ -383,15 +383,17 @@ class ThermalManager:
                 )
             matrix_width = len(matrix_data[0])
             if matrix_width > 1:
-                ts_widths[matrix_width] = ts_path.name
+                ts_widths.setdefault(matrix_width, []).append(ts_path.name)
 
         if len(ts_widths) > 1:
-            # fmt: off
-            (first_matrix_width, first_matrix_name), (second_matrix_width, second_matrix_name) = list(ts_widths.items())[:2]
-            # fmt: on
-            raise IncoherenceBetweenMatricesLength(
-                f"Column mismatch : The '{first_matrix_name}' matrix has {first_matrix_width} columns "
-                f"whereas the '{second_matrix_name}' matrix has {second_matrix_width}."
-            )
+            messages = []
+            for width, name_list in ts_widths.items():
+                names = ", ".join([f"'{name}'" for name in name_list])
+                message = {
+                    1: f"matrix {names} has {width} columns",
+                    2: f"matrices {names} have {width} columns",
+                }[min(2, len(name_list))]
+                messages.append(message)
+            raise IncoherenceBetweenMatricesLength("Mismatch widths: " + "; ".join(messages))
 
         return True
