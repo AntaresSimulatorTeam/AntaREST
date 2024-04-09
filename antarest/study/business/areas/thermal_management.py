@@ -1,9 +1,15 @@
 import json
 import typing as t
+from pathlib import Path
 
 from pydantic import validator
 
-from antarest.core.exceptions import DuplicateThermalCluster, ThermalClusterConfigNotFound, ThermalClusterNotFound
+from antarest.core.exceptions import (
+    DuplicateThermalCluster,
+    IncoherenceBetweenMatricesLength,
+    ThermalClusterConfigNotFound,
+    ThermalClusterNotFound,
+)
 from antarest.study.business.utils import AllOptionalMetaclass, camel_case_model, execute_or_add_commands
 from antarest.study.model import Study
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
@@ -338,6 +344,11 @@ class ThermalManager:
             f"input/thermal/prepro/{area_id}/{lower_new_id}/modulation",
             f"input/thermal/prepro/{area_id}/{lower_new_id}/data",
         ]
+        if int(study.version) >= 870:
+            source_paths.append(f"input/thermal/series/{area_id}/{lower_source_id}/CO2Cost")
+            source_paths.append(f"input/thermal/series/{area_id}/{lower_source_id}/fuelCost")
+            new_paths.append(f"input/thermal/series/{area_id}/{lower_new_id}/CO2Cost")
+            new_paths.append(f"input/thermal/series/{area_id}/{lower_new_id}/fuelCost")
 
         # Prepare and execute commands
         commands: t.List[t.Union[CreateCluster, ReplaceMatrix]] = [create_cluster_cmd]
@@ -351,3 +362,38 @@ class ThermalManager:
         execute_or_add_commands(study, self._get_file_study(study), commands, self.storage_service)
 
         return ThermalClusterOutput(**new_config.dict(by_alias=False))
+
+    def validate_series(self, study: Study, area_id: str, cluster_id: str) -> bool:
+        lower_cluster_id = cluster_id.lower()
+        thermal_cluster_path = Path(f"input/thermal/series/{area_id}/{lower_cluster_id}")
+        series_path = [thermal_cluster_path / "series"]
+        if int(study.version) >= 870:
+            series_path.append(thermal_cluster_path / "CO2Cost")
+            series_path.append(thermal_cluster_path / "fuelCost")
+
+        ts_widths: t.MutableMapping[int, t.MutableSequence[str]] = {}
+        for ts_path in series_path:
+            matrix = self.storage_service.get_storage(study).get(study, str(ts_path))
+            matrix_data = matrix["data"]
+            matrix_height = len(matrix_data)
+            # We ignore empty matrices as there are default matrices for the simulator.
+            if matrix_data != [[]] and matrix_height != 8760:
+                raise IncoherenceBetweenMatricesLength(
+                    f"The matrix {ts_path.name} should have 8760 rows, currently: {matrix_height}"
+                )
+            matrix_width = len(matrix_data[0])
+            if matrix_width > 1:
+                ts_widths.setdefault(matrix_width, []).append(ts_path.name)
+
+        if len(ts_widths) > 1:
+            messages = []
+            for width, name_list in ts_widths.items():
+                names = ", ".join([f"'{name}'" for name in name_list])
+                message = {
+                    1: f"matrix {names} has {width} columns",
+                    2: f"matrices {names} have {width} columns",
+                }[min(2, len(name_list))]
+                messages.append(message)
+            raise IncoherenceBetweenMatricesLength("Mismatch widths: " + "; ".join(messages))
+
+        return True

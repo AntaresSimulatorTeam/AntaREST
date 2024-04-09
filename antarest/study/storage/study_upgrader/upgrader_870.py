@@ -50,10 +50,15 @@ def upgrade_870(study_path: Path) -> None:
 
     # Add properties for thermal clusters in .ini file
     ini_files = study_path.glob("input/thermal/clusters/*/list.ini")
+    thermal_path = study_path / Path("input/thermal/series")
     for ini_file_path in ini_files:
         data = IniReader().read(ini_file_path)
-        for section in data:
-            data[section]["costgeneration"] = "SetManually"
-            data[section]["efficiency"] = 100
-            data[section]["variableomcost"] = 0
+        area_id = ini_file_path.parent.name
+        for cluster in data:
+            new_thermal_path = thermal_path / area_id / cluster.lower()
+            (new_thermal_path / "CO2Cost.txt").touch()
+            (new_thermal_path / "fuelCost.txt").touch()
+            data[cluster]["costgeneration"] = "SetManually"
+            data[cluster]["efficiency"] = 100
+            data[cluster]["variableomcost"] = 0
         IniWriter().write(data, ini_file_path)
