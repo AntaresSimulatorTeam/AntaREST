@@ -74,6 +74,7 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
             # We want to remove existing coeffs to replace them.
             allowed_keys = {
                 "name": existing_constraint["name"],
+                # fixme: [review] we must exclude ICommand.__fields__ names, not only command_context
                 **json.loads(self.json(exclude={"command_context"}, by_alias=True)),
             }
             keys_to_delete = [key for key in existing_constraint if key not in allowed_keys]
