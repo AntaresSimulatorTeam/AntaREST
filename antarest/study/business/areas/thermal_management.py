@@ -373,7 +373,7 @@ class ThermalManager:
 
         ts_widths: t.MutableMapping[int, t.MutableSequence[str]] = {}
         for ts_path in series_path:
-            matrix = self.storage_service.get_storage(study).get(study, str(ts_path))
+            matrix = self.storage_service.get_storage(study).get(study, ts_path.as_posix())
             matrix_data = matrix["data"]
             matrix_height = len(matrix_data)
             # We ignore empty matrices as there are default matrices for the simulator.
