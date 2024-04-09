@@ -1,7 +1,6 @@
 from typing import Optional
 
 from fastapi import FastAPI
-from fastapi_jwt_auth.exceptions import AuthJWTException  # type: ignore
 
 from antarest.core.config import Config
 from antarest.core.filetransfer.service import FileTransferManager

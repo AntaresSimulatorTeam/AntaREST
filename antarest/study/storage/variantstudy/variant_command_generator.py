@@ -1,5 +1,6 @@
 import logging
 import shutil
+import uuid
 from pathlib import Path
 from typing import Callable, List, Optional, Tuple, Union, cast
 
@@ -10,11 +11,21 @@ from antarest.study.storage.utils import update_antares_info
 from antarest.study.storage.variantstudy.model.command.common import CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
-from antarest.study.storage.variantstudy.model.model import GenerationResultInfoDTO
+from antarest.study.storage.variantstudy.model.model import GenerationResultInfoDTO, NewDetailsDTO
 
 logger = logging.getLogger(__name__)
 
 APPLY_CALLBACK = Callable[[ICommand, Union[FileStudyTreeConfig, FileStudy]], CommandOutput]
+
+
+class CmdNotifier:
+    def __init__(self, study_id: str, total_count: int) -> None:
+        self.index = 0
+        self.study_id = study_id
+        self.total_count = total_count
+
+    def __call__(self, x: float) -> None:
+        logger.info(f"Command {self.index}/{self.total_count} [{self.study_id}] applied in {x}s")
 
 
 class VariantCommandGenerator:
@@ -33,53 +44,45 @@ class VariantCommandGenerator:
         # Apply commands
         results: GenerationResultInfoDTO = GenerationResultInfoDTO(success=True, details=[])
 
-        stopwatch.reset_current()
         logger.info("Applying commands")
-        command_index = 0
-        total_commands = len(commands)
-        study_id = metadata.id if metadata is not None else "-"
-        for command_batch in commands:
-            command_output_status = True
-            command_output_message = ""
-            command_name = command_batch[0].command_name.value if len(command_batch) > 0 else ""
-            try:
-                command_index += 1
-                command_output_messages: List[str] = []
-                for command in command_batch:
-                    output = applier(command, data)
-                    command_output_messages.append(output.message)
-                    command_output_status = command_output_status and output.status
-                    if not command_output_status:
-                        break
-                command_output_message = "\n".join(command_output_messages)
-            except Exception as e:
-                command_output_status = False
-                command_output_message = f"Error while applying command {command_name}"
-                logger.error(command_output_message, exc_info=e)
-                break
-            finally:
-                results.details.append(
-                    (
-                        command_name,
-                        command_output_status,
-                        command_output_message,
-                    )
-                )
-                results.success = command_output_status
-                if notifier:
-                    notifier(
-                        command_index - 1,
-                        command_output_status,
-                        command_output_message,
-                    )
-                stopwatch.log_elapsed(
-                    lambda x: logger.info(
-                        f"Command {command_index}/{total_commands} [{study_id}] {command.match_signature()} applied in {x}s"
-                    )
-                )
+        study_id = "-" if metadata is None else metadata.id
 
-            if not results.success:
-                break
+        # flatten the list of commands
+        all_commands = [command for command_batch in commands for command in command_batch]
+
+        # Prepare the stopwatch
+        cmd_notifier = CmdNotifier(study_id, len(all_commands))
+        stopwatch.reset_current()
+
+        # Store all the outputs
+        for index, cmd in enumerate(all_commands, 1):
+            try:
+                output = applier(cmd, data)
+            except Exception as e:
+                # Unhandled exception
+                output = CommandOutput(
+                    status=False,
+                    message=f"Error while applying command {cmd.command_name}",
+                )
+                logger.error(output.message, exc_info=e)
+
+            # noinspection PyTypeChecker
+            detail: NewDetailsDTO = {
+                "id": uuid.UUID(int=0) if cmd.command_id is None else cmd.command_id,
+                "name": cmd.command_name.value,
+                "status": output.status,
+                "msg": output.message,
+            }
+            results.details.append(detail)
+
+            if notifier:
+                notifier(index - 1, output.status, output.message)
+
+            cmd_notifier.index = index
+            stopwatch.log_elapsed(cmd_notifier)
+
+        results.success = all(detail["status"] for detail in results.details)  # type: ignore
+
         data_type = isinstance(data, FileStudy)
         stopwatch.log_elapsed(
             lambda x: logger.info(

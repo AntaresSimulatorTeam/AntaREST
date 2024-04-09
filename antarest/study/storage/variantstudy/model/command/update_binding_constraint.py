@@ -56,7 +56,7 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
         self.validates_and_fills_matrices(specific_matrices=updated_matrices or None, version=study_data.config.version, create=False)
         # fmt: on
 
-        return apply_binding_constraint(
+        err_msg = apply_binding_constraint(
             study_data,
             binding_constraints,
             new_key,
@@ -75,6 +75,7 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
             self.filter_synthesis,
             self.group,
         )
+        return CommandOutput(status=not err_msg, message=err_msg)
 
     def to_dto(self) -> CommandDTO:
         dto = super().to_dto()

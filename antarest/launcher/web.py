@@ -231,7 +231,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
                     "value": "local",
                 },
             },
-        )
+        ),
     ) -> List[str]:
         """
         Get list of supported solver versions defined in the configuration.
@@ -268,7 +268,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
                     "value": "local",
                 },
             },
-        )
+        ),
     ) -> Dict[str, int]:
         """
         Retrieve the numer of cores of the launcher.

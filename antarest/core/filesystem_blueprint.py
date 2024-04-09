@@ -15,7 +15,6 @@ from pydantic import BaseModel, Extra, Field
 from starlette.responses import PlainTextResponse, StreamingResponse
 
 from antarest.core.config import Config
-from antarest.core.jwt import JWTUser
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 

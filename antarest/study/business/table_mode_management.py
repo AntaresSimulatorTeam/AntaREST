@@ -436,17 +436,13 @@ class TableModeManager:
 
         if table_type == TableTemplateType.AREA:
             return {
-                area_id: columns_model.construct(
-                    **{col: get_column_value(col, data) for col in columns}
-                )  # type: ignore
+                area_id: columns_model.construct(**{col: get_column_value(col, data) for col in columns})  # type: ignore
                 for area_id, data in glob_object.items()
             }
 
         if table_type == TableTemplateType.BINDING_CONSTRAINT:
             return {
-                data["id"]: columns_model.construct(
-                    **{col: get_column_value(col, data) for col in columns}
-                )  # type: ignore
+                data["id"]: columns_model.construct(**{col: get_column_value(col, data) for col in columns})  # type: ignore
                 for data in glob_object.values()
             }
 

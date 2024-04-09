@@ -61,7 +61,7 @@ class PathType:
         from antarest.main import PathType
 
         parser = argparse.ArgumentParser()
-        parser.add_argument('--input', type=PathType(file_ok=True, exists=True))
+        parser.add_argument("--input", type=PathType(file_ok=True, exists=True))
         args = parser.parse_args()
 
         print(args.input)
