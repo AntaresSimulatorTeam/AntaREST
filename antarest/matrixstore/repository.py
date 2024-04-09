@@ -6,8 +6,8 @@ from pathlib import Path
 import numpy as np
 from filelock import FileLock
 from numpy import typing as npt
-from sqlalchemy import and_, exists  # type: ignore
-from sqlalchemy.orm import Session, aliased  # type: ignore
+from sqlalchemy import exists  # type: ignore
+from sqlalchemy.orm import Session  # type: ignore
 
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.matrixstore.model import Matrix, MatrixContent, MatrixData, MatrixDataSet

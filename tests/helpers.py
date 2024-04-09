@@ -1,4 +1,5 @@
 import time
+import uuid
 from datetime import datetime, timedelta, timezone
 from functools import wraps
 from typing import Any, Callable, Dict, List, cast
@@ -76,3 +77,26 @@ def auto_retry_assert(predicate: Callable[..., bool], timeout: int = 2, delay: f
             return
         time.sleep(delay)
     raise AssertionError()
+
+
+class AnyUUID:
+    """Mock object to match any UUID."""
+
+    def __init__(self, as_string: bool = False):
+        self.as_string = as_string
+
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, AnyUUID):
+            return True
+        if isinstance(other, str):
+            if self.as_string:
+                try:
+                    uuid.UUID(other)
+                    return True
+                except ValueError:
+                    return False
+            return False
+        return isinstance(other, uuid.UUID)
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
