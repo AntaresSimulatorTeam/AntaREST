@@ -64,8 +64,6 @@ class TestTableMode:
         assert res.status_code == 200, res.json()
         actual = res.json()
         assert set(actual["properties"]) == {
-            # UI
-            "colorRgb",
             # Optimization - Nodal optimization
             "nonDispatchablePower",
             "dispatchableHydroPower",
@@ -95,9 +93,6 @@ class TestTableMode:
                     "adequacyPatchMode": "inside",
                     "spreadSpilledEnergyCost": None,  # not changed
                 },
-                "fr": {
-                    "colorRgb": "#C00000",
-                },
             },
         )
         assert res.status_code == 200, res.json()
@@ -106,7 +101,6 @@ class TestTableMode:
                 "adequacyPatchMode": "outside",
                 "averageSpilledEnergyCost": 0,
                 "averageUnsuppliedEnergyCost": 3456,
-                "colorRgb": "#0080FF",
                 "dispatchableHydroPower": False,
                 "filterSynthesis": "daily, monthly",
                 "filterYearByYear": "weekly, annual",
@@ -119,7 +113,6 @@ class TestTableMode:
                 "adequacyPatchMode": "inside",
                 "averageSpilledEnergyCost": 0,
                 "averageUnsuppliedEnergyCost": 3000,
-                "colorRgb": "#0080FF",
                 "dispatchableHydroPower": True,
                 "filterSynthesis": "daily, monthly",
                 "filterYearByYear": "hourly, weekly, annual",
@@ -132,7 +125,6 @@ class TestTableMode:
                 "adequacyPatchMode": "outside",
                 "averageSpilledEnergyCost": 0,
                 "averageUnsuppliedEnergyCost": 3000,
-                "colorRgb": "#C00000",
                 "dispatchableHydroPower": True,
                 "filterSynthesis": "",
                 "filterYearByYear": "hourly",
@@ -145,7 +137,6 @@ class TestTableMode:
                 "adequacyPatchMode": "outside",
                 "averageSpilledEnergyCost": 0,
                 "averageUnsuppliedEnergyCost": 3000,
-                "colorRgb": "#0080FF",
                 "dispatchableHydroPower": True,
                 "filterSynthesis": "",
                 "filterYearByYear": "hourly",
