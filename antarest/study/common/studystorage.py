@@ -55,7 +55,7 @@ class IStudyStorageService(ABC, t.Generic[T]):
         output_name: str,
         query_file: AreasQueryFile,
         frequency: MatrixFrequency,
-        mc_years: t.Sequence[str],
+        mc_years: t.Sequence[int],
         areas_names: t.Sequence[str],
         columns_names: t.Sequence[str],
     ) -> t.Dict[str, t.Any]:
@@ -83,7 +83,7 @@ class IStudyStorageService(ABC, t.Generic[T]):
         output_name: str,
         query_file: LinksQueryFile,
         frequency: MatrixFrequency,
-        mc_years: t.Sequence[str],
+        mc_years: t.Sequence[int],
         columns_names: t.Sequence[str],
     ) -> t.Dict[str, t.Any]:
         """

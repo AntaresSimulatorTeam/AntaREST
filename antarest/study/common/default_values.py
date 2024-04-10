@@ -31,12 +31,12 @@ class LinkProperties:
 
 
 class AreasQueryFile(str, Enum):
-    AREAS_VALUES = "values"
-    AREAS_DETAILS = "details"
-    AREAS_DETAILS_ST_STORAGE = "details-st-storage"
-    AREAS_DETAILS_RES = "details-res"
+    VALUES = "values"
+    DETAILS = "details"
+    DETAILS_ST_STORAGE = "details-st-storage"
+    DETAILS_RES = "details-res"
 
 
 class LinksQueryFile(str, Enum):
     VALUES = "values"
-    LINKS_DETAILS = "details"
+    DETAILS = "details"

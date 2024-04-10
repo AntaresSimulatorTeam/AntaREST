@@ -325,7 +325,7 @@ class StudyService:
         output_name: str,
         query_file: AreasQueryFile,
         frequency: MatrixFrequency,
-        mc_years: t.Sequence[str],
+        mc_years: t.Sequence[int],
         areas_names: t.Sequence[str],
         columns_names: t.Sequence[str],
         params: RequestParameters,
@@ -359,7 +359,7 @@ class StudyService:
         output_name: str,
         query_file: LinksQueryFile,
         frequency: MatrixFrequency,
-        mc_years: t.Sequence[str],
+        mc_years: t.Sequence[int],
         columns_names: t.Sequence[str],
         params: RequestParameters,
     ) -> JSON:

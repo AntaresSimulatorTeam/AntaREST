@@ -4,7 +4,6 @@ import shutil
 import tempfile
 import typing as t
 from abc import ABC
-from enum import Enum
 from pathlib import Path
 from uuid import uuid4
 
@@ -62,34 +61,25 @@ FREQUENCY_INDEX = -2
 """Index in path parts starting from the Monte Carlo year to determine matrix frequency."""
 
 
-class AggregateType(str, Enum):
+def _stringify(col: t.Union[str, t.Tuple[str, ...]]) -> str:
     """
-    Enum to determine the type for the aggregation: areas/links.
-    """
+    Convert a column name from Generic Hashable to a string without commas.
 
-    LINKS = "links"
-    AREAS = "areas"
-
-
-def stringify(col: t.Union[str, t.Tuple[str, ...]]) -> str:
-    """
-    Convert a column name from Generic Hashable to a string without comers
     Args:
         col: column name to convert
 
     Returns:  column name as string
-
     """
-    return "/".join(col) if isinstance(col, tuple) else col
+    return ("/".join(col)).strip("/") if isinstance(col, tuple) else col
 
 
-def flatten_tree(path_tree: t.Dict[str, t.Any]) -> t.List[t.Tuple[str, ...]]:
+def flatten_tree(path_tree: t.Dict[str, t.Any]) -> t.List[t.List[str]]:
     """
     Flatten paths tree
     Args:
         path_tree: tree to flatten
 
-    Returns: list of tuple with all tree paths parts
+    Returns: list of all tree paths parts flattened
 
     """
 
@@ -97,11 +87,11 @@ def flatten_tree(path_tree: t.Dict[str, t.Any]) -> t.List[t.Tuple[str, ...]]:
 
     for key, value in path_tree.items():
         if isinstance(value, dict) and value:
-            result.extend([(key,) + sub for sub in flatten_tree(value)])
+            result.extend([[key] + sub for sub in flatten_tree(value)])
         elif value:
-            result.append((key, value))
+            result.append([key, value])
         else:
-            result.append((key,))
+            result.append([key])
     return result
 
 
@@ -232,9 +222,9 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         output_name: str,
         query_file: AreasQueryFile,
         frequency: MatrixFrequency,
-        mc_years: t.Sequence[str],
+        mc_years: t.Sequence[int],  # review: t.Sequence[int]
         areas_names: t.Sequence[str],
-        columns_names: t.Sequence[str],
+        columns_names: t.Sequence[str],  # review: typo: "column_names`
     ) -> t.Dict[str, t.Any]:
         """
         Entry point to fetch areas raw data.
@@ -256,21 +246,18 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         mc_years_parts = flatten_tree(study.tree.get(parts, depth=1))
         # Monte Carlo years filtering
         if mc_years:
-            int_mc_years = [int(mc_year) for mc_year in mc_years]
-            mc_years_parts = [
-                mc_year_parts for mc_year_parts in mc_years_parts if int(mc_year_parts[0]) in int_mc_years
-            ]
-        mc_years_parts = [mc_year_parts + (AggregateType.AREAS.value,) for mc_year_parts in mc_years_parts]
+            mc_years_parts = [mc_year_parts for mc_year_parts in mc_years_parts if int(mc_year_parts[0]) in mc_years]
+        mc_years_parts = [mc_year_parts + ["areas"] for mc_year_parts in mc_years_parts]
         full_areas_parts = []
         for mc_year_parts in mc_years_parts:
-            areas_parts = flatten_tree(study.tree.get(parts + list(mc_year_parts), depth=1))
+            areas_parts = flatten_tree(study.tree.get(parts + mc_year_parts, depth=1))
             # Areas names filtering
             if areas_names:
                 areas_parts = [area_parts for area_parts in areas_parts if area_parts[0] in areas_names]
             full_areas_parts.extend([mc_year_parts + area_parts for area_parts in areas_parts])
         all_paths_parts = []
         for mc_year_area_parts in full_areas_parts:
-            files_parts = flatten_tree(study.tree.get(parts + list(mc_year_area_parts), depth=-1))
+            files_parts = flatten_tree(study.tree.get(parts + mc_year_area_parts, depth=-1))
             all_paths_parts.extend([mc_year_area_parts + file_parts for file_parts in files_parts])
         # Frequency filtering
         all_paths_parts = [path_parts for path_parts in all_paths_parts if frequency in path_parts[FREQUENCY_INDEX]]
@@ -280,26 +267,33 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         final_df = pd.DataFrame()
         for path_parts in all_paths_parts:
             try:
-                node_data = study.tree.get(parts + list(path_parts[:-1]))
+                node_data = study.tree.get(parts + path_parts[:-1])
             except ChildNotFoundError:
                 continue
 
-            data_columns = [stringify(col) for col in node_data["columns"]]
+            data_columns = [_stringify(col) for col in node_data["columns"]]
             df = pd.DataFrame(node_data["data"], columns=data_columns, index=node_data["index"])
             # columns filtering
             if columns_names:
                 # noinspection PyTypeChecker
                 df = df[[col for col in data_columns if col in columns_names]]
+
+            # rearrange columns order
             new_column_order = df.columns.values.tolist()
+            new_column_order = [AREA_COL, MCYEAR_COL] + new_column_order
+
+            # add column for areas and one to record the Monte Carlo year
             df[MCYEAR_COL] = [int(path_parts[MC_YEAR_INDEX])] * len(df)
             df[AREA_COL] = [path_parts[AREA_INDEX]] * len(df)
-            new_column_order = [AREA_COL, MCYEAR_COL] + new_column_order
             # Reorganize the columns
             df = df.reindex(columns=new_column_order)
 
             final_df = pd.concat([final_df, df], ignore_index=True)
 
-        return {str(k): v for k, v in (final_df.fillna("N/A").to_dict(orient="split")).items()}
+        # replace np.nan by None
+        final_df = final_df.replace({np.nan: None})
+
+        return {str(k): v for k, v in final_df.to_dict(orient="split").items()}
 
     def aggregate_links_data(
         self,
@@ -307,7 +301,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         output_name: str,
         query_file: LinksQueryFile,
         frequency: MatrixFrequency,
-        mc_years: t.Sequence[str],
+        mc_years: t.Sequence[int],
         columns_names: t.Sequence[str],
     ) -> t.Dict[str, t.Any]:
         """
@@ -329,14 +323,11 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         mc_years_parts = flatten_tree(study.tree.get(parts, depth=1))
         # Monte Carlo years filtering
         if mc_years:
-            int_mc_years = [int(mc_year) for mc_year in mc_years]
-            mc_years_parts = [
-                mc_year_parts for mc_year_parts in mc_years_parts if int(mc_year_parts[0]) in int_mc_years
-            ]
-        mc_years_parts = [mc_year_parts + (AggregateType.LINKS.value,) for mc_year_parts in mc_years_parts]
+            mc_years_parts = [mc_year_parts for mc_year_parts in mc_years_parts if int(mc_year_parts[0]) in mc_years]
+        mc_years_parts = [mc_year_parts + ["links"] for mc_year_parts in mc_years_parts]
         all_paths_parts = []
         for mc_year_parts in mc_years_parts:
-            files_parts = flatten_tree(study.tree.get(parts + list(mc_year_parts), depth=-1))
+            files_parts = flatten_tree(study.tree.get(parts + mc_year_parts, depth=-1))
             all_paths_parts.extend([mc_year_parts + file_parts for file_parts in files_parts])
         # Frequency filtering
         all_paths_parts = [path_parts for path_parts in all_paths_parts if frequency in path_parts[FREQUENCY_INDEX]]
@@ -346,11 +337,11 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         final_df = pd.DataFrame()
         for path_parts in all_paths_parts:
             try:
-                node_data = study.tree.get(parts + list(path_parts[:-1]))
+                node_data = study.tree.get(parts + path_parts[:-1])
             except ChildNotFoundError:
                 continue
 
-            data_columns = [stringify(col) for col in node_data["columns"]]
+            data_columns = [_stringify(col) for col in node_data["columns"]]
             df = pd.DataFrame(node_data["data"], columns=data_columns, index=node_data["index"])
             # columns filtering
             if columns_names:
@@ -365,7 +356,10 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
 
             final_df = pd.concat([final_df, df], ignore_index=True)
 
-        return {str(k): v for k, v in (final_df.fillna("N/A").to_dict(orient="split")).items()}
+        # replace np.nan by None
+        final_df = final_df.replace({np.nan: None})
+
+        return {str(k): v for k, v in final_df.to_dict(orient="split").items()}
 
     def get_study_sim_result(
         self,

@@ -259,7 +259,7 @@ def create_raw_study_routes(
             output_name=output_name,
             query_file=query_file,
             frequency=frequency,
-            mc_years=_split_comma_separated_values(mc_years),
+            mc_years=[int(mc_year) for mc_year in _split_comma_separated_values(mc_years)],
             areas_names=_split_comma_separated_values(areas_names),
             columns_names=_split_comma_separated_values(columns_names),
             params=parameters,
@@ -307,7 +307,7 @@ def create_raw_study_routes(
             output_name=output_name,
             query_file=query_file,
             frequency=frequency,
-            mc_years=_split_comma_separated_values(mc_years),
+            mc_years=[int(mc_year) for mc_year in _split_comma_separated_values(mc_years)],
             columns_names=_split_comma_separated_values(columns_names),
             params=parameters,
         )
