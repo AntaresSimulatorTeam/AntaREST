@@ -336,28 +336,6 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
     def match_signature(self) -> str:
         return str(self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.name)
 
-    def match(self, other: ICommand, equal: bool = False) -> bool:
-        if not isinstance(other, CreateBindingConstraint):
-            return False
-        simple_match = self.name == other.name
-        if not equal:
-            return simple_match
-        return (
-            simple_match
-            and self.enabled == other.enabled
-            and self.time_step == other.time_step
-            and self.operator == other.operator
-            and self.coeffs == other.coeffs
-            and self.values == other.values
-            and self.comments == other.comments
-            and self.less_term_matrix == other.less_term_matrix
-            and self.greater_term_matrix == other.greater_term_matrix
-            and self.equal_term_matrix == other.equal_term_matrix
-            and self.group == other.group
-            and self.filter_synthesis == other.filter_synthesis
-            and self.filter_year_by_year == other.filter_year_by_year
-        )
-
     def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
         from antarest.study.storage.variantstudy.model.command.update_binding_constraint import UpdateBindingConstraint
 
