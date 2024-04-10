@@ -30,8 +30,9 @@ class TestSTStorage:
     """
 
     @pytest.mark.parametrize("study_type", ["raw", "variant"])
+    @pytest.mark.parametrize("study_version", [860, 880])
     def test_lifecycle__nominal(
-        self, client: TestClient, user_access_token: str, study_id: str, study_type: str
+        self, client: TestClient, user_access_token: str, study_id: str, study_type: str, study_version: int
     ) -> None:
         """
         The purpose of this integration test is to test the endpoints
@@ -66,7 +67,7 @@ class TestSTStorage:
         res = client.put(
             f"/v1/studies/{study_id}/upgrade",
             headers=user_headers,
-            params={"target_version": 860},
+            params={"target_version": study_version},
         )
         res.raise_for_status()
         task_id = res.json()
@@ -99,10 +100,9 @@ class TestSTStorage:
         area_id = transform_name_to_id("FR")
         siemens_battery = "Siemens Battery"
 
-        # Un attempt to create a short-term storage without name
+        # An attempt to create a short-term storage without name
         # should raise a validation error (other properties are optional).
-        # Un attempt to create a short-term storage with an empty name
-        # or an invalid name should also raise a validation error.
+        # The same goes for empty or invalid names
         attempts = [{}, {"name": ""}, {"name": "!??"}]
         for attempt in attempts:
             res = client.post(
@@ -122,6 +122,8 @@ class TestSTStorage:
             "withdrawalNominalCapacity": 1350,
             "reservoirCapacity": 1500,
         }
+        if study_version < 880:
+            del siemens_properties["enabled"]  # only exist since v8.8
         res = client.post(
             f"/v1/studies/{study_id}/areas/{area_id}/storages",
             headers=user_headers,
@@ -130,7 +132,7 @@ class TestSTStorage:
         assert res.status_code == 200, res.json()
         siemens_battery_id = res.json()["id"]
         assert siemens_battery_id == transform_name_to_id(siemens_battery)
-        siemens_config = {**siemens_properties, "id": siemens_battery_id}
+        siemens_config = {**siemens_properties, "id": siemens_battery_id, "enabled": True}
         assert res.json() == siemens_config
 
         # reading the properties of a short-term storage
@@ -516,6 +518,20 @@ class TestSTStorage:
         description = obj["description"]
         assert siemens_battery.lower() in description
         assert obj["exception"] == "DuplicateSTStorage"
+
+        # Cannot specify the field 'enabled' before v8.8
+        properties = {"enabled": False, "name": "fake_name", "group": "Battery"}
+        res = client.post(
+            f"/v1/studies/{study_id}/areas/{area_id}/storages",
+            headers=user_headers,
+            json=properties,
+        )
+        if study_version < 880:
+            assert res.status_code == 422
+            assert res.json()["exception"] == "ValidationError"
+        else:
+            assert res.status_code == 200
+            assert res.json()["enabled"] is False
 
     @pytest.mark.parametrize("study_type", ["raw", "variant"])
     def test__default_values(self, client: TestClient, user_access_token: str, study_type: str) -> None:

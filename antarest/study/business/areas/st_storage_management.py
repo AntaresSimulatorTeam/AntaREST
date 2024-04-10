@@ -469,7 +469,12 @@ class STStorageManager:
         # Cluster duplication
         current_cluster = self.get_storage(study, area_id, source_id)
         current_cluster.name = new_cluster_name
-        creation_form = STStorageCreation(**current_cluster.dict(by_alias=False, exclude={"id"}))
+        fields_to_exclude = {"id"}
+        # We should remove the field 'enabled' for studies before v8.8 as it didn't exist
+        if int(study.version) < 880:
+            fields_to_exclude.add("enabled")
+        creation_form = STStorageCreation(**current_cluster.dict(by_alias=False, exclude=fields_to_exclude))
+
         new_config = creation_form.to_config(study.version)
         create_cluster_cmd = self._make_create_cluster_cmd(area_id, new_config)
 

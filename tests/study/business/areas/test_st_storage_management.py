@@ -141,6 +141,7 @@ class TestSTStorageManager:
                 "name": "Storage1",
                 "reservoirCapacity": 20000.0,
                 "withdrawalNominalCapacity": 1500.0,
+                "enabled": True,  # present with default value evenif the study is in v8.6
             },
             {
                 "efficiency": 0.78,
@@ -152,6 +153,7 @@ class TestSTStorageManager:
                 "name": "Storage2",
                 "reservoirCapacity": 20000.0,
                 "withdrawalNominalCapacity": 1500.0,
+                "enabled": True,
             },
             {
                 "efficiency": 0.72,
@@ -163,6 +165,7 @@ class TestSTStorageManager:
                 "name": "Storage3",
                 "reservoirCapacity": 21000.0,
                 "withdrawalNominalCapacity": 1500.0,
+                "enabled": True,
             },
         ]
         assert actual == expected
@@ -249,6 +252,7 @@ class TestSTStorageManager:
             "name": "Storage1",
             "reservoirCapacity": 20000.0,
             "withdrawalNominalCapacity": 1500.0,
+            "enabled": True,
         }
         assert actual == expected
 
