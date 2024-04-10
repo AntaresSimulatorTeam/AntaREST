@@ -5,7 +5,7 @@ from tests.storage.study_upgrader.conftest import StudyAssets
 
 def test_nominal_case(study_assets: StudyAssets):
     """
-    Check that binding constraints and thermal folders are correctly modified
+    Check that short term storages are correctly modified
     """
 
     # upgrade the study

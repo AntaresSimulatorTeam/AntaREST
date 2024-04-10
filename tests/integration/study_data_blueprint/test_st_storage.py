@@ -123,7 +123,7 @@ class TestSTStorage:
             "reservoirCapacity": 1500,
         }
         if study_version < 880:
-            del siemens_properties["enabled"]  # only exist since v8.8
+            del siemens_properties["enabled"]  # only exists since v8.8
         res = client.post(
             f"/v1/studies/{study_id}/areas/{area_id}/storages",
             headers=user_headers,

@@ -141,7 +141,7 @@ class TestSTStorageManager:
                 "name": "Storage1",
                 "reservoirCapacity": 20000.0,
                 "withdrawalNominalCapacity": 1500.0,
-                "enabled": True,  # present with default value evenif the study is in v8.6
+                "enabled": True,  # present with default value even if the study is in v8.6
             },
             {
                 "efficiency": 0.78,
