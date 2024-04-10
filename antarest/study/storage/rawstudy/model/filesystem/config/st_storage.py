@@ -6,14 +6,6 @@ from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.storage.rawstudy.model.filesystem.config.cluster import ItemProperties
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import LowerCaseIdentifier
 
-__all__ = (
-    "STStorageGroup",
-    "STStorageProperties",
-    "STStorageConfig",
-    "STStorageConfigType",
-    "create_st_storage_config",
-)
-
 
 class STStorageGroup(EnumIgnoreCase):
     """
@@ -75,7 +67,7 @@ class STStorageProperties(ItemProperties):
         ge=0,
         le=1,
     )
-    # The `initial_level` value must be between 0 and 1, but the default value is 0.
+    # The `initial_level` value must be between 0 and 1, but the default value is 0.5
     initial_level: float = Field(
         0.5,
         description="Initial level of the storage system (%)",
@@ -88,6 +80,17 @@ class STStorageProperties(ItemProperties):
         description="Flag indicating if the initial level is optimized",
         alias="initialleveloptim",
     )
+
+
+class STStorage880Properties(STStorageProperties):
+    """
+    Short term storage configuration model for 880 study.
+    """
+
+    # Activity status:
+    # - True: the plant may generate.
+    # - False: Ignored by the simulator.
+    enabled: bool = Field(default=True, description="Activity status")
 
 
 # noinspection SpellCheckingInspection
@@ -116,7 +119,27 @@ class STStorageConfig(STStorageProperties, LowerCaseIdentifier):
     """
 
 
-STStorageConfigType = STStorageConfig
+class STStorage880Config(STStorage880Properties, LowerCaseIdentifier):
+    """
+    Short Term Storage properties for study in version 8.8 or above.
+
+    Usage:
+
+    >>> from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import STStorage880Config
+
+    >>> st = STStorage880Config(name="Storage 1", group="battery", enabled=False)
+    >>> st.id
+    'storage 1'
+    >>> st.group == STStorageGroup.BATTERY
+    True
+    >>> st.enabled
+    False
+    """
+
+
+# NOTE: In the following Union, it is important to place the older version first,
+# because otherwise, creating a short term storage always creates a v8.8 one.
+STStorageConfigType = t.Union[STStorageConfig, STStorage880Config]
 
 
 def create_st_storage_config(study_version: t.Union[str, int], **kwargs: t.Any) -> STStorageConfigType:
@@ -136,4 +159,6 @@ def create_st_storage_config(study_version: t.Union[str, int], **kwargs: t.Any) 
     version = int(study_version)
     if version < 860:
         raise ValueError(f"Unsupported study version: {version}")
-    return STStorageConfig(**kwargs)
+    elif version < 880:
+        return STStorageConfig(**kwargs)
+    return STStorage880Config(**kwargs)

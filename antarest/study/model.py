@@ -46,9 +46,10 @@ STUDY_REFERENCE_TEMPLATES: t.Mapping[str, str] = {
     "850": "empty_study_850.zip",
     "860": "empty_study_860.zip",
     "870": "empty_study_870.zip",
+    "880": "empty_study_880.zip",
 }
 
-NEW_DEFAULT_STUDY_VERSION: str = "870"
+NEW_DEFAULT_STUDY_VERSION: str = "880"
 
 
 class StudyGroup(Base):  # type:ignore

@@ -19,9 +19,10 @@ from antarest.study.business.utils import AllOptionalMetaclass, camel_case_model
 from antarest.study.model import Study
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
-    STStorageConfig,
+    STStorage880Config,
+    STStorage880Properties,
+    STStorageConfigType,
     STStorageGroup,
-    STStorageProperties,
     create_st_storage_config,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -32,18 +33,9 @@ from antarest.study.storage.variantstudy.model.command.remove_st_storage import 
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 
-__all__ = (
-    "STStorageManager",
-    "STStorageCreation",
-    "STStorageInput",
-    "STStorageOutput",
-    "STStorageMatrix",
-    "STStorageTimeSeries",
-)
-
 
 @camel_case_model
-class STStorageInput(STStorageProperties, metaclass=AllOptionalMetaclass, use_none=True):
+class STStorageInput(STStorage880Properties, metaclass=AllOptionalMetaclass, use_none=True):
     """
     Model representing the form used to EDIT an existing short-term storage.
     """
@@ -79,13 +71,13 @@ class STStorageCreation(STStorageInput):
         return name
 
     # noinspection PyUnusedLocal
-    def to_config(self, study_version: t.Union[str, int]) -> STStorageConfig:
+    def to_config(self, study_version: t.Union[str, int]) -> STStorageConfigType:
         values = self.dict(by_alias=False, exclude_none=True)
-        return STStorageConfig(**values)
+        return create_st_storage_config(study_version=study_version, **values)
 
 
 @camel_case_model
-class STStorageOutput(STStorageConfig):
+class STStorageOutput(STStorage880Config):
     """
     Model representing the form used to display the details of a short-term storage entry.
     """
@@ -105,10 +97,10 @@ class STStorageOutput(STStorageConfig):
             )
 
     @classmethod
-    def from_config(cls, storage_id: str, config: t.Mapping[str, t.Any]) -> "STStorageOutput":
-        storage = STStorageConfig(**config, id=storage_id)
+    def from_config(cls, study_version: int, storage_id: str, config: t.Mapping[str, t.Any]) -> "STStorageOutput":
+        storage = create_st_storage_config(study_version=study_version, **config, id=storage_id)
         values = storage.dict(by_alias=False)
-        return cls(**values)
+        return STStorageOutput(**values)
 
 
 # =============
@@ -241,6 +233,16 @@ def _get_values_by_ids(file_study: FileStudy, area_id: str) -> t.Mapping[str, t.
         raise STStorageConfigNotFound(path, area_id) from None
 
 
+def create_storage_output(
+    study_version: t.Union[str, int],
+    cluster_id: str,
+    config: t.Mapping[str, t.Any],
+) -> "STStorageOutput":
+    obj = create_st_storage_config(study_version=study_version, **config, id=cluster_id)
+    kwargs = obj.dict(by_alias=False)
+    return STStorageOutput(**kwargs)
+
+
 class STStorageManager:
     """
     Manage short-term storage configuration in a study
@@ -291,7 +293,7 @@ class STStorageManager:
         output = self.get_storage(study, area_id, storage_id=storage.id)
         return output
 
-    def _make_create_cluster_cmd(self, area_id: str, cluster: STStorageConfig) -> CreateSTStorage:
+    def _make_create_cluster_cmd(self, area_id: str, cluster: STStorageConfigType) -> CreateSTStorage:
         command = CreateSTStorage(
             area_id=area_id,
             parameters=cluster,
@@ -326,11 +328,9 @@ class STStorageManager:
 
         # Sort STStorageConfig by groups and then by name
         order_by = operator.attrgetter("group", "name")
-        all_configs = sorted(
-            (STStorageConfig(id=storage_id, **options) for storage_id, options in config.items()),
-            key=order_by,
-        )
-        return tuple(STStorageOutput(**config.dict(by_alias=False)) for config in all_configs)
+        study_version = int(study.version)
+        storages = [create_storage_output(study_version, storage_id, options) for storage_id, options in config.items()]
+        return sorted(storages, key=order_by)
 
     def get_storage(
         self,
@@ -356,7 +356,7 @@ class STStorageManager:
             config = file_study.tree.get(path.split("/"), depth=1)
         except KeyError:
             raise STStorageNotFound(path, storage_id) from None
-        return STStorageOutput.from_config(storage_id, config)
+        return create_storage_output(int(study.version), storage_id, config)
 
     def update_storage(
         self,

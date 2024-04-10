@@ -7,7 +7,6 @@ import typing as t
 from http import HTTPStatus
 from http.client import HTTPException
 from pathlib import Path
-from typing import Callable, List, NamedTuple
 
 from antarest.core.exceptions import StudyValidationError
 
@@ -21,6 +20,7 @@ from .upgrader_840 import upgrade_840
 from .upgrader_850 import upgrade_850
 from .upgrader_860 import upgrade_860
 from .upgrader_870 import upgrade_870
+from .upgrader_880 import upgrade_880
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +47,7 @@ UPGRADE_METHODS = [
     UpgradeMethod("840", "850", upgrade_850, [_GENERAL_DATA_PATH]),
     UpgradeMethod("850", "860", upgrade_860, [Path("input"), _GENERAL_DATA_PATH]),
     UpgradeMethod("860", "870", upgrade_870, [Path("input/thermal"), Path("input/bindingconstraints")]),
+    UpgradeMethod("870", "880", upgrade_880, [Path("input/st-storage/clusters")]),
 ]
 
 
@@ -196,6 +197,9 @@ def _copies_only_necessary_files(files_to_upgrade: t.List[Path], study_path: Pat
     files_to_retrieve = []
     for path in files_to_copy:
         entire_path = study_path / path
+        if not entire_path.exists():
+            # This can happen when upgrading a study to v8.8.
+            continue
         if entire_path.is_dir():
             if not (tmp_path / path).exists():
                 shutil.copytree(entire_path, tmp_path / path, dirs_exist_ok=True)
