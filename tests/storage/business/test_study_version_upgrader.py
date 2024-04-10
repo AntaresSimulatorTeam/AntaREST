@@ -237,12 +237,19 @@ def are_same_dir(dir1, dir2) -> bool:
         return False
     path_dir1 = Path(dir1)
     path_dir2 = Path(dir2)
-    # check files
+    # check files content ignoring newline character (to avoid crashing on Windows)
     for common_file in dirs_cmp.common_files:
         file_1 = path_dir1 / common_file
         file_2 = path_dir2 / common_file
-        if not filecmp.cmp(file_1, file_2, shallow=False):
-            return False
+        # ignore study.ico
+        if common_file == "study.ico":
+            continue
+        with open(file_1, "r", encoding="utf-8") as f1:
+            with open(file_2, "r", encoding="utf-8") as f2:
+                content_1 = f1.read().splitlines(keepends=False)
+                content_2 = f2.read().splitlines(keepends=False)
+                if content_1 != content_2:
+                    return False
     # iter through common dirs recursively
     for common_dir in dirs_cmp.common_dirs:
         path_common_dir = Path(common_dir)
