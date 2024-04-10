@@ -41,13 +41,13 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
         binding_constraints = study_data.tree.get(["input", "bindingconstraints", "bindingconstraints"])
 
         binding: Optional[JSON] = None
-        new_key: Optional[str] = None
+        existing_key: Optional[str] = None
         for key, binding_config in binding_constraints.items():
             if binding_config["id"] == self.id:
                 binding = binding_config
-                new_key = key
+                existing_key = key
                 break
-        if binding is None or new_key is None:
+        if binding is None or existing_key is None:
             return CommandOutput(
                 status=False,
                 message="Failed to retrieve existing binding constraint",
@@ -67,10 +67,20 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
             include |= {"group"}
 
         obj = json.loads(self.json(by_alias=True, include=include, exclude_none=True))
+        existing_constraint = binding_constraints[str(existing_key)]
+        existing_constraint.update(obj)
 
-        binding_constraints[str(new_key)].update(obj)
+        if self.coeffs:
+            # We want to remove existing coeffs to replace them.
+            allowed_keys = {
+                "name": existing_constraint["name"],
+                **json.loads(self.json(exclude={"command_context"}, by_alias=True)),
+            }
+            keys_to_delete = [key for key in existing_constraint if key not in allowed_keys]
+            for key in keys_to_delete:
+                del existing_constraint[key]
 
-        return super().apply_binding_constraint(study_data, binding_constraints, new_key, self.id)
+        return super().apply_binding_constraint(study_data, binding_constraints, existing_key, self.id)
 
     def to_dto(self) -> CommandDTO:
         matrices = ["values"] + TERM_MATRICES

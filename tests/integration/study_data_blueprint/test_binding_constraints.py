@@ -410,6 +410,24 @@ class TestBindingConstraints:
         )
         assert res.status_code == 200, res.json()
 
+        # Check updated terms, the deleted term should no longer exist.
+        res = client.get(
+            f"/v1/studies/{study_id}/bindingconstraints/{bc_id}",
+            headers=user_headers,
+        )
+        assert res.status_code == 200, res.json()
+        binding_constraint = res.json()
+        constraint_terms = binding_constraint["terms"]
+        expected = [
+            {
+                "data": {"area": area1_id, "cluster": cluster_id.lower()},
+                "id": f"{area1_id}.{cluster_id.lower()}",
+                "offset": None,
+                "weight": 3.0,
+            },
+        ]
+        assert constraint_terms == expected
+
         # =============================
         # GENERAL EDITION
         # =============================
