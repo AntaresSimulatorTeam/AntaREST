@@ -46,6 +46,22 @@ class TableModeType(EnumIgnoreCase):
     # Avoid "constraints" because we may have other kinds of constraints in the future
     BINDING_CONSTRAINT = "binding-constraints"
 
+    @classmethod
+    def _missing_(cls, value: object) -> t.Optional["EnumIgnoreCase"]:
+        if isinstance(value, str):
+            # handle aliases of old table types
+            value = value.upper()
+            aliases = {
+                "AREA": cls.AREA,
+                "LINK": cls.LINK,
+                "CLUSTER": cls.THERMAL,
+                "RENEWABLE": cls.RENEWABLE,
+                "BINDING CONSTRAINT": cls.BINDING_CONSTRAINT,
+            }
+            if value in aliases:
+                return aliases[value]
+        return super()._missing_(value)
+
 
 class TableModeManager:
     def __init__(

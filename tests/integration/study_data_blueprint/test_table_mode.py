@@ -881,3 +881,14 @@ class TestTableMode:
         }
         actual = res.json()
         assert actual == expected
+
+
+def test_table_type_aliases(client: TestClient, user_access_token: str) -> None:
+    """
+    Ensure that we can use the old table type aliases to get the schema of the tables.
+    """
+    user_headers = {"Authorization": f"Bearer {user_access_token}"}
+    # do not use `pytest.mark.parametrize`, because it is too slow
+    for table_type in ["area", "link", "cluster", "renewable", "binding constraint"]:
+        res = client.get(f"/v1/table-schema/{table_type}", headers=user_headers)
+        assert res.status_code == 200, f"Failed to get schema for {table_type}: {res.json()}"
