@@ -504,6 +504,8 @@
   "study.modelization.clusters.matrix.common": "Common",
   "study.modelization.clusters.matrix.tsGen": "TS generator",
   "study.modelization.clusters.matrix.timeSeries": "Time-Series",
+  "study.modelization.clusters.matrix.fuelCost": "Fuel Cost",
+  "study.modelization.clusters.matrix.co2Cost": "CO2 Cost",
   "study.modelization.clusters.backClusterList": "Back to cluster list",
   "study.modelization.clusters.tsInterpretation": "TS interpretation",
   "studies.modelization.clusters.question.delete_one": "Are you sure you want to delete this cluster?",
