@@ -53,8 +53,10 @@ MC_YEAR_INDEX = 0
 """Index in path parts starting from the Monte Carlo year to determine the Monte Carlo year."""
 AREA_INDEX = 2
 """Index in path parts starting from the Monte Carlo year to determine the area name."""
-LINK_INDEX = 2
-"""Index in path parts starting from the Monte Carlo year to determine the link name."""
+LINK_END_1_INDEX = 2
+"""Index in path parts starting from the Monte Carlo year to determine the link first vertex."""
+LINK_END_2_INDEX = 3
+"""Index in path parts starting from the Monte Carlo year to determine the link second vertex."""
 QUERY_FILE_INDEX = -2
 """Index in path parts starting from the Monte Carlo year to determine the if we fetch values, details etc ."""
 FREQUENCY_INDEX = -2
@@ -349,7 +351,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
                 df = df[[col for col in data_columns if col in columns_names]]
             new_column_order = df.columns.values.tolist()
             df[MCYEAR_COL] = [int(path_parts[MC_YEAR_INDEX])] * len(df)
-            df[LINK_COL] = [path_parts[LINK_INDEX]] * len(df)
+            df[LINK_COL] = [path_parts[LINK_END_1_INDEX] + " - " + path_parts[LINK_END_2_INDEX]] * len(df)
             new_column_order = [LINK_COL, MCYEAR_COL] + new_column_order
             # Reorganize the columns
             df = df.reindex(columns=new_column_order)
