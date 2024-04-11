@@ -150,6 +150,37 @@ export function validatePassword(password: string): string | true {
   return true;
 }
 
+/**
+ * Validates a number against specified numerical limits.
+ *
+ * @param value - The number to validate.
+ * @param options - Configuration options for validation including min and max values. (Optional)
+ * @param [options.min=Number.MIN_SAFE_INTEGER] - Minimum allowed value for the number.
+ * @param [options.max=Number.MAX_SAFE_INTEGER] - Maximum allowed value for the number.
+ * @returns True if validation is successful, or a localized error message if it fails.
+ */
+export function validateNumber(
+  value: number,
+  options?: ValidationOptions,
+): string | true {
+  if (typeof value !== "number" || isNaN(value) || !isFinite(value)) {
+    return t("form.field.invalidNumber", { value });
+  }
+
+  const { min = Number.MIN_SAFE_INTEGER, max = Number.MAX_SAFE_INTEGER } =
+    options || {};
+
+  if (value < min) {
+    return t("form.field.minValue", { 0: min });
+  }
+
+  if (value > max) {
+    return t("form.field.maxValue", { 0: max });
+  }
+
+  return true;
+}
+
 ////////////////////////////////////////////////////////////////
 // Utils
 ////////////////////////////////////////////////////////////////
