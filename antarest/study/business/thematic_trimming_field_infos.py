@@ -191,7 +191,7 @@ FIELDS_INFO: t.Mapping[str, t.Mapping[str, t.Any]] = {
     "sts_inj_by_plant": {"topic": _SHORT_TERM_STORAGES, "path": "STS inj by plant", "default_value": True, "start_version": 860},
     "sts_withdrawal_by_plant": {"topic": _SHORT_TERM_STORAGES, "path": "STS withdrawal by plant", "default_value": True, "start_version": 860},
     "sts_lvl_by_plant": {"topic": _SHORT_TERM_STORAGES, "path": "STS lvl by plant", "default_value": True, "start_version": 860},
-    "sts_cashflow_by_cluster": {"topic": _SHORT_TERM_STORAGES, "path": "STS Cashflow By Cluster", "default_value": True, "start_version": 860},
+    "sts_cashflow_by_cluster": {"topic": _SHORT_TERM_STORAGES, "path": "STS Cashflow By Cluster", "default_value": True, "start_version": 880},
     # topic: "Short-Term Storages - Group"
     "psp_open_injection": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "PSP_open_injection", "default_value": True, "start_version": 860},
     "psp_open_withdrawal": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "PSP_open_withdrawal", "default_value": True, "start_version": 860},

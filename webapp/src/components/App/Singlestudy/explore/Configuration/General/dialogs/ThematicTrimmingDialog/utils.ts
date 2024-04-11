@@ -72,7 +72,6 @@ export interface ThematicTrimmingFormFields {
   stsInjByPlant?: boolean;
   stsWithdrawalByPlant?: boolean;
   stsLvlByPlant?: boolean;
-  stsCashflowByCluster?: boolean;
   pspOpenInjection?: boolean;
   pspOpenWithdrawal?: boolean;
   pspOpenLevel?: boolean;
@@ -100,6 +99,8 @@ export interface ThematicTrimmingFormFields {
   other5Injection?: boolean;
   other5Withdrawal?: boolean;
   other5Level?: boolean;
+  // Study version >= 880
+  stsCashflowByCluster?: boolean;
 }
 
 const keysMap: Record<keyof ThematicTrimmingFormFields, string> = {
@@ -172,7 +173,6 @@ const keysMap: Record<keyof ThematicTrimmingFormFields, string> = {
   stsInjByPlant: "STS INJ BY PLANT",
   stsWithdrawalByPlant: "STS WITHDRAWAL BY PLANT",
   stsLvlByPlant: "STS LVL BY PLANT",
-  stsCashflowByCluster: "STS CASHFLOW BY CLUSTER",
   pspOpenInjection: "PSP_OPEN_INJECTION",
   pspOpenWithdrawal: "PSP_OPEN_WITHDRAWAL",
   pspOpenLevel: "PSP_OPEN_LEVEL",
@@ -200,6 +200,8 @@ const keysMap: Record<keyof ThematicTrimmingFormFields, string> = {
   other5Injection: "OTHER5_INJECTION",
   other5Withdrawal: "OTHER5_WITHDRAWAL",
   other5Level: "OTHER5_LEVEL",
+  // Study version >= 880
+  stsCashflowByCluster: "STS CASHFLOW BY CLUSTER",
 };
 
 // Allow to support all study versions by using directly the server config

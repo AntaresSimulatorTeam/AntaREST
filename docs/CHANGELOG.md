@@ -19,6 +19,7 @@ v2.16.8 (unreleased)
 * **comments:** use a command to update comments on a variant [`#1959`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1959)
 * **outputs (ui):** correct weekly data formatting to support 53-week years [`#1975`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1975)
 * **configuration:** add missing variables in Thematic Trimming for studies in version v8.6 or above [`#1992`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1992)
+* **configuration:** version availability for "STS Cashflow By Cluster" variable is v8.8
 
 
 v2.16.7 (2024-03-05)
