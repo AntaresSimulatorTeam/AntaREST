@@ -22,6 +22,7 @@ function Matrix({ study, areaId, clusterId }: Props) {
   const [value, setValue] = React.useState(0);
 
   const commonNames = [
+    // TODO COMMON_MATIX_COLS
     "Marginal cost modulation",
     "Market bid modulation",
     "Capacity modulation",
@@ -29,6 +30,7 @@ function Matrix({ study, areaId, clusterId }: Props) {
   ];
 
   const tsGenNames = [
+    // TODO TS_GEN_MATRIX_COLS
     "FO Duration",
     "PO Duration",
     "FO Rate",

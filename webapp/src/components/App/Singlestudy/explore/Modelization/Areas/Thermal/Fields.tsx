@@ -16,13 +16,14 @@ import {
   TS_GENERATION_OPTIONS,
   TS_LAW_OPTIONS,
 } from "./utils";
+import { validateNumber } from "../../../../../../../utils/validationUtils";
 
 function Fields() {
   const [t] = useTranslation();
   const { control, watch } = useFormContextPlus<ThermalCluster>();
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const studyVersion = Number(study.version);
-  const isTSCosts = watch("costGeneration") === "useCostTimeseries";
+  const isTSCost = watch("costGeneration") === "useCostTimeseries";
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -73,10 +74,7 @@ function Fields() {
           name="unitCount"
           control={control}
           rules={{
-            min: {
-              value: 1,
-              message: t("form.field.minValue", { 0: 1 }),
-            },
+            validate: (v) => validateNumber(v, { min: 1 }),
             setValueAs: Math.floor,
           }}
         />
@@ -85,10 +83,7 @@ function Fields() {
           name="nominalCapacity"
           control={control}
           rules={{
-            min: {
-              value: 0,
-              message: t("form.field.minValue", { 0: 0 }),
-            },
+            validate: (v) => validateNumber(v, { min: 0 }),
           }}
         />
         <NumberFE
@@ -101,14 +96,7 @@ function Fields() {
           name="spinning"
           control={control}
           rules={{
-            min: {
-              value: 0,
-              message: t("form.field.minValue", { 0: 0 }),
-            },
-            max: {
-              value: 100,
-              message: t("form.field.maxValue", { 0: 100 }),
-            },
+            validate: (v) => validateNumber(v, { min: 0, max: 100 }),
           }}
         />
         <NumberFE
@@ -116,14 +104,7 @@ function Fields() {
           name="minUpTime"
           control={control}
           rules={{
-            min: {
-              value: 1,
-              message: t("form.field.minValue", { 0: 1 }),
-            },
-            max: {
-              value: 168,
-              message: t("form.field.maxValue", { 0: 168 }),
-            },
+            validate: (v) => validateNumber(v, { min: 1, max: 168 }),
             setValueAs: Math.floor,
           }}
         />
@@ -132,14 +113,7 @@ function Fields() {
           name="minDownTime"
           control={control}
           rules={{
-            min: {
-              value: 1,
-              message: t("form.field.minValue", { 0: 1 }),
-            },
-            max: {
-              value: 168,
-              message: t("form.field.maxValue", { 0: 168 }),
-            },
+            validate: (v) => validateNumber(v, { min: 1, max: 168 }),
             setValueAs: Math.floor,
           }}
         />
@@ -160,22 +134,16 @@ function Fields() {
           name="efficiency"
           control={control}
           rules={{
-            min: {
-              value: 0,
-              message: t("form.field.minValue", { 0: 0 }),
-            },
+            validate: (v) => validateNumber(v, { min: 0 }),
           }}
-          disabled={!isTSCosts}
+          disabled={!isTSCost}
         />
         <NumberFE
           label={t("study.modelization.clusters.marginalCost")}
           name="marginalCost"
           control={control}
           rules={{
-            min: {
-              value: 0,
-              message: t("form.field.minValue", { 0: 0 }),
-            },
+            validate: (v) => validateNumber(v, { min: 0 }),
           }}
         />
 
@@ -184,10 +152,7 @@ function Fields() {
           name="startupCost"
           control={control}
           rules={{
-            min: {
-              value: 0,
-              message: t("form.field.minValue", { 0: 0 }),
-            },
+            validate: (v) => validateNumber(v, { min: 0 }),
           }}
         />
         <NumberFE
@@ -195,10 +160,7 @@ function Fields() {
           name="marketBidCost"
           control={control}
           rules={{
-            min: {
-              value: 0,
-              message: t("form.field.minValue", { 0: 0 }),
-            },
+            validate: (v) => validateNumber(v, { min: 0 }),
           }}
         />
         <NumberFE
@@ -206,10 +168,7 @@ function Fields() {
           name="fixedCost"
           control={control}
           rules={{
-            min: {
-              value: 0,
-              message: t("form.field.minValue", { 0: 0 }),
-            },
+            validate: (v) => validateNumber(v, { min: 0 }),
           }}
         />
         <NumberFE
@@ -217,12 +176,9 @@ function Fields() {
           name="variableOMCost"
           control={control}
           rules={{
-            min: {
-              value: 0,
-              message: t("form.field.minValue", { 0: 0 }),
-            },
+            validate: (v) => validateNumber(v, { min: 0 }),
           }}
-          disabled={!isTSCosts}
+          disabled={!isTSCost}
         />
         <NumberFE
           label={t("study.modelization.clusters.spreadCost")}
@@ -240,10 +196,7 @@ function Fields() {
                 name={name}
                 control={control}
                 rules={{
-                  min: {
-                    value: 0,
-                    message: t("form.field.minValue", { 0: 0 }),
-                  },
+                  validate: (v) => validateNumber(v, { min: 0 }),
                 }}
               />
             ),
@@ -265,14 +218,7 @@ function Fields() {
           name="volatilityForced"
           control={control}
           rules={{
-            min: {
-              value: 0,
-              message: t("form.field.minValue", { 0: 0 }),
-            },
-            max: {
-              value: 1,
-              message: t("form.field.maxValue", { 0: 1 }),
-            },
+            validate: (v) => validateNumber(v, { min: 0, max: 1 }),
           }}
           inputProps={{ step: 0.1 }}
         />
@@ -281,14 +227,7 @@ function Fields() {
           name="volatilityPlanned"
           control={control}
           rules={{
-            min: {
-              value: 0,
-              message: t("form.field.minValue", { 0: 0 }),
-            },
-            max: {
-              value: 1,
-              message: t("form.field.maxValue", { 0: 1 }),
-            },
+            validate: (v) => validateNumber(v, { min: 0, max: 1 }),
           }}
           inputProps={{ step: 0.1 }}
         />
