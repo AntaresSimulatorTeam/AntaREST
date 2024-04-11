@@ -96,12 +96,6 @@ class STStorageOutput(STStorage880Config):
                 initial_level_optim=True,
             )
 
-    @classmethod
-    def from_config(cls, study_version: int, storage_id: str, config: t.Mapping[str, t.Any]) -> "STStorageOutput":
-        storage = create_st_storage_config(study_version=study_version, **config, id=storage_id)
-        values = storage.dict(by_alias=False)
-        return STStorageOutput(**values)
-
 
 # =============
 #  Time series
