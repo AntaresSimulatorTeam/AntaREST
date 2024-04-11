@@ -29,7 +29,7 @@ const logErr = debug("antares:createimportform:error");
 interface Props {
   study: StudyMetadata;
   url: string;
-  columnsNames?: string[];
+  columnsNames?: string[] | readonly string[];
   rowNames?: string[];
   title?: string;
   computStats: MatrixStats;
