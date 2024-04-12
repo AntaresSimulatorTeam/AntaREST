@@ -20,6 +20,9 @@ v2.16.8 (2024-04-19)
 * **outputs (ui):** correct weekly data formatting to support 53-week years [`#1975`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1975)
 * **configuration:** add missing variables in Thematic Trimming for studies in version v8.6 or above [`#1992`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1992)
 * **configuration:** version availability for "STS Cashflow By Cluster" variable is v8.8
+* **launcher:** upgrade the project dependencies to use Antares-Launcher v1.3.2
+  - **ssh:** add retry loop around SSH Exceptions [`#68`](https://github.com/AntaresSimulatorTeam/antares-launcher/pull/68)
+  - **retriever:** avoid infinite loop when `sbatch` command fails [`#69`](https://github.com/AntaresSimulatorTeam/antares-launcher/pull/69)
 
 
 v2.16.7 (2024-03-05)
