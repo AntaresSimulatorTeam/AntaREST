@@ -94,8 +94,6 @@ class RemoteVariantGenerator(IVariantGenerator):
             res = self.session.post(self.build_url("/v1/matrix"), json=matrix_data)
             res.raise_for_status()
             matrix_id = res.json()
-            # file_name = matrix_file.with_suffix("").name
-            # assert matrix_id == file_name, f"{matrix_id} != {file_name}"
             matrix_dataset.append(matrix_id)
 
         # TODO could create a dataset from theses matrices using "variant_<study_id>" as name
@@ -117,10 +115,14 @@ class RemoteVariantGenerator(IVariantGenerator):
         res.raise_for_status()
 
         stopwatch.log_elapsed(lambda x: logger.info(f"Generation done in {x}s"))
-        task_result = TaskDTO.parse_obj(res.json())
-        assert task_result.result is not None
+        task_result = TaskDTO(**res.json())
 
-        return GenerationResultInfoDTO.parse_raw(task_result.result.return_value or "")
+        if task_result.result is None or task_result.result.return_value is None:  # pragma: no cover
+            # This should not happen, but if it does, we return a failed result
+            return GenerationResultInfoDTO(success=False, details=[])
+
+        info = json.loads(task_result.result.return_value)
+        return GenerationResultInfoDTO(**info)
 
     def build_url(self, url: str) -> str:
         return url if self.host is None else f"{self.host.strip('/')}/{url.strip('/')}"
@@ -164,15 +166,15 @@ class LocalVariantGenerator(IVariantGenerator):
         )
 
         command_objs: List[List[ICommand]] = []
-        logger.info("Parsing command objects")
+        logger.info("Parsing command objects...")
         command_objs.extend(command_factory.to_command(command_block) for command_block in commands)
         stopwatch.log_elapsed(lambda x: logger.info(f"Command objects parsed in {x}s"))
         result = generator.generate(command_objs, self.output_path, delete_on_failure=False)
         if result.success:
             # sourcery skip: extract-method
-            logger.info("Building new study tree")
+            logger.info("Building new study tree...")
             study = study_factory.create_from_fs(self.output_path, study_id="", use_cache=False)
-            logger.info("Denormalizing study")
+            logger.info("Denormalize study...")
             stopwatch.reset_current()
             study.tree.denormalize()
             stopwatch.log_elapsed(lambda x: logger.info(f"Denormalized done in {x}s"))
@@ -323,7 +325,7 @@ def parse_commands(file: Path) -> List[CommandDTO]:
         json_commands = json.load(fh)
     stopwatch.log_elapsed(lambda x: logger.info(f"Script file read in {x}s"))
 
-    commands: List[CommandDTO] = [CommandDTO.parse_obj(command) for command in json_commands]
+    commands: List[CommandDTO] = [CommandDTO(**command) for command in json_commands]
     stopwatch.log_elapsed(lambda x: logger.info(f"Script commands parsed in {x}s"))
 
     return commands
