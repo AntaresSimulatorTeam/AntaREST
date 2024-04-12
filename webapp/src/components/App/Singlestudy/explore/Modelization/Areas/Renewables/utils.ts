@@ -74,35 +74,29 @@ const getClusterUrl = (
   clusterId: Cluster["id"],
 ): string => `${getClustersUrl(studyId, areaId)}/${clusterId}`;
 
-async function makeRequest<T>(
-  method: "get" | "post" | "patch" | "delete",
-  url: string,
-  data?: Partial<RenewableCluster> | { data: Array<Cluster["id"]> } | null,
-  params?: Record<string, string>,
-): Promise<T> {
-  const res = await client[method]<T>(url, data, params && { params });
-  return res.data;
-}
+////////////////////////////////////////////////////////////////
+// API
+////////////////////////////////////////////////////////////////
 
 export async function getRenewableClusters(
   studyId: StudyMetadata["id"],
   areaId: Area["name"],
-): Promise<RenewableCluster[]> {
-  return makeRequest<RenewableCluster[]>(
-    "get",
+) {
+  const res = await client.get<RenewableCluster[]>(
     getClustersUrl(studyId, areaId),
   );
+  return res.data;
 }
 
 export async function getRenewableCluster(
   studyId: StudyMetadata["id"],
   areaId: Area["name"],
   clusterId: Cluster["id"],
-): Promise<RenewableCluster> {
-  return makeRequest<RenewableCluster>(
-    "get",
+) {
+  const res = await client.get<RenewableCluster>(
     getClusterUrl(studyId, areaId, clusterId),
   );
+  return res.data;
 }
 
 export async function updateRenewableCluster(
@@ -110,46 +104,44 @@ export async function updateRenewableCluster(
   areaId: Area["name"],
   clusterId: Cluster["id"],
   data: Partial<RenewableCluster>,
-): Promise<RenewableCluster> {
-  return makeRequest<RenewableCluster>(
-    "patch",
+) {
+  const res = await client.patch<RenewableCluster>(
     getClusterUrl(studyId, areaId, clusterId),
     data,
   );
+  return res.data;
 }
 
-export function createRenewableCluster(
+export async function createRenewableCluster(
   studyId: StudyMetadata["id"],
   areaId: Area["name"],
   data: PartialExceptFor<RenewableCluster, "name">,
 ) {
-  return makeRequest<RenewableCluster>(
-    "post",
+  const res = await client.post<RenewableCluster>(
     getClustersUrl(studyId, areaId),
     data,
   );
+  return res.data;
 }
 
-export function duplicateRenewableCluster(
+export async function duplicateRenewableCluster(
   studyId: StudyMetadata["id"],
   areaId: Area["name"],
   sourceClusterId: RenewableCluster["id"],
   newName: RenewableCluster["name"],
 ) {
-  return makeRequest<RenewableCluster>(
-    "post",
+  const res = await client.post<RenewableCluster>(
     `/v1/studies/${studyId}/areas/${areaId}/renewables/${sourceClusterId}`,
     null,
-    { newName },
+    { params: { newName } },
   );
+  return res.data;
 }
 
-export function deleteRenewableClusters(
+export async function deleteRenewableClusters(
   studyId: StudyMetadata["id"],
   areaId: Area["name"],
   clusterIds: Array<Cluster["id"]>,
-): Promise<void> {
-  return makeRequest<void>("delete", getClustersUrl(studyId, areaId), {
-    data: clusterIds,
-  });
+) {
+  await client.delete(getClustersUrl(studyId, areaId), { data: clusterIds });
 }

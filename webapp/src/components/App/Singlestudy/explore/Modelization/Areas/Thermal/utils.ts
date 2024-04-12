@@ -105,32 +105,29 @@ const getClusterUrl = (
   clusterId: Cluster["id"],
 ): string => `${getClustersUrl(studyId, areaId)}/${clusterId}`;
 
-async function makeRequest<T>(
-  method: "get" | "post" | "patch" | "delete",
-  url: string,
-  data?: Partial<ThermalCluster> | { data: Array<Cluster["id"]> } | null,
-  params?: Record<string, string>,
-): Promise<T> {
-  const res = await client[method]<T>(url, data, params && { params });
-  return res.data;
-}
+////////////////////////////////////////////////////////////////
+// API
+////////////////////////////////////////////////////////////////
 
 export async function getThermalClusters(
   studyId: StudyMetadata["id"],
   areaId: Area["name"],
-): Promise<ThermalCluster[]> {
-  return makeRequest<ThermalCluster[]>("get", getClustersUrl(studyId, areaId));
+) {
+  const res = await client.get<ThermalCluster[]>(
+    getClustersUrl(studyId, areaId),
+  );
+  return res.data;
 }
 
 export async function getThermalCluster(
   studyId: StudyMetadata["id"],
   areaId: Area["name"],
   clusterId: Cluster["id"],
-): Promise<ThermalCluster> {
-  return makeRequest<ThermalCluster>(
-    "get",
+) {
+  const res = await client.get<ThermalCluster>(
     getClusterUrl(studyId, areaId, clusterId),
   );
+  return res.data;
 }
 
 export async function updateThermalCluster(
@@ -138,46 +135,44 @@ export async function updateThermalCluster(
   areaId: Area["name"],
   clusterId: Cluster["id"],
   data: Partial<ThermalCluster>,
-): Promise<ThermalCluster> {
-  return makeRequest<ThermalCluster>(
-    "patch",
+) {
+  const res = await client.patch<ThermalCluster>(
     getClusterUrl(studyId, areaId, clusterId),
     data,
   );
+  return res.data;
 }
 
-export function createThermalCluster(
+export async function createThermalCluster(
   studyId: StudyMetadata["id"],
   areaId: Area["name"],
   data: PartialExceptFor<ThermalCluster, "name">,
 ) {
-  return makeRequest<ThermalCluster>(
-    "post",
+  const res = await client.post<ThermalCluster>(
     getClustersUrl(studyId, areaId),
     data,
   );
+  return res.data;
 }
 
-export function duplicateThermalCluster(
+export async function duplicateThermalCluster(
   studyId: StudyMetadata["id"],
   areaId: Area["name"],
   sourceClusterId: ThermalCluster["id"],
   newName: ThermalCluster["name"],
 ) {
-  return makeRequest<ThermalCluster>(
-    "post",
+  const res = await client.post<ThermalCluster>(
     `/v1/studies/${studyId}/areas/${areaId}/thermals/${sourceClusterId}`,
     null,
-    { newName },
+    { params: { newName } },
   );
+  return res.data;
 }
 
-export function deleteThermalClusters(
+export async function deleteThermalClusters(
   studyId: StudyMetadata["id"],
   areaId: Area["name"],
   clusterIds: Array<Cluster["id"]>,
-): Promise<void> {
-  return makeRequest<void>("delete", getClustersUrl(studyId, areaId), {
-    data: clusterIds,
-  });
+) {
+  await client.delete(getClustersUrl(studyId, areaId), { data: clusterIds });
 }
