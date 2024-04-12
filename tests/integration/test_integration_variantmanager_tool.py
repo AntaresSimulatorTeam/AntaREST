@@ -49,8 +49,8 @@ def generate_study_with_server(
         f"/v1/studies/{base_study_id}/variants?name={urllib.parse.quote_plus(name)}",
         headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
     )
+    assert res.status_code == 200, res.json()
     variant_id = res.json()
-    assert res.status_code == 200
     generator = RemoteVariantGenerator(variant_id, session=client, token=admin_credentials["access_token"])
     return generator.apply_commands(commands, matrices_dir), variant_id
 
