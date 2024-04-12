@@ -25,6 +25,10 @@ import * as R from "ramda";
 import * as RA from "ramda-adjunct";
 import { usePrevious } from "react-use";
 import useUpdateEffectOnce from "../../../hooks/useUpdateEffectOnce";
+import { PromiseAny } from "../../../utils/tsUtils";
+import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
+import { toError } from "../../../utils/fnUtils";
+import useOperationInProgressCount from "../../../hooks/useOperationInProgressCount";
 
 export interface GroupedDataTableProps<TData extends TRow> {
   data: TData[];
@@ -32,7 +36,7 @@ export interface GroupedDataTableProps<TData extends TRow> {
   columns: Array<MRT_ColumnDef<TData, any>>;
   groups: string[] | readonly string[];
   onCreate?: (values: TData) => Promise<TData>;
-  onDelete?: (ids: string[]) => void;
+  onDelete?: (rows: TData[]) => PromiseAny | void;
   onNameClick?: (row: MRT_Row<TData>) => void;
   isLoading?: boolean;
   deleteConfirmationMessage?: string | ((count: number) => string);
@@ -60,9 +64,11 @@ function GroupedDataTable<TData extends TRow>({
   >("");
   const [tableData, setTableData] = useState(data);
   const [rowSelection, setRowSelection] = useState<MRT_RowSelectionState>({});
+  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   // Allow to use the last version of `onNameClick` in `tableColumns`
   const callbacksRef = useAutoUpdateRef({ onNameClick });
   const prevData = usePrevious(data);
+  const { deleteOps, totalOps } = useOperationInProgressCount();
 
   // Update once `data` only if previous value was empty.
   // It allows to handle loading data.
@@ -129,7 +135,7 @@ function GroupedDataTable<TData extends TRow>({
       expanded: true,
       columnPinning: { left: [GROUP_COLUMN_ID] },
     },
-    state: { isLoading, rowSelection },
+    state: { isLoading, isSaving: totalOps > 0, rowSelection },
     enableGrouping: true,
     enableStickyFooter: true,
     enableStickyHeader: true,
@@ -235,24 +241,31 @@ function GroupedDataTable<TData extends TRow>({
     }
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
+    closeDialog();
+
     if (!onDelete) {
       return;
     }
 
-    const rowIndexes = Object.keys(rowSelection)
-      .map(Number)
-      // ignore groups names
-      .filter(Number.isInteger);
-
-    const rowIdsToDelete = rowIndexes.map((index) => tableData[index].id);
-
-    onDelete(rowIdsToDelete);
-    setTableData((prevTableData) =>
-      prevTableData.filter((row) => !rowIdsToDelete.includes(row.id)),
-    );
     setRowSelection({});
-    closeDialog();
+
+    const rowsToDelete = selectedRows;
+
+    setTableData((prevTableData) =>
+      prevTableData.filter((row) => !rowsToDelete.includes(row)),
+    );
+
+    deleteOps.increment();
+
+    try {
+      await onDelete(rowsToDelete);
+    } catch (error) {
+      enqueueErrorSnackbar(t("global.error.delete"), toError(error));
+      setTableData((prevTableData) => [...prevTableData, ...rowsToDelete]);
+    }
+
+    deleteOps.decrement();
   };
 
   const handleDuplicate = async (name: string) => {

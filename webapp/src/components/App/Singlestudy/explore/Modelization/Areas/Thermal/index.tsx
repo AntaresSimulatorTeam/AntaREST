@@ -128,7 +128,8 @@ function Thermal() {
     return createThermalCluster(study.id, areaId, cluster);
   };
 
-  const handleDeleteSelection = (ids: string[]) => {
+  const handleDelete = (rows: ThermalClusterWithCapacity[]) => {
+    const ids = rows.map((row) => row.id);
     return deleteThermalClusters(study.id, areaId, ids);
   };
 
@@ -147,7 +148,7 @@ function Thermal() {
       columns={columns}
       groups={THERMAL_GROUPS}
       onCreate={handleCreateRow}
-      onDelete={handleDeleteSelection}
+      onDelete={handleDelete}
       onNameClick={handleNameClick}
       deleteConfirmationMessage={(count) =>
         t("studies.modelization.clusters.question.delete", { count })

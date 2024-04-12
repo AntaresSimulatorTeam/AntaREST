@@ -160,7 +160,8 @@ function Storages() {
     return createStorage(study.id, areaId, storage);
   };
 
-  const handleDeleteSelection = (ids: string[]) => {
+  const handleDelete = (rows: Storage[]) => {
+    const ids = rows.map((row) => row.id);
     return deleteStorages(study.id, areaId, ids);
   };
 
@@ -179,7 +180,7 @@ function Storages() {
       columns={columns}
       groups={STORAGE_GROUPS}
       onCreate={handleCreateRow}
-      onDelete={handleDeleteSelection}
+      onDelete={handleDelete}
       onNameClick={handleNameClick}
       deleteConfirmationMessage={(count) =>
         t("studies.modelization.clusters.question.delete", { count })

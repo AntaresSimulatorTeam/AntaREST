@@ -82,6 +82,7 @@
   "global.error.failedtoretrievejobs": "Failed to retrieve job information",
   "global.error.failedtoretrievelogs": "Failed to retrieve job logs",
   "global.error.failedtoretrievedownloads": "Failed to retrieve downloads list",
+  "global.error.delete": "Deletion failed",
   "global.area.add": "Add an area",
   "login.error": "Failed to authenticate",
   "tasks.title": "Tasks",
