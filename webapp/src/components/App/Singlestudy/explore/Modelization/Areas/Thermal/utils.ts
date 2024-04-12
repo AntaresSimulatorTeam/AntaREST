@@ -108,9 +108,10 @@ const getClusterUrl = (
 async function makeRequest<T>(
   method: "get" | "post" | "patch" | "delete",
   url: string,
-  data?: Partial<ThermalCluster> | { data: Array<Cluster["id"]> },
+  data?: Partial<ThermalCluster> | { data: Array<Cluster["id"]> } | null,
+  params?: Record<string, string>,
 ): Promise<T> {
-  const res = await client[method]<T>(url, data);
+  const res = await client[method]<T>(url, data, params && { params });
   return res.data;
 }
 
@@ -154,6 +155,20 @@ export function createThermalCluster(
     "post",
     getClustersUrl(studyId, areaId),
     data,
+  );
+}
+
+export function duplicateThermalCluster(
+  studyId: StudyMetadata["id"],
+  areaId: Area["name"],
+  sourceClusterId: ThermalCluster["id"],
+  newName: ThermalCluster["name"],
+) {
+  return makeRequest<ThermalCluster>(
+    "post",
+    `/v1/studies/${studyId}/areas/${areaId}/thermals/${sourceClusterId}`,
+    null,
+    { newName },
   );
 }
 

@@ -11,6 +11,7 @@ import {
   RenewableGroup,
   createRenewableCluster,
   deleteRenewableClusters,
+  duplicateRenewableCluster,
   getRenewableClusters,
 } from "./utils";
 import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
@@ -113,6 +114,20 @@ function Renewables() {
     return addCapacity(cluster);
   };
 
+  const handleDuplicate = async (
+    row: RenewableClusterWithCapacity,
+    newName: string,
+  ) => {
+    const cluster = await duplicateRenewableCluster(
+      study.id,
+      areaId,
+      row.id,
+      newName,
+    );
+
+    return { ...row, ...cluster };
+  };
+
   const handleDelete = (rows: RenewableClusterWithCapacity[]) => {
     const ids = rows.map((row) => row.id);
     return deleteRenewableClusters(study.id, areaId, ids);
@@ -133,6 +148,7 @@ function Renewables() {
       columns={columns}
       groups={[...RENEWABLE_GROUPS]}
       onCreate={handleCreate}
+      onDuplicate={handleDuplicate}
       onDelete={handleDelete}
       onNameClick={handleNameClick}
       deleteConfirmationMessage={(count) =>

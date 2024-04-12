@@ -77,9 +77,10 @@ const getClusterUrl = (
 async function makeRequest<T>(
   method: "get" | "post" | "patch" | "delete",
   url: string,
-  data?: Partial<RenewableCluster> | { data: Array<Cluster["id"]> },
+  data?: Partial<RenewableCluster> | { data: Array<Cluster["id"]> } | null,
+  params?: Record<string, string>,
 ): Promise<T> {
-  const res = await client[method]<T>(url, data);
+  const res = await client[method]<T>(url, data, params && { params });
   return res.data;
 }
 
@@ -126,6 +127,20 @@ export function createRenewableCluster(
     "post",
     getClustersUrl(studyId, areaId),
     data,
+  );
+}
+
+export function duplicateRenewableCluster(
+  studyId: StudyMetadata["id"],
+  areaId: Area["name"],
+  sourceClusterId: RenewableCluster["id"],
+  newName: RenewableCluster["name"],
+) {
+  return makeRequest<RenewableCluster>(
+    "post",
+    `/v1/studies/${studyId}/areas/${areaId}/renewables/${sourceClusterId}`,
+    null,
+    { newName },
   );
 }
 

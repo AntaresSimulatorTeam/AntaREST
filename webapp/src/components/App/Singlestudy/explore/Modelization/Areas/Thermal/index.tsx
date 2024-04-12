@@ -12,6 +12,7 @@ import {
   THERMAL_GROUPS,
   ThermalCluster,
   ThermalGroup,
+  duplicateThermalCluster,
 } from "./utils";
 import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../../redux/selectors";
@@ -127,6 +128,20 @@ function Thermal() {
     return addCapacity(cluster);
   };
 
+  const handleDuplicate = async (
+    row: ThermalClusterWithCapacity,
+    newName: string,
+  ) => {
+    const cluster = await duplicateThermalCluster(
+      study.id,
+      areaId,
+      row.id,
+      newName,
+    );
+
+    return { ...row, ...cluster };
+  };
+
   const handleDelete = (rows: ThermalClusterWithCapacity[]) => {
     const ids = rows.map((row) => row.id);
     return deleteThermalClusters(study.id, areaId, ids);
@@ -147,6 +162,7 @@ function Thermal() {
       columns={columns}
       groups={[...THERMAL_GROUPS]}
       onCreate={handleCreate}
+      onDuplicate={handleDuplicate}
       onDelete={handleDelete}
       onNameClick={handleNameClick}
       deleteConfirmationMessage={(count) =>

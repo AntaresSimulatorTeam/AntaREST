@@ -40,6 +40,7 @@ export interface GroupedDataTableProps<
   columns: Array<MRT_ColumnDef<TData, any>>;
   groups: TGroups;
   onCreate?: (values: TRow<TGroups[number]>) => Promise<TData>;
+  onDuplicate?: (row: TData, newName: string) => Promise<TData>;
   onDelete?: (rows: TData[]) => PromiseAny | void;
   onNameClick?: (row: MRT_Row<TData>) => void;
   isLoading?: boolean;
@@ -60,6 +61,7 @@ function GroupedDataTable<
   columns,
   groups,
   onCreate,
+  onDuplicate,
   onDelete,
   onNameClick,
   isLoading,
@@ -224,7 +226,7 @@ function GroupedDataTable<
             {t("button.add")}
           </Button>
         )}
-        {onCreate && (
+        {onDuplicate && (
           <Button
             startIcon={<ContentCopyIcon />}
             variant="outlined"
@@ -320,6 +322,34 @@ function GroupedDataTable<
     createOps.decrement();
   };
 
+  const handleDuplicate = async (newName: string) => {
+    closeDialog();
+
+    if (!onDuplicate || !selectedRow) {
+      return;
+    }
+
+    setRowSelection({});
+
+    const duplicatedRow = {
+      ...selectedRow,
+      name: newName,
+    };
+
+    createOps.increment();
+    addPendingRow(duplicatedRow);
+
+    try {
+      const newRow = await onDuplicate(selectedRow, newName);
+      setTableData((prev) => [...prev, newRow]);
+    } catch (error) {
+      enqueueErrorSnackbar(t("global.error.create"), toError(error));
+    }
+
+    removePendingRow(duplicatedRow);
+    createOps.decrement();
+  };
+
   const handleDelete = async () => {
     closeDialog();
 
@@ -345,26 +375,6 @@ function GroupedDataTable<
     }
 
     deleteOps.decrement();
-  };
-
-  const handleDuplicate = async (name: string) => {
-    if (!selectedRow) {
-      return;
-    }
-
-    const id = generateUniqueValue(name, tableData);
-
-    const duplicatedRow = {
-      ...selectedRow,
-      id,
-      name,
-    };
-
-    if (onCreate) {
-      const newRow = await onCreate(duplicatedRow);
-      setTableData((prevTableData) => [...prevTableData, newRow]);
-      setRowSelection({});
-    }
   };
 
   ////////////////////////////////////////////////////////////////

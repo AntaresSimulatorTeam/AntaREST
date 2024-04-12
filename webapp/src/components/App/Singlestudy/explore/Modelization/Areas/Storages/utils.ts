@@ -54,9 +54,10 @@ const getStorageUrl = (
 async function makeRequest<T>(
   method: "get" | "post" | "patch" | "delete",
   url: string,
-  data?: Partial<Storage> | { data: Array<Storage["id"]> },
+  data?: Partial<Storage> | { data: Array<Storage["id"]> } | null,
+  params?: Record<string, string>,
 ): Promise<T> {
-  const res = await client[method]<T>(url, data);
+  const res = await client[method]<T>(url, data, params && { params });
   return res.data;
 }
 
@@ -94,6 +95,20 @@ export function createStorage(
   data: PartialExceptFor<Storage, "name">,
 ) {
   return makeRequest<Storage>("post", getStoragesUrl(studyId, areaId), data);
+}
+
+export function duplicateStorage(
+  studyId: StudyMetadata["id"],
+  areaId: Area["name"],
+  sourceClusterId: Storage["id"],
+  newName: Storage["name"],
+) {
+  return makeRequest<Storage>(
+    "post",
+    `/v1/studies/${studyId}/areas/${areaId}/storages/${sourceClusterId}`,
+    null,
+    { newName },
+  );
 }
 
 export function deleteStorages(
