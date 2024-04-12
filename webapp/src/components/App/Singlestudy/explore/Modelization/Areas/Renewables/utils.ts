@@ -4,6 +4,7 @@ import {
   StudyMetadata,
 } from "../../../../../../../common/types";
 import client from "../../../../../../../services/api/client";
+import type { PartialExceptFor } from "../../../../../../../utils/tsUtils";
 
 ////////////////////////////////////////////////////////////////
 // Constants
@@ -30,8 +31,9 @@ export const TS_INTERPRETATION_OPTIONS = [
 // Types
 ////////////////////////////////////////////////////////////////
 
+export type RenewableGroup = (typeof RENEWABLE_GROUPS)[number];
+
 type TimeSeriesInterpretation = (typeof TS_INTERPRETATION_OPTIONS)[number];
-type RenewableGroup = (typeof RENEWABLE_GROUPS)[number];
 
 export interface RenewableFormFields {
   name: string;
@@ -115,12 +117,12 @@ export async function updateRenewableCluster(
   );
 }
 
-export async function createRenewableCluster(
+export function createRenewableCluster(
   studyId: StudyMetadata["id"],
   areaId: Area["name"],
-  data: Partial<RenewableCluster>,
-): Promise<RenewableClusterWithCapacity> {
-  return makeRequest<RenewableClusterWithCapacity>(
+  data: PartialExceptFor<RenewableCluster, "name">,
+) {
+  return makeRequest<RenewableCluster>(
     "post",
     getClustersUrl(studyId, areaId),
     data,

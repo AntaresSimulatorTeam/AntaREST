@@ -13,8 +13,10 @@ import {
   deleteStorages,
   createStorage,
   STORAGE_GROUPS,
+  StorageGroup,
 } from "./utils";
 import usePromiseWithSnackbarError from "../../../../../../../hooks/usePromiseWithSnackbarError";
+import type { TRow } from "../../../../../../common/GroupedDataTable/types";
 
 function Storages() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -156,8 +158,8 @@ function Storages() {
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleCreateRow = ({ id, ...storage }: Storage) => {
-    return createStorage(study.id, areaId, storage);
+  const handleCreate = (values: TRow<StorageGroup>) => {
+    return createStorage(study.id, areaId, values);
   };
 
   const handleDelete = (rows: Storage[]) => {
@@ -178,8 +180,8 @@ function Storages() {
       isLoading={isLoading}
       data={storages || []}
       columns={columns}
-      groups={STORAGE_GROUPS}
-      onCreate={handleCreateRow}
+      groups={[...STORAGE_GROUPS]}
+      onCreate={handleCreate}
       onDelete={handleDelete}
       onNameClick={handleNameClick}
       deleteConfirmationMessage={(count) =>

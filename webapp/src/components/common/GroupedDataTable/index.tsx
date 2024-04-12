@@ -3,7 +3,7 @@ import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { Button } from "@mui/material";
+import { Button, Skeleton } from "@mui/material";
 import {
   MaterialReactTable,
   MRT_ToggleFiltersButton,
@@ -14,10 +14,10 @@ import {
   type MRT_Row,
 } from "material-react-table";
 import { useTranslation } from "react-i18next";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import CreateDialog from "./CreateDialog";
 import ConfirmationDialog from "../dialogs/ConfirmationDialog";
-import { TRow, generateUniqueValue, getTableOptionsForAlign } from "./utils";
+import { generateUniqueValue, getTableOptionsForAlign } from "./utils";
 import DuplicateDialog from "./DuplicateDialog";
 import { translateWithColon } from "../../../utils/i18nUtils";
 import useAutoUpdateRef from "../../../hooks/useAutoUpdateRef";
@@ -29,13 +29,17 @@ import { PromiseAny } from "../../../utils/tsUtils";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import { toError } from "../../../utils/fnUtils";
 import useOperationInProgressCount from "../../../hooks/useOperationInProgressCount";
+import type { TRow } from "./types";
 
-export interface GroupedDataTableProps<TData extends TRow> {
+export interface GroupedDataTableProps<
+  TGroups extends string[],
+  TData extends TRow<TGroups[number]>,
+> {
   data: TData[];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   columns: Array<MRT_ColumnDef<TData, any>>;
-  groups: string[] | readonly string[];
-  onCreate?: (values: TData) => Promise<TData>;
+  groups: TGroups;
+  onCreate?: (values: TRow<TGroups[number]>) => Promise<TData>;
   onDelete?: (rows: TData[]) => PromiseAny | void;
   onNameClick?: (row: MRT_Row<TData>) => void;
   isLoading?: boolean;
@@ -48,7 +52,10 @@ export interface GroupedDataTableProps<TData extends TRow> {
 const GROUP_COLUMN_ID = "_group";
 const NAME_COLUMN_ID = "_name";
 
-function GroupedDataTable<TData extends TRow>({
+function GroupedDataTable<
+  TGroups extends string[],
+  TData extends TRow<TGroups[number]>,
+>({
   data,
   columns,
   groups,
@@ -57,7 +64,7 @@ function GroupedDataTable<TData extends TRow>({
   onNameClick,
   isLoading,
   deleteConfirmationMessage,
-}: GroupedDataTableProps<TData>) {
+}: GroupedDataTableProps<TGroups, TData>) {
   const { t } = useTranslation();
   const [openDialog, setOpenDialog] = useState<
     "add" | "duplicate" | "delete" | ""
@@ -68,7 +75,8 @@ function GroupedDataTable<TData extends TRow>({
   // Allow to use the last version of `onNameClick` in `tableColumns`
   const callbacksRef = useAutoUpdateRef({ onNameClick });
   const prevData = usePrevious(data);
-  const { deleteOps, totalOps } = useOperationInProgressCount();
+  const pendingRows = useRef<Array<TRow<TGroups[number]>>>([]);
+  const { createOps, deleteOps, totalOps } = useOperationInProgressCount();
 
   // Update once `data` only if previous value was empty.
   // It allows to handle loading data.
@@ -104,23 +112,52 @@ function GroupedDataTable<TData extends TRow>({
         filterSelectOptions: existingNames,
         Cell:
           callbacksRef.current.onNameClick &&
-          (({ renderedCellValue, row }) => (
-            <Box
-              sx={{
-                display: "inline",
-                "&:hover": {
-                  color: "primary.main",
-                  textDecoration: "underline",
-                },
-              }}
-              onClick={() => callbacksRef.current.onNameClick?.(row)}
-            >
-              {renderedCellValue}
-            </Box>
-          )),
+          (({ renderedCellValue, row }) => {
+            if (isPendingRow(row.original)) {
+              return renderedCellValue;
+            }
+
+            return (
+              <Box
+                sx={{
+                  display: "inline",
+                  "&:hover": {
+                    color: "primary.main",
+                    textDecoration: "underline",
+                  },
+                }}
+                onClick={() => callbacksRef.current.onNameClick?.(row)}
+              >
+                {renderedCellValue}
+              </Box>
+            );
+          }),
         ...getTableOptionsForAlign("left"),
       },
-      ...columns,
+      ...columns.map(
+        (column) =>
+          ({
+            ...column,
+            Cell: (props) => {
+              const { row, renderedCellValue } = props;
+              // Use JSX instead of call it directly to remove React warning:
+              // 'Warning: Internal React error: Expected static flag was missing.'
+              const CellComp = column.Cell;
+
+              if (isPendingRow(row.original)) {
+                return (
+                  <Skeleton
+                    width={80}
+                    height={24}
+                    sx={{ display: "inline-block" }}
+                  />
+                );
+              }
+
+              return CellComp ? <CellComp {...props} /> : renderedCellValue;
+            },
+          }) as MRT_ColumnDef<TData>,
+      ),
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [columns, t, ...groups],
@@ -145,27 +182,35 @@ function GroupedDataTable<TData extends TRow>({
     enablePagination: false,
     positionToolbarAlertBanner: "none",
     // Rows
-    muiTableBodyRowProps: ({ row }) => ({
-      onClick: () => {
-        const isGrouped = row.getIsGrouped();
-        const rowIds = isGrouped
-          ? row.getLeafRows().map((r) => r.id)
-          : [row.id];
+    muiTableBodyRowProps: ({ row }) => {
+      const isPending = isPendingRow(row.original);
+
+      return {
+        onClick: () => {
+          if (isPending) {
+            return;
+          }
+
+          const isGrouped = row.getIsGrouped();
+          const rowIds = isGrouped
+            ? row.getLeafRows().map((r) => r.id)
+            : [row.id];
 
           setRowSelection((prev) => {
             const newValue = isGrouped
               ? !rowIds.some((id) => prev[id]) // Select/Deselect all
               : !prev[row.id];
 
-          return {
-            ...prev,
-            ...rowIds.reduce((acc, id) => ({ ...acc, [id]: newValue }), {}),
-          };
-        });
-      },
-      selected: rowSelection[row.id],
-      sx: { cursor: "pointer" },
-    }),
+            return {
+              ...prev,
+              ...rowIds.reduce((acc, id) => ({ ...acc, [id]: newValue }), {}),
+            };
+          });
+        },
+        selected: rowSelection[row.id],
+        sx: { cursor: isPending ? "wait" : "pointer" },
+      };
+    },
     // Toolbars
     renderTopToolbarCustomActions: ({ table }) => (
       <Box sx={{ display: "flex", gap: 1 }}>
@@ -212,6 +257,7 @@ function GroupedDataTable<TData extends TRow>({
     ),
     onRowSelectionChange: setRowSelection,
     // Styles
+    muiTablePaperProps: { sx: { display: "flex", flexDirection: "column" } }, // Allow to have scroll
     ...R.mergeDeepRight(getTableOptionsForAlign("right"), {
       muiTableBodyCellProps: {
         sx: { borderBottom: "1px solid rgba(224, 224, 224, 0.3)" },
@@ -225,6 +271,25 @@ function GroupedDataTable<TData extends TRow>({
   const selectedRow = selectedRows.length === 1 ? selectedRows[0] : null;
 
   ////////////////////////////////////////////////////////////////
+  // Optimistic
+  ////////////////////////////////////////////////////////////////
+
+  const addPendingRow = (row: TRow<TGroups[number]>) => {
+    pendingRows.current.push(row);
+    // Type can be asserted as `TData` because the row will be checked in cell renders
+    setTableData((prev) => [...prev, row as TData]);
+  };
+
+  const removePendingRow = (row: TRow<TGroups[number]>) => {
+    pendingRows.current = pendingRows.current.filter((r) => r !== row);
+    setTableData((prev) => prev.filter((r) => r !== row));
+  };
+
+  function isPendingRow(row: TData) {
+    return pendingRows.current.includes(row);
+  }
+
+  ////////////////////////////////////////////////////////////////
   // Utils
   ////////////////////////////////////////////////////////////////
 
@@ -234,11 +299,25 @@ function GroupedDataTable<TData extends TRow>({
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleCreate = async (values: TData) => {
-    if (onCreate) {
-      const newRow = await onCreate(values);
-      setTableData((prevTableData) => [...prevTableData, newRow]);
+  const handleCreate = async (values: TRow<TGroups[number]>) => {
+    closeDialog();
+
+    if (!onCreate) {
+      return;
     }
+
+    createOps.increment();
+    addPendingRow(values);
+
+    try {
+      const newRow = await onCreate(values);
+      setTableData((prev) => [...prev, newRow]);
+    } catch (error) {
+      enqueueErrorSnackbar(t("global.error.create"), toError(error));
+    }
+
+    removePendingRow(values);
+    createOps.decrement();
   };
 
   const handleDelete = async () => {
@@ -273,7 +352,7 @@ function GroupedDataTable<TData extends TRow>({
       return;
     }
 
-    const id = generateUniqueValue("id", name, tableData);
+    const id = generateUniqueValue(name, tableData);
 
     const duplicatedRow = {
       ...selectedRow,
@@ -310,7 +389,7 @@ function GroupedDataTable<TData extends TRow>({
           onClose={closeDialog}
           onSubmit={handleDuplicate}
           existingNames={existingNames}
-          defaultName={generateUniqueValue("name", selectedRow.name, tableData)}
+          defaultName={generateUniqueValue(selectedRow.name, tableData)}
         />
       )}
       {openDialog === "delete" && (

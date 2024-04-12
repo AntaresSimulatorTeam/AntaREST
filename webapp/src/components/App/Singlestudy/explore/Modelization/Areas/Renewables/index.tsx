@@ -8,6 +8,7 @@ import {
   RENEWABLE_GROUPS,
   RenewableCluster,
   RenewableClusterWithCapacity,
+  RenewableGroup,
   createRenewableCluster,
   deleteRenewableClusters,
   getRenewableClusters,
@@ -16,9 +17,11 @@ import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../../redux/selectors";
 import GroupedDataTable from "../../../../../../common/GroupedDataTable";
 import {
+  addCapacity,
   capacityAggregationFn,
   useClusterDataWithCapacity,
 } from "../common/utils";
+import { TRow } from "../../../../../../common/GroupedDataTable/types";
 
 function Renewables() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -86,8 +89,8 @@ function Renewables() {
         ),
         Cell: ({ row }) => (
           <>
-            {Math.floor(row.original.enabledCapacity ?? 0)} /{" "}
-            {Math.floor(row.original.installedCapacity ?? 0)}
+            {Math.floor(row.original.enabledCapacity)} /{" "}
+            {Math.floor(row.original.installedCapacity)}
           </>
         ),
         Footer: () => (
@@ -105,13 +108,9 @@ function Renewables() {
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleCreateRow = ({
-    id,
-    installedCapacity,
-    enabledCapacity,
-    ...cluster
-  }: RenewableClusterWithCapacity) => {
-    return createRenewableCluster(study.id, areaId, cluster);
+  const handleCreate = async (values: TRow<RenewableGroup>) => {
+    const cluster = await createRenewableCluster(study.id, areaId, values);
+    return addCapacity(cluster);
   };
 
   const handleDelete = (rows: RenewableClusterWithCapacity[]) => {
@@ -132,8 +131,8 @@ function Renewables() {
       isLoading={isLoading}
       data={clustersWithCapacity}
       columns={columns}
-      groups={RENEWABLE_GROUPS}
-      onCreate={handleCreateRow}
+      groups={[...RENEWABLE_GROUPS]}
+      onCreate={handleCreate}
       onDelete={handleDelete}
       onNameClick={handleNameClick}
       deleteConfirmationMessage={(count) =>

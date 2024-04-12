@@ -4,6 +4,7 @@ import {
   StudyMetadata,
 } from "../../../../../../../common/types";
 import client from "../../../../../../../services/api/client";
+import type { PartialExceptFor } from "../../../../../../../utils/tsUtils";
 
 ////////////////////////////////////////////////////////////////
 // Constants
@@ -51,7 +52,8 @@ export const TS_LAW_OPTIONS = ["geometric", "uniform"] as const;
 // Types
 ////////////////////////////////////////////////////////////////
 
-type ThermalGroup = (typeof THERMAL_GROUPS)[number];
+export type ThermalGroup = (typeof THERMAL_GROUPS)[number];
+
 type LocalTSGenerationBehavior = (typeof TS_GENERATION_OPTIONS)[number];
 type TimeSeriesLawOption = (typeof TS_LAW_OPTIONS)[number];
 
@@ -143,12 +145,12 @@ export async function updateThermalCluster(
   );
 }
 
-export async function createThermalCluster(
+export function createThermalCluster(
   studyId: StudyMetadata["id"],
   areaId: Area["name"],
-  data: Partial<ThermalCluster>,
-): Promise<ThermalClusterWithCapacity> {
-  return makeRequest<ThermalClusterWithCapacity>(
+  data: PartialExceptFor<ThermalCluster, "name">,
+) {
+  return makeRequest<ThermalCluster>(
     "post",
     getClustersUrl(studyId, areaId),
     data,
