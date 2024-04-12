@@ -571,7 +571,7 @@ class TestThermal:
         )
         assert res.status_code == 422
         obj = res.json()
-        assert obj["exception"] == "IncoherenceBetweenMatricesLength"
+        assert obj["exception"] == "WrongMatrixLength"
         assert obj["description"] == "The matrix series should have 8760 rows, currently: 4"
 
         # Update with the right length
@@ -608,7 +608,7 @@ class TestThermal:
             )
             assert res.status_code == 422
             obj = res.json()
-            assert obj["exception"] == "IncoherenceBetweenMatricesLength"
+            assert obj["exception"] == "IncoherenceBetweenMatricesWidth"
             pattern = ".*'series'.*4.*'CO2Cost'.*3"
             assert re.match(pattern, obj["description"])
 
