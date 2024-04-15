@@ -128,21 +128,19 @@ class RawStudyService(AbstractStorageService[RawStudy]):
 
     def exists(self, study: RawStudy) -> bool:
         """
-        Check study exist.
+        Check if the study exists in the filesystem.
+
         Args:
-            study: study
+            study: The study to check.
 
         Returns: true if study presents in disk, false else.
-
         """
-        path = self.get_study_path(study)
-
         if study.archived:
-            path = self.get_archive_path(study)
-            zf = ZipFile(path, "r")
-            return str("study.antares") in zf.namelist()
+            archive_path = self.get_archive_path(study)
+            return archive_path.is_file()
 
-        return (path / "study.antares").is_file()
+        path = self.get_study_path(study)
+        return path.joinpath("study.antares").is_file()
 
     def get_raw(
         self,
@@ -392,7 +390,21 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             self.import_study(study, fh)
 
     def get_archive_path(self, study: RawStudy) -> Path:
-        return Path(self.config.storage.archive_dir / f"{study.id}.zip")
+        """
+        Get archive path of a study.
+
+        Args:
+            study: The study to get the archive path for.
+
+        Returns:
+            The full path of the archive file (zip or 7z).
+        """
+        archive_dir: Path = self.config.storage.archive_dir
+        for suffix in [".zip", ".7z"]:
+            path = archive_dir.joinpath(f"{study.id}{suffix}")
+            if path.is_file():
+                return path
+        return archive_dir.joinpath(f"{study.id}.7z")
 
     def get_study_path(self, metadata: Study) -> Path:
         """
