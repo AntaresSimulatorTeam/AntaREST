@@ -42,6 +42,8 @@ from antarest.study.storage.utils import extract_output_name, fix_study_root, re
 logger = logging.getLogger(__name__)
 
 TEMPLATE_PARTS = "output/{sim_id}/economy/mc-ind"
+"""Template for the path to reach the output data."""
+HORIZON_TEMPLATE = "output/{sim_id}/about-the-study/parameters"
 # noinspection SpellCheckingInspection
 MCYEAR_COL = "mcYear"
 """Column name for the Monte Carlo year."""
@@ -49,6 +51,10 @@ AREA_COL = "area"
 """Column name for the area."""
 LINK_COL = "link"
 """Column name for the link."""
+TIME_ID_COL = "time_id"
+"""Column name for the time id."""
+HORIZON_COL = "time"
+"""Column name for the horizon."""
 MC_YEAR_INDEX = 0
 """Index in path parts starting from the Monte Carlo year to determine the Monte Carlo year."""
 AREA_INDEX = 2
@@ -63,16 +69,31 @@ FREQUENCY_INDEX = -2
 """Index in path parts starting from the Monte Carlo year to determine matrix frequency."""
 
 
-def _stringify(col: t.Union[str, t.Tuple[str, ...]]) -> str:
+# noinspection SpellCheckingInspection
+def _stringfy(column: t.Tuple[str, ...]) -> str:
     """
-    Convert a column name from Generic Hashable to a string without commas.
-
+    Convert a column tuple to a string
     Args:
-        col: column name to convert
+        column:
 
-    Returns:  column name as string
+    Returns:
+
     """
-    return ("/".join(col)).strip("/") if isinstance(col, tuple) else col
+    if not column:
+        raise ValueError("Empty column name")
+
+    elif len(column) == 1:
+        return column[0].upper()
+
+    elif column[1] == "NODU":
+        return column[0].upper() + " " + column[1].upper()
+
+    else:
+        part_1 = column[0].upper()
+        part_2 = ""
+        if "-" in column[1]:
+            part_2 = " " + (column[1].split("-")[0].strip()).upper()
+        return part_1 + part_2
 
 
 def flatten_tree(path_tree: t.Dict[str, t.Any]) -> t.List[t.List[str]]:
@@ -244,6 +265,11 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         """
         self._check_study_exists(metadata)
         study = self.get_raw(metadata)
+        # retrieve the horizon from the study output
+        parameters = study.tree.get(url=HORIZON_TEMPLATE.format(sim_id=output_name).split("/"))
+        horizon = parameters.get("general", dict()).get("horizon")
+
+        # root parts to retrieve the data
         parts = TEMPLATE_PARTS.format(sim_id=output_name).split("/")
         mc_years_parts = flatten_tree(study.tree.get(parts, depth=1))
         # Monte Carlo years filtering
@@ -273,7 +299,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
             except ChildNotFoundError:
                 continue
 
-            data_columns = [_stringify(col) for col in node_data["columns"]]
+            data_columns = [_stringfy(col) for col in node_data["columns"]]
             df = pd.DataFrame(node_data["data"], columns=data_columns, index=node_data["index"])
             # columns filtering
             if columns_names:
@@ -282,11 +308,16 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
 
             # rearrange columns order
             new_column_order = df.columns.values.tolist()
-            new_column_order = [AREA_COL, MCYEAR_COL] + new_column_order
+            new_column_order = [AREA_COL, MCYEAR_COL, TIME_ID_COL, HORIZON_COL] + new_column_order
 
             # add column for areas and one to record the Monte Carlo year
             df[MCYEAR_COL] = [int(path_parts[MC_YEAR_INDEX])] * len(df)
             df[AREA_COL] = [path_parts[AREA_INDEX]] * len(df)
+            # add a column for the time id
+            df[TIME_ID_COL] = df.index
+            # add horizon  column
+            df[HORIZON_COL] = [horizon] * len(df)
+
             # Reorganize the columns
             df = df.reindex(columns=new_column_order)
 
@@ -321,6 +352,11 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         """
         self._check_study_exists(metadata)
         study = self.get_raw(metadata)
+        # retrieve the horizon from the study output
+        parameters = study.tree.get(url=HORIZON_TEMPLATE.format(sim_id=output_name).split("/"))
+        horizon = parameters.get("general", dict()).get("horizon")
+
+        # root parts to retrieve the data
         parts = TEMPLATE_PARTS.format(sim_id=output_name).split("/")
         mc_years_parts = flatten_tree(study.tree.get(parts, depth=1))
         # Monte Carlo years filtering
@@ -343,16 +379,25 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
             except ChildNotFoundError:
                 continue
 
-            data_columns = [_stringify(col) for col in node_data["columns"]]
+            data_columns = [_stringfy(col) for col in node_data["columns"]]
             df = pd.DataFrame(node_data["data"], columns=data_columns, index=node_data["index"])
             # columns filtering
             if columns_names:
                 # noinspection PyTypeChecker
                 df = df[[col for col in data_columns if col in columns_names]]
+
+            # rearrange columns order
             new_column_order = df.columns.values.tolist()
+            new_column_order = [LINK_COL, MCYEAR_COL, TIME_ID_COL, HORIZON_COL] + new_column_order
+
+            # add the Monte Carlo and link columns
             df[MCYEAR_COL] = [int(path_parts[MC_YEAR_INDEX])] * len(df)
             df[LINK_COL] = [path_parts[LINK_END_1_INDEX] + " - " + path_parts[LINK_END_2_INDEX]] * len(df)
-            new_column_order = [LINK_COL, MCYEAR_COL] + new_column_order
+            # add a column for the time id
+            df[TIME_ID_COL] = df.index
+            # add horizon  column
+            df[HORIZON_COL] = [horizon] * len(df)
+
             # Reorganize the columns
             df = df.reindex(columns=new_column_order)
 
