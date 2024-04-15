@@ -320,6 +320,7 @@
   "study.configuration.general.mcScenarioBuilder.tab.solar": "Solaire",
   "study.configuration.general.mcScenarioBuilder.tab.ntc": "NTC",
   "study.configuration.general.mcScenarioBuilder.tab.hydroLevels": "Hydro Levels",
+  "study.configuration.general.mcScenarioBuilder.tab.bindingConstraints": "Contraintes Couplantes",
   "study.configuration.general.mcScenarioBuilder.dialog.delete.text": "Êtes-vous sûr de vouloir supprimer la ruleset '{{0}}' ?",
   "study.configuration.general.mcScenarioBuilder.error.table": "La table '{{0}}' n'a pas été mise à jour",
   "study.configuration.general.mcScenarioBuilder.error.ruleset.rename": "La ruleset '{{0}}' n'a pas été renommée",

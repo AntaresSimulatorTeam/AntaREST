@@ -320,6 +320,7 @@
   "study.configuration.general.mcScenarioBuilder.tab.solar": "Solar",
   "study.configuration.general.mcScenarioBuilder.tab.ntc": "NTC",
   "study.configuration.general.mcScenarioBuilder.tab.hydroLevels": "Hydro Levels",
+  "study.configuration.general.mcScenarioBuilder.tab.bindingConstraints": "Binding Constraints",
   "study.configuration.general.mcScenarioBuilder.dialog.delete.text": "Are you sure you want to delete '{{0}}' ruleset?",
   "study.configuration.general.mcScenarioBuilder.error.table": "'{{0}}' table not updated",
   "study.configuration.general.mcScenarioBuilder.error.ruleset.rename": "'{{0}}' ruleset not renamed",
