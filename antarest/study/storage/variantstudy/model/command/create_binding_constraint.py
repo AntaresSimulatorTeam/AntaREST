@@ -22,16 +22,13 @@ from antarest.study.storage.variantstudy.model.command.common import (
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
-__all__ = (
-    "AbstractBindingConstraintCommand",
-    "CreateBindingConstraint",
-    "check_matrix_values",
-    "BindingConstraintProperties",
-    "BindingConstraintProperties870",
-    "BindingConstraintMatrices",
-)
-
 MatrixType = t.List[t.List[MatrixData]]
+
+EXPECTED_MATRIX_SHAPES = {
+    BindingConstraintFrequency.HOURLY: (8784, 3),
+    BindingConstraintFrequency.DAILY: (366, 3),
+    BindingConstraintFrequency.WEEKLY: (366, 3),
+}
 
 
 def check_matrix_values(time_step: BindingConstraintFrequency, values: MatrixType, version: int) -> None:
@@ -53,14 +50,9 @@ def check_matrix_values(time_step: BindingConstraintFrequency, values: MatrixTyp
     # Also, we use the same matrices for "weekly" and "daily" frequencies,
     # because the solver calculates the weekly matrix from the daily matrix.
     # See https://github.com/AntaresSimulatorTeam/AntaREST/issues/1843
-    shapes = {
-        BindingConstraintFrequency.HOURLY: (8784, 3),
-        BindingConstraintFrequency.DAILY: (366, 3),
-        BindingConstraintFrequency.WEEKLY: (366, 3),
-    }
     # Check the matrix values and create the corresponding matrix link
     array = np.array(values, dtype=np.float64)
-    expected_shape = shapes[time_step]
+    expected_shape = EXPECTED_MATRIX_SHAPES[time_step]
     actual_shape = array.shape
     if version < 870:
         if actual_shape != expected_shape:

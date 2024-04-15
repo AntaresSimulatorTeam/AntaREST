@@ -1,7 +1,7 @@
 import collections
 import itertools
 import logging
-from typing import Any, Dict, List, Mapping, MutableSequence, Optional, Sequence, Union
+from typing import Any, Dict, List, Mapping, MutableSequence, Optional, Sequence, Tuple, Union
 
 import numpy as np
 from pydantic import BaseModel, Field, root_validator, validator
@@ -12,11 +12,12 @@ from antarest.core.exceptions import (
     ConstraintAlreadyExistError,
     ConstraintIdNotFoundError,
     DuplicateConstraintName,
-    IncoherenceBetweenMatricesLength,
     InvalidConstraintName,
     InvalidFieldForVersionError,
+    MatrixWidthMismatchError,
     MissingDataError,
     NoConstraintError,
+    WrongMatrixHeightError,
 )
 from antarest.core.utils.string import to_camel_case
 from antarest.study.business.utils import AllOptionalMetaclass, camel_case_model, execute_or_add_commands
@@ -39,6 +40,7 @@ from antarest.study.storage.variantstudy.business.matrix_constants.binding_const
 )
 from antarest.study.storage.variantstudy.model.command.common import BindingConstraintOperator
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import (
+    EXPECTED_MATRIX_SHAPES,
     BindingConstraintMatrices,
     BindingConstraintProperties,
     BindingConstraintProperties870,
@@ -255,11 +257,7 @@ class ConstraintCreation(ConstraintInput):
         # Also, we use the same matrices for "weekly" and "daily" frequencies,
         # because the solver calculates the weekly matrix from the daily matrix.
         # See https://github.com/AntaresSimulatorTeam/AntaREST/issues/1843
-        expected_rows = {
-            BindingConstraintFrequency.HOURLY: 8784,
-            BindingConstraintFrequency.DAILY: 366,
-            BindingConstraintFrequency.WEEKLY: 366,
-        }[_time_step]
+        expected_rows = EXPECTED_MATRIX_SHAPES[_time_step][0]
 
         # Collect the matrix shapes
         matrix_shapes = {}
@@ -311,38 +309,72 @@ class ConstraintOutput870(ConstraintOutputBase):
 ConstraintOutput = Union[ConstraintOutputBase, ConstraintOutput870]
 
 
-def _validate_binding_constraints(file_study: FileStudy, bcs: Sequence[ConstraintOutput]) -> bool:
+def _get_references_by_widths(
+    file_study: FileStudy, bcs: Sequence[ConstraintOutput]
+) -> Mapping[int, Sequence[Tuple[str, str]]]:
+    """
+    Iterates over each BC and its associated matrices.
+    For each matrix, it checks its width according to the expected matrix shapes.
+    It then groups the binding constraints by these widths.
+
+    Notes:
+        The height of the matrices may vary depending on the time step,
+        but the width should be consistent within a group of binding constraints.
+    """
     if int(file_study.config.version) < 870:
         matrix_id_fmts = {"{bc_id}"}
     else:
         matrix_id_fmts = {"{bc_id}_eq", "{bc_id}_lt", "{bc_id}_gt"}
 
-    references_by_shapes = collections.defaultdict(list)
+    references_by_width: Dict[int, List[Tuple[str, str]]] = {}
     _total = len(bcs) * len(matrix_id_fmts)
     for _index, (bc, fmt) in enumerate(itertools.product(bcs, matrix_id_fmts), 1):
+        bc_id = bc.id
         matrix_id = fmt.format(bc_id=bc.id)
-        logger.info(f"⏲ Validating BC '{bc.id}': {matrix_id=} [{_index}/{_total}]")
-        _obj = file_study.tree.get(url=["input", "bindingconstraints", matrix_id])
-        _array = np.array(_obj["data"], dtype=float)
-        if _array.size == 0 or _array.shape[1] == 1:
+        logger.info(f"⏲ Validating BC '{bc_id}': {matrix_id=} [{_index}/{_total}]")
+        obj = file_study.tree.get(url=["input", "bindingconstraints", matrix_id])
+        matrix = np.array(obj["data"], dtype=float)
+        # We ignore empty matrices as there are default matrices for the simulator.
+        if not matrix.size:
             continue
-        references_by_shapes[_array.shape].append((bc.id, matrix_id))
-        del _obj
-        del _array
 
-    if len(references_by_shapes) > 1:
-        most_common = collections.Counter(references_by_shapes.keys()).most_common()
-        invalid_constraints = collections.defaultdict(list)
-        for shape, _ in most_common[1:]:
-            references = references_by_shapes[shape]
+        matrix_height = matrix.shape[0]
+        expected_height = EXPECTED_MATRIX_SHAPES[bc.time_step][0]
+        if matrix_height != expected_height:
+            raise WrongMatrixHeightError(
+                f"The binding constraint '{bc.name}' should have {expected_height} rows, currently: {matrix_height}"
+            )
+        matrix_width = matrix.shape[1]
+        if matrix_width > 1:
+            references_by_width.setdefault(matrix_width, []).append((bc_id, matrix_id))
+
+    return references_by_width
+
+
+def _validate_binding_constraints(file_study: FileStudy, bcs: Sequence[ConstraintOutput]) -> bool:
+    """
+    Validates the binding constraints within a group.
+    """
+    references_by_widths = _get_references_by_widths(file_study, bcs)
+
+    if len(references_by_widths) > 1:
+        most_common = collections.Counter(references_by_widths.keys()).most_common()
+        invalid_constraints: Dict[str, str] = {}
+
+        for width, _ in most_common[1:]:
+            references = references_by_widths[width]
             for bc_id, matrix_id in references:
-                invalid_constraints[bc_id].append(f"'{matrix_id}' {shape}")
-        expected_shape = most_common[0][0]
-        detail = {
-            "msg": f"Matrix shapes mismatch in binding constraints group. Expected shape: {expected_shape}",
-            "invalid_constraints": dict(invalid_constraints),
-        }
-        raise IncoherenceBetweenMatricesLength(detail)
+                existing_key = invalid_constraints.get(bc_id, "")
+                if existing_key:
+                    existing_key += ", "
+                existing_key += f"'{matrix_id}' has {width} columns"
+                invalid_constraints[bc_id] = existing_key
+
+        expected_width = most_common[0][0]
+        raise MatrixWidthMismatchError(
+            f"Mismatch widths: the most common width in the group is {expected_width}"
+            f" but we have: {invalid_constraints!r}"
+        )
 
     return True
 
@@ -618,11 +650,12 @@ class BindingConstraintManager:
         for group_name, bcs in grouped_constraints.items():
             try:
                 _validate_binding_constraints(file_study, bcs)
-            except IncoherenceBetweenMatricesLength as e:
+            except MatrixWidthMismatchError as e:
                 invalid_groups[group_name] = e.detail
 
         if invalid_groups:
-            raise IncoherenceBetweenMatricesLength(invalid_groups)
+            err_msg = ", ".join(f"'{grp}': {msg}" for grp, msg in sorted(invalid_groups.items()))
+            raise MatrixWidthMismatchError(err_msg)
 
         return True
 

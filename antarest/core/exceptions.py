@@ -385,9 +385,14 @@ class InvalidFieldForVersionError(HTTPException):
         super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, message)
 
 
-class IncoherenceBetweenMatricesLength(HTTPException):
-    def __init__(self, detail: Any) -> None:
-        super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, detail)
+class MatrixWidthMismatchError(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, message)
+
+
+class WrongMatrixHeightError(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, message)
 
 
 class MissingDataError(HTTPException):

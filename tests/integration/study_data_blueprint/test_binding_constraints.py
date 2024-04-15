@@ -1,4 +1,8 @@
+import io
+import re
+
 import numpy as np
+import pandas as pd
 import pytest
 from starlette.testclient import TestClient
 
@@ -60,6 +64,21 @@ class TestConstraintTerm:
             offset=123,
         )
         assert term.generate_id() == "foo"
+
+
+def _upload_matrix(
+    client: TestClient, user_access_token: str, study_id: str, matrix_path: str, df: pd.DataFrame
+) -> None:
+    tsv = io.BytesIO()
+    df.to_csv(tsv, sep="\t", index=False, header=False)
+    tsv.seek(0)
+    res = client.put(
+        f"/v1/studies/{study_id}/raw",
+        params={"path": matrix_path},
+        headers={"Authorization": f"Bearer {user_access_token}"},
+        files={"file": tsv},
+    )
+    res.raise_for_status()
 
 
 @pytest.mark.unit_test
@@ -802,9 +821,8 @@ class TestBindingConstraints:
         assert "(8784, 2)" in description
 
         #
-        # Creation of 2 BC inside the same group with different columns size
-        # "First BC": 3 cols, "Group 1" -> OK
-        # "Second BC": 4 cols, "Group 1" -> OK, but should fail in group validation
+        # Creation of 1 BC
+        # Update raw with wrong columns size -> OK but validation should fail
         #
 
         matrix_lt3 = np.ones((8784, 3))
@@ -819,6 +837,47 @@ class TestBindingConstraints:
             headers=admin_headers,
         )
         assert res.status_code in {200, 201}, res.json()
+        first_bc_id = res.json()["id"]
+
+        generator = np.random.default_rng(11)
+        random_matrix = pd.DataFrame(generator.integers(0, 10, size=(4, 1)))
+        _upload_matrix(
+            client,
+            admin_access_token,
+            study_id,
+            f"input/bindingconstraints/{first_bc_id}_gt",
+            random_matrix,
+        )
+
+        # Validation should fail
+        res = client.get(
+            f"/v1/studies/{study_id}/constraint-groups/Group 1/validate",
+            headers=admin_headers,
+        )
+        assert res.status_code == 422
+        obj = res.json()
+        assert obj["exception"] == "WrongMatrixHeightError"
+        assert obj["description"] == "The binding constraint 'First BC' should have 8784 rows, currently: 4"
+
+        # So, we correct the shape of the matrix
+        res = client.put(
+            f"/v1/studies/{study_id}/bindingconstraints/{first_bc_id}",
+            json={"greater_term_matrix": matrix_lt3.tolist()},
+            headers=admin_headers,
+        )
+        assert res.status_code in {200, 201}, res.json()
+
+        #
+        # Creation of another BC inside the same group with different columns size
+        # "Second BC": 4 cols, "Group 1" -> OK, but should fail in group validation
+        #
+
+        # Asserts everything is ok.
+        res = client.get(
+            f"/v1/studies/{study_id}/constraint-groups/Group 1/validate",
+            headers=admin_headers,
+        )
+        assert res.status_code == 200, res.json()
 
         matrix_gt4 = np.ones((8784, 4))  # Wrong number of columns
         res = client.post(
@@ -837,12 +896,10 @@ class TestBindingConstraints:
         # validate the BC group "Group 1"
         res = client.get(f"/v1/studies/{study_id}/constraint-groups/Group 1/validate", headers=admin_headers)
         assert res.status_code == 422, res.json()
-        assert res.json()["exception"] == "IncoherenceBetweenMatricesLength"
+        assert res.json()["exception"] == "MatrixWidthMismatchError"
         description = res.json()["description"]
-        assert description == {
-            "invalid_constraints": {"second bc": ["'second bc_gt' (8784, 4)"]},
-            "msg": "Matrix shapes mismatch in binding constraints group. Expected shape: (8784, 3)",
-        }
+        assert re.search(r"the most common width in the group is 3", description, flags=re.IGNORECASE)
+        assert re.search(r"'second bc_gt' has 4 columns", description, flags=re.IGNORECASE)
 
         # So, we correct the shape of the matrix of the Second BC
         res = client.put(
@@ -884,12 +941,10 @@ class TestBindingConstraints:
         # validate the BC group "Group 1"
         res = client.get(f"/v1/studies/{study_id}/constraint-groups/Group 1/validate", headers=admin_headers)
         assert res.status_code == 422, res.json()
-        assert res.json()["exception"] == "IncoherenceBetweenMatricesLength"
+        assert res.json()["exception"] == "MatrixWidthMismatchError"
         description = res.json()["description"]
-        assert description == {
-            "invalid_constraints": {"third bc": ["'third bc_lt' (8784, 4)"]},
-            "msg": "Matrix shapes mismatch in binding constraints group. Expected shape: (8784, 3)",
-        }
+        assert re.search(r"the most common width in the group is 3", description, flags=re.IGNORECASE)
+        assert re.search(r"'third bc_lt' has 4 columns", description, flags=re.IGNORECASE)
 
         # So, we correct the shape of the matrix of the Second BC
         res = client.put(
@@ -949,10 +1004,7 @@ class TestBindingConstraints:
         assert res.status_code == 422, res.json()
         exception = res.json()["exception"]
         description = res.json()["description"]
-        assert exception == "IncoherenceBetweenMatricesLength"
-        assert description == {
-            "Group 1": {
-                "msg": "Matrix shapes mismatch in binding constraints group. Expected shape: (8784, 3)",
-                "invalid_constraints": {"third bc": ["'third bc_lt' (8784, 4)"]},
-            }
-        }
+        assert exception == "MatrixWidthMismatchError"
+        assert re.search(r"'Group 1':", description, flags=re.IGNORECASE)
+        assert re.search(r"the most common width in the group is 3", description, flags=re.IGNORECASE)
+        assert re.search(r"'third bc_lt' has 4 columns", description, flags=re.IGNORECASE)
