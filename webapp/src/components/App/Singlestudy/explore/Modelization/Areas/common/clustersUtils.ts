@@ -1,4 +1,4 @@
-import { DependencyList, useMemo } from "react";
+import { useMemo, type DependencyList } from "react";
 import { MRT_AggregationFn } from "material-react-table";
 import { ThermalClusterWithCapacity } from "../Thermal/utils";
 import { RenewableClusterWithCapacity } from "../Renewables/utils";
@@ -63,15 +63,18 @@ export const useClusterDataWithCapacity = <T extends BaseCluster>(
   errorMessage: string,
   deps: DependencyList,
 ): UseClusterDataWithCapacityReturn<T> => {
-  const { data: clusters, isLoading } = usePromiseWithSnackbarError(fetchFn, {
-    errorMessage,
-    deps,
-  });
-
-  const clustersWithCapacity: Array<ClusterWithCapacity<T>> = useMemo(
-    () => clusters?.map(addCapacity) || [],
-    [clusters],
-  );
+  const { data: clustersWithCapacity = [], isLoading } =
+    usePromiseWithSnackbarError<Array<ClusterWithCapacity<T>>>(
+      async () => {
+        const clusters = await fetchFn();
+        return clusters?.map(addCapacity);
+      },
+      {
+        resetDataOnReload: true,
+        errorMessage,
+        deps,
+      },
+    );
 
   const { totalUnitCount, totalInstalledCapacity, totalEnabledCapacity } =
     useMemo(() => {

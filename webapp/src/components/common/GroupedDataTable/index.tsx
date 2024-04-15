@@ -13,7 +13,7 @@ import {
   type MRT_ColumnDef,
 } from "material-react-table";
 import { useTranslation } from "react-i18next";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import CreateDialog from "./CreateDialog";
 import ConfirmationDialog from "../dialogs/ConfirmationDialog";
 import { generateUniqueValue, getTableOptionsForAlign } from "./utils";
@@ -22,8 +22,6 @@ import { translateWithColon } from "../../../utils/i18nUtils";
 import useAutoUpdateRef from "../../../hooks/useAutoUpdateRef";
 import * as R from "ramda";
 import * as RA from "ramda-adjunct";
-import { usePrevious } from "react-use";
-import useUpdateEffectOnce from "../../../hooks/useUpdateEffectOnce";
 import { PromiseAny } from "../../../utils/tsUtils";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import { toError } from "../../../utils/fnUtils";
@@ -79,17 +77,10 @@ function GroupedDataTable<
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   // Allow to use the last version of `onNameClick` in `tableColumns`
   const callbacksRef = useAutoUpdateRef({ onNameClick });
-  const prevData = usePrevious(data);
   const pendingRows = useRef<Array<TRow<TGroups[number]>>>([]);
   const { createOps, deleteOps, totalOps } = useOperationInProgressCount();
 
-  // Update once `data` only if previous value was empty.
-  // It allows to handle loading data.
-  useUpdateEffectOnce(() => {
-    if (prevData && prevData.length === 0) {
-      setTableData(data);
-    }
-  }, [data.length]);
+  useEffect(() => setTableData(data), [data]);
 
   const existingNames = useMemo(
     () => tableData.map((row) => row.name.toLowerCase()),
