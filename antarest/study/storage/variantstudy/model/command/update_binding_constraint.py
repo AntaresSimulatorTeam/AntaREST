@@ -10,8 +10,6 @@ from antarest.study.storage.variantstudy.model.command.create_binding_constraint
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
-__all__ = ("UpdateBindingConstraint",)
-
 MatrixType = List[List[MatrixData]]
 
 

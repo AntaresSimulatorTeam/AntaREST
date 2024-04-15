@@ -22,15 +22,6 @@ from antarest.study.storage.variantstudy.model.command.common import (
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
-__all__ = (
-    "AbstractBindingConstraintCommand",
-    "CreateBindingConstraint",
-    "check_matrix_values",
-    "BindingConstraintProperties",
-    "BindingConstraintProperties870",
-    "BindingConstraintMatrices",
-)
-
 MatrixType = t.List[t.List[MatrixData]]
 
 EXPECTED_MATRIX_SHAPES = {
