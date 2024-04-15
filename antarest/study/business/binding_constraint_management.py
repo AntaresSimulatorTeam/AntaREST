@@ -12,12 +12,12 @@ from antarest.core.exceptions import (
     ConstraintAlreadyExistError,
     ConstraintIdNotFoundError,
     DuplicateConstraintName,
-    IncoherenceBetweenMatricesWidth,
     InvalidConstraintName,
     InvalidFieldForVersionError,
+    MatrixWidthMismatchError,
     MissingDataError,
     NoConstraintError,
-    WrongMatrixLength,
+    WrongMatrixHeightError,
 )
 from antarest.core.utils.string import to_camel_case
 from antarest.study.business.utils import AllOptionalMetaclass, camel_case_model, execute_or_add_commands
@@ -329,7 +329,7 @@ def _validate_binding_constraints(file_study: FileStudy, bcs: Sequence[Constrain
         matrix_height = matrix.shape[0]
         expected_height = EXPECTED_MATRIX_SHAPES[bc.time_step][0]
         if matrix_height != expected_height:
-            raise WrongMatrixLength(
+            raise WrongMatrixHeightError(
                 f"The binding constraint '{bc.name}' should have {expected_height} rows, currently: {matrix_height}"
             )
         matrix_width = matrix.shape[1]
@@ -349,7 +349,7 @@ def _validate_binding_constraints(file_study: FileStudy, bcs: Sequence[Constrain
                 invalid_constraints[bc_id] = existing_key
         expected_shape = most_common[0][0]
         message = f"Mismatch widths : The most common width in the group is {expected_shape} but we have : {invalid_constraints}"
-        raise IncoherenceBetweenMatricesWidth(message)
+        raise MatrixWidthMismatchError(message)
 
     return True
 
@@ -625,11 +625,11 @@ class BindingConstraintManager:
         for group_name, bcs in grouped_constraints.items():
             try:
                 _validate_binding_constraints(file_study, bcs)
-            except IncoherenceBetweenMatricesWidth as e:
+            except MatrixWidthMismatchError as e:
                 invalid_groups[group_name] = e.detail
 
         if invalid_groups:
-            raise IncoherenceBetweenMatricesWidth(f"{invalid_groups}")
+            raise MatrixWidthMismatchError(f"{invalid_groups}")
 
         return True
 

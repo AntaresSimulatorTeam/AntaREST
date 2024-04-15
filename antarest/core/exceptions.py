@@ -385,12 +385,12 @@ class InvalidFieldForVersionError(HTTPException):
         super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, message)
 
 
-class IncoherenceBetweenMatricesWidth(HTTPException):
+class MatrixWidthMismatchError(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, message)
 
 
-class WrongMatrixLength(HTTPException):
+class WrongMatrixHeightError(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, message)
 

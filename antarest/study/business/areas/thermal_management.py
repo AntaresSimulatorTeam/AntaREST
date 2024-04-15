@@ -6,10 +6,10 @@ from pydantic import validator
 
 from antarest.core.exceptions import (
     DuplicateThermalCluster,
-    IncoherenceBetweenMatricesWidth,
+    MatrixWidthMismatchError,
     ThermalClusterConfigNotFound,
     ThermalClusterNotFound,
-    WrongMatrixLength,
+    WrongMatrixHeightError,
 )
 from antarest.study.business.utils import AllOptionalMetaclass, camel_case_model, execute_or_add_commands
 from antarest.study.model import Study
@@ -379,7 +379,9 @@ class ThermalManager:
             matrix_height = len(matrix_data)
             # We ignore empty matrices as there are default matrices for the simulator.
             if matrix_data != [[]] and matrix_height != 8760:
-                raise WrongMatrixLength(f"The matrix {ts_path.name} should have 8760 rows, currently: {matrix_height}")
+                raise WrongMatrixHeightError(
+                    f"The matrix {ts_path.name} should have 8760 rows, currently: {matrix_height}"
+                )
             matrix_width = len(matrix_data[0])
             if matrix_width > 1:
                 ts_widths.setdefault(matrix_width, []).append(ts_path.name)
@@ -393,6 +395,6 @@ class ThermalManager:
                     2: f"matrices {names} have {width} columns",
                 }[min(2, len(name_list))]
                 messages.append(message)
-            raise IncoherenceBetweenMatricesWidth("Mismatch widths: " + "; ".join(messages))
+            raise MatrixWidthMismatchError("Mismatch widths: " + "; ".join(messages))
 
         return True

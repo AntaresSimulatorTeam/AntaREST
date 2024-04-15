@@ -855,7 +855,7 @@ class TestBindingConstraints:
         )
         assert res.status_code == 422
         obj = res.json()
-        assert obj["exception"] == "WrongMatrixLength"
+        assert obj["exception"] == "WrongMatrixHeightError"
         assert obj["description"] == "The binding constraint 'First BC' should have 8784 rows, currently: 4"
 
         # So, we correct the shape of the matrix
@@ -895,7 +895,7 @@ class TestBindingConstraints:
         # validate the BC group "Group 1"
         res = client.get(f"/v1/studies/{study_id}/constraint-groups/Group 1/validate", headers=admin_headers)
         assert res.status_code == 422, res.json()
-        assert res.json()["exception"] == "IncoherenceBetweenMatricesWidth"
+        assert res.json()["exception"] == "MatrixWidthMismatchError"
         description = res.json()["description"]
         assert (
             description
@@ -942,7 +942,7 @@ class TestBindingConstraints:
         # validate the BC group "Group 1"
         res = client.get(f"/v1/studies/{study_id}/constraint-groups/Group 1/validate", headers=admin_headers)
         assert res.status_code == 422, res.json()
-        assert res.json()["exception"] == "IncoherenceBetweenMatricesWidth"
+        assert res.json()["exception"] == "MatrixWidthMismatchError"
         description = res.json()["description"]
         assert (
             description
@@ -1007,7 +1007,7 @@ class TestBindingConstraints:
         assert res.status_code == 422, res.json()
         exception = res.json()["exception"]
         description = res.json()["description"]
-        assert exception == "IncoherenceBetweenMatricesWidth"
+        assert exception == "MatrixWidthMismatchError"
         assert description == str(
             {
                 "Group 1": "Mismatch widths : The most common width in the group is 3 but we have : {'third bc': 'third bc_lt has 4 columns'}"
