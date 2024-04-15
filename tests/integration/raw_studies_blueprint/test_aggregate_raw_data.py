@@ -63,6 +63,17 @@ class TestRawDataAggregation:
                 ),
                 "test-04.result.tsv",
             ),
+            (
+                dict(
+                    output_name="20201014-1425eco-goodbye",
+                    query_file=AreasQueryFile.VALUES,
+                    frequency=MatrixFrequency.ANNUAL,
+                    mc_years="",
+                    areas_names="",
+                    columns_names="",
+                ),
+                "test-05.result.tsv",
+            ),
         ],
     )
     def test_area_aggregation(
@@ -105,7 +116,7 @@ class TestRawDataAggregation:
             assert not (set(df["mcYear"].values) - set(int(i) for i in params["mc_years"].split(",")))
         if params["columns_names"] and matrix["columns"]:
             assert not (
-                set(df.columns.values) - {"area", "mcYear", "time_id", "time"} - set(params["columns_names"].split(","))
+                set(df.columns.values) - {"area", "mcYear", "timeId", "time"} - set(params["columns_names"].split(","))
             )
 
     @pytest.mark.parametrize(
@@ -181,5 +192,5 @@ class TestRawDataAggregation:
             assert not (set(df["mcYear"].values) - set(int(i) for i in params["mc_years"].split(",")))
         if params["columns_names"] and matrix["columns"]:
             assert not (
-                set(df.columns.values) - {"link", "mcYear", "time_id", "time"} - set(params["columns_names"].split(","))
+                set(df.columns.values) - {"link", "mcYear", "timeId", "time"} - set(params["columns_names"].split(","))
             )

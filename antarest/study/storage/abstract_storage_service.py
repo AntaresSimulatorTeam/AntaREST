@@ -51,10 +51,10 @@ AREA_COL = "area"
 """Column name for the area."""
 LINK_COL = "link"
 """Column name for the link."""
-TIME_ID_COL = "time_id"
-"""Column name for the time id."""
-HORIZON_COL = "time"
-"""Column name for the horizon."""
+TIME_ID_COL = "timeId"
+"""Column name for the time index."""
+TIME_COL = "time"
+"""Column name for the timestamp."""
 MC_YEAR_INDEX = 0
 """Index in path parts starting from the Monte Carlo year to determine the Monte Carlo year."""
 AREA_INDEX = 2
@@ -67,33 +67,6 @@ QUERY_FILE_INDEX = -2
 """Index in path parts starting from the Monte Carlo year to determine the if we fetch values, details etc ."""
 FREQUENCY_INDEX = -2
 """Index in path parts starting from the Monte Carlo year to determine matrix frequency."""
-
-
-# noinspection SpellCheckingInspection
-def _stringfy(column: t.Tuple[str, ...]) -> str:
-    """
-    Convert a column tuple to a string
-    Args:
-        column:
-
-    Returns:
-
-    """
-    if not column:
-        raise ValueError("Empty column name")
-
-    elif len(column) == 1:
-        return column[0].upper()
-
-    elif column[1] == "NODU":
-        return column[0].upper() + " " + column[1].upper()
-
-    else:
-        part_1 = column[0].upper()
-        part_2 = ""
-        if "-" in column[1]:
-            part_2 = " " + (column[1].split("-")[0].strip()).upper()
-        return part_1 + part_2
 
 
 def flatten_tree(path_tree: t.Dict[str, t.Any]) -> t.List[t.List[str]]:
@@ -299,7 +272,10 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
             except ChildNotFoundError:
                 continue
 
-            data_columns = [_stringfy(col) for col in node_data["columns"]]
+            if query_file == AreasQueryFile.VALUES:
+                data_columns = [col[0].upper() for col in node_data["columns"]]
+            else:
+                data_columns = [(" ".join(col)).upper() for col in node_data["columns"]]
             df = pd.DataFrame(node_data["data"], columns=data_columns, index=node_data["index"])
             # columns filtering
             if columns_names:
@@ -308,15 +284,18 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
 
             # rearrange columns order
             new_column_order = df.columns.values.tolist()
-            new_column_order = [AREA_COL, MCYEAR_COL, TIME_ID_COL, HORIZON_COL] + new_column_order
+            new_column_order = [AREA_COL, MCYEAR_COL, TIME_ID_COL, TIME_COL] + new_column_order
 
             # add column for areas and one to record the Monte Carlo year
             df[MCYEAR_COL] = [int(path_parts[MC_YEAR_INDEX])] * len(df)
             df[AREA_COL] = [path_parts[AREA_INDEX]] * len(df)
             # add a column for the time id
-            df[TIME_ID_COL] = df.index
+            df[TIME_ID_COL] = list(range(1, len(df) + 1))
             # add horizon  column
-            df[HORIZON_COL] = [horizon] * len(df)
+            if frequency == MatrixFrequency.ANNUAL:
+                df[TIME_COL] = [horizon] * len(df)
+            else:
+                df[TIME_COL] = df.index
 
             # Reorganize the columns
             df = df.reindex(columns=new_column_order)
@@ -379,7 +358,10 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
             except ChildNotFoundError:
                 continue
 
-            data_columns = [_stringfy(col) for col in node_data["columns"]]
+            if query_file == LinksQueryFile.VALUES:
+                data_columns = [col[0].upper() for col in node_data["columns"]]
+            else:
+                data_columns = [(" ".join(col)).upper() for col in node_data["columns"]]
             df = pd.DataFrame(node_data["data"], columns=data_columns, index=node_data["index"])
             # columns filtering
             if columns_names:
@@ -388,15 +370,18 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
 
             # rearrange columns order
             new_column_order = df.columns.values.tolist()
-            new_column_order = [LINK_COL, MCYEAR_COL, TIME_ID_COL, HORIZON_COL] + new_column_order
+            new_column_order = [LINK_COL, MCYEAR_COL, TIME_ID_COL, TIME_COL] + new_column_order
 
             # add the Monte Carlo and link columns
             df[MCYEAR_COL] = [int(path_parts[MC_YEAR_INDEX])] * len(df)
             df[LINK_COL] = [path_parts[LINK_END_1_INDEX] + " - " + path_parts[LINK_END_2_INDEX]] * len(df)
             # add a column for the time id
-            df[TIME_ID_COL] = df.index
+            df[TIME_ID_COL] = list(range(1, len(df) + 1))
             # add horizon  column
-            df[HORIZON_COL] = [horizon] * len(df)
+            if frequency == MatrixFrequency.ANNUAL:
+                df[TIME_COL] = [horizon] * len(df)
+            else:
+                df[TIME_COL] = df.index
 
             # Reorganize the columns
             df = df.reindex(columns=new_column_order)
