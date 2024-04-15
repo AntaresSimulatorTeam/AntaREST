@@ -1,26 +1,27 @@
 import { TabContext, TabList, TabListProps, TabPanel } from "@mui/lab";
 import { Box, Button, Tab } from "@mui/material";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { StudyMetadata } from "../../../../../../../../common/types";
 import usePromise from "../../../../../../../../hooks/usePromise";
 import BasicDialog from "../../../../../../../common/dialogs/BasicDialog";
 import Rulesets from "./Rulesets";
-import Table from "./tabs/Table";
+import Table from "./Table";
 import {
-  ACTIVE_SCENARIO_PATH,
+  RULESET_PATH,
   getScenarioBuilderConfig,
   ScenarioBuilderConfig,
-  TABS_DATA,
+  SCENARIOS,
 } from "./utils";
-import ConfigContext from "./ConfigContext";
-import Thermal from "./tabs/Thermal";
+import { ScenarioBuilderContext } from "./ScenarioBuilderContext";
 import UsePromiseCond from "../../../../../../../common/utils/UsePromiseCond";
 import {
   editStudy,
   getStudyData,
 } from "../../../../../../../../services/api/study";
 import useEnqueueErrorSnackbar from "../../../../../../../../hooks/useEnqueueErrorSnackbar";
+import { AxiosError } from "axios";
+import withAreas from "./withAreas";
 
 interface Props {
   study: StudyMetadata;
@@ -29,65 +30,75 @@ interface Props {
   nbYears: number;
 }
 
-function ScenarioBuilderDialog(props: Props) {
-  const { study, open, onClose, nbYears } = props;
-  const [currentTab, setCurrentTab] = useState(TABS_DATA[0][0]);
-  const [activeRuleset, setActiveRuleset] = useState("");
-  const [config, setConfig] = useState<ScenarioBuilderConfig>({});
-  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
+// HOC that provides areas menu, for particular cases. (e.g thermals)
+const EnhancedTable = withAreas(Table);
+
+function ScenarioBuilderDialog({ study, open, onClose, nbYears }: Props) {
   const { t } = useTranslation();
+  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
+  const [config, setConfig] = useState<ScenarioBuilderConfig>({});
+  const [activeRuleset, setActiveRuleset] = useState("");
+  const [selectedScenario, setSelectedScenario] = useState(SCENARIOS[0].type);
 
   const res = usePromise(async () => {
-    const config = await getScenarioBuilderConfig(study.id);
-    setConfig(config);
-
     try {
-      const activeRuleset = await getStudyData<string>(
-        study.id,
-        ACTIVE_SCENARIO_PATH,
-      );
+      const [config, rulesetId] = await Promise.all([
+        // TODO use nbYears and a query param to get the splitted content
+        getScenarioBuilderConfig(study.id),
+        getStudyData(study.id, RULESET_PATH), // Active ruleset.
+      ]);
 
-      if (!config[activeRuleset]) {
-        throw new Error();
-      }
-
+      setConfig(config);
+      setActiveRuleset(rulesetId);
+    } catch (error) {
+      // TODO test
       setActiveRuleset(activeRuleset);
-    } catch {
-      setActiveRuleset("");
+
+      enqueueErrorSnackbar(
+        "There is no active ruleset or valid configuration available.",
+        error as AxiosError,
+      );
     }
-  }, [study.id]);
-
-  const cxValue = useMemo(
-    () => ({
-      config,
-      setConfig,
-      reloadConfig: res.reload,
-      activeRuleset,
-      setActiveRuleset: (ruleset: string) => {
-        setActiveRuleset(ruleset);
-
-        editStudy(ruleset, study.id, ACTIVE_SCENARIO_PATH).catch((err) => {
-          setActiveRuleset("");
-          enqueueErrorSnackbar(
-            t(
-              "study.configuration.general.mcScenarioBuilder.error.ruleset.changeActive",
-            ),
-            err,
-          );
-        });
-      },
-      studyId: study.id,
-    }),
-    [activeRuleset, config, enqueueErrorSnackbar, res.reload, study.id, t],
-  );
+  }, [study.id, t, enqueueErrorSnackbar]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleTabChange: TabListProps["onChange"] = (_, newValue) => {
-    setCurrentTab(newValue);
+  const handleActiveRulesetChange = useCallback(
+    async (ruleset: string) => {
+      setActiveRuleset(ruleset);
+      try {
+        await editStudy(ruleset, study.id, RULESET_PATH);
+      } catch (error) {
+        enqueueErrorSnackbar(
+          t("study.configuration.error.changeActiveRuleset"),
+          error as AxiosError,
+        );
+      }
+    },
+    [study.id, t, enqueueErrorSnackbar, setActiveRuleset],
+  );
+
+  const handleScenarioChange: TabListProps["onChange"] = (_, type) => {
+    setSelectedScenario(type);
   };
+
+  ////////////////////////////////////////////////////////////////
+  // Utils
+  ////////////////////////////////////////////////////////////////
+
+  const scenarioBuilderContext = useMemo(
+    () => ({
+      config,
+      setConfig,
+      refreshConfig: res.reload,
+      activeRuleset,
+      updateRuleset: handleActiveRulesetChange,
+      studyId: study.id,
+    }),
+    [config, res.reload, activeRuleset, handleActiveRulesetChange, study.id],
+  );
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -98,54 +109,45 @@ function ScenarioBuilderDialog(props: Props) {
       title={t("study.configuration.general.mcScenarioBuilder")}
       open={open}
       onClose={onClose}
-      actions={<Button onClick={onClose}>{t("global.close")}</Button>}
-      maxWidth="md"
+      actions={<Button onClick={onClose}>{t("button.close")}</Button>}
+      maxWidth="xl"
       fullWidth
-      PaperProps={{
-        // TODO: add `maxHeight` and `fullHeight` in BasicDialog`
-        sx: { height: "calc(100% - 64px)", maxHeight: "900px" },
+      contentProps={{
+        sx: { p: 1, height: "95vh", width: 1 },
       }}
     >
       <UsePromiseCond
         response={res}
         ifResolved={() => (
-          <ConfigContext.Provider value={cxValue}>
+          <ScenarioBuilderContext.Provider value={scenarioBuilderContext}>
             <Rulesets />
             {activeRuleset && (
-              <TabContext value={currentTab}>
+              <TabContext value={selectedScenario}>
                 <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
-                  <TabList onChange={handleTabChange}>
-                    {TABS_DATA.map(([name]) => (
+                  <TabList onChange={handleScenarioChange}>
+                    {SCENARIOS.map(({ type }) => (
                       <Tab
-                        key={name}
-                        value={name}
+                        key={type}
+                        value={type}
                         label={t(
-                          `study.configuration.general.mcScenarioBuilder.tab.${name}`,
+                          `study.configuration.general.mcScenarioBuilder.tab.${type}`,
                         )}
                       />
                     ))}
                   </TabList>
                 </Box>
-                {TABS_DATA.map(([name, sym]) => (
+                {SCENARIOS.map(({ type, symbol }) => (
                   <TabPanel
-                    key={name}
-                    value={name}
-                    sx={{ p: 0, pt: 2, height: 1, overflow: "auto" }}
+                    key={type}
+                    value={type}
+                    sx={{ px: 1, height: 1, overflow: "auto" }}
                   >
-                    {name === "thermal" ? (
-                      <Thermal nbYears={nbYears} />
-                    ) : (
-                      <Table
-                        nbYears={nbYears}
-                        symbol={sym}
-                        rowType={name === "ntc" ? "link" : "area"}
-                      />
-                    )}
+                    <EnhancedTable symbol={symbol} />
                   </TabPanel>
                 ))}
               </TabContext>
             )}
-          </ConfigContext.Provider>
+          </ScenarioBuilderContext.Provider>
         )}
       />
     </BasicDialog>

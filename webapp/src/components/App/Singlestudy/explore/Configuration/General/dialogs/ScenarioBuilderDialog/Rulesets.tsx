@@ -8,7 +8,7 @@ import { LoadingButton } from "@mui/lab";
 import FileCopyIcon from "@mui/icons-material/FileCopy";
 import AddIcon from "@mui/icons-material/Add";
 import SelectFE from "../../../../../../../common/fieldEditors/SelectFE";
-import ConfigContext from "./ConfigContext";
+import { ScenarioBuilderContext } from "./ScenarioBuilderContext";
 import StringFE from "../../../../../../../common/fieldEditors/StringFE";
 import Form from "../../../../../../../common/Form";
 import { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
@@ -22,11 +22,11 @@ function Rulesets() {
   const {
     config,
     setConfig,
-    reloadConfig,
+    refreshConfig,
     activeRuleset,
-    setActiveRuleset,
+    updateRuleset,
     studyId,
-  } = useContext(ConfigContext);
+  } = useContext(ScenarioBuilderContext);
   const { t } = useTranslation();
   const [openForm, setOpenForm] = useState<"add" | "rename" | "">("");
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -37,58 +37,63 @@ function Rulesets() {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleRename = ({ values: { name } }: SubmitHandlerType) => {
+  const handleRename = async ({ values: { name } }: SubmitHandlerType) => {
     setOpenForm("");
     setConfig(
       (prev) => RA.renameKeys({ [activeRuleset]: name }, prev) as typeof prev,
     );
-    setActiveRuleset(name);
+    updateRuleset(name);
 
-    return updateScenarioBuilderConfig(studyId, {
-      [activeRuleset]: "",
-      [name]: activeRuleset,
-    }).catch((err) => {
-      reloadConfig();
+    try {
+      await updateScenarioBuilderConfig(studyId, {
+        [activeRuleset]: "",
+        [name]: activeRuleset,
+      });
+    } catch (err) {
+      refreshConfig();
 
       throw new Error(
         t(
           "study.configuration.general.mcScenarioBuilder.error.ruleset.rename",
-          { 0: activeRuleset },
+          {
+            0: activeRuleset,
+          },
         ),
         { cause: err },
       );
-    });
+    }
   };
 
-  const handleAdd = ({ values: { name } }: SubmitHandlerType) => {
+  const handleAdd = async ({ values: { name } }: SubmitHandlerType) => {
     setOpenForm("");
     setConfig((prev) => ({ [name]: {}, ...prev }));
-    setActiveRuleset(name);
+    updateRuleset(name);
 
-    return updateScenarioBuilderConfig(studyId, {
-      [name]: {},
-    }).catch((err) => {
-      reloadConfig();
-
+    try {
+      await updateScenarioBuilderConfig(studyId, {
+        [name]: {},
+      });
+    } catch (err) {
+      refreshConfig();
       throw new Error(
         t("study.configuration.general.mcScenarioBuilder.error.ruleset.add", {
           0: name,
         }),
         { cause: err },
       );
-    });
+    }
   };
 
   const handleDelete = () => {
     const { [activeRuleset]: ignore, ...newConfig } = config;
     setConfig(newConfig);
-    setActiveRuleset(Object.keys(newConfig)[0] || "");
+    updateRuleset(Object.keys(newConfig)[0] || "");
     setConfirmDelete(false);
 
     updateScenarioBuilderConfig(studyId, {
       [activeRuleset]: "",
     }).catch((err) => {
-      reloadConfig();
+      refreshConfig();
 
       enqueueErrorSnackbar(
         t(
@@ -103,12 +108,12 @@ function Rulesets() {
   const handleDuplicate = () => {
     const newRulesetName = `${activeRuleset} Copy`;
     setConfig((prev) => ({ [newRulesetName]: prev[activeRuleset], ...prev }));
-    setActiveRuleset(newRulesetName);
+    updateRuleset(newRulesetName);
 
     updateScenarioBuilderConfig(studyId, {
       [newRulesetName]: activeRuleset,
     }).catch((err) => {
-      reloadConfig();
+      refreshConfig();
 
       enqueueErrorSnackbar(
         t(
@@ -131,6 +136,7 @@ function Rulesets() {
           display: "flex",
           alignItems: "center",
           gap: 1,
+          px: 2,
         }}
       >
         <InputLabel>
@@ -187,7 +193,7 @@ function Rulesets() {
               variant="outlined"
               startCaseLabel={false}
               onChange={(event) => {
-                setActiveRuleset(event.target.value as string);
+                updateRuleset(String(event.target.value));
               }}
             />
             <IconButton onClick={() => setOpenForm("add")}>
