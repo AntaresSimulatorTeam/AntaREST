@@ -1,4 +1,5 @@
 import io
+import re
 
 import numpy as np
 import pandas as pd
@@ -897,10 +898,8 @@ class TestBindingConstraints:
         assert res.status_code == 422, res.json()
         assert res.json()["exception"] == "MatrixWidthMismatchError"
         description = res.json()["description"]
-        assert (
-            description
-            == "Mismatch widths : The most common width in the group is 3 but we have : {'second bc': 'second bc_gt has 4 columns'}"
-        )
+        assert re.search(r"the most common width in the group is 3", description, flags=re.IGNORECASE)
+        assert re.search(r"'second bc_gt' has 4 columns", description, flags=re.IGNORECASE)
 
         # So, we correct the shape of the matrix of the Second BC
         res = client.put(
@@ -944,10 +943,8 @@ class TestBindingConstraints:
         assert res.status_code == 422, res.json()
         assert res.json()["exception"] == "MatrixWidthMismatchError"
         description = res.json()["description"]
-        assert (
-            description
-            == "Mismatch widths : The most common width in the group is 3 but we have : {'third bc': 'third bc_lt has 4 columns'}"
-        )
+        assert re.search(r"the most common width in the group is 3", description, flags=re.IGNORECASE)
+        assert re.search(r"'third bc_lt' has 4 columns", description, flags=re.IGNORECASE)
 
         # So, we correct the shape of the matrix of the Second BC
         res = client.put(
@@ -1008,8 +1005,6 @@ class TestBindingConstraints:
         exception = res.json()["exception"]
         description = res.json()["description"]
         assert exception == "MatrixWidthMismatchError"
-        assert description == str(
-            {
-                "Group 1": "Mismatch widths : The most common width in the group is 3 but we have : {'third bc': 'third bc_lt has 4 columns'}"
-            }
-        )
+        assert re.search(r"'Group 1':", description, flags=re.IGNORECASE)
+        assert re.search(r"the most common width in the group is 3", description, flags=re.IGNORECASE)
+        assert re.search(r"'third bc_lt' has 4 columns", description, flags=re.IGNORECASE)

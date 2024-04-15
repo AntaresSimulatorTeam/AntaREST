@@ -309,7 +309,18 @@ class ConstraintOutput870(ConstraintOutputBase):
 ConstraintOutput = Union[ConstraintOutputBase, ConstraintOutput870]
 
 
-def _validate_binding_constraints(file_study: FileStudy, bcs: Sequence[ConstraintOutput]) -> bool:
+def _get_references_by_widths(
+    file_study: FileStudy, bcs: Sequence[ConstraintOutput]
+) -> Mapping[int, Sequence[Tuple[str, str]]]:
+    """
+    Iterates over each BC and its associated matrices.
+    For each matrix, it checks its width according to the expected matrix shapes.
+    It then groups the binding constraints by these widths.
+
+    Notes:
+        The height of the matrices may vary depending on the time step,
+        but the width should be consistent within a group of binding constraints.
+    """
     if int(file_study.config.version) < 870:
         matrix_id_fmts = {"{bc_id}"}
     else:
@@ -324,8 +335,9 @@ def _validate_binding_constraints(file_study: FileStudy, bcs: Sequence[Constrain
         obj = file_study.tree.get(url=["input", "bindingconstraints", matrix_id])
         matrix = np.array(obj["data"], dtype=float)
         # We ignore empty matrices as there are default matrices for the simulator.
-        if matrix == [[]]:
+        if not matrix.size:
             continue
+
         matrix_height = matrix.shape[0]
         expected_height = EXPECTED_MATRIX_SHAPES[bc.time_step][0]
         if matrix_height != expected_height:
@@ -336,20 +348,33 @@ def _validate_binding_constraints(file_study: FileStudy, bcs: Sequence[Constrain
         if matrix_width > 1:
             references_by_width.setdefault(matrix_width, []).append((bc_id, matrix_id))
 
-    if len(references_by_width) > 1:
-        most_common = collections.Counter(references_by_width.keys()).most_common()
+    return references_by_width
+
+
+def _validate_binding_constraints(file_study: FileStudy, bcs: Sequence[ConstraintOutput]) -> bool:
+    """
+    Validates the binding constraints within a group.
+    """
+    references_by_widths = _get_references_by_widths(file_study, bcs)
+
+    if len(references_by_widths) > 1:
+        most_common = collections.Counter(references_by_widths.keys()).most_common()
         invalid_constraints: Dict[str, str] = {}
+
         for width, _ in most_common[1:]:
-            references = references_by_width[width]
+            references = references_by_widths[width]
             for bc_id, matrix_id in references:
                 existing_key = invalid_constraints.get(bc_id, "")
                 if existing_key:
                     existing_key += ", "
-                existing_key += f"{matrix_id} has {width} columns"
+                existing_key += f"'{matrix_id}' has {width} columns"
                 invalid_constraints[bc_id] = existing_key
-        expected_shape = most_common[0][0]
-        message = f"Mismatch widths : The most common width in the group is {expected_shape} but we have : {invalid_constraints}"
-        raise MatrixWidthMismatchError(message)
+
+        expected_width = most_common[0][0]
+        raise MatrixWidthMismatchError(
+            f"Mismatch widths: the most common width in the group is {expected_width}"
+            f" but we have: {invalid_constraints!r}"
+        )
 
     return True
 
@@ -629,7 +654,8 @@ class BindingConstraintManager:
                 invalid_groups[group_name] = e.detail
 
         if invalid_groups:
-            raise MatrixWidthMismatchError(f"{invalid_groups}")
+            err_msg = ", ".join(f"'{grp}': {msg}" for grp, msg in sorted(invalid_groups.items()))
+            raise MatrixWidthMismatchError(err_msg)
 
         return True
 
