@@ -31,7 +31,7 @@ def test_end_to_end_upgrades(tmp_path: Path):
     old_areas_values = get_old_area_values(study_dir)
     old_binding_constraint_values = get_old_binding_constraint_values(study_dir)
     # Only checks if the study_upgrader can go from the first supported version to the last one
-    target_version = "870"
+    target_version = "880"
     upgrade_study(study_dir, target_version)
     assert_study_antares_file_is_updated(study_dir, target_version)
     assert_settings_are_updated(study_dir, old_values)
@@ -235,9 +235,23 @@ def are_same_dir(dir1, dir2) -> bool:
     dirs_cmp = filecmp.dircmp(dir1, dir2)
     if len(dirs_cmp.left_only) > 0 or len(dirs_cmp.right_only) > 0 or len(dirs_cmp.funny_files) > 0:
         return False
+    path_dir1 = Path(dir1)
+    path_dir2 = Path(dir2)
+    # check files content ignoring newline character (to avoid crashing on Windows)
+    for common_file in dirs_cmp.common_files:
+        file_1 = path_dir1 / common_file
+        file_2 = path_dir2 / common_file
+        # ignore study.ico
+        if common_file == "study.ico":
+            continue
+        with open(file_1, "r", encoding="utf-8") as f1:
+            with open(file_2, "r", encoding="utf-8") as f2:
+                content_1 = f1.read().splitlines(keepends=False)
+                content_2 = f2.read().splitlines(keepends=False)
+                if content_1 != content_2:
+                    return False
+    # iter through common dirs recursively
     for common_dir in dirs_cmp.common_dirs:
-        path_dir1 = Path(dir1)
-        path_dir2 = Path(dir2)
         path_common_dir = Path(common_dir)
         new_dir1 = path_dir1 / path_common_dir
         new_dir2 = path_dir2 / path_common_dir

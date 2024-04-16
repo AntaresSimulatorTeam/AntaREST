@@ -7,10 +7,8 @@ import typing as t
 from http import HTTPStatus
 from http.client import HTTPException
 from pathlib import Path
-from typing import Callable, List, NamedTuple
 
 from antarest.core.exceptions import StudyValidationError
-
 from .upgrader_710 import upgrade_710
 from .upgrader_720 import upgrade_720
 from .upgrader_800 import upgrade_800
@@ -21,6 +19,12 @@ from .upgrader_840 import upgrade_840
 from .upgrader_850 import upgrade_850
 from .upgrader_860 import upgrade_860
 from .upgrader_870 import upgrade_870
+from .upgrader_880 import upgrade_880
+
+STUDY_ANTARES = "study.antares"
+"""
+Main file of an Antares study containing the caption, the version, the creation date, etc.
+"""
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +51,7 @@ UPGRADE_METHODS = [
     UpgradeMethod("840", "850", upgrade_850, [_GENERAL_DATA_PATH]),
     UpgradeMethod("850", "860", upgrade_860, [Path("input"), _GENERAL_DATA_PATH]),
     UpgradeMethod("860", "870", upgrade_870, [Path("input/thermal"), Path("input/bindingconstraints")]),
+    UpgradeMethod("870", "880", upgrade_880, [Path("input/st-storage/clusters")]),
 ]
 
 
@@ -105,7 +110,7 @@ def get_current_version(study_path: Path) -> str:
         `study.antares` file or does not match the expected format.
     """
 
-    antares_path = study_path / "study.antares"
+    antares_path = study_path / STUDY_ANTARES
     pattern = r"version\s*=\s*([\w.-]+)\s*"
     with antares_path.open(encoding="utf-8") as lines:
         for line in lines:
@@ -163,8 +168,8 @@ def can_upgrade_version(from_version: str, to_version: str) -> t.List[Path]:
 
 
 def _update_study_antares_file(target_version: str, study_path: Path) -> None:
-    file = study_path / "study.antares"
-    content = file.read_text(encoding="utf-8")
+    antares_path = study_path / STUDY_ANTARES
+    content = antares_path.read_text(encoding="utf-8")
     content = re.sub(
         r"^version\s*=.*$",
         f"version = {target_version}",
@@ -177,7 +182,7 @@ def _update_study_antares_file(target_version: str, study_path: Path) -> None:
         content,
         flags=re.MULTILINE,
     )
-    file.write_text(content, encoding="utf-8")
+    antares_path.write_text(content, encoding="utf-8")
 
 
 def _copies_only_necessary_files(files_to_upgrade: t.List[Path], study_path: Path, tmp_path: Path) -> t.List[Path]:
@@ -192,10 +197,13 @@ def _copies_only_necessary_files(files_to_upgrade: t.List[Path], study_path: Pat
         without any children that has parents already in the list.
     """
     files_to_copy = _filters_out_children_files(files_to_upgrade)
-    files_to_copy.append(Path("study.antares"))
+    files_to_copy.append(Path(STUDY_ANTARES))
     files_to_retrieve = []
     for path in files_to_copy:
         entire_path = study_path / path
+        if not entire_path.exists():
+            # This can happen when upgrading a study to v8.8.
+            continue
         if entire_path.is_dir():
             if not (tmp_path / path).exists():
                 shutil.copytree(entire_path, tmp_path / path, dirs_exist_ok=True)
