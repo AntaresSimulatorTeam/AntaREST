@@ -20,58 +20,58 @@ class TestRawDataAggregation:
         "params, expected_result_filename",
         [
             (
-                dict(
-                    output_name="20201014-1425eco-goodbye",
-                    query_file=AreasQueryFile.VALUES,
-                    frequency=MatrixFrequency.HOURLY,
-                    mc_years="",
-                    areas_names="",
-                    columns_names="",
-                ),
+                {
+                    "output_id": "20201014-1425eco-goodbye",
+                    "query_file": AreasQueryFile.VALUES,
+                    "frequency": MatrixFrequency.HOURLY,
+                    "mc_years": "",
+                    "areas_ids": "",
+                    "columns_names": "",
+                },
                 "test-01.result.tsv",
             ),
             (
-                dict(
-                    output_name="20201014-1425eco-goodbye",
-                    query_file=AreasQueryFile.DETAILS,
-                    frequency=MatrixFrequency.HOURLY,
-                    mc_years="1",
-                    areas_names="de,fr,it",
-                    columns_names="",
-                ),
+                {
+                    "output_id": "20201014-1425eco-goodbye",
+                    "query_file": AreasQueryFile.DETAILS,
+                    "frequency": MatrixFrequency.HOURLY,
+                    "mc_years": "1",
+                    "areas_ids": "de,fr,it",
+                    "columns_names": "",
+                },
                 "test-02.result.tsv",
             ),
             (
-                dict(
-                    output_name="20201014-1425eco-goodbye",
-                    query_file=AreasQueryFile.VALUES,
-                    frequency=MatrixFrequency.WEEKLY,
-                    mc_years="1,2",
-                    areas_names="",
-                    columns_names="OP. COST,MRG. PRICE",
-                ),
+                {
+                    "output_id": "20201014-1425eco-goodbye",
+                    "query_file": AreasQueryFile.VALUES,
+                    "frequency": MatrixFrequency.WEEKLY,
+                    "mc_years": "1,2",
+                    "areas_ids": "",
+                    "columns_names": "OP. COST,MRG. PRICE",
+                },
                 "test-03.result.tsv",
             ),
             (
-                dict(
-                    output_name="20201014-1425eco-goodbye",
-                    query_file=AreasQueryFile.VALUES,
-                    frequency=MatrixFrequency.HOURLY,
-                    mc_years="2",
-                    areas_names="es,fr,de",
-                    columns_names="",
-                ),
+                {
+                    "output_id": "20201014-1425eco-goodbye",
+                    "query_file": AreasQueryFile.VALUES,
+                    "frequency": MatrixFrequency.HOURLY,
+                    "mc_years": "2",
+                    "areas_ids": "es,fr,de",
+                    "columns_names": "",
+                },
                 "test-04.result.tsv",
             ),
             (
-                dict(
-                    output_name="20201014-1425eco-goodbye",
-                    query_file=AreasQueryFile.VALUES,
-                    frequency=MatrixFrequency.ANNUAL,
-                    mc_years="",
-                    areas_names="",
-                    columns_names="",
-                ),
+                {
+                    "output_id": "20201014-1425eco-goodbye",
+                    "query_file": AreasQueryFile.VALUES,
+                    "frequency": MatrixFrequency.ANNUAL,
+                    "mc_years": "",
+                    "areas_ids": "",
+                    "columns_names": "",
+                },
                 "test-05.result.tsv",
             ),
         ],
@@ -110,8 +110,8 @@ class TestRawDataAggregation:
         else:
             # create the resource
             df.to_csv(resource_file, sep="\t", index=False)
-        if params["areas_names"] and matrix["columns"]:
-            assert not (set(df["area"].values) - set(params["areas_names"].split(",")))
+        if params["areas_ids"] and matrix["columns"]:
+            assert not (set(df["area"].values) - set(params["areas_ids"].split(",")))
         if params["mc_years"] and matrix["columns"]:
             assert not (set(df["mcYear"].values) - set(int(i) for i in params["mc_years"].split(",")))
         if params["columns_names"] and matrix["columns"]:
@@ -123,33 +123,33 @@ class TestRawDataAggregation:
         "params, expected_result_filename",
         [
             (
-                dict(
-                    output_name="20201014-1425eco-goodbye",
-                    query_file=LinksQueryFile.VALUES,
-                    frequency=MatrixFrequency.HOURLY,
-                    mc_years="",
-                    columns_names="",
-                ),
+                {
+                    "output_id": "20201014-1425eco-goodbye",
+                    "query_file": LinksQueryFile.VALUES,
+                    "frequency": MatrixFrequency.HOURLY,
+                    "mc_years": "",
+                    "columns_names": "",
+                },
                 "test-01.result.tsv",
             ),
             (
-                dict(
-                    output_name="20201014-1425eco-goodbye",
-                    query_file=LinksQueryFile.VALUES,
-                    frequency=MatrixFrequency.HOURLY,
-                    mc_years="1",
-                    columns_names="",
-                ),
+                {
+                    "output_id": "20201014-1425eco-goodbye",
+                    "query_file": LinksQueryFile.VALUES,
+                    "frequency": MatrixFrequency.HOURLY,
+                    "mc_years": "1",
+                    "columns_names": "",
+                },
                 "test-02.result.tsv",
             ),
             (
-                dict(
-                    output_name="20201014-1425eco-goodbye",
-                    query_file=LinksQueryFile.VALUES,
-                    frequency=MatrixFrequency.HOURLY,
-                    mc_years="1,2",
-                    columns_names="UCAP LIN.,FLOW QUAD.",
-                ),
+                {
+                    "output_id": "20201014-1425eco-goodbye",
+                    "query_file": LinksQueryFile.VALUES,
+                    "frequency": MatrixFrequency.HOURLY,
+                    "mc_years": "1,2",
+                    "columns_names": "UCAP LIN.,FLOW QUAD.",
+                },
                 "test-03.result.tsv",
             ),
         ],

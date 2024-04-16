@@ -497,22 +497,22 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
     def aggregate_areas_data(
         self,
         metadata: Study,
-        output_name: str,
+        output_id: str,
         query_file: AreasQueryFile,
         frequency: MatrixFrequency,
         mc_years: t.Sequence[int],
-        areas_names: t.Sequence[str],
+        areas_ids: t.Sequence[str],
         columns_names: t.Sequence[str],
     ) -> t.Dict[str, t.Any]:
         """
         Entry point to fetch data inside study.
         Args:
             metadata: study
-            output_name: the simulation id
-            query_file: details | values | ...
-            frequency: hourly | daily | monthly | yearly ...
+            output_id: the simulation ID
+            query_file: "values", "details", "details-st-storage", "details-res"
+            frequency: "hourly", "daily", "weekly", "monthly", "annual"
             mc_years: list of Monte Carlo years to be selected, if empty, all years are selected
-            areas_names: list of areas to be selected, if empty, all areas are selected
+            areas_ids: list of areas to be selected, if empty, all areas are selected
             columns_names: list of columns to be selected, if empty, all columns are selected
 
         Returns: the aggregated data for areas in JSON (DataFrame.to_dict(orient='split'))
@@ -521,13 +521,13 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         self._safe_generation(metadata, timeout=60)
         self.repository.refresh(metadata)
         return super().aggregate_areas_data(
-            metadata, output_name, query_file, frequency, mc_years, areas_names, columns_names
+            metadata, output_id, query_file, frequency, mc_years, areas_ids, columns_names
         )
 
     def aggregate_links_data(
         self,
         metadata: Study,
-        output_name: str,
+        output_id: str,
         query_file: LinksQueryFile,
         frequency: MatrixFrequency,
         mc_years: t.Sequence[int],
@@ -537,9 +537,9 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         Entry point to fetch data inside study.
         Args:
             metadata: study for which we want to aggregate output links raw data
-            output_name: the simulation id
-            query_file: details | values
-            frequency: hourly | daily | monthly | yearly ...
+            output_id: the simulation ID
+            query_file: "values", "details"
+            frequency: "hourly", "daily", "weekly", "monthly", "annual"
             mc_years: list of Monte Carlo years to be selected, if empty, all years are selected
             columns_names: list of columns to be selected, if empty, all columns are selected
 
@@ -548,7 +548,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         """
         self._safe_generation(metadata, timeout=60)
         self.repository.refresh(metadata)
-        return super().aggregate_links_data(metadata, output_name, query_file, frequency, mc_years, columns_names)
+        return super().aggregate_links_data(metadata, output_id, query_file, frequency, mc_years, columns_names)
 
     def create_variant_study(self, uuid: str, name: str, params: RequestParameters) -> VariantStudy:
         """

@@ -322,11 +322,11 @@ class StudyService:
     def aggregate_areas_data(
         self,
         uuid: str,
-        output_name: str,
+        output_id: str,
         query_file: AreasQueryFile,
         frequency: MatrixFrequency,
         mc_years: t.Sequence[int],
-        areas_names: t.Sequence[str],
+        areas_ids: t.Sequence[str],
         columns_names: t.Sequence[str],
         params: RequestParameters,
     ) -> JSON:
@@ -334,11 +334,11 @@ class StudyService:
         Get study data inside filesystem
         Args:
             uuid: study uuid
-            output_name: simulation output id
-            query_file: which types of data to retrieve
+            output_id: simulation output ID
+            query_file: which types of data to retrieve ("values", "details", "details-st-storage", "details-res")
             frequency: yearly, monthly, weekly, daily or hourly.
             mc_years: list of monte-carlo years, if empty, all years are selected
-            areas_names: list of areas names, if empty, all areas are selected
+            areas_ids: list of areas names, if empty, all areas are selected
             columns_names: columns to be selected, if empty, all columns are selected
             params: request parameters
 
@@ -348,7 +348,7 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
         output = self.storage_service.get_storage(study).aggregate_areas_data(
-            study, output_name, query_file, frequency, mc_years, areas_names, columns_names
+            study, output_id, query_file, frequency, mc_years, areas_ids, columns_names
         )
 
         return output
@@ -356,7 +356,7 @@ class StudyService:
     def aggregate_links_data(
         self,
         uuid: str,
-        output_name: str,
+        output_id: str,
         query_file: LinksQueryFile,
         frequency: MatrixFrequency,
         mc_years: t.Sequence[int],
@@ -367,8 +367,8 @@ class StudyService:
         Get study data inside filesystem
         Args:
             uuid: study uuid
-            output_name: simulation output id
-            query_file: which types of data to retrieve
+            output_id: simulation output ID
+            query_file: which types of data to retrieve ("values", "details")
             frequency: yearly, monthly, weekly, daily or hourly.
             mc_years: list of monte-carlo years, if empty, all years are selected
             columns_names: columns to be selected, if empty, all columns are selected
@@ -380,7 +380,7 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
         output = self.storage_service.get_storage(study).aggregate_links_data(
-            study, output_name, query_file, frequency, mc_years, columns_names
+            study, output_id, query_file, frequency, mc_years, columns_names
         )
 
         return output

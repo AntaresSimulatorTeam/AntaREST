@@ -215,35 +215,34 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
     def aggregate_areas_data(
         self,
         metadata: T,
-        output_name: str,
+        output_id: str,
         query_file: AreasQueryFile,
         frequency: MatrixFrequency,
-        mc_years: t.Sequence[int],  # review: t.Sequence[int]
-        areas_names: t.Sequence[str],
-        columns_names: t.Sequence[str],  # review: typo: "column_names`
+        mc_years: t.Sequence[int],
+        areas_ids: t.Sequence[str],
+        columns_names: t.Sequence[str],
     ) -> t.Dict[str, t.Any]:
         """
         Entry point to fetch areas raw data.
         Args:
             metadata: study file
-            output_name: simulation id
-            query_file: values | details | ...
-            frequency: hourly | daily | monthly | yearly | ...
+            output_id: simulation ID
+            query_file: "values", "details", "details-st-storage", "details-res"
+            frequency: "hourly", "daily", "weekly", "monthly", "annual"
             mc_years: list of Monte Carlo years to be selected (empty list means all)
-            areas_names: list of areas names to be selected (empty list means all)
+            areas_ids: list of areas names to be selected (empty list means all)
             columns_names: list of columns names to be selected (empty list means all)
 
         Returns: JSON (DF like matrix) representing the aggregated areas data
 
         """
-        self._check_study_exists(metadata)
         study = self.get_raw(metadata)
         # retrieve the horizon from the study output
-        parameters = study.tree.get(url=HORIZON_TEMPLATE.format(sim_id=output_name).split("/"))
-        horizon = parameters.get("general", dict()).get("horizon")
+        parameters = study.tree.get(url=HORIZON_TEMPLATE.format(sim_id=output_id).split("/"))
+        horizon = parameters.get("general", {}).get("horizon", "Annual")
 
         # root parts to retrieve the data
-        parts = TEMPLATE_PARTS.format(sim_id=output_name).split("/")
+        parts = TEMPLATE_PARTS.format(sim_id=output_id).split("/")
         mc_years_parts = flatten_tree(study.tree.get(parts, depth=1))
         # Monte Carlo years filtering
         if mc_years:
@@ -253,8 +252,8 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         for mc_year_parts in mc_years_parts:
             areas_parts = flatten_tree(study.tree.get(parts + mc_year_parts, depth=1))
             # Areas names filtering
-            if areas_names:
-                areas_parts = [area_parts for area_parts in areas_parts if area_parts[0] in areas_names]
+            if areas_ids:
+                areas_parts = [area_parts for area_parts in areas_parts if area_parts[0] in areas_ids]
             full_areas_parts.extend([mc_year_parts + area_parts for area_parts in areas_parts])
         all_paths_parts = []
         for mc_year_area_parts in full_areas_parts:
@@ -272,15 +271,18 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
             except ChildNotFoundError:
                 continue
 
-            if query_file == AreasQueryFile.VALUES:
-                data_columns = [col[0].upper() for col in node_data["columns"]]
-            else:
-                data_columns = [(" ".join(col)).upper() for col in node_data["columns"]]
-            df = pd.DataFrame(node_data["data"], columns=data_columns, index=node_data["index"])
+            # normalize columns' names
+            node_data["columns"] = (
+                [(col[0].upper()).strip() for col in node_data["columns"]]
+                if query_file == AreasQueryFile.VALUES
+                else [((" ".join(col)).upper()).strip() for col in node_data["columns"]]
+            )
+            # create a DataFrame from the node data
+            df = pd.DataFrame(**node_data)
             # columns filtering
             if columns_names:
                 # noinspection PyTypeChecker
-                df = df[[col for col in data_columns if col in columns_names]]
+                df = df[[col for col in df.columns if col in columns_names]]
 
             # rearrange columns order
             new_column_order = df.columns.values.tolist()
@@ -310,7 +312,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
     def aggregate_links_data(
         self,
         metadata: T,
-        output_name: str,
+        output_id: str,
         query_file: LinksQueryFile,
         frequency: MatrixFrequency,
         mc_years: t.Sequence[int],
@@ -320,23 +322,22 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         Entry point to fetch links raw data.
         Args:
             metadata: study file
-            output_name: simulation id
-            query_file: values | details | ...
-            frequency: hourly | daily | monthly | yearly | ...
+            output_id: simulation ID
+            query_file: "values", "details"
+            frequency: "hourly", "daily", "weekly", "monthly", "annual"
             mc_years: list of Monte Carlo years to be selected (empty list means all)
             columns_names: list of columns names to be selected (empty list means all)
 
         Returns: JSON (DF like matrix) representing the aggregated links data
 
         """
-        self._check_study_exists(metadata)
         study = self.get_raw(metadata)
         # retrieve the horizon from the study output
-        parameters = study.tree.get(url=HORIZON_TEMPLATE.format(sim_id=output_name).split("/"))
-        horizon = parameters.get("general", dict()).get("horizon")
+        parameters = study.tree.get(url=HORIZON_TEMPLATE.format(sim_id=output_id).split("/"))
+        horizon = parameters.get("general", {}).get("horizon", "Annual")
 
         # root parts to retrieve the data
-        parts = TEMPLATE_PARTS.format(sim_id=output_name).split("/")
+        parts = TEMPLATE_PARTS.format(sim_id=output_id).split("/")
         mc_years_parts = flatten_tree(study.tree.get(parts, depth=1))
         # Monte Carlo years filtering
         if mc_years:
@@ -358,15 +359,18 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
             except ChildNotFoundError:
                 continue
 
-            if query_file == LinksQueryFile.VALUES:
-                data_columns = [col[0].upper() for col in node_data["columns"]]
-            else:
-                data_columns = [(" ".join(col)).upper() for col in node_data["columns"]]
-            df = pd.DataFrame(node_data["data"], columns=data_columns, index=node_data["index"])
+            # normalize columns' names
+            node_data["columns"] = (
+                [(col[0].upper()).strip() for col in node_data["columns"]]
+                if query_file == LinksQueryFile.VALUES
+                else [((" ".join(col)).upper()).strip() for col in node_data["columns"]]
+            )
+            # create a DataFrame from the node data
+            df = pd.DataFrame(**node_data)
             # columns filtering
             if columns_names:
                 # noinspection PyTypeChecker
-                df = df[[col for col in data_columns if col in columns_names]]
+                df = df[[col for col in df.columns if col in columns_names]]
 
             # rearrange columns order
             new_column_order = df.columns.values.tolist()

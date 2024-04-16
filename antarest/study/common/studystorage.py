@@ -52,11 +52,11 @@ class IStudyStorageService(ABC, t.Generic[T]):
     def aggregate_areas_data(
         self,
         metadata: T,
-        output_name: str,
+        output_id: str,
         query_file: AreasQueryFile,
         frequency: MatrixFrequency,
         mc_years: t.Sequence[int],
-        areas_names: t.Sequence[str],
+        areas_ids: t.Sequence[str],
         columns_names: t.Sequence[str],
     ) -> t.Dict[str, t.Any]:
         """
@@ -64,11 +64,11 @@ class IStudyStorageService(ABC, t.Generic[T]):
 
         Args:
             metadata: study for which we want to perform the aggregation
-            output_name: simulation id
-            query_file: details | values ...
-            frequency: hourly | daily | monthly | yearly ...
+            output_id: simulation ID
+            query_file: "values", "details", "details-st-storage", "details-res"
+            frequency: "hourly", "daily", "weekly", "monthly", "annual"
             mc_years: list of Monte Carlo years to consider, if empty, all years are considered
-            areas_names: list of areas to consider, if empty, all areas are considered
+            areas_ids: list of areas to consider, if empty, all areas are considered
             columns_names: list of columns to consider, if empty, all columns are considered
 
         Returns: the areas aggregated data in a JSON format
@@ -80,7 +80,7 @@ class IStudyStorageService(ABC, t.Generic[T]):
     def aggregate_links_data(
         self,
         metadata: T,
-        output_name: str,
+        output_id: str,
         query_file: LinksQueryFile,
         frequency: MatrixFrequency,
         mc_years: t.Sequence[int],
@@ -91,9 +91,9 @@ class IStudyStorageService(ABC, t.Generic[T]):
 
         Args:
             metadata: study for which we want to perform the aggregation
-            output_name: simulation id
-            query_file: details | values ...
-            frequency: hourly | daily | monthly | yearly ...
+            output_id: simulation ID
+            query_file: "values", "details"
+            frequency: "hourly", "daily", "weekly", "monthly", "annual"
             mc_years: list of Monte Carlo years to consider, if empty, all years are considered
             columns_names: list of columns to consider, if empty, all columns are considered
 

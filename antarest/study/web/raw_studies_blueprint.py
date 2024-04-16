@@ -223,11 +223,11 @@ def create_raw_study_routes(
     )
     def aggregate_areas_raw_data(
         uuid: str,
-        output_name: str,
+        output_id: str,
         query_file: AreasQueryFile,
         frequency: MatrixFrequency,
         mc_years: str = "",
-        areas_names: str = "",
+        areas_ids: str = "",
         columns_names: str = "",
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> t.Dict[str, t.Any]:
@@ -235,12 +235,12 @@ def create_raw_study_routes(
         Create an aggregation of areas raw data
 
         Args:
-            uuid: study id
-            output_name: the output name aka the simulation id
-            query_file: details vs values
-            frequency: hourly, daily, monthly, yearly ...
+            uuid: study ID
+            output_id: the output ID aka the simulation ID
+            query_file: "values", "details", "details-st-storage", "details-res"
+            frequency: "hourly", "daily", "weekly", "monthly", "annual"
             mc_years: which Monte Carlo years to be selected if empty all are selected (comma separated)
-            areas_names: which areas to be selected if empty all are selected (comma separated)
+            areas_ids: which areas to be selected if empty all are selected (comma separated)
             columns_names: which columns to be selected if empty all are selected (comma separated)
             current_user: the current user login info
 
@@ -250,17 +250,17 @@ def create_raw_study_routes(
 
         """
         logger.info(
-            f"Aggregate areas raw data at {query_file} (output name = {output_name}) from study {uuid}",
+            f"Aggregate areas raw data at {query_file} (output name = {output_id}) from study {uuid}",
             extra={"user": current_user.id},
         )
         parameters = RequestParameters(user=current_user)
         output = study_service.aggregate_areas_data(
             uuid,
-            output_name=output_name,
+            output_id=output_id,
             query_file=query_file,
             frequency=frequency,
             mc_years=[int(mc_year) for mc_year in _split_comma_separated_values(mc_years)],
-            areas_names=_split_comma_separated_values(areas_names),
+            areas_ids=_split_comma_separated_values(areas_ids),
             columns_names=_split_comma_separated_values(columns_names),
             params=parameters,
         )
@@ -274,7 +274,7 @@ def create_raw_study_routes(
     )
     def aggregate_links_raw_data(
         uuid: str,
-        output_name: str,
+        output_id: str,
         query_file: LinksQueryFile,
         frequency: MatrixFrequency,
         mc_years: str = "",
@@ -285,10 +285,10 @@ def create_raw_study_routes(
         Create an aggregation of links raw data
 
         Args:
-            uuid: study id
-            output_name: the output name aka the simulation id
-            query_file: details vs values
-            frequency: hourly, daily, monthly, yearly ...
+            uuid: study ID
+            output_id: the output ID aka the simulation ID
+            query_file: "values", "details"
+            frequency: "hourly", "daily", "weekly", "monthly", "annual"
             mc_years: which Monte Carlo years to be selected if empty all are selected (comma separated)
             columns_names: which columns to be selected if empty all are selected (comma separated)
             current_user: the current user login info
@@ -298,13 +298,13 @@ def create_raw_study_routes(
 
         """
         logger.info(
-            f"Aggregate links raw data at {query_file} (output name = {output_name}) from study {uuid}",
+            f"Aggregate links raw data at {query_file} (output name = {output_id}) from study {uuid}",
             extra={"user": current_user.id},
         )
         parameters = RequestParameters(user=current_user)
         output = study_service.aggregate_links_data(
             uuid,
-            output_name=output_name,
+            output_id=output_id,
             query_file=query_file,
             frequency=frequency,
             mc_years=[int(mc_year) for mc_year in _split_comma_separated_values(mc_years)],
