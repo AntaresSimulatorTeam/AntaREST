@@ -42,8 +42,8 @@ from antarest.study.storage.variantstudy.business.matrix_constants.binding_const
 )
 from antarest.study.storage.variantstudy.model.command.common import BindingConstraintOperator
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import (
-    EXPECTED_MATRIX_SHAPES,
     DEFAULT_GROUP,
+    EXPECTED_MATRIX_SHAPES,
     TERM_MATRICES,
     BindingConstraintMatrices,
     BindingConstraintProperties,
