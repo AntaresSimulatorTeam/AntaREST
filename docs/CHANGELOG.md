@@ -8,6 +8,7 @@ v2.16.8 (2024-04-19)
 
 * **clusters:** add new endpoint for clusters duplication [`#1972`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1972)
 * **configuration:** turn Thematic Trimming variable names in upper case
+* **configuration (ui):** replace underscore with space in Thematic Trimming variable names [`#2010`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2010)
 
 ### Bug Fixes
 
