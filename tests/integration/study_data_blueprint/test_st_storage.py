@@ -32,7 +32,12 @@ class TestSTStorage:
     @pytest.mark.parametrize("study_type", ["raw", "variant"])
     @pytest.mark.parametrize("study_version", [860, 880])
     def test_lifecycle__nominal(
-        self, client: TestClient, user_access_token: str, study_id: str, study_type: str, study_version: int
+        self,
+        client: TestClient,
+        user_access_token: str,
+        study_id: str,
+        study_type: str,
+        study_version: int,
     ) -> None:
         """
         The purpose of this integration test is to test the endpoints

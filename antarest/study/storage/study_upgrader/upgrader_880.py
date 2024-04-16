@@ -1,10 +1,5 @@
 import glob
-import typing as t
 from pathlib import Path
-
-import numpy as np
-import numpy.typing as npt
-import pandas as pd
 
 from antarest.study.storage.rawstudy.ini_reader import IniReader
 from antarest.study.storage.rawstudy.ini_writer import IniWriter
