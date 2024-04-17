@@ -32,6 +32,8 @@
   "global.open": "Open",
   "global.name": "Name",
   "global.import": "Import",
+  "global.import.fromFile": "From a file",
+  "global.import.fromDatabase": "From database",
   "global.importHint": "Click or drag and drop here",
   "global.launch": "Launch",
   "global.jobs": "Jobs",
