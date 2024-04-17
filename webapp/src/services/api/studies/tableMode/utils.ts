@@ -1,5 +1,5 @@
 import { snakeCase } from "lodash";
-import { TableModeColumnsForType, TableModeType } from "./type";
+import { TableModeColumnsForType, TableModeType } from "./types";
 
 export function toColumnApiName(
   column: TableModeColumnsForType<TableModeType>[number],
