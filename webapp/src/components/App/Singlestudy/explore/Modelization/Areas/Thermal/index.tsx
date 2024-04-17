@@ -21,7 +21,7 @@ import {
   addCapacity,
   capacityAggregationFn,
   useClusterDataWithCapacity,
-} from "../common/utils";
+} from "../common/clustersUtils";
 import { TRow } from "../../../../../../common/GroupedDataTable/types";
 
 function Thermal() {
@@ -168,6 +168,11 @@ function Thermal() {
       deleteConfirmationMessage={(count) =>
         t("studies.modelization.clusters.question.delete", { count })
       }
+      fillPendingRow={(row) => ({
+        ...row,
+        enabledCapacity: 0,
+        installedCapacity: 0,
+      })}
     />
   );
 }
