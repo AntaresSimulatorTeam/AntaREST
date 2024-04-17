@@ -70,6 +70,7 @@
   "global.assign": "Assign",
   "global.undo": "Undo",
   "global.redo": "Redo",
+  "global.total": "Total",
   "global.time.hourly": "Hourly",
   "global.time.daily": "Daily",
   "global.time.weekly": "Weekly",

@@ -70,6 +70,7 @@
   "global.assign": "Assigner",
   "global.undo": "Annuler",
   "global.redo": "Rétablir",
+  "global.total": "Total",
   "global.time.hourly": "Horaire",
   "global.time.daily": "Journalier",
   "global.time.weekly": "Hebdomadaire",
