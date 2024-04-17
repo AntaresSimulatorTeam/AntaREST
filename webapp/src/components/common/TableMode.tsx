@@ -8,7 +8,7 @@ import {
   TableData,
   TableModeColumnsForType,
   TableModeType,
-} from "../../services/api/studies/tableMode/type";
+} from "../../services/api/studies/tableMode/types";
 import { SubmitHandlerPlus } from "./Form/types";
 import TableForm from "./TableForm";
 import UsePromiseCond from "./utils/UsePromiseCond";
@@ -22,16 +22,17 @@ export interface TableModeProps<T extends TableModeType = TableModeType> {
 function TableMode<T extends TableModeType>(props: TableModeProps<T>) {
   const { studyId, type, columns } = props;
 
-  const res = usePromise(async () => {
-    return getTableMode(studyId, type, columns);
-  }, [studyId, type, JSON.stringify(columns)]);
+  const res = usePromise(
+    () => getTableMode({ studyId, type, columns }),
+    [studyId, type, JSON.stringify(columns)],
+  );
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = (data: SubmitHandlerPlus<TableData>) => {
-    return setTableMode(studyId, type, data.dirtyValues);
+    return setTableMode({ studyId, type, data: data.dirtyValues });
   };
 
   ////////////////////////////////////////////////////////////////
