@@ -48,6 +48,7 @@
   "global.emptyString": "Chaine de caractères vide",
   "global.edit": "Editer",
   "global.download": "Télécharger",
+  "global.download.error": "Le téléchargement a échoué",
   "global.generate": "Générer",
   "global.user": "Utilisateur",
   "global.users": "Utilisateurs",

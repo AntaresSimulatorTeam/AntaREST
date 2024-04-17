@@ -48,6 +48,7 @@
   "global.emptyString": "Empty string",
   "global.edit": "Edit",
   "global.download": "Download",
+  "global.download.error": "Download failed",
   "global.generate": "Generate",
   "global.user": "User",
   "global.users": "Users",
