@@ -18,12 +18,13 @@ import { useSnackbar } from "notistack";
 import { useMountedState } from "react-use";
 import { shallowEqual } from "react-redux";
 import {
+  LaunchOptions,
   StudyMetadata,
   StudyOutput,
-  LaunchOptions,
 } from "../../../common/types";
 import {
   getLauncherCores,
+  getLauncherTimeLimit,
   getLauncherVersions,
   getStudyOutputs,
   launchStudy,
@@ -49,7 +50,7 @@ interface Props {
   onClose: () => void;
 }
 
-function LauncherDialog(props: Props) {
+function LauncherDialog(props: Readonly<Props>) {
   const { studyIds, open, onClose } = props;
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
@@ -57,7 +58,7 @@ function LauncherDialog(props: Props) {
   const [options, setOptions] = useState<LaunchOptions>({
     nb_cpu: DEFAULT_NB_CPU,
     auto_unzip: true,
-    time_limit: DEFAULT_TIME_LIMIT,
+    time_limit: undefined,
   });
   const [solverVersion, setSolverVersion] = useState<string>();
   const [isLaunching, setIsLaunching] = useState(false);
@@ -82,6 +83,18 @@ function LauncherDialog(props: Props) {
       errorMessage: t("study.error.launcherCores"),
     },
   );
+
+  const { data: launcherTimeLimit } = usePromiseWithSnackbarError(
+    async () => {
+      return await getLauncherTimeLimit();
+    },
+    {
+      errorMessage: t("study.error.launcherTimeLimit"),
+    },
+  );
+
+  const minSeconds = 3600;
+  const maxSeconds = launcherTimeLimit ?? DEFAULT_TIME_LIMIT;
 
   const { data: outputList } = usePromiseWithSnackbarError(
     () => Promise.all(studyIds.map((sid) => getStudyOutputs(sid))),
@@ -182,7 +195,7 @@ function LauncherDialog(props: Props) {
    */
   const parseHoursToSeconds = (hourString: string): number => {
     const seconds = moment.duration(hourString, "hours").asSeconds();
-    return seconds > 0 ? seconds : DEFAULT_TIME_LIMIT;
+    return Math.max(minSeconds, Math.min(seconds, maxSeconds));
   };
 
   ////////////////////////////////////////////////////////////////
@@ -273,7 +286,11 @@ function LauncherDialog(props: Props) {
             type="number"
             variant="filled"
             // Convert from seconds to hours the displayed value
-            value={(options.time_limit ?? DEFAULT_TIME_LIMIT) / 3600}
+            value={
+              options.time_limit === undefined
+                ? maxSeconds / 3600
+                : options.time_limit / 3600
+            }
             onChange={(e) =>
               handleChange("time_limit", parseHoursToSeconds(e.target.value))
             }
@@ -281,8 +298,9 @@ function LauncherDialog(props: Props) {
               shrink: true,
             }}
             inputProps={{
-              min: 1,
-              max: 240,
+              min: minSeconds / 3600,
+              max: maxSeconds / 3600,
+              step: 1,
             }}
             sx={{
               minWidth: "125px",
@@ -449,7 +467,7 @@ function LauncherDialog(props: Props) {
                     }
                   />
                 }
-                label={t("launcher.xpansion.sensitivityMode") as string}
+                label={t("launcher.xpansion.sensitivityMode")}
               />
               <SelectSingle
                 name={t("studies.selectOutput")}
@@ -458,7 +476,7 @@ function LauncherDialog(props: Props) {
                   name: o.name,
                 }))}
                 disabled={!!options.xpansion_r_version || !options.xpansion}
-                data={options.xpansion?.output_id || ""}
+                data={options.xpansion?.output_id ?? ""}
                 setValue={(data: string) =>
                   handleObjectChange("xpansion", {
                     output_id: data,

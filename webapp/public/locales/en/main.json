@@ -564,6 +564,7 @@
   "study.error.listOutputs": "Failed to retrieve output list",
   "study.error.launcherVersions": "Failed to retrieve launcher versions",
   "study.error.launcherCores": "Failed to retrieve launcher number of cores",
+  "study.error.launcherTimeLimit": "Failed to retrieve launcher time limit",
   "study.error.fetchComments": "Failed to fetch comments",
   "study.error.commentsNotSaved": "Comments not saved",
   "study.error.studyIdCopy": "Failed to copy study ID",

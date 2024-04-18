@@ -308,7 +308,7 @@ class SlurmConfig:
 
 class InvalidConfigurationError(Exception):
     """
-    Exception raised when an attempt is made to retrieve the number of cores
+    Exception raised when an attempt is made to retrieve a property
     of a launcher that doesn't exist in the configuration.
     """
 
@@ -370,6 +370,29 @@ class LauncherConfig:
         if launcher_config is None:
             raise InvalidConfigurationError(launcher)
         return launcher_config.nb_cores
+
+    def get_time_limit(self, launcher: str) -> int:
+        """
+        Retrieve the time limit for a job of the given launcher: "local" or "slurm".
+        If "default" is specified, retrieve the configuration of the default launcher.
+
+        Args:
+            launcher: type of launcher "local", "slurm" or "default".
+
+        Returns:
+            Time limit for a job of the given launcher.
+
+        Raises:
+            InvalidConfigurationError: Exception raised when an attempt is made to retrieve
+                a property of a launcher that doesn't exist in the configuration.
+        """
+        config_map = {"local": self.local, "slurm": self.slurm}
+        config_map["default"] = config_map[self.default]
+        launcher_config = config_map.get(launcher)
+        if launcher_config is None:
+            raise InvalidConfigurationError(launcher)
+        # The default time limit is not available for the local launcher
+        return getattr(launcher_config, "default_time_limit", 3600)
 
 
 @dataclass(frozen=True)

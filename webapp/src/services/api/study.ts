@@ -206,7 +206,7 @@ export const exportStudy = async (
 
 export const getExportUrl = (sid: string, skipOutputs = false): string =>
   `${
-    getConfig().downloadHostUrl ||
+    getConfig().downloadHostUrl ??
     getConfig().baseUrl + getConfig().restEndpoint
   }/v1/studies/${sid}/export?no_output=${skipOutputs}`;
 
@@ -226,7 +226,7 @@ export const importStudy = async (
   if (onProgress) {
     options.onUploadProgress = (progressEvent): void => {
       const percentCompleted = Math.round(
-        (progressEvent.loaded * 100) / (progressEvent.total || 1),
+        (progressEvent.loaded * 100) / (progressEvent.total ?? 1),
       );
       onProgress(percentCompleted);
     };
@@ -253,7 +253,7 @@ export const importFile = async (
   if (onProgress) {
     options.onUploadProgress = (progressEvent): void => {
       const percentCompleted = Math.round(
-        (progressEvent.loaded * 100) / (progressEvent.total || 1),
+        (progressEvent.loaded * 100) / (progressEvent.total ?? 1),
       );
       onProgress(percentCompleted);
     };
@@ -301,6 +301,16 @@ export const getLauncherVersions = async (): Promise<string[]> => {
 
 export const getLauncherCores = async (): Promise<Record<string, number>> => {
   const res = await client.get("/v1/launcher/nbcores");
+  return res.data;
+};
+
+/**
+ * Time limit for SLURM jobs (in seconds).
+ * If a jobs exceed this time limit, SLURM kills the job and it is considered failed.
+ * Often used value: 172800 (48 hours)
+ */
+export const getLauncherTimeLimit = async (): Promise<number> => {
+  const res = await client.get("/v1/launcher/time-limit");
   return res.data;
 };
 
