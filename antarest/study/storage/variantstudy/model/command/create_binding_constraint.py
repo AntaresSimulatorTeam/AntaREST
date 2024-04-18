@@ -1,3 +1,4 @@
+import json
 import typing as t
 from abc import ABCMeta
 
@@ -5,13 +6,13 @@ import numpy as np
 from pydantic import BaseModel, Extra, Field, root_validator
 
 from antarest.matrixstore.model import MatrixData
+from antarest.study.business.all_optional_meta import AllOptionalMetaclass
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.business.utils import validate_matrix
 from antarest.study.storage.variantstudy.business.utils_binding_constraint import (
-    apply_binding_constraint,
     parse_bindings_coeffs_and_save_into_config,
 )
 from antarest.study.storage.variantstudy.model.command.common import (
@@ -21,6 +22,9 @@ from antarest.study.storage.variantstudy.model.command.common import (
 )
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
 from antarest.study.storage.variantstudy.model.model import CommandDTO
+
+TERM_MATRICES = ["less_term_matrix", "equal_term_matrix", "greater_term_matrix"]
+DEFAULT_GROUP = "default"
 
 MatrixType = t.List[t.List[MatrixData]]
 
@@ -63,17 +67,77 @@ def check_matrix_values(time_step: BindingConstraintFrequency, values: MatrixTyp
         raise ValueError("Matrix values cannot contain NaN")
 
 
-class BindingConstraintProperties(BaseModel, extra=Extra.forbid, allow_population_by_field_name=True):
+# =================================================================================
+# Binding constraint properties classes
+# =================================================================================
+
+
+class BindingConstraintPropertiesBase(BaseModel, extra=Extra.forbid, allow_population_by_field_name=True):
     enabled: bool = True
-    time_step: BindingConstraintFrequency = BindingConstraintFrequency.HOURLY
+    time_step: BindingConstraintFrequency = Field(BindingConstraintFrequency.HOURLY, alias="type")
     operator: BindingConstraintOperator = BindingConstraintOperator.EQUAL
-    comments: t.Optional[str] = ""
-    filter_year_by_year: t.Optional[str] = ""
-    filter_synthesis: t.Optional[str] = ""
+    comments: str = ""
+
+    @classmethod
+    def from_dict(cls, **attrs: t.Any) -> "BindingConstraintPropertiesBase":
+        """
+        Instantiate a class from a dictionary excluding unknown or `None` fields.
+        """
+        attrs = {k: v for k, v in attrs.items() if k in cls.__fields__ and v is not None}
+        return cls(**attrs)
 
 
-class BindingConstraintProperties870(BindingConstraintProperties):
-    group: t.Optional[str] = ""
+class BindingConstraintProperties830(BindingConstraintPropertiesBase):
+    filter_year_by_year: str = Field("", alias="filter-year-by-year")
+    filter_synthesis: str = Field("", alias="filter-synthesis")
+
+
+class BindingConstraintProperties870(BindingConstraintProperties830):
+    group: str = DEFAULT_GROUP
+
+
+BindingConstraintProperties = t.Union[
+    BindingConstraintPropertiesBase,
+    BindingConstraintProperties830,
+    BindingConstraintProperties870,
+]
+
+
+def get_binding_constraint_config_cls(study_version: t.Union[str, int]) -> t.Type[BindingConstraintProperties]:
+    """
+    Retrieves the binding constraint configuration class based on the study version.
+    """
+    version = int(study_version)
+    if version >= 870:
+        return BindingConstraintProperties870
+    elif version >= 830:
+        return BindingConstraintProperties830
+    else:
+        return BindingConstraintPropertiesBase
+
+
+def create_binding_constraint_config(study_version: t.Union[str, int], **kwargs: t.Any) -> BindingConstraintProperties:
+    """
+    Factory method to create a binding constraint configuration model.
+
+    Args:
+        study_version: The version of the study.
+        **kwargs: The properties to be used to initialize the model.
+
+    Returns:
+        The binding_constraint configuration model.
+    """
+    cls = get_binding_constraint_config_cls(study_version)
+    return cls.from_dict(**kwargs)
+
+
+class OptionalProperties(BindingConstraintProperties870, metaclass=AllOptionalMetaclass, use_none=True):
+    pass
+
+
+# =================================================================================
+# Binding constraint matrices classes
+# =================================================================================
 
 
 class BindingConstraintMatrices(BaseModel, extra=Extra.forbid, allow_population_by_field_name=True):
@@ -114,35 +178,41 @@ class BindingConstraintMatrices(BaseModel, extra=Extra.forbid, allow_population_
                 "You cannot fill 'values' (matrix before v8.7) and a matrix term:"
                 " 'less_term_matrix', 'greater_term_matrix' or 'equal_term_matrix' (matrices since v8.7)"
             )
+
         return values
 
 
-class AbstractBindingConstraintCommand(
-    BindingConstraintProperties870, BindingConstraintMatrices, ICommand, metaclass=ABCMeta
-):
+# =================================================================================
+# Binding constraint command classes
+# =================================================================================
+
+
+class AbstractBindingConstraintCommand(OptionalProperties, BindingConstraintMatrices, ICommand, metaclass=ABCMeta):
     """
     Abstract class for binding constraint commands.
     """
 
-    coeffs: t.Dict[str, t.List[float]]
+    coeffs: t.Optional[t.Dict[str, t.List[float]]]
 
     def to_dto(self) -> CommandDTO:
-        args = {
-            "enabled": self.enabled,
-            "time_step": self.time_step.value,
-            "operator": self.operator.value,
-            "coeffs": self.coeffs,
-            "comments": self.comments,
-            "filter_year_by_year": self.filter_year_by_year,
-            "filter_synthesis": self.filter_synthesis,
-        }
+        json_command = json.loads(self.json(exclude={"command_context"}))
+        args = {}
+        for field in ["enabled", "coeffs", "comments", "time_step", "operator"]:
+            if json_command[field]:
+                args[field] = json_command[field]
+
+        # The `filter_year_by_year` and `filter_synthesis` attributes are only available for studies since v8.3
+        if self.filter_synthesis:
+            args["filter_synthesis"] = self.filter_synthesis
+        if self.filter_year_by_year:
+            args["filter_year_by_year"] = self.filter_year_by_year
 
         # The `group` attribute is only available for studies since v8.7
         if self.group:
             args["group"] = self.group
 
         matrix_service = self.command_context.matrix_service
-        for matrix_name in ["values", "less_term_matrix", "greater_term_matrix", "equal_term_matrix"]:
+        for matrix_name in TERM_MATRICES + ["values"]:
             matrix_attr = getattr(self, matrix_name, None)
             if matrix_attr is not None:
                 args[matrix_name] = matrix_service.get_matrix_id(matrix_attr)
@@ -163,11 +233,9 @@ class AbstractBindingConstraintCommand(
         ]
 
     def get_corresponding_matrices(
-        self, v: t.Optional[t.Union[MatrixType, str]], version: int, create: bool
+        self, v: t.Optional[t.Union[MatrixType, str]], time_step: BindingConstraintFrequency, version: int, create: bool
     ) -> t.Optional[str]:
-        constants: GeneratorMatrixConstants
-        constants = self.command_context.generator_matrix_constants
-        time_step = self.time_step
+        constants: GeneratorMatrixConstants = self.command_context.generator_matrix_constants
 
         if v is None:
             if not create:
@@ -198,17 +266,81 @@ class AbstractBindingConstraintCommand(
         raise TypeError(repr(v))
 
     def validates_and_fills_matrices(
-        self, *, specific_matrices: t.Optional[t.List[str]], version: int, create: bool
+        self,
+        *,
+        time_step: BindingConstraintFrequency,
+        specific_matrices: t.Optional[t.List[str]],
+        version: int,
+        create: bool,
     ) -> None:
         if version < 870:
-            self.values = self.get_corresponding_matrices(self.values, version, create)
+            self.values = self.get_corresponding_matrices(self.values, time_step, version, create)
         elif specific_matrices:
             for matrix in specific_matrices:
-                setattr(self, matrix, self.get_corresponding_matrices(getattr(self, matrix), version, create))
+                setattr(
+                    self, matrix, self.get_corresponding_matrices(getattr(self, matrix), time_step, version, create)
+                )
         else:
-            self.less_term_matrix = self.get_corresponding_matrices(self.less_term_matrix, version, create)
-            self.greater_term_matrix = self.get_corresponding_matrices(self.greater_term_matrix, version, create)
-            self.equal_term_matrix = self.get_corresponding_matrices(self.equal_term_matrix, version, create)
+            self.less_term_matrix = self.get_corresponding_matrices(self.less_term_matrix, time_step, version, create)
+            self.greater_term_matrix = self.get_corresponding_matrices(
+                self.greater_term_matrix, time_step, version, create
+            )
+            self.equal_term_matrix = self.get_corresponding_matrices(self.equal_term_matrix, time_step, version, create)
+
+    def apply_binding_constraint(
+        self, study_data: FileStudy, binding_constraints: t.Dict[str, t.Any], new_key: str, bd_id: str
+    ) -> CommandOutput:
+        version = study_data.config.version
+
+        if self.coeffs:
+            for link_or_cluster in self.coeffs:
+                if "%" in link_or_cluster:
+                    area_1, area_2 = link_or_cluster.split("%")
+                    if area_1 not in study_data.config.areas or area_2 not in study_data.config.areas[area_1].links:
+                        return CommandOutput(
+                            status=False,
+                            message=f"Link '{link_or_cluster}' does not exist in binding constraint '{bd_id}'",
+                        )
+                elif "." in link_or_cluster:
+                    # Cluster IDs are stored in lower case in the binding constraints file.
+                    area, cluster_id = link_or_cluster.split(".")
+                    thermal_ids = {thermal.id.lower() for thermal in study_data.config.areas[area].thermals}
+                    if area not in study_data.config.areas or cluster_id.lower() not in thermal_ids:
+                        return CommandOutput(
+                            status=False,
+                            message=f"Cluster '{link_or_cluster}' does not exist in binding constraint '{bd_id}'",
+                        )
+                else:
+                    raise NotImplementedError(f"Invalid link or thermal ID: {link_or_cluster}")
+
+                # this is weird because Antares Simulator only accept int as offset
+                if len(self.coeffs[link_or_cluster]) == 2:
+                    self.coeffs[link_or_cluster][1] = int(self.coeffs[link_or_cluster][1])
+
+                binding_constraints[new_key][link_or_cluster] = "%".join(
+                    [str(coeff_val) for coeff_val in self.coeffs[link_or_cluster]]
+                )
+        parse_bindings_coeffs_and_save_into_config(bd_id, study_data.config, self.coeffs or {})
+        study_data.tree.save(
+            binding_constraints,
+            ["input", "bindingconstraints", "bindingconstraints"],
+        )
+        if self.values:
+            if not isinstance(self.values, str):  # pragma: no cover
+                raise TypeError(repr(self.values))
+            if version < 870:
+                study_data.tree.save(self.values, ["input", "bindingconstraints", bd_id])
+        for matrix_term, matrix_name, matrix_alias in zip(
+            [self.less_term_matrix, self.equal_term_matrix, self.greater_term_matrix],
+            TERM_MATRICES,
+            ["lt", "eq", "gt"],
+        ):
+            if matrix_term:
+                if not isinstance(matrix_term, str):  # pragma: no cover
+                    raise TypeError(repr(matrix_term))
+                if version >= 870:
+                    study_data.tree.save(matrix_term, ["input", "bindingconstraints", f"{bd_id}_{matrix_alias}"])
+        return CommandOutput(status=True)
 
 
 class CreateBindingConstraint(AbstractBindingConstraintCommand):
@@ -224,35 +356,26 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
 
     def _apply_config(self, study_data_config: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
         bd_id = transform_name_to_id(self.name)
-        parse_bindings_coeffs_and_save_into_config(bd_id, study_data_config, self.coeffs)
+        parse_bindings_coeffs_and_save_into_config(bd_id, study_data_config, self.coeffs or {})
         return CommandOutput(status=True), {}
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
         binding_constraints = study_data.tree.get(["input", "bindingconstraints", "bindingconstraints"])
-        new_key = len(binding_constraints)
+        new_key = str(len(binding_constraints))
         bd_id = transform_name_to_id(self.name)
-        self.validates_and_fills_matrices(specific_matrices=None, version=study_data.config.version, create=True)
 
-        err_msg = apply_binding_constraint(
-            study_data,
-            binding_constraints,
-            str(new_key),
-            bd_id,
-            self.name,
-            self.comments,
-            self.enabled,
-            self.time_step,
-            self.operator,
-            self.coeffs,
-            self.values,
-            self.less_term_matrix,
-            self.greater_term_matrix,
-            self.equal_term_matrix,
-            self.filter_year_by_year,
-            self.filter_synthesis,
-            self.group,
+        study_version = study_data.config.version
+        props = create_binding_constraint_config(study_version, **self.dict())
+        obj = json.loads(props.json(by_alias=True))
+
+        new_binding = {"id": bd_id, "name": self.name, **obj}
+
+        binding_constraints[new_key] = new_binding
+
+        self.validates_and_fills_matrices(
+            time_step=props.time_step, specific_matrices=None, version=study_version, create=True
         )
-        return CommandOutput(status=not err_msg, message=err_msg)
+        return super().apply_binding_constraint(study_data, binding_constraints, new_key, bd_id)
 
     def to_dto(self) -> CommandDTO:
         dto = super().to_dto()
@@ -262,49 +385,32 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
     def match_signature(self) -> str:
         return str(self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.name)
 
-    def match(self, other: ICommand, equal: bool = False) -> bool:
-        if not isinstance(other, CreateBindingConstraint):
-            return False
-        simple_match = self.name == other.name
-        if not equal:
-            return simple_match
-        return (
-            simple_match
-            and self.enabled == other.enabled
-            and self.time_step == other.time_step
-            and self.operator == other.operator
-            and self.coeffs == other.coeffs
-            and self.values == other.values
-            and self.comments == other.comments
-            and self.less_term_matrix == other.less_term_matrix
-            and self.greater_term_matrix == other.greater_term_matrix
-            and self.equal_term_matrix == other.equal_term_matrix
-            and self.group == other.group
-            and self.filter_synthesis == other.filter_synthesis
-            and self.filter_year_by_year == other.filter_year_by_year
-        )
-
     def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
         from antarest.study.storage.variantstudy.model.command.update_binding_constraint import UpdateBindingConstraint
 
         other = t.cast(CreateBindingConstraint, other)
         bd_id = transform_name_to_id(self.name)
+        args = {"id": bd_id, "command_context": other.command_context}
 
-        args = {
-            "id": bd_id,
-            "enabled": other.enabled,
-            "time_step": other.time_step,
-            "operator": other.operator,
-            "coeffs": other.coeffs,
-            "filter_year_by_year": other.filter_year_by_year,
-            "filter_synthesis": other.filter_synthesis,
-            "comments": other.comments,
-            "command_context": other.command_context,
-            "group": other.group,
-        }
+        excluded_fields = frozenset(ICommand.__fields__)
+        self_command = json.loads(self.json(exclude=excluded_fields))
+        other_command = json.loads(other.json(exclude=excluded_fields))
+        properties = [
+            "enabled",
+            "coeffs",
+            "comments",
+            "filter_year_by_year",
+            "filter_synthesis",
+            "group",
+            "time_step",
+            "operator",
+        ]
+        for prop in properties:
+            if self_command[prop] != other_command[prop]:
+                args[prop] = other_command[prop]
 
         matrix_service = self.command_context.matrix_service
-        for matrix_name in ["values", "less_term_matrix", "equal_term_matrix", "greater_term_matrix"]:
+        for matrix_name in ["values"] + TERM_MATRICES:
             self_matrix = getattr(self, matrix_name)  # matrix, ID or `None`
             other_matrix = getattr(other, matrix_name)  # matrix, ID or `None`
             self_matrix_id = None if self_matrix is None else matrix_service.get_matrix_id(self_matrix)
@@ -313,3 +419,10 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
                 args[matrix_name] = other_matrix_id
 
         return [UpdateBindingConstraint(**args)]
+
+    def match(self, other: "ICommand", equal: bool = False) -> bool:
+        if not isinstance(other, self.__class__):
+            return False
+        if not equal:
+            return self.name == other.name
+        return super().match(other, equal)

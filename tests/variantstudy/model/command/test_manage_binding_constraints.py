@@ -79,7 +79,8 @@ def test_manage_binding_constraint(empty_study: FileStudy, command_context: Comm
 
     cfg_path = study_path / "input/bindingconstraints/bindingconstraints.ini"
     bd_config = IniReader().read(cfg_path)
-    assert bd_config.get("0") == {
+
+    expected_bd_1 = {
         "name": "BD 1",
         "id": "bd 1",
         "enabled": True,
@@ -88,7 +89,7 @@ def test_manage_binding_constraint(empty_study: FileStudy, command_context: Comm
         "operator": "less",
         "type": "hourly",
     }
-    assert bd_config.get("1") == {
+    expected_bd_2 = {
         "name": "BD 2",
         "id": "bd 2",
         "enabled": False,
@@ -97,6 +98,17 @@ def test_manage_binding_constraint(empty_study: FileStudy, command_context: Comm
         "operator": "both",
         "type": "daily",
     }
+    if empty_study.config.version >= 830:
+        expected_bd_1["filter-year-by-year"] = ""
+        expected_bd_1["filter-synthesis"] = ""
+        expected_bd_2["filter-year-by-year"] = ""
+        expected_bd_2["filter-synthesis"] = ""
+    if empty_study.config.version >= 870:
+        expected_bd_1["group"] = "default"
+        expected_bd_2["group"] = "default"
+
+    assert bd_config.get("0") == expected_bd_1
+    assert bd_config.get("1") == expected_bd_2
 
     if empty_study.config.version < 870:
         weekly_values = default_bc_weekly_daily.tolist()
@@ -123,15 +135,21 @@ def test_manage_binding_constraint(empty_study: FileStudy, command_context: Comm
     res = bind_update.apply(empty_study)
     assert res.status
     bd_config = IniReader().read(cfg_path)
-    assert bd_config.get("0") == {
+    expected_bd_1 = {
         "name": "BD 1",
         "id": "bd 1",
         "enabled": False,
+        "comments": "Hello",  # comments are not updated
         "area1%area2": "800.0%30",
-        "comments": "",
         "operator": "both",
         "type": "weekly",
     }
+    if empty_study.config.version >= 830:
+        expected_bd_1["filter-year-by-year"] = ""
+        expected_bd_1["filter-synthesis"] = ""
+    if empty_study.config.version >= 870:
+        expected_bd_1["group"] = "default"
+    assert bd_config.get("0") == expected_bd_1
 
     remove_bind = RemoveBindingConstraint(id="bd 1", command_context=command_context)
     res3 = remove_bind.apply(empty_study)
@@ -148,7 +166,7 @@ def test_manage_binding_constraint(empty_study: FileStudy, command_context: Comm
 
     bd_config = IniReader().read(cfg_path)
     assert len(bd_config) == 1
-    assert bd_config.get("0") == {
+    expected_bd_2 = {
         "name": "BD 2",
         "id": "bd 2",
         "enabled": False,
@@ -157,6 +175,12 @@ def test_manage_binding_constraint(empty_study: FileStudy, command_context: Comm
         "operator": "both",
         "type": "daily",
     }
+    if empty_study.config.version >= 830:
+        expected_bd_2["filter-year-by-year"] = ""
+        expected_bd_2["filter-synthesis"] = ""
+    if empty_study.config.version >= 870:
+        expected_bd_2["group"] = "default"
+    assert bd_config.get("0") == expected_bd_2
 
 
 def test_match(command_context: CommandContext):
@@ -341,7 +365,6 @@ def test_revert(command_context: CommandContext):
             operator=BindingConstraintOperator.EQUAL,
             coeffs={"a": [0.3]},
             values=hourly_matrix_id,
-            comments="",
             command_context=command_context,
         )
     ]

@@ -398,10 +398,10 @@ def test_matrix(client: TestClient, admin_access_token: str, study_id: str) -> N
     assert res.status_code == 200
 
 
-def test_area_management(client: TestClient, admin_access_token: str, study_id: str) -> None:
+def test_area_management(client: TestClient, admin_access_token: str) -> None:
     admin_headers = {"Authorization": f"Bearer {admin_access_token}"}
 
-    created = client.post("/v1/studies?name=foo", headers=admin_headers)
+    created = client.post("/v1/studies", headers=admin_headers, params={"name": "foo", "version": 870})
     study_id = created.json()
     res_areas = client.get(f"/v1/studies/{study_id}/areas", headers=admin_headers)
     assert res_areas.json() == [
@@ -970,7 +970,6 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
         "solarPv": True,
         "solarRooft": True,
         "spilEnrg": True,
-        "stsCashflowByCluster": True,
         "stsInjByPlant": True,
         "stsLvlByPlant": True,
         "stsWithdrawalByPlant": True,
@@ -1138,7 +1137,6 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
         "solarPv": True,
         "solarRooft": True,
         "spilEnrg": True,
-        "stsCashflowByCluster": True,
         "stsInjByPlant": True,
         "stsLvlByPlant": True,
         "stsWithdrawalByPlant": True,
@@ -1713,11 +1711,13 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
             "enabled": True,
             "type": BindingConstraintFrequency.HOURLY.value,
             "operator": BindingConstraintOperator.LESS.value,
+            "group": "default",
         },
         "binding constraint 2": {
             "enabled": True,
             "type": BindingConstraintFrequency.HOURLY.value,
             "operator": BindingConstraintOperator.LESS.value,
+            "group": "default",
         },
     }
 
@@ -1752,11 +1752,13 @@ def test_area_management(client: TestClient, admin_access_token: str, study_id: 
             "enabled": False,
             "type": BindingConstraintFrequency.HOURLY.value,
             "operator": BindingConstraintOperator.BOTH.value,
+            "group": "default",
         },
         "binding constraint 2": {
             "enabled": True,
             "type": BindingConstraintFrequency.WEEKLY.value,
             "operator": BindingConstraintOperator.EQUAL.value,
+            "group": "default",
         },
     }
 

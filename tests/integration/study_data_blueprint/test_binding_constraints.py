@@ -410,6 +410,24 @@ class TestBindingConstraints:
         )
         assert res.status_code == 200, res.json()
 
+        # Check updated terms, the deleted term should no longer exist.
+        res = client.get(
+            f"/v1/studies/{study_id}/bindingconstraints/{bc_id}",
+            headers=user_headers,
+        )
+        assert res.status_code == 200, res.json()
+        binding_constraint = res.json()
+        constraint_terms = binding_constraint["terms"]
+        expected = [
+            {
+                "data": {"area": area1_id, "cluster": cluster_id.lower()},
+                "id": f"{area1_id}.{cluster_id.lower()}",
+                "offset": None,
+                "weight": 3.0,
+            },
+        ]
+        assert constraint_terms == expected
+
         # =============================
         # GENERAL EDITION
         # =============================
@@ -629,6 +647,42 @@ class TestBindingConstraints:
             assert res.status_code in {200, 201}
             study_id = res.json()
 
+        # Create Areas
+        res = client.post(
+            f"/v1/studies/{study_id}/areas",
+            headers=admin_headers,
+            json={
+                "name": "Area 1",
+                "type": "AREA",
+            },
+        )
+        assert res.status_code == 200, res.json()
+        area1_id = res.json()["id"]
+        assert area1_id == "area 1"
+
+        res = client.post(
+            f"/v1/studies/{study_id}/areas",
+            headers=admin_headers,
+            json={
+                "name": "Area 2",
+                "type": "AREA",
+            },
+        )
+        assert res.status_code == 200, res.json()
+        area2_id = res.json()["id"]
+        assert area2_id == "area 2"
+
+        # Create a link between the two areas
+        res = client.post(
+            f"/v1/studies/{study_id}/links",
+            headers=admin_headers,
+            json={
+                "area1": area1_id,
+                "area2": area2_id,
+            },
+        )
+        assert res.status_code == 200, res.json()
+
         # =============================
         #  CREATION
         # =============================
@@ -685,6 +739,41 @@ class TestBindingConstraints:
                 assert data == matrix_lt3.tolist()
             else:
                 assert data == np.zeros((matrix_lt3.shape[0], 1)).tolist()
+
+        # =============================
+        # CONSTRAINT TERM MANAGEMENT
+        # =============================
+
+        # Add binding constraint link term
+        res = client.post(
+            f"/v1/studies/{study_id}/bindingconstraints/{bc_id_w_group}/term",
+            json={
+                "weight": 1,
+                "offset": 2.5,
+                "data": {"area1": area1_id, "area2": area2_id},
+            },
+            headers=admin_headers,
+        )
+        assert res.status_code == 200, res.json()
+
+        # Get binding constraints list to check added term
+        res = client.get(
+            f"/v1/studies/{study_id}/bindingconstraints/{bc_id_w_group}",
+            headers=admin_headers,
+        )
+        assert res.status_code == 200, res.json()
+        binding_constraint = res.json()
+        assert binding_constraint["group"] == "specific_grp"  # asserts the group wasn't altered
+        constraint_terms = binding_constraint["terms"]
+        expected = [
+            {
+                "data": {"area1": area1_id, "area2": area2_id},
+                "id": f"{area1_id}%{area2_id}",
+                "offset": 2,  # asserts the offset has been rounded
+                "weight": 1.0,
+            }
+        ]
+        assert constraint_terms == expected
 
         # =============================
         #  UPDATE

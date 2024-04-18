@@ -11,8 +11,8 @@ from pydantic import BaseModel, Extra, Field, ValidationError, root_validator, v
 
 from antarest.core.exceptions import BadZipBinary
 from antarest.core.model import JSON
+from antarest.study.business.all_optional_meta import AllOptionalMetaclass
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
-from antarest.study.business.utils import AllOptionalMetaclass
 from antarest.study.model import Study
 from antarest.study.storage.rawstudy.model.filesystem.bucket_node import BucketNode
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy

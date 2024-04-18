@@ -110,7 +110,6 @@ class ICommand(ABC, BaseModel, extra=Extra.forbid, arbitrary_types_allowed=True)
         """Returns the command signature."""
         raise NotImplementedError()
 
-    @abstractmethod
     def match(self, other: "ICommand", equal: bool = False) -> bool:
         """
         Indicate if the other command is the same type and targets the same element.
@@ -121,7 +120,12 @@ class ICommand(ABC, BaseModel, extra=Extra.forbid, arbitrary_types_allowed=True)
 
         Returns: True if the command match with the other else False
         """
-        raise NotImplementedError()
+        if not isinstance(other, self.__class__):
+            return False
+        excluded_fields = set(ICommand.__fields__)
+        this_values = self.dict(exclude=excluded_fields)
+        that_values = other.dict(exclude=excluded_fields)
+        return this_values == that_values
 
     @abstractmethod
     def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:

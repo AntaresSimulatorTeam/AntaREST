@@ -1,5 +1,6 @@
 import collections
 import itertools
+import json
 import logging
 from typing import Any, Dict, List, Mapping, MutableSequence, Optional, Sequence, Tuple, Union
 
@@ -20,7 +21,8 @@ from antarest.core.exceptions import (
     WrongMatrixHeightError,
 )
 from antarest.core.utils.string import to_camel_case
-from antarest.study.business.utils import AllOptionalMetaclass, camel_case_model, execute_or_add_commands
+from antarest.study.business.all_optional_meta import camel_case_model
+from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import Study
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
@@ -40,20 +42,19 @@ from antarest.study.storage.variantstudy.business.matrix_constants.binding_const
 )
 from antarest.study.storage.variantstudy.model.command.common import BindingConstraintOperator
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import (
+    DEFAULT_GROUP,
     EXPECTED_MATRIX_SHAPES,
+    TERM_MATRICES,
     BindingConstraintMatrices,
-    BindingConstraintProperties,
-    BindingConstraintProperties870,
+    BindingConstraintPropertiesBase,
     CreateBindingConstraint,
+    OptionalProperties,
 )
 from antarest.study.storage.variantstudy.model.command.remove_binding_constraint import RemoveBindingConstraint
 from antarest.study.storage.variantstudy.model.command.update_binding_constraint import UpdateBindingConstraint
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 
 logger = logging.getLogger(__name__)
-
-DEFAULT_GROUP = "default"
-"""Default group name for binding constraints if missing or empty."""
 
 
 class LinkTerm(BaseModel):
@@ -226,7 +227,7 @@ class ConstraintFilters(BaseModel, frozen=True, extra="forbid"):
 
 
 @camel_case_model
-class ConstraintInput870(BindingConstraintProperties870, metaclass=AllOptionalMetaclass, use_none=True):
+class ConstraintInput870(OptionalProperties):
     pass
 
 
@@ -243,7 +244,7 @@ class ConstraintCreation(ConstraintInput):
 
     @root_validator(pre=True)
     def check_matrices_dimensions(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        for _key in ["time_step", "less_term_matrix", "equal_term_matrix", "greater_term_matrix"]:
+        for _key in ["time_step"] + TERM_MATRICES:
             _camel = to_camel_case(_key)
             values[_key] = values.pop(_camel, values.get(_key))
 
@@ -261,7 +262,7 @@ class ConstraintCreation(ConstraintInput):
 
         # Collect the matrix shapes
         matrix_shapes = {}
-        for _field_name in ["values", "less_term_matrix", "equal_term_matrix", "greater_term_matrix"]:
+        for _field_name in ["values"] + TERM_MATRICES:
             if _matrix := values.get(_field_name):
                 _array = np.array(_matrix)
                 # We only store the shape if the array is not empty
@@ -293,20 +294,26 @@ class ConstraintCreation(ConstraintInput):
 
 
 @camel_case_model
-class ConstraintOutputBase(BindingConstraintProperties):
+class ConstraintOutputBase(BindingConstraintPropertiesBase):
     id: str
     name: str
-    terms: MutableSequence[ConstraintTerm] = Field(
-        default_factory=lambda: [],
-    )
+    terms: MutableSequence[ConstraintTerm] = Field(default_factory=lambda: [])
 
 
 @camel_case_model
-class ConstraintOutput870(ConstraintOutputBase):
+class ConstraintOutput830(ConstraintOutputBase):
+    filter_year_by_year: str = ""
+    filter_synthesis: str = ""
+
+
+@camel_case_model
+class ConstraintOutput870(ConstraintOutput830):
     group: str = DEFAULT_GROUP
 
 
-ConstraintOutput = Union[ConstraintOutputBase, ConstraintOutput870]
+# WARNING: Do not change the order of the following line, it is used to determine
+# the type of the output constraint in the FastAPI endpoint.
+ConstraintOutput = Union[ConstraintOutputBase, ConstraintOutput830, ConstraintOutput870]
 
 
 def _get_references_by_widths(
@@ -387,9 +394,7 @@ class BindingConstraintManager:
         self.storage_service = storage_service
 
     @staticmethod
-    def parse_and_add_terms(
-        key: str, value: Any, adapted_constraint: Union[ConstraintOutputBase, ConstraintOutput870]
-    ) -> None:
+    def parse_and_add_terms(key: str, value: Any, adapted_constraint: ConstraintOutput) -> None:
         """Parse a single term from the constraint dictionary and add it to the adapted_constraint model."""
         if "%" in key or "." in key:
             separator = "%" if "%" in key else "."
@@ -425,24 +430,24 @@ class BindingConstraintManager:
     @staticmethod
     def constraint_model_adapter(constraint: Mapping[str, Any], version: int) -> ConstraintOutput:
         """
-        Adapts a constraint configuration to the appropriate version-specific format.
+        Adapts a binding constraint configuration to the appropriate model version.
 
-        Parameters:
-        - constraint: A dictionary or model representing the constraint to be adapted.
-                    This can either be a dictionary coming from client input or an existing
-                    model that needs reformatting.
-        - version: An integer indicating the target version of the study configuration. This is used to
+        Args:
+            constraint: A dictionary or model representing the constraint to be adapted.
+                This can either be a dictionary coming from client input or an existing
+                model that needs reformatting.
+            version: An integer indicating the target version of the study configuration. This is used to
                 determine which model class to instantiate and which default values to apply.
 
         Returns:
-        - A new instance of either `ConstraintOutputBase` or `ConstraintOutput870`,
-        populated with the adapted values from the input constraint, and conforming to the
-        structure expected by the specified version.
+            A new instance of either `ConstraintOutputBase`, `ConstraintOutput830`, or `ConstraintOutput870`,
+            populated with the adapted values from the input constraint, and conforming to the
+            structure expected by the specified version.
 
         Note:
-        This method is crucial for ensuring backward compatibility and future-proofing the application
-        as it evolves. It allows client-side data to be accurately represented within the config and
-        ensures data integrity when storing or retrieving constraint configurations from the database.
+            This method is crucial for ensuring backward compatibility and future-proofing the application
+            as it evolves. It allows client-side data to be accurately represented within the config and
+            ensures data integrity when storing or retrieving constraint configurations from the database.
         """
 
         constraint_output = {
@@ -455,19 +460,20 @@ class BindingConstraintManager:
             "terms": constraint.get("terms", []),
         }
 
-        # TODO: Implement a model for version-specific fields. Output filters are sent regardless of the version.
-        if version >= 840:
-            constraint_output["filter_year_by_year"] = constraint.get("filter_year_by_year") or constraint.get(
-                "filter-year-by-year", ""
-            )
-            constraint_output["filter_synthesis"] = constraint.get("filter_synthesis") or constraint.get(
-                "filter-synthesis", ""
-            )
-
-        adapted_constraint: Union[ConstraintOutputBase, ConstraintOutput870]
+        if version >= 830:
+            _filter_year_by_year = constraint.get("filter_year_by_year") or constraint.get("filter-year-by-year", "")
+            _filter_synthesis = constraint.get("filter_synthesis") or constraint.get("filter-synthesis", "")
+            constraint_output["filter_year_by_year"] = _filter_year_by_year
+            constraint_output["filter_synthesis"] = _filter_synthesis
         if version >= 870:
             constraint_output["group"] = constraint.get("group", DEFAULT_GROUP)
+
+        # Choose the right model according to the version
+        adapted_constraint: ConstraintOutput
+        if version >= 870:
             adapted_constraint = ConstraintOutput870(**constraint_output)
+        elif version >= 830:
+            adapted_constraint = ConstraintOutput830(**constraint_output)
         else:
             adapted_constraint = ConstraintOutputBase(**constraint_output)
 
@@ -675,38 +681,28 @@ class BindingConstraintManager:
 
         check_attributes_coherence(data, version)
 
-        new_constraint = {
-            "name": data.name,
-            "enabled": data.enabled,
-            "time_step": data.time_step,
-            "operator": data.operator,
-            "coeffs": self.terms_to_coeffs(data.terms),
-            "values": data.values,
-            "less_term_matrix": data.less_term_matrix,
-            "equal_term_matrix": data.equal_term_matrix,
-            "greater_term_matrix": data.greater_term_matrix,
-            "filter_year_by_year": data.filter_year_by_year,
-            "filter_synthesis": data.filter_synthesis,
-            "comments": data.comments or "",
+        new_constraint = {"name": data.name, **json.loads(data.json(exclude={"terms", "name"}, exclude_none=True))}
+        args = {
+            **new_constraint,
+            "command_context": self.storage_service.variant_study_service.command_factory.command_context,
         }
+        if data.terms:
+            args["coeffs"] = self.terms_to_coeffs(data.terms)
 
-        if version >= 870:
-            new_constraint["group"] = data.group or DEFAULT_GROUP
-
-        command = CreateBindingConstraint(
-            **new_constraint, command_context=self.storage_service.variant_study_service.command_factory.command_context
-        )
+        command = CreateBindingConstraint(**args)
 
         # Validates the matrices. Needed when the study is a variant because we only append the command to the list
         if isinstance(study, VariantStudy):
-            command.validates_and_fills_matrices(specific_matrices=None, version=version, create=True)
+            time_step = data.time_step or BindingConstraintFrequency.HOURLY
+            command.validates_and_fills_matrices(
+                time_step=time_step, specific_matrices=None, version=version, create=True
+            )
 
         file_study = self.storage_service.get_storage(study).get_raw(study)
         execute_or_add_commands(study, file_study, [command], self.storage_service)
 
         # Processes the constraints to add them inside the endpoint response.
         new_constraint["id"] = bc_id
-        new_constraint["type"] = data.time_step
         return self.constraint_model_adapter(new_constraint, version)
 
     def update_binding_constraint(
@@ -720,33 +716,16 @@ class BindingConstraintManager:
         study_version = int(study.version)
         check_attributes_coherence(data, study_version)
 
-        # Because the update_binding_constraint command requires every attribute we have to fill them all.
-        # This creates a `big` command even though we only updated one field.
-        # fixme : Change the architecture to avoid this type of misconception
         upd_constraint = {
             "id": binding_constraint_id,
-            "enabled": data.enabled if data.enabled is not None else existing_constraint.enabled,
-            "time_step": data.time_step or existing_constraint.time_step,
-            "operator": data.operator or existing_constraint.operator,
-            "coeffs": self.terms_to_coeffs(data.terms) or self.terms_to_coeffs(existing_constraint.terms),
-            "comments": data.comments or existing_constraint.comments,
+            **json.loads(data.json(exclude={"terms", "name"}, exclude_none=True)),
         }
-
-        if study_version >= 840:
-            upd_constraint["filter_year_by_year"] = data.filter_year_by_year or existing_constraint.filter_year_by_year
-            upd_constraint["filter_synthesis"] = data.filter_synthesis or existing_constraint.filter_synthesis
-
-        if study_version >= 870:
-            upd_constraint["group"] = data.group or existing_constraint.group  # type: ignore
-
         args = {
             **upd_constraint,
             "command_context": self.storage_service.variant_study_service.command_factory.command_context,
         }
-
-        for term in ["values", "less_term_matrix", "equal_term_matrix", "greater_term_matrix"]:
-            if matrices_to_update := getattr(data, term):
-                args[term] = matrices_to_update
+        if data.terms:
+            args["coeffs"] = self.terms_to_coeffs(data.terms)
 
         if data.time_step is not None and data.time_step != existing_constraint.time_step:
             # The user changed the time step, we need to update the matrix accordingly
@@ -756,22 +735,26 @@ class BindingConstraintManager:
 
         # Validates the matrices. Needed when the study is a variant because we only append the command to the list
         if isinstance(study, VariantStudy):
-            updated_matrices = [
-                term for term in ["less_term_matrix", "equal_term_matrix", "greater_term_matrix"] if getattr(data, term)
-            ]
+            updated_matrices = [term for term in TERM_MATRICES if getattr(data, term)]
+            time_step = data.time_step or existing_constraint.time_step
             command.validates_and_fills_matrices(
-                specific_matrices=updated_matrices, version=study_version, create=False
+                time_step=time_step, specific_matrices=updated_matrices, version=study_version, create=False
             )
 
         execute_or_add_commands(study, file_study, [command], self.storage_service)
 
-        # Processes the constraints to add them inside the endpoint response.
+        # Constructs the endpoint response.
         upd_constraint["name"] = existing_constraint.name
-        upd_constraint["type"] = upd_constraint["time_step"]
-        # Replace coeffs by the terms
-        del upd_constraint["coeffs"]
+        upd_constraint["type"] = upd_constraint.get("time_step", existing_constraint.time_step)
         upd_constraint["terms"] = data.terms or existing_constraint.terms
-
+        new_fields = ["enabled", "operator", "comments", "terms"]
+        if study_version >= 830:
+            new_fields.extend(["filter_year_by_year", "filter_synthesis"])
+        if study_version >= 870:
+            new_fields.append("group")
+        for field in new_fields:
+            if field not in upd_constraint:
+                upd_constraint[field] = getattr(data, field) or getattr(existing_constraint, field)
         return self.constraint_model_adapter(upd_constraint, study_version)
 
     def remove_binding_constraint(self, study: Study, binding_constraint_id: str) -> None:
@@ -829,13 +812,7 @@ class BindingConstraintManager:
 
         command = UpdateBindingConstraint(
             id=constraint.id,
-            enabled=constraint.enabled,
-            time_step=constraint.time_step,
-            operator=constraint.operator,
             coeffs=coeffs,
-            filter_year_by_year=constraint.filter_year_by_year,
-            filter_synthesis=constraint.filter_synthesis,
-            comments=constraint.comments,
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
         )
         execute_or_add_commands(study, file_study, [command], self.storage_service)
@@ -866,22 +843,10 @@ class BindingConstraintManager:
             )
         )
 
-        coeffs = {}
-
-        for term in constraint_terms:
-            coeffs[term.id] = [term.weight]
-            if term.offset:
-                coeffs[term.id].append(term.offset)
-
+        coeffs = {term.id: [term.weight] + [term.offset] if term.offset else [term.weight] for term in constraint_terms}
         command = UpdateBindingConstraint(
             id=constraint.id,
-            enabled=constraint.enabled,
-            time_step=constraint.time_step,
-            operator=constraint.operator,
             coeffs=coeffs,
-            comments=constraint.comments,
-            filter_year_by_year=constraint.filter_year_by_year,
-            filter_synthesis=constraint.filter_synthesis,
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
         )
         execute_or_add_commands(study, file_study, [command], self.storage_service)
@@ -913,7 +878,7 @@ def _replace_matrices_according_to_frequency_and_version(
             BindingConstraintFrequency.DAILY.value: default_bc_weekly_daily_87,
             BindingConstraintFrequency.WEEKLY.value: default_bc_weekly_daily_87,
         }[data.time_step].tolist()
-        for term in ["less_term_matrix", "equal_term_matrix", "greater_term_matrix"]:
+        for term in TERM_MATRICES:
             if term not in args:
                 args[term] = matrix
     return args

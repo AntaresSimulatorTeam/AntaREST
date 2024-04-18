@@ -81,6 +81,11 @@ class VariantCommandGenerator:
             cmd_notifier.index = index
             stopwatch.log_elapsed(cmd_notifier)
 
+            # stop variant generation as soon as a command fails
+            if not output.status:
+                logger.error(f"Command {cmd.command_name} failed: {output.message}")
+                break
+
         results.success = all(detail["status"] for detail in results.details)  # type: ignore
 
         data_type = isinstance(data, FileStudy)
