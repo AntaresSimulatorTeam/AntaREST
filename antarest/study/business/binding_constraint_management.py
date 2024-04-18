@@ -46,7 +46,7 @@ from antarest.study.storage.variantstudy.model.command.create_binding_constraint
     EXPECTED_MATRIX_SHAPES,
     TERM_MATRICES,
     BindingConstraintMatrices,
-    BindingConstraintProperties,
+    BindingConstraintPropertiesBase,
     CreateBindingConstraint,
     OptionalProperties,
 )
@@ -294,7 +294,7 @@ class ConstraintCreation(ConstraintInput):
 
 
 @camel_case_model
-class ConstraintOutputBase(BindingConstraintProperties):
+class ConstraintOutputBase(BindingConstraintPropertiesBase):
     id: str
     name: str
     terms: MutableSequence[ConstraintTerm] = Field(default_factory=lambda: [])

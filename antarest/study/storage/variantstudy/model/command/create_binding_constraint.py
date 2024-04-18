@@ -67,14 +67,27 @@ def check_matrix_values(time_step: BindingConstraintFrequency, values: MatrixTyp
         raise ValueError("Matrix values cannot contain NaN")
 
 
-class BindingConstraintProperties(BaseModel, extra=Extra.forbid, allow_population_by_field_name=True):
+# =================================================================================
+# Binding constraint properties classes
+# =================================================================================
+
+
+class BindingConstraintPropertiesBase(BaseModel, extra=Extra.forbid, allow_population_by_field_name=True):
     enabled: bool = True
     time_step: BindingConstraintFrequency = Field(BindingConstraintFrequency.HOURLY, alias="type")
     operator: BindingConstraintOperator = BindingConstraintOperator.EQUAL
     comments: str = ""
 
+    @classmethod
+    def from_dict(cls, **attrs: t.Any) -> "BindingConstraintPropertiesBase":
+        """
+        Instantiate a class from a dictionary excluding unknown or `None` fields.
+        """
+        attrs = {k: v for k, v in attrs.items() if k in cls.__fields__ and v is not None}
+        return cls(**attrs)
 
-class BindingConstraintProperties830(BindingConstraintProperties):
+
+class BindingConstraintProperties830(BindingConstraintPropertiesBase):
     filter_year_by_year: str = Field("", alias="filter-year-by-year")
     filter_synthesis: str = Field("", alias="filter-synthesis")
 
@@ -83,8 +96,48 @@ class BindingConstraintProperties870(BindingConstraintProperties830):
     group: str = DEFAULT_GROUP
 
 
+BindingConstraintProperties = t.Union[
+    BindingConstraintPropertiesBase,
+    BindingConstraintProperties830,
+    BindingConstraintProperties870,
+]
+
+
+def get_binding_constraint_config_cls(study_version: t.Union[str, int]) -> t.Type[BindingConstraintProperties]:
+    """
+    Retrieves the binding constraint configuration class based on the study version.
+    """
+    version = int(study_version)
+    if version >= 870:
+        return BindingConstraintProperties870
+    elif version >= 830:
+        return BindingConstraintProperties830
+    else:
+        return BindingConstraintPropertiesBase
+
+
+def create_binding_constraint_config(study_version: t.Union[str, int], **kwargs: t.Any) -> BindingConstraintProperties:
+    """
+    Factory method to create a binding constraint configuration model.
+
+    Args:
+        study_version: The version of the study.
+        **kwargs: The properties to be used to initialize the model.
+
+    Returns:
+        The binding_constraint configuration model.
+    """
+    cls = get_binding_constraint_config_cls(study_version)
+    return cls.from_dict(**kwargs)
+
+
 class OptionalProperties(BindingConstraintProperties870, metaclass=AllOptionalMetaclass, use_none=True):
     pass
+
+
+# =================================================================================
+# Binding constraint matrices classes
+# =================================================================================
 
 
 class BindingConstraintMatrices(BaseModel, extra=Extra.forbid, allow_population_by_field_name=True):
@@ -125,7 +178,13 @@ class BindingConstraintMatrices(BaseModel, extra=Extra.forbid, allow_population_
                 "You cannot fill 'values' (matrix before v8.7) and a matrix term:"
                 " 'less_term_matrix', 'greater_term_matrix' or 'equal_term_matrix' (matrices since v8.7)"
             )
+
         return values
+
+
+# =================================================================================
+# Binding constraint command classes
+# =================================================================================
 
 
 class AbstractBindingConstraintCommand(OptionalProperties, BindingConstraintMatrices, ICommand, metaclass=ABCMeta):
@@ -304,27 +363,17 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
         binding_constraints = study_data.tree.get(["input", "bindingconstraints", "bindingconstraints"])
         new_key = str(len(binding_constraints))
         bd_id = transform_name_to_id(self.name)
+
         study_version = study_data.config.version
+        props = create_binding_constraint_config(study_version, **self.dict())
+        obj = json.loads(props.json(by_alias=True))
 
-        include = {"name", "enabled", "time_step", "operator", "comments"}
-        if study_version >= 830:
-            include |= {"filter_year_by_year", "filter_synthesis"}
-        if study_version >= 870:
-            include |= {"group"}
-
-        obj = json.loads(self.json(by_alias=True, include=include))
-        new_binding = {"id": bd_id, **obj}
-
-        default_properties = json.loads(BindingConstraintProperties870().json(by_alias=True))
-        for key in new_binding:
-            if new_binding[key] is None:
-                new_binding[key] = default_properties.get(key)
+        new_binding = {"id": bd_id, "name": self.name, **obj}
 
         binding_constraints[new_key] = new_binding
 
-        time_step: BindingConstraintFrequency = self.time_step or default_properties.get("type")
         self.validates_and_fills_matrices(
-            time_step=time_step, specific_matrices=None, version=study_version, create=True
+            time_step=props.time_step, specific_matrices=None, version=study_version, create=True
         )
         return super().apply_binding_constraint(study_data, binding_constraints, new_key, bd_id)
 
@@ -343,8 +392,9 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
         bd_id = transform_name_to_id(self.name)
         args = {"id": bd_id, "command_context": other.command_context}
 
-        self_command = json.loads(self.json(exclude={"command_context"}))
-        other_command = json.loads(other.json(exclude={"command_context"}))
+        excluded_fields = frozenset(ICommand.__fields__)
+        self_command = json.loads(self.json(exclude=excluded_fields))
+        other_command = json.loads(other.json(exclude=excluded_fields))
         properties = [
             "enabled",
             "coeffs",
@@ -369,3 +419,10 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
                 args[matrix_name] = other_matrix_id
 
         return [UpdateBindingConstraint(**args)]
+
+    def match(self, other: "ICommand", equal: bool = False) -> bool:
+        if not isinstance(other, self.__class__):
+            return False
+        if not equal:
+            return self.name == other.name
+        return super().match(other, equal)
