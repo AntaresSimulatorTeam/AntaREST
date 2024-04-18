@@ -40,6 +40,20 @@ export interface Storage {
 // Functions
 ////////////////////////////////////////////////////////////////
 
+export function getStoragesTotals(storages: Storage[]) {
+  return storages.reduce(
+    (acc, { withdrawalNominalCapacity, injectionNominalCapacity }) => {
+      acc.totalWithdrawalNominalCapacity += withdrawalNominalCapacity;
+      acc.totalInjectionNominalCapacity += injectionNominalCapacity;
+      return acc;
+    },
+    {
+      totalWithdrawalNominalCapacity: 0,
+      totalInjectionNominalCapacity: 0,
+    },
+  );
+}
+
 const getStoragesUrl = (
   studyId: StudyMetadata["id"],
   areaId: Area["name"],

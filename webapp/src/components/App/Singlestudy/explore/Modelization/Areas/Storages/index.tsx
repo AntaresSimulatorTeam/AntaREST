@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { createMRTColumnHelper } from "material-react-table";
 import { Box, Tooltip } from "@mui/material";
@@ -15,51 +15,37 @@ import {
   STORAGE_GROUPS,
   StorageGroup,
   duplicateStorage,
+  getStoragesTotals,
 } from "./utils";
 import usePromiseWithSnackbarError from "../../../../../../../hooks/usePromiseWithSnackbarError";
 import type { TRow } from "../../../../../../common/GroupedDataTable/types";
 import BooleanCell from "../../../../../../common/GroupedDataTable/cellRenderers/BooleanCell";
 
+const columnHelper = createMRTColumnHelper<Storage>();
+
 function Storages() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
-  const [t] = useTranslation();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const areaId = useAppSelector(getCurrentAreaId);
-  const columnHelper = createMRTColumnHelper<Storage>();
 
-  const { data: storages, isLoading } = usePromiseWithSnackbarError(
+  const { data: storages = [], isLoading } = usePromiseWithSnackbarError(
     () => getStorages(study.id, areaId),
     {
+      resetDataOnReload: true,
       errorMessage: t("studies.error.retrieveData"),
       deps: [study.id, areaId],
     },
   );
 
-  const { totalWithdrawalNominalCapacity, totalInjectionNominalCapacity } =
-    useMemo(() => {
-      if (!storages) {
-        return {
-          totalWithdrawalNominalCapacity: 0,
-          totalInjectionNominalCapacity: 0,
-        };
-      }
+  const [totals, setTotals] = useState(getStoragesTotals(storages));
 
-      return storages.reduce(
-        (acc, { withdrawalNominalCapacity, injectionNominalCapacity }) => {
-          acc.totalWithdrawalNominalCapacity += withdrawalNominalCapacity;
-          acc.totalInjectionNominalCapacity += injectionNominalCapacity;
-          return acc;
-        },
-        {
-          totalWithdrawalNominalCapacity: 0,
-          totalInjectionNominalCapacity: 0,
-        },
-      );
-    }, [storages]);
+  const columns = useMemo(() => {
+    const { totalInjectionNominalCapacity, totalWithdrawalNominalCapacity } =
+      totals;
 
-  const columns = useMemo(
-    () => [
+    return [
       columnHelper.accessor("injectionNominalCapacity", {
         header: t("study.modelization.storages.injectionNominalCapacity"),
         Header: ({ column }) => (
@@ -144,10 +130,8 @@ function Storages() {
         filterVariant: "checkbox",
         Cell: BooleanCell,
       }),
-    ],
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [t, totalInjectionNominalCapacity, totalWithdrawalNominalCapacity],
-  );
+    ];
+  }, [t, totals]);
 
   ////////////////////////////////////////////////////////////////
   // Event handlers
@@ -187,6 +171,14 @@ function Storages() {
       deleteConfirmationMessage={(count) =>
         t("studies.modelization.clusters.question.delete", { count })
       }
+      fillPendingRow={(row) => ({
+        withdrawalNominalCapacity: 0,
+        injectionNominalCapacity: 0,
+        ...row,
+      })}
+      onDataChange={(data) => {
+        setTotals(getStoragesTotals(data));
+      }}
     />
   );
 }

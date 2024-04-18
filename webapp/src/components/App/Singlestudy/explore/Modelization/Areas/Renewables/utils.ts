@@ -5,6 +5,7 @@ import {
 } from "../../../../../../../common/types";
 import client from "../../../../../../../services/api/client";
 import type { PartialExceptFor } from "../../../../../../../utils/tsUtils";
+import type { ClusterWithCapacity } from "../common/clustersUtils";
 
 ////////////////////////////////////////////////////////////////
 // Constants
@@ -54,10 +55,8 @@ export interface RenewableCluster {
   nominalCapacity: number;
 }
 
-export interface RenewableClusterWithCapacity extends RenewableCluster {
-  installedCapacity: number;
-  enabledCapacity: number;
-}
+export type RenewableClusterWithCapacity =
+  ClusterWithCapacity<RenewableCluster>;
 
 ////////////////////////////////////////////////////////////////
 // Functions

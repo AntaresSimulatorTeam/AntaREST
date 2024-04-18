@@ -1,8 +1,6 @@
-import { useMemo, type DependencyList } from "react";
 import { MRT_AggregationFn } from "material-react-table";
 import { ThermalClusterWithCapacity } from "../Thermal/utils";
 import { RenewableClusterWithCapacity } from "../Renewables/utils";
-import usePromiseWithSnackbarError from "../../../../../../../hooks/usePromiseWithSnackbarError";
 
 /**
  * Custom aggregation function summing the values of each row,
@@ -45,61 +43,9 @@ interface BaseCluster {
   enabled: boolean;
 }
 
-type ClusterWithCapacity<T extends BaseCluster> = T & {
+export type ClusterWithCapacity<T extends BaseCluster> = T & {
   installedCapacity: number;
   enabledCapacity: number;
-};
-
-interface UseClusterDataWithCapacityReturn<T extends BaseCluster> {
-  clustersWithCapacity: Array<ClusterWithCapacity<T>>;
-  totalUnitCount: number;
-  totalInstalledCapacity: number;
-  totalEnabledCapacity: number;
-  isLoading: boolean;
-}
-
-export const useClusterDataWithCapacity = <T extends BaseCluster>(
-  fetchFn: () => Promise<T[]>,
-  errorMessage: string,
-  deps: DependencyList,
-): UseClusterDataWithCapacityReturn<T> => {
-  const { data: clustersWithCapacity = [], isLoading } =
-    usePromiseWithSnackbarError<Array<ClusterWithCapacity<T>>>(
-      async () => {
-        const clusters = await fetchFn();
-        return clusters?.map(addCapacity);
-      },
-      {
-        resetDataOnReload: true,
-        errorMessage,
-        deps,
-      },
-    );
-
-  const { totalUnitCount, totalInstalledCapacity, totalEnabledCapacity } =
-    useMemo(() => {
-      return clustersWithCapacity.reduce(
-        (acc, { unitCount, installedCapacity, enabledCapacity }) => {
-          acc.totalUnitCount += unitCount;
-          acc.totalInstalledCapacity += installedCapacity;
-          acc.totalEnabledCapacity += enabledCapacity;
-          return acc;
-        },
-        {
-          totalUnitCount: 0,
-          totalInstalledCapacity: 0,
-          totalEnabledCapacity: 0,
-        },
-      );
-    }, [clustersWithCapacity]);
-
-  return {
-    clustersWithCapacity,
-    totalUnitCount: Math.floor(totalUnitCount),
-    totalInstalledCapacity: Math.floor(totalInstalledCapacity),
-    totalEnabledCapacity: Math.floor(totalEnabledCapacity),
-    isLoading,
-  };
 };
 
 /**
@@ -108,9 +54,34 @@ export const useClusterDataWithCapacity = <T extends BaseCluster>(
  * @param cluster - The cluster to add the capacity fields to.
  * @returns The cluster with the installed and enabled capacity fields added.
  */
-export function addCapacity<T extends BaseCluster>(cluster: T) {
+export function addClusterCapacity<T extends BaseCluster>(cluster: T) {
   const { unitCount, nominalCapacity, enabled } = cluster;
   const installedCapacity = unitCount * nominalCapacity;
   const enabledCapacity = enabled ? installedCapacity : 0;
   return { ...cluster, installedCapacity, enabledCapacity };
+}
+
+/**
+ * Gets the totals for unit count, installed capacity, and enabled capacity
+ * for the specified clusters.
+ *
+ * @param clusters - The clusters to get the totals for.
+ * @returns An object containing the totals.
+ */
+export function getClustersWithCapacityTotals<T extends BaseCluster>(
+  clusters: Array<ClusterWithCapacity<T>>,
+) {
+  return clusters.reduce(
+    (acc, { unitCount, installedCapacity, enabledCapacity }) => {
+      acc.totalUnitCount += unitCount;
+      acc.totalInstalledCapacity += installedCapacity;
+      acc.totalEnabledCapacity += enabledCapacity;
+      return acc;
+    },
+    {
+      totalUnitCount: 0,
+      totalInstalledCapacity: 0,
+      totalEnabledCapacity: 0,
+    },
+  );
 }

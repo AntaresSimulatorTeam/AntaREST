@@ -5,6 +5,7 @@ import {
 } from "../../../../../../../common/types";
 import client from "../../../../../../../services/api/client";
 import type { PartialExceptFor } from "../../../../../../../utils/tsUtils";
+import type { ClusterWithCapacity } from "../common/clustersUtils";
 
 ////////////////////////////////////////////////////////////////
 // Constants
@@ -85,10 +86,7 @@ export interface ThermalCluster extends ThermalPollutants {
   lawPlanned: TimeSeriesLawOption;
 }
 
-export interface ThermalClusterWithCapacity extends ThermalCluster {
-  enabledCapacity: number;
-  installedCapacity: number;
-}
+export type ThermalClusterWithCapacity = ClusterWithCapacity<ThermalCluster>;
 
 ////////////////////////////////////////////////////////////////
 // Functions

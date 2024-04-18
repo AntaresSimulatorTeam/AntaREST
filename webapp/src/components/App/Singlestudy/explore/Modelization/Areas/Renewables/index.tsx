@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { createMRTColumnHelper } from "material-react-table";
 import { Box } from "@mui/material";
 import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
@@ -6,47 +6,56 @@ import { useTranslation } from "react-i18next";
 import { StudyMetadata } from "../../../../../../../common/types";
 import {
   RENEWABLE_GROUPS,
-  RenewableCluster,
-  RenewableClusterWithCapacity,
   RenewableGroup,
   createRenewableCluster,
   deleteRenewableClusters,
   duplicateRenewableCluster,
   getRenewableClusters,
+  type RenewableClusterWithCapacity,
 } from "./utils";
 import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../../redux/selectors";
 import GroupedDataTable from "../../../../../../common/GroupedDataTable";
 import {
-  addCapacity,
+  addClusterCapacity,
   capacityAggregationFn,
-  useClusterDataWithCapacity,
+  getClustersWithCapacityTotals,
 } from "../common/clustersUtils";
 import { TRow } from "../../../../../../common/GroupedDataTable/types";
 import BooleanCell from "../../../../../../common/GroupedDataTable/cellRenderers/BooleanCell";
+import usePromiseWithSnackbarError from "../../../../../../../hooks/usePromiseWithSnackbarError";
+
+const columnHelper = createMRTColumnHelper<RenewableClusterWithCapacity>();
 
 function Renewables() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
-  const [t] = useTranslation();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const areaId = useAppSelector(getCurrentAreaId);
-  const columnHelper = createMRTColumnHelper<RenewableClusterWithCapacity>();
 
-  const {
-    clustersWithCapacity,
-    totalUnitCount,
-    totalInstalledCapacity,
-    totalEnabledCapacity,
-    isLoading,
-  } = useClusterDataWithCapacity<RenewableCluster>(
-    () => getRenewableClusters(study.id, areaId),
-    t("studies.error.retrieveData"),
-    [study.id, areaId],
+  const { data: clustersWithCapacity = [], isLoading } =
+    usePromiseWithSnackbarError<RenewableClusterWithCapacity[]>(
+      async () => {
+        const clusters = await getRenewableClusters(study.id, areaId);
+        return clusters?.map(addClusterCapacity);
+      },
+      {
+        resetDataOnReload: true,
+        errorMessage: t("studies.error.retrieveData"),
+        deps: [study.id, areaId],
+      },
+    );
+
+  const [totals, setTotals] = useState(
+    getClustersWithCapacityTotals(clustersWithCapacity),
   );
 
-  const columns = useMemo(
-    () => [
+  const columns = useMemo(() => {
+    const { totalUnitCount, totalEnabledCapacity, totalInstalledCapacity } =
+      totals;
+
+    return [
       columnHelper.accessor("enabled", {
         header: "Enabled",
         size: 50,
@@ -94,10 +103,8 @@ function Renewables() {
           </Box>
         ),
       }),
-    ],
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [t, totalEnabledCapacity, totalInstalledCapacity, totalUnitCount],
-  );
+    ];
+  }, [totals]);
 
   ////////////////////////////////////////////////////////////////
   // Event handlers
@@ -105,7 +112,7 @@ function Renewables() {
 
   const handleCreate = async (values: TRow<RenewableGroup>) => {
     const cluster = await createRenewableCluster(study.id, areaId, values);
-    return addCapacity(cluster);
+    return addClusterCapacity(cluster);
   };
 
   const handleDuplicate = async (
@@ -149,10 +156,14 @@ function Renewables() {
         t("studies.modelization.clusters.question.delete", { count })
       }
       fillPendingRow={(row) => ({
-        ...row,
+        unitCount: 0,
         enabledCapacity: 0,
         installedCapacity: 0,
+        ...row,
       })}
+      onDataChange={(data) => {
+        setTotals(getClustersWithCapacityTotals(data));
+      }}
     />
   );
 }

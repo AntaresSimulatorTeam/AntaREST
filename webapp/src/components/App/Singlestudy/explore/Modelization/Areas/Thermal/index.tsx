@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { createMRTColumnHelper } from "material-react-table";
 import { Box } from "@mui/material";
 import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
@@ -8,45 +8,54 @@ import {
   getThermalClusters,
   createThermalCluster,
   deleteThermalClusters,
-  ThermalClusterWithCapacity,
   THERMAL_GROUPS,
-  ThermalCluster,
   ThermalGroup,
   duplicateThermalCluster,
+  type ThermalClusterWithCapacity,
 } from "./utils";
 import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../../redux/selectors";
 import GroupedDataTable from "../../../../../../common/GroupedDataTable";
 import {
-  addCapacity,
+  addClusterCapacity,
   capacityAggregationFn,
-  useClusterDataWithCapacity,
+  getClustersWithCapacityTotals,
 } from "../common/clustersUtils";
 import { TRow } from "../../../../../../common/GroupedDataTable/types";
 import BooleanCell from "../../../../../../common/GroupedDataTable/cellRenderers/BooleanCell";
+import usePromiseWithSnackbarError from "../../../../../../../hooks/usePromiseWithSnackbarError";
+
+const columnHelper = createMRTColumnHelper<ThermalClusterWithCapacity>();
 
 function Thermal() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
-  const [t] = useTranslation();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const areaId = useAppSelector(getCurrentAreaId);
-  const columnHelper = createMRTColumnHelper<ThermalClusterWithCapacity>();
 
-  const {
-    clustersWithCapacity,
-    totalUnitCount,
-    totalInstalledCapacity,
-    totalEnabledCapacity,
-    isLoading,
-  } = useClusterDataWithCapacity<ThermalCluster>(
-    () => getThermalClusters(study.id, areaId),
-    t("studies.error.retrieveData"),
-    [study.id, areaId],
+  const { data: clustersWithCapacity = [], isLoading } =
+    usePromiseWithSnackbarError<ThermalClusterWithCapacity[]>(
+      async () => {
+        const clusters = await getThermalClusters(study.id, areaId);
+        return clusters?.map(addClusterCapacity);
+      },
+      {
+        resetDataOnReload: true,
+        errorMessage: t("studies.error.retrieveData"),
+        deps: [study.id, areaId],
+      },
+    );
+
+  const [totals, setTotals] = useState(
+    getClustersWithCapacityTotals(clustersWithCapacity),
   );
 
-  const columns = useMemo(
-    () => [
+  const columns = useMemo(() => {
+    const { totalUnitCount, totalEnabledCapacity, totalInstalledCapacity } =
+      totals;
+
+    return [
       columnHelper.accessor("enabled", {
         header: "Enabled",
         size: 50,
@@ -101,10 +110,8 @@ function Thermal() {
         size: 50,
         Cell: ({ cell }) => <>{cell.getValue().toFixed(2)}</>,
       }),
-    ],
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [t, totalEnabledCapacity, totalInstalledCapacity, totalUnitCount],
-  );
+    ];
+  }, [totals]);
 
   ////////////////////////////////////////////////////////////////
   // Event handlers
@@ -112,7 +119,7 @@ function Thermal() {
 
   const handleCreate = async (values: TRow<ThermalGroup>) => {
     const cluster = await createThermalCluster(study.id, areaId, values);
-    return addCapacity(cluster);
+    return addClusterCapacity(cluster);
   };
 
   const handleDuplicate = async (
@@ -156,10 +163,14 @@ function Thermal() {
         t("studies.modelization.clusters.question.delete", { count })
       }
       fillPendingRow={(row) => ({
-        ...row,
+        unitCount: 0,
         enabledCapacity: 0,
         installedCapacity: 0,
+        ...row,
       })}
+      onDataChange={(data) => {
+        setTotals(getClustersWithCapacityTotals(data));
+      }}
     />
   );
 }

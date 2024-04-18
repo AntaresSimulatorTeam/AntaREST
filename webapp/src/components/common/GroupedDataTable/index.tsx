@@ -40,6 +40,7 @@ export interface GroupedDataTableProps<
   onDuplicate?: (row: TData, newName: string) => Promise<TData>;
   onDelete?: (rows: TData[]) => PromiseAny | void;
   onNameClick?: (row: TData) => void;
+  onDataChange?: (data: TData[]) => void;
   isLoading?: boolean;
   deleteConfirmationMessage?: string | ((count: number) => string);
   fillPendingRow?: (
@@ -64,6 +65,7 @@ function GroupedDataTable<
   onDuplicate,
   onDelete,
   onNameClick,
+  onDataChange,
   isLoading,
   deleteConfirmationMessage,
   fillPendingRow,
@@ -81,6 +83,9 @@ function GroupedDataTable<
   const { createOps, deleteOps, totalOps } = useOperationInProgressCount();
 
   useEffect(() => setTableData(data), [data]);
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => onDataChange?.(tableData), [tableData]);
 
   const existingNames = useMemo(
     () => tableData.map((row) => row.name.toLowerCase()),
