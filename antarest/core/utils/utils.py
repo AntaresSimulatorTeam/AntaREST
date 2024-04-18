@@ -10,6 +10,7 @@ from pathlib import Path
 
 import py7zr
 import redis
+from py7zr import SevenZipFile
 
 from antarest.core.config import RedisConfig
 from antarest.core.exceptions import ShouldNotHappenException
@@ -176,6 +177,16 @@ def zip_dir(dir_path: Path, zip_path: Path, remove_source_dir: bool = False) -> 
             for file in files:
                 file_path = os.path.join(root, file)
                 zipf.write(file_path, file_path[len_dir_path:])
+    if remove_source_dir:
+        shutil.rmtree(dir_path)
+
+
+def seven_zip_dir(dir_path: Path, seven_zip_path: Path, remove_source_dir: bool = False) -> None:
+    with SevenZipFile(seven_zip_path, "w") as szf:
+        for root, _, files in os.walk(dir_path):
+            for file in files:
+                file_path = os.path.join(root, file)
+                szf.write(file_path, arcname=os.path.relpath(file_path, dir_path))
     if remove_source_dir:
         shutil.rmtree(dir_path)
 
