@@ -62,7 +62,7 @@ class ICommandExtractor(abc.ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def generate_update_rawfile(
+    def generate_update_raw_file(
         self,
         study_tree: FileStudyTree,
         url: List[str],

@@ -1,6 +1,6 @@
 import base64
 import logging
-from typing import List, Optional, Tuple, cast
+import typing as t
 
 import numpy as np
 
@@ -38,7 +38,7 @@ def _find_binding_config(binding_id: str, study_tree: FileStudyTree) -> JSON:
     url = ["input", "bindingconstraints", "bindingconstraints"]
     for binding_config in study_tree.get(url).values():
         if binding_config["id"] == binding_id:
-            return cast(JSON, binding_config)
+            return t.cast(JSON, binding_config)
     raise ValueError(f"Binding constraint '{binding_id}' not found in '{''.join(url)}'")
 
 
@@ -54,7 +54,7 @@ class CommandExtractor(ICommandExtractor):
             patch_service=self.patch_service,
         )
 
-    def extract_area(self, study: FileStudy, area_id: str) -> Tuple[List[ICommand], List[ICommand]]:
+    def extract_area(self, study: FileStudy, area_id: str) -> t.Tuple[t.List[ICommand], t.List[ICommand]]:
         stopwatch = StopWatch()
         study_tree = study.tree
         study_config = study.config
@@ -62,7 +62,7 @@ class CommandExtractor(ICommandExtractor):
         optimization_data = study_tree.get(["input", "areas", area_id, "optimization"])
         ui_data = study_tree.get(["input", "areas", area_id, "ui"])
 
-        study_commands: List[ICommand] = [
+        study_commands: t.List[ICommand] = [
             CreateArea(
                 area_name=area.name,
                 command_context=self.command_context,
@@ -81,7 +81,7 @@ class CommandExtractor(ICommandExtractor):
         stopwatch.log_elapsed(lambda x: logger.info(f"Area command extraction done in {x}s"))
 
         links_data = study_tree.get(["input", "links", area_id, "properties"])
-        links_commands: List[ICommand] = []
+        links_commands: t.List[ICommand] = []
         for link in area.links:
             links_commands += self.extract_link(study, area_id, link, links_data)
 
@@ -140,8 +140,8 @@ class CommandExtractor(ICommandExtractor):
         study: FileStudy,
         area1: str,
         area2: str,
-        links_data: Optional[JSON] = None,
-    ) -> List[ICommand]:
+        links_data: t.Optional[JSON] = None,
+    ) -> t.List[ICommand]:
         study_tree = study.tree
         link_command = CreateLink(
             area1=area1,
@@ -160,7 +160,7 @@ class CommandExtractor(ICommandExtractor):
             command_context=self.command_context,
         )
         null_matrix_id = strip_matrix_protocol(self.generator_matrix_constants.get_null_matrix())
-        commands: List[ICommand] = [link_command, link_config_command]
+        commands: t.List[ICommand] = [link_command, link_config_command]
         if study.config.version < 820:
             commands.append(
                 self.generate_replace_matrix(
@@ -191,7 +191,7 @@ class CommandExtractor(ICommandExtractor):
             )
         return commands
 
-    def _extract_cluster(self, study: FileStudy, area_id: str, cluster_id: str, renewables: bool) -> List[ICommand]:
+    def _extract_cluster(self, study: FileStudy, area_id: str, cluster_id: str, renewables: bool) -> t.List[ICommand]:
         study_tree = study.tree
         if renewables:
             cluster_type = "renewables"  # with a final "s"
@@ -207,7 +207,7 @@ class CommandExtractor(ICommandExtractor):
         null_matrix_id = strip_matrix_protocol(self.generator_matrix_constants.get_null_matrix())
         # Note that cluster IDs are case-insensitive, but series IDs are in lower case.
         series_id = cluster_id.lower()
-        study_commands: List[ICommand] = [
+        study_commands: t.List[ICommand] = [
             create_cluster_command(
                 area_id=area_id,
                 cluster_name=cluster.id,
@@ -237,13 +237,13 @@ class CommandExtractor(ICommandExtractor):
             )
         return study_commands
 
-    def extract_cluster(self, study: FileStudy, area_id: str, thermal_id: str) -> List[ICommand]:
+    def extract_cluster(self, study: FileStudy, area_id: str, thermal_id: str) -> t.List[ICommand]:
         return self._extract_cluster(study, area_id, thermal_id, False)
 
-    def extract_renewables_cluster(self, study: FileStudy, area_id: str, renewables_id: str) -> List[ICommand]:
+    def extract_renewables_cluster(self, study: FileStudy, area_id: str, renewables_id: str) -> t.List[ICommand]:
         return self._extract_cluster(study, area_id, renewables_id, True)
 
-    def extract_hydro(self, study: FileStudy, area_id: str) -> List[ICommand]:
+    def extract_hydro(self, study: FileStudy, area_id: str) -> t.List[ICommand]:
         study_tree = study.tree
         commands = [
             self.generate_replace_matrix(
@@ -304,8 +304,8 @@ class CommandExtractor(ICommandExtractor):
 
         return commands
 
-    def extract_district(self, study: FileStudy, district_id: str) -> List[ICommand]:
-        study_commands: List[ICommand] = []
+    def extract_district(self, study: FileStudy, district_id: str) -> t.List[ICommand]:
+        study_commands: t.List[ICommand] = []
         study_config = study.config
         study_tree = study.tree
         district_config = study_config.sets[district_id]
@@ -323,80 +323,66 @@ class CommandExtractor(ICommandExtractor):
         )
         return study_commands
 
-    def extract_comments(self, study: FileStudy) -> List[ICommand]:
+    def extract_comments(self, study: FileStudy) -> t.List[ICommand]:
         study_tree = study.tree
-        content = cast(bytes, study_tree.get(["settings", "comments"]))
+        content = t.cast(bytes, study_tree.get(["settings", "comments"]))
         comments = content.decode("utf-8")
-        return [
-            UpdateComments(
-                comments=comments,
-                command_context=self.command_context,
-            )
-        ]
+        return [UpdateComments(comments=comments, command_context=self.command_context)]
 
     def extract_binding_constraint(
         self,
         study: FileStudy,
         binding_id: str,
-        bindings_data: Optional[JSON] = None,
-    ) -> List[ICommand]:
+        bindings_data: t.Optional[JSON] = None,
+    ) -> t.List[ICommand]:
         study_tree = study.tree
+
+        # Retrieve binding constraint properties from the study tree,
+        # so, field names follow the same convention as the INI file.
         binding: JSON = _find_binding_config(binding_id, study_tree) if bindings_data is None else bindings_data
 
-        args = {"name": binding["name"]}
-        properties = [
-            "enabled",
-            "comments",
-            "filter_synthesis",
-            "filter_year_by_year",
-            "group",
-            "time_step",
-            "operator",
-        ]
-        for prop in properties:
-            if prop in binding:
-                args[prop] = binding[prop]
-        args["coeffs"] = {
-            coeff: [float(el) for el in str(value).split("%")]
-            for coeff, value in binding.items()
-            if "%" in coeff or "." in coeff
-        }
+        # Extract the binding constraint ID, which is recalculated from the name in the command
+        bc_id = binding.pop("id")
 
-        study_commands: List[ICommand] = [CreateBindingConstraint(**args, command_context=self.command_context)]
+        # Extract binding constraint terms, which keys contain "%" or "."
+        terms = {}
+        for term_id, value in sorted(binding.items()):
+            if "%" in term_id or "." in term_id:
+                weight, _, offset = str(value).partition("%")
+                term_value = [float(weight), int(offset)] if offset else [float(weight)]
+                terms[term_id] = term_value
+                del binding[term_id]
+
+        # Extract the matrices associated with the binding constraint
         if study.config.version < 870:
-            study_commands.append(
-                self.generate_replace_matrix(study_tree, ["input", "bindingconstraints", binding["id"]])
-            )
+            urls = {"values": ["input", "bindingconstraints", bc_id]}
         else:
-            study_commands.append(
-                self.generate_replace_matrix(study_tree, ["input", "bindingconstraints", f"{binding['id']}_lt"])
-            )
-            study_commands.append(
-                self.generate_replace_matrix(study_tree, ["input", "bindingconstraints", f"{binding['id']}_gt"])
-            )
-            study_commands.append(
-                self.generate_replace_matrix(study_tree, ["input", "bindingconstraints", f"{binding['id']}_eq"])
-            )
+            urls = {
+                "less_term_matrix": ["input", "bindingconstraints", f"{bc_id}_lt"],
+                "greater_term_matrix": ["input", "bindingconstraints", f"{bc_id}_gt"],
+                "equal_term_matrix": ["input", "bindingconstraints", f"{bc_id}_eq"],
+            }
 
-        return study_commands
+        matrices: t.Dict[str, t.List[t.List[float]]] = {}
+        for name, url in urls.items():
+            matrix = study_tree.get(url)
+            if matrix is not None:
+                matrices[name] = matrix["data"]
 
-    def generate_update_config(
-        self,
-        study_tree: FileStudyTree,
-        url: List[str],
-    ) -> ICommand:
+        # Create the command to create the binding constraint
+        create_cmd = CreateBindingConstraint(**binding, **matrices, coeffs=terms, command_context=self.command_context)
+
+        return [create_cmd]
+
+    def generate_update_config(self, study_tree: FileStudyTree, url: t.List[str]) -> ICommand:
         data = study_tree.get(url)
-        return UpdateConfig(
-            target="/".join(url),
-            data=data,
-            command_context=self.command_context,
-        )
+        return UpdateConfig(target="/".join(url), data=data, command_context=self.command_context)
 
-    def generate_update_rawfile(self, study_tree: FileStudyTree, url: List[str]) -> ICommand:
+    def generate_update_raw_file(self, study_tree: FileStudyTree, url: t.List[str]) -> ICommand:
         data = study_tree.get(url)
         return UpdateRawFile(
             target="/".join(url),
-            b64Data=base64.b64encode(cast(bytes, data)).decode("utf-8"),
+            b64Data=base64.b64encode(t.cast(bytes, data)).decode("utf-8"),
             command_context=self.command_context,
         )
 
@@ -404,7 +390,7 @@ class CommandExtractor(ICommandExtractor):
         self,
         study_tree: FileStudyTree,
     ) -> ICommand:
-        content = cast(bytes, study_tree.get(["settings", "comments"]))
+        content = t.cast(bytes, study_tree.get(["settings", "comments"]))
         comments = content.decode("utf-8")
         return UpdateComments(
             comments=comments,
@@ -428,8 +414,8 @@ class CommandExtractor(ICommandExtractor):
     def generate_replace_matrix(
         self,
         study_tree: FileStudyTree,
-        url: List[str],
-        default_value: Optional[str] = None,
+        url: t.List[str],
+        default_value: t.Optional[str] = None,
     ) -> ICommand:
         data = study_tree.get(url)
         if isinstance(data, str):
@@ -439,7 +425,7 @@ class CommandExtractor(ICommandExtractor):
         else:
             matrix = [[]] if default_value is None else default_value
         if isinstance(matrix, np.ndarray):
-            matrix = cast(List[List[MatrixData]], matrix.tolist())
+            matrix = t.cast(t.List[t.List[MatrixData]], matrix.tolist())
         return ReplaceMatrix(
             target="/".join(url),
             matrix=matrix,
