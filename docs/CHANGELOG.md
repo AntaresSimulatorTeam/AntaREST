@@ -7,11 +7,14 @@ v2.16.8 (2024-04-19)
 ### Features
 
 * **clusters:** add new endpoint for clusters duplication [`#1972`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1972)
+* **clusters (ui):** implement new duplication endpoint and optimistic update [`#1984`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1984)
 * **configuration:** turn Thematic Trimming variable names in upper case
 * **configuration (ui):** replace underscore with space in Thematic Trimming variable names [`#2010`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2010)
 
 ### Bug Fixes
 
+* **clusters (ui):** totals are updated after a duplication and a deletion [`#1984`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1984)
+* **clusters (ui):** issue with selecting and deleting rows [`#1984`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1984)
 * **st-storages (ui):** correction of incorrect wording between "withdrawal" and "injection" [`#1977`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1977)
 * **st-storages (ui):** change matrix titles [`#1994`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1994)
 * **st-storages:** use command when updating matrices [`#1971`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1971)

@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import ControlPointDuplicateIcon from "@mui/icons-material/ControlPointDuplicate";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import Fieldset from "../Fieldset";
 import FormDialog from "../dialogs/FormDialog";
 import { SubmitHandlerPlus } from "../Form/types";
@@ -37,7 +37,7 @@ function DuplicateDialog(props: Props) {
     <FormDialog
       open={open}
       title={t("global.duplicate")}
-      titleIcon={ControlPointDuplicateIcon}
+      titleIcon={ContentCopyIcon}
       onCancel={onClose}
       onSubmit={handleSubmit}
       config={{ defaultValues }}
