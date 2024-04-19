@@ -25,7 +25,6 @@ class IStudyStorageService(ABC, t.Generic[T]):
         Returns: new study information
 
         """
-        raise NotImplementedError()
 
     @abstractmethod
     def get(
@@ -46,7 +45,6 @@ class IStudyStorageService(ABC, t.Generic[T]):
         Returns: study data formatted in json
 
         """
-        raise NotImplementedError()
 
     @abstractmethod
     def aggregate_areas_data(
@@ -74,7 +72,6 @@ class IStudyStorageService(ABC, t.Generic[T]):
         Returns: the areas aggregated data in a JSON format
 
         """
-        raise NotImplementedError()
 
     @abstractmethod
     def aggregate_links_data(
@@ -100,7 +97,6 @@ class IStudyStorageService(ABC, t.Generic[T]):
         Returns: the links aggregated data in a JSON format
 
         """
-        raise NotImplementedError()
 
     @abstractmethod
     def exists(self, metadata: T) -> bool:
@@ -112,7 +108,6 @@ class IStudyStorageService(ABC, t.Generic[T]):
         Returns: true if study presents in disk, false else.
 
         """
-        raise NotImplementedError()
 
     @abstractmethod
     def copy(self, src_meta: T, dest_name: str, groups: t.Sequence[str], with_outputs: bool = False) -> T:
@@ -128,7 +123,6 @@ class IStudyStorageService(ABC, t.Generic[T]):
         Returns:
             The newly created study.
         """
-        raise NotImplementedError()
 
     @abstractmethod
     def patch_update_study_metadata(self, study: T, metadata: StudyMetadataPatchDTO) -> StudyMetadataDTO:
@@ -141,7 +135,6 @@ class IStudyStorageService(ABC, t.Generic[T]):
         Returns: study metadata
 
         """
-        raise NotImplementedError()
 
     @abstractmethod
     def import_output(
@@ -158,11 +151,10 @@ class IStudyStorageService(ABC, t.Generic[T]):
             output_name: Optional name suffix to append to the output name
         Returns: None
         """
-        raise NotImplementedError()
 
     @abstractmethod
     def get_study_information(self, metadata: T) -> StudyMetadataDTO:
-        raise NotImplementedError()
+        """Get study information."""
 
     @abstractmethod
     def get_raw(
@@ -180,7 +172,6 @@ class IStudyStorageService(ABC, t.Generic[T]):
         Returns: the config and study tree object
 
         """
-        raise NotImplementedError()
 
     @abstractmethod
     def get_study_sim_result(self, metadata: T) -> t.List[StudySimResultDTO]:
@@ -193,7 +184,6 @@ class IStudyStorageService(ABC, t.Generic[T]):
         Returns:
             study output data
         """
-        raise NotImplementedError()
 
     @abstractmethod
     def set_reference_output(self, metadata: T, output_id: str, status: bool) -> None:
@@ -205,7 +195,6 @@ class IStudyStorageService(ABC, t.Generic[T]):
             output_id: the id of output to set the reference status.
             status: true to set it as reference, false to unset it.
         """
-        raise NotImplementedError()
 
     @abstractmethod
     def delete(self, metadata: T) -> None:
@@ -217,7 +206,6 @@ class IStudyStorageService(ABC, t.Generic[T]):
         Returns:
 
         """
-        raise NotImplementedError()
 
     @abstractmethod
     def delete_output(self, metadata: T, output_id: str) -> None:
@@ -230,7 +218,6 @@ class IStudyStorageService(ABC, t.Generic[T]):
         Returns:
 
         """
-        raise NotImplementedError()
 
     @abstractmethod
     def get_study_path(self, metadata: Study) -> Path:
@@ -242,7 +229,6 @@ class IStudyStorageService(ABC, t.Generic[T]):
         Returns: study path
 
         """
-        raise NotImplementedError()
 
     def _check_study_exists(self, metadata: Study) -> None:
         """
@@ -270,7 +256,6 @@ class IStudyStorageService(ABC, t.Generic[T]):
         Returns:
             Path: The path to the created ZIP file containing the study files.
         """
-        raise NotImplementedError()
 
     @abstractmethod
     def export_output(self, metadata: T, output_id: str, target: Path) -> None:
@@ -284,7 +269,6 @@ class IStudyStorageService(ABC, t.Generic[T]):
         Returns: zip file with study files compressed inside
 
         """
-        raise NotImplementedError()
 
     @abstractmethod
     def export_study_flat(
@@ -305,7 +289,6 @@ class IStudyStorageService(ABC, t.Generic[T]):
             output_list_filter: list of outputs to keep (None indicate all outputs).
             denormalize: denormalize the study (replace matrix links by real matrices).
         """
-        raise NotImplementedError()
 
     @abstractmethod
     def get_synthesis(self, metadata: T, params: t.Optional[RequestParameters] = None) -> FileStudyTreeConfigDTO:
@@ -317,16 +300,16 @@ class IStudyStorageService(ABC, t.Generic[T]):
         Returns: FileStudyTreeConfigDTO
 
         """
-        raise NotImplementedError()
 
     @abstractmethod
     def initialize_additional_data(self, study: T) -> bool:
-        raise NotImplementedError()
+        """Initialize additional data for a study."""
 
     @abstractmethod
     def archive_study_output(self, study: T, output_id: str) -> bool:
-        raise NotImplementedError()
+        """Archive a study output."""
 
+    # noinspection SpellCheckingInspection
     @abstractmethod
     def unarchive_study_output(self, study: T, output_id: str, keep_src_zip: bool) -> bool:
-        raise NotImplementedError()
+        """Un-archive a study output."""
