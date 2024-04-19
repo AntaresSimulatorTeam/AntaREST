@@ -2,10 +2,13 @@ import json
 import logging
 import shutil
 import tempfile
+import typing as t
 from abc import ABC
 from pathlib import Path
-from typing import BinaryIO, List, Optional, Union
 from uuid import uuid4
+
+import numpy as np
+import pandas as pd
 
 from antarest.core.config import Config
 from antarest.core.exceptions import BadOutputError, StudyOutputNotFoundError
@@ -13,6 +16,7 @@ from antarest.core.interfaces.cache import CacheConstants, ICache
 from antarest.core.model import JSON, PublicMode
 from antarest.core.utils.utils import StopWatch, extract_zip, unzip, zip_dir
 from antarest.login.model import GroupDTO
+from antarest.study.common.default_values import AreasQueryFile, LinksQueryFile
 from antarest.study.common.studystorage import IStudyStorageService, T
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
@@ -30,10 +34,61 @@ from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.files import get_playlist
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Simulation
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import ChildNotFoundError
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
 from antarest.study.storage.utils import extract_output_name, fix_study_root, remove_from_cache
 
 logger = logging.getLogger(__name__)
+
+TEMPLATE_PARTS = "output/{sim_id}/economy/mc-ind"
+"""Template for the path to reach the output data."""
+HORIZON_TEMPLATE = "output/{sim_id}/about-the-study/parameters"
+# noinspection SpellCheckingInspection
+MCYEAR_COL = "mcYear"
+"""Column name for the Monte Carlo year."""
+AREA_COL = "area"
+"""Column name for the area."""
+LINK_COL = "link"
+"""Column name for the link."""
+TIME_ID_COL = "timeId"
+"""Column name for the time index."""
+TIME_COL = "time"
+"""Column name for the timestamp."""
+MC_YEAR_INDEX = 0
+"""Index in path parts starting from the Monte Carlo year to determine the Monte Carlo year."""
+AREA_INDEX = 2
+"""Index in path parts starting from the Monte Carlo year to determine the area name."""
+LINK_END_1_INDEX = 2
+"""Index in path parts starting from the Monte Carlo year to determine the link first vertex."""
+LINK_END_2_INDEX = 3
+"""Index in path parts starting from the Monte Carlo year to determine the link second vertex."""
+QUERY_FILE_INDEX = -2
+"""Index in path parts starting from the Monte Carlo year to determine the if we fetch values, details etc ."""
+FREQUENCY_INDEX = -2
+"""Index in path parts starting from the Monte Carlo year to determine matrix frequency."""
+
+
+def flatten_tree(path_tree: t.Dict[str, t.Any]) -> t.List[t.List[str]]:
+    """
+    Flatten paths tree
+    Args:
+        path_tree: tree to flatten
+
+    Returns: list of all tree paths parts flattened
+
+    """
+
+    result = []
+
+    for key, value in path_tree.items():
+        if isinstance(value, dict) and value:
+            result.extend([[key] + sub for sub in flatten_tree(value)])
+        elif value:
+            result.append([key, value])
+        else:
+            result.append([key])
+    return result
 
 
 class AbstractStorageService(IStudyStorageService[T], ABC):
@@ -85,7 +140,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         patch_metadata = patch.study or PatchStudy()
 
         study_workspace = getattr(study, "workspace", DEFAULT_WORKSPACE_NAME)
-        folder: Optional[str] = None
+        folder: t.Optional[str] = None
         if hasattr(study, "folder"):
             folder = study.folder
 
@@ -142,7 +197,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
 
         if url == "" and depth == -1:
             cache_id = f"{CacheConstants.RAW_STUDY}/{metadata.id}"
-            from_cache: Optional[JSON] = None
+            from_cache: t.Optional[JSON] = None
             if use_cache:
                 from_cache = self.cache.get(cache_id)
             if from_cache is not None:
@@ -157,10 +212,195 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         del study
         return data
 
+    def aggregate_areas_data(
+        self,
+        metadata: T,
+        output_id: str,
+        query_file: AreasQueryFile,
+        frequency: MatrixFrequency,
+        mc_years: t.Sequence[int],
+        areas_ids: t.Sequence[str],
+        columns_names: t.Sequence[str],
+    ) -> t.Dict[str, t.Any]:
+        """
+        Entry point to fetch areas raw data.
+        Args:
+            metadata: study file
+            output_id: simulation ID
+            query_file: "values", "details", "details-st-storage", "details-res"
+            frequency: "hourly", "daily", "weekly", "monthly", "annual"
+            mc_years: list of Monte Carlo years to be selected (empty list means all)
+            areas_ids: list of areas names to be selected (empty list means all)
+            columns_names: list of columns names to be selected (empty list means all)
+
+        Returns: JSON (DF like matrix) representing the aggregated areas data
+
+        """
+        study = self.get_raw(metadata)
+        # retrieve the horizon from the study output
+        parameters = study.tree.get(url=HORIZON_TEMPLATE.format(sim_id=output_id).split("/"))
+        horizon = parameters.get("general", {}).get("horizon", "Annual")
+
+        # root parts to retrieve the data
+        parts = TEMPLATE_PARTS.format(sim_id=output_id).split("/")
+        mc_years_parts = flatten_tree(study.tree.get(parts, depth=1))
+        # Monte Carlo years filtering
+        if mc_years:
+            mc_years_parts = [mc_year_parts for mc_year_parts in mc_years_parts if int(mc_year_parts[0]) in mc_years]
+        mc_years_parts = [mc_year_parts + ["areas"] for mc_year_parts in mc_years_parts]
+        full_areas_parts = []
+        for mc_year_parts in mc_years_parts:
+            areas_parts = flatten_tree(study.tree.get(parts + mc_year_parts, depth=1))
+            # Areas names filtering
+            if areas_ids:
+                areas_parts = [area_parts for area_parts in areas_parts if area_parts[0] in areas_ids]
+            full_areas_parts.extend([mc_year_parts + area_parts for area_parts in areas_parts])
+        all_paths_parts = []
+        for mc_year_area_parts in full_areas_parts:
+            files_parts = flatten_tree(study.tree.get(parts + mc_year_area_parts, depth=-1))
+            all_paths_parts.extend([mc_year_area_parts + file_parts for file_parts in files_parts])
+        # Frequency filtering
+        all_paths_parts = [path_parts for path_parts in all_paths_parts if frequency in path_parts[FREQUENCY_INDEX]]
+        # query file filtering
+        all_paths_parts = [path_parts for path_parts in all_paths_parts if query_file in path_parts[QUERY_FILE_INDEX]]
+
+        final_df = pd.DataFrame()
+        for path_parts in all_paths_parts:
+            try:
+                node_data = study.tree.get(parts + path_parts[:-1])
+            except ChildNotFoundError:
+                continue
+
+            # normalize columns' names
+            node_data["columns"] = (
+                [(col[0].upper()).strip() for col in node_data["columns"]]
+                if query_file == AreasQueryFile.VALUES
+                else [((" ".join(col)).upper()).strip() for col in node_data["columns"]]
+            )
+            # create a DataFrame from the node data
+            df = pd.DataFrame(**node_data)
+            # columns filtering
+            if columns_names:
+                # noinspection PyTypeChecker
+                df = df[[col for col in df.columns if col in columns_names]]
+
+            # rearrange columns order
+            new_column_order = df.columns.values.tolist()
+            new_column_order = [AREA_COL, MCYEAR_COL, TIME_ID_COL, TIME_COL] + new_column_order
+
+            # add column for areas and one to record the Monte Carlo year
+            df[MCYEAR_COL] = [int(path_parts[MC_YEAR_INDEX])] * len(df)
+            df[AREA_COL] = [path_parts[AREA_INDEX]] * len(df)
+            # add a column for the time id
+            df[TIME_ID_COL] = list(range(1, len(df) + 1))
+            # add horizon  column
+            if frequency == MatrixFrequency.ANNUAL:
+                df[TIME_COL] = [horizon] * len(df)
+            else:
+                df[TIME_COL] = df.index
+
+            # Reorganize the columns
+            df = df.reindex(columns=new_column_order)
+
+            final_df = pd.concat([final_df, df], ignore_index=True)
+
+        # replace np.nan by None
+        final_df = final_df.replace({np.nan: None})
+
+        return {str(k): v for k, v in final_df.to_dict(orient="split").items()}
+
+    def aggregate_links_data(
+        self,
+        metadata: T,
+        output_id: str,
+        query_file: LinksQueryFile,
+        frequency: MatrixFrequency,
+        mc_years: t.Sequence[int],
+        columns_names: t.Sequence[str],
+    ) -> t.Dict[str, t.Any]:
+        """
+        Entry point to fetch links raw data.
+        Args:
+            metadata: study file
+            output_id: simulation ID
+            query_file: "values", "details"
+            frequency: "hourly", "daily", "weekly", "monthly", "annual"
+            mc_years: list of Monte Carlo years to be selected (empty list means all)
+            columns_names: list of columns names to be selected (empty list means all)
+
+        Returns: JSON (DF like matrix) representing the aggregated links data
+
+        """
+        study = self.get_raw(metadata)
+        # retrieve the horizon from the study output
+        parameters = study.tree.get(url=HORIZON_TEMPLATE.format(sim_id=output_id).split("/"))
+        horizon = parameters.get("general", {}).get("horizon", "Annual")
+
+        # root parts to retrieve the data
+        parts = TEMPLATE_PARTS.format(sim_id=output_id).split("/")
+        mc_years_parts = flatten_tree(study.tree.get(parts, depth=1))
+        # Monte Carlo years filtering
+        if mc_years:
+            mc_years_parts = [mc_year_parts for mc_year_parts in mc_years_parts if int(mc_year_parts[0]) in mc_years]
+        mc_years_parts = [mc_year_parts + ["links"] for mc_year_parts in mc_years_parts]
+        all_paths_parts = []
+        for mc_year_parts in mc_years_parts:
+            files_parts = flatten_tree(study.tree.get(parts + mc_year_parts, depth=-1))
+            all_paths_parts.extend([mc_year_parts + file_parts for file_parts in files_parts])
+        # Frequency filtering
+        all_paths_parts = [path_parts for path_parts in all_paths_parts if frequency in path_parts[FREQUENCY_INDEX]]
+        # query file filtering
+        all_paths_parts = [path_parts for path_parts in all_paths_parts if query_file in path_parts[QUERY_FILE_INDEX]]
+
+        final_df = pd.DataFrame()
+        for path_parts in all_paths_parts:
+            try:
+                node_data = study.tree.get(parts + path_parts[:-1])
+            except ChildNotFoundError:
+                continue
+
+            # normalize columns' names
+            node_data["columns"] = (
+                [(col[0].upper()).strip() for col in node_data["columns"]]
+                if query_file == LinksQueryFile.VALUES
+                else [((" ".join(col)).upper()).strip() for col in node_data["columns"]]
+            )
+            # create a DataFrame from the node data
+            df = pd.DataFrame(**node_data)
+            # columns filtering
+            if columns_names:
+                # noinspection PyTypeChecker
+                df = df[[col for col in df.columns if col in columns_names]]
+
+            # rearrange columns order
+            new_column_order = df.columns.values.tolist()
+            new_column_order = [LINK_COL, MCYEAR_COL, TIME_ID_COL, TIME_COL] + new_column_order
+
+            # add the Monte Carlo and link columns
+            df[MCYEAR_COL] = [int(path_parts[MC_YEAR_INDEX])] * len(df)
+            df[LINK_COL] = [path_parts[LINK_END_1_INDEX] + " - " + path_parts[LINK_END_2_INDEX]] * len(df)
+            # add a column for the time id
+            df[TIME_ID_COL] = list(range(1, len(df) + 1))
+            # add horizon  column
+            if frequency == MatrixFrequency.ANNUAL:
+                df[TIME_COL] = [horizon] * len(df)
+            else:
+                df[TIME_COL] = df.index
+
+            # Reorganize the columns
+            df = df.reindex(columns=new_column_order)
+
+            final_df = pd.concat([final_df, df], ignore_index=True)
+
+        # replace np.nan by None
+        final_df = final_df.replace({np.nan: None})
+
+        return {str(k): v for k, v in final_df.to_dict(orient="split").items()}
+
     def get_study_sim_result(
         self,
         study: T,
-    ) -> List[StudySimResultDTO]:
+    ) -> t.List[StudySimResultDTO]:
         """
         Get global result information
         Args:
@@ -169,7 +409,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         """
         study_data = self.get_raw(study)
         patch_metadata = self.patch_service.get(study)
-        results: List[StudySimResultDTO] = []
+        results: t.List[StudySimResultDTO] = []
         if study_data.config.outputs is not None:
             reference = (patch_metadata.outputs or PatchOutputs()).reference
             for output in study_data.config.outputs:
@@ -209,9 +449,9 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
     def import_output(
         self,
         metadata: T,
-        output: Union[BinaryIO, Path],
-        output_name: Optional[str] = None,
-    ) -> Optional[str]:
+        output: t.Union[t.BinaryIO, Path],
+        output_name: t.Optional[str] = None,
+    ) -> t.Optional[str]:
         """
         Import additional output in an existing study.
 
@@ -229,7 +469,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         path_output = Path(metadata.path) / "output" / f"imported_output_{str(uuid4())}"
         study_id = metadata.id
         path_output.mkdir(parents=True)
-        output_full_name: Optional[str]
+        output_full_name: t.Optional[str]
         is_zipped = False
         stopwatch = StopWatch()
         try:

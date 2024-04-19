@@ -75,6 +75,7 @@ from antarest.study.business.xpansion_management import (
     XpansionCandidateDTO,
     XpansionManager,
 )
+from antarest.study.common.default_values import AreasQueryFile, LinksQueryFile
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     NEW_DEFAULT_STUDY_VERSION,
@@ -108,6 +109,7 @@ from antarest.study.storage.rawstudy.model.filesystem.folder_node import ChildNo
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import OutputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
@@ -316,6 +318,72 @@ class StudyService:
         assert_permission(params.user, study, StudyPermissionType.READ)
 
         return self.storage_service.get_storage(study).get(study, url, depth, formatted)
+
+    def aggregate_areas_data(
+        self,
+        uuid: str,
+        output_id: str,
+        query_file: AreasQueryFile,
+        frequency: MatrixFrequency,
+        mc_years: t.Sequence[int],
+        areas_ids: t.Sequence[str],
+        columns_names: t.Sequence[str],
+        params: RequestParameters,
+    ) -> JSON:
+        """
+        Get study data inside filesystem
+        Args:
+            uuid: study uuid
+            output_id: simulation output ID
+            query_file: which types of data to retrieve ("values", "details", "details-st-storage", "details-res")
+            frequency: yearly, monthly, weekly, daily or hourly.
+            mc_years: list of monte-carlo years, if empty, all years are selected
+            areas_ids: list of areas names, if empty, all areas are selected
+            columns_names: columns to be selected, if empty, all columns are selected
+            params: request parameters
+
+        Returns: data study formatted in json
+
+        """
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.READ)
+        output = self.storage_service.get_storage(study).aggregate_areas_data(
+            study, output_id, query_file, frequency, mc_years, areas_ids, columns_names
+        )
+
+        return output
+
+    def aggregate_links_data(
+        self,
+        uuid: str,
+        output_id: str,
+        query_file: LinksQueryFile,
+        frequency: MatrixFrequency,
+        mc_years: t.Sequence[int],
+        columns_names: t.Sequence[str],
+        params: RequestParameters,
+    ) -> JSON:
+        """
+        Get study data inside filesystem
+        Args:
+            uuid: study uuid
+            output_id: simulation output ID
+            query_file: which types of data to retrieve ("values", "details")
+            frequency: yearly, monthly, weekly, daily or hourly.
+            mc_years: list of monte-carlo years, if empty, all years are selected
+            columns_names: columns to be selected, if empty, all columns are selected
+            params: request parameters
+
+        Returns: data study formatted in json
+
+        """
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.READ)
+        output = self.storage_service.get_storage(study).aggregate_links_data(
+            study, output_id, query_file, frequency, mc_years, columns_names
+        )
+
+        return output
 
     def get_logs(
         self,

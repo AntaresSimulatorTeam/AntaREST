@@ -9,6 +9,7 @@ from http.client import HTTPException
 from pathlib import Path
 
 from antarest.core.exceptions import StudyValidationError
+
 from .upgrader_710 import upgrade_710
 from .upgrader_720 import upgrade_720
 from .upgrader_800 import upgrade_800

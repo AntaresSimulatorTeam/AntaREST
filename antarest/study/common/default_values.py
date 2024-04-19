@@ -1,3 +1,6 @@
+from enum import Enum
+
+
 class FilteringOptions:
     FILTER_SYNTHESIS: str = "hourly, daily, weekly, monthly, annual"
     FILTER_YEAR_BY_YEAR: str = "hourly, daily, weekly, monthly, annual"
@@ -25,3 +28,15 @@ class LinkProperties:
     COLORR: int = 112
     COLORG: int = 112
     COLORB: int = 112
+
+
+class AreasQueryFile(str, Enum):
+    VALUES = "values"
+    DETAILS = "details"
+    DETAILS_ST_STORAGE = "details-st-storage"
+    DETAILS_RES = "details-res"
+
+
+class LinksQueryFile(str, Enum):
+    VALUES = "values"
+    DETAILS = "details"
