@@ -1,4 +1,5 @@
 import logging
+import textwrap
 from pathlib import Path
 from typing import Any, Dict
 from zipfile import ZipFile
@@ -10,7 +11,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint 
     BindingConstraintFrequency,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.files import (
-    _parse_links,
+    _parse_links_filtering,
     _parse_renewables,
     _parse_sets,
     _parse_st_storage,
@@ -31,8 +32,12 @@ from antarest.study.storage.rawstudy.model.filesystem.config.thermal import Ther
 from tests.storage.business.assets import ASSETS_DIR
 
 
-def build_empty_files(tmp: Path) -> Path:
-    study_path = tmp / "my-study"
+@pytest.fixture(name="study_path")
+def study_path_fixture(tmp_path: Path) -> Path:
+    """
+    Create a study directory with the minimal structure required to build the configuration.
+    """
+    study_path = tmp_path / "my-study"
     (study_path / "input/bindingconstraints/").mkdir(parents=True)
     (study_path / "input/bindingconstraints/bindingconstraints.ini").touch()
 
@@ -49,31 +54,29 @@ def build_empty_files(tmp: Path) -> Path:
     return study_path
 
 
-def test_parse_output_parameters(tmp_path: Path) -> None:
-    study = build_empty_files(tmp_path)
+def test_parse_output_parameters(study_path: Path) -> None:
     content = """
     [output]
     synthesis = true
     storenewset = true
     archives =
     """
-    (study / "settings/generaldata.ini").write_text(content)
+    (study_path / "settings/generaldata.ini").write_text(content)
 
     config = FileStudyTreeConfig(
-        study_path=study,
-        path=study,
+        study_path=study_path,
+        path=study_path,
         version=-1,
         store_new_set=True,
         study_id="id",
-        output_path=study / "output",
+        output_path=study_path / "output",
     )
-    assert build(study, "id") == config
+    assert build(study_path, "id") == config
 
 
-def test_parse_bindings(tmp_path: Path) -> None:
+def test_parse_bindings(study_path: Path) -> None:
     # Setup files
-    study_path = build_empty_files(tmp_path)
-    content = """
+    content = """\
     [bindA]
     id = bindA
     
@@ -81,7 +84,7 @@ def test_parse_bindings(tmp_path: Path) -> None:
     id = bindB
     type = weekly
     """
-    (study_path / "input/bindingconstraints/bindingconstraints.ini").write_text(content)
+    (study_path / "input/bindingconstraints/bindingconstraints.ini").write_text(textwrap.dedent(content))
 
     config = FileStudyTreeConfig(
         study_path=study_path,
@@ -108,14 +111,13 @@ def test_parse_bindings(tmp_path: Path) -> None:
     assert build(study_path, "id") == config
 
 
-def test_parse_outputs(tmp_path: Path) -> None:
-    study_path = build_empty_files(tmp_path)
+def test_parse_outputs(study_path: Path) -> None:
     output_path = study_path / "output/20201220-1456eco-hello/"
     output_path.mkdir(parents=True)
 
     (output_path / "about-the-study").mkdir()
     file = output_path / "about-the-study/parameters.ini"
-    content = """
+    content = """\
     [general]
     nbyears = 1
     year-by-year = true
@@ -127,7 +129,7 @@ def test_parse_outputs(tmp_path: Path) -> None:
     [playlist]
     playlist_year + = 0
     """
-    file.write_text(content)
+    file.write_text(textwrap.dedent(content))
 
     (output_path / "checkIntegrity.txt").touch()
 
@@ -226,21 +228,19 @@ def test_parse_outputs__nominal(tmp_path: Path, assets_name: str, expected: Dict
     assert actual == expected
 
 
-def test_parse_sets(tmp_path: Path) -> None:
-    study_path = build_empty_files(tmp_path)
-    content = """
-[hello]
-output = true
-+ = a
-+ = b
-"""
-    (study_path / "input/areas/sets.ini").write_text(content)
+def test_parse_sets(study_path: Path) -> None:
+    content = """\
+    [hello]
+    output = true
+    + = a
+    + = b
+    """
+    (study_path / "input/areas/sets.ini").write_text(textwrap.dedent(content))
 
     assert _parse_sets(study_path) == {"hello": DistrictSet(areas=["a", "b"], output=True, inverted_set=False)}
 
 
-def test_parse_area(tmp_path: Path) -> None:
-    study_path = build_empty_files(tmp_path)
+def test_parse_area(study_path: Path) -> None:
     (study_path / "input/areas/list.txt").write_text("FR\n")
     (study_path / "input/areas/fr").mkdir(parents=True)
     content = """
@@ -270,6 +270,51 @@ def test_parse_area(tmp_path: Path) -> None:
     assert build(study_path, "id") == config
 
 
+def test_parse_area__extra_area(study_path: Path) -> None:
+    """
+    Test the case where an extra area is present in the `list.txt` file.
+
+    The extra area should be taken into account with default values to avoid any parsing error.
+    """
+
+    (study_path / "input/areas/list.txt").write_text("FR\nDE\n")
+    (study_path / "input/areas/fr").mkdir(parents=True)
+    content = """
+    [filtering]
+    filter-synthesis = daily, monthly
+    filter-year-by-year = hourly, weekly, annual
+    """
+    (study_path / "input/areas/fr/optimization.ini").write_text(content)
+
+    config = FileStudyTreeConfig(
+        study_path=study_path,
+        path=study_path,
+        study_id="id",
+        version=-1,
+        output_path=study_path / "output",
+        areas={
+            "fr": Area(
+                name="FR",
+                thermals=[],
+                renewables=[],
+                links={},
+                filters_year=["hourly", "weekly", "annual"],
+                filters_synthesis=["daily", "monthly"],
+            ),
+            "de": Area(
+                name="DE",
+                links={},
+                thermals=[],
+                renewables=[],
+                filters_synthesis=[],
+                filters_year=[],
+                st_storages=[],
+            ),
+        },
+    )
+    assert build(study_path, "id") == config
+
+
 # noinspection SpellCheckingInspection
 THERMAL_LIST_INI = """\
 [t1]
@@ -286,8 +331,7 @@ nominalcapacity = 456.5
 """
 
 
-def test_parse_thermal(tmp_path: Path) -> None:
-    study_path = build_empty_files(tmp_path)
+def test_parse_thermal(study_path: Path) -> None:
     study_path.joinpath("study.antares").write_text("[antares] \n version = 700")
     ini_path = study_path.joinpath("input/thermal/clusters/fr/list.ini")
 
@@ -325,8 +369,7 @@ nh3 = 456
 
 
 @pytest.mark.parametrize("version", [850, 860, 870])
-def test_parse_thermal_860(tmp_path: Path, version, caplog) -> None:
-    study_path = build_empty_files(tmp_path)
+def test_parse_thermal_860(study_path: Path, version, caplog) -> None:
     study_path.joinpath("study.antares").write_text(f"[antares] \n version = {version}")
     ini_path = study_path.joinpath("input/thermal/clusters/fr/list.ini")
     ini_path.parent.mkdir(parents=True)
@@ -361,8 +404,7 @@ nominalcapacity = 456.5
 """
 
 
-def test_parse_renewables(tmp_path: Path) -> None:
-    study_path = build_empty_files(tmp_path)
+def test_parse_renewables(study_path: Path) -> None:
     study_path.joinpath("study.antares").write_text("[antares] \n version = 810")
     ini_path = study_path.joinpath("input/renewables/clusters/fr/list.ini")
 
@@ -411,8 +453,7 @@ initialleveloptim = False
 """
 
 
-def test_parse_st_storage(tmp_path: Path) -> None:
-    study_path = build_empty_files(tmp_path)
+def test_parse_st_storage(study_path: Path) -> None:
     study_path.joinpath("study.antares").write_text("[antares] \n version = 860")
     config_dir = study_path.joinpath("input", "st-storage", "clusters", "fr")
     config_dir.mkdir(parents=True)
@@ -452,8 +493,7 @@ def test_parse_st_storage_with_no_file(tmp_path: Path) -> None:
     assert _parse_st_storage(tmp_path, "") == []
 
 
-def test_parse_links(tmp_path: Path) -> None:
-    study_path = build_empty_files(tmp_path)
+def test_parse_links(study_path: Path) -> None:
     (study_path / "input/links/fr").mkdir(parents=True)
     content = """
     [l1]
@@ -463,4 +503,4 @@ def test_parse_links(tmp_path: Path) -> None:
     (study_path / "input/links/fr/properties.ini").write_text(content)
 
     link = Link(filters_synthesis=["annual"], filters_year=["hourly"])
-    assert _parse_links(study_path, "fr") == {"l1": link}
+    assert _parse_links_filtering(study_path, "fr") == {"l1": link}
