@@ -138,7 +138,9 @@ class LinkProperties(IniProperties):
     def _validate_filtering(cls, v: t.Any) -> str:
         return validate_filtering(v)
 
-    _validate_color_rgb = validator("color_rgb", pre=True, allow_reuse=True)(validate_color_rgb)
+    @validator("color_rgb", pre=True)
+    def _validate_color_rgb(cls, v: t.Any) -> str:
+        return validate_color_rgb(v)
 
     @root_validator(pre=True)
     def _validate_colors(cls, values: t.MutableMapping[str, t.Any]) -> t.Mapping[str, t.Any]:
