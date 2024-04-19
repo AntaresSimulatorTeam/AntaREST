@@ -49,7 +49,7 @@ from antarest.matrixstore.matrix_editor import MatrixEditInstruction
 from antarest.study.business.adequacy_patch_management import AdequacyPatchManager
 from antarest.study.business.advanced_parameters_management import AdvancedParamsManager
 from antarest.study.business.allocation_management import AllocationManager
-from antarest.study.business.area_management import AreaCreationDTO, AreaInfoDTO, AreaManager, AreaType
+from antarest.study.business.area_management import AreaCreationDTO, AreaInfoDTO, AreaManager, AreaType, UpdateAreaUi
 from antarest.study.business.areas.hydro_management import HydroManager
 from antarest.study.business.areas.properties_management import PropertiesManager
 from antarest.study.business.areas.renewable_management import RenewableManager
@@ -1292,11 +1292,13 @@ class StudyService:
                 )
                 return FileResponse(
                     tmp_export_file,
-                    headers={"Content-Disposition": "inline"}
-                    if filetype == ExportFormat.JSON
-                    else {
-                        "Content-Disposition": f'attachment; filename="output-{output_id}.{"tar.gz" if filetype == ExportFormat.TAR_GZ else "zip"}'
-                    },
+                    headers=(
+                        {"Content-Disposition": "inline"}
+                        if filetype == ExportFormat.JSON
+                        else {
+                            "Content-Disposition": f'attachment; filename="output-{output_id}.{"tar.gz" if filetype == ExportFormat.TAR_GZ else "zip"}'
+                        }
+                    ),
                     media_type=filetype,
                 )
             else:
@@ -1862,7 +1864,7 @@ class StudyService:
         self,
         uuid: str,
         area_id: str,
-        area_ui: AreaUI,
+        area_ui: UpdateAreaUi,
         layer: str,
         params: RequestParameters,
     ) -> None:

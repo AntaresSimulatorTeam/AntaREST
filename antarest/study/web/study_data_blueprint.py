@@ -18,7 +18,8 @@ from antarest.matrixstore.matrix_editor import MatrixEditInstruction
 from antarest.study.business.adequacy_patch_management import AdequacyPatchFormFields
 from antarest.study.business.advanced_parameters_management import AdvancedParamsFormFields
 from antarest.study.business.allocation_management import AllocationFormFields, AllocationMatrix
-from antarest.study.business.area_management import AreaCreationDTO, AreaInfoDTO, AreaType, LayerInfoDTO
+from antarest.study.business.area_management import AreaCreationDTO, AreaInfoDTO, AreaType, LayerInfoDTO, \
+    UpdateAreaUi
 from antarest.study.business.areas.hydro_management import InflowStructure, ManagementOptionsFormFields
 from antarest.study.business.areas.properties_management import PropertiesFormFields
 from antarest.study.business.areas.renewable_management import (
@@ -189,7 +190,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     def update_area_ui(
         uuid: str,
         area_id: str,
-        area_ui: AreaUI,
+        area_ui: UpdateAreaUi,
         layer: str = "0",
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> t.Any:

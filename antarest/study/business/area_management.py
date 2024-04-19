@@ -70,6 +70,53 @@ class LayerInfoDTO(BaseModel):
     areas: t.List[str]
 
 
+class UpdateAreaUi(BaseModel, extra="forbid", allow_population_by_field_name=True):
+    """
+    DTO for updating area UI
+
+    Usage:
+
+    >>> from antarest.study.business.area_management import UpdateAreaUi
+    >>> from pprint import pprint
+
+    >>> obj = {
+    ...     "x": -673.75,
+    ...     "y": 301.5,
+    ...     "color_rgb": [230, 108, 44],
+    ...     "layerX": {"0": -230, "4": -230, "6": -95, "7": -230, "8": -230},
+    ...     "layerY": {"0": 136, "4": 136, "6": 39, "7": 136, "8": 136},
+    ...     "layerColor": {
+    ...         "0": "230, 108, 44",
+    ...         "4": "230, 108, 44",
+    ...         "6": "230, 108, 44",
+    ...         "7": "230, 108, 44",
+    ...         "8": "230, 108, 44",
+    ...     },
+    ... }
+
+    >>> model = UpdateAreaUi(**obj)
+    >>> pprint(model.dict(by_alias=True), width=80)
+    {'colorRgb': [230, 108, 44],
+     'layerColor': {0: '230, 108, 44',
+                    4: '230, 108, 44',
+                    6: '230, 108, 44',
+                    7: '230, 108, 44',
+                    8: '230, 108, 44'},
+     'layerX': {0: -230, 4: -230, 6: -95, 7: -230, 8: -230},
+     'layerY': {0: 136, 4: 136, 6: 39, 7: 136, 8: 136},
+     'x': -673,
+     'y': 301}
+
+    """
+
+    x: int = Field(title="X position")
+    y: int = Field(title="Y position")
+    color_rgb: t.Sequence[int] = Field(title="RGB color", alias="colorRgb")
+    layer_x: t.Mapping[int, int] = Field(default_factory=dict, title="X position of each layer", alias="layerX")
+    layer_y: t.Mapping[int, int] = Field(default_factory=dict, title="Y position of each layer", alias="layerY")
+    layer_color: t.Mapping[int, str] = Field(default_factory=dict, title="Color of each layer", alias="layerColor")
+
+
 def _get_ui_info_map(file_study: FileStudy, area_ids: t.Sequence[str]) -> t.Dict[str, t.Any]:
     """
     Get the UI information (a JSON object) for each selected Area.
@@ -601,8 +648,14 @@ class AreaManager:
             set=area_or_set.get_areas(list(file_study.config.areas)) if isinstance(area_or_set, DistrictSet) else [],
         )
 
-    def update_area_ui(self, study: Study, area_id: str, area_ui: AreaUI, layer: str = "0") -> None:
-        obj = area_ui.to_config()
+    def update_area_ui(self, study: Study, area_id: str, area_ui: UpdateAreaUi, layer: str = "0") -> None:
+        obj = {
+            "x": area_ui.x,
+            "y": area_ui.y,
+            "color_r": area_ui.color_rgb[0],
+            "color_g": area_ui.color_rgb[1],
+            "color_b": area_ui.color_rgb[2],
+        }
         file_study = self.storage_service.get_storage(study).get_raw(study)
         commands = (
             [
