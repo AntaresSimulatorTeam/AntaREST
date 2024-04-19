@@ -4,6 +4,8 @@ import {
   StudyMetadata,
 } from "../../../../../../../common/types";
 import client from "../../../../../../../services/api/client";
+import type { PartialExceptFor } from "../../../../../../../utils/tsUtils";
+import type { ClusterWithCapacity } from "../common/clustersUtils";
 
 ////////////////////////////////////////////////////////////////
 // Constants
@@ -51,7 +53,8 @@ export const TS_LAW_OPTIONS = ["geometric", "uniform"] as const;
 // Types
 ////////////////////////////////////////////////////////////////
 
-type ThermalGroup = (typeof THERMAL_GROUPS)[number];
+export type ThermalGroup = (typeof THERMAL_GROUPS)[number];
+
 type LocalTSGenerationBehavior = (typeof TS_GENERATION_OPTIONS)[number];
 type TimeSeriesLawOption = (typeof TS_LAW_OPTIONS)[number];
 
@@ -83,10 +86,7 @@ export interface ThermalCluster extends ThermalPollutants {
   lawPlanned: TimeSeriesLawOption;
 }
 
-export interface ThermalClusterWithCapacity extends ThermalCluster {
-  enabledCapacity: number;
-  installedCapacity: number;
-}
+export type ThermalClusterWithCapacity = ClusterWithCapacity<ThermalCluster>;
 
 ////////////////////////////////////////////////////////////////
 // Functions
@@ -103,31 +103,29 @@ const getClusterUrl = (
   clusterId: Cluster["id"],
 ): string => `${getClustersUrl(studyId, areaId)}/${clusterId}`;
 
-async function makeRequest<T>(
-  method: "get" | "post" | "patch" | "delete",
-  url: string,
-  data?: Partial<ThermalCluster> | { data: Array<Cluster["id"]> },
-): Promise<T> {
-  const res = await client[method]<T>(url, data);
-  return res.data;
-}
+////////////////////////////////////////////////////////////////
+// API
+////////////////////////////////////////////////////////////////
 
 export async function getThermalClusters(
   studyId: StudyMetadata["id"],
   areaId: Area["name"],
-): Promise<ThermalCluster[]> {
-  return makeRequest<ThermalCluster[]>("get", getClustersUrl(studyId, areaId));
+) {
+  const res = await client.get<ThermalCluster[]>(
+    getClustersUrl(studyId, areaId),
+  );
+  return res.data;
 }
 
 export async function getThermalCluster(
   studyId: StudyMetadata["id"],
   areaId: Area["name"],
   clusterId: Cluster["id"],
-): Promise<ThermalCluster> {
-  return makeRequest<ThermalCluster>(
-    "get",
+) {
+  const res = await client.get<ThermalCluster>(
     getClusterUrl(studyId, areaId, clusterId),
   );
+  return res.data;
 }
 
 export async function updateThermalCluster(
@@ -135,32 +133,44 @@ export async function updateThermalCluster(
   areaId: Area["name"],
   clusterId: Cluster["id"],
   data: Partial<ThermalCluster>,
-): Promise<ThermalCluster> {
-  return makeRequest<ThermalCluster>(
-    "patch",
+) {
+  const res = await client.patch<ThermalCluster>(
     getClusterUrl(studyId, areaId, clusterId),
     data,
   );
+  return res.data;
 }
 
 export async function createThermalCluster(
   studyId: StudyMetadata["id"],
   areaId: Area["name"],
-  data: Partial<ThermalCluster>,
-): Promise<ThermalClusterWithCapacity> {
-  return makeRequest<ThermalClusterWithCapacity>(
-    "post",
+  data: PartialExceptFor<ThermalCluster, "name">,
+) {
+  const res = await client.post<ThermalCluster>(
     getClustersUrl(studyId, areaId),
     data,
   );
+  return res.data;
 }
 
-export function deleteThermalClusters(
+export async function duplicateThermalCluster(
+  studyId: StudyMetadata["id"],
+  areaId: Area["name"],
+  sourceClusterId: ThermalCluster["id"],
+  newName: ThermalCluster["name"],
+) {
+  const res = await client.post<ThermalCluster>(
+    `/v1/studies/${studyId}/areas/${areaId}/thermals/${sourceClusterId}`,
+    null,
+    { params: { newName } },
+  );
+  return res.data;
+}
+
+export async function deleteThermalClusters(
   studyId: StudyMetadata["id"],
   areaId: Area["name"],
   clusterIds: Array<Cluster["id"]>,
-): Promise<void> {
-  return makeRequest<void>("delete", getClustersUrl(studyId, areaId), {
-    data: clusterIds,
-  });
+) {
+  await client.delete(getClustersUrl(studyId, areaId), { data: clusterIds });
 }

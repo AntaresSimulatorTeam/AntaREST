@@ -1,6 +1,6 @@
-import { useMemo } from "react";
-import { MRT_ColumnDef } from "material-react-table";
-import { Box, Chip } from "@mui/material";
+import { useMemo, useState } from "react";
+import { createMRTColumnHelper } from "material-react-table";
+import { Box } from "@mui/material";
 import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { StudyMetadata } from "../../../../../../../common/types";
@@ -8,146 +8,95 @@ import {
   getThermalClusters,
   createThermalCluster,
   deleteThermalClusters,
-  ThermalClusterWithCapacity,
   THERMAL_GROUPS,
-  ThermalCluster,
+  ThermalGroup,
+  duplicateThermalCluster,
+  type ThermalClusterWithCapacity,
 } from "./utils";
 import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../../redux/selectors";
 import GroupedDataTable from "../../../../../../common/GroupedDataTable";
-import SimpleLoader from "../../../../../../common/loaders/SimpleLoader";
-import SimpleContent from "../../../../../../common/page/SimpleContent";
 import {
+  addClusterCapacity,
   capacityAggregationFn,
-  useClusterDataWithCapacity,
-} from "../common/utils";
-import UsePromiseCond from "../../../../../../common/utils/UsePromiseCond";
+  getClustersWithCapacityTotals,
+} from "../common/clustersUtils";
+import { TRow } from "../../../../../../common/GroupedDataTable/types";
+import BooleanCell from "../../../../../../common/GroupedDataTable/cellRenderers/BooleanCell";
+import usePromiseWithSnackbarError from "../../../../../../../hooks/usePromiseWithSnackbarError";
+
+const columnHelper = createMRTColumnHelper<ThermalClusterWithCapacity>();
 
 function Thermal() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
-  const [t] = useTranslation();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const areaId = useAppSelector(getCurrentAreaId);
 
-  const {
-    clusters,
-    clustersWithCapacity,
-    totalUnitCount,
-    totalInstalledCapacity,
-    totalEnabledCapacity,
-  } = useClusterDataWithCapacity<ThermalCluster>(
-    () => getThermalClusters(study.id, areaId),
-    t("studies.error.retrieveData"),
-    [study.id, areaId],
+  const { data: clustersWithCapacity = [], isLoading } =
+    usePromiseWithSnackbarError<ThermalClusterWithCapacity[]>(
+      async () => {
+        const clusters = await getThermalClusters(study.id, areaId);
+        return clusters?.map(addClusterCapacity);
+      },
+      {
+        resetDataOnReload: true,
+        errorMessage: t("studies.error.retrieveData"),
+        deps: [study.id, areaId],
+      },
+    );
+
+  const [totals, setTotals] = useState(
+    getClustersWithCapacityTotals(clustersWithCapacity),
   );
 
-  const columns = useMemo<Array<MRT_ColumnDef<ThermalClusterWithCapacity>>>(
-    () => [
-      {
-        accessorKey: "name",
-        header: "Name",
-        size: 100,
-        muiTableHeadCellProps: {
-          align: "left",
-        },
-        muiTableBodyCellProps: {
-          align: "left",
-        },
-        Cell: ({ renderedCellValue, row }) => {
-          const clusterId = row.original.id;
-          return (
-            <Box
-              sx={{
-                cursor: "pointer",
-                "&:hover": {
-                  color: "primary.main",
-                  textDecoration: "underline",
-                },
-              }}
-              onClick={() => navigate(`${location.pathname}/${clusterId}`)}
-            >
-              {renderedCellValue}
-            </Box>
-          );
-        },
-      },
-      {
-        accessorKey: "group",
-        header: "Group",
-        size: 50,
-        filterVariant: "select",
-        filterSelectOptions: [...THERMAL_GROUPS],
-        muiTableHeadCellProps: {
-          align: "left",
-        },
-        muiTableBodyCellProps: {
-          align: "left",
-        },
-        Footer: () => (
-          <Box sx={{ display: "flex", alignItems: "flex-start" }}>Total:</Box>
-        ),
-      },
-      {
-        accessorKey: "enabled",
+  const columns = useMemo(() => {
+    const { totalUnitCount, totalEnabledCapacity, totalInstalledCapacity } =
+      totals;
+
+    return [
+      columnHelper.accessor("enabled", {
         header: "Enabled",
         size: 50,
         filterVariant: "checkbox",
-        Cell: ({ cell }) => (
-          <Chip
-            label={cell.getValue<boolean>() ? t("button.yes") : t("button.no")}
-            color={cell.getValue<boolean>() ? "success" : "error"}
-            size="small"
-            sx={{ minWidth: 40 }}
-          />
-        ),
-      },
-      {
-        accessorKey: "mustRun",
+        Cell: BooleanCell,
+      }),
+      columnHelper.accessor("mustRun", {
         header: "Must Run",
         size: 50,
         filterVariant: "checkbox",
-        Cell: ({ cell }) => (
-          <Chip
-            label={cell.getValue<boolean>() ? t("button.yes") : t("button.no")}
-            color={cell.getValue<boolean>() ? "success" : "error"}
-            size="small"
-            sx={{ minWidth: 40 }}
-          />
-        ),
-      },
-      {
-        accessorKey: "unitCount",
+        Cell: BooleanCell,
+      }),
+      columnHelper.accessor("unitCount", {
         header: "Unit Count",
         size: 50,
         aggregationFn: "sum",
         AggregatedCell: ({ cell }) => (
           <Box sx={{ color: "info.main", fontWeight: "bold" }}>
-            {cell.getValue<number>()}
+            {cell.getValue()}
           </Box>
         ),
         Footer: () => <Box color="warning.main">{totalUnitCount}</Box>,
-      },
-      {
-        accessorKey: "nominalCapacity",
+      }),
+      columnHelper.accessor("nominalCapacity", {
         header: "Nominal Capacity (MW)",
-        size: 200,
-        Cell: ({ cell }) => cell.getValue<number>().toFixed(1),
-      },
-      {
-        accessorKey: "installedCapacity",
+        size: 220,
+        Cell: ({ cell }) => cell.getValue().toFixed(1),
+      }),
+      columnHelper.accessor("installedCapacity", {
         header: "Enabled / Installed (MW)",
-        size: 200,
+        size: 220,
         aggregationFn: capacityAggregationFn(),
         AggregatedCell: ({ cell }) => (
           <Box sx={{ color: "info.main", fontWeight: "bold" }}>
-            {cell.getValue<string>() ?? ""}
+            {cell.getValue() ?? ""}
           </Box>
         ),
         Cell: ({ row }) => (
           <>
-            {Math.floor(row.original.enabledCapacity ?? 0)} /{" "}
-            {Math.floor(row.original.installedCapacity ?? 0)}
+            {Math.floor(row.original.enabledCapacity)} /{" "}
+            {Math.floor(row.original.installedCapacity)}
           </>
         ),
         Footer: () => (
@@ -155,39 +104,45 @@ function Thermal() {
             {totalEnabledCapacity} / {totalInstalledCapacity}
           </Box>
         ),
-      },
-      {
-        accessorKey: "marketBidCost",
+      }),
+      columnHelper.accessor("marketBidCost", {
         header: "Market Bid (€/MWh)",
         size: 50,
-        Cell: ({ cell }) => <>{cell.getValue<number>().toFixed(2)}</>,
-      },
-    ],
-    [
-      location.pathname,
-      navigate,
-      t,
-      totalEnabledCapacity,
-      totalInstalledCapacity,
-      totalUnitCount,
-    ],
-  );
+        Cell: ({ cell }) => <>{cell.getValue().toFixed(2)}</>,
+      }),
+    ];
+  }, [totals]);
 
   ////////////////////////////////////////////////////////////////
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleCreateRow = ({
-    id,
-    installedCapacity,
-    enabledCapacity,
-    ...cluster
-  }: ThermalClusterWithCapacity) => {
-    return createThermalCluster(study.id, areaId, cluster);
+  const handleCreate = async (values: TRow<ThermalGroup>) => {
+    const cluster = await createThermalCluster(study.id, areaId, values);
+    return addClusterCapacity(cluster);
   };
 
-  const handleDeleteSelection = (ids: string[]) => {
+  const handleDuplicate = async (
+    row: ThermalClusterWithCapacity,
+    newName: string,
+  ) => {
+    const cluster = await duplicateThermalCluster(
+      study.id,
+      areaId,
+      row.id,
+      newName,
+    );
+
+    return { ...row, ...cluster };
+  };
+
+  const handleDelete = (rows: ThermalClusterWithCapacity[]) => {
+    const ids = rows.map((row) => row.id);
     return deleteThermalClusters(study.id, areaId, ids);
+  };
+
+  const handleNameClick = (row: ThermalClusterWithCapacity) => {
+    navigate(`${location.pathname}/${row.id}`);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -195,19 +150,27 @@ function Thermal() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <UsePromiseCond
-      response={clusters}
-      ifPending={() => <SimpleLoader />}
-      ifResolved={() => (
-        <GroupedDataTable
-          data={clustersWithCapacity}
-          columns={columns}
-          groups={THERMAL_GROUPS}
-          onCreate={handleCreateRow}
-          onDelete={handleDeleteSelection}
-        />
-      )}
-      ifRejected={(error) => <SimpleContent title={error?.toString()} />}
+    <GroupedDataTable
+      isLoading={isLoading}
+      data={clustersWithCapacity}
+      columns={columns}
+      groups={[...THERMAL_GROUPS]}
+      onCreate={handleCreate}
+      onDuplicate={handleDuplicate}
+      onDelete={handleDelete}
+      onNameClick={handleNameClick}
+      deleteConfirmationMessage={(count) =>
+        t("studies.modelization.clusters.question.delete", { count })
+      }
+      fillPendingRow={(row) => ({
+        unitCount: 0,
+        enabledCapacity: 0,
+        installedCapacity: 0,
+        ...row,
+      })}
+      onDataChange={(data) => {
+        setTotals(getClustersWithCapacityTotals(data));
+      }}
     />
   );
 }
