@@ -17,6 +17,7 @@ import {
   updateStudyMapLayer,
 } from "../../../../../../../../redux/ducks/studyMaps";
 import useAppDispatch from "../../../../../../../../redux/hooks/useAppDispatch";
+import { validateString } from "../../../../../../../../utils/validationUtils";
 
 interface Props {
   open: boolean;
@@ -44,7 +45,7 @@ function UpdateLayerDialog(props: Props) {
     }));
 
   const existingLayers = useMemo(
-    () => Object.values(layersById).map((layer) => layer.name.toLowerCase()),
+    () => Object.values(layersById).map(({ name }) => name),
     [layersById],
   );
 
@@ -56,6 +57,7 @@ function UpdateLayerDialog(props: Props) {
     data: SubmitHandlerPlus<typeof defaultValues>,
   ) => {
     const { layerId, name } = data.values;
+
     if (layerId && name) {
       return dispatch(updateStudyMapLayer({ studyId: study.id, layerId, name }))
         .unwrap()
@@ -67,6 +69,7 @@ function UpdateLayerDialog(props: Props) {
     if (layerId) {
       dispatch(deleteStudyMapLayer({ studyId: study.id, layerId }));
     }
+
     setOpenConfirmationModal(false);
     onClose();
   };
@@ -86,7 +89,7 @@ function UpdateLayerDialog(props: Props) {
         defaultValues,
       }}
     >
-      {({ control, setValue, getValues }) => (
+      {({ control, getValues, reset }) => (
         <Fieldset fullFieldWidth>
           <SelectFE
             name="layerId"
@@ -94,9 +97,12 @@ function UpdateLayerDialog(props: Props) {
             variant="filled"
             options={layersOptions}
             control={control}
-            onChange={(e) =>
-              setValue("name", layersById[String(e.target.value)].name)
-            }
+            onChange={({ target: { value } }) => {
+              reset({
+                layerId: value as string,
+                name: layersById[value as string].name,
+              });
+            }}
           />
           <StringFE
             label={t("global.name")}
@@ -104,15 +110,12 @@ function UpdateLayerDialog(props: Props) {
             control={control}
             fullWidth
             rules={{
-              required: { value: true, message: t("form.field.required") },
-              validate: (v) => {
-                if (v.trim().length <= 0) {
-                  return false;
-                }
-                if (existingLayers.includes(v.toLowerCase())) {
-                  return `The Layer "${v}" already exists`;
-                }
-              },
+              validate: (v) =>
+                validateString(v, {
+                  existingValues: existingLayers,
+                  // Excludes the current layer's original name to allow edits without false duplicates.
+                  editedValue: layersById[getValues("layerId")].name,
+                }),
             }}
             disabled={getValues("layerId") === ""}
             sx={{ mx: 0 }}

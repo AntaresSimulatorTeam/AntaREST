@@ -402,6 +402,13 @@ class TestCommandFactory:
     )
     @pytest.mark.unit_test
     def test_command_factory(self, command_dto: CommandDTO):
+        def get_matrix_id(matrix: str) -> str:
+            # str.removeprefix() is not available in Python 3.8
+            prefix = "matrix://"
+            if matrix.startswith(prefix):
+                return matrix[len(prefix) :]
+            return matrix
+
         command_factory = CommandFactory(
             generator_matrix_constants=Mock(spec=GeneratorMatrixConstants),
             matrix_service=Mock(spec=MatrixService),

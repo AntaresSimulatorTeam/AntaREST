@@ -12,6 +12,7 @@ import useAppDispatch from "../../../../../../../../redux/hooks/useAppDispatch";
 import { createStudyMapDistrict } from "../../../../../../../../redux/ducks/studyMaps";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
 import { getStudyMapDistrictsById } from "../../../../../../../../redux/selectors";
+import { validateString } from "../../../../../../../../utils/validationUtils";
 
 interface Props {
   open: boolean;
@@ -32,10 +33,7 @@ function CreateDistrictDialog(props: Props) {
   const districtsById = useAppSelector(getStudyMapDistrictsById);
 
   const existingDistricts = useMemo(
-    () =>
-      Object.values(districtsById).map((district) =>
-        district.name.toLowerCase(),
-      ),
+    () => Object.values(districtsById).map(({ name }) => name),
     [districtsById],
   );
 
@@ -81,15 +79,8 @@ function CreateDistrictDialog(props: Props) {
             control={control}
             fullWidth
             rules={{
-              required: { value: true, message: t("form.field.required") },
-              validate: (v) => {
-                if (v.trim().length <= 0) {
-                  return false;
-                }
-                if (existingDistricts.includes(v.toLowerCase())) {
-                  return `The District "${v}" already exists`;
-                }
-              },
+              validate: (v) =>
+                validateString(v, { existingValues: existingDistricts }),
             }}
             sx={{ m: 0 }}
           />

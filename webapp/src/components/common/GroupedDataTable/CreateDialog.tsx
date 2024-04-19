@@ -1,47 +1,38 @@
-import { t } from "i18next";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
 import FormDialog from "../dialogs/FormDialog";
 import StringFE from "../fieldEditors/StringFE";
 import Fieldset from "../Fieldset";
 import { SubmitHandlerPlus } from "../Form/types";
 import SelectFE from "../fieldEditors/SelectFE";
-import { nameToId } from "../../../services/utils";
-import { TRow } from "./utils";
+import { validateString } from "../../../utils/validationUtils";
+import type { TRow } from "./types";
+import { useTranslation } from "react-i18next";
 
-interface Props<TData extends TRow> {
+interface Props {
   open: boolean;
   onClose: VoidFunction;
-  onSubmit: (values: TData) => Promise<void>;
-  groups: string[] | readonly string[];
-  existingNames: Array<TData["name"]>;
+  onSubmit: (values: TRow) => Promise<void>;
+  groups: string[];
+  existingNames: Array<TRow["name"]>;
 }
 
-const defaultValues = {
-  name: "",
-  group: "",
-};
-
-function CreateDialog<TData extends TRow>({
+function CreateDialog({
   open,
   onClose,
   onSubmit,
   groups,
   existingNames,
-}: Props<TData>) {
+}: Props) {
+  const { t } = useTranslation();
+
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = async ({
-    values,
-  }: SubmitHandlerPlus<typeof defaultValues>) => {
-    await onSubmit({
-      ...values,
-      id: nameToId(values.name),
-      name: values.name.trim(),
-    } as TData);
-
-    onClose();
+  const handleSubmit = ({
+    values: { name, group },
+  }: SubmitHandlerPlus<TRow>) => {
+    return onSubmit({ name: name.trim(), group });
   };
 
   ////////////////////////////////////////////////////////////////
@@ -55,7 +46,6 @@ function CreateDialog<TData extends TRow>({
       open={open}
       onCancel={onClose}
       onSubmit={handleSubmit}
-      config={{ defaultValues }}
     >
       {({ control }) => (
         <Fieldset fullFieldWidth>
@@ -65,31 +55,17 @@ function CreateDialog<TData extends TRow>({
             control={control}
             fullWidth
             rules={{
-              required: { value: true, message: t("form.field.required") },
-              validate: (v) => {
-                const regex = /^[a-zA-Z0-9_\-() &]+$/;
-                if (!regex.test(v.trim())) {
-                  return t("form.field.specialChars", { 0: "&()_-" });
-                }
-                if (v.trim().length <= 0) {
-                  return t("form.field.required");
-                }
-                if (existingNames.includes(v.trim().toLowerCase())) {
-                  return t("form.field.duplicate", { 0: v });
-                }
-              },
+              validate: (v) =>
+                validateString(v, { existingValues: existingNames }),
             }}
             sx={{ m: 0 }}
           />
           <SelectFE
-            label={t("study.modelization.clusters.group")}
+            label={t("global.group")}
             name="group"
             control={control}
             options={groups}
-            required
-            sx={{
-              alignSelf: "center",
-            }}
+            rules={{ required: t("form.field.required") }}
           />
         </Fieldset>
       )}

@@ -8,12 +8,17 @@ from pydantic import BaseModel, Extra, root_validator, validator
 from typing_extensions import Literal
 
 from antarest.core.exceptions import (
+    AreaNotFound,
+    ClusterAlreadyExists,
+    DuplicateSTStorageId,
     STStorageConfigNotFoundError,
     STStorageFieldsNotFoundError,
     STStorageMatrixNotFoundError,
+    STStorageNotFoundError,
 )
 from antarest.study.business.utils import AllOptionalMetaclass, camel_case_model, execute_or_add_commands
 from antarest.study.model import Study
+from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
     STStorageConfig,
     STStorageGroup,
@@ -24,6 +29,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
 from antarest.study.storage.variantstudy.model.command.remove_st_storage import RemoveSTStorage
+from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 
 __all__ = (
@@ -72,8 +78,8 @@ class STStorageCreation(STStorageInput):
             raise ValueError("'name' must not be empty")
         return name
 
-    @property
-    def to_config(self) -> STStorageConfig:
+    # noinspection PyUnusedLocal
+    def to_config(self, study_version: t.Union[str, int]) -> STStorageConfig:
         values = self.dict(by_alias=False, exclude_none=True)
         return STStorageConfig(**values)
 
@@ -203,7 +209,7 @@ class STStorageMatrices(BaseModel):
             upper_array = np.array(upper_rule_curve.data, dtype=np.float64)
             # noinspection PyUnresolvedReferences
             if (lower_array > upper_array).any():
-                raise ValueError("Each 'lower_rule_curve' value must be lower" " or equal to each 'upper_rule_curve'")
+                raise ValueError("Each 'lower_rule_curve' value must be lower or equal to each 'upper_rule_curve'")
         return values
 
 
@@ -257,21 +263,26 @@ class STStorageManager:
         Returns:
             The ID of the newly created short-term storage.
         """
-        storage = form.to_config
-        command = CreateSTStorage(
-            area_id=area_id,
-            parameters=storage,
-            command_context=self.storage_service.variant_study_service.command_factory.command_context,
-        )
         file_study = self._get_file_study(study)
+        storage = form.to_config(study.version)
+        _check_creation_feasibility(file_study, area_id, storage.id)
+        command = self._make_create_cluster_cmd(area_id, storage)
         execute_or_add_commands(
             study,
             file_study,
             [command],
             self.storage_service,
         )
+        output = self.get_storage(study, area_id, storage_id=storage.id)
+        return output
 
-        return self.get_storage(study, area_id, storage_id=storage.id)
+    def _make_create_cluster_cmd(self, area_id: str, cluster: STStorageConfig) -> CreateSTStorage:
+        command = CreateSTStorage(
+            area_id=area_id,
+            parameters=cluster,
+            command_context=self.storage_service.variant_study_service.command_factory.command_context,
+        )
+        return command
 
     def get_storages(
         self,
@@ -350,18 +361,11 @@ class STStorageManager:
         """
         study_version = study.version
 
-        # review: reading the configuration poses a problem for variants,
-        #  because it requires generating a snapshot, which takes time.
-        #  This reading could be avoided if we don't need the previous values
-        #  (no cross-field validation, no default values, etc.).
-        #  In return, we won't be able to return a complete `STStorageOutput` object.
-        #  So, we need to make sure the frontend doesn't need the missing fields.
-        #  This missing information could also be a problem for the API users.
-        #  The solution would be to avoid reading the configuration if the study is a variant
-        #  (we then use the default values), otherwise, for a RAW study, we read the configuration
-        #  and update the modified values.
+        #  For variants, this method requires generating a snapshot, which takes time.
+        #  But sadly, there's no other way to prevent creating wrong commands.
 
         file_study = self._get_file_study(study)
+        _check_update_feasibility(file_study, area_id, storage_id)
 
         path = STORAGE_LIST_PATH.format(area_id=area_id, storage_id=storage_id)
         try:
@@ -408,6 +412,9 @@ class STStorageManager:
             area_id: The area ID of the short-term storage.
             storage_ids: IDs list of short-term storages to remove.
         """
+        file_study = self._get_file_study(study)
+        _check_deletion_feasibility(file_study, area_id, storage_ids)
+
         command_context = self.storage_service.variant_study_service.command_factory.command_context
         for storage_id in storage_ids:
             command = RemoveSTStorage(
@@ -415,8 +422,61 @@ class STStorageManager:
                 storage_id=storage_id,
                 command_context=command_context,
             )
-            file_study = self._get_file_study(study)
             execute_or_add_commands(study, file_study, [command], self.storage_service)
+
+    def duplicate_cluster(self, study: Study, area_id: str, source_id: str, new_cluster_name: str) -> STStorageOutput:
+        """
+        Creates a duplicate cluster within the study area with a new name.
+
+        Args:
+            study: The study in which the cluster will be duplicated.
+            area_id: The identifier of the area where the cluster will be duplicated.
+            source_id: The identifier of the cluster to be duplicated.
+            new_cluster_name: The new name for the duplicated cluster.
+
+        Returns:
+            The duplicated cluster configuration.
+
+        Raises:
+            ClusterAlreadyExists: If a cluster with the new name already exists in the area.
+        """
+        new_id = transform_name_to_id(new_cluster_name)
+        lower_new_id = new_id.lower()
+        if any(lower_new_id == storage.id.lower() for storage in self.get_storages(study, area_id)):
+            raise ClusterAlreadyExists("Short-term storage", new_id)
+
+        # Cluster duplication
+        current_cluster = self.get_storage(study, area_id, source_id)
+        current_cluster.name = new_cluster_name
+        creation_form = STStorageCreation(**current_cluster.dict(by_alias=False, exclude={"id"}))
+        new_config = creation_form.to_config(study.version)
+        create_cluster_cmd = self._make_create_cluster_cmd(area_id, new_config)
+
+        # Matrix edition
+        lower_source_id = source_id.lower()
+        # noinspection SpellCheckingInspection
+        ts_names = ["pmax_injection", "pmax_withdrawal", "lower_rule_curve", "upper_rule_curve", "inflows"]
+        source_paths = [
+            STORAGE_SERIES_PATH.format(area_id=area_id, storage_id=lower_source_id, ts_name=ts_name)
+            for ts_name in ts_names
+        ]
+        new_paths = [
+            STORAGE_SERIES_PATH.format(area_id=area_id, storage_id=lower_new_id, ts_name=ts_name)
+            for ts_name in ts_names
+        ]
+
+        # Prepare and execute commands
+        commands: t.List[t.Union[CreateSTStorage, ReplaceMatrix]] = [create_cluster_cmd]
+        storage_service = self.storage_service.get_storage(study)
+        command_context = self.storage_service.variant_study_service.command_factory.command_context
+        for source_path, new_path in zip(source_paths, new_paths):
+            current_matrix = storage_service.get(study, source_path)["data"]
+            command = ReplaceMatrix(target=new_path, matrix=current_matrix, command_context=command_context)
+            commands.append(command)
+
+        execute_or_add_commands(study, self._get_file_study(study), commands, self.storage_service)
+
+        return STStorageOutput(**new_config.dict(by_alias=False))
 
     def get_matrix(
         self,
@@ -473,8 +533,7 @@ class STStorageManager:
             ts_name: Name of the time series to update.
             ts: Matrix of the time series to update.
         """
-        matrix_object = ts.dict()
-        self._save_matrix_obj(study, area_id, storage_id, ts_name, matrix_object)
+        self._save_matrix_obj(study, area_id, storage_id, ts_name, ts.data)
 
     def _save_matrix_obj(
         self,
@@ -482,14 +541,13 @@ class STStorageManager:
         area_id: str,
         storage_id: str,
         ts_name: STStorageTimeSeries,
-        matrix_obj: t.Dict[str, t.Any],
+        matrix_data: t.List[t.List[float]],
     ) -> None:
         file_study = self._get_file_study(study)
+        command_context = self.storage_service.variant_study_service.command_factory.command_context
         path = STORAGE_SERIES_PATH.format(area_id=area_id, storage_id=storage_id, ts_name=ts_name)
-        try:
-            file_study.tree.save(matrix_obj, path.split("/"))
-        except KeyError:
-            raise STStorageMatrixNotFoundError(study.id, area_id, storage_id, ts_name) from None
+        command = ReplaceMatrix(target=path, matrix=matrix_data, command_context=command_context)
+        execute_or_add_commands(study, file_study, [command], self.storage_service)
 
     def validate_matrices(
         self,
@@ -534,3 +592,31 @@ class STStorageManager:
 
         # Validation successful
         return True
+
+
+def _get_existing_storage_ids(file_study: FileStudy, area_id: str) -> t.Set[str]:
+    try:
+        area = file_study.config.areas[area_id]
+    except KeyError:
+        raise AreaNotFound(area_id) from None
+    else:
+        return {s.id for s in area.st_storages}
+
+
+def _check_deletion_feasibility(file_study: FileStudy, area_id: str, storage_ids: t.Sequence[str]) -> None:
+    existing_ids = _get_existing_storage_ids(file_study, area_id)
+    for storage_id in storage_ids:
+        if storage_id not in existing_ids:
+            raise STStorageNotFoundError(file_study.config.study_id, area_id, storage_id)
+
+
+def _check_update_feasibility(file_study: FileStudy, area_id: str, storage_id: str) -> None:
+    existing_ids = _get_existing_storage_ids(file_study, area_id)
+    if storage_id not in existing_ids:
+        raise STStorageNotFoundError(file_study.config.study_id, area_id, storage_id)
+
+
+def _check_creation_feasibility(file_study: FileStudy, area_id: str, storage_id: str) -> None:
+    existing_ids = _get_existing_storage_ids(file_study, area_id)
+    if storage_id in existing_ids:
+        raise DuplicateSTStorageId(file_study.config.study_id, area_id, storage_id)

@@ -80,7 +80,6 @@ from antarest.study.model import (
     MatrixIndex,
     PatchArea,
     PatchCluster,
-    PatchStudy,
     RawStudy,
     Study,
     StudyAdditionalData,
@@ -110,6 +109,7 @@ from antarest.study.storage.study_upgrader import (
     upgrade_study,
 )
 from antarest.study.storage.utils import assert_permission, get_start_date, is_managed, remove_from_cache
+from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command.update_comments import UpdateComments
@@ -383,17 +383,7 @@ class StudyService:
         study = self.get_study(study_id)
         assert_permission(params.user, study, StudyPermissionType.READ)
 
-        output: t.Union[str, JSON]
-        raw_study_service = self.storage_service.raw_study_service
-        variant_study_service = self.storage_service.variant_study_service
-        if isinstance(study, RawStudy):
-            output = raw_study_service.get(metadata=study, url="/settings/comments")
-        elif isinstance(study, VariantStudy):
-            patch = raw_study_service.patch_service.get(study)
-            patch_study = PatchStudy() if patch.study is None else patch.study
-            output = patch_study.comments or variant_study_service.get(metadata=study, url="/settings/comments")
-        else:
-            raise StudyTypeUnsupported(study.id, study.type)
+        output = self.storage_service.get_storage(study).get(metadata=study, url="/settings/comments")
 
         with contextlib.suppress(AttributeError, UnicodeDecodeError):
             output = output.decode("utf-8")  # type: ignore
@@ -428,14 +418,20 @@ class StudyService:
                 new=bytes(data.comments, "utf-8"),
                 params=params,
             )
-        elif isinstance(study, VariantStudy):
-            patch = self.storage_service.raw_study_service.patch_service.get(study)
-            patch_study = patch.study or PatchStudy()
-            patch_study.comments = data.comments
-            patch.study = patch_study
-            self.storage_service.raw_study_service.patch_service.save(study, patch)
         else:
-            raise StudyTypeUnsupported(study.id, study.type)
+            variant_study_service = self.storage_service.variant_study_service
+            command = [
+                UpdateRawFile(
+                    target="settings/comments",
+                    b64Data=base64.b64encode(data.comments.encode("utf-8")).decode("utf-8"),
+                    command_context=variant_study_service.command_factory.command_context,
+                )
+            ]
+            variant_study_service.append_commands(
+                study.id,
+                transform_command_to_dto(command, force_aggregate=True),
+                RequestParameters(user=params.user),
+            )
 
     def get_studies_information(
         self,

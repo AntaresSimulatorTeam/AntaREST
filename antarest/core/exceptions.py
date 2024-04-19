@@ -34,8 +34,30 @@ class STStorageConfigNotFoundError(HTTPException):
     """Configuration for short-term storage is not found"""
 
     def __init__(self, study_id: str, area_id: str) -> None:
-        detail = f"The short-term storage configuration of area '{area_id}' not found:"
+        detail = f"The short-term storage configuration of area '{area_id}' not found"
         super().__init__(HTTPStatus.NOT_FOUND, detail)
+
+    def __str__(self) -> str:
+        return self.detail
+
+
+class STStorageNotFoundError(HTTPException):
+    """Short-term storage is not found"""
+
+    def __init__(self, study_id: str, area_id: str, st_storage_id: str) -> None:
+        detail = f"Short-term storage '{st_storage_id}' not found in area '{area_id}'"
+        super().__init__(HTTPStatus.NOT_FOUND, detail)
+
+    def __str__(self) -> str:
+        return self.detail
+
+
+class DuplicateSTStorageId(HTTPException):
+    """Exception raised when trying to create a short-term storage with an already existing id."""
+
+    def __init__(self, study_id: str, area_id: str, st_storage_id: str) -> None:
+        detail = f"Short term storage '{st_storage_id}' already exists in area '{area_id}'"
+        super().__init__(HTTPStatus.CONFLICT, detail)
 
     def __str__(self) -> str:
         return self.detail
@@ -303,4 +325,14 @@ class ClusterConfigNotFound(HTTPException):
         super().__init__(
             HTTPStatus.NOT_FOUND,
             f"Cluster configuration for area: '{area_id}' not found",
+        )
+
+
+class ClusterAlreadyExists(HTTPException):
+    """Exception raised when attempting to create a cluster with an already existing ID."""
+
+    def __init__(self, cluster_type: str, cluster_id: str) -> None:
+        super().__init__(
+            HTTPStatus.CONFLICT,
+            f"{cluster_type} cluster with ID '{cluster_id}' already exists and could not be created.",
         )

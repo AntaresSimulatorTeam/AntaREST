@@ -2,34 +2,35 @@ import i18n from "i18next";
 import Backend from "i18next-http-backend";
 import LanguageDetector from "i18next-browser-languagedetector";
 import { initReactI18next } from "react-i18next";
+import { version } from "../package.json";
 
-export default function i18nInit(version = "unknown") {
-  i18n
-    // load translation using xhr -> see /public/locales
-    // learn more: https://github.com/i18next/i18next-xhr-backend
-    .use(Backend)
-    // detect user language
-    // learn more: https://github.com/i18next/i18next-browser-languageDetector
-    .use(LanguageDetector)
-    // pass the i18n instance to react-i18next.
-    .use(initReactI18next)
-    // init i18next
-    // for all options read: https://www.i18next.com/overview/configuration-options
-    .init({
-      fallbackLng: "en",
-      backend: {
-        loadPath: `${
-          import.meta.env.BASE_URL
-        }locales/{{lng}}/{{ns}}.json?v=${version}`,
-      },
-      react: {
-        useSuspense: false,
-      },
-      interpolation: {
-        escapeValue: false, // not needed for react as it escapes by default
-      },
-      ns: ["main"],
-      defaultNS: "main",
-      returnNull: false,
-    });
-}
+i18n
+  // load translation using xhr -> see /public/locales
+  // learn more: https://github.com/i18next/i18next-xhr-backend
+  .use(Backend)
+  // detect user language
+  // learn more: https://github.com/i18next/i18next-browser-languageDetector
+  .use(LanguageDetector)
+  // pass the i18n instance to react-i18next.
+  .use(initReactI18next)
+  // init i18next
+  // for all options read: https://www.i18next.com/overview/configuration-options
+  .init({
+    fallbackLng: "en",
+    backend: {
+      loadPath: `${
+        import.meta.env.BASE_URL
+      }locales/{{lng}}/{{ns}}.json?v=${version}`,
+    },
+    react: {
+      useSuspense: false,
+    },
+    interpolation: {
+      escapeValue: false, // not needed for react as it escapes by default
+    },
+    ns: ["main"],
+    defaultNS: "main",
+    returnNull: false,
+  });
+
+export default i18n;

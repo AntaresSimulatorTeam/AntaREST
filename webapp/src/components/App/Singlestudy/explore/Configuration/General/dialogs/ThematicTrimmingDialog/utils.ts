@@ -51,7 +51,7 @@ export interface ThematicTrimmingFormFields {
   congProbPlus: boolean;
   congProbMinus: boolean;
   hurdleCost: boolean;
-  // For study versions >= 810
+  // Study version >= 810
   resGenerationByPlant?: boolean;
   miscDtg2?: boolean;
   miscDtg3?: boolean;
@@ -65,9 +65,42 @@ export interface ThematicTrimmingFormFields {
   renw2?: boolean;
   renw3?: boolean;
   renw4?: boolean;
-  // For study versions >= 830
+  // Study version >= 830
   dens?: boolean;
   profitByPlant?: boolean;
+  // Study version >= 860
+  stsInjByPlant?: boolean;
+  stsWithdrawalByPlant?: boolean;
+  stsLvlByPlant?: boolean;
+  pspOpenInjection?: boolean;
+  pspOpenWithdrawal?: boolean;
+  pspOpenLevel?: boolean;
+  pspClosedInjection?: boolean;
+  pspClosedWithdrawal?: boolean;
+  pspClosedLevel?: boolean;
+  pondageInjection?: boolean;
+  pondageWithdrawal?: boolean;
+  pondageLevel?: boolean;
+  batteryInjection?: boolean;
+  batteryWithdrawal?: boolean;
+  batteryLevel?: boolean;
+  other1Injection?: boolean;
+  other1Withdrawal?: boolean;
+  other1Level?: boolean;
+  other2Injection?: boolean;
+  other2Withdrawal?: boolean;
+  other2Level?: boolean;
+  other3Injection?: boolean;
+  other3Withdrawal?: boolean;
+  other3Level?: boolean;
+  other4Injection?: boolean;
+  other4Withdrawal?: boolean;
+  other4Level?: boolean;
+  other5Injection?: boolean;
+  other5Withdrawal?: boolean;
+  other5Level?: boolean;
+  // Study version >= 880
+  stsCashflowByCluster?: boolean;
 }
 
 const keysMap: Record<keyof ThematicTrimmingFormFields, string> = {
@@ -75,7 +108,7 @@ const keysMap: Record<keyof ThematicTrimmingFormFields, string> = {
   opCost: "OP. COST",
   mrgPrice: "MRG. PRICE",
   co2Emis: "CO2 EMIS.",
-  dtgByPlant: "DTG by plant",
+  dtgByPlant: "DTG BY PLANT",
   balance: "BALANCE",
   rowBal: "ROW BAL.",
   psp: "PSP",
@@ -106,9 +139,9 @@ const keysMap: Record<keyof ThematicTrimmingFormFields, string> = {
   dtgMrg: "DTG MRG",
   maxMrg: "MAX MRG",
   npCost: "NP COST",
-  npCostByPlant: "NP Cost by plant",
+  npCostByPlant: "NP COST BY PLANT",
   nodu: "NODU",
-  noduByPlant: "NODU by plant",
+  noduByPlant: "NODU BY PLANT",
   flowLin: "FLOW LIN.",
   ucapLin: "UCAP LIN.",
   loopFlow: "LOOP FLOW",
@@ -120,7 +153,7 @@ const keysMap: Record<keyof ThematicTrimmingFormFields, string> = {
   congProbMinus: "CONG. PROB -",
   hurdleCost: "HURDLE COST",
   // Study version >= 810
-  resGenerationByPlant: "RES generation by plant",
+  resGenerationByPlant: "RES GENERATION BY PLANT",
   miscDtg2: "MISC. DTG 2",
   miscDtg3: "MISC. DTG 3",
   miscDtg4: "MISC. DTG 4",
@@ -135,7 +168,40 @@ const keysMap: Record<keyof ThematicTrimmingFormFields, string> = {
   renw4: "RENW. 4",
   // Study version >= 830
   dens: "DENS",
-  profitByPlant: "Profit by plant",
+  profitByPlant: "PROFIT BY PLANT",
+  // Study version >= 860
+  stsInjByPlant: "STS INJ BY PLANT",
+  stsWithdrawalByPlant: "STS WITHDRAWAL BY PLANT",
+  stsLvlByPlant: "STS LVL BY PLANT",
+  pspOpenInjection: "PSP OPEN INJECTION",
+  pspOpenWithdrawal: "PSP OPEN WITHDRAWAL",
+  pspOpenLevel: "PSP OPEN LEVEL",
+  pspClosedInjection: "PSP CLOSED INJECTION",
+  pspClosedWithdrawal: "PSP CLOSED WITHDRAWAL",
+  pspClosedLevel: "PSP CLOSED LEVEL",
+  pondageInjection: "PONDAGE INJECTION",
+  pondageWithdrawal: "PONDAGE WITHDRAWAL",
+  pondageLevel: "PONDAGE LEVEL",
+  batteryInjection: "BATTERY INJECTION",
+  batteryWithdrawal: "BATTERY WITHDRAWAL",
+  batteryLevel: "BATTERY LEVEL",
+  other1Injection: "OTHER1 INJECTION",
+  other1Withdrawal: "OTHER1 WITHDRAWAL",
+  other1Level: "OTHER1 LEVEL",
+  other2Injection: "OTHER2 INJECTION",
+  other2Withdrawal: "OTHER2 WITHDRAWAL",
+  other2Level: "OTHER2 LEVEL",
+  other3Injection: "OTHER3 INJECTION",
+  other3Withdrawal: "OTHER3 WITHDRAWAL",
+  other3Level: "OTHER3 LEVEL",
+  other4Injection: "OTHER4 INJECTION",
+  other4Withdrawal: "OTHER4 WITHDRAWAL",
+  other4Level: "OTHER4 LEVEL",
+  other5Injection: "OTHER5 INJECTION",
+  other5Withdrawal: "OTHER5 WITHDRAWAL",
+  other5Level: "OTHER5 LEVEL",
+  // Study version >= 880
+  stsCashflowByCluster: "STS CASHFLOW BY CLUSTER",
 };
 
 // Allow to support all study versions by using directly the server config

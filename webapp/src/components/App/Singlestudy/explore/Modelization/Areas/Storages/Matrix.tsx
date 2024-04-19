@@ -35,7 +35,7 @@ function Matrix({ study, areaId, storageId }: Props) {
       }}
     >
       <Tabs sx={{ width: 1 }} value={value} onChange={(_, v) => setValue(v)}>
-        <Tab label={t("study.modelization.storages.capacities")} />
+        <Tab label={t("study.modelization.storages.modulation")} />
         <Tab label={t("study.modelization.storages.ruleCurves")} />
         <Tab label={t("study.modelization.storages.inflows")} />
       </Tabs>
@@ -56,7 +56,7 @@ function Matrix({ study, areaId, storageId }: Props) {
                     study={study}
                     url={`input/st-storage/series/${areaId}/${storageId}/pmax_injection`}
                     computStats={MatrixStats.NOCOL}
-                    title={t("study.modelization.storages.chargeCapacity")}
+                    title={t("study.modelization.storages.injectionModulation")}
                   />
                 }
                 right={
@@ -64,7 +64,9 @@ function Matrix({ study, areaId, storageId }: Props) {
                     study={study}
                     url={`input/st-storage/series/${areaId}/${storageId}/pmax_withdrawal`}
                     computStats={MatrixStats.NOCOL}
-                    title={t("study.modelization.storages.dischargeCapacity")}
+                    title={t(
+                      "study.modelization.storages.withdrawalModulation",
+                    )}
                   />
                 }
                 sx={{

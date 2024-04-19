@@ -1,5 +1,6 @@
 import { StudyMetadata, Area } from "../../../../../../../common/types";
 import client from "../../../../../../../services/api/client";
+import type { PartialExceptFor } from "../../../../../../../utils/tsUtils";
 
 ////////////////////////////////////////////////////////////////
 // Constants
@@ -39,6 +40,20 @@ export interface Storage {
 // Functions
 ////////////////////////////////////////////////////////////////
 
+export function getStoragesTotals(storages: Storage[]) {
+  return storages.reduce(
+    (acc, { withdrawalNominalCapacity, injectionNominalCapacity }) => {
+      acc.totalWithdrawalNominalCapacity += withdrawalNominalCapacity;
+      acc.totalInjectionNominalCapacity += injectionNominalCapacity;
+      return acc;
+    },
+    {
+      totalWithdrawalNominalCapacity: 0,
+      totalInjectionNominalCapacity: 0,
+    },
+  );
+}
+
 const getStoragesUrl = (
   studyId: StudyMetadata["id"],
   areaId: Area["name"],
@@ -50,28 +65,27 @@ const getStorageUrl = (
   storageId: Storage["id"],
 ): string => `${getStoragesUrl(studyId, areaId)}/${storageId}`;
 
-async function makeRequest<T>(
-  method: "get" | "post" | "patch" | "delete",
-  url: string,
-  data?: Partial<Storage> | { data: Array<Storage["id"]> },
-): Promise<T> {
-  const res = await client[method]<T>(url, data);
-  return res.data;
-}
+////////////////////////////////////////////////////////////////
+// API
+////////////////////////////////////////////////////////////////
 
 export async function getStorages(
   studyId: StudyMetadata["id"],
   areaId: Area["name"],
-): Promise<Storage[]> {
-  return makeRequest<Storage[]>("get", getStoragesUrl(studyId, areaId));
+) {
+  const res = await client.get<Storage[]>(getStoragesUrl(studyId, areaId));
+  return res.data;
 }
 
 export async function getStorage(
   studyId: StudyMetadata["id"],
   areaId: Area["name"],
   storageId: Storage["id"],
-): Promise<Storage> {
-  return makeRequest<Storage>("get", getStorageUrl(studyId, areaId, storageId));
+) {
+  const res = await client.get<Storage>(
+    getStorageUrl(studyId, areaId, storageId),
+  );
+  return res.data;
 }
 
 export async function updateStorage(
@@ -79,28 +93,41 @@ export async function updateStorage(
   areaId: Area["name"],
   storageId: Storage["id"],
   data: Partial<Storage>,
-): Promise<Storage> {
-  return makeRequest<Storage>(
-    "patch",
+) {
+  const res = await client.patch<Storage>(
     getStorageUrl(studyId, areaId, storageId),
     data,
   );
+  return res.data;
 }
 
 export async function createStorage(
   studyId: StudyMetadata["id"],
   areaId: Area["name"],
-  data: Partial<Storage>,
-): Promise<Storage> {
-  return makeRequest<Storage>("post", getStoragesUrl(studyId, areaId), data);
+  data: PartialExceptFor<Storage, "name">,
+) {
+  const res = await client.post<Storage>(getStoragesUrl(studyId, areaId), data);
+  return res.data;
 }
 
-export function deleteStorages(
+export async function duplicateStorage(
+  studyId: StudyMetadata["id"],
+  areaId: Area["name"],
+  sourceClusterId: Storage["id"],
+  newName: Storage["name"],
+) {
+  const res = await client.post<Storage>(
+    `/v1/studies/${studyId}/areas/${areaId}/storages/${sourceClusterId}`,
+    null,
+    { params: { newName } },
+  );
+  return res.data;
+}
+
+export async function deleteStorages(
   studyId: StudyMetadata["id"],
   areaId: Area["name"],
   storageIds: Array<Storage["id"]>,
-): Promise<void> {
-  return makeRequest<void>("delete", getStoragesUrl(studyId, areaId), {
-    data: storageIds,
-  });
+) {
+  await client.delete(getStoragesUrl(studyId, areaId), { data: storageIds });
 }

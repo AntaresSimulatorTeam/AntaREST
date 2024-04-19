@@ -1,3 +1,4 @@
+import enum
 import logging
 from http import HTTPStatus
 from typing import Any, Dict, List, Optional, Sequence, Union, cast
@@ -24,10 +25,12 @@ from antarest.study.business.areas.renewable_management import (
     RenewableClusterCreation,
     RenewableClusterInput,
     RenewableClusterOutput,
+    RenewableManager,
 )
 from antarest.study.business.areas.st_storage_management import (
     STStorageCreation,
     STStorageInput,
+    STStorageManager,
     STStorageMatrix,
     STStorageOutput,
     STStorageTimeSeries,
@@ -36,6 +39,7 @@ from antarest.study.business.areas.thermal_management import (
     ThermalClusterCreation,
     ThermalClusterInput,
     ThermalClusterOutput,
+    ThermalManager,
 )
 from antarest.study.business.binding_constraint_management import (
     BindingConstraintPropertiesWithName,
@@ -49,13 +53,27 @@ from antarest.study.business.link_management import LinkInfoDTO
 from antarest.study.business.optimization_management import OptimizationFormFields
 from antarest.study.business.playlist_management import PlaylistColumns
 from antarest.study.business.table_mode_management import ColumnsModelTypes, TableTemplateType
-from antarest.study.business.thematic_trimming_management import ThematicTrimmingFormFields
+from antarest.study.business.thematic_trimming_field_infos import ThematicTrimmingFormFields
 from antarest.study.business.timeseries_config_management import TSFormFields
 from antarest.study.model import PatchArea, PatchCluster
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 
 logger = logging.getLogger(__name__)
+
+
+class ClusterType(str, enum.Enum):
+    """
+    Cluster type:
+
+    - `STORAGE`: short-term storages
+    - `RENEWABLES`: renewable clusters
+    - `THERMALS`: thermal clusters
+    """
+
+    ST_STORAGES = "storages"
+    RENEWABLES = "renewables"
+    THERMALS = "thermals"
 
 
 def create_study_data_routes(study_service: StudyService, config: Config) -> APIRouter:
@@ -2018,5 +2036,37 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
         study_service.st_storage_manager.delete_storages(study, area_id, storage_ids)
+
+    @bp.post(
+        path="/studies/{uuid}/areas/{area_id}/{cluster_type}/{source_cluster_id}",
+        tags=[APITag.study_data],
+        summary="Duplicates a given cluster",
+    )
+    def duplicate_cluster(
+        uuid: str,
+        area_id: str,
+        cluster_type: ClusterType,
+        source_cluster_id: str,
+        new_cluster_name: str = Query(..., alias="newName", title="New Cluster Name"),  # type: ignore
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Union[STStorageOutput, ThermalClusterOutput, RenewableClusterOutput]:
+        logger.info(
+            f"Duplicates {cluster_type.value} {source_cluster_id} of {area_id} for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
+
+        manager: Union[STStorageManager, RenewableManager, ThermalManager]
+        if cluster_type == ClusterType.ST_STORAGES:
+            manager = STStorageManager(study_service.storage_service)
+        elif cluster_type == ClusterType.RENEWABLES:
+            manager = RenewableManager(study_service.storage_service)
+        elif cluster_type == ClusterType.THERMALS:
+            manager = ThermalManager(study_service.storage_service)
+        else:  # pragma: no cover
+            raise NotImplementedError(f"Cluster type {cluster_type} not implemented")
+
+        return manager.duplicate_cluster(study, area_id, source_cluster_id, new_cluster_name)
 
     return bp

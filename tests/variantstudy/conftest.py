@@ -70,6 +70,21 @@ def matrix_service_fixture() -> MatrixService:
         """
         del matrix_map[matrix_id]
 
+    def get_matrix_id(matrix: t.Union[t.List[t.List[float]], str]) -> str:
+        """
+        Get the matrix ID from a matrix or a matrix link.
+        """
+        if isinstance(matrix, str):
+            # str.removeprefix() is not available in Python 3.8
+            prefix = "matrix://"
+            if matrix.startswith(prefix):
+                return matrix[len(prefix) :]
+            return matrix
+        elif isinstance(matrix, list):
+            return create(matrix)
+        else:
+            raise TypeError(f"Invalid type for matrix: {type(matrix)}")
+
     matrix_service = Mock(spec=MatrixService)
     matrix_service.create.side_effect = create
     matrix_service.get.side_effect = get

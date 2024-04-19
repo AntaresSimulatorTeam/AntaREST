@@ -10,7 +10,7 @@ import filelock
 from antarest.core.interfaces.cache import CacheConstants, ICache
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.matrixstore.uri_resolver_service import UriResolverService
-from antarest.study.storage.rawstudy.model.filesystem.config.files import build
+from antarest.study.storage.rawstudy.model.filesystem.config.files import build, parse_outputs
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
@@ -93,6 +93,9 @@ class StudyFactory:
             if from_cache is not None:
                 logger.info(f"Study {study_id} read from cache")
                 config = FileStudyTreeConfigDTO.parse_obj(from_cache).to_build_config()
+                if output_path:
+                    config.output_path = output_path
+                    config.outputs = parse_outputs(output_path)
                 return FileStudy(config, FileStudyTree(self.context, config))
         start_time = time.time()
         config = build(path, study_id, output_path)
