@@ -24,6 +24,7 @@ v2.16.8 (2024-04-19)
 * **launcher:** upgrade the project dependencies to use Antares-Launcher v1.3.2
   - **ssh:** add retry loop around SSH Exceptions [`#68`](https://github.com/AntaresSimulatorTeam/antares-launcher/pull/68)
   - **retriever:** avoid infinite loop when `sbatch` command fails [`#69`](https://github.com/AntaresSimulatorTeam/antares-launcher/pull/69)
+* **synthesis:** prevent 500 error during study synthesis parsing [`#2011`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2011)
 
 
 v2.16.7 (2024-03-05)
