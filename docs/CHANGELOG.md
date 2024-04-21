@@ -1,6 +1,36 @@
 Antares Web Changelog
 =====================
 
+v2.16.8 (2024-04-19)
+--------------------
+
+### Features
+
+* **clusters:** add new endpoint for clusters duplication [`#1972`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1972)
+* **clusters (ui):** implement new duplication endpoint and optimistic update [`#1984`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1984)
+* **configuration:** turn Thematic Trimming variable names in upper case
+* **configuration (ui):** replace underscore with space in Thematic Trimming variable names [`#2010`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2010)
+* **ui:** enhance and refactor validation across UI components [`#1956`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1956)
+
+### Bug Fixes
+
+* **clusters (ui):** totals are updated after a duplication and a deletion [`#1984`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1984)
+* **clusters (ui):** issue with selecting and deleting rows [`#1984`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1984)
+* **st-storages (ui):** correction of incorrect wording between "withdrawal" and "injection" [`#1977`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1977)
+* **st-storages (ui):** change matrix titles [`#1994`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1994)
+* **st-storages:** use command when updating matrices [`#1971`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1971)
+* **variants:** avoid recursive error when creating big variant tree [`#1967`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1967)
+* **outputs:** build outputs config even when using cache [`#1958`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1958)
+* **comments:** use a command to update comments on a variant [`#1959`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1959)
+* **outputs (ui):** correct weekly data formatting to support 53-week years [`#1975`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1975)
+* **configuration:** add missing variables in Thematic Trimming for studies in version v8.6 or above [`#1992`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1992)
+* **configuration:** version availability for "STS Cashflow By Cluster" variable is v8.8
+* **launcher:** upgrade the project dependencies to use Antares-Launcher v1.3.2
+  - **ssh:** add retry loop around SSH Exceptions [`#68`](https://github.com/AntaresSimulatorTeam/antares-launcher/pull/68)
+  - **retriever:** avoid infinite loop when `sbatch` command fails [`#69`](https://github.com/AntaresSimulatorTeam/antares-launcher/pull/69)
+* **synthesis:** prevent 500 error during study synthesis parsing [`#2011`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2011)
+
+
 v2.16.7 (2024-03-05)
 --------------------
 

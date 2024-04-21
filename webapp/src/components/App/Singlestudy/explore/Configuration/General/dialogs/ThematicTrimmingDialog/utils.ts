@@ -72,7 +72,6 @@ export interface ThematicTrimmingFormFields {
   stsInjByPlant?: boolean;
   stsWithdrawalByPlant?: boolean;
   stsLvlByPlant?: boolean;
-  stsCashflowByCluster?: boolean;
   pspOpenInjection?: boolean;
   pspOpenWithdrawal?: boolean;
   pspOpenLevel?: boolean;
@@ -100,6 +99,8 @@ export interface ThematicTrimmingFormFields {
   other5Injection?: boolean;
   other5Withdrawal?: boolean;
   other5Level?: boolean;
+  // Study version >= 880
+  stsCashflowByCluster?: boolean;
 }
 
 const keysMap: Record<keyof ThematicTrimmingFormFields, string> = {
@@ -107,7 +108,7 @@ const keysMap: Record<keyof ThematicTrimmingFormFields, string> = {
   opCost: "OP. COST",
   mrgPrice: "MRG. PRICE",
   co2Emis: "CO2 EMIS.",
-  dtgByPlant: "DTG by plant",
+  dtgByPlant: "DTG BY PLANT",
   balance: "BALANCE",
   rowBal: "ROW BAL.",
   psp: "PSP",
@@ -138,9 +139,9 @@ const keysMap: Record<keyof ThematicTrimmingFormFields, string> = {
   dtgMrg: "DTG MRG",
   maxMrg: "MAX MRG",
   npCost: "NP COST",
-  npCostByPlant: "NP Cost by plant",
+  npCostByPlant: "NP COST BY PLANT",
   nodu: "NODU",
-  noduByPlant: "NODU by plant",
+  noduByPlant: "NODU BY PLANT",
   flowLin: "FLOW LIN.",
   ucapLin: "UCAP LIN.",
   loopFlow: "LOOP FLOW",
@@ -152,7 +153,7 @@ const keysMap: Record<keyof ThematicTrimmingFormFields, string> = {
   congProbMinus: "CONG. PROB -",
   hurdleCost: "HURDLE COST",
   // Study version >= 810
-  resGenerationByPlant: "RES generation by plant",
+  resGenerationByPlant: "RES GENERATION BY PLANT",
   miscDtg2: "MISC. DTG 2",
   miscDtg3: "MISC. DTG 3",
   miscDtg4: "MISC. DTG 4",
@@ -167,39 +168,40 @@ const keysMap: Record<keyof ThematicTrimmingFormFields, string> = {
   renw4: "RENW. 4",
   // Study version >= 830
   dens: "DENS",
-  profitByPlant: "Profit by plant",
+  profitByPlant: "PROFIT BY PLANT",
   // Study version >= 860
-  stsInjByPlant: "STS inj by plant",
-  stsWithdrawalByPlant: "STS withdrawal by plant",
-  stsLvlByPlant: "STS lvl by plant",
-  stsCashflowByCluster: "STS Cashflow By Cluster",
-  pspOpenInjection: "PSP_open_injection",
-  pspOpenWithdrawal: "PSP_open_withdrawal",
-  pspOpenLevel: "PSP_open_level",
-  pspClosedInjection: "PSP_closed_injection",
-  pspClosedWithdrawal: "PSP_closed_withdrawal",
-  pspClosedLevel: "PSP_closed_level",
-  pondageInjection: "Pondage_injection",
-  pondageWithdrawal: "Pondage_withdrawal",
-  pondageLevel: "Pondage_level",
-  batteryInjection: "Battery_injection",
-  batteryWithdrawal: "Battery_withdrawal",
-  batteryLevel: "Battery_level",
-  other1Injection: "Other1_injection",
-  other1Withdrawal: "Other1_withdrawal",
-  other1Level: "Other1_level",
-  other2Injection: "Other2_injection",
-  other2Withdrawal: "Other2_withdrawal",
-  other2Level: "Other2_level",
-  other3Injection: "Other3_injection",
-  other3Withdrawal: "Other3_withdrawal",
-  other3Level: "Other3_level",
-  other4Injection: "Other4_injection",
-  other4Withdrawal: "Other4_withdrawal",
-  other4Level: "Other4_level",
-  other5Injection: "Other5_injection",
-  other5Withdrawal: "Other5_withdrawal",
-  other5Level: "Other5_level",
+  stsInjByPlant: "STS INJ BY PLANT",
+  stsWithdrawalByPlant: "STS WITHDRAWAL BY PLANT",
+  stsLvlByPlant: "STS LVL BY PLANT",
+  pspOpenInjection: "PSP OPEN INJECTION",
+  pspOpenWithdrawal: "PSP OPEN WITHDRAWAL",
+  pspOpenLevel: "PSP OPEN LEVEL",
+  pspClosedInjection: "PSP CLOSED INJECTION",
+  pspClosedWithdrawal: "PSP CLOSED WITHDRAWAL",
+  pspClosedLevel: "PSP CLOSED LEVEL",
+  pondageInjection: "PONDAGE INJECTION",
+  pondageWithdrawal: "PONDAGE WITHDRAWAL",
+  pondageLevel: "PONDAGE LEVEL",
+  batteryInjection: "BATTERY INJECTION",
+  batteryWithdrawal: "BATTERY WITHDRAWAL",
+  batteryLevel: "BATTERY LEVEL",
+  other1Injection: "OTHER1 INJECTION",
+  other1Withdrawal: "OTHER1 WITHDRAWAL",
+  other1Level: "OTHER1 LEVEL",
+  other2Injection: "OTHER2 INJECTION",
+  other2Withdrawal: "OTHER2 WITHDRAWAL",
+  other2Level: "OTHER2 LEVEL",
+  other3Injection: "OTHER3 INJECTION",
+  other3Withdrawal: "OTHER3 WITHDRAWAL",
+  other3Level: "OTHER3 LEVEL",
+  other4Injection: "OTHER4 INJECTION",
+  other4Withdrawal: "OTHER4 WITHDRAWAL",
+  other4Level: "OTHER4 LEVEL",
+  other5Injection: "OTHER5 INJECTION",
+  other5Withdrawal: "OTHER5 WITHDRAWAL",
+  other5Level: "OTHER5 LEVEL",
+  // Study version >= 880
+  stsCashflowByCluster: "STS CASHFLOW BY CLUSTER",
 };
 
 // Allow to support all study versions by using directly the server config

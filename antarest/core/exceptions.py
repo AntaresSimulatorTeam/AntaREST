@@ -1,6 +1,6 @@
 import re
+import typing as t
 from http import HTTPStatus
-from typing import Any, Optional
 
 from fastapi.exceptions import HTTPException
 
@@ -158,6 +158,17 @@ class MatrixNotFound(HTTPException):
         return self.detail
 
 
+class DuplicateSTStorageId(HTTPException):
+    """Exception raised when trying to create a short-term storage with an already existing id."""
+
+    def __init__(self, study_id: str, area_id: str, st_storage_id: str) -> None:
+        detail = f"Short term storage '{st_storage_id}' already exists in area '{area_id}'"
+        super().__init__(HTTPStatus.CONFLICT, detail)
+
+    def __str__(self) -> str:
+        return self.detail
+
+
 class ThermalClusterMatrixNotFound(MatrixNotFound):
     """Matrix of the thermal cluster is not found (404 Not Found)"""
 
@@ -304,7 +315,7 @@ class TaskAlreadyRunning(HTTPException):
 
 
 class StudyDeletionNotAllowed(HTTPException):
-    def __init__(self, uuid: str, message: Optional[str] = None) -> None:
+    def __init__(self, uuid: str, message: t.Optional[str] = None) -> None:
         msg = f"Study {uuid} (not managed) is not allowed to be deleted"
         if message:
             msg += f"\n{message}"

@@ -1,8 +1,8 @@
 import datetime
 import io
 import re
+import typing as t
 import uuid
-from typing import Any, MutableMapping, Sequence, cast
 from unittest.mock import Mock
 
 import numpy as np
@@ -97,7 +97,7 @@ class TestSTStorageManager:
         )
         db_session.add(raw_study)
         db_session.commit()
-        return cast(str, raw_study.id)
+        return t.cast(str, raw_study.id)
 
     def test_get_st_storages__nominal_case(
         self,
@@ -533,7 +533,7 @@ class TestSTStorageManager:
         }
 
         # Prepare the mocks
-        def tree_get(url: Sequence[str], **_: Any) -> MutableMapping[str, Any]:
+        def tree_get(url: t.Sequence[str], **_: t.Any) -> t.MutableMapping[str, t.Any]:
             name = url[-1]
             array = matrices[name]
             return {
@@ -570,7 +570,7 @@ class TestSTStorageManager:
         }
 
         # Prepare the mocks
-        def tree_get(url: Sequence[str], **_: Any) -> MutableMapping[str, Any]:
+        def tree_get(url: t.Sequence[str], **_: t.Any) -> t.MutableMapping[str, t.Any]:
             name = url[-1]
             array = matrices[name]
             return {
@@ -636,7 +636,7 @@ class TestSTStorageManager:
         }
 
         # Prepare the mocks
-        def tree_get(url: Sequence[str], **_: Any) -> MutableMapping[str, Any]:
+        def tree_get(url: t.Sequence[str], **_: t.Any) -> t.MutableMapping[str, t.Any]:
             name = url[-1]
             array = matrices[name]
             return {
