@@ -4,7 +4,6 @@ Object model used to read and update area configuration.
 
 import typing as t
 
-import typing_extensions as te
 from pydantic import Field, root_validator, validator
 
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
@@ -468,9 +467,6 @@ class AreaFolder(IniProperties):
     )
 
 
-EnergyCost = te.Annotated[float, Field(ge=0, description="Energy cost (€/MWh)")]
-
-
 # noinspection SpellCheckingInspection
 class ThermalAreasProperties(IniProperties):
     """
@@ -526,20 +522,20 @@ class ThermalAreasProperties(IniProperties):
      'unserverdenergycost': {'at': 6500.0, 'be': 3500.0, 'de': 1250.0, 'fr': 0.0}}
     """
 
-    unserverd_energy_cost: t.MutableMapping[str, EnergyCost] = Field(
+    unserverd_energy_cost: t.MutableMapping[str, float] = Field(
         default_factory=dict,
         alias="unserverdenergycost",
         description="unserverd energy cost (€/MWh) of each area",
     )
 
-    spilled_energy_cost: t.MutableMapping[str, EnergyCost] = Field(
+    spilled_energy_cost: t.MutableMapping[str, float] = Field(
         default_factory=dict,
         alias="spilledenergycost",
         description="spilled energy cost (€/MWh) of each area",
     )
 
     @validator("unserverd_energy_cost", "spilled_energy_cost", pre=True)
-    def _validate_energy_cost(cls, v: t.Any) -> t.MutableMapping[str, EnergyCost]:
+    def _validate_energy_cost(cls, v: t.Any) -> t.MutableMapping[str, float]:
         if isinstance(v, dict):
             return {str(k): float(v) for k, v in v.items()}
         raise TypeError(f"Invalid type for energy cost: {type(v)}")
