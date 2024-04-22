@@ -80,7 +80,7 @@ class STStorageCreation(STStorageInput):
 
 
 @camel_case_model
-class STStorageOutput(STStorage880Config):
+class STStorageOutput(STStorage880Config, metaclass=AllOptionalMetaclass, use_none=True):
     """
     Model representing the form used to display the details of a short-term storage entry.
     """
@@ -236,7 +236,7 @@ def create_storage_output(
     cluster_id: str,
     config: t.Mapping[str, t.Any],
 ) -> "STStorageOutput":
-    obj = create_st_storage_config(study_version, **config, id=cluster_id)
+    obj = create_st_storage_config(study_version=study_version, **config, id=cluster_id)
     kwargs = obj.dict(by_alias=False)
     return STStorageOutput(**kwargs)
 
@@ -357,11 +357,12 @@ class STStorageManager:
         except KeyError:
             raise STStorageConfigNotFound(path) from None
 
+        study_version = study.version
         storages_by_areas: t.MutableMapping[str, t.MutableMapping[str, STStorageOutput]]
         storages_by_areas = collections.defaultdict(dict)
         for area_id, cluster_obj in storages.items():
             for cluster_id, cluster in cluster_obj.items():
-                storages_by_areas[area_id][cluster_id] = create_storage_output(int(study.version), cluster_id, cluster)
+                storages_by_areas[area_id][cluster_id] = create_storage_output(study_version, cluster_id, cluster)
 
         return storages_by_areas
 
