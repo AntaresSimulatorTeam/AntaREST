@@ -365,6 +365,8 @@ def test_revert(command_context: CommandContext):
             enabled=True,
             time_step=BindingConstraintFrequency.HOURLY,
             operator=BindingConstraintOperator.EQUAL,
+            filter_year_by_year="",
+            filter_synthesis="",
             coeffs={"a": [0.3]},
             values=hourly_matrix_id,
             command_context=command_context,
