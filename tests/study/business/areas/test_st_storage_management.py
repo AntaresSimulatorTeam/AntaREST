@@ -142,6 +142,7 @@ class TestSTStorageManager:
             "west": [
                 {
                     "id": "storage1",
+                    "enabled": None,
                     "group": STStorageGroup.BATTERY,
                     "name": "Storage1",
                     "injectionNominalCapacity": 1500.0,
@@ -153,6 +154,7 @@ class TestSTStorageManager:
                 },
                 {
                     "id": "storage2",
+                    "enabled": None,
                     "group": STStorageGroup.PSP_CLOSED,
                     "name": "Storage2",
                     "injectionNominalCapacity": 2000.0,
@@ -164,6 +166,7 @@ class TestSTStorageManager:
                 },
                 {
                     "id": "storage3",
+                    "enabled": None,
                     "group": STStorageGroup.PSP_CLOSED,
                     "name": "Storage3",
                     "injectionNominalCapacity": 1500.0,
@@ -250,7 +253,7 @@ class TestSTStorageManager:
                 "name": "Storage1",
                 "reservoirCapacity": 20000.0,
                 "withdrawalNominalCapacity": 1500.0,
-                "enabled": True,  # present with default value even if the study is in v8.6
+                "enabled": None,
             },
             {
                 "efficiency": 0.78,
@@ -262,7 +265,7 @@ class TestSTStorageManager:
                 "name": "Storage2",
                 "reservoirCapacity": 20000.0,
                 "withdrawalNominalCapacity": 1500.0,
-                "enabled": True,
+                "enabled": None,
             },
             {
                 "efficiency": 0.72,
@@ -274,7 +277,7 @@ class TestSTStorageManager:
                 "name": "Storage3",
                 "reservoirCapacity": 21000.0,
                 "withdrawalNominalCapacity": 1500.0,
-                "enabled": True,
+                "enabled": None,
             },
         ]
         assert actual == expected
@@ -361,7 +364,7 @@ class TestSTStorageManager:
             "name": "Storage1",
             "reservoirCapacity": 20000.0,
             "withdrawalNominalCapacity": 1500.0,
-            "enabled": True,
+            "enabled": None,
         }
         assert actual == expected
 
