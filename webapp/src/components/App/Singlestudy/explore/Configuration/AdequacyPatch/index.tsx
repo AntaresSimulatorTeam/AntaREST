@@ -53,7 +53,7 @@ function AdequacyPatch() {
           content: (
             <TableMode
               studyId={study.id}
-              type="area"
+              type="areas"
               columns={["adequacyPatchMode"]}
             />
           ),

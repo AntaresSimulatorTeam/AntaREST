@@ -23,7 +23,7 @@ function TableMode<T extends TableModeType>(props: TableModeProps<T>) {
   const { studyId, type, columns } = props;
 
   const res = usePromise(
-    () => getTableMode({ studyId, type, columns }),
+    () => getTableMode({ studyId, tableType: type, columns }),
     [studyId, type, JSON.stringify(columns)],
   );
 
@@ -32,7 +32,7 @@ function TableMode<T extends TableModeType>(props: TableModeProps<T>) {
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = (data: SubmitHandlerPlus<TableData>) => {
-    return setTableMode({ studyId, type, data: data.dirtyValues });
+    return setTableMode({ studyId, tableType: type, data: data.dirtyValues });
   };
 
   ////////////////////////////////////////////////////////////////

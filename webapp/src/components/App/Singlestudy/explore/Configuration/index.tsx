@@ -63,7 +63,7 @@ function Configuration() {
               () => (
                 <TableMode
                   studyId={study.id}
-                  type="area"
+                  type="areas"
                   columns={[
                     "averageUnsuppliedEnergyCost",
                     "spreadUnsuppliedEnergyCost",
@@ -81,7 +81,7 @@ function Configuration() {
               () => (
                 <TableMode
                   studyId={study.id}
-                  type="area"
+                  type="areas"
                   columns={["filterYearByYear", "filterSynthesis"]}
                 />
               ),
@@ -91,7 +91,7 @@ function Configuration() {
               () => (
                 <TableMode
                   studyId={study.id}
-                  type="link"
+                  type="links"
                   columns={["filterYearByYear", "filterSynthesis"]}
                 />
               ),

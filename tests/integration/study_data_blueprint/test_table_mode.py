@@ -64,16 +64,21 @@ class TestTableMode:
         assert res.status_code == 200, res.json()
         actual = res.json()
         assert set(actual["properties"]) == {
-            "adequacyPatchMode",
-            "averageSpilledEnergyCost",
-            "averageUnsuppliedEnergyCost",
+            # UI
+            "colorRgb",
+            # Optimization - Nodal optimization
+            "nonDispatchablePower",
             "dispatchableHydroPower",
+            "otherDispatchablePower",
+            "averageUnsuppliedEnergyCost",
+            "spreadUnsuppliedEnergyCost",
+            "averageSpilledEnergyCost",
+            "spreadSpilledEnergyCost",
+            # Optimization - Filtering
             "filterSynthesis",
             "filterYearByYear",
-            "nonDispatchablePower",
-            "otherDispatchablePower",
-            "spreadSpilledEnergyCost",
-            "spreadUnsuppliedEnergyCost",
+            # Adequacy patch
+            "adequacyPatchMode",
         }
 
         res = client.put(
@@ -90,6 +95,9 @@ class TestTableMode:
                     "adequacyPatchMode": "inside",
                     "spreadSpilledEnergyCost": None,  # not changed
                 },
+                "fr": {
+                    "colorRgb": "#C00000",
+                },
             },
         )
         assert res.status_code == 200, res.json()
@@ -98,6 +106,7 @@ class TestTableMode:
                 "adequacyPatchMode": "outside",
                 "averageSpilledEnergyCost": 0,
                 "averageUnsuppliedEnergyCost": 3456,
+                "colorRgb": "#0080FF",
                 "dispatchableHydroPower": False,
                 "filterSynthesis": "daily, monthly",
                 "filterYearByYear": "weekly, annual",
@@ -110,6 +119,7 @@ class TestTableMode:
                 "adequacyPatchMode": "inside",
                 "averageSpilledEnergyCost": 0,
                 "averageUnsuppliedEnergyCost": 3000,
+                "colorRgb": "#0080FF",
                 "dispatchableHydroPower": True,
                 "filterSynthesis": "daily, monthly",
                 "filterYearByYear": "hourly, weekly, annual",
@@ -122,6 +132,7 @@ class TestTableMode:
                 "adequacyPatchMode": "outside",
                 "averageSpilledEnergyCost": 0,
                 "averageUnsuppliedEnergyCost": 3000,
+                "colorRgb": "#C00000",
                 "dispatchableHydroPower": True,
                 "filterSynthesis": "",
                 "filterYearByYear": "hourly",
@@ -134,6 +145,7 @@ class TestTableMode:
                 "adequacyPatchMode": "outside",
                 "averageSpilledEnergyCost": 0,
                 "averageUnsuppliedEnergyCost": 3000,
+                "colorRgb": "#0080FF",
                 "dispatchableHydroPower": True,
                 "filterSynthesis": "",
                 "filterYearByYear": "hourly",
@@ -162,17 +174,18 @@ class TestTableMode:
         assert res.status_code == 200, res.json()
         actual = res.json()
         assert set(actual["properties"]) == {
-            "assetType",
             "colorRgb",
+            "comments",
+            "hurdlesCost",
+            "loopFlow",
+            "usePhaseShifter",
+            "transmissionCapacities",
+            "assetType",
+            "linkStyle",
+            "linkWidth",
             "displayComments",
             "filterSynthesis",
             "filterYearByYear",
-            "hurdlesCost",
-            "linkStyle",
-            "linkWidth",
-            "loopFlow",
-            "transmissionCapacities",
-            "usePhaseShifter",
         }
 
         res = client.put(
@@ -203,6 +216,7 @@ class TestTableMode:
                     "usePhaseShifter": True,
                 },
                 "fr / it": {
+                    "comments": "Link from France to Italie",
                     "assetType": "DC",  # case-insensitive
                 },
             },
@@ -212,6 +226,7 @@ class TestTableMode:
             "de / fr": {
                 "assetType": "ac",
                 "colorRgb": "#FFA500",
+                "comments": "",
                 "displayComments": False,
                 "filterSynthesis": "hourly, daily, weekly, annual",
                 "filterYearByYear": "hourly, daily, monthly, annual",
@@ -225,6 +240,7 @@ class TestTableMode:
             "es / fr": {
                 "assetType": "ac",
                 "colorRgb": "#FF6347",
+                "comments": "",
                 "displayComments": True,
                 "filterSynthesis": "hourly, daily, weekly, monthly, annual",
                 "filterYearByYear": "hourly, daily, weekly, annual",
@@ -238,6 +254,7 @@ class TestTableMode:
             "fr / it": {
                 "assetType": "dc",
                 "colorRgb": "#707070",
+                "comments": "Link from France to Italie",
                 "displayComments": True,
                 "filterSynthesis": "",
                 "filterYearByYear": "hourly",
@@ -268,43 +285,47 @@ class TestTableMode:
         assert res.status_code == 200, res.json()
         actual = res.json()
         assert set(actual["properties"]) == {
-            "co2",
-            "costGeneration",
-            "efficiency",
-            "enabled",
-            "fixedCost",
-            "genTs",
-            "group",
+            # read-only fields
             "id",
+            "name",
+            # Thermals fields
+            "group",
+            "enabled",
+            "unitCount",
+            "nominalCapacity",
+            "genTs",
+            "minStablePower",
+            "minUpTime",
+            "minDownTime",
+            "mustRun",
+            "spinning",
+            "volatilityForced",
+            "volatilityPlanned",
             "lawForced",
             "lawPlanned",
             "marginalCost",
+            "spreadCost",
+            "fixedCost",
+            "startupCost",
             "marketBidCost",
-            "minDownTime",
-            "minStablePower",
-            "minUpTime",
-            "mustRun",
-            "name",
+            # pollutants - since v8.6 (except for "co2")
+            "co2",
             "nh3",
-            "nmvoc",
-            "nominalCapacity",
+            "so2",
             "nox",
+            "pm25",
+            "pm5",
+            "pm10",
+            "nmvoc",
             "op1",
             "op2",
             "op3",
             "op4",
             "op5",
-            "pm10",
-            "pm25",
-            "pm5",
-            "so2",
-            "spinning",
-            "spreadCost",
-            "startupCost",
-            "unitCount",
+            # since v8.7
+            "costGeneration",
+            "efficiency",
             "variableOMCost",
-            "volatilityForced",
-            "volatilityPlanned",
         }
 
         res = client.put(
@@ -328,6 +349,8 @@ class TestTableMode:
         assert res.status_code == 200, res.json()
         expected_thermals = {
             "de / 01_solar": {
+                # "id": "01_solar",
+                # "name": "01_solar",
                 "co2": 0,
                 "costGeneration": None,
                 "efficiency": None,
@@ -335,7 +358,6 @@ class TestTableMode:
                 "fixedCost": 0,
                 "genTs": "use global",
                 "group": "Other 2",
-                "id": "01_solar",
                 "lawForced": "uniform",
                 "lawPlanned": "uniform",
                 "marginalCost": 10,
@@ -344,7 +366,6 @@ class TestTableMode:
                 "minStablePower": 0,
                 "minUpTime": 1,
                 "mustRun": False,
-                "name": "01_solar",
                 "nh3": 0,
                 "nmvoc": 0,
                 "nominalCapacity": 500000,
@@ -367,6 +388,8 @@ class TestTableMode:
                 "volatilityPlanned": 0,
             },
             "de / 02_wind_on": {
+                # "id": "02_wind_on",
+                # "name": "02_wind_on",
                 "co2": 123,
                 "costGeneration": None,
                 "efficiency": None,
@@ -374,7 +397,6 @@ class TestTableMode:
                 "fixedCost": 0,
                 "genTs": "use global",
                 "group": "Nuclear",
-                "id": "02_wind_on",
                 "lawForced": "uniform",
                 "lawPlanned": "uniform",
                 "marginalCost": 20,
@@ -383,7 +405,6 @@ class TestTableMode:
                 "minStablePower": 0,
                 "minUpTime": 1,
                 "mustRun": False,
-                "name": "02_wind_on",
                 "nh3": 0,
                 "nmvoc": 0,
                 "nominalCapacity": 314159,
@@ -527,13 +548,15 @@ class TestTableMode:
         assert res.status_code == 200, res.json()
         actual = res.json()
         assert set(actual["properties"]) == {
-            "enabled",
-            "group",
+            # read-only fields
             "id",
             "name",
-            "nominalCapacity",
+            # Renewables fields
+            "group",
             "tsInterpretation",
+            "enabled",
             "unitCount",
+            "nominalCapacity",
         }
 
         # Update some generators using the table mode
@@ -575,15 +598,17 @@ class TestTableMode:
         assert res.status_code == 200, res.json()
         actual = res.json()
         assert set(actual["properties"]) == {
-            "efficiency",
-            "group",
+            # read-only fields
             "id",
+            "name",
+            # Short-term storage fields
+            "group",
+            "injectionNominalCapacity",
+            "withdrawalNominalCapacity",
+            "reservoirCapacity",
+            "efficiency",
             "initialLevel",
             "initialLevelOptim",
-            "injectionNominalCapacity",
-            "name",
-            "reservoirCapacity",
-            "withdrawalNominalCapacity",
         }
 
         # Prepare data for short-term storage tests
@@ -650,46 +675,46 @@ class TestTableMode:
         actual = res.json()
         assert actual == {
             "fr / siemens": {
+                # "id": "siemens",
+                # "name": "Siemens",
                 "efficiency": 1,
                 "group": "Battery",
-                "id": "siemens",
                 "initialLevel": 0.5,
                 "initialLevelOptim": False,
                 "injectionNominalCapacity": 1550,
-                "name": "Siemens",
                 "reservoirCapacity": 1500,
                 "withdrawalNominalCapacity": 1550,
             },
             "fr / tesla": {
+                # "id": "tesla",
+                # "name": "Tesla",
                 "efficiency": 0.75,
                 "group": "Battery",
-                "id": "tesla",
                 "initialLevel": 0.89,
                 "initialLevelOptim": False,
                 "injectionNominalCapacity": 1200,
-                "name": "Tesla",
                 "reservoirCapacity": 1200,
                 "withdrawalNominalCapacity": 1200,
             },
             "it / storage3": {
+                # "id": "storage3",
+                # "name": "storage3",
                 "efficiency": 1,
                 "group": "Pondage",
-                "id": "storage3",
                 "initialLevel": 1,
                 "initialLevelOptim": False,
                 "injectionNominalCapacity": 1234,
-                "name": "storage3",
                 "reservoirCapacity": 1357,
                 "withdrawalNominalCapacity": 1020,
             },
             "it / storage4": {
+                # "id": "storage4",
+                # "name": "storage4",
                 "efficiency": 1,
                 "group": "PSP_open",
-                "id": "storage4",
                 "initialLevel": 0.5,
                 "initialLevelOptim": True,
                 "injectionNominalCapacity": 567,
-                "name": "storage4",
                 "reservoirCapacity": 500,
                 "withdrawalNominalCapacity": 456,
             },
@@ -797,16 +822,19 @@ class TestTableMode:
         assert res.status_code == 200, res.json()
         actual = res.json()
         assert set(actual["properties"]) == {
-            "comments",
-            "enabled",
-            "filterSynthesis",
-            "filterYearByYear",
-            "group",
+            # read-only fields
             "id",
             "name",
-            "operator",
-            "terms",
+            # Binding Constraints fields
+            "group",
+            "enabled",
             "timeStep",
+            "operator",
+            "comments",
+            "filterSynthesis",
+            "filterYearByYear",
+            # Binding Constraints - Terms
+            "terms",
         }
 
         # Update some binding constraints using the table mode

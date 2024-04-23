@@ -54,7 +54,7 @@ from antarest.study.business.general_management import GeneralFormFields
 from antarest.study.business.link_management import LinkInfoDTO
 from antarest.study.business.optimization_management import OptimizationFormFields
 from antarest.study.business.playlist_management import PlaylistColumns
-from antarest.study.business.table_mode_management import TableDataDTO, TableTemplateType
+from antarest.study.business.table_mode_management import TableDataDTO, TableModeType
 from antarest.study.business.thematic_trimming_field_infos import ThematicTrimmingFormFields
 from antarest.study.business.timeseries_config_management import TSFormFields
 from antarest.study.model import PatchArea, PatchCluster
@@ -847,7 +847,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     )
     def get_table_mode(
         uuid: str,
-        table_type: TableTemplateType,
+        table_type: TableModeType,
         columns: str = "",
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> TableDataDTO:
@@ -867,7 +867,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         summary="Get table schema",
     )
     def get_table_schema(
-        table_type: TableTemplateType,
+        table_type: TableModeType,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> JSON:
         logger.info("Getting table schema", extra={"user": current_user.id})
@@ -881,7 +881,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     )
     def set_table_mode(
         uuid: str,
-        table_type: TableTemplateType,
+        table_type: TableModeType,
         data: TableDataDTO,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> TableDataDTO:

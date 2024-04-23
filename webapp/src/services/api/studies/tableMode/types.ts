@@ -15,12 +15,12 @@ export type TableData = Record<
 
 export interface GetTableModeParams<T extends TableModeType> {
   studyId: StudyMetadata["id"];
-  type: T;
+  tableType: T;
   columns: TableModeColumnsForType<T>;
 }
 
 export interface SetTableModeParams {
   studyId: StudyMetadata["id"];
-  type: TableModeType;
+  tableType: TableModeType;
   data: DeepPartial<TableData>;
 }

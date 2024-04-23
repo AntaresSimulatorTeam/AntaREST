@@ -76,6 +76,7 @@ class LinkProperties(IniProperties):
     ...     "colorr": "80",
     ...     "colorg": "192",
     ...     "colorb": "255",
+    ...     "comments": "This is a link",
     ...     "display-comments": "true",
     ...     "filter-synthesis": "hourly, daily, weekly, monthly, annual",
     ...     "filter-year-by-year": "hourly, daily, weekly, monthly, annual",
@@ -86,6 +87,7 @@ class LinkProperties(IniProperties):
     >>> pprint(opt.dict(by_alias=True), width=80)
     {'asset-type': <AssetType.AC: 'ac'>,
      'colorRgb': '#50C0FF',
+     'comments': 'This is a link',
      'display-comments': True,
      'filter-synthesis': 'hourly, daily, weekly, monthly, annual',
      'filter-year-by-year': 'hourly, daily, weekly, monthly, annual',
@@ -101,6 +103,7 @@ class LinkProperties(IniProperties):
      'colorb': 255,
      'colorg': 192,
      'colorr': 80,
+     'comments': 'This is a link',
      'display-comments': True,
      'filter-synthesis': 'hourly, daily, weekly, monthly, annual',
      'filter-year-by-year': 'hourly, daily, weekly, monthly, annual',
@@ -121,6 +124,7 @@ class LinkProperties(IniProperties):
     asset_type: AssetType = Field(default=AssetType.AC, alias="asset-type")
     link_style: str = Field(default="plain", alias="link-style")
     link_width: int = Field(default=1, alias="link-width")
+    comments: str = Field(default="", alias="comments")  # unknown field?!
     display_comments: bool = Field(default=True, alias="display-comments")
     filter_synthesis: str = Field(default="", alias="filter-synthesis")
     filter_year_by_year: str = Field(default="", alias="filter-year-by-year")
