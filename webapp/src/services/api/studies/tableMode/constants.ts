@@ -1,20 +1,20 @@
-const AREA = "area";
-const LINK = "link";
-const CLUSTER = "cluster";
-const RENEWABLE = "renewable";
-const BINDING_CONSTRAINT = "binding constraint";
+const AREAS = "areas";
+const LINKS = "links";
+const THERMALS = "thermals";
+const RENEWABLES = "renewables";
+const ST_STORAGES = "st-storages";
+const BINDING_CONSTRAINTS = "binding-constraints";
 
 export const TABLE_MODE_TYPES = [
-  AREA,
-  LINK,
-  CLUSTER,
-  RENEWABLE,
-  BINDING_CONSTRAINT,
+  AREAS,
+  LINKS,
+  THERMALS,
+  RENEWABLES,
+  BINDING_CONSTRAINTS,
 ] as const;
 
 export const TABLE_MODE_COLUMNS_BY_TYPE = {
-  [AREA]: [
-    // Optimization - Nodal optimization
+  [AREAS]: [
     "nonDispatchablePower",
     "dispatchableHydroPower",
     "otherDispatchablePower",
@@ -22,13 +22,12 @@ export const TABLE_MODE_COLUMNS_BY_TYPE = {
     "spreadUnsuppliedEnergyCost",
     "averageSpilledEnergyCost",
     "spreadSpilledEnergyCost",
-    // Optimization - Filtering
     "filterSynthesis",
     "filterYearByYear",
-    // Adequacy patch
+    // Since v8.3
     "adequacyPatchMode",
   ],
-  [LINK]: [
+  [LINKS]: [
     "hurdlesCost",
     "loopFlow",
     "usePhaseShifter",
@@ -36,38 +35,79 @@ export const TABLE_MODE_COLUMNS_BY_TYPE = {
     "assetType",
     "linkStyle",
     "linkWidth",
+    "comments",
     "displayComments",
     "filterSynthesis",
     "filterYearByYear",
   ],
-  [CLUSTER]: [
+  [THERMALS]: [
     "group",
     "enabled",
-    "mustRun",
     "unitCount",
     "nominalCapacity",
+    "genTs",
     "minStablePower",
-    "spinning",
     "minUpTime",
     "minDownTime",
-    "co2",
-    "marginalCost",
-    "fixedCost",
-    "startupCost",
-    "marketBidCost",
-    "spreadCost",
-    "tsGen",
+    "mustRun",
+    "spinning",
     "volatilityForced",
     "volatilityPlanned",
     "lawForced",
     "lawPlanned",
+    "marginalCost",
+    "spreadCost",
+    "fixedCost",
+    "startupCost",
+    "marketBidCost",
+    "co2",
+    // Since v8.6
+    "nh3",
+    "so2",
+    "nox",
+    "pm25",
+    "pm5",
+    "pm10",
+    "nmvoc",
+    "op1",
+    "op2",
+    "op3",
+    "op4",
+    "op5",
+    // Since v8.7
+    "costGeneration",
+    "efficiency",
+    "variableOMCost",
   ],
-  [RENEWABLE]: [
+  [RENEWABLES]: [
+    // Since v8.1
     "group",
-    "tsInterpretation",
     "enabled",
+    "tsInterpretation",
     "unitCount",
     "nominalCapacity",
   ],
-  [BINDING_CONSTRAINT]: ["type", "operator", "enabled"],
+  [ST_STORAGES]: [
+    // Since v8.6
+    "group",
+    "injectionNominalCapacity",
+    "withdrawalNominalCapacity",
+    "reservoirCapacity",
+    "efficiency",
+    "initialLevel",
+    "initialLevelOptim",
+    // Since v8.8
+    "enabled",
+  ],
+  [BINDING_CONSTRAINTS]: [
+    "enabled",
+    "timeStep",
+    "operator",
+    "comments",
+    // Since v8.3
+    "filterSynthesis",
+    "filterYearByYear",
+    // Since v8.7
+    "group",
+  ],
 } as const;

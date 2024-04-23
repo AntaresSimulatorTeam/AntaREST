@@ -9,7 +9,7 @@ from starlette.responses import RedirectResponse
 
 from antarest.core.config import Config
 from antarest.core.jwt import JWTUser
-from antarest.core.model import StudyPermissionType
+from antarest.core.model import JSON, StudyPermissionType
 from antarest.core.requests import RequestParameters
 from antarest.core.utils.utils import sanitize_uuid
 from antarest.core.utils.web import APITag
@@ -18,7 +18,7 @@ from antarest.matrixstore.matrix_editor import MatrixEditInstruction
 from antarest.study.business.adequacy_patch_management import AdequacyPatchFormFields
 from antarest.study.business.advanced_parameters_management import AdvancedParamsFormFields
 from antarest.study.business.allocation_management import AllocationFormFields, AllocationMatrix
-from antarest.study.business.area_management import AreaCreationDTO, AreaInfoDTO, AreaType, AreaUI, LayerInfoDTO
+from antarest.study.business.area_management import AreaCreationDTO, AreaInfoDTO, AreaType, LayerInfoDTO, UpdateAreaUi
 from antarest.study.business.areas.hydro_management import InflowStructure, ManagementOptionsFormFields
 from antarest.study.business.areas.properties_management import PropertiesFormFields
 from antarest.study.business.areas.renewable_management import (
@@ -54,16 +54,16 @@ from antarest.study.business.general_management import GeneralFormFields
 from antarest.study.business.link_management import LinkInfoDTO
 from antarest.study.business.optimization_management import OptimizationFormFields
 from antarest.study.business.playlist_management import PlaylistColumns
-from antarest.study.business.table_mode_management import (
-    BindingConstraintOperator,
-    ColumnsModelTypes,
-    TableTemplateType,
-)
+from antarest.study.business.table_mode_management import TableDataDTO, TableModeType
 from antarest.study.business.thematic_trimming_field_infos import ThematicTrimmingFormFields
 from antarest.study.business.timeseries_config_management import TSFormFields
 from antarest.study.model import PatchArea, PatchCluster
 from antarest.study.service import StudyService
-from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
+from antarest.study.storage.rawstudy.model.filesystem.config.area import AreaUI
+from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
+    BindingConstraintFrequency,
+    BindingConstraintOperator,
+)
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 
 logger = logging.getLogger(__name__)
@@ -189,7 +189,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     def update_area_ui(
         uuid: str,
         area_id: str,
-        area_ui: AreaUI,
+        area_ui: UpdateAreaUi,
         layer: str = "0",
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> t.Any:
@@ -841,47 +841,95 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         study_service.ts_config_manager.set_field_values(study, field_values)
 
     @bp.get(
-        path="/studies/{uuid}/tablemode",
+        path="/table-schema/{table_type}",
+        tags=[APITag.study_data],
+        summary="Get table schema",
+    )
+    def get_table_schema(
+        table_type: TableModeType,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> JSON:
+        """
+        Get the properties of the table columns.
+
+        Args:
+        - `table_type`: The type of table to get the schema for.
+        """
+        logger.info("Getting table schema", extra={"user": current_user.id})
+        model_schema = study_service.table_mode_manager.get_table_schema(table_type)
+        return model_schema
+
+    @bp.get(
+        path="/studies/{uuid}/table-mode/{table_type}",
         tags=[APITag.study_data],
         summary="Get table data for table form",
-        # `Any` because `Union[AreaColumns, LinkColumns]` not working
-        response_model=t.Dict[str, t.Dict[str, t.Any]],
-        response_model_exclude_none=True,
     )
     def get_table_mode(
         uuid: str,
-        table_type: TableTemplateType,
-        columns: str,
+        table_type: TableModeType,
+        columns: str = Query("", description="A comma-separated list of columns to include in the table data"),
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> t.Dict[str, ColumnsModelTypes]:
+    ) -> TableDataDTO:
+        """
+        Get the table data for the given study and table type.
+
+        Args:
+        - uuid: The UUID of the study.
+        - table_type: The type of table to get the data for.
+        """
         logger.info(
-            f"Getting template table data for study {uuid}",
+            f"Getting table data for study {uuid}",
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
-
-        return study_service.table_mode_manager.get_table_data(study, table_type, columns.split(","))
+        column_list = columns.split(",") if columns else []
+        table_data = study_service.table_mode_manager.get_table_data(study, table_type, column_list)
+        return table_data
 
     @bp.put(
-        path="/studies/{uuid}/tablemode",
+        path="/studies/{uuid}/table-mode/{table_type}",
         tags=[APITag.study_data],
-        summary="Set table data with values from table form",
+        summary="Update table data with values from table form",
     )
-    def set_table_mode(
+    def update_table_mode(
         uuid: str,
-        table_type: TableTemplateType,
-        data: t.Dict[str, ColumnsModelTypes],
+        table_type: TableModeType,
+        data: TableDataDTO = Body(
+            ...,
+            example={
+                "de / nuclear_cl1": {
+                    "enabled": True,
+                    "group": "Nuclear",
+                    "unitCount": 17,
+                    "nominalCapacity": 123,
+                },
+                "de / gas_cl1": {
+                    "enabled": True,
+                    "group": "Gas",
+                    "unitCount": 15,
+                    "nominalCapacity": 456,
+                },
+            },
+        ),
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> None:
+    ) -> TableDataDTO:
+        """
+        Update the table data for the given study and table type.
+
+        Args:
+        - uuid: The UUID of the study.
+        - table_type: The type of table to update.
+        - data: The table data to update.
+        """
         logger.info(
             f"Updating table data for study {uuid}",
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
-
-        study_service.table_mode_manager.set_table_data(study, table_type, data)
+        table_data = study_service.table_mode_manager.update_table_data(study, table_type, data)
+        return table_data
 
     @bp.post(
         "/studies/_update_version",

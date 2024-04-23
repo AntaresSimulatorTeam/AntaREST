@@ -43,7 +43,7 @@ function CreateTemplateTableDialog(props: Props) {
       config={{
         defaultValues: {
           name: "",
-          type: "area",
+          type: "areas",
           columns: [],
         },
       }}

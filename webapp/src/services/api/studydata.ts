@@ -1,5 +1,4 @@
 import {
-  AllClustersAndLinks,
   LinkCreationInfoDTO,
   LinkInfoWithUI,
   UpdateAreaUi,
@@ -16,7 +15,7 @@ export const createArea = async (
   uuid: string,
   name: string,
 ): Promise<StudyMapNode> => {
-  const res = await client.post(`/v1/studies/${uuid}/areas?uuid=${uuid}`, {
+  const res = await client.post(`/v1/studies/${uuid}/areas`, {
     name,
     type: "AREA",
   });
@@ -27,10 +26,7 @@ export const createLink = async (
   uuid: string,
   linkCreationInfo: LinkCreationInfoDTO,
 ): Promise<string> => {
-  const res = await client.post(
-    `/v1/studies/${uuid}/links?uuid=${uuid}`,
-    linkCreationInfo,
-  );
+  const res = await client.post(`/v1/studies/${uuid}/links`, linkCreationInfo);
   return res.data;
 };
 
@@ -41,7 +37,7 @@ export const updateAreaUI = async (
   areaUi: UpdateAreaUi,
 ): Promise<string> => {
   const res = await client.put(
-    `/v1/studies/${uuid}/areas/${areaId}/ui?uuid=${uuid}&area_id=${areaId}&layer=${layerId}`,
+    `/v1/studies/${uuid}/areas/${areaId}/ui?layer=${layerId}`,
     areaUi,
   );
   return res.data;
@@ -51,9 +47,7 @@ export const deleteArea = async (
   uuid: string,
   areaId: string,
 ): Promise<string> => {
-  const res = await client.delete(
-    `/v1/studies/${uuid}/areas/${areaId}?uuid=${uuid}&area_id=${areaId}`,
-  );
+  const res = await client.delete(`/v1/studies/${uuid}/areas/${areaId}`);
   return res.data;
 };
 
@@ -63,7 +57,7 @@ export const deleteLink = async (
   areaIdTo: string,
 ): Promise<string> => {
   const res = await client.delete(
-    `/v1/studies/${uuid}/links/${areaIdFrom}/${areaIdTo}?uuid=${uuid}&area_from=${areaIdFrom}&area_to=${areaIdTo}`,
+    `/v1/studies/${uuid}/links/${areaIdFrom}/${areaIdTo}`,
   );
   return res.data;
 };
@@ -156,13 +150,6 @@ export const createBindingConstraint = async (
   return res.data;
 };
 
-export const getClustersAndLinks = async (
-  uuid: string,
-): Promise<AllClustersAndLinks> => {
-  const res = await client.get(`/v1/studies/${uuid}/linksandclusters`);
-  return res.data;
-};
-
 interface GetAllLinksParams {
   uuid: string;
   withUi?: boolean;
@@ -176,10 +163,7 @@ export const getAllLinks = async <T extends GetAllLinksParams>(
   params: T,
 ): Promise<Array<LinkTypeFromParams<T>>> => {
   const { uuid, withUi } = params;
-  const res = await client.get(
-    `/v1/studies/${uuid}/links${withUi ? `?with_ui=${withUi}` : ""}`,
-  );
+  const withUiStr = withUi ? "with_ui=true" : "";
+  const res = await client.get(`/v1/studies/${uuid}/links?${withUiStr}`);
   return res.data;
 };
-
-export default {};

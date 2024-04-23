@@ -11,7 +11,7 @@ from antarest.core.requests import RequestParameters
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.matrixstore.repository import MatrixContentRepository
 from antarest.matrixstore.service import SimpleMatrixService
-from antarest.study.business.area_management import AreaCreationDTO, AreaManager, AreaType, AreaUI
+from antarest.study.business.area_management import AreaCreationDTO, AreaManager, AreaType, UpdateAreaUi
 from antarest.study.business.link_management import LinkInfoDTO, LinkManager
 from antarest.study.model import Patch, PatchArea, PatchCluster, RawStudy, StudyAdditionalData
 from antarest.study.repository import StudyMetadataRepository
@@ -111,7 +111,7 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
     assert len(empty_study.config.areas.keys()) == 1
     assert json.loads((empty_study.config.study_path / "patch.json").read_text())["areas"]["test"]["country"] is None
 
-    area_manager.update_area_ui(study, "test", AreaUI(x=100, y=200, color_rgb=(255, 0, 100)))
+    area_manager.update_area_ui(study, "test", UpdateAreaUi(x=100, y=200, color_rgb=(255, 0, 100)))
     assert empty_study.tree.get(["input", "areas", "test", "ui", "ui"]) == {
         "x": 100,
         "y": 200,
@@ -157,7 +157,7 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
     assert (empty_study.config.study_path / "patch.json").exists()
     assert json.loads((empty_study.config.study_path / "patch.json").read_text())["areas"]["test"]["country"] == "FR"
 
-    area_manager.update_area_ui(study, "test", AreaUI(x=100, y=200, color_rgb=(255, 0, 100)))
+    area_manager.update_area_ui(study, "test", UpdateAreaUi(x=100, y=200, color_rgb=(255, 0, 100)))
     variant_study_service.append_commands.assert_called_with(
         variant_id,
         [
@@ -194,7 +194,7 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
                     },
                     {
                         "target": "input/areas/test/ui/layerColor/0",
-                        "data": "255 , 0 , 100",
+                        "data": "255,0,100",
                     },
                 ],
             ),

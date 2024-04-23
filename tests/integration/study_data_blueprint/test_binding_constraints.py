@@ -543,7 +543,7 @@ class TestBindingConstraints:
             },
             headers=user_headers,
         )
-        assert res.status_code == 422
+        assert res.status_code == 422, res.json()
         description = res.json()["description"]
         assert "cannot fill 'values'" in description
         assert "'less_term_matrix'" in description
@@ -560,11 +560,11 @@ class TestBindingConstraints:
                 "operator": "less",
                 "terms": [],
                 "comments": "Incoherent matrix with version",
-                "less_term_matrix": [[]],
+                "lessTermMatrix": [[]],
             },
             headers=user_headers,
         )
-        assert res.status_code == 422
+        assert res.status_code == 422, res.json()
         description = res.json()["description"]
         assert description == "You cannot fill a 'matrix_term' as these values refer to v8.7+ studies"
 
@@ -594,7 +594,7 @@ class TestBindingConstraints:
         # Delete a fake binding constraint
         res = client.delete(f"/v1/studies/{study_id}/bindingconstraints/fake_bc", headers=user_headers)
         assert res.status_code == 404, res.json()
-        assert res.json()["exception"] == "BindingConstraintNotFoundError"
+        assert res.json()["exception"] == "BindingConstraintNotFound"
         assert res.json()["description"] == "Binding constraint 'fake_bc' not found"
 
         # Add a group before v8.7

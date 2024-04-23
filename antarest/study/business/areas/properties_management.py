@@ -4,9 +4,9 @@ from typing import Any, Dict, Iterable, List, Optional, Set, cast
 
 from pydantic import root_validator
 
-from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.utils import FieldInfo, FormFieldsBaseModel, execute_or_add_commands
 from antarest.study.model import Study
+from antarest.study.storage.rawstudy.model.filesystem.config.area import AdequacyPatchMode
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import ChildNotFoundError
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
@@ -35,12 +35,6 @@ def encode_filter(value: str) -> Set[str]:
 
 def decode_filter(encoded_value: Set[str], current_filter: Optional[str] = None) -> str:
     return ", ".join(sort_filter_options(encoded_value))
-
-
-class AdequacyPatchMode(EnumIgnoreCase):
-    OUTSIDE = "outside"
-    INSIDE = "inside"
-    VIRTUAL = "virtual"
 
 
 class PropertiesFormFields(FormFieldsBaseModel):

@@ -1,3 +1,4 @@
+import collections
 import functools
 import json
 import operator
@@ -15,6 +16,7 @@ from antarest.core.exceptions import (
     STStorageMatrixNotFound,
     STStorageNotFound,
 )
+from antarest.core.model import JSON
 from antarest.study.business.all_optional_meta import AllOptionalMetaclass, camel_case_model
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import Study
@@ -78,7 +80,7 @@ class STStorageCreation(STStorageInput):
 
 
 @camel_case_model
-class STStorageOutput(STStorage880Config):
+class STStorageOutput(STStorage880Config, metaclass=AllOptionalMetaclass, use_none=True):
     """
     Model representing the form used to display the details of a short-term storage entry.
     """
@@ -216,6 +218,7 @@ STStorageTimeSeries = Literal[
 
 _STORAGE_LIST_PATH = "input/st-storage/clusters/{area_id}/list/{storage_id}"
 _STORAGE_SERIES_PATH = "input/st-storage/series/{area_id}/{storage_id}/{ts_name}"
+_ALL_STORAGE_PATH = "input/st-storage/clusters"
 
 
 def _get_values_by_ids(file_study: FileStudy, area_id: str) -> t.Mapping[str, t.Mapping[str, t.Any]]:
@@ -326,6 +329,77 @@ class STStorageManager:
         study_version = int(study.version)
         storages = [create_storage_output(study_version, storage_id, options) for storage_id, options in config.items()]
         return sorted(storages, key=order_by)
+
+    def get_all_storages_props(
+        self,
+        study: Study,
+    ) -> t.Mapping[str, t.Mapping[str, STStorageOutput]]:
+        """
+        Retrieve all short-term storages from all areas within a study.
+
+        Args:
+            study: Study from which to retrieve the storages.
+
+        Returns:
+            A mapping of area IDs to a mapping of storage IDs to storage configurations.
+
+        Raises:
+            STStorageConfigNotFound: If no storages are found in the specified area.
+        """
+
+        file_study = self._get_file_study(study)
+        path = _ALL_STORAGE_PATH
+        try:
+            # may raise KeyError if the path is missing
+            storages = file_study.tree.get(path.split("/"), depth=5)
+            # may raise KeyError if "list" is missing
+            storages = {area_id: cluster_list["list"] for area_id, cluster_list in storages.items()}
+        except KeyError:
+            raise STStorageConfigNotFound(path) from None
+
+        study_version = study.version
+        storages_by_areas: t.MutableMapping[str, t.MutableMapping[str, STStorageOutput]]
+        storages_by_areas = collections.defaultdict(dict)
+        for area_id, cluster_obj in storages.items():
+            for cluster_id, cluster in cluster_obj.items():
+                storages_by_areas[area_id][cluster_id] = create_storage_output(study_version, cluster_id, cluster)
+
+        return storages_by_areas
+
+    def update_storages_props(
+        self,
+        study: Study,
+        update_storages_by_areas: t.Mapping[str, t.Mapping[str, STStorageInput]],
+    ) -> t.Mapping[str, t.Mapping[str, STStorageOutput]]:
+        old_storages_by_areas = self.get_all_storages_props(study)
+        new_storages_by_areas = {area_id: dict(clusters) for area_id, clusters in old_storages_by_areas.items()}
+
+        # Prepare the commands to update the storage clusters.
+        commands = []
+        for area_id, update_storages_by_ids in update_storages_by_areas.items():
+            old_storages_by_ids = old_storages_by_areas[area_id]
+            for storage_id, update_cluster in update_storages_by_ids.items():
+                # Update the storage cluster properties.
+                old_cluster = old_storages_by_ids[storage_id]
+                new_cluster = old_cluster.copy(update=update_cluster.dict(by_alias=False, exclude_none=True))
+                new_storages_by_areas[area_id][storage_id] = new_cluster
+
+                # Convert the DTO to a configuration object and update the configuration file.
+                properties = create_st_storage_config(
+                    study.version, **new_cluster.dict(by_alias=False, exclude_none=True)
+                )
+                path = _STORAGE_LIST_PATH.format(area_id=area_id, storage_id=storage_id)
+                cmd = UpdateConfig(
+                    target=path,
+                    data=json.loads(properties.json(by_alias=True, exclude={"id"})),
+                    command_context=self.storage_service.variant_study_service.command_factory.command_context,
+                )
+                commands.append(cmd)
+
+        file_study = self.storage_service.get_storage(study).get_raw(study)
+        execute_or_add_commands(study, file_study, commands, self.storage_service)
+
+        return new_storages_by_areas
 
     def get_storage(
         self,
@@ -613,3 +687,7 @@ class STStorageManager:
 
         # Validation successful
         return True
+
+    @staticmethod
+    def get_table_schema() -> JSON:
+        return STStorageOutput.schema()

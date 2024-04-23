@@ -3,11 +3,15 @@ import typing as t
 from abc import ABCMeta
 
 import numpy as np
-from pydantic import BaseModel, Extra, Field, root_validator
+from pydantic import BaseModel, Extra, Field, root_validator, validator
 
 from antarest.matrixstore.model import MatrixData
 from antarest.study.business.all_optional_meta import AllOptionalMetaclass
-from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
+from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
+    BindingConstraintFrequency,
+    BindingConstraintOperator,
+)
+from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import validate_filtering
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
@@ -15,11 +19,7 @@ from antarest.study.storage.variantstudy.business.utils import validate_matrix
 from antarest.study.storage.variantstudy.business.utils_binding_constraint import (
     parse_bindings_coeffs_and_save_into_config,
 )
-from antarest.study.storage.variantstudy.model.command.common import (
-    BindingConstraintOperator,
-    CommandName,
-    CommandOutput,
-)
+from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -90,6 +90,10 @@ class BindingConstraintPropertiesBase(BaseModel, extra=Extra.forbid, allow_popul
 class BindingConstraintProperties830(BindingConstraintPropertiesBase):
     filter_year_by_year: str = Field("", alias="filter-year-by-year")
     filter_synthesis: str = Field("", alias="filter-synthesis")
+
+    @validator("filter_synthesis", "filter_year_by_year", pre=True)
+    def _validate_filtering(cls, v: t.Any) -> str:
+        return validate_filtering(v)
 
 
 class BindingConstraintProperties870(BindingConstraintProperties830):

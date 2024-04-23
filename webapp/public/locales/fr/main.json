@@ -391,6 +391,7 @@
   "study.configuration.economicOpt": "Options économiques",
   "study.configuration.geographicTrimmingAreas": "Filtre géographique (zones)",
   "study.configuration.geographicTrimmingLinks": "Filtre géographique (liens)",
+  "study.configuration.geographicTrimmingBindingConstraints": "Filtre géographique (contraintes couplantes)",
   "study.modelization.properties": "Propriétés",
   "study.modelization.properties.energyCost": "Coût de l'énergie",
   "study.modelization.properties.unsupplied": "Non distribuée",

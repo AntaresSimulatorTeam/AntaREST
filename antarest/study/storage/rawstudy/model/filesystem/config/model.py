@@ -1,21 +1,20 @@
 import re
 import typing as t
-from enum import Enum
 from pathlib import Path
 
-from pydantic import Field, root_validator
-from pydantic.main import BaseModel
+from pydantic import BaseModel, Field, root_validator
 
 from antarest.core.utils.utils import DTO
+from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 
-from .binding_constraint import BindingConstraintDTO
+from .binding_constraint import BindingConstraintFrequency
 from .field_validators import extract_filtering
 from .renewable import RenewableConfigType
 from .st_storage import STStorageConfigType
 from .thermal import ThermalConfigType
 
 
-class ENR_MODELLING(Enum):
+class EnrModelling(EnumIgnoreCase):
     AGGREGATED = "aggregated"
     CLUSTERS = "clusters"
 
@@ -101,6 +100,13 @@ class Simulation(BaseModel):
         return f"{self.date}{modes[self.mode]}{dash}{self.name}"
 
 
+class BindingConstraintDTO(BaseModel):
+    id: str
+    areas: t.Set[str]
+    clusters: t.Set[str]
+    time_step: BindingConstraintFrequency
+
+
 class FileStudyTreeConfig(DTO):
     """
     Root object to handle all study parameters which impact tree structure
@@ -119,7 +125,7 @@ class FileStudyTreeConfig(DTO):
         bindings: t.Optional[t.List[BindingConstraintDTO]] = None,
         store_new_set: bool = False,
         archive_input_series: t.Optional[t.List[str]] = None,
-        enr_modelling: str = ENR_MODELLING.AGGREGATED.value,
+        enr_modelling: str = EnrModelling.AGGREGATED.value,
         cache: t.Optional[t.Dict[str, t.List[str]]] = None,
         zip_path: t.Optional[Path] = None,
     ):
@@ -254,7 +260,7 @@ class FileStudyTreeConfigDTO(BaseModel):
     bindings: t.List[BindingConstraintDTO] = list()
     store_new_set: bool = False
     archive_input_series: t.List[str] = list()
-    enr_modelling: str = ENR_MODELLING.AGGREGATED.value
+    enr_modelling: str = EnrModelling.AGGREGATED.value
     zip_path: t.Optional[Path] = None
 
     @staticmethod
