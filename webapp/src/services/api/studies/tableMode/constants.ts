@@ -15,7 +15,6 @@ export const TABLE_MODE_TYPES = [
 
 export const TABLE_MODE_COLUMNS_BY_TYPE = {
   [AREAS]: [
-    // Optimization - Nodal optimization
     "nonDispatchablePower",
     "dispatchableHydroPower",
     "otherDispatchablePower",
@@ -23,10 +22,9 @@ export const TABLE_MODE_COLUMNS_BY_TYPE = {
     "spreadUnsuppliedEnergyCost",
     "averageSpilledEnergyCost",
     "spreadSpilledEnergyCost",
-    // Optimization - Filtering
     "filterSynthesis",
     "filterYearByYear",
-    // Adequacy patch
+    // Since v8.3
     "adequacyPatchMode",
   ],
   [LINKS]: [
@@ -37,14 +35,12 @@ export const TABLE_MODE_COLUMNS_BY_TYPE = {
     "assetType",
     "linkStyle",
     "linkWidth",
-    "comments", // unknown field?!
+    "comments",
     "displayComments",
-    // Optimization - Filtering
     "filterSynthesis",
     "filterYearByYear",
   ],
   [THERMALS]: [
-    // "name" is read-only
     "group",
     "enabled",
     "unitCount",
@@ -64,8 +60,8 @@ export const TABLE_MODE_COLUMNS_BY_TYPE = {
     "fixedCost",
     "startupCost",
     "marketBidCost",
-    // Pollutants - since v8.6 (except for "co2")
     "co2",
+    // Since v8.6
     "nh3",
     "so2",
     "nox",
@@ -84,6 +80,7 @@ export const TABLE_MODE_COLUMNS_BY_TYPE = {
     "variableOMCost",
   ],
   [RENEWABLES]: [
+    // Since v8.1
     "group",
     "enabled",
     "tsInterpretation",
@@ -91,23 +88,26 @@ export const TABLE_MODE_COLUMNS_BY_TYPE = {
     "nominalCapacity",
   ],
   [ST_STORAGES]: [
+    // Since v8.6
     "group",
-    // "enabled",  // since v8.8
     "injectionNominalCapacity",
     "withdrawalNominalCapacity",
     "reservoirCapacity",
     "efficiency",
     "initialLevel",
     "initialLevelOptim",
+    // Since v8.8
+    "enabled",
   ],
   [BINDING_CONSTRAINTS]: [
-    "group",
     "enabled",
     "timeStep",
     "operator",
     "comments",
-    // Optimization - Filtering
+    // Since v8.3
     "filterSynthesis",
     "filterYearByYear",
+    // Since v8.7
+    "group",
   ],
 } as const;
