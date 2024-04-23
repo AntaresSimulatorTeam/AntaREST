@@ -91,6 +91,10 @@ class BindingConstraintProperties830(BindingConstraintPropertiesBase):
     filter_year_by_year: str = Field("", alias="filter-year-by-year")
     filter_synthesis: str = Field("", alias="filter-synthesis")
 
+    @validator("filter_synthesis", "filter_year_by_year", pre=True)
+    def _validate_filtering(cls, v: t.Any) -> str:
+        return validate_filtering(v)
+
 
 class BindingConstraintProperties870(BindingConstraintProperties830):
     group: str = DEFAULT_GROUP
@@ -130,10 +134,6 @@ def create_binding_constraint_config(study_version: t.Union[str, int], **kwargs:
     cls = get_binding_constraint_config_cls(study_version)
     return cls.from_dict(**kwargs)
 
-    @validator("filter_synthesis", "filter_year_by_year", pre=True)
-    def _validate_filtering(cls, v: t.Any) -> str:
-        return validate_filtering(v)
-
 
 class OptionalProperties(BindingConstraintProperties870, metaclass=AllOptionalMetaclass, use_none=True):
     pass
@@ -142,25 +142,6 @@ class OptionalProperties(BindingConstraintProperties870, metaclass=AllOptionalMe
 # =================================================================================
 # Binding constraint matrices classes
 # =================================================================================
-
-
-BindingConstraintPropertiesType = t.Union[BindingConstraintProperties870, BindingConstraintProperties]
-
-
-def get_binding_constraint_config_cls(study_version: t.Union[str, int]) -> t.Type[BindingConstraintPropertiesType]:
-    """
-    Retrieves the short-term storage configuration class based on the study version.
-
-    Args:
-        study_version: The version of the study.
-
-    Returns:
-        The short-term storage configuration class.
-    """
-    version = int(study_version)
-    if version >= 870:
-        return BindingConstraintProperties870
-    return BindingConstraintProperties
 
 
 class BindingConstraintMatrices(BaseModel, extra=Extra.forbid, allow_population_by_field_name=True):

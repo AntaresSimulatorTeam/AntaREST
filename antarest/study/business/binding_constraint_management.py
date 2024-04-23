@@ -10,11 +10,9 @@ from requests.utils import CaseInsensitiveDict
 
 from antarest.core.exceptions import (
     BindingConstraintNotFound,
-    ConfigFileNotFound,
     ConstraintAlreadyExistError,
     ConstraintIdNotFoundError,
     DuplicateConstraintName,
-    IncoherenceBetweenMatricesLength,
     InvalidConstraintName,
     InvalidFieldForVersionError,
     MatrixWidthMismatchError,
@@ -323,7 +321,7 @@ ConstraintOutput = t.Union[ConstraintOutputBase, ConstraintOutput830, Constraint
 
 def _get_references_by_widths(
     file_study: FileStudy, bcs: t.Sequence[ConstraintOutput]
-) -> Mapping[int, Sequence[Tuple[str, str]]]:
+) -> t.Mapping[int, t.Sequence[t.Tuple[str, str]]]:
     """
     Iterates over each BC and its associated matrices.
     For each matrix, it checks its width according to the expected matrix shapes.
@@ -363,7 +361,7 @@ def _get_references_by_widths(
     return references_by_width
 
 
-def _validate_binding_constraints(file_study: FileStudy, bcs: Sequence[ConstraintOutput]) -> bool:
+def _validate_binding_constraints(file_study: FileStudy, bcs: t.Sequence[ConstraintOutput]) -> bool:
     """
     Validates the binding constraints within a group.
     """
@@ -371,7 +369,7 @@ def _validate_binding_constraints(file_study: FileStudy, bcs: Sequence[Constrain
 
     if len(references_by_widths) > 1:
         most_common = collections.Counter(references_by_widths.keys()).most_common()
-        invalid_constraints: Dict[str, str] = {}
+        invalid_constraints: t.Dict[str, str] = {}
 
         for width, _ in most_common[1:]:
             references = references_by_widths[width]

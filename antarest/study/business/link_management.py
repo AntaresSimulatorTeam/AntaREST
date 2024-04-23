@@ -4,7 +4,8 @@ from pydantic import BaseModel
 
 from antarest.core.exceptions import ConfigFileNotFound
 from antarest.core.model import JSON
-from antarest.study.business.utils import AllOptionalMetaclass, camel_case_model, execute_or_add_commands
+from antarest.study.business.all_optional_meta import AllOptionalMetaclass, camel_case_model
+from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import RawStudy
 from antarest.study.storage.rawstudy.model.filesystem.config.links import LinkProperties
 from antarest.study.storage.storage_service import StudyStorageService

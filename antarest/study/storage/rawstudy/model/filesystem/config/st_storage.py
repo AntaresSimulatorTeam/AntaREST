@@ -149,7 +149,7 @@ class STStorage880Config(STStorage880Properties, LowerCaseIdentifier):
 STStorageConfigType = t.Union[STStorageConfig, STStorage880Config]
 
 
-def get_st_storage_config_cls(study_version: t.Union[str, int]) -> t.Type[STStorageConfig]:
+def get_st_storage_config_cls(study_version: t.Union[str, int]) -> t.Type[STStorageConfigType]:
     """
     Retrieves the short-term storage configuration class based on the study version.
 

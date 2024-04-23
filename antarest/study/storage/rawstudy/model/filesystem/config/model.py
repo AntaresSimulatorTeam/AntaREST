@@ -2,11 +2,11 @@ import re
 import typing as t
 from pathlib import Path
 
-from pydantic import BaseModel
-from pydantic import Field, root_validator
+from pydantic import BaseModel, Field, root_validator
 
 from antarest.core.utils.utils import DTO
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
+
 from .binding_constraint import BindingConstraintFrequency
 from .field_validators import extract_filtering
 from .renewable import RenewableConfigType
