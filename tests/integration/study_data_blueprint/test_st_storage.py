@@ -8,14 +8,22 @@ import pytest
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskStatus
-from antarest.study.business.areas.st_storage_management import STStorageOutput
+from antarest.study.business.areas.st_storage_management import create_storage_output
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
-from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import STStorageConfig
+from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import create_st_storage_config
 from tests.integration.utils import wait_task_completion
 
-DEFAULT_CONFIG = json.loads(STStorageConfig(id="dummy", name="dummy").json(by_alias=True, exclude={"id", "name"}))
+_ST_STORAGE_860_CONFIG = create_st_storage_config(860, name="dummy")
+_ST_STORAGE_880_CONFIG = create_st_storage_config(880, name="dummy")
 
-DEFAULT_PROPERTIES = json.loads(STStorageOutput(name="dummy").json(by_alias=True, exclude={"id", "name"}))
+_ST_STORAGE_OUTPUT_860 = create_storage_output(860, cluster_id="dummy", config={"name": "dummy"})
+_ST_STORAGE_OUTPUT_880 = create_storage_output(880, cluster_id="dummy", config={"name": "dummy"})
+
+DEFAULT_CONFIG_860 = json.loads(_ST_STORAGE_860_CONFIG.json(by_alias=True, exclude={"id", "name"}))
+DEFAULT_CONFIG_880 = json.loads(_ST_STORAGE_880_CONFIG.json(by_alias=True, exclude={"id", "name"}))
+
+DEFAULT_OUTPUT_860 = json.loads(_ST_STORAGE_OUTPUT_860.json(by_alias=True, exclude={"id", "name"}))
+DEFAULT_OUTPUT_880 = json.loads(_ST_STORAGE_OUTPUT_880.json(by_alias=True, exclude={"id", "name"}))
 
 
 # noinspection SpellCheckingInspection
@@ -30,7 +38,13 @@ class TestSTStorage:
     """
 
     @pytest.mark.parametrize("study_type", ["raw", "variant"])
-    @pytest.mark.parametrize("study_version", [860, 880])
+    @pytest.mark.parametrize(
+        "study_version, default_output",
+        [
+            pytest.param(860, DEFAULT_OUTPUT_860, id="860"),
+            pytest.param(880, DEFAULT_OUTPUT_880, id="880"),
+        ],
+    )
     def test_lifecycle__nominal(
         self,
         client: TestClient,
@@ -38,6 +52,7 @@ class TestSTStorage:
         study_id: str,
         study_type: str,
         study_version: int,
+        default_output: t.Dict[str, t.Any],
     ) -> None:
         """
         The purpose of this integration test is to test the endpoints
@@ -68,7 +83,7 @@ class TestSTStorage:
         # =============================
         user_headers = {"Authorization": f"Bearer {user_access_token}"}
 
-        # Upgrade study to version 860
+        # Upgrade study to version 860 or above
         res = client.put(
             f"/v1/studies/{study_id}/upgrade",
             headers=user_headers,
@@ -118,17 +133,15 @@ class TestSTStorage:
             assert res.status_code == 422, res.json()
             assert res.json()["exception"] in {"ValidationError", "RequestValidationError"}, res.json()
 
-        # We can create a short-term storage with the following properties:
+        # We can create a short-term storage with the following properties.
+        # Unfilled properties will be set to their default values.
         siemens_properties = {
-            **DEFAULT_PROPERTIES,
             "name": siemens_battery,
             "group": "Battery",
             "injectionNominalCapacity": 1450,
             "withdrawalNominalCapacity": 1350,
             "reservoirCapacity": 1500,
         }
-        if study_version < 880:
-            del siemens_properties["enabled"]  # only exists since v8.8
         res = client.post(
             f"/v1/studies/{study_id}/areas/{area_id}/storages",
             headers=user_headers,
@@ -137,8 +150,8 @@ class TestSTStorage:
         assert res.status_code == 200, res.json()
         siemens_battery_id = res.json()["id"]
         assert siemens_battery_id == transform_name_to_id(siemens_battery)
-        siemens_config = {**siemens_properties, "id": siemens_battery_id, "enabled": True}
-        assert res.json() == siemens_config
+        siemens_output = {**default_output, **siemens_properties, "id": siemens_battery_id}
+        assert res.json() == siemens_output
 
         # reading the properties of a short-term storage
         res = client.get(
@@ -146,7 +159,7 @@ class TestSTStorage:
             headers=user_headers,
         )
         assert res.status_code == 200, res.json()
-        assert res.json() == siemens_config
+        assert res.json() == siemens_output
 
         # =============================
         #  SHORT-TERM STORAGE MATRICES
@@ -195,7 +208,7 @@ class TestSTStorage:
             headers=user_headers,
         )
         assert res.status_code == 200, res.json()
-        assert res.json() == [siemens_config]
+        assert res.json() == [siemens_output]
 
         # updating properties
         res = client.patch(
@@ -207,19 +220,19 @@ class TestSTStorage:
             },
         )
         assert res.status_code == 200, res.json()
-        siemens_config = {
-            **siemens_config,
+        siemens_output = {
+            **siemens_output,
             "name": "New Siemens Battery",
             "reservoirCapacity": 2500,
         }
-        assert res.json() == siemens_config
+        assert res.json() == siemens_output
 
         res = client.get(
             f"/v1/studies/{study_id}/areas/{area_id}/storages/{siemens_battery_id}",
             headers=user_headers,
         )
         assert res.status_code == 200, res.json()
-        assert res.json() == siemens_config
+        assert res.json() == siemens_output
 
         # ===========================
         #  SHORT-TERM STORAGE UPDATE
@@ -234,13 +247,13 @@ class TestSTStorage:
                 "reservoirCapacity": 0,
             },
         )
-        siemens_config = {
-            **siemens_config,
+        siemens_output = {
+            **siemens_output,
             "initialLevel": 0.59,
             "reservoirCapacity": 0,
         }
         assert res.status_code == 200, res.json()
-        assert res.json() == siemens_config
+        assert res.json() == siemens_output
 
         # An attempt to update the `efficiency` property with an invalid value
         # should raise a validation error.
@@ -260,7 +273,7 @@ class TestSTStorage:
             headers=user_headers,
         )
         assert res.status_code == 200, res.json()
-        assert res.json() == siemens_config
+        assert res.json() == siemens_output
 
         # =============================
         #  SHORT-TERM STORAGE DUPLICATION
@@ -274,11 +287,11 @@ class TestSTStorage:
         )
         assert res.status_code in {200, 201}, res.json()
         # asserts the config is the same
-        duplicated_config = dict(siemens_config)
-        duplicated_config["name"] = new_name  # type: ignore
+        duplicated_output = dict(siemens_output)
+        duplicated_output["name"] = new_name
         duplicated_id = transform_name_to_id(new_name)
-        duplicated_config["id"] = duplicated_id  # type: ignore
-        assert res.json() == duplicated_config
+        duplicated_output["id"] = duplicated_id
+        assert res.json() == duplicated_output
 
         # asserts the matrix has also been duplicated
         res = client.get(
@@ -358,16 +371,16 @@ class TestSTStorage:
             headers=user_headers,
         )
         assert res.status_code == 200, res.json()
-        siemens_config = {**DEFAULT_PROPERTIES, **siemens_properties, "id": siemens_battery_id}
-        grand_maison_config = {**DEFAULT_PROPERTIES, **grand_maison_properties, "id": grand_maison_id}
-        assert res.json() == [duplicated_config, siemens_config, grand_maison_config]
+        siemens_output = {**default_output, **siemens_properties, "id": siemens_battery_id}
+        grand_maison_output = {**default_output, **grand_maison_properties, "id": grand_maison_id}
+        assert res.json() == [duplicated_output, siemens_output, grand_maison_output]
 
         # We can delete the three short-term storages at once.
         res = client.request(
             "DELETE",
             f"/v1/studies/{study_id}/areas/{area_id}/storages",
             headers=user_headers,
-            json=[grand_maison_id, duplicated_config["id"]],
+            json=[grand_maison_id, duplicated_output["id"]],
         )
         assert res.status_code == 204, res.json()
         assert res.text in {"", "null"}  # Old FastAPI versions return 'null'.
@@ -539,7 +552,22 @@ class TestSTStorage:
             assert res.json()["enabled"] is False
 
     @pytest.mark.parametrize("study_type", ["raw", "variant"])
-    def test__default_values(self, client: TestClient, user_access_token: str, study_type: str) -> None:
+    @pytest.mark.parametrize(
+        "study_version, default_config, default_output",
+        [
+            pytest.param(860, DEFAULT_CONFIG_860, DEFAULT_OUTPUT_860, id="860"),
+            pytest.param(880, DEFAULT_CONFIG_880, DEFAULT_OUTPUT_880, id="880"),
+        ],
+    )
+    def test__default_values(
+        self,
+        client: TestClient,
+        user_access_token: str,
+        study_type: str,
+        study_version: int,
+        default_config: t.Dict[str, t.Any],
+        default_output: t.Dict[str, t.Any],
+    ) -> None:
         """
         The purpose of this integration test is to test the default values of
         the properties of a short-term storage.
@@ -553,7 +581,7 @@ class TestSTStorage:
         res = client.post(
             "/v1/studies",
             headers=user_headers,
-            params={"name": "MyStudy", "version": 860},
+            params={"name": "MyStudy", "version": study_version},
         )
         assert res.status_code in {200, 201}, res.json()
         study_id = res.json()
@@ -586,8 +614,8 @@ class TestSTStorage:
         )
         assert res.status_code == 200, res.json()
         tesla_battery_id = res.json()["id"]
-        tesla_config = {**DEFAULT_PROPERTIES, "id": tesla_battery_id, "name": tesla_battery, "group": "Battery"}
-        assert res.json() == tesla_config
+        tesla_output = {**default_output, "id": tesla_battery_id, "name": tesla_battery, "group": "Battery"}
+        assert res.json() == tesla_output
 
         # Use the Debug mode to make sure that the initialLevel and initialLevelOptim properties
         # are properly set in the configuration file.
@@ -598,7 +626,7 @@ class TestSTStorage:
         )
         assert res.status_code == 200, res.json()
         actual = res.json()
-        expected = {**DEFAULT_CONFIG, "name": tesla_battery, "group": "Battery"}
+        expected = {**default_config, "name": tesla_battery, "group": "Battery"}
         assert actual == expected
 
         # We want to make sure that the default properties are applied to a study variant.
@@ -637,7 +665,7 @@ class TestSTStorage:
             "action": "create_st_storage",
             "args": {
                 "area_id": "fr",
-                "parameters": {**DEFAULT_CONFIG, "name": siemens_battery, "group": "Battery"},
+                "parameters": {**default_config, "name": siemens_battery, "group": "Battery"},
                 "pmax_injection": ANY,
                 "pmax_withdrawal": ANY,
                 "lower_rule_curve": ANY,
@@ -721,7 +749,7 @@ class TestSTStorage:
         assert res.status_code == 200, res.json()
         actual = res.json()
         expected = {
-            **DEFAULT_CONFIG,
+            **default_config,
             "name": siemens_battery,
             "group": "Battery",
             "injectionnominalcapacity": 1600,
