@@ -31,6 +31,10 @@ function Configuration() {
         { id: 5, name: t("study.configuration.economicOpt") },
         { id: 6, name: t("study.configuration.geographicTrimmingAreas") },
         { id: 7, name: t("study.configuration.geographicTrimmingLinks") },
+        {
+          id: 8,
+          name: t("study.configuration.geographicTrimmingBindingConstraints"),
+        },
       ].filter(Boolean),
     [study.version, t],
   );
@@ -92,6 +96,16 @@ function Configuration() {
                 <TableMode
                   studyId={study.id}
                   type="links"
+                  columns={["filterYearByYear", "filterSynthesis"]}
+                />
+              ),
+            ],
+            [
+              R.equals(8),
+              () => (
+                <TableMode
+                  studyId={study.id}
+                  type="binding-constraints"
                   columns={["filterYearByYear", "filterSynthesis"]}
                 />
               ),
