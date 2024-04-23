@@ -8,6 +8,8 @@ import zipfile
 from enum import Enum
 from pathlib import Path
 
+from py7zr import SevenZipFile
+
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.ini_reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
@@ -46,6 +48,64 @@ class FileType(Enum):
     MULTI_INI = "multi_ini"
 
 
+def extract_lines_from_archive(root: Path, posix_path: str) -> t.List[str]:
+    """
+    Extract text lines from various types of files.
+
+    Args:
+        root: 7zip or ZIP file containing the study.
+        posix_path: Relative path to the file to extract.
+
+    Returns:
+        list of lines
+    """
+    if root.suffix.lower() == ".zip":
+        with zipfile.ZipFile(root) as zf:
+            try:
+                with zf.open(posix_path) as f:
+                    text = f.read().decode("utf-8")
+                    return text.splitlines(keepends=False)
+            except KeyError:
+                # File not found in the ZIP archive
+                return []
+    elif root.suffix.lower() == ".7z":
+        raise NotImplementedError("7z archive not supported yet")
+    else:
+        raise ValueError(f"Unsupported file type: {root}")
+
+
+def extract_data_from_archive(
+    root: Path,
+    posix_path: str,
+    reader: IniReader,
+) -> t.Dict[str, t.Any]:
+    """
+    Extract and process data from various types of files.
+
+     Args:
+          root: 7zip or ZIP file containing the study.
+          posix_path: Relative path to the file to extract.
+          reader: IniReader object to use for processing the file.
+
+    Returns:
+        The content of the file, processed according to its type:
+        - SIMPLE_INI or MULTI_INI: dictionary of keys/values
+    """
+    if root.suffix.lower() == ".zip":
+        with zipfile.ZipFile(root) as zf:
+            try:
+                with zf.open(posix_path) as f:
+                    buffer = io.StringIO(f.read().decode("utf-8"))
+                    return reader.read(buffer)
+            except KeyError:
+                # File not found in the ZIP archive
+                return {}
+    elif root.suffix.lower() == ".7z":
+        raise NotImplementedError("7z archive not supported yet")
+    else:
+        raise ValueError(f"Unsupported file type: {root}")
+
+
 def build(study_path: Path, study_id: str, output_path: t.Optional[Path] = None) -> "FileStudyTreeConfig":
     """
     Extracts data from the filesystem to build a study config.
@@ -59,10 +119,10 @@ def build(study_path: Path, study_id: str, output_path: t.Optional[Path] = None)
     Returns:
         An instance of `FileStudyTreeConfig` filled with the study data.
     """
-    is_zip_file = study_path.suffix.lower() == ".zip"
+    is_archive = study_path.suffix.lower() in {".zip", ".7z"}
 
     # Study directory to use if the study is compressed
-    study_dir = study_path.with_suffix("") if is_zip_file else study_path
+    study_dir = study_path.with_suffix("") if is_archive else study_path
     (sns, asi, enr_modelling) = _parse_parameters(study_path)
 
     outputs_dir: Path = output_path or study_path / "output"
@@ -79,50 +139,8 @@ def build(study_path: Path, study_id: str, output_path: t.Optional[Path] = None)
         store_new_set=sns,
         archive_input_series=asi,
         enr_modelling=enr_modelling,
-        zip_path=study_path if is_zip_file else None,
+        zip_path=study_path if is_archive else None,
     )
-
-
-def _extract_text_from_zip(root: Path, posix_path: str) -> t.Sequence[str]:
-    """
-    Extracts text from a file inside a ZIP archive and returns it as a list of lines.
-
-    Args:
-        root: The path to the ZIP archive.
-        posix_path: The relative path to the file inside the ZIP archive.
-
-    Returns:
-        A list of lines in the file. If the file is not found, an empty list is returned.
-    """
-    with zipfile.ZipFile(root) as zf:
-        try:
-            with zf.open(posix_path) as f:
-                text = f.read().decode("utf-8")
-                return text.splitlines(keepends=False)
-        except KeyError:
-            return []
-
-
-def _extract_ini_from_zip(root: Path, posix_path: str, multi_ini_keys: t.Sequence[str] = ()) -> t.Mapping[str, t.Any]:
-    """
-    Extracts data from an INI file inside a ZIP archive and returns it as a dictionary.
-
-    Args:
-        root: The path to the ZIP archive.
-        posix_path: The relative path to the file inside the ZIP archive.
-        multi_ini_keys: List of keys to use for multi INI files.
-
-    Returns:
-        A dictionary of keys/values in the INI file. If the file is not found, an empty dictionary is returned.
-    """
-    reader = IniReader(multi_ini_keys)
-    with zipfile.ZipFile(root) as zf:
-        try:
-            with zf.open(posix_path) as f:
-                buffer = io.StringIO(f.read().decode("utf-8"))
-                return reader.read(buffer)
-        except KeyError:
-            return {}
 
 
 def _extract_data_from_file(
@@ -146,13 +164,13 @@ def _extract_data_from_file(
         - SIMPLE_INI or MULTI_INI: dictionary of keys/values
     """
 
-    is_zip_file: bool = root.suffix.lower() == ".zip"
+    is_archive: bool = root.suffix.lower() in {".zip", ".7z"}
     posix_path: str = inside_root_path.as_posix()
 
     if file_type == FileType.TXT:
         # Parse the file as a list of lines, return an empty list if missing.
-        if is_zip_file:
-            return _extract_text_from_zip(root, posix_path)
+        if is_archive:
+            return extract_lines_from_archive(root, posix_path)
         else:
             output_data_path = root / inside_root_path
             try:
@@ -162,12 +180,12 @@ def _extract_data_from_file(
 
     elif file_type in {FileType.MULTI_INI, FileType.SIMPLE_INI}:
         # Parse the file as a dictionary of keys/values, return an empty dictionary if missing.
-        if is_zip_file:
-            return _extract_ini_from_zip(root, posix_path, multi_ini_keys=multi_ini_keys)
+        reader = IniReader(multi_ini_keys)
+        if is_archive:
+            return extract_data_from_archive(root, posix_path, reader)
         else:
             output_data_path = root / inside_root_path
             try:
-                reader = IniReader(multi_ini_keys)
                 return reader.read(output_data_path)
             except FileNotFoundError:
                 return {}

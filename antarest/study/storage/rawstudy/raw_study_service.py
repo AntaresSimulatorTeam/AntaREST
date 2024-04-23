@@ -6,14 +6,13 @@ from datetime import datetime
 from pathlib import Path
 from threading import Thread
 from uuid import uuid4
-from zipfile import ZipFile
 
 from antarest.core.config import Config
 from antarest.core.exceptions import StudyDeletionNotAllowed
 from antarest.core.interfaces.cache import ICache
 from antarest.core.model import PublicMode
 from antarest.core.requests import RequestParameters
-from antarest.core.utils.utils import extract_zip
+from antarest.core.utils.utils import extract_archive
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, Patch, RawStudy, Study, StudyAdditionalData
 from antarest.study.storage.abstract_storage_service import AbstractStorageService
 from antarest.study.storage.patch_service import PatchService
@@ -61,14 +60,17 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         )
         self.cleanup_thread.start()
 
-    def update_from_raw_meta(self, metadata: RawStudy, fallback_on_default: t.Optional[bool] = False) -> None:
+    def update_from_raw_meta(
+        self, metadata: RawStudy, fallback_on_default: t.Optional[bool] = False, study_path: t.Optional[Path] = None
+    ) -> None:
         """
         Update metadata from study raw metadata
         Args:
             metadata: study
             fallback_on_default: use default values in case of failure
+            study_path: optional study path
         """
-        path = self.get_study_path(metadata)
+        path = study_path if study_path is not None else self.get_study_path(metadata)
         study = self.study_factory.create_from_fs(path, study_id="")
         try:
             raw_meta = study.tree.get(["study", "antares"])
@@ -307,19 +309,22 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         Raises:
             BadArchiveContent: If the archive is corrupted or in an unknown format.
         """
-        path_study = Path(metadata.path)
-        path_study.mkdir()
+        study_path = Path(metadata.path)
+        study_path.mkdir()
 
         try:
-            extract_zip(stream, path_study)
-            fix_study_root(path_study)
-            self.update_from_raw_meta(metadata)
+            extract_archive(stream, study_path)
+            fix_study_root(study_path)
+            self.update_from_raw_meta(
+                metadata,
+                study_path=study_path,
+            )
 
         except Exception:
-            shutil.rmtree(path_study)
+            shutil.rmtree(study_path)
             raise
 
-        metadata.path = str(path_study)
+        metadata.path = str(study_path)
         return metadata
 
     def export_study_flat(

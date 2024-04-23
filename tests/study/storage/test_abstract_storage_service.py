@@ -1,8 +1,9 @@
 import datetime
-import zipfile
 from pathlib import Path
 from typing import List, Optional, Sequence
 from unittest.mock import Mock, call
+
+from py7zr import SevenZipFile
 
 from antarest.core.config import Config, StorageConfig
 from antarest.core.interfaces.cache import ICache
@@ -137,15 +138,15 @@ class TestAbstractStorageService:
 
         ## Check the `export_study` function
         service.export_study_flat = Mock(return_value=None)
-        target_path = tmp_path / "export.zip"
+        target_path = tmp_path / "export.7z"
         actual = service.export_study(metadata, target_path, outputs=True)
         assert actual == target_path
 
         ## Check the call to export_study_flat
         assert service.export_study_flat.mock_calls == [call(metadata, TmpCopy(tmp_path), True)]
 
-        ## Check that the ZIP file exist and is valid
-        with zipfile.ZipFile(target_path) as zf:
-            # Actually, there is nothing is the ZIP file,
+        ## Check that the 7zip file exist and is valid
+        with SevenZipFile(target_path) as szf:
+            # Actually, there is nothing is the .7z file,
             # because the Study files doesn't really exist.
-            assert not zf.namelist()
+            assert not szf.getnames()

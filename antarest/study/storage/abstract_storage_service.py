@@ -11,7 +11,7 @@ from antarest.core.config import Config
 from antarest.core.exceptions import BadOutputError, StudyOutputNotFoundError
 from antarest.core.interfaces.cache import CacheConstants, ICache
 from antarest.core.model import JSON, PublicMode
-from antarest.core.utils.utils import StopWatch, extract_zip, seven_zip_dir, unzip, zip_dir
+from antarest.core.utils.utils import StopWatch, extract_archive, seven_zip_dir, unzip, zip_dir
 from antarest.login.model import GroupDTO
 from antarest.study.common.studystorage import IStudyStorageService, T
 from antarest.study.model import (
@@ -242,7 +242,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
                     path_output = Path(str(path_output) + ".zip")
                     shutil.copyfile(output, path_output)
             else:
-                extract_zip(output, path_output)
+                extract_archive(output, path_output)
 
             stopwatch.log_elapsed(lambda elapsed_time: logger.info(f"Copied output for {study_id} in {elapsed_time}s"))
             fix_study_root(path_output)

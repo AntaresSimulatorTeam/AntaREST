@@ -52,7 +52,7 @@ class BadArchiveContent(Exception):
         super().__init__(message)
 
 
-def extract_zip(stream: t.BinaryIO, target_dir: Path) -> None:
+def extract_archive(stream: t.BinaryIO, target_dir: Path) -> None:
     """
     Extract a ZIP archive to a given destination.
 
@@ -182,11 +182,12 @@ def zip_dir(dir_path: Path, zip_path: Path, remove_source_dir: bool = False) -> 
 
 
 def seven_zip_dir(dir_path: Path, seven_zip_path: Path, remove_source_dir: bool = False) -> None:
+    len_dir_path = len(str(dir_path))
     with SevenZipFile(seven_zip_path, "w") as szf:
         for root, _, files in os.walk(dir_path):
             for file in files:
                 file_path = os.path.join(root, file)
-                szf.write(file_path, arcname=os.path.relpath(file_path, dir_path))
+                szf.write(file_path, arcname=file_path[len_dir_path:])
     if remove_source_dir:
         shutil.rmtree(dir_path)
 
