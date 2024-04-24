@@ -10,6 +10,7 @@ export const TABLE_MODE_TYPES = [
   LINKS,
   THERMALS,
   RENEWABLES,
+  ST_STORAGES,
   BINDING_CONSTRAINTS,
 ] as const;
 
