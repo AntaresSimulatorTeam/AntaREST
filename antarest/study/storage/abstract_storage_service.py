@@ -7,11 +7,13 @@ from abc import ABC
 from pathlib import Path
 from uuid import uuid4
 
+import py7zr
+
 from antarest.core.config import Config
 from antarest.core.exceptions import BadOutputError, StudyOutputNotFoundError
 from antarest.core.interfaces.cache import CacheConstants, ICache
 from antarest.core.model import JSON, PublicMode
-from antarest.core.utils.utils import StopWatch, extract_archive, seven_zip_dir, unzip, zip_dir
+from antarest.core.utils.utils import StopWatch, extract_archive, unzip, zip_dir
 from antarest.login.model import GroupDTO
 from antarest.study.common.studystorage import IStudyStorageService, T
 from antarest.study.model import (
@@ -283,7 +285,8 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
             tmp_study_path = Path(tmpdir) / "tmp_copy"
             self.export_study_flat(metadata, tmp_study_path, outputs)
             stopwatch = StopWatch()
-            seven_zip_dir(tmp_study_path, target)
+            with py7zr.SevenZipFile(target, "w") as szf:
+                szf.writeall(tmp_study_path, arcname=".")
             stopwatch.log_elapsed(lambda x: logger.info(f"Study {path_study} exported (7zip mode) in {x}s"))
         return target
 
