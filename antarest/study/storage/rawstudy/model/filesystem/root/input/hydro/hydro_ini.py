@@ -4,8 +4,20 @@ from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFi
 
 
 class InputHydroIni(IniFileNode):
+    # noinspection SpellCheckingInspection
     def __init__(self, context: ContextServer, config: FileStudyTreeConfig):
-        # TODO: missing "use heuristic", "follow load" and "reservoir capacity"
+        # The "use heuristic", "follow load" and "reservoir capacity" parameters are missing here,
+        # but are well taken into account in the `HydroManager` class and can be modified
+        # by the user in the graphical interface.
+        #
+        # They are very used in the representation of hydro.
+        # - "use heuristic" allows to define a reservoir management mode which consists
+        #   in turbinating a certain fixed quantity each week.
+        # - "reservoir capacity" is the capacity of the reservoir in MWh.
+        # - "follow load" is a parameter whose activation (with others) helps to define
+        #   the amount of water that can be turbinated for each reservoir each week.
+        #   This amount depends on the consumption of the node on which the reservoir is located, hence the name.
+
         sections = [
             "inter-daily-breakdown",
             "intra-daily-modulation",
