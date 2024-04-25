@@ -101,7 +101,18 @@ class Simulation(BaseModel):
 
 
 class BindingConstraintDTO(BaseModel):
+    """
+    Object linked to `input/bindingconstraints/bindingconstraints.ini` information
+
+    Attributes:
+        id: The ID of the binding constraint.
+        group: The group for the scenario of BC (optional, required since v8.7).
+        areas: List of area IDs on which the BC applies (links or clusters).
+        clusters: List of thermal cluster IDs on which the BC applies (format: "area.cluster").
+    """
+
     id: str
+    group: t.Optional[str] = None
     areas: t.Set[str]
     clusters: t.Set[str]
     time_step: BindingConstraintFrequency
@@ -211,7 +222,7 @@ class FileStudyTreeConfig(DTO):
         return self.cache.get(f"%st-storage%{area}", [s.id for s in self.areas[area].st_storages])
 
     def get_links(self, area: str) -> t.List[str]:
-        return self.cache.get(f"%links%{area}", list(self.areas[area].links.keys()))
+        return self.cache.get(f"%links%{area}", list(self.areas[area].links))
 
     def get_filters_synthesis(self, area: str, link: t.Optional[str] = None) -> t.List[str]:
         if link:
@@ -226,6 +237,12 @@ class FileStudyTreeConfig(DTO):
         if area in self.sets and self.sets[area].output:
             return self.sets[area].filters_year
         return self.areas[area].filters_year
+
+    def get_binding_constraint_groups(self) -> t.Sequence[str]:
+        """
+        Returns a list of binding constraint groups without duplicates.
+        """
+        return sorted({bc.group.lower() for bc in self.bindings if bc.group})
 
 
 # Invalid chars was taken from Antares Simulator (C++).
