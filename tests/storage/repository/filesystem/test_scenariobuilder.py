@@ -5,66 +5,68 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, 
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import ThermalConfig
 from antarest.study.storage.rawstudy.model.filesystem.root.settings.scenariobuilder import ScenarioBuilder
 
-content = """
-[Default Ruleset]
-l,de,0 = 1
-l,es,0 = 1
-l,fr,0 = 1
-l,it,0 = 1
-s,de,0 = 1
-s,es,0 = 1
-s,fr,0 = 1
-s,it,0 = 1
-h,de,0 = 1
-h,es,0 = 1
-h,fr,0 = 1
-h,it,0 = 1
-w,de,0 = 1
-w,es,0 = 1
-w,fr,0 = 1
-w,it,0 = 1
-t,de,0,01_solar = 1
-t,de,0,02_wind_on = 1
-t,de,0,03_wind_off = 1
-t,de,0,04_res = 1
-t,de,0,05_nuclear = 1
-t,de,0,06_coal = 1
-t,de,0,07_gas = 1
-t,de,0,08_non-res = 1
-t,de,0,09_hydro_pump = 1
-t,es,0,01_solar = 1
-t,es,0,02_wind_on = 1
-t,es,0,03_wind_off = 1
-t,es,0,04_res = 1
-t,es,0,05_nuclear = 1
-t,es,0,06_coal = 1
-t,es,0,07_gas = 1
-t,es,0,08_non-res = 1
-t,es,0,09_hydro_pump = 1
-t,fr,0,01_solar = 1
-t,fr,0,02_wind_on = 1
-t,fr,0,03_wind_off = 1
-t,fr,0,04_res = 1
-t,fr,0,05_nuclear = 1
-t,fr,0,06_coal = 1
-t,fr,0,07_gas = 1
-t,fr,0,08_non-res = 1
-t,fr,0,09_hydro_pump = 1
-t,it,0,01_solar = 1
-t,it,0,02_wind_on = 1
-t,it,0,03_wind_off = 1
-t,it,0,04_res = 1
-t,it,0,05_nuclear = 1
-t,it,0,06_coal = 1
-t,it,0,07_gas = 1
-t,it,0,08_non-res = 1
-t,it,0,09_hydro_pump = 1
-"""
+RULES = {
+    "h,de,0": 1,
+    "h,es,0": 1,
+    "h,fr,0": 1,
+    "h,it,0": 1,
+    "l,de,0": 1,
+    "l,es,0": 1,
+    "l,fr,0": 1,
+    "l,it,0": 1,
+    "s,de,0": 1,
+    "s,es,0": 1,
+    "s,fr,0": 1,
+    "s,it,0": 1,
+    "t,de,0,01_solar": 1,
+    "t,de,0,02_wind_on": 1,
+    "t,de,0,03_wind_off": 1,
+    "t,de,0,04_res": 1,
+    "t,de,0,05_nuclear": 1,
+    "t,de,0,06_coal": 1,
+    "t,de,0,07_gas": 1,
+    "t,de,0,08_non-res": 1,
+    "t,de,0,09_hydro_pump": 1,
+    "t,es,0,01_solar": 1,
+    "t,es,0,02_wind_on": 1,
+    "t,es,0,03_wind_off": 1,
+    "t,es,0,04_res": 1,
+    "t,es,0,05_nuclear": 1,
+    "t,es,0,06_coal": 1,
+    "t,es,0,07_gas": 1,
+    "t,es,0,08_non-res": 1,
+    "t,es,0,09_hydro_pump": 1,
+    "t,fr,0,01_solar": 1,
+    "t,fr,0,02_wind_on": 1,
+    "t,fr,0,03_wind_off": 1,
+    "t,fr,0,04_res": 1,
+    "t,fr,0,05_nuclear": 1,
+    "t,fr,0,06_coal": 1,
+    "t,fr,0,07_gas": 1,
+    "t,fr,0,08_non-res": 1,
+    "t,fr,0,09_hydro_pump": 1,
+    "t,it,0,01_solar": 1,
+    "t,it,0,02_wind_on": 1,
+    "t,it,0,03_wind_off": 1,
+    "t,it,0,04_res": 1,
+    "t,it,0,05_nuclear": 1,
+    "t,it,0,06_coal": 1,
+    "t,it,0,07_gas": 1,
+    "t,it,0,08_non-res": 1,
+    "t,it,0,09_hydro_pump": 1,
+    "w,de,0": 1,
+    "w,es,0": 1,
+    "w,fr,0": 1,
+    "w,it,0": 1,
+}
 
 
 def test_get(tmp_path: Path):
     path = tmp_path / "file.ini"
-    path.write_text(content)
+    with open(path, mode="w") as f:
+        print("[Default Ruleset]", file=f)
+        for key, value in RULES.items():
+            print(f"{key} = {value}", file=f)
 
     thermals = [
         ThermalConfig(id="01_solar", name="01_solar", enabled=True),
@@ -95,11 +97,12 @@ def test_get(tmp_path: Path):
         config=FileStudyTreeConfig(
             study_path=path,
             path=path,
-            version=-1,
+            version=870,
             areas=areas,
             outputs=dict(),
             study_id="id",
         ),
     )
 
-    assert node.get(["Default Ruleset", "t,it,0,09_hydro_pump"]) == 1
+    actual = node.get(["Default Ruleset"])
+    assert actual == RULES
