@@ -324,7 +324,7 @@ class AbstractBindingConstraintCommand(OptionalProperties, BindingConstraintMatr
                 binding_constraints[new_key][link_or_cluster] = "%".join(
                     [str(coeff_val) for coeff_val in self.coeffs[link_or_cluster]]
                 )
-        parse_bindings_coeffs_and_save_into_config(bd_id, study_data.config, self.coeffs or {})
+        parse_bindings_coeffs_and_save_into_config(bd_id, self.group, study_data.config, self.coeffs or {})
         study_data.tree.save(
             binding_constraints,
             ["input", "bindingconstraints", "bindingconstraints"],
@@ -360,7 +360,7 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
 
     def _apply_config(self, study_data_config: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
         bd_id = transform_name_to_id(self.name)
-        parse_bindings_coeffs_and_save_into_config(bd_id, study_data_config, self.coeffs or {})
+        parse_bindings_coeffs_and_save_into_config(bd_id, self.group, study_data_config, self.coeffs or {})
         return CommandOutput(status=True), {}
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
