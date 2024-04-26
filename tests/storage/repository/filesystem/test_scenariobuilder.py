@@ -61,7 +61,7 @@ RULES = {
 }
 
 
-def test_get(tmp_path: Path):
+def test_get(tmp_path: Path) -> None:
     path = tmp_path / "file.ini"
     with open(path, mode="w") as f:
         print("[Default Ruleset]", file=f)
@@ -104,5 +104,11 @@ def test_get(tmp_path: Path):
         ),
     )
 
+    actual = node.get()
+    assert actual == {"Default Ruleset": RULES}
+
     actual = node.get(["Default Ruleset"])
     assert actual == RULES
+
+    actual = node.get(["Default Ruleset", "w,de,0"])
+    assert actual == 1
