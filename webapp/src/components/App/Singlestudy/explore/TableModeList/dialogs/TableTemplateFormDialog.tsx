@@ -75,7 +75,7 @@ function TableTemplateFormDialog(props: TableTemplateFormDialogProps) {
           />
           <ListFE
             label={t("study.columns")}
-            options={getTableColumnsForType(getValues("type"))}
+            options={[...getTableColumnsForType(getValues("type"))]}
             getOptionLabel={startCase}
             name="columns"
             control={control}
