@@ -232,6 +232,86 @@ class TestIniReader:
         }
         assert actual == expected
 
+    def test_read__filtered_section(self, tmp_path) -> None:
+        path = Path(tmp_path) / "test.ini"
+        path.write_text(
+            textwrap.dedent(
+                """
+                [part1]
+                foo = 5
+                bar = hello
+
+                [part2]
+                foo = 6
+                bar = salut
+
+                [other]
+                pi = 3.14
+                """
+            )
+        )
+
+        reader = IniReader()
+
+        # exact match
+        actual = reader.read(path, section="part1")
+        expected = {"part1": {"foo": 5, "bar": "hello"}}
+        assert actual == expected
+
+        # regex match
+        actual = reader.read(path, section_regex="part.*")
+        expected = {
+            "part1": {"foo": 5, "bar": "hello"},
+            "part2": {"foo": 6, "bar": "salut"},
+        }
+        assert actual == expected
+
+    def test_read__filtered_option(self, tmp_path) -> None:
+        path = Path(tmp_path) / "test.ini"
+        path.write_text(
+            textwrap.dedent(
+                """
+                [part1]
+                foo = 5
+                bar = hello
+
+                [part2]
+                foo = 6
+                bar = salut
+
+                [other]
+                pi = 3.14
+                """
+            )
+        )
+
+        reader = IniReader()
+
+        # exact match
+        actual = reader.read(path, option="foo")
+        expected = {"part1": {"foo": 5}, "part2": {"foo": 6}, "other": {}}
+        assert actual == expected
+
+        # regex match
+        actual = reader.read(path, option_regex="fo.*")
+        expected = {"part1": {"foo": 5}, "part2": {"foo": 6}, "other": {}}
+        assert actual == expected
+
+        # exact match with section
+        actual = reader.read(path, section="part2", option="foo")
+        expected = {"part2": {"foo": 6}}
+        assert actual == expected
+
+        # regex match with section
+        actual = reader.read(path, section_regex="part.*", option="foo")
+        expected = {"part1": {"foo": 5}, "part2": {"foo": 6}}
+        assert actual == expected
+
+        # regex match with section and option
+        actual = reader.read(path, section_regex="part.*", option_regex=".*a.*")
+        expected = {"part1": {"bar": "hello"}, "part2": {"bar": "salut"}}
+        assert actual == expected
+
 
 class TestSimpleKeyValueReader:
     def test_read(self) -> None:
