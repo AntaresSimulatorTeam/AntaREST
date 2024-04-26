@@ -89,15 +89,17 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
 
         if depth == 0:
             return {}
+
         url = url or []
+        kwargs = self._get_filtering_kwargs(url)
 
         if self.config.zip_path:
             with zipfile.ZipFile(self.config.zip_path, mode="r") as zipped_folder:
                 inside_zip_path = self.config.path.relative_to(self.config.zip_path.with_suffix("")).as_posix()
                 with io.TextIOWrapper(zipped_folder.open(inside_zip_path)) as f:
-                    data = self.reader.read(f)
+                    data = self.reader.read(f, **kwargs)
         else:
-            data = self.reader.read(self.path)
+            data = self.reader.read(self.path, **kwargs)
 
         if len(url) == 2:
             data = data[url[0]][url[1]]
@@ -105,7 +107,30 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
             data = data[url[0]]
         else:
             data = {k: {} for k in data} if depth == 1 else data
+
         return cast(SUB_JSON, data)
+
+    @staticmethod
+    def _get_filtering_kwargs(url: List[str]) -> Dict[str, str]:
+        """
+        Extracts the filtering arguments from the URL components.
+
+        Note: this method can be overridden in subclasses to provide additional filtering arguments.
+
+        Args:
+            url: URL components [section_name, key_name].
+
+        Returns:
+            Keyword arguments used by the INI reader to filter the data.
+        """
+        if len(url) > 2:
+            raise ValueError(f"Invalid URL: {url!r}")
+        elif len(url) == 2:
+            return {"section": url[0], "option": url[1]}
+        elif len(url) == 1:
+            return {"section": url[0]}
+        else:
+            return {}
 
     def get(
         self,
