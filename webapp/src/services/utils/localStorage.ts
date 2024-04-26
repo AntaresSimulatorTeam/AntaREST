@@ -4,6 +4,7 @@ import { UserInfo } from "../../common/types";
 import { TableTemplate } from "../../components/App/Singlestudy/explore/TableModeList/utils";
 import { StudiesSortConf, StudiesState } from "../../redux/ducks/studies";
 import { UIState } from "../../redux/ducks/ui";
+import { TABLE_MODE_TYPES_ALIASES } from "../api/studies/tableMode/constants";
 
 export enum StorageKey {
   Version = "version",
@@ -46,7 +47,18 @@ function getItem<T extends StorageKey>(key: T): TypeFromKey[T] | null {
     if (serializedState === null) {
       return null;
     }
-    return JSON.parse(serializedState);
+    const res = JSON.parse(serializedState);
+
+    // Convert deprecated types to new ones (breaking change from v2.16.8)
+    if (key === StorageKey.StudiesModelTableModeTemplates) {
+      return res.map((template: Record<string, unknown>) => ({
+        ...template,
+        // @ts-expect-error To ignore error TS2551
+        type: TABLE_MODE_TYPES_ALIASES[template.type] ?? template.type,
+      }));
+    }
+
+    return res;
   } catch (err) {
     return null;
   }
