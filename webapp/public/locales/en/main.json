@@ -731,5 +731,11 @@
   "results.error.jobs": "Failed to retrieve study launch jobs",
   "results.error.outputs": "Failed to retrieve study output list",
   "results.noOutputs": "No outputs",
-  "results.question.deleteOutput": "Are you sure you want to delete the output {{outputname}}?"
+  "results.question.deleteOutput": "Are you sure you want to delete the output {{outputname}}?",
+  "tableMode.type.areas": "Areas",
+  "tableMode.type.links": "Links",
+  "tableMode.type.thermals": "Thermals",
+  "tableMode.type.renewables": "Renewables",
+  "tableMode.type.st-storages": "Short-Term Storages",
+  "tableMode.type.binding-constraints": "Binding Constraints"
 }

@@ -30,6 +30,15 @@ function TableTemplateFormDialog(props: TableTemplateFormDialogProps) {
     [templates],
   );
 
+  const typeOptions = useMemo(
+    () =>
+      TABLE_MODE_TYPES.map((type) => ({
+        value: type,
+        label: t(`tableMode.type.${type}`),
+      })),
+    [t],
+  );
+
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
@@ -67,7 +76,7 @@ function TableTemplateFormDialog(props: TableTemplateFormDialogProps) {
           />
           <SelectFE
             label={t("study.type")}
-            options={TABLE_MODE_TYPES}
+            options={typeOptions}
             variant="outlined"
             onChange={() => resetField("columns")}
             name="type"
