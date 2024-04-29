@@ -115,6 +115,7 @@ function GroupForm(props: UseFormReturnPlus) {
             validateString(v, {
               existingValues: existingGroups,
               excludedValues: RESERVED_GROUP_NAMES,
+              editedValue: defaultValues?.name, // prevent false duplicates on update form
             }),
         })}
       />
