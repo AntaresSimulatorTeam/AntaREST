@@ -34,6 +34,8 @@ export interface Storage {
   efficiency: number;
   initialLevel: number;
   initialLevelOptim: boolean;
+  // Since v8.8
+  enabled: boolean;
 }
 
 ////////////////////////////////////////////////////////////////
