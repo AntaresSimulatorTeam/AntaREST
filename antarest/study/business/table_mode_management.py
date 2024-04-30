@@ -83,7 +83,11 @@ class TableModeManager:
     def _get_table_data_unsafe(self, study: RawStudy, table_type: TableModeType) -> TableDataDTO:
         if table_type == TableModeType.AREA:
             areas_map = self._area_manager.get_all_area_props(study)
-            data = {area_id: area.dict(by_alias=True) for area_id, area in areas_map.items()}
+            study_version = int(study.version)
+            data = {
+                area_id: area.dict(by_alias=True, exclude={"adequacy_patch_mode"} if study_version < 830 else {})
+                for area_id, area in areas_map.items()
+            }
         elif table_type == TableModeType.LINK:
             links_map = self._link_manager.get_all_links_props(study)
             data = {
@@ -177,8 +181,11 @@ class TableModeManager:
             # Use AreaOutput to update properties of areas
             area_props_by_ids = {key: AreaOutput(**values) for key, values in data.items()}
             areas_map = self._area_manager.update_areas_props(study, area_props_by_ids)
-            data = {area_id: area.dict(by_alias=True) for area_id, area in areas_map.items()}
-            return data
+            study_version = int(study.version)
+            data = {
+                area_id: area.dict(by_alias=True, exclude={"adequacy_patch_mode"} if study_version < 830 else {})
+                for area_id, area in areas_map.items()
+            }
         elif table_type == TableModeType.LINK:
             links_map = {tuple(key.split(" / ")): LinkOutput(**values) for key, values in data.items()}
             updated_map = self._link_manager.update_links_props(study, links_map)  # type: ignore
@@ -186,7 +193,6 @@ class TableModeManager:
                 f"{area1_id} / {area2_id}": link.dict(by_alias=True)
                 for (area1_id, area2_id), link in updated_map.items()
             }
-            return data
         elif table_type == TableModeType.THERMAL:
             thermals_by_areas: t.MutableMapping[str, t.MutableMapping[str, ThermalClusterInput]]
             thermals_by_areas = collections.defaultdict(dict)
@@ -199,7 +205,6 @@ class TableModeManager:
                 for area_id, thermals_by_ids in thermals_map.items()
                 for cluster_id, cluster in thermals_by_ids.items()
             }
-            return data
         elif table_type == TableModeType.RENEWABLE:
             renewables_by_areas: t.MutableMapping[str, t.MutableMapping[str, RenewableClusterInput]]
             renewables_by_areas = collections.defaultdict(dict)
@@ -212,7 +217,6 @@ class TableModeManager:
                 for area_id, renewables_by_ids in renewables_map.items()
                 for cluster_id, cluster in renewables_by_ids.items()
             }
-            return data
         elif table_type == TableModeType.ST_STORAGE:
             storages_by_areas: t.MutableMapping[str, t.MutableMapping[str, STStorageInput]]
             storages_by_areas = collections.defaultdict(dict)
@@ -225,13 +229,13 @@ class TableModeManager:
                 for area_id, storages_by_ids in storages_map.items()
                 for cluster_id, cluster in storages_by_ids.items()
             }
-            return data
         elif table_type == TableModeType.BINDING_CONSTRAINT:
             bcs_by_ids = {key: ConstraintInput(**values) for key, values in data.items()}
             bcs_map = self._binding_constraint_manager.update_binding_constraints(study, bcs_by_ids)
-            return {bc_id: bc.dict(by_alias=True, exclude={"id", "name", "terms"}) for bc_id, bc in bcs_map.items()}
+            data = {bc_id: bc.dict(by_alias=True, exclude={"id", "name", "terms"}) for bc_id, bc in bcs_map.items()}
         else:  # pragma: no cover
             raise NotImplementedError(f"Table type {table_type} not implemented")
+        return data
 
     def get_table_schema(self, table_type: TableModeType) -> JSON:
         """
