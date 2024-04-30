@@ -285,8 +285,6 @@ class TestBindingConstraints:
         # CONSTRAINT TERM MANAGEMENT
         # =============================
 
-        # todo: add tests on /terms: creation and update
-
         # Add binding constraint link term
         res = client.post(
             f"/v1/studies/{study_id}/bindingconstraints/{bc_id}/term",
