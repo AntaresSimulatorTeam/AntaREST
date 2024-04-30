@@ -52,7 +52,7 @@ function TableTemplateFormDialog(props: TableTemplateFormDialogProps) {
       onSubmit={onSubmit}
       onCancel={onCancel}
     >
-      {({ control, resetField, getValues }) => (
+      {({ control, setValue, getValues }) => (
         <Box
           sx={{
             display: "flex",
@@ -78,7 +78,7 @@ function TableTemplateFormDialog(props: TableTemplateFormDialogProps) {
             label={t("study.type")}
             options={typeOptions}
             variant="outlined"
-            onChange={() => resetField("columns")}
+            onChange={() => setValue("columns", [])}
             name="type"
             control={control}
           />
