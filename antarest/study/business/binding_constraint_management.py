@@ -805,46 +805,82 @@ class BindingConstraintManager:
         command = RemoveBindingConstraint(id=bc.id, command_context=command_context)
         execute_or_add_commands(study, file_study, [command], self.storage_service)
 
+    def update_constraint_terms(
+        self, study: Study, binding_constraint_id: str, constaint_terms: t.Sequence[ConstraintTerm]
+    ) -> None:
+        constraint = self.get_binding_constraint(study, binding_constraint_id)
+        existing_terms = constraint.terms  # existing constraint terms
+        if not existing_terms:
+            raise NoConstraintError(study.id)
+
+        for term in constaint_terms:
+            term_id = term.id if isinstance(term, ConstraintTerm) else term
+            if term_id is None:
+                raise ConstraintIdNotFoundError(study.id)
+
+            term_id_index = find_constraint_term_id(existing_terms, term_id)
+            if term_id_index < 0:
+                raise ConstraintIdNotFoundError(study.id)
+
+            if isinstance(term, ConstraintTerm):
+                updated_term_id = term.data.generate_id() if term.data else term_id
+                current_constraint = existing_terms[term_id_index]
+
+                existing_terms[term_id_index] = ConstraintTerm(
+                    id=updated_term_id,
+                    weight=term.weight or current_constraint.weight,
+                    offset=term.offset,
+                    data=term.data or current_constraint.data,
+                )
+            else:
+                del existing_terms[term_id_index]
+
+        coeffs = {term.id: [term.weight, term.offset] if term.offset else [term.weight] for term in existing_terms}
+        command = UpdateBindingConstraint(
+            id=constraint.id,
+            coeffs=coeffs,
+            command_context=self.storage_service.variant_study_service.command_factory.command_context,
+        )
+        file_study = self.storage_service.get_storage(study).get_raw(study)
+        execute_or_add_commands(study, file_study, [command], self.storage_service)
+
     def update_constraint_term(
         self,
         study: Study,
         binding_constraint_id: str,
         term: ConstraintTerm,
     ) -> None:
-        file_study = self.storage_service.get_storage(study).get_raw(study)
+        self.update_constraint_terms(study, binding_constraint_id, [term])
+
+    def create_constraint_terms(
+        self, study: Study, binding_constraint_id: str, constraints_term: t.Sequence[ConstraintTerm]
+    ) -> None:
         constraint = self.get_binding_constraint(study, binding_constraint_id)
-        constraint_terms = constraint.terms  # existing constraint terms
-        if not constraint_terms:
-            raise NoConstraintError(study.id)
+        existing_terms = constraint.terms or []
+        new_terms = constraint.terms or []
 
-        term_id = term.id if isinstance(term, ConstraintTerm) else term
-        if term_id is None:
-            raise ConstraintIdNotFoundError(study.id)
-
-        term_id_index = find_constraint_term_id(constraint_terms, term_id)
-        if term_id_index < 0:
-            raise ConstraintIdNotFoundError(study.id)
-
-        if isinstance(term, ConstraintTerm):
-            updated_term_id = term.data.generate_id() if term.data else term_id
-            current_constraint = constraint_terms[term_id_index]
-
-            constraint_terms[term_id_index] = ConstraintTerm(
-                id=updated_term_id,
-                weight=term.weight or current_constraint.weight,
-                offset=term.offset,
-                data=term.data or current_constraint.data,
+        for constraint_term in constraints_term:
+            if constraint_term.data is None:
+                raise MissingDataError("Add new constraint term : data is missing")
+            constraint_id = constraint_term.data.generate_id()
+            if find_constraint_term_id(existing_terms, constraint_id) >= 0:
+                raise ConstraintAlreadyExistError(study.id)
+            new_terms.append(
+                ConstraintTerm(
+                    id=constraint_id,
+                    weight=constraint_term.weight if constraint_term.weight is not None else 0.0,
+                    offset=constraint_term.offset,
+                    data=constraint_term.data,
+                )
             )
-        else:
-            del constraint_terms[term_id_index]
 
-        coeffs = {term.id: [term.weight, term.offset] if term.offset else [term.weight] for term in constraint_terms}
-
+        coeffs = {term.id: [term.weight] + [term.offset] if term.offset else [term.weight] for term in new_terms}
         command = UpdateBindingConstraint(
             id=constraint.id,
             coeffs=coeffs,
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
         )
+        file_study = self.storage_service.get_storage(study).get_raw(study)
         execute_or_add_commands(study, file_study, [command], self.storage_service)
 
     def create_constraint_term(
@@ -853,33 +889,7 @@ class BindingConstraintManager:
         binding_constraint_id: str,
         constraint_term: ConstraintTerm,
     ) -> None:
-        file_study = self.storage_service.get_storage(study).get_raw(study)
-        constraint = self.get_binding_constraint(study, binding_constraint_id)
-
-        if constraint_term.data is None:
-            raise MissingDataError("Add new constraint term : data is missing")
-
-        constraint_id = constraint_term.data.generate_id()
-        constraint_terms = constraint.terms or []
-        if find_constraint_term_id(constraint_terms, constraint_id) >= 0:
-            raise ConstraintAlreadyExistError(study.id)
-
-        constraint_terms.append(
-            ConstraintTerm(
-                id=constraint_id,
-                weight=constraint_term.weight if constraint_term.weight is not None else 0.0,
-                offset=constraint_term.offset,
-                data=constraint_term.data,
-            )
-        )
-
-        coeffs = {term.id: [term.weight] + [term.offset] if term.offset else [term.weight] for term in constraint_terms}
-        command = UpdateBindingConstraint(
-            id=constraint.id,
-            coeffs=coeffs,
-            command_context=self.storage_service.variant_study_service.command_factory.command_context,
-        )
-        execute_or_add_commands(study, file_study, [command], self.storage_service)
+        self.create_constraint_terms(study, binding_constraint_id, [constraint_term])
 
     # FIXME create a dedicated delete service
     def remove_constraint_term(
