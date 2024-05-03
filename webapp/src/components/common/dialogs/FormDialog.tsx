@@ -83,8 +83,10 @@ function FormDialog<
   ////////////////////////////////////////////////////////////////
 
   const handleClose: FormDialogProps["onClose"] = (...args) => {
-    onCancel();
-    onClose?.(...args);
+    if (!isSubmitting) {
+      onCancel();
+      onClose?.(...args);
+    }
   };
 
   ////////////////////////////////////////////////////////////////
