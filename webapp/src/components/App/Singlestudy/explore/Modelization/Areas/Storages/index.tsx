@@ -29,6 +29,7 @@ function Storages() {
   const navigate = useNavigate();
   const location = useLocation();
   const areaId = useAppSelector(getCurrentAreaId);
+  const studyVersion = parseInt(study.version, 10);
 
   const { data: storages = [], isLoading } = usePromiseWithSnackbarError(
     () => getStorages(study.id, areaId),
@@ -46,6 +47,11 @@ function Storages() {
       totals;
 
     return [
+      studyVersion >= 880 &&
+        columnHelper.accessor("enabled", {
+          header: t("global.enabled"),
+          Cell: BooleanCell,
+        }),
       columnHelper.accessor("injectionNominalCapacity", {
         header: t("study.modelization.storages.injectionNominalCapacity"),
         Header: ({ column }) => (
@@ -130,8 +136,8 @@ function Storages() {
         filterVariant: "checkbox",
         Cell: BooleanCell,
       }),
-    ];
-  }, [t, totals]);
+    ].filter(Boolean);
+  }, [studyVersion, t, totals]);
 
   ////////////////////////////////////////////////////////////////
   // Event handlers
