@@ -24,7 +24,7 @@ interface PropTypes {
   matrixTime: boolean;
   readOnly: boolean;
   onUpdate?: (change: MatrixEditDTO[], source: string) => void;
-  columnsNames?: string[];
+  columnsNames?: string[] | readonly string[];
   rowNames?: string[];
   computStats?: MatrixStats;
   isPercentDisplayEnabled?: boolean;
