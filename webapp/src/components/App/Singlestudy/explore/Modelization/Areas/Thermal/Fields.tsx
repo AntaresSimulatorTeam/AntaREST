@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router";
 import { StudyMetadata } from "../../../../../../../common/types";
+import Box from "@mui/material/Box";
 import NumberFE from "../../../../../../common/fieldEditors/NumberFE";
 import SelectFE from "../../../../../../common/fieldEditors/SelectFE";
 import StringFE from "../../../../../../common/fieldEditors/StringFE";
@@ -8,6 +9,7 @@ import SwitchFE from "../../../../../../common/fieldEditors/SwitchFE";
 import Fieldset from "../../../../../../common/Fieldset";
 import { useFormContextPlus } from "../../../../../../common/Form";
 import {
+  COST_GENERATION_OPTIONS,
   THERMAL_GROUPS,
   THERMAL_POLLUTANTS,
   ThermalCluster,
@@ -17,16 +19,18 @@ import {
 
 function Fields() {
   const [t] = useTranslation();
-  const { control } = useFormContextPlus<ThermalCluster>();
+  const { control, watch } = useFormContextPlus<ThermalCluster>();
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const studyVersion = Number(study.version);
+  const isTSCosts = watch("costGeneration") === "useCostTimeseries";
 
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
 
   return (
-    <>
+    // TODO: remove the margin reset after updating MUI Theme.
+    <Box sx={{ "& .MuiFormControl-root": { margin: 0 } }}>
       <Fieldset legend={t("global.general")}>
         <StringFE
           label={t("global.name")}
@@ -36,6 +40,7 @@ function Fields() {
         />
         <SelectFE
           label={t("global.group")}
+          variant="outlined"
           name="group"
           control={control}
           options={THERMAL_GROUPS}
@@ -140,6 +145,28 @@ function Fields() {
         />
       </Fieldset>
       <Fieldset legend={t("study.modelization.clusters.operatingCosts")}>
+        <SelectFE
+          variant="outlined"
+          label={t("study.modelization.clusters.costGeneration")}
+          name="costGeneration"
+          options={COST_GENERATION_OPTIONS}
+          control={control}
+          sx={{
+            alignSelf: "center",
+          }}
+        />
+        <NumberFE
+          label={t("study.modelization.clusters.efficiency")}
+          name="efficiency"
+          control={control}
+          rules={{
+            min: {
+              value: 0,
+              message: t("form.field.minValue", { 0: 0 }),
+            },
+          }}
+          disabled={!isTSCosts}
+        />
         <NumberFE
           label={t("study.modelization.clusters.marginalCost")}
           name="marginalCost"
@@ -151,17 +178,7 @@ function Fields() {
             },
           }}
         />
-        <NumberFE
-          label={t("study.modelization.clusters.fixedCost")}
-          name="fixedCost"
-          control={control}
-          rules={{
-            min: {
-              value: 0,
-              message: t("form.field.minValue", { 0: 0 }),
-            },
-          }}
-        />
+
         <NumberFE
           label={t("study.modelization.clusters.startupCost")}
           name="startupCost"
@@ -183,6 +200,29 @@ function Fields() {
               message: t("form.field.minValue", { 0: 0 }),
             },
           }}
+        />
+        <NumberFE
+          label={t("study.modelization.clusters.fixedCost")}
+          name="fixedCost"
+          control={control}
+          rules={{
+            min: {
+              value: 0,
+              message: t("form.field.minValue", { 0: 0 }),
+            },
+          }}
+        />
+        <NumberFE
+          label={t("study.modelization.clusters.variableOMCost")}
+          name="variableOMCost"
+          control={control}
+          rules={{
+            min: {
+              value: 0,
+              message: t("form.field.minValue", { 0: 0 }),
+            },
+          }}
+          disabled={!isTSCosts}
         />
         <NumberFE
           label={t("study.modelization.clusters.spreadCost")}
@@ -211,6 +251,7 @@ function Fields() {
       </Fieldset>
       <Fieldset legend={t("study.modelization.clusters.timeSeriesGen")}>
         <SelectFE
+          variant="outlined"
           label={t("study.modelization.clusters.genTs")}
           name="genTs"
           control={control}
@@ -252,6 +293,7 @@ function Fields() {
           inputProps={{ step: 0.1 }}
         />
         <SelectFE
+          variant="outlined"
           label={t("study.modelization.clusters.lawForced")}
           name="lawForced"
           control={control}
@@ -261,6 +303,7 @@ function Fields() {
           }}
         />
         <SelectFE
+          variant="outlined"
           label={t("study.modelization.clusters.lawPlanned")}
           name="lawPlanned"
           control={control}
@@ -270,7 +313,7 @@ function Fields() {
           }}
         />
       </Fieldset>
-    </>
+    </Box>
   );
 }
 

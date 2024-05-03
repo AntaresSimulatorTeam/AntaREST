@@ -49,6 +49,11 @@ export const TS_GENERATION_OPTIONS = [
 
 export const TS_LAW_OPTIONS = ["geometric", "uniform"] as const;
 
+export const COST_GENERATION_OPTIONS = [
+  "SetManually",
+  "useCostTimeseries",
+] as const;
+
 ////////////////////////////////////////////////////////////////
 // Types
 ////////////////////////////////////////////////////////////////
@@ -57,7 +62,7 @@ export type ThermalGroup = (typeof THERMAL_GROUPS)[number];
 
 type LocalTSGenerationBehavior = (typeof TS_GENERATION_OPTIONS)[number];
 type TimeSeriesLawOption = (typeof TS_LAW_OPTIONS)[number];
-
+type CostGeneration = (typeof COST_GENERATION_OPTIONS)[number];
 type ThermalPollutants = {
   [K in (typeof THERMAL_POLLUTANTS)[number]]: number;
 };
@@ -84,6 +89,9 @@ export interface ThermalCluster extends ThermalPollutants {
   volatilityPlanned: number;
   lawForced: TimeSeriesLawOption;
   lawPlanned: TimeSeriesLawOption;
+  costGeneration: CostGeneration;
+  efficiency: number;
+  variableOMCost: number;
 }
 
 export type ThermalClusterWithCapacity = ClusterWithCapacity<ThermalCluster>;
