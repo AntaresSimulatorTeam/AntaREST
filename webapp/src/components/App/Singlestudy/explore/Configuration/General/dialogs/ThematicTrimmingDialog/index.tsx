@@ -1,4 +1,12 @@
-import { Box, Button, Divider, Unstable_Grid2 as Grid } from "@mui/material";
+import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
+  Button,
+  Divider,
+  Unstable_Grid2 as Grid,
+} from "@mui/material";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import * as R from "ramda";
 import * as RA from "ramda-adjunct";
 import { useState } from "react";
@@ -11,12 +19,18 @@ import {
 import SearchFE from "../../../../../../../common/fieldEditors/SearchFE";
 import { isSearchMatching } from "../../../../../../../../utils/stringUtils";
 import FormDialog from "../../../../../../../common/dialogs/FormDialog";
-import { getFieldNames } from "./utils";
+import {
+  THEMATIC_TRIMMING_GROUPS,
+  getFieldLabelsForGroup,
+  type ThematicTrimmingGroup,
+} from "./utils";
 import type { ThematicTrimmingConfig } from "../../../../../../../../services/api/studies/config/thematicTrimming/types";
 import {
   getThematicTrimmingConfig,
   setThematicTrimmingConfig,
 } from "../../../../../../../../services/api/studies/config/thematicTrimming";
+import { useTranslation } from "react-i18next";
+import Stack from "@mui/material/Stack";
 
 interface Props {
   study: StudyMetadata;
@@ -26,21 +40,34 @@ interface Props {
 
 function ThematicTrimmingDialog(props: Props) {
   const { study, open, onClose } = props;
+  const { t } = useTranslation();
   const [search, setSearch] = useState("");
+
+  const [expanded, setExpanded] = useState(() =>
+    THEMATIC_TRIMMING_GROUPS.reduce(
+      (acc, group) => ({ ...acc, [group]: true }),
+      {} as Partial<Record<ThematicTrimmingGroup, boolean>>,
+    ),
+  );
+
+  const commonBtnProps = {
+    color: "secondary",
+    // Disable all buttons when search is active to remove confusion
+    // about which fields are being affected by the action (search or all)
+    disabled: !!search,
+  } as const;
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
   const handleUpdateConfig =
-    (api: UseFormReturnPlus<ThematicTrimmingFormFields>, fn: RA.Pred) => () => {
-      setSearch("");
-
-      const valuesArr = R.toPairs(api.getValues()).filter(Boolean);
-
-      valuesArr.forEach(([key, val]) => {
-        api.setValue(key, fn(val));
-      });
+    (api: UseFormReturnPlus<ThematicTrimmingConfig>, fn: RA.Pred) => () => {
+      R.toPairs(api.getValues())
+        .filter(Boolean)
+        .forEach(([key, val]) => {
+          api.setValue(key, fn(val));
+        });
     };
 
   const handleSubmit = (data: SubmitHandlerPlus<ThematicTrimmingConfig>) => {
@@ -80,49 +107,83 @@ function ThematicTrimmingDialog(props: Props) {
     >
       {(api) => (
         <>
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              pb: 2,
-            }}
-          >
+          <Stack direction="row" justifyContent="space-between" sx={{ pb: 2 }}>
             <SearchFE
               sx={{ m: 0 }}
               value={search}
               onSearchValueChange={setSearch}
+              onClear={() => setSearch("")}
               size="small"
             />
-            <Box sx={{ display: "flex", gap: 1 }}>
-              <Button color="secondary" onClick={handleUpdateConfig(api, R.T)}>
-                Enable all
-              </Button>
-              <Button color="secondary" onClick={handleUpdateConfig(api, R.F)}>
-                Disable all
-              </Button>
-              <Divider orientation="vertical" flexItem />
+            <Stack direction="row" spacing={1}>
               <Button
-                color="secondary"
+                {...commonBtnProps}
+                onClick={handleUpdateConfig(api, R.T)}
+              >
+                {t(
+                  "study.configuration.general.thematicTrimming.action.enableAll",
+                )}
+              </Button>
+              <Button
+                {...commonBtnProps}
+                onClick={handleUpdateConfig(api, R.F)}
+              >
+                {t(
+                  "study.configuration.general.thematicTrimming.action.disableAll",
+                )}
+              </Button>
+              <Button
+                {...commonBtnProps}
                 onClick={handleUpdateConfig(api, R.not)}
               >
-                Reverse
+                {t(
+                  "study.configuration.general.thematicTrimming.action.reverse",
+                )}
               </Button>
-            </Box>
-          </Box>
-          <Grid
-            container
-            disableEqualOverflow
-            spacing={1}
-            sx={{ overflow: "auto", p: 1 }}
-          >
-            {getFieldNames(api.getValues())
+              <Divider orientation="vertical" flexItem />
+              <Button {...commonBtnProps} onClick={() => setExpanded({})}>
+                {t(
+                  "study.configuration.general.thematicTrimming.action.collapseAll",
+                )}
+              </Button>
+            </Stack>
+          </Stack>
+          {THEMATIC_TRIMMING_GROUPS.map((group) => {
+            const fields = getFieldLabelsForGroup(api.getValues(), group)
               .filter(([, label]) => isSearchMatching(search, label))
               .map(([name, label]) => (
                 <Grid key={name} xs={4}>
                   <SwitchFE name={name} label={label} control={api.control} />
                 </Grid>
-              ))}
-          </Grid>
+              ));
+
+            return fields.length > 0 ? (
+              <Accordion
+                key={group}
+                expanded={expanded[group] || !!search}
+                onChange={(event, isExpanded) => {
+                  setExpanded((prev) => ({ ...prev, [group]: isExpanded }));
+                }}
+                disableGutters
+              >
+                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                  {t(
+                    `study.configuration.general.thematicTrimming.group.${group}`,
+                  )}
+                </AccordionSummary>
+                <AccordionDetails>
+                  <Grid
+                    container
+                    disableEqualOverflow
+                    spacing={1}
+                    sx={{ overflow: "auto", p: 1 }}
+                  >
+                    {fields}
+                  </Grid>
+                </AccordionDetails>
+              </Accordion>
+            ) : null;
+          })}
         </>
       )}
     </FormDialog>
