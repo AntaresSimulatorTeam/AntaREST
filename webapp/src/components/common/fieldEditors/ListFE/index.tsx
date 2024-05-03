@@ -42,9 +42,9 @@ import {
 import { makeLabel, makeListItems } from "./utils";
 
 interface ListFEProps<TItem, TOption> {
-  defaultValue?: readonly TItem[];
-  value?: readonly TItem[];
-  options: readonly TOption[];
+  defaultValue?: TItem[];
+  value?: TItem[];
+  options?: TOption[];
   label?: string;
   getOptionLabel?: (option: TOption) => string;
   getValueLabel?: (value: TItem) => string;
@@ -64,7 +64,7 @@ function ListFE<TItem, TOption>(props: ListFEProps<TItem, TOption>) {
     value,
     defaultValue,
     label,
-    options,
+    options = [],
     getOptionLabel = makeLabel,
     getValueLabel = makeLabel,
     optionToItem = (option: TOption) => option as unknown as TItem,

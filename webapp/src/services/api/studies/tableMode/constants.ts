@@ -1,20 +1,30 @@
-const AREAS = "areas";
-const LINKS = "links";
-const THERMALS = "thermals";
-const RENEWABLES = "renewables";
-const ST_STORAGES = "st-storages";
-const BINDING_CONSTRAINTS = "binding-constraints";
+const AREA = "areas";
+const LINK = "links";
+const THERMAL = "thermals";
+const RENEWABLE = "renewables";
+const ST_STORAGE = "st-storages";
+const BINDING_CONSTRAINT = "binding-constraints";
 
 export const TABLE_MODE_TYPES = [
-  AREAS,
-  LINKS,
-  THERMALS,
-  RENEWABLES,
-  BINDING_CONSTRAINTS,
+  AREA,
+  LINK,
+  THERMAL,
+  RENEWABLE,
+  ST_STORAGE,
+  BINDING_CONSTRAINT,
 ] as const;
 
+// Deprecated types (breaking change from v2.16.8)
+export const TABLE_MODE_TYPES_ALIASES = {
+  area: AREA,
+  link: LINK,
+  cluster: THERMAL,
+  renewable: RENEWABLE,
+  "binding constraint": BINDING_CONSTRAINT,
+};
+
 export const TABLE_MODE_COLUMNS_BY_TYPE = {
-  [AREAS]: [
+  [AREA]: [
     "nonDispatchablePower",
     "dispatchableHydroPower",
     "otherDispatchablePower",
@@ -27,7 +37,7 @@ export const TABLE_MODE_COLUMNS_BY_TYPE = {
     // Since v8.3
     "adequacyPatchMode",
   ],
-  [LINKS]: [
+  [LINK]: [
     "hurdlesCost",
     "loopFlow",
     "usePhaseShifter",
@@ -40,7 +50,7 @@ export const TABLE_MODE_COLUMNS_BY_TYPE = {
     "filterSynthesis",
     "filterYearByYear",
   ],
-  [THERMALS]: [
+  [THERMAL]: [
     "group",
     "enabled",
     "unitCount",
@@ -79,7 +89,7 @@ export const TABLE_MODE_COLUMNS_BY_TYPE = {
     "efficiency",
     "variableOMCost",
   ],
-  [RENEWABLES]: [
+  [RENEWABLE]: [
     // Since v8.1
     "group",
     "enabled",
@@ -87,7 +97,7 @@ export const TABLE_MODE_COLUMNS_BY_TYPE = {
     "unitCount",
     "nominalCapacity",
   ],
-  [ST_STORAGES]: [
+  [ST_STORAGE]: [
     // Since v8.6
     "group",
     "injectionNominalCapacity",
@@ -99,7 +109,7 @@ export const TABLE_MODE_COLUMNS_BY_TYPE = {
     // Since v8.8
     "enabled",
   ],
-  [BINDING_CONSTRAINTS]: [
+  [BINDING_CONSTRAINT]: [
     "enabled",
     "timeStep",
     "operator",

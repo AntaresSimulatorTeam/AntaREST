@@ -748,5 +748,11 @@
   "results.error.jobs": "Erreur lors de la récupération des tâches de lancement",
   "results.error.outputs": "Erreur lors de la récupération des sorties de l'étude",
   "results.noOutputs": "Aucune sorties",
-  "results.question.deleteOutput": "Êtes-vous sûr de vouloir supprimer le résultat de simulation {{outputname}} ?"
+  "results.question.deleteOutput": "Êtes-vous sûr de vouloir supprimer le résultat de simulation {{outputname}} ?",
+  "tableMode.type.areas": "Zones",
+  "tableMode.type.links": "Liens",
+  "tableMode.type.thermals": "Thermiques",
+  "tableMode.type.renewables": "Renouvelables",
+  "tableMode.type.st-storages": "Stockages court terme",
+  "tableMode.type.binding-constraints": "Contraintes couplantes"
 }
