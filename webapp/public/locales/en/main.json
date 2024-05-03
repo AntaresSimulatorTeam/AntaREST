@@ -71,6 +71,7 @@
   "global.undo": "Undo",
   "global.redo": "Redo",
   "global.total": "Total",
+  "global.enabled": "Enabled",
   "global.time.hourly": "Hourly",
   "global.time.daily": "Daily",
   "global.time.weekly": "Weekly",

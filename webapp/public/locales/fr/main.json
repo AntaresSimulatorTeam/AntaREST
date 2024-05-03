@@ -71,6 +71,7 @@
   "global.undo": "Annuler",
   "global.redo": "Rétablir",
   "global.total": "Total",
+  "global.enabled": "Activé",
   "global.time.hourly": "Horaire",
   "global.time.daily": "Journalier",
   "global.time.weekly": "Hebdomadaire",

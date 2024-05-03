@@ -7,10 +7,14 @@ import SwitchFE from "../../../../../../common/fieldEditors/SwitchFE";
 import Fieldset from "../../../../../../common/Fieldset";
 import { useFormContextPlus } from "../../../../../../common/Form";
 import { STORAGE_GROUPS, Storage } from "./utils";
+import { useOutletContext } from "react-router";
+import { StudyMetadata } from "../../../../../../../common/types";
 
 function Fields() {
   const [t] = useTranslation();
+  const { study } = useOutletContext<{ study: StudyMetadata }>();
   const { control } = useFormContextPlus<Storage>();
+  const studyVersion = parseInt(study.version, 10);
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -33,6 +37,17 @@ function Fields() {
           alignSelf: "center",
         }}
       />
+      {studyVersion >= 880 && (
+        <SwitchFE
+          label={t("global.enabled")}
+          name="enabled"
+          control={control}
+          sx={{
+            alignItems: "center",
+            alignSelf: "center",
+          }}
+        />
+      )}
       <Tooltip
         title={t("study.modelization.storages.injectionNominalCapacity.info")}
         arrow
