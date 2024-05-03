@@ -11,12 +11,12 @@ import {
 import SearchFE from "../../../../../../../common/fieldEditors/SearchFE";
 import { isSearchMatching } from "../../../../../../../../utils/stringUtils";
 import FormDialog from "../../../../../../../common/dialogs/FormDialog";
+import { getFieldNames } from "./utils";
+import type { ThematicTrimmingConfig } from "../../../../../../../../services/api/studies/config/thematicTrimming/types";
 import {
-  getFieldNames,
-  getThematicTrimmingFormFields,
+  getThematicTrimmingConfig,
   setThematicTrimmingConfig,
-  ThematicTrimmingFormFields,
-} from "./utils";
+} from "../../../../../../../../services/api/studies/config/thematicTrimming";
 
 interface Props {
   study: StudyMetadata;
@@ -43,10 +43,11 @@ function ThematicTrimmingDialog(props: Props) {
       });
     };
 
-  const handleSubmit = (
-    data: SubmitHandlerPlus<ThematicTrimmingFormFields>,
-  ) => {
-    return setThematicTrimmingConfig(study.id, data.values);
+  const handleSubmit = (data: SubmitHandlerPlus<ThematicTrimmingConfig>) => {
+    return setThematicTrimmingConfig({
+      studyId: study.id,
+      config: data.values,
+    });
   };
 
   ////////////////////////////////////////////////////////////////
@@ -59,7 +60,7 @@ function ThematicTrimmingDialog(props: Props) {
       open={open}
       title="Thematic Trimming"
       config={{
-        defaultValues: () => getThematicTrimmingFormFields(study.id),
+        defaultValues: () => getThematicTrimmingConfig({ studyId: study.id }),
       }}
       onSubmit={handleSubmit}
       onCancel={onClose}
