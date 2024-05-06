@@ -1204,13 +1204,21 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         term: ConstraintTerm,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
+        """
+        Append a new term to a given binding constraint
+
+        Args:
+        - `uuid`: The UUID of the study.
+        - `binding_constraint_id`: The binding constraint ID.
+        - `term`: The term to create.
+        """
         logger.info(
             f"Add constraint term {term.id} to {binding_constraint_id} for study {uuid}",
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
-        return study_service.binding_constraint_manager.create_constraint_term(study, binding_constraint_id, term)
+        return study_service.binding_constraint_manager.create_constraint_terms(study, binding_constraint_id, [term])
 
     @bp.post(
         "/studies/{uuid}/bindingconstraints/{binding_constraint_id}/terms",
@@ -1224,7 +1232,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
         """
-        Create several terms for a given binding constraint
+        Append new terms to a given binding constraint
 
         Args:
         - `uuid`: The UUID of the study.
@@ -1250,13 +1258,21 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         term: ConstraintTerm,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
+        """
+        Update a term for a given binding constraint
+
+        Args:
+        - `uuid`: The UUID of the study.
+        - `binding_constraint_id`: The binding constraint ID.
+        - `term`: The term to update.
+        """
         logger.info(
             f"Update constraint term {term.id} from {binding_constraint_id} for study {uuid}",
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
-        return study_service.binding_constraint_manager.update_constraint_term(study, binding_constraint_id, term)
+        return study_service.binding_constraint_manager.update_constraint_terms(study, binding_constraint_id, [term])
 
     @bp.put(
         "/studies/{uuid}/bindingconstraints/{binding_constraint_id}/terms",

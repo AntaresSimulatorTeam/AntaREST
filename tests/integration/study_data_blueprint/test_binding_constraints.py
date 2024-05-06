@@ -375,17 +375,15 @@ class TestBindingConstraints:
         # Update constraint cluster term with invalid id
         res = client.put(
             f"/v1/studies/{study_id}/bindingconstraints/{bc_id}/term",
-            json={
-                "id": f"{area1_id}.!!Invalid#cluster%%",
-                "weight": 4,
-            },
+            json={"id": f"{area1_id}.!!invalid#cluster%%", "weight": 4},
             headers=user_headers,
         )
         assert res.status_code == 404, res.json()
-        assert res.json() == {
-            "description": f"{study_id}",
-            "exception": "ConstraintIdNotFoundError",
-        }
+        exception = res.json()["exception"]
+        description = res.json()["description"]
+        assert exception == "ConstraintTermNotFound"
+        assert bc_id in description
+        assert f"{area1_id}.!!invalid#cluster%%" in description
 
         # Update constraint cluster term with empty data
         res = client.put(
@@ -761,20 +759,38 @@ class TestBindingConstraints:
         res = client.post(
             f"/v1/studies/{study_id}/bindingconstraints/{bc_id_w_group}/terms",
             json=[
-                {
-                    "weight": 1,
-                    "offset": 2,
-                    "data": {"area1": area1_id, "area2": area2_id},
-                },
-                {
-                    "weight": 1,
-                    "offset": 2,
-                    "data": {"area": area1_id, "cluster": cluster_id},
-                },
+                {"weight": 1, "offset": 2, "data": {"area1": area1_id, "area2": area2_id}},
+                {"weight": 1, "offset": 2, "data": {"area": area1_id, "cluster": cluster_id}},
             ],
             headers=admin_headers,
         )
         assert res.status_code == 200, res.json()
+
+        # Attempt to add a term with missing data
+        res = client.post(
+            f"/v1/studies/{study_id}/bindingconstraints/{bc_id_w_group}/terms",
+            json=[{"weight": 1, "offset": 2}],
+            headers=admin_headers,
+        )
+        assert res.status_code == 422, res.json()
+        exception = res.json()["exception"]
+        description = res.json()["description"]
+        assert exception == "InvalidConstraintTerm"
+        assert bc_id_w_group in description, "Error message should contain the binding constraint ID"
+        assert "term 'data' is missing" in description, "Error message should indicate the missing field"
+
+        # Attempt to add a duplicate term
+        res = client.post(
+            f"/v1/studies/{study_id}/bindingconstraints/{bc_id_w_group}/terms",
+            json=[{"weight": 99, "offset": 0, "data": {"area1": area1_id, "area2": area2_id}}],
+            headers=admin_headers,
+        )
+        assert res.status_code == 409, res.json()
+        exception = res.json()["exception"]
+        description = res.json()["description"]
+        assert exception == "DuplicateConstraintTerm"
+        assert bc_id_w_group in description, "Error message should contain the binding constraint ID"
+        assert f"{area1_id}%{area2_id}" in description, "Error message should contain the duplicate term ID"
 
         # Get binding constraints list to check added terms
         res = client.get(
@@ -823,10 +839,20 @@ class TestBindingConstraints:
         assert res.status_code == 200, res.json()
         binding_constraint = res.json()
         constraint_terms = binding_constraint["terms"]
-        expected[0]["weight"] = 4.4
-        expected[0]["offset"] = 1
-        expected[1]["weight"] = 5.1
-        expected[1]["offset"] = None
+        expected = [
+            {
+                "data": {"area1": area1_id, "area2": area2_id},
+                "id": f"{area1_id}%{area2_id}",
+                "offset": 1,
+                "weight": 4.4,
+            },
+            {
+                "data": {"area": area1_id, "cluster": cluster_id.lower()},
+                "id": f"{area1_id}.{cluster_id.lower()}",
+                "offset": None,
+                "weight": 5.1,
+            },
+        ]
         assert constraint_terms == expected
 
         # =============================
