@@ -376,11 +376,6 @@ class NoConstraintError(HTTPException):
         super().__init__(HTTPStatus.NOT_FOUND, message)
 
 
-class ConstraintAlreadyExistError(HTTPException):
-    def __init__(self, message: str) -> None:
-        super().__init__(HTTPStatus.NOT_FOUND, message)
-
-
 class DuplicateConstraintName(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.CONFLICT, message)
@@ -406,14 +401,61 @@ class WrongMatrixHeightError(HTTPException):
         super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, message)
 
 
-class MissingDataError(HTTPException):
-    def __init__(self, message: str) -> None:
+class ConstraintTermNotFound(HTTPException):
+    """
+    Exception raised when a constraint term is not found.
+    """
+
+    def __init__(self, binding_constraint_id: str, *ids: str) -> None:
+        count = len(ids)
+        id_enum = ", ".join(f"'{term}'" for term in ids)
+        message = {
+            0: f"Constraint terms not found in BC '{binding_constraint_id}'",
+            1: f"Constraint term {id_enum} not found in BC '{binding_constraint_id}'",
+            2: f"Constraint terms {id_enum} not found in BC '{binding_constraint_id}'",
+        }[min(count, 2)]
         super().__init__(HTTPStatus.NOT_FOUND, message)
 
+    def __str__(self) -> str:
+        """Return a string representation of the exception."""
+        return self.detail
 
-class ConstraintIdNotFoundError(HTTPException):
-    def __init__(self, message: str) -> None:
-        super().__init__(HTTPStatus.NOT_FOUND, message)
+
+class DuplicateConstraintTerm(HTTPException):
+    """
+    Exception raised when an attempt is made to create a constraint term which already exists.
+    """
+
+    def __init__(self, binding_constraint_id: str, *ids: str) -> None:
+        count = len(ids)
+        id_enum = ", ".join(f"'{term}'" for term in ids)
+        message = {
+            0: f"Constraint terms already exist in BC '{binding_constraint_id}'",
+            1: f"Constraint term {id_enum} already exists in BC '{binding_constraint_id}'",
+            2: f"Constraint terms {id_enum} already exist in BC '{binding_constraint_id}'",
+        }[min(count, 2)]
+        super().__init__(HTTPStatus.CONFLICT, message)
+
+    def __str__(self) -> str:
+        """Return a string representation of the exception."""
+        return self.detail
+
+
+class InvalidConstraintTerm(HTTPException):
+    """
+    Exception raised when a constraint term is not correctly specified (no term data).
+    """
+
+    def __init__(self, binding_constraint_id: str, term_json: str) -> None:
+        message = (
+            f"Invalid constraint term for binding constraint '{binding_constraint_id}': {term_json},"
+            f" term 'data' is missing or empty"
+        )
+        super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, message)
+
+    def __str__(self) -> str:
+        """Return a string representation of the exception."""
+        return self.detail
 
 
 class LayerNotFound(HTTPException):
