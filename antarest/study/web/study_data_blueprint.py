@@ -59,7 +59,6 @@ from antarest.study.business.thematic_trimming_field_infos import ThematicTrimmi
 from antarest.study.business.timeseries_config_management import TSFormFields
 from antarest.study.model import PatchArea, PatchCluster
 from antarest.study.service import StudyService
-from antarest.study.storage.rawstudy.model.filesystem.config.area import AreaUI
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     BindingConstraintFrequency,
     BindingConstraintOperator,
