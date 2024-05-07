@@ -218,11 +218,7 @@ class AreaOutput(_BaseAreaDTO, metaclass=AllOptionalMetaclass, use_none=True):
             **area_folder.optimization.filtering.dict(by_alias=False),
             **area_folder.optimization.nodal_optimization.dict(by_alias=False),
             # adequacy_patch is only available if study version >= 830.
-            **(
-                area_folder.adequacy_patch.adequacy_patch.dict(by_alias=False)
-                if area_folder.adequacy_patch
-                else {"adequacy_patch_mode": "outside"}
-            ),
+            **(area_folder.adequacy_patch.adequacy_patch.dict(by_alias=False) if area_folder.adequacy_patch else {}),
         }
         return cls(**obj)
 
