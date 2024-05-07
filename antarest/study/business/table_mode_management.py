@@ -174,10 +174,10 @@ class TableModeManager:
             The updated properties of the objects including the old ones.
         """
         if table_type == TableModeType.AREA:
-            # Use AreaOutput to update properties of areas
+            # Use AreaOutput to update properties of areas, which may include `None` values
             area_props_by_ids = {key: AreaOutput(**values) for key, values in data.items()}
             areas_map = self._area_manager.update_areas_props(study, area_props_by_ids)
-            data = {area_id: area.dict(by_alias=True) for area_id, area in areas_map.items()}
+            data = {area_id: area.dict(by_alias=True, exclude_none=True) for area_id, area in areas_map.items()}
             return data
         elif table_type == TableModeType.LINK:
             links_map = {tuple(key.split(" / ")): LinkOutput(**values) for key, values in data.items()}
