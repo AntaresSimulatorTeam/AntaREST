@@ -8,17 +8,7 @@ from typing import List, Optional, Set, Union
 from zipfile import ZipFile
 
 import numpy as np
-
-try:
-    # The HTTPX equivalent of `requests.Session` is `httpx.Client`.
-    import httpx as requests
-    from httpx import Client as Session
-except ImportError:
-    # noinspection PyUnresolvedReferences, PyPackageRequirements
-    import requests
-
-    # noinspection PyUnresolvedReferences,PyPackageRequirements
-    from requests import Session
+from httpx import Client
 
 from antarest.core.cache.business.local_chache import LocalCache
 from antarest.core.config import CacheConfig
@@ -55,22 +45,17 @@ class RemoteVariantGenerator(IVariantGenerator):
         study_id: str,
         host: Optional[str] = None,
         token: Optional[str] = None,
-        session: Optional[Session] = None,
+        session: Optional[Client] = None,
     ):
         self.study_id = study_id
 
         # todo: find the correct way to handle certificates.
-        #  By default, Requests/Httpx verifies SSL certificates for HTTPS requests.
+        #  By default, Httpx verifies SSL certificates for HTTPS requests.
         #  When verify is set to `False`, requests will accept any TLS certificate presented
-        #  by the server,and will ignore hostname mismatches and/or expired certificates,
+        #  by the server, and will ignore hostname mismatches and/or expired certificates,
         #  which will make your application vulnerable to man-in-the-middle (MitM) attacks.
-        #  Setting verify to False may be useful during local development or testing.
-        if Session.__name__ == "Client":
-            # noinspection PyArgumentList
-            self.session = session or Session(verify=False)
-        else:
-            self.session = session or Session()
-            self.session.verify = False
+        #  Setting verify to `False` may be useful during local development or testing.
+        self.session = session or Client(verify=False)
 
         self.host = host
         if session is None and host is None:

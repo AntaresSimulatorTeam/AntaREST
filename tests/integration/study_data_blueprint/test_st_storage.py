@@ -313,7 +313,7 @@ class TestSTStorage:
             json=[siemens_battery_id],
         )
         assert res.status_code == 204, res.json()
-        assert res.text in {"", "null"}  # Old FastAPI versions return 'null'.
+        assert not res.text
 
         # If the short-term storage list is empty, the deletion should be a no-op.
         res = client.request(
@@ -323,7 +323,7 @@ class TestSTStorage:
             json=[],
         )
         assert res.status_code == 204, res.json()
-        assert res.text in {"", "null"}  # Old FastAPI versions return 'null'.
+        assert not res.text
 
         # It's possible to delete multiple short-term storages at once.
         # In the following example, we will create two short-term storages:
@@ -383,7 +383,7 @@ class TestSTStorage:
             json=[grand_maison_id, duplicated_output["id"]],
         )
         assert res.status_code == 204, res.json()
-        assert res.text in {"", "null"}  # Old FastAPI versions return 'null'.
+        assert not res.text
 
         # Only one st-storage should remain.
         res = client.get(
