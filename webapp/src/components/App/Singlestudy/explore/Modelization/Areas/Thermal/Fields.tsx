@@ -30,8 +30,7 @@ function Fields() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    // TODO: remove the margin reset after updating MUI Theme.
-    <Box sx={{ "& .MuiFormControl-root": { margin: 0 } }}>
+    <Box>
       <Fieldset legend={t("global.general")}>
         <StringFE
           label={t("global.name")}
