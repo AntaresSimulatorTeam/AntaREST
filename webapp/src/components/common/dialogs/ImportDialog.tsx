@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import * as R from "ramda";
 import { Box, LinearProgress, Paper, Typography } from "@mui/material";
-import Dropzone from "react-dropzone";
+import Dropzone, { type Accept } from "react-dropzone";
 import { useMountedState } from "react-use";
 import { useTranslation } from "react-i18next";
 import BasicDialog, { BasicDialogProps } from "./BasicDialog";
@@ -10,6 +10,7 @@ interface Props {
   open: BasicDialogProps["open"];
   title?: string;
   dropzoneText?: string;
+  accept?: Accept;
   onClose: VoidFunction;
   onImport: (
     file: File,
@@ -18,7 +19,7 @@ interface Props {
 }
 
 function ImportDialog(props: Props) {
-  const { open, title, dropzoneText, onClose, onImport } = props;
+  const { open, title, dropzoneText, accept, onClose, onImport } = props;
   const [t] = useTranslation();
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(-1);
@@ -92,7 +93,12 @@ function ImportDialog(props: Props) {
             value={uploadProgress}
           />
         ) : (
-          <Dropzone onDrop={handleDrop} disabled={isUploading} multiple={false}>
+          <Dropzone
+            onDrop={handleDrop}
+            disabled={isUploading}
+            multiple={false}
+            accept={accept}
+          >
             {({ getRootProps, getInputProps }) => (
               <Paper sx={{ border: "1px dashed grey", p: 4 }}>
                 <div {...getRootProps()}>
