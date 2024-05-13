@@ -115,7 +115,7 @@ function Fields({ study, constraintId }: Props) {
           control={control}
           sx={{ maxWidth: 150 }}
         />
-        {Number(study.version) >= 840 && (
+        {Number(study.version) >= 830 && (
           <Box sx={{ display: "flex", gap: 2, width: 1 }}>
             <SelectFE
               name="filterYearByYear"
