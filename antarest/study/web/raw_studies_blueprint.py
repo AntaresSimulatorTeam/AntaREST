@@ -25,6 +25,12 @@ from antarest.study.common.default_values import AreasQueryFile, LinksQueryFile
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 
+try:
+    import tables  # type: ignore
+    import xlsxwriter  # type: ignore
+except ImportError:
+    raise ImportError("The 'xlsxwriter' and 'tables' packages are required") from None
+
 logger = logging.getLogger(__name__)
 
 
@@ -69,7 +75,10 @@ class TableExportFormat(EnumIgnoreCase):
     """Export format for tables."""
 
     XLSX = "xlsx"
+    HDF5 = "hdf5"
     TSV = "tsv"
+    CSV = "csv"
+    CSV_SEMICOLON = "csv (semicolon)"
 
     def __str__(self) -> str:
         """Return the format as a string for display."""
@@ -83,6 +92,10 @@ class TableExportFormat(EnumIgnoreCase):
             return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         elif self == TableExportFormat.TSV:
             return "text/tab-separated-values"
+        elif self in (TableExportFormat.CSV, TableExportFormat.CSV_SEMICOLON):
+            return "text/csv"
+        elif self == TableExportFormat.HDF5:
+            return "application/x-hdf5"
         else:  # pragma: no cover
             raise NotImplementedError(f"Export format '{self}' is not implemented")
 
@@ -93,6 +106,10 @@ class TableExportFormat(EnumIgnoreCase):
             return ".xlsx"
         elif self == TableExportFormat.TSV:
             return ".tsv"
+        elif self in (TableExportFormat.CSV, TableExportFormat.CSV_SEMICOLON):
+            return ".csv"
+        elif self == TableExportFormat.HDF5:
+            return ".h5"
         else:  # pragma: no cover
             raise NotImplementedError(f"Export format '{self}' is not implemented")
 
@@ -106,9 +123,45 @@ class TableExportFormat(EnumIgnoreCase):
     ) -> None:
         """Export a table to a file in the given format."""
         if self == TableExportFormat.XLSX:
-            return df.to_excel(export_path, index=with_index, header=with_header, engine="openpyxl")
+            return df.to_excel(
+                export_path,
+                index=with_index,
+                header=with_header,
+                engine="xlsxwriter",
+            )
         elif self == TableExportFormat.TSV:
-            return df.to_csv(export_path, sep="\t", index=with_index, header=with_header, float_format="%.6f")
+            return df.to_csv(
+                export_path,
+                sep="\t",
+                index=with_index,
+                header=with_header,
+                float_format="%.6f",
+            )
+        elif self == TableExportFormat.CSV:
+            return df.to_csv(
+                export_path,
+                sep=",",
+                index=with_index,
+                header=with_header,
+                float_format="%.6f",
+            )
+        elif self == TableExportFormat.CSV_SEMICOLON:
+            return df.to_csv(
+                export_path,
+                sep=";",
+                decimal=",",
+                index=with_index,
+                header=with_header,
+                float_format="%.6f",
+            )
+        elif self == TableExportFormat.HDF5:
+            return df.to_hdf(
+                export_path,
+                key="data",
+                mode="w",
+                format="table",
+                data_columns=True,
+            )
         else:  # pragma: no cover
             raise NotImplementedError(f"Export format '{self}' is not implemented")
 
@@ -464,7 +517,10 @@ def create_raw_study_routes(
 
         return FileResponse(
             export_path,
-            headers={"Content-Disposition": f'attachment; filename="{export_file_download.filename}"'},
+            headers={
+                "Content-Disposition": f'attachment; filename="{export_file_download.filename}"',
+                "Content-Type": f"{export_format.media_type}; charset=utf-8",
+            },
             media_type=export_format.media_type,
         )
 
