@@ -8,7 +8,7 @@ from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderN
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE, INode
 
 
-class TestSubNode(INode[int, int, int]):
+class CheckSubNode(INode[int, int, int]):
     def normalize(self) -> None:
         pass
 
@@ -18,7 +18,8 @@ class TestSubNode(INode[int, int, int]):
     def build(self, config: FileStudyTreeConfig) -> "TREE":
         pass
 
-    def __init__(self, value: int):
+    def __init__(self, config: FileStudyTreeConfig, value: int):
+        super().__init__(config)
         self.value = value
 
     def get_node(
