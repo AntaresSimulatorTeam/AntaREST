@@ -35,7 +35,7 @@ interface PropTypes {
 function ExportFilterModal(props: PropTypes) {
   const [t] = useTranslation();
   const { output, synthesis, filter, setFilter } = props;
-  const [year, setCurrentYear] = useState<number[]>([]);
+  const [year, setYear] = useState<number[]>([]);
   const [byYear, setByYear] = useState<{ isByYear: boolean; nbYear: number }>({
     isByYear: false,
     nbYear: -1,
@@ -105,7 +105,7 @@ function ExportFilterModal(props: PropTypes) {
           }))}
           data={year.map((elm) => elm.toString())}
           setValue={(value: string[] | string) =>
-            setCurrentYear((value as string[]).map((elm) => parseInt(elm, 10)))
+            setYear((value as string[]).map((elm) => parseInt(elm, 10)))
           }
           sx={{ width: "100%", mb: 2 }}
           required

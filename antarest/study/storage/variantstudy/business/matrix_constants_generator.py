@@ -35,11 +35,11 @@ EMPTY_SCENARIO_MATRIX = "empty_scenario_matrix"
 ONES_SCENARIO_MATRIX = "ones_scenario_matrix"
 
 # Binding constraint aliases
-BINDING_CONSTRAINT_HOURLY = "empty_2nd_member_hourly"
-"""2D-matrix of shape (8784, 3), filled-in with zeros for hourly binding constraints."""
+BINDING_CONSTRAINT_HOURLY_v86 = "empty_2nd_member_hourly_v86"
+BINDING_CONSTRAINT_DAILY_WEEKLY_v86 = "empty_2nd_member_daily_or_weekly_v86"
 
-BINDING_CONSTRAINT_WEEKLY_DAILY = "empty_2nd_member_weekly_daily"
-"""2D-matrix of shape (366, 3), filled-in with zeros for weekly/daily binding constraints."""
+BINDING_CONSTRAINT_HOURLY_v87 = "empty_2nd_member_hourly_v87"
+BINDING_CONSTRAINT_DAILY_WEEKLY_v87 = "empty_2nd_member_daily_or_weekly_v87"
 
 # Short-term storage aliases
 ST_STORAGE_PMAX_INJECTION = ONES_SCENARIO_MATRIX
@@ -95,15 +95,23 @@ class GeneratorMatrixConstants:
             self.hashes[RESERVES_TS] = self.matrix_service.create(FIXED_4_COLUMNS)
             self.hashes[MISCGEN_TS] = self.matrix_service.create(FIXED_8_COLUMNS)
 
-            # Binding constraint matrices
-            series = matrix_constants.binding_constraint.series
-            self.hashes[BINDING_CONSTRAINT_HOURLY] = self.matrix_service.create(series.default_bc_hourly)
-            self.hashes[BINDING_CONSTRAINT_WEEKLY_DAILY] = self.matrix_service.create(series.default_bc_weekly_daily)
+        # Binding constraint matrices
+        series_before_87 = matrix_constants.binding_constraint.series_before_v87
+        self.hashes[BINDING_CONSTRAINT_HOURLY_v86] = self.matrix_service.create(series_before_87.default_bc_hourly)
+        self.hashes[BINDING_CONSTRAINT_DAILY_WEEKLY_v86] = self.matrix_service.create(
+            series_before_87.default_bc_weekly_daily
+        )
 
-            # Some short-term storage matrices use np.ones((8760, 1))
-            self.hashes[ONES_SCENARIO_MATRIX] = self.matrix_service.create(
-                matrix_constants.st_storage.series.pmax_injection
-            )
+        series_after_87 = matrix_constants.binding_constraint.series_after_v87
+        self.hashes[BINDING_CONSTRAINT_HOURLY_v87] = self.matrix_service.create(series_after_87.default_bc_hourly)
+        self.hashes[BINDING_CONSTRAINT_DAILY_WEEKLY_v87] = self.matrix_service.create(
+            series_after_87.default_bc_weekly_daily
+        )
+
+        # Some short-term storage matrices use np.ones((8760, 1))
+        self.hashes[ONES_SCENARIO_MATRIX] = self.matrix_service.create(
+            matrix_constants.st_storage.series.pmax_injection
+        )
 
     def get_hydro_max_power(self, version: int) -> str:
         if version > 650:
@@ -157,17 +165,21 @@ class GeneratorMatrixConstants:
     def get_default_miscgen(self) -> str:
         return MATRIX_PROTOCOL_PREFIX + self.hashes[MISCGEN_TS]
 
-    def get_binding_constraint_hourly(self) -> str:
+    def get_binding_constraint_hourly_86(self) -> str:
         """2D-matrix of shape (8784, 3), filled-in with zeros."""
-        return MATRIX_PROTOCOL_PREFIX + self.hashes[BINDING_CONSTRAINT_HOURLY]
+        return MATRIX_PROTOCOL_PREFIX + self.hashes[BINDING_CONSTRAINT_HOURLY_v86]
 
-    def get_binding_constraint_daily(self) -> str:
+    def get_binding_constraint_daily_weekly_86(self) -> str:
         """2D-matrix of shape (366, 3), filled-in with zeros."""
-        return MATRIX_PROTOCOL_PREFIX + self.hashes[BINDING_CONSTRAINT_WEEKLY_DAILY]
+        return MATRIX_PROTOCOL_PREFIX + self.hashes[BINDING_CONSTRAINT_DAILY_WEEKLY_v86]
 
-    def get_binding_constraint_weekly(self) -> str:
-        """2D-matrix of shape (366, 3), filled-in with zeros, same as daily."""
-        return MATRIX_PROTOCOL_PREFIX + self.hashes[BINDING_CONSTRAINT_WEEKLY_DAILY]
+    def get_binding_constraint_hourly_87(self) -> str:
+        """2D-matrix of shape (8784, 1), filled-in with zeros."""
+        return MATRIX_PROTOCOL_PREFIX + self.hashes[BINDING_CONSTRAINT_HOURLY_v87]
+
+    def get_binding_constraint_daily_weekly_87(self) -> str:
+        """2D-matrix of shape (8784, 1), filled-in with zeros."""
+        return MATRIX_PROTOCOL_PREFIX + self.hashes[BINDING_CONSTRAINT_DAILY_WEEKLY_v87]
 
     def get_st_storage_pmax_injection(self) -> str:
         """2D-matrix of shape (8760, 1), filled-in with ones."""

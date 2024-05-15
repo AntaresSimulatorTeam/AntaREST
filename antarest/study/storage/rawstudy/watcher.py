@@ -94,6 +94,7 @@ class Watcher(IService):
                 "Removing duplicates, this is a temporary fix that should be removed when previous duplicates are removed"
             )
             with db():
+                # in this part full `Read` rights over studies are granted to this function
                 self.study_service.remove_duplicates()
         except Exception as e:
             logger.error("Unexpected error when removing duplicates", exc_info=e)

@@ -1,18 +1,20 @@
+import typing as t
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import BinaryIO, Generic, List, Optional, Sequence, TypeVar, Union
 
 from antarest.core.exceptions import StudyNotFoundError
 from antarest.core.model import JSON
 from antarest.core.requests import RequestParameters
+from antarest.study.common.default_values import AreasQueryFile, LinksQueryFile
 from antarest.study.model import Study, StudyMetadataDTO, StudyMetadataPatchDTO, StudySimResultDTO
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 
-T = TypeVar("T", bound=Study)
+T = t.TypeVar("T", bound=Study)
 
 
-class IStudyStorageService(ABC, Generic[T]):
+class IStudyStorageService(ABC, t.Generic[T]):
     @abstractmethod
     def create(self, metadata: T) -> T:
         """
@@ -23,7 +25,6 @@ class IStudyStorageService(ABC, Generic[T]):
         Returns: new study information
 
         """
-        raise NotImplementedError()
 
     @abstractmethod
     def get(
@@ -44,7 +45,58 @@ class IStudyStorageService(ABC, Generic[T]):
         Returns: study data formatted in json
 
         """
-        raise NotImplementedError()
+
+    @abstractmethod
+    def aggregate_areas_data(
+        self,
+        metadata: T,
+        output_id: str,
+        query_file: AreasQueryFile,
+        frequency: MatrixFrequency,
+        mc_years: t.Sequence[int],
+        areas_ids: t.Sequence[str],
+        columns_names: t.Sequence[str],
+    ) -> t.Dict[str, t.Any]:
+        """
+        Entry point to fetch areas data inside study's output.
+
+        Args:
+            metadata: study for which we want to perform the aggregation
+            output_id: simulation ID
+            query_file: "values", "details", "details-st-storage", "details-res"
+            frequency: "hourly", "daily", "weekly", "monthly", "annual"
+            mc_years: list of Monte Carlo years to consider, if empty, all years are considered
+            areas_ids: list of areas to consider, if empty, all areas are considered
+            columns_names: list of columns to consider, if empty, all columns are considered
+
+        Returns: the areas aggregated data in a JSON format
+
+        """
+
+    @abstractmethod
+    def aggregate_links_data(
+        self,
+        metadata: T,
+        output_id: str,
+        query_file: LinksQueryFile,
+        frequency: MatrixFrequency,
+        mc_years: t.Sequence[int],
+        columns_names: t.Sequence[str],
+    ) -> t.Dict[str, t.Any]:
+        """
+        Entry point to fetch links raw data inside study's output.
+
+        Args:
+            metadata: study for which we want to perform the aggregation
+            output_id: simulation ID
+            query_file: "values", "details"
+            frequency: "hourly", "daily", "weekly", "monthly", "annual"
+            mc_years: list of Monte Carlo years to consider, if empty, all years are considered
+            columns_names: list of columns to consider, if empty, all columns are considered
+
+        Returns: the links aggregated data in a JSON format
+
+        """
 
     @abstractmethod
     def exists(self, metadata: T) -> bool:
@@ -56,10 +108,9 @@ class IStudyStorageService(ABC, Generic[T]):
         Returns: true if study presents in disk, false else.
 
         """
-        raise NotImplementedError()
 
     @abstractmethod
-    def copy(self, src_meta: T, dest_name: str, groups: Sequence[str], with_outputs: bool = False) -> T:
+    def copy(self, src_meta: T, dest_name: str, groups: t.Sequence[str], with_outputs: bool = False) -> T:
         """
         Create a new study by copying a reference study.
 
@@ -72,7 +123,6 @@ class IStudyStorageService(ABC, Generic[T]):
         Returns:
             The newly created study.
         """
-        raise NotImplementedError()
 
     @abstractmethod
     def patch_update_study_metadata(self, study: T, metadata: StudyMetadataPatchDTO) -> StudyMetadataDTO:
@@ -85,15 +135,14 @@ class IStudyStorageService(ABC, Generic[T]):
         Returns: study metadata
 
         """
-        raise NotImplementedError()
 
     @abstractmethod
     def import_output(
         self,
         study: T,
-        output: Union[BinaryIO, Path],
-        output_name: Optional[str] = None,
-    ) -> Optional[str]:
+        output: t.Union[t.BinaryIO, Path],
+        output_name: t.Optional[str] = None,
+    ) -> t.Optional[str]:
         """
         Import an output
         Args:
@@ -102,18 +151,17 @@ class IStudyStorageService(ABC, Generic[T]):
             output_name: Optional name suffix to append to the output name
         Returns: None
         """
-        raise NotImplementedError()
 
     @abstractmethod
     def get_study_information(self, metadata: T) -> StudyMetadataDTO:
-        raise NotImplementedError()
+        """Get study information."""
 
     @abstractmethod
     def get_raw(
         self,
         metadata: T,
         use_cache: bool = True,
-        output_dir: Optional[Path] = None,
+        output_dir: t.Optional[Path] = None,
     ) -> FileStudy:
         """
         Fetch a study raw tree object and its config
@@ -124,10 +172,9 @@ class IStudyStorageService(ABC, Generic[T]):
         Returns: the config and study tree object
 
         """
-        raise NotImplementedError()
 
     @abstractmethod
-    def get_study_sim_result(self, metadata: T) -> List[StudySimResultDTO]:
+    def get_study_sim_result(self, metadata: T) -> t.List[StudySimResultDTO]:
         """
         Get global result information
 
@@ -137,7 +184,6 @@ class IStudyStorageService(ABC, Generic[T]):
         Returns:
             study output data
         """
-        raise NotImplementedError()
 
     @abstractmethod
     def set_reference_output(self, metadata: T, output_id: str, status: bool) -> None:
@@ -149,7 +195,6 @@ class IStudyStorageService(ABC, Generic[T]):
             output_id: the id of output to set the reference status.
             status: true to set it as reference, false to unset it.
         """
-        raise NotImplementedError()
 
     @abstractmethod
     def delete(self, metadata: T) -> None:
@@ -161,7 +206,6 @@ class IStudyStorageService(ABC, Generic[T]):
         Returns:
 
         """
-        raise NotImplementedError()
 
     @abstractmethod
     def delete_output(self, metadata: T, output_id: str) -> None:
@@ -174,7 +218,6 @@ class IStudyStorageService(ABC, Generic[T]):
         Returns:
 
         """
-        raise NotImplementedError()
 
     @abstractmethod
     def get_study_path(self, metadata: Study) -> Path:
@@ -186,7 +229,6 @@ class IStudyStorageService(ABC, Generic[T]):
         Returns: study path
 
         """
-        raise NotImplementedError()
 
     def _check_study_exists(self, metadata: Study) -> None:
         """
@@ -214,7 +256,6 @@ class IStudyStorageService(ABC, Generic[T]):
         Returns:
             Path: The path to the created ZIP file containing the study files.
         """
-        raise NotImplementedError()
 
     @abstractmethod
     def export_output(self, metadata: T, output_id: str, target: Path) -> None:
@@ -228,7 +269,6 @@ class IStudyStorageService(ABC, Generic[T]):
         Returns: zip file with study files compressed inside
 
         """
-        raise NotImplementedError()
 
     @abstractmethod
     def export_study_flat(
@@ -236,7 +276,7 @@ class IStudyStorageService(ABC, Generic[T]):
         metadata: T,
         dst_path: Path,
         outputs: bool = True,
-        output_list_filter: Optional[List[str]] = None,
+        output_list_filter: t.Optional[t.List[str]] = None,
         denormalize: bool = True,
     ) -> None:
         """
@@ -249,10 +289,9 @@ class IStudyStorageService(ABC, Generic[T]):
             output_list_filter: list of outputs to keep (None indicate all outputs).
             denormalize: denormalize the study (replace matrix links by real matrices).
         """
-        raise NotImplementedError()
 
     @abstractmethod
-    def get_synthesis(self, metadata: T, params: Optional[RequestParameters] = None) -> FileStudyTreeConfigDTO:
+    def get_synthesis(self, metadata: T, params: t.Optional[RequestParameters] = None) -> FileStudyTreeConfigDTO:
         """
         Return study synthesis
         Args:
@@ -261,16 +300,16 @@ class IStudyStorageService(ABC, Generic[T]):
         Returns: FileStudyTreeConfigDTO
 
         """
-        raise NotImplementedError()
 
     @abstractmethod
     def initialize_additional_data(self, study: T) -> bool:
-        raise NotImplementedError()
+        """Initialize additional data for a study."""
 
     @abstractmethod
     def archive_study_output(self, study: T, output_id: str) -> bool:
-        raise NotImplementedError()
+        """Archive a study output."""
 
+    # noinspection SpellCheckingInspection
     @abstractmethod
     def unarchive_study_output(self, study: T, output_id: str, keep_src_zip: bool) -> bool:
-        raise NotImplementedError()
+        """Un-archive a study output."""

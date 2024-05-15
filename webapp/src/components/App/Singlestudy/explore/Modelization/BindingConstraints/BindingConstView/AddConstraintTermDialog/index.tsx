@@ -8,54 +8,79 @@ import FormDialog, {
 import { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
 import useEnqueueErrorSnackbar from "../../../../../../../../hooks/useEnqueueErrorSnackbar";
 import {
-  BindingConstFields,
-  ConstraintType,
-  dataToId,
-  isDataLink,
-  isOptionExist,
-  isTermExist,
+  isLinkTerm,
+  type BindingConstraint,
+  type ConstraintTerm,
 } from "../utils";
 import AddConstraintTermForm from "./AddConstraintTermForm";
-import { addConstraintTerm } from "../../../../../../../../services/api/studydata";
-import {
-  AllClustersAndLinks,
-  ClusterElement,
-  LinkCreationInfoDTO,
-} from "../../../../../../../../common/types";
+import { createConstraintTerm } from "../../../../../../../../services/api/studydata";
+import { AllClustersAndLinks } from "../../../../../../../../common/types";
 import useStudySynthesis from "../../../../../../../../redux/hooks/useStudySynthesis";
 import { getLinksAndClusters } from "../../../../../../../../redux/selectors";
+import { BaseSyntheticEvent } from "react";
+import UsePromiseCond from "../../../../../../../common/utils/UsePromiseCond";
 
 interface Props extends Omit<FormDialogProps, "children" | "handleSubmit"> {
   studyId: string;
-  bindingConstraint: string;
-  append: UseFieldArrayAppend<BindingConstFields, "constraints">;
-  constraintsTerm: BindingConstFields["constraints"];
+  constraintId: string;
+  append: UseFieldArrayAppend<BindingConstraint, "terms">;
+  constraintTerms: ConstraintTerm[];
   options: AllClustersAndLinks;
 }
 
-function AddConstraintTermDialog(props: Props) {
+const defaultValues = {
+  id: "",
+  weight: 0,
+  offset: undefined,
+  data: {
+    area1: "",
+    area2: "",
+  },
+};
+
+/**
+ * @deprecated This form and all its children are deprecated due to the original design mixing different
+ * types of terms (links and clusters) in a single form state. This approach has proven to be problematic,
+ * leading to a non-separate and imprecise form state management. Future development should focus on
+ * separating these concerns into distinct components or forms to ensure cleaner, more maintainable code.
+ *
+ * The current workaround involves conditionally constructing the `newTerm` object based on the term type,
+ * which is not ideal and should be avoided in future designs.
+ *
+ * Potential Future Optimizations:
+ * - Separate link and cluster term forms into distinct components to simplify state management and
+ *   improve type safety.
+ * - Implement more granular type checks or leverage TypeScript discriminated unions more effectively
+ *   to avoid runtime type assertions and ensure compile-time type safety.
+ * - Consider redesigning the form state structure to more clearly differentiate between link and cluster
+ *   terms from the outset, possibly using separate state variables or contexts.
+ *
+ * Note: This component is not expected to evolve further in its current form. Any necessary bug fixes or
+ * minor improvements should be approached with caution, keeping in mind the planned obsolescence.
+ *
+ * @param props - The props passed to the component.
+ * @param  props.studyId - Identifier for the study to which the constraint term is being added.
+ * @param  props.constraintId - Identifier for the specific constraint to which the term is added.
+ * @param  props.options - Object containing potential options for populating form selects.
+ * @param  props.constraintTerms - Array of existing constraint terms.
+ * @param  props.append - Function to append the new term to the array of existing terms.
+ *
+ *@returns A React component that renders the form dialog for adding a constraint term.
+ */
+function AddConstraintTermDialog({
+  studyId,
+  constraintId,
+  options,
+  constraintTerms,
+  append,
+  ...dialogProps
+}: Props) {
   const [t] = useTranslation();
-  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
-  const { enqueueSnackbar } = useSnackbar();
-  const {
-    studyId,
-    bindingConstraint,
-    options,
-    constraintsTerm,
-    append,
-    ...dialogProps
-  } = props;
   const { onCancel } = dialogProps;
-  const defaultValues: ConstraintType = {
-    id: "",
-    weight: 0,
-    offset: 0,
-    data: {
-      area1: "",
-      area2: "",
-    },
-  };
-  const { data: optionsItems } = useStudySynthesis({
+  const { enqueueSnackbar } = useSnackbar();
+  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
+
+  const linksAndClusters = useStudySynthesis({
     studyId,
     selector: (state) => getLinksAndClusters(state, studyId),
   });
@@ -64,67 +89,48 @@ function AddConstraintTermDialog(props: Props) {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = async (values: SubmitHandlerPlus) => {
+  /**
+   * @deprecated Due to the challenges and limitations associated with dynamically determining term types
+   * and constructing term data based on runtime checks, this method is deprecated. Future implementations
+   * should consider using separate and explicit handling for different term types to enhance type safety,
+   * reduce complexity, and improve code maintainability.
+   *
+   * Potential future optimizations include adopting separate forms for link and cluster terms, leveraging
+   * TypeScript's type system more effectively, and implementing robust form validation.
+   *
+   * @param root0 - The first parameter object containing all form values.
+   * @param root0.values - The structured data of the form, including details about the term being submitted.
+   * It includes both link and cluster term fields due to the unified form design.
+   * @param _event - The event object for the form submission. May not be
+   * used explicitly in the function but is included to match the expected handler signature.
+   *
+   * @returns A promise that resolves when the term has been successfully submitted
+   * and processed or rejects in case of an error.
+   */
+  const handleSubmit = async (
+    { values }: SubmitHandlerPlus<ConstraintTerm>,
+    _event?: BaseSyntheticEvent,
+  ) => {
     try {
-      const tmpValues = values.dirtyValues as ConstraintType;
-      const isLink = isDataLink(tmpValues.data);
-      if (tmpValues.weight === undefined) {
-        tmpValues.weight = 0.0;
-      }
-      let data: LinkCreationInfoDTO | ClusterElement;
-      // Verify if this link/cluster combination is allowed
-      if (isLink) {
-        data = tmpValues.data as LinkCreationInfoDTO;
-        if (!isOptionExist(options.links, data.area1, data.area2)) {
-          enqueueSnackbar(
-            t("study.error.missingData", {
-              0: t("study.area1"),
-              1: t("study.area2"),
-            }),
-            { variant: "error" },
-          );
-          onCancel();
-          return;
-        }
-      } else {
-        data = tmpValues.data as ClusterElement;
-        if (!isOptionExist(options.clusters, data.area, data.cluster)) {
-          enqueueSnackbar(
-            t("study.error.missingData", {
-              0: t("study.area"),
-              1: t("study.cluster"),
-            }),
-            { variant: "error" },
-          );
-          onCancel();
-          return;
-        }
-      }
+      const newTerm = {
+        ...values,
+        data: isLinkTerm(values.data)
+          ? { area1: values.data.area1, area2: values.data.area2 }
+          : { area: values.data.area, cluster: values.data.cluster },
+      };
 
-      // Verify if this term already exist in current term list
-      const termId = dataToId(data);
-      if (isTermExist(constraintsTerm, termId)) {
-        enqueueSnackbar(t("study.error.termAlreadyExist"), {
-          variant: "error",
-        });
-        onCancel();
-        return;
-      }
+      await createConstraintTerm(studyId, constraintId, newTerm);
 
-      // Send
-      await addConstraintTerm(
-        studyId,
-        bindingConstraint,
-        values.dirtyValues as ConstraintType,
-      );
+      append(newTerm);
 
-      // Add to current UX
-      append(tmpValues as ConstraintType);
-      enqueueSnackbar(t("study.success.addConstraintTerm"), {
+      enqueueSnackbar(t("study.success.createConstraintTerm"), {
         variant: "success",
       });
     } catch (e) {
-      enqueueErrorSnackbar(t("study.error.addConstraintTerm"), e as AxiosError);
+      enqueueErrorSnackbar(
+        t("study.error.createConstraintTerm"),
+        e as AxiosError,
+      );
     } finally {
       onCancel();
     }
@@ -136,17 +142,21 @@ function AddConstraintTermDialog(props: Props) {
 
   return (
     <FormDialog
-      maxWidth="md"
+      maxWidth="lg"
       config={{ defaultValues }}
+      // @ts-expect-error // TODO fix
       onSubmit={handleSubmit}
       {...dialogProps}
     >
-      {optionsItems && (
-        <AddConstraintTermForm
-          options={optionsItems}
-          constraintsTerm={constraintsTerm}
-        />
-      )}
+      <UsePromiseCond
+        response={linksAndClusters}
+        ifResolved={(data) => (
+          <AddConstraintTermForm
+            options={data}
+            constraintTerms={constraintTerms}
+          />
+        )}
+      />
     </FormDialog>
   );
 }

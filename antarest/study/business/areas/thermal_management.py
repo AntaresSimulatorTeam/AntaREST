@@ -1,15 +1,25 @@
+import collections
 import json
 import typing as t
+from pathlib import Path
 
 from pydantic import validator
 
-from antarest.core.exceptions import ClusterAlreadyExists, ClusterConfigNotFound, ClusterNotFound
-from antarest.study.business.utils import AllOptionalMetaclass, camel_case_model, execute_or_add_commands
+from antarest.core.exceptions import (
+    DuplicateThermalCluster,
+    MatrixWidthMismatchError,
+    ThermalClusterConfigNotFound,
+    ThermalClusterNotFound,
+    WrongMatrixHeightError,
+)
+from antarest.core.model import JSON
+from antarest.study.business.all_optional_meta import AllOptionalMetaclass, camel_case_model
+from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import Study
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
-    Thermal860Config,
-    Thermal860Properties,
+    Thermal870Config,
+    Thermal870Properties,
     ThermalConfigType,
     create_thermal_config,
 )
@@ -29,10 +39,11 @@ __all__ = (
 
 _CLUSTER_PATH = "input/thermal/clusters/{area_id}/list/{cluster_id}"
 _CLUSTERS_PATH = "input/thermal/clusters/{area_id}/list"
+_ALL_CLUSTERS_PATH = "input/thermal/clusters"
 
 
 @camel_case_model
-class ThermalClusterInput(Thermal860Properties, metaclass=AllOptionalMetaclass, use_none=True):
+class ThermalClusterInput(Thermal870Properties, metaclass=AllOptionalMetaclass, use_none=True):
     """
     Model representing the data structure required to edit an existing thermal cluster within a study.
     """
@@ -72,7 +83,7 @@ class ThermalClusterCreation(ThermalClusterInput):
 
 
 @camel_case_model
-class ThermalClusterOutput(Thermal860Config, metaclass=AllOptionalMetaclass, use_none=True):
+class ThermalClusterOutput(Thermal870Config, metaclass=AllOptionalMetaclass, use_none=True):
     """
     Model representing the output data structure to display the details of a thermal cluster within a study.
     """
@@ -138,7 +149,7 @@ class ThermalManager:
             The cluster with the specified ID.
 
         Raises:
-            ClusterNotFound: If the specified cluster does not exist.
+            ThermalClusterNotFound: If the specified cluster does not exist.
         """
 
         file_study = self._get_file_study(study)
@@ -146,7 +157,7 @@ class ThermalManager:
         try:
             cluster = file_study.tree.get(path.split("/"), depth=1)
         except KeyError:
-            raise ClusterNotFound(cluster_id)
+            raise ThermalClusterNotFound(path, cluster_id) from None
         study_version = study.version
         return create_thermal_output(study_version, cluster_id, cluster)
 
@@ -166,7 +177,7 @@ class ThermalManager:
             A list of thermal clusters within the specified area.
 
         Raises:
-            ClusterConfigNotFound: If no clusters are found in the specified area.
+            ThermalClusterConfigNotFound: If no clusters are found in the specified area.
         """
 
         file_study = self._get_file_study(study)
@@ -174,9 +185,82 @@ class ThermalManager:
         try:
             clusters = file_study.tree.get(path.split("/"), depth=3)
         except KeyError:
-            raise ClusterConfigNotFound(area_id)
+            raise ThermalClusterConfigNotFound(path, area_id) from None
         study_version = study.version
         return [create_thermal_output(study_version, cluster_id, cluster) for cluster_id, cluster in clusters.items()]
+
+    def get_all_thermals_props(
+        self,
+        study: Study,
+    ) -> t.Mapping[str, t.Mapping[str, ThermalClusterOutput]]:
+        """
+        Retrieve all thermal clusters from all areas within a study.
+
+        Args:
+            study: Study from which to retrieve the clusters.
+
+        Returns:
+            A mapping of area IDs to a mapping of cluster IDs to thermal cluster configurations.
+
+        Raises:
+            ThermalClusterConfigNotFound: If no clusters are found in the specified area.
+        """
+
+        file_study = self._get_file_study(study)
+        path = _ALL_CLUSTERS_PATH
+        try:
+            # may raise KeyError if the path is missing
+            clusters = file_study.tree.get(path.split("/"), depth=5)
+            # may raise KeyError if "list" is missing
+            clusters = {area_id: cluster_list["list"] for area_id, cluster_list in clusters.items()}
+        except KeyError:
+            raise ThermalClusterConfigNotFound(path) from None
+
+        study_version = study.version
+        thermals_by_areas: t.MutableMapping[str, t.MutableMapping[str, ThermalClusterOutput]]
+        thermals_by_areas = collections.defaultdict(dict)
+        for area_id, cluster_obj in clusters.items():
+            for cluster_id, cluster in cluster_obj.items():
+                thermals_by_areas[area_id][cluster_id] = create_thermal_output(study_version, cluster_id, cluster)
+
+        return thermals_by_areas
+
+    def update_thermals_props(
+        self,
+        study: Study,
+        update_thermals_by_areas: t.Mapping[str, t.Mapping[str, ThermalClusterInput]],
+    ) -> t.Mapping[str, t.Mapping[str, ThermalClusterOutput]]:
+        old_thermals_by_areas = self.get_all_thermals_props(study)
+        new_thermals_by_areas = {area_id: dict(clusters) for area_id, clusters in old_thermals_by_areas.items()}
+
+        # Prepare the commands to update the thermal clusters.
+        commands = []
+        for area_id, update_thermals_by_ids in update_thermals_by_areas.items():
+            old_thermals_by_ids = old_thermals_by_areas[area_id]
+            for thermal_id, update_cluster in update_thermals_by_ids.items():
+                # Update the thermal cluster properties.
+                old_cluster = old_thermals_by_ids[thermal_id]
+                new_cluster = old_cluster.copy(update=update_cluster.dict(by_alias=False, exclude_none=True))
+                new_thermals_by_areas[area_id][thermal_id] = new_cluster
+
+                # Convert the DTO to a configuration object and update the configuration file.
+                properties = create_thermal_config(study.version, **new_cluster.dict(by_alias=False, exclude_none=True))
+                path = _CLUSTER_PATH.format(area_id=area_id, cluster_id=thermal_id)
+                cmd = UpdateConfig(
+                    target=path,
+                    data=json.loads(properties.json(by_alias=True, exclude={"id"})),
+                    command_context=self.storage_service.variant_study_service.command_factory.command_context,
+                )
+                commands.append(cmd)
+
+        file_study = self.storage_service.get_storage(study).get_raw(study)
+        execute_or_add_commands(study, file_study, commands, self.storage_service)
+
+        return new_thermals_by_areas
+
+    @staticmethod
+    def get_table_schema() -> JSON:
+        return ThermalClusterOutput.schema()
 
     def create_cluster(self, study: Study, area_id: str, cluster_data: ThermalClusterCreation) -> ThermalClusterOutput:
         """
@@ -235,7 +319,7 @@ class ThermalManager:
             The updated cluster.
 
         Raises:
-            ClusterNotFound: If the provided `cluster_id` does not match the ID of the cluster
+            ThermalClusterNotFound: If the provided `cluster_id` does not match the ID of the cluster
             in the provided cluster_data.
         """
 
@@ -245,7 +329,7 @@ class ThermalManager:
         try:
             values = file_study.tree.get(path.split("/"), depth=1)
         except KeyError:
-            raise ClusterNotFound(cluster_id) from None
+            raise ThermalClusterNotFound(path, cluster_id) from None
         else:
             old_config = create_thermal_config(study_version, **values)
 
@@ -317,7 +401,7 @@ class ThermalManager:
         new_id = transform_name_to_id(new_cluster_name, lower=False)
         lower_new_id = new_id.lower()
         if any(lower_new_id == cluster.id.lower() for cluster in self.get_clusters(study, area_id)):
-            raise ClusterAlreadyExists("Thermal", new_id)
+            raise DuplicateThermalCluster(area_id, new_id)
 
         # Cluster duplication
         source_cluster = self.get_cluster(study, area_id, source_id)
@@ -338,6 +422,11 @@ class ThermalManager:
             f"input/thermal/prepro/{area_id}/{lower_new_id}/modulation",
             f"input/thermal/prepro/{area_id}/{lower_new_id}/data",
         ]
+        if int(study.version) >= 870:
+            source_paths.append(f"input/thermal/series/{area_id}/{lower_source_id}/CO2Cost")
+            source_paths.append(f"input/thermal/series/{area_id}/{lower_source_id}/fuelCost")
+            new_paths.append(f"input/thermal/series/{area_id}/{lower_new_id}/CO2Cost")
+            new_paths.append(f"input/thermal/series/{area_id}/{lower_new_id}/fuelCost")
 
         # Prepare and execute commands
         commands: t.List[t.Union[CreateCluster, ReplaceMatrix]] = [create_cluster_cmd]
@@ -351,3 +440,38 @@ class ThermalManager:
         execute_or_add_commands(study, self._get_file_study(study), commands, self.storage_service)
 
         return ThermalClusterOutput(**new_config.dict(by_alias=False))
+
+    def validate_series(self, study: Study, area_id: str, cluster_id: str) -> bool:
+        lower_cluster_id = cluster_id.lower()
+        thermal_cluster_path = Path(f"input/thermal/series/{area_id}/{lower_cluster_id}")
+        series_path = [thermal_cluster_path / "series"]
+        if int(study.version) >= 870:
+            series_path.append(thermal_cluster_path / "CO2Cost")
+            series_path.append(thermal_cluster_path / "fuelCost")
+
+        ts_widths: t.MutableMapping[int, t.MutableSequence[str]] = {}
+        for ts_path in series_path:
+            matrix = self.storage_service.get_storage(study).get(study, ts_path.as_posix())
+            matrix_data = matrix["data"]
+            matrix_height = len(matrix_data)
+            # We ignore empty matrices as there are default matrices for the simulator.
+            if matrix_data != [[]] and matrix_height != 8760:
+                raise WrongMatrixHeightError(
+                    f"The matrix {ts_path.name} should have 8760 rows, currently: {matrix_height}"
+                )
+            matrix_width = len(matrix_data[0])
+            if matrix_width > 1:
+                ts_widths.setdefault(matrix_width, []).append(ts_path.name)
+
+        if len(ts_widths) > 1:
+            messages = []
+            for width, name_list in ts_widths.items():
+                names = ", ".join([f"'{name}'" for name in name_list])
+                message = {
+                    1: f"matrix {names} has {width} columns",
+                    2: f"matrices {names} have {width} columns",
+                }[min(2, len(name_list))]
+                messages.append(message)
+            raise MatrixWidthMismatchError("Mismatch widths: " + "; ".join(messages))
+
+        return True

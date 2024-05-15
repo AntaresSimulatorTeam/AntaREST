@@ -44,7 +44,7 @@ from antarest.study.model import (
     TimeSerie,
     TimeSeriesData,
 )
-from antarest.study.repository import StudyFilter, StudyMetadataRepository
+from antarest.study.repository import AccessPermissions, StudyFilter, StudyMetadataRepository
 from antarest.study.service import MAX_MISSING_STUDY_TIMEOUT, StudyService, StudyUpgraderTask, UserHasNotPermissionError
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -172,6 +172,7 @@ def test_study_listing(db_session: Session) -> None:
     config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
     repository = StudyMetadataRepository(cache_service=Mock(spec=ICache), session=db_session)
     service = build_study_service(raw_study_service, repository, config, cache_service=cache)
+    params: RequestParameters = RequestParameters(user=JWTUser(id=2, impersonator=2, type="users"))
 
     # retrieve studies that are not managed
     # use the db recorder to check that:
@@ -179,10 +180,7 @@ def test_study_listing(db_session: Session) -> None:
     # 2- having an exact total of queries equals to 1
     with DBStatementRecorder(db_session.bind) as db_recorder:
         studies = service.get_studies_information(
-            study_filter=StudyFilter(
-                managed=False,
-            ),
-            params=RequestParameters(user=JWTUser(id=2, impersonator=2, type="users")),
+            study_filter=StudyFilter(managed=False, access_permissions=AccessPermissions.from_params(params)),
         )
     assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
@@ -196,10 +194,7 @@ def test_study_listing(db_session: Session) -> None:
     # 2- having an exact total of queries equals to 1
     with DBStatementRecorder(db_session.bind) as db_recorder:
         studies = service.get_studies_information(
-            study_filter=StudyFilter(
-                managed=True,
-            ),
-            params=RequestParameters(user=JWTUser(id=2, impersonator=2, type="users")),
+            study_filter=StudyFilter(managed=True, access_permissions=AccessPermissions.from_params(params)),
         )
     assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
@@ -213,10 +208,7 @@ def test_study_listing(db_session: Session) -> None:
     # 2- having an exact total of queries equals to 1
     with DBStatementRecorder(db_session.bind) as db_recorder:
         studies = service.get_studies_information(
-            study_filter=StudyFilter(
-                managed=None,
-            ),
-            params=RequestParameters(user=JWTUser(id=2, impersonator=2, type="users")),
+            study_filter=StudyFilter(managed=None, access_permissions=AccessPermissions.from_params(params)),
         )
     assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
@@ -230,10 +222,7 @@ def test_study_listing(db_session: Session) -> None:
     # 2- the `put` method of `cache` was never used
     with DBStatementRecorder(db_session.bind) as db_recorder:
         studies = service.get_studies_information(
-            study_filter=StudyFilter(
-                managed=None,
-            ),
-            params=RequestParameters(user=JWTUser(id=2, impersonator=2, type="users")),
+            study_filter=StudyFilter(managed=None, access_permissions=AccessPermissions.from_params(params)),
         )
     assert len(db_recorder.sql_statements) == 1, str(db_recorder)
     with contextlib.suppress(AssertionError):
@@ -350,18 +339,30 @@ def test_partial_sync_studies_from_disk() -> None:
     )
 
 
-@pytest.mark.unit_test
-def test_remove_duplicate() -> None:
-    ma = RawStudy(id="a", path="a")
-    mb = RawStudy(id="b", path="a")
+@with_db_context
+def test_remove_duplicate(db_session: Session) -> None:
+    with db_session:
+        db_session.add(RawStudy(id="a", path="/path/to/a"))
+        db_session.add(RawStudy(id="b", path="/path/to/a"))
+        db_session.add(RawStudy(id="c", path="/path/to/c"))
+        db_session.commit()
+        study_count = db_session.query(RawStudy).filter(RawStudy.path == "/path/to/a").count()
+        assert study_count == 2  # there are 2 studies with same path before removing duplicates
 
-    repository = Mock()
-    repository.get_all.return_value = [ma, mb]
-    config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
-    service = build_study_service(Mock(), repository, config)
+    with db_session:
+        repository = StudyMetadataRepository(Mock(), db_session)
+        config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
+        service = build_study_service(Mock(), repository, config)
+        service.remove_duplicates()
 
-    service.remove_duplicates()
-    repository.delete.assert_called_once_with(mb.id)
+    # example with 1 duplicate with same path
+    with db_session:
+        study_count = db_session.query(RawStudy).filter(RawStudy.path == "/path/to/a").count()
+    assert study_count == 1
+    # example with no duplicates with same path
+    with db_session:
+        study_count = db_session.query(RawStudy).filter(RawStudy.path == "/path/to/c").count()
+    assert study_count == 1
 
 
 # noinspection PyArgumentList
@@ -571,7 +572,7 @@ def test_download_output() -> None:
     # AREA TYPE
     res_matrix = MatrixAggregationResultDTO(
         index=MatrixIndex(
-            start_date="2001-01-01 00:00:00",
+            start_date="2018-01-01 00:00:00",
             steps=1,
             first_week_size=7,
             level=StudyDownloadLevelDTO.ANNUAL,
@@ -631,7 +632,7 @@ def test_download_output() -> None:
     input_data.filter = ["east>west"]
     res_matrix = MatrixAggregationResultDTO(
         index=MatrixIndex(
-            start_date="2001-01-01 00:00:00",
+            start_date="2018-01-01 00:00:00",
             steps=1,
             first_week_size=7,
             level=StudyDownloadLevelDTO.ANNUAL,
@@ -661,7 +662,7 @@ def test_download_output() -> None:
     input_data.filterIn = "n"
     res_matrix = MatrixAggregationResultDTO(
         index=MatrixIndex(
-            start_date="2001-01-01 00:00:00",
+            start_date="2018-01-01 00:00:00",
             steps=1,
             first_week_size=7,
             level=StudyDownloadLevelDTO.ANNUAL,

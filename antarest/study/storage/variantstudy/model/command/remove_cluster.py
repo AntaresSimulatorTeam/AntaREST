@@ -134,26 +134,50 @@ class RemoveCluster(ICommand):
     def get_inner_matrices(self) -> t.List[str]:
         return []
 
-    # noinspection SpellCheckingInspection
     def _remove_cluster_from_binding_constraints(self, study_data: FileStudy) -> None:
-        config = study_data.tree.get(["input", "bindingconstraints", "bindingconstraints"])
+        """
+        Remove the binding constraints that are related to the thermal cluster.
 
-        # Binding constraints IDs to remove
-        ids_to_remove = set()
+        Notes:
+            A binding constraint has properties, a list of terms (which form a linear equation) and
+            a right-hand side (which is the matrix of the binding constraint).
+            The terms are of the form `area1%area2` or `area.cluster` where `area` is the ID of the area
+            and `cluster` is the ID of the cluster.
 
-        # Cluster IDs are stored in lower case in the binding contraints configuration file.
-        cluster_id = self.cluster_id.lower()
-        for bc_id, bc_props in config.items():
-            if f"{self.area_id}.{cluster_id}" in bc_props.keys():
-                ids_to_remove.add(bc_id)
+            When a thermal cluster is removed, it has an impact on the terms of the binding constraints.
+            At first, we could decide to remove the terms that are related to the area.
+            However, this would lead to a linear equation that is not valid anymore.
 
-        for bc_id in ids_to_remove:
-            study_data.tree.delete(["input", "bindingconstraints", config[bc_id]["id"]])
-            bc = next(iter([bind for bind in study_data.config.bindings if bind.id == config[bc_id]["id"]]))
-            study_data.config.bindings.remove(bc)
-            del config[bc_id]
+            Instead, we decide to remove the binding constraints that are related to the cluster.
+        """
+        # See also `RemoveCluster`
+        # noinspection SpellCheckingInspection
+        url = ["input", "bindingconstraints", "bindingconstraints"]
+        binding_constraints = study_data.tree.get(url)
 
-        study_data.tree.save(
-            config,
-            ["input", "bindingconstraints", "bindingconstraints"],
-        )
+        # Collect the binding constraints that are related to the area to remove
+        # by searching the terms that contain the ID of the area.
+        bc_to_remove = {}
+        lower_area_id = self.area_id.lower()
+        lower_cluster_id = self.cluster_id.lower()
+        for bc_index, bc in list(binding_constraints.items()):
+            for key in bc:
+                if "." not in key:
+                    # This key identifies a link or belongs to the set of properties.
+                    # It isn't a cluster ID, so we skip it.
+                    continue
+                # Term IDs are in the form `area1%area2` or `area.cluster`
+                # noinspection PyTypeChecker
+                related_area_id, related_cluster_id = map(str.lower, key.split("."))
+                if (lower_area_id, lower_cluster_id) == (related_area_id, related_cluster_id):
+                    bc_to_remove[bc_index] = binding_constraints.pop(bc_index)
+                    break
+
+        matrix_suffixes = ["_lt", "_gt", "_eq"] if study_data.config.version >= 870 else [""]
+
+        for bc_index, bc in bc_to_remove.items():
+            for suffix in matrix_suffixes:
+                # noinspection SpellCheckingInspection
+                study_data.tree.delete(["input", "bindingconstraints", f"{bc['id']}{suffix}"])
+
+        study_data.tree.save(binding_constraints, url)

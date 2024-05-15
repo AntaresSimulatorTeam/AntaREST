@@ -1,6 +1,36 @@
 Antares Web Changelog
 =====================
 
+v2.17 (2024-05-15)
+------------------
+
+Support for evolutions relating to studies in versions 8.7:
+- Scenarized RHS for binding constraints,
+- Thermal cluster new properties (cost generation mode, efficiency, variable OM cost)
+
+Support for evolutions relating to studies in versions 8.8:
+- Short-term storage¶: add `enabled` property
+- Experimental "MILP" mode (using launcher options)
+
+### Features
+
+* **bc:** add endpoint for multiple terms edition [`#2020`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2020)
+* **table-mode:** add missing properties for v8.6 and 8.7 [`#1643`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1643)
+* **ui-table-mode:** translate table types in add/edit modal
+
+
+### Bug Fixes
+
+* **bc:** handle undefined v8.3 fields [`#2026`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2026)
+* **table-mode:** hide `adequacy_patch_mode` column from table-mode before v8.3 [`#2022`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2022)
+* **ui-common:** allow only import of TSV file in `MatrixInput` [`#2027`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2027)
+* **ui-settings:** prevent false duplicates on group form updates [`#1998`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1998)
+* **ui-table-mode:** reset 'column' field when 'type' field change in create/update modal
+* **ui-table-mode:** unable to edit tables with old types
+* **ui-table-mode:** add missing "ST Storage" in Table Mode template [`#2016`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2016)
+* **download**: improve performance of Excel file download
+
+
 v2.16.8 (2024-04-19)
 --------------------
 

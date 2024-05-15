@@ -23,6 +23,34 @@ from antarest.study.storage.storage_service import StudyStorageService
 from tests.study.business.areas.assets import ASSETS_DIR
 
 
+class TestThermalClusterGroup:
+    """
+    Tests for the `ThermalClusterGroup` enumeration.
+    """
+
+    def test_nominal_case(self):
+        """
+        When a group is read from a INI file, the group should be the same as the one in the file.
+        """
+        group = ThermalClusterGroup("gas")  # different case: original is "Gas"
+        assert group == ThermalClusterGroup.GAS
+
+    def test_unknown(self):
+        """
+        When an unknown group is read from a INI file, the group should be `OTHER1`.
+        Note that this is the current behavior in Antares Solver.
+        """
+        group = ThermalClusterGroup("unknown")
+        assert group == ThermalClusterGroup.OTHER1
+
+    def test_invalid_type(self):
+        """
+        When an invalid type is used to create a group, a `ValueError` should be raised.
+        """
+        with pytest.raises(ValueError):
+            ThermalClusterGroup(123)
+
+
 @pytest.fixture(name="zip_legacy_path")
 def zip_legacy_path_fixture(tmp_path: Path) -> Path:
     target_dir = tmp_path.joinpath("resources")
@@ -141,6 +169,10 @@ class TestThermalManager:
             "op3": None,
             "op4": None,
             "op5": None,
+            # These values are also None as they are defined in v8.7+
+            "costGeneration": None,
+            "efficiency": None,
+            "variableOMCost": None,
         }
         assert actual == expected
 
@@ -203,6 +235,9 @@ class TestThermalManager:
                 "op3": None,
                 "op4": None,
                 "op5": None,
+                "costGeneration": None,
+                "efficiency": None,
+                "variableOMCost": None,
             },
             {
                 "id": "on and must 2",
@@ -239,6 +274,9 @@ class TestThermalManager:
                 "op3": None,
                 "op4": None,
                 "op5": None,
+                "costGeneration": None,
+                "efficiency": None,
+                "variableOMCost": None,
             },
             {
                 "id": "2 avail and must 2",
@@ -275,6 +313,9 @@ class TestThermalManager:
                 "op3": None,
                 "op4": None,
                 "op5": None,
+                "costGeneration": None,
+                "efficiency": None,
+                "variableOMCost": None,
             },
         ]
         assert actual == expected
@@ -343,6 +384,9 @@ class TestThermalManager:
                 "pm25": None,
                 "pm5": None,
                 "so2": None,
+                "costGeneration": None,
+                "efficiency": None,
+                "variableOMCost": None,
                 "spinning": 0.0,
                 "spreadCost": 0.0,
                 "startupCost": 0.0,
@@ -407,6 +451,10 @@ class TestThermalManager:
                 "op3": None,
                 "op4": None,
                 "op5": None,
+                # These values are also None as they are defined in v8.7+
+                "costGeneration": None,
+                "efficiency": None,
+                "variableOMCost": None,
             }
             assert actual == expected
 

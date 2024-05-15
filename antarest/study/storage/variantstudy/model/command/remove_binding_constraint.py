@@ -26,11 +26,11 @@ class RemoveBindingConstraint(ICommand):
                 dict(),
             )
         study_data.bindings.remove(next(iter([bind for bind in study_data.bindings if bind.id == self.id])))
-        return CommandOutput(status=True), dict()
+        return CommandOutput(status=True), {}
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
         if self.id not in [bind.id for bind in study_data.config.bindings]:
-            return CommandOutput(status=False, message="Binding constraint not found")
+            return CommandOutput(status=False, message=f"Binding constraint not found: '{self.id}'")
         binding_constraints = study_data.tree.get(["input", "bindingconstraints", "bindingconstraints"])
         new_binding_constraints: JSON = {}
         index = 0
@@ -43,7 +43,11 @@ class RemoveBindingConstraint(ICommand):
             new_binding_constraints,
             ["input", "bindingconstraints", "bindingconstraints"],
         )
-        study_data.tree.delete(["input", "bindingconstraints", self.id])
+        if study_data.config.version < 870:
+            study_data.tree.delete(["input", "bindingconstraints", self.id])
+        else:
+            for term in ["lt", "gt", "eq"]:
+                study_data.tree.delete(["input", "bindingconstraints", f"{self.id}_{term}"])
         output, _ = self._apply_config(study_data.config)
         return output
 

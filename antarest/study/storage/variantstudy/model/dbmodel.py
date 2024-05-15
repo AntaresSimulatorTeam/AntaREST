@@ -21,7 +21,7 @@ class VariantStudySnapshot(Base):  # type: ignore
 
     id: str = Column(
         String(36),
-        ForeignKey("variantstudy.id"),
+        ForeignKey("variantstudy.id", ondelete="CASCADE"),
         primary_key=True,
     )
     created_at: datetime.date = Column(DateTime)
@@ -48,14 +48,16 @@ class CommandBlock(Base):  # type: ignore
         default=lambda: str(uuid.uuid4()),
         unique=True,
     )
-    study_id: str = Column(String(36), ForeignKey("variantstudy.id"))
+    study_id: str = Column(String(36), ForeignKey("variantstudy.id", ondelete="CASCADE"))
     index: int = Column(Integer)
     command: str = Column(String(255))
     version: int = Column(Integer)
     args: str = Column(String())
 
     def to_dto(self) -> CommandDTO:
-        return CommandDTO(id=self.id, action=self.command, args=json.loads(self.args))
+        # Database may lack a version number, defaulting to 1 if so.
+        version = self.version or 1
+        return CommandDTO(id=self.id, action=self.command, args=json.loads(self.args), version=version)
 
     def __str__(self) -> str:
         return (
@@ -77,7 +79,7 @@ class VariantStudy(Study):
 
     id: str = Column(
         String(36),
-        ForeignKey("study.id"),
+        ForeignKey("study.id", ondelete="CASCADE"),
         primary_key=True,
     )
     generation_task: t.Optional[str] = Column(String(), nullable=True)

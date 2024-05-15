@@ -23,18 +23,17 @@ interface UseNavigateOnConditionOptions {
 }
 
 /**
- * A React hook for conditional navigation using react-router-dom.
+ * A React hook for conditional navigation using react-router-dom. This hook allows for navigating to a different route
+ * based on custom logic encapsulated in a `shouldNavigate` function. It observes specified dependencies and triggers navigation
+ * when they change if the conditions defined in `shouldNavigate` are met.
  *
- * @function
- * @name useNavigateOnCondition
- *
- * @param {Object} options - Configuration options for the hook.
- * @param {DependencyList} options.deps - An array of dependencies that the effect will observe.
- * @param {To} options.to - The target location to navigate to, it could be a route as a string or a relative numeric location.
- * @param {function} [options.shouldNavigate] - An optional function that returns a boolean to determine whether navigation should take place.
+ * @param options - Configuration options for the hook.
+ * @param options.deps - An array of dependencies that the effect will observe.
+ * @param options.to - The target location to navigate to, which can be a route as a string or a relative numeric location.
+ * @param options.shouldNavigate - An optional function that returns a boolean to determine whether navigation should take place. Defaults to a function that always returns true.
  *
  * @example
- * - Basic usage
+ * Basic usage
  * useNavigateOnCondition({
  *   deps: [someDependency],
  *   to: '/some-route',

@@ -46,7 +46,7 @@ class TestGeneratorMatrixConstants:
         matrix_dto5 = generator.matrix_service.get(matrix_id5)
         assert np.array(matrix_dto5.data).all() == matrix_constants.st_storage.series.inflows.all()
 
-    def test_get_binding_constraint(self, tmp_path):
+    def test_get_binding_constraint_before_v87(self, tmp_path):
         matrix_content_repository = MatrixContentRepository(
             bucket_dir=tmp_path,
         )
@@ -56,19 +56,14 @@ class TestGeneratorMatrixConstants:
             )
         )
         generator.init_constant_matrices()
-        series = matrix_constants.binding_constraint.series
+        series = matrix_constants.binding_constraint.series_before_v87
 
-        hourly = generator.get_binding_constraint_hourly()
+        hourly = generator.get_binding_constraint_hourly_86()
         hourly_matrix_id = hourly.split(MATRIX_PROTOCOL_PREFIX)[1]
         hourly_matrix_dto = generator.matrix_service.get(hourly_matrix_id)
         assert np.array(hourly_matrix_dto.data).all() == series.default_bc_hourly.all()
 
-        daily = generator.get_binding_constraint_daily()
-        daily_matrix_id = daily.split(MATRIX_PROTOCOL_PREFIX)[1]
-        daily_matrix_dto = generator.matrix_service.get(daily_matrix_id)
-        assert np.array(daily_matrix_dto.data).all() == series.default_bc_weekly_daily.all()
-
-        weekly = generator.get_binding_constraint_weekly()
-        weekly_matrix_id = weekly.split(MATRIX_PROTOCOL_PREFIX)[1]
-        weekly_matrix_dto = generator.matrix_service.get(weekly_matrix_id)
-        assert np.array(weekly_matrix_dto.data).all() == series.default_bc_weekly_daily.all()
+        daily_weekly = generator.get_binding_constraint_daily_weekly_86()
+        matrix_id = daily_weekly.split(MATRIX_PROTOCOL_PREFIX)[1]
+        matrix_dto = generator.matrix_service.get(matrix_id)
+        assert np.array(matrix_dto.data).all() == series.default_bc_weekly_daily.all()

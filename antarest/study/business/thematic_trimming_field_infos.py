@@ -4,7 +4,8 @@ List of fields of the Thematic Trimming panel
 
 import typing as t
 
-from antarest.study.business.utils import AllOptionalMetaclass, FormFieldsBaseModel
+from antarest.study.business.all_optional_meta import AllOptionalMetaclass
+from antarest.study.business.utils import FormFieldsBaseModel
 
 
 class ThematicTrimmingFormFields(FormFieldsBaseModel, metaclass=AllOptionalMetaclass, use_none=True):

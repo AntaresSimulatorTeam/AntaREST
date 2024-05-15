@@ -1,6 +1,5 @@
 import {
   Box,
-  Button,
   Paper,
   Skeleton,
   ToggleButton,
@@ -12,7 +11,6 @@ import { useTranslation } from "react-i18next";
 import { useNavigate, useOutletContext, useParams } from "react-router";
 import axios from "axios";
 import GridOffIcon from "@mui/icons-material/GridOff";
-import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
 import {
   Area,
   LinkElement,
@@ -44,12 +42,12 @@ import UsePromiseCond, {
   mergeResponses,
 } from "../../../../../common/utils/UsePromiseCond";
 import useStudySynthesis from "../../../../../../redux/hooks/useStudySynthesis";
-import { downloadMatrix } from "../../../../../../utils/matrixUtils";
 import ButtonBack from "../../../../../common/ButtonBack";
 import BooleanFE from "../../../../../common/fieldEditors/BooleanFE";
 import SelectFE from "../../../../../common/fieldEditors/SelectFE";
 import NumberFE from "../../../../../common/fieldEditors/NumberFE";
 import moment from "moment";
+import DownloadMatrixButton from "../../../../../common/DownloadMatrixButton.tsx";
 
 function ResultDetails() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -62,7 +60,7 @@ function ResultDetails() {
 
   const { data: output } = outputRes;
   const [dataType, setDataType] = useState(DataType.General);
-  const [timestep, setTimeStep] = useState(Timestep.Hourly);
+  const [timestep, setTimestep] = useState(Timestep.Hourly);
   const [year, setYear] = useState(-1);
   const [itemType, setItemType] = useState(OutputItemType.Areas);
   const [selectedItemId, setSelectedItemId] = useState("");
@@ -105,17 +103,22 @@ function ResultDetails() {
     [filteredItems],
   );
 
+  const path = useMemo(() => {
+    if (output && selectedItem && !isSynthesis) {
+      return createPath({
+        output,
+        item: selectedItem,
+        dataType,
+        timestep,
+        year,
+      });
+    }
+    return "";
+  }, [output, selectedItem, isSynthesis, dataType, timestep, year]);
+
   const matrixRes = usePromise<MatrixType | null>(
     async () => {
-      if (output && selectedItem && !isSynthesis) {
-        const path = createPath({
-          output,
-          item: selectedItem,
-          dataType,
-          timestep,
-          year,
-        });
-
+      if (path) {
         const res = await getStudyData(study.id, path);
         if (typeof res === "string") {
           const fixed = res
@@ -131,18 +134,17 @@ function ResultDetails() {
     {
       resetDataOnReload: true,
       resetErrorOnReload: true,
-      deps: [study.id, output, selectedItem, dataType, timestep, year],
+      deps: [study.id, path],
     },
   );
 
-  const { data: synthesis } = usePromise<string>(
-    async () => {
+  const { data: synthesis } = usePromise(
+    () => {
       if (outputId && selectedItem && isSynthesis) {
         const path = `output/${outputId}/economy/mc-all/grid/${selectedItem.id}`;
-        const res = await getStudyData(study.id, path);
-        return res;
+        return getStudyData<string>(study.id, path);
       }
-      return null;
+      return Promise.resolve(null);
     },
     {
       deps: [study.id, outputId, selectedItem],
@@ -151,7 +153,9 @@ function ResultDetails() {
 
   // !NOTE: Workaround to display the date in the correct format, to be replaced by a proper solution.
   const dateTimeFromIndex = useMemo(() => {
-    if (!matrixRes.data) return [];
+    if (!matrixRes.data) {
+      return [];
+    }
 
     // Annual format has a static string
     if (timestep === Timestep.Annual) {
@@ -199,10 +203,6 @@ function ResultDetails() {
     if (newValue && newValue !== itemType) {
       setItemType(newValue);
     }
-  };
-
-  const handleDownload = (matrixData: MatrixType, fileName: string): void => {
-    downloadMatrix(matrixData, fileName);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -363,7 +363,7 @@ function ResultDetails() {
                         size="small"
                         variant="outlined"
                         onChange={(event) => {
-                          setTimeStep(event?.target.value as Timestep);
+                          setTimestep(event?.target.value as Timestep);
                         }}
                       />
                     ),
@@ -383,19 +383,7 @@ function ResultDetails() {
                   <Field />
                 </Box>
               ))}
-              <Button
-                size="small"
-                title={t("global.download")}
-                variant="outlined"
-                color="primary"
-                onClick={() =>
-                  matrixRes.data &&
-                  handleDownload(matrixRes.data, `matrix_${study.id}`)
-                }
-                disabled={matrixRes.isLoading}
-              >
-                <DownloadOutlinedIcon />
-              </Button>
+              <DownloadMatrixButton studyId={study.id} path={path} />
             </Box>
             <Box sx={{ flex: 1 }}>
               <UsePromiseCond

@@ -3,7 +3,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from antarest.study.storage.rawstudy.model.filesystem.config.model import ENR_MODELLING, transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.model import EnrModelling, transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.command_reverter import CommandReverter
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
@@ -14,7 +14,7 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 
 class TestCreateArea:
     @pytest.mark.parametrize("version", [600, 650, 810, 830, 860])
-    @pytest.mark.parametrize("enr_modelling", list(ENR_MODELLING))
+    @pytest.mark.parametrize("enr_modelling", list(EnrModelling))
     def test_apply(
         self,
         empty_study: FileStudy,
@@ -132,7 +132,7 @@ class TestCreateArea:
         assert (study_path / "input" / "thermal" / "clusters" / area_id / "list.ini").exists()
 
         # Renewable Clusters
-        if version >= 810 and empty_study.config.enr_modelling == ENR_MODELLING.CLUSTERS.value:
+        if version >= 810 and empty_study.config.enr_modelling == EnrModelling.CLUSTERS.value:
             assert (study_path / "input" / "renewables" / "clusters" / area_id).is_dir()
             assert (study_path / "input" / "renewables" / "clusters" / area_id / "list.ini").exists()
 

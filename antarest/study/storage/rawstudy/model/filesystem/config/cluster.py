@@ -3,12 +3,11 @@ Common properties related to thermal and renewable clusters, and short-term stor
 
 In the near future, this set of classes may be used for solar, wind and hydro clusters.
 """
+
 import functools
 import typing as t
 
 from pydantic import BaseModel, Extra, Field
-
-__all__ = ("ItemProperties", "ClusterProperties")
 
 
 @functools.total_ordering
@@ -69,10 +68,16 @@ class ClusterProperties(ItemProperties):
     # Activity status:
     # - True: the plant may generate.
     # - False: not yet commissioned, moth-balled, etc.
-    enabled: bool = Field(default=True, description="Activity status")
+    enabled: bool = Field(default=True, description="Activity status", title="Enabled")
 
     # noinspection SpellCheckingInspection
-    unit_count: int = Field(default=1, ge=1, description="Unit count", alias="unitcount")
+    unit_count: int = Field(
+        default=1,
+        ge=1,
+        description="Unit count",
+        alias="unitcount",
+        title="Unit Count",
+    )
 
     # noinspection SpellCheckingInspection
     nominal_capacity: float = Field(
@@ -80,6 +85,7 @@ class ClusterProperties(ItemProperties):
         ge=0,
         description="Nominal capacity (MW per unit)",
         alias="nominalcapacity",
+        title="Nominal Capacity",
     )
 
     @property

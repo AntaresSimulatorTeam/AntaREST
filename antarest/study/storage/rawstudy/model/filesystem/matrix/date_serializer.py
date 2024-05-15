@@ -68,7 +68,7 @@ class HourlyMatrixSerializer(IDateMatrixSerializer):
 
     def build_date(self, index: pd.Index) -> pd.DataFrame:
         def _map(row: str) -> Tuple[str, int, str, str, str]:
-            m, d, h = re.split("[\s/]", row)
+            m, d, h = re.split(r"[\s/]", row)
             return "", 1, d, IDateMatrixSerializer._R_MONTHS[m], h
 
         items = index.map(_map).tolist()

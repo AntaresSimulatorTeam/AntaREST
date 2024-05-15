@@ -15,6 +15,7 @@ export enum HydroMatrixType {
   WaterValues,
   HydroStorage,
   RunOfRiver,
+  MinGen,
   InflowPattern,
   OverallMonthlyHydro,
   Allocation,
@@ -99,6 +100,10 @@ export const HYDRO_ROUTES: HydroRoute[] = [
     path: "ror",
     type: HydroMatrixType.RunOfRiver,
   },
+  {
+    path: "mingen",
+    type: HydroMatrixType.MinGen,
+  },
 ];
 
 export const MATRICES: Matrices = {
@@ -142,6 +147,11 @@ export const MATRICES: Matrices = {
   [HydroMatrixType.RunOfRiver]: {
     title: "Run Of River",
     url: "input/hydro/series/{areaId}/ror",
+    stats: MatrixStats.STATS,
+  },
+  [HydroMatrixType.MinGen]: {
+    title: "Min Gen",
+    url: "input/hydro/series/{areaId}/mingen",
     stats: MatrixStats.STATS,
   },
   [HydroMatrixType.InflowPattern]: {
@@ -200,7 +210,8 @@ export const MATRICES: Matrices = {
 
 /**
  * Generates an array of column names from 0 to 100, optionally with a suffix.
- * @param columnSuffix The suffix to append to the column names.
+ *
+ * @param columnSuffix - The suffix to append to the column names.
  * @returns An array of strings representing column names from 0 to 100.
  */
 function generateColumns(columnSuffix = ""): string[] {

@@ -8,6 +8,12 @@ import numpy as np
 import numpy.typing as npt
 import pytest
 
+from antarest.study.storage.study_upgrader import get_current_version
+
+if t.TYPE_CHECKING:
+    # noinspection PyPackageRequirements
+    from _pytest.fixtures import SubRequest
+
 from antarest.matrixstore.model import MatrixDTO
 from antarest.matrixstore.service import MatrixService
 from antarest.matrixstore.uri_resolver_service import UriResolverService
@@ -90,6 +96,7 @@ def matrix_service_fixture() -> MatrixService:
     matrix_service.get.side_effect = get
     matrix_service.exists.side_effect = exists
     matrix_service.delete.side_effect = delete
+    matrix_service.get_matrix_id.side_effect = get_matrix_id
 
     return matrix_service
 
@@ -137,27 +144,32 @@ def command_factory_fixture(matrix_service: MatrixService) -> CommandFactory:
 
 
 @pytest.fixture(name="empty_study")
-def empty_study_fixture(tmp_path: Path, matrix_service: MatrixService) -> FileStudy:
+def empty_study_fixture(request: "SubRequest", tmp_path: Path, matrix_service: MatrixService) -> FileStudy:
     """
     Fixture for creating an empty FileStudy object.
 
     Args:
+        request: pytest's request object.
         tmp_path: The temporary path for extracting the empty study.
         matrix_service: The MatrixService object.
 
     Returns:
         FileStudy: The empty FileStudy object.
     """
-    empty_study_path: Path = ASSETS_DIR / "empty_study_720.zip"
+    zip_name = getattr(request, "param", "empty_study_720.zip")
+    empty_study_path: Path = ASSETS_DIR / zip_name
     empty_study_destination_path = tmp_path.joinpath("empty-study")
     with zipfile.ZipFile(empty_study_path, "r") as zip_empty_study:
         zip_empty_study.extractall(empty_study_destination_path)
+
+    # Detect the version of the study from `study.antares` file.
+    version = get_current_version(empty_study_destination_path)
 
     config = FileStudyTreeConfig(
         study_path=empty_study_destination_path,
         path=empty_study_destination_path,
         study_id="",
-        version=720,
+        version=int(version),
         areas={},
         sets={},
     )

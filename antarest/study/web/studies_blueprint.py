@@ -15,7 +15,7 @@ from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.jwt import JWTUser
 from antarest.core.model import PublicMode
-from antarest.core.requests import RequestParameters
+from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.utils.utils import BadArchiveContent, sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
@@ -28,11 +28,13 @@ from antarest.study.model import (
     StudyMetadataPatchDTO,
     StudySimResultDTO,
 )
-from antarest.study.repository import StudyFilter, StudyPagination, StudySortBy
+from antarest.study.repository import AccessPermissions, StudyFilter, StudyPagination, StudySortBy
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 
 logger = logging.getLogger(__name__)
+
+QUERY_REGEX = r"^\s*(?:\d+\s*(?:,\s*\d+\s*)*)?$"
 
 
 def _split_comma_separated_values(value: str, *, default: t.Sequence[str] = ()) -> t.Sequence[str]:
@@ -76,49 +78,30 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         managed: t.Optional[bool] = Query(None, description="Filter studies based on their management status."),
         archived: t.Optional[bool] = Query(None, description="Filter studies based on their archive status."),
         variant: t.Optional[bool] = Query(None, description="Filter studies based on their variant status."),
-        versions: str = Query(
-            "",
-            description="Comma-separated list of versions for filtering.",
-            regex=r"^\s*(?:\d+\s*(?:,\s*\d+\s*)*)?$",
-        ),
-        users: str = Query(
-            "",
-            description="Comma-separated list of user IDs for filtering.",
-            regex=r"^\s*(?:\d+\s*(?:,\s*\d+\s*)*)?$",
-        ),
+        versions: str = Query("", description="Comma-separated list of versions for filtering.", regex=QUERY_REGEX),
+        users: str = Query("", description="Comma-separated list of user IDs for filtering.", regex=QUERY_REGEX),
         groups: str = Query("", description="Comma-separated list of group IDs for filtering."),
         tags: str = Query("", description="Comma-separated list of tags for filtering."),
-        study_ids: str = Query(
-            "",
-            description="Comma-separated list of study IDs for filtering.",
-            alias="studyIds",
-        ),
+        study_ids: str = Query("", description="Comma-separated list of study IDs for filtering.", alias="studyIds"),
         exists: t.Optional[bool] = Query(None, description="Filter studies based on their existence on disk."),
         workspace: str = Query("", description="Filter studies based on their workspace."),
         folder: str = Query("", description="Filter studies based on their folder."),
-        # It is advisable to use an optional Query parameter for enumerated types, like booleans.
         sort_by: t.Optional[StudySortBy] = Query(
             None,
             description="Sort studies based on their name (case-insensitive) or creation date.",
             alias="sortBy",
         ),
-        page_nb: NonNegativeInt = Query(
-            0,
-            description="Page number (starting from 0).",
-            alias="pageNb",
-        ),
+        page_nb: NonNegativeInt = Query(0, description="Page number (starting from 0).", alias="pageNb"),
         page_size: NonNegativeInt = Query(
-            0,
-            description="Number of studies per page (0 = no limit).",
-            alias="pageSize",
+            0, description="Number of studies per page (0 = no limit).", alias="pageSize"
         ),
     ) -> t.Dict[str, StudyMetadataDTO]:
         """
         Get the list of studies matching the specified criteria.
 
         Args:
+
         - `name`: Filter studies based on their name. Case-insensitive search for studies
-          whose name contains the specified value.
         - `managed`: Filter studies based on their management status.
         - `archived`: Filter studies based on their archive status.
         - `variant`: Filter studies based on their variant status.
@@ -144,6 +127,9 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
 
         user_list = [int(v) for v in _split_comma_separated_values(users)]
 
+        if not params.user:
+            raise UserHasNotPermissionError("FAIL permission: user is not logged")
+
         study_filter = StudyFilter(
             name=name,
             managed=managed,
@@ -157,16 +143,86 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
             exists=exists,
             workspace=workspace,
             folder=folder,
+            access_permissions=AccessPermissions.from_params(params),
         )
 
         matching_studies = study_service.get_studies_information(
-            params=params,
             study_filter=study_filter,
             sort_by=sort_by,
             pagination=StudyPagination(page_nb=page_nb, page_size=page_size),
         )
 
         return matching_studies
+
+    @bp.get(
+        "/studies/count",
+        tags=[APITag.study_management],
+        summary="Count Studies",
+    )
+    def count_studies(
+        current_user: JWTUser = Depends(auth.get_current_user),
+        name: str = Query("", description="Case-insensitive: filter studies based on their name.", alias="name"),
+        managed: t.Optional[bool] = Query(None, description="Management status filter."),
+        archived: t.Optional[bool] = Query(None, description="Archive status filter."),
+        variant: t.Optional[bool] = Query(None, description="Variant status filter."),
+        versions: str = Query("", description="Comma-separated versions filter.", regex=QUERY_REGEX),
+        users: str = Query("", description="Comma-separated user IDs filter.", regex=QUERY_REGEX),
+        groups: str = Query("", description="Comma-separated group IDs filter."),
+        tags: str = Query("", description="Comma-separated tags filter."),
+        study_ids: str = Query("", description="Comma-separated study IDs filter.", alias="studyIds"),
+        exists: t.Optional[bool] = Query(None, description="Existence on disk filter."),
+        workspace: str = Query("", description="Workspace filter."),
+        folder: str = Query("", description="Study folder filter."),
+    ) -> int:
+        """
+        Get the number of studies matching the specified criteria.
+
+        Args:
+
+        - `name`: Regexp to filter through studies based on their names
+        - `managed`: Whether to limit the selection based on management status.
+        - `archived`: Whether to limit the selection based on archive status.
+        - `variant`: Whether to limit the selection either raw or variant studies.
+        - `versions`: Comma-separated versions for studies to be selected.
+        - `users`: Comma-separated user IDs for studies to be selected.
+        - `groups`: Comma-separated group IDs for studies to be selected.
+        - `tags`: Comma-separated tags for studies to be selected.
+        - `studyIds`: Comma-separated IDs of studies to be selected.
+        - `exists`: Whether to limit the selection based on studies' existence on disk.
+        - `workspace`: to limit studies selection based on their workspace.
+        - `folder`: to limit studies selection based on their folder.
+
+        Returns:
+        - An integer representing the total number of studies matching the filters above and the user permissions.
+        """
+
+        logger.info("Counting matching studies", extra={"user": current_user.id})
+        params = RequestParameters(user=current_user)
+
+        user_list = [int(v) for v in _split_comma_separated_values(users)]
+
+        if not params.user:
+            raise UserHasNotPermissionError("FAIL permission: user is not logged")
+
+        count = study_service.count_studies(
+            study_filter=StudyFilter(
+                name=name,
+                managed=managed,
+                archived=archived,
+                variant=variant,
+                versions=_split_comma_separated_values(versions),
+                users=user_list,
+                groups=_split_comma_separated_values(groups),
+                tags=_split_comma_separated_values(tags),
+                study_ids=_split_comma_separated_values(study_ids),
+                exists=exists,
+                workspace=workspace,
+                folder=folder,
+                access_permissions=AccessPermissions.from_params(params),
+            ),
+        )
+
+        return count
 
     @bp.get(
         "/studies/{uuid}/comments",

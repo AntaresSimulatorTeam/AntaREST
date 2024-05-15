@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, List, Optional
+import typing as t
 
 from antarest.core.model import JSON, SUB_JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
@@ -12,7 +12,7 @@ class RegisteredFile:
     def __init__(
         self,
         key: str,
-        node: Optional[Callable[[ContextServer, FileStudyTreeConfig], INode[Any, Any, Any]]],
+        node: t.Optional[t.Callable[[ContextServer, FileStudyTreeConfig], INode[t.Any, t.Any, t.Any]]],
         filename: str = "",
     ):
         self.key = key
@@ -29,42 +29,36 @@ class BucketNode(FolderNode):
         self,
         context: ContextServer,
         config: FileStudyTreeConfig,
-        registered_files: Optional[List[RegisteredFile]] = None,
-        default_file_node: Callable[..., INode[Any, Any, Any]] = RawFileNode,
+        registered_files: t.Optional[t.List[RegisteredFile]] = None,
+        default_file_node: t.Callable[..., INode[t.Any, t.Any, t.Any]] = RawFileNode,
     ):
         super().__init__(context, config)
-        self.registered_files: List[RegisteredFile] = registered_files or []
-        self.default_file_node: Callable[..., INode[Any, Any, Any]] = default_file_node
+        self.registered_files: t.List[RegisteredFile] = registered_files or []
+        self.default_file_node: t.Callable[..., INode[t.Any, t.Any, t.Any]] = default_file_node
 
-    def _get_registered_file(self, key: str) -> Optional[RegisteredFile]:
-        for registered_file in self.registered_files:
-            if registered_file.key == key:
-                return registered_file
-        return None
+    def _get_registered_file_by_key(self, key: str) -> t.Optional[RegisteredFile]:
+        return next((rf for rf in self.registered_files if rf.key == key), None)
 
-    def _get_registered_file_from_filename(self, filename: str) -> Optional[RegisteredFile]:
-        for registered_file in self.registered_files:
-            if registered_file.filename == filename:
-                return registered_file
-        return None
+    def _get_registered_file_by_filename(self, filename: str) -> t.Optional[RegisteredFile]:
+        return next((rf for rf in self.registered_files if rf.filename == filename), None)
 
     def save(
         self,
         data: SUB_JSON,
-        url: Optional[List[str]] = None,
+        url: t.Optional[t.List[str]] = None,
     ) -> None:
         self._assert_not_in_zipped_file()
         if not self.config.path.exists():
             self.config.path.mkdir()
 
-        if url is None or len(url) == 0:
-            assert isinstance(data, Dict)
+        if not url:
+            assert isinstance(data, dict)
             for key, value in data.items():
                 self._save(value, key)
         else:
             key = url[0]
             if len(url) > 1:
-                registered_file = self._get_registered_file(key)
+                registered_file = self._get_registered_file_by_key(key)
                 if registered_file:
                     node = registered_file.node or self.default_file_node
                     node(self.context, self.config.next_file(key)).save(data, url[1:])
@@ -74,7 +68,7 @@ class BucketNode(FolderNode):
                 self._save(data, key)
 
     def _save(self, data: SUB_JSON, key: str) -> None:
-        registered_file = self._get_registered_file(key)
+        registered_file = self._get_registered_file_by_key(key)
         if registered_file:
             node, filename = (
                 registered_file.node or self.default_file_node,
@@ -88,12 +82,12 @@ class BucketNode(FolderNode):
             BucketNode(self.context, self.config.next_file(key)).save(data)
 
     def build(self) -> TREE:
-        if not self.config.path.exists():
-            return dict()
+        if not self.config.path.is_dir():
+            return {}
 
         children: TREE = {}
         for item in sorted(self.config.path.iterdir()):
-            registered_file = self._get_registered_file_from_filename(item.name)
+            registered_file = self._get_registered_file_by_filename(item.name)
             if registered_file:
                 node = registered_file.node or self.default_file_node
                 children[registered_file.key] = node(self.context, self.config.next_file(item.name))
@@ -107,7 +101,7 @@ class BucketNode(FolderNode):
     def check_errors(
         self,
         data: JSON,
-        url: Optional[List[str]] = None,
+        url: t.Optional[t.List[str]] = None,
         raising: bool = False,
-    ) -> List[str]:
+    ) -> t.List[str]:
         return []

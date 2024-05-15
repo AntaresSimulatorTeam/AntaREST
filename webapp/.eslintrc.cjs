@@ -11,12 +11,14 @@ module.exports = {
     "plugin:react/recommended",
     "plugin:react/jsx-runtime",
     "plugin:react-hooks/recommended",
+    "plugin:jsdoc/recommended-typescript",
     "plugin:prettier/recommended",
   ],
   plugins: ["react-refresh"],
   ignorePatterns: ["dist", ".eslintrc.cjs"],
   parser: "@typescript-eslint/parser",
   parserOptions: {
+    // `ecmaVersion` is automatically sets by `esXXXX` in `env`
     sourceType: "module",
     project: ["./tsconfig.json", "./tsconfig.node.json"],
     tsconfigRootDir: __dirname,
@@ -41,6 +43,12 @@ module.exports = {
         ],
       },
     ],
+    curly: "error",
+    "jsdoc/no-defaults": "off",
+    "jsdoc/require-hyphen-before-param-description": "warn",
+    "jsdoc/require-jsdoc": "off",
+    "jsdoc/tag-lines": ["warn", "any", { "startLines": 1 }], // Expected 1 line after block description
+    "no-console": "error",
     "no-param-reassign": [
       "error",
       {
@@ -65,6 +73,9 @@ module.exports = {
       "warn",
       { allowConstantExport: true },
     ],
+    "react/hook-use-state": "error",
     "react/prop-types": "off",
+    "react/self-closing-comp": "error",
+    "require-await": "warn", // TODO: switch to "error" when the quantity of warning will be low
   },
 };

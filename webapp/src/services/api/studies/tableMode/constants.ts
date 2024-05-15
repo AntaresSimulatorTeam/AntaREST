@@ -1,20 +1,30 @@
-const AREA = "area";
-const LINK = "link";
-const CLUSTER = "cluster";
-const RENEWABLE = "renewable";
-const BINDING_CONSTRAINT = "binding constraint";
+const AREA = "areas";
+const LINK = "links";
+const THERMAL = "thermals";
+const RENEWABLE = "renewables";
+const ST_STORAGE = "st-storages";
+const BINDING_CONSTRAINT = "binding-constraints";
 
 export const TABLE_MODE_TYPES = [
   AREA,
   LINK,
-  CLUSTER,
+  THERMAL,
   RENEWABLE,
+  ST_STORAGE,
   BINDING_CONSTRAINT,
 ] as const;
 
+// Deprecated types (breaking change from v2.16.8)
+export const TABLE_MODE_TYPES_ALIASES = {
+  area: AREA,
+  link: LINK,
+  cluster: THERMAL,
+  renewable: RENEWABLE,
+  "binding constraint": BINDING_CONSTRAINT,
+};
+
 export const TABLE_MODE_COLUMNS_BY_TYPE = {
   [AREA]: [
-    // Optimization - Nodal optimization
     "nonDispatchablePower",
     "dispatchableHydroPower",
     "otherDispatchablePower",
@@ -22,10 +32,9 @@ export const TABLE_MODE_COLUMNS_BY_TYPE = {
     "spreadUnsuppliedEnergyCost",
     "averageSpilledEnergyCost",
     "spreadSpilledEnergyCost",
-    // Optimization - Filtering
     "filterSynthesis",
     "filterYearByYear",
-    // Adequacy patch
+    // Since v8.3
     "adequacyPatchMode",
   ],
   [LINK]: [
@@ -36,38 +45,79 @@ export const TABLE_MODE_COLUMNS_BY_TYPE = {
     "assetType",
     "linkStyle",
     "linkWidth",
+    "comments",
     "displayComments",
     "filterSynthesis",
     "filterYearByYear",
   ],
-  [CLUSTER]: [
+  [THERMAL]: [
     "group",
     "enabled",
-    "mustRun",
     "unitCount",
     "nominalCapacity",
+    "genTs",
     "minStablePower",
-    "spinning",
     "minUpTime",
     "minDownTime",
-    "co2",
-    "marginalCost",
-    "fixedCost",
-    "startupCost",
-    "marketBidCost",
-    "spreadCost",
-    "tsGen",
+    "mustRun",
+    "spinning",
     "volatilityForced",
     "volatilityPlanned",
     "lawForced",
     "lawPlanned",
+    "marginalCost",
+    "spreadCost",
+    "fixedCost",
+    "startupCost",
+    "marketBidCost",
+    "co2",
+    // Since v8.6
+    "nh3",
+    "so2",
+    "nox",
+    "pm25",
+    "pm5",
+    "pm10",
+    "nmvoc",
+    "op1",
+    "op2",
+    "op3",
+    "op4",
+    "op5",
+    // Since v8.7
+    "costGeneration",
+    "efficiency",
+    "variableOMCost",
   ],
   [RENEWABLE]: [
+    // Since v8.1
     "group",
-    "tsInterpretation",
     "enabled",
+    "tsInterpretation",
     "unitCount",
     "nominalCapacity",
   ],
-  [BINDING_CONSTRAINT]: ["type", "operator", "enabled"],
+  [ST_STORAGE]: [
+    // Since v8.6
+    "group",
+    "injectionNominalCapacity",
+    "withdrawalNominalCapacity",
+    "reservoirCapacity",
+    "efficiency",
+    "initialLevel",
+    "initialLevelOptim",
+    // Since v8.8
+    "enabled",
+  ],
+  [BINDING_CONSTRAINT]: [
+    "enabled",
+    "timeStep",
+    "operator",
+    "comments",
+    // Since v8.3
+    "filterSynthesis",
+    "filterYearByYear",
+    // Since v8.7
+    "group",
+  ],
 } as const;

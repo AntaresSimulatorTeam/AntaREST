@@ -27,23 +27,23 @@ We should test the following end poins:
 * delete a cluster (or several clusters)
 * validate the consistency of the matrices (and properties)
 """
+import io
 import json
 import re
 import typing as t
 
 import numpy as np
+import pandas as pd
 import pytest
 from starlette.testclient import TestClient
 
 from antarest.core.utils.string import to_camel_case
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
-from antarest.study.storage.rawstudy.model.filesystem.config.thermal import Thermal860Properties, ThermalProperties
+from antarest.study.storage.rawstudy.model.filesystem.config.thermal import ThermalProperties
+from tests.integration.utils import wait_task_completion
 
 DEFAULT_PROPERTIES = json.loads(ThermalProperties(name="Dummy").json())
 DEFAULT_PROPERTIES = {to_camel_case(k): v for k, v in DEFAULT_PROPERTIES.items() if k != "name"}
-
-DEFAULT_860_PROPERTIES = json.loads(Thermal860Properties(name="Dummy").json())
-DEFAULT_860_PROPERTIES = {to_camel_case(k): v for k, v in DEFAULT_860_PROPERTIES.items() if k != "name"}
 
 # noinspection SpellCheckingInspection
 EXISTING_CLUSTERS = [
@@ -63,19 +63,7 @@ EXISTING_CLUSTERS = [
         "minUpTime": 1,
         "mustRun": False,
         "name": "01_solar",
-        "nh3": None,
-        "nmvoc": None,
         "nominalCapacity": 1000000.0,
-        "nox": None,
-        "op1": None,
-        "op2": None,
-        "op3": None,
-        "op4": None,
-        "op5": None,
-        "pm10": None,
-        "pm25": None,
-        "pm5": None,
-        "so2": None,
         "spinning": 0.0,
         "spreadCost": 0.0,
         "startupCost": 0.0,
@@ -99,19 +87,7 @@ EXISTING_CLUSTERS = [
         "minUpTime": 1,
         "mustRun": False,
         "name": "02_wind_on",
-        "nh3": None,
-        "nmvoc": None,
         "nominalCapacity": 1000000.0,
-        "nox": None,
-        "op1": None,
-        "op2": None,
-        "op3": None,
-        "op4": None,
-        "op5": None,
-        "pm10": None,
-        "pm25": None,
-        "pm5": None,
-        "so2": None,
         "spinning": 0.0,
         "spreadCost": 0.0,
         "startupCost": 0.0,
@@ -135,19 +111,7 @@ EXISTING_CLUSTERS = [
         "minUpTime": 1,
         "mustRun": False,
         "name": "03_wind_off",
-        "nh3": None,
-        "nmvoc": None,
         "nominalCapacity": 1000000.0,
-        "nox": None,
-        "op1": None,
-        "op2": None,
-        "op3": None,
-        "op4": None,
-        "op5": None,
-        "pm10": None,
-        "pm25": None,
-        "pm5": None,
-        "so2": None,
         "spinning": 0.0,
         "spreadCost": 0.0,
         "startupCost": 0.0,
@@ -171,19 +135,7 @@ EXISTING_CLUSTERS = [
         "minUpTime": 1,
         "mustRun": False,
         "name": "04_res",
-        "nh3": None,
-        "nmvoc": None,
         "nominalCapacity": 1000000.0,
-        "nox": None,
-        "op1": None,
-        "op2": None,
-        "op3": None,
-        "op4": None,
-        "op5": None,
-        "pm10": None,
-        "pm25": None,
-        "pm5": None,
-        "so2": None,
         "spinning": 0.0,
         "spreadCost": 0.0,
         "startupCost": 0.0,
@@ -207,19 +159,7 @@ EXISTING_CLUSTERS = [
         "minUpTime": 1,
         "mustRun": False,
         "name": "05_nuclear",
-        "nh3": None,
-        "nmvoc": None,
         "nominalCapacity": 1000000.0,
-        "nox": None,
-        "op1": None,
-        "op2": None,
-        "op3": None,
-        "op4": None,
-        "op5": None,
-        "pm10": None,
-        "pm25": None,
-        "pm5": None,
-        "so2": None,
         "spinning": 0.0,
         "spreadCost": 0.0,
         "startupCost": 0.0,
@@ -243,19 +183,7 @@ EXISTING_CLUSTERS = [
         "minUpTime": 1,
         "mustRun": False,
         "name": "06_coal",
-        "nh3": None,
-        "nmvoc": None,
         "nominalCapacity": 1000000.0,
-        "nox": None,
-        "op1": None,
-        "op2": None,
-        "op3": None,
-        "op4": None,
-        "op5": None,
-        "pm10": None,
-        "pm25": None,
-        "pm5": None,
-        "so2": None,
         "spinning": 0.0,
         "spreadCost": 0.0,
         "startupCost": 0.0,
@@ -279,19 +207,7 @@ EXISTING_CLUSTERS = [
         "minUpTime": 1,
         "mustRun": False,
         "name": "07_gas",
-        "nh3": None,
-        "nmvoc": None,
         "nominalCapacity": 1000000.0,
-        "nox": None,
-        "op1": None,
-        "op2": None,
-        "op3": None,
-        "op4": None,
-        "op5": None,
-        "pm10": None,
-        "pm25": None,
-        "pm5": None,
-        "so2": None,
         "spinning": 0.0,
         "spreadCost": 0.0,
         "startupCost": 0.0,
@@ -315,19 +231,7 @@ EXISTING_CLUSTERS = [
         "minUpTime": 1,
         "mustRun": False,
         "name": "08_non-res",
-        "nh3": None,
-        "nmvoc": None,
         "nominalCapacity": 1000000.0,
-        "nox": None,
-        "op1": None,
-        "op2": None,
-        "op3": None,
-        "op4": None,
-        "op5": None,
-        "pm10": None,
-        "pm25": None,
-        "pm5": None,
-        "so2": None,
         "spinning": 0.0,
         "spreadCost": 0.0,
         "startupCost": 0.0,
@@ -351,19 +255,7 @@ EXISTING_CLUSTERS = [
         "minUpTime": 1,
         "mustRun": False,
         "name": "09_hydro_pump",
-        "nh3": None,
-        "nmvoc": None,
         "nominalCapacity": 1000000.0,
-        "nox": None,
-        "op1": None,
-        "op2": None,
-        "op3": None,
-        "op4": None,
-        "op5": None,
-        "pm10": None,
-        "pm25": None,
-        "pm5": None,
-        "so2": None,
         "spinning": 0.0,
         "spreadCost": 0.0,
         "startupCost": 0.0,
@@ -374,17 +266,66 @@ EXISTING_CLUSTERS = [
 ]
 
 
+def _upload_matrix(
+    client: TestClient, user_access_token: str, study_id: str, matrix_path: str, df: pd.DataFrame
+) -> None:
+    tsv = io.BytesIO()
+    df.to_csv(tsv, sep="\t", index=False, header=False)
+    tsv.seek(0)
+    res = client.put(
+        f"/v1/studies/{study_id}/raw",
+        params={"path": matrix_path},
+        headers={"Authorization": f"Bearer {user_access_token}"},
+        files={"file": tsv},
+    )
+    res.raise_for_status()
+
+
 @pytest.mark.unit_test
 class TestThermal:
+    @pytest.mark.parametrize(
+        "version", [pytest.param(0, id="No Upgrade"), pytest.param(860, id="v8.6"), pytest.param(870, id="v8.7")]
+    )
     def test_lifecycle(
-        self,
-        client: TestClient,
-        user_access_token: str,
-        study_id: str,
+        self, client: TestClient, user_access_token: str, study_id: str, admin_access_token: str, version: int
     ) -> None:
         # =============================
-        #  THERMAL CLUSTER CREATION
+        #  STUDY UPGRADE
         # =============================
+
+        if version != 0:
+            res = client.put(
+                f"/v1/studies/{study_id}/upgrade",
+                headers={"Authorization": f"Bearer {admin_access_token}"},
+                params={"target_version": version},
+            )
+            res.raise_for_status()
+            task_id = res.json()
+            task = wait_task_completion(client, admin_access_token, task_id)
+            from antarest.core.tasks.model import TaskStatus
+
+            assert task.status == TaskStatus.COMPLETED, task
+
+        # =================================
+        #  UPDATE EXPECTED POLLUTANTS LIST
+        # =================================
+
+        # noinspection SpellCheckingInspection
+        pollutants_names = ["nh3", "nmvoc", "nox", "op1", "op2", "op3", "op4", "op5", "pm10", "pm25", "pm5", "so2"]
+        pollutants_values = 0.0 if version >= 860 else None
+        for existing_cluster in EXISTING_CLUSTERS:
+            existing_cluster.update({p: pollutants_values for p in pollutants_names})
+            existing_cluster.update(
+                {
+                    "costGeneration": "SetManually" if version == 870 else None,
+                    "efficiency": 100.0 if version == 870 else None,
+                    "variableOMCost": 0.0 if version == 870 else None,
+                }
+            )
+
+        # ==========================
+        #  THERMAL CLUSTER CREATION
+        # ==========================
 
         area_id = transform_name_to_id("FR")
         fr_gas_conventional = "FR_Gas conventional"
@@ -430,18 +371,15 @@ class TestThermal:
         fr_gas_conventional_cfg = {
             **fr_gas_conventional_props,
             "id": fr_gas_conventional_id,
-            "nh3": None,
-            "nmvoc": None,
-            "nox": None,
-            "op1": None,
-            "op2": None,
-            "op3": None,
-            "op4": None,
-            "op5": None,
-            "pm10": None,
-            "pm25": None,
-            "pm5": None,
-            "so2": None,
+            **{p: pollutants_values for p in pollutants_names},
+        }
+        fr_gas_conventional_cfg = {
+            **fr_gas_conventional_cfg,
+            **{
+                "costGeneration": "SetManually" if version == 870 else None,
+                "efficiency": 100.0 if version == 870 else None,
+                "variableOMCost": 0.0 if version == 870 else None,
+            },
         }
         assert res.json() == fr_gas_conventional_cfg
 
@@ -453,9 +391,9 @@ class TestThermal:
         assert res.status_code == 200, res.json()
         assert res.json() == fr_gas_conventional_cfg
 
-        # =============================
+        # ==========================
         #  THERMAL CLUSTER MATRICES
-        # =============================
+        # ==========================
 
         matrix = np.random.randint(0, 2, size=(8760, 1)).tolist()
         matrix_path = f"input/thermal/prepro/{area_id}/{fr_gas_conventional_id.lower()}/data"
@@ -554,6 +492,24 @@ class TestThermal:
         assert res.status_code == 200, res.json()
         assert res.json() == fr_gas_conventional_cfg
 
+        # Update with a pollutant. Should succeed even with versions prior to v8.6
+        res = client.patch(
+            f"/v1/studies/{study_id}/areas/{area_id}/clusters/thermal/{fr_gas_conventional_id}",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+            json={"nox": 10.0},
+        )
+        assert res.status_code == 200
+        assert res.json()["nox"] == 10.0
+
+        # Update with the field `efficiency`. Should succeed even with versions prior to v8.7
+        res = client.patch(
+            f"/v1/studies/{study_id}/areas/{area_id}/clusters/thermal/{fr_gas_conventional_id}",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+            json={"efficiency": 97.0},
+        )
+        assert res.status_code == 200
+        assert res.json()["efficiency"] == 97.0
+
         # =============================
         #  THERMAL CLUSTER DUPLICATION
         # =============================
@@ -570,6 +526,11 @@ class TestThermal:
         duplicated_config["name"] = new_name
         duplicated_id = transform_name_to_id(new_name, lower=False)
         duplicated_config["id"] = duplicated_id
+        # takes the update into account
+        if version >= 860:
+            duplicated_config["nox"] = 10
+        if version >= 870:
+            duplicated_config["efficiency"] = 97.0
         assert res.json() == duplicated_config
 
         # asserts the matrix has also been duplicated
@@ -583,8 +544,107 @@ class TestThermal:
         assert res.json()["data"] == matrix
 
         # =============================
+        #  THERMAL CLUSTER VALIDATION
+        # =============================
+
+        # Everything is fine at the beginning
+        res = client.get(
+            f"/v1/studies/{study_id}/areas/{area_id}/clusters/thermal/{fr_gas_conventional_id}/validate",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+        )
+        assert res.status_code == 200
+        assert res.json() is True
+
+        # Modifies series matrix with wrong length (!= 8760)
+        _upload_matrix(
+            client,
+            user_access_token,
+            study_id,
+            f"input/thermal/series/{area_id}/{fr_gas_conventional_id.lower()}/series",
+            pd.DataFrame(np.random.randint(0, 10, size=(4, 1))),
+        )
+
+        # Validation should fail
+        res = client.get(
+            f"/v1/studies/{study_id}/areas/{area_id}/clusters/thermal/{fr_gas_conventional_id}/validate",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+        )
+        assert res.status_code == 422
+        obj = res.json()
+        assert obj["exception"] == "WrongMatrixHeightError"
+        assert obj["description"] == "The matrix series should have 8760 rows, currently: 4"
+
+        # Update with the right length
+        _upload_matrix(
+            client,
+            user_access_token,
+            study_id,
+            f"input/thermal/series/{area_id}/{fr_gas_conventional_id.lower()}/series",
+            pd.DataFrame(np.random.randint(0, 10, size=(8760, 4))),
+        )
+
+        # Validation should succeed again
+        res = client.get(
+            f"/v1/studies/{study_id}/areas/{area_id}/clusters/thermal/{fr_gas_conventional_id}/validate",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+        )
+        assert res.status_code == 200
+        assert res.json() is True
+
+        if version >= 870:
+            # Adds a CO2Cost matrix with different columns size
+            _upload_matrix(
+                client,
+                user_access_token,
+                study_id,
+                f"input/thermal/series/{area_id}/{fr_gas_conventional_id.lower()}/CO2Cost",
+                pd.DataFrame(np.random.randint(0, 10, size=(8760, 3))),
+            )
+
+            # Validation should fail
+            res = client.get(
+                f"/v1/studies/{study_id}/areas/{area_id}/clusters/thermal/{fr_gas_conventional_id}/validate",
+                headers={"Authorization": f"Bearer {user_access_token}"},
+            )
+            assert res.status_code == 422
+            obj = res.json()
+            assert obj["exception"] == "MatrixWidthMismatchError"
+            pattern = r".*'series'.*4.*'CO2Cost'.*3"
+            assert re.match(pattern, obj["description"])
+
+        # =============================
         #  THERMAL CLUSTER DELETION
         # =============================
+
+        # Here is a Binding Constraint that references the thermal cluster.:
+        bc_obj = {
+            "name": "Binding Constraint",
+            "enabled": True,
+            "time_step": "hourly",
+            "operator": "less",
+            "terms": [
+                {
+                    "id": f"{area_id}.{fr_gas_conventional_id.lower()}",
+                    "weight": 2,
+                    "offset": 5,
+                    "data": {"area": area_id, "cluster": fr_gas_conventional_id.lower()},
+                }
+            ],
+            "comments": "New API",
+        }
+        matrix = np.random.randint(0, 1000, size=(8784, 3))
+        if version < 870:
+            bc_obj["values"] = matrix.tolist()
+        else:
+            bc_obj["lessTermMatrix"] = matrix.tolist()
+
+        # noinspection SpellCheckingInspection
+        res = client.post(
+            f"/v1/studies/{study_id}/bindingconstraints",
+            json=bc_obj,
+            headers={"Authorization": f"Bearer {user_access_token}"},
+        )
+        assert res.status_code in {200, 201}, res.json()
 
         # To delete a thermal cluster, we need to provide its ID.
         res = client.request(
@@ -595,6 +655,15 @@ class TestThermal:
         )
         assert res.status_code == 204, res.json()
         assert res.text in {"", "null"}  # Old FastAPI versions return 'null'.
+
+        # When we delete a thermal cluster, we should also delete the binding constraints that reference it.
+        # noinspection SpellCheckingInspection
+        res = client.get(
+            f"/v1/studies/{study_id}/bindingconstraints",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+        )
+        assert res.status_code == 200, res.json()
+        assert len(res.json()) == 0
 
         # If the thermal cluster list is empty, the deletion should be a no-op.
         res = client.request(
@@ -801,8 +870,8 @@ class TestThermal:
         )
         assert res.status_code == 404, res.json()
         obj = res.json()
-        assert obj["description"] == f"Cluster: '{unknown_id}' not found"
-        assert obj["exception"] == "ClusterNotFound"
+        assert f"'{unknown_id}' not found" in obj["description"]
+        assert obj["exception"] == "ThermalClusterNotFound"
 
         # Cannot duplicate with an existing id
         res = client.post(
@@ -814,7 +883,7 @@ class TestThermal:
         obj = res.json()
         description = obj["description"]
         assert new_name.upper() in description
-        assert obj["exception"] == "ClusterAlreadyExists"
+        assert obj["exception"] == "DuplicateThermalCluster"
 
     @pytest.fixture(name="base_study_id")
     def base_study_id_fixture(self, request: t.Any, client: TestClient, user_access_token: str) -> str:

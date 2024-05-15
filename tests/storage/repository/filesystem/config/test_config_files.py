@@ -1,15 +1,12 @@
 import logging
 import textwrap
+import typing as t
 from pathlib import Path
-from typing import Any, Dict
 from zipfile import ZipFile
 
 import pytest
 
-from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
-    BindingConstraintDTO,
-    BindingConstraintFrequency,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.files import (
     _parse_links_filtering,
     _parse_renewables,
@@ -21,6 +18,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.files import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
+    BindingConstraintDTO,
     DistrictSet,
     FileStudyTreeConfig,
     Link,
@@ -28,7 +26,12 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.renewable import RenewableConfig
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import STStorageConfig, STStorageGroup
-from antarest.study.storage.rawstudy.model.filesystem.config.thermal import Thermal860Config, ThermalConfig
+from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
+    Thermal860Config,
+    Thermal870Config,
+    ThermalConfig,
+    ThermalCostGeneration,
+)
 from tests.storage.business.assets import ASSETS_DIR
 
 
@@ -214,7 +217,7 @@ def test_parse_outputs(study_path: Path) -> None:
         ),
     ],
 )
-def test_parse_outputs__nominal(tmp_path: Path, assets_name: str, expected: Dict[str, Any]) -> None:
+def test_parse_outputs__nominal(tmp_path: Path, assets_name: str, expected: t.Dict[str, t.Any]) -> None:
     """
     This test decompresses a zipped study (stored in the `assets` directory)
     into a temporary directory and executes the parsing of the outputs.
@@ -376,10 +379,24 @@ def test_parse_thermal_860(study_path: Path, version, caplog) -> None:
     ini_path.write_text(THERMAL_860_LIST_INI)
     with caplog.at_level(logging.WARNING):
         actual = _parse_thermal(study_path, "fr")
-    if version >= 860:
+    if version == 860:
         expected = [
             Thermal860Config(id="t1", name="t1"),
             Thermal860Config(id="t2", name="t2", co2=156, nh3=456),
+        ]
+        assert not caplog.text
+    elif version == 870:
+        expected = [
+            Thermal870Config(id="t1", name="t1"),
+            Thermal870Config(
+                id="t2",
+                name="t2",
+                co2=156,
+                nh3=456,
+                cost_generation=ThermalCostGeneration.SET_MANUALLY,
+                efficiency=100.0,
+                variable_o_m_cost=0,
+            ),
         ]
         assert not caplog.text
     else:

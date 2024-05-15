@@ -3,14 +3,11 @@ import { useSnackbar } from "notistack";
 import { useState } from "react";
 import { AxiosError } from "axios";
 import debug from "debug";
-import { Typography, Box, Button, Divider, Tooltip } from "@mui/material";
-import UploadOutlinedIcon from "@mui/icons-material/UploadOutlined";
-import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
-import InventoryIcon from "@mui/icons-material/Inventory";
+import { Typography, Box, Divider } from "@mui/material";
+import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import {
   MatrixEditDTO,
   MatrixStats,
-  MatrixType,
   StudyMetadata,
 } from "../../../common/types";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
@@ -23,9 +20,9 @@ import SimpleContent from "../page/SimpleContent";
 import EditableMatrix from "../EditableMatrix";
 import ImportDialog from "../dialogs/ImportDialog";
 import MatrixAssignDialog from "./MatrixAssignDialog";
-import { downloadMatrix } from "../../../utils/matrixUtils";
 import { fetchMatrixFn } from "../../App/Singlestudy/explore/Modelization/Areas/Hydro/utils";
-import { LoadingButton } from "@mui/lab";
+import SplitButton from "../buttons/SplitButton";
+import DownloadMatrixButton from "../DownloadMatrixButton.tsx";
 
 const logErr = debug("antares:createimportform:error");
 
@@ -57,7 +54,6 @@ function MatrixInput({
   const [t] = useTranslation();
   const [openImportDialog, setOpenImportDialog] = useState(false);
   const [openMatrixAsignDialog, setOpenMatrixAsignDialog] = useState(false);
-  const [isDownloading, setIsDownloading] = useState(false);
 
   const {
     data: matrixData,
@@ -86,6 +82,7 @@ function MatrixInput({
    * Otherwise, default row numbers and timestamps are displayed using initialRowNames.
    */
   const rowNames = fetchFn ? matrixIndex : initialRowNames;
+  const columnsLength = matrixData?.columns?.length ?? 0;
 
   ////////////////////////////////////////////////////////////////
   // Utils
@@ -138,16 +135,6 @@ function MatrixInput({
     }
   };
 
-  const handleDownload = async (matrixData: MatrixType, fileName: string) => {
-    setIsDownloading(true);
-
-    // Re-fetch to get latest data
-    const data = await fetchMatrixData();
-    downloadMatrix(data, fileName);
-
-    setIsDownloading(false);
-  };
-
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
@@ -166,54 +153,36 @@ function MatrixInput({
           >
             {title || t("xpansion.timeSeries")}
           </Typography>
-          <Box sx={{ display: "flex", alignItems: "center" }}>
-            <Button
-              sx={{
-                mx: 2,
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <SplitButton
+              options={[
+                t("global.import.fromFile"),
+                t("global.import.fromDatabase"),
+              ]}
+              onClick={(_, index) => {
+                if (index === 0) {
+                  setOpenImportDialog(true);
+                } else {
+                  setOpenMatrixAsignDialog(true);
+                }
               }}
-              variant="outlined"
-              color="primary"
-              onClick={() => setOpenMatrixAsignDialog(true)}
-            >
-              <Tooltip title={t("data.assignMatrix") as string}>
-                <InventoryIcon />
-              </Tooltip>
-            </Button>
-
-            <Button
-              variant="outlined"
-              color="primary"
-              startIcon={<UploadOutlinedIcon />}
-              onClick={() => setOpenImportDialog(true)}
+              size="small"
+              ButtonProps={{
+                startIcon: <FileDownloadIcon />,
+              }}
             >
               {t("global.import")}
-            </Button>
-
-            {matrixData?.columns?.length >= 1 && (
-              <LoadingButton
-                sx={{
-                  ml: 2,
-                }}
-                loadingPosition="start"
-                loading={isDownloading}
-                variant="outlined"
-                color="primary"
-                startIcon={<DownloadOutlinedIcon />}
-                onClick={() =>
-                  handleDownload(
-                    matrixData,
-                    `matrix_${study.id}_${url.replace("/", "_")}`,
-                  )
-                }
-              >
-                {t("global.download")}
-              </LoadingButton>
-            )}
+            </SplitButton>
+            <DownloadMatrixButton
+              studyId={study.id}
+              path={url}
+              disabled={columnsLength === 0}
+            />
           </Box>
         </Header>
         <Divider sx={{ width: "100%", mt: 1, mb: 2 }} />
         {isLoading && <SimpleLoader />}
-        {!isLoading && matrixData?.columns?.length >= 1 && matrixIndex ? (
+        {!isLoading && columnsLength >= 1 && matrixIndex ? (
           <EditableMatrix
             matrix={matrixData}
             matrixTime={!rowNames}
@@ -226,21 +195,7 @@ function MatrixInput({
             isPercentDisplayEnabled={enablePercentDisplay}
           />
         ) : (
-          !isLoading && (
-            <SimpleContent
-              title="matrix.message.matrixEmpty"
-              callToAction={
-                <Button
-                  variant="outlined"
-                  color="primary"
-                  startIcon={<UploadOutlinedIcon />}
-                  onClick={() => setOpenImportDialog(true)}
-                >
-                  {t("global.import")}
-                </Button>
-              }
-            />
-          )
+          !isLoading && <SimpleContent title="matrix.message.matrixEmpty" />
         )}
       </Content>
       {openImportDialog && (
@@ -250,6 +205,9 @@ function MatrixInput({
           dropzoneText={t("matrix.message.importHint")}
           onClose={() => setOpenImportDialog(false)}
           onImport={handleImport}
+          accept={{
+            "text/tsv": [".tsv"],
+          }}
         />
       )}
       {openMatrixAsignDialog && (

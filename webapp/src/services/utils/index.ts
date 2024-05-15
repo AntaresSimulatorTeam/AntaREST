@@ -155,7 +155,7 @@ export const exportText = (fileData: string, filename: string): void => {
  *
  * Ex: '820' -> '8.2'
  *
- * @param v Version in format '[major][minor]0' (ex: '820').
+ * @param v - Version in format '[major][minor]0' (ex: '820').
  * @returns Version in format '[major].[minor]' (ex: '8.2').
  */
 export const displayVersionName = (v: string): string => `${v[0]}.${v[1]}`;
@@ -248,7 +248,12 @@ export const sortByName = <T extends { name: string }>(list: T[]): T[] => {
 };
 
 /**
- * @deprecated This function is deprecated. Please use nameToId instead.
+ * Converts a name string to an ID format.
+ *
+ * @deprecated Please use `nameToId` instead.
+ *
+ * @param name - The string to transform.
+ * @returns The transformed ID string.
  */
 export const transformNameToId = (name: string): string => {
   let duppl = false;
@@ -290,7 +295,8 @@ export const transformNameToId = (name: string): string => {
  * Converts a name string to a valid ID string.
  * Replacing any characters that are not alphanumeric or -_,()& with a space,
  * trimming the resulting string, and converting it to lowercase.
- * @param name The name string to convert to an ID.
+ *
+ * @param name - The name string to convert to an ID.
  * @returns The resulting ID string.
  */
 export const nameToId = (name: string): string => {

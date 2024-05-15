@@ -16,7 +16,7 @@ function TextSeparator(props: Props) {
       alignItems="center"
       sx={rootStyle}
     >
-      <Typography variant="caption" sx={{ my: 2, ...textStyle }}>
+      <Typography variant="caption" sx={{ ...textStyle }}>
         {text}
       </Typography>
       <Divider

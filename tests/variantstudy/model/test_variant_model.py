@@ -12,10 +12,10 @@ from antarest.login.model import Group, Role, User
 from antarest.study.model import RawStudy, StudyAdditionalData
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
-from antarest.study.storage.variantstudy.model.model import CommandDTO, GenerationResultInfoDTO
+from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.snapshot_generator import SnapshotGenerator
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
-from tests.helpers import with_db_context
+from tests.helpers import AnyUUID, with_db_context
 
 
 class TestVariantStudyService:
@@ -141,13 +141,33 @@ class TestVariantStudyService:
             repository=variant_study_service.repository,
         )
         results = generator.generate_snapshot(saved_id, jwt_user, denormalize=False)
-        assert results == GenerationResultInfoDTO(
-            success=True,
-            details=[
-                ("create_area", True, "Area 'Yes' created"),
-                ("create_area", True, "Area 'No' created"),
-                ("create_link", True, "Link between 'no' and 'yes' created"),
-                ("create_cluster", True, "Thermal cluster 'cl1' added to area 'yes'."),
+        assert results.dict() == {
+            "success": True,
+            "details": [
+                {
+                    "id": AnyUUID(),
+                    "name": "create_area",
+                    "status": True,
+                    "msg": "Area 'Yes' created",
+                },
+                {
+                    "id": AnyUUID(),
+                    "name": "create_area",
+                    "status": True,
+                    "msg": "Area 'No' created",
+                },
+                {
+                    "id": AnyUUID(),
+                    "name": "create_link",
+                    "status": True,
+                    "msg": "Link between 'no' and 'yes' created",
+                },
+                {
+                    "id": AnyUUID(),
+                    "name": "create_cluster",
+                    "status": True,
+                    "msg": "Thermal cluster 'cl1' added to area 'yes'.",
+                },
             ],
-        )
+        }
         assert study.snapshot.id == study.id

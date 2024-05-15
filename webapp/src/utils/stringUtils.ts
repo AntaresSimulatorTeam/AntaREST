@@ -11,9 +11,14 @@ export const isSearchMatching = R.curry(
 );
 
 /**
- * Formats a string with values.
+ * Formats a string by replacing placeholders with specified values.
+ *
+ * @param str - The string containing placeholders in the format `{placeholder}`.
+ * @param values - An object mapping placeholders to their replacement values.
+ * @returns The formatted string with all placeholders replaced by their corresponding values.
+ *
  * @example
- * format("Hello {name}", { name: "John" }); // returns "Hello John"
+ * format("Hello {name}", { name: "John" }); // Returns: "Hello John"
  */
 export function format(str: string, values: Record<string, string>): string {
   return str.replace(/{([a-zA-Z0-9]+)}/g, (_, key) => values[key]);

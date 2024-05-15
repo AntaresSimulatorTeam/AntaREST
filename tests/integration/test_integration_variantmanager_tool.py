@@ -21,8 +21,7 @@ from antarest.tools.lib import (
     generate_study,
     parse_commands,
 )
-
-test_dir: Path = Path(__file__).parent
+from tests.integration.assets import ASSETS_DIR
 
 
 def generate_csv_string(array: npt.NDArray[np.float64]) -> str:
@@ -49,27 +48,26 @@ def generate_study_with_server(
         f"/v1/studies/{base_study_id}/variants?name={urllib.parse.quote_plus(name)}",
         headers={"Authorization": f'Bearer {admin_credentials["access_token"]}'},
     )
+    assert res.status_code == 200, res.json()
     variant_id = res.json()
-    assert res.status_code == 200
     generator = RemoteVariantGenerator(variant_id, session=client, token=admin_credentials["access_token"])
     return generator.apply_commands(commands, matrices_dir), variant_id
 
 
 def test_variant_manager(app: FastAPI, tmp_path: str) -> None:
     client = TestClient(app, raise_server_exceptions=False)
-    commands = parse_commands(test_dir / "assets" / "commands1.json")
-    matrix_dir = Path(tmp_path) / "empty_matrix_store"
+    commands = parse_commands(ASSETS_DIR / "commands1.json")
+    matrix_dir = tmp_path / "empty_matrix_store"
     matrix_dir.mkdir(parents=True, exist_ok=True)
     res, study_id = generate_study_with_server(client, "test", "720", commands, matrix_dir)
     assert res is not None and res.success
 
 
 def test_parse_commands(tmp_path: str, app: FastAPI) -> None:
-    base_dir = test_dir / "assets"
-    export_path = Path(tmp_path) / "commands"
+    export_path = tmp_path / "commands"
     study = "base_study"
-    study_path = Path(tmp_path) / study
-    with ZipFile(base_dir / "base_study.zip") as zip_output:
+    study_path = tmp_path / study
+    with ZipFile(ASSETS_DIR / "base_study.zip") as zip_output:
         zip_output.extractall(path=tmp_path)
     output_dir = Path(export_path) / study
     study_info = IniReader().read(study_path / "study.antares")
@@ -83,7 +81,7 @@ def test_parse_commands(tmp_path: str, app: FastAPI) -> None:
     )
     res, study_id = generate_study_with_server(client, name, version, commands, output_dir / MATRIX_STORE_DIR)
     assert res is not None and res.success
-    generated_study_path = Path(tmp_path) / "internal_workspace" / study_id / "snapshot"
+    generated_study_path = tmp_path / "internal_workspace" / study_id / "snapshot"
     assert generated_study_path.exists() and generated_study_path.is_dir()
 
     single_column_empty_items = [
@@ -188,20 +186,19 @@ def test_parse_commands(tmp_path: str, app: FastAPI) -> None:
 
 
 def test_diff_local(tmp_path: Path) -> None:
-    base_dir = test_dir / "assets"
-    export_path = Path(tmp_path) / "generation_result"
+    export_path = tmp_path / "generation_result"
     base_study = "base_study"
     variant_study = "variant_study"
     output_study_commands = export_path / "output_study_commands"
-    output_study_path = Path(tmp_path) / base_study
+    output_study_path = tmp_path / base_study
     base_study_commands = export_path / base_study
     variant_study_commands = export_path / variant_study
-    variant_study_path = Path(tmp_path) / variant_study
+    variant_study_path = tmp_path / variant_study
 
     for study in [base_study, variant_study]:
-        with ZipFile(base_dir / f"{study}.zip") as zip_output:
+        with ZipFile(ASSETS_DIR / f"{study}.zip") as zip_output:
             zip_output.extractall(path=tmp_path)
-        extract_commands(Path(tmp_path) / study, export_path / study)
+        extract_commands(tmp_path / study, export_path / study)
 
     generate_study(base_study_commands, None, str(export_path / "base_generated"))
     generate_study(

@@ -24,7 +24,7 @@ interface PropType {
 function CreateCandidateDialog(props: PropType) {
   const { open, links, onClose, onSave, candidates } = props;
   const [t] = useTranslation();
-  const [isToggled, setToggle] = useState(true);
+  const [isToggled, setIsToggled] = useState(true);
 
   const existingCandidates = useMemo(
     () => candidates.map(({ name }) => name),
@@ -36,7 +36,7 @@ function CreateCandidateDialog(props: PropType) {
   ////////////////////////////////////////////////////////////////
 
   const handleToggle = () => {
-    setToggle(!isToggled);
+    setIsToggled(!isToggled);
   };
 
   const handleSubmit = (data: SubmitHandlerPlus<XpansionCandidate>) => {

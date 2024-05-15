@@ -6,14 +6,6 @@ from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.storage.rawstudy.model.filesystem.config.cluster import ItemProperties
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import LowerCaseIdentifier
 
-__all__ = (
-    "STStorageGroup",
-    "STStorageProperties",
-    "STStorageConfig",
-    "STStorageConfigType",
-    "create_st_storage_config",
-)
-
 
 class STStorageGroup(EnumIgnoreCase):
     """
@@ -50,44 +42,62 @@ class STStorageProperties(ItemProperties):
     group: STStorageGroup = Field(
         STStorageGroup.OTHER1,
         description="Energy storage system group",
+        title="Short-Term Storage Group",
     )
     injection_nominal_capacity: float = Field(
         0,
         description="Injection nominal capacity (MW)",
         ge=0,
         alias="injectionnominalcapacity",
+        title="Injection Nominal Capacity",
     )
     withdrawal_nominal_capacity: float = Field(
         0,
         description="Withdrawal nominal capacity (MW)",
         ge=0,
         alias="withdrawalnominalcapacity",
+        title="Withdrawal Nominal Capacity",
     )
     reservoir_capacity: float = Field(
         0,
         description="Reservoir capacity (MWh)",
         ge=0,
         alias="reservoircapacity",
+        title="Reservoir Capacity",
     )
     efficiency: float = Field(
         1,
         description="Efficiency of the storage system (%)",
         ge=0,
         le=1,
+        title="Efficiency",
     )
-    # The `initial_level` value must be between 0 and 1, but the default value is 0.
+    # The `initial_level` value must be between 0 and 1, but the default value is 0.5
     initial_level: float = Field(
         0.5,
         description="Initial level of the storage system (%)",
         ge=0,
         le=1,
         alias="initiallevel",
+        title="Initial Level",
     )
     initial_level_optim: bool = Field(
         False,
         description="Flag indicating if the initial level is optimized",
         alias="initialleveloptim",
+        title="Initial Level Optimization",
     )
+
+
+class STStorage880Properties(STStorageProperties):
+    """
+    Short term storage configuration model for 880 study.
+    """
+
+    # Activity status:
+    # - True: the plant may generate.
+    # - False: Ignored by the simulator.
+    enabled: bool = Field(default=True, description="Activity status")
 
 
 # noinspection SpellCheckingInspection
@@ -116,7 +126,45 @@ class STStorageConfig(STStorageProperties, LowerCaseIdentifier):
     """
 
 
-STStorageConfigType = STStorageConfig
+class STStorage880Config(STStorage880Properties, LowerCaseIdentifier):
+    """
+    Short Term Storage properties for study in version 8.8 or above.
+
+    Usage:
+
+    >>> from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import STStorage880Config
+
+    >>> st = STStorage880Config(name="Storage 1", group="battery", enabled=False)
+    >>> st.id
+    'storage 1'
+    >>> st.group == STStorageGroup.BATTERY
+    True
+    >>> st.enabled
+    False
+    """
+
+
+# NOTE: In the following Union, it is important to place the older version first,
+# because otherwise, creating a short term storage always creates a v8.8 one.
+STStorageConfigType = t.Union[STStorageConfig, STStorage880Config]
+
+
+def get_st_storage_config_cls(study_version: t.Union[str, int]) -> t.Type[STStorageConfigType]:
+    """
+    Retrieves the short-term storage configuration class based on the study version.
+
+    Args:
+        study_version: The version of the study.
+
+    Returns:
+        The short-term storage configuration class.
+    """
+    version = int(study_version)
+    if version >= 880:
+        return STStorage880Config
+    elif version >= 860:
+        return STStorageConfig
+    raise ValueError(f"Unsupported study version: {version}")
 
 
 def create_st_storage_config(study_version: t.Union[str, int], **kwargs: t.Any) -> STStorageConfigType:
@@ -133,7 +181,5 @@ def create_st_storage_config(study_version: t.Union[str, int], **kwargs: t.Any) 
     Raises:
         ValueError: If the study version is not supported.
     """
-    version = int(study_version)
-    if version < 860:
-        raise ValueError(f"Unsupported study version: {version}")
-    return STStorageConfig(**kwargs)
+    cls = get_st_storage_config_cls(study_version)
+    return cls(**kwargs)

@@ -1,11 +1,8 @@
 import { Box } from "@mui/material";
-import * as R from "ramda";
-import { ReactNode } from "react";
 import { useOutletContext } from "react-router";
 import { StudyMetadata } from "../../../../../../common/types";
 import SimpleLoader from "../../../../../common/loaders/SimpleLoader";
 import SimpleContent from "../../../../../common/page/SimpleContent";
-import SplitLayoutView from "../../../../../common/SplitLayoutView";
 import BindingConstPropsView from "./BindingConstPropsView";
 import {
   getBindingConst,
@@ -18,25 +15,42 @@ import BindingConstView from "./BindingConstView";
 import usePromise from "../../../../../../hooks/usePromise";
 import { getBindingConstraintList } from "../../../../../../services/api/studydata";
 import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
+import { useEffect } from "react";
+import SplitView from "../../../../../common/SplitView";
 
 function BindingConstraints() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
+  const dispatch = useAppDispatch();
+
+  const currentConstraintId = useAppSelector(getCurrentBindingConstId);
+
   const bindingConstraints = useAppSelector((state) =>
     getBindingConst(state, study.id),
   );
-  const res = usePromise(
+
+  // TODO find better name
+  const constraints = usePromise(
     () => getBindingConstraintList(study.id),
     [study.id, bindingConstraints],
   );
-  const currentBindingConst = useAppSelector(getCurrentBindingConstId);
-  const dispatch = useAppDispatch();
+
+  useEffect(() => {
+    const { data } = constraints;
+
+    if (!data || data.length === 0 || currentConstraintId) {
+      return;
+    }
+
+    const firstConstraintId = data[0].id;
+    dispatch(setCurrentBindingConst(firstConstraintId));
+  }, [constraints, currentConstraintId, dispatch]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleBindingConstClick = (bindingConstId: string): void => {
-    dispatch(setCurrentBindingConst(bindingConstId));
+  const handleConstraintChange = (constraintId: string): void => {
+    dispatch(setCurrentBindingConst(constraintId));
   };
 
   ////////////////////////////////////////////////////////////////
@@ -44,43 +58,27 @@ function BindingConstraints() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <SplitLayoutView
-      left={
-        <UsePromiseCond
-          response={res}
-          ifPending={() => <SimpleLoader />}
-          ifResolved={(data) => (
-            <Box width="100%" height="100%">
-              <BindingConstPropsView
-                onClick={handleBindingConstClick}
-                list={data || []}
-                studyId={study.id}
-                currentBindingConst={currentBindingConst || undefined}
-              />
-            </Box>
-          )}
-        />
-      }
-      right={
-        <>
-          {R.cond([
-            // Binding constraints list
-            [
-              () => !!currentBindingConst && res.data !== undefined,
-              () =>
-                (
-                  <BindingConstView bindingConst={currentBindingConst} />
-                ) as ReactNode,
-            ],
-            // No Areas
-            [
-              R.T,
-              () =>
-                (<SimpleContent title="No Binding Constraints" />) as ReactNode,
-            ],
-          ])()}
-        </>
-      }
+    <UsePromiseCond
+      response={constraints}
+      ifPending={() => <SimpleLoader />}
+      ifResolved={(data) => (
+        <SplitView direction="horizontal" sizes={[10, 90]} gutterSize={3}>
+          <Box>
+            <BindingConstPropsView // TODO rename ConstraintsList
+              list={data}
+              onClick={handleConstraintChange}
+              currentConstraint={currentConstraintId}
+              reloadConstraintsList={constraints.reload}
+            />
+          </Box>
+          <Box>
+            {currentConstraintId && (
+              <BindingConstView constraintId={currentConstraintId} />
+            )}
+          </Box>
+        </SplitView>
+      )}
+      ifRejected={(error) => <SimpleContent title={error?.toString()} />}
     />
   );
 }

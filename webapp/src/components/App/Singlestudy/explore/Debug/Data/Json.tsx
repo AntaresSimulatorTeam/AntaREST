@@ -22,7 +22,7 @@ function Json({ path, studyId }: Props) {
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [jsonData, setJsonData] = useState<string | null>(null);
-  const [isSaveAllowed, setSaveAllowed] = useState(false);
+  const [isSaveAllowed, setIsSaveAllowed] = useState(false);
 
   const res = usePromiseWithSnackbarError(
     () => getStudyData(studyId, path, -1),
@@ -34,7 +34,7 @@ function Json({ path, studyId }: Props) {
 
   // Reset save button when path changes
   useUpdateEffect(() => {
-    setSaveAllowed(false);
+    setIsSaveAllowed(false);
   }, [studyId, path]);
 
   ////////////////////////////////////////////////////////////////
@@ -48,7 +48,7 @@ function Json({ path, studyId }: Props) {
         enqueueSnackbar(t("studies.success.saveData"), {
           variant: "success",
         });
-        setSaveAllowed(false);
+        setIsSaveAllowed(false);
       } catch (e) {
         enqueueErrorSnackbar(t("studies.error.saveData"), e as AxiosError);
       }
@@ -57,7 +57,7 @@ function Json({ path, studyId }: Props) {
 
   const handleJsonChange = (newJson: string) => {
     setJsonData(newJson);
-    setSaveAllowed(true);
+    setIsSaveAllowed(true);
   };
 
   ////////////////////////////////////////////////////////////////

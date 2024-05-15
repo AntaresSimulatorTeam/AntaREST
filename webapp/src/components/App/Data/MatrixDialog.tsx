@@ -17,7 +17,7 @@ function MatrixDialog(props: PropTypes) {
   const [t] = useTranslation();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [loading, setLoading] = useState(false);
-  const [matrix, setCurrentMatrix] = useState<MatrixType>({
+  const [matrix, setMatrix] = useState<MatrixType>({
     index: [],
     columns: [],
     data: [],
@@ -34,7 +34,7 @@ function MatrixDialog(props: PropTypes) {
             columns: matrix ? res.columns : [],
             data: matrix ? res.data : [],
           };
-          setCurrentMatrix(matrixContent);
+          setMatrix(matrixContent);
         }
       } catch (error) {
         enqueueErrorSnackbar(t("data.error.matrix"), error as AxiosError);
@@ -44,7 +44,7 @@ function MatrixDialog(props: PropTypes) {
     };
     init();
     return () => {
-      setCurrentMatrix({ index: [], columns: [], data: [] });
+      setMatrix({ index: [], columns: [], data: [] });
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enqueueErrorSnackbar, matrixInfo, t]);

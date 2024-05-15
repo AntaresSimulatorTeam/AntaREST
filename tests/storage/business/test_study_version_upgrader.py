@@ -1,5 +1,6 @@
 import filecmp
 import glob
+import os
 import re
 import shutil
 import zipfile
@@ -28,12 +29,13 @@ def test_end_to_end_upgrades(tmp_path: Path):
     shutil.copytree(study_dir, before_upgrade_dir, dirs_exist_ok=True)
     old_values = get_old_settings_values(study_dir)
     old_areas_values = get_old_area_values(study_dir)
+    old_binding_constraint_values = get_old_binding_constraint_values(study_dir)
     # Only checks if the study_upgrader can go from the first supported version to the last one
-    target_version = "860"
+    target_version = "880"
     upgrade_study(study_dir, target_version)
     assert_study_antares_file_is_updated(study_dir, target_version)
     assert_settings_are_updated(study_dir, old_values)
-    assert_inputs_are_updated(study_dir, old_areas_values)
+    assert_inputs_are_updated(study_dir, old_areas_values, old_binding_constraint_values)
     assert not are_same_dir(study_dir, before_upgrade_dir)
 
 
@@ -138,7 +140,17 @@ def get_old_area_values(tmp_path: Path) -> dict:
     return dico
 
 
-def assert_inputs_are_updated(tmp_path: Path, dico: dict) -> None:
+def get_old_binding_constraint_values(tmp_path: Path) -> dict:
+    dico = {}
+    bd_list = glob.glob(str(tmp_path / "input" / "bindingconstraints" / "*.txt"))
+    for txt_file in bd_list:
+        path_txt = Path(txt_file)
+        df = pandas.read_csv(path_txt, sep="\t", header=None)
+        dico[str(path_txt.stem)] = df
+    return dico
+
+
+def assert_inputs_are_updated(tmp_path: Path, old_area_values: dict, old_binding_constraint_values: dict) -> None:
     input_path = tmp_path / "input"
 
     # tests 8.1 upgrade
@@ -152,7 +164,7 @@ def assert_inputs_are_updated(tmp_path: Path, dico: dict) -> None:
             path_txt = Path(txt)
             old_txt = str(Path(path_txt.parent.name).joinpath(path_txt.stem)).replace("_parameters", "")
             df = pandas.read_csv(txt, sep="\t", header=None)
-            assert df.values.all() == dico[old_txt].iloc[:, 2:8].values.all()
+            assert df.to_numpy().all() == old_area_values[old_txt].iloc[:, 2:8].values.all()
         capacities = glob.glob(str(folder_path / "capacities" / "*"))
         for direction_txt in capacities:
             df_capacities = pandas.read_csv(direction_txt, sep="\t", header=None)
@@ -160,10 +172,10 @@ def assert_inputs_are_updated(tmp_path: Path, dico: dict) -> None:
             old_txt = str(Path(direction_path.parent.parent.name).joinpath(direction_path.name))
             if "indirect" in old_txt:
                 new_txt = old_txt.replace("_indirect.txt", "")
-                assert df_capacities[0].values.all() == dico[new_txt].iloc[:, 0].values.all()
+                assert df_capacities[0].values.all() == old_area_values[new_txt].iloc[:, 0].values.all()
             else:
                 new_txt = old_txt.replace("_direct.txt", "")
-                assert df_capacities[0].values.all() == dico[new_txt].iloc[:, 1].values.all()
+                assert df_capacities[0].values.all() == old_area_values[new_txt].iloc[:, 1].values.all()
 
     # tests 8.3 upgrade
     areas = glob.glob(str(tmp_path / "input" / "areas" / "*"))
@@ -184,6 +196,34 @@ def assert_inputs_are_updated(tmp_path: Path, dico: dict) -> None:
         assert (st_storage_path / "list.ini").exists()
         assert input_path.joinpath("hydro", "series", area_id, "mingen.txt").exists()
 
+    # tests 8.7 upgrade
+    # binding constraint part
+    reader = IniReader(DUPLICATE_KEYS)
+    data = reader.read(input_path / "bindingconstraints" / "bindingconstraints.ini")
+    binding_constraints_list = list(data.keys())
+    for bd in binding_constraints_list:
+        bd_id = data[bd]["id"]
+        assert data[bd]["group"] == "default"
+        for k, term in enumerate(["lt", "gt", "eq"]):
+            term_path = input_path / "bindingconstraints" / f"{bd_id}_{term}.txt"
+            df = pandas.read_csv(term_path, sep="\t", header=None)
+            assert df.to_numpy().all() == old_binding_constraint_values[bd_id].iloc[:, k].values.all()
+
+    # thermal cluster part
+    for area in list_areas:
+        reader = IniReader(DUPLICATE_KEYS)
+        thermal_series_path = tmp_path / "input" / "thermal" / "series" / area
+        thermal_cluster_list = reader.read(tmp_path / "input" / "thermal" / "clusters" / area / "list.ini")
+        for cluster in thermal_cluster_list:
+            fuel_cost_path = thermal_series_path / cluster.lower() / "fuelCost.txt"
+            co2_cost_path = thermal_series_path / cluster.lower() / "CO2Cost.txt"
+            for path in [fuel_cost_path, co2_cost_path]:
+                assert path.exists()
+                assert os.path.getsize(path) == 0
+            assert thermal_cluster_list[cluster]["costgeneration"] == "SetManually"
+            assert thermal_cluster_list[cluster]["efficiency"] == 100
+            assert thermal_cluster_list[cluster]["variableomcost"] == 0
+
 
 def assert_folder_is_created(path: Path) -> None:
     assert path.is_dir()
@@ -195,9 +235,23 @@ def are_same_dir(dir1, dir2) -> bool:
     dirs_cmp = filecmp.dircmp(dir1, dir2)
     if len(dirs_cmp.left_only) > 0 or len(dirs_cmp.right_only) > 0 or len(dirs_cmp.funny_files) > 0:
         return False
+    path_dir1 = Path(dir1)
+    path_dir2 = Path(dir2)
+    # check files content ignoring newline character (to avoid crashing on Windows)
+    for common_file in dirs_cmp.common_files:
+        file_1 = path_dir1 / common_file
+        file_2 = path_dir2 / common_file
+        # ignore study.ico
+        if common_file == "study.ico":
+            continue
+        with open(file_1, "r", encoding="utf-8") as f1:
+            with open(file_2, "r", encoding="utf-8") as f2:
+                content_1 = f1.read().splitlines(keepends=False)
+                content_2 = f2.read().splitlines(keepends=False)
+                if content_1 != content_2:
+                    return False
+    # iter through common dirs recursively
     for common_dir in dirs_cmp.common_dirs:
-        path_dir1 = Path(dir1)
-        path_dir2 = Path(dir2)
         path_common_dir = Path(common_dir)
         new_dir1 = path_dir1 / path_common_dir
         new_dir2 = path_dir2 / path_common_dir

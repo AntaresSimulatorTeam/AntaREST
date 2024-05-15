@@ -3,7 +3,6 @@ import { useOutletContext } from "react-router";
 import { useMemo } from "react";
 import SelectFE from "../../../../../../common/fieldEditors/SelectFE";
 import Fieldset from "../../../../../../common/Fieldset";
-import ColorPickerFE from "../../../../../../common/fieldEditors/ColorPickerFE";
 import SwitchFE from "../../../../../../common/fieldEditors/SwitchFE";
 import NumberFE from "../../../../../../common/fieldEditors/NumberFE";
 import { useFormContextPlus } from "../../../../../../common/Form";
@@ -27,23 +26,6 @@ function Fields() {
 
   return (
     <>
-      <Fieldset legend={t("global.general")}>
-        <ColorPickerFE
-          name="color"
-          label={t("global.color")}
-          control={control}
-        />
-        <NumberFE
-          name="posX"
-          label={t("study.modelization.properties.posX")}
-          control={control}
-        />
-        <NumberFE
-          name="posY"
-          label={t("study.modelization.properties.posY")}
-          control={control}
-        />
-      </Fieldset>
       <Fieldset legend={t("study.modelization.properties.energyCost")}>
         <NumberFE
           name="energyCostUnsupplied"

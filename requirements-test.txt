@@ -2,3 +2,7 @@
 checksumdir~=1.2.0
 pytest~=6.2.5
 pytest-cov~=4.0.0
+
+# In this version DataFrame conversion to Excel is done using 'xlsxwriter' library.
+# But Excel files reading is done using 'openpyxl' library, during testing only.
+openpyxl~=3.1.2

@@ -1,8 +1,8 @@
 import datetime
 import io
 import re
+import typing as t
 import uuid
-from typing import Any, MutableMapping, Sequence, cast
 from unittest.mock import Mock
 
 import numpy as np
@@ -10,20 +10,14 @@ import pytest
 from pydantic import ValidationError
 from sqlalchemy.orm.session import Session  # type: ignore
 
-from antarest.core.exceptions import (
-    AreaNotFound,
-    STStorageConfigNotFoundError,
-    STStorageFieldsNotFoundError,
-    STStorageMatrixNotFoundError,
-    STStorageNotFoundError,
-)
+from antarest.core.exceptions import AreaNotFound, STStorageConfigNotFound, STStorageMatrixNotFound, STStorageNotFound
 from antarest.core.model import PublicMode
 from antarest.login.model import Group, User
 from antarest.study.business.areas.st_storage_management import STStorageInput, STStorageManager
 from antarest.study.model import RawStudy, Study, StudyContentStatus
 from antarest.study.storage.rawstudy.ini_reader import IniReader
-from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import STStorageConfig, STStorageGroup
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import STStorageGroup
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
@@ -65,6 +59,11 @@ initiallevel = 1
 
 LIST_CFG = IniReader().read(io.StringIO(LIST_INI))
 
+ALL_STORAGES = {
+    "west": {"list": LIST_CFG},
+    "east": {"list": {}},
+}
+
 
 class TestSTStorageManager:
     @pytest.fixture(name="study_storage_service")
@@ -103,7 +102,114 @@ class TestSTStorageManager:
         )
         db_session.add(raw_study)
         db_session.commit()
-        return cast(str, raw_study.id)
+        return t.cast(str, raw_study.id)
+
+    def test_get_all_storages__nominal_case(
+        self,
+        db_session: Session,
+        study_storage_service: StudyStorageService,
+        study_uuid: str,
+    ) -> None:
+        """
+        This unit test is to verify the behavior of the `get_all_storages`
+        method in the `STStorageManager` class under nominal conditions.
+        It checks whether the method returns the expected storage lists
+        for each area, based on a specific configuration.
+        """
+        # The study must be fetched from the database
+        study: RawStudy = db_session.query(Study).get(study_uuid)
+
+        # Prepare the mocks
+        storage = study_storage_service.get_storage(study)
+        file_study = storage.get_raw(study)
+        file_study.tree = Mock(
+            spec=FileStudyTree,
+            get=Mock(return_value=ALL_STORAGES),
+        )
+
+        # Given the following arguments
+        manager = STStorageManager(study_storage_service)
+
+        # run
+        all_storages = manager.get_all_storages_props(study)
+
+        # Check
+        actual = {
+            area_id: [form.dict(by_alias=True) for form in clusters_by_ids.values()]
+            for area_id, clusters_by_ids in all_storages.items()
+        }
+        expected = {
+            "west": [
+                {
+                    "id": "storage1",
+                    "enabled": None,
+                    "group": STStorageGroup.BATTERY,
+                    "name": "Storage1",
+                    "injectionNominalCapacity": 1500.0,
+                    "withdrawalNominalCapacity": 1500.0,
+                    "reservoirCapacity": 20000.0,
+                    "efficiency": 0.94,
+                    "initialLevel": 0.5,
+                    "initialLevelOptim": True,
+                },
+                {
+                    "id": "storage2",
+                    "enabled": None,
+                    "group": STStorageGroup.PSP_CLOSED,
+                    "name": "Storage2",
+                    "injectionNominalCapacity": 2000.0,
+                    "withdrawalNominalCapacity": 1500.0,
+                    "reservoirCapacity": 20000.0,
+                    "efficiency": 0.78,
+                    "initialLevel": 0.5,
+                    "initialLevelOptim": False,
+                },
+                {
+                    "id": "storage3",
+                    "enabled": None,
+                    "group": STStorageGroup.PSP_CLOSED,
+                    "name": "Storage3",
+                    "injectionNominalCapacity": 1500.0,
+                    "withdrawalNominalCapacity": 1500.0,
+                    "reservoirCapacity": 21000.0,
+                    "efficiency": 0.72,
+                    "initialLevel": 1.0,
+                    "initialLevelOptim": False,
+                },
+            ],
+        }
+        assert actual == expected
+
+    def test_get_all_storages__config_not_found(
+        self,
+        db_session: Session,
+        study_storage_service: StudyStorageService,
+        study_uuid: str,
+    ) -> None:
+        """
+        This test verifies that when the `get_all_storages` method is called
+        with a study and the corresponding configuration is not found
+        (indicated by the `KeyError` raised by the mock), it correctly
+        raises the `STStorageConfigNotFound` exception with the expected error
+        message containing the study ID.
+        """
+        # The study must be fetched from the database
+        study: RawStudy = db_session.query(Study).get(study_uuid)
+
+        # Prepare the mocks
+        storage = study_storage_service.get_storage(study)
+        file_study = storage.get_raw(study)
+        file_study.tree = Mock(
+            spec=FileStudyTree,
+            get=Mock(side_effect=KeyError("Oops!")),
+        )
+
+        # Given the following arguments
+        manager = STStorageManager(study_storage_service)
+
+        # run
+        with pytest.raises(STStorageConfigNotFound, match="not found"):
+            manager.get_all_storages_props(study)
 
     def test_get_st_storages__nominal_case(
         self,
@@ -147,6 +253,7 @@ class TestSTStorageManager:
                 "name": "Storage1",
                 "reservoirCapacity": 20000.0,
                 "withdrawalNominalCapacity": 1500.0,
+                "enabled": None,
             },
             {
                 "efficiency": 0.78,
@@ -158,6 +265,7 @@ class TestSTStorageManager:
                 "name": "Storage2",
                 "reservoirCapacity": 20000.0,
                 "withdrawalNominalCapacity": 1500.0,
+                "enabled": None,
             },
             {
                 "efficiency": 0.72,
@@ -169,6 +277,7 @@ class TestSTStorageManager:
                 "name": "Storage3",
                 "reservoirCapacity": 21000.0,
                 "withdrawalNominalCapacity": 1500.0,
+                "enabled": None,
             },
         ]
         assert actual == expected
@@ -183,7 +292,7 @@ class TestSTStorageManager:
         This test verifies that when the `get_storages` method is called
         with a study and area ID, and the corresponding configuration is not found
         (indicated by the `KeyError` raised by the mock), it correctly
-        raises the `STStorageConfigNotFoundError` exception with the expected error
+        raises the `STStorageConfigNotFound` exception with the expected error
         message containing the study ID and area ID.
         """
         # The study must be fetched from the database
@@ -201,7 +310,7 @@ class TestSTStorageManager:
         manager = STStorageManager(study_storage_service)
 
         # run
-        with pytest.raises(STStorageConfigNotFoundError, match="not found") as ctx:
+        with pytest.raises(STStorageConfigNotFound, match="not found") as ctx:
             manager.get_storages(study, area_id="West")
 
         # ensure the error message contains at least the study ID and area ID
@@ -255,6 +364,7 @@ class TestSTStorageManager:
             "name": "Storage1",
             "reservoirCapacity": 20000.0,
             "withdrawalNominalCapacity": 1500.0,
+            "enabled": None,
         }
         assert actual == expected
 
@@ -286,11 +396,10 @@ class TestSTStorageManager:
         ini_file_node = IniFileNode(context=Mock(), config=Mock())
         file_study.tree = Mock(
             spec=FileStudyTree,
-            get=Mock(return_value=LIST_CFG["storage1"]),
+            get=Mock(return_value=LIST_CFG),
             get_node=Mock(return_value=ini_file_node),
         )
 
-        area = Mock(spec=Area)
         mock_config = Mock(spec=FileStudyTreeConfig, study_id=study.id)
         file_study.config = mock_config
 
@@ -299,20 +408,22 @@ class TestSTStorageManager:
         edit_form = STStorageInput(initial_level=0, initial_level_optim=False)
 
         # Test behavior for area not in study
-        mock_config.areas = {"fake_area": area}
-        with pytest.raises(AreaNotFound) as ctx:
-            manager.update_storage(study, area_id="West", storage_id="storage1", form=edit_form)
-        assert ctx.value.detail == "Area is not found: 'West'"
+        # noinspection PyTypeChecker
+        file_study.tree.get.return_value = {}
+        with pytest.raises((AreaNotFound, STStorageNotFound)) as ctx:
+            manager.update_storage(study, area_id="unknown_area", storage_id="storage1", form=edit_form)
+        assert "unknown_area" in ctx.value.detail
+        assert "storage1" in ctx.value.detail
 
         # Test behavior for st_storage not in study
-        mock_config.areas = {"West": area}
-        area.st_storages = [STStorageConfig(name="fake_name", group="battery")]
-        with pytest.raises(STStorageNotFoundError) as ctx:
-            manager.update_storage(study, area_id="West", storage_id="storage1", form=edit_form)
-        assert ctx.value.detail == "Short-term storage 'storage1' not found in area 'West'"
+        file_study.tree.get.return_value = {"storage1": LIST_CFG["storage1"]}
+        with pytest.raises(STStorageNotFound) as ctx:
+            manager.update_storage(study, area_id="West", storage_id="unknown_storage", form=edit_form)
+        assert "West" in ctx.value.detail
+        assert "unknown_storage" in ctx.value.detail
 
         # Test behavior for nominal case
-        area.st_storages = [STStorageConfig(name="storage1", group="battery")]
+        file_study.tree.get.return_value = LIST_CFG
         manager.update_storage(study, area_id="West", storage_id="storage1", form=edit_form)
 
         # Assert that the storage fields have been updated
@@ -351,7 +462,7 @@ class TestSTStorageManager:
         """
         Test the `get_st_storage` method of the `STStorageManager` class when the configuration is not found.
 
-        This test verifies that the `get_st_storage` method raises an `STStorageFieldsNotFoundError`
+        This test verifies that the `get_st_storage` method raises an `STStorageNotFound`
         exception when the configuration for the provided study, area, and storage ID combination is not found.
 
         Args:
@@ -375,7 +486,7 @@ class TestSTStorageManager:
         manager = STStorageManager(study_storage_service)
 
         # Run the method being tested and expect an exception
-        with pytest.raises(STStorageFieldsNotFoundError, match="not found") as ctx:
+        with pytest.raises(STStorageNotFound, match="not found") as ctx:
             manager.get_storage(study, area_id="West", storage_id="storage1")
         # ensure the error message contains at least the study ID, area ID and storage ID
         err_msg = str(ctx.value)
@@ -436,7 +547,7 @@ class TestSTStorageManager:
         """
         Test the `get_matrix` method of the `STStorageManager` class when the time series is not found.
 
-        This test verifies that the `get_matrix` method raises an `STStorageFieldsNotFoundError`
+        This test verifies that the `get_matrix` method raises an `STStorageNotFound`
         exception when the configuration for the provided study, area, time series,
         and storage ID combination is not found.
 
@@ -461,7 +572,7 @@ class TestSTStorageManager:
         manager = STStorageManager(study_storage_service)
 
         # Run the method being tested and expect an exception
-        with pytest.raises(STStorageMatrixNotFoundError, match="not found") as ctx:
+        with pytest.raises(STStorageMatrixNotFound, match="not found") as ctx:
             manager.get_matrix(study, area_id="West", storage_id="storage1", ts_name="inflows")
         # ensure the error message contains at least the study ID, area ID and storage ID
         err_msg = str(ctx.value)
@@ -477,7 +588,7 @@ class TestSTStorageManager:
         """
         Test the `get_matrix` method of the `STStorageManager` class when the time series is not found.
 
-        This test verifies that the `get_matrix` method raises an `STStorageFieldsNotFoundError`
+        This test verifies that the `get_matrix` method raises an `STStorageNotFound`
         exception when the configuration for the provided study, area, time series,
         and storage ID combination is not found.
 
@@ -534,7 +645,7 @@ class TestSTStorageManager:
         }
 
         # Prepare the mocks
-        def tree_get(url: Sequence[str], **_: Any) -> MutableMapping[str, Any]:
+        def tree_get(url: t.Sequence[str], **_: t.Any) -> t.MutableMapping[str, t.Any]:
             name = url[-1]
             array = matrices[name]
             return {
@@ -571,7 +682,7 @@ class TestSTStorageManager:
         }
 
         # Prepare the mocks
-        def tree_get(url: Sequence[str], **_: Any) -> MutableMapping[str, Any]:
+        def tree_get(url: t.Sequence[str], **_: t.Any) -> t.MutableMapping[str, t.Any]:
             name = url[-1]
             array = matrices[name]
             return {
@@ -637,7 +748,7 @@ class TestSTStorageManager:
         }
 
         # Prepare the mocks
-        def tree_get(url: Sequence[str], **_: Any) -> MutableMapping[str, Any]:
+        def tree_get(url: t.Sequence[str], **_: t.Any) -> t.MutableMapping[str, t.Any]:
             name = url[-1]
             array = matrices[name]
             return {

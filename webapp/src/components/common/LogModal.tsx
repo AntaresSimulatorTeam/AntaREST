@@ -35,7 +35,7 @@ function LogModal(props: Props) {
   const [logDetail, setLogDetail] = useState(content);
   const divRef = useRef<HTMLDivElement | null>(null);
   const logRef = useRef<HTMLDivElement | null>(null);
-  const [autoscroll, setAutoScroll] = useState<boolean>(true);
+  const [autoScroll, setAutoScroll] = useState<boolean>(true);
   const [t] = useTranslation();
 
   const updateLog = useCallback(
@@ -92,11 +92,11 @@ function LogModal(props: Props) {
 
   useEffect(() => {
     if (logRef.current) {
-      if (autoscroll) {
+      if (autoScroll) {
         scrollToEnd();
       }
     }
-  }, [logDetail, autoscroll]);
+  }, [logDetail, autoScroll]);
 
   useEffect(() => {
     if (followLogs) {

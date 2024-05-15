@@ -67,19 +67,36 @@ export type ReactHookFormSupportProps<
       shouldUnregister?: never;
     };
 
+/**
+ * Provides React Hook Form support to a field editor component, enhancing it with form control and validation capabilities.
+ * It integrates custom validation logic, value transformation, and handles form submission state.
+ *
+ * @param options - Configuration options for the hook support.
+ * @param options.preValidate - A function that pre-validates the value before the main validation.
+ * @param options.setValueAs - A function that transforms the value before setting it into the form.
+ * @returns A function that takes a field editor component and returns a new component wrapped with React Hook Form functionality.
+ */
 function reactHookFormSupport<TValue>(
   options: ReactHookFormSupport<TValue> = {},
 ) {
   const { preValidate, setValueAs = R.identity } = options;
 
   /**
-   * Wrap in a higher component the specified field editor component
+   * Wraps the provided field editor component with React Hook Form functionality,
+   * applying the specified pre-validation and value transformation logic.
+   *
+   * @param FieldEditor - The field editor component to wrap.
+   * @returns The wrapped component with added React Hook Form support.
    */
   function wrapWithReactHookFormSupport<
     TProps extends FieldEditorProps<TValue>,
   >(FieldEditor: React.ComponentType<TProps>) {
     /**
-     * The wrapper component
+     * The wrapper component that integrates React Hook Form capabilities with the original field editor.
+     * It manages form control registration, handles value changes and blurring with custom logic, and displays validation errors.
+     *
+     * @param props - The props of the field editor, extended with React Hook Form and custom options.
+     * @returns The field editor component wrapped with React Hook Form functionality.
      */
     function ReactHookFormSupport<
       TFieldValues extends FieldValues = FieldValues,

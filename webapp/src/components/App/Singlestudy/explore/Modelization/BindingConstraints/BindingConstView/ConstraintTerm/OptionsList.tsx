@@ -1,156 +1,140 @@
-import { useCallback, useMemo } from "react";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { AllClustersAndLinks } from "../../../../../../../../common/types";
 import SelectSingle from "../../../../../../../common/SelectSingle";
-import { ConstraintType, dataToId, isTermExist } from "../utils";
+import { ConstraintTerm, generateTermId, isTermExist } from "../utils";
 
+interface Option {
+  id: string;
+  name: string;
+}
 interface Props {
   list: AllClustersAndLinks;
   isLink: boolean;
-  constraint: ConstraintType;
-  constraintsTerm: ConstraintType[];
-  saveValue: (constraint: Partial<ConstraintType>) => void;
-  value1: string;
-  value2: string;
-  setValue1: (value: string) => void;
-  setValue2: (value: string) => void;
+  term: ConstraintTerm;
+  constraintTerms: ConstraintTerm[];
+  saveValue: (term: ConstraintTerm) => void;
+  selectedArea: string;
+  selectedClusterOrArea: string;
+  setSelectedArea: (value: string) => void;
+  setSelectedClusterOrArea: (value: string) => void;
 }
 
-export default function OptionsList(props: Props) {
-  const {
-    list,
-    isLink,
-    constraint,
-    value1,
-    value2,
-    constraintsTerm,
-    saveValue,
-    setValue1,
-    setValue2,
-  } = props;
+export default function OptionsList({
+  list,
+  isLink,
+  term,
+  constraintTerms,
+  saveValue,
+  selectedArea,
+  selectedClusterOrArea,
+  setSelectedArea,
+  setSelectedClusterOrArea,
+}: Props) {
   const [t] = useTranslation();
-  const name1 = isLink ? "area1" : "area";
-  const name2 = isLink ? "area2" : "cluster";
-  const options = isLink ? list.links : list.clusters;
-  const options1 = useMemo(() => {
-    return options.map((elm) => ({
-      name: elm.element.name,
-      id: elm.element.id,
-    }));
-  }, [options]);
 
-  const options2 = useMemo(() => {
-    const index = options.findIndex((elm) => elm.element.id === value1);
-    if (index < 0) {
+  const areaOptions = useMemo(
+    () =>
+      list.links.map(({ element }) => ({
+        name: element.name,
+        id: element.id,
+      })),
+    [list.links],
+  );
+
+  const clusterOrAreaOptions = useMemo(() => {
+    if (!selectedArea) {
       return [];
     }
 
-    const tmp = options[index].item_list
-      .filter(
-        (elm) =>
-          elm.id === value2 ||
-          !isTermExist(
-            constraintsTerm,
-            dataToId(
-              isLink
-                ? {
-                    area1: value1,
-                    area2: elm.id,
-                  }
-                : { area: value1, cluster: elm.id },
-            ),
-          ),
-      )
-      .map((elm) => ({
-        name: elm.name,
-        id: elm.id.toLowerCase(),
-      }));
-    return tmp;
-  }, [constraintsTerm, isLink, options, value1, value2]);
+    // Determine the type of options to use based on whether it is a link or cluster
+    const relatedOptions = isLink ? list.links : list.clusters;
 
-  const getFirstValue2 = useCallback(
-    (value: string): string => {
-      const index = options1.findIndex((elm) => elm.id === value);
-      if (index >= 0) {
-        return options[index].item_list[0].id;
+    // Attempt to find the option that matches the selected area
+    const foundOption = relatedOptions.find(
+      ({ element }) => element.id === selectedArea,
+    );
+
+    if (!foundOption) {
+      return [];
+    }
+
+    return foundOption.item_list.reduce<Option[]>((acc, { id, name }) => {
+      const termId = generateTermId(
+        isLink
+          ? { area1: selectedArea, area2: id }
+          : { area: selectedArea, cluster: id },
+      );
+
+      // Check if the id is valid
+      if (
+        id === selectedClusterOrArea ||
+        !isTermExist(constraintTerms, termId)
+      ) {
+        acc.push({ name, id: id.toLowerCase() });
       }
-      return "";
-    },
-    [options, options1],
-  );
+
+      return acc;
+    }, []);
+  }, [
+    selectedArea,
+    isLink,
+    list.links,
+    list.clusters,
+    selectedClusterOrArea,
+    constraintTerms,
+  ]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleValue1 = useCallback(
-    (value: string) => {
-      const v2 = getFirstValue2(value);
-      saveValue({
-        id: constraint.id,
-        data: isLink
-          ? {
-              area1: value,
-              area2: v2,
-            }
-          : {
-              area: value,
-              cluster: v2,
-            },
-      });
-      setValue1(value);
-      setValue2(v2);
-    },
-    [constraint.id, getFirstValue2, isLink, saveValue, setValue1, setValue2],
-  );
+  const handleAreaChange = (value: string) => {
+    setSelectedArea(value);
+  };
 
-  const handleValue2 = useCallback(
-    (value: string) => {
-      setValue2(value);
-      saveValue({
-        id: constraint.id,
-        data: isLink
-          ? {
-              area1: value1,
-              area2: value,
-            }
-          : {
-              area: value1,
-              cluster: value,
-            },
-      });
-    },
-    [constraint.id, isLink, saveValue, setValue2, value1],
-  );
+  const handleClusterOrAreaChange = (value: string) => {
+    setSelectedClusterOrArea(value);
+    saveValue({
+      ...term,
+      data: isLink
+        ? { area1: selectedArea, area2: value }
+        : { area: selectedArea, cluster: value },
+    });
+  };
 
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
+
   return (
     <>
       <SelectSingle
-        name="value1"
-        list={options1}
-        label={t(`study.${name1}`)}
-        data={value1}
-        handleChange={(key, value) => handleValue1(value as string)}
+        disabled
+        size="small"
+        variant="outlined"
+        name="selectedArea"
+        label={t(`study.${isLink ? "area1" : "area"}`)}
+        data={selectedArea}
+        list={areaOptions}
+        handleChange={(key, value) => handleAreaChange(value as string)}
         sx={{
-          flexGrow: 1,
-          minWidth: "200px",
-          height: "60px",
+          width: 200,
+          mr: 1,
         }}
       />
       <SelectSingle
-        name="value2"
-        list={options2}
-        label={t(`study.${name2}`)}
-        data={value2.toLowerCase()}
-        handleChange={(key, value) => handleValue2(value as string)}
+        size="small"
+        variant="outlined"
+        name="selectedClusterOrArea"
+        label={t(`study.${isLink ? "area2" : "cluster"}`)}
+        data={selectedClusterOrArea.toLowerCase()}
+        list={clusterOrAreaOptions}
+        handleChange={(key, value) =>
+          handleClusterOrAreaChange(value as string)
+        }
         sx={{
-          flexGrow: 1,
-          minWidth: "200px",
-          height: "60px",
-          ml: 1,
+          width: 200,
         }}
       />
     </>

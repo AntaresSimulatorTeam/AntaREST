@@ -1,28 +1,18 @@
-import typing as t
-from enum import Enum
+"""
+Object model used to read and update binding constraint configuration.
+"""
 
-from pydantic import BaseModel
+from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 
 
-class BindingConstraintFrequency(str, Enum):
+class BindingConstraintFrequency(EnumIgnoreCase):
     """
-    Frequency of binding constraint
+    Frequency of a binding constraint.
 
-    - HOURLY: hourly time series with 8784 lines
-    - DAILY: daily time series with 366 lines
-    - WEEKLY: weekly time series with 366 lines (same as daily)
-
-    Usage example:
-
-    >>> bcf = BindingConstraintFrequency.HOURLY
-    >>> bcf == "hourly"
-    True
-    >>> bcf = BindingConstraintFrequency.DAILY
-    >>> "daily" == bcf
-    True
-    >>> bcf = BindingConstraintFrequency.WEEKLY
-    >>> bcf != "daily"
-    True
+    Attributes:
+        HOURLY: hourly time series with 8784 lines
+        DAILY: daily time series with 366 lines
+        WEEKLY: weekly time series with 366 lines (same as daily)
     """
 
     HOURLY = "hourly"
@@ -30,8 +20,18 @@ class BindingConstraintFrequency(str, Enum):
     WEEKLY = "weekly"
 
 
-class BindingConstraintDTO(BaseModel):
-    id: str
-    areas: t.Set[str]
-    clusters: t.Set[str]
-    time_step: BindingConstraintFrequency
+class BindingConstraintOperator(EnumIgnoreCase):
+    """
+    Operator of a binding constraint.
+
+    Attributes:
+        LESS: less than or equal to
+        GREATER: greater than or equal to
+        BOTH: both LESS and GREATER
+        EQUAL: equal to
+    """
+
+    LESS = "less"
+    GREATER = "greater"
+    BOTH = "both"
+    EQUAL = "equal"

@@ -4,8 +4,8 @@ from pydantic import validator
 
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    ENR_MODELLING,
     Area,
+    EnrModelling,
     FileStudyTreeConfig,
     transform_name_to_id,
 )
@@ -42,7 +42,7 @@ class CreateRenewablesCluster(ICommand):
         return val
 
     def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
-        if study_data.enr_modelling != ENR_MODELLING.CLUSTERS.value:
+        if study_data.enr_modelling != EnrModelling.CLUSTERS.value:
             # Since version 8.1 of the solver, we can use renewable clusters
             # instead of "Load", "Wind" and "Solar" objects for modelling.
             # When the "renewable-generation-modelling" parameter is set to "aggregated",
@@ -50,7 +50,7 @@ class CreateRenewablesCluster(ICommand):
             # To use renewable clusters, the parameter must therefore be set to "clusters".
             message = (
                 f"Parameter 'renewable-generation-modelling'"
-                f" must be set to '{ENR_MODELLING.CLUSTERS.value}'"
+                f" must be set to '{EnrModelling.CLUSTERS.value}'"
                 f" instead of '{study_data.enr_modelling}'"
             )
             return CommandOutput(status=False, message=message), {}

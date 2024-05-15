@@ -62,7 +62,8 @@ export default function ExportModal(props: BasicDialogProps & Props) {
   const [optionSelection, setOptionSelection] = useState<string>("exportWith");
   const [outputList, setOutputList] = useState<GenericInfo[]>();
   const [currentOutput, setCurrentOutput] = useState<string>();
-  const [synthesis, setStudySynthesis] = useState<FileStudyTreeConfigDTO>();
+  const [studySynthesis, setStudySynthesis] =
+    useState<FileStudyTreeConfigDTO>();
   const [filter, setFilter] = useState<StudyOutputDownloadDTO>({
     type: StudyOutputDownloadType.AREAS,
     level: StudyOutputDownloadLevelDTO.WEEKLY,
@@ -206,7 +207,7 @@ export default function ExportModal(props: BasicDialogProps & Props) {
               (
                 <ExportFilter
                   output={currentOutput as string}
-                  synthesis={synthesis}
+                  synthesis={studySynthesis}
                   filter={filter}
                   setFilter={setFilter}
                 />

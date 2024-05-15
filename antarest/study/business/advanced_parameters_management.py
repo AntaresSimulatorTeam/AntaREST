@@ -91,7 +91,7 @@ class AdvancedParamsFormFields(FormFieldsBaseModel):
             return ""
 
         allowed_values = ["wind", "load", "solar"]
-        values_list = re.split("\s*,\s*", v.strip())
+        values_list = re.split(r"\s*,\s*", v.strip())
 
         if len(values_list) != len(set(values_list)):
             raise ValueError("Duplicate value")

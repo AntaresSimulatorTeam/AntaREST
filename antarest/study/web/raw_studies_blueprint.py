@@ -1,15 +1,18 @@
+import collections
 import http
 import io
 import json
 import logging
-import pathlib
 import typing as t
+from pathlib import Path, PurePosixPath
 
+import pandas as pd
 from fastapi import APIRouter, Body, Depends, File, HTTPException
 from fastapi.params import Param, Query
-from starlette.responses import JSONResponse, PlainTextResponse, Response, StreamingResponse
+from starlette.responses import FileResponse, JSONResponse, PlainTextResponse, Response, StreamingResponse
 
 from antarest.core.config import Config
+from antarest.core.filetransfer.model import FileDownloadNotFound
 from antarest.core.jwt import JWTUser
 from antarest.core.model import SUB_JSON
 from antarest.core.requests import RequestParameters
@@ -17,9 +20,19 @@ from antarest.core.swagger import get_path_examples
 from antarest.core.utils.utils import sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
+from antarest.study.business.enum_ignore_case import EnumIgnoreCase
+from antarest.study.common.default_values import AreasQueryFile, LinksQueryFile
 from antarest.study.service import StudyService
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
+
+try:
+    import tables  # type: ignore
+    import xlsxwriter  # type: ignore
+except ImportError:
+    raise ImportError("The 'xlsxwriter' and 'tables' packages are required") from None
 
 logger = logging.getLogger(__name__)
+
 
 # noinspection SpellCheckingInspection
 
@@ -47,6 +60,110 @@ CONTENT_TYPES = {
     # (JSON)
     ".json": ("application/json", "utf-8"),
 }
+
+
+def _split_comma_separated_values(value: str, *, default: t.Sequence[str] = ()) -> t.Sequence[str]:
+    """Split a comma-separated list of values into an ordered set of strings."""
+    values = value.split(",") if value else default
+    # drop whitespace around values
+    values = [v.strip() for v in values]
+    # remove duplicates and preserve order (to have a deterministic result for unit tests).
+    return list(collections.OrderedDict.fromkeys(values))
+
+
+class TableExportFormat(EnumIgnoreCase):
+    """Export format for tables."""
+
+    XLSX = "xlsx"
+    HDF5 = "hdf5"
+    TSV = "tsv"
+    CSV = "csv"
+    CSV_SEMICOLON = "csv (semicolon)"
+
+    def __str__(self) -> str:
+        """Return the format as a string for display."""
+        return self.value.title()
+
+    @property
+    def media_type(self) -> str:
+        """Return the media type used for the HTTP response."""
+        if self == TableExportFormat.XLSX:
+            # noinspection SpellCheckingInspection
+            return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        elif self == TableExportFormat.TSV:
+            return "text/tab-separated-values"
+        elif self in (TableExportFormat.CSV, TableExportFormat.CSV_SEMICOLON):
+            return "text/csv"
+        elif self == TableExportFormat.HDF5:
+            return "application/x-hdf5"
+        else:  # pragma: no cover
+            raise NotImplementedError(f"Export format '{self}' is not implemented")
+
+    @property
+    def suffix(self) -> str:
+        """Return the file suffix for the format."""
+        if self == TableExportFormat.XLSX:
+            return ".xlsx"
+        elif self == TableExportFormat.TSV:
+            return ".tsv"
+        elif self in (TableExportFormat.CSV, TableExportFormat.CSV_SEMICOLON):
+            return ".csv"
+        elif self == TableExportFormat.HDF5:
+            return ".h5"
+        else:  # pragma: no cover
+            raise NotImplementedError(f"Export format '{self}' is not implemented")
+
+    def export_table(
+        self,
+        df: pd.DataFrame,
+        export_path: t.Union[str, Path],
+        *,
+        with_index: bool = True,
+        with_header: bool = True,
+    ) -> None:
+        """Export a table to a file in the given format."""
+        if self == TableExportFormat.XLSX:
+            return df.to_excel(
+                export_path,
+                index=with_index,
+                header=with_header,
+                engine="xlsxwriter",
+            )
+        elif self == TableExportFormat.TSV:
+            return df.to_csv(
+                export_path,
+                sep="\t",
+                index=with_index,
+                header=with_header,
+                float_format="%.6f",
+            )
+        elif self == TableExportFormat.CSV:
+            return df.to_csv(
+                export_path,
+                sep=",",
+                index=with_index,
+                header=with_header,
+                float_format="%.6f",
+            )
+        elif self == TableExportFormat.CSV_SEMICOLON:
+            return df.to_csv(
+                export_path,
+                sep=";",
+                decimal=",",
+                index=with_index,
+                header=with_header,
+                float_format="%.6f",
+            )
+        elif self == TableExportFormat.HDF5:
+            return df.to_hdf(
+                export_path,
+                key="data",
+                mode="w",
+                format="table",
+                data_columns=True,
+            )
+        else:  # pragma: no cover
+            raise NotImplementedError(f"Export format '{self}' is not implemented")
 
 
 def create_raw_study_routes(
@@ -88,7 +205,7 @@ def create_raw_study_routes(
         - `formatted`: A flag specifying whether the data should be returned in a formatted manner.
 
         Returns the fetched data: a JSON object (in most cases), a plain text file
-        or a file attachment (Microsoft Office document, CSV/TSV file...).
+        or a file attachment (Microsoft Office document, TSV/TSV file...).
         """
         logger.info(
             f"📘 Fetching data at {path} (depth={depth}) from study {uuid}",
@@ -99,10 +216,10 @@ def create_raw_study_routes(
 
         if isinstance(output, bytes):
             # Guess the suffix form the target data
-            resource_path = pathlib.PurePosixPath(path)
+            resource_path = PurePosixPath(path)
             parent_cfg = study_service.get(uuid, str(resource_path.parent), depth=2, formatted=True, params=parameters)
             child = parent_cfg[resource_path.name]
-            suffix = pathlib.PurePosixPath(child).suffix
+            suffix = PurePosixPath(child).suffix
 
             content_type, encoding = CONTENT_TYPES.get(suffix, (None, None))
             if content_type == "application/json":
@@ -151,6 +268,104 @@ def create_raw_study_routes(
             separators=(",", ":"),
         ).encode("utf-8")
         return Response(content=json_response, media_type="application/json")
+
+    @bp.get(
+        "/studies/{uuid}/areas/aggregate",
+        tags=[APITag.study_raw_data],
+        summary="Retrieve Aggregated Areas Raw Data from Study Output",
+    )
+    def aggregate_areas_raw_data(
+        uuid: str,
+        output_id: str,
+        query_file: AreasQueryFile,
+        frequency: MatrixFrequency,
+        mc_years: str = "",
+        areas_ids: str = "",
+        columns_names: str = "",
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> t.Dict[str, t.Any]:
+        """
+        Create an aggregation of areas raw data
+
+        Args:
+            uuid: study ID
+            output_id: the output ID aka the simulation ID
+            query_file: "values", "details", "details-st-storage", "details-res"
+            frequency: "hourly", "daily", "weekly", "monthly", "annual"
+            mc_years: which Monte Carlo years to be selected if empty all are selected (comma separated)
+            areas_ids: which areas to be selected if empty all are selected (comma separated)
+            columns_names: which columns to be selected if empty all are selected (comma separated)
+            current_user: the current user login info
+
+
+        Returns:
+            JSON (DF like matrix) object with the aggregated raw output data  for areas
+
+        """
+        logger.info(
+            f"Aggregate areas raw data at {query_file} (output name = {output_id}) from study {uuid}",
+            extra={"user": current_user.id},
+        )
+        parameters = RequestParameters(user=current_user)
+        output = study_service.aggregate_areas_data(
+            uuid,
+            output_id=output_id,
+            query_file=query_file,
+            frequency=frequency,
+            mc_years=[int(mc_year) for mc_year in _split_comma_separated_values(mc_years)],
+            areas_ids=_split_comma_separated_values(areas_ids),
+            columns_names=_split_comma_separated_values(columns_names),
+            params=parameters,
+        )
+
+        return output
+
+    @bp.get(
+        "/studies/{uuid}/links/aggregate",
+        tags=[APITag.study_raw_data],
+        summary="Retrieve Aggregated Areas Raw Data from Study Output",
+    )
+    def aggregate_links_raw_data(
+        uuid: str,
+        output_id: str,
+        query_file: LinksQueryFile,
+        frequency: MatrixFrequency,
+        mc_years: str = "",
+        columns_names: str = "",
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> t.Dict[str, t.Any]:
+        """
+        Create an aggregation of links raw data
+
+        Args:
+            uuid: study ID
+            output_id: the output ID aka the simulation ID
+            query_file: "values", "details"
+            frequency: "hourly", "daily", "weekly", "monthly", "annual"
+            mc_years: which Monte Carlo years to be selected if empty all are selected (comma separated)
+            columns_names: which columns to be selected if empty all are selected (comma separated)
+            current_user: the current user login info
+
+        Returns:
+            JSON (DF like matrix)  with the aggregated links raw data
+
+        """
+        logger.info(
+            f"Aggregate links raw data at {query_file} (output name = {output_id}) from study {uuid}",
+            extra={"user": current_user.id},
+        )
+        parameters = RequestParameters(user=current_user)
+        output = study_service.aggregate_links_data(
+            uuid,
+            output_id=output_id,
+            query_file=query_file,
+            frequency=frequency,
+            mc_years=[int(mc_year) for mc_year in _split_comma_separated_values(mc_years)],
+            columns_names=_split_comma_separated_values(columns_names),
+            params=parameters,
+        )
+
+        return output
 
     @bp.post(
         "/studies/{uuid}/raw",
@@ -242,5 +457,71 @@ def create_raw_study_routes(
             extra={"user": current_user.id},
         )
         return study_service.check_errors(uuid)
+
+    @bp.get(
+        "/studies/{uuid}/raw/download",
+        summary="Download a matrix in a given format",
+        tags=[APITag.study_raw_data],
+    )
+    def get_matrix(
+        uuid: str,
+        matrix_path: str = Query(  # type: ignore
+            ..., alias="path", description="Relative path of the matrix to download", title="Matrix Path"
+        ),
+        export_format: TableExportFormat = Query(  # type: ignore
+            TableExportFormat.XLSX, alias="format", description="Export format", title="Export Format"
+        ),
+        with_header: bool = Query(  # type: ignore
+            True, alias="header", description="Whether to include the header or not", title="With Header"
+        ),
+        with_index: bool = Query(  # type: ignore
+            True, alias="index", description="Whether to include the index or not", title="With Index"
+        ),
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> FileResponse:
+        parameters = RequestParameters(user=current_user)
+        df_matrix = study_service.get_matrix_with_index_and_header(
+            study_id=uuid,
+            path=matrix_path,
+            with_index=with_index,
+            with_header=with_header,
+            parameters=parameters,
+        )
+
+        matrix_name = Path(matrix_path).stem
+        export_file_download = study_service.file_transfer_manager.request_download(
+            f"{matrix_name}{export_format.suffix}",
+            f"Exporting matrix '{matrix_name}' to {export_format} format for study '{uuid}'",
+            current_user,
+            use_notification=False,
+            expiration_time_in_minutes=10,
+        )
+        export_path = Path(export_file_download.path)
+        export_id = export_file_download.id
+
+        try:
+            export_format.export_table(df_matrix, export_path, with_index=with_index, with_header=with_header)
+            study_service.file_transfer_manager.set_ready(export_id, use_notification=False)
+        except ValueError as e:
+            study_service.file_transfer_manager.fail(export_id, str(e))
+            raise HTTPException(
+                status_code=http.HTTPStatus.UNPROCESSABLE_ENTITY,
+                detail=f"Cannot replace '{export_path}' due to Excel policy: {e}",
+            ) from e
+        except FileDownloadNotFound as e:
+            study_service.file_transfer_manager.fail(export_id, str(e))
+            raise HTTPException(
+                status_code=http.HTTPStatus.UNPROCESSABLE_ENTITY,
+                detail=f"The file download does not exist in database :{str(e)}",
+            ) from e
+
+        return FileResponse(
+            export_path,
+            headers={
+                "Content-Disposition": f'attachment; filename="{export_file_download.filename}"',
+                "Content-Type": f"{export_format.media_type}; charset=utf-8",
+            },
+            media_type=export_format.media_type,
+        )
 
     return bp

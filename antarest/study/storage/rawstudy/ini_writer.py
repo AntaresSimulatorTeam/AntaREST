@@ -27,7 +27,6 @@ class IniConfigParser(configparser.RawConfigParser):
             self, section_name, key, value
         )
         if value is not None or not self._allow_no_value:  # type:ignore
-            # value = IniConfigParser.format_value(value)
             value = delimiter + str(value).replace("\n", "\n\t")
         else:
             value = ""

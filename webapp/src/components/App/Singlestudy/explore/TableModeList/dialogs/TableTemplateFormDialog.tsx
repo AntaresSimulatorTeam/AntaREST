@@ -30,6 +30,15 @@ function TableTemplateFormDialog(props: TableTemplateFormDialogProps) {
     [templates],
   );
 
+  const typeOptions = useMemo(
+    () =>
+      TABLE_MODE_TYPES.map((type) => ({
+        value: type,
+        label: t(`tableMode.type.${type}`),
+      })),
+    [t],
+  );
+
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
@@ -43,7 +52,7 @@ function TableTemplateFormDialog(props: TableTemplateFormDialogProps) {
       onSubmit={onSubmit}
       onCancel={onCancel}
     >
-      {({ control, resetField, getValues }) => (
+      {({ control, setValue, getValues }) => (
         <Box
           sx={{
             display: "flex",
@@ -67,15 +76,15 @@ function TableTemplateFormDialog(props: TableTemplateFormDialogProps) {
           />
           <SelectFE
             label={t("study.type")}
-            options={TABLE_MODE_TYPES}
+            options={typeOptions}
             variant="outlined"
-            onChange={() => resetField("columns")}
+            onChange={() => setValue("columns", [])}
             name="type"
             control={control}
           />
           <ListFE
             label={t("study.columns")}
-            options={getTableColumnsForType(getValues("type"))}
+            options={[...getTableColumnsForType(getValues("type"))]}
             getOptionLabel={startCase}
             name="columns"
             control={control}
