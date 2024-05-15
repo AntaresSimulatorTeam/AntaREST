@@ -160,7 +160,9 @@ class TestDownloadMatrices:
             )
             assert res.status_code == 200
             # noinspection SpellCheckingInspection
-            assert res.headers["content-type"] == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            assert res.headers["content-type"] == (
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet; charset=utf-8"
+            )
 
             # load into dataframe
             # noinspection PyTypeChecker

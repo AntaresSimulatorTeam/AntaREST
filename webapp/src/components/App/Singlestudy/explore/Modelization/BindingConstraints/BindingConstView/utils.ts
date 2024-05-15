@@ -152,8 +152,13 @@ function isValidOutputFilterInput(array: string[]): array is OutputFilter[] {
  * @throws If the input is neither a string nor an array of OutputFilter values.
  */
 function adaptOutputFilterFormat(
-  data: string | OutputFilter[],
+  data: string | OutputFilter[] | undefined,
 ): string | OutputFilter[] {
+  // Handle case where the fields are undefined in versions below 8.3.
+  if (data === undefined) {
+    return [];
+  }
+
   // Handle empty string as an empty array of filters.
   if (typeof data === "string") {
     if (data.length === 0) {

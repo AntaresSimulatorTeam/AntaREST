@@ -19,7 +19,7 @@ MATCH_SIGNATURE_SEPARATOR = "%"
 logger = logging.getLogger(__name__)
 
 
-class ICommand(ABC, BaseModel, extra=Extra.forbid, arbitrary_types_allowed=True):
+class ICommand(ABC, BaseModel, extra=Extra.forbid, arbitrary_types_allowed=True, copy_on_model_validation="deep"):
     """
     Interface for all commands that can be applied to a study.
 

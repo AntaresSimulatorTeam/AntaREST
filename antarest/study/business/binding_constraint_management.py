@@ -10,14 +10,13 @@ from requests.utils import CaseInsensitiveDict
 
 from antarest.core.exceptions import (
     BindingConstraintNotFound,
-    ConstraintAlreadyExistError,
-    ConstraintIdNotFoundError,
+    ConstraintTermNotFound,
     DuplicateConstraintName,
+    DuplicateConstraintTerm,
     InvalidConstraintName,
+    InvalidConstraintTerm,
     InvalidFieldForVersionError,
     MatrixWidthMismatchError,
-    MissingDataError,
-    NoConstraintError,
     WrongMatrixHeightError,
 )
 from antarest.core.model import JSON
@@ -805,90 +804,92 @@ class BindingConstraintManager:
         command = RemoveBindingConstraint(id=bc.id, command_context=command_context)
         execute_or_add_commands(study, file_study, [command], self.storage_service)
 
-    def update_constraint_term(
-        self,
-        study: Study,
-        binding_constraint_id: str,
-        term: ConstraintTerm,
+    def _update_constraint_with_terms(
+        self, study: Study, bc: ConstraintOutput, terms: t.Mapping[str, ConstraintTerm]
     ) -> None:
-        file_study = self.storage_service.get_storage(study).get_raw(study)
-        constraint = self.get_binding_constraint(study, binding_constraint_id)
-        constraint_terms = constraint.terms  # existing constraint terms
-        if not constraint_terms:
-            raise NoConstraintError(study.id)
-
-        term_id = term.id if isinstance(term, ConstraintTerm) else term
-        if term_id is None:
-            raise ConstraintIdNotFoundError(study.id)
-
-        term_id_index = find_constraint_term_id(constraint_terms, term_id)
-        if term_id_index < 0:
-            raise ConstraintIdNotFoundError(study.id)
-
-        if isinstance(term, ConstraintTerm):
-            updated_term_id = term.data.generate_id() if term.data else term_id
-            current_constraint = constraint_terms[term_id_index]
-
-            constraint_terms[term_id_index] = ConstraintTerm(
-                id=updated_term_id,
-                weight=term.weight or current_constraint.weight,
-                offset=term.offset,
-                data=term.data or current_constraint.data,
-            )
-        else:
-            del constraint_terms[term_id_index]
-
-        coeffs = {term.id: [term.weight, term.offset] if term.offset else [term.weight] for term in constraint_terms}
-
+        coeffs = {
+            term_id: [term.weight, term.offset] if term.offset else [term.weight] for term_id, term in terms.items()
+        }
         command = UpdateBindingConstraint(
-            id=constraint.id,
+            id=bc.id,
             coeffs=coeffs,
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
         )
+        file_study = self.storage_service.get_storage(study).get_raw(study)
         execute_or_add_commands(study, file_study, [command], self.storage_service)
 
-    def create_constraint_term(
+    def update_constraint_terms(
         self,
         study: Study,
         binding_constraint_id: str,
-        constraint_term: ConstraintTerm,
+        constraint_terms: t.Sequence[ConstraintTerm],
+        update_mode: str = "replace",
     ) -> None:
-        file_study = self.storage_service.get_storage(study).get_raw(study)
+        """
+        Update or add the specified constraint terms.
+
+        Args:
+            study: The study from which to update the binding constraint.
+            binding_constraint_id: The ID of the binding constraint to update.
+            constraint_terms: The constraint terms to update.
+            update_mode: The update mode, either "replace" or "add".
+        """
+        if update_mode == "add":
+            for term in constraint_terms:
+                if term.data is None:
+                    raise InvalidConstraintTerm(binding_constraint_id, term.json())
+
         constraint = self.get_binding_constraint(study, binding_constraint_id)
+        existing_terms = collections.OrderedDict((term.generate_id(), term) for term in constraint.terms)
+        updated_terms = collections.OrderedDict((term.generate_id(), term) for term in constraint_terms)
 
-        if constraint_term.data is None:
-            raise MissingDataError("Add new constraint term : data is missing")
+        if update_mode == "replace":
+            missing_terms = set(updated_terms) - set(existing_terms)
+            if missing_terms:
+                raise ConstraintTermNotFound(binding_constraint_id, *missing_terms)
+        elif update_mode == "add":
+            duplicate_terms = set(updated_terms) & set(existing_terms)
+            if duplicate_terms:
+                raise DuplicateConstraintTerm(binding_constraint_id, *duplicate_terms)
+        else:  # pragma: no cover
+            raise NotImplementedError(f"Unsupported update mode: {update_mode}")
 
-        constraint_id = constraint_term.data.generate_id()
-        constraint_terms = constraint.terms or []
-        if find_constraint_term_id(constraint_terms, constraint_id) >= 0:
-            raise ConstraintAlreadyExistError(study.id)
+        existing_terms.update(updated_terms)
+        self._update_constraint_with_terms(study, constraint, existing_terms)
 
-        constraint_terms.append(
-            ConstraintTerm(
-                id=constraint_id,
-                weight=constraint_term.weight if constraint_term.weight is not None else 0.0,
-                offset=constraint_term.offset,
-                data=constraint_term.data,
-            )
-        )
+    def create_constraint_terms(
+        self, study: Study, binding_constraint_id: str, constraint_terms: t.Sequence[ConstraintTerm]
+    ) -> None:
+        """
+        Adds new constraint terms to an existing binding constraint.
 
-        coeffs = {term.id: [term.weight] + [term.offset] if term.offset else [term.weight] for term in constraint_terms}
-        command = UpdateBindingConstraint(
-            id=constraint.id,
-            coeffs=coeffs,
-            command_context=self.storage_service.variant_study_service.command_factory.command_context,
-        )
-        execute_or_add_commands(study, file_study, [command], self.storage_service)
+        Args:
+            study: The study from which to update the binding constraint.
+            binding_constraint_id: The ID of the binding constraint to update.
+            constraint_terms: The constraint terms to add.
+        """
+        return self.update_constraint_terms(study, binding_constraint_id, constraint_terms, update_mode="add")
 
-    # FIXME create a dedicated delete service
     def remove_constraint_term(
         self,
         study: Study,
         binding_constraint_id: str,
         term_id: str,
     ) -> None:
-        return self.update_constraint_term(study, binding_constraint_id, term_id)  # type: ignore
+        """
+        Remove a constraint term from an existing binding constraint.
+
+        Args:
+            study: The study from which to update the binding constraint.
+            binding_constraint_id: The ID of the binding constraint to update.
+            term_id: The ID of the term to remove.
+        """
+        constraint = self.get_binding_constraint(study, binding_constraint_id)
+        existing_terms = collections.OrderedDict((term.generate_id(), term) for term in constraint.terms)
+        removed_term = existing_terms.pop(term_id, None)
+        if removed_term is None:
+            raise ConstraintTermNotFound(binding_constraint_id, term_id)
+        self._update_constraint_with_terms(study, constraint, existing_terms)
 
     @staticmethod
     def get_table_schema() -> JSON:
@@ -916,14 +917,6 @@ def _replace_matrices_according_to_frequency_and_version(
             if term not in args:
                 args[term] = matrix
     return args
-
-
-def find_constraint_term_id(constraints_term: t.Sequence[ConstraintTerm], constraint_term_id: str) -> int:
-    try:
-        index = [elm.id for elm in constraints_term].index(constraint_term_id)
-        return index
-    except ValueError:
-        return -1
 
 
 def check_attributes_coherence(data: t.Union[ConstraintCreation, ConstraintInput], study_version: int) -> None:

@@ -13,7 +13,6 @@ Jinja2~=3.0.3
 jsonref~=0.2
 MarkupSafe~=2.0.1
 numpy~=1.22.1
-openpyxl~=3.1.2
 pandas~=1.4.0
 paramiko~=2.12.0
 plyer~=2.0.0
@@ -28,5 +27,7 @@ redis~=4.1.2
 requests~=2.27.1
 SQLAlchemy~=1.4.46
 starlette~=0.17.1
+tables
 typing_extensions~=4.7.1
 uvicorn[standard]~=0.15.0
+xlsxwriter~=3.2.0
