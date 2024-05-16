@@ -9,7 +9,7 @@ interface NumberValidationOptions {
   max?: number;
 }
 
-interface ValidationOptions {
+interface StringValidationOptions {
   existingValues?: string[];
   excludedValues?: string[];
   isCaseSensitive?: boolean;
@@ -17,8 +17,8 @@ interface ValidationOptions {
   specialChars?: string;
   allowSpaces?: boolean;
   editedValue?: string;
-  min?: number;
-  max?: number;
+  minLength?: number;
+  maxLength?: number;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -40,13 +40,13 @@ interface ValidationOptions {
  * @param [options.specialChars="&()_-"] - A string representing additional allowed characters outside the typical alphanumeric scope.
  * @param [options.allowSpaces=true] - Flags if spaces are allowed in the value.
  * @param [options.editedValue=""] - The current value being edited, to exclude it from duplicate checks.
- * @param [options.min=0] - Minimum length required for the string. Defaults to 0.
- * @param [options.max=255] - Maximum allowed length for the string. Defaults to 255.
+ * @param [options.minLength=0] - Minimum length required for the string. Defaults to 0.
+ * @param [options.maxLength=255] - Maximum allowed length for the string. Defaults to 255.
  * @returns True if validation is successful, or a localized error message if it fails.
  */
 export function validateString(
   value: string,
-  options?: ValidationOptions,
+  options?: StringValidationOptions,
 ): string | true {
   const {
     existingValues = [],
@@ -56,8 +56,8 @@ export function validateString(
     allowSpaces = true,
     specialChars = "&()_-",
     editedValue = "",
-    min = 0,
-    max = 255,
+    minLength = 0,
+    maxLength = 255,
   } = options || {};
 
   const trimmedValue = value.trim();
@@ -70,12 +70,12 @@ export function validateString(
     return t("form.field.spacesNotAllowed");
   }
 
-  if (trimmedValue.length < min) {
-    return t("form.field.minValue", { 0: min });
+  if (trimmedValue.length < minLength) {
+    return t("form.field.minLength", { length: minLength });
   }
 
-  if (trimmedValue.length > max) {
-    return t("form.field.maxValue", { 0: max });
+  if (trimmedValue.length > maxLength) {
+    return t("form.field.maxLength", { length: maxLength });
   }
 
   // Compiles a regex pattern based on allowed characters and flags.
@@ -129,11 +129,11 @@ export function validatePassword(password: string): string | true {
   }
 
   if (trimmedPassword.length < 8) {
-    return t("form.field.minValue", { 0: 8 });
+    return t("form.field.minLength", { length: 8 });
   }
 
   if (trimmedPassword.length > 50) {
-    return t("form.field.maxValue", { 0: 50 });
+    return t("form.field.maxLength", { length: 50 });
   }
 
   if (!/[a-z]/.test(trimmedPassword)) {
