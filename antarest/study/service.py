@@ -38,7 +38,6 @@ from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTGroup, JWTUser
 from antarest.core.model import JSON, SUB_JSON, PermissionInfo, PublicMode, StudyPermissionType
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
-from antarest.core.roles import RoleType
 from antarest.core.tasks.model import TaskListFilter, TaskResult, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskService, TaskUpdateNotifier, noop_notifier
 from antarest.core.utils.fastapi_sqlalchemy import db
@@ -104,7 +103,6 @@ from antarest.study.repository import (
     StudySortBy,
 )
 from antarest.study.storage.matrix_profile import adjust_matrix_columns_index
-from antarest.study.storage.rawstudy.model.filesystem.config.area import AreaUI
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import ChildNotFoundError
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
@@ -2044,11 +2042,7 @@ class StudyService:
         study.groups.clear()
         for gid in group_ids:
             jwt_group: t.Optional[JWTGroup] = next(filter(lambda g: g.id == gid, owner.groups), None)  # type: ignore
-            if (
-                jwt_group is None
-                or jwt_group.role is None
-                or (jwt_group.role < RoleType.WRITER and not owner.is_site_admin())
-            ):
+            if jwt_group is None or jwt_group.role is None:
                 raise UserHasNotPermissionError(f"Permission denied for group ID: {gid}")
             study.groups.append(Group(id=jwt_group.id, name=jwt_group.name))
 

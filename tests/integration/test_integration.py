@@ -1616,6 +1616,40 @@ def test_import(client: TestClient, admin_access_token: str, study_id: str) -> N
     assert res["groups"] == []
     assert res["public_mode"] == "READ"
 
+    # create George group
+    george_group = "george_group"
+    res = client.post(
+        "/v1/groups",
+        headers=admin_headers,
+        json={"id": george_group, "name": george_group},
+    )
+    assert res.status_code in {200, 201}
+    # add George to the group as a reader
+    client.post(
+        "/v1/roles",
+        headers=admin_headers,
+        json={"type": 10, "group_id": george_group, "identity_id": 2},
+    )
+    # reset login to update credentials
+    res = client.post(
+        "/v1/refresh",
+        headers={"Authorization": f'Bearer {george_credentials["refresh_token"]}'},
+    )
+    george_credentials = res.json()
+
+    # George imports a study and it should still succeed even if it's role is only READER
+    georges_headers = {"Authorization": f'Bearer {george_credentials["access_token"]}'}
+    res = client.post(
+        "/v1/studies/_import",
+        files={"study": io.BytesIO(zip_path.read_bytes())},
+        headers=georges_headers,
+    )
+    assert res.status_code in {200, 201}
+    uuid = res.json()
+    res = client.get(f"v1/studies/{uuid}", headers=georges_headers).json()
+    assert res["groups"] == [{"id": george_group, "name": george_group}]
+    assert res["public_mode"] == "NONE"
+
     # Study importer works for 7z files
     res = client.post(
         "/v1/studies/_import",
