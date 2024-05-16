@@ -74,7 +74,7 @@ function Fields() {
           name="unitCount"
           control={control}
           rules={{
-            validate: (v) => validateNumber(v, { min: 1 }),
+            validate: validateNumber({ min: 1 }),
             setValueAs: Math.floor,
           }}
         />
@@ -83,7 +83,7 @@ function Fields() {
           name="nominalCapacity"
           control={control}
           rules={{
-            validate: (v) => validateNumber(v, { min: 0 }),
+            validate: validateNumber({ min: 0 }),
           }}
         />
         <NumberFE
@@ -96,7 +96,7 @@ function Fields() {
           name="spinning"
           control={control}
           rules={{
-            validate: (v) => validateNumber(v, { min: 0, max: 100 }),
+            validate: validateNumber({ min: 0, max: 100 }),
           }}
         />
         <NumberFE
@@ -104,7 +104,7 @@ function Fields() {
           name="minUpTime"
           control={control}
           rules={{
-            validate: (v) => validateNumber(v, { min: 1, max: 168 }),
+            validate: validateNumber({ min: 1, max: 168 }),
             setValueAs: Math.floor,
           }}
         />
@@ -113,7 +113,7 @@ function Fields() {
           name="minDownTime"
           control={control}
           rules={{
-            validate: (v) => validateNumber(v, { min: 1, max: 168 }),
+            validate: validateNumber({ min: 1, max: 168 }),
             setValueAs: Math.floor,
           }}
         />
@@ -134,7 +134,7 @@ function Fields() {
           name="efficiency"
           control={control}
           rules={{
-            validate: (v) => validateNumber(v, { min: 0 }),
+            validate: validateNumber({ min: 0 }),
           }}
           disabled={!isTSCost}
         />
@@ -143,7 +143,7 @@ function Fields() {
           name="marginalCost"
           control={control}
           rules={{
-            validate: (v) => validateNumber(v, { min: 0 }),
+            validate: validateNumber({ min: 0 }),
           }}
         />
 
@@ -152,7 +152,7 @@ function Fields() {
           name="startupCost"
           control={control}
           rules={{
-            validate: (v) => validateNumber(v, { min: 0 }),
+            validate: validateNumber({ min: 0 }),
           }}
         />
         <NumberFE
@@ -160,7 +160,7 @@ function Fields() {
           name="marketBidCost"
           control={control}
           rules={{
-            validate: (v) => validateNumber(v, { min: 0 }),
+            validate: validateNumber({ min: 0 }),
           }}
         />
         <NumberFE
@@ -168,7 +168,7 @@ function Fields() {
           name="fixedCost"
           control={control}
           rules={{
-            validate: (v) => validateNumber(v, { min: 0 }),
+            validate: validateNumber({ min: 0 }),
           }}
         />
         <NumberFE
@@ -176,7 +176,7 @@ function Fields() {
           name="variableOMCost"
           control={control}
           rules={{
-            validate: (v) => validateNumber(v, { min: 0 }),
+            validate: validateNumber({ min: 0 }),
           }}
           disabled={!isTSCost}
         />
@@ -196,7 +196,7 @@ function Fields() {
                 name={name}
                 control={control}
                 rules={{
-                  validate: (v) => validateNumber(v, { min: 0 }),
+                  validate: validateNumber({ min: 0 }),
                 }}
               />
             ),
@@ -218,7 +218,7 @@ function Fields() {
           name="volatilityForced"
           control={control}
           rules={{
-            validate: (v) => validateNumber(v, { min: 0, max: 1 }),
+            validate: validateNumber({ min: 0, max: 1 }),
           }}
           inputProps={{ step: 0.1 }}
         />
@@ -227,7 +227,7 @@ function Fields() {
           name="volatilityPlanned"
           control={control}
           rules={{
-            validate: (v) => validateNumber(v, { min: 0, max: 1 }),
+            validate: validateNumber({ min: 0, max: 1 }),
           }}
           inputProps={{ step: 0.1 }}
         />

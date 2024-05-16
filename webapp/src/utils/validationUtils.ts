@@ -4,7 +4,12 @@ import { t } from "i18next";
 // Types
 ////////////////////////////////////////////////////////////////
 
-interface ValidationOptions {
+interface NumberValidationOptions {
+  min?: number;
+  max?: number;
+}
+
+interface StringValidationOptions {
   existingValues?: string[];
   excludedValues?: string[];
   isCaseSensitive?: boolean;
@@ -12,8 +17,8 @@ interface ValidationOptions {
   specialChars?: string;
   allowSpaces?: boolean;
   editedValue?: string;
-  min?: number;
-  max?: number;
+  minLength?: number;
+  maxLength?: number;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -35,13 +40,13 @@ interface ValidationOptions {
  * @param [options.specialChars="&()_-"] - A string representing additional allowed characters outside the typical alphanumeric scope.
  * @param [options.allowSpaces=true] - Flags if spaces are allowed in the value.
  * @param [options.editedValue=""] - The current value being edited, to exclude it from duplicate checks.
- * @param [options.min=0] - Minimum length required for the string. Defaults to 0.
- * @param [options.max=255] - Maximum allowed length for the string. Defaults to 255.
+ * @param [options.minLength=0] - Minimum length required for the string. Defaults to 0.
+ * @param [options.maxLength=255] - Maximum allowed length for the string. Defaults to 255.
  * @returns True if validation is successful, or a localized error message if it fails.
  */
 export function validateString(
   value: string,
-  options?: ValidationOptions,
+  options?: StringValidationOptions,
 ): string | true {
   const {
     existingValues = [],
@@ -51,8 +56,8 @@ export function validateString(
     allowSpaces = true,
     specialChars = "&()_-",
     editedValue = "",
-    min = 0,
-    max = 255,
+    minLength = 0,
+    maxLength = 255,
   } = options || {};
 
   const trimmedValue = value.trim();
@@ -65,12 +70,12 @@ export function validateString(
     return t("form.field.spacesNotAllowed");
   }
 
-  if (trimmedValue.length < min) {
-    return t("form.field.minValue", { 0: min });
+  if (trimmedValue.length < minLength) {
+    return t("form.field.minLength", { length: minLength });
   }
 
-  if (trimmedValue.length > max) {
-    return t("form.field.maxValue", { 0: max });
+  if (trimmedValue.length > maxLength) {
+    return t("form.field.maxLength", { length: maxLength });
   }
 
   // Compiles a regex pattern based on allowed characters and flags.
@@ -124,11 +129,11 @@ export function validatePassword(password: string): string | true {
   }
 
   if (trimmedPassword.length < 8) {
-    return t("form.field.minValue", { 0: 8 });
+    return t("form.field.minLength", { length: 8 });
   }
 
   if (trimmedPassword.length > 50) {
-    return t("form.field.maxValue", { 0: 50 });
+    return t("form.field.maxLength", { length: 50 });
   }
 
   if (!/[a-z]/.test(trimmedPassword)) {
@@ -153,22 +158,47 @@ export function validatePassword(password: string): string | true {
 /**
  * Validates a number against specified numerical limits.
  *
+ * @example
+ * validateNumber(5, { min: 0, max: 10 }); // true
+ * validateNumber(9, { min: 10, max: 20 }); // Error message
+ *
+ *
+ * @example <caption>With currying.</caption>
+ * const fn = validateNumber({ min: 0, max: 10 });
+ * fn(5); // true
+ * fn(11); // Error message
+ *
  * @param value - The number to validate.
- * @param options - Configuration options for validation including min and max values. (Optional)
- * @param [options.min=Number.MIN_SAFE_INTEGER] - Minimum allowed value for the number.
- * @param [options.max=Number.MAX_SAFE_INTEGER] - Maximum allowed value for the number.
+ * @param [options] - Configuration options for validation.
+ * @param [options.min=Number.MIN_SAFE_INTEGER] - Minimum allowed value.
+ * @param [options.max=Number.MAX_SAFE_INTEGER] - Maximum allowed value.
  * @returns True if validation is successful, or a localized error message if it fails.
  */
 export function validateNumber(
   value: number,
-  options?: ValidationOptions,
-): string | true {
-  if (typeof value !== "number" || isNaN(value) || !isFinite(value)) {
+  options?: NumberValidationOptions,
+): string | true;
+
+export function validateNumber(
+  options?: NumberValidationOptions,
+): (value: number) => string | true;
+
+export function validateNumber(
+  valueOrOpts?: number | NumberValidationOptions,
+  options: NumberValidationOptions = {},
+): (string | true) | ((value: number) => string | true) {
+  if (typeof valueOrOpts !== "number") {
+    return (v: number) => validateNumber(v, valueOrOpts);
+  }
+
+  const value = valueOrOpts;
+
+  if (!isFinite(value)) {
     return t("form.field.invalidNumber", { value });
   }
 
   const { min = Number.MIN_SAFE_INTEGER, max = Number.MAX_SAFE_INTEGER } =
-    options || {};
+    options;
 
   if (value < min) {
     return t("form.field.minValue", { 0: min });
