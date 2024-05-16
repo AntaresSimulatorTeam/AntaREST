@@ -4,6 +4,11 @@ import { t } from "i18next";
 // Types
 ////////////////////////////////////////////////////////////////
 
+interface NumberValidationOptions {
+  min?: number;
+  max?: number;
+}
+
 interface ValidationOptions {
   existingValues?: string[];
   excludedValues?: string[];
@@ -153,22 +158,47 @@ export function validatePassword(password: string): string | true {
 /**
  * Validates a number against specified numerical limits.
  *
+ * @example
+ * validateNumber(5, { min: 0, max: 10 }); // true
+ * validateNumber(9, { min: 10, max: 20 }); // Error message
+ *
+ *
+ * @example <caption>With currying.</caption>
+ * const fn = validateNumber({ min: 0, max: 10 });
+ * fn(5); // true
+ * fn(11); // Error message
+ *
  * @param value - The number to validate.
- * @param options - Configuration options for validation including min and max values. (Optional)
- * @param [options.min=Number.MIN_SAFE_INTEGER] - Minimum allowed value for the number.
- * @param [options.max=Number.MAX_SAFE_INTEGER] - Maximum allowed value for the number.
+ * @param [options] - Configuration options for validation.
+ * @param [options.min=Number.MIN_SAFE_INTEGER] - Minimum allowed value.
+ * @param [options.max=Number.MAX_SAFE_INTEGER] - Maximum allowed value.
  * @returns True if validation is successful, or a localized error message if it fails.
  */
 export function validateNumber(
   value: number,
-  options?: ValidationOptions,
-): string | true {
-  if (typeof value !== "number" || isNaN(value) || !isFinite(value)) {
+  options?: NumberValidationOptions,
+): string | true;
+
+export function validateNumber(
+  options?: NumberValidationOptions,
+): (value: number) => string | true;
+
+export function validateNumber(
+  valueOrOpts?: number | NumberValidationOptions,
+  options: NumberValidationOptions = {},
+): (string | true) | ((value: number) => string | true) {
+  if (typeof valueOrOpts !== "number") {
+    return (v: number) => validateNumber(v, valueOrOpts);
+  }
+
+  const value = valueOrOpts;
+
+  if (!isFinite(value)) {
     return t("form.field.invalidNumber", { value });
   }
 
   const { min = Number.MIN_SAFE_INTEGER, max = Number.MAX_SAFE_INTEGER } =
-    options || {};
+    options;
 
   if (value < min) {
     return t("form.field.minValue", { 0: min });
