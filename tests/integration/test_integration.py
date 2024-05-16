@@ -1637,7 +1637,7 @@ def test_import(client: TestClient, admin_access_token: str, study_id: str) -> N
     )
     george_credentials = res.json()
 
-    # George imports a study and it should still succeed even if it's role is only READER
+    # George imports a study and it should succeed even if its role is only "READER"
     georges_headers = {"Authorization": f'Bearer {george_credentials["access_token"]}'}
     res = client.post(
         "/v1/studies/_import",
