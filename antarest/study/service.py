@@ -2041,7 +2041,8 @@ class StudyService:
 
         study.groups.clear()
         for gid in group_ids:
-            jwt_group: t.Optional[JWTGroup] = next(filter(lambda g: g.id == gid, owner.groups), None)  # type: ignore
+            owned_groups = (g for g in owner.groups if g.id == gid)
+            jwt_group: t.Optional[JWTGroup] = next(owned_groups, None)
             if jwt_group is None or jwt_group.role is None:
                 raise UserHasNotPermissionError(f"Permission denied for group ID: {gid}")
             study.groups.append(Group(id=jwt_group.id, name=jwt_group.name))
