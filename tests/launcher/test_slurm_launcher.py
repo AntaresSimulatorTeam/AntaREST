@@ -2,6 +2,7 @@ import os
 import shutil
 import textwrap
 import uuid
+import zipfile
 from argparse import Namespace
 from pathlib import Path
 from unittest.mock import ANY, Mock, patch
@@ -386,7 +387,7 @@ def test_import_study_output(launcher_config, tmp_path) -> None:
 
     slurm_launcher.callbacks.import_output.assert_called_once_with(
         "1",
-        launcher_config.launcher.slurm.local_workspace / "OUTPUT" / "1" / "output",
+        launcher_config.launcher.slurm.local_workspace / "OUTPUT" / "1",
         {},
     )
     assert res == "output"
@@ -413,6 +414,20 @@ def test_import_study_output(launcher_config, tmp_path) -> None:
     assert (output_dir / "results" / "something_else").exists()
     assert (output_dir / "results" / "something_else").read_text() == "world"
 
+    # asserts that a xpansion output zipped can be imported
+    xpansion_zip_dir = launcher_config.launcher.slurm.local_workspace / "OUTPUT" / "2"
+    xpansion_zip_dir.mkdir(parents=True)
+    (xpansion_zip_dir / "input" / "links").mkdir(parents=True)
+    xpansion_out_put_dir = xpansion_zip_dir / "output"
+    xpansion_out_put_dir.mkdir(parents=True)
+    xpansion_output_file = xpansion_out_put_dir / "xpansion.zip"
+    with zipfile.ZipFile(xpansion_output_file, "w") as zipf:
+        zipf.write(xpansion_dir / "something_else", "some_file.txt")
+    slurm_launcher._import_study_output("2", "cpp")
+    assert (
+        launcher_config.launcher.slurm.local_workspace / "OUTPUT" / "2" / "output" / xpansion_output_file.name[:-4]
+    ).exists()
+
     log_dir = tmp_path / "logs"
     log_dir.mkdir()
     log_info = log_dir / "antares-out-xxxx.txt"
@@ -423,7 +438,7 @@ def test_import_study_output(launcher_config, tmp_path) -> None:
     slurm_launcher._import_study_output("1", None, str(log_dir))
     slurm_launcher.callbacks.import_output.assert_called_once_with(
         "1",
-        launcher_config.launcher.slurm.local_workspace / "OUTPUT" / "1" / "output",
+        launcher_config.launcher.slurm.local_workspace / "OUTPUT" / "1",
         {
             "antares-out.log": [log_info],
             "antares-err.log": [log_error],
