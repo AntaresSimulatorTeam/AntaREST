@@ -38,7 +38,6 @@ from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTGroup, JWTUser
 from antarest.core.model import JSON, SUB_JSON, PermissionInfo, PublicMode, StudyPermissionType
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
-from antarest.core.roles import RoleType
 from antarest.core.tasks.model import TaskListFilter, TaskResult, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskService, TaskUpdateNotifier, noop_notifier
 from antarest.core.utils.fastapi_sqlalchemy import db
@@ -104,7 +103,6 @@ from antarest.study.repository import (
     StudySortBy,
 )
 from antarest.study.storage.matrix_profile import adjust_matrix_columns_index
-from antarest.study.storage.rawstudy.model.filesystem.config.area import AreaUI
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import ChildNotFoundError
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
@@ -1396,13 +1394,7 @@ class StudyService:
         study = self.storage_service.raw_study_service.import_study(study, stream)
         study.updated_at = datetime.utcnow()
 
-        # status = self._analyse_study(study)
-        self._save_study(
-            study,
-            owner=params.user,
-            group_ids=group_ids,
-            #    content_status=status,
-        )
+        self._save_study(study, params.user, group_ids)
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_CREATED,
@@ -2014,7 +2006,6 @@ class StudyService:
         study: Study,
         owner: t.Optional[JWTUser] = None,
         group_ids: t.Sequence[str] = (),
-        content_status: StudyContentStatus = StudyContentStatus.VALID,
     ) -> None:
         """
         Create or update a study with specified attributes.
@@ -2026,29 +2017,24 @@ class StudyService:
             study: The study to be saved or updated.
             owner: The owner of the study (current authenticated user).
             group_ids: The list of group IDs to associate with the study.
-            content_status: The new content status for the study.
 
         Raises:
             UserHasNotPermissionError:
-                If the owner is not specified or has invalid authentication,
-                or if permission is denied for any of the specified group IDs.
+                If the owner or the group role is not specified.
         """
         if not owner:
             raise UserHasNotPermissionError("owner is not specified or has invalid authentication")
 
         if isinstance(study, RawStudy):
-            study.content_status = content_status
+            study.content_status = StudyContentStatus.VALID
 
         study.owner = self.user_service.get_user(owner.impersonator, params=RequestParameters(user=owner))
 
         study.groups.clear()
         for gid in group_ids:
-            jwt_group: t.Optional[JWTGroup] = next(filter(lambda g: g.id == gid, owner.groups), None)  # type: ignore
-            if (
-                jwt_group is None
-                or jwt_group.role is None
-                or (jwt_group.role < RoleType.WRITER and not owner.is_site_admin())
-            ):
+            owned_groups = (g for g in owner.groups if g.id == gid)
+            jwt_group: t.Optional[JWTGroup] = next(owned_groups, None)
+            if jwt_group is None or jwt_group.role is None:
                 raise UserHasNotPermissionError(f"Permission denied for group ID: {gid}")
             study.groups.append(Group(id=jwt_group.id, name=jwt_group.name))
 
