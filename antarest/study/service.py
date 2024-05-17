@@ -1394,13 +1394,7 @@ class StudyService:
         study = self.storage_service.raw_study_service.import_study(study, stream)
         study.updated_at = datetime.utcnow()
 
-        # status = self._analyse_study(study)
-        self._save_study(
-            study,
-            owner=params.user,
-            group_ids=group_ids,
-            #    content_status=status,
-        )
+        self._save_study(study, params.user, group_ids)
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_CREATED,
@@ -2012,7 +2006,6 @@ class StudyService:
         study: Study,
         owner: t.Optional[JWTUser] = None,
         group_ids: t.Sequence[str] = (),
-        content_status: StudyContentStatus = StudyContentStatus.VALID,
     ) -> None:
         """
         Create or update a study with specified attributes.
@@ -2024,18 +2017,16 @@ class StudyService:
             study: The study to be saved or updated.
             owner: The owner of the study (current authenticated user).
             group_ids: The list of group IDs to associate with the study.
-            content_status: The new content status for the study.
 
         Raises:
             UserHasNotPermissionError:
-                If the owner is not specified or has invalid authentication,
-                or if permission is denied for any of the specified group IDs.
+                If the owner or the group role is not specified.
         """
         if not owner:
             raise UserHasNotPermissionError("owner is not specified or has invalid authentication")
 
         if isinstance(study, RawStudy):
-            study.content_status = content_status
+            study.content_status = StudyContentStatus.VALID
 
         study.owner = self.user_service.get_user(owner.impersonator, params=RequestParameters(user=owner))
 
