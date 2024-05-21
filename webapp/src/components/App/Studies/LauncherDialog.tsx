@@ -42,7 +42,8 @@ import SwitchFE from "../../common/fieldEditors/SwitchFE";
 import moment from "moment";
 
 const DEFAULT_NB_CPU = 22;
-const DEFAULT_TIME_LIMIT = 240 * 3600; // 240 hours in seconds
+const MIN_TIME_LIMIT = 1 * 3600; // 1 hour in seconds.
+const MAX_TIME_LIMIT = 240 * 3600; // 240 hours in seconds.
 
 interface Props {
   open: boolean;
@@ -58,7 +59,7 @@ function LauncherDialog(props: Readonly<Props>) {
   const [options, setOptions] = useState<LaunchOptions>({
     nb_cpu: DEFAULT_NB_CPU,
     auto_unzip: true,
-    time_limit: undefined,
+    time_limit: MIN_TIME_LIMIT,
   });
   const [solverVersion, setSolverVersion] = useState<string>();
   const [isLaunching, setIsLaunching] = useState(false);
@@ -68,7 +69,7 @@ function LauncherDialog(props: Readonly<Props>) {
     shallowEqual,
   );
 
-  const res = usePromiseWithSnackbarError(
+  const launcherCores = usePromiseWithSnackbarError(
     () =>
       getLauncherCores().then((cores) => {
         setOptions((prevOptions) => {
@@ -84,17 +85,21 @@ function LauncherDialog(props: Readonly<Props>) {
     },
   );
 
-  const { data: launcherTimeLimit } = usePromiseWithSnackbarError(
-    async () => {
-      return await getLauncherTimeLimit();
-    },
+  const launcherTimeLimit = usePromiseWithSnackbarError(
+    () =>
+      getLauncherTimeLimit().then((timeLimit) => {
+        setOptions((prevOptions) => {
+          return {
+            ...prevOptions,
+            time_limit: timeLimit,
+          };
+        });
+        return timeLimit;
+      }),
     {
       errorMessage: t("study.error.launcherTimeLimit"),
     },
   );
-
-  const minSeconds = 3600;
-  const maxSeconds = launcherTimeLimit ?? DEFAULT_TIME_LIMIT;
 
   const { data: outputList } = usePromiseWithSnackbarError(
     () => Promise.all(studyIds.map((sid) => getStudyOutputs(sid))),
@@ -110,7 +115,7 @@ function LauncherDialog(props: Readonly<Props>) {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleLaunchClick = async () => {
+  const handleLaunchClick = () => {
     if (studyIds.length > 0) {
       setIsLaunching(true);
       Promise.all(
@@ -195,7 +200,7 @@ function LauncherDialog(props: Readonly<Props>) {
    */
   const parseHoursToSeconds = (hourString: string): number => {
     const seconds = moment.duration(hourString, "hours").asSeconds();
-    return Math.max(minSeconds, Math.min(seconds, maxSeconds));
+    return Math.max(MIN_TIME_LIMIT, Math.min(seconds, MAX_TIME_LIMIT));
   };
 
   ////////////////////////////////////////////////////////////////
@@ -218,7 +223,7 @@ function LauncherDialog(props: Readonly<Props>) {
             sx={{ mx: 2 }}
             color="primary"
             variant="contained"
-            disabled={isLaunching || !res.isResolved}
+            disabled={isLaunching || !launcherCores.isResolved}
             onClick={handleLaunchClick}
           >
             {t("global.launch")}
@@ -279,34 +284,42 @@ function LauncherDialog(props: Readonly<Props>) {
               width: "50%",
             }}
           />
-          <TextField
-            id="launcher-option-time-limit"
-            label={t("study.timeLimit")}
-            type="number"
-            variant="outlined"
-            // Convert from seconds to hours the displayed value
-            value={
-              options.time_limit === undefined
-                ? maxSeconds / 3600
-                : options.time_limit / 3600
-            }
-            onChange={(e) =>
-              handleChange("time_limit", parseHoursToSeconds(e.target.value))
-            }
-            InputLabelProps={{
-              shrink: true,
-            }}
-            inputProps={{
-              min: minSeconds / 3600,
-              max: maxSeconds / 3600,
-              step: 1,
-            }}
-            sx={{
-              minWidth: "125px",
-            }}
-          />
+
           <UsePromiseCond
-            response={res}
+            response={launcherTimeLimit}
+            ifResolved={(timeLimit) => (
+              <TextField
+                id="launcher-option-time-limit"
+                label={t("study.timeLimit")}
+                type="number"
+                variant="outlined"
+                required
+                value={(options.time_limit ?? timeLimit) / 3600} // Convert seconds to hours for display.
+                onChange={(e) => {
+                  handleChange(
+                    "time_limit",
+                    parseHoursToSeconds(e.target.value),
+                  );
+                }}
+                InputLabelProps={{
+                  shrink: true,
+                }}
+                inputProps={{
+                  min: MIN_TIME_LIMIT,
+                  max: MAX_TIME_LIMIT,
+                  step: 1,
+                }}
+                sx={{
+                  minWidth: "125px",
+                }}
+              />
+            )}
+            ifPending={() => <Skeleton width={125} height={60} />}
+            ifRejected={() => <Skeleton width={125} height={60} />}
+          />
+
+          <UsePromiseCond
+            response={launcherCores}
             ifResolved={(cores) => (
               <TextField
                 id="nb-cpu"
@@ -477,7 +490,7 @@ function LauncherDialog(props: Readonly<Props>) {
                   name: o.name,
                 }))}
                 disabled={!!options.xpansion_r_version || !options.xpansion}
-                data={options.xpansion?.output_id ?? ""}
+                data={options.xpansion?.output_id || ""}
                 setValue={(data: string) =>
                   handleObjectChange("xpansion", {
                     output_id: data,

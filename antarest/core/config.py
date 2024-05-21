@@ -391,8 +391,8 @@ class LauncherConfig:
         launcher_config = config_map.get(launcher)
         if launcher_config is None:
             raise InvalidConfigurationError(launcher)
-        # The default time limit is not available for the local launcher
-        return getattr(launcher_config, "default_time_limit", 3600)
+        # Default to 172800 (48 hours) for local launcher.
+        return getattr(launcher_config, "default_time_limit", 172800)
 
 
 @dataclass(frozen=True)
