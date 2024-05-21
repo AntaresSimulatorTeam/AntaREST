@@ -207,9 +207,8 @@ function LauncherDialog(props: Readonly<Props>) {
       title={t("study.runStudy")}
       open={open}
       onClose={onClose}
-      contentProps={{
-        sx: { width: "600px", height: "500px", p: 0, overflow: "hidden" },
-      }}
+      maxWidth="md"
+      PaperProps={{ sx: { width: 700 } }}
       actions={
         <>
           <Button variant="text" color="primary" onClick={onClose}>
@@ -268,7 +267,7 @@ function LauncherDialog(props: Readonly<Props>) {
             id="launcher-option-output-suffix"
             label={t("global.name")}
             type="text"
-            variant="filled"
+            variant="outlined"
             value={options.output_suffix}
             onChange={(e) =>
               handleChange("output_suffix", e.target.value.trim())
@@ -284,7 +283,7 @@ function LauncherDialog(props: Readonly<Props>) {
             id="launcher-option-time-limit"
             label={t("study.timeLimit")}
             type="number"
-            variant="filled"
+            variant="outlined"
             // Convert from seconds to hours the displayed value
             value={
               options.time_limit === undefined
@@ -313,7 +312,7 @@ function LauncherDialog(props: Readonly<Props>) {
                 id="nb-cpu"
                 label={t("study.nbCpu")}
                 type="number"
-                variant="filled"
+                variant="outlined"
                 value={options.nb_cpu}
                 onChange={(e) => {
                   const newValue = parseInt(e.target.value, 10);
@@ -350,16 +349,17 @@ function LauncherDialog(props: Readonly<Props>) {
           <Typography>Simulateur</Typography>
           <SelectSingle
             name={t("global.version")}
+            variant="outlined"
             list={launcherVersions}
             data={solverVersion}
             setValue={setSolverVersion}
-            sx={{ width: 1, mt: 2 }}
+            sx={{ width: 1, mt: 0.5 }}
           />
           <TextField
             id="other-options"
             label={t("study.otherOptions")}
             type="text"
-            variant="filled"
+            variant="outlined"
             value={options.other_options}
             onChange={(e) => handleChange("other_options", e.target.value)}
             sx={{
@@ -454,7 +454,7 @@ function LauncherDialog(props: Readonly<Props>) {
             />
           </Box>
           {outputList && outputList.length === 1 && (
-            <Box sx={{ display: "flex", gap: 2 }}>
+            <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
               <FormControlLabel
                 control={
                   <Checkbox
@@ -471,6 +471,7 @@ function LauncherDialog(props: Readonly<Props>) {
               />
               <SelectSingle
                 name={t("studies.selectOutput")}
+                variant="outlined"
                 list={outputList[0].map((o: StudyOutput) => ({
                   id: o.name,
                   name: o.name,
@@ -482,15 +483,11 @@ function LauncherDialog(props: Readonly<Props>) {
                     output_id: data,
                   })
                 }
-                sx={{ width: "300px", my: 3 }}
+                sx={{ minWidth: 400 }}
               />
             </Box>
           )}
         </FormGroup>
-        <Divider
-          sx={{ width: 1, my: 1, border: "0.5px solid", opacity: 0.7 }}
-          orientation="horizontal"
-        />
       </Box>
     </BasicDialog>
   );
