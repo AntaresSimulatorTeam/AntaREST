@@ -3,7 +3,7 @@ import http
 import pytest
 from starlette.testclient import TestClient
 
-from antarest.core.config import LocalConfig
+from antarest.core.config import LocalConfig, TimeLimitConfig
 
 
 # noinspection SpellCheckingInspection
@@ -69,19 +69,19 @@ class TestLauncherNbCores:
             "exception": "UnknownSolverConfig",
         }
 
-    def test_get_time_limit(
+    def test_get_launcher_time_limit(
         self,
         client: TestClient,
         user_access_token: str,
     ) -> None:
-        nb_cores_expected = 3600
         res = client.get(
             "/v1/launcher/time-limit",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         res.raise_for_status()
         actual = res.json()
-        assert actual == nb_cores_expected
+        expected = TimeLimitConfig().to_json()
+        assert actual == expected
 
         res = client.get(
             "/v1/launcher/time-limit?launcher=default",
@@ -89,7 +89,7 @@ class TestLauncherNbCores:
         )
         res.raise_for_status()
         actual = res.json()
-        assert actual == nb_cores_expected
+        assert actual == expected
 
         res = client.get(
             "/v1/launcher/time-limit?launcher=local",
@@ -97,7 +97,7 @@ class TestLauncherNbCores:
         )
         res.raise_for_status()
         actual = res.json()
-        assert actual == nb_cores_expected
+        assert actual == expected
 
         # Check that the endpoint raise an exception when the "slurm" launcher is requested.
         res = client.get(

@@ -151,7 +151,7 @@ class SlurmLauncher(AbstractLauncher):
     def _init_launcher_arguments(self, local_workspace: Optional[Path] = None) -> argparse.Namespace:
         main_options_parameters = ParserParameters(
             default_wait_time=self.slurm_config.default_wait_time,
-            default_time_limit=self.slurm_config.default_time_limit,
+            default_time_limit=self.slurm_config.time_limit.max * 3600,
             default_n_cpu=self.slurm_config.nb_cores.default,
             studies_in_dir=str((Path(local_workspace or self.slurm_config.local_workspace) / STUDIES_INPUT_DIR_NAME)),
             log_dir=str((Path(self.slurm_config.local_workspace) / LOG_DIR_NAME)),

@@ -275,11 +275,11 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
     @bp.get(
         "/time-limit",
         tags=[APITag.launcher],
-        summary="Retrieve the time limit for a job (in seconds)",
+        summary="Retrieve the time limit for a job (in hours)",
     )
-    def get_time_limit(launcher: str = LauncherQuery) -> int:
+    def get_time_limit(launcher: str = LauncherQuery) -> Dict[str, int]:
         """
-        Retrieve the time limit for a job (in seconds) of the given launcher: "local" or "slurm".
+        Retrieve the time limit for a job (in hours) of the given launcher: "local" or "slurm".
 
         If a jobs exceed this time limit, SLURM kills the job and it is considered failed.
 
@@ -288,11 +288,13 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
           If "default" is specified, retrieve the configuration of the default launcher.
 
         Returns:
-        - time limit in seconds
+        - "min": min allowed time limit
+        - "defaultValue": default time limit
+        - "max": max allowed time limit
         """
         logger.info(f"Fetching the time limit for the '{launcher}' configuration")
         try:
-            return service.config.launcher.get_time_limit(launcher)
+            return service.config.launcher.get_time_limit(launcher).to_json()
         except InvalidConfigurationError:
             raise UnknownSolverConfig(launcher)
 

@@ -11,7 +11,7 @@ from antareslauncher.data_repo.data_repo_tinydb import DataRepoTinydb
 from antareslauncher.main import MainParameters
 from antareslauncher.study_dto import StudyDTO
 
-from antarest.core.config import Config, LauncherConfig, NbCoresConfig, SlurmConfig
+from antarest.core.config import Config, LauncherConfig, NbCoresConfig, SlurmConfig, TimeLimitConfig
 from antarest.launcher.adapters.abstractlauncher import LauncherInitException
 from antarest.launcher.adapters.slurm_launcher.slurm_launcher import (
     LOG_DIR_NAME,
@@ -68,7 +68,7 @@ def test_init_slurm_launcher_arguments(tmp_path: Path) -> None:
         launcher=LauncherConfig(
             slurm=SlurmConfig(
                 default_wait_time=42,
-                default_time_limit=43,
+                time_limit=TimeLimitConfig(),
                 nb_cores=NbCoresConfig(min=1, default=30, max=36),
                 local_workspace=tmp_path,
             )
