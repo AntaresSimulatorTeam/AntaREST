@@ -103,14 +103,12 @@ class Simulation(BaseModel):
 class BindingConstraintDTO(BaseModel):
     """
     Object linked to `input/bindingconstraints/bindingconstraints.ini` information
-
     Attributes:
         id: The ID of the binding constraint.
         group: The group for the scenario of BC (optional, required since v8.7).
         areas: List of area IDs on which the BC applies (links or clusters).
         clusters: List of thermal cluster IDs on which the BC applies (format: "area.cluster").
     """
-
     id: str
     group: t.Optional[str] = None
     areas: t.Set[str]
@@ -223,6 +221,12 @@ class FileStudyTreeConfig(DTO):
 
     def get_links(self, area: str) -> t.List[str]:
         return self.cache.get(f"%links%{area}", list(self.areas[area].links))
+
+    def get_binding_constraint_groups(self) -> t.Sequence[str]:
+        """
+        Returns a list of binding constraint groups without duplicates.
+        """
+        return sorted({bc.group.lower() for bc in self.bindings if bc.group})
 
     def get_filters_synthesis(self, area: str, link: t.Optional[str] = None) -> t.List[str]:
         if link:
