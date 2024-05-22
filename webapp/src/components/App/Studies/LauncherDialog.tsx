@@ -51,7 +51,7 @@ interface Props {
   onClose: () => void;
 }
 
-function LauncherDialog(props: Readonly<Props>) {
+function LauncherDialog(props: Props) {
   const { studyIds, open, onClose } = props;
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
@@ -64,6 +64,7 @@ function LauncherDialog(props: Readonly<Props>) {
   const [solverVersion, setSolverVersion] = useState<string>();
   const [isLaunching, setIsLaunching] = useState(false);
   const isMounted = useMountedState();
+
   const studyNames = useAppSelector(
     (state) => studyIds.map((sid) => getStudy(state, sid)?.name),
     shallowEqual,
@@ -223,7 +224,11 @@ function LauncherDialog(props: Readonly<Props>) {
             sx={{ mx: 2 }}
             color="primary"
             variant="contained"
-            disabled={isLaunching || !launcherCores.isResolved}
+            disabled={
+              isLaunching ||
+              !launcherCores.isResolved ||
+              !launcherTimeLimit.isResolved
+            }
             onClick={handleLaunchClick}
           >
             {t("global.launch")}
