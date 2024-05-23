@@ -183,7 +183,7 @@ def test_extra_parameters(launcher_config: Config) -> None:
     slurm_config = slurm_launcher.config.launcher.slurm
     assert slurm_config is not None
     assert launcher_params.n_cpu == slurm_config.nb_cores.default
-    assert launcher_params.time_limit == slurm_config.default_time_limit
+    assert launcher_params.time_limit == slurm_config.time_limit.default * 3600
     assert not launcher_params.xpansion_mode
     assert not launcher_params.post_processing
 
@@ -468,7 +468,7 @@ def test_kill_job(
         output_dir=str(tmp_path / "OUTPUT"),
         post_processing=False,
         studies_in=str(tmp_path / "STUDIES_IN"),
-        time_limit=slurm_config.default_time_limit,
+        time_limit=slurm_config.time_limit.default * 3600,
         version=False,
         wait_mode=False,
         wait_time=slurm_config.default_wait_time,
