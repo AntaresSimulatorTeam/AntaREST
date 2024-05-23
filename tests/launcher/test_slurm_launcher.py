@@ -270,16 +270,13 @@ def test_run_study(
         cache=Mock(),
     )
 
-    study_uuid = "study_uuid"
-    argument = Mock()
-    argument.studies_in = launcher_config.launcher.slurm.local_workspace / "studies_in"
-    slurm_launcher.launcher_args = argument
     slurm_launcher._clean_local_workspace = Mock()
     slurm_launcher.start = Mock()
     slurm_launcher._delete_workspace_file = Mock()
 
     job_id = str(uuid.uuid4())
-    study_dir = argument.studies_in / job_id
+    studies_in = launcher_config.launcher.slurm.local_workspace / "studies_in"
+    study_dir = studies_in / job_id
     study_dir.mkdir(parents=True)
     study_antares_path = study_dir.joinpath("study.antares")
     study_antares_path.write_text(
@@ -299,6 +296,7 @@ def test_run_study(
     slurm_launcher._call_launcher = call_launcher_mock
 
     # When the launcher is called
+    study_uuid = str(uuid.uuid4())
     slurm_launcher._run_study(study_uuid, job_id, LauncherParametersDTO(), str(version))
 
     # Check the results
