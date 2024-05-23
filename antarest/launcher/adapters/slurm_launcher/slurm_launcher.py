@@ -32,8 +32,6 @@ from antarest.study.storage.rawstudy.ini_writer import IniWriter
 logger = logging.getLogger(__name__)
 logging.getLogger("paramiko").setLevel("WARN")
 
-MAX_TIME_LIMIT = 864000
-MIN_TIME_LIMIT = 3600
 WORKSPACE_LOCK_FILE_NAME = ".lock"
 LOCK_FILE_NAME = "slurm_launcher_init.lock"
 LOG_DIR_NAME = "LOGS"
@@ -151,7 +149,7 @@ class SlurmLauncher(AbstractLauncher):
     def _init_launcher_arguments(self, local_workspace: Optional[Path] = None) -> argparse.Namespace:
         main_options_parameters = ParserParameters(
             default_wait_time=self.slurm_config.default_wait_time,
-            default_time_limit=self.slurm_config.time_limit.max * 3600,
+            default_time_limit=self.slurm_config.time_limit.default * 3600,
             default_n_cpu=self.slurm_config.nb_cores.default,
             studies_in_dir=str((Path(local_workspace or self.slurm_config.local_workspace) / STUDIES_INPUT_DIR_NAME)),
             log_dir=str((Path(self.slurm_config.local_workspace) / LOG_DIR_NAME)),
@@ -514,12 +512,14 @@ class SlurmLauncher(AbstractLauncher):
                     other_options.append("xpansion_sensitivity")
 
             # The `time_limit` parameter could be `None`, in that case, the default value is used.
-            time_limit = launcher_params.time_limit or MIN_TIME_LIMIT
-            time_limit = min(max(time_limit, MIN_TIME_LIMIT), MAX_TIME_LIMIT)
+            _time_limit_min_allowed = self.slurm_config.time_limit.min * 3600
+            _time_limit_max_allowed = self.slurm_config.time_limit.max * 3600
+            time_limit = launcher_params.time_limit or self.slurm_config.time_limit.default * 3600
+            time_limit = min(max(time_limit, _time_limit_min_allowed), _time_limit_max_allowed)
             if launcher_args.time_limit != time_limit:
                 logger.warning(
                     f"Invalid slurm launcher time_limit ({time_limit}),"
-                    f" should be between {MIN_TIME_LIMIT} and {MAX_TIME_LIMIT}"
+                    f" should be between {_time_limit_min_allowed} and {_time_limit_max_allowed} (in seconds)"
                 )
             launcher_args.time_limit = time_limit
 

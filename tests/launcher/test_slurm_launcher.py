@@ -1,4 +1,5 @@
 import os
+import random
 import shutil
 import textwrap
 import uuid
@@ -15,8 +16,6 @@ from antarest.core.config import Config, LauncherConfig, NbCoresConfig, SlurmCon
 from antarest.launcher.adapters.abstractlauncher import LauncherInitException
 from antarest.launcher.adapters.slurm_launcher.slurm_launcher import (
     LOG_DIR_NAME,
-    MAX_TIME_LIMIT,
-    MIN_TIME_LIMIT,
     WORKSPACE_LOCK_FILE_NAME,
     SlurmLauncher,
     VersionNotSupportedError,
@@ -36,7 +35,7 @@ def launcher_config(tmp_path: Path) -> Config:
         "key_password": "password",
         "password": "password",
         "default_wait_time": 10,
-        "default_time_limit": MAX_TIME_LIMIT,
+        "default_time_limit": 24 * 3600,  # 24 hours
         "default_json_db_name": "antares.db",
         "slurm_script_path": "/path/to/slurm/launcher.sh",
         "partition": "fake_partition",
@@ -202,17 +201,19 @@ def test_extra_parameters(launcher_config: Config) -> None:
     launcher_params = apply_params(LauncherParametersDTO(nb_cpu=999))
     assert launcher_params.n_cpu == slurm_config.nb_cores.default  # out of range
 
+    _config_time_limit = launcher_config.launcher.slurm.time_limit
     launcher_params = apply_params(LauncherParametersDTO.construct(time_limit=None))
-    assert launcher_params.time_limit == MIN_TIME_LIMIT
+    assert launcher_params.time_limit == _config_time_limit.default * 3600
 
-    launcher_params = apply_params(LauncherParametersDTO(time_limit=10))
-    assert launcher_params.time_limit == MIN_TIME_LIMIT
+    launcher_params = apply_params(LauncherParametersDTO(time_limit=10))  # 10 seconds
+    assert launcher_params.time_limit == _config_time_limit.min * 3600
 
     launcher_params = apply_params(LauncherParametersDTO(time_limit=999999999))
-    assert launcher_params.time_limit == MAX_TIME_LIMIT
+    assert launcher_params.time_limit == _config_time_limit.max * 3600
 
-    launcher_params = apply_params(LauncherParametersDTO(time_limit=99999))
-    assert launcher_params.time_limit == 99999
+    _time_limit_sec = random.randrange(_config_time_limit.min, _config_time_limit.max) * 3600
+    launcher_params = apply_params(LauncherParametersDTO(time_limit=_time_limit_sec))
+    assert launcher_params.time_limit == _time_limit_sec
 
     launcher_params = apply_params(LauncherParametersDTO(xpansion=False))
     assert launcher_params.xpansion_mode is None
