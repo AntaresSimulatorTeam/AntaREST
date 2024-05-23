@@ -564,6 +564,7 @@
   "study.error.listOutputs": "Échec de la récupération des sorties",
   "study.error.launcherVersions": "Échec lors de la récupération des versions du launcher",
   "study.error.launcherCores": "Échec lors de la récupération du nombre de cœurs du launcher",
+  "study.error.launcherTimeLimit": "Échec lors de la récupération de la limite de temps du launcher",
   "study.error.fetchComments": "Échec lors de la récupération des commentaires",
   "study.error.commentsNotSaved": "Erreur lors de l'enregistrement des commentaires",
   "study.error.studyIdCopy": "Erreur lors de la copie de l'identifiant de l'étude",

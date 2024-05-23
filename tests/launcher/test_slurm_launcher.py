@@ -1,4 +1,5 @@
 import os
+import random
 import shutil
 import textwrap
 import uuid
@@ -11,12 +12,10 @@ from antareslauncher.data_repo.data_repo_tinydb import DataRepoTinydb
 from antareslauncher.main import MainParameters
 from antareslauncher.study_dto import StudyDTO
 
-from antarest.core.config import Config, LauncherConfig, NbCoresConfig, SlurmConfig
+from antarest.core.config import Config, LauncherConfig, NbCoresConfig, SlurmConfig, TimeLimitConfig
 from antarest.launcher.adapters.abstractlauncher import LauncherInitException
 from antarest.launcher.adapters.slurm_launcher.slurm_launcher import (
     LOG_DIR_NAME,
-    MAX_TIME_LIMIT,
-    MIN_TIME_LIMIT,
     WORKSPACE_LOCK_FILE_NAME,
     SlurmLauncher,
     VersionNotSupportedError,
@@ -36,7 +35,7 @@ def launcher_config(tmp_path: Path) -> Config:
         "key_password": "password",
         "password": "password",
         "default_wait_time": 10,
-        "default_time_limit": MAX_TIME_LIMIT,
+        "default_time_limit": 24 * 3600,  # 24 hours
         "default_json_db_name": "antares.db",
         "slurm_script_path": "/path/to/slurm/launcher.sh",
         "partition": "fake_partition",
@@ -68,7 +67,7 @@ def test_init_slurm_launcher_arguments(tmp_path: Path) -> None:
         launcher=LauncherConfig(
             slurm=SlurmConfig(
                 default_wait_time=42,
-                default_time_limit=43,
+                time_limit=TimeLimitConfig(),
                 nb_cores=NbCoresConfig(min=1, default=30, max=36),
                 local_workspace=tmp_path,
             )
@@ -183,7 +182,7 @@ def test_extra_parameters(launcher_config: Config) -> None:
     slurm_config = slurm_launcher.config.launcher.slurm
     assert slurm_config is not None
     assert launcher_params.n_cpu == slurm_config.nb_cores.default
-    assert launcher_params.time_limit == slurm_config.default_time_limit
+    assert launcher_params.time_limit == slurm_config.time_limit.default * 3600
     assert not launcher_params.xpansion_mode
     assert not launcher_params.post_processing
 
@@ -202,17 +201,19 @@ def test_extra_parameters(launcher_config: Config) -> None:
     launcher_params = apply_params(LauncherParametersDTO(nb_cpu=999))
     assert launcher_params.n_cpu == slurm_config.nb_cores.default  # out of range
 
+    _config_time_limit = launcher_config.launcher.slurm.time_limit
     launcher_params = apply_params(LauncherParametersDTO.construct(time_limit=None))
-    assert launcher_params.time_limit == MIN_TIME_LIMIT
+    assert launcher_params.time_limit == _config_time_limit.default * 3600
 
-    launcher_params = apply_params(LauncherParametersDTO(time_limit=10))
-    assert launcher_params.time_limit == MIN_TIME_LIMIT
+    launcher_params = apply_params(LauncherParametersDTO(time_limit=10))  # 10 seconds
+    assert launcher_params.time_limit == _config_time_limit.min * 3600
 
     launcher_params = apply_params(LauncherParametersDTO(time_limit=999999999))
-    assert launcher_params.time_limit == MAX_TIME_LIMIT
+    assert launcher_params.time_limit == _config_time_limit.max * 3600
 
-    launcher_params = apply_params(LauncherParametersDTO(time_limit=99999))
-    assert launcher_params.time_limit == 99999
+    _time_limit_sec = random.randrange(_config_time_limit.min, _config_time_limit.max) * 3600
+    launcher_params = apply_params(LauncherParametersDTO(time_limit=_time_limit_sec))
+    assert launcher_params.time_limit == _time_limit_sec
 
     launcher_params = apply_params(LauncherParametersDTO(xpansion=False))
     assert launcher_params.xpansion_mode is None
@@ -269,16 +270,13 @@ def test_run_study(
         cache=Mock(),
     )
 
-    study_uuid = "study_uuid"
-    argument = Mock()
-    argument.studies_in = launcher_config.launcher.slurm.local_workspace / "studies_in"
-    slurm_launcher.launcher_args = argument
     slurm_launcher._clean_local_workspace = Mock()
     slurm_launcher.start = Mock()
     slurm_launcher._delete_workspace_file = Mock()
 
     job_id = str(uuid.uuid4())
-    study_dir = argument.studies_in / job_id
+    studies_in = launcher_config.launcher.slurm.local_workspace / "studies_in"
+    study_dir = studies_in / job_id
     study_dir.mkdir(parents=True)
     study_antares_path = study_dir.joinpath("study.antares")
     study_antares_path.write_text(
@@ -298,6 +296,7 @@ def test_run_study(
     slurm_launcher._call_launcher = call_launcher_mock
 
     # When the launcher is called
+    study_uuid = str(uuid.uuid4())
     slurm_launcher._run_study(study_uuid, job_id, LauncherParametersDTO(), str(version))
 
     # Check the results
@@ -468,7 +467,7 @@ def test_kill_job(
         output_dir=str(tmp_path / "OUTPUT"),
         post_processing=False,
         studies_in=str(tmp_path / "STUDIES_IN"),
-        time_limit=slurm_config.default_time_limit,
+        time_limit=slurm_config.time_limit.default * 3600,
         version=False,
         wait_mode=False,
         wait_time=slurm_config.default_wait_time,
