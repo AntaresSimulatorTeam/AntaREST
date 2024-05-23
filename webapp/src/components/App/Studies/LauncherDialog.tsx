@@ -39,11 +39,6 @@ import CheckBoxFE from "../../common/fieldEditors/CheckBoxFE";
 import { convertVersions } from "../../../services/utils";
 import UsePromiseCond from "../../common/utils/UsePromiseCond";
 import SwitchFE from "../../common/fieldEditors/SwitchFE";
-import moment from "moment";
-
-const DEFAULT_NB_CPU = 22;
-const MIN_TIME_LIMIT = 1 * 3600; // 1 hour in seconds.
-const MAX_TIME_LIMIT = 240 * 3600; // 240 hours in seconds.
 
 interface Props {
   open: boolean;
@@ -57,9 +52,7 @@ function LauncherDialog(props: Props) {
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [options, setOptions] = useState<LaunchOptions>({
-    nb_cpu: DEFAULT_NB_CPU,
     auto_unzip: true,
-    time_limit: MIN_TIME_LIMIT,
   });
   const [solverVersion, setSolverVersion] = useState<string>();
   const [isLaunching, setIsLaunching] = useState(false);
@@ -92,7 +85,7 @@ function LauncherDialog(props: Props) {
         setOptions((prevOptions) => {
           return {
             ...prevOptions,
-            time_limit: timeLimit,
+            time_limit: timeLimit.defaultValue * 3600,
           };
         });
         return timeLimit;
@@ -186,22 +179,6 @@ function LauncherDialog(props: Props) {
           .trim(),
       };
     });
-  };
-
-  ////////////////////////////////////////////////////////////////
-  // Utils
-  ////////////////////////////////////////////////////////////////
-
-  /**
-   * Parses an hour value from a string and converts it to seconds.
-   * If the input is invalid, returns a default value.
-   *
-   * @param hourString - A string representing the number of hours.
-   * @returns The equivalent number of seconds, or a default value for invalid inputs.
-   */
-  const parseHoursToSeconds = (hourString: string): number => {
-    const seconds = moment.duration(hourString, "hours").asSeconds();
-    return Math.max(MIN_TIME_LIMIT, Math.min(seconds, MAX_TIME_LIMIT));
   };
 
   ////////////////////////////////////////////////////////////////
@@ -299,19 +276,25 @@ function LauncherDialog(props: Props) {
                 type="number"
                 variant="outlined"
                 required
-                value={(options.time_limit ?? timeLimit) / 3600} // Convert seconds to hours for display.
+                value={
+                  options.time_limit
+                    ? options.time_limit / 3600
+                    : timeLimit.defaultValue
+                }
                 onChange={(e) => {
+                  const newValue = parseInt(e.target.value, 10);
                   handleChange(
                     "time_limit",
-                    parseHoursToSeconds(e.target.value),
+                    Math.min(Math.max(newValue, timeLimit.min), timeLimit.max) *
+                      3600,
                   );
                 }}
                 InputLabelProps={{
                   shrink: true,
                 }}
                 inputProps={{
-                  min: MIN_TIME_LIMIT,
-                  max: MAX_TIME_LIMIT,
+                  min: timeLimit.min,
+                  max: timeLimit.max,
                   step: 1,
                 }}
                 sx={{
@@ -331,7 +314,8 @@ function LauncherDialog(props: Props) {
                 label={t("study.nbCpu")}
                 type="number"
                 variant="outlined"
-                value={options.nb_cpu}
+                required
+                value={options.nb_cpu ? options.nb_cpu : cores.defaultValue}
                 onChange={(e) => {
                   const newValue = parseInt(e.target.value, 10);
                   handleChange(
@@ -342,6 +326,7 @@ function LauncherDialog(props: Props) {
                 inputProps={{
                   min: cores.min,
                   max: cores.max,
+                  step: 1,
                 }}
                 sx={{
                   minWidth: "125px",

@@ -308,9 +308,11 @@ export const getLauncherCores = async (): Promise<Record<string, number>> => {
  * Time limit for SLURM jobs.
  * If a jobs exceed this time limit, SLURM kills the job and it is considered failed.
  *
- * @returns The time limit in seconds, Often used value: 172800 (48 hours).
+ * @returns The min, defaultValue and max for the time limit in hours.
  */
-export const getLauncherTimeLimit = async (): Promise<number> => {
+export const getLauncherTimeLimit = async (): Promise<
+  Record<string, number>
+> => {
   const res = await client.get("/v1/launcher/time-limit");
   return res.data;
 };
