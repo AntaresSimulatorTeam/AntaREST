@@ -1,6 +1,31 @@
 Antares Web Changelog
 =====================
 
+v2.17.1 (2024-05-29)
+--------------------
+
+### Features
+
+* **launcher:** add new API endpoint `/v1/launcher/time-limit` and update `LauncherDialog` [`#2012`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2012)
+* **raw:** refactor aggregation endpoint [`#2031`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2031)
+* **ui-utils:** add overload signatures for validateNumber function in validationUtils [`#2029`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2029)
+
+
+### Bug Fixes
+
+* **import:** allow import for users that are reader only [`#2032`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2032)
+
+
+### Refactoring
+
+* **ui-storages:** short-term storage update form [`#2025`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2025)
+
+
+### Build System
+
+* **pyinstaller:** upgrade version of pyinstaller in build requirements [`#2030`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2030)
+
+
 v2.17 (2024-05-15)
 ------------------
 
