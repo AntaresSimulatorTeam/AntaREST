@@ -8,7 +8,7 @@ import zipfile
 from enum import Enum
 from pathlib import Path
 
-from py7zr import SevenZipFile
+import py7zr
 
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.ini_reader import IniReader
@@ -69,7 +69,14 @@ def extract_lines_from_archive(root: Path, posix_path: str) -> t.List[str]:
                 # File not found in the ZIP archive
                 return []
     elif root.suffix.lower() == ".7z":
-        raise NotImplementedError("7z archive not supported yet")
+        with py7zr.SevenZipFile(root, mode="r") as z:
+            try:
+                data = z.read([posix_path])
+                text = data[posix_path].read().decode("utf-8")
+                return text.splitlines(keepends=False)
+            except KeyError:
+                # File not found in the 7z archive
+                return []
     else:
         raise ValueError(f"Unsupported file type: {root}")
 
@@ -101,7 +108,14 @@ def extract_data_from_archive(
                 # File not found in the ZIP archive
                 return {}
     elif root.suffix.lower() == ".7z":
-        raise NotImplementedError("7z archive not supported yet")
+        with py7zr.SevenZipFile(root, mode="r") as z:
+            try:
+                data = z.read([posix_path])
+                buffer = io.StringIO(data[posix_path].read().decode("utf-8"))
+                return reader.read(buffer)
+            except KeyError:
+                # File not found in the 7z archive
+                return {}
     else:
         raise ValueError(f"Unsupported file type: {root}")
 
