@@ -190,13 +190,14 @@ def create_raw_study_routes(
         export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,  # type: ignore
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> FileResponse:
+        # noinspection SpellCheckingInspection
         """
         Create an aggregation of areas raw data
 
         Parameters:
         - `uuid`: study ID
         - `output_id`: the output ID aka the simulation ID
-        - `query_file`: "values", "details", "details-st-storage", "details-res"
+        - `query_file`: "values", "details", "details-STstorage", "details-res"
         - `frequency`: "hourly", "daily", "weekly", "monthly", "annual"
         - `mc_years`: which Monte Carlo years to be selected. If empty, all are selected (comma separated)
         - `areas_ids`: which areas to be selected. If empty, all are selected (comma separated)
@@ -208,7 +209,7 @@ def create_raw_study_routes(
         """
         logger.info(
             f"Aggregating areas output data for study {uuid}, output {output_id},"
-            f"from files {query_file}-{frequency.value}.txt",
+            f"from files '{query_file}-{frequency}.txt'",
             extra={"user": current_user.id},
         )
 
@@ -264,10 +265,10 @@ def create_raw_study_routes(
         Parameters:
         - `uuid`: study ID
         - `output_id`: the output ID aka the simulation ID
-        - `query_file`: "values", "details"
+        - `query_file`: "values" (currently the only available option)
         - `frequency`: "hourly", "daily", "weekly", "monthly", "annual"
         - `mc_years`: which Monte Carlo years to be selected. If empty, all are selected (comma separated)
-        - `links_ids`: which links to be selected (ex: be - fr). If empty, all are selected (comma separated)
+        - `links_ids`: which links to be selected (ex: "be - fr"). If empty, all are selected (comma separated)
         - `columns_names`: which columns to be selected. If empty, all are selected (comma separated)
         - `export_format`: Returned file format (csv by default).
 
@@ -276,7 +277,7 @@ def create_raw_study_routes(
         """
         logger.info(
             f"Aggregating links output data for study {uuid}, output {output_id},"
-            f"from files {query_file}-{frequency.value}.txt",
+            f"from files '{query_file}-{frequency}.txt'",
             extra={"user": current_user.id},
         )
 
@@ -420,6 +421,28 @@ def create_raw_study_routes(
         ),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> FileResponse:
+        """
+        Download a matrix in a given format.
+
+        Parameters:
+        - `uuid`: study ID
+        - `matrix_path`: Relative path of the matrix to download.
+        - `export_format`: Returned file format (csv by default).
+        - `with_header`:  Whether to include the header or not.
+        - `with_index`: Whether to include the index or not.
+
+        Returns:
+            FileResponse that corresponds to the matrix file in the requested format.
+        """
+        logger.info(
+            f"Exporting matrix '{matrix_path}' to {export_format} format for study '{uuid}'",
+            extra={"user": current_user.id},
+        )
+
+        # Avoid vulnerabilities by sanitizing the `uuid` and `output_id` parameters
+        uuid = sanitize_uuid(uuid)
+        matrix_path = sanitize_uuid(matrix_path)
+
         parameters = RequestParameters(user=current_user)
         df_matrix = study_service.get_matrix_with_index_and_header(
             study_id=uuid,

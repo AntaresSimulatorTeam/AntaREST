@@ -117,6 +117,26 @@ def export_file(
     download_log: str,
     current_user: JWTUser,
 ) -> FileResponse:
+    """
+    Exports a DataFrame to a file in the specified format and prepares it for download.
+
+    Args:
+        df_matrix: The DataFrame to be exported.
+        file_transfer_manager: The FileTransferManager instance to handle file transfer operations.
+        export_format: The format in which the DataFrame should be exported.
+        with_index: Whether to include the DataFrame's index in the exported file.
+        with_header: Whether to include the DataFrame's header in the exported file.
+        download_name: The name of the file to be downloaded (file name with suffix)
+        download_log: The log message for the download operation for the end-user.
+        current_user: The current user performing the operation.
+
+    Returns:
+        A FileResponse object representing the file to be downloaded.
+
+    Raises:
+        HTTPException: If there is an error during the export operation.
+    """
+
     export_file_download = file_transfer_manager.request_download(
         download_name,
         download_log,

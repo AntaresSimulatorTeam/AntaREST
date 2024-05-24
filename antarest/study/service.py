@@ -2442,8 +2442,31 @@ class StudyService:
         return get_disk_usage(study_path) if study_path.exists() else 0
 
     def get_matrix_with_index_and_header(
-        self, *, study_id: str, path: str, with_index: bool, with_header: bool, parameters: RequestParameters
+        self,
+        *,
+        study_id: str,
+        path: str,
+        with_index: bool,
+        with_header: bool,
+        parameters: RequestParameters,
     ) -> pd.DataFrame:
+        """
+        Retrieves a matrix from a study with the option to include the index and header.
+
+        Args:
+            study_id: The UUID of the study from which to retrieve the matrix.
+            path: The relative path to the matrix within the study.
+            with_index: A boolean indicating whether to include the index in the retrieved matrix.
+            with_header: A boolean indicating whether to include the header in the retrieved matrix.
+            parameters: The request parameters, including the user information.
+
+        Returns:
+            A DataFrame representing the matrix.
+
+        Raises:
+            HTTPException: If the matrix does not exist or the user does not have the necessary permissions.
+        """
+
         matrix_path = Path(path)
         study = self.get_study(study_id)
 
