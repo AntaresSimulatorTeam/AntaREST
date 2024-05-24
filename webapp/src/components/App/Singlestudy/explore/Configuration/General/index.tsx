@@ -77,7 +77,6 @@ function GeneralParameters() {
               open
               study={study}
               onClose={handleCloseDialog}
-              nbYears={apiRef?.current?.getValues("nbYears") || 0}
             />
           ),
         ],

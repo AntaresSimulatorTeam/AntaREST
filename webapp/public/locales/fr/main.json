@@ -318,6 +318,7 @@
   "study.configuration.general.mcScenarioBuilder.tab.hydro": "Hydro",
   "study.configuration.general.mcScenarioBuilder.tab.wind": "Éolien",
   "study.configuration.general.mcScenarioBuilder.tab.solar": "Solaire",
+  "study.configuration.general.mcScenarioBuilder.tab.renewable": "Renouvelables",
   "study.configuration.general.mcScenarioBuilder.tab.ntc": "NTC",
   "study.configuration.general.mcScenarioBuilder.tab.hydroLevels": "Hydro Levels",
   "study.configuration.general.mcScenarioBuilder.tab.bindingConstraints": "Contraintes Couplantes",

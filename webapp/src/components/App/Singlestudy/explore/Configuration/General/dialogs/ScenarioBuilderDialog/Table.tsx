@@ -5,22 +5,23 @@ import TableForm from "../../../../../../../common/TableForm";
 import { ScenarioBuilderContext } from "./ScenarioBuilderContext";
 import {
   GenericScenarioConfig,
-  ScenarioSymbol,
-  ThermalHandlerReturn,
+  ScenarioType,
+  ClustersHandlerReturn,
   updateScenarioBuilderConfig,
 } from "./utils";
 import { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
+import SimpleContent from "../../../../../../../common/page/SimpleContent";
 
 interface Props {
-  config: GenericScenarioConfig | ThermalHandlerReturn;
-  symbol: ScenarioSymbol;
+  config: GenericScenarioConfig | ClustersHandlerReturn;
+  type: ScenarioType;
   areaId?: string;
 }
 
-function Table({ config, symbol, areaId }: Props) {
+function Table({ config, type, areaId }: Props) {
   const { t } = useTranslation();
 
-  const { activeRuleset, setConfig, refreshConfig, studyId } = useContext(
+  const { setConfig, refreshConfig, isConfigLoading, studyId } = useContext(
     ScenarioBuilderContext,
   );
 
@@ -30,10 +31,10 @@ function Table({ config, symbol, areaId }: Props) {
 
   const handleSubmit = async ({ dirtyValues }: SubmitHandlerPlus) => {
     const newData = {
-      [activeRuleset]: {
-        [symbol]:
-          symbol === "t" && areaId ? { [areaId]: dirtyValues } : dirtyValues,
-      },
+      [type]:
+        (type === "thermal" || type === "renewable") && areaId
+          ? { [areaId]: dirtyValues }
+          : dirtyValues,
     };
 
     setConfig(R.mergeDeepLeft(newData));
@@ -43,11 +44,8 @@ function Table({ config, symbol, areaId }: Props) {
     } catch (err) {
       refreshConfig();
 
-      throw new Error( // TODO snackbar
-        t("study.configuration.general.mcScenarioBuilder.error.table", {
-          0: `${activeRuleset}.${symbol}`,
-        }),
-        { cause: err },
+      throw new Error( // TODO snackbar + update keys
+        t("study.configuration.general.mcScenarioBuilder.error.table"),
       );
     }
   };
@@ -56,8 +54,10 @@ function Table({ config, symbol, areaId }: Props) {
   // JSX
   ////////////////////////////////////////////////////////////////
 
-  if (!config) {
-    return <div>No configuration available</div>;
+  console.log("! isConfigLoading", !isConfigLoading);
+
+  if (!isConfigLoading && Object.keys(config).length === 0) {
+    return <SimpleContent title="No scenario configuration" />;
   }
 
   return (

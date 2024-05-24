@@ -6,8 +6,7 @@ interface ScenarioBuilderContextType {
   config: ScenarioBuilderConfig;
   setConfig: Dispatch<SetStateAction<ScenarioBuilderConfig>>;
   refreshConfig: VoidFunction;
-  activeRuleset: string;
-  updateRuleset: (ruleset: string) => void;
+  isConfigLoading: boolean;
   studyId: StudyMetadata["id"];
 }
 
@@ -15,8 +14,7 @@ const defaultValues = {
   config: {},
   setConfig: () => undefined,
   refreshConfig: () => undefined,
-  activeRuleset: "",
-  updateRuleset: () => "",
+  isConfigLoading: true,
   studyId: "",
 };
 
