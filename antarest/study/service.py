@@ -1,6 +1,7 @@
 import base64
 import collections
 import contextlib
+import http
 import io
 import json
 import logging
@@ -8,7 +9,6 @@ import os
 import time
 import typing as t
 from datetime import datetime, timedelta
-from http import HTTPStatus
 from pathlib import Path, PurePosixPath
 from uuid import uuid4
 
@@ -47,6 +47,7 @@ from antarest.login.service import LoginService
 from antarest.matrixstore.matrix_editor import MatrixEditInstruction
 from antarest.study.business.adequacy_patch_management import AdequacyPatchManager
 from antarest.study.business.advanced_parameters_management import AdvancedParamsManager
+from antarest.study.business.aggregator_management import AggregatorManager, AreasQueryFile, LinksQueryFile
 from antarest.study.business.allocation_management import AllocationManager
 from antarest.study.business.area_management import AreaCreationDTO, AreaInfoDTO, AreaManager, AreaType, UpdateAreaUi
 from antarest.study.business.areas.hydro_management import HydroManager
@@ -74,7 +75,6 @@ from antarest.study.business.xpansion_management import (
     XpansionCandidateDTO,
     XpansionManager,
 )
-from antarest.study.common.default_values import AreasQueryFile, LinksQueryFile
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     NEW_DEFAULT_STUDY_VERSION,
@@ -141,7 +141,7 @@ MAX_MISSING_STUDY_TIMEOUT = 2  # days
 def get_disk_usage(path: t.Union[str, Path]) -> int:
     """Calculate the total disk usage (in bytes) of a study in a compressed file or directory."""
     path = Path(path)
-    if path.suffix.lower() in {".zip", "7z"}:
+    if path.suffix.lower() in {".zip", ".7z"}:
         return os.path.getsize(path)
     total_size = 0
     with os.scandir(path) as it:
@@ -325,71 +325,47 @@ class StudyService:
 
         return self.storage_service.get_storage(study).get(study, url, depth, formatted)
 
-    def aggregate_areas_data(
+    def aggregate_output_data(
         self,
         uuid: str,
         output_id: str,
-        query_file: AreasQueryFile,
+        query_file: t.Union[AreasQueryFile, LinksQueryFile],
         frequency: MatrixFrequency,
         mc_years: t.Sequence[int],
-        areas_ids: t.Sequence[str],
         columns_names: t.Sequence[str],
+        ids_to_consider: t.Sequence[str],
         params: RequestParameters,
-    ) -> JSON:
+    ) -> pd.DataFrame:
         """
-        Get study data inside filesystem
+        Aggregates output data based on several filtering conditions
         Args:
             uuid: study uuid
             output_id: simulation output ID
             query_file: which types of data to retrieve ("values", "details", "details-st-storage", "details-res")
             frequency: yearly, monthly, weekly, daily or hourly.
             mc_years: list of monte-carlo years, if empty, all years are selected
-            areas_ids: list of areas names, if empty, all areas are selected
             columns_names: columns to be selected, if empty, all columns are selected
+            ids_to_consider: list of areas or links ids to consider, if empty, all areas are selected
             params: request parameters
 
-        Returns: data study formatted in json
+        Returns: the aggregated data as a DataFrame
 
         """
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
-        output = self.storage_service.get_storage(study).aggregate_areas_data(
-            study, output_id, query_file, frequency, mc_years, areas_ids, columns_names
+        study_path = self.storage_service.raw_study_service.get_study_path(study)
+        # fmt: off
+        aggregator_manager = AggregatorManager(
+            study_path,
+            output_id,
+            query_file,
+            frequency,
+            mc_years,
+            columns_names,
+            ids_to_consider
         )
-
-        return output
-
-    def aggregate_links_data(
-        self,
-        uuid: str,
-        output_id: str,
-        query_file: LinksQueryFile,
-        frequency: MatrixFrequency,
-        mc_years: t.Sequence[int],
-        columns_names: t.Sequence[str],
-        params: RequestParameters,
-    ) -> JSON:
-        """
-        Get study data inside filesystem
-        Args:
-            uuid: study uuid
-            output_id: simulation output ID
-            query_file: which types of data to retrieve ("values", "details")
-            frequency: yearly, monthly, weekly, daily or hourly.
-            mc_years: list of monte-carlo years, if empty, all years are selected
-            columns_names: columns to be selected, if empty, all columns are selected
-            params: request parameters
-
-        Returns: data study formatted in json
-
-        """
-        study = self.get_study(uuid)
-        assert_permission(params.user, study, StudyPermissionType.READ)
-        output = self.storage_service.get_storage(study).aggregate_links_data(
-            study, output_id, query_file, frequency, mc_years, columns_names
-        )
-
-        return output
+        # fmt: on
+        return aggregator_manager.aggregate_output_data()
 
     def get_logs(
         self,
@@ -1958,7 +1934,7 @@ class StudyService:
     def unarchive(self, uuid: str, params: RequestParameters) -> str:
         study = self.get_study(uuid)
         if not study.archived:
-            raise HTTPException(HTTPStatus.BAD_REQUEST, "Study is not archived")
+            raise HTTPException(http.HTTPStatus.BAD_REQUEST, "Study is not archived")
 
         if self.task_service.list_tasks(
             TaskListFilter(
@@ -2466,8 +2442,31 @@ class StudyService:
         return get_disk_usage(study_path) if study_path.exists() else 0
 
     def get_matrix_with_index_and_header(
-        self, *, study_id: str, path: str, with_index: bool, with_header: bool, parameters: RequestParameters
+        self,
+        *,
+        study_id: str,
+        path: str,
+        with_index: bool,
+        with_header: bool,
+        parameters: RequestParameters,
     ) -> pd.DataFrame:
+        """
+        Retrieves a matrix from a study with the option to include the index and header.
+
+        Args:
+            study_id: The UUID of the study from which to retrieve the matrix.
+            path: The relative path to the matrix within the study.
+            with_index: A boolean indicating whether to include the index in the retrieved matrix.
+            with_header: A boolean indicating whether to include the header in the retrieved matrix.
+            parameters: The request parameters, including the user information.
+
+        Returns:
+            A DataFrame representing the matrix.
+
+        Raises:
+            HTTPException: If the matrix does not exist or the user does not have the necessary permissions.
+        """
+
         matrix_path = Path(path)
         study = self.get_study(study_id)
 

@@ -3,7 +3,6 @@ from typing import Any, Dict, List, Tuple
 from pydantic import Field
 
 from antarest.core.model import JSON
-from antarest.study.common.default_values import FilteringOptions, NodalOptimization
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
     EnrModelling,
@@ -11,7 +10,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     transform_name_to_id,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
+from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, FilteringOptions
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -30,6 +29,16 @@ def _generate_new_thermal_areas_ini(
     if spilledenergycost is not None:
         new_areas["spilledenergycost"][area_id] = spilledenergycost
     return new_areas
+
+
+class NodalOptimization:
+    NON_DISPATCHABLE_POWER: bool = True
+    DISPATCHABLE_HYDRO_POWER: bool = True
+    OTHER_DISPATCHABLE_POWER: bool = True
+    SPREAD_UNSUPPLIED_ENERGY_COST: float = 0.000000
+    SPREAD_SPILLED_ENERGY_COST: float = 0.000000
+    UNSERVERDDENERGYCOST: float = 0.000000
+    SPILLEDENERGYCOST: float = 0.000000
 
 
 class CreateArea(ICommand):
