@@ -45,11 +45,6 @@ else
   popd
 fi
 
-echo "INFO: Generating the Worker Application..."
-pushd ${PROJECT_DIR}
-pyinstaller --distpath ${DIST_DIR} AntaresWebWorker.spec
-popd
-
 echo "INFO: Creating destination directory '${ANTARES_SOLVER_DIR}'..."
 mkdir -p "${ANTARES_SOLVER_DIR}"
 
@@ -91,7 +86,7 @@ if [[ "$OSTYPE" == "msys"* ]]; then
   cp "${RESOURCES_DIR}/AntaresWebServerShortcut.lnk" "${DIST_DIR}"
 else
   echo "INFO: Updating executable permissions..."
-  for excutable in "${DIST_DIR}/AntaresWeb/AntaresWebServer" "${DIST_DIR}/AntaresWeb/AntaresTool" "${DIST_DIR}/AntaresWebWorker"; do
+  for excutable in "${DIST_DIR}/AntaresWeb/AntaresWebServer" "${DIST_DIR}/AntaresWeb/AntaresTool"; do
     chmod +x "${excutable}"
   done
 fi
