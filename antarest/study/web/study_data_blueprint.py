@@ -653,9 +653,11 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         response_model=t.Dict[str, t.Any],
     )
     def get_scenario_builder_config(
-            uuid: str,
-            scenario_type: t.Optional[str] = Query(None, description="Filter config based on scenario type", alias="scenarioType"),
-            current_user: JWTUser = Depends(auth.get_current_user),
+        uuid: str,
+        scenario_type: t.Optional[str] = Query(
+            None, description="Filter config based on scenario type", alias="scenarioType"
+        ),
+        current_user: JWTUser = Depends(auth.get_current_user),
     ) -> t.Dict[str, t.Any]:
         logger.info(
             f"Getting MC Scenario builder config for study {uuid} with scenario type filter: {scenario_type}",
@@ -682,7 +684,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
-        study_service.scenario_builder_manager.update_config(study, data)
+        study_service.scenario_builder_manager.update_scenario_by_type(study, data)
 
     @bp.get(
         path="/studies/{uuid}/config/general/form",
