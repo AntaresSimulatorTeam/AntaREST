@@ -1,0 +1,153 @@
+import http
+import typing as t
+from pathlib import Path
+
+import pandas as pd
+from fastapi import HTTPException
+from starlette.responses import FileResponse
+
+from antarest.core.filetransfer.model import FileDownloadNotFound
+from antarest.core.filetransfer.service import FileTransferManager
+from antarest.core.jwt import JWTUser
+from antarest.study.business.enum_ignore_case import EnumIgnoreCase
+
+
+class TableExportFormat(EnumIgnoreCase):
+    """Export format for tables."""
+
+    XLSX = "xlsx"
+    HDF5 = "hdf5"
+    TSV = "tsv"
+    CSV = "csv"
+    CSV_SEMICOLON = "csv (semicolon)"
+
+    def __str__(self) -> str:
+        """Return the format as a string for display."""
+        return self.value.title()
+
+    @property
+    def media_type(self) -> str:
+        """Return the media type used for the HTTP response."""
+        if self == TableExportFormat.XLSX:
+            # noinspection SpellCheckingInspection
+            return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        elif self == TableExportFormat.TSV:
+            return "text/tab-separated-values"
+        elif self in (TableExportFormat.CSV, TableExportFormat.CSV_SEMICOLON):
+            return "text/csv"
+        elif self == TableExportFormat.HDF5:
+            return "application/x-hdf5"
+        else:  # pragma: no cover
+            raise NotImplementedError(f"Export format '{self}' is not implemented")
+
+    @property
+    def suffix(self) -> str:
+        """Return the file suffix for the format."""
+        if self == TableExportFormat.XLSX:
+            return ".xlsx"
+        elif self == TableExportFormat.TSV:
+            return ".tsv"
+        elif self in (TableExportFormat.CSV, TableExportFormat.CSV_SEMICOLON):
+            return ".csv"
+        elif self == TableExportFormat.HDF5:
+            return ".h5"
+        else:  # pragma: no cover
+            raise NotImplementedError(f"Export format '{self}' is not implemented")
+
+    def export_table(
+        self,
+        df: pd.DataFrame,
+        export_path: t.Union[str, Path],
+        *,
+        with_index: bool = True,
+        with_header: bool = True,
+    ) -> None:
+        """Export a table to a file in the given format."""
+        if self == TableExportFormat.XLSX:
+            return df.to_excel(
+                export_path,
+                index=with_index,
+                header=with_header,
+                engine="xlsxwriter",
+            )
+        elif self == TableExportFormat.TSV:
+            return df.to_csv(
+                export_path,
+                sep="\t",
+                index=with_index,
+                header=with_header,
+                float_format="%.6f",
+            )
+        elif self == TableExportFormat.CSV:
+            return df.to_csv(
+                export_path,
+                sep=",",
+                index=with_index,
+                header=with_header,
+                float_format="%.6f",
+            )
+        elif self == TableExportFormat.CSV_SEMICOLON:
+            return df.to_csv(
+                export_path,
+                sep=";",
+                decimal=",",
+                index=with_index,
+                header=with_header,
+                float_format="%.6f",
+            )
+        elif self == TableExportFormat.HDF5:
+            return df.to_hdf(
+                export_path,
+                key="data",
+                mode="w",
+                format="table",
+                data_columns=True,
+            )
+        else:  # pragma: no cover
+            raise NotImplementedError(f"Export format '{self}' is not implemented")
+
+
+def export_file(
+    df_matrix: pd.DataFrame,
+    file_transfer_manager: FileTransferManager,
+    export_format: TableExportFormat,
+    with_index: bool,
+    with_header: bool,
+    download_name: str,
+    download_log: str,
+    current_user: JWTUser,
+) -> FileResponse:
+    export_file_download = file_transfer_manager.request_download(
+        download_name,
+        download_log,
+        current_user,
+        use_notification=False,
+        expiration_time_in_minutes=10,
+    )
+    export_path = Path(export_file_download.path)
+    export_id = export_file_download.id
+
+    try:
+        export_format.export_table(df_matrix, export_path, with_index=with_index, with_header=with_header)
+        file_transfer_manager.set_ready(export_id, use_notification=False)
+    except ValueError as e:
+        file_transfer_manager.fail(export_id, str(e))
+        raise HTTPException(
+            status_code=http.HTTPStatus.UNPROCESSABLE_ENTITY,
+            detail=f"Cannot replace '{export_path}' due to Excel policy: {e}",
+        ) from e
+    except FileDownloadNotFound as e:
+        file_transfer_manager.fail(export_id, str(e))
+        raise HTTPException(
+            status_code=http.HTTPStatus.UNPROCESSABLE_ENTITY,
+            detail=f"The file download does not exist in database :{str(e)}",
+        ) from e
+
+    return FileResponse(
+        export_path,
+        headers={
+            "Content-Disposition": f'attachment; filename="{export_file_download.filename}"',
+            "Content-Type": f"{export_format.media_type}; charset=utf-8",
+        },
+        media_type=export_format.media_type,
+    )

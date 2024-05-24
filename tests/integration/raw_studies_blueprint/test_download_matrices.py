@@ -134,7 +134,8 @@ class TestDownloadMatrices:
         study_860_id = preparer.copy_upgrade_study(study_id, target_version=860)
 
         # Import a Min Gen. matrix: shape=(8760, 3), with random integers between 0 and 1000
-        min_gen_df = pd.DataFrame(np.random.randint(0, 1000, size=(8760, 3)))
+        generator = np.random.default_rng(11)
+        min_gen_df = pd.DataFrame(generator.integers(0, 10, size=(8760, 3)))
         preparer.upload_matrix(study_860_id, "input/hydro/series/de/mingen", min_gen_df)
 
         # =============================================
@@ -151,7 +152,7 @@ class TestDownloadMatrices:
             (study_820_id, raw_matrix_path, raw_start_date),
             (variant_id, variant_matrix_path, variant_start_date),
         ]:
-            # Export the matrix in xlsx format (which is the default format)
+            # Export the matrix in CSV format (which is the default format)
             # and retrieve it as binary content (a ZIP-like file).
             res = client.get(
                 f"/v1/studies/{uuid}/raw/download",
@@ -159,21 +160,16 @@ class TestDownloadMatrices:
                 headers=user_headers,
             )
             assert res.status_code == 200
-            # noinspection SpellCheckingInspection
-            assert res.headers["content-type"] == (
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet; charset=utf-8"
-            )
+            assert res.headers["content-type"] == "text/csv; charset=utf-8"
 
             # load into dataframe
-            # noinspection PyTypeChecker
-            dataframe = pd.read_excel(io.BytesIO(res.content), index_col=0)
+            dataframe = pd.read_csv(io.BytesIO(res.content), index_col=0, header="infer", sep=",")
 
             # check time coherence
             actual_index = dataframe.index
-            # noinspection PyUnresolvedReferences
-            first_date = actual_index[0].to_pydatetime()
-            # noinspection PyUnresolvedReferences
-            second_date = actual_index[1].to_pydatetime()
+            date_format = "%Y-%m-%d %H:%M:%S"
+            first_date = datetime.datetime.strptime(str(actual_index[0]), date_format)
+            second_date = datetime.datetime.strptime(str(actual_index[1]), date_format)
             first_month = 1 if uuid == study_820_id else 7  # July
             assert first_date.month == second_date.month == first_month
             assert first_date.day == second_date.day == 1
@@ -188,16 +184,17 @@ class TestDownloadMatrices:
             )
             expected_matrix = res.json()
             expected_matrix["columns"] = [f"TS-{n + 1}" for n in expected_matrix["columns"]]
-            time_column = pd.date_range(
-                start=start_date,
-                periods=len(expected_matrix["data"]),
-                freq="H",
-            )
+
+            time_column = [
+                (start_date + datetime.timedelta(hours=i)).strftime(date_format)
+                for i in range(len(expected_matrix["data"]))
+            ]
+
             expected_matrix["index"] = time_column
             expected = pd.DataFrame(**expected_matrix)
             assert dataframe.index.tolist() == expected.index.tolist()
             assert dataframe.columns.tolist() == expected.columns.tolist()
-            assert (dataframe == expected).all().all()
+            assert dataframe.equals(expected)
 
         # =============================
         # TESTS INDEX AND HEADER PARAMETERS
@@ -274,7 +271,7 @@ class TestDownloadMatrices:
             content = io.BytesIO(res.content)
             dataframe = pd.read_csv(content, index_col=0, sep="\t")
             assert list(dataframe.index) == list(dataframe.columns) == ["de", "es", "fr", "it"]
-            assert all(dataframe.iloc[i, i] == 1.0 for i in range(len(dataframe)))
+            assert all(np.isclose(dataframe.iloc[i, i], 1.0) for i in range(len(dataframe)))
 
         # test for empty matrix
         res = client.get(
@@ -344,19 +341,22 @@ class TestDownloadMatrices:
         assert dataframe.empty
 
         # test the Min Gen of the 8.6 study
-        res = client.get(
-            f"/v1/studies/{study_860_id}/raw/download",
-            params={"path": "input/hydro/series/de/mingen", "format": "tsv"},
-            headers=user_headers,
-        )
-        assert res.status_code == 200
-        content = io.BytesIO(res.content)
-        dataframe = pd.read_csv(content, index_col=0, sep="\t")
-        assert dataframe.shape == (8760, 3)
-        assert dataframe.columns.tolist() == ["TS-1", "TS-2", "TS-3"]
-        assert dataframe.index[0] == "2018-01-01 00:00:00"
-        # noinspection PyUnresolvedReferences
-        assert (dataframe.values == min_gen_df.values).all()
+        for export_format in ["tsv", "xlsx"]:
+            res = client.get(
+                f"/v1/studies/{study_860_id}/raw/download",
+                params={"path": "input/hydro/series/de/mingen", "format": {export_format}},
+                headers=user_headers,
+            )
+            assert res.status_code == 200
+            content = io.BytesIO(res.content)
+            if export_format == "tsv":
+                dataframe = pd.read_csv(content, index_col=0, sep="\t")
+            else:
+                dataframe = pd.read_excel(content, index_col=0)  # type: ignore
+            assert dataframe.shape == (8760, 3)
+            assert dataframe.columns.tolist() == ["TS-1", "TS-2", "TS-3"]
+            assert str(dataframe.index[0]) == "2018-01-01 00:00:00"
+            assert np.array_equal(dataframe.to_numpy(), min_gen_df.to_numpy())
 
         # =============================
         #  ERRORS

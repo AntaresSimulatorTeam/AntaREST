@@ -158,17 +158,6 @@ class MatrixNotFound(HTTPException):
         return self.detail
 
 
-class DuplicateSTStorageId(HTTPException):
-    """Exception raised when trying to create a short-term storage with an already existing id."""
-
-    def __init__(self, study_id: str, area_id: str, st_storage_id: str) -> None:
-        detail = f"Short term storage '{st_storage_id}' already exists in area '{area_id}'"
-        super().__init__(HTTPStatus.CONFLICT, detail)
-
-    def __str__(self) -> str:
-        return self.detail
-
-
 class ThermalClusterMatrixNotFound(MatrixNotFound):
     """Matrix of the thermal cluster is not found (404 Not Found)"""
 
@@ -354,6 +343,15 @@ class BadZipBinary(HTTPException):
 class IncorrectPathError(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.NOT_FOUND, message)
+
+
+class FileTooLargeError(HTTPException):
+    def __init__(self, estimated_size: int, maximum_size: int) -> None:
+        message = (
+            f"Cannot aggregate output data."
+            f" The expected size: {estimated_size}Mo exceeds the max supported size: {maximum_size}"
+        )
+        super().__init__(HTTPStatus.REQUEST_ENTITY_TOO_LARGE, message)
 
 
 class UrlNotMatchJsonDataError(HTTPException):
