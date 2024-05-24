@@ -1,6 +1,6 @@
-from typing import Any, Dict, List, Tuple
+import copy
+from typing import Any, Dict, List, Tuple, Union
 
-from antarest.core.utils.dict import merge_deep
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
@@ -13,31 +13,66 @@ class UpdateScenarioBuilder(ICommand):
     Command used to update a scenario builder table.
     """
 
-    # Overloaded metadata
-    # ===================
-
     command_name = CommandName.UPDATE_SCENARIO_BUILDER
     version = 1
-
-    # Command parameters
-    # ==================
-
     data: Dict[str, Any]
 
-    def _apply(self, study_data: FileStudy) -> CommandOutput:
-        def remove_rand_values(obj: Dict[str, Any]) -> Dict[str, Any]:
-            return {k: v for k, v in obj.items() if v != ""}
+    @staticmethod
+    def parse_key(key: str) -> Tuple[str, List[str], str]:
+        parts = key.split(",")
+        symbol = parts[0]
 
+        if symbol == "ntc":  # NTC links scenarios
+            index = parts[3]  # ntc,z1,z2,0 -> index is the year
+        elif symbol in ["t", "r"]:  # Clusters may include an additional identifier
+            index = parts[2]  # t,z1,0,cluster1 -> index is the year
+        else:  # Generic areas scenarios.
+            index = parts[2]  # l,z1,0 -> index is the year
+
+        return symbol, parts, index
+
+    @staticmethod
+    def insert_by_symbol(existing_data: Dict[str, Any], new_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Merges and sorts configuration data by ruleset keys using a defined sorting mechanism.
+
+        This method updates existing configuration data with new entries, ensuring data integrity and order. For each ruleset in the configuration:
+        - If the ruleset does not exist in `existing_data`, it is added.
+        - If it exists, the new data is merged with the existing data, and the combined data is sorted.
+
+        Sorting is based on the key structure, parsed by the `parse_key` function, which prioritizes symbol, area, and index.
+        Non-standard or malformed keys are handled gracefully by assigning them a high sort value.
+
+        Parameters:
+        - existing_data: The current configuration data where keys represent rulesets.
+        - new_data: New data to merge, following the same structure as `existing_data`.
+
+        Returns:
+        - Updated and sorted configuration data.
+
+        Example:
+        Given `existing_data` as {'Default Ruleset': {'l,a,0': 10, 'l,a,2': 30}} and `new_data` as {'Default Ruleset': {'l,a,1': 20}},
+        the result would be {'Default Ruleset': {'l,a,0': 10, 'l,a,1': 20, 'l,a,2': 30}}.
+        """
+        result = copy.deepcopy(existing_data)
+
+        for ruleset, ruleset_data in new_data.items():
+            if ruleset not in result:
+                result[ruleset] = ruleset_data  # Add the entire new ruleset if it doesn't exist
+            else:
+                # Merge new data into the existing ruleset and then sort the keys
+                merged_data = {**result[ruleset], **ruleset_data}
+                sorted_keys = sorted(merged_data.keys(), key=lambda k: UpdateScenarioBuilder.parse_key(k))
+                # Reassign the sorted dictionary back to the result under the current ruleset
+                result[ruleset] = {k: merged_data[k] for k in sorted_keys}
+
+        return result
+
+    def _apply(self, study_data: FileStudy) -> CommandOutput:
         url = ["settings", "scenariobuilder"]
-        prev = study_data.tree.get(url)
-        new_config = {
-            # The value `v` is a string when it is a ruleset cloning
-            k: remove_rand_values(v if isinstance(v, dict) else prev[v])
-            for k, v in merge_deep(prev, self.data).items()
-            # Deleted rulesets have an empty string
-            if v != ""
-        }
-        study_data.tree.save(new_config, url)
+        existing_config = study_data.tree.get(url)
+        updated_config = UpdateScenarioBuilder.insert_by_symbol(existing_config, self.data)
+        study_data.tree.save(updated_config, url)
         return CommandOutput(status=True)
 
     def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
