@@ -3,249 +3,231 @@ from typing import Any, Dict, Optional
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import Study
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.root.settings.scenariobuilder import ScenarioUtils
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.update_scenario_builder import UpdateScenarioBuilder
 
-SCENARIOS = [
-    {"type": "load", "symbol": "l"},
-    {"type": "thermal", "symbol": "t"},
-    {"type": "hydro", "symbol": "h"},
-    {"type": "wind", "symbol": "w"},
-    {"type": "solar", "symbol": "s"},
-    {"type": "ntc", "symbol": "ntc"},
-    {"type": "renewable", "symbol": "r"},
-    {"type": "bindingConstraints", "symbol": "bc"},
-]
 
-types_by_symbol = {scenario['type']: scenario['symbol'] for scenario in SCENARIOS}
-symbols_by_type = {scenario["symbol"]: scenario["type"] for scenario in SCENARIOS}
+class ScenarioHandlers:
+    @staticmethod
+    def handle_generic_scenario(config, nb_years, file_study, scenario_type):
+        """Generic handler for area-based scenarios. (load, hydro, wind, solar)"""
+        scenario_config = {scenario_type: {}}
+        areas = file_study.config.area_names()
 
+        for scenario, mc_year in config.items():
+            parts = scenario.split(",")
 
-def _generate_clusters_mc_years(nb_years, identifiers, lowercase_ids=False):
-    """Helper function to generate a scenario config skeleton based on provided identifiers."""
-    if lowercase_ids:
-        identifiers = [id.lower() for id in identifiers]
-    return {id: {str(year): "" for year in range(nb_years)} for id in identifiers}
+            # Generic scenarios have 3 parts e.g. for load (`l,<area>,<year> = <TS number>`)
+            if len(parts) < 3:
+                continue
 
+            symbol, area, index = parts
 
-def _handle_generic_scenario(config, nb_years, file_study, scenario_type):
-    """Generic handler for area-based scenarios. (load, hydro, wind, solar)"""
+            type = ScenarioUtils.SYMBOLS_BY_TYPE.get(symbol)
+            if type != scenario_type or type not in ["load", "hydro", "wind", "solar"]:
+                raise ValueError("Invalid scenario type.")
 
-    scenario_config = {scenario_type: {}}
-    areas = file_study.config.area_names()
+            if int(index) >= nb_years:
+                continue  # Skip the out of range configurations.
 
-    for scenario, mc_year in config.items():
-        parts = scenario.split(",")
+            # Initialize area data structure
+            if area not in scenario_config[type]:
+                scenario_config[type][area] = {}
 
-        # Generic scenarios have 3 parts e.g. for load (`l,<area>,<year> = <TS number>`)
-        if len(parts) < 3:
-            continue
+            area_data = scenario_config[type][area]
 
-        symbol, area, index = parts
+            # Handle area-level data initialization
+            if not area_data:
+                # Initialize MC years as empty if config value is missing.
+                area_data.update({str(year): "" for year in range(nb_years)})
+            # Set the existing config value if any.
+            area_data[index] = mc_year
 
-        type = symbols_by_type.get(symbol)
-        if type != scenario_type or type not in ['load', 'hydro', 'wind', 'solar']:
-            raise ValueError("Invalid scenario type.")
+        # Generate empty configurations (rand) for all areas.
+        for area in areas:
+            if area not in scenario_config[scenario_type]:
+                scenario_config[scenario_type][area] = {str(year): "" for year in range(nb_years)}
 
-        if int(index) >= nb_years:
-            continue  # Skip the out of range configurations.
+        return scenario_config
 
-        # Initialize area data structure
-        if area not in scenario_config[type]:
-            scenario_config[type][area] = {}
+    @staticmethod
+    def handle_thermal_scenario(config, nb_years, file_study, scenario_type):
+        """Handler for thermal scenarios that initializes configurations and updates them with existing data."""
+        scenario_config = {scenario_type: {}}
+        areas = file_study.config.area_names()
 
-        area_data = scenario_config[type][area]
+        for scenario, mc_year in config.items():
+            parts = scenario.split(",")
 
-        # Handle area-level data initialization
-        if not area_data:
-            # Initialize MC years as empty if config value is missing.
-            area_data.update({str(year): "" for year in range(nb_years)})
-        # Set the existing config value if any.
-        area_data[index] = mc_year
+            # Thermal scenarios should have exactly 4 parts: `t,<area>,<year>,<cluster>`
+            if len(parts) != 4:
+                continue
 
-    # Generate empty configurations (rand) for all areas.
-    for area in areas:
-        if area not in scenario_config[scenario_type]:
-            scenario_config[scenario_type][area] = {str(year): "" for year in range(nb_years)}
+            symbol, area, index, cluster = parts
+            cluster = cluster.lower()  # Ensure uniformity in cluster identification
 
-    return scenario_config
+            type = ScenarioUtils.SYMBOLS_BY_TYPE.get(symbol)
+            if type != scenario_type:
+                raise ValueError("Invalid scenario type.")
 
+            if int(index) >= nb_years:
+                continue  # Skip the out of range configurations.
 
-def _handle_thermal_scenario(config, nb_years, file_study, scenario_type):
-    """Handler for thermal scenarios that initializes configurations and updates them with existing data."""
-    scenario_config = {"thermal": {}}
-    areas = file_study.config.area_names()
-
-    for scenario, mc_year in config.items():
-        parts = scenario.split(",")
-
-        # Thermal scenarios should have exactly 4 parts: `t,<area>,<year>,<cluster>`
-        if len(parts) != 4:
-            continue
-
-        symbol, area, index, cluster = parts
-        cluster = cluster.lower()  # Ensure uniformity in cluster identification
-
-        type = symbols_by_type.get(symbol)
-        if type != scenario_type:
-            raise ValueError("Invalid scenario type.")
-
-        if int(index) >= nb_years:
-            continue  # Skip the out of range configurations.
-
-        # Initialize area and cluster.
-        if area not in scenario_config["thermal"]:
-            scenario_config["thermal"][area] = {}
-        if cluster not in scenario_config["thermal"][area]:
-            scenario_config["thermal"][area][cluster] = {}
-
-        scenario_config["thermal"][area][cluster][index] = mc_year
-
-    # Generate empty configurations (rand) for all areas and clusters.
-    for area in areas:
-        thermal_ids = file_study.config.get_thermal_ids(area)
-        if area not in scenario_config[scenario_type]:
-            scenario_config[scenario_type][area] = {}
-        for tid in thermal_ids:
-            cluster = tid.lower()
+            # Initialize area and cluster.
+            if area not in scenario_config[scenario_type]:
+                scenario_config[scenario_type][area] = {}
             if cluster not in scenario_config[scenario_type][area]:
-                scenario_config[scenario_type][area][cluster] = {str(year): "" for year in range(nb_years)}
+                scenario_config[scenario_type][area][cluster] = {}
 
-    return scenario_config
+            scenario_config[scenario_type][area][cluster][index] = mc_year
 
+        # Generate empty configurations (rand) for all areas and clusters.
+        for area in areas:
+            thermal_ids = file_study.config.get_thermal_ids(area)
+            if area not in scenario_config[scenario_type]:
+                scenario_config[scenario_type][area] = {}
+            for tid in thermal_ids:
+                cluster = tid.lower()
+                if cluster not in scenario_config[scenario_type][area]:
+                    scenario_config[scenario_type][area][cluster] = {str(year): "" for year in range(nb_years)}
 
-def _handle_ntc_scenario(config, nb_years, file_study, scenario_type):
-    """Handler for NTC (network transmission capacity) scenarios."""
-    scenario_config = {scenario_type: {}}
-    areas = file_study.config.area_names()
+        return scenario_config
 
-    for scenario, mc_year in config.items():
-        parts = scenario.split(",")
+    @staticmethod
+    def handle_ntc_scenario(config, nb_years, file_study, scenario_type):
+        """Handler for NTC (network transmission capacity) scenarios."""
+        scenario_config = {scenario_type: {}}
+        areas = file_study.config.area_names()
 
-        symbol, area1, area2, index = parts
-        # Construct the link key using a consistent format
-        link = f"{area1} / {area2}"
+        for scenario, mc_year in config.items():
+            parts = scenario.split(",")
 
-        type = symbols_by_type.get(symbol)
-        if type != scenario_type:
-            raise ValueError("Invalid scenario type.")
+            symbol, area1, area2, index = parts
+            link = f"{area1} / {area2}"
 
-        # Initialize the link if it does not exist yet
-        if link not in scenario_config[scenario_type]:
-            scenario_config[scenario_type][link] = {}
+            type = ScenarioUtils.SYMBOLS_BY_TYPE.get(symbol)
+            if type != scenario_type:
+                raise ValueError("Invalid scenario type.")
 
-        # Only process further if the year index is within bounds
-        if 0 <= int(index) < nb_years:
-            scenario_config[scenario_type][link][index] = mc_year
-
-    # Generate empty configurations (rand) for all links.
-    for area1 in areas:
-        area_links = file_study.config.get_links(area1)
-        for area2 in area_links:
-            # Form the link key using the area and each connected area
-            link = f"{area1.lower()} / {area2.lower()}"
+            # Initialize the link if it does not exist yet
             if link not in scenario_config[scenario_type]:
-                scenario_config[scenario_type][link] = {str(year): "" for year in range(nb_years)}
+                scenario_config[scenario_type][link] = {}
 
-    return scenario_config
+            # Only process further if the year index is within bounds
+            if 0 <= int(index) < nb_years:
+                scenario_config[scenario_type][link][index] = mc_year
 
+        # Generate empty configurations (rand) for all links.
+        for area1 in areas:
+            area_links = file_study.config.get_links(area1)
+            for area2 in area_links:
+                # Form the link key using the area and each connected area
+                link = f"{area1.lower()} / {area2.lower()}"
+                if link not in scenario_config[scenario_type]:
+                    scenario_config[scenario_type][link] = {str(year): "" for year in range(nb_years)}
 
-def _handle_renewable_scenario(config, nb_years, file_study, scenario_type):
-    """Handler for renewable scenarios that initializes configurations and updates them with existing data."""
-    scenario_config = {"renewable": {}}
-    areas = file_study.config.area_names()
+        return scenario_config
 
-    # Populate scenario configuration from the config dictionary
-    for scenario, mc_year in config.items():
-        parts = scenario.split(",")
+    @staticmethod
+    def handle_renewable_scenario(config, nb_years, file_study, scenario_type):
+        """Handler for renewable scenarios that initializes configurations and updates them with existing data."""
+        scenario_config = {scenario_type: {}}
+        areas = file_study.config.area_names()
 
-        # Renewable scenarios should also have exactly 4 parts: `r,<area>,<year>,<cluster>`
-        if len(parts) != 4:
-            continue
+        # Populate scenario configuration from the config dictionary
+        for scenario, mc_year in config.items():
+            parts = scenario.split(",")
 
-        symbol, area, index, cluster = parts
-        cluster = cluster.lower()  # Ensure uniformity in cluster identification
+            # Renewable scenarios should also have exactly 4 parts: `r,<area>,<year>,<cluster>`
+            if len(parts) != 4:
+                continue
 
-        type = symbols_by_type.get(symbol)
-        if type != scenario_type:
-            raise ValueError("Invalid scenario type.")
+            symbol, area, index, cluster = parts
+            cluster = cluster.lower()  # Ensure uniformity in cluster identification
 
-        if int(index) >= nb_years:
-            continue  # Skip the out of range configurations.
+            type = ScenarioUtils.SYMBOLS_BY_TYPE.get(symbol)
+            if type != scenario_type:
+                raise ValueError("Invalid scenario type.")
 
-        # Initialize area and cluster if they don't already exist.
-        if area not in scenario_config["renewable"]:
-            scenario_config["renewable"][area] = {}
-        if cluster not in scenario_config["renewable"][area]:
-            scenario_config["renewable"][area][cluster] = {}
+            if int(index) >= nb_years:
+                continue  # Skip the out of range configurations.
 
-        scenario_config["renewable"][area][cluster][index] = mc_year
-
-    # Generate empty configurations (rand) for all areas and clusters.
-    for area in areas:
-        renewable_ids = file_study.config.get_renewable_ids(area)
-        if area not in scenario_config[scenario_type]:
-            scenario_config[scenario_type][area] = {}
-        for rid in renewable_ids:
-            cluster = rid.lower()
+            # Initialize area and cluster if they don't already exist.
+            if area not in scenario_config[scenario_type]:
+                scenario_config[scenario_type][area] = {}
             if cluster not in scenario_config[scenario_type][area]:
-                scenario_config[scenario_type][area][cluster] = {str(year): "" for year in range(nb_years)}
+                scenario_config[scenario_type][area][cluster] = {}
 
-    return scenario_config
+            scenario_config[scenario_type][area][cluster][index] = mc_year
 
+        # Generate empty configurations (rand) for all areas and clusters.
+        for area in areas:
+            renewable_ids = file_study.config.get_renewable_ids(area)
+            if area not in scenario_config[scenario_type]:
+                scenario_config[scenario_type][area] = {}
+            for rid in renewable_ids:
+                cluster = rid.lower()
+                if cluster not in scenario_config[scenario_type][area]:
+                    scenario_config[scenario_type][area][cluster] = {str(year): "" for year in range(nb_years)}
 
-def _handle_binding_constraints_scenario(config, nb_years, file_study, scenario_type):
-    """Handler for binding constraints (BC) scenarios that initializes configurations based on existing BC groups."""
-    scenario_config = {scenario_type: {}}
-    bc_groups = file_study.config.get_binding_constraint_groups()
+        return scenario_config
 
-    for scenario, mc_year in config.items():
-        parts = scenario.split(",")
+    @staticmethod
+    def handle_binding_constraints_scenario(config, nb_years, file_study, scenario_type):
+        """Handler for binding constraints (BC) scenarios that initializes configurations based on existing BC groups."""
+        scenario_config = {scenario_type: {}}
+        bc_groups = file_study.config.get_binding_constraint_groups()
 
-        # Expect format: `bc,<group>,<year> = <TS number>`
-        if len(parts) != 3:
-            continue
+        for scenario, mc_year in config.items():
+            parts = scenario.split(",")
 
-        symbol, group, index, = parts
+            # Expect format: `bc,<group>,<year> = <TS number>`
+            if len(parts) != 3:
+                continue
 
-        type = symbols_by_type.get(symbol)
-        if type != scenario_type:
-            raise ValueError("Invalid scenario type.")
+            (
+                symbol,
+                group,
+                index,
+            ) = parts
 
-        # Initialize the group if it does not exist
-        if group not in scenario_config[scenario_type]:
-            scenario_config[scenario_type][group] = {str(y): "" for y in range(nb_years)}
+            type = ScenarioUtils.SYMBOLS_BY_TYPE.get(symbol)
+            if type != scenario_type:
+                raise ValueError("Invalid scenario type.")
 
-        # Only set the configuration year if it's within the valid range
-        if 0 <= int(index) < nb_years:
-            scenario_config[scenario_type][group][index] = mc_year
+            # Initialize the group if it does not exist
+            if group not in scenario_config[scenario_type]:
+                scenario_config[scenario_type][group] = {str(y): "" for y in range(nb_years)}
 
-    # Generate empty configurations (rand) for all BC groups.
-    for group in bc_groups:
-        if group.lower() not in scenario_config[scenario_type]:
-            scenario_config[scenario_type][group.lower()] = {str(year): "" for year in range(nb_years)}
+            # Only set the configuration year if it's within the valid range
+            if 0 <= int(index) < nb_years:
+                scenario_config[scenario_type][group][index] = mc_year
 
-    return scenario_config
+        # Generate empty configurations (rand) for all BC groups.
+        for group in bc_groups:
+            if group.lower() not in scenario_config[scenario_type]:
+                scenario_config[scenario_type][group.lower()] = {str(year): "" for year in range(nb_years)}
 
+        return scenario_config
 
-def parse_config_by_handler(scenario_config, nb_years, file_study, scenario_type):
-    """Route to the appropriate handler based on scenario type."""
-    handlers = {
-        'load': _handle_generic_scenario,
-        'thermal': _handle_thermal_scenario,
-        'hydro': _handle_generic_scenario,
-        'wind': _handle_generic_scenario,
-        'solar': _handle_generic_scenario,
-        'ntc': _handle_ntc_scenario,
-        'renewable': _handle_renewable_scenario,
-        'bindingConstraints': _handle_binding_constraints_scenario,
-    }
+    @staticmethod
+    def parse_config_by_type(scenario_config, nb_years, file_study, scenario_type):
+        """Route to the appropriate handler based on scenario type."""
 
-    if not scenario_type:
-        raise ValueError("Scenario type is missing.")
+        handlers = {
+            "load": ScenarioHandlers.handle_generic_scenario,
+            "thermal": ScenarioHandlers.handle_thermal_scenario,
+            "hydro": ScenarioHandlers.handle_generic_scenario,
+            "wind": ScenarioHandlers.handle_generic_scenario,
+            "solar": ScenarioHandlers.handle_generic_scenario,
+            "ntc": ScenarioHandlers.handle_ntc_scenario,
+            "renewable": ScenarioHandlers.handle_renewable_scenario,
+            "bindingConstraints": ScenarioHandlers.handle_binding_constraints_scenario,
+        }
 
-    handler = handlers.get(scenario_type)
-    return handler(scenario_config, nb_years, file_study, scenario_type)
+        handler = handlers.get(scenario_type)
+        return handler(scenario_config, nb_years, file_study, scenario_type)
 
 
 class ScenarioBuilderManager:
@@ -258,90 +240,79 @@ class ScenarioBuilderManager:
         """
         return self.storage_service.get_storage(study).get_raw(study)
 
-    def get_scenario_by_type(self, study: Study, scenario_type: str = None) -> Dict[str, Any]:
-        if scenario_type not in types_by_symbol:
+    @staticmethod
+    def create_scenario_key(scenario_type: str, area: str, year: str, cluster: Optional[str] = None) -> str:
+        """
+        Generate configuration keys based on the scenario type and given parameters.
+        This method adjusts keys for different scenarios including clusters and NTC links.
+        """
+        symbol = ScenarioUtils.TYPES_BY_SYMBOL.get(scenario_type)
+
+        if scenario_type in ["thermal", "renewable"]:
+            # Keys for scenarios with clusters should include the cluster name
+            return f"{symbol},{area},{year},{cluster}"
+
+        if scenario_type == "ntc":
+            # Keys for NTC scenarios should split the area into two linked areas
+            area1, area2 = map(str.strip, area.split("/"))
+            return f"{symbol},{area1},{area2},{year}"
+
+        # Simple area-year key for other types
+        return f"{symbol},{area},{year}"
+
+    @staticmethod
+    def generate_updates(scenario_config_updates: Dict[str, Dict[str, Dict[str, Dict[str, int]]]]) -> Dict[str, int]:
+        updates = {}
+
+        for scenario_type, areas in scenario_config_updates.items():
+            for area, configurations in areas.items():
+                for key, value in configurations.items():
+                    if isinstance(value, dict):
+                        for year, val in value.items():
+                            cluster = key if scenario_type in ["thermal", "renewable"] else None
+                            full_key = ScenarioBuilderManager.create_scenario_key(scenario_type, area, year, cluster)
+                            updates[full_key] = val
+                    else:
+                        full_key = ScenarioBuilderManager.create_scenario_key(scenario_type, area, key)
+                        updates[full_key] = value
+
+        return updates
+
+    def get_scenario_by_type(self, study: Study, scenario_type: str) -> Dict[str, Any]:
+        if not scenario_type:
+            raise ValueError("Scenario type is missing.")
+
+        if scenario_type not in ScenarioUtils.TYPES_BY_SYMBOL:
             raise ValueError(f"Unsupported scenario type: {scenario_type}")
 
         storage = self.storage_service.get_storage(study)
         file_study = self._get_file_study(study)
         general_settings = storage.get(study, "settings/generaldata/general")
-        # TODO add default ruleset on empty config studies, if no areas raise an error
         active_ruleset = general_settings.get("active-rules-scenario", "Default Ruleset")
-        nb_years = general_settings.get("nbyears", 0)
 
+        nb_years = general_settings.get("nbyears", 0)
         if nb_years <= 0:
             raise ValueError("Number of years must be greater than zero.")
 
         scenario_config = storage.get(study, f"/settings/scenariobuilder/{active_ruleset}/{scenario_type}")
-
         if not scenario_config:
             raise ValueError("Scenario configuration is missing or empty.")
 
-        return parse_config_by_handler(scenario_config[active_ruleset], nb_years, file_study, scenario_type)
-
-    def update_config(self, study: Study, scenario_updates: Dict[str, Dict[str, Dict[str, Dict[str, int]]]]) -> None:
-        file_study = self.storage_service.get_storage(study).get_raw(study)
-        active_ruleset = self.storage_service.get_storage(study).get(study, "settings/generaldata/general").get(
-            "active-rules-scenario", "Default Ruleset")
-
-        def to_valid_key(symbol: str, area: str, index: str, cluster: Optional[str] = None) -> str:
-            """
-            Generate a valid configuration key based on the provided parameters.
-            Handles special formatting for 'ntc' symbols where the area needs to be split.
-
-            Args:
-                symbol (str): The symbol indicating the type of scenario (e.g., 't', 'ntc').
-                area (str): The area or combined areas, potentially needing splitting for 'ntc'.
-                index (str): The index or identifier within the configuration.
-                cluster (Optional[str]): The cluster identifier, if applicable.
-
-            Returns:
-                str: The correctly formatted key.
-            """
-            if symbol == "ntc" and " / " in area:
-                # Split the area for 'ntc' scenarios, which involve linked areas.
-                area1, area2 = area.split(" / ")
-                return f"{symbol},{area1},{area2},{index}"
-            else:
-                # Clusters scenarios key format.
-                if cluster:
-                    return f"{symbol},{area},{index},{cluster}"
-                # Standard key format for non-'ntc' and 'clusters' scenarios.
-                return f"{symbol},{area},{index}"
-
-        # Convert the structured scenario data into the flat format expected by the update commands
-        def flatten_updates(data: Dict[str, Dict[str, Dict[str, int]]], symbol: str) -> Dict[str, int]:
-            flat_data = {}
-            for area, clusters_or_indexes in data.items():
-                for cluster_or_index, value in clusters_or_indexes.items():
-                    if isinstance(value, dict):
-                        # If the value is a dictionary, then it's a cluster configuration
-                        for index, val in value.items():
-                            key = to_valid_key(symbol, area, index, cluster_or_index)
-                            flat_data[key] = val
-                    else:
-                        # If the value is not a dictionary, it's a direct area configuration
-                        key = to_valid_key(symbol, area, cluster_or_index)
-                        flat_data[key] = value
-            return flat_data
-
-        # Process each scenario type in the updates
-        updates_to_apply = {}
-        for scenario_type, areas in scenario_updates.items():
-            symbol = types_by_symbol.get(scenario_type)
-            if not symbol:
-                continue  # Skip unknown scenario types
-            scenario_data = flatten_updates(areas, symbol)
-            updates_to_apply.update(scenario_data)
-
-        execute_or_add_commands(
-            study,
-            file_study,
-            [
-                UpdateScenarioBuilder(
-                    data={active_ruleset: updates_to_apply},
-                    command_context=self.storage_service.variant_study_service.command_factory.command_context,
-                )
-            ],
-            self.storage_service,
+        return ScenarioHandlers.parse_config_by_type(
+            scenario_config[active_ruleset], nb_years, file_study, scenario_type
         )
+
+    def update_scenario_by_type(
+        self, study: Study, scenario_updates: Dict[str, Dict[str, Dict[str, Dict[str, int]]]]
+    ) -> None:
+        file_study = self._get_file_study(study)
+        general_settings = self.storage_service.get_storage(study).get(study, "settings/generaldata/general")
+        active_ruleset = general_settings.get("active-rules-scenario", "Default Ruleset")
+
+        updates = ScenarioBuilderManager.generate_updates(scenario_updates)
+
+        update_scenario = UpdateScenarioBuilder(
+            data={active_ruleset: updates},
+            command_context=self.storage_service.variant_study_service.command_factory.command_context,
+        )
+        execute_or_add_commands(study, file_study, [update_scenario], self.storage_service)

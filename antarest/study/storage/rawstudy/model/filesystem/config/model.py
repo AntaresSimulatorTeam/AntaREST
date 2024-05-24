@@ -109,6 +109,7 @@ class BindingConstraintDTO(BaseModel):
         areas: List of area IDs on which the BC applies (links or clusters).
         clusters: List of thermal cluster IDs on which the BC applies (format: "area.cluster").
     """
+
     id: str
     group: t.Optional[str] = None
     areas: t.Set[str]
