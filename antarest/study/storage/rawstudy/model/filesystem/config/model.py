@@ -169,13 +169,13 @@ class FileStudyTreeConfig(DTO):
         self.archive_input_series = archive_input_series or []
         self.enr_modelling = enr_modelling
         self.cache = cache or {}
-        self.zip_path = zip_path
+        self.archive_path = zip_path
 
     def next_file(self, name: str, is_output: bool = False) -> "FileStudyTreeConfig":
         if is_output and name in self.outputs and self.outputs[name].archived:
             zip_path: t.Optional[Path] = self.path / f"{name}.zip"
         else:
-            zip_path = self.zip_path
+            zip_path = self.archive_path
 
         return FileStudyTreeConfig(
             study_path=self.study_path,
@@ -316,7 +316,7 @@ class FileStudyTreeConfigDTO(BaseModel):
             store_new_set=config.store_new_set,
             archive_input_series=config.archive_input_series,
             enr_modelling=config.enr_modelling,
-            zip_path=config.zip_path,
+            zip_path=config.archive_path,
         )
 
     def to_build_config(self) -> FileStudyTreeConfig:
