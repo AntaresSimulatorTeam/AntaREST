@@ -153,7 +153,7 @@ def build(study_path: Path, study_id: str, output_path: t.Optional[Path] = None)
         store_new_set=sns,
         archive_input_series=asi,
         enr_modelling=enr_modelling,
-        zip_path=study_path if is_archive else None,
+        archive_path=study_path if is_archive else None,
     )
 
 
