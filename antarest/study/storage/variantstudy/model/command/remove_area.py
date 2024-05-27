@@ -182,6 +182,26 @@ class RemoveArea(ICommand):
 
         study_data.tree.save(districts, ["input", "areas", "sets"])
 
+    def _remove_area_from_scenario_builder(self, study_data: FileStudy) -> None:
+        """
+        Update the scenario builder by removing the rows that correspond to the area to remove.
+
+        NOTE: this update can be very long if the scenario builder configuration is large.
+        """
+        rulesets = study_data.tree.get(["settings", "scenariobuilder"])
+
+        area_keys = {"l", "h", "w", "s", "t", "r", "hl", "hfl", "hgp"}
+        link_keys = {"ntc"}
+        for ruleset in rulesets.values():
+            for key in list(ruleset):
+                symbol, *parts = key.split(",")
+                if (symbol in area_keys and parts[0] == self.id) or (
+                    symbol in link_keys and (parts[0] == self.id or parts[1] == self.id)
+                ):
+                    del ruleset[key]
+
+        study_data.tree.save(rulesets, ["settings", "scenariobuilder"])
+
     # noinspection SpellCheckingInspection
     def _apply(self, study_data: FileStudy) -> CommandOutput:
         study_data.tree.delete(["input", "areas", self.id])
@@ -229,6 +249,7 @@ class RemoveArea(ICommand):
         self._remove_area_from_correlation_matrices(study_data)
         self._remove_area_from_hydro_allocation(study_data)
         self._remove_area_from_districts(study_data)
+        self._remove_area_from_scenario_builder(study_data)
 
         output, _ = self._apply_config(study_data.config)
 
