@@ -182,12 +182,6 @@ class RemoveArea(ICommand):
 
         study_data.tree.save(districts, ["input", "areas", "sets"])
 
-    def _remove_area_from_cluster(self, study_data: FileStudy) -> None:
-        study_data.tree.delete(["input", "thermal", "prepro", self.id])
-
-    def _remove_area_from_time_series(self, study_data: FileStudy) -> None:
-        study_data.tree.delete(["input", "thermal", "series", self.id])
-
     # noinspection SpellCheckingInspection
     def _apply(self, study_data: FileStudy) -> CommandOutput:
         study_data.tree.delete(["input", "areas", self.id])
@@ -205,6 +199,8 @@ class RemoveArea(ICommand):
         study_data.tree.delete(["input", "solar", "prepro", self.id])
         study_data.tree.delete(["input", "solar", "series", f"solar_{self.id}"])
         study_data.tree.delete(["input", "thermal", "clusters", self.id])
+        study_data.tree.delete(["input", "thermal", "prepro", self.id])
+        study_data.tree.delete(["input", "thermal", "series", self.id])
         study_data.tree.delete(["input", "thermal", "areas", "unserverdenergycost", self.id])
         study_data.tree.delete(["input", "thermal", "areas", "spilledenergycost", self.id])
         study_data.tree.delete(["input", "wind", "prepro", self.id])
@@ -220,6 +216,10 @@ class RemoveArea(ICommand):
             study_data.tree.delete(["input", "hydro", "common", "capacity", f"inflowPattern_{self.id}"])
             study_data.tree.delete(["input", "hydro", "common", "capacity", f"waterValues_{self.id}"])
 
+        if study_data.config.version >= 810:
+            study_data.tree.delete(["input", "renewables", "clusters", self.id])
+            study_data.tree.delete(["input", "renewables", "series", self.id])
+
         if study_data.config.version >= 860:
             study_data.tree.delete(["input", "st-storage", "clusters", self.id])
             study_data.tree.delete(["input", "st-storage", "series", self.id])
@@ -229,8 +229,6 @@ class RemoveArea(ICommand):
         self._remove_area_from_correlation_matrices(study_data)
         self._remove_area_from_hydro_allocation(study_data)
         self._remove_area_from_districts(study_data)
-        self._remove_area_from_cluster(study_data)
-        self._remove_area_from_time_series(study_data)
 
         output, _ = self._apply_config(study_data.config)
 
