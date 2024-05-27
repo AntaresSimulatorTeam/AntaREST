@@ -1,11 +1,4 @@
-import {
-  ComponentType,
-  ReactElement,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { ComponentType, useContext, useEffect, useMemo, useState } from "react";
 import { Box } from "@mui/material";
 import SplitView from "../../../../../../../common/SplitView";
 import PropertiesView from "../../../../../../../common/PropertiesView";
@@ -13,21 +6,21 @@ import ListElement from "../../../../common/ListElement";
 import {
   GenericScenarioConfig,
   HandlerReturnTypes,
-  ScenarioSymbol,
-  ThermalHandlerReturn,
+  ScenarioType,
+  ClustersHandlerReturn,
   getConfigByScenario,
 } from "./utils";
 import { ScenarioBuilderContext } from "./ScenarioBuilderContext";
 
 interface ScenarioTableProps {
-  symbol: ScenarioSymbol;
+  type: ScenarioType;
   areaId?: string;
 }
 
+// If the configuration contains areas/clusters.
 function hasAreas(
   config: HandlerReturnTypes[keyof HandlerReturnTypes],
-): config is ThermalHandlerReturn {
-  // TODO make a generic type for areas configurations return
+): config is ClustersHandlerReturn {
   return (
     "areas" in config &&
     Array.isArray(config.areas) &&
@@ -38,27 +31,22 @@ function hasAreas(
 function withAreas(
   Component: ComponentType<
     ScenarioTableProps & {
-      config: GenericScenarioConfig | ThermalHandlerReturn;
+      config: GenericScenarioConfig | ClustersHandlerReturn;
     }
   >,
 ) {
-  return function TableWithAreas({
-    symbol,
-    ...props
-  }: ScenarioTableProps): ReactElement {
-    const { config, activeRuleset } = useContext(ScenarioBuilderContext);
+  return function TableWithAreas({ type, ...props }: ScenarioTableProps) {
+    const { config } = useContext(ScenarioBuilderContext);
     const [selectedAreaId, setSelectedAreaId] = useState("");
     const [areas, setAreas] = useState<string[]>([]);
     const [configByArea, setConfigByArea] = useState<
-      GenericScenarioConfig | ThermalHandlerReturn
+      GenericScenarioConfig | ClustersHandlerReturn
     >({});
 
     const scenarioConfig = useMemo(
-      () => getConfigByScenario(config, activeRuleset, symbol),
-      [config, activeRuleset, symbol],
+      () => getConfigByScenario(config, type),
+      [config, type],
     );
-
-    console.log("scenarioConfig", scenarioConfig);
 
     useEffect(() => {
       if (scenarioConfig && hasAreas(scenarioConfig)) {
@@ -78,21 +66,17 @@ function withAreas(
       }
     }, [selectedAreaId, scenarioConfig]);
 
-    console.log("selectedAreaId", selectedAreaId);
-    console.log("symbol", symbol);
-    console.log("configByArea", configByArea);
-
     ////////////////////////////////////////////////////////////////
     // JSX
     ////////////////////////////////////////////////////////////////
 
-    // The regular case where no nested data depending on areas.
+    // The regular case where no clusters nested data.
     if (!areas.length && scenarioConfig) {
       return (
         <Component
           {...props}
           config={scenarioConfig}
-          symbol={symbol}
+          type={type}
           areaId={selectedAreaId}
         />
       );
@@ -119,7 +103,7 @@ function withAreas(
           <Component
             {...props}
             config={configByArea}
-            symbol={symbol}
+            type={type}
             areaId={selectedAreaId}
           />
         </Box>

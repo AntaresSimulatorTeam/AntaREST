@@ -1,28 +1,28 @@
 import { useContext } from "react";
 import { useTranslation } from "react-i18next";
-import * as R from "ramda";
 import TableForm from "../../../../../../../common/TableForm";
 import { ScenarioBuilderContext } from "./ScenarioBuilderContext";
 import {
   GenericScenarioConfig,
-  ScenarioSymbol,
-  ThermalHandlerReturn,
+  ScenarioType,
+  ClustersHandlerReturn,
   updateScenarioBuilderConfig,
 } from "./utils";
 import { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
+import SimpleContent from "../../../../../../../common/page/SimpleContent";
+import useEnqueueErrorSnackbar from "../../../../../../../../hooks/useEnqueueErrorSnackbar";
+import { AxiosError } from "axios";
 
 interface Props {
-  config: GenericScenarioConfig | ThermalHandlerReturn;
-  symbol: ScenarioSymbol;
+  config: GenericScenarioConfig | ClustersHandlerReturn;
+  type: ScenarioType;
   areaId?: string;
 }
 
-function Table({ config, symbol, areaId }: Props) {
+function Table({ config, type, areaId }: Props) {
   const { t } = useTranslation();
-
-  const { activeRuleset, setConfig, refreshConfig, studyId } = useContext(
-    ScenarioBuilderContext,
-  );
+  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
+  const { studyId } = useContext(ScenarioBuilderContext);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -30,24 +30,20 @@ function Table({ config, symbol, areaId }: Props) {
 
   const handleSubmit = async ({ dirtyValues }: SubmitHandlerPlus) => {
     const newData = {
-      [activeRuleset]: {
-        [symbol]:
-          symbol === "t" && areaId ? { [areaId]: dirtyValues } : dirtyValues,
-      },
+      [type]:
+        (type === "thermal" || type === "renewable") && areaId
+          ? { [areaId]: dirtyValues }
+          : dirtyValues,
     };
-
-    setConfig(R.mergeDeepLeft(newData));
 
     try {
       await updateScenarioBuilderConfig(studyId, newData);
-    } catch (err) {
-      refreshConfig();
-
-      throw new Error( // TODO snackbar
-        t("study.configuration.general.mcScenarioBuilder.error.table", {
-          0: `${activeRuleset}.${symbol}`,
+    } catch (error) {
+      enqueueErrorSnackbar(
+        t("study.configuration.general.mcScenarioBuilder.update.error", {
+          type,
         }),
-        { cause: err },
+        error as AxiosError,
       );
     }
   };
@@ -56,13 +52,14 @@ function Table({ config, symbol, areaId }: Props) {
   // JSX
   ////////////////////////////////////////////////////////////////
 
-  if (!config) {
-    return <div>No configuration available</div>;
+  if (Object.keys(config).length === 0) {
+    return <SimpleContent title="No scenario configuration." />;
   }
 
   return (
     <TableForm
       key={JSON.stringify(config)}
+      autoSubmit={false}
       defaultValues={config}
       tableProps={{
         type: "numeric",
