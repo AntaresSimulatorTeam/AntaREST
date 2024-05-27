@@ -11,10 +11,12 @@ from antarest.study.storage.variantstudy.model.command.create_binding_constraint
 from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
 from antarest.study.storage.variantstudy.model.command.create_district import CreateDistrict, DistrictBaseFilter
 from antarest.study.storage.variantstudy.model.command.create_link import CreateLink
+from antarest.study.storage.variantstudy.model.command.create_renewables_cluster import CreateRenewablesCluster
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
 from antarest.study.storage.variantstudy.model.command.remove_district import RemoveDistrict
 from antarest.study.storage.variantstudy.model.command.remove_link import RemoveLink
+from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
@@ -48,12 +50,7 @@ class TestRemoveArea:
 
         area_name = "Area"
         area_id = transform_name_to_id(area_name)
-        create_area_command: ICommand = CreateArea.parse_obj(
-            {
-                "area_name": area_name,
-                "command_context": command_context,
-            }
-        )
+        create_area_command: ICommand = CreateArea(area_name=area_name, command_context=command_context)
         output = create_area_command.apply(study_data=empty_study)
         assert output.status
 
@@ -65,6 +62,19 @@ class TestRemoveArea:
         )
         output = create_district_command.apply(study_data=empty_study)
         assert output.status
+
+        # Change the MC years to 5 to test the scenario builder data
+        empty_study.tree.save(5, ["settings", "generaldata", "general", "nbyears"])
+
+        if empty_study.config.version >= 810:
+            # Parameter 'renewable-generation-modelling' must be set to 'clusters' instead of 'aggregated'
+            update_config = UpdateConfig(
+                target="settings/generaldata/other preferences",
+                data={"renewable-generation-modelling": "clusters"},
+                command_context=command_context,
+            )
+            output = update_config.apply(study_data=empty_study)
+            assert output.status
 
         ########################################################################################
 
@@ -78,12 +88,7 @@ class TestRemoveArea:
         area_name2 = "Area2"
         area_id2 = transform_name_to_id(area_name2)
 
-        create_area_command: ICommand = CreateArea.parse_obj(
-            {
-                "area_name": area_name2,
-                "command_context": command_context,
-            }
-        )
+        create_area_command: ICommand = CreateArea(area_name=area_name2, command_context=command_context)
         output = create_area_command.apply(study_data=empty_study)
         assert output.status
 
@@ -97,25 +102,41 @@ class TestRemoveArea:
         output = create_link_command.apply(study_data=empty_study)
         assert output.status
 
-        # noinspection SpellCheckingInspection
-        create_cluster_command = CreateCluster.parse_obj(
-            {
-                "area_id": area_id2,
-                "cluster_name": "cluster",
-                "parameters": {
-                    "group": "Other",
-                    "unitcount": "1",
-                    "nominalcapacity": "1000000",
-                    "marginal-cost": "30",
-                    "market-bid-cost": "30",
-                },
-                "prepro": [[0]],
-                "modulation": [[0]],
-                "command_context": command_context,
-            }
-        )
-        output = create_cluster_command.apply(study_data=empty_study)
+        thermal_name = "cluster"
+        thermal_id = transform_name_to_id(thermal_name)
+        output = CreateCluster(
+            area_id=area_id2,
+            cluster_name=thermal_name,
+            parameters={
+                "group": "Other",
+                "unitcount": "1",
+                "nominalcapacity": "1000000",
+                "marginal-cost": "30",
+                "market-bid-cost": "30",
+            },
+            prepro=[[0]],
+            modulation=[[0]],
+            command_context=command_context,
+        ).apply(study_data=empty_study)
         assert output.status
+
+        renewable_id = None
+        if empty_study.config.version >= 810:
+            renewable_name = "Renewable"
+            renewable_id = transform_name_to_id(renewable_name)
+            output = CreateRenewablesCluster(
+                area_id=area_id2,
+                cluster_name=renewable_name,
+                parameters={
+                    "enabled": "true",
+                    "group": "Solar Rooftop",
+                    "unitcount": "10",
+                    "nominalcapacity": "12000",
+                    "ts-interpretation": "power-generation",
+                },
+                command_context=command_context,
+            ).apply(study_data=empty_study)
+            assert output.status
 
         bind1_cmd = CreateBindingConstraint(
             name="BD 2",
@@ -147,12 +168,7 @@ class TestRemoveArea:
         output = create_district_command.apply(study_data=empty_study)
         assert output.status
 
-        remove_area_command: ICommand = RemoveArea.parse_obj(
-            {
-                "id": transform_name_to_id(area_name2),
-                "command_context": command_context,
-            }
-        )
+        remove_area_command: ICommand = RemoveArea(id=area_id2, command_context=command_context)
         output = remove_area_command.apply(study_data=empty_study)
         assert output.status
 
