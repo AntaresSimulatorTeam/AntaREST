@@ -1,19 +1,66 @@
-from typing import Dict, Type
+import typing as t
 
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
+import typing_extensions as te
+
+from antarest.study.storage.rawstudy.model.filesystem.config.model import EnrModelling, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 
+_TSNumber: te.TypeAlias = int
+_HydroLevel: te.TypeAlias = float
+_Rules = t.MutableMapping[str, t.Union[t.Type[_TSNumber], t.Type[_HydroLevel]]]
+
 
 class ScenarioBuilder(IniFileNode):
+    """
+    Node representing the `settings/scenariobuilder.dat` file in an Antares study.
+    This ".dat" file is a kind of ".ini"" file, where sections are rulesets.
+    Each ruleset is a set of rules defined for each kind of generator or link.
+
+    | Label                  | Symbol | Format                                     | Availability |
+    |------------------------|:------:|--------------------------------------------|:------------:|
+    | load                   |   l    | `l,<area>,<year> = <TS number>`            |              |
+    | hydro                  |   h    | `h,<area>,<year> = <TS number>`            |              |
+    | wind                   |   w    | `w,<area>,<year> = <TS number>`            |              |
+    | solar                  |   s    | `s,<area>,<year> = <TS number>`            |              |
+    | NTC (links)            |  ntc   | `ntc,<area1>,<area2>,<year> = <TS number>` |              |
+    | thermal                |   t    | `t,<area>,<year>,<cluster> = <TS number>`  |              |
+    | renewable              |   r    | `r,<area>,<year>,<cluster> = <TS number>`  |     8.1      |
+    | binding-constraints    |   bc   | `bc,<group>,<year> = <TS number>`          |     8.7      |
+    | hydro initial levels   |   hl   | `hl,<area>,<year> = <Level>`               |     8.0      |
+    | hydro final levels     |  hfl   | `hfl,<area>,<year> = <Level>`              |     9.2      |
+    | hydro generation power |  hgp   | `hgp,<area>,<year> = <TS number>`          |     9.1      |
+
+    Legend:
+    - `<area>`: The area ID (in lower case).
+    - `<area1>`, `<area2>`: The area IDs of the two connected areas (source and target).
+    - `<year>`: The year (0-based index) of the time series.
+    - `<cluster>`: The ID of the thermal / renewable cluster (in lower case).
+    - `<group>`: The ID of the binding constraint group (in lower case).
+    - `<TS number>`: The time series number (1-based index of the matrix column).
+    - `<Level>`: The level of the hydraulic reservoir (in range 0-1).
+    """
+
     def __init__(self, context: ContextServer, config: FileStudyTreeConfig):
         self.config = config
 
-        rules: Dict[str, Type[int]] = {}
-        for area in self.config.areas:
-            for mode in ["l", "s", "w", "h"]:
-                rules[f"{mode},{area},0"] = int
-            self._add_thermal(area, rules)
+        rules: _Rules = {}
+        self._populate_load_hydro_wind_solar_rules(rules)
+        self._populate_ntc_rules(rules)
+        self._populate_thermal_rules(rules)
+
+        # Rules are defined for a specific version of the study.
+        study_version = config.version
+        if study_version >= 810 and EnrModelling(self.config.enr_modelling) == EnrModelling.CLUSTERS:
+            self._populate_renewable_rules(rules)
+        if study_version >= 870:
+            self._populate_binding_constraints_rules(rules)
+        if study_version >= 800:
+            self._populate_hydro_initial_level_rules(rules)
+        if study_version >= 920:
+            self._populate_hydro_final_level_rules(rules)
+        if study_version >= 910:
+            self._populate_hydro_generation_power_rules(rules)
 
         super().__init__(
             context=context,
@@ -21,9 +68,38 @@ class ScenarioBuilder(IniFileNode):
             types={"Default Ruleset": rules},
         )
 
-    def _add_thermal(self, area: str, rules: Dict[str, Type[int]]) -> None:
-        # Note that cluster IDs are case-insensitive, but series IDs are in lower case.
-        # For instance, if your cluster ID is "Base", then the series ID will be "base".
-        series_ids = map(str.lower, self.config.get_thermal_ids(area))
-        for series_id in series_ids:
-            rules[f"t,{area},0,{series_id}"] = int
+    def _populate_load_hydro_wind_solar_rules(self, rules: _Rules) -> None:
+        for area_id in self.config.areas:
+            for symbol in ("l", "h", "w", "s"):
+                rules[f"{symbol},{area_id},0"] = _TSNumber
+
+    def _populate_ntc_rules(self, rules: _Rules) -> None:
+        for area1_id in self.config.areas:
+            for area2_id in self.config.get_links(area1_id):
+                rules[f"ntc,{area1_id},{area2_id},0"] = _TSNumber
+
+    def _populate_thermal_rules(self, rules: _Rules) -> None:
+        for area_id in self.config.areas:
+            for cl_id in (th.lower() for th in self.config.get_thermal_ids(area_id)):
+                rules[f"t,{area_id},0,{cl_id}"] = _TSNumber
+
+    def _populate_renewable_rules(self, rules: _Rules) -> None:
+        for area_id in self.config.areas:
+            for cl_id in (re.lower() for re in self.config.get_renewable_ids(area_id)):
+                rules[f"r,{area_id},0,{cl_id}"] = _TSNumber
+
+    def _populate_binding_constraints_rules(self, rules: _Rules) -> None:
+        for group_id in (gr.lower() for gr in self.config.get_binding_constraint_groups()):
+            rules[f"bc,{group_id},0"] = _TSNumber
+
+    def _populate_hydro_initial_level_rules(self, rules: _Rules) -> None:
+        for area_id in self.config.areas:
+            rules[f"hl,{area_id},0"] = _HydroLevel
+
+    def _populate_hydro_final_level_rules(self, rules: _Rules) -> None:
+        for area_id in self.config.areas:
+            rules[f"hfl,{area_id},0"] = _HydroLevel
+
+    def _populate_hydro_generation_power_rules(self, rules: _Rules) -> None:
+        for area_id in self.config.areas:
+            rules[f"hgp,{area_id},0"] = _TSNumber
