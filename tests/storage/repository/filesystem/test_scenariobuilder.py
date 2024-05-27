@@ -59,6 +59,11 @@ t,it,0,06_coal = 1
 t,it,0,07_gas = 1
 t,it,0,08_non-res = 1
 t,it,0,09_hydro_pump = 1
+# since v8.7
+bc,group a,0 = 1
+bc,group a,1 = 2
+bc,group b,0 = 2
+bc,group b,1 = 1
 """
 
 
@@ -95,7 +100,7 @@ def test_get(tmp_path: Path):
         config=FileStudyTreeConfig(
             study_path=path,
             path=path,
-            version=-1,
+            version=870,
             areas=areas,
             outputs=dict(),
             study_id="id",
@@ -103,3 +108,9 @@ def test_get(tmp_path: Path):
     )
 
     assert node.get(["Default Ruleset", "t,it,0,09_hydro_pump"]) == 1
+
+    # since v8.7
+    assert node.get(["Default Ruleset", "bc,group a,0"]) == 1
+    assert node.get(["Default Ruleset", "bc,group a,1"]) == 2
+    assert node.get(["Default Ruleset", "bc,group b,0"]) == 2
+    assert node.get(["Default Ruleset", "bc,group b,1"]) == 1
