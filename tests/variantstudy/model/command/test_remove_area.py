@@ -17,6 +17,7 @@ from antarest.study.storage.variantstudy.model.command.remove_area import Remove
 from antarest.study.storage.variantstudy.model.command.remove_district import RemoveDistrict
 from antarest.study.storage.variantstudy.model.command.remove_link import RemoveLink
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
+from antarest.study.storage.variantstudy.model.command.update_scenario_builder import UpdateScenarioBuilder
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
@@ -166,6 +167,32 @@ class TestRemoveArea:
             command_context=command_context,
         )
         output = create_district_command.apply(study_data=empty_study)
+        assert output.status
+
+        # Add scenario builder data
+        default_ruleset = {
+            f"l,{area_id2},0": 1,
+            f"h,{area_id2},0": 1,
+            f"w,{area_id2},0": 1,
+            f"s,{area_id2},0": 1,
+            f"ntc,{area_id},{area_id2},0": 1,
+            f"t,{area_id2},0,{thermal_id.lower()}": 1,
+        }
+        if empty_study.config.version >= 800:
+            default_ruleset[f"hl,{area_id2},0"] = 1
+        if empty_study.config.version >= 810:
+            default_ruleset[f"r,{area_id2},0,{renewable_id.lower()}"] = 1
+        if empty_study.config.version >= 870:
+            default_ruleset[f"bc,bd 2,0"] = 1
+        if empty_study.config.version >= 920:
+            default_ruleset[f"hfl,{area_id2},0"] = 1
+        if empty_study.config.version >= 910:
+            default_ruleset[f"hgp,{area_id2},0"] = 1
+
+        output = UpdateScenarioBuilder(
+            data={"Default Ruleset": default_ruleset},
+            command_context=command_context,
+        ).apply(study_data=empty_study)
         assert output.status
 
         remove_area_command: ICommand = RemoveArea(id=area_id2, command_context=command_context)
