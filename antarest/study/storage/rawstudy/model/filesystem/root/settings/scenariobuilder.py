@@ -1,36 +1,61 @@
+import logging
 import typing as t
-from typing import Dict, Type, Optional, List
+from typing import Optional, List
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 
-scenario_symbols = {
-    "load": "l",
-    "thermal": "t",
-    "hydro": "h",
-    "wind": "w",
-    "solar": "s",
-    "ntc": "ntc",
-    "renewable": "r",
-    "bindingConstraints": "bc",
-}
+logger = logging.getLogger(__name__)
 
 
-def parse_line(line: str):
-    line = line.strip()
-    if line.startswith('[') and line.endswith(']'):
-        # This is a section header
-        return line[1:-1], None  # Returns section name and None for value
-    if '=' in line:
-        key, value = line.split('=', 1)
-        key = key.strip()
-        try:
-            value = int(value.strip())
-            return key, value
-        except ValueError:
-            print(f"Invalid configuration value detected for key '{key}': '{value}' is not a valid integer.")
-    return None, None
+class ScenarioUtils:
+    SCENARIOS = [
+        {"type": "load", "symbol": "l"},
+        {"type": "thermal", "symbol": "t"},
+        {"type": "hydro", "symbol": "h"},
+        {"type": "wind", "symbol": "w"},
+        {"type": "solar", "symbol": "s"},
+        {"type": "ntc", "symbol": "ntc"},
+        {"type": "renewable", "symbol": "r"},
+        {"type": "bindingConstraints", "symbol": "bc"},
+    ]
+
+    TYPES_BY_SYMBOL = {scenario["type"]: scenario["symbol"] for scenario in SCENARIOS}
+    SYMBOLS_BY_TYPE = {scenario["symbol"]: scenario["type"] for scenario in SCENARIOS}
+
+    @staticmethod
+    def parse_line(line: str) -> t.Tuple[Optional[str], Optional[int]]:
+        line = line.strip()
+        if line.startswith("[") and line.endswith("]"):
+            return line[1:-1], None
+        if "=" in line:
+            key, value = line.split("=", 1)
+            key = key.strip()
+            try:
+                value = int(value.strip())
+                return key, value
+            except ValueError:
+                logger.warning(
+                    f"Invalid scenario configuration value detected for key '{key}': '{value}' is not a valid integer."
+                )
+        return None, None
+
+    @staticmethod
+    def extract_url_params(url: Optional[List[str]]) -> t.Tuple[str, Optional[str]]:
+        """
+        Extracts and returns the active ruleset and scenario type from the URL parameters.
+
+        :param url: URL parameters list
+        :return: Tuple containing active ruleset and scenario type
+        """
+        if url:
+            active_ruleset = url[0]
+            scenario_type = None if not url[1] or url[1] == "None" else url[1]
+        else:
+            active_ruleset = "Default Ruleset"
+            scenario_type = None
+        return active_ruleset, scenario_type
 
 
 class ScenarioBuilder(IniFileNode):
@@ -62,52 +87,35 @@ class ScenarioBuilder(IniFileNode):
     """
 
     def __init__(self, context: ContextServer, config: FileStudyTreeConfig):
-
         rules: t.Dict[str, t.Union[t.Type[int], t.Type[float]]] = {}
 
         super().__init__(context=context, config=config, types={"Default Ruleset": rules})
 
-    def _get(self, url: Optional[List[str]] = None, depth: int = -1, expanded: bool = False, get_node: bool = False):
-
+    def _get(
+        self, url: Optional[List[str]] = None, depth: int = -1, expanded: bool = False, get_node: bool = False
+    ) -> dict:
         file_path = self.path
         current_section = None
-        data = {}
-
+        config_data = {}
         matched_symbol = False  # Flag to track the first occurrence of the scenario type.
 
-        if url:
-            # The URL list includes essential filtering criteria: [active_ruleset, scenario_type].
-            # active_ruleset: Defines which configuration ruleset to apply.
-            # scenario_type: Specifies the type of scenario to filter configuration data by, if applicable.
-            active_ruleset = url[0]  # Retrieve the active ruleset identifier from the URL.
-            # Convert 'None' or empty string to None for scenario_type to ensure proper filtering.
-            scenario_type = None if not url[1] or url[1] == 'None' else url[1]
-        else:
-            # Defaults are used if no URL parameters are provided.
-            active_ruleset = 'Default Ruleset'  # Default ruleset if none specified.
-            scenario_type = None  # No scenario filtering if not specified.
+        active_ruleset, scenario_type = ScenarioUtils.extract_url_params(url)
+        symbol = ScenarioUtils.TYPES_BY_SYMBOL.get(scenario_type)
 
-        symbol = None if not scenario_type else scenario_symbols[scenario_type]
-
-        with open(file_path, mode='r', encoding='utf-8') as file:
+        with open(file_path, mode="r", encoding="utf-8") as file:
             for line in file:
-                key, value = parse_line(line)
+                key, value = ScenarioUtils.parse_line(line)
                 if key and value is None:
-                    # Detect new configuration sections (e.g., [Ruleset B]).
                     current_section = key
                     if current_section == active_ruleset:
-                        data[current_section] = {}
+                        config_data[current_section] = {}
                 elif key and value is not None and current_section == active_ruleset:
-                    # Check if the key matches the active ruleset and scenario type.
                     if symbol:
                         if key.startswith(symbol):
-                            if not matched_symbol:
-                                matched_symbol = True  # Mark the first match of the scenario type.
-                            data[current_section][key] = value
+                            matched_symbol = True
+                            config_data[current_section][key] = value
                         elif matched_symbol:
-                            # If a different scenario type is encountered after the first match, stop processing.
                             break
                     else:
-                        # If no specific scenario type is provided, all entries under the current section are included.
-                        data[current_section][key] = value
-        return data
+                        config_data[current_section][key] = value
+        return config_data
