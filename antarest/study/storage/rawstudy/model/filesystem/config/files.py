@@ -17,6 +17,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.exceptions import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import extract_filtering
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    DEFAULT_GROUP,
     Area,
     BindingConstraintDTO,
     DistrictSet,
@@ -224,8 +225,16 @@ def _parse_bindings(root: Path) -> t.List[BindingConstraintDTO]:
                 cluster_set.add(key)
                 area_set.add(key.split(".", 1)[0])
 
+        group = bind.get("group", DEFAULT_GROUP)
+
         output_list.append(
-            BindingConstraintDTO(id=bind["id"], areas=area_set, clusters=cluster_set, time_step=time_step)
+            BindingConstraintDTO(
+                id=bind["id"],
+                areas=area_set,
+                clusters=cluster_set,
+                time_step=time_step,
+                group=group,
+            )
         )
 
     return output_list
