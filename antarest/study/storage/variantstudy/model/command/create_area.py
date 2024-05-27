@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Tuple
+import typing as t
 
 from pydantic import Field
 
@@ -62,9 +62,9 @@ class CreateArea(ICommand):
     # we choose to declare it as an empty dictionary.
     # fixme: remove this attribute in the next version if it is not used by the "Script R" team,
     #  or if we don't want to support this feature.
-    metadata: Dict[str, str] = Field(default_factory=dict, description="Area metadata: country and tag list")
+    metadata: t.Dict[str, str] = Field(default_factory=dict, description="Area metadata: country and tag list")
 
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
         if self.command_context.generator_matrix_constants is None:
             raise ValueError()
 
@@ -93,11 +93,13 @@ class CreateArea(ICommand):
         )
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
-        output, data = self._apply_config(study_data.config)
+        config = study_data.config
+
+        output, data = self._apply_config(config)
         if not output.status:
             return output
         area_id = data["area_id"]
-        version = study_data.config.version
+        version = config.version
 
         hydro_config = study_data.tree.get(["input", "hydro", "hydro"])
         hydro_config.setdefault("inter-daily-breakdown", {})[area_id] = 1
@@ -105,10 +107,12 @@ class CreateArea(ICommand):
         hydro_config.setdefault("intra-daily-modulation", {})[area_id] = 24
         hydro_config.setdefault("inter-monthly-breakdown", {})[area_id] = 1
 
+        null_matrix = self.command_context.generator_matrix_constants.get_null_matrix()
+
         new_area_data: JSON = {
             "input": {
                 "areas": {
-                    "list": [area.name for area in study_data.config.areas.values()],
+                    "list": [area.name for area in config.areas.values()],
                     area_id: {
                         "optimization": {
                             "nodal optimization": {
@@ -155,14 +159,14 @@ class CreateArea(ICommand):
                     },
                     "prepro": {
                         area_id: {
-                            "energy": self.command_context.generator_matrix_constants.get_null_matrix(),
+                            "energy": null_matrix,
                             "prepro": {"prepro": {"intermonthly-correlation": 0.5}},
                         },
                     },
                     "series": {
                         area_id: {
-                            "mod": self.command_context.generator_matrix_constants.get_null_matrix(),
-                            "ror": self.command_context.generator_matrix_constants.get_null_matrix(),
+                            "mod": null_matrix,
+                            "ror": null_matrix,
                         },
                     },
                 },
@@ -172,9 +176,9 @@ class CreateArea(ICommand):
                         area_id: {
                             "conversion": self.command_context.generator_matrix_constants.get_prepro_conversion(),
                             "data": self.command_context.generator_matrix_constants.get_prepro_data(),
-                            "k": self.command_context.generator_matrix_constants.get_null_matrix(),
+                            "k": null_matrix,
                             "settings": {},
-                            "translation": self.command_context.generator_matrix_constants.get_null_matrix(),
+                            "translation": null_matrix,
                         }
                     },
                     "series": {
@@ -190,9 +194,9 @@ class CreateArea(ICommand):
                         area_id: {
                             "conversion": self.command_context.generator_matrix_constants.get_prepro_conversion(),
                             "data": self.command_context.generator_matrix_constants.get_prepro_data(),
-                            "k": self.command_context.generator_matrix_constants.get_null_matrix(),
+                            "k": null_matrix,
                             "settings": {},
-                            "translation": self.command_context.generator_matrix_constants.get_null_matrix(),
+                            "translation": null_matrix,
                         }
                     },
                     "series": {
@@ -213,9 +217,9 @@ class CreateArea(ICommand):
                         area_id: {
                             "conversion": self.command_context.generator_matrix_constants.get_prepro_conversion(),
                             "data": self.command_context.generator_matrix_constants.get_prepro_data(),
-                            "k": self.command_context.generator_matrix_constants.get_null_matrix(),
+                            "k": null_matrix,
                             "settings": {},
-                            "translation": self.command_context.generator_matrix_constants.get_null_matrix(),
+                            "translation": null_matrix,
                         }
                     },
                     "series": {
@@ -243,14 +247,11 @@ class CreateArea(ICommand):
             new_area_data["input"]["hydro"]["common"]["capacity"][
                 f"inflowPattern_{area_id}"
             ] = self.command_context.generator_matrix_constants.get_hydro_inflow_pattern()
-            new_area_data["input"]["hydro"]["common"]["capacity"][
-                f"waterValues_{area_id}"
-            ] = self.command_context.generator_matrix_constants.get_null_matrix()
+            new_area_data["input"]["hydro"]["common"]["capacity"][f"waterValues_{area_id}"] = null_matrix
 
-        if version >= 810 and study_data.config.enr_modelling == EnrModelling.CLUSTERS.value:
-            new_area_data["input"]["renewables"] = {
-                "clusters": {area_id: {"list": {}}},
-            }
+        has_renewables = config.version >= 810 and EnrModelling(config.enr_modelling) == EnrModelling.CLUSTERS
+        if has_renewables:
+            new_area_data["input"]["renewables"] = {"clusters": {area_id: {"list": {}}}}
 
         if version >= 830:
             new_area_data["input"]["areas"][area_id]["adequacy_patch"] = {
@@ -259,9 +260,7 @@ class CreateArea(ICommand):
 
         if version >= 860:
             new_area_data["input"]["st-storage"] = {"clusters": {area_id: {"list": {}}}}
-            new_area_data["input"]["hydro"]["series"][area_id][
-                "mingen"
-            ] = self.command_context.generator_matrix_constants.get_null_matrix()
+            new_area_data["input"]["hydro"]["series"][area_id]["mingen"] = null_matrix
 
         new_area_data["input"]["hydro"]["hydro"] = hydro_config
 
@@ -292,8 +291,8 @@ class CreateArea(ICommand):
             return False
         return self.area_name == other.area_name
 
-    def _create_diff(self, other: "ICommand") -> List["ICommand"]:
+    def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
         return []
 
-    def get_inner_matrices(self) -> List[str]:
+    def get_inner_matrices(self) -> t.List[str]:
         return []
