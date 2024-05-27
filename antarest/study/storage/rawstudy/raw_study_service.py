@@ -138,7 +138,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         Returns: true if study presents in disk, false else.
         """
         if study.archived:
-            archive_path = self.get_archive_path(study)
+            archive_path = self.find_archive_path(study)
             return archive_path.is_file()
 
         path = self.get_study_path(study)
@@ -373,7 +373,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         remove_from_cache(self.cache, study.id)
 
     def archive(self, study: RawStudy) -> Path:
-        archive_path = self.get_archive_path(study)
+        archive_path = self.create_archive_path(study)
         new_study_path = self.export_study(study, archive_path)
         shutil.rmtree(study.path)
         remove_from_cache(cache=self.cache, root_id=study.id)
@@ -391,12 +391,12 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         Raises:
             BadArchiveContent: If the archive is corrupted or in an unknown format.
         """
-        with open(self.get_archive_path(study), mode="rb") as fh:
+        with open(self.find_archive_path(study), mode="rb") as fh:
             self.import_study(study, fh)
 
-    def get_archive_path(self, study: RawStudy) -> Path:
+    def find_archive_path(self, study: RawStudy) -> Path:
         """
-        Get archive path of a study.
+        Fetch for archive path of a study if it exists else raise an incorrectly archived study.
 
         Args:
             study: The study to get the archive path for.
@@ -409,6 +409,19 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             path = archive_dir.joinpath(f"{study.id}{suffix}")
             if path.is_file():
                 return path
+        raise FileNotFoundError(f"Study {study.id} archiving process is corrupted (no archive file found).")
+
+    def create_archive_path(self, study: RawStudy) -> Path:
+        """
+        Create archive path of a study.
+
+        Args:
+            study: The study to get the archive path for.
+
+        Returns:
+            The full path of the archive file (7z).
+        """
+        archive_dir: Path = self.config.storage.archive_dir
         return archive_dir.joinpath(f"{study.id}.7z")
 
     def get_study_path(self, metadata: Study) -> Path:
@@ -421,7 +434,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
 
         """
         if metadata.archived:
-            return self.get_archive_path(metadata)
+            return self.find_archive_path(metadata)
         return Path(metadata.path)
 
     def initialize_additional_data(self, raw_study: RawStudy) -> bool:
