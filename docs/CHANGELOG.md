@@ -9,6 +9,7 @@ v2.17.1 (2024-05-29)
 * **launcher:** add new API endpoint `/v1/launcher/time-limit` and update `LauncherDialog` [`#2012`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2012)
 * **raw:** refactor aggregation endpoint [`#2031`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2031)
 * **ui-utils:** add overload signatures for validateNumber function in validationUtils [`#2029`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2029)
+* **desktop**: update Antares Web Desktop version [`#2036`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2036)
 
 
 ### Bug Fixes
