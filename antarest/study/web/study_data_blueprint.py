@@ -54,6 +54,7 @@ from antarest.study.business.general_management import GeneralFormFields
 from antarest.study.business.link_management import LinkInfoDTO
 from antarest.study.business.optimization_management import OptimizationFormFields
 from antarest.study.business.playlist_management import PlaylistColumns
+from antarest.study.business.scenario_builder_management import Rulesets
 from antarest.study.business.table_mode_management import TableDataDTO, TableModeType
 from antarest.study.business.thematic_trimming_field_infos import ThematicTrimmingFormFields
 from antarest.study.business.timeseries_config_management import TSFormFields
@@ -650,12 +651,12 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/config/scenariobuilder",
         tags=[APITag.study_data],
         summary="Get MC Scenario builder config",
-        response_model=t.Dict[str, t.Any],
+        response_model=Rulesets,
     )
     def get_scenario_builder_config(
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> t.Dict[str, t.Any]:
+    ) -> Rulesets:
         logger.info(
             f"Getting MC Scenario builder config for study {uuid}",
             extra={"user": current_user.id},
@@ -672,7 +673,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     )
     def update_scenario_builder_config(
         uuid: str,
-        data: t.Dict[str, t.Any],
+        data: Rulesets,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
         logger.info(

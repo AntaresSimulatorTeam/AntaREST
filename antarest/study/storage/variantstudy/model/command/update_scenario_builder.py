@@ -1,6 +1,5 @@
 from typing import Any, Dict, List, Tuple
 
-from antarest.core.utils.dict import merge_deep
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
@@ -25,19 +24,34 @@ class UpdateScenarioBuilder(ICommand):
     data: Dict[str, Any]
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
-        def remove_rand_values(obj: Dict[str, Any]) -> Dict[str, Any]:
-            return {k: v for k, v in obj.items() if v != ""}
+        """
+        Apply the command to the study data.
 
+        This method updates the current configuration of the scenario builder data.
+        It adds, modifies, or removes section values based on the command's data.
+        The changes are saved to the study's tree structure.
+
+        Args:
+            study_data: The study data to which the command will be applied.
+
+        Returns:
+            CommandOutput: The output of the command, indicating the status of the operation.
+        """
         url = ["settings", "scenariobuilder"]
-        prev = study_data.tree.get(url)
-        new_config = {
-            # The value `v` is a string when it is a ruleset cloning
-            k: remove_rand_values(v if isinstance(v, dict) else prev[v])
-            for k, v in merge_deep(prev, self.data).items()
-            # Deleted rulesets have an empty string
-            if v != ""
-        }
-        study_data.tree.save(new_config, url)
+
+        curr_cfg = study_data.tree.get(url)
+        for section_name, section in list(self.data.items()):
+            if section:
+                curr_section = curr_cfg.setdefault(section_name, {})
+                for key, value in section.items():
+                    if isinstance(value, (int, float)) and value != float("nan"):
+                        curr_section[key] = value
+                    else:
+                        curr_section.pop(key, None)
+            else:
+                curr_cfg.pop(section_name, None)
+
+        study_data.tree.save(curr_cfg, url)
         return CommandOutput(status=True)
 
     def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
@@ -46,9 +60,7 @@ class UpdateScenarioBuilder(ICommand):
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
             action=CommandName.UPDATE_SCENARIO_BUILDER.value,
-            args={
-                "data": self.data,
-            },
+            args={"data": self.data},
         )
 
     def match_signature(self) -> str:

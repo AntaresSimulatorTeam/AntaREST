@@ -128,11 +128,12 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
                 "l": {"area1": {"0": 1}},
                 "ntc": {"area1 / area2": {"1": 23}},
                 "t": {"area1": {"thermal": {"1": 2}}},
+                "hl": {"area1": {"0": 75}},
             },
-            "Default Ruleset": "",
+            "Default Ruleset": {},
         },
     )
-    assert res.status_code == 200
+    assert res.status_code == 200, res.json()
 
     res = client.get(
         f"/v1/studies/{study_id}/config/scenariobuilder",
@@ -144,6 +145,7 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
             "l": {"area1": {"0": 1}},
             "ntc": {"area1 / area2": {"1": 23}},
             "t": {"area1": {"thermal": {"1": 2}}},
+            "hl": {"area1": {"0": 75}},
         },
     }
 
