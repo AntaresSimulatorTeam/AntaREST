@@ -1,5 +1,4 @@
 import { ReactNode, useState } from "react";
-import { AxiosError } from "axios";
 import {
   Box,
   Divider,
@@ -14,8 +13,6 @@ import {
   Typography,
   Button,
 } from "@mui/material";
-import debug from "debug";
-import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import UploadOutlinedIcon from "@mui/icons-material/UploadOutlined";
@@ -23,13 +20,10 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import DownloadIcon from "@mui/icons-material/Download";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
-import useEnqueueErrorSnackbar from "../../hooks/useEnqueueErrorSnackbar";
 import ConfirmationDialog from "./dialogs/ConfirmationDialog";
 import { GenericInfo } from "../../common/types";
 import DownloadLink from "./DownloadLink";
 import ImportDialog from "./dialogs/ImportDialog";
-
-const logErr = debug("antares:createimportform:error");
 
 interface PropType {
   title: ReactNode;
@@ -45,9 +39,6 @@ interface PropType {
 }
 
 function FileTable(props: PropType) {
-  const [t] = useTranslation();
-  const { enqueueSnackbar } = useSnackbar();
-  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const {
     title,
     content,
@@ -60,23 +51,9 @@ function FileTable(props: PropType) {
     allowDelete,
     copyId,
   } = props;
+  const [t] = useTranslation();
   const [openConfirmationModal, setOpenConfirmationModal] = useState("");
   const [openImportDialog, setOpenImportDialog] = useState(false);
-
-  const onImport = async (file: File) => {
-    try {
-      if (uploadFile) {
-        await uploadFile(file);
-      }
-    } catch (e) {
-      logErr("Failed to import file", file, e);
-      enqueueErrorSnackbar(t("studies.error.saveData"), e as AxiosError);
-    } finally {
-      enqueueSnackbar(t("studies.success.saveData"), {
-        variant: "success",
-      });
-    }
-  };
 
   return (
     <Box
@@ -238,8 +215,8 @@ function FileTable(props: PropType) {
       {openImportDialog && (
         <ImportDialog
           open={openImportDialog}
-          onClose={() => setOpenImportDialog(false)}
-          onImport={onImport}
+          onCancel={() => setOpenImportDialog(false)}
+          onImport={async (file) => uploadFile?.(file)}
         />
       )}
     </Box>
