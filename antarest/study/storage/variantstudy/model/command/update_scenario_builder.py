@@ -74,6 +74,10 @@ class UpdateScenarioBuilder(ICommand):
         if active_rules_scenario:
             curr_cfg.setdefault(active_rules_scenario, {})
 
+        # Ensure keys are sorted in each section (to improve reading performance).
+        for section_name, section in curr_cfg.items():
+            curr_cfg[section_name] = dict(sorted(section.items()))
+
         study_data.tree.save(curr_cfg, url)  # type: ignore
         return CommandOutput(status=True)
 
