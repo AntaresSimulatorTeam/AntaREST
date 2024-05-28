@@ -20,6 +20,7 @@ from typing import Callable
 from unittest.mock import Mock
 from zipfile import ZIP_DEFLATED, ZipFile
 
+import py7zr
 import pytest
 
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
@@ -464,7 +465,7 @@ def test_copy_study(
 
 
 @pytest.mark.unit_test
-def test_zipped_output(tmp_path: Path) -> None:
+def test_archived_output(tmp_path: Path) -> None:
     if not platform.platform().startswith("Windows"):
         os.environ["TZ"] = "Europe/Paris"  # set new timezone
         time.tzset()
@@ -484,10 +485,9 @@ def test_zipped_output(tmp_path: Path) -> None:
 
     md = RawStudy(id=name, workspace="foo", path=str(study_path))
 
-    zipped_output = tmp_path / "output.zip"
-    with ZipFile(zipped_output, "w", ZIP_DEFLATED) as output_data:
+    archived_output = tmp_path / "output.7z"
+    with py7zr.SevenZipFile(archived_output, "w") as output_data:
         output_data.writestr(
-            "info.antares-output",
             """[general]
 version = 700
 name = 11mc
@@ -496,32 +496,33 @@ date = 2020.09.07 - 16:15
 title = 2020.09.07 - 16:15
 timestamp = 1599488150
         """,
+            "info.antares-output",
         )
 
     expected_output_name = "20200907-1615eco-11mc"
-    output_name = study_service.import_output(md, zipped_output)
+    output_name = study_service.import_output(md, archived_output)
     if output_name != expected_output_name:
         # because windows sucks...
         expected_output_name = "20200907-1415eco-11mc"
     assert output_name == expected_output_name
-    assert (study_path / "output" / (expected_output_name + ".zip")).exists()
+    assert (study_path / "output" / (expected_output_name + ".7z")).exists()
 
     study_service.unarchive_study_output(md, expected_output_name, False)
     assert (study_path / "output" / expected_output_name).exists()
-    assert not (study_path / "output" / (expected_output_name + ".zip")).exists()
+    assert not (study_path / "output" / (expected_output_name + ".7z")).exists()
     study_service.delete_output(md, output_name)
     assert not (study_path / "output" / expected_output_name).exists()
 
-    output_name = study_service.import_output(md, zipped_output)
+    output_name = study_service.import_output(md, archived_output)
     study_service.unarchive_study_output(md, expected_output_name, True)
-    assert (study_path / "output" / (expected_output_name + ".zip")).exists()
-    os.unlink(study_path / "output" / (expected_output_name + ".zip"))
-    assert not (study_path / "output" / (expected_output_name + ".zip")).exists()
+    assert (study_path / "output" / (expected_output_name + ".7z")).exists()
+    os.unlink(study_path / "output" / (expected_output_name + ".7z"))
+    assert not (study_path / "output" / (expected_output_name + ".7z")).exists()
     study_service.archive_study_output(md, expected_output_name)
     assert not (study_path / "output" / expected_output_name).exists()
-    assert (study_path / "output" / (expected_output_name + ".zip")).exists()
+    assert (study_path / "output" / (expected_output_name + ".7z")).exists()
     study_service.delete_output(md, output_name)
-    assert not (study_path / "output" / (expected_output_name + ".zip")).exists()
+    assert not (study_path / "output" / (expected_output_name + ".7z")).exists()
 
 
 @pytest.mark.unit_test
