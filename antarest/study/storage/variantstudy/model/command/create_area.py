@@ -25,9 +25,9 @@ def _generate_new_thermal_areas_ini(
 ) -> JSON:
     new_areas: JSON = file_study.tree.get(["input", "thermal", "areas"])
     if unserverdenergycost is not None:
-        new_areas["unserverdenergycost"][area_id] = unserverdenergycost
+        new_areas.setdefault("unserverdenergycost", {})[area_id] = unserverdenergycost
     if spilledenergycost is not None:
-        new_areas["spilledenergycost"][area_id] = spilledenergycost
+        new_areas.setdefault("spilledenergycost", {})[area_id] = spilledenergycost
     return new_areas
 
 
