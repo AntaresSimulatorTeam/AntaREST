@@ -1,4 +1,4 @@
-import { ComponentType, useContext, useEffect, useMemo, useState } from "react";
+import { ComponentType, useEffect, useMemo, useState } from "react";
 import { Box } from "@mui/material";
 import SplitView from "../../../../../../../common/SplitView";
 import PropertiesView from "../../../../../../../common/PropertiesView";
@@ -9,11 +9,12 @@ import {
   ScenarioType,
   ClustersHandlerReturn,
   getConfigByScenario,
+  ScenarioConfig,
 } from "./utils";
-import { ScenarioBuilderContext } from "./ScenarioBuilderContext";
 
 interface ScenarioTableProps {
   type: ScenarioType;
+  config: ScenarioConfig;
   areaId?: string;
 }
 
@@ -35,8 +36,11 @@ function withAreas(
     }
   >,
 ) {
-  return function TableWithAreas({ type, ...props }: ScenarioTableProps) {
-    const { config } = useContext(ScenarioBuilderContext);
+  return function TableWithAreas({
+    type,
+    config,
+    ...props
+  }: ScenarioTableProps) {
     const [selectedAreaId, setSelectedAreaId] = useState("");
     const [areas, setAreas] = useState<string[]>([]);
     const [configByArea, setConfigByArea] = useState<

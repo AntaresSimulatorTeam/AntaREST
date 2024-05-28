@@ -1,7 +1,5 @@
-import { useContext } from "react";
 import { useTranslation } from "react-i18next";
 import TableForm from "../../../../../../../common/TableForm";
-import { ScenarioBuilderContext } from "./ScenarioBuilderContext";
 import {
   GenericScenarioConfig,
   ScenarioType,
@@ -11,7 +9,9 @@ import {
 import { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
 import SimpleContent from "../../../../../../../common/page/SimpleContent";
 import useEnqueueErrorSnackbar from "../../../../../../../../hooks/useEnqueueErrorSnackbar";
-import { AxiosError } from "axios";
+import { toError } from "../../../../../../../../utils/fnUtils";
+import { useOutletContext } from "react-router";
+import { StudyMetadata } from "../../../../../../../../common/types";
 
 interface Props {
   config: GenericScenarioConfig | ClustersHandlerReturn;
@@ -22,14 +22,14 @@ interface Props {
 function Table({ config, type, areaId }: Props) {
   const { t } = useTranslation();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
-  const { studyId } = useContext(ScenarioBuilderContext);
+  const { study } = useOutletContext<{ study: StudyMetadata }>();
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = async ({ dirtyValues }: SubmitHandlerPlus) => {
-    const newData = {
+    const updatedScenario = {
       [type]:
         (type === "thermal" || type === "renewable") && areaId
           ? { [areaId]: dirtyValues }
@@ -37,13 +37,13 @@ function Table({ config, type, areaId }: Props) {
     };
 
     try {
-      await updateScenarioBuilderConfig(studyId, newData);
+      await updateScenarioBuilderConfig(study.id, updatedScenario, type);
     } catch (error) {
       enqueueErrorSnackbar(
         t("study.configuration.general.mcScenarioBuilder.update.error", {
           type,
         }),
-        error as AxiosError,
+        toError(error),
       );
     }
   };

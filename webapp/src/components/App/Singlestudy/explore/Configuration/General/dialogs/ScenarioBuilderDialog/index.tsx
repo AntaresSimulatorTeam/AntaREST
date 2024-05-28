@@ -1,22 +1,14 @@
 import { TabContext, TabList, TabListProps, TabPanel } from "@mui/lab";
 import { Box, Button, Tab, Skeleton } from "@mui/material";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { StudyMetadata } from "../../../../../../../../common/types";
-import usePromise from "../../../../../../../../hooks/usePromise";
 import BasicDialog from "../../../../../../../common/dialogs/BasicDialog";
 import Table from "./Table";
-import {
-  getScenarioConfigByType,
-  ScenarioBuilderConfig,
-  SCENARIOS,
-  ScenarioType,
-} from "./utils";
-import { ScenarioBuilderContext } from "./ScenarioBuilderContext";
+import { getScenarioConfigByType, SCENARIOS, ScenarioType } from "./utils";
 import UsePromiseCond from "../../../../../../../common/utils/UsePromiseCond";
-import useEnqueueErrorSnackbar from "../../../../../../../../hooks/useEnqueueErrorSnackbar";
-import { AxiosError } from "axios";
 import withAreas from "./withAreas";
+import usePromiseWithSnackbarError from "../../../../../../../../hooks/usePromiseWithSnackbarError";
 
 interface Props {
   study: StudyMetadata;
@@ -29,23 +21,18 @@ const EnhancedTable = withAreas(Table);
 
 function ScenarioBuilderDialog({ study, open, onClose }: Props) {
   const { t } = useTranslation();
-  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
-  const [config, setConfig] = useState<ScenarioBuilderConfig>({});
   const [selectedScenario, setSelectedScenario] = useState<ScenarioType>(
     SCENARIOS[0],
   );
 
-  const scenarioConfig = usePromise(async () => {
-    try {
-      const config = await getScenarioConfigByType(study.id, selectedScenario);
-      setConfig(config);
-    } catch (error) {
-      enqueueErrorSnackbar(
+  const config = usePromiseWithSnackbarError(
+    () => getScenarioConfigByType(study.id, selectedScenario),
+    {
+      errorMessage: t(
         "study.configuration.general.mcScenarioBuilder.noConfig.error",
-        error as AxiosError,
-      );
-    }
-  }, [study.id, t, enqueueErrorSnackbar]);
+      ),
+    },
+  );
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -53,20 +40,8 @@ function ScenarioBuilderDialog({ study, open, onClose }: Props) {
 
   const handleScenarioChange: TabListProps["onChange"] = (_, type) => {
     setSelectedScenario(type);
-    scenarioConfig.reload();
+    config.reload();
   };
-
-  ////////////////////////////////////////////////////////////////
-  // Utils
-  ////////////////////////////////////////////////////////////////
-
-  const scenarioBuilderContext = useMemo(
-    () => ({
-      config,
-      studyId: study.id,
-    }),
-    [config, study.id],
-  );
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -77,45 +52,43 @@ function ScenarioBuilderDialog({ study, open, onClose }: Props) {
       title={t("study.configuration.general.mcScenarioBuilder")}
       open={open}
       onClose={onClose}
-      actions={<Button onClick={onClose}>{t("button.close")}</Button>}
+      actions={<Button onClick={onClose}>{t("global.close")}</Button>}
       maxWidth="xl"
       fullWidth
       contentProps={{
         sx: { p: 1, height: "95vh", width: 1 },
       }}
     >
-      <ScenarioBuilderContext.Provider value={scenarioBuilderContext}>
-        <TabContext value={selectedScenario}>
-          <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
-            <TabList onChange={handleScenarioChange}>
-              {SCENARIOS.map((type) => (
-                <Tab
-                  key={type}
-                  value={type}
-                  label={t(
-                    `study.configuration.general.mcScenarioBuilder.tab.${type}`,
-                  )}
-                />
-              ))}
-            </TabList>
-          </Box>
-          {SCENARIOS.map((type) => (
-            <TabPanel
-              key={type}
-              value={type}
-              sx={{ px: 1, height: 1, overflow: "auto" }}
-            >
-              <UsePromiseCond
-                response={scenarioConfig}
-                ifResolved={() => <EnhancedTable type={type} />}
-                ifPending={() => (
-                  <Skeleton sx={{ height: 1, transform: "none" }} />
+      <TabContext value={selectedScenario}>
+        <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
+          <TabList onChange={handleScenarioChange}>
+            {SCENARIOS.map((type) => (
+              <Tab
+                key={type}
+                value={type}
+                label={t(
+                  `study.configuration.general.mcScenarioBuilder.tab.${type}`,
                 )}
               />
-            </TabPanel>
-          ))}
-        </TabContext>
-      </ScenarioBuilderContext.Provider>
+            ))}
+          </TabList>
+        </Box>
+        {SCENARIOS.map((type) => (
+          <TabPanel
+            key={type}
+            value={type}
+            sx={{ px: 1, height: 1, overflow: "auto" }}
+          >
+            <UsePromiseCond
+              response={config}
+              ifResolved={(data) => <EnhancedTable type={type} config={data} />}
+              ifPending={() => (
+                <Skeleton sx={{ height: 1, transform: "none" }} />
+              )}
+            />
+          </TabPanel>
+        ))}
+      </TabContext>
     </BasicDialog>
   );
 }
