@@ -119,18 +119,27 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
     assert res.status_code == 200
     assert res.json() == {"1": 8.0, "2": 1.0}
 
+    # Update the active ruleset
+    active_ruleset_name = "ruleset test"
+    res = client.post(
+        f"/v1/studies/{study_id}/raw?path=settings/generaldata/general/active-rules-scenario",
+        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
+        json=active_ruleset_name.title(),  # ruleset names are case-insensitive
+    )
+    assert res.status_code == 204
+
     # scenario builder
     res = client.put(
         f"/v1/studies/{study_id}/config/scenariobuilder",
         headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
         json={
-            "ruleset test": {
+            active_ruleset_name: {
                 "l": {"area1": {"0": 1}},
                 "ntc": {"area1 / area2": {"1": 23}},
                 "t": {"area1": {"thermal": {"1": 2}}},
                 "hl": {"area1": {"0": 75}},
             },
-            "Default Ruleset": {},
+            "Default Ruleset": {},  # should be removed
         },
     )
     assert res.status_code == 200, res.json()
@@ -141,7 +150,7 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
     )
     assert res.status_code == 200
     assert res.json() == {
-        "ruleset test": {
+        active_ruleset_name: {
             "l": {"area1": {"0": 1}},
             "ntc": {"area1 / area2": {"1": 23}},
             "t": {"area1": {"thermal": {"1": 2}}},
