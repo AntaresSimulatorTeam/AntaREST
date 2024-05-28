@@ -24,7 +24,7 @@ function Matrix({ study, operator, constraintId, open, onClose }: Props) {
     onClose,
     actions: (
       <Button onClick={onClose} color="primary" variant="outlined" size="small">
-        {t("button.close")}
+        {t("global.close")}
       </Button>
     ),
   };

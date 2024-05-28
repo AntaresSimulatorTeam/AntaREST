@@ -98,7 +98,7 @@ function ScenarioBuilderDialog(props: Props) {
       title={t("study.configuration.general.mcScenarioBuilder")}
       open={open}
       onClose={onClose}
-      actions={<Button onClick={onClose}>{t("button.close")}</Button>}
+      actions={<Button onClick={onClose}>{t("global.close")}</Button>}
       maxWidth="md"
       fullWidth
       PaperProps={{
