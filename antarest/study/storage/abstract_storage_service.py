@@ -51,6 +51,14 @@ from antarest.study.storage.utils import extract_output_name, fix_study_root, re
 logger = logging.getLogger(__name__)
 
 
+def find_output_archive(study: T, output_id: str) -> t.Optional[Path]:
+    if (Path(study.path) / "output" / f"{output_id}.7z").exists():
+        return Path(study.path) / "output" / f"{output_id}.7z"
+    elif (Path(study.path) / "output" / f"{output_id}.zip").exists():
+        return Path(study.path) / "output" / f"{output_id}.zip"
+    return None
+
+
 class AbstractStorageService(IStudyStorageService[T], ABC):
     def __init__(
         self,
@@ -244,17 +252,19 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         study_id = metadata.id
         path_output.mkdir(parents=True)
         output_full_name: t.Optional[str]
-        is_zipped = False
+        is_archived = False
+        extension = ""
         stopwatch = StopWatch()
         try:
             if isinstance(output, Path):
-                if output != path_output and output.suffix != ArchiveFormat.ZIP:
+                if output != path_output and output.suffix not in {".zip", ".7z"}:
                     shutil.copytree(output, path_output / "imported")
-                elif output.suffix == ArchiveFormat.ZIP:
-                    is_zipped = True
+                elif output.suffix in {".zip", ".7z"}:
+                    is_archived = True
                     path_output.rmdir()
-                    path_output = Path(str(path_output) + f"{ArchiveFormat.ZIP}")
+                    path_output = Path(str(path_output) + output.suffix)
                     shutil.copyfile(output, path_output)
+                    extension = ".zip" if output.suffix == ".zip" else ".7z"
             else:
                 extract_archive(output, path_output)
 
@@ -273,7 +283,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         except Exception as e:
             logger.error("Failed to import output", exc_info=e)
             shutil.rmtree(path_output, ignore_errors=True)
-            if is_zipped:
+            if is_archived:
                 Path(str(path_output) + f"{ArchiveFormat.ZIP}").unlink(missing_ok=True)
             output_full_name = None
 
@@ -337,11 +347,12 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
 
     def archive_study_output(self, study: T, output_id: str) -> bool:
         try:
+            # use 7zip to compress the output folder
             archive_dir(
                 Path(study.path) / "output" / output_id,
-                Path(study.path) / "output" / f"{output_id}{ArchiveFormat.ZIP}",
+                Path(study.path) / "output" / f"{output_id}{ArchiveFormat.SEVEN_ZIP}",
                 remove_source_dir=True,
-                archive_format=ArchiveFormat.ZIP,
+                archive_format=ArchiveFormat.SEVEN_ZIP,
             )
             remove_from_cache(self.cache, study.id)
             return True
@@ -352,18 +363,26 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
             )
             return False
 
-    def unarchive_study_output(self, study: T, output_id: str, keep_src_zip: bool) -> bool:
-        if not (Path(study.path) / "output" / f"{output_id}{ArchiveFormat.ZIP}").exists():
+    def unarchive_study_output(self, study: T, output_id: str, keep_src_archive: bool) -> bool:
+        archive_path = find_output_archive(study, output_id)
+        if archive_path is None:
             logger.warning(
                 f"Failed to archive study {study.name} output {output_id}. Maybe it's already unarchived",
             )
             return False
         try:
-            unzip(
-                Path(study.path) / "output" / output_id,
-                Path(study.path) / "output" / f"{output_id}{ArchiveFormat.ZIP}",
-                remove_source_zip=not keep_src_zip,
-            )
+            # use 7zip to uncompress the output folder
+            if archive_path.suffix == ".7z":
+                with py7zr.SevenZipFile(archive_path, "r") as szf:
+                    szf.extractall(Path(study.path) / "output" / output_id)
+                if not keep_src_archive:
+                    archive_path.unlink()
+            else:
+                unzip(
+                    Path(study.path) / "output" / output_id,
+                    Path(study.path) / "output" / f"{output_id}{ArchiveFormat.ZIP}",
+                    remove_source_zip=not keep_src_archive,
+                )
             remove_from_cache(self.cache, study.id)
             return True
         except Exception as e:
