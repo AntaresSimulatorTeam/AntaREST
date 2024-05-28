@@ -13,7 +13,7 @@ from antarest.core.exceptions import StudyDeletionNotAllowed
 from antarest.core.interfaces.cache import ICache
 from antarest.core.model import PublicMode
 from antarest.core.requests import RequestParameters
-from antarest.core.utils.utils import extract_zip
+from antarest.core.utils.utils import extract_archive
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, Patch, RawStudy, Study, StudyAdditionalData
 from antarest.study.storage.abstract_storage_service import AbstractStorageService
 from antarest.study.storage.patch_service import PatchService
@@ -290,6 +290,8 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         output_path = study_path / "output" / output_name
         if output_path.exists() and output_path.is_dir():
             shutil.rmtree(output_path, ignore_errors=True)
+        elif (output_path.parent / f"{output_name}.7z").exists():
+            (output_path.parent / f"{output_name}.7z").unlink(missing_ok=True)
         else:
             output_path = output_path.parent / f"{output_name}.zip"
             output_path.unlink(missing_ok=True)
@@ -313,7 +315,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         path_study.mkdir()
 
         try:
-            extract_zip(stream, path_study)
+            extract_archive(stream, path_study)
             fix_study_root(path_study)
             self.update_from_raw_meta(metadata)
 
