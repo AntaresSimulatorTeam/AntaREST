@@ -304,6 +304,8 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         output_path = study_path / "output" / output_name
         if output_path.exists() and output_path.is_dir():
             shutil.rmtree(output_path, ignore_errors=True)
+        elif (output_path.parent / f"{output_name}.7z").exists():
+            (output_path.parent / f"{output_name}.7z").unlink(missing_ok=True)
         else:
             output_path = output_path.parent / f"{output_name}.zip"
             output_path.unlink(missing_ok=True)

@@ -23,6 +23,8 @@ from pathlib import Path
 from uuid import uuid4
 from zipfile import ZipFile
 
+import py7zr
+
 from antares.study.version import StudyVersion
 
 from antarest.core.exceptions import StudyValidationError, UnsupportedStudyVersion
@@ -79,12 +81,12 @@ def fix_study_root(study_path: Path) -> None:
     Args:
         study_path: the study initial root path
     """
-    # TODO: what if it is a zipped output ?
-    if is_archive_format(study_path.suffix):
+    # TODO: what if it is a archived output ?
+    if study_path.suffix in {".zip", ".7z"}:
         return None
 
     if not study_path.is_dir():
-        raise StudyValidationError("Not a directory: '{study_path}'")
+        raise StudyValidationError(f"Not a directory: '{study_path}'")
 
     root_path = study_path
     contents = os.listdir(root_path)
@@ -125,13 +127,17 @@ def is_output_archived(path_output: Path) -> bool:
 
 def extract_output_name(path_output: Path, new_suffix_name: t.Optional[str] = None) -> str:
     ini_reader = IniReader()
-    archived = is_output_archived(path_output)
-    if archived:
+    is_output_archived = path_output.suffix in {".zip", ".7z"}
+    if is_output_archived:
         temp_dir = tempfile.TemporaryDirectory()
         s = StopWatch()
-        with ZipFile(path_output, "r") as zip_obj:
-            zip_obj.extract("info.antares-output", temp_dir.name)
-            info_antares_output = ini_reader.read(Path(temp_dir.name) / "info.antares-output")
+        if path_output.suffix == ".zip":
+            with ZipFile(path_output, "r") as zip_obj:
+                zip_obj.extract("info.antares-output", temp_dir.name)
+        else:
+            with py7zr.SevenZipFile(path_output, mode="r") as archive:
+                archive.extract(targets=["info.antares-output"], path=temp_dir.name)
+        info_antares_output = ini_reader.read(Path(temp_dir.name) / "info.antares-output")
         s.log_elapsed(lambda x: logger.info(f"info.antares_output has been read in {x}s"))
         temp_dir.cleanup()
 
