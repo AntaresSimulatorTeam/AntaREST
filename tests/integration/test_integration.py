@@ -158,6 +158,9 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
         },
     }
 
+    # Keys must be sorted in each section (to improve reading performance).
+    assert list(res.json()[active_ruleset_name]) == ["hl", "l", "ntc", "t"]
+
     # config / thematic trimming
     res = client.get(
         f"/v1/studies/{study_id}/config/thematictrimming/form",
