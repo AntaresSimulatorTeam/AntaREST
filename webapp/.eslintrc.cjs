@@ -46,6 +46,7 @@ module.exports = {
     curly: "error",
     "jsdoc/no-defaults": "off",
     "jsdoc/require-jsdoc": "off",
+    "jsdoc/require-hyphen-before-param-description": "warn",
     "jsdoc/tag-lines": ["warn", "any", { startLines: 1 }], // Expected 1 line after block description
     "no-console": "warn",
     "no-param-reassign": [

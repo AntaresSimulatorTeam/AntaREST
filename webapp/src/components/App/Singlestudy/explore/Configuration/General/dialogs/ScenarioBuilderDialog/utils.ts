@@ -23,24 +23,79 @@ export type ScenarioType = (typeof SCENARIOS)[number];
 // Types
 ////////////////////////////////////////////////////////////////
 
-// Represents values that can be either a number or an uninitialized string (rand).
+/**
+ * Represents yearly configuration values, which can be either a numerical value or an uninitialized (rand) value represented as an empty string.
+ *
+ * @example
+ * { "0": 120, "1": "", "2": 150 }
+ */
 export type YearlyValues = number | "";
-export type ElementConfig = Record<string, YearlyValues>;
-// General configuration format for scenarios using areas as element IDs.
-export type GenericScenarioConfig = Record<string, ElementConfig>;
 
+/**
+ * Maps area identifiers to their configuration, each configuration being a series of values or uninitialized (rand) values.
+ *
+ * @example
+ * { "Area1": { "0": 10, "1": 20, "2": 15, "3": "", "4": 50 } }
+ */
+export type AreaConfig = Record<string, YearlyValues>;
+
+/**
+ * Maps cluster identifiers to their configurations within an area, similar to AreaConfig but used at the cluster level.
+ *
+ * @example
+ * { "Cluster1": { "0": 5, "1": "", "2": 20, "3": 30, "4": "" } }
+ */
 export type ClusterConfig = Record<string, YearlyValues>;
-export type AreaClustersConfig = Record<string, ClusterConfig>;
-// Full configuration for scenarios involving multiple clusters per area.
-export type ClustersScenarioConfig = Record<string, AreaClustersConfig>;
+
+/**
+ * Represents configuration for multiple clusters within each area.
+ *
+ * @example
+ * {
+ *   "Area1": {
+ *     "Cluster1": { "0": 10, "1": "", "2": 30 },
+ *     "Cluster2": { "0": 5, "1": 25, "2": "" }
+ *   }
+ * }
+ */
+export type ClustersConfig = Record<string, ClusterConfig>;
+
+/**
+ * General configuration format for scenarios using single areas as elements.
+ * Each scenario type maps to its specific areas configuration.
+ *
+ * @example
+ * {
+ *   "load": {
+ *     "Area1": { "0": 15, "1": 255, "2": "", "3": "", "4": "", "5": "" },
+ *     "Area2": { "0": 15, "1": 255, "2": "", "3": "", "4": "", "5": "" }
+ *   }
+ * }
+ */
+export type GenericScenarioConfig = Record<string, AreaConfig>;
+
+/**
+ * Full configuration format for scenarios involving multiple clusters per area.
+ *
+ * @example
+ * {
+ *   "thermal": {
+ *     "Area1": {
+ *       "Cluster1": { "0": 10, "1": "", "2": 30 },
+ *       "Cluster2": { "0": 5, "1": 25, "2": "" }
+ *     }
+ *   }
+ * }
+ */
+export type ClustersScenarioConfig = Record<string, ClustersConfig>;
 
 export interface ClustersHandlerReturn {
   areas: string[];
-  clusters: Record<string, AreaClustersConfig>;
+  clusters: Record<string, ClustersConfig>;
 }
 
 // General structure for ruleset configurations covering all scenarios.
-export interface RulesetConfig {
+export interface ScenarioConfig {
   load?: GenericScenarioConfig;
   thermal?: ClustersScenarioConfig;
   hydro?: GenericScenarioConfig;
@@ -52,10 +107,8 @@ export interface RulesetConfig {
 }
 
 type NonNullableRulesetConfig = {
-  [K in keyof RulesetConfig]-?: NonNullable<RulesetConfig[K]>;
+  [K in keyof ScenarioConfig]-?: NonNullable<ScenarioConfig[K]>;
 };
-
-export type ScenarioBuilderConfig = Record<string, RulesetConfig>;
 
 type ConfigHandler<T, U = T> = (config: T) => U;
 
@@ -89,7 +142,7 @@ const handlers: {
 /**
  * Handles generic scenario configurations by reducing key-value pairs into a single object.
  *
- * @param config The initial scenario configuration object.
+ * @param config - The initial scenario configuration object.
  * @returns The processed configuration object.
  */
 function handleGenericConfig(
@@ -107,7 +160,7 @@ function handleGenericConfig(
 /**
  * Processes clusters based configurations to separate areas and clusters.
  *
- * @param config The initial clusters based scenario configuration.
+ * @param config - The initial clusters based scenario configuration.
  * @returns Object containing separated areas and cluster configurations.
  */
 function handleClustersConfig(
@@ -126,12 +179,12 @@ function handleClustersConfig(
 /**
  * Retrieves and processes the configuration for a specific scenario within a ruleset.
  *
- * @param config Full configuration mapping by ruleset.
- * @param scenario The specific scenario type to retrieve.
+ * @param config - Full configuration mapping by ruleset.
+ * @param scenario - The specific scenario type to retrieve.
  * @returns The processed configuration or undefined if not found.
  */
-export function getConfigByScenario<K extends keyof RulesetConfig>(
-  config: RulesetConfig,
+export function getConfigByScenario<K extends keyof ScenarioConfig>(
+  config: ScenarioConfig,
   scenario: K,
 ): HandlerReturnTypes[K] | undefined {
   const scenarioConfig = config[scenario];
@@ -147,32 +200,23 @@ export function getConfigByScenario<K extends keyof RulesetConfig>(
 // API
 ////////////////////////////////////////////////////////////////
 
-export async function getScenarioBuilderConfig(studyId: StudyMetadata["id"]) {
-  const res = await client.get<ScenarioBuilderConfig>(
-    `v1/studies/${studyId}/config/scenariobuilder`,
-  );
-  return res.data;
-}
-
 export async function getScenarioConfigByType(
   studyId: StudyMetadata["id"],
   scenarioType: ScenarioType,
 ) {
-  const res = await client.get<ScenarioBuilderConfig>(
-    `v1/studies/${studyId}/config/scenariobuilder`,
-    {
-      params: { scenarioType },
-    },
+  const res = await client.get<ScenarioConfig>(
+    `v1/studies/${studyId}/config/scenariobuilder/${scenarioType}`,
   );
   return res.data;
 }
 
 export function updateScenarioBuilderConfig(
   studyId: StudyMetadata["id"],
-  data: Partial<ScenarioBuilderConfig>,
+  data: Partial<ScenarioConfig>,
+  scenarioType: ScenarioType,
 ) {
   return client.put<AxiosResponse<null, string>>(
-    `v1/studies/${studyId}/config/scenariobuilder`,
+    `v1/studies/${studyId}/config/scenariobuilder/${scenarioType}`,
     data,
   );
 }
