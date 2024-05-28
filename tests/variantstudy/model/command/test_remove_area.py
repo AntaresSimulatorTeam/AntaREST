@@ -53,7 +53,7 @@ class TestRemoveArea:
         area_id = transform_name_to_id(area_name)
         create_area_command: ICommand = CreateArea(area_name=area_name, command_context=command_context)
         output = create_area_command.apply(study_data=empty_study)
-        assert output.status
+        assert output.status, output.message
 
         create_district_command = CreateDistrict(
             name="foo",
@@ -62,7 +62,7 @@ class TestRemoveArea:
             command_context=command_context,
         )
         output = create_district_command.apply(study_data=empty_study)
-        assert output.status
+        assert output.status, output.message
 
         # Change the MC years to 5 to test the scenario builder data
         empty_study.tree.save(5, ["settings", "generaldata", "general", "nbyears"])
@@ -75,7 +75,7 @@ class TestRemoveArea:
                 command_context=command_context,
             )
             output = update_config.apply(study_data=empty_study)
-            assert output.status
+            assert output.status, output.message
 
         ########################################################################################
 
@@ -91,7 +91,7 @@ class TestRemoveArea:
 
         create_area_command: ICommand = CreateArea(area_name=area_name2, command_context=command_context)
         output = create_area_command.apply(study_data=empty_study)
-        assert output.status
+        assert output.status, output.message
 
         create_link_command: ICommand = CreateLink(
             area1=area_id,
@@ -101,7 +101,7 @@ class TestRemoveArea:
             series=[[0]],
         )
         output = create_link_command.apply(study_data=empty_study)
-        assert output.status
+        assert output.status, output.message
 
         thermal_name = "cluster"
         thermal_id = transform_name_to_id(thermal_name)
@@ -119,7 +119,7 @@ class TestRemoveArea:
             modulation=[[0]],
             command_context=command_context,
         ).apply(study_data=empty_study)
-        assert output.status
+        assert output.status, output.message
 
         renewable_id = None
         if empty_study.config.version >= 810:
@@ -137,7 +137,7 @@ class TestRemoveArea:
                 },
                 command_context=command_context,
             ).apply(study_data=empty_study)
-            assert output.status
+            assert output.status, output.message
 
         bind1_cmd = CreateBindingConstraint(
             name="BD 2",
@@ -151,14 +151,14 @@ class TestRemoveArea:
             command_context=command_context,
         )
         output = bind1_cmd.apply(study_data=empty_study)
-        assert output.status
+        assert output.status, output.message
 
         remove_district_command = RemoveDistrict(
             id="foo",
             command_context=command_context,
         )
         output = remove_district_command.apply(study_data=empty_study)
-        assert output.status
+        assert output.status, output.message
 
         create_district_command = CreateDistrict(
             name="foo",
@@ -167,7 +167,7 @@ class TestRemoveArea:
             command_context=command_context,
         )
         output = create_district_command.apply(study_data=empty_study)
-        assert output.status
+        assert output.status, output.message
 
         # Add scenario builder data
         default_ruleset = {
@@ -193,11 +193,11 @@ class TestRemoveArea:
             data={"Default Ruleset": default_ruleset},
             command_context=command_context,
         ).apply(study_data=empty_study)
-        assert output.status
+        assert output.status, output.message
 
         remove_area_command: ICommand = RemoveArea(id=area_id2, command_context=command_context)
         output = remove_area_command.apply(study_data=empty_study)
-        assert output.status
+        assert output.status, output.message
 
         actual_cfg = empty_study.tree.get(depth=999)
         assert actual_cfg == empty_study_cfg
