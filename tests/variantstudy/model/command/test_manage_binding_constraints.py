@@ -26,6 +26,7 @@ from antarest.study.storage.variantstudy.model.command.remove_area import Remove
 from antarest.study.storage.variantstudy.model.command.remove_binding_constraint import RemoveBindingConstraint
 from antarest.study.storage.variantstudy.model.command.remove_link import RemoveLink
 from antarest.study.storage.variantstudy.model.command.update_binding_constraint import UpdateBindingConstraint
+from antarest.study.storage.variantstudy.model.command.update_scenario_builder import UpdateScenarioBuilder
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
@@ -44,27 +45,25 @@ def test_manage_binding_constraint(empty_study: FileStudy, command_context: Comm
         {"area_id": area1, "cluster_name": cluster, "parameters": {}, "command_context": command_context}
     ).apply(empty_study)
 
-    bind1_cmd = CreateBindingConstraint(
+    output = CreateBindingConstraint(
         name="BD 1",
         time_step=BindingConstraintFrequency.HOURLY,
         operator=BindingConstraintOperator.LESS,
         coeffs={"area1%area2": [800, 30]},
         comments="Hello",
         command_context=command_context,
-    )
-    res = bind1_cmd.apply(empty_study)
-    assert res.status
+    ).apply(empty_study)
+    assert output.status, output.message
 
-    bind2_cmd = CreateBindingConstraint(
+    output = CreateBindingConstraint(
         name="BD 2",
         enabled=False,
         time_step=BindingConstraintFrequency.DAILY,
         operator=BindingConstraintOperator.BOTH,
         coeffs={"area1.cluster": [50]},
         command_context=command_context,
-    )
-    res2 = bind2_cmd.apply(empty_study)
-    assert res2.status
+    ).apply(empty_study)
+    assert output.status, output.message
 
     if empty_study.config.version < 870:
         matrix_links = ["bd 1.txt.link", "bd 2.txt.link"]
@@ -123,7 +122,7 @@ def test_manage_binding_constraint(empty_study: FileStudy, command_context: Comm
         less_term_matrix = weekly_values
         greater_term_matrix = weekly_values
 
-    bind_update = UpdateBindingConstraint(
+    output = UpdateBindingConstraint(
         id="bd 1",
         enabled=False,
         time_step=BindingConstraintFrequency.WEEKLY,
@@ -133,9 +132,9 @@ def test_manage_binding_constraint(empty_study: FileStudy, command_context: Comm
         less_term_matrix=less_term_matrix,
         greater_term_matrix=greater_term_matrix,
         command_context=command_context,
-    )
-    res = bind_update.apply(empty_study)
-    assert res.status
+    ).apply(empty_study)
+    assert output.status, output.message
+
     bd_config = IniReader().read(cfg_path)
     expected_bd_1 = {
         "name": "BD 1",
@@ -153,9 +152,21 @@ def test_manage_binding_constraint(empty_study: FileStudy, command_context: Comm
         expected_bd_1["group"] = "default"
     assert bd_config.get("0") == expected_bd_1
 
-    remove_bind = RemoveBindingConstraint(id="bd 1", command_context=command_context)
-    res3 = remove_bind.apply(empty_study)
-    assert res3.status
+    if empty_study.config.version >= 870:
+        # Add scenario builder data
+        output = UpdateScenarioBuilder(
+            data={"Default Ruleset": {"bc,default,0": 1}},
+            command_context=command_context,
+        ).apply(study_data=empty_study)
+        assert output.status, output.message
+
+    output = RemoveBindingConstraint(id="bd 1", command_context=command_context).apply(empty_study)
+    assert output.status, output.message
+
+    if empty_study.config.version >= 870:
+        # Check that the scenario builder is not yet updated, because "BD 2" is still present
+        rulesets = empty_study.tree.get(["settings", "scenariobuilder"])
+        assert rulesets == {"Default Ruleset": {"bc,default,0": 1}}
 
     for matrix_link in matrix_links:
         link_path = study_path / f"input/bindingconstraints/{matrix_link}"
@@ -183,6 +194,14 @@ def test_manage_binding_constraint(empty_study: FileStudy, command_context: Comm
     if empty_study.config.version >= 870:
         expected_bd_2["group"] = "default"
     assert bd_config.get("0") == expected_bd_2
+
+    output = RemoveBindingConstraint(id="bd 2", command_context=command_context).apply(empty_study)
+    assert output.status, output.message
+
+    if empty_study.config.version >= 870:
+        # Check that the scenario builder is updated
+        rulesets = empty_study.tree.get(["settings", "scenariobuilder"])
+        assert rulesets == {"Default Ruleset": {}}
 
 
 def test_match(command_context: CommandContext):
