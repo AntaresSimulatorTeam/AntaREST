@@ -159,7 +159,7 @@ function LogModal(props: Props) {
       maxWidth="lg"
       actions={
         <Button variant="text" color="primary" onClick={close}>
-          {t("button.close")}
+          {t("global.close")}
         </Button>
       }
     >

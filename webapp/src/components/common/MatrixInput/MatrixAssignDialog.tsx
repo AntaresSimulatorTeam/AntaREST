@@ -102,7 +102,7 @@ function MatrixAssignDialog(props: Props) {
       sx={{
         "& .MuiDialog-paper": { maxWidth: "unset" },
       }}
-      actions={<Button onClick={onClose}>{t("button.close")}</Button>}
+      actions={<Button onClick={onClose}>{t("global.close")}</Button>}
       contentProps={{
         sx: { width: "1200px", height: "700px" },
       }}

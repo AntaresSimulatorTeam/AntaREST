@@ -1,29 +1,47 @@
 import { useEffect, useState } from "react";
-import * as R from "ramda";
-import { Box, LinearProgress, Paper, Typography } from "@mui/material";
-import Dropzone, { type Accept } from "react-dropzone";
-import { useMountedState } from "react-use";
+import { Box, Button, LinearProgress, Paper, Typography } from "@mui/material";
+import { FileRejection, useDropzone, type Accept } from "react-dropzone";
 import { useTranslation } from "react-i18next";
 import BasicDialog, { BasicDialogProps } from "./BasicDialog";
+import { blue, grey } from "@mui/material/colors";
+import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
+import { toError } from "../../../utils/fnUtils";
+import { enqueueSnackbar } from "notistack";
+import { PromiseAny } from "../../../utils/tsUtils";
 
-interface Props {
-  open: BasicDialogProps["open"];
-  title?: string;
+interface ImportDialogProps extends Omit<BasicDialogProps, "actions"> {
   dropzoneText?: string;
   accept?: Accept;
-  onClose: VoidFunction;
+  onCancel: VoidFunction;
   onImport: (
     file: File,
-    onUploadProgress: (progress: number) => void,
-  ) => Promise<void>;
+    setUploadProgress: (progress: number) => void,
+  ) => PromiseAny;
 }
 
-function ImportDialog(props: Props) {
-  const { open, title, dropzoneText, accept, onClose, onImport } = props;
+function ImportDialog(props: ImportDialogProps) {
+  const {
+    dropzoneText,
+    accept,
+    onImport,
+    onCancel,
+    onClose,
+    title,
+    ...dialogProps
+  } = props;
   const [t] = useTranslation();
+  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(-1);
-  const isMounted = useMountedState();
+  const [invalidText, setInvalidText] = useState("");
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDropAccepted: handleDropAccepted,
+    onDropRejected: handleDropRejected,
+    disabled: isUploading,
+    multiple: false,
+    accept,
+  });
 
   useEffect(() => {
     if (isUploading) {
@@ -44,31 +62,35 @@ function ImportDialog(props: Props) {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleDrop = async (acceptedFiles: File[]) => {
-    const fileToUpload = R.last(acceptedFiles);
+  async function handleDropAccepted(acceptedFiles: File[]) {
+    setInvalidText("");
+    setIsUploading(true);
 
-    if (fileToUpload) {
-      setIsUploading(true);
-      setUploadProgress(0);
+    const fileToUpload = acceptedFiles[0];
 
-      try {
-        await onImport(fileToUpload, (progress) => {
-          if (isMounted()) {
-            setUploadProgress(progress);
-          }
-        });
+    try {
+      await onImport(fileToUpload, setUploadProgress);
 
-        if (isMounted()) {
-          onClose();
-        }
-      } catch {
-        // noop
-      } finally {
-        if (isMounted()) {
-          setIsUploading(false);
-          setUploadProgress(-1);
-        }
-      }
+      enqueueSnackbar(t("common.dialog.import.importSuccess"), {
+        variant: "success",
+      });
+      onCancel();
+    } catch (err) {
+      enqueueErrorSnackbar(t("common.dialog.import.importError"), toError(err));
+    }
+
+    setIsUploading(false);
+    setUploadProgress(-1);
+  }
+
+  function handleDropRejected(fileRejections: FileRejection[]) {
+    setInvalidText(fileRejections[0].errors[0].message);
+  }
+
+  const handleClose: ImportDialogProps["onClose"] = (...args) => {
+    if (!isUploading) {
+      onCancel();
+      onClose?.(...args);
     }
   };
 
@@ -78,47 +100,62 @@ function ImportDialog(props: Props) {
 
   return (
     <BasicDialog
-      open={open}
-      onClose={uploadProgress > -1 ? undefined : onClose}
+      {...dialogProps}
       title={title || t("global.import")}
+      actions={
+        <Button onClick={onCancel} disabled={isUploading}>
+          {t("global.close")}
+        </Button>
+      }
+      onClose={handleClose}
     >
-      <Box sx={{ p: 2 }}>
-        {uploadProgress > -1 ? (
+      <Box sx={{ pt: 1 }}>
+        {isUploading ? (
           <LinearProgress
             variant={
               uploadProgress > 2 && uploadProgress < 98
                 ? "determinate"
                 : "indeterminate"
             }
-            value={uploadProgress}
+            value={Math.max(0, Math.min(100, uploadProgress))}
           />
         ) : (
-          <Dropzone
-            onDrop={handleDrop}
-            disabled={isUploading}
-            multiple={false}
-            accept={accept}
-          >
-            {({ getRootProps, getInputProps }) => (
-              <Paper sx={{ border: "1px dashed grey", p: 4 }}>
-                <div {...getRootProps()}>
-                  <input {...getInputProps()} />
-                  <Typography sx={{ cursor: "pointer" }}>
-                    {dropzoneText || t("global.importHint")}
-                  </Typography>
-                </div>
-              </Paper>
+          <>
+            <Paper
+              {...getRootProps()}
+              sx={{
+                borderWidth: 1,
+                borderStyle: "dashed",
+                borderColor: isDragActive ? blue[500] : grey[500],
+                transition: "border .24s ease-in-out",
+                p: 4,
+                backgroundColor: "#262733",
+                color: grey[400],
+                cursor: "pointer",
+                position: "relative",
+              }}
+            >
+              <input {...getInputProps()} />
+              <Typography>
+                {dropzoneText || t("common.dialog.import.dropzoneText")}
+              </Typography>
+            </Paper>
+            {invalidText && (
+              <Typography
+                sx={{
+                  textAlign: "center",
+                  color: "error.main",
+                  pt: 1,
+                }}
+              >
+                {invalidText}
+              </Typography>
             )}
-          </Dropzone>
+          </>
         )}
       </Box>
     </BasicDialog>
   );
 }
-
-ImportDialog.defaultProps = {
-  title: null,
-  dropzoneText: null,
-};
 
 export default ImportDialog;
