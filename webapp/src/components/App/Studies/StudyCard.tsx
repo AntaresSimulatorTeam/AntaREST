@@ -376,6 +376,14 @@ const StudyCard = memo((props: Props) => {
             },
           }}
         >
+          {study.archived && (
+            <Chip
+              icon={<ArchiveOutlinedIcon />}
+              label="archive"
+              color="warning"
+              size="small"
+            />
+          )}
           {study.type === StudyType.VARIANT && (
             <Chip
               icon={<AltRouteOutlinedIcon />}
