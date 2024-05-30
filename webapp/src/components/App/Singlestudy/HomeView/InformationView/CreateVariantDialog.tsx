@@ -44,7 +44,7 @@ function CreateVariantDialog(props: Props) {
     return createVariant(sourceId, name);
   };
 
-  const handleSubmitSuccessful = async (
+  const handleSubmitSuccessful = (
     data: SubmitHandlerPlus<typeof defaultValues>,
     variantId: string,
   ) => {
@@ -58,6 +58,7 @@ function CreateVariantDialog(props: Props) {
 
   return (
     <FormDialog
+      maxWidth="sm"
       title={t("studies.createNewStudy")}
       titleIcon={AddCircleIcon}
       open={open}
@@ -67,7 +68,7 @@ function CreateVariantDialog(props: Props) {
       config={{ defaultValues }}
     >
       {({ control }) => (
-        <Fieldset fullFieldWidth>
+        <Fieldset fieldWidth={550}>
           <StringFE
             label={t("variants.newVariant")}
             name="name"
@@ -79,6 +80,7 @@ function CreateVariantDialog(props: Props) {
           />
           <SelectFE
             label={t("study.versionSource")}
+            variant="outlined"
             options={sourceList.map((ver) => ({
               label: ver.name,
               value: ver.id,
