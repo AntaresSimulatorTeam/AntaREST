@@ -27,6 +27,7 @@ class RemoveLink(ICommand):
     area1: str
     area2: str
 
+    # noinspection PyMethodParameters
     @validator("area1", "area2", pre=True)
     def _validate_id(cls, area: str) -> str:
         if isinstance(area, str):
@@ -40,6 +41,7 @@ class RemoveLink(ICommand):
         # Delegates the validation to Pydantic validators (e.g: type checking).
         return area
 
+    # noinspection PyMethodParameters
     @root_validator(pre=False)
     def _validate_link(cls, values: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
         area1 = values.get("area1")
@@ -96,6 +98,23 @@ class RemoveLink(ICommand):
 
         return output, data
 
+    def _remove_link_from_scenario_builder(self, study_data: FileStudy) -> None:
+        """
+        Update the scenario builder by removing the rows that correspond to the link to remove.
+
+        NOTE: this update can be very long if the scenario builder configuration is large.
+        """
+        rulesets = study_data.tree.get(["settings", "scenariobuilder"])
+
+        for ruleset in rulesets.values():
+            for key in list(ruleset):
+                # The key is in the form "symbol,area1,area2,year".
+                symbol, *parts = key.split(",")
+                if symbol == "ntc" and parts[0] == self.area1 and parts[1] == self.area2:
+                    del ruleset[key]
+
+        study_data.tree.save(rulesets, ["settings", "scenariobuilder"])
+
     def _apply(self, study_data: FileStudy) -> CommandOutput:
         """
         Update the configuration and the study data by removing the link between the source and target areas.
@@ -117,6 +136,8 @@ class RemoveLink(ICommand):
                 study_data.tree.delete(["input", "links", self.area1, "capacities", f"{self.area2}_direct"])
                 study_data.tree.delete(["input", "links", self.area1, "capacities", f"{self.area2}_indirect"])
             study_data.tree.delete(["input", "links", self.area1, "properties", self.area2])
+
+            self._remove_link_from_scenario_builder(study_data)
 
         return self._apply_config(study_data.config)[0]
 

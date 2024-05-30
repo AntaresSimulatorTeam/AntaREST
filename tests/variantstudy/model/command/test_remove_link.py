@@ -17,6 +17,7 @@ from antarest.study.storage.variantstudy.model.command.create_area import Create
 from antarest.study.storage.variantstudy.model.command.create_link import CreateLink
 from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
 from antarest.study.storage.variantstudy.model.command.remove_link import RemoveLink
+from antarest.study.storage.variantstudy.model.command.update_scenario_builder import UpdateScenarioBuilder
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
@@ -89,12 +90,26 @@ class TestRemoveLink:
         output = CreateLink(area1="area_x", area2="area_y", command_context=command_context).apply(empty_study)
         assert output.status, output.message
 
+        # Create a ruleset in the Scenario Builder configuration for this link
+        output = UpdateScenarioBuilder(
+            data={"Default Ruleset": {"ntc,area_x,area_y,0": 1}},
+            command_context=command_context,
+        ).apply(study_data=empty_study)
+        assert output.status, output.message
+
         # Run the test with the two areas created
 
         hash_before_link = dirhash(empty_study.config.study_path, "md5")
 
         # Create a link between Area_X and Area_Z
         output = CreateLink(area1="area_x", area2="area_z", command_context=command_context).apply(empty_study)
+        assert output.status, output.message
+
+        # Create a ruleset in the Scenario Builder configuration for this link
+        output = UpdateScenarioBuilder(
+            data={"Default Ruleset": {"ntc,area_x,area_z,0": 1}},
+            command_context=command_context,
+        ).apply(study_data=empty_study)
         assert output.status, output.message
 
         output = RemoveLink(area1="area_x", area2="area_z", command_context=command_context).apply(empty_study)
