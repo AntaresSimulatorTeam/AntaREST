@@ -1,4 +1,5 @@
 import os
+import typing as t
 import uuid
 from pathlib import Path
 from unittest.mock import Mock
@@ -6,6 +7,7 @@ from zipfile import ZipFile
 
 import pytest
 from checksumdir import dirhash
+from pydantic import ValidationError
 
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
@@ -19,6 +21,44 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 
 
 class TestRemoveLink:
+    @pytest.mark.parametrize(
+        "area1, area2, expected",
+        [
+            pytest.param(
+                "",
+                "",
+                {},
+                id="not-empty-areas",
+                marks=pytest.mark.xfail(reason="Area IDs must not be empty", raises=ValidationError, strict=True),
+            ),
+            pytest.param(
+                None,
+                None,
+                {},
+                id="not-none-areas",
+                marks=pytest.mark.xfail(reason="Area IDs must not be None", raises=ValidationError, strict=True),
+            ),
+            pytest.param(
+                "%!",
+                "~#é",
+                {},
+                id="invalid-areas",
+                marks=pytest.mark.xfail(reason="Invalid characters", raises=ValidationError, strict=True),
+            ),
+            pytest.param("Zone1", "Zone2", {"area1": "zone1", "area2": "zone2"}, id="area-to-lowercase"),
+            pytest.param("TO", "FROM", {"area1": "from", "area2": "to"}, id="areas-reordered"),
+        ],
+    )
+    def test_remove_link__validation(self, area1: str, area2: str, expected: t.Dict[str, str]) -> None:
+        """
+        This test checks that the parameters control (the area names) is done correctly.
+        It checks that the area names are correctly converted to area ID (in lowercase)
+        and that the areas are well-ordered in alphabetical order (Antares Solver convention).
+        """
+        command = RemoveLink(area1=area1, area2=area2, command_context=Mock(spec=CommandContext))
+        actual = command.dict(include={"area1", "area2"})
+        assert actual == expected
+
     @staticmethod
     def make_study(tmpdir: Path, version: int) -> FileStudy:
         study_dir: Path = (
@@ -36,49 +76,33 @@ class TestRemoveLink:
         return FileStudy(config, FileStudyTree(Mock(), config))
 
     @pytest.mark.parametrize("version", [810, 820])
-    @pytest.mark.unit_test
-    def test_apply(self, tmpdir: Path, command_context: CommandContext, version: int):
+    def test_apply(self, tmpdir: Path, command_context: CommandContext, version: int) -> None:
         empty_study = self.make_study(tmpdir, version)
-        area1 = "Area1"
-        area1_id = transform_name_to_id(area1)
-        area2 = "Area2"
-        area2_id = transform_name_to_id(area2)
 
-        CreateArea.parse_obj(
-            {
-                "area_name": area1,
-                "command_context": command_context,
-            }
-        ).apply(empty_study)
+        # Create some areas
+        areas = {transform_name_to_id(area, lower=True): area for area in ["Area_X", "Area_Y", "Area_Z"]}
+        for area in areas.values():
+            output = CreateArea(area_name=area, command_context=command_context).apply(empty_study)
+            assert output.status, output.message
 
-        CreateArea.parse_obj(
-            {
-                "area_name": area2,
-                "command_context": command_context,
-            }
-        ).apply(empty_study)
+        # Create a link between Area_X and Area_Y
+        output = CreateLink(area1="area_x", area2="area_y", command_context=command_context).apply(empty_study)
+        assert output.status, output.message
+
+        # Run the test with the two areas created
 
         hash_before_link = dirhash(empty_study.config.study_path, "md5")
 
-        CreateLink(
-            area1=area1_id,
-            area2=area2_id,
-            parameters={},
-            command_context=command_context,
-            series=[[0]],
-        ).apply(empty_study)
+        # Create a link between Area_X and Area_Z
+        output = CreateLink(area1="area_x", area2="area_z", command_context=command_context).apply(empty_study)
+        assert output.status, output.message
 
-        output = RemoveLink(
-            area1=area1_id,
-            area2=area2_id,
-            command_context=command_context,
-        ).apply(empty_study)
+        output = RemoveLink(area1="area_x", area2="area_z", command_context=command_context).apply(empty_study)
+        assert output.status, output.message
 
-        assert output.status
         assert dirhash(empty_study.config.study_path, "md5") == hash_before_link
 
-    @pytest.mark.unit_test
-    def test_match(self, command_context: CommandContext):
+    def test_match(self, command_context: CommandContext) -> None:
         base = RemoveLink(area1="foo", area2="bar", command_context=command_context)
         other_match = RemoveLink(area1="foo", area2="bar", command_context=command_context)
         other_not_match = RemoveLink(area1="foo", area2="baz", command_context=command_context)
@@ -86,11 +110,10 @@ class TestRemoveLink:
         assert base.match(other_match)
         assert not base.match(other_not_match)
         assert not base.match(other_other)
-        assert base.match_signature() == "remove_link%foo%bar"
+        assert base.match_signature() == "remove_link%bar%foo"  # alphabetical order
         assert base.get_inner_matrices() == []
 
-    @pytest.mark.unit_test
-    def test_create_diff(self, command_context: CommandContext):
+    def test_create_diff(self, command_context: CommandContext) -> None:
         base = RemoveLink(area1="foo", area2="bar", command_context=command_context)
         other_match = RemoveLink(area1="foo", area2="bar", command_context=command_context)
         assert base.create_diff(other_match) == []
