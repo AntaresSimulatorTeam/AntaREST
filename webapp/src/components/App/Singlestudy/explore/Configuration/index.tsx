@@ -5,7 +5,6 @@ import { useOutletContext } from "react-router";
 import { useTranslation } from "react-i18next";
 import { StudyMetadata } from "../../../../../common/types";
 import PropertiesView from "../../../../common/PropertiesView";
-import SplitLayoutView from "../../../../common/SplitLayoutView";
 import ListElement from "../common/ListElement";
 import AdequacyPatch from "./AdequacyPatch";
 import AdvancedParameters from "./AdvancedParameters";
@@ -13,13 +12,13 @@ import General from "./General";
 import Optimization from "./Optimization";
 import TimeSeriesManagement from "./TimeSeriesManagement";
 import TableMode from "../../../../common/TableMode";
+import SplitView from "../../../../common/SplitView";
 
 function Configuration() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const [currentTabIndex, setCurrentTabIndex] = useState(0);
   const { t } = useTranslation();
 
-  // TODO i18n
   const tabList = useMemo(
     () =>
       [
@@ -40,80 +39,77 @@ function Configuration() {
   );
 
   return (
-    <SplitLayoutView
-      left={
-        <PropertiesView
-          mainContent={
-            <ListElement
-              list={tabList}
-              currentElement={tabList[currentTabIndex].name}
-              setSelectedItem={(_, index) => {
-                setCurrentTabIndex(index);
-              }}
-            />
-          }
-        />
-      }
-      right={
-        <Paper sx={{ width: 1, height: 1, padding: 2, overflow: "auto" }}>
-          {R.cond([
-            [R.equals(0), () => <General />],
-            [R.equals(1), () => <TimeSeriesManagement />],
-            [R.equals(2), () => <Optimization />],
-            [R.equals(3), () => <AdequacyPatch />],
-            [R.equals(4), () => <AdvancedParameters />],
-            [
-              R.equals(5),
-              () => (
-                <TableMode
-                  studyId={study.id}
-                  type="areas"
-                  columns={[
-                    "averageUnsuppliedEnergyCost",
-                    "spreadUnsuppliedEnergyCost",
-                    "averageSpilledEnergyCost",
-                    "spreadSpilledEnergyCost",
-                    "nonDispatchablePower",
-                    "dispatchableHydroPower",
-                    "otherDispatchablePower",
-                  ]}
-                />
-              ),
-            ],
-            [
-              R.equals(6),
-              () => (
-                <TableMode
-                  studyId={study.id}
-                  type="areas"
-                  columns={["filterYearByYear", "filterSynthesis"]}
-                />
-              ),
-            ],
-            [
-              R.equals(7),
-              () => (
-                <TableMode
-                  studyId={study.id}
-                  type="links"
-                  columns={["filterYearByYear", "filterSynthesis"]}
-                />
-              ),
-            ],
-            [
-              R.equals(8),
-              () => (
-                <TableMode
-                  studyId={study.id}
-                  type="binding-constraints"
-                  columns={["filterYearByYear", "filterSynthesis"]}
-                />
-              ),
-            ],
-          ])(tabList[currentTabIndex].id)}
-        </Paper>
-      }
-    />
+    <SplitView direction="horizontal" sizes={[15, 85]}>
+      <PropertiesView
+        mainContent={
+          <ListElement
+            list={tabList}
+            currentElement={tabList[currentTabIndex].name}
+            setSelectedItem={(_, index) => {
+              setCurrentTabIndex(index);
+            }}
+          />
+        }
+      />
+
+      <Paper sx={{ width: 1, height: 1, padding: 2, overflow: "auto" }}>
+        {R.cond([
+          [R.equals(0), () => <General />],
+          [R.equals(1), () => <TimeSeriesManagement />],
+          [R.equals(2), () => <Optimization />],
+          [R.equals(3), () => <AdequacyPatch />],
+          [R.equals(4), () => <AdvancedParameters />],
+          [
+            R.equals(5),
+            () => (
+              <TableMode
+                studyId={study.id}
+                type="areas"
+                columns={[
+                  "averageUnsuppliedEnergyCost",
+                  "spreadUnsuppliedEnergyCost",
+                  "averageSpilledEnergyCost",
+                  "spreadSpilledEnergyCost",
+                  "nonDispatchablePower",
+                  "dispatchableHydroPower",
+                  "otherDispatchablePower",
+                ]}
+              />
+            ),
+          ],
+          [
+            R.equals(6),
+            () => (
+              <TableMode
+                studyId={study.id}
+                type="areas"
+                columns={["filterYearByYear", "filterSynthesis"]}
+              />
+            ),
+          ],
+          [
+            R.equals(7),
+            () => (
+              <TableMode
+                studyId={study.id}
+                type="links"
+                columns={["filterYearByYear", "filterSynthesis"]}
+              />
+            ),
+          ],
+          [
+            R.equals(8),
+            () => (
+              <TableMode
+                studyId={study.id}
+                type="binding-constraints"
+                columns={["filterYearByYear", "filterSynthesis"]}
+              />
+            ),
+          ],
+        ])(tabList[currentTabIndex].id)}
+      </Paper>
+    </SplitView>
   );
 }
 

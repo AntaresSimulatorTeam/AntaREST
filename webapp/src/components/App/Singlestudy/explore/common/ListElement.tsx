@@ -72,7 +72,7 @@ function ListElement<T extends { id?: IdType; name: string; label?: string }>({
       width="100%"
       flexGrow={1}
       flexShrink={1}
-      sx={mergeSxProp({ overflow: "auto" }, sx)}
+      sx={mergeSxProp({ overflow: "auto", py: 1 }, sx)}
     >
       {list.map((element, index) => (
         <ListItemButton
