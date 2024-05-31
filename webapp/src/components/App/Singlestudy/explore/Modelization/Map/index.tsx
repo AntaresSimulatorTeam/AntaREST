@@ -11,7 +11,6 @@ import {
   StudyMetadata,
   UpdateAreaUi,
 } from "../../../../../../common/types";
-import SplitLayoutView from "../../../../../common/SplitLayoutView";
 import MapGraph from "./MapGraph";
 import Areas from "./Areas";
 import CreateAreaDialog from "./CreateAreaDialog";
@@ -37,6 +36,7 @@ import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
 import MapHeader from "./MapHeader";
 import MapControlButtons from "./MapControlButtons";
 import useDebouncedState from "../../../../../../hooks/useDebouncedState";
+import SplitView from "../../../../../common/SplitView";
 
 function Map() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -67,9 +67,7 @@ function Map() {
     selector: getStudyMapNodes,
   });
 
-  /**
-   * Sets highlight mode on node click
-   */
+  // Sets highlight mode on node click
   useEffect(() => {
     const { current } = graphRef;
     if (current) {
@@ -94,12 +92,10 @@ function Map() {
   // Utils
   ////////////////////////////////////////////////////////////////
 
-  const updateUI = async (nodeId: string, nodeUI: UpdateAreaUi) => {
+  const updateUI = (nodeId: string, nodeUI: UpdateAreaUi) => {
     const updatedNode = getUpdatedNode(nodeId, mapNodesRes.data || []);
-    /**
-     * Compare the new node position: @nodeUI and the existing one: @updatedNode
-     * If they are not equal the UI should be updated
-     */
+
+    // Compare the new node position and the existing one, if they are not equal the UI should be updated
     const updatedUI = !R.whereEq(nodeUI, updatedNode);
 
     if (updatedUI && study) {
@@ -115,7 +111,7 @@ function Map() {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleCreateArea = async (name: string) => {
+  const handleCreateArea = (name: string) => {
     try {
       if (study) {
         return dispatch(createStudyMapNode({ studyId: study.id, name }))
@@ -129,7 +125,7 @@ function Map() {
     }
   };
 
-  const handlePositionChange = async (id: string, x: number, y: number) => {
+  const handlePositionChange = (id: string, x: number, y: number) => {
     const updatedNode = getUpdatedNode(id, mapNodesRes.data || []);
     if (updatedNode) {
       const { layerX, layerY, layerColor } = updatedNode;
@@ -169,44 +165,41 @@ function Map() {
       response={mapNodesRes}
       ifResolved={(mapNodes) => (
         <>
-          <SplitLayoutView
-            left={
-              <Areas
-                onAdd={() => setOpenDialog(true)}
-                nodes={mapNodes}
-                updateUI={updateUI}
-              />
-            }
-            right={
-              openConfig ? (
-                <MapConfig onClose={() => setOpenConfig(false)} />
-              ) : (
-                <MapContainer>
-                  <MapHeader links={mapLinks} nodes={mapNodes} />
-                  <AutoSizer>
-                    {({ height, width }) => (
-                      <MapGraph
-                        height={height}
-                        width={width}
-                        links={mapLinks}
-                        nodes={mapNodes}
-                        graph={graphRef}
-                        onNodePositionChange={handlePositionChange}
-                        zoomLevel={zoomLevel}
-                        setZoomLevel={setZoomLevel}
-                      />
-                    )}
-                  </AutoSizer>
-                  <MapControlButtons
-                    onZoomIn={handleZoomIn}
-                    onZoomOut={handleZoomOut}
-                    onOpenConfig={() => setOpenConfig(true)}
-                    zoomLevel={zoomLevel}
-                  />
-                </MapContainer>
-              )
-            }
-          />
+          <SplitView direction="horizontal" sizes={[10, 90]}>
+            <Areas
+              onAdd={() => setOpenDialog(true)}
+              nodes={mapNodes}
+              updateUI={updateUI}
+            />
+            {openConfig ? (
+              <MapConfig onClose={() => setOpenConfig(false)} />
+            ) : (
+              <MapContainer>
+                <MapHeader links={mapLinks} nodes={mapNodes} />
+                <AutoSizer>
+                  {({ height, width }) => (
+                    <MapGraph
+                      height={height}
+                      width={width}
+                      links={mapLinks}
+                      nodes={mapNodes}
+                      graph={graphRef}
+                      onNodePositionChange={handlePositionChange}
+                      zoomLevel={zoomLevel}
+                      setZoomLevel={setZoomLevel}
+                    />
+                  )}
+                </AutoSizer>
+                <MapControlButtons
+                  onZoomIn={handleZoomIn}
+                  onZoomOut={handleZoomOut}
+                  onOpenConfig={() => setOpenConfig(true)}
+                  zoomLevel={zoomLevel}
+                />
+              </MapContainer>
+            )}
+          </SplitView>
+
           {openDialog && (
             <CreateAreaDialog
               studyId={study.id}
