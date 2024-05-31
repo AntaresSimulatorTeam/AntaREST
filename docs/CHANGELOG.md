@@ -11,6 +11,7 @@ v2.17.1 (2024-05-29)
 * **ui-utils:** add overload signatures for validateNumber function in validationUtils [`#2029`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2029)
 * **desktop**: update Antares Web Desktop version [`#2036`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2036)
 * **ui:** add studies "archive" tag [`#2043`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2043)
+* **ui:** prevent `CreateVariantDialog` fields overflow [`#2044`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2043)
 
 
 ### Bug Fixes
