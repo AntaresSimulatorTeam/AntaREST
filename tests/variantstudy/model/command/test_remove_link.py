@@ -19,6 +19,7 @@ from antarest.study.storage.variantstudy.model.command.remove_area import Remove
 from antarest.study.storage.variantstudy.model.command.remove_link import RemoveLink
 from antarest.study.storage.variantstudy.model.command.update_scenario_builder import UpdateScenarioBuilder
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.variantstudy.model.command.helpers import reset_line_separator
 
 
 class TestRemoveLink:
@@ -97,9 +98,11 @@ class TestRemoveLink:
         ).apply(study_data=empty_study)
         assert output.status, output.message
 
-        # Run the test with the two areas created
+        ########################################################################################
 
-        hash_before_link = dirhash(empty_study.config.study_path, "md5")
+        # Line ending of the `settings/scenariobuilder.dat` must be reset before checksum
+        reset_line_separator(empty_study.config.study_path.joinpath("settings/scenariobuilder.dat"))
+        hash_before_removal = dirhash(empty_study.config.study_path, "md5")
 
         # Create a link between Area_X and Area_Z
         output = CreateLink(area1="area_x", area2="area_z", command_context=command_context).apply(empty_study)
@@ -115,7 +118,7 @@ class TestRemoveLink:
         output = RemoveLink(area1="area_x", area2="area_z", command_context=command_context).apply(empty_study)
         assert output.status, output.message
 
-        assert dirhash(empty_study.config.study_path, "md5") == hash_before_link
+        assert dirhash(empty_study.config.study_path, "md5") == hash_before_removal
 
     def test_match(self, command_context: CommandContext) -> None:
         base = RemoveLink(area1="foo", area2="bar", command_context=command_context)

@@ -8,6 +8,7 @@ from antarest.study.storage.variantstudy.model.command.remove_area import Remove
 from antarest.study.storage.variantstudy.model.command.remove_renewables_cluster import RemoveRenewablesCluster
 from antarest.study.storage.variantstudy.model.command.update_scenario_builder import UpdateScenarioBuilder
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.variantstudy.model.command.helpers import reset_line_separator
 
 
 class TestRemoveRenewablesCluster:
@@ -23,7 +24,10 @@ class TestRemoveRenewablesCluster:
         assert output.status, output.message
 
         ################################################################################################
-        hash_before_cluster = dirhash(empty_study.config.study_path, "md5")
+
+        # Line ending of the `settings/scenariobuilder.dat` must be reset before checksum
+        reset_line_separator(empty_study.config.study_path.joinpath("settings/scenariobuilder.dat"))
+        hash_before_removal = dirhash(empty_study.config.study_path, "md5")
 
         CreateRenewablesCluster(
             area_id=area_id,
@@ -48,8 +52,8 @@ class TestRemoveRenewablesCluster:
             command_context=command_context,
         ).apply(empty_study)
 
-        assert output.status
-        assert dirhash(empty_study.config.study_path, "md5") == hash_before_cluster
+        assert output.status, output.message
+        assert dirhash(empty_study.config.study_path, "md5") == hash_before_removal
 
         output = RemoveRenewablesCluster(
             area_id="non_existent_area",
