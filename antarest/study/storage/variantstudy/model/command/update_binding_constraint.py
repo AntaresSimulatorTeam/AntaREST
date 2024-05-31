@@ -8,6 +8,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import FileSt
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import (
+    DEFAULT_GROUP,
     TERM_MATRICES,
     AbstractBindingConstraintCommand,
     create_binding_constraint_config,
@@ -52,6 +53,9 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
     def _apply(self, study_data: FileStudy) -> CommandOutput:
         binding_constraints = study_data.tree.get(["input", "bindingconstraints", "bindingconstraints"])
 
+        # When all BC of a given group are removed, the group should be removed from the scenario builder
+        old_groups = {bd.get("group", DEFAULT_GROUP).lower() for bd in binding_constraints.values()}
+
         index_and_cfg = self._find_binding_config(binding_constraints)
         if index_and_cfg is None:
             return CommandOutput(
@@ -80,7 +84,7 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
             term_ids = {k for k in updated_cfg if "%" in k or "." in k}
             binding_constraints[index] = {k: v for k, v in updated_cfg.items() if k not in term_ids}
 
-        return super().apply_binding_constraint(study_data, binding_constraints, index, self.id)
+        return super().apply_binding_constraint(study_data, binding_constraints, index, self.id, old_groups=old_groups)
 
     def to_dto(self) -> CommandDTO:
         matrices = ["values"] + TERM_MATRICES
