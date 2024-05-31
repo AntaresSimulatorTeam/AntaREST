@@ -14,6 +14,7 @@ import AreaConfig from "./AreaConfig";
 import { isSearchMatching } from "../../../../../../../utils/stringUtils";
 import { setCurrentArea } from "../../../../../../../redux/ducks/studySyntheses";
 import { StudyMapNode } from "../../../../../../../redux/ducks/studyMaps";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   onAdd: () => void;
@@ -21,8 +22,8 @@ interface Props {
   nodes: StudyMapNode[];
 }
 
-function Areas(props: Props) {
-  const { onAdd, updateUI, nodes } = props;
+function Areas({ onAdd, updateUI, nodes }: Props) {
+  const { t } = useTranslation();
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const dispatch = useAppDispatch();
   const [filteredNodes, setFilteredNodes] = useState<StudyMapNode[]>([]);
@@ -42,6 +43,8 @@ function Areas(props: Props) {
 
     setFilteredNodes(filter());
   }, [nodes, searchValue]);
+
+  // TODO prevent area config panel to show when area is selected on the first render
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -78,6 +81,7 @@ function Areas(props: Props) {
         setSearchValue(searchValue);
       }}
       onAdd={!currentArea ? onAdd : undefined}
+      addButtonText={t("global.area.add")}
     />
   );
 }

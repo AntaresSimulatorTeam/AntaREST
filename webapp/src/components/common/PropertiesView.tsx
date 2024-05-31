@@ -1,8 +1,9 @@
 import { ReactNode } from "react";
-import { Box, Fab, SxProps, Theme } from "@mui/material";
-import AddIcon from "@mui/icons-material/Add";
+import { Box, Button, SxProps, Theme } from "@mui/material";
 import SearchFE from "./fieldEditors/SearchFE";
 import { mergeSxProp } from "../../utils/muiUtils";
+import { Add } from "@mui/icons-material";
+import { useTranslation } from "react-i18next";
 
 interface PropsType {
   topContent?: ReactNode;
@@ -10,59 +11,61 @@ interface PropsType {
   secondaryContent?: ReactNode;
   onSearchFilterChange?: (value: string) => void;
   onAdd?: () => void;
+  addButtonText?: string;
   sx?: SxProps<Theme>;
 }
 
-function PropertiesView(props: PropsType) {
-  const {
-    onAdd,
-    onSearchFilterChange,
-    topContent,
-    mainContent,
-    secondaryContent,
-    sx,
-  } = props;
+function PropertiesView({
+  onAdd,
+  addButtonText,
+  onSearchFilterChange,
+  topContent,
+  mainContent,
+  secondaryContent,
+  sx,
+}: PropsType) {
+  const { t } = useTranslation();
 
   return (
     <Box
-      width="100%"
-      height="100%"
-      display="flex"
-      flexDirection="column"
-      justifyContent="flex-start"
-      alignItems="center"
-      boxSizing="border-box"
       sx={mergeSxProp(
         {
-          pt: onSearchFilterChange ? 1 : 2,
-          pb: 1,
+          width: 1,
+          height: 1,
+          display: "flex",
+          flexDirection: "column",
         },
         sx,
       )}
     >
+      {onAdd && (
+        <Box sx={{ display: "flex", px: 1 }}>
+          <Button
+            color="primary"
+            variant="contained"
+            size="small"
+            startIcon={<Add />}
+            onClick={onAdd}
+            sx={{
+              display: "flex",
+              justifyContent: "flex-start",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}
+          >
+            {addButtonText || t("global.add")}
+          </Button>
+        </Box>
+      )}
       {topContent}
       {onSearchFilterChange && (
         <SearchFE onSearchValueChange={onSearchFilterChange} />
       )}
       {mainContent}
       {secondaryContent}
-      {onAdd && (
-        <Fab
-          size="small"
-          color="primary"
-          aria-label="add"
-          sx={{ alignSelf: "flex-start", mb: 2, ml: 1 }}
-          onClick={onAdd}
-        >
-          <AddIcon />
-        </Fab>
-      )}
     </Box>
   );
 }
-
-PropertiesView.defaultProps = {
-  onAdd: undefined,
-};
 
 export default PropertiesView;
