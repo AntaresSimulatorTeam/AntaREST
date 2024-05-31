@@ -1,11 +1,13 @@
-import typing
 from typing import Any, Dict, List, Tuple
 
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
-from antarest.study.storage.variantstudy.model.command.create_binding_constraint import DEFAULT_GROUP
+from antarest.study.storage.variantstudy.model.command.create_binding_constraint import (
+    DEFAULT_GROUP,
+    remove_bc_from_scenario_builder,
+)
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -29,24 +31,6 @@ class RemoveBindingConstraint(ICommand):
             )
         study_data.bindings.remove(next(iter([bind for bind in study_data.bindings if bind.id == self.id])))
         return CommandOutput(status=True), {}
-
-    # noinspection PyMethodMayBeStatic
-    def _remove_bc_from_scenario_builder(self, study_data: FileStudy, removed_groups: typing.Set[str]) -> None:
-        """
-        Update the scenario builder by removing the rows that correspond to the BC groups to remove.
-
-        NOTE: this update can be very long if the scenario builder configuration is large.
-        """
-        rulesets = study_data.tree.get(["settings", "scenariobuilder"])
-
-        for ruleset in rulesets.values():
-            for key in list(ruleset):
-                # The key is in the form "symbol,group,year"
-                symbol, *parts = key.split(",")
-                if symbol == "bc" and parts[0] in removed_groups:
-                    del ruleset[key]
-
-        study_data.tree.save(rulesets, ["settings", "scenariobuilder"])
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
         if self.id not in [bind.id for bind in study_data.config.bindings]:
@@ -73,7 +57,7 @@ class RemoveBindingConstraint(ICommand):
             old_groups = {bd.get("group", DEFAULT_GROUP).lower() for bd in binding_constraints.values()}
             new_groups = {bd.get("group", DEFAULT_GROUP).lower() for bd in new_binding_constraints.values()}
             removed_groups = old_groups - new_groups
-            self._remove_bc_from_scenario_builder(study_data, removed_groups)
+            remove_bc_from_scenario_builder(study_data, removed_groups)
 
         return self._apply_config(study_data.config)[0]
 
