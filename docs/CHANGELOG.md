@@ -10,11 +10,13 @@ v2.17.1 (2024-05-29)
 * **raw:** refactor aggregation endpoint [`#2031`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2031)
 * **ui-utils:** add overload signatures for validateNumber function in validationUtils [`#2029`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2029)
 * **desktop**: update Antares Web Desktop version [`#2036`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2036)
+* **ui:** add studies "archive" tag [`#2043`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2043)
 
 
 ### Bug Fixes
 
 * **import:** allow import for users that are reader only [`#2032`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2032)
+* **scenario-builder:** handle missing objects in Scenario Builder configuration [`#2038`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2038)
 
 
 ### Refactoring
