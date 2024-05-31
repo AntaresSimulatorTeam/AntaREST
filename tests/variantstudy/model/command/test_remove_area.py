@@ -1,4 +1,5 @@
 import pytest
+from checksumdir import dirhash
 
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     BindingConstraintFrequency,
@@ -19,6 +20,7 @@ from antarest.study.storage.variantstudy.model.command.remove_link import Remove
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command.update_scenario_builder import UpdateScenarioBuilder
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.variantstudy.model.command.helpers import reset_line_separator
 
 
 class TestRemoveArea:
@@ -78,6 +80,10 @@ class TestRemoveArea:
             assert output.status, output.message
 
         ########################################################################################
+
+        # Line ending of the `settings/scenariobuilder.dat` must be reset before checksum
+        reset_line_separator(empty_study.config.study_path.joinpath("settings/scenariobuilder.dat"))
+        hash_before_removal = dirhash(empty_study.config.study_path, "md5")
 
         empty_study_cfg = empty_study.tree.get(depth=999)
         if empty_study.config.version >= 830:
@@ -198,6 +204,7 @@ class TestRemoveArea:
         remove_area_command: ICommand = RemoveArea(id=area_id2, command_context=command_context)
         output = remove_area_command.apply(study_data=empty_study)
         assert output.status, output.message
+        assert dirhash(empty_study.config.study_path, "md5") == hash_before_removal
 
         actual_cfg = empty_study.tree.get(depth=999)
         assert actual_cfg == empty_study_cfg
