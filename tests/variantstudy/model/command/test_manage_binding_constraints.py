@@ -8,6 +8,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint 
     BindingConstraintFrequency,
     BindingConstraintOperator,
 )
+from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.command_extractor import CommandExtractor
 from antarest.study.storage.variantstudy.business.command_reverter import CommandReverter
@@ -38,12 +39,12 @@ def test_manage_binding_constraint(empty_study: FileStudy, command_context: Comm
     area1 = "area1"
     area2 = "area2"
     cluster = "cluster"
-    CreateArea.parse_obj({"area_name": area1, "command_context": command_context}).apply(empty_study)
-    CreateArea.parse_obj({"area_name": area2, "command_context": command_context}).apply(empty_study)
-    CreateLink.parse_obj({"area1": area1, "area2": area2, "command_context": command_context}).apply(empty_study)
-    CreateCluster.parse_obj(
-        {"area_id": area1, "cluster_name": cluster, "parameters": {}, "command_context": command_context}
-    ).apply(empty_study)
+    CreateArea(area_name=area1, command_context=command_context).apply(empty_study)
+    CreateArea(area_name=area2, command_context=command_context).apply(empty_study)
+    CreateLink(area1=area1, area2=area2, command_context=command_context).apply(empty_study)
+    CreateCluster(area_id=area1, cluster_name=cluster, parameters={}, command_context=command_context).apply(
+        empty_study
+    )
 
     output = CreateBindingConstraint(
         name="BD 1",
@@ -70,8 +71,12 @@ def test_manage_binding_constraint(empty_study: FileStudy, command_context: Comm
     else:
         matrix_links = [
             # fmt: off
-            "bd 1_lt.txt.link", "bd 1_eq.txt.link", "bd 1_gt.txt.link",
-            "bd 2_lt.txt.link", "bd 2_eq.txt.link", "bd 2_gt.txt.link",
+            "bd 1_lt.txt.link",
+            "bd 1_eq.txt.link",
+            "bd 1_gt.txt.link",
+            "bd 2_lt.txt.link",
+            "bd 2_eq.txt.link",
+            "bd 2_gt.txt.link",
             # fmt: on
         ]
     for matrix_link in matrix_links:
@@ -202,6 +207,60 @@ def test_manage_binding_constraint(empty_study: FileStudy, command_context: Comm
         # Check that the scenario builder is updated
         rulesets = empty_study.tree.get(["settings", "scenariobuilder"])
         assert rulesets == {"Default Ruleset": {}}
+
+
+@pytest.mark.parametrize("empty_study", ["empty_study_870.zip"], indirect=True)
+def test_scenario_builder(empty_study: FileStudy, command_context: CommandContext):
+    """
+    Test that the scenario builder is updated when a binding constraint group is renamed or removed
+    """
+    # This test requires a study with version >= 870, which support "scenarised" binding constraints.
+    assert empty_study.config.version >= 870
+
+    # Create two areas and a link between them:
+    areas = {name: transform_name_to_id(name) for name in ["Area X", "Area Y"]}
+    for area in areas.values():
+        output = CreateArea(area_name=area, command_context=command_context).apply(empty_study)
+        assert output.status, output.message
+    output = CreateLink(area1=areas["Area X"], area2=areas["Area Y"], command_context=command_context).apply(
+        empty_study
+    )
+    assert output.status, output.message
+    link_id = f"{areas['Area X']}%{areas['Area Y']}"
+
+    # Create a binding constraint in a specific group:
+    bc_group = "Group 1"
+    output = CreateBindingConstraint(
+        name="BD 1",
+        enabled=False,
+        time_step=BindingConstraintFrequency.DAILY,
+        operator=BindingConstraintOperator.BOTH,
+        coeffs={link_id: [0.3]},
+        group=bc_group,
+        command_context=command_context,
+    ).apply(empty_study)
+    assert output.status, output.message
+
+    # Create a rule in the scenario builder for the binding constraint group:
+    output = UpdateScenarioBuilder(
+        data={"Default Ruleset": {f"bc,{bc_group.lower()},0": 1}},  # group name in lowercase
+        command_context=command_context,
+    ).apply(study_data=empty_study)
+    assert output.status, output.message
+
+    # Here, we have a binding constraint between "Area X" and "Area Y" in the group "Group 1"
+    # and a rule in the scenario builder for this group.
+    # If we update the group name in the BC, the scenario builder should be updated
+    output = UpdateBindingConstraint(
+        id="bd 1",
+        group="Group 2",
+        command_context=command_context,
+    ).apply(empty_study)
+    assert output.status, output.message
+
+    # Check the BC rule is removed from the scenario builder
+    rulesets = empty_study.tree.get(["settings", "scenariobuilder"])
+    assert rulesets == {"Default Ruleset": {}}
 
 
 def test_match(command_context: CommandContext):
