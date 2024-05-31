@@ -14,8 +14,8 @@ import ButtonBack from "../ButtonBack";
 import BasicDialog, { BasicDialogProps } from "../dialogs/BasicDialog";
 import EditableMatrix from "../EditableMatrix";
 import FileTable from "../FileTable";
-import SplitLayoutView from "../SplitLayoutView";
 import UsePromiseCond from "../utils/UsePromiseCond";
+import SplitView from "../SplitView";
 
 interface Props {
   study: StudyMetadata;
@@ -111,19 +111,45 @@ function MatrixAssignDialog(props: Props) {
         response={resList}
         ifResolved={(dataset) =>
           dataset && (
-            <SplitLayoutView
-              left={
-                <DataPropsView
-                  dataset={dataset}
-                  selectedItem={selectedItem}
-                  setSelectedItem={setSelectedItem}
-                />
-              }
-              right={
-                <Box sx={{ width: "100%", height: "100%" }}>
-                  {selectedItem && !currentMatrix && (
-                    <FileTable
-                      title={
+            <SplitView direction="horizontal" sizes={[20, 80]}>
+              <DataPropsView
+                dataset={dataset}
+                selectedItem={selectedItem}
+                setSelectedItem={setSelectedItem}
+              />
+              <Box sx={{ width: 1, height: 1, px: 2 }}>
+                {selectedItem && !currentMatrix && (
+                  <FileTable
+                    title={
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                        }}
+                      >
+                        <Typography
+                          sx={{
+                            color: "text.primary",
+                            fontSize: "1.25rem",
+                            fontWeight: 400,
+                            lineHeight: 1.334,
+                          }}
+                        >
+                          {matrixName}
+                        </Typography>
+                      </Box>
+                    }
+                    content={matrices || []}
+                    onRead={handleMatrixClick}
+                    onAssign={handleAssignation}
+                  />
+                )}
+                <UsePromiseCond
+                  response={resMatrix}
+                  ifResolved={(matrix) =>
+                    matrix && (
+                      <>
                         <Box
                           sx={{
                             display: "flex",
@@ -141,55 +167,25 @@ function MatrixAssignDialog(props: Props) {
                           >
                             {matrixName}
                           </Typography>
-                        </Box>
-                      }
-                      content={matrices || []}
-                      onRead={handleMatrixClick}
-                      onAssign={handleAssignation}
-                    />
-                  )}
-                  <UsePromiseCond
-                    response={resMatrix}
-                    ifResolved={(matrix) =>
-                      matrix && (
-                        <>
-                          <Box
-                            sx={{
-                              display: "flex",
-                              justifyContent: "space-between",
-                              alignItems: "center",
-                            }}
-                          >
-                            <Typography
-                              sx={{
-                                color: "text.primary",
-                                fontSize: "1.25rem",
-                                fontWeight: 400,
-                                lineHeight: 1.334,
-                              }}
-                            >
-                              {matrixName}
-                            </Typography>
 
-                            <Box display="flex" justifyContent="flex-end">
-                              <ButtonBack
-                                onClick={() => setCurrentMatrix(undefined)}
-                              />
-                            </Box>
+                          <Box display="flex" justifyContent="flex-end">
+                            <ButtonBack
+                              onClick={() => setCurrentMatrix(undefined)}
+                            />
                           </Box>
-                          <Divider sx={{ mt: 1, mb: 2 }} />
-                          <EditableMatrix
-                            matrix={matrix}
-                            readOnly
-                            matrixTime={false}
-                          />
-                        </>
-                      )
-                    }
-                  />
-                </Box>
-              }
-            />
+                        </Box>
+                        <Divider sx={{ mt: 1, mb: 2 }} />
+                        <EditableMatrix
+                          matrix={matrix}
+                          readOnly
+                          matrixTime={false}
+                        />
+                      </>
+                    )
+                  }
+                />
+              </Box>
+            </SplitView>
           )
         }
       />

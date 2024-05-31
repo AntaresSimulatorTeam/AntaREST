@@ -38,25 +38,27 @@ function Areas() {
 
   return (
     <SplitView direction="horizontal" sizes={[10, 90]}>
-      <Box width="100%" height="100%">
+      <Box>
         <AreaPropsView
           studyId={study.id}
           onClick={handleAreaClick}
           currentArea={currentArea?.id}
         />
       </Box>
-      <UsePromiseCond
-        response={res}
-        ifResolved={(renewablesClustering) =>
-          currentArea ? (
-            <AreasTab
-              renewablesClustering={renewablesClustering !== "aggregated"}
-            />
-          ) : (
-            <SimpleContent title="No areas" />
-          )
-        }
-      />
+      <Box>
+        <UsePromiseCond
+          response={res}
+          ifResolved={(renewablesClustering) =>
+            currentArea ? (
+              <AreasTab
+                renewablesClustering={renewablesClustering !== "aggregated"}
+              />
+            ) : (
+              <SimpleContent title="No areas" />
+            )
+          }
+        />
+      </Box>
     </SplitView>
   );
 }
