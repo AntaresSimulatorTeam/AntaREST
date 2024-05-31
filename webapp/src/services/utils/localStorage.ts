@@ -1,7 +1,7 @@
 import * as RA from "ramda-adjunct";
 import packages from "../../../package.json";
 import { UserInfo } from "../../common/types";
-import { TableTemplate } from "../../components/App/Singlestudy/explore/TableModeList/utils";
+import { TableTemplate } from "../../components/App/Singlestudy/explore/TableMode/utils";
 import { StudiesSortConf, StudiesState } from "../../redux/ducks/studies";
 import { UIState } from "../../redux/ducks/ui";
 import { TABLE_MODE_TYPES_ALIASES } from "../api/studies/tableMode/constants";
