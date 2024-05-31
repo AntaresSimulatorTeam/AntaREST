@@ -7,6 +7,12 @@ from antarest.study.model import Study
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.update_scenario_builder import UpdateScenarioBuilder
 
+# Symbols used in scenario builder data
+_AREA_RELATED_SYMBOLS = "l", "h", "w", "s", "bc", "hgp"
+_LINK_RELATED_SYMBOLS = ("ntc",)
+_HYDRO_LEVEL_RELATED_SYMBOLS = "hl", "hfl"
+_CLUSTER_RELATED_SYMBOLS = "t", "r"
+
 _HYDRO_LEVEL_PERCENT = 100
 
 _Section: te.TypeAlias = t.MutableMapping[str, t.Union[int, float]]
@@ -29,16 +35,16 @@ class ScenarioBuilderManager:
             for key, value in data.items():
                 symbol, *parts = key.split(",")
                 scenario = ruleset.setdefault(symbol, {})
-                if symbol in ("l", "h", "w", "s", "bc", "hgp"):
+                if symbol in _AREA_RELATED_SYMBOLS:
                     scenario_area = scenario.setdefault(parts[0], {})
                     scenario_area[parts[1]] = int(value)
-                elif symbol in ("hl", "hfl"):
+                elif symbol in _HYDRO_LEVEL_RELATED_SYMBOLS:
                     scenario_area = scenario.setdefault(parts[0], {})
                     scenario_area[parts[1]] = float(value) * _HYDRO_LEVEL_PERCENT
-                elif symbol in ("ntc",):
+                elif symbol in _LINK_RELATED_SYMBOLS:
                     scenario_link = scenario.setdefault(f"{parts[0]} / {parts[1]}", {})
                     scenario_link[parts[2]] = int(value)
-                elif symbol in ("t", "r"):
+                elif symbol in _CLUSTER_RELATED_SYMBOLS:
                     scenario_area = scenario.setdefault(parts[0], {})
                     scenario_area_cluster = scenario_area.setdefault(parts[2], {})
                     scenario_area_cluster[parts[1]] = int(value)
@@ -54,13 +60,13 @@ class ScenarioBuilderManager:
         for ruleset_name, ruleset in rulesets.items():
             section = sections[ruleset_name] = {}
             for symbol, data in ruleset.items():
-                if symbol in ("l", "h", "w", "s", "bc", "hgp"):
+                if symbol in _AREA_RELATED_SYMBOLS:
                     _populate_common(section, symbol, data)
-                elif symbol in ("hl", "hfl"):
+                elif symbol in _HYDRO_LEVEL_RELATED_SYMBOLS:
                     _populate_hydro_levels(section, symbol, data)
-                elif symbol in ("ntc",):
+                elif symbol in _LINK_RELATED_SYMBOLS:
                     _populate_links(section, symbol, data)
-                elif symbol in ("t", "r"):
+                elif symbol in _CLUSTER_RELATED_SYMBOLS:
                     _populate_clusters(section, symbol, data)
                 else:  # pragma: no cover
                     raise NotImplementedError(f"Unknown symbol {symbol}")
