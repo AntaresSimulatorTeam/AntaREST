@@ -30,9 +30,9 @@ export interface SplitViewProps {
  */
 function SplitView({
   children,
-  direction,
+  direction = "horizontal",
   sizes,
-  gutterSize = 4,
+  gutterSize = 3,
 }: SplitViewProps) {
   const numberOfChildren = React.Children.count(children);
   const defaultSizes = Array(numberOfChildren).fill(100 / numberOfChildren);

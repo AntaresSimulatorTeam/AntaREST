@@ -165,7 +165,7 @@ function Map() {
       response={mapNodesRes}
       ifResolved={(mapNodes) => (
         <>
-          <SplitView direction="horizontal" sizes={[10, 90]}>
+          <SplitView sizes={[10, 90]}>
             <Areas
               onAdd={() => setOpenDialog(true)}
               nodes={mapNodes}

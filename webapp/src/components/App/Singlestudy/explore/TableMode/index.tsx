@@ -73,54 +73,58 @@ function TableModeList() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <Box sx={{ width: 1, height: 1, py: 2 }}>
-      <SplitView direction="horizontal" sizes={[10, 90]}>
-        <PropertiesView
-          mainContent={
-            <ListElement
-              list={templates}
-              currentElement={selectedTemplate?.id}
-              currentElementKeyToTest="id"
-              setSelectedItem={({ id }) => setSelectedTemplateId(id)}
-              contextMenuContent={({ element, close }) => (
-                <>
-                  <MenuItem
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      setDialog({
-                        type: "edit",
-                        templateId: element.id,
-                      });
-                      close();
-                    }}
-                  >
-                    Edit
-                  </MenuItem>
-                  <MenuItem
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      setDialog({
-                        type: "delete",
-                        templateId: element.id,
-                      });
-                      close();
-                    }}
-                  >
-                    Delete
-                  </MenuItem>
-                </>
-              )}
-            />
-          }
-          onAdd={() => setDialog({ type: "add", templateId: "" })}
-        />
-        {selectedTemplate && (
-          <TableMode
-            studyId={study.id}
-            type={selectedTemplate.type}
-            columns={selectedTemplate.columns}
+    <Box sx={{ width: 1, height: 1, py: 1 }}>
+      <SplitView sizes={[10, 90]}>
+        <Box>
+          <PropertiesView
+            mainContent={
+              <ListElement
+                list={templates}
+                currentElement={selectedTemplate?.id}
+                currentElementKeyToTest="id"
+                setSelectedItem={({ id }) => setSelectedTemplateId(id)}
+                contextMenuContent={({ element, close }) => (
+                  <>
+                    <MenuItem
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setDialog({
+                          type: "edit",
+                          templateId: element.id,
+                        });
+                        close();
+                      }}
+                    >
+                      Edit
+                    </MenuItem>
+                    <MenuItem
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setDialog({
+                          type: "delete",
+                          templateId: element.id,
+                        });
+                        close();
+                      }}
+                    >
+                      Delete
+                    </MenuItem>
+                  </>
+                )}
+              />
+            }
+            onAdd={() => setDialog({ type: "add", templateId: "" })}
           />
-        )}
+        </Box>
+        <Box>
+          {selectedTemplate && (
+            <TableMode
+              studyId={study.id}
+              type={selectedTemplate.type}
+              columns={selectedTemplate.columns}
+            />
+          )}
+        </Box>
       </SplitView>
 
       {dialog?.type === "add" && (

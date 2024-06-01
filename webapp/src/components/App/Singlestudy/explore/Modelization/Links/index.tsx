@@ -33,22 +33,24 @@ function Links() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <SplitView direction="horizontal" sizes={[10, 90]}>
+    <SplitView sizes={[10, 90]}>
       <Box width="100%" height="100%">
         <LinkPropsView studyId={study.id} onClick={handleLinkClick} />
       </Box>
-      <UsePromiseCond
-        response={res}
-        ifResolved={(currentLink) =>
-          currentLink ? (
-            <Box sx={{ width: 1, height: 1 }}>
-              <LinkView link={currentLink} />
-            </Box>
-          ) : (
-            <SimpleContent title="No Links" />
-          )
-        }
-      />
+      <Box>
+        <UsePromiseCond
+          response={res}
+          ifResolved={(currentLink) =>
+            currentLink ? (
+              <Box sx={{ width: 1, height: 1 }}>
+                <LinkView link={currentLink} />
+              </Box>
+            ) : (
+              <SimpleContent title="No Links" />
+            )
+          }
+        />
+      </Box>
     </SplitView>
   );
 }

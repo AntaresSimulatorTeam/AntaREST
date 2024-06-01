@@ -39,7 +39,7 @@ function Configuration() {
   );
 
   return (
-    <SplitView direction="horizontal" sizes={[15, 85]}>
+    <SplitView sizes={[15, 85]}>
       <PropertiesView
         mainContent={
           <ListElement

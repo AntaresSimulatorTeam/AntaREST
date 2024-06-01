@@ -69,7 +69,7 @@ function Matrix({ study, operator, constraintId, open, onClose }: Props) {
             />
           )}
           {operator === "both" && (
-            <SplitView direction="horizontal">
+            <SplitView>
               <Box sx={{ px: 2 }}>
                 <MatrixInput
                   study={study}
