@@ -7,6 +7,7 @@ import {
   PopoverPosition,
   SxProps,
   Theme,
+  Tooltip,
 } from "@mui/material";
 import ArrowRightOutlinedIcon from "@mui/icons-material/ArrowRightOutlined";
 import { useState } from "react";
@@ -89,13 +90,19 @@ function ListElement<T extends { id?: IdType; name: string; label?: string }>({
           }}
           onContextMenu={handleContextMenu(element)}
         >
-          <ListItemText
-            sx={{
-              "&> span": { textOverflow: "ellipsis", overflow: "hidden" },
-            }}
-          >
-            {element.label || element.name}
-          </ListItemText>
+          <Tooltip title={element.name} placement="right">
+            <ListItemText
+              sx={{
+                "&> span": {
+                  textOverflow: "ellipsis",
+                  overflow: "hidden",
+                  whiteSpace: "nowrap",
+                },
+              }}
+            >
+              {element.label || element.name}
+            </ListItemText>
+          </Tooltip>
           <ListItemIcon
             sx={{
               minWidth: 0,
