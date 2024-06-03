@@ -37,7 +37,7 @@ function Areas() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <SplitView sizes={[10, 90]}>
+    <SplitView id="areas" sizes={[10, 90]}>
       <Box>
         <AreaPropsView
           studyId={study.id}

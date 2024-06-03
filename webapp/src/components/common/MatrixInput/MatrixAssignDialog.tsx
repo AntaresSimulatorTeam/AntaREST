@@ -111,7 +111,7 @@ function MatrixAssignDialog(props: Props) {
         response={resList}
         ifResolved={(dataset) =>
           dataset && (
-            <SplitView sizes={[20, 80]}>
+            <SplitView id="matrix-assign" sizes={[20, 80]}>
               <DataPropsView
                 dataset={dataset}
                 selectedItem={selectedItem}

@@ -33,7 +33,7 @@ function Links() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <SplitView sizes={[10, 90]}>
+    <SplitView id="links" sizes={[10, 90]}>
       <Box width="100%" height="100%">
         <LinkPropsView studyId={study.id} onClick={handleLinkClick} />
       </Box>

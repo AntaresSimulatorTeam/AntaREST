@@ -215,7 +215,7 @@ function Candidates() {
 
   return (
     <>
-      <SplitView sizes={[10, 90]}>
+      <SplitView id="xpansion">
         <Box>
           <XpansionPropsView
             candidateList={candidates || []}

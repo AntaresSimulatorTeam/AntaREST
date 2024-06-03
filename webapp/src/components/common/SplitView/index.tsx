@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Split, { SplitProps } from "react-split";
 import { Box } from "@mui/material";
 import "./style.css";
 
 export interface SplitViewProps {
+  id: string;
   children: React.ReactNode[];
   direction?: SplitProps["direction"];
   sizes?: SplitProps["sizes"];
@@ -12,16 +13,16 @@ export interface SplitViewProps {
 
 /**
  * Renders a resizable split view layout, configurable for both horizontal and vertical directions.
- *
- * @see {@link SplitViewProps} for the properties it accepts.
+ * Uses localStorage to persist and retrieve the last known sizes of the split panes, using the ID.
  *
  * @example
- * <SplitView direction="vertical" sizes={[30, 70]}>
+ * <SplitView id="main-split" direction="vertical" sizes={[30, 70]}>
  *   <ComponentOne />
  *   <ComponentTwo />
  * </SplitView>
  *
  * @param props - The component props.
+ * @param props.id - Identifier to uniquely store the sizes of the panes.
  * @param props.children - Child components to be rendered within the split views.
  * @param props.direction - The orientation of the split view ("horizontal" or "vertical").
  * @param props.sizes - Initial sizes of each view in percentages. The array must sum to 100 and match the number of children.
@@ -29,6 +30,7 @@ export interface SplitViewProps {
  * @returns A React component displaying a split layout view with resizable panes.
  */
 function SplitView({
+  id,
   children,
   direction = "horizontal",
   sizes,
@@ -36,6 +38,22 @@ function SplitView({
 }: SplitViewProps) {
   const numberOfChildren = React.Children.count(children);
   const defaultSizes = Array(numberOfChildren).fill(100 / numberOfChildren);
+  const localStorageKey = `split-sizes-${id || "default"}-${direction}`;
+
+  const [activeSizes, setActiveSizes] = useState(() => {
+    const savedSizes = localStorage.getItem(localStorageKey);
+
+    if (savedSizes) {
+      return JSON.parse(savedSizes);
+    }
+
+    return sizes || defaultSizes;
+  });
+
+  useEffect(() => {
+    // Update localStorage whenever activeSizes change.
+    localStorage.setItem(localStorageKey, JSON.stringify(activeSizes));
+  }, [activeSizes, localStorageKey]);
 
   return (
     <Box
@@ -46,10 +64,11 @@ function SplitView({
       }}
     >
       <Split
-        key={direction} // force re-render when direction changes.
+        key={direction} // Force re-render when direction changes.
         className="split"
         direction={direction}
-        sizes={sizes?.length === numberOfChildren ? sizes : defaultSizes} // sizes array must sum up to 100 and match the number of children.
+        sizes={activeSizes ?? defaultSizes}
+        onDragEnd={setActiveSizes} // Update sizes on drag end.
         gutterSize={gutterSize}
         style={{
           display: "flex",

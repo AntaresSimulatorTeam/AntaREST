@@ -74,7 +74,7 @@ function TableModeList() {
 
   return (
     <Box sx={{ width: 1, height: 1, py: 1 }}>
-      <SplitView sizes={[10, 90]}>
+      <SplitView id="tablemode" sizes={[10, 90]}>
         <Box>
           <PropertiesView
             mainContent={
