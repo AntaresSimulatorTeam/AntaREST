@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session  # type: ignore
 from starlette.responses import Response
 
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
-from antarest.core.exceptions import TaskAlreadyRunning
+from antarest.core.exceptions import StudyUpgradeRequirementsNotMet, TaskAlreadyRunning
 from antarest.core.filetransfer.model import FileDownload, FileDownloadTaskDTO
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import Event, EventType
@@ -1594,17 +1594,18 @@ def test_task_upgrade_study(tmp_path: Path) -> None:
     )
     study_mock.name = "my_study"
     study_mock.to_json_summary.return_value = {"id": "my_study", "name": "foo"}
+    service.repository.has_children.return_value = False  # type: ignore
     service.repository.get.return_value = study_mock  # type: ignore
 
     study_id = "my_study"
-    service.task_service.reset_mock()
+    service.task_service.reset_mock()  # type: ignore
     service.task_service.list_tasks.side_effect = [
         [
             TaskDTO(
                 id="1",
                 name=f"Upgrade study my_study ({study_id}) to version 800",
                 status=TaskStatus.RUNNING,
-                creation_date_utc=str(datetime.utcnow()),
+                creation_date_utc=str(datetime.utcnow()),  # type: ignore
                 type=TaskType.UNARCHIVE,
                 ref_id=study_id,
             )
@@ -1633,6 +1634,56 @@ def test_task_upgrade_study(tmp_path: Path) -> None:
         custom_event_messages=None,
         request_params=RequestParameters(user=DEFAULT_ADMIN_USER),
     )
+
+    # check that a variant study or a raw study with children cannot be upgraded
+    parent_raw_study = Mock(
+        spec=RawStudy,
+        archived=False,
+        id="parent_raw_study",
+        name="parent_raw_study",
+        path=tmp_path,
+        version="720",
+        owner=None,
+        groups=[],
+        public_mode=PublicMode.NONE,
+        workspace="other_workspace",
+    )
+    study_mock.name = "parent_raw_study"
+    study_mock.to_json_summary.return_value = {"id": "parent_raw_study", "name": "parent_raw_study"}
+    service.repository.has_children.return_value = True  # type: ignore
+    service.repository.get.return_value = parent_raw_study  # type: ignore
+
+    with pytest.raises(StudyUpgradeRequirementsNotMet):
+        service.upgrade_study(
+            "parent_raw_study",
+            target_version="",
+            params=RequestParameters(user=DEFAULT_ADMIN_USER),
+        )
+
+    variant_study = Mock(
+        spec=VariantStudy,
+        archived=False,
+        id="variant_study",
+        name="variant_study",
+        path=tmp_path,
+        version="720",
+        owner=None,
+        groups=[],
+        public_mode=PublicMode.NONE,
+        workspace="other_workspace",
+    )
+
+    study_mock.name = "variant_study"
+    study_mock.to_json_summary.return_value = {"id": "variant_study", "name": "variant_study"}
+    service.repository.has_children.return_value = True  # type: ignore
+    service.repository.get.return_value = variant_study  # type: ignore
+
+    with pytest.raises(StudyUpgradeRequirementsNotMet):
+        service.upgrade_study(
+            "variant_study",
+            target_version="",
+            params=RequestParameters(user=DEFAULT_ADMIN_USER),
+        )
 
 
 @with_db_context
