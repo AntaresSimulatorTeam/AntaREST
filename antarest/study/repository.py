@@ -428,4 +428,4 @@ class StudyMetadataRepository:
             True if the study has children, False otherwise.
         """
 
-        return bool(self.session.query(Study).filter(and_(Study.parent_id == uuid, Study.id != uuid)).count())
+        return self.session.query(Study).filter(Study.parent_id == uuid).first() is not None

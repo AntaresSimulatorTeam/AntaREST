@@ -27,7 +27,7 @@ from antarest.core.exceptions import (
     StudyDeletionNotAllowed,
     StudyNotFoundError,
     StudyTypeUnsupported,
-    StudyUpgradeRequirementsNotMet,
+    StudyVariantUpgradeError,
     TaskAlreadyRunning,
     UnsupportedOperationOnArchivedStudy,
     UnsupportedStudyVersion,
@@ -2385,9 +2385,18 @@ class StudyService:
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
 
-        # If the study is raw study with variants or a variant study throw an Expectation Failed error
-        if isinstance(study, VariantStudy) or self.repository.has_children(study_id):
-            raise StudyUpgradeRequirementsNotMet(isinstance(study, VariantStudy), study.id)
+        # The upgrade of a study variant requires the use of a command specifically dedicated to the upgrade.
+        # However, such a command does not currently exist. Moreover, upgrading a study (whether raw or variant)
+        # directly impacts its descendants, as it would necessitate upgrading all of them.
+        # It’s uncertain whether this would be an acceptable behavior.
+        # For this reason, upgrading a study is not possible if the study is a variant or if it has descendants.
+
+        # First check if the study is a variant study, if so throw an error
+        if isinstance(study, VariantStudy):
+            raise StudyVariantUpgradeError(True)
+        # If the study is a parent raw study, throw an error
+        elif self.repository.has_children(study_id):
+            raise StudyVariantUpgradeError(False)
 
         target_version = target_version or find_next_version(study.version)
         if not target_version:
