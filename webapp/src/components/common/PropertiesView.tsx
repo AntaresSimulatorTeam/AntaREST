@@ -11,13 +11,11 @@ interface PropsType {
   secondaryContent?: ReactNode;
   onSearchFilterChange?: (value: string) => void;
   onAdd?: () => void;
-  addButtonText?: string;
   sx?: SxProps<Theme>;
 }
 
 function PropertiesView({
   onAdd,
-  addButtonText,
   onSearchFilterChange,
   topContent,
   mainContent,
@@ -57,7 +55,7 @@ function PropertiesView({
               textOverflow: "ellipsis",
             }}
           >
-            {addButtonText || t("global.add")}
+            {t("global.add")}
           </Button>
         </Box>
       )}

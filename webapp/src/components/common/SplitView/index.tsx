@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import Split, { SplitProps } from "react-split";
 import { Box } from "@mui/material";
+import storage from "../../../services/utils/localStorage";
 import "./style.css";
 
 export interface SplitViewProps {
@@ -38,22 +39,21 @@ function SplitView({
 }: SplitViewProps) {
   const numberOfChildren = React.Children.count(children);
   const defaultSizes = Array(numberOfChildren).fill(100 / numberOfChildren);
-  const localStorageKey = `split-sizes-${id || "default"}-${direction}`;
+  const localStorageKey = `splitSizes.${id}.${direction}`;
 
-  const [activeSizes, setActiveSizes] = useState(() => {
-    const savedSizes = localStorage.getItem(localStorageKey);
-
-    if (savedSizes) {
-      return JSON.parse(savedSizes);
-    }
-
-    return sizes || defaultSizes;
+  const [activeSizes, setActiveSizes] = useState<SplitProps["sizes"]>(() => {
+    const savedSizes = storage.getItem(localStorageKey) as number[];
+    return savedSizes ?? (sizes || defaultSizes);
   });
 
   useEffect(() => {
     // Update localStorage whenever activeSizes change.
-    localStorage.setItem(localStorageKey, JSON.stringify(activeSizes));
+    storage.setItem(localStorageKey, activeSizes);
   }, [activeSizes, localStorageKey]);
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
 
   return (
     <Box

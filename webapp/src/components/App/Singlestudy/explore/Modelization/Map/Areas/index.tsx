@@ -14,7 +14,6 @@ import AreaConfig from "./AreaConfig";
 import { isSearchMatching } from "../../../../../../../utils/stringUtils";
 import { setCurrentArea } from "../../../../../../../redux/ducks/studySyntheses";
 import { StudyMapNode } from "../../../../../../../redux/ducks/studyMaps";
-import { useTranslation } from "react-i18next";
 
 interface Props {
   onAdd: () => void;
@@ -23,7 +22,6 @@ interface Props {
 }
 
 function Areas({ onAdd, updateUI, nodes }: Props) {
-  const { t } = useTranslation();
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const dispatch = useAppDispatch();
   const [filteredNodes, setFilteredNodes] = useState<StudyMapNode[]>([]);
@@ -77,7 +75,6 @@ function Areas({ onAdd, updateUI, nodes }: Props) {
         setSearchValue(searchValue);
       }}
       onAdd={onAdd}
-      addButtonText={t("global.area.add")}
     />
   );
 }
