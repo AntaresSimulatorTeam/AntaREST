@@ -27,6 +27,7 @@ from antarest.core.exceptions import (
     StudyDeletionNotAllowed,
     StudyNotFoundError,
     StudyTypeUnsupported,
+    StudyUpgradeRequirementsNotMet,
     TaskAlreadyRunning,
     UnsupportedOperationOnArchivedStudy,
     UnsupportedStudyVersion,
@@ -2383,6 +2384,10 @@ class StudyService:
         study = self.get_study(study_id)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
+
+        # If the study is raw study with variants or a variant study throw an Expectation Failed error
+        if isinstance(study, VariantStudy) or self.repository.has_children(study_id):
+            raise StudyUpgradeRequirementsNotMet(isinstance(study, VariantStudy), study.id)
 
         target_version = target_version or find_next_version(study.version)
         if not target_version:

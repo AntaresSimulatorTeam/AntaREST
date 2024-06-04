@@ -416,3 +416,16 @@ class StudyMetadataRepository:
         subquery = session.query(Study.path).group_by(Study.path).having(func.count() > 1).subquery()
         query = session.query(Study.id, Study.path).filter(Study.path.in_(subquery))
         return t.cast(t.List[t.Tuple[str, str]], query.all())
+
+    def has_children(self, uuid: str) -> bool:
+        """
+        Check if a study has children.
+
+        Args:
+            uuid: The `uuid` of the study to check.
+
+        Returns:
+            True if the study has children, False otherwise.
+        """
+
+        return bool(self.session.query(Study).filter(and_(Study.parent_id == uuid, Study.id != uuid)).count())
