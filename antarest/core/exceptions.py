@@ -314,6 +314,17 @@ class StudyDeletionNotAllowed(HTTPException):
         )
 
 
+class StudyVariantUpgradeError(HTTPException):
+    def __init__(self, is_variant: bool) -> None:
+        if is_variant:
+            super().__init__(
+                HTTPStatus.EXPECTATION_FAILED,
+                "Upgrade not supported for variant study",
+            )
+        else:
+            super().__init__(HTTPStatus.EXPECTATION_FAILED, "Upgrade not supported for parent of variants")
+
+
 class UnsupportedStudyVersion(HTTPException):
     def __init__(self, version: str) -> None:
         super().__init__(
