@@ -15,8 +15,8 @@ import os
 import platform
 import re
 import time
+import typing as t
 from pathlib import Path
-from typing import Callable
 from unittest.mock import Mock
 
 import py7zr
@@ -35,7 +35,7 @@ def build_config(
     study_path: Path,
     workspace_name: str = DEFAULT_WORKSPACE_NAME,
     allow_deletion: bool = False,
-):
+) -> Config:
     return Config(
         storage=StorageConfig(
             workspaces={workspace_name: WorkspaceConfig(path=study_path)},
@@ -45,7 +45,7 @@ def build_config(
 
 
 @pytest.mark.unit_test
-def test_get(tmp_path: str, project_path) -> None:
+def test_get(tmp_path: str, project_path: Path) -> None:
     """
     path_to_studies
     |_study1 (d)
@@ -117,7 +117,7 @@ def test_get_cache(tmp_path: str) -> None:
         config=Mock(),
         cache=cache,
         study_factory=study_factory,
-        path_resources="",
+        path_resources=Path(),
         patch_service=Mock(),
     )
 
@@ -132,7 +132,7 @@ def test_get_cache(tmp_path: str) -> None:
 
 
 @pytest.mark.unit_test
-def test_check_errors():
+def test_check_errors() -> None:
     study = Mock()
     study.check_errors.return_value = ["Hello"]
 
@@ -156,7 +156,7 @@ def test_check_errors():
 
 
 @pytest.mark.unit_test
-def test_assert_study_exist(tmp_path: str, project_path) -> None:
+def test_assert_study_exist(tmp_path: str, project_path: Path) -> None:
     tmp = Path(tmp_path)
     (tmp / "study1").mkdir()
     (tmp / "study.antares").touch()
@@ -182,7 +182,7 @@ def test_assert_study_exist(tmp_path: str, project_path) -> None:
 
 
 @pytest.mark.unit_test
-def test_assert_study_not_exist(tmp_path: str, project_path) -> None:
+def test_assert_study_not_exist(tmp_path: str, project_path: Path) -> None:
     # Create folders
     tmp = Path(tmp_path)
     (tmp / "study1").mkdir()
@@ -246,7 +246,7 @@ def test_create(tmp_path: Path, project_path: Path) -> None:
 
 
 @pytest.mark.unit_test
-def test_create_study_versions(tmp_path: str, project_path) -> None:
+def test_create_study_versions(tmp_path: str, project_path: Path) -> None:
     path_studies = Path(tmp_path)
 
     study = Mock()
@@ -264,7 +264,7 @@ def test_create_study_versions(tmp_path: str, project_path) -> None:
         patch_service=Mock(),
     )
 
-    def create_study(version: str):
+    def create_study(version: str) -> RawStudy:
         metadata = RawStudy(
             id=f"study{version}",
             workspace=DEFAULT_WORKSPACE_NAME,
@@ -410,7 +410,7 @@ def test_create_study_versions(tmp_path: str, project_path) -> None:
 @pytest.mark.unit_test
 def test_copy_study(
     tmp_path: str,
-    clean_ini_writer: Callable,
+    clean_ini_writer: t.Callable[[Path, str], None],
 ) -> None:
     path_studies = Path(tmp_path)
     source_name = "study1"
@@ -432,8 +432,7 @@ def test_copy_study(
     study.get.return_value = value
     study_factory = Mock()
 
-    config = Mock()
-    study_factory.create_from_fs.return_value = FileStudy(config, study)
+    study_factory.create_from_fs.return_value = FileStudy(Mock(spec=Config), study)
     study_factory.create_from_config.return_value = study
 
     url_engine = Mock()
@@ -463,6 +462,17 @@ def test_copy_study(
     study.get.assert_called_once_with(["study"])
 
 
+GENERAL_SECTION = """\
+[general]
+version = 700
+name = 11mc
+mode = Economy
+date = 2020.09.07 - 16:15
+title = 2020.09.07 - 16:15
+timestamp = 1599488150
+"""
+
+
 @pytest.mark.unit_test
 def test_archived_output(tmp_path: Path) -> None:
     if not platform.platform().startswith("Windows"):
@@ -486,17 +496,7 @@ def test_archived_output(tmp_path: Path) -> None:
 
     archived_output = tmp_path / "output.7z"
     with py7zr.SevenZipFile(archived_output, "w") as output_data:
-        output_data.writestr(
-            """[general]
-version = 700
-name = 11mc
-mode = Economy
-date = 2020.09.07 - 16:15
-title = 2020.09.07 - 16:15
-timestamp = 1599488150
-        """,
-            "info.antares-output",
-        )
+        output_data.writestr(GENERAL_SECTION, "info.antares-output")
 
     expected_output_name = "20200907-1615eco-11mc"
     output_name = study_service.import_output(md, archived_output)
@@ -513,6 +513,7 @@ timestamp = 1599488150
     assert not (study_path / "output" / expected_output_name).exists()
 
     output_name = study_service.import_output(md, archived_output)
+    assert output_name is not None
     study_service.unarchive_study_output(md, expected_output_name, True)
     assert (study_path / "output" / (expected_output_name + ".7z")).exists()
     os.unlink(study_path / "output" / (expected_output_name + ".7z"))
@@ -589,7 +590,7 @@ def test_initialize_additional_data(tmp_path: Path) -> None:
 
     assert not study_service.initialize_additional_data(raw_study)
 
-    study_service._read_additional_data_from_files = Mock(return_value=study_additional_data)
+    study_service._read_additional_data_from_files = Mock(return_value=study_additional_data)  # type: ignore
     assert study_service.initialize_additional_data(raw_study)
 
 
