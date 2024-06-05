@@ -193,9 +193,7 @@ function MatrixInput({
           dropzoneText={t("matrix.message.importHint")}
           onCancel={() => setOpenImportDialog(false)}
           onImport={handleImport}
-          accept={{
-            "text/tsv": [".tsv"],
-          }}
+          accept={{ "text/*": [".csv", ".tsv", ".txt"] }}
         />
       )}
       {openMatrixAsignDialog && (
