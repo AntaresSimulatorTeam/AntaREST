@@ -3,6 +3,7 @@ import logging
 import shutil
 import tempfile
 import typing as t
+import zipfile
 from abc import ABC
 from pathlib import Path
 from uuid import uuid4
@@ -13,7 +14,7 @@ from antarest.core.config import Config
 from antarest.core.exceptions import BadOutputError, StudyOutputNotFoundError
 from antarest.core.interfaces.cache import CacheConstants, ICache
 from antarest.core.model import JSON, PublicMode
-from antarest.core.utils.utils import StopWatch, extract_archive, unzip, zip_dir
+from antarest.core.utils.utils import StopWatch, extract_archive, zip_dir
 from antarest.login.model import GroupDTO
 from antarest.study.common.studystorage import IStudyStorageService, T
 from antarest.study.model import (
@@ -251,9 +252,9 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
                 elif output.suffix in {".zip", ".7z"}:
                     is_archived = True
                     path_output.rmdir()
-                    path_output = Path(str(path_output) + output.suffix)
+                    path_output = path_output.with_suffix(output.suffix)
                     shutil.copyfile(output, path_output)
-                    extension = ".zip" if output.suffix == ".zip" else ".7z"
+                    extension = output.suffix
             else:
                 extract_archive(output, path_output)
 
@@ -272,7 +273,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
             logger.error("Failed to import output", exc_info=e)
             shutil.rmtree(path_output, ignore_errors=True)
             if is_archived:
-                Path(str(path_output) + ".zip").unlink(missing_ok=True)
+                path_output.with_suffix(extension).unlink(missing_ok=True)
             output_full_name = None
 
         return output_full_name
@@ -359,19 +360,20 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
                 f"Failed to archive study {study.name} output {output_id}. Maybe it's already unarchived",
             )
             return False
+
         try:
-            # use 7zip to uncompress the output folder
             if archive_path.suffix == ".7z":
-                with py7zr.SevenZipFile(archive_path, "r") as szf:
+                with py7zr.SevenZipFile(archive_path, mode="r") as szf:
                     szf.extractall(Path(study.path) / "output" / output_id)
-                if not keep_src_archive:
-                    archive_path.unlink()
+            elif archive_path.suffix == ".zip":
+                with zipfile.ZipFile(archive_path, mode="r") as zipf:
+                    zipf.extractall(Path(study.path) / "output" / output_id)
             else:
-                unzip(
-                    Path(study.path) / "output" / output_id,
-                    Path(study.path) / "output" / f"{output_id}.zip",
-                    remove_source_zip=not keep_src_archive,
-                )
+                raise NotImplementedError(f"Unsupported archive format {archive_path.suffix}")
+
+            if not keep_src_archive:
+                archive_path.unlink()
+
             remove_from_cache(self.cache, study.id)
             return True
         except Exception as e:
