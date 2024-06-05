@@ -377,7 +377,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         shutil.rmtree(self.get_study_path(variant_study), ignore_errors=True)
 
     def has_children(self, study: VariantStudy) -> bool:
-        return len(self.repository.get_children(parent_id=study.id)) > 0
+        return self.repository.has_children(study.id)
 
     def get_all_variants_children(
         self,

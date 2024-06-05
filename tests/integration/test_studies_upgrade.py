@@ -52,3 +52,53 @@ class TestStudyUpgrade:
         task = wait_task_completion(client, user_access_token, task_id)
         assert task.status == TaskStatus.FAILED
         assert target_version in task.result.message, f"Version not in {task.result.message=}"
+
+    def test_upgrade_study__unmet_requirements(self, client: TestClient, admin_access_token: str):
+        """
+        Test that an upgrade with unmet requirements fails, corresponding to the two following cases:
+            - the study is a raw study with at least one child study
+            - the study is a variant study
+        """
+
+        # set the admin access token in the client headers
+        client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+
+        # create a raw study
+        res = client.post(
+            "/v1/studies",
+            params={"name": "My Study"},
+        )
+        assert res.status_code == 201, res.json()
+        uuid = res.json()
+
+        # create a child variant study
+        res = client.post(
+            f"/v1/studies/{uuid}/variants",
+            params={"name": "foo"},
+        )
+        assert res.status_code == 200, res.json()
+        child_uuid = res.json()
+
+        # upgrade the raw study
+        res = client.put(
+            f"/v1/studies/{uuid}/upgrade",
+        )
+
+        # check that the upgrade failed (HttpException:417, with the expected message)
+        assert res.status_code == 417, res.json()
+        assert res.json() == {
+            "description": "Upgrade not supported for parent of variants",
+            "exception": "StudyVariantUpgradeError",
+        }
+
+        # upgrade the variant study
+        res = client.put(
+            f"/v1/studies/{child_uuid}/upgrade",
+        )
+
+        # check that the upgrade failed (HttpException:417, with the expected message)
+        assert res.status_code == 417, res.json()
+        assert res.json() == {
+            "description": "Upgrade not supported for variant study",
+            "exception": "StudyVariantUpgradeError",
+        }
