@@ -144,11 +144,6 @@ SAME_REQUEST_DIFFERENT_FORMATS = [
 
 INCOHERENT_REQUESTS_BODIES = [
     {
-        "output_id": "fake_output_id",
-        "query_file": LinksQueryFile.VALUES,
-        "frequency": MatrixFrequency.HOURLY,
-    },
-    {
         "output_id": "20201014-1425eco-goodbye",
         "query_file": AreasQueryFile.VALUES,
         "frequency": MatrixFrequency.HOURLY,
@@ -311,3 +306,33 @@ class TestRawDataAggregation:
             )
             assert res.status_code == 422
             assert res.json()["exception"] == "RequestValidationError"
+
+    def test_aggregation_with_wrong_output(self, client: TestClient, user_access_token: str, study_id: str):
+        """
+        Asserts that requests with wrong output send an HTTP 422 Exception
+        """
+        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+
+        # test for areas
+        res = client.get(
+            f"/v1/studies/{study_id}/areas/aggregate",
+            params={
+                "output_id": "fake_output_id",
+                "query_file": AreasQueryFile.VALUES,
+                "frequency": MatrixFrequency.HOURLY,
+            },
+        )
+        assert res.status_code == 422
+        assert res.json()["exception"] == "BadOutputError"
+
+        # test for links
+        res = client.get(
+            f"/v1/studies/{study_id}/links/aggregate",
+            params={
+                "output_id": "fake_output_id",
+                "query_file": LinksQueryFile.VALUES,
+                "frequency": MatrixFrequency.HOURLY,
+            },
+        )
+        assert res.status_code == 422
+        assert res.json()["exception"] == "BadOutputError"
