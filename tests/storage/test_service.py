@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session  # type: ignore
 from starlette.responses import Response
 
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
-from antarest.core.exceptions import TaskAlreadyRunning
+from antarest.core.exceptions import StudyVariantUpgradeError, TaskAlreadyRunning
 from antarest.core.filetransfer.model import FileDownload, FileDownloadTaskDTO
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import Event, EventType
@@ -1104,9 +1104,9 @@ def test_delete_with_prefetch(tmp_path: Path) -> None:
     seal(study_mock)
 
     study_metadata_repository.get.return_value = study_mock
-    variant_study_repository.get_children.return_value = []
+    variant_study_repository.has_children.return_value = False
 
-    # if this fails, it may means the study metadata mock is missing some attribute definition
+    # if this fails, it may mean the study metadata mock is missing some attribute definition
     # this test is here to prevent errors if we add attribute fetching from child classes
     # (attributes in polymorphism are lazy)
     # see the comment in the delete method for more information
@@ -1133,7 +1133,7 @@ def test_delete_with_prefetch(tmp_path: Path) -> None:
     seal(study_mock)
 
     study_metadata_repository.get.return_value = study_mock
-    variant_study_repository.get_children.return_value = []
+    variant_study_repository.has_children.return_value = False
 
     # if this fails, it may means the study metadata mock is missing some definition
     # this test is here to prevent errors if we add attribute fetching from child classes (attributes in polymorphism are lazy)
@@ -1180,8 +1180,7 @@ def test_delete_recursively(tmp_path: Path) -> None:
         return str(_study_dir)
 
     study_path = create_study_fs_mock()
-    study_mock = Mock(
-        spec=RawStudy,
+    study_mock = RawStudy(
         archived=False,
         id="my_study",
         path=study_path,
@@ -1191,30 +1190,72 @@ def test_delete_recursively(tmp_path: Path) -> None:
         workspace=DEFAULT_WORKSPACE_NAME,
         last_access=datetime.utcnow(),
     )
-    study_mock.to_json_summary.return_value = {"id": "my_study", "name": "foo"}
-
-    # it freezes the mock and raise Attribute error if anything else than defined is used
-    seal(study_mock)
 
     v1 = VariantStudy(id="variant_1", path=create_study_fs_mock(variant=True))
     v2 = VariantStudy(id="variant_2", path=create_study_fs_mock(variant=True))
     v3 = VariantStudy(id="sub_variant_1", path=create_study_fs_mock(variant=True))
 
-    study_metadata_repository.get.side_effect = [study_mock, v3, v1, v2]
-    variant_study_repository.get_children.side_effect = [
-        [v1, v2],
-        [v3],
-        [],
-        [],
-        [],
-        [],
-        [],
-    ]
-    variant_study_repository.get.side_effect = [
-        VariantStudy(id="variant_1"),
-        VariantStudy(id="sub_variant_1"),
-        VariantStudy(id="variant_2"),
-    ]
+    def get_study(study_id: str) -> Study:
+        if study_id == "my_study":
+            return study_mock
+        elif study_id == "variant_1":
+            return v1
+        elif study_id == "variant_2":
+            return v2
+        elif study_id == "sub_variant_1":
+            return v3
+        raise ValueError(f"Unexpected study id: {study_id}")
+
+    class ChildrenProvider:
+        def __init__(self):
+            self.c0 = 0
+            self.c1 = 0
+
+        def get_children(self, parent_id: str) -> t.List[Study]:
+            if parent_id == "my_study":
+                if self.c0 > 0:
+                    return []
+                self.c0 = 1
+                return [v1, v2]
+            elif parent_id == "variant_1":
+                if self.c1 > 0:
+                    return []
+                self.c1 = 1
+                return [v3]
+            elif parent_id == "variant_2":
+                return []
+            elif parent_id == "sub_variant_1":
+                return []
+            raise ValueError(f"Unexpected study id: {parent_id}")
+
+    class HasChildrenProvider:
+        def __init__(self):
+            self.c1 = 0
+            self.c2 = 0
+
+        def has_children(self, study_id: str) -> bool:
+            if study_id == "my_study":
+                if self.c1 > 0:
+                    return False
+                self.c1 = 1
+                return True
+            elif study_id == "variant_1":
+                if self.c2 > 0:
+                    return False
+                self.c2 = 1
+                return True
+            elif study_id == "variant_2":
+                return False
+            elif study_id == "sub_variant_1":
+                return False
+            raise ValueError(f"Unexpected study id: {study_id}")
+
+    children_provider = ChildrenProvider()
+    hash_children_provider = HasChildrenProvider()
+    study_metadata_repository.get = get_study
+    variant_study_repository.get = get_study
+    variant_study_repository.get_children = children_provider.get_children
+    variant_study_repository.has_children = hash_children_provider.has_children
 
     service.delete_study(
         "my_study",
@@ -1594,17 +1635,18 @@ def test_task_upgrade_study(tmp_path: Path) -> None:
     )
     study_mock.name = "my_study"
     study_mock.to_json_summary.return_value = {"id": "my_study", "name": "foo"}
+    service.repository.has_children.return_value = False  # type: ignore
     service.repository.get.return_value = study_mock  # type: ignore
 
     study_id = "my_study"
-    service.task_service.reset_mock()
+    service.task_service.reset_mock()  # type: ignore
     service.task_service.list_tasks.side_effect = [
         [
             TaskDTO(
                 id="1",
                 name=f"Upgrade study my_study ({study_id}) to version 800",
                 status=TaskStatus.RUNNING,
-                creation_date_utc=str(datetime.utcnow()),
+                creation_date_utc=str(datetime.utcnow()),  # type: ignore
                 type=TaskType.UNARCHIVE,
                 ref_id=study_id,
             )
@@ -1633,6 +1675,56 @@ def test_task_upgrade_study(tmp_path: Path) -> None:
         custom_event_messages=None,
         request_params=RequestParameters(user=DEFAULT_ADMIN_USER),
     )
+
+    # check that a variant study or a raw study with children cannot be upgraded
+    parent_raw_study = Mock(
+        spec=RawStudy,
+        archived=False,
+        id="parent_raw_study",
+        name="parent_raw_study",
+        path=tmp_path,
+        version="720",
+        owner=None,
+        groups=[],
+        public_mode=PublicMode.NONE,
+        workspace="other_workspace",
+    )
+    study_mock.name = "parent_raw_study"
+    study_mock.to_json_summary.return_value = {"id": "parent_raw_study", "name": "parent_raw_study"}
+    service.repository.has_children.return_value = True  # type: ignore
+    service.repository.get.return_value = parent_raw_study  # type: ignore
+
+    with pytest.raises(StudyVariantUpgradeError):
+        service.upgrade_study(
+            "parent_raw_study",
+            target_version="",
+            params=RequestParameters(user=DEFAULT_ADMIN_USER),
+        )
+
+    variant_study = Mock(
+        spec=VariantStudy,
+        archived=False,
+        id="variant_study",
+        name="variant_study",
+        path=tmp_path,
+        version="720",
+        owner=None,
+        groups=[],
+        public_mode=PublicMode.NONE,
+        workspace="other_workspace",
+    )
+
+    study_mock.name = "variant_study"
+    study_mock.to_json_summary.return_value = {"id": "variant_study", "name": "variant_study"}
+    service.repository.has_children.return_value = True  # type: ignore
+    service.repository.get.return_value = variant_study  # type: ignore
+
+    with pytest.raises(StudyVariantUpgradeError):
+        service.upgrade_study(
+            "variant_study",
+            target_version="",
+            params=RequestParameters(user=DEFAULT_ADMIN_USER),
+        )
 
 
 @with_db_context
