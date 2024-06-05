@@ -86,6 +86,7 @@
   "global.error.create": "Creation failed",
   "global.error.delete": "Deletion failed",
   "global.area.add": "Add an area",
+  "global.add": "Add",
   "login.error": "Failed to authenticate",
   "tasks.title": "Tasks",
   "api.title": "API",

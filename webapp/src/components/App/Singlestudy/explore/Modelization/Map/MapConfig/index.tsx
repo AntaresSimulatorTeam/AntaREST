@@ -33,6 +33,7 @@ function MapConfig({ onClose }: Props) {
         height: "100%",
         display: "flex",
         flexDirection: "column",
+        p: 1,
       }}
     >
       <Button

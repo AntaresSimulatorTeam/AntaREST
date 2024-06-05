@@ -86,6 +86,7 @@
   "global.error.create": "La création a échoué",
   "global.error.delete": "La suppression a échoué",
   "global.area.add": "Ajouter une zone",
+  "global.add": "Ajouter",
   "login.error": "Échec de l'authentification",
   "tasks.title": "Tâches",
   "api.title": "API",

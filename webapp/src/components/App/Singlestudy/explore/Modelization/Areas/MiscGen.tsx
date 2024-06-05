@@ -4,8 +4,6 @@ import { getCurrentAreaId } from "../../../../../../redux/selectors";
 import { MatrixStats, StudyMetadata } from "../../../../../../common/types";
 import MatrixInput from "../../../../../common/MatrixInput";
 import { Root } from "./style";
-import DocLink from "../../../../../common/DocLink";
-import { ACTIVE_WINDOWS_DOC_PATH } from "../BindingConstraints/BindingConstView/utils";
 
 function MiscGen() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -28,7 +26,6 @@ function MiscGen() {
 
   return (
     <Root>
-      <DocLink to={`${ACTIVE_WINDOWS_DOC_PATH}#misc-gen`} isAbsolute />
       <MatrixInput
         study={study}
         url={url}
