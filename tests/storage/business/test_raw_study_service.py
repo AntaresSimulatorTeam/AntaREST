@@ -18,7 +18,6 @@ import time
 from pathlib import Path
 from typing import Callable
 from unittest.mock import Mock
-from zipfile import ZIP_DEFLATED, ZipFile
 
 import py7zr
 import pytest

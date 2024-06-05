@@ -51,12 +51,13 @@ from antarest.study.storage.utils import extract_output_name, fix_study_root, re
 logger = logging.getLogger(__name__)
 
 
-def find_output_archive(study: T, output_id: str) -> t.Optional[Path]:
-    if (Path(study.path) / "output" / f"{output_id}.7z").exists():
-        return Path(study.path) / "output" / f"{output_id}.7z"
-    elif (Path(study.path) / "output" / f"{output_id}.zip").exists():
-        return Path(study.path) / "output" / f"{output_id}.zip"
-    return None
+def _search_output_archive(study_path: str, output_id: str) -> t.Optional[Path]:
+    """Search for an output archive file in the study path, return ``None`` if not found."""
+    locations = [
+        Path(study_path) / "output" / f"{output_id}.7z",
+        Path(study_path) / "output" / f"{output_id}.zip",
+    ]
+    return next(iter(path for path in locations if path.exists()), None)
 
 
 class AbstractStorageService(IStudyStorageService[T], ABC):
@@ -364,7 +365,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
             return False
 
     def unarchive_study_output(self, study: T, output_id: str, keep_src_archive: bool) -> bool:
-        archive_path = find_output_archive(study, output_id)
+        archive_path = _search_output_archive(study.path, output_id)
         if archive_path is None:
             logger.warning(
                 f"Failed to archive study {study.name} output {output_id}. Maybe it's already unarchived",
