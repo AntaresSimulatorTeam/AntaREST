@@ -128,21 +128,21 @@ def is_output_archived(path_output: Path) -> bool:
 def extract_output_name(path_output: Path, new_suffix_name: t.Optional[str] = None) -> str:
     ini_reader = IniReader()
     is_output_archived = path_output.suffix in {".zip", ".7z"}
+    info_filename = "info.antares-output"
     if is_output_archived:
-        temp_dir = tempfile.TemporaryDirectory()
-        s = StopWatch()
-        if path_output.suffix == ".zip":
-            with ZipFile(path_output, "r") as zip_obj:
-                zip_obj.extract("info.antares-output", temp_dir.name)
-        else:
-            with py7zr.SevenZipFile(path_output, mode="r") as archive:
-                archive.extract(targets=["info.antares-output"], path=temp_dir.name)
-        info_antares_output = ini_reader.read(Path(temp_dir.name) / "info.antares-output")
-        s.log_elapsed(lambda x: logger.info(f"info.antares_output has been read in {x}s"))
-        temp_dir.cleanup()
+        with tempfile.TemporaryDirectory() as temp_dir:
+            s = StopWatch()
+            if path_output.suffix == ".zip":
+                with ZipFile(path_output, mode="r") as zip_obj:
+                    zip_obj.extract(info_filename, temp_dir)
+            else:
+                with py7zr.SevenZipFile(path_output, mode="r") as archive:
+                    archive.extract(targets=[info_filename], path=temp_dir)
+            info_antares_output = ini_reader.read(Path(temp_dir) / info_filename)
+            s.log_elapsed(lambda x: logger.info(f"'{info_filename}' has been read in {x}s"))
 
     else:
-        info_antares_output = ini_reader.read(path_output / "info.antares-output")
+        info_antares_output = ini_reader.read(path_output / info_filename)
 
     general_info = info_antares_output["general"]
 
@@ -155,7 +155,7 @@ def extract_output_name(path_output: Path, new_suffix_name: t.Optional[str] = No
         general_info["name"] = suffix_name
         if not archived:
             ini_writer = IniWriter()
-            ini_writer.write(info_antares_output, path_output / "info.antares-output")
+            ini_writer.write(info_antares_output, path_output / info_filename)
         else:
             logger.warning("Could not rewrite the new name inside the output: the output is archived")
 
