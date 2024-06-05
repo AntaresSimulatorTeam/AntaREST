@@ -41,17 +41,17 @@ class VariantStudyRepository(StudyMetadataRepository):
 
     def get_children(self, parent_id: str) -> t.List[VariantStudy]:
         """
-        Get the children of a variant study.
+        Get the children of a variant study in chronological order.
 
         Args:
             parent_id: Identifier of the parent study.
 
         Returns:
-            List of `VariantStudy` objects.
+            List of `VariantStudy` objects, ordered by creation date.
         """
-        studies: t.List[VariantStudy] = (
-            self.session.query(VariantStudy).filter(VariantStudy.parent_id == parent_id).all()
-        )
+        q = self.session.query(VariantStudy).filter(Study.parent_id == parent_id)
+        q = q.order_by(Study.created_at.asc())
+        studies = t.cast(t.List[VariantStudy], q.all())
         return studies
 
     def get_ancestor_or_self_ids(self, variant_id: str) -> t.Sequence[str]:
