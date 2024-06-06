@@ -165,6 +165,11 @@ class ScenarioHandlers:
         return scenario_config
 
     @staticmethod
+    def handle_hydro_initial_levels_scenario(config, nb_years, file_study, scenario_type):
+        # TODO
+        return {}
+
+    @staticmethod
     def handle_binding_constraints_scenario(config, nb_years, file_study, scenario_type):
         """Handler for binding constraints (BC) scenarios that initializes configurations based on existing BC groups."""
         scenario_config = {scenario_type: {}}
@@ -214,6 +219,7 @@ class ScenarioHandlers:
             "solar": ScenarioHandlers.handle_generic_scenario,
             "ntc": ScenarioHandlers.handle_ntc_scenario,
             "renewable": ScenarioHandlers.handle_renewable_scenario,
+            "hydroInitialLevels": ScenarioHandlers.handle_hydro_initial_levels_scenario,
             "bindingConstraints": ScenarioHandlers.handle_binding_constraints_scenario,
         }
 

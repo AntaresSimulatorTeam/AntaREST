@@ -18,6 +18,7 @@ class ScenarioUtils:
         {"type": "solar", "symbol": "s"},
         {"type": "ntc", "symbol": "ntc"},
         {"type": "renewable", "symbol": "r"},
+        {"type": "hydroInitialLevels", "symbol": "hl"},
         {"type": "bindingConstraints", "symbol": "bc"},
     ]
 
