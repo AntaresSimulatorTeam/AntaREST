@@ -264,10 +264,25 @@ class IStudyStorageService(ABC, t.Generic[T]):
         """Initialize additional data for a study."""
 
     @abstractmethod
-    def archive_study_output(self, study: T, output_id: str) -> bool:
-        """Archive a study output."""
+    def archive_study_output(self, study: T, output_id: str) -> None:
+        """
+        Archive study output in a 7z file and remove the output folder.
+
+        Args:
+            study: Study to archive the output from.
+            output_id: Output to archive.
+        """
 
     # noinspection SpellCheckingInspection
     @abstractmethod
-    def unarchive_study_output(self, study: T, output_id: str, keep_src_zip: bool) -> bool:
-        """Un-archive a study output."""
+    def unarchive_study_output(self, study: T, output_id: str, keep_src_archive: bool) -> None:
+        """
+        Unarchive a study output archive and remove the archive file if needed.
+
+        The output archive file could be a 7z file or a zip file.
+
+        Args:
+            study: Study to unarchive the output from.
+            output_id: Output to unarchive.
+            keep_src_archive: Whether to keep the source archive file.
+        """

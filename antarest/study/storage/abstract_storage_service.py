@@ -52,15 +52,6 @@ from antarest.study.storage.utils import extract_output_name, fix_study_root, re
 logger = logging.getLogger(__name__)
 
 
-def _search_output_archive(study_path: str, output_id: str) -> t.Optional[Path]:
-    """Search for an output archive file in the study path, return ``None`` if not found."""
-    locations = [
-        Path(study_path) / "output" / f"{output_id}.7z",
-        Path(study_path) / "output" / f"{output_id}.zip",
-    ]
-    return next(iter(path for path in locations if path.exists()), None)
-
-
 class AbstractStorageService(IStudyStorageService[T], ABC):
     def __init__(
         self,
@@ -347,50 +338,46 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         study_additional_data = StudyAdditionalData(horizon=horizon, author=author, patch=patch.model_dump_json())
         return study_additional_data
 
-    def archive_study_output(self, study: T, output_id: str) -> bool:
-        try:
-            # use 7zip to compress the output folder
-            archive_dir(
-                Path(study.path) / "output" / output_id,
-                Path(study.path) / "output" / f"{output_id}{ArchiveFormat.SEVEN_ZIP}",
-                remove_source_dir=True,
-                archive_format=ArchiveFormat.SEVEN_ZIP,
-            )
-            remove_from_cache(self.cache, study.id)
-            return True
-        except Exception as e:
-            logger.warning(
-                f"Failed to archive study {study.name} output {output_id}",
-                exc_info=e,
-            )
-            return False
+    def archive_study_output(self, study: T, output_id: str) -> None:
+        study_path = Path(study.path)
+        output_dir = study_path / "output" / output_id
+        if not output_dir.exists():
+            _err_msg = f"Output '{output_id}' not found in study '{study.name}'"
+            actual_files = [p.relative_to(study_path) for p in study_path.glob("output/*") if p.is_dir()]
+            logger.error(f"{_err_msg}. Found folders: {', '.join([str(file) for file in actual_files])}")
+            raise FileNotFoundError(_err_msg)
 
-    def unarchive_study_output(self, study: T, output_id: str, keep_src_archive: bool) -> bool:
-        archive_path = _search_output_archive(study.path, output_id)
+        archive_path = study_path / "output" / f"{output_id}.7z"
+        with py7zr.SevenZipFile(archive_path, "w") as szf:
+            szf.writeall(output_dir, arcname=".")
+
+        shutil.rmtree(output_dir)
+        remove_from_cache(self.cache, study.id)
+
+    def unarchive_study_output(self, study: T, output_id: str, keep_src_archive: bool) -> None:
+        # Search for an output archive file in the study path
+        study_path = Path(study.path)
+        locations = [
+            study_path / "output" / f"{output_id}.7z",
+            study_path / "output" / f"{output_id}.zip",
+        ]
+        archive_path = next(iter(path for path in locations if path.exists()), None)
         if archive_path is None:
-            logger.warning(
-                f"Failed to archive study {study.name} output {output_id}. Maybe it's already unarchived",
-            )
-            return False
+            _err_msg = f"Archive for study '{study.name}' output '{output_id}' not found"
+            actual_files = [p.relative_to(study_path) for p in study_path.glob("output/*") if p.is_file()]
+            logger.error(f"{_err_msg}. Found files: {', '.join([str(file) for file in actual_files])}")
+            raise FileNotFoundError(_err_msg)
 
-        try:
-            if archive_path.suffix == ".7z":
-                with py7zr.SevenZipFile(archive_path, mode="r") as szf:
-                    szf.extractall(Path(study.path) / "output" / output_id)
-            elif archive_path.suffix == ".zip":
-                with zipfile.ZipFile(archive_path, mode="r") as zipf:
-                    zipf.extractall(Path(study.path) / "output" / output_id)
-            else:
-                raise NotImplementedError(f"Unsupported archive format {archive_path.suffix}")
+        if archive_path.suffix == ".7z":
+            with py7zr.SevenZipFile(archive_path, mode="r") as szf:
+                szf.extractall(study_path / "output" / output_id)
+        elif archive_path.suffix == ".zip":
+            with zipfile.ZipFile(archive_path, mode="r") as zipf:
+                zipf.extractall(study_path / "output" / output_id)
+        else:
+            raise NotImplementedError(f"Unsupported archive format {archive_path.suffix}")
 
-            if not keep_src_archive:
-                archive_path.unlink()
+        if not keep_src_archive:
+            archive_path.unlink()
 
-            remove_from_cache(self.cache, study.id)
-            return True
-        except Exception as e:
-            logger.warning(
-                f"Failed to unarchive study {study.name} output {output_id}",
-                exc_info=e,
-            )
-            return False
+        remove_from_cache(self.cache, study.id)
