@@ -44,7 +44,6 @@ from antarest.study.model import (
 )
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.files import get_playlist
-from antarest.study.storage.rawstudy.model.filesystem.config.model import Simulation
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
 from antarest.study.storage.utils import extract_output_name, fix_study_root, remove_from_cache
@@ -187,10 +186,10 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         results: t.List[StudySimResultDTO] = []
         if study_data.config.outputs is not None:
             reference = (patch_metadata.outputs or PatchOutputs()).reference
-            for output in study_data.config.outputs:
-                output_data: Simulation = study_data.config.outputs[output]
+            for output, output_data in study_data.config.outputs.items():
                 try:
-                    file_metadata = FileStudyHelpers.get_config(study_data, output_data.get_file())
+                    output_file = output_data.get_file()
+                    file_metadata = FileStudyHelpers.get_config(study_data, output_file)
                     settings = StudySimSettingsDTO(
                         general=file_metadata["general"],
                         input=file_metadata["input"],
@@ -204,7 +203,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
 
                     results.append(
                         StudySimResultDTO(
-                            name=output_data.get_file(),
+                            name=output_file,
                             type=output_data.mode,
                             settings=settings,
                             completionDate="",
