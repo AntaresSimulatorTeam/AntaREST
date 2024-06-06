@@ -146,9 +146,10 @@ class FileStudyTreeConfig(DTO):
 
     def next_file(self, name: str, is_output: bool = False) -> "FileStudyTreeConfig":
         if is_output and name in self.outputs and self.outputs[name].archived:
-            zip_path: t.Optional[Path] = self.path / f"{name}.zip"
+            locations = [self.path / f"{name}.7z", self.path / f"{name}.zip"]
+            archive_path = next((p for p in locations if p.exists()))
         else:
-            zip_path = self.zip_path
+            archive_path = self.zip_path
 
         return FileStudyTreeConfig(
             study_path=self.study_path,
@@ -164,7 +165,7 @@ class FileStudyTreeConfig(DTO):
             archive_input_series=self.archive_input_series,
             enr_modelling=self.enr_modelling,
             cache=self.cache,
-            zip_path=zip_path,
+            zip_path=archive_path,
         )
 
     def at_file(self, filepath: Path) -> "FileStudyTreeConfig":
