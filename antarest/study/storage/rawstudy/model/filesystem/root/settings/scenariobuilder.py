@@ -50,11 +50,16 @@ class ScenarioUtils:
         :return: Tuple containing active ruleset and scenario type
         """
         if url:
-            active_ruleset = url[0]
-            scenario_type = None if not url[1] or url[1] == "None" else url[1]
+            # Ensure there's at least one element for the active ruleset
+            active_ruleset = url[0] if len(url) > 0 else "Default Ruleset"
+
+            # Ensure there's a second element for the scenario type, if not, return None
+            scenario_type = url[1] if len(url) > 1 and url[1] != "None" else None
         else:
+            # Defaults if no URL parameters are provided
             active_ruleset = "Default Ruleset"
             scenario_type = None
+
         return active_ruleset, scenario_type
 
 
@@ -97,25 +102,28 @@ class ScenarioBuilder(IniFileNode):
         file_path = self.path
         current_section = None
         config_data = {}
-        matched_symbol = False  # Flag to track the first occurrence of the scenario type.
+        matched_symbol = False  # Flag to track the first occurrence of the scenario type
 
         active_ruleset, scenario_type = ScenarioUtils.extract_url_params(url)
-        symbol = ScenarioUtils.TYPES_BY_SYMBOL.get(scenario_type)
+        symbol = ScenarioUtils.TYPES_BY_SYMBOL.get(scenario_type) if scenario_type else None
 
         with open(file_path, mode="r", encoding="utf-8") as file:
             for line in file:
                 key, value = ScenarioUtils.parse_line(line)
                 if key and value is None:
-                    current_section = key
+                    current_section = key.lower()  # Ensure case-insensitive ruleset
                     if current_section == active_ruleset:
                         config_data[current_section] = {}
                 elif key and value is not None and current_section == active_ruleset:
+                    # If a specific scenario type is provided, optimize by breaking early after matching relevant entries
                     if symbol:
                         if key.startswith(symbol):
                             matched_symbol = True
                             config_data[current_section][key] = value
                         elif matched_symbol:
-                            break
+                            break  # Break after matching the required entries to optimize reading
                     else:
+                        # If no specific scenario type is provided, collect all configurations under the active ruleset
                         config_data[current_section][key] = value
+
         return config_data

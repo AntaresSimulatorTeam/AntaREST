@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional
+import typing as t
 
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import Study
@@ -232,7 +232,7 @@ class ScenarioBuilderManager:
         return self.storage_service.get_storage(study).get_raw(study)
 
     @staticmethod
-    def create_scenario_key(scenario_type: str, area: str, year: str, cluster: Optional[str] = None) -> str:
+    def create_scenario_key(scenario_type: str, area: str, year: str, cluster: t.Optional[str] = None) -> str:
         """
         Generate configuration keys based on the scenario type and given parameters.
         This method adjusts keys for different scenarios including clusters and NTC links.
@@ -252,7 +252,7 @@ class ScenarioBuilderManager:
         return f"{symbol},{area},{year}"
 
     @staticmethod
-    def generate_updates(scenario_config_updates: Dict[str, Dict[str, Dict[str, Dict[str, int]]]]) -> Dict[str, int]:
+    def get_updates_by_type(scenario_config_updates: t.Dict[str, t.Any]) -> t.Dict[str, int]:
         updates = {}
 
         for scenario_type, areas in scenario_config_updates.items():
@@ -269,7 +269,7 @@ class ScenarioBuilderManager:
 
         return updates
 
-    def get_scenario_by_type(self, study: Study, scenario_type: str) -> Dict[str, Any]:
+    def get_config_by_type(self, study: Study, scenario_type: str) -> t.Dict[str, t.Any]:
         if not scenario_type:
             raise ValueError("Scenario type is missing.")
 
@@ -279,13 +279,16 @@ class ScenarioBuilderManager:
         storage = self.storage_service.get_storage(study)
         file_study = self._get_file_study(study)
         general_settings = storage.get(study, "settings/generaldata/general")
-        active_ruleset = general_settings.get("active-rules-scenario", "Default Ruleset")
+        active_ruleset = general_settings.get(
+            "active-rules-scenario", "Default Ruleset"
+        ).lower()  # Ensure the active scenario is case-insensitive
 
         nb_years = general_settings.get("nbyears", 0)
         if nb_years <= 0:
             raise ValueError("Number of years must be greater than zero.")
 
         scenario_config = storage.get(study, f"/settings/scenariobuilder/{active_ruleset}/{scenario_type}")
+
         if not scenario_config:
             raise ValueError("Scenario configuration is missing or empty.")
 
@@ -293,17 +296,29 @@ class ScenarioBuilderManager:
             scenario_config[active_ruleset], nb_years, file_study, scenario_type
         )
 
-    def update_scenario_by_type(
-            self, study: Study, scenario_updates: Dict[str, Dict[str, Dict[str, Dict[str, int]]]]
-    ) -> None:
+    def update_scenario_by_type(self, study: Study, scenario_updates: t.Dict[str, t.Any], scenario_type: str) -> None:
+        if not scenario_type:
+            raise ValueError("Scenario type is missing.")
+
+        if scenario_type not in ScenarioUtils.TYPES_BY_SYMBOL:
+            raise ValueError(f"Unsupported scenario type: {scenario_type}")
+
         file_study = self._get_file_study(study)
         general_settings = self.storage_service.get_storage(study).get(study, "settings/generaldata/general")
         active_ruleset = general_settings.get("active-rules-scenario", "Default Ruleset")
 
-        updates = ScenarioBuilderManager.generate_updates(scenario_updates)
+        updates = ScenarioBuilderManager.get_updates_by_type(scenario_updates)
 
         update_scenario = UpdateScenarioBuilder(
             data={active_ruleset: updates},
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
         )
         execute_or_add_commands(study, file_study, [update_scenario], self.storage_service)
+
+    def get_config(self, study: Study) -> t.Dict[str, t.Any]:
+        # TODO
+        return None
+
+    def update_config(self, study: Study, data: t.Any) -> None:
+        # TODO
+        return None

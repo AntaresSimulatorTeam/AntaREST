@@ -654,9 +654,26 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     )
     def get_scenario_builder_config(
         uuid: str,
-        scenario_type: t.Optional[str] = Query(
-            None, description="Filter config based on scenario type", alias="scenarioType"
-        ),
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> t.Dict[str, t.Any]:
+        logger.info(
+            f"Getting MC Scenario builder config for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
+
+        return study_service.scenario_builder_manager.get_config(study)
+
+    @bp.get(
+        path="/studies/{uuid}/config/scenariobuilder/{scenario_type}",
+        tags=[APITag.study_data],
+        summary="Get MC Scenario builder config",
+        response_model=t.Dict[str, t.Any],
+    )
+    def get_scenario_builder_config(
+        uuid: str,
+        scenario_type: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> t.Dict[str, t.Any]:
         logger.info(
@@ -665,15 +682,14 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
-
-        return study_service.scenario_builder_manager.get_scenario_by_type(study, scenario_type)
+        return study_service.scenario_builder_manager.get_config_by_type(study, scenario_type)
 
     @bp.put(
         path="/studies/{uuid}/config/scenariobuilder",
         tags=[APITag.study_data],
         summary="Set MC Scenario builder config",
     )
-    def update_scenario_builder_config(
+    def update_scenario_config(
         uuid: str,
         data: t.Dict[str, t.Any],
         current_user: JWTUser = Depends(auth.get_current_user),
@@ -684,7 +700,26 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
-        study_service.scenario_builder_manager.update_scenario_by_type(study, data)
+        study_service.scenario_builder_manager.update_config(study, data)
+
+    @bp.put(
+        path="/studies/{uuid}/config/scenariobuilder/{scenario_type}",
+        tags=[APITag.study_data],
+        summary="Set MC Scenario builder config",
+    )
+    def update_scenario_config_by_type(
+        uuid: str,
+        data: t.Dict[str, t.Any],
+        scenario_type: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> None:
+        logger.info(
+            f"Updating MC Scenario builder config for study {uuid} with scenario type filter: {scenario_type}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
+        study_service.scenario_builder_manager.update_scenario_by_type(study, data, scenario_type)
 
     @bp.get(
         path="/studies/{uuid}/config/general/form",
