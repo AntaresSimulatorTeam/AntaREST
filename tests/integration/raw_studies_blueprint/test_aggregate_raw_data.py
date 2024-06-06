@@ -144,11 +144,6 @@ SAME_REQUEST_DIFFERENT_FORMATS = [
 
 INCOHERENT_REQUESTS_BODIES = [
     {
-        "output_id": "fake_output_id",
-        "query_file": LinksQueryFile.VALUES,
-        "frequency": MatrixFrequency.HOURLY,
-    },
-    {
         "output_id": "20201014-1425eco-goodbye",
         "query_file": AreasQueryFile.VALUES,
         "frequency": MatrixFrequency.HOURLY,
@@ -206,7 +201,8 @@ class TestRawDataAggregation:
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
         for params, expected_result_filename in AREAS_REQUESTS:
-            res = client.get(f"/v1/studies/{study_id}/areas/aggregate", params=params)
+            output_id = params.pop("output_id")
+            res = client.get(f"/v1/studies/{study_id}/areas/aggregate/{output_id}", params=params)
             assert res.status_code == 200, res.json()
             content = io.BytesIO(res.content)
             df = pd.read_csv(content, index_col=0, sep=",")
@@ -234,7 +230,8 @@ class TestRawDataAggregation:
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
         for params, expected_result_filename in LINKS_REQUESTS:
-            res = client.get(f"/v1/studies/{study_id}/links/aggregate", params=params)
+            output_id = params.pop("output_id")
+            res = client.get(f"/v1/studies/{study_id}/links/aggregate/{output_id}", params=params)
             assert res.status_code == 200, res.json()
             content = io.BytesIO(res.content)
             df = pd.read_csv(content, index_col=0, sep=",")
@@ -262,7 +259,8 @@ class TestRawDataAggregation:
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
         for params, expected_result_filename in SAME_REQUEST_DIFFERENT_FORMATS:
-            res = client.get(f"/v1/studies/{study_id}/links/aggregate", params=params)
+            output_id = params.pop("output_id")
+            res = client.get(f"/v1/studies/{study_id}/links/aggregate/{output_id}", params=params)
             assert res.status_code == 200, res.json()
             content = io.BytesIO(res.content)
             export_format = params["format"]
@@ -290,10 +288,8 @@ class TestRawDataAggregation:
         """
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
         for params in INCOHERENT_REQUESTS_BODIES:
-            res = client.get(
-                f"/v1/studies/{study_id}/links/aggregate",
-                params=params,
-            )
+            output_id = params.pop("output_id")
+            res = client.get(f"/v1/studies/{study_id}/links/aggregate/{output_id}", params=params)
             assert res.status_code == 200, res.json()
             content = io.BytesIO(res.content)
             df = pd.read_csv(content, index_col=0, sep=",")
@@ -305,9 +301,37 @@ class TestRawDataAggregation:
         """
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
         for params in WRONGLY_TYPED_REQUESTS:
-            res = client.get(
-                f"/v1/studies/{study_id}/links/aggregate",
-                params=params,
-            )
+            output_id = params.pop("output_id")
+            res = client.get(f"/v1/studies/{study_id}/links/aggregate/{output_id}", params=params)
             assert res.status_code == 422
             assert res.json()["exception"] == "RequestValidationError"
+
+    def test_aggregation_with_wrong_output(self, client: TestClient, user_access_token: str, study_id: str):
+        """
+        Asserts that requests with wrong output send an HTTP 422 Exception
+        """
+        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+
+        # test for areas
+        res = client.get(
+            f"/v1/studies/{study_id}/areas/aggregate/unknown_id",
+            params={
+                "query_file": AreasQueryFile.VALUES,
+                "frequency": MatrixFrequency.HOURLY,
+            },
+        )
+        assert res.status_code == 404, res.json()
+        assert res.json()["exception"] == "OutputNotFound"
+        assert "unknown_id" in res.json()["description"], "The output_id should be in the message"
+
+        # test for links
+        res = client.get(
+            f"/v1/studies/{study_id}/links/aggregate/unknown_id",
+            params={
+                "query_file": LinksQueryFile.VALUES,
+                "frequency": MatrixFrequency.HOURLY,
+            },
+        )
+        assert res.status_code == 404, res.json()
+        assert res.json()["exception"] == "OutputNotFound"
+        assert "unknown_id" in res.json()["description"], "The output_id should be in the message"

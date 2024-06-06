@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from antarest.core.exceptions import FileTooLargeError
+from antarest.core.exceptions import FileTooLargeError, OutputNotFound
 from antarest.study.storage.rawstudy.ini_reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.matrix.date_serializer import (
     FactoryDateSerializer,
@@ -198,7 +198,7 @@ class AggregatorManager:
 
         # Checks if mc-ind results exist
         if not self.mc_ind_path.exists():
-            return pd.DataFrame()
+            raise OutputNotFound(self.output_id)
 
         # Retrieves the horizon from the study output
         horizon_path = self.study_path / HORIZON_TEMPLATE.format(sim_id=self.output_id)
