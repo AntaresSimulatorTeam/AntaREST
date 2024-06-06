@@ -11,16 +11,19 @@
 # This file is part of the Antares project.
 
 import datetime
+import logging
 import os
 import platform
 import re
 import time
 import typing as t
+import uuid
 from pathlib import Path
 from unittest.mock import Mock
 
 import py7zr
 import pytest
+from _pytest.logging import LogCaptureFixture
 
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
 from antarest.core.exceptions import StudyDeletionNotAllowed, StudyNotFoundError
@@ -474,7 +477,7 @@ timestamp = 1599488150
 
 
 @pytest.mark.unit_test
-def test_archived_output(tmp_path: Path) -> None:
+def test_archived_output(tmp_path: Path, caplog: LogCaptureFixture) -> None:
     if not platform.platform().startswith("Windows"):
         os.environ["TZ"] = "Europe/Paris"  # set new timezone
         time.tzset()
@@ -492,7 +495,7 @@ def test_archived_output(tmp_path: Path) -> None:
         patch_service=Mock(),
     )
 
-    md = RawStudy(id=name, workspace="foo", path=str(study_path))
+    md = RawStudy(id=str(uuid.uuid4()), workspace="foo", path=str(study_path), name=name)
 
     archived_output = tmp_path / "output.7z"
     with py7zr.SevenZipFile(archived_output, "w") as output_data:
@@ -514,10 +517,30 @@ def test_archived_output(tmp_path: Path) -> None:
 
     output_name = study_service.import_output(md, archived_output)
     assert output_name is not None
+
+    # If we try to unarchive an output that does not exist, we should have an error
+    # and an error message should be displayed in the logs to list the files
+    # present in the `output` folder.
+    with caplog.at_level(logging.ERROR):
+        with pytest.raises(FileNotFoundError) as ctx:
+            study_service.unarchive_study_output(md, "unknown", False)
+    assert str(ctx.value) == f"Archive for study '{name}' output 'unknown' not found"
+    assert f"output/{expected_output_name}.7z" in caplog.text
+
     study_service.unarchive_study_output(md, expected_output_name, True)
     assert (study_path / "output" / (expected_output_name + ".7z")).exists()
     os.unlink(study_path / "output" / (expected_output_name + ".7z"))
     assert not (study_path / "output" / (expected_output_name + ".7z")).exists()
+
+    # If we try to archive an output that does not exist, we should have an error
+    # and an error message should be displayed in the logs to list the files
+    # present in the `output` folder.
+    with caplog.at_level(logging.ERROR):
+        with pytest.raises(FileNotFoundError) as ctx:
+            study_service.archive_study_output(md, "unknown")
+    assert str(ctx.value) == f"Output 'unknown' not found in study '{name}'"
+    assert f"output/{expected_output_name}" in caplog.text
+
     study_service.archive_study_output(md, expected_output_name)
     assert not (study_path / "output" / expected_output_name).exists()
     assert (study_path / "output" / (expected_output_name + ".7z")).exists()
