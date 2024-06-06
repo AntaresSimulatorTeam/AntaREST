@@ -23,6 +23,8 @@ from pathlib import Path
 import py7zr
 from antares.study.version import StudyVersion
 
+import py7zr
+
 from antarest.core.model import JSON
 from antarest.core.serialization import from_json
 from antarest.core.utils.archives import (
@@ -285,9 +287,9 @@ def parse_outputs(output_path: Path) -> t.Dict[str, Simulation]:
         try:
             if suffix == ".tmp" or path_name.startswith("~"):
                 continue
-            elif suffix == ".zip":
+            elif suffix in {".zip", ".7z"}:
                 if path.stem not in sims:
-                    if simulation := parse_simulation_zip(path):
+                    if simulation := parse_simulation_archive(path):
                         sims[path.stem] = simulation
             elif (path / "about-the-study/parameters.ini").exists():
                 if simulation := parse_simulation(path, canonical_name=path_name):
@@ -297,26 +299,32 @@ def parse_outputs(output_path: Path) -> t.Dict[str, Simulation]:
     return sims
 
 
-def parse_simulation_zip(path: Path) -> Simulation:
+def parse_simulation_archive(path: Path) -> Simulation:
     xpansion_path = "expansion/out.json"
     ini_path = "about-the-study/parameters.ini"
     integrity_path = "checkIntegrity.txt"
     with tempfile.TemporaryDirectory(dir=path.parent, prefix=f"~{path.stem}-", suffix=".tmp") as output_dir:
         try:
-            with zipfile.ZipFile(path) as zf:
-                try:
-                    zf.extract(ini_path, output_dir)
-                except KeyError:
-                    raise SimulationParsingError(
-                        path,
-                        f"Parameters file '{ini_path}' not found",
-                    ) from None
-                if xpansion_path in zf.namelist():
-                    zf.extract(xpansion_path, output_dir)
-                if integrity_path in zf.namelist():
-                    zf.extract(integrity_path, output_dir)
-        except zipfile.BadZipFile as exc:
-            raise SimulationParsingError(path, f"Bad ZIP file: {exc}") from exc
+            if path.suffix == ".zip":
+                with zipfile.ZipFile(path) as zf:
+                    try:
+                        zf.extract(ini_path, output_dir)
+                    except KeyError:
+                        raise SimulationParsingError(path, f"Parameters file '{ini_path}' not found") from None
+                    if xpansion_path in zf.namelist():
+                        zf.extract(xpansion_path, output_dir)
+                    if integrity_path in zf.namelist():
+                        zf.extract(integrity_path, output_dir)
+            elif path.suffix == ".7z":
+                with py7zr.SevenZipFile(path, mode="r") as z:
+                    z.extract(output_dir, [ini_path, xpansion_path, integrity_path])
+                if not (Path(output_dir) / ini_path).exists():
+                    raise SimulationParsingError(path, f"Parameters file '{ini_path}' not found")
+            else:
+                raise ValueError(f"Unsupported file format: {path.suffix}")
+
+        except (zipfile.BadZipFile, py7zr.exceptions.Bad7zFile) as exc:
+            raise SimulationParsingError(path, f"Bad archive file: {exc}") from exc
         simulation = parse_simulation(Path(output_dir), canonical_name=path.stem)
         simulation.archived = True
         return simulation
