@@ -175,7 +175,7 @@ def create_raw_study_routes(
         return Response(content=json_response, media_type="application/json")
 
     @bp.get(
-        "/studies/{uuid}/areas/aggregate",
+        "/studies/{uuid}/areas/aggregate/{output_id}",
         tags=[APITag.study_raw_data],
         summary="Retrieve Aggregated Areas Raw Data from Study Output",
     )
@@ -244,7 +244,7 @@ def create_raw_study_routes(
         )
 
     @bp.get(
-        "/studies/{uuid}/links/aggregate",
+        "/studies/{uuid}/links/aggregate/{output_id}",
         tags=[APITag.study_raw_data],
         summary="Retrieve Aggregated Links Raw Data from Study Output",
     )

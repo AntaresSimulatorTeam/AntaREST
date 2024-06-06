@@ -346,6 +346,20 @@ class BadOutputError(HTTPException):
         super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, message)
 
 
+class OutputNotFound(HTTPException):
+    """
+    Exception raised when an output is not found in the study results directory.
+    """
+
+    def __init__(self, output_id: str) -> None:
+        message = f"Output '{output_id}' not found"
+        super().__init__(HTTPStatus.NOT_FOUND, message)
+
+    def __str__(self) -> str:
+        """Return a string representation of the exception."""
+        return self.detail
+
+
 class BadZipBinary(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.UNSUPPORTED_MEDIA_TYPE, message)
