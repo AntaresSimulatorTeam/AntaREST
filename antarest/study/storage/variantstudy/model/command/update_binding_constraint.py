@@ -79,7 +79,7 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
         updated_cfg = binding_constraints[index]
         updated_cfg.update(obj)
 
-        updated_terms = set(self.coeffs.keys()) if self.coeffs else set()
+        updated_terms = set(self.coeffs) if self.coeffs else set()
 
         # Remove the terms not in the current update but existing in the config
         terms_to_remove = {key for key in updated_cfg if ("%" in key or "." in key) and key not in updated_terms}

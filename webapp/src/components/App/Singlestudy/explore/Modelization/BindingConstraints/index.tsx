@@ -72,7 +72,7 @@ function BindingConstraints() {
             />
           </Box>
           <Box>
-            {data && data.length > 0 && currentConstraintId ? (
+            {data.length > 0 && currentConstraintId ? (
               <BindingConstView constraintId={currentConstraintId} />
             ) : (
               <SimpleContent title="No Binding Constraints" />
