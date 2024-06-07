@@ -119,7 +119,7 @@ export default function OptionsList({
         list={areaOptions}
         handleChange={(key, value) => handleAreaChange(value as string)}
         sx={{
-          width: 200,
+          maxWidth: 200,
           mr: 1,
         }}
       />
@@ -134,7 +134,7 @@ export default function OptionsList({
           handleClusterOrAreaChange(value as string)
         }
         sx={{
-          width: 200,
+          maxWidth: 200,
         }}
       />
     </>
