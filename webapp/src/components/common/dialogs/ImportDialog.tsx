@@ -138,7 +138,7 @@ function ImportDialog(props: ImportDialogProps) {
               }}
             >
               <input {...getInputProps()} />
-              <Typography>
+              <Typography sx={{ textAlign: "center" }}>
                 {dropzoneText || t("common.dialog.import.dropzoneText")}
               </Typography>
             </Paper>
