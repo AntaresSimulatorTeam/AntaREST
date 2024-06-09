@@ -23,6 +23,7 @@ function hasAreas(
   config: HandlerReturnTypes[keyof HandlerReturnTypes],
 ): config is ClustersHandlerReturn {
   return (
+    config !== undefined &&
     "areas" in config &&
     Array.isArray(config.areas) &&
     config.areas.every((area) => typeof area === "string")
@@ -87,7 +88,7 @@ function withAreas(
     }
 
     return (
-      <SplitView direction="horizontal" sizes={[15, 85]} gutterSize={3}>
+      <SplitView id="scenario-builder" sizes={[15, 85]}>
         <PropertiesView
           sx={{ p: 1, ".SearchFE": { mx: 0 } }}
           mainContent={
