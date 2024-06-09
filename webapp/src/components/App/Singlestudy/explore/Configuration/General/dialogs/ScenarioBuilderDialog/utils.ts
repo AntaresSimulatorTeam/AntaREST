@@ -14,6 +14,9 @@ export const SCENARIOS = [
   "solar",
   "ntc",
   "renewable",
+  "hydroInitialLevels",
+  // "hydroFinalLevels", since v9.2
+  // "hydroGenerationPower", since v9.1
   "bindingConstraints",
 ] as const;
 
@@ -103,6 +106,7 @@ export interface ScenarioConfig {
   solar?: GenericScenarioConfig;
   ntc?: GenericScenarioConfig;
   renewable?: ClustersScenarioConfig;
+  hydroInitialLevels?: GenericScenarioConfig;
   bindingConstraints?: GenericScenarioConfig;
 }
 
@@ -120,6 +124,7 @@ export interface HandlerReturnTypes {
   solar: GenericScenarioConfig;
   ntc: GenericScenarioConfig;
   renewable: ClustersHandlerReturn;
+  hydroInitialLevels?: GenericScenarioConfig;
   bindingConstraints: GenericScenarioConfig;
 }
 
@@ -136,6 +141,7 @@ const handlers: {
   solar: handleGenericConfig,
   ntc: handleGenericConfig,
   renewable: handleClustersConfig,
+  hydroInitialLevels: handleGenericConfig,
   bindingConstraints: handleGenericConfig,
 };
 
