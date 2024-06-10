@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router";
 import { StudyMetadata } from "../../../../../../../common/types";
+import Box from "@mui/material/Box";
 import NumberFE from "../../../../../../common/fieldEditors/NumberFE";
 import SelectFE from "../../../../../../common/fieldEditors/SelectFE";
 import StringFE from "../../../../../../common/fieldEditors/StringFE";
@@ -8,25 +9,29 @@ import SwitchFE from "../../../../../../common/fieldEditors/SwitchFE";
 import Fieldset from "../../../../../../common/Fieldset";
 import { useFormContextPlus } from "../../../../../../common/Form";
 import {
+  COST_GENERATION_OPTIONS,
   THERMAL_GROUPS,
   THERMAL_POLLUTANTS,
   ThermalCluster,
   TS_GENERATION_OPTIONS,
   TS_LAW_OPTIONS,
 } from "./utils";
+import { validateNumber } from "../../../../../../../utils/validationUtils";
 
 function Fields() {
   const [t] = useTranslation();
-  const { control } = useFormContextPlus<ThermalCluster>();
+  const { control, watch } = useFormContextPlus<ThermalCluster>();
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const studyVersion = Number(study.version);
+  const isCostGenerationEnabled =
+    watch("costGeneration") === "useCostTimeseries";
 
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
 
   return (
-    <>
+    <Box>
       <Fieldset legend={t("global.general")}>
         <StringFE
           label={t("global.name")}
@@ -36,6 +41,7 @@ function Fields() {
         />
         <SelectFE
           label={t("global.group")}
+          variant="outlined"
           name="group"
           control={control}
           options={THERMAL_GROUPS}
@@ -68,10 +74,7 @@ function Fields() {
           name="unitCount"
           control={control}
           rules={{
-            min: {
-              value: 1,
-              message: t("form.field.minValue", { 0: 1 }),
-            },
+            validate: validateNumber({ min: 1 }),
             setValueAs: Math.floor,
           }}
         />
@@ -80,10 +83,7 @@ function Fields() {
           name="nominalCapacity"
           control={control}
           rules={{
-            min: {
-              value: 0,
-              message: t("form.field.minValue", { 0: 0 }),
-            },
+            validate: validateNumber({ min: 0 }),
           }}
         />
         <NumberFE
@@ -96,14 +96,7 @@ function Fields() {
           name="spinning"
           control={control}
           rules={{
-            min: {
-              value: 0,
-              message: t("form.field.minValue", { 0: 0 }),
-            },
-            max: {
-              value: 100,
-              message: t("form.field.maxValue", { 0: 100 }),
-            },
+            validate: validateNumber({ min: 0, max: 100 }),
           }}
         />
         <NumberFE
@@ -111,14 +104,7 @@ function Fields() {
           name="minUpTime"
           control={control}
           rules={{
-            min: {
-              value: 1,
-              message: t("form.field.minValue", { 0: 1 }),
-            },
-            max: {
-              value: 168,
-              message: t("form.field.maxValue", { 0: 168 }),
-            },
+            validate: validateNumber({ min: 1, max: 168 }),
             setValueAs: Math.floor,
           }}
         />
@@ -127,50 +113,59 @@ function Fields() {
           name="minDownTime"
           control={control}
           rules={{
-            min: {
-              value: 1,
-              message: t("form.field.minValue", { 0: 1 }),
-            },
-            max: {
-              value: 168,
-              message: t("form.field.maxValue", { 0: 168 }),
-            },
+            validate: validateNumber({ min: 1, max: 168 }),
             setValueAs: Math.floor,
           }}
         />
       </Fieldset>
       <Fieldset legend={t("study.modelization.clusters.operatingCosts")}>
+        {studyVersion >= 870 && (
+          <>
+            <SelectFE
+              variant="outlined"
+              label={t("study.modelization.clusters.costGeneration")}
+              name="costGeneration"
+              options={COST_GENERATION_OPTIONS}
+              control={control}
+              sx={{
+                alignSelf: "center",
+              }}
+            />
+            <NumberFE
+              label={t("study.modelization.clusters.efficiency")}
+              name="efficiency"
+              control={control}
+              rules={{
+                validate: validateNumber({ min: 0 }),
+              }}
+              disabled={!isCostGenerationEnabled}
+            />
+            <NumberFE
+              label={t("study.modelization.clusters.variableOMCost")}
+              name="variableOMCost"
+              control={control}
+              rules={{
+                validate: validateNumber({ min: 0 }),
+              }}
+              disabled={!isCostGenerationEnabled}
+            />
+          </>
+        )}
         <NumberFE
           label={t("study.modelization.clusters.marginalCost")}
           name="marginalCost"
           control={control}
           rules={{
-            min: {
-              value: 0,
-              message: t("form.field.minValue", { 0: 0 }),
-            },
+            validate: validateNumber({ min: 0 }),
           }}
-        />
-        <NumberFE
-          label={t("study.modelization.clusters.fixedCost")}
-          name="fixedCost"
-          control={control}
-          rules={{
-            min: {
-              value: 0,
-              message: t("form.field.minValue", { 0: 0 }),
-            },
-          }}
+          disabled={isCostGenerationEnabled}
         />
         <NumberFE
           label={t("study.modelization.clusters.startupCost")}
           name="startupCost"
           control={control}
           rules={{
-            min: {
-              value: 0,
-              message: t("form.field.minValue", { 0: 0 }),
-            },
+            validate: validateNumber({ min: 0 }),
           }}
         />
         <NumberFE
@@ -178,10 +173,16 @@ function Fields() {
           name="marketBidCost"
           control={control}
           rules={{
-            min: {
-              value: 0,
-              message: t("form.field.minValue", { 0: 0 }),
-            },
+            validate: validateNumber({ min: 0 }),
+          }}
+          disabled={isCostGenerationEnabled}
+        />
+        <NumberFE
+          label={t("study.modelization.clusters.fixedCost")}
+          name="fixedCost"
+          control={control}
+          rules={{
+            validate: validateNumber({ min: 0 }),
           }}
         />
         <NumberFE
@@ -200,10 +201,7 @@ function Fields() {
                 name={name}
                 control={control}
                 rules={{
-                  min: {
-                    value: 0,
-                    message: t("form.field.minValue", { 0: 0 }),
-                  },
+                  validate: validateNumber({ min: 0 }),
                 }}
               />
             ),
@@ -211,6 +209,7 @@ function Fields() {
       </Fieldset>
       <Fieldset legend={t("study.modelization.clusters.timeSeriesGen")}>
         <SelectFE
+          variant="outlined"
           label={t("study.modelization.clusters.genTs")}
           name="genTs"
           control={control}
@@ -224,14 +223,7 @@ function Fields() {
           name="volatilityForced"
           control={control}
           rules={{
-            min: {
-              value: 0,
-              message: t("form.field.minValue", { 0: 0 }),
-            },
-            max: {
-              value: 1,
-              message: t("form.field.maxValue", { 0: 1 }),
-            },
+            validate: validateNumber({ min: 0, max: 1 }),
           }}
           inputProps={{ step: 0.1 }}
         />
@@ -240,18 +232,12 @@ function Fields() {
           name="volatilityPlanned"
           control={control}
           rules={{
-            min: {
-              value: 0,
-              message: t("form.field.minValue", { 0: 0 }),
-            },
-            max: {
-              value: 1,
-              message: t("form.field.maxValue", { 0: 1 }),
-            },
+            validate: validateNumber({ min: 0, max: 1 }),
           }}
           inputProps={{ step: 0.1 }}
         />
         <SelectFE
+          variant="outlined"
           label={t("study.modelization.clusters.lawForced")}
           name="lawForced"
           control={control}
@@ -261,6 +247,7 @@ function Fields() {
           }}
         />
         <SelectFE
+          variant="outlined"
           label={t("study.modelization.clusters.lawPlanned")}
           name="lawPlanned"
           control={control}
@@ -270,7 +257,7 @@ function Fields() {
           }}
         />
       </Fieldset>
-    </>
+    </Box>
   );
 }
 

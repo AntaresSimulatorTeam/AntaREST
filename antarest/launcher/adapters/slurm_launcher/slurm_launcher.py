@@ -7,9 +7,8 @@ import tempfile
 import threading
 import time
 import traceback
-from copy import deepcopy
+import typing as t
 from pathlib import Path
-from typing import Awaitable, Callable, Dict, List, Optional, cast
 
 from antareslauncher.data_repo.data_repo_tinydb import DataRepoTinydb
 from antareslauncher.main import MainParameters, run_with
@@ -17,7 +16,7 @@ from antareslauncher.main_option_parser import MainOptionParser, ParserParameter
 from antareslauncher.study_dto import StudyDTO
 from filelock import FileLock
 
-from antarest.core.config import Config, SlurmConfig
+from antarest.core.config import Config, NbCoresConfig, SlurmConfig, TimeLimitConfig
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.model import PermissionInfo, PublicMode
@@ -32,8 +31,6 @@ from antarest.study.storage.rawstudy.ini_writer import IniWriter
 logger = logging.getLogger(__name__)
 logging.getLogger("paramiko").setLevel("WARN")
 
-MAX_TIME_LIMIT = 864000
-MIN_TIME_LIMIT = 3600
 WORKSPACE_LOCK_FILE_NAME = ".lock"
 LOCK_FILE_NAME = "slurm_launcher_init.lock"
 LOG_DIR_NAME = "LOGS"
@@ -47,6 +44,85 @@ class VersionNotSupportedError(Exception):
 
 class JobIdNotFound(Exception):
     pass
+
+
+class LauncherArgs(argparse.Namespace):
+    """
+    Launcher arguments to be passed to `antareslauncher.main.run_with`.
+    """
+
+    def __init__(self, launcher_args: argparse.Namespace):
+        """
+        Create a copy of the `argparse.Namespace` object.
+
+        Args:
+            launcher_args: The arguments to copy.
+        """
+        super().__init__()
+
+        # known arguments
+        self.other_options: t.Optional[str] = None
+        self.xpansion_mode: t.Optional[str] = None
+        self.time_limit: int = 0
+        self.n_cpu: int = 0
+        self.post_processing: bool = False
+
+        args = vars(launcher_args)
+        for key, value in args.items():
+            setattr(self, key, value)
+
+    def _append_other_option(self, option: str) -> None:
+        self.other_options = f"{self.other_options} {option}" if self.other_options else option
+
+    def apply_other_options(self, launcher_params: LauncherParametersDTO) -> None:
+        other_options = launcher_params.other_options or ""
+        options = other_options.split() if other_options else []
+        options = [re.sub("[^a-zA-Z0-9_,-]", "", opt) for opt in options]
+        self.other_options = " ".join(options)
+
+    def apply_xpansion_mode(self, launcher_params: LauncherParametersDTO) -> None:
+        if launcher_params.xpansion:  # not None and not False
+            self.xpansion_mode = {True: "r", False: "cpp"}[launcher_params.xpansion_r_version]
+            if (
+                isinstance(launcher_params.xpansion, XpansionParametersDTO)
+                and launcher_params.xpansion.sensitivity_mode
+            ):
+                self._append_other_option("xpansion_sensitivity")
+
+    def apply_time_limit(self, launcher_params: LauncherParametersDTO, time_limit_cfg: TimeLimitConfig) -> None:
+        # The `time_limit` parameter could be `None`, in that case, the default value is used.
+        min_allowed = time_limit_cfg.min * 3600
+        max_allowed = time_limit_cfg.max * 3600
+        time_limit = launcher_params.time_limit or time_limit_cfg.default * 3600
+        time_limit = min(max(time_limit, min_allowed), max_allowed)
+        if self.time_limit != time_limit:
+            logger.warning(
+                f"Invalid slurm launcher time_limit ({time_limit}),"
+                f" should be between {min_allowed} and {max_allowed} (in seconds)"
+            )
+        self.time_limit = time_limit
+
+    def apply_nb_cpu(self, launcher_params: LauncherParametersDTO, nb_cores_cfg: NbCoresConfig) -> None:
+        nb_cpu = launcher_params.nb_cpu
+        if nb_cpu is not None:
+            if nb_cores_cfg.min <= nb_cpu <= nb_cores_cfg.max:
+                self.n_cpu = nb_cpu
+            else:
+                logger.warning(
+                    f"Invalid slurm launcher nb_cpu ({nb_cpu}),"
+                    f" should be between {nb_cores_cfg.min} and {nb_cores_cfg.max}"
+                )
+                self.n_cpu = nb_cores_cfg.default
+
+    def apply_post_processing(self, launcher_params: LauncherParametersDTO) -> None:
+        post_processing = launcher_params.post_processing
+        if post_processing is not None:
+            self.post_processing = post_processing
+
+    def apply_adequacy_patch(self, launcher_params: LauncherParametersDTO) -> None:
+        adequacy_patch = launcher_params.adequacy_patch
+        if adequacy_patch is not None:
+            self.post_processing = True
 
 
 class SlurmLauncher(AbstractLauncher):
@@ -67,8 +143,8 @@ class SlurmLauncher(AbstractLauncher):
         self.check_state: bool = True
         self.event_bus = event_bus
         self.event_bus.add_listener(self._create_event_listener(), [EventType.STUDY_JOB_CANCEL_REQUEST])
-        self.thread: Optional[threading.Thread] = None
-        self.job_list: List[str] = []
+        self.thread: t.Optional[threading.Thread] = None
+        self.job_list: t.List[str] = []
         self._check_config()
         self.antares_launcher_lock = threading.Lock()
 
@@ -148,10 +224,10 @@ class SlurmLauncher(AbstractLauncher):
         self.thread = None
         logger.info("slurm_launcher loop stopped")
 
-    def _init_launcher_arguments(self, local_workspace: Optional[Path] = None) -> argparse.Namespace:
+    def _init_launcher_arguments(self, local_workspace: t.Optional[Path] = None) -> argparse.Namespace:
         main_options_parameters = ParserParameters(
             default_wait_time=self.slurm_config.default_wait_time,
-            default_time_limit=self.slurm_config.default_time_limit,
+            default_time_limit=self.slurm_config.time_limit.default * 3600,
             default_n_cpu=self.slurm_config.nb_cores.default,
             studies_in_dir=str((Path(local_workspace or self.slurm_config.local_workspace) / STUDIES_INPUT_DIR_NAME)),
             log_dir=str((Path(self.slurm_config.local_workspace) / LOG_DIR_NAME)),
@@ -165,7 +241,7 @@ class SlurmLauncher(AbstractLauncher):
         parser.add_basic_arguments()
         parser.add_advanced_arguments()
 
-        arguments = cast(argparse.Namespace, parser.parse_args([]))
+        arguments = t.cast(argparse.Namespace, parser.parse_args([]))
         arguments.wait_mode = False
         arguments.check_queue = False
         arguments.json_ssh_config = None
@@ -177,7 +253,7 @@ class SlurmLauncher(AbstractLauncher):
 
         return arguments
 
-    def _init_launcher_parameters(self, local_workspace: Optional[Path] = None) -> MainParameters:
+    def _init_launcher_parameters(self, local_workspace: t.Optional[Path] = None) -> MainParameters:
         return MainParameters(
             json_dir=local_workspace or self.slurm_config.local_workspace,
             default_json_db_name=self.slurm_config.default_json_db_name,
@@ -206,13 +282,13 @@ class SlurmLauncher(AbstractLauncher):
     def _import_study_output(
         self,
         job_id: str,
-        xpansion_mode: Optional[str] = None,
-        log_dir: Optional[str] = None,
-    ) -> Optional[str]:
+        xpansion_mode: t.Optional[str] = None,
+        log_dir: t.Optional[str] = None,
+    ) -> t.Optional[str]:
         if xpansion_mode is not None:
             self._import_xpansion_result(job_id, xpansion_mode)
 
-        launcher_logs: Dict[str, List[Path]] = {}
+        launcher_logs: t.Dict[str, t.List[Path]] = {}
         if log_dir is not None:
             launcher_logs = {
                 log_name: log_path
@@ -374,17 +450,17 @@ class SlurmLauncher(AbstractLauncher):
             self.callbacks.update_status(study.name, JobStatus.SUCCESS, None, output_id)
 
     @staticmethod
-    def _get_log_path(study: StudyDTO, log_type: LogType = LogType.STDOUT) -> Optional[Path]:
+    def _get_log_path(study: StudyDTO, log_type: LogType = LogType.STDOUT) -> t.Optional[Path]:
         log_dir = Path(study.job_log_dir)
         return SlurmLauncher._get_log_path_from_log_dir(log_dir, log_type)
 
     @staticmethod
-    def _find_log_dir(base_log_dir: Path, job_id: str) -> Optional[Path]:
+    def _find_log_dir(base_log_dir: Path, job_id: str) -> t.Optional[Path]:
         pattern = f"{job_id}*"
         return next(iter(base_log_dir.glob(pattern)), None)
 
     @staticmethod
-    def _get_log_path_from_log_dir(log_dir: Path, log_type: LogType = LogType.STDOUT) -> Optional[Path]:
+    def _get_log_path_from_log_dir(log_dir: Path, log_type: LogType = LogType.STDOUT) -> t.Optional[Path]:
         pattern = {
             LogType.STDOUT: "antares-out-*",
             LogType.STDERR: "antares-err-*",
@@ -496,54 +572,15 @@ class SlurmLauncher(AbstractLauncher):
             to launch a simulation using Antares Launcher.
         """
         if launcher_params:
-            launcher_args = deepcopy(self.launcher_args)
-
-            if launcher_params.other_options:
-                options = launcher_params.other_options.split()
-                other_options = [re.sub("[^a-zA-Z0-9_,-]", "", opt) for opt in options]
-            else:
-                other_options = []
-
-            # launcher_params.xpansion can be an `XpansionParametersDTO`, a bool or `None`
-            if launcher_params.xpansion:  # not None and not False
-                launcher_args.xpansion_mode = {True: "r", False: "cpp"}[launcher_params.xpansion_r_version]
-                if (
-                    isinstance(launcher_params.xpansion, XpansionParametersDTO)
-                    and launcher_params.xpansion.sensitivity_mode
-                ):
-                    other_options.append("xpansion_sensitivity")
-
-            # The `time_limit` parameter could be `None`, in that case, the default value is used.
-            time_limit = launcher_params.time_limit or MIN_TIME_LIMIT
-            time_limit = min(max(time_limit, MIN_TIME_LIMIT), MAX_TIME_LIMIT)
-            if launcher_args.time_limit != time_limit:
-                logger.warning(
-                    f"Invalid slurm launcher time_limit ({time_limit}),"
-                    f" should be between {MIN_TIME_LIMIT} and {MAX_TIME_LIMIT}"
-                )
-            launcher_args.time_limit = time_limit
-
-            post_processing = launcher_params.post_processing
-            if post_processing is not None:
-                launcher_args.post_processing = post_processing
-
-            nb_cpu = launcher_params.nb_cpu
-            if nb_cpu is not None:
-                nb_cores = self.slurm_config.nb_cores
-                if nb_cores.min <= nb_cpu <= nb_cores.max:
-                    launcher_args.n_cpu = nb_cpu
-                else:
-                    logger.warning(
-                        f"Invalid slurm launcher nb_cpu ({nb_cpu}),"
-                        f" should be between {nb_cores.min} and {nb_cores.max}"
-                    )
-                    launcher_args.n_cpu = nb_cores.default
-
-            if launcher_params.adequacy_patch is not None:  # the adequacy patch can be an empty object
-                launcher_args.post_processing = True
-
-            launcher_args.other_options = " ".join(other_options)
+            launcher_args = LauncherArgs(self.launcher_args)
+            launcher_args.apply_other_options(launcher_params)
+            launcher_args.apply_xpansion_mode(launcher_params)
+            launcher_args.apply_time_limit(launcher_params, self.slurm_config.time_limit)
+            launcher_args.apply_post_processing(launcher_params)
+            launcher_args.apply_nb_cpu(launcher_params, self.slurm_config.nb_cores)
+            launcher_args.apply_adequacy_patch(launcher_params)
             return launcher_args
+
         return self.launcher_args
 
     def run_study(
@@ -561,8 +598,8 @@ class SlurmLauncher(AbstractLauncher):
         )
         thread.start()
 
-    def get_log(self, job_id: str, log_type: LogType) -> Optional[str]:
-        log_path: Optional[Path] = None
+    def get_log(self, job_id: str, log_type: LogType) -> t.Optional[str]:
+        log_path: t.Optional[Path] = None
         for study in self.data_repo_tinydb.get_list_of_studies():
             if study.name == job_id:
                 log_path = SlurmLauncher._get_log_path(study, log_type)
@@ -572,14 +609,14 @@ class SlurmLauncher(AbstractLauncher):
             log_path = SlurmLauncher._get_log_path_from_log_dir(log_dir, log_type)
         return log_path.read_text() if log_path else None
 
-    def _create_event_listener(self) -> Callable[[Event], Awaitable[None]]:
+    def _create_event_listener(self) -> t.Callable[[Event], t.Awaitable[None]]:
         async def _listen_to_kill_job(event: Event) -> None:
             self.kill_job(event.payload, dispatch=False)
 
         return _listen_to_kill_job
 
     def kill_job(self, job_id: str, dispatch: bool = True) -> None:
-        launcher_args = deepcopy(self.launcher_args)
+        launcher_args = LauncherArgs(self.launcher_args)
         for study in self.data_repo_tinydb.get_list_of_studies():
             if study.name == job_id:
                 launcher_args.job_id_to_kill = study.job_id

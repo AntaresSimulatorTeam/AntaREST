@@ -1,12 +1,11 @@
 import { useState } from "react";
-import { MenuItem } from "@mui/material";
+import { Box, MenuItem } from "@mui/material";
 import { useOutletContext } from "react-router";
 import { useUpdateEffect } from "react-use";
 import { useTranslation } from "react-i18next";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { v4 as uuidv4 } from "uuid";
 import PropertiesView from "../../../../common/PropertiesView";
-import SplitLayoutView from "../../../../common/SplitLayoutView";
 import ListElement from "../common/ListElement";
 import type { TableTemplate } from "./utils";
 import storage, {
@@ -17,6 +16,7 @@ import CreateTemplateTableDialog from "./dialogs/CreateTemplateTableDialog";
 import UpdateTemplateTableDialog from "./dialogs/UpdateTemplateTableDialog";
 import ConfirmationDialog from "../../../../common/dialogs/ConfirmationDialog";
 import TableMode from "../../../../common/TableMode";
+import SplitView from "../../../../common/SplitView";
 
 function TableModeList() {
   const { t } = useTranslation();
@@ -73,9 +73,9 @@ function TableModeList() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <>
-      <SplitLayoutView
-        left={
+    <Box sx={{ width: 1, height: 1, py: 1 }}>
+      <SplitView id="tablemode" sizes={[10, 90]}>
+        <Box>
           <PropertiesView
             mainContent={
               <ListElement
@@ -115,17 +115,18 @@ function TableModeList() {
             }
             onAdd={() => setDialog({ type: "add", templateId: "" })}
           />
-        }
-        right={
-          selectedTemplate && (
+        </Box>
+        <Box>
+          {selectedTemplate && (
             <TableMode
               studyId={study.id}
               type={selectedTemplate.type}
               columns={selectedTemplate.columns}
             />
-          )
-        }
-      />
+          )}
+        </Box>
+      </SplitView>
+
       {dialog?.type === "add" && (
         <CreateTemplateTableDialog
           templates={templates}
@@ -156,7 +157,7 @@ function TableModeList() {
           })}
         </ConfirmationDialog>
       )}
-    </>
+    </Box>
   );
 }
 

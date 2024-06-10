@@ -90,7 +90,7 @@ function Fields({ study, constraintId }: Props) {
             rules={{
               validate: (v) =>
                 validateString(v, {
-                  max: 20,
+                  maxLength: 20,
                   specialChars: "-",
                 }),
             }}

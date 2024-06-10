@@ -198,12 +198,47 @@ class NbCoresConfig:
 
 
 @dataclass(frozen=True)
+class TimeLimitConfig:
+    """
+    The TimeLimitConfig class is designed to manage the configuration of the time limit for a job.
+
+    Attributes:
+        min: int: minimum allowed value for the time limit (in hours).
+        default: int: default value for the time limit (in hours).
+        max: int: maximum allowed value for the time limit (in hours).
+    """
+
+    min: int = 1
+    default: int = 48
+    max: int = 48
+
+    def to_json(self) -> Dict[str, int]:
+        """
+        Retrieves the time limit parameters, returning a dictionary containing the values "min"
+        (minimum allowed value), "defaultValue" (default value), and "max" (maximum allowed value)
+
+        Returns:
+            A dictionary: `{"min": min, "defaultValue": default, "max": max}`.
+            Because ReactJs Material UI expects "min", "defaultValue" and "max" keys.
+        """
+        return {"min": self.min, "defaultValue": self.default, "max": self.max}
+
+    def __post_init__(self) -> None:
+        """validation of CPU configuration"""
+        if 1 <= self.min <= self.default <= self.max:
+            return
+        msg = f"Invalid configuration: 1 <= {self.min=} <= {self.default=} <= {self.max=}"
+        raise ValueError(msg)
+
+
+@dataclass(frozen=True)
 class LocalConfig:
     """Sub config object dedicated to launcher module (local)"""
 
     binaries: Dict[str, Path] = field(default_factory=dict)
     enable_nb_cores_detection: bool = True
     nb_cores: NbCoresConfig = NbCoresConfig()
+    time_limit: TimeLimitConfig = TimeLimitConfig()
 
     @classmethod
     def from_dict(cls, data: JSON) -> "LocalConfig":
@@ -251,7 +286,7 @@ class SlurmConfig:
     key_password: str = ""
     password: str = ""
     default_wait_time: int = 0
-    default_time_limit: int = 0
+    time_limit: TimeLimitConfig = TimeLimitConfig()
     default_json_db_name: str = ""
     slurm_script_path: str = ""
     partition: str = ""
@@ -279,6 +314,9 @@ class SlurmConfig:
             nb_cores["max"] = max(nb_cores["max"], nb_cores["default"])
         if enable_nb_cores_detection:
             nb_cores.update(cls._autodetect_nb_cores())
+        # In the configuration file, the default time limit is in seconds, so we convert it to hours
+        max_time_limit = data.get("default_time_limit", defaults.time_limit.max * 3600) // 3600
+        time_limit = TimeLimitConfig(min=1, default=max_time_limit, max=max_time_limit)
         return cls(
             local_workspace=Path(data.get("local_workspace", defaults.local_workspace)),
             username=data.get("username", defaults.username),
@@ -288,7 +326,7 @@ class SlurmConfig:
             key_password=data.get("key_password", defaults.key_password),
             password=data.get("password", defaults.password),
             default_wait_time=data.get("default_wait_time", defaults.default_wait_time),
-            default_time_limit=data.get("default_time_limit", defaults.default_time_limit),
+            time_limit=time_limit,
             default_json_db_name=data.get("default_json_db_name", defaults.default_json_db_name),
             slurm_script_path=data.get("slurm_script_path", defaults.slurm_script_path),
             partition=data.get("partition", defaults.partition),
@@ -308,7 +346,7 @@ class SlurmConfig:
 
 class InvalidConfigurationError(Exception):
     """
-    Exception raised when an attempt is made to retrieve the number of cores
+    Exception raised when an attempt is made to retrieve a property
     of a launcher that doesn't exist in the configuration.
     """
 
@@ -370,6 +408,28 @@ class LauncherConfig:
         if launcher_config is None:
             raise InvalidConfigurationError(launcher)
         return launcher_config.nb_cores
+
+    def get_time_limit(self, launcher: str) -> TimeLimitConfig:
+        """
+        Retrieve the time limit for a job of the given launcher: "local" or "slurm".
+        If "default" is specified, retrieve the configuration of the default launcher.
+
+        Args:
+            launcher: type of launcher "local", "slurm" or "default".
+
+        Returns:
+            Time limit for a job of the given launcher (in seconds).
+
+        Raises:
+            InvalidConfigurationError: Exception raised when an attempt is made to retrieve
+                a property of a launcher that doesn't exist in the configuration.
+        """
+        config_map = {"local": self.local, "slurm": self.slurm}
+        config_map["default"] = config_map[self.default]
+        launcher_config = config_map.get(launcher)
+        if launcher_config is None:
+            raise InvalidConfigurationError(launcher)
+        return launcher_config.time_limit
 
 
 @dataclass(frozen=True)

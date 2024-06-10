@@ -24,7 +24,7 @@ function Matrix({ study, operator, constraintId, open, onClose }: Props) {
     onClose,
     actions: (
       <Button onClick={onClose} color="primary" variant="outlined" size="small">
-        {t("button.close")}
+        {t("global.close")}
       </Button>
     ),
   };
@@ -69,7 +69,7 @@ function Matrix({ study, operator, constraintId, open, onClose }: Props) {
             />
           )}
           {operator === "both" && (
-            <SplitView direction="horizontal">
+            <SplitView id="binding-constraints-matrix" sizes={[50, 50]}>
               <Box sx={{ px: 2 }}>
                 <MatrixInput
                   study={study}

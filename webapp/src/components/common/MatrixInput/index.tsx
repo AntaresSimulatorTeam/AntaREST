@@ -2,7 +2,6 @@ import { useTranslation } from "react-i18next";
 import { useSnackbar } from "notistack";
 import { useState } from "react";
 import { AxiosError } from "axios";
-import debug from "debug";
 import { Typography, Box, Divider } from "@mui/material";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import {
@@ -24,12 +23,10 @@ import { fetchMatrixFn } from "../../App/Singlestudy/explore/Modelization/Areas/
 import SplitButton from "../buttons/SplitButton";
 import DownloadMatrixButton from "../DownloadMatrixButton.tsx";
 
-const logErr = debug("antares:createimportform:error");
-
 interface Props {
   study: StudyMetadata;
   url: string;
-  columnsNames?: string[];
+  columnsNames?: string[] | readonly string[];
   rowNames?: string[];
   title?: string;
   computStats: MatrixStats;
@@ -122,17 +119,8 @@ function MatrixInput({
   };
 
   const handleImport = async (file: File) => {
-    try {
-      await importFile(file, study.id, url);
-    } catch (e) {
-      logErr("Failed to import file", file, e);
-      enqueueErrorSnackbar(t("variants.error.import"), e as AxiosError);
-    } finally {
-      enqueueSnackbar(t("variants.success.import"), {
-        variant: "success",
-      });
-      reloadMatrix();
-    }
+    await importFile(file, study.id, url);
+    reloadMatrix();
   };
 
   ////////////////////////////////////////////////////////////////
@@ -203,11 +191,9 @@ function MatrixInput({
           open={openImportDialog}
           title={t("matrix.importNewMatrix")}
           dropzoneText={t("matrix.message.importHint")}
-          onClose={() => setOpenImportDialog(false)}
+          onCancel={() => setOpenImportDialog(false)}
           onImport={handleImport}
-          accept={{
-            "text/tsv": [".tsv"],
-          }}
+          accept={{ "text/*": [".csv", ".tsv", ".txt"] }}
         />
       )}
       {openMatrixAsignDialog && (

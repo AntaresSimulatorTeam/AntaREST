@@ -1,6 +1,7 @@
 import base64
 import collections
 import contextlib
+import http
 import io
 import json
 import logging
@@ -8,7 +9,6 @@ import os
 import time
 import typing as t
 from datetime import datetime, timedelta
-from http import HTTPStatus
 from pathlib import Path, PurePosixPath
 from uuid import uuid4
 
@@ -27,6 +27,7 @@ from antarest.core.exceptions import (
     StudyDeletionNotAllowed,
     StudyNotFoundError,
     StudyTypeUnsupported,
+    StudyVariantUpgradeError,
     TaskAlreadyRunning,
     UnsupportedOperationOnArchivedStudy,
     UnsupportedStudyVersion,
@@ -38,7 +39,6 @@ from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTGroup, JWTUser
 from antarest.core.model import JSON, SUB_JSON, PermissionInfo, PublicMode, StudyPermissionType
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
-from antarest.core.roles import RoleType
 from antarest.core.tasks.model import TaskListFilter, TaskResult, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskService, TaskUpdateNotifier, noop_notifier
 from antarest.core.utils.fastapi_sqlalchemy import db
@@ -48,6 +48,7 @@ from antarest.login.service import LoginService
 from antarest.matrixstore.matrix_editor import MatrixEditInstruction
 from antarest.study.business.adequacy_patch_management import AdequacyPatchManager
 from antarest.study.business.advanced_parameters_management import AdvancedParamsManager
+from antarest.study.business.aggregator_management import AggregatorManager, AreasQueryFile, LinksQueryFile
 from antarest.study.business.allocation_management import AllocationManager
 from antarest.study.business.area_management import AreaCreationDTO, AreaInfoDTO, AreaManager, AreaType, UpdateAreaUi
 from antarest.study.business.areas.hydro_management import HydroManager
@@ -75,7 +76,6 @@ from antarest.study.business.xpansion_management import (
     XpansionCandidateDTO,
     XpansionManager,
 )
-from antarest.study.common.default_values import AreasQueryFile, LinksQueryFile
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     NEW_DEFAULT_STUDY_VERSION,
@@ -104,7 +104,6 @@ from antarest.study.repository import (
     StudySortBy,
 )
 from antarest.study.storage.matrix_profile import adjust_matrix_columns_index
-from antarest.study.storage.rawstudy.model.filesystem.config.area import AreaUI
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import ChildNotFoundError
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
@@ -143,7 +142,7 @@ MAX_MISSING_STUDY_TIMEOUT = 2  # days
 def get_disk_usage(path: t.Union[str, Path]) -> int:
     """Calculate the total disk usage (in bytes) of a study in a compressed file or directory."""
     path = Path(path)
-    if path.suffix.lower() in {".zip", "7z"}:
+    if path.suffix.lower() in {".zip", ".7z"}:
         return os.path.getsize(path)
     total_size = 0
     with os.scandir(path) as it:
@@ -327,71 +326,47 @@ class StudyService:
 
         return self.storage_service.get_storage(study).get(study, url, depth, formatted)
 
-    def aggregate_areas_data(
+    def aggregate_output_data(
         self,
         uuid: str,
         output_id: str,
-        query_file: AreasQueryFile,
+        query_file: t.Union[AreasQueryFile, LinksQueryFile],
         frequency: MatrixFrequency,
         mc_years: t.Sequence[int],
-        areas_ids: t.Sequence[str],
         columns_names: t.Sequence[str],
+        ids_to_consider: t.Sequence[str],
         params: RequestParameters,
-    ) -> JSON:
+    ) -> pd.DataFrame:
         """
-        Get study data inside filesystem
+        Aggregates output data based on several filtering conditions
         Args:
             uuid: study uuid
             output_id: simulation output ID
             query_file: which types of data to retrieve ("values", "details", "details-st-storage", "details-res")
             frequency: yearly, monthly, weekly, daily or hourly.
             mc_years: list of monte-carlo years, if empty, all years are selected
-            areas_ids: list of areas names, if empty, all areas are selected
             columns_names: columns to be selected, if empty, all columns are selected
+            ids_to_consider: list of areas or links ids to consider, if empty, all areas are selected
             params: request parameters
 
-        Returns: data study formatted in json
+        Returns: the aggregated data as a DataFrame
 
         """
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
-        output = self.storage_service.get_storage(study).aggregate_areas_data(
-            study, output_id, query_file, frequency, mc_years, areas_ids, columns_names
+        study_path = self.storage_service.raw_study_service.get_study_path(study)
+        # fmt: off
+        aggregator_manager = AggregatorManager(
+            study_path,
+            output_id,
+            query_file,
+            frequency,
+            mc_years,
+            columns_names,
+            ids_to_consider
         )
-
-        return output
-
-    def aggregate_links_data(
-        self,
-        uuid: str,
-        output_id: str,
-        query_file: LinksQueryFile,
-        frequency: MatrixFrequency,
-        mc_years: t.Sequence[int],
-        columns_names: t.Sequence[str],
-        params: RequestParameters,
-    ) -> JSON:
-        """
-        Get study data inside filesystem
-        Args:
-            uuid: study uuid
-            output_id: simulation output ID
-            query_file: which types of data to retrieve ("values", "details")
-            frequency: yearly, monthly, weekly, daily or hourly.
-            mc_years: list of monte-carlo years, if empty, all years are selected
-            columns_names: columns to be selected, if empty, all columns are selected
-            params: request parameters
-
-        Returns: data study formatted in json
-
-        """
-        study = self.get_study(uuid)
-        assert_permission(params.user, study, StudyPermissionType.READ)
-        output = self.storage_service.get_storage(study).aggregate_links_data(
-            study, output_id, query_file, frequency, mc_years, columns_names
-        )
-
-        return output
+        # fmt: on
+        return aggregator_manager.aggregate_output_data()
 
     def get_logs(
         self,
@@ -1396,13 +1371,7 @@ class StudyService:
         study = self.storage_service.raw_study_service.import_study(study, stream)
         study.updated_at = datetime.utcnow()
 
-        # status = self._analyse_study(study)
-        self._save_study(
-            study,
-            owner=params.user,
-            group_ids=group_ids,
-            #    content_status=status,
-        )
+        self._save_study(study, params.user, group_ids)
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_CREATED,
@@ -1966,7 +1935,7 @@ class StudyService:
     def unarchive(self, uuid: str, params: RequestParameters) -> str:
         study = self.get_study(uuid)
         if not study.archived:
-            raise HTTPException(HTTPStatus.BAD_REQUEST, "Study is not archived")
+            raise HTTPException(http.HTTPStatus.BAD_REQUEST, "Study is not archived")
 
         if self.task_service.list_tasks(
             TaskListFilter(
@@ -2014,7 +1983,6 @@ class StudyService:
         study: Study,
         owner: t.Optional[JWTUser] = None,
         group_ids: t.Sequence[str] = (),
-        content_status: StudyContentStatus = StudyContentStatus.VALID,
     ) -> None:
         """
         Create or update a study with specified attributes.
@@ -2026,29 +1994,24 @@ class StudyService:
             study: The study to be saved or updated.
             owner: The owner of the study (current authenticated user).
             group_ids: The list of group IDs to associate with the study.
-            content_status: The new content status for the study.
 
         Raises:
             UserHasNotPermissionError:
-                If the owner is not specified or has invalid authentication,
-                or if permission is denied for any of the specified group IDs.
+                If the owner or the group role is not specified.
         """
         if not owner:
             raise UserHasNotPermissionError("owner is not specified or has invalid authentication")
 
         if isinstance(study, RawStudy):
-            study.content_status = content_status
+            study.content_status = StudyContentStatus.VALID
 
         study.owner = self.user_service.get_user(owner.impersonator, params=RequestParameters(user=owner))
 
         study.groups.clear()
         for gid in group_ids:
-            jwt_group: t.Optional[JWTGroup] = next(filter(lambda g: g.id == gid, owner.groups), None)  # type: ignore
-            if (
-                jwt_group is None
-                or jwt_group.role is None
-                or (jwt_group.role < RoleType.WRITER and not owner.is_site_admin())
-            ):
+            owned_groups = (g for g in owner.groups if g.id == gid)
+            jwt_group: t.Optional[JWTGroup] = next(owned_groups, None)
+            if jwt_group is None or jwt_group.role is None:
                 raise UserHasNotPermissionError(f"Permission denied for group ID: {gid}")
             study.groups.append(Group(id=jwt_group.id, name=jwt_group.name))
 
@@ -2422,6 +2385,19 @@ class StudyService:
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
 
+        # The upgrade of a study variant requires the use of a command specifically dedicated to the upgrade.
+        # However, such a command does not currently exist. Moreover, upgrading a study (whether raw or variant)
+        # directly impacts its descendants, as it would necessitate upgrading all of them.
+        # It’s uncertain whether this would be an acceptable behavior.
+        # For this reason, upgrading a study is not possible if the study is a variant or if it has descendants.
+
+        # First check if the study is a variant study, if so throw an error
+        if isinstance(study, VariantStudy):
+            raise StudyVariantUpgradeError(True)
+        # If the study is a parent raw study, throw an error
+        elif self.repository.has_children(study_id):
+            raise StudyVariantUpgradeError(False)
+
         target_version = target_version or find_next_version(study.version)
         if not target_version:
             raise UnsupportedStudyVersion(study.version)
@@ -2480,8 +2456,31 @@ class StudyService:
         return get_disk_usage(study_path) if study_path.exists() else 0
 
     def get_matrix_with_index_and_header(
-        self, *, study_id: str, path: str, with_index: bool, with_header: bool, parameters: RequestParameters
+        self,
+        *,
+        study_id: str,
+        path: str,
+        with_index: bool,
+        with_header: bool,
+        parameters: RequestParameters,
     ) -> pd.DataFrame:
+        """
+        Retrieves a matrix from a study with the option to include the index and header.
+
+        Args:
+            study_id: The UUID of the study from which to retrieve the matrix.
+            path: The relative path to the matrix within the study.
+            with_index: A boolean indicating whether to include the index in the retrieved matrix.
+            with_header: A boolean indicating whether to include the header in the retrieved matrix.
+            parameters: The request parameters, including the user information.
+
+        Returns:
+            A DataFrame representing the matrix.
+
+        Raises:
+            HTTPException: If the matrix does not exist or the user does not have the necessary permissions.
+        """
+
         matrix_path = Path(path)
         study = self.get_study(study_id)
 

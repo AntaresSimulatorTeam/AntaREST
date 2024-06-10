@@ -21,27 +21,26 @@ interface Props {
   nodes: StudyMapNode[];
 }
 
-function Areas(props: Props) {
-  const { onAdd, updateUI, nodes } = props;
+function Areas({ onAdd, updateUI, nodes }: Props) {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const dispatch = useAppDispatch();
   const [filteredNodes, setFilteredNodes] = useState<StudyMapNode[]>([]);
   const [searchValue, setSearchValue] = useState("");
+  const [showAreaConfig, setShowAreaConfig] = useState(false);
   const currentArea = useAppSelector(getCurrentStudyMapNode);
   const currentLink = useAppSelector((state) =>
     getCurrentLink(state, study.id),
   );
 
   useEffect(() => {
-    const filter = (): StudyMapNode[] => {
-      if (nodes) {
-        return nodes.filter((node) => isSearchMatching(searchValue, node.id));
-      }
-      return [];
-    };
-
-    setFilteredNodes(filter());
+    setFilteredNodes(
+      nodes.filter(({ id }) => isSearchMatching(searchValue, id)),
+    );
   }, [nodes, searchValue]);
+
+  useEffect(() => {
+    setShowAreaConfig(!!(currentArea || currentLink));
+  }, [currentArea, currentLink]);
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -50,25 +49,23 @@ function Areas(props: Props) {
   return (
     <PropertiesView
       mainContent={
-        currentArea ? (
+        showAreaConfig && (
           <AreasContainer>
-            <AreaConfig currentArea={currentArea} updateUI={updateUI} />
+            <AreaConfig
+              currentArea={currentArea}
+              updateUI={updateUI}
+              currentLink={currentLink}
+            />
           </AreasContainer>
-        ) : (
-          currentLink && (
-            <AreasContainer>
-              <AreaConfig updateUI={updateUI} currentLink={currentLink} />
-            </AreasContainer>
-          )
         )
       }
       secondaryContent={
-        filteredNodes &&
-        !currentLink &&
-        !currentArea && (
+        (!showAreaConfig || (!currentArea && !currentLink)) &&
+        filteredNodes.length > 0 && (
           <ListElement
-            setSelectedItem={(node) => {
-              dispatch(setCurrentArea(node.id));
+            setSelectedItem={({ id }) => {
+              dispatch(setCurrentArea(id));
+              setShowAreaConfig(true);
             }}
             list={filteredNodes}
           />
@@ -77,7 +74,7 @@ function Areas(props: Props) {
       onSearchFilterChange={(searchValue) => {
         setSearchValue(searchValue);
       }}
-      onAdd={!currentArea ? onAdd : undefined}
+      onAdd={onAdd}
     />
   );
 }

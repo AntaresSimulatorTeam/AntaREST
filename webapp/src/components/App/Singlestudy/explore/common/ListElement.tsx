@@ -7,13 +7,14 @@ import {
   PopoverPosition,
   SxProps,
   Theme,
+  Tooltip,
 } from "@mui/material";
 import ArrowRightOutlinedIcon from "@mui/icons-material/ArrowRightOutlined";
 import { useState } from "react";
 import { IdType } from "../../../../../common/types";
 import { mergeSxProp } from "../../../../../utils/muiUtils";
 
-interface PropsType<T> {
+interface Props<T> {
   list: T[];
   currentElement?: string;
   currentElementKeyToTest?: keyof T;
@@ -25,18 +26,14 @@ interface PropsType<T> {
   sx?: SxProps<Theme>;
 }
 
-function ListElement<T extends { id?: IdType; name: string; label?: string }>(
-  props: PropsType<T>,
-) {
-  const {
-    list,
-    currentElement,
-    currentElementKeyToTest,
-    setSelectedItem,
-    contextMenuContent: ContextMenuContent,
-    sx,
-  } = props;
-
+function ListElement<T extends { id?: IdType; name: string; label?: string }>({
+  list,
+  currentElement,
+  currentElementKeyToTest,
+  setSelectedItem,
+  contextMenuContent: ContextMenuContent,
+  sx,
+}: Props<T>) {
   const [contextMenuPosition, setContextMenuPosition] =
     useState<PopoverPosition | null>(null);
   const [elementForContext, setElementForContext] = useState<T>();
@@ -76,7 +73,7 @@ function ListElement<T extends { id?: IdType; name: string; label?: string }>(
       width="100%"
       flexGrow={1}
       flexShrink={1}
-      sx={mergeSxProp({ pl: 2, pt: 1, pr: 1, mb: 1, overflow: "auto" }, sx)}
+      sx={mergeSxProp({ overflow: "auto", py: 1 }, sx)}
     >
       {list.map((element, index) => (
         <ListItemButton
@@ -89,14 +86,23 @@ function ListElement<T extends { id?: IdType; name: string; label?: string }>(
             width: "100%",
             display: "flex",
             justifyContent: "space-between",
+            py: 0,
           }}
           onContextMenu={handleContextMenu(element)}
         >
-          <ListItemText
-            sx={{ "&> span": { textOverflow: "ellipsis", overflow: "hidden" } }}
-          >
-            {element.label || element.name}
-          </ListItemText>
+          <Tooltip title={element.name} placement="right">
+            <ListItemText
+              sx={{
+                "&> span": {
+                  textOverflow: "ellipsis",
+                  overflow: "hidden",
+                  whiteSpace: "nowrap",
+                },
+              }}
+            >
+              {element.label || element.name}
+            </ListItemText>
+          </Tooltip>
           <ListItemIcon
             sx={{
               minWidth: 0,
@@ -127,9 +133,5 @@ function ListElement<T extends { id?: IdType; name: string; label?: string }>(
     </Box>
   );
 }
-
-ListElement.defaultProps = {
-  currentElement: undefined,
-};
 
 export default ListElement;

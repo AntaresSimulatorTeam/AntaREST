@@ -5,11 +5,9 @@ from pathlib import Path
 from antarest.core.exceptions import StudyNotFoundError
 from antarest.core.model import JSON
 from antarest.core.requests import RequestParameters
-from antarest.study.common.default_values import AreasQueryFile, LinksQueryFile
 from antarest.study.model import Study, StudyMetadataDTO, StudyMetadataPatchDTO, StudySimResultDTO
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 
 T = t.TypeVar("T", bound=Study)
 
@@ -43,58 +41,6 @@ class IStudyStorageService(ABC, t.Generic[T]):
             formatted: indicate if raw files must be parsed and formatted
 
         Returns: study data formatted in json
-
-        """
-
-    @abstractmethod
-    def aggregate_areas_data(
-        self,
-        metadata: T,
-        output_id: str,
-        query_file: AreasQueryFile,
-        frequency: MatrixFrequency,
-        mc_years: t.Sequence[int],
-        areas_ids: t.Sequence[str],
-        columns_names: t.Sequence[str],
-    ) -> t.Dict[str, t.Any]:
-        """
-        Entry point to fetch areas data inside study's output.
-
-        Args:
-            metadata: study for which we want to perform the aggregation
-            output_id: simulation ID
-            query_file: "values", "details", "details-st-storage", "details-res"
-            frequency: "hourly", "daily", "weekly", "monthly", "annual"
-            mc_years: list of Monte Carlo years to consider, if empty, all years are considered
-            areas_ids: list of areas to consider, if empty, all areas are considered
-            columns_names: list of columns to consider, if empty, all columns are considered
-
-        Returns: the areas aggregated data in a JSON format
-
-        """
-
-    @abstractmethod
-    def aggregate_links_data(
-        self,
-        metadata: T,
-        output_id: str,
-        query_file: LinksQueryFile,
-        frequency: MatrixFrequency,
-        mc_years: t.Sequence[int],
-        columns_names: t.Sequence[str],
-    ) -> t.Dict[str, t.Any]:
-        """
-        Entry point to fetch links raw data inside study's output.
-
-        Args:
-            metadata: study for which we want to perform the aggregation
-            output_id: simulation ID
-            query_file: "values", "details"
-            frequency: "hourly", "daily", "weekly", "monthly", "annual"
-            mc_years: list of Monte Carlo years to consider, if empty, all years are considered
-            columns_names: list of columns to consider, if empty, all columns are considered
-
-        Returns: the links aggregated data in a JSON format
 
         """
 

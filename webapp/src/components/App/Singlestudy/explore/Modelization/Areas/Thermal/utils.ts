@@ -11,6 +11,22 @@ import type { ClusterWithCapacity } from "../common/clustersUtils";
 // Constants
 ////////////////////////////////////////////////////////////////
 
+export const COMMON_MATRIX_COLS = [
+  "Marginal cost modulation",
+  "Market bid modulation",
+  "Capacity modulation",
+  "Min gen modulation",
+] as const;
+
+export const TS_GEN_MATRIX_COLS = [
+  "FO Duration",
+  "PO Duration",
+  "FO Rate",
+  "PO Rate",
+  "NPO Min",
+  "NPO Max",
+] as const;
+
 export const THERMAL_GROUPS = [
   "Gas",
   "Hard Coal",
@@ -25,8 +41,8 @@ export const THERMAL_GROUPS = [
 ] as const;
 
 export const THERMAL_POLLUTANTS = [
-  // For study versions >= 860
   "co2",
+  // Since v8.6
   "so2",
   "nh3",
   "nox",
@@ -49,6 +65,11 @@ export const TS_GENERATION_OPTIONS = [
 
 export const TS_LAW_OPTIONS = ["geometric", "uniform"] as const;
 
+export const COST_GENERATION_OPTIONS = [
+  "SetManually",
+  "useCostTimeseries",
+] as const;
+
 ////////////////////////////////////////////////////////////////
 // Types
 ////////////////////////////////////////////////////////////////
@@ -57,7 +78,7 @@ export type ThermalGroup = (typeof THERMAL_GROUPS)[number];
 
 type LocalTSGenerationBehavior = (typeof TS_GENERATION_OPTIONS)[number];
 type TimeSeriesLawOption = (typeof TS_LAW_OPTIONS)[number];
-
+type CostGeneration = (typeof COST_GENERATION_OPTIONS)[number];
 type ThermalPollutants = {
   [K in (typeof THERMAL_POLLUTANTS)[number]]: number;
 };
@@ -84,6 +105,10 @@ export interface ThermalCluster extends ThermalPollutants {
   volatilityPlanned: number;
   lawForced: TimeSeriesLawOption;
   lawPlanned: TimeSeriesLawOption;
+  // Since v8.7
+  costGeneration: CostGeneration;
+  efficiency: number;
+  variableOMCost: number;
 }
 
 export type ThermalClusterWithCapacity = ClusterWithCapacity<ThermalCluster>;

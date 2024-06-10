@@ -19,33 +19,29 @@ from tests.integration.assets import ASSETS_DIR
 from tests.integration.utils import wait_for
 
 
-def test_main(client: TestClient, admin_access_token: str, study_id: str) -> None:
-    admin_headers = {"Authorization": f"Bearer {admin_access_token}"}
+def test_main(client: TestClient, admin_access_token: str) -> None:
+    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
 
     # create some new users
     # TODO check for bad username or empty password
     client.post(
         "/v1/users",
-        headers=admin_headers,
         json={"name": "George", "password": "mypass"},
     )
     client.post(
         "/v1/users",
-        headers=admin_headers,
         json={"name": "Fred", "password": "mypass"},
     )
     client.post(
         "/v1/users",
-        headers=admin_headers,
         json={"name": "Harry", "password": "mypass"},
     )
-    res = client.get("/v1/users", headers=admin_headers)
+    res = client.get("/v1/users")
     assert len(res.json()) == 4
 
     # reject user with existing name creation
     res = client.post(
         "/v1/users",
-        headers=admin_headers,
         json={"name": "George", "password": "mypass"},
     )
     assert res.status_code == 400
@@ -123,20 +119,30 @@ def test_main(client: TestClient, admin_access_token: str, study_id: str) -> Non
     assert res.status_code == 200
     assert res.json() == {"1": 8.0, "2": 1.0}
 
+    # Update the active ruleset
+    active_ruleset_name = "ruleset test"
+    res = client.post(
+        f"/v1/studies/{study_id}/raw?path=settings/generaldata/general/active-rules-scenario",
+        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
+        json=active_ruleset_name.title(),  # ruleset names are case-insensitive
+    )
+    assert res.status_code == 204
+
     # scenario builder
     res = client.put(
         f"/v1/studies/{study_id}/config/scenariobuilder",
         headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
         json={
-            "ruleset test": {
+            active_ruleset_name: {
                 "l": {"area1": {"0": 1}},
                 "ntc": {"area1 / area2": {"1": 23}},
                 "t": {"area1": {"thermal": {"1": 2}}},
+                "hl": {"area1": {"0": 75}},
             },
-            "Default Ruleset": "",
+            "Default Ruleset": {},  # should be removed
         },
     )
-    assert res.status_code == 200
+    assert res.status_code == 200, res.json()
 
     res = client.get(
         f"/v1/studies/{study_id}/config/scenariobuilder",
@@ -144,12 +150,16 @@ def test_main(client: TestClient, admin_access_token: str, study_id: str) -> Non
     )
     assert res.status_code == 200
     assert res.json() == {
-        "ruleset test": {
+        active_ruleset_name: {
             "l": {"area1": {"0": 1}},
             "ntc": {"area1 / area2": {"1": 23}},
             "t": {"area1": {"thermal": {"1": 2}}},
+            "hl": {"area1": {"0": 75}},
         },
     }
+
+    # Keys must be sorted in each section (to improve reading performance).
+    assert list(res.json()[active_ruleset_name]) == ["hl", "l", "ntc", "t"]
 
     # config / thematic trimming
     res = client.get(
@@ -231,19 +241,16 @@ def test_main(client: TestClient, admin_access_token: str, study_id: str) -> Non
     # play with groups
     client.post(
         "/v1/groups",
-        headers=admin_headers,
         json={"name": "Weasley"},
     )
-    res = client.get("/v1/groups", headers=admin_headers)
+    res = client.get("/v1/groups")
     group_id = res.json()[1]["id"]
     client.post(
         "/v1/roles",
-        headers=admin_headers,
         json={"type": 40, "group_id": group_id, "identity_id": 3},
     )
     client.post(
         "/v1/roles",
-        headers=admin_headers,
         json={"type": 30, "group_id": group_id, "identity_id": 2},
     )
     # reset login to update credentials
@@ -282,7 +289,7 @@ def test_main(client: TestClient, admin_access_token: str, study_id: str) -> Non
     )
     job_id = res.json()["job_id"]
 
-    res = client.get("/v1/launcher/load", headers=admin_headers)
+    res = client.get("/v1/launcher/load")
     assert res.status_code == 200, res.json()
     launcher_load = LauncherLoadDTO(**res.json())
     assert launcher_load.allocated_cpu_rate == 100 / (os.cpu_count() or 1)
@@ -331,20 +338,19 @@ def test_main(client: TestClient, admin_access_token: str, study_id: str) -> Non
     assert new_meta.json()["horizon"] == "2035"
 
 
-def test_matrix(client: TestClient, admin_access_token: str, study_id: str) -> None:
-    admin_headers = {"Authorization": f"Bearer {admin_access_token}"}
+def test_matrix(client: TestClient, admin_access_token: str) -> None:
+    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
 
     matrix = [[1, 2], [3, 4]]
 
     res = client.post(
         "/v1/matrix",
-        headers=admin_headers,
         json=matrix,
     )
 
     assert res.status_code == 200
 
-    res = client.get(f"/v1/matrix/{res.json()}", headers=admin_headers)
+    res = client.get(f"/v1/matrix/{res.json()}")
 
     assert res.status_code == 200
     stored = res.json()
@@ -353,7 +359,7 @@ def test_matrix(client: TestClient, admin_access_token: str, study_id: str) -> N
 
     matrix_id = stored["id"]
 
-    res = client.get(f"/v1/matrix/{matrix_id}/download", headers=admin_headers)
+    res = client.get(f"/v1/matrix/{matrix_id}/download")
     assert res.status_code == 200
 
     res = client.post(
@@ -366,30 +372,29 @@ def test_matrix(client: TestClient, admin_access_token: str, study_id: str) -> N
             },
             "matrices": [{"id": matrix_id, "name": "mymatrix"}],
         },
-        headers=admin_headers,
     )
     assert res.status_code == 200
 
-    res = client.get("/v1/matrixdataset/_search?name=myda", headers=admin_headers)
+    res = client.get("/v1/matrixdataset/_search?name=myda")
     results = res.json()
     assert len(results) == 1
     assert len(results[0]["matrices"]) == 1
     assert results[0]["matrices"][0]["id"] == matrix_id
 
     dataset_id = results[0]["id"]
-    res = client.get(f"/v1/matrixdataset/{dataset_id}/download", headers=admin_headers)
+    res = client.get(f"/v1/matrixdataset/{dataset_id}/download")
     assert res.status_code == 200
 
-    res = client.delete(f"/v1/matrixdataset/{dataset_id}", headers=admin_headers)
+    res = client.delete(f"/v1/matrixdataset/{dataset_id}")
     assert res.status_code == 200
 
 
 def test_area_management(client: TestClient, admin_access_token: str) -> None:
-    admin_headers = {"Authorization": f"Bearer {admin_access_token}"}
+    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
 
-    created = client.post("/v1/studies", headers=admin_headers, params={"name": "foo", "version": 870})
+    created = client.post("/v1/studies", params={"name": "foo", "version": 870})
     study_id = created.json()
-    res_areas = client.get(f"/v1/studies/{study_id}/areas", headers=admin_headers)
+    res_areas = client.get(f"/v1/studies/{study_id}/areas")
     assert res_areas.json() == [
         {
             "id": "all areas",
@@ -403,7 +408,6 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
 
     res = client.post(
         f"/v1/studies/{study_id}/areas",
-        headers=admin_headers,
         json={
             "name": "area 1",
             "type": "AREA",
@@ -415,7 +419,6 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
     # Test area creation with duplicate name
     res = client.post(
         f"/v1/studies/{study_id}/areas",
-        headers=admin_headers,
         json={
             "name": "Area 1",  # Same name but with different case
             "type": "AREA",
@@ -430,7 +433,6 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
 
     client.post(
         f"/v1/studies/{study_id}/areas",
-        headers=admin_headers,
         json={
             "name": "area 2",
             "type": "AREA",
@@ -440,7 +442,6 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
 
     client.post(
         f"/v1/studies/{study_id}/commands",
-        headers=admin_headers,
         json=[
             {
                 "action": CommandName.CREATE_THERMAL_CLUSTER.value,
@@ -455,7 +456,6 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
 
     client.post(
         f"/v1/studies/{study_id}/commands",
-        headers=admin_headers,
         json=[
             {
                 "action": CommandName.CREATE_THERMAL_CLUSTER.value,
@@ -470,7 +470,6 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
 
     client.post(
         f"/v1/studies/{study_id}/commands",
-        headers=admin_headers,
         json=[
             {
                 "action": CommandName.CREATE_RENEWABLES_CLUSTER.value,
@@ -485,7 +484,6 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
 
     client.post(
         f"/v1/studies/{study_id}/commands",
-        headers=admin_headers,
         json=[
             {
                 "action": CommandName.CREATE_RENEWABLES_CLUSTER.value,
@@ -500,7 +498,6 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
 
     res = client.post(
         f"/v1/studies/{study_id}/commands",
-        headers=admin_headers,
         json=[
             {
                 "action": CommandName.CREATE_BINDING_CONSTRAINT.value,
@@ -518,7 +515,6 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
 
     res = client.post(
         f"/v1/studies/{study_id}/commands",
-        headers=admin_headers,
         json=[
             {
                 "action": CommandName.CREATE_BINDING_CONSTRAINT.value,
@@ -534,7 +530,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
     )
     res.raise_for_status()
 
-    res_areas = client.get(f"/v1/studies/{study_id}/areas", headers=admin_headers)
+    res_areas = client.get(f"/v1/studies/{study_id}/areas")
     assert res_areas.json() == [
         {
             "id": "area 1",
@@ -600,13 +596,12 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
 
     client.post(
         f"/v1/studies/{study_id}/links",
-        headers=admin_headers,
         json={
             "area1": "area 1",
             "area2": "area 2",
         },
     )
-    res_links = client.get(f"/v1/studies/{study_id}/links?with_ui=true", headers=admin_headers)
+    res_links = client.get(f"/v1/studies/{study_id}/links?with_ui=true")
     assert res_links.json() == [
         {
             "area1": "area 1",
@@ -617,64 +612,63 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
 
     # -- `layers` integration tests
 
-    res = client.get(f"/v1/studies/{study_id}/layers", headers=admin_headers)
+    res = client.get(f"/v1/studies/{study_id}/layers")
     assert res.json() == [LayerInfoDTO(id="0", name="All", areas=["area 1", "area 2"]).dict()]
 
-    res = client.post(f"/v1/studies/{study_id}/layers?name=test", headers=admin_headers)
+    res = client.post(f"/v1/studies/{study_id}/layers?name=test")
     assert res.json() == "1"
 
-    res = client.get(f"/v1/studies/{study_id}/layers", headers=admin_headers)
+    res = client.get(f"/v1/studies/{study_id}/layers")
     assert res.json() == [
         LayerInfoDTO(id="0", name="All", areas=["area 1", "area 2"]).dict(),
         LayerInfoDTO(id="1", name="test", areas=[]).dict(),
     ]
 
-    res = client.put(f"/v1/studies/{study_id}/layers/1?name=test2", headers=admin_headers)
-    res = client.put(f"/v1/studies/{study_id}/layers/1", json=["area 1"], headers=admin_headers)
-    res = client.put(f"/v1/studies/{study_id}/layers/1", json=["area 2"], headers=admin_headers)
-    res = client.get(f"/v1/studies/{study_id}/layers", headers=admin_headers)
+    res = client.put(f"/v1/studies/{study_id}/layers/1?name=test2")
+    res = client.put(f"/v1/studies/{study_id}/layers/1", json=["area 1"])
+    res = client.put(f"/v1/studies/{study_id}/layers/1", json=["area 2"])
+    res = client.get(f"/v1/studies/{study_id}/layers")
     assert res.json() == [
         LayerInfoDTO(id="0", name="All", areas=["area 1", "area 2"]).dict(),
         LayerInfoDTO(id="1", name="test2", areas=["area 2"]).dict(),
     ]
 
     # Delete the layer '1' that has 1 area
-    res = client.delete(f"/v1/studies/{study_id}/layers/1", headers=admin_headers)
+    res = client.delete(f"/v1/studies/{study_id}/layers/1")
     assert res.status_code == HTTPStatus.NO_CONTENT
 
     # Ensure the layer is deleted
-    res = client.get(f"/v1/studies/{study_id}/layers", headers=admin_headers)
+    res = client.get(f"/v1/studies/{study_id}/layers")
     assert res.json() == [
         LayerInfoDTO(id="0", name="All", areas=["area 1", "area 2"]).dict(),
     ]
 
     # Create the layer again without areas
-    res = client.post(f"/v1/studies/{study_id}/layers?name=test2", headers=admin_headers)
+    res = client.post(f"/v1/studies/{study_id}/layers?name=test2")
     assert res.json() == "1"
 
     # Delete the layer with no areas
-    res = client.delete(f"/v1/studies/{study_id}/layers/1", headers=admin_headers)
+    res = client.delete(f"/v1/studies/{study_id}/layers/1")
     assert res.status_code == HTTPStatus.NO_CONTENT
 
     # Ensure the layer is deleted
-    res = client.get(f"/v1/studies/{study_id}/layers", headers=admin_headers)
+    res = client.get(f"/v1/studies/{study_id}/layers")
     assert res.json() == [
         LayerInfoDTO(id="0", name="All", areas=["area 1", "area 2"]).dict(),
     ]
 
     # Try to delete a non-existing layer
-    res = client.delete(f"/v1/studies/{study_id}/layers/1", headers=admin_headers)
+    res = client.delete(f"/v1/studies/{study_id}/layers/1")
     assert res.status_code == HTTPStatus.NOT_FOUND
 
     # Try to delete the layer 'All'
-    res = client.delete(f"/v1/studies/{study_id}/layers/0", headers=admin_headers)
+    res = client.delete(f"/v1/studies/{study_id}/layers/0")
     assert res.status_code == HTTPStatus.BAD_REQUEST
 
     # -- `district` integration tests
 
     res = client.post(
         f"/v1/studies/{study_id}/districts",
-        headers=admin_headers,
         json={
             "name": "District 1",
             "output": True,
@@ -693,7 +687,6 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
 
     res = client.put(
         f"/v1/studies/{study_id}/districts/district%201",
-        headers=admin_headers,
         json={
             "name": "District 1",
             "output": True,
@@ -703,7 +696,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
     )
     assert res.status_code == 200
 
-    res = client.get(f"/v1/studies/{study_id}/districts", headers=admin_headers)
+    res = client.get(f"/v1/studies/{study_id}/districts")
     assert res.status_code == 200
     actual = res.json()
     actual[0]["areas"].sort()
@@ -725,12 +718,12 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
         },
     ]
 
-    res = client.delete(f"/v1/studies/{study_id}/districts/district%201", headers=admin_headers)
+    res = client.delete(f"/v1/studies/{study_id}/districts/district%201")
     assert res.status_code == 200
 
     # Optimization form
 
-    res_optimization_config = client.get(f"/v1/studies/{study_id}/config/optimization/form", headers=admin_headers)
+    res_optimization_config = client.get(f"/v1/studies/{study_id}/config/optimization/form")
     res_optimization_config_json = res_optimization_config.json()
     assert res_optimization_config_json == {
         "bindingConstraints": True,
@@ -749,14 +742,13 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
 
     client.put(
         f"/v1/studies/{study_id}/config/optimization/form",
-        headers=admin_headers,
         json={
             "strategicReserve": False,
             "unfeasibleProblemBehavior": UnfeasibleProblemBehavior.WARNING_VERBOSE.value,
             "simplexOptimizationRange": SimplexOptimizationRange.DAY.value,
         },
     )
-    res_optimization_config = client.get(f"/v1/studies/{study_id}/config/optimization/form", headers=admin_headers)
+    res_optimization_config = client.get(f"/v1/studies/{study_id}/config/optimization/form")
     res_optimization_config_json = res_optimization_config.json()
     assert res_optimization_config_json == {
         "bindingConstraints": True,
@@ -775,7 +767,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
 
     # Adequacy patch form
 
-    res_adequacy_patch_config = client.get(f"/v1/studies/{study_id}/config/adequacypatch/form", headers=admin_headers)
+    res_adequacy_patch_config = client.get(f"/v1/studies/{study_id}/config/adequacypatch/form")
     res_adequacy_patch_config_json = res_adequacy_patch_config.json()
     assert res_adequacy_patch_config_json == {
         "enableAdequacyPatch": False,
@@ -791,14 +783,13 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
 
     client.put(
         f"/v1/studies/{study_id}/config/adequacypatch/form",
-        headers=admin_headers,
         json={
             "ntcBetweenPhysicalAreasOutAdequacyPatch": False,
             "priceTakingOrder": "Load",
             "thresholdDisplayLocalMatchingRuleViolations": 1.1,
         },
     )
-    res_adequacy_patch_config = client.get(f"/v1/studies/{study_id}/config/adequacypatch/form", headers=admin_headers)
+    res_adequacy_patch_config = client.get(f"/v1/studies/{study_id}/config/adequacypatch/form")
     res_adequacy_patch_config_json = res_adequacy_patch_config.json()
     assert res_adequacy_patch_config_json == {
         "enableAdequacyPatch": False,
@@ -814,7 +805,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
 
     # General form
 
-    res_general_config = client.get(f"/v1/studies/{study_id}/config/general/form", headers=admin_headers)
+    res_general_config = client.get(f"/v1/studies/{study_id}/config/general/form")
     res_general_config_json = res_general_config.json()
     assert res_general_config_json == {
         "mode": "Economy",
@@ -837,7 +828,6 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
 
     client.put(
         f"/v1/studies/{study_id}/config/general/form",
-        headers=admin_headers,
         json={
             "mode": Mode.ADEQUACY.value,
             "firstDay": 2,
@@ -845,7 +835,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
             "leapYear": True,
         },
     )
-    res_general_config = client.get(f"/v1/studies/{study_id}/config/general/form", headers=admin_headers)
+    res_general_config = client.get(f"/v1/studies/{study_id}/config/general/form")
     res_general_config_json = res_general_config.json()
     assert res_general_config_json == {
         "mode": Mode.ADEQUACY.value,
@@ -868,7 +858,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
 
     # Thematic trimming form
 
-    res = client.get(f"/v1/studies/{study_id}/config/thematictrimming/form", headers=admin_headers)
+    res = client.get(f"/v1/studies/{study_id}/config/thematictrimming/form")
     obj = res.json()
     assert obj == {
         "avlDtg": True,
@@ -968,7 +958,6 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
 
     client.put(
         f"/v1/studies/{study_id}/config/thematictrimming/form",
-        headers=admin_headers,
         json={
             "ovCost": False,
             "opCost": True,
@@ -1035,7 +1024,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
             "profitByPlant": True,
         },
     )
-    res = client.get(f"/v1/studies/{study_id}/config/thematictrimming/form", headers=admin_headers)
+    res = client.get(f"/v1/studies/{study_id}/config/thematictrimming/form")
     obj = res.json()
     assert obj == {
         "avlDtg": True,
@@ -1135,7 +1124,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
 
     # Properties form
 
-    res_properties_config = client.get(f"/v1/studies/{study_id}/areas/area 1/properties/form", headers=admin_headers)
+    res_properties_config = client.get(f"/v1/studies/{study_id}/areas/area 1/properties/form")
     res_properties_config_json = res_properties_config.json()
     res_properties_config_json["filterSynthesis"] = set(res_properties_config_json["filterSynthesis"])
     res_properties_config_json["filterByYear"] = set(res_properties_config_json["filterByYear"])
@@ -1152,7 +1141,6 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
 
     client.put(
         f"/v1/studies/{study_id}/areas/area 1/properties/form",
-        headers=admin_headers,
         json={
             "energyCostUnsupplied": 2.0,
             "energyCostSpilled": 4.0,
@@ -1164,7 +1152,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
             "adequacyPatchMode": "inside",
         },
     )
-    res_properties_config = client.get(f"/v1/studies/{study_id}/areas/area 1/properties/form", headers=admin_headers)
+    res_properties_config = client.get(f"/v1/studies/{study_id}/areas/area 1/properties/form")
     res_properties_config_json = res_properties_config.json()
     res_properties_config_json["filterSynthesis"] = set(res_properties_config_json["filterSynthesis"])
     res_properties_config_json["filterByYear"] = set(res_properties_config_json["filterByYear"])
@@ -1183,7 +1171,6 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
 
     res_hydro_config = client.put(
         f"/v1/studies/{study_id}/areas/area 1/hydro/form",
-        headers=admin_headers,
         json={
             "interDailyBreakdown": 8,
             "intraDailyModulation": 7,
@@ -1193,7 +1180,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
     )
     assert res_hydro_config.status_code == 200
 
-    res_hydro_config = client.get(f"/v1/studies/{study_id}/areas/area 1/hydro/form", headers=admin_headers)
+    res_hydro_config = client.get(f"/v1/studies/{study_id}/areas/area 1/hydro/form")
     res_hydro_config_json = res_hydro_config.json()
 
     assert res_hydro_config_json == {
@@ -1216,7 +1203,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
 
     # Time-series form
 
-    res_ts_config = client.get(f"/v1/studies/{study_id}/config/timeseries/form", headers=admin_headers)
+    res_ts_config = client.get(f"/v1/studies/{study_id}/config/timeseries/form")
     res_ts_config_json = res_ts_config.json()
     assert res_ts_config_json == {
         "load": {
@@ -1260,7 +1247,6 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
     }
     res_ts_config = client.put(
         f"/v1/studies/{study_id}/config/timeseries/form",
-        headers=admin_headers,
         json={
             "thermal": {"stochasticTsStatus": True},
             "load": {
@@ -1270,7 +1256,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
             },
         },
     )
-    res_ts_config = client.get(f"/v1/studies/{study_id}/config/timeseries/form", headers=admin_headers)
+    res_ts_config = client.get(f"/v1/studies/{study_id}/config/timeseries/form")
     res_ts_config_json = res_ts_config.json()
     assert res_ts_config_json == {
         "load": {
@@ -1317,7 +1303,6 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
 
     res = client.put(
         f"/v1/studies/{study_id}/areas/area 1/clusters/renewable/cluster renewable 1/form",
-        headers=admin_headers,
         json={
             "name": "cluster renewable 1 renamed",
             "tsInterpretation": "production-factor",
@@ -1330,7 +1315,6 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
 
     res = client.get(
         f"/v1/studies/{study_id}/areas/area 1/clusters/renewable/cluster renewable 1/form",
-        headers=admin_headers,
     )
     expected = {
         "enabled": False,
@@ -1387,7 +1371,6 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
     res = client.put(
         # This URL is deprecated, but we must check it for backward compatibility.
         f"/v1/studies/{study_id}/areas/area 1/clusters/thermal/cluster 1/form",
-        headers=admin_headers,
         json=obj,
     )
     assert res.status_code == 200, res.json()
@@ -1395,29 +1378,26 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
     res = client.get(
         # This URL is deprecated, but we must check it for backward compatibility.
         f"/v1/studies/{study_id}/areas/area 1/clusters/thermal/cluster 1/form",
-        headers=admin_headers,
     )
     assert res.status_code == 200, res.json()
     assert res.json() == {"id": "cluster 1", **obj}
 
     # Links
 
-    client.delete(f"/v1/studies/{study_id}/links/area%201/area%202", headers=admin_headers)
-    res_links = client.get(f"/v1/studies/{study_id}/links", headers=admin_headers)
+    client.delete(f"/v1/studies/{study_id}/links/area%201/area%202")
+    res_links = client.get(f"/v1/studies/{study_id}/links")
     assert res_links.json() == []
 
     res = client.put(
         f"/v1/studies/{study_id}/areas/area%201/ui",
-        headers=admin_headers,
         json={"x": 100, "y": 100, "color_rgb": [255, 0, 100]},
     )
     res = client.put(
         f"/v1/studies/{study_id}/areas/area%202/ui?layer=1",
-        headers=admin_headers,
         json={"x": 105, "y": 105, "color_rgb": [255, 10, 100]},
     )
     assert res.status_code == 200
-    res_ui = client.get(f"/v1/studies/{study_id}/areas?ui=true", headers=admin_headers)
+    res_ui = client.get(f"/v1/studies/{study_id}/areas?ui=true")
     assert res_ui.json() == {
         "area 1": {
             "ui": {
@@ -1447,9 +1427,9 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
         },
     }
 
-    result = client.delete(f"/v1/studies/{study_id}/areas/area%201", headers=admin_headers)
+    result = client.delete(f"/v1/studies/{study_id}/areas/area%201")
     assert result.status_code == 200
-    res_areas = client.get(f"/v1/studies/{study_id}/areas", headers=admin_headers)
+    res_areas = client.get(f"/v1/studies/{study_id}/areas")
     assert res_areas.json() == [
         {
             "id": "area 2",
@@ -1488,50 +1468,47 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
     ]
 
 
-def test_archive(client: TestClient, admin_access_token: str, study_id: str, tmp_path: Path) -> None:
-    admin_headers = {"Authorization": f"Bearer {admin_access_token}"}
+def test_archive(client: TestClient, admin_access_token: str, tmp_path: Path) -> None:
+    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
 
-    study_res = client.post("/v1/studies?name=foo", headers=admin_headers)
+    study_res = client.post("/v1/studies?name=foo")
     study_id = study_res.json()
 
-    res = client.put(f"/v1/studies/{study_id}/archive", headers=admin_headers)
+    res = client.put(f"/v1/studies/{study_id}/archive")
     assert res.status_code == 200
     task_id = res.json()
     wait_for(
         lambda: client.get(
             f"/v1/tasks/{task_id}",
-            headers=admin_headers,
         ).json()["status"]
         == 3
     )
 
-    res = client.get(f"/v1/studies/{study_id}", headers=admin_headers)
+    res = client.get(f"/v1/studies/{study_id}")
     assert res.json()["archived"]
     assert (tmp_path / "archive_dir" / f"{study_id}.zip").exists()
 
-    res = client.put(f"/v1/studies/{study_id}/unarchive", headers=admin_headers)
+    res = client.put(f"/v1/studies/{study_id}/unarchive")
 
     task_id = res.json()
     wait_for(
         lambda: client.get(
             f"/v1/tasks/{task_id}",
-            headers=admin_headers,
         ).json()["status"]
         == 3
     )
 
-    res = client.get(f"/v1/studies/{study_id}", headers=admin_headers)
+    res = client.get(f"/v1/studies/{study_id}")
     assert not res.json()["archived"]
     assert not (tmp_path / "archive_dir" / f"{study_id}.zip").exists()
 
 
-def test_maintenance(client: TestClient, admin_access_token: str, study_id: str) -> None:
-    admin_headers = {"Authorization": f"Bearer {admin_access_token}"}
+def test_maintenance(client: TestClient, admin_access_token: str) -> None:
+    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
 
     # Create non admin user
     res = client.post(
         "/v1/users",
-        headers=admin_headers,
         json={"name": "user", "password": "user"},
     )
     assert res.status_code == 200
@@ -1544,13 +1521,11 @@ def test_maintenance(client: TestClient, admin_access_token: str, study_id: str)
         # Set maintenance mode
         result = client.post(
             f"/v1/core/maintenance?maintenance={'true' if value else 'false'}",
-            headers=admin_headers,
         )
         assert result.status_code == 200
 
         result = client.get(
             "/v1/core/maintenance",
-            headers=admin_headers,
         )
         assert result.status_code == 200
         assert result.json() == value
@@ -1569,19 +1544,18 @@ def test_maintenance(client: TestClient, admin_access_token: str, study_id: str)
     message = "Hey"
     res = client.post(
         "/v1/core/maintenance/message",
-        headers=admin_headers,
         json=message,
     )
     assert res.status_code == 200
 
     # Set message info when not admin
-    res = client.get("/v1/core/maintenance/message", headers=admin_headers)
+    res = client.get("/v1/core/maintenance/message")
     assert res.status_code == 200
     assert res.json() == message
 
 
 def test_import(client: TestClient, admin_access_token: str, study_id: str) -> None:
-    admin_headers = {"Authorization": f"Bearer {admin_access_token}"}
+    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
 
     zip_path = ASSETS_DIR / "STA-mini.zip"
     seven_zip_path = ASSETS_DIR / "STA-mini.7z"
@@ -1590,16 +1564,14 @@ def test_import(client: TestClient, admin_access_token: str, study_id: str) -> N
     uuid = client.post(
         "/v1/studies/_import",
         files={"study": io.BytesIO(zip_path.read_bytes())},
-        headers=admin_headers,
     ).json()
-    res = client.get(f"v1/studies/{uuid}", headers=admin_headers).json()
+    res = client.get(f"v1/studies/{uuid}").json()
     assert res["groups"] == [{"id": "admin", "name": "admin"}]
     assert res["public_mode"] == "NONE"
 
     # Create user George who belongs to no group
     client.post(
         "/v1/users",
-        headers=admin_headers,
         json={"name": "George", "password": "mypass"},
     )
     res = client.post("/v1/login", json={"username": "George", "password": "mypass"})
@@ -1616,11 +1588,42 @@ def test_import(client: TestClient, admin_access_token: str, study_id: str) -> N
     assert res["groups"] == []
     assert res["public_mode"] == "READ"
 
+    # create George group
+    george_group = "george_group"
+    res = client.post(
+        "/v1/groups",
+        json={"id": george_group, "name": george_group},
+    )
+    assert res.status_code in {200, 201}
+    # add George to the group as a reader
+    client.post(
+        "/v1/roles",
+        json={"type": 10, "group_id": george_group, "identity_id": 2},
+    )
+    # reset login to update credentials
+    res = client.post(
+        "/v1/refresh",
+        headers={"Authorization": f'Bearer {george_credentials["refresh_token"]}'},
+    )
+    george_credentials = res.json()
+
+    # George imports a study, and it should succeed even if he has only "READER" access in the group
+    georges_headers = {"Authorization": f'Bearer {george_credentials["access_token"]}'}
+    res = client.post(
+        "/v1/studies/_import",
+        files={"study": io.BytesIO(zip_path.read_bytes())},
+        headers=georges_headers,
+    )
+    assert res.status_code in {200, 201}
+    uuid = res.json()
+    res = client.get(f"v1/studies/{uuid}", headers=georges_headers).json()
+    assert res["groups"] == [{"id": george_group, "name": george_group}]
+    assert res["public_mode"] == "NONE"
+
     # Study importer works for 7z files
     res = client.post(
         "/v1/studies/_import",
         files={"study": io.BytesIO(seven_zip_path.read_bytes())},
-        headers=admin_headers,
     )
     assert res.status_code == 201
 
@@ -1674,13 +1677,13 @@ def test_import(client: TestClient, admin_access_token: str, study_id: str) -> N
 
 
 def test_copy(client: TestClient, admin_access_token: str, study_id: str) -> None:
-    admin_headers = {"Authorization": f"Bearer {admin_access_token}"}
+    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
 
     # Copy a study with admin user who belongs to a group
-    copied = client.post(f"/v1/studies/{study_id}/copy?dest=copied&use_task=false", headers=admin_headers)
+    copied = client.post(f"/v1/studies/{study_id}/copy?dest=copied&use_task=false")
     assert copied.status_code == 201
     # asserts that it has admin groups and PublicMode to NONE
-    res = client.get(f"/v1/studies/{copied.json()}", headers=admin_headers).json()
+    res = client.get(f"/v1/studies/{copied.json()}").json()
     assert res["groups"] == [{"id": "admin", "name": "admin"}]
     assert res["public_mode"] == "NONE"
 
@@ -1695,6 +1698,6 @@ def test_copy(client: TestClient, admin_access_token: str, study_id: str) -> Non
     )
     assert copied.status_code == 201
     # asserts that it has no groups and PublicMode to READ
-    res = client.get(f"/v1/studies/{copied.json()}", headers=admin_headers).json()
+    res = client.get(f"/v1/studies/{copied.json()}").json()
     assert res["groups"] == []
     assert res["public_mode"] == "READ"

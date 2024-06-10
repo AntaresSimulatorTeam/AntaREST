@@ -57,16 +57,3 @@ The tool has the following subcommands:
 - `upgrade-study`:         Upgrades study version
 
 Further instructions can be found in the online help. Use the `--help' option.
-
-## Using the Archive Worker
-
-The Antares archive manager is a command that runs in the background to automatically unarchive simulation results.
-The worker is notified by the web application via EventBus to initiate asynchronous unarchiving of the results.
-
-To launch the archive worker, run the command:
-
-```
-./AntaresWebWorker -c config.yaml -w default
-```
-
-Further instructions can be found in the online help. Use the `--help' option.

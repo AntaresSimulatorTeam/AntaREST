@@ -3,7 +3,8 @@
 black~=23.7.0
 isort~=5.12.0
 mypy~=1.4.1
-pyinstaller~=4.8
+pyinstaller==5.6.2
+pyinstaller-hooks-contrib==2024.6
 
 # Extra requirements installed by `mypy --install-types`.
 # IMPORTANT: Make sure the versions of these typing libraries match the versions

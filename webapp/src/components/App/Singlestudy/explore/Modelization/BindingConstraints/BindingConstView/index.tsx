@@ -1,11 +1,12 @@
-import { ACTIVE_WINDOWS_DOC_PATH, BindingConstraint } from "./utils";
-import { Box, Button, Paper } from "@mui/material";
+import { BindingConstraint } from "./utils";
+import { Box, Button, Paper, Skeleton } from "@mui/material";
 import Form from "../../../../../../common/Form";
 import UsePromiseCond, {
   mergeResponses,
 } from "../../../../../../common/utils/UsePromiseCond";
 import {
   getBindingConstraint,
+  getBindingConstraintList,
   updateBindingConstraint,
 } from "../../../../../../../services/api/studydata";
 import { useOutletContext } from "react-router";
@@ -16,7 +17,6 @@ import { CommandEnum } from "../../../../Commands/Edition/commandTypes";
 import ConfirmationDialog from "../../../../../../common/dialogs/ConfirmationDialog";
 import ConstraintFields from "./ConstraintFields";
 import Delete from "@mui/icons-material/Delete";
-import DocLink from "../../../../../../common/DocLink";
 import { StudyMetadata } from "../../../../../../../common/types";
 import { SubmitHandlerPlus } from "../../../../../../common/Form/types";
 import { appendCommands } from "../../../../../../../services/api/variant";
@@ -84,8 +84,12 @@ function BindingConstView({ constraintId }: Props) {
         },
       ]);
 
-      // Trigger a reload redirecting to the first constraint
-      dispatch(setCurrentBindingConst(""));
+      const updatedConstraints = await getBindingConstraintList(study.id);
+
+      if (updatedConstraints && updatedConstraints.length > 0) {
+        // Trigger a reload redirecting to the first constraint
+        dispatch(setCurrentBindingConst(updatedConstraints[0].id));
+      }
 
       enqueueSnackbar(t("study.success.deleteConstraint"), {
         variant: "success",
@@ -126,10 +130,6 @@ function BindingConstView({ constraintId }: Props) {
               >
                 {t("global.delete.all")}
               </Button>
-              <DocLink
-                to={`${ACTIVE_WINDOWS_DOC_PATH}#binding-constraints`}
-                sx={{ pr: 0 }}
-              />
             </Box>
             {/* Constraint properties form */}
             <Box sx={{ display: "flex", width: 1 }}>
@@ -154,6 +154,7 @@ function BindingConstView({ constraintId }: Props) {
             </Box>
           </>
         )}
+        ifPending={() => <Skeleton sx={{ height: 1, transform: "none" }} />}
       />
 
       {deleteConstraintDialogOpen && (

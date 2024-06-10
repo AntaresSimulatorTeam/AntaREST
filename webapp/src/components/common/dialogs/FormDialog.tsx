@@ -83,8 +83,10 @@ function FormDialog<
   ////////////////////////////////////////////////////////////////
 
   const handleClose: FormDialogProps["onClose"] = (...args) => {
-    onCancel();
-    onClose?.(...args);
+    if (!isSubmitting) {
+      onCancel();
+      onClose?.(...args);
+    }
   };
 
   ////////////////////////////////////////////////////////////////
@@ -100,7 +102,7 @@ function FormDialog<
       actions={
         <>
           <Button onClick={onCancel} disabled={isSubmitting}>
-            {cancelButtonText || t("button.close")}
+            {cancelButtonText || t("global.close")}
           </Button>
           {!autoSubmit && (
             <LoadingButton
