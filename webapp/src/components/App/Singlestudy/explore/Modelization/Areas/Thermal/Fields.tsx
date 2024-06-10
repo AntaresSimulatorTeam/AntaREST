@@ -23,7 +23,8 @@ function Fields() {
   const { control, watch } = useFormContextPlus<ThermalCluster>();
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const studyVersion = Number(study.version);
-  const isTSCost = watch("costGeneration") === "useCostTimeseries";
+  const isCostGenerationEnabled =
+    watch("costGeneration") === "useCostTimeseries";
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -118,25 +119,38 @@ function Fields() {
         />
       </Fieldset>
       <Fieldset legend={t("study.modelization.clusters.operatingCosts")}>
-        <SelectFE
-          variant="outlined"
-          label={t("study.modelization.clusters.costGeneration")}
-          name="costGeneration"
-          options={COST_GENERATION_OPTIONS}
-          control={control}
-          sx={{
-            alignSelf: "center",
-          }}
-        />
-        <NumberFE
-          label={t("study.modelization.clusters.efficiency")}
-          name="efficiency"
-          control={control}
-          rules={{
-            validate: validateNumber({ min: 0 }),
-          }}
-          disabled={!isTSCost}
-        />
+        {studyVersion >= 870 && (
+          <>
+            <SelectFE
+              variant="outlined"
+              label={t("study.modelization.clusters.costGeneration")}
+              name="costGeneration"
+              options={COST_GENERATION_OPTIONS}
+              control={control}
+              sx={{
+                alignSelf: "center",
+              }}
+            />
+            <NumberFE
+              label={t("study.modelization.clusters.efficiency")}
+              name="efficiency"
+              control={control}
+              rules={{
+                validate: validateNumber({ min: 0 }),
+              }}
+              disabled={!isCostGenerationEnabled}
+            />
+            <NumberFE
+              label={t("study.modelization.clusters.variableOMCost")}
+              name="variableOMCost"
+              control={control}
+              rules={{
+                validate: validateNumber({ min: 0 }),
+              }}
+              disabled={!isCostGenerationEnabled}
+            />
+          </>
+        )}
         <NumberFE
           label={t("study.modelization.clusters.marginalCost")}
           name="marginalCost"
@@ -144,8 +158,8 @@ function Fields() {
           rules={{
             validate: validateNumber({ min: 0 }),
           }}
+          disabled={isCostGenerationEnabled}
         />
-
         <NumberFE
           label={t("study.modelization.clusters.startupCost")}
           name="startupCost"
@@ -161,6 +175,7 @@ function Fields() {
           rules={{
             validate: validateNumber({ min: 0 }),
           }}
+          disabled={isCostGenerationEnabled}
         />
         <NumberFE
           label={t("study.modelization.clusters.fixedCost")}
@@ -169,15 +184,6 @@ function Fields() {
           rules={{
             validate: validateNumber({ min: 0 }),
           }}
-        />
-        <NumberFE
-          label={t("study.modelization.clusters.variableOMCost")}
-          name="variableOMCost"
-          control={control}
-          rules={{
-            validate: validateNumber({ min: 0 }),
-          }}
-          disabled={!isTSCost}
         />
         <NumberFE
           label={t("study.modelization.clusters.spreadCost")}

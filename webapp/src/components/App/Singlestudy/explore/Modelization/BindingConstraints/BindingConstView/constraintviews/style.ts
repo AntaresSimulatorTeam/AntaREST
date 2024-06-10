@@ -3,7 +3,7 @@ import { Box, Paper, styled } from "@mui/material";
 export const ConstraintElementRoot = styled(Paper)(({ theme }) => ({
   display: "flex",
   flexDirection: "column",
-  padding: theme.spacing(0.8),
+  padding: theme.spacing(1),
   borderRadius: 5,
   backgroundImage:
     "linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05))",

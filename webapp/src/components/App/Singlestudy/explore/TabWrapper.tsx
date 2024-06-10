@@ -31,6 +31,7 @@ interface TabItem {
   label: string;
   path: string;
   onClick?: () => void;
+  disabled?: boolean;
 }
 
 interface Props {
@@ -101,7 +102,11 @@ function TabWrapper({
         }}
       >
         {tabList.map((tab) => (
-          <Tab key={tab.path} label={tab.label} />
+          <Tab
+            key={tab.path}
+            label={tab.label}
+            disabled={tab.disabled ?? false}
+          />
         ))}
       </StyledTab>
       <Outlet context={{ study }} />

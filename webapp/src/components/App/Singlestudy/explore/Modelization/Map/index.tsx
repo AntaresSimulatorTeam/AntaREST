@@ -37,6 +37,7 @@ import MapHeader from "./MapHeader";
 import MapControlButtons from "./MapControlButtons";
 import useDebouncedState from "../../../../../../hooks/useDebouncedState";
 import SplitView from "../../../../../common/SplitView";
+import { Box } from "@mui/material";
 
 function Map() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -166,38 +167,42 @@ function Map() {
       ifResolved={(mapNodes) => (
         <>
           <SplitView id="map" sizes={[10, 90]}>
-            <Areas
-              onAdd={() => setOpenDialog(true)}
-              nodes={mapNodes}
-              updateUI={updateUI}
-            />
-            {openConfig ? (
-              <MapConfig onClose={() => setOpenConfig(false)} />
-            ) : (
-              <MapContainer>
-                <MapHeader links={mapLinks} nodes={mapNodes} />
-                <AutoSizer>
-                  {({ height, width }) => (
-                    <MapGraph
-                      height={height}
-                      width={width}
-                      links={mapLinks}
-                      nodes={mapNodes}
-                      graph={graphRef}
-                      onNodePositionChange={handlePositionChange}
-                      zoomLevel={zoomLevel}
-                      setZoomLevel={setZoomLevel}
-                    />
-                  )}
-                </AutoSizer>
-                <MapControlButtons
-                  onZoomIn={handleZoomIn}
-                  onZoomOut={handleZoomOut}
-                  onOpenConfig={() => setOpenConfig(true)}
-                  zoomLevel={zoomLevel}
-                />
-              </MapContainer>
-            )}
+            <Box>
+              <Areas
+                onAdd={() => setOpenDialog(true)}
+                nodes={mapNodes}
+                updateUI={updateUI}
+              />
+            </Box>
+            <Box>
+              {openConfig ? (
+                <MapConfig onClose={() => setOpenConfig(false)} />
+              ) : (
+                <MapContainer>
+                  <MapHeader links={mapLinks} nodes={mapNodes} />
+                  <AutoSizer>
+                    {({ height, width }) => (
+                      <MapGraph
+                        height={height}
+                        width={width}
+                        links={mapLinks}
+                        nodes={mapNodes}
+                        graph={graphRef}
+                        onNodePositionChange={handlePositionChange}
+                        zoomLevel={zoomLevel}
+                        setZoomLevel={setZoomLevel}
+                      />
+                    )}
+                  </AutoSizer>
+                  <MapControlButtons
+                    onZoomIn={handleZoomIn}
+                    onZoomOut={handleZoomOut}
+                    onOpenConfig={() => setOpenConfig(true)}
+                    zoomLevel={zoomLevel}
+                  />
+                </MapContainer>
+              )}
+            </Box>
           </SplitView>
 
           {openDialog && (

@@ -1,4 +1,5 @@
 import json
+import typing
 import typing as t
 from abc import ABCMeta
 
@@ -292,7 +293,13 @@ class AbstractBindingConstraintCommand(OptionalProperties, BindingConstraintMatr
             self.equal_term_matrix = self.get_corresponding_matrices(self.equal_term_matrix, time_step, version, create)
 
     def apply_binding_constraint(
-        self, study_data: FileStudy, binding_constraints: t.Dict[str, t.Any], new_key: str, bd_id: str
+        self,
+        study_data: FileStudy,
+        binding_constraints: t.Dict[str, t.Any],
+        new_key: str,
+        bd_id: str,
+        *,
+        old_groups: t.Optional[t.Set[str]] = None,
     ) -> CommandOutput:
         version = study_data.config.version
 
@@ -324,16 +331,33 @@ class AbstractBindingConstraintCommand(OptionalProperties, BindingConstraintMatr
                 binding_constraints[new_key][link_or_cluster] = "%".join(
                     [str(coeff_val) for coeff_val in self.coeffs[link_or_cluster]]
                 )
-        parse_bindings_coeffs_and_save_into_config(bd_id, study_data.config, self.coeffs or {})
+
+        group = self.group or DEFAULT_GROUP
+        parse_bindings_coeffs_and_save_into_config(
+            bd_id,
+            study_data.config,
+            self.coeffs or {},
+            group=group,
+        )
+
         study_data.tree.save(
             binding_constraints,
             ["input", "bindingconstraints", "bindingconstraints"],
         )
+
+        if version >= 870:
+            # When all BC of a given group are removed, the group should be removed from the scenario builder
+            old_groups = old_groups or set()
+            new_groups = {bd.get("group", DEFAULT_GROUP).lower() for bd in binding_constraints.values()}
+            removed_groups = old_groups - new_groups
+            remove_bc_from_scenario_builder(study_data, removed_groups)
+
         if self.values:
             if not isinstance(self.values, str):  # pragma: no cover
                 raise TypeError(repr(self.values))
             if version < 870:
                 study_data.tree.save(self.values, ["input", "bindingconstraints", bd_id])
+
         for matrix_term, matrix_name, matrix_alias in zip(
             [self.less_term_matrix, self.equal_term_matrix, self.greater_term_matrix],
             TERM_MATRICES,
@@ -360,7 +384,13 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
 
     def _apply_config(self, study_data_config: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
         bd_id = transform_name_to_id(self.name)
-        parse_bindings_coeffs_and_save_into_config(bd_id, study_data_config, self.coeffs or {})
+        group = self.group or DEFAULT_GROUP
+        parse_bindings_coeffs_and_save_into_config(
+            bd_id,
+            study_data_config,
+            self.coeffs or {},
+            group=group,
+        )
         return CommandOutput(status=True), {}
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
@@ -430,3 +460,21 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
         if not equal:
             return self.name == other.name
         return super().match(other, equal)
+
+
+def remove_bc_from_scenario_builder(study_data: FileStudy, removed_groups: typing.Set[str]) -> None:
+    """
+    Update the scenario builder by removing the rows that correspond to the BC groups to remove.
+
+    NOTE: this update can be very long if the scenario builder configuration is large.
+    """
+    rulesets = study_data.tree.get(["settings", "scenariobuilder"])
+
+    for ruleset in rulesets.values():
+        for key in list(ruleset):
+            # The key is in the form "symbol,group,year"
+            symbol, *parts = key.split(",")
+            if symbol == "bc" and parts[0] in removed_groups:
+                del ruleset[key]
+
+    study_data.tree.save(rulesets, ["settings", "scenariobuilder"])

@@ -72,8 +72,10 @@ function BindingConstraints() {
             />
           </Box>
           <Box>
-            {currentConstraintId && (
+            {data.length > 0 && currentConstraintId ? (
               <BindingConstView constraintId={currentConstraintId} />
+            ) : (
+              <SimpleContent title="No Binding Constraints" />
             )}
           </Box>
         </SplitView>

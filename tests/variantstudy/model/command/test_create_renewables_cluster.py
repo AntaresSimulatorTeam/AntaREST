@@ -41,7 +41,7 @@ class TestCreateRenewablesCluster:
             CreateRenewablesCluster(area_id="fr", cluster_name="%", command_context=command_context, parameters={})
 
     def test_apply(self, empty_study: FileStudy, command_context: CommandContext) -> None:
-        empty_study.config.enr_modelling = EnrModelling.CLUSTERS.value
+        empty_study.config.enr_modelling = str(EnrModelling.CLUSTERS)
         empty_study.config.version = 810
         study_path = empty_study.config.study_path
         area_name = "DE"
