@@ -1427,8 +1427,22 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
         },
     }
 
+    # check that at this stage the area cannot be deleted as it is referenced in binding constraint 1
     result = client.delete(f"/v1/studies/{study_id}/areas/area%201")
-    assert result.status_code == 200
+    assert result.status_code == 403, res.json()
+    # verify the error message
+    assert (
+        result.json()["description"] == "Area area 1 is not allowed to be deleted\nArea is referenced "
+        "in the following binding constraints:\n1- binding constraint 1\n"
+    )
+    # check the exception
+    assert result.json()["exception"] == "AreaDeletionNotAllowed"
+
+    # delete binding constraint 1
+    result = client.delete(f"/v1/studies/{study_id}/bindingconstraints/binding%20constraint%201")
+    # check now that we can delete the area 1
+    result = client.delete(f"/v1/studies/{study_id}/areas/area%201")
+    assert result.status_code == 200, res.json()
     res_areas = client.get(f"/v1/studies/{study_id}/areas")
     assert res_areas.json() == [
         {

@@ -40,6 +40,7 @@ from starlette.testclient import TestClient
 from antarest.core.utils.string import to_camel_case
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import ThermalProperties
+from antarest.study.storage.variantstudy.model.command.common import CommandName
 from tests.integration.utils import wait_task_completion
 
 DEFAULT_PROPERTIES = json.loads(ThermalProperties(name="Dummy").json())
@@ -1002,6 +1003,25 @@ class TestThermal:
         )
         assert res.status_code == 200
         assert res.json()["data"] == matrix
+
+        # # create a binding constraint for
+        # res = client.post(
+        #     f"/v1/studies/{variant_id}/commands",
+        #     headers={"Authorization": f"Bearer {user_access_token}"},
+        #     json=[
+        #         {
+        #             "action": CommandName.CREATE_BINDING_CONSTRAINT.value,
+        #             "args": {
+        #                 "name": "binding constraint 1",
+        #                 "enabled": True,
+        #                 "time_step": "hourly",
+        #                 "operator": "less",
+        #                 "coeffs": {f"{area_id}.{cluster_id}": [2.0, 4]},
+        #             },
+        #         }
+        #     ],
+        # )
+        # res.raise_for_status()
 
         # Delete the thermal cluster
         res = client.delete(

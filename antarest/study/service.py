@@ -20,9 +20,12 @@ from starlette.responses import FileResponse, Response
 
 from antarest.core.config import Config
 from antarest.core.exceptions import (
+    AreaDeletionNotAllowed,
     BadEditInstructionException,
+    ClusterDeletionNotAllowed,
     CommandApplicationError,
     IncorrectPathError,
+    LinkDeletionNotAllowed,
     NotAManagedStudyException,
     StudyDeletionNotAllowed,
     StudyNotFoundError,
@@ -56,7 +59,7 @@ from antarest.study.business.areas.properties_management import PropertiesManage
 from antarest.study.business.areas.renewable_management import RenewableManager
 from antarest.study.business.areas.st_storage_management import STStorageManager
 from antarest.study.business.areas.thermal_management import ThermalManager
-from antarest.study.business.binding_constraint_management import BindingConstraintManager
+from antarest.study.business.binding_constraint_management import BindingConstraintManager, ConstraintFilters, LinkTerm
 from antarest.study.business.config_management import ConfigManager
 from antarest.study.business.correlation_management import CorrelationManager
 from antarest.study.business.district_manager import DistrictManager
@@ -137,6 +140,7 @@ from antarest.worker.simulator_worker import GenerateTimeseriesTaskArgs
 logger = logging.getLogger(__name__)
 
 MAX_MISSING_STUDY_TIMEOUT = 2  # days
+MAX_BINDING_CONSTRAINTS_TO_DISPLAY = 10
 
 
 def get_disk_usage(path: t.Union[str, Path]) -> int:
@@ -1858,6 +1862,16 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
+        referencing_binding_constraints = self.binding_constraint_manager.get_binding_constraints(
+            study, ConstraintFilters(area_name=area_id)
+        )[:MAX_BINDING_CONSTRAINTS_TO_DISPLAY]
+        if referencing_binding_constraints:
+            first_bcs_ids = ""
+            for i, bc in enumerate(referencing_binding_constraints):
+                first_bcs_ids += f"{i+1}- {bc.id}\n"
+            raise AreaDeletionNotAllowed(
+                area_id, "Area is referenced in the following binding constraints:\n" + first_bcs_ids
+            )
         self.areas.delete_area(study, area_id)
         self.event_bus.push(
             Event(
@@ -1877,6 +1891,17 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
+        link_id = LinkTerm(area1=area_from, area2=area_to).generate_id()
+        referencing_binding_constraints = self.binding_constraint_manager.get_binding_constraints(
+            study, ConstraintFilters(link_id=link_id)
+        )[:MAX_BINDING_CONSTRAINTS_TO_DISPLAY]
+        if referencing_binding_constraints:
+            first_bcs_ids = ""
+            for i, bc in enumerate(referencing_binding_constraints):
+                first_bcs_ids += f"{i+1}- {bc.id}\n"
+            raise LinkDeletionNotAllowed(
+                link_id, "Link is referenced in the following binding constraints:\n" + first_bcs_ids
+            )
         self.links.delete_link(study, area_from, area_to)
         self.event_bus.push(
             Event(
@@ -2518,3 +2543,27 @@ class StudyService:
         )
 
         return df_matrix
+
+    def assert_no_cluster_referenced_in_bcs(self, study: Study, cluster_ids: t.Sequence[str]) -> None:
+        """
+        Check that no cluster is referenced in a binding constraint otherwise raise an ClusterDeletionNotAllowed Exception
+
+        Args:
+            study: input study
+            cluster_ids: cluster IDs to be checked
+
+        Returns:
+
+        """
+
+        for cluster_id in cluster_ids:
+            referencing_binding_constraints = self.binding_constraint_manager.get_binding_constraints(
+                study, ConstraintFilters(cluster_id=cluster_id)
+            )[:MAX_BINDING_CONSTRAINTS_TO_DISPLAY]
+            if referencing_binding_constraints:
+                first_bcs_ids = ""
+                for i, bc in enumerate(referencing_binding_constraints):
+                    first_bcs_ids += f"{i+1}- {bc.id}\n"
+                raise ClusterDeletionNotAllowed(
+                    cluster_id, "Cluster is referenced in the following binding constraints:\n" + first_bcs_ids
+                )

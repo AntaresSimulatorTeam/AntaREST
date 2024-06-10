@@ -325,6 +325,39 @@ class StudyVariantUpgradeError(HTTPException):
             super().__init__(HTTPStatus.EXPECTATION_FAILED, "Upgrade not supported for parent of variants")
 
 
+class AreaDeletionNotAllowed(HTTPException):
+    def __init__(self, uuid: str, message: t.Optional[str] = None) -> None:
+        msg = f"Area {uuid} is not allowed to be deleted"
+        if message:
+            msg += f"\n{message}"
+        super().__init__(
+            HTTPStatus.FORBIDDEN,
+            msg,
+        )
+
+
+class LinkDeletionNotAllowed(HTTPException):
+    def __init__(self, uuid: str, message: t.Optional[str] = None) -> None:
+        msg = f"Link {uuid} is not allowed to be deleted"
+        if message:
+            msg += f"\n{message}"
+        super().__init__(
+            HTTPStatus.FORBIDDEN,
+            msg,
+        )
+
+
+class ClusterDeletionNotAllowed(HTTPException):
+    def __init__(self, uuid: str, message: t.Optional[str] = None) -> None:
+        msg = f"Cluster {uuid} is not allowed to be deleted"
+        if message:
+            msg += f"\n{message}"
+        super().__init__(
+            HTTPStatus.FORBIDDEN,
+            msg,
+        )
+
+
 class UnsupportedStudyVersion(HTTPException):
     def __init__(self, version: str) -> None:
         super().__init__(
