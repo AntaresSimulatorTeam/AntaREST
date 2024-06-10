@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional
 from pydantic import validator
 from pydantic.types import StrictInt, StrictStr
 
+from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.utils import GENERAL_DATA_PATH, FieldInfo, FormFieldsBaseModel, execute_or_add_commands
 from antarest.study.model import Study
@@ -44,6 +45,7 @@ class ReserveManagement(EnumIgnoreCase):
 class UnitCommitmentMode(EnumIgnoreCase):
     FAST = "fast"
     ACCURATE = "accurate"
+    MILP = "milp"
 
 
 class SimulationCore(EnumIgnoreCase):
@@ -235,6 +237,14 @@ class AdvancedParamsManager:
         for field_name, value in field_values.__iter__():
             if value is not None:
                 info = FIELDS_INFO[field_name]
+
+                # Handle the specific case of `milp` value that appeared in v8.8
+                if (
+                    field_name == "unit_commitment_mode"
+                    and value == UnitCommitmentMode.MILP
+                    and int(study.version) < 880
+                ):
+                    raise InvalidFieldForVersionError("Unit commitment mode `MILP` only exists in v8.8+ studies")
 
                 commands.append(
                     UpdateConfig(
