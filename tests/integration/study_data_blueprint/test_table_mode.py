@@ -152,6 +152,20 @@ class TestTableMode:
         actual = res.json()
         assert actual == expected_areas
 
+        # Specific tests for averageSpilledEnergyCost and averageUnsuppliedEnergyCost
+        _de_values = {
+            "averageSpilledEnergyCost": 123,
+            "averageUnsuppliedEnergyCost": 456,
+        }
+        res = client.put(
+            f"/v1/studies/{study_id}/table-mode/areas",
+            json={"de": _de_values},
+        )
+        assert res.status_code == 200, res.json()
+        actual = res.json()["de"]
+        assert actual["averageSpilledEnergyCost"] == 123
+        assert actual["averageUnsuppliedEnergyCost"] == 456
+
         # Table Mode - Links
         # ==================
 
