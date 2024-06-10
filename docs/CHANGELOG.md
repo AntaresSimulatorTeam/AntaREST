@@ -8,13 +8,23 @@ v2.17.1 (2024-06-10)
 
 * **launcher:** add new API endpoint `/v1/launcher/time-limit` and update `LauncherDialog` [`#2012`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2012)
 * **raw:** refactor aggregation endpoint [`#2031`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2031)
-* **ui-utils:** add overload signatures for validateNumber function in validationUtils [`#2029`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2029)
+* **ui-common:** add validation message in ImportDialog and update style [`#2040`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2040)
+* **ui-studies:** add studies "archive" tag [`#2043`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2043)
+* **ui:** add a the new split view on multiple pages [`#2046`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2046)
 * **desktop**: update Antares Web Desktop version [`#2036`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2036)
+* **ui-thermal:** minor adjustments to v8.7 `Thermal` fields [`#2053`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2053)
 
 
 ### Bug Fixes
 
 * **import:** allow import for users that are reader only [`#2032`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2032)
+* **variant-command:** correct behavior of creation command in special context [`#2041`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2041)
+* **ui-study:** prevent `CreateVariantDialog` fields overflow [`#2044`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2044)
+* **ui-commons:** add of extensions accepted for matrix import in MatrixInput [`#2048`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2048)
+* **api-aggregation:** raise 404 HTTP exception for unfound output names [`#2050`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2050)
+* **scenario-builder:** handle missing objects in Scenario Builder configuration [`#2038`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2038)
+* **variants:** display variants in chronological order in the variants tree [`#2049`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2049)
+* **upgrade:** raise an HTTP 417 exception when an upgrade has unmet requirements [`#2047`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2047)
 
 
 ### Refactoring
