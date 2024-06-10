@@ -426,6 +426,23 @@ class TestBindingConstraints:
         ]
         assert constraint_terms == expected
 
+        # Update random field, shouldn't remove the term.
+        res = client.put(
+            f"v1/studies/{study_id}/bindingconstraints/{bc_id}",
+            json={"enabled": False},
+            headers=user_headers,
+        )
+        assert res.status_code == 200
+
+        res = client.get(
+            f"/v1/studies/{study_id}/bindingconstraints/{bc_id}",
+            headers=user_headers,
+        )
+        assert res.status_code == 200, res.json()
+        binding_constraint = res.json()
+        constraint_terms = binding_constraint["terms"]
+        assert constraint_terms == expected
+
         # =============================
         # GENERAL EDITION
         # =============================
