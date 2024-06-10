@@ -221,7 +221,7 @@ class ScenarioBuilderManager:
 
         # Create the UpdateScenarioBuilder command
         ruleset_name = _get_active_ruleset_name(file_study)
-        data = {ruleset_name: ruleset.get_rules()}
+        data = {ruleset_name: ruleset.get_rules(allow_nan=True)}
         command_context = self.storage_service.variant_study_service.command_factory.command_context
         update_scenario = UpdateScenarioBuilder(data=data, command_context=command_context)
         execute_or_add_commands(study, file_study, [update_scenario], self.storage_service)

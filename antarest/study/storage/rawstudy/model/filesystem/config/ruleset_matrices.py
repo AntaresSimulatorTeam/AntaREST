@@ -1,5 +1,6 @@
 import typing as t
 
+import numpy as np
 import pandas as pd
 import typing_extensions as te
 
@@ -23,7 +24,7 @@ _ClusterScenario: te.TypeAlias = t.MutableMapping[str, pd.DataFrame]
 _Scenario: te.TypeAlias = t.Union[_SimpleScenario, _ClusterScenario]
 _ScenarioMapping: te.TypeAlias = t.MutableMapping[str, _Scenario]
 
-SimpleTableForm: te.TypeAlias = t.Dict[str, t.Dict[str, t.Union[int, float, str]]]
+SimpleTableForm: te.TypeAlias = t.Dict[str, t.Dict[str, t.Union[int, float, str, None]]]
 ClusterTableForm: te.TypeAlias = t.Dict[str, SimpleTableForm]
 TableForm: te.TypeAlias = t.Union[SimpleTableForm, ClusterTableForm]
 
@@ -211,9 +212,12 @@ class RulesetMatrices:
             else:
                 raise NotImplementedError(f"Unknown symbol {symbol}")
 
-    def get_rules(self) -> t.Dict[str, _Value]:
+    def get_rules(self, *, allow_nan: bool = False) -> t.Dict[str, _Value]:
         """
         Get the rules from the scenario matrices in INI format.
+
+        Args:
+            allow_nan: Allow NaN values if True.
 
         Returns:
             Dictionary of rules with the following format
@@ -230,17 +234,18 @@ class RulesetMatrices:
         rules: t.Dict[str, _Value] = {}
         for symbol, scenario_type in self.scenario_types.items():
             scenario = self.scenarios[scenario_type]
-            scenario_rules = self.get_scenario_rules(scenario, symbol)
+            scenario_rules = self.get_scenario_rules(scenario, symbol, allow_nan=allow_nan)
             rules.update(scenario_rules)
         return rules
 
-    def get_scenario_rules(self, scenario: _Scenario, symbol: str) -> t.Dict[str, _Value]:
+    def get_scenario_rules(self, scenario: _Scenario, symbol: str, *, allow_nan: bool = False) -> t.Dict[str, _Value]:
         """
         Get the rules for a specific scenario matrix and symbol.
 
         Args:
             scenario: Matrix or dictionary of matrices.
             symbol: Rule symbol.
+            allow_nan: Allow NaN values if True.
 
         Returns:
             Dictionary of rules.
@@ -250,21 +255,21 @@ class RulesetMatrices:
                 f"{symbol},{area_id},{year}": value
                 for area_id, area in self.areas.items()
                 for year, value in scenario.loc[idx_area(area)].items()  # type: ignore
-                if not pd.isna(value)
+                if allow_nan or not pd.isna(value)
             }
         elif symbol in _LINK_RELATED_SYMBOLS:
             scenario_rules = {
                 f"{symbol},{area1_id},{area2_id},{year}": value
                 for (area1_id, area2_id), (area1, area2) in self.links.items()
                 for year, value in scenario.loc[idx_link(area1, area2)].items()  # type: ignore
-                if not pd.isna(value)
+                if allow_nan or not pd.isna(value)
             }
         elif symbol in _HYDRO_LEVEL_RELATED_SYMBOLS:
             scenario_rules = {
                 f"{symbol},{area_id},{year}": value / 100
                 for area_id, area in self.areas.items()
                 for year, value in scenario.loc[idx_area(area)].items()  # type: ignore
-                if not pd.isna(value)
+                if allow_nan or not pd.isna(value)
             }
         elif symbol in _CLUSTER_RELATED_SYMBOLS:
             clusters_mapping = self.clusters_by_symbols[symbol]
@@ -273,14 +278,14 @@ class RulesetMatrices:
                 for area_id, clusters in clusters_mapping.items()
                 for cluster_id, cluster in clusters.items()
                 for year, value in scenario[self.areas[area_id]].loc[idx_cluster(self.areas[area_id], cluster)].items()
-                if not pd.isna(value)
+                if allow_nan or not pd.isna(value)
             }
         elif symbol in _BINDING_CONSTRAINTS_RELATED_SYMBOLS:
             scenario_rules = {
                 f"{symbol},{group_id},{year}": value
                 for group_id, group in self.groups.items()
                 for year, value in scenario.loc[idx_group(group)].items()  # type: ignore
-                if not pd.isna(value)
+                if allow_nan or not pd.isna(value)
             }
         else:
             raise NotImplementedError(f"Unknown symbol {symbol}")
@@ -350,11 +355,11 @@ class RulesetMatrices:
         actual_scenario = self.scenarios[scenario_type]
         if isinstance(actual_scenario, pd.DataFrame):
             scenario = pd.DataFrame.from_dict(table_form, orient="index")
-            scenario = scenario.replace(nan_value, pd.NA)
+            scenario = scenario.replace([None, nan_value], np.nan)
             self.scenarios[scenario_type] = scenario
         else:
             self.scenarios[scenario_type] = {
-                area: pd.DataFrame.from_dict(df, orient="index").replace(nan_value, pd.NA)
+                area: pd.DataFrame.from_dict(df, orient="index").replace([None, nan_value], np.nan)
                 for area, df in table_form.items()
             }
 
@@ -367,16 +372,14 @@ class RulesetMatrices:
             scenario_type: Scenario type.
             nan_value: Value to replace NaNs. for instance: ``{"& psp x1": {"0": 10}}``.
         """
-
-        def to_nan(x: t.Union[int, float, str]) -> _Value:
-            return t.cast(_Value, pd.NA if x == nan_value else x)
-
         scenario = self.scenarios[scenario_type]
         if isinstance(scenario, pd.DataFrame):
             simple_table_form = t.cast(SimpleTableForm, table_form)
-            scenario.update(pd.DataFrame(simple_table_form).transpose().applymap(to_nan))
+            df = pd.DataFrame(simple_table_form).transpose().replace([None, nan_value], np.nan)
+            scenario.at[df.index, df.columns] = df
         else:
             cluster_table_form = t.cast(ClusterTableForm, table_form)
             for area, simple_table_form in cluster_table_form.items():
                 scenario = t.cast(pd.DataFrame, self.scenarios[scenario_type][area])
-                scenario.update(pd.DataFrame(simple_table_form).transpose().applymap(to_nan))
+                df = pd.DataFrame(simple_table_form).transpose().replace([None, nan_value], np.nan)
+                scenario.at[df.index, df.columns] = df

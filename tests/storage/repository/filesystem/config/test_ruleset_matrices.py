@@ -1,6 +1,9 @@
+import typing as t
+
+import numpy as np
 import pytest
 
-from antarest.study.storage.rawstudy.model.filesystem.config.ruleset_matrices import RulesetMatrices
+from antarest.study.storage.rawstudy.model.filesystem.config.ruleset_matrices import RulesetMatrices, TableForm
 
 SCENARIO_TYPES = {
     "l": "load",
@@ -18,7 +21,7 @@ SCENARIO_TYPES = {
 
 
 @pytest.fixture(name="ruleset")
-def ruleset_fixture():
+def ruleset_fixture() -> RulesetMatrices:
     return RulesetMatrices(
         nb_years=4,
         areas=["France", "Germany", "Italy"],
@@ -30,7 +33,7 @@ def ruleset_fixture():
     )
 
 
-class TestRuleset:
+class TestRulesetMatrices:
     def test_ruleset__init(self, ruleset: RulesetMatrices) -> None:
         assert ruleset.columns == ["0", "1", "2", "3"]
         assert ruleset.scenarios["load"].shape == (3, 4)
@@ -531,3 +534,26 @@ class TestRuleset:
 
         with pytest.raises(KeyError):
             ruleset.get_table_form("invalid")
+
+    @pytest.mark.parametrize(
+        "table_form, expected",
+        [
+            ({"France": {"0": 23}}, 23),
+            ({"France": {"0": None}}, np.nan),
+            ({"France": {"0": ""}}, np.nan),
+        ],
+    )
+    @pytest.mark.parametrize("old_value", [12, None, np.nan, ""], ids=["int", "None", "NaN", "empty"])
+    def test_update_table_form(
+        self,
+        ruleset: RulesetMatrices,
+        table_form: TableForm,
+        expected: float,
+        old_value: t.Union[int, float, str],
+    ) -> None:
+        ruleset.scenarios["load"].at["France", "0"] = old_value
+        ruleset.update_table_form(table_form, "load")
+        actual = ruleset.scenarios["load"].at["France", "0"]
+        assert np.isnan(expected) and np.isnan(actual) or expected == actual
+        actual_table_form = ruleset.get_table_form("load")
+        assert actual_table_form["France"]["0"] == ("" if np.isnan(expected) else expected)
