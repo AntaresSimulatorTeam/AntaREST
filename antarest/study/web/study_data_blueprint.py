@@ -676,7 +676,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         uuid: str,
         scenario_type: ScenarioType,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> SBTableForm:
+    ) -> t.Dict[str, SBTableForm]:
         logger.info(
             f"Getting MC Scenario builder config for study {uuid} with scenario type filter: {scenario_type}",
             extra={"user": current_user.id},
@@ -684,7 +684,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
         table_form = study_service.scenario_builder_manager.get_scenario_by_type(study, scenario_type)
-        return table_form
+        return {scenario_type: table_form}
 
     @bp.put(
         path="/studies/{uuid}/config/scenariobuilder",
@@ -711,18 +711,19 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     )
     def update_scenario_builder_config_by_type(
         uuid: str,
-        data: SBTableForm,
+        data: t.Dict[str, SBTableForm],
         scenario_type: ScenarioType,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> SBTableForm:
+    ) -> t.Dict[str, SBTableForm]:
         logger.info(
             f"Updating MC Scenario builder config for study {uuid} with scenario type filter: {scenario_type}",
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
-        table_form = study_service.scenario_builder_manager.update_scenario_by_type(study, data, scenario_type)
-        return table_form
+        table_form = data[scenario_type]
+        table_form = study_service.scenario_builder_manager.update_scenario_by_type(study, table_form, scenario_type)
+        return {scenario_type: table_form}
 
     @bp.get(
         path="/studies/{uuid}/config/general/form",
