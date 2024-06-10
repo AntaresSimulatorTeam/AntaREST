@@ -50,7 +50,7 @@ class VariantStudyRepository(StudyMetadataRepository):
             List of `VariantStudy` objects, ordered by creation date.
         """
         q = self.session.query(VariantStudy).filter(Study.parent_id == parent_id)
-        q = q.order_by(Study.created_at.asc())
+        q = q.order_by(Study.created_at.desc())
         studies = t.cast(t.List[VariantStudy], q.all())
         return studies
 
