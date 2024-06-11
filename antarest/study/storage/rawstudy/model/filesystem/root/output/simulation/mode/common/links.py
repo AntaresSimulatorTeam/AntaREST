@@ -47,7 +47,7 @@ class OutputSimulationLinks(FolderNode):
         context: ContextServer,
         config: FileStudyTreeConfig,
         current_path: Path,
-        mc_all: bool = True,
+        mc_all: bool = False,
     ):
         super().__init__(context, config)
         self.current_path = current_path

@@ -18,7 +18,7 @@ class OutputSimulationAreas(FolderNode):
         context: ContextServer,
         config: FileStudyTreeConfig,
         current_path: Path,
-        mc_all: bool = True,
+        mc_all: bool = False,
     ) -> None:
         super().__init__(context, config)
         self.mc_all = mc_all
