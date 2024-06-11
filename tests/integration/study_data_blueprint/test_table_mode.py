@@ -45,7 +45,7 @@ class TestTableMode:
             assert task.status == TaskStatus.COMPLETED, task
 
         # Create another link to test specific bug.
-        res = client.post(f"/v1/studies/{study_id}/links", json={"area1": "de", "area2": "it"}, headers=user_headers)
+        res = client.post(f"/v1/studies/{study_id}/links", json={"area1": "de", "area2": "it"})
         assert res.status_code in [200, 201], res.json()
 
         # Table Mode - Area
