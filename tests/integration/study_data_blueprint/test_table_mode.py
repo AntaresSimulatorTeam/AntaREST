@@ -1,3 +1,4 @@
+import copy
 import typing as t
 
 import pytest
@@ -43,6 +44,10 @@ class TestTableMode:
             task_id = res.json()
             task = wait_task_completion(client, user_access_token, task_id)
             assert task.status == TaskStatus.COMPLETED, task
+
+        # Create another link to test specific bug.
+        res = client.post(f"/v1/studies/{study_id}/links", json={"area1": "de", "area2": "it"}, headers=user_headers)
+        assert res.status_code in [200, 201], res.json()
 
         # Table Mode - Area
         # =================
@@ -226,6 +231,20 @@ class TestTableMode:
                 "transmissionCapacities": "ignore",
                 "usePhaseShifter": False,
             },
+            "de / it": {
+                "assetType": "ac",
+                "colorRgb": "#707070",
+                "comments": "",
+                "displayComments": True,
+                "filterSynthesis": "hourly, daily, weekly, monthly, annual",
+                "filterYearByYear": "hourly, daily, weekly, monthly, annual",
+                "hurdlesCost": False,
+                "linkStyle": "plain",
+                "linkWidth": 1,
+                "loopFlow": False,
+                "transmissionCapacities": "enabled",
+                "usePhaseShifter": False,
+            },
             "es / fr": {
                 "assetType": "ac",
                 "colorRgb": "#FF6347",
@@ -255,12 +274,16 @@ class TestTableMode:
                 "usePhaseShifter": False,
             },
         }
+        # asserts actual equals expected without the non-updated link.
         actual = res.json()
-        assert actual == expected_links
+        expected_result = copy.deepcopy(expected_links)
+        del expected_result["de / it"]
+        assert actual == expected_result
 
         res = client.get(f"/v1/studies/{study_id}/table-mode/links", headers=user_headers)
         assert res.status_code == 200, res.json()
         actual = res.json()
+        # asserts the `de / it` link is not removed.
         assert actual == expected_links
 
         # Table Mode - Thermal Clusters
