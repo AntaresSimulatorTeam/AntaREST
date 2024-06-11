@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
@@ -15,12 +17,15 @@ class OutputSimulationAreas(FolderNode):
         self,
         context: ContextServer,
         config: FileStudyTreeConfig,
+        current_path: Path,
         mc_all: bool = True,
     ) -> None:
         super().__init__(context, config)
         self.mc_all = mc_all
+        self.current_path = current_path
 
     def build(self) -> TREE:
+        areas = [d.name for d in self.current_path.iterdir()]
         children: TREE = {
             a: Area(
                 self.context,
@@ -28,7 +33,7 @@ class OutputSimulationAreas(FolderNode):
                 area=a,
                 mc_all=self.mc_all,
             )
-            for a in self.config.area_names()
+            for a in areas
         }
 
         for s in self.config.set_names():

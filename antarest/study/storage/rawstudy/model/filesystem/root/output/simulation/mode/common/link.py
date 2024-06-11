@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
@@ -13,29 +15,28 @@ class OutputSimulationLinkItem(FolderNode):
         config: FileStudyTreeConfig,
         area: str,
         link: str,
+        current_path: Path,
         mc_all: bool = True,
     ):
         FolderNode.__init__(self, context, config)
         self.area = area
         self.link = link
+        self.current_path = current_path
         self.mc_all = mc_all
 
     def build(self) -> TREE:
         children: TREE = {}
-
-        # filters = self.config.get_filters_synthesis(self.area, self.link)
-        # todo get the config related to this output (now this may fail if input has changed since the launch)
-
         freq: MatrixFrequency
         for freq in MatrixFrequency:
-            children[f"values-{freq}"] = LinkOutputSeriesMatrix(
-                self.context,
-                self.config.next_file(f"values-{freq}.txt"),
-                freq,
-                self.area,
-                self.link,
-            )
-            if self.mc_all:
+            if (self.current_path / f"values-{freq}.txt").exists():
+                children[f"values-{freq}"] = LinkOutputSeriesMatrix(
+                    self.context,
+                    self.config.next_file(f"values-{freq}.txt"),
+                    freq,
+                    self.area,
+                    self.link,
+                )
+            if self.mc_all and (self.current_path / f"id-{freq}.txt").exists():
                 children[f"id-{freq}"] = LinkOutputSeriesMatrix(
                     self.context,
                     self.config.next_file(f"id-{freq}.txt"),
@@ -44,9 +45,4 @@ class OutputSimulationLinkItem(FolderNode):
                     self.link,
                 )
 
-        return {
-            child: children[child]
-            for child in children
-            # this takes way too long... see above todo to prevent needing this
-            # if cast(LinkOutputSeriesMatrix, children[child]).file_exists()
-        }
+        return children
