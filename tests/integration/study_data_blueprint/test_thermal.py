@@ -40,7 +40,6 @@ from starlette.testclient import TestClient
 from antarest.core.utils.string import to_camel_case
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import ThermalProperties
-from antarest.study.storage.variantstudy.model.command.common import CommandName
 from tests.integration.utils import wait_task_completion
 
 DEFAULT_PROPERTIES = json.loads(ThermalProperties(name="Dummy").json())
@@ -647,7 +646,29 @@ class TestThermal:
         )
         assert res.status_code in {200, 201}, res.json()
 
-        # To delete a thermal cluster, we need to provide its ID.
+        # verify that we can't delete the thermal cluster because it is referenced in a binding constraint
+        res = client.request(
+            "DELETE",
+            f"/v1/studies/{study_id}/areas/{area_id}/clusters/thermal",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+            json=[fr_gas_conventional_id],
+        )
+        assert res.status_code == 403, res.json()
+        assert res.json() == {
+            "description": "Cluster FR_Gas conventional is not allowed to be deleted\n"
+            "Cluster is referenced in the following binding constraints:"
+            "\n1- binding constraint\n",
+            "exception": "ClusterDeletionNotAllowed",
+        }
+
+        # delete the binding constraint
+        res = client.delete(
+            f"/v1/studies/{study_id}/bindingconstraints/{bc_obj['name']}",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+        )
+        assert res.status_code == 200, res.json()
+
+        # Now we can delete the thermal cluster
         res = client.request(
             "DELETE",
             f"/v1/studies/{study_id}/areas/{area_id}/clusters/thermal",
@@ -655,9 +676,8 @@ class TestThermal:
             json=[fr_gas_conventional_id],
         )
         assert res.status_code == 204, res.json()
-        assert res.text in {"", "null"}  # Old FastAPI versions return 'null'.
 
-        # When we delete a thermal cluster, we should also delete the binding constraints that reference it.
+        # check that the binding constraint has been deleted
         # noinspection SpellCheckingInspection
         res = client.get(
             f"/v1/studies/{study_id}/bindingconstraints",
@@ -1004,25 +1024,6 @@ class TestThermal:
         assert res.status_code == 200
         assert res.json()["data"] == matrix
 
-        # # create a binding constraint for
-        # res = client.post(
-        #     f"/v1/studies/{variant_id}/commands",
-        #     headers={"Authorization": f"Bearer {user_access_token}"},
-        #     json=[
-        #         {
-        #             "action": CommandName.CREATE_BINDING_CONSTRAINT.value,
-        #             "args": {
-        #                 "name": "binding constraint 1",
-        #                 "enabled": True,
-        #                 "time_step": "hourly",
-        #                 "operator": "less",
-        #                 "coeffs": {f"{area_id}.{cluster_id}": [2.0, 4]},
-        #             },
-        #         }
-        #     ],
-        # )
-        # res.raise_for_status()
-
         # Delete the thermal cluster
         res = client.delete(
             f"/v1/studies/{variant_id}/areas/{area_id}/clusters/thermal",
@@ -1049,3 +1050,179 @@ class TestThermal:
             "replace_matrix",
             "remove_cluster",
         ]
+
+    def test_thermal_cluster_deletion(self, client: TestClient, user_access_token: str) -> None:
+        """
+        Test that creating a thermal cluster with invalid properties raises a validation error.
+        """
+
+        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+
+        # Create a new study
+        res = client.post(
+            f"/v1/studies",
+            params={"name": "My Study"},
+        )
+        assert res.status_code in {200, 201}, res.json()
+        study_id = res.json()
+
+        # Create an area "area_1" in the study
+        res = client.post(
+            f"/v1/studies/{study_id}/areas",
+            json={
+                "name": "area_1",
+                "type": "AREA",
+                "metadata": {"country": "FR"},
+            },
+        )
+        assert res.status_code == 200, res.json()
+
+        # Create an area "area_2" in the study
+        res = client.post(
+            f"/v1/studies/{study_id}/areas",
+            json={
+                "name": "area_2",
+                "type": "AREA",
+                "metadata": {"country": "DE"},
+            },
+        )
+        assert res.status_code == 200, res.json()
+
+        # Create an area "area_3" in the study
+        res = client.post(
+            f"/v1/studies/{study_id}/areas",
+            json={
+                "name": "area_3",
+                "type": "AREA",
+                "metadata": {"country": "ES"},
+            },
+        )
+        assert res.status_code == 200, res.json()
+
+        # Create a thermal cluster in the study for area_1
+        res = client.post(
+            f"/v1/studies/{study_id}/areas/area_1/clusters/thermal",
+            json={
+                "name": "cluster_1",
+                "group": "Nuclear",
+                "unitCount": 13,
+                "nominalCapacity": 42500,
+                "marginalCost": 0.1,
+            },
+        )
+        assert res.status_code == 200, res.json()
+
+        # Create a thermal cluster in the study for area_2
+        res = client.post(
+            f"/v1/studies/{study_id}/areas/area_2/clusters/thermal",
+            json={
+                "name": "cluster_2",
+                "group": "Nuclear",
+                "unitCount": 13,
+                "nominalCapacity": 42500,
+                "marginalCost": 0.1,
+            },
+        )
+        assert res.status_code == 200, res.json()
+
+        # Create a thermal cluster in the study for area_3
+        res = client.post(
+            f"/v1/studies/{study_id}/areas/area_3/clusters/thermal",
+            json={
+                "name": "cluster_3",
+                "group": "Nuclear",
+                "unitCount": 13,
+                "nominalCapacity": 42500,
+                "marginalCost": 0.1,
+            },
+        )
+        assert res.status_code == 200, res.json()
+
+        # add a binding constraint that references the thermal cluster in area_1
+        bc_obj = {
+            "name": "bc_1",
+            "enabled": True,
+            "time_step": "hourly",
+            "operator": "less",
+            "terms": [
+                {
+                    "id": "area_1.cluster_1",
+                    "weight": 2,
+                    "offset": 5,
+                    "data": {"area": "area_1", "cluster": "cluster_1"},
+                }
+            ],
+        }
+        res = client.post(
+            f"/v1/studies/{study_id}/bindingconstraints",
+            json=bc_obj,
+        )
+        assert res.status_code == 200, res.json()
+
+        # add a binding constraint that references the thermal cluster in area_2
+        bc_obj = {
+            "name": "bc_2",
+            "enabled": True,
+            "time_step": "hourly",
+            "operator": "less",
+            "terms": [
+                {
+                    "id": "area_2.cluster_2",
+                    "weight": 2,
+                    "offset": 5,
+                    "data": {"area": "area_2", "cluster": "cluster_2"},
+                }
+            ],
+        }
+        res = client.post(
+            f"/v1/studies/{study_id}/bindingconstraints",
+            json=bc_obj,
+        )
+        assert res.status_code == 200, res.json()
+
+        # check that deleting the thermal cluster in area_1 fails
+        res = client.delete(
+            f"/v1/studies/{study_id}/areas/area_1/clusters/thermal",
+            json=["cluster_1"],
+        )
+        assert res.status_code == 403, res.json()
+
+        # now delete the binding constraint that references the thermal cluster in area_1
+        res = client.delete(
+            f"/v1/studies/{study_id}/bindingconstraints/bc_1",
+        )
+        assert res.status_code == 200, res.json()
+
+        # check that deleting the thermal cluster in area_1 succeeds
+        res = client.delete(
+            f"/v1/studies/{study_id}/areas/area_1/clusters/thermal",
+            json=["cluster_1"],
+        )
+        assert res.status_code == 204, res.json()
+
+        # check that deleting the thermal cluster in area_2 fails
+        res = client.delete(
+            f"/v1/studies/{study_id}/areas/area_2/clusters/thermal",
+            json=["cluster_2"],
+        )
+        assert res.status_code == 403, res.json()
+
+        # now delete the binding constraint that references the thermal cluster in area_2
+        res = client.delete(
+            f"/v1/studies/{study_id}/bindingconstraints/bc_2",
+        )
+        assert res.status_code == 200, res.json()
+
+        # check that deleting the thermal cluster in area_2 succeeds
+        res = client.delete(
+            f"/v1/studies/{study_id}/areas/area_2/clusters/thermal",
+            json=["cluster_2"],
+        )
+        assert res.status_code == 204, res.json()
+
+        # check that deleting the thermal cluster in area_3 succeeds
+        res = client.delete(
+            f"/v1/studies/{study_id}/areas/area_3/clusters/thermal",
+            json=["cluster_3"],
+        )
+        assert res.status_code == 204, res.json()

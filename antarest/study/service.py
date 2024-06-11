@@ -2544,12 +2544,13 @@ class StudyService:
 
         return df_matrix
 
-    def assert_no_cluster_referenced_in_bcs(self, study: Study, cluster_ids: t.Sequence[str]) -> None:
+    def assert_no_cluster_referenced_in_bcs(self, study: Study, area_id: str, cluster_ids: t.Sequence[str]) -> None:
         """
         Check that no cluster is referenced in a binding constraint otherwise raise an ClusterDeletionNotAllowed Exception
 
         Args:
             study: input study
+            area_id: area ID to be checked
             cluster_ids: cluster IDs to be checked
 
         Returns:
@@ -2558,7 +2559,7 @@ class StudyService:
 
         for cluster_id in cluster_ids:
             referencing_binding_constraints = self.binding_constraint_manager.get_binding_constraints(
-                study, ConstraintFilters(cluster_id=cluster_id)
+                study, ConstraintFilters(cluster_id=f"{area_id}.{cluster_id}")
             )[:MAX_BINDING_CONSTRAINTS_TO_DISPLAY]
             if referencing_binding_constraints:
                 first_bcs_ids = ""

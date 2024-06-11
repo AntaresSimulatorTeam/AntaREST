@@ -1439,7 +1439,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
     assert result.json()["exception"] == "AreaDeletionNotAllowed"
 
     # delete binding constraint 1
-    result = client.delete(f"/v1/studies/{study_id}/bindingconstraints/binding%20constraint%201")
+    client.delete(f"/v1/studies/{study_id}/bindingconstraints/binding%20constraint%201")
     # check now that we can delete the area 1
     result = client.delete(f"/v1/studies/{study_id}/areas/area%201")
     assert result.status_code == 200, res.json()
@@ -1715,3 +1715,85 @@ def test_copy(client: TestClient, admin_access_token: str, study_id: str) -> Non
     res = client.get(f"/v1/studies/{copied.json()}").json()
     assert res["groups"] == []
     assert res["public_mode"] == "READ"
+
+
+def test_links_deletion(client: TestClient, user_access_token: str) -> None:
+    """
+    Test the deletion of links between areas.
+    """
+
+    # set client headers to user access token
+    client.headers = {"Authorization": f"Bearer {user_access_token}"}
+
+    # create a study
+    study_id = client.post("/v1/studies?name=test").json()
+
+    # Create an area "area_1" in the study
+    res = client.post(
+        f"/v1/studies/{study_id}/areas",
+        json={
+            "name": "area_1",
+            "type": "AREA",
+            "metadata": {"country": "FR"},
+        },
+    )
+    assert res.status_code == 200, res.json()
+
+    # Create an area "area_2" in the study
+    res = client.post(
+        f"/v1/studies/{study_id}/areas",
+        json={
+            "name": "area_2",
+            "type": "AREA",
+            "metadata": {"country": "DE"},
+        },
+    )
+    assert res.status_code == 200, res.json()
+
+    # create a link between the two areas
+    res = client.post(
+        f"/v1/studies/{study_id}/links",
+        json={
+            "area1": "area_1",
+            "area2": "area_2",
+        },
+    )
+    assert res.status_code == 200, res.json()
+
+    # create a binding constraint that references the link
+    bc_obj = {
+        "name": "bc_1",
+        "enabled": True,
+        "time_step": "hourly",
+        "operator": "less",
+        "terms": [
+            {
+                "id": "area_1%area_2",
+                "weight": 2,
+                "data": {"area1": "area_1", "area2": "area_2"},
+            }
+        ],
+    }
+    res = client.post(
+        f"/v1/studies/{study_id}/bindingconstraints",
+        json=bc_obj,
+    )
+    assert res.status_code == 200, res.json()
+
+    # try to delete the link before deleting the binding constraint
+    res = client.delete(f"/v1/studies/{study_id}/links/area_1/area_2")
+    assert res.status_code == 403, res.json()
+    assert res.json() == {
+        "description": "Link area_1%area_2 is not allowed to be deleted\n"
+        "Link is referenced in the following binding constraints:\n"
+        "1- bc_1\n",
+        "exception": "LinkDeletionNotAllowed",
+    }
+
+    # delete the binding constraint
+    res = client.delete(f"/v1/studies/{study_id}/bindingconstraints/bc_1")
+    assert res.status_code == 200, res.json()
+
+    # delete the link
+    res = client.delete(f"/v1/studies/{study_id}/links/area_1/area_2")
+    assert res.status_code == 200, res.json()
