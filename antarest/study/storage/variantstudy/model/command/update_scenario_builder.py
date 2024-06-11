@@ -1,5 +1,6 @@
 import typing as t
 
+import numpy as np
 from requests.structures import CaseInsensitiveDict
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
@@ -62,7 +63,7 @@ class UpdateScenarioBuilder(ICommand):
             if section:
                 curr_section = curr_cfg.setdefault(section_name, {})
                 for key, value in section.items():
-                    if isinstance(value, (int, float)) and value != float("nan"):
+                    if isinstance(value, (int, float)) and not np.isnan(value):
                         curr_section[key] = value
                     else:
                         curr_section.pop(key, None)

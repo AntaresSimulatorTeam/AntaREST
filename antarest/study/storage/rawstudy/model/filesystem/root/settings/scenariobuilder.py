@@ -1,3 +1,4 @@
+import re
 import typing as t
 
 import typing_extensions as te
@@ -103,3 +104,38 @@ class ScenarioBuilder(IniFileNode):
     def _populate_hydro_generation_power_rules(self, rules: _Rules) -> None:
         for area_id in self.config.areas:
             rules[f"hgp,{area_id},0"] = _TSNumber
+
+    def _get_filtering_kwargs(self, url: t.List[str]) -> t.Dict[str, str]:
+        # If the URL contains 2 elements, we can filter the options based on the generator type.
+        if len(url) == 2:
+            section, symbol = url
+            if re.fullmatch(r"\w+", symbol):
+                # Mutate the URL to get all values matching the generator type.
+                url[:] = [section]
+                return {"section": section, "option_regex": f"{symbol},.*"}
+
+        # If the URL contains 3 elements, we can filter on the generator type and area (or group for BC).
+        elif len(url) == 3:
+            section, symbol, area = url
+            if re.fullmatch(r"\w+", symbol):
+                # Mutate the URL to get all values matching the generator type.
+                url[:] = [section]
+                area_re = re.escape(area)
+                return {"section": section, "option_regex": f"{symbol},{area_re},.*"}
+
+        # If the URL contains 4 elements, we can filter on the generator type, area, and cluster.
+        elif len(url) == 4:
+            section, symbol, area, cluster = url
+            if re.fullmatch(r"\w+", symbol):
+                # Mutate the URL to get all values matching the generator type.
+                url[:] = [section]
+                if symbol in ("t", "r"):
+                    area_re = re.escape(area)
+                    cluster_re = re.escape(cluster)
+                    return {"section": section, "option_regex": rf"{symbol},{area_re},\d+,{cluster_re}"}
+                elif symbol == "ntc":
+                    area1_re = re.escape(area)
+                    area2_re = re.escape(cluster)
+                    return {"section": section, "option_regex": f"{symbol},{area1_re},{area2_re},.*"}
+
+        return super()._get_filtering_kwargs(url)

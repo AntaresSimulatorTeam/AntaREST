@@ -1,5 +1,4 @@
 import json
-import typing
 import typing as t
 from abc import ABCMeta
 
@@ -339,7 +338,6 @@ class AbstractBindingConstraintCommand(OptionalProperties, BindingConstraintMatr
             self.coeffs or {},
             group=group,
         )
-
         study_data.tree.save(
             binding_constraints,
             ["input", "bindingconstraints", "bindingconstraints"],
@@ -462,7 +460,7 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
         return super().match(other, equal)
 
 
-def remove_bc_from_scenario_builder(study_data: FileStudy, removed_groups: typing.Set[str]) -> None:
+def remove_bc_from_scenario_builder(study_data: FileStudy, removed_groups: t.Set[str]) -> None:
     """
     Update the scenario builder by removing the rows that correspond to the BC groups to remove.
 

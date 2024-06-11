@@ -23,16 +23,14 @@ def parse_bindings_coeffs_and_save_into_config(
             elif "." in k:
                 clusters_set.add(k)
                 areas_set.add(k.split(".")[0])
-
-        study_data_config.bindings.append(
-            BindingConstraintDTO(
-                id=bd_id,
-                areas=areas_set,
-                clusters=clusters_set,
-                time_step=time_step,
-                group=group,
-            )
+        bc = BindingConstraintDTO(
+            id=bd_id,
+            group=group,
+            areas=areas_set,
+            clusters=clusters_set,
+            time_step=time_step,
         )
+        study_data_config.bindings.append(bc)
 
 
 def remove_area_cluster_from_binding_constraints(

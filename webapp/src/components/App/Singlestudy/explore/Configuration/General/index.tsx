@@ -1,6 +1,6 @@
 import { useOutletContext } from "react-router";
 import * as R from "ramda";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { StudyMetadata } from "../../../../../../common/types";
 import Form from "../../../../../common/Form";
 import Fields from "./Fields";
@@ -14,16 +14,12 @@ import {
   SetDialogStateType,
   setGeneralFormFields,
 } from "./utils";
-import {
-  SubmitHandlerPlus,
-  UseFormReturnPlus,
-} from "../../../../../common/Form/types";
+import { SubmitHandlerPlus } from "../../../../../common/Form/types";
 import ScenarioBuilderDialog from "./dialogs/ScenarioBuilderDialog";
 
 function GeneralParameters() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const [dialog, setDialog] = useState<SetDialogStateType>("");
-  const apiRef = useRef<UseFormReturnPlus<GeneralFormFields>>();
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -54,7 +50,6 @@ function GeneralParameters() {
         key={study.id}
         config={{ defaultValues: () => getGeneralFormFields(study.id) }}
         onSubmit={handleSubmit}
-        apiRef={apiRef}
         enableUndoRedo
       >
         <Fields setDialog={setDialog} />
@@ -77,7 +72,6 @@ function GeneralParameters() {
               open
               study={study}
               onClose={handleCloseDialog}
-              nbYears={apiRef?.current?.getValues("nbYears") || 0}
             />
           ),
         ],

@@ -226,16 +226,14 @@ def _parse_bindings(root: Path) -> t.List[BindingConstraintDTO]:
                 area_set.add(key.split(".", 1)[0])
 
         group = bind.get("group", DEFAULT_GROUP)
-
-        output_list.append(
-            BindingConstraintDTO(
-                id=bind["id"],
-                areas=area_set,
-                clusters=cluster_set,
-                time_step=time_step,
-                group=group,
-            )
+        bc = BindingConstraintDTO(
+            id=bind["id"],
+            areas=area_set,
+            clusters=cluster_set,
+            time_step=time_step,
+            group=group,
         )
+        output_list.append(bc)
 
     return output_list
 
