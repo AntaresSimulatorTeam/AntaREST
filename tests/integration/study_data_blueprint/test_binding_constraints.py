@@ -432,7 +432,7 @@ class TestBindingConstraints:
             json={"enabled": False},
             headers=user_headers,
         )
-        assert res.status_code == 200
+        assert res.status_code == 200, res.json()
 
         res = client.get(
             f"/v1/studies/{study_id}/bindingconstraints/{bc_id}",

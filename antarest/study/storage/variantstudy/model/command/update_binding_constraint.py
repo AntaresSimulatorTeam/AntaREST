@@ -79,7 +79,8 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
         updated_cfg = binding_constraints[index]
         updated_cfg.update(obj)
 
-        updated_properties = self.dict(exclude={"command_context", "command_name", "version", "id"}, exclude_none=True)
+        excluded_fields = set(ICommand.__fields__) | {"id"}
+        updated_properties = self.dict(exclude=excluded_fields, exclude_none=True)
         # This 2nd check is here to remove the last term.
         if self.coeffs or updated_properties == {"coeffs": {}}:
             # Remove terms which IDs contain a "%" or a "." in their name
