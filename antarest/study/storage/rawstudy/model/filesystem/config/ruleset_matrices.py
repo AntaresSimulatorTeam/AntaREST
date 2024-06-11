@@ -131,12 +131,13 @@ class RulesetMatrices:
         group_index = self.get_group_index()
         link_index = self.get_link_index()
         for symbol, scenario_type in self.scenario_types.items():
+            # Note: all DataFrames are initialized with NaN values, so the dtype is `float`.
             if symbol in _AREA_RELATED_SYMBOLS:
-                self.scenarios[scenario_type] = pd.DataFrame(index=area_index, columns=self.columns, dtype=int)
+                self.scenarios[scenario_type] = pd.DataFrame(index=area_index, columns=self.columns, dtype=float)
             elif symbol in _BINDING_CONSTRAINTS_RELATED_SYMBOLS:
-                self.scenarios[scenario_type] = pd.DataFrame(index=group_index, columns=self.columns, dtype=int)
+                self.scenarios[scenario_type] = pd.DataFrame(index=group_index, columns=self.columns, dtype=float)
             elif symbol in _LINK_RELATED_SYMBOLS:
-                self.scenarios[scenario_type] = pd.DataFrame(index=link_index, columns=self.columns, dtype=int)
+                self.scenarios[scenario_type] = pd.DataFrame(index=link_index, columns=self.columns, dtype=float)
             elif symbol in _HYDRO_LEVEL_RELATED_SYMBOLS:
                 self.scenarios[scenario_type] = pd.DataFrame(index=area_index, columns=self.columns, dtype=float)
             elif symbol in _CLUSTER_RELATED_SYMBOLS:
@@ -144,7 +145,7 @@ class RulesetMatrices:
                 # Keys are the names of the areas (and not the identifiers)
                 self.scenarios[scenario_type] = {
                     self.areas[area_id]: pd.DataFrame(
-                        index=self.get_cluster_index(symbol, self.areas[area_id]), columns=self.columns, dtype=int
+                        index=self.get_cluster_index(symbol, self.areas[area_id]), columns=self.columns, dtype=float
                     )
                     for area_id, cluster in self.clusters_by_symbols[symbol].items()
                     if cluster
@@ -250,23 +251,32 @@ class RulesetMatrices:
         Returns:
             Dictionary of rules.
         """
+
+        def to_ts_number(v: t.Any) -> _Value:
+            """Convert value to TimeSeries number."""
+            return np.nan if pd.isna(v) else int(v)
+
+        def to_percent(v: t.Any) -> _Value:
+            """Convert value to percentage in range [0, 100]."""
+            return np.nan if pd.isna(v) else float(v) / 100
+
         if symbol in _AREA_RELATED_SYMBOLS:
             scenario_rules = {
-                f"{symbol},{area_id},{year}": value
+                f"{symbol},{area_id},{year}": to_ts_number(value)
                 for area_id, area in self.areas.items()
                 for year, value in scenario.loc[idx_area(area)].items()  # type: ignore
                 if allow_nan or not pd.isna(value)
             }
         elif symbol in _LINK_RELATED_SYMBOLS:
             scenario_rules = {
-                f"{symbol},{area1_id},{area2_id},{year}": value
+                f"{symbol},{area1_id},{area2_id},{year}": to_ts_number(value)
                 for (area1_id, area2_id), (area1, area2) in self.links.items()
                 for year, value in scenario.loc[idx_link(area1, area2)].items()  # type: ignore
                 if allow_nan or not pd.isna(value)
             }
         elif symbol in _HYDRO_LEVEL_RELATED_SYMBOLS:
             scenario_rules = {
-                f"{symbol},{area_id},{year}": value / 100
+                f"{symbol},{area_id},{year}": to_percent(value)
                 for area_id, area in self.areas.items()
                 for year, value in scenario.loc[idx_area(area)].items()  # type: ignore
                 if allow_nan or not pd.isna(value)
@@ -274,7 +284,7 @@ class RulesetMatrices:
         elif symbol in _CLUSTER_RELATED_SYMBOLS:
             clusters_mapping = self.clusters_by_symbols[symbol]
             scenario_rules = {
-                f"{symbol},{area_id},{year},{cluster_id}": value
+                f"{symbol},{area_id},{year},{cluster_id}": to_ts_number(value)
                 for area_id, clusters in clusters_mapping.items()
                 for cluster_id, cluster in clusters.items()
                 for year, value in scenario[self.areas[area_id]].loc[idx_cluster(self.areas[area_id], cluster)].items()
@@ -282,7 +292,7 @@ class RulesetMatrices:
             }
         elif symbol in _BINDING_CONSTRAINTS_RELATED_SYMBOLS:
             scenario_rules = {
-                f"{symbol},{group_id},{year}": value
+                f"{symbol},{group_id},{year}": to_ts_number(value)
                 for group_id, group in self.groups.items()
                 for year, value in scenario.loc[idx_group(group)].items()  # type: ignore
                 if allow_nan or not pd.isna(value)

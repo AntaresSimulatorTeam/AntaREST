@@ -91,14 +91,16 @@ class TestRulesetMatrices:
         actual = ruleset.scenarios[scenario_type]
         actual = actual.fillna("NaN").to_dict(orient="index")
         expected = {
-            "France": {"0": 1.0, "1": 4.0, "2": 7.0, "3": "NaN"},
-            "Germany": {"0": 2.0, "1": 5.0, "2": 8.0, "3": "NaN"},
-            "Italy": {"0": 3.0, "1": 6.0, "2": "NaN", "3": "NaN"},
+            "France": {"0": 1, "1": 4, "2": 7, "3": "NaN"},
+            "Germany": {"0": 2, "1": 5, "2": 8, "3": "NaN"},
+            "Italy": {"0": 3, "1": 6, "2": "NaN", "3": "NaN"},
         }
         assert actual == expected
 
         actual_rules = ruleset.get_rules()
         assert actual_rules == rules
+        for rule_id, ts_number in actual_rules.items():
+            assert isinstance(ts_number, int)
 
     def test_update_rules__link(self, ruleset: RulesetMatrices) -> None:
         rules = {
@@ -112,13 +114,15 @@ class TestRulesetMatrices:
         actual = ruleset.scenarios["link"]
         actual = actual.fillna("NaN").to_dict(orient="index")
         expected = {
-            "Germany / France": {"0": 1.0, "1": 3.0, "2": 5.0, "3": "NaN"},
-            "Italy / France": {"0": 2.0, "1": 4.0, "2": "NaN", "3": "NaN"},
+            "Germany / France": {"0": 1, "1": 3, "2": 5, "3": "NaN"},
+            "Italy / France": {"0": 2, "1": 4, "2": "NaN", "3": "NaN"},
         }
         assert actual == expected
 
         actual_rules = ruleset.get_rules()
         assert actual_rules == rules
+        for rule_id, ts_number in actual_rules.items():
+            assert isinstance(ts_number, int)
 
     def test_update_rules__thermal(self, ruleset: RulesetMatrices) -> None:
         rules = {
@@ -137,16 +141,16 @@ class TestRulesetMatrices:
         actual = actual_map["France"]
         actual = actual.fillna("NaN").to_dict(orient="index")
         expected = {
-            "coal": {"0": 2.0, "1": 6.0, "2": "NaN", "3": "NaN"},
-            "nuclear": {"0": 1.0, "1": 5.0, "2": "NaN", "3": "NaN"},
+            "coal": {"0": 2, "1": 6, "2": "NaN", "3": "NaN"},
+            "nuclear": {"0": 1, "1": 5, "2": "NaN", "3": "NaN"},
         }
         assert actual == expected
 
         actual = actual_map["Italy"]
         actual = actual.fillna("NaN").to_dict(orient="index")
         expected = {
-            "fuel": {"0": 4.0, "1": 8.0, "2": "NaN", "3": "NaN"},
-            "nuclear": {"0": 3.0, "1": 7.0, "2": "NaN", "3": "NaN"},
+            "fuel": {"0": 4, "1": 8, "2": "NaN", "3": "NaN"},
+            "nuclear": {"0": 3, "1": 7, "2": "NaN", "3": "NaN"},
         }
         assert actual == expected
 
@@ -160,6 +164,8 @@ class TestRulesetMatrices:
 
         actual_rules = ruleset.get_rules()
         assert actual_rules == rules
+        for rule_id, ts_number in actual_rules.items():
+            assert isinstance(ts_number, int)
 
     def test_update_rules__renewable(self, ruleset: RulesetMatrices) -> None:
         rules = {
@@ -176,20 +182,22 @@ class TestRulesetMatrices:
         actual = actual_map["France"]
         actual = actual.fillna("NaN").to_dict(orient="index")
         expected = {
-            "wind offshore": {"0": 1.0, "1": 4.0, "2": "NaN", "3": "NaN"},
-            "wind onshore": {"0": 2.0, "1": 5.0, "2": "NaN", "3": "NaN"},
+            "wind offshore": {"0": 1, "1": 4, "2": "NaN", "3": "NaN"},
+            "wind onshore": {"0": 2, "1": 5, "2": "NaN", "3": "NaN"},
         }
         assert actual == expected
 
         actual = actual_map["Germany"]
         actual = actual.fillna("NaN").to_dict(orient="index")
         expected = {
-            "wind onshore": {"0": 3.0, "1": 6.0, "2": "NaN", "3": "NaN"},
+            "wind onshore": {"0": 3, "1": 6, "2": "NaN", "3": "NaN"},
         }
         assert actual == expected
 
         actual_rules = ruleset.get_rules()
         assert actual_rules == rules
+        for rule_id, ts_number in actual_rules.items():
+            assert isinstance(ts_number, int)
 
     def test_update_rules__hydro(self, ruleset: RulesetMatrices) -> None:
         rules = {
@@ -204,14 +212,16 @@ class TestRulesetMatrices:
         actual = ruleset.scenarios["hydro"]
         actual = actual.fillna("NaN").to_dict(orient="index")
         expected = {
-            "France": {"0": 1.0, "1": 4.0, "2": "NaN", "3": "NaN"},
-            "Germany": {"0": 2.0, "1": 5.0, "2": "NaN", "3": "NaN"},
-            "Italy": {"0": 3.0, "1": 6.0, "2": "NaN", "3": "NaN"},
+            "France": {"0": 1, "1": 4, "2": "NaN", "3": "NaN"},
+            "Germany": {"0": 2, "1": 5, "2": "NaN", "3": "NaN"},
+            "Italy": {"0": 3, "1": 6, "2": "NaN", "3": "NaN"},
         }
         assert actual == expected
 
         actual_rules = ruleset.get_rules()
         assert actual_rules == rules
+        for rule_id, ts_number in actual_rules.items():
+            assert isinstance(ts_number, int)
 
     def test_update_rules__hydro_generation_power(self, ruleset: RulesetMatrices) -> None:
         rules = {
@@ -226,14 +236,16 @@ class TestRulesetMatrices:
         actual = ruleset.scenarios["hydroGenerationPower"]
         actual = actual.fillna("NaN").to_dict(orient="index")
         expected = {
-            "France": {"0": 1.0, "1": 4.0, "2": "NaN", "3": "NaN"},
-            "Germany": {"0": 2.0, "1": 5.0, "2": "NaN", "3": "NaN"},
-            "Italy": {"0": 3.0, "1": 6.0, "2": "NaN", "3": "NaN"},
+            "France": {"0": 1, "1": 4, "2": "NaN", "3": "NaN"},
+            "Germany": {"0": 2, "1": 5, "2": "NaN", "3": "NaN"},
+            "Italy": {"0": 3, "1": 6, "2": "NaN", "3": "NaN"},
         }
         assert actual == expected
 
         actual_rules = ruleset.get_rules()
         assert actual_rules == rules
+        for rule_id, ts_number in actual_rules.items():
+            assert isinstance(ts_number, int)
 
     def test_update_rules__binding_constraints(self, ruleset: RulesetMatrices) -> None:
         rules = {
@@ -247,20 +259,22 @@ class TestRulesetMatrices:
         actual = ruleset.scenarios["bindingConstraints"]
         actual = actual.fillna("NaN").to_dict(orient="index")
         expected = {
-            "Main": {"0": 1.0, "1": 3.0, "2": 5.0, "3": "NaN"},
-            "Secondary": {"0": 2.0, "1": 4.0, "2": "NaN", "3": "NaN"},
+            "Main": {"0": 1, "1": 3, "2": 5, "3": "NaN"},
+            "Secondary": {"0": 2, "1": 4, "2": "NaN", "3": "NaN"},
         }
         assert actual == expected
 
         actual_rules = ruleset.get_rules()
         assert actual_rules == rules
+        for rule_id, ts_number in actual_rules.items():
+            assert isinstance(ts_number, int)
 
     def test_update_rules__hydro_initial_levels(self, ruleset: RulesetMatrices) -> None:
         rules = {
             "hl,france,0": 0.1,
             "hl,germany,0": 0.2,
             "hl,italy,0": 0.3,
-            "hl,france,1": 0.4,
+            "hl,france,1": 0.4537,
             "hl,germany,1": 0.5,
             "hl,italy,1": 0.6,
         }
@@ -268,7 +282,7 @@ class TestRulesetMatrices:
         actual = ruleset.scenarios["hydroInitialLevels"]
         actual = actual.fillna("NaN").to_dict(orient="index")
         expected = {
-            "France": {"0": 10, "1": 40, "2": "NaN", "3": "NaN"},
+            "France": {"0": 10, "1": 45.37, "2": "NaN", "3": "NaN"},
             "Germany": {"0": 20, "1": 50, "2": "NaN", "3": "NaN"},
             "Italy": {"0": 30, "1": 60, "2": "NaN", "3": "NaN"},
         }
@@ -276,6 +290,8 @@ class TestRulesetMatrices:
 
         actual_rules = ruleset.get_rules()
         assert actual_rules == rules
+        for rule_id, ts_number in actual_rules.items():
+            assert isinstance(ts_number, float)
 
     def test_update_rules__hydro_final_levels(self, ruleset: RulesetMatrices) -> None:
         rules = {
