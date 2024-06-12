@@ -23,7 +23,7 @@ class TestAbstractStorageService:
         Returns:
 
         """
-        # Prepare a dummy study with a `study.antarest` file, and non-empty input and output folder
+        # Prepare a dummy study with a `study.antares` file, and non-empty input and output folder
         study_path = tmp_path / "My Study"
         study_path.mkdir()
         content_list = ["study.antares", "input/areas/foo.ini", "output/20240424-1200eco/result.log"]

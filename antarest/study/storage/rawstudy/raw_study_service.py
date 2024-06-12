@@ -70,7 +70,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             fallback_on_default: use default values in case of failure
             study_path: optional study path
         """
-        path = study_path if study_path is not None else self.get_study_path(metadata)
+        path = study_path or self.get_study_path(metadata)
         study = self.study_factory.create_from_fs(path, study_id="")
         try:
             raw_meta = study.tree.get(["study", "antares"])
