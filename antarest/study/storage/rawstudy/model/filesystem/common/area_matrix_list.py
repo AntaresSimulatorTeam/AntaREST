@@ -45,10 +45,12 @@ class AreaMatrixList(FolderNode):
         context: ContextServer,
         config: FileStudyTreeConfig,
         *,
+        prefix: str = "",
         matrix_class: t.Callable[..., INode[t.Any, t.Any, t.Any]] = InputSeriesMatrix,
         additional_matrix_params: t.Optional[t.Dict[str, t.Any]] = None,
     ):
         super().__init__(context, config)
+        self.prefix = prefix
         self.matrix_class = matrix_class
         self.additional_matrix_params = additional_matrix_params or {}
 
@@ -61,10 +63,15 @@ class AreaMatrixList(FolderNode):
             and the value is the corresponding :class:`InputSeriesMatrix` node.
         """
         children: TREE = {}
-        files = [d.name.split(".")[0] for d in self.config.path.iterdir()]
+        if not self.prefix:  # Corresponds to the outputs
+            files = [d.name.split(".")[0] for d in self.config.path.iterdir()]
+        else:  # Corresponds to the inputs
+            files = self.config.area_names()
+
         for file in files:
-            children[file] = self.matrix_class(
-                self.context, self.config.next_file(f"{file}.txt"), **self.additional_matrix_params
+            name = f"{self.prefix}{file}"
+            children[name] = self.matrix_class(
+                self.context, self.config.next_file(f"{name}.txt"), **self.additional_matrix_params
             )
         return children
 

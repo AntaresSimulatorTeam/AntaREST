@@ -29,12 +29,12 @@ class Input(FolderNode):
             "bindingconstraints": BindingConstraints(self.context, config.next_file("bindingconstraints")),
             "hydro": InputHydro(self.context, config.next_file("hydro")),
             "links": InputLink(self.context, config.next_file("links")),
-            "load": InputPreproSeries(self.context, config.next_file("load")),
+            "load": InputPreproSeries(self.context, config.next_file("load"), "load_"),
             "misc-gen": InputMiscGen(self.context, config.next_file("misc-gen")),
             "reserves": InputReserves(self.context, config.next_file("reserves")),
-            "solar": InputPreproSeries(self.context, config.next_file("solar")),
+            "solar": InputPreproSeries(self.context, config.next_file("solar"), "solar_"),
             "thermal": InputThermal(self.context, config.next_file("thermal")),
-            "wind": InputPreproSeries(self.context, config.next_file("wind")),
+            "wind": InputPreproSeries(self.context, config.next_file("wind"), "wind_"),
         }
 
         has_renewables = config.version >= 810 and EnrModelling(config.enr_modelling) == EnrModelling.CLUSTERS
