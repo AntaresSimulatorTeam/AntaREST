@@ -22,10 +22,5 @@ class OutputSimulationModeMcAll(FolderNode):
         children: TREE = {}
         for key, simulation_class in OUTPUT_MAPPING.items():
             if (current_path / key).exists():
-                params = {"context": self.context, "config": self.config.next_file(key)}
-                if key in {"areas", "links"}:
-                    params.update({"current_path": current_path / key, "mc_all": True})
-                elif key == "binding_constraints":
-                    params.update({"current_path": current_path / key})
-                children[key] = simulation_class(**params)
+                children[key] = simulation_class(self.context, self.config.next_file(key), current_path / key)
         return children

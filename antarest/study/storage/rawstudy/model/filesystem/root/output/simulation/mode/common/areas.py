@@ -18,29 +18,23 @@ class OutputSimulationAreas(FolderNode):
         context: ContextServer,
         config: FileStudyTreeConfig,
         current_path: Path,
-        mc_all: bool = False,
     ) -> None:
         super().__init__(context, config)
-        self.mc_all = mc_all
         self.current_path = current_path
 
     def build(self) -> TREE:
-        areas = [d.name for d in self.current_path.iterdir()]
+        areas = set()
+        sets = set()
+        for file in self.current_path.iterdir():
+            name = file.name
+            if "@" in name:
+                sets.add(name)
+            else:
+                areas.add(name)
         children: TREE = {
-            a: Area(
-                self.context,
-                self.config.next_file(a),
-                area=a,
-                mc_all=self.mc_all,
-            )
-            for a in areas
+            a: Area(self.context, self.config.next_file(a), area=a, current_path=self.current_path / a) for a in areas
         }
 
-        for s in self.config.set_names():
-            children[f"@ {s}"] = Set(
-                self.context,
-                self.config.next_file(f"@ {s}"),
-                set=s,
-                mc_all=self.mc_all,
-            )
+        for s in sets:
+            children[f"@ {s}"] = Set(self.context, self.config.next_file(f"@ {s}"), set=s)
         return children

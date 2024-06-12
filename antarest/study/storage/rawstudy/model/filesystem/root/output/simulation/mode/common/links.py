@@ -18,25 +18,18 @@ class _OutputSimulationModeMcAllLinksBis(FolderNode):
         area_from: str,
         link_names: t.List[str],
         current_path: Path,
-        mc_all: bool,
     ):
         FolderNode.__init__(self, context, config)
         self.area_from = area_from
         self.link_names = link_names
         self.current_path = current_path
-        self.mc_all = mc_all
 
     def build(self) -> TREE:
         children: TREE = {}
         for link_name in self.link_names:
             link = link_name.split(" - ")[1]
             children[link] = OutputSimulationLinkItem(
-                self.context,
-                self.config.next_file(link_name),
-                self.area_from,
-                link,
-                self.current_path / link_name,
-                mc_all=self.mc_all,
+                self.context, self.config.next_file(link_name), self.area_from, link, self.current_path / link_name
             )
         return children
 
@@ -47,11 +40,9 @@ class OutputSimulationLinks(FolderNode):
         context: ContextServer,
         config: FileStudyTreeConfig,
         current_path: Path,
-        mc_all: bool = False,
     ):
         super().__init__(context, config)
         self.current_path = current_path
-        self.mc_all = mc_all
 
     def build(self) -> TREE:
         children: TREE = {}
@@ -62,7 +53,7 @@ class OutputSimulationLinks(FolderNode):
             areas.setdefault(link.split(" - ")[0], []).append(link)
         for area_from, link_names in areas.items():
             children[area_from] = _OutputSimulationModeMcAllLinksBis(
-                self.context, self.config, area_from, link_names, self.current_path, self.mc_all
+                self.context, self.config, area_from, link_names, self.current_path
             )
 
         return children

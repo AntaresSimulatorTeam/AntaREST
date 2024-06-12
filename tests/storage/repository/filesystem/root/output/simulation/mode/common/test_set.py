@@ -65,7 +65,6 @@ class TestOutputSimulationSet:
             context=context,
             config=config,
             set="foo",
-            mc_all=mc_all,
         )
         actual = node.build()
 

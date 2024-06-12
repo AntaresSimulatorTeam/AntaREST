@@ -16,33 +16,25 @@ class OutputSimulationLinkItem(FolderNode):
         area: str,
         link: str,
         current_path: Path,
-        mc_all: bool = True,
     ):
         FolderNode.__init__(self, context, config)
         self.area = area
         self.link = link
         self.current_path = current_path
-        self.mc_all = mc_all
 
     def build(self) -> TREE:
         children: TREE = {}
+        possible_outputs = ["id", "values"]
         freq: MatrixFrequency
         for freq in MatrixFrequency:
-            if (self.current_path / f"values-{freq}.txt").exists():
-                children[f"values-{freq}"] = LinkOutputSeriesMatrix(
-                    self.context,
-                    self.config.next_file(f"values-{freq}.txt"),
-                    freq,
-                    self.area,
-                    self.link,
-                )
-            if self.mc_all and (self.current_path / f"id-{freq}.txt").exists():
-                children[f"id-{freq}"] = LinkOutputSeriesMatrix(
-                    self.context,
-                    self.config.next_file(f"id-{freq}.txt"),
-                    freq,
-                    self.area,
-                    self.link,
-                )
+            for output_type in possible_outputs:
+                if (self.current_path / f"{output_type}-{freq}.txt").exists():
+                    children[f"{output_type}-{freq}"] = LinkOutputSeriesMatrix(
+                        self.context,
+                        self.config.next_file(f"{output_type}-{freq}.txt"),
+                        freq,
+                        self.area,
+                        self.link,
+                    )
 
         return children
