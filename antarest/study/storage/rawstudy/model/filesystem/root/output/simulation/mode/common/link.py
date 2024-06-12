@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
@@ -15,12 +13,10 @@ class OutputSimulationLinkItem(FolderNode):
         config: FileStudyTreeConfig,
         area: str,
         link: str,
-        current_path: Path,
     ):
         FolderNode.__init__(self, context, config)
         self.area = area
         self.link = link
-        self.current_path = current_path
 
     def build(self) -> TREE:
         children: TREE = {}
@@ -29,7 +25,7 @@ class OutputSimulationLinkItem(FolderNode):
         for freq in MatrixFrequency:
             for output_type in possible_outputs:
                 file_name = f"{output_type}-{freq}.txt"
-                if (self.current_path / file_name).exists():
+                if (self.config.path / file_name).exists():
                     children[f"{output_type}-{freq}"] = LinkOutputSeriesMatrix(
                         self.context,
                         self.config.next_file(file_name),

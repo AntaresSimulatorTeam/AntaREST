@@ -33,14 +33,14 @@ class TestOutputSimulationSet:
         context = ContextServer(matrix=matrix, resolver=resolver)
         study_id = str(uuid.uuid4())
         config = FileStudyTreeConfig(
-            study_path=Path("path/to/study"),
-            path=Path("path/to/study"),
+            study_path=Path("study_path"),
+            path=tmp_path,
             study_id=study_id,
             version=850,  # will become a `str` in the future
             areas={},
         )
 
-        node = set.OutputSimulationSet(context=context, config=config, set="foo", current_path=tmp_path)
+        node = set.OutputSimulationSet(context=context, config=config, set="foo")
         actual = node.build()
 
         # check the result

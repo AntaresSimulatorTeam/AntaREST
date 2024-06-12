@@ -18,9 +18,8 @@ class OutputSimulationModeMcAll(FolderNode):
     def build(self) -> TREE:
         if not self.config.output_path:
             return {}
-        current_path = self.config.output_path / self.simulation.get_file() / self.simulation.mode / "mc-all"
         children: TREE = {}
         for key, simulation_class in OUTPUT_MAPPING.items():
-            if (current_path / key).exists():
-                children[key] = simulation_class(self.context, self.config.next_file(key), current_path / key)
+            if (self.config.path / key).exists():
+                children[key] = simulation_class(self.context, self.config.next_file(key))
         return children

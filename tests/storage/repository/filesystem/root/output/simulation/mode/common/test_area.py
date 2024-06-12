@@ -36,13 +36,13 @@ class TestOutputSimulationAreaItem:
         study_id = str(uuid.uuid4())
         config = FileStudyTreeConfig(
             study_path=Path("path/to/study"),
-            path=Path("path/to/study"),
+            path=tmp_path,
             study_id=study_id,
             version=850,  # will become a `str` in the future
             areas={},
         )
 
-        node = area.OutputSimulationAreaItem(context=context, config=config, area="fr", current_path=tmp_path)
+        node = area.OutputSimulationAreaItem(context=context, config=config, area="fr")
         actual = node.build()
 
         # check the result
@@ -52,13 +52,13 @@ class TestOutputSimulationAreaItem:
 
         new_config = FileStudyTreeConfig(
             study_path=Path("path/to/study"),
-            path=Path("path/to/study"),
+            path=tmp_path,
             study_id=study_id,
             version=860,  # will become a `str` in the future
             areas={},
         )
 
-        new_node = area.OutputSimulationAreaItem(context=context, config=new_config, area="fr", current_path=tmp_path)
+        new_node = area.OutputSimulationAreaItem(context=context, config=new_config, area="fr")
         new_actual = new_node.build()
         # check the result
         actual_obj = {key: {"freq": value.freq} for key, value in new_actual.items()}

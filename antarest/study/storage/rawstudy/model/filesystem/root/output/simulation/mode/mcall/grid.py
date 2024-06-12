@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
@@ -12,13 +10,11 @@ class OutputSimulationModeMcAllGrid(FolderNode):
         self,
         context: ContextServer,
         config: FileStudyTreeConfig,
-        current_path: Path,
     ):
         FolderNode.__init__(self, context, config)
-        self.current_path = current_path
 
     def build(self) -> TREE:
-        files = [d.stem for d in self.current_path.iterdir()]
+        files = [d.stem for d in self.config.path.iterdir()]
         children: TREE = {}
         for file in files:
             children[file] = RawFileNode(self.context, self.config.next_file(f"{file}.txt"))

@@ -38,6 +38,10 @@ class OutputSimulation(FolderNode):
             "antares-err": RawFileNode(self.context, self.config.next_file("antares-err.log")),
         }
 
+        # todo: check files existences plus add execution_info.ini
+        # todo: ask a spec of what's inside optimization folder
+        # todo: continue the job for ts-numbers and ts-generator
+
         if not self.simulation.error:
             children["annualSystemCost"] = RawFileNode(self.context, self.config.next_file("annualSystemCost.txt"))
             children["checkIntegrity"] = RawFileNode(self.context, self.config.next_file("checkIntegrity.txt"))

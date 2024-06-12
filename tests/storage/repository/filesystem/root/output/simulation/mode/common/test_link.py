@@ -34,19 +34,13 @@ class TestOutputSimulationLinkItem:
         study_id = str(uuid.uuid4())
         config = FileStudyTreeConfig(
             study_path=Path("path/to/study"),
-            path=Path("path/to/study"),
+            path=tmp_path,
             study_id=study_id,
             version=850,  # will become a `str` in the future
             areas={},
         )
 
-        node = link.OutputSimulationLinkItem(
-            context=context,
-            config=config,
-            area="fr",
-            link="fr -> de",
-            current_path=tmp_path,
-        )
+        node = link.OutputSimulationLinkItem(context=context, config=config, area="fr", link="fr -> de")
         actual = node.build()
 
         # check the result
