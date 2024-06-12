@@ -2,8 +2,8 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import FileSt
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
-from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcind.scn import (
-    OutputSimulationModeMcIndScn,
+from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.common.utils import (
+    OutputSimulationModeCommon,
 )
 
 
@@ -19,7 +19,7 @@ class OutputSimulationModeMcInd(FolderNode):
 
     def build(self) -> TREE:
         children: TREE = {
-            str("{:05d}".format(scn)): OutputSimulationModeMcIndScn(
+            str("{:05d}".format(scn)): OutputSimulationModeCommon(
                 self.context, self.config.next_file("{:05d}".format(scn))
             )
             for scn in self.simulation.playlist or range(1, self.simulation.nbyears + 1)

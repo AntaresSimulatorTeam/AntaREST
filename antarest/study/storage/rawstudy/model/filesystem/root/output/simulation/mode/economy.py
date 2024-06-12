@@ -2,8 +2,8 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import FileSt
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
-from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.mcall import (
-    OutputSimulationModeMcAll,
+from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.common.utils import (
+    OutputSimulationModeCommon,
 )
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcind.mcind import (
     OutputSimulationModeMcInd,
@@ -27,6 +27,6 @@ class OutputSimulationMode(FolderNode):
                 self.context, self.config.next_file("mc-ind"), self.simulation
             )
         if self.simulation.synthesis:
-            children["mc-all"] = OutputSimulationModeMcAll(self.context, self.config.next_file("mc-all"))
+            children["mc-all"] = OutputSimulationModeCommon(self.context, self.config.next_file("mc-all"))
 
         return children
