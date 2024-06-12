@@ -1,3 +1,5 @@
+import typing as t
+
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.common.areas import (
     OutputSimulationAreas,
 )
@@ -11,7 +13,15 @@ from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mod
     OutputSimulationModeMcAllGrid,
 )
 
-OUTPUT_MAPPING = {
+OUTPUT_SIMULATION_TYPE = t.Type[
+    t.Union[
+        OutputSimulationAreas,
+        OutputSimulationModeMcAllGrid,
+        OutputSimulationLinks,
+        OutputSimulationBindingConstraintItem,
+    ]
+]
+OUTPUT_MAPPING: t.Dict[str, OUTPUT_SIMULATION_TYPE] = {
     "areas": OutputSimulationAreas,
     "grid": OutputSimulationModeMcAllGrid,
     "links": OutputSimulationLinks,
