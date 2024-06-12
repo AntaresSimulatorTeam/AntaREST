@@ -5,7 +5,7 @@ from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
 from antarest.study.storage.rawstudy.model.filesystem.matrix.constants import default_scenario_hourly
 
 
-class InputSolar(FolderNode):
+class InputPreproSeries(FolderNode):
     """
     Represents a folder structure, which contains a "prepro" and a time series structure.
 
@@ -13,7 +13,7 @@ class InputSolar(FolderNode):
 
     .. code-block:: text
 
-       input/solar/
+       input/load/
        ├── prepro
        │   ├── correlation.ini
        │   ├── store_in
@@ -29,8 +29,8 @@ class InputSolar(FolderNode):
        │       ├── settings.ini
        │       └── translation.txt
        └── series
-           ├── solar_store_in.txt
-           └── solar_store_out.txt
+           ├── load_store_in.txt
+           └── load_store_out.txt
     """
 
     def build(self) -> TREE:
@@ -39,7 +39,6 @@ class InputSolar(FolderNode):
             "series": AreaMatrixList(
                 self.context,
                 self.config.next_file("series"),
-                prefix="solar_",
                 additional_matrix_params={"default_empty": default_scenario_hourly},
             ),
         }

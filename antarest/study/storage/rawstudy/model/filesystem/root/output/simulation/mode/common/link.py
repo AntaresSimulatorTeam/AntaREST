@@ -20,10 +20,9 @@ class OutputSimulationLinkItem(FolderNode):
 
     def build(self) -> TREE:
         children: TREE = {}
-        possible_outputs = ["id", "values"]
         freq: MatrixFrequency
         for freq in MatrixFrequency:
-            for output_type in possible_outputs:
+            for output_type in ["id", "values"]:
                 file_name = f"{output_type}-{freq}.txt"
                 if (self.config.path / file_name).exists():
                     children[f"{output_type}-{freq}"] = LinkOutputSeriesMatrix(

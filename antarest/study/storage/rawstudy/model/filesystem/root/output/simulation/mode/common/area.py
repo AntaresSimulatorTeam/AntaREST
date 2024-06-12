@@ -19,9 +19,8 @@ class OutputSimulationAreaItem(FolderNode):
     def build(self) -> TREE:
         children: TREE = {}
         freq: MatrixFrequency
-        possible_outputs = ["id", "values", "details", "details-res", "details-STstorage"]
         for freq in MatrixFrequency:
-            for output_type in possible_outputs:
+            for output_type in ["id", "values", "details", "details-res", "details-STstorage"]:
                 file_name = f"{output_type}-{freq}.txt"
                 if (self.config.path / file_name).exists():
                     children[f"{output_type}-{freq}"] = AreaOutputSeriesMatrix(

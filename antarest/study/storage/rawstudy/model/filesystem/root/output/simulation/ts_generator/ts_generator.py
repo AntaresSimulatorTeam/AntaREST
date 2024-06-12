@@ -56,17 +56,18 @@ class OutputSimulationTsGeneratorCustomMatrixList(FolderNode):
 
 class OutputSimulationTsGenerator(FolderNode):
     def build(self) -> TREE:
-        children: TREE = {
-            "hydro": OutputSimulationTsGeneratorCustomMatrixList(
+        children: TREE = {}
+        for output_type in ["load", "solar", "wind"]:
+            if (self.config.path / output_type).exists():
+                children[output_type] = OutputSimulationTsGeneratorSimpleMatrixList(
+                    self.context, self.config.next_file(output_type)
+                )
+        if (self.config.path / "hydro").exists():
+            children["hydro"] = OutputSimulationTsGeneratorCustomMatrixList(
                 self.context, self.config.next_file("hydro"), HydroMatrixList
-            ),
-            "load": OutputSimulationTsGeneratorSimpleMatrixList(self.context, self.config.next_file("load")),
-            "solar": OutputSimulationTsGeneratorSimpleMatrixList(self.context, self.config.next_file("solar")),
-            "wind": OutputSimulationTsGeneratorSimpleMatrixList(self.context, self.config.next_file("wind")),
-            "thermal": OutputSimulationTsGeneratorCustomMatrixList(
-                self.context,
-                self.config.next_file("thermal"),
-                ThermalMatrixList,
-            ),
-        }
+            )
+        if (self.config.path / "thermal").exists():
+            children["thermal"] = OutputSimulationTsGeneratorCustomMatrixList(
+                self.context, self.config.next_file("thermal"), ThermalMatrixList
+            )
         return children
