@@ -22,10 +22,6 @@ class OutputSimulationMode(FolderNode):
 
     def build(self) -> TREE:
         children: TREE = {}
-        # todo: il faut aussi le faire pour ts-numbers ...
-        # todo: que faire du updated-links ?? sa structure dépend de la version ... C'est giga relou.
-        # todo: fix mypy issue that i don't understand
-
         if self.simulation.by_year:
             children["mc-ind"] = OutputSimulationModeMcInd(
                 self.context, self.config.next_file("mc-ind"), self.simulation
