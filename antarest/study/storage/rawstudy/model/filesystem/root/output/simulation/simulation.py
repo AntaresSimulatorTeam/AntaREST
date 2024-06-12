@@ -41,8 +41,9 @@ class OutputSimulation(FolderNode):
 
         if not self.simulation.error:
             for file in ["annualSystemCost", "checkIntegrity", "simulation-comments"]:
-                if (self.config.path / file).exists():
-                    children[file] = RawFileNode(self.context, self.config.next_file(f"{file}.txt"))
+                file_path = f"{file}.txt"
+                if (self.config.path / file_path).exists():
+                    children[file] = RawFileNode(self.context, self.config.next_file(file_path))
 
             file_name = "execution_info"
             if (self.config.path / f"{file_name}.ini").exists():
