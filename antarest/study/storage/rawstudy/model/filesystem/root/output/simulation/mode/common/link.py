@@ -28,10 +28,11 @@ class OutputSimulationLinkItem(FolderNode):
         freq: MatrixFrequency
         for freq in MatrixFrequency:
             for output_type in possible_outputs:
-                if (self.current_path / f"{output_type}-{freq}.txt").exists():
+                file_name = f"{output_type}-{freq}.txt"
+                if (self.current_path / file_name).exists():
                     children[f"{output_type}-{freq}"] = LinkOutputSeriesMatrix(
                         self.context,
-                        self.config.next_file(f"{output_type}-{freq}.txt"),
+                        self.config.next_file(file_name),
                         freq,
                         self.area,
                         self.link,

@@ -26,7 +26,7 @@ class OutputSimulationAreas(FolderNode):
         areas = set()
         sets = set()
         for file in self.current_path.iterdir():
-            name = file.name
+            name = file.stem
             if "@" in name:
                 sets.add(name)
             else:
@@ -36,5 +36,7 @@ class OutputSimulationAreas(FolderNode):
         }
 
         for s in sets:
-            children[f"@ {s}"] = Set(self.context, self.config.next_file(f"@ {s}"), set=s)
+            children[f"@ {s}"] = Set(
+                self.context, self.config.next_file(f"@ {s}"), current_path=self.current_path / s, set=s
+            )
         return children

@@ -46,8 +46,7 @@ class OutputSimulationLinks(FolderNode):
 
     def build(self) -> TREE:
         children: TREE = {}
-
-        links = [d.name for d in self.current_path.iterdir()]
+        links = [d.stem for d in self.current_path.iterdir()]
         areas: t.Dict[str, t.List[str]] = {}
         for link in links:
             areas.setdefault(link.split(" - ")[0], []).append(link)

@@ -18,7 +18,7 @@ class OutputSimulationModeMcAllGrid(FolderNode):
         self.current_path = current_path
 
     def build(self) -> TREE:
-        files = [d.name for d in self.current_path.iterdir()]
+        files = [d.stem for d in self.current_path.iterdir()]
         children: TREE = {}
         for file in files:
             children[file] = RawFileNode(self.context, self.config.next_file(f"{file}.txt"))
