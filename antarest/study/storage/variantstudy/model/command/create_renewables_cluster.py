@@ -42,7 +42,7 @@ class CreateRenewablesCluster(ICommand):
         return val
 
     def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
-        if study_data.enr_modelling != EnrModelling.CLUSTERS.value:
+        if EnrModelling(study_data.enr_modelling) != EnrModelling.CLUSTERS:
             # Since version 8.1 of the solver, we can use renewable clusters
             # instead of "Load", "Wind" and "Solar" objects for modelling.
             # When the "renewable-generation-modelling" parameter is set to "aggregated",
@@ -50,7 +50,7 @@ class CreateRenewablesCluster(ICommand):
             # To use renewable clusters, the parameter must therefore be set to "clusters".
             message = (
                 f"Parameter 'renewable-generation-modelling'"
-                f" must be set to '{EnrModelling.CLUSTERS.value}'"
+                f" must be set to '{EnrModelling.CLUSTERS}'"
                 f" instead of '{study_data.enr_modelling}'"
             )
             return CommandOutput(status=False, message=message), {}

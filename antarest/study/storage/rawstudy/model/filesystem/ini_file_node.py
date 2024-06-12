@@ -5,10 +5,10 @@ import json
 import logging
 import os
 import tempfile
+import typing as t
 import zipfile
 from json import JSONDecodeError
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Union, cast
 
 from filelock import FileLock
 
@@ -36,7 +36,7 @@ class IniFileNodeWarning(UserWarning):
         super().__init__(f"INI File error '{relpath}': {message}")
 
 
-def log_warning(f: Callable[..., Any]) -> Callable[..., Any]:
+def log_warning(f: t.Callable[..., t.Any]) -> t.Callable[..., t.Any]:
     """
     Decorator to suppress `UserWarning` exceptions by logging them as warnings.
 
@@ -48,7 +48,7 @@ def log_warning(f: Callable[..., Any]) -> Callable[..., Any]:
     """
 
     @functools.wraps(f)
-    def wrapper(*args: Any, **kwargs: Any) -> Any:
+    def wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
         try:
             return f(*args, **kwargs)
         except UserWarning as w:
@@ -63,9 +63,9 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
         self,
         context: ContextServer,
         config: FileStudyTreeConfig,
-        types: Optional[Dict[str, Any]] = None,
-        reader: Optional[IReader] = None,
-        writer: Optional[IniWriter] = None,
+        types: t.Optional[t.Dict[str, t.Any]] = None,
+        reader: t.Optional[IReader] = None,
+        writer: t.Optional[IniWriter] = None,
     ):
         super().__init__(config)
         self.context = context
@@ -76,11 +76,11 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
 
     def _get(
         self,
-        url: Optional[List[str]] = None,
+        url: t.Optional[t.List[str]] = None,
         depth: int = -1,
         expanded: bool = False,
         get_node: bool = False,
-    ) -> Union[SUB_JSON, INode[SUB_JSON, SUB_JSON, JSON]]:
+    ) -> t.Union[SUB_JSON, INode[SUB_JSON, SUB_JSON, JSON]]:
         if get_node:
             return self
 
@@ -89,15 +89,17 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
 
         if depth == 0:
             return {}
+
         url = url or []
+        kwargs = self._get_filtering_kwargs(url)
 
         if self.config.zip_path:
             with zipfile.ZipFile(self.config.zip_path, mode="r") as zipped_folder:
                 inside_zip_path = self.config.path.relative_to(self.config.zip_path.with_suffix("")).as_posix()
                 with io.TextIOWrapper(zipped_folder.open(inside_zip_path)) as f:
-                    data = self.reader.read(f)
+                    data = self.reader.read(f, **kwargs)
         else:
-            data = self.reader.read(self.path)
+            data = self.reader.read(self.path, **kwargs)
 
         if len(url) == 2:
             data = data[url[0]][url[1]]
@@ -105,11 +107,34 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
             data = data[url[0]]
         else:
             data = {k: {} for k in data} if depth == 1 else data
-        return cast(SUB_JSON, data)
+
+        return t.cast(SUB_JSON, data)
+
+    # noinspection PyMethodMayBeStatic
+    def _get_filtering_kwargs(self, url: t.List[str]) -> t.Dict[str, str]:
+        """
+        Extracts the filtering arguments from the URL components.
+
+        Note: this method can be overridden in subclasses to provide additional filtering arguments.
+
+        Args:
+            url: URL components [section_name, key_name].
+
+        Returns:
+            Keyword arguments used by the INI reader to filter the data.
+        """
+        if len(url) > 2:
+            raise ValueError(f"Invalid URL: {url!r}")
+        elif len(url) == 2:
+            return {"section": url[0], "option": url[1]}
+        elif len(url) == 1:
+            return {"section": url[0]}
+        else:
+            return {}
 
     def get(
         self,
-        url: Optional[List[str]] = None,
+        url: t.Optional[t.List[str]] = None,
         depth: int = -1,
         expanded: bool = False,
         formatted: bool = True,
@@ -120,13 +145,13 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
 
     def get_node(
         self,
-        url: Optional[List[str]] = None,
+        url: t.Optional[t.List[str]] = None,
     ) -> INode[SUB_JSON, SUB_JSON, JSON]:
         output = self._get(url, get_node=True)
         assert isinstance(output, INode)
         return output
 
-    def save(self, data: SUB_JSON, url: Optional[List[str]] = None) -> None:
+    def save(self, data: SUB_JSON, url: t.Optional[t.List[str]] = None) -> None:
         self._assert_not_in_zipped_file()
         url = url or []
         with FileLock(
@@ -147,11 +172,11 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
             elif len(url) == 1:
                 info[url[0]] = obj
             else:
-                info = cast(JSON, obj)
+                info = t.cast(JSON, obj)
             self.writer.write(info, self.path)
 
     @log_warning
-    def delete(self, url: Optional[List[str]] = None) -> None:
+    def delete(self, url: t.Optional[t.List[str]] = None) -> None:
         """
         Deletes the specified section or key from the INI file,
         or the entire INI file if no URL is provided.
@@ -216,9 +241,9 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
     def check_errors(
         self,
         data: JSON,
-        url: Optional[List[str]] = None,
+        url: t.Optional[t.List[str]] = None,
         raising: bool = False,
-    ) -> List[str]:
+    ) -> t.List[str]:
         errors = []
         for section, params in self.types.items():
             if section not in data:
@@ -240,9 +265,9 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
     def _validate_param(
         self,
         section: str,
-        params: Any,
+        params: t.Any,
         data: JSON,
-        errors: List[str],
+        errors: t.List[str],
         raising: bool,
     ) -> None:
         for param, typing in params.items():

@@ -6,21 +6,28 @@ from antarest.study.storage.variantstudy.model.command.create_area import Create
 from antarest.study.storage.variantstudy.model.command.create_renewables_cluster import CreateRenewablesCluster
 from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
 from antarest.study.storage.variantstudy.model.command.remove_renewables_cluster import RemoveRenewablesCluster
+from antarest.study.storage.variantstudy.model.command.update_scenario_builder import UpdateScenarioBuilder
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.variantstudy.model.command.helpers import reset_line_separator
 
 
 class TestRemoveRenewablesCluster:
-    def test_apply(self, empty_study: FileStudy, command_context: CommandContext):
-        empty_study.config.enr_modelling = EnrModelling.CLUSTERS.value
+    def test_apply(self, empty_study: FileStudy, command_context: CommandContext) -> None:
+        empty_study.config.enr_modelling = str(EnrModelling.CLUSTERS)
         empty_study.config.version = 810
         area_name = "Area_name"
         area_id = transform_name_to_id(area_name)
         cluster_name = "Cluster Name"
         cluster_id = transform_name_to_id(cluster_name, lower=False)
 
-        CreateArea(area_name=area_name, command_context=command_context).apply(empty_study)
+        output = CreateArea(area_name=area_name, command_context=command_context).apply(empty_study)
+        assert output.status, output.message
 
-        hash_before_cluster = dirhash(empty_study.config.study_path, "md5")
+        ################################################################################################
+
+        # Line ending of the `settings/scenariobuilder.dat` must be reset before checksum
+        reset_line_separator(empty_study.config.study_path.joinpath("settings/scenariobuilder.dat"))
+        hash_before_removal = dirhash(empty_study.config.study_path, "md5")
 
         CreateRenewablesCluster(
             area_id=area_id,
@@ -32,14 +39,21 @@ class TestRemoveRenewablesCluster:
             command_context=command_context,
         ).apply(empty_study)
 
+        # Add scenario builder data
+        output = UpdateScenarioBuilder(
+            data={"Default Ruleset": {f"r,{area_id},0,{cluster_name.lower()}": 1}},
+            command_context=command_context,
+        ).apply(study_data=empty_study)
+        assert output.status, output.message
+
         output = RemoveRenewablesCluster(
             area_id=area_id,
             cluster_id=cluster_id,
             command_context=command_context,
         ).apply(empty_study)
 
-        assert output.status
-        assert dirhash(empty_study.config.study_path, "md5") == hash_before_cluster
+        assert output.status, output.message
+        assert dirhash(empty_study.config.study_path, "md5") == hash_before_removal
 
         output = RemoveRenewablesCluster(
             area_id="non_existent_area",
@@ -56,7 +70,7 @@ class TestRemoveRenewablesCluster:
         assert not output.status
 
 
-def test_match(command_context: CommandContext):
+def test_match(command_context: CommandContext) -> None:
     base = RemoveRenewablesCluster(area_id="foo", cluster_id="bar", command_context=command_context)
     other_match = RemoveRenewablesCluster(area_id="foo", cluster_id="bar", command_context=command_context)
     other_not_match = RemoveRenewablesCluster(area_id="foo", cluster_id="baz", command_context=command_context)
@@ -68,7 +82,7 @@ def test_match(command_context: CommandContext):
     assert base.get_inner_matrices() == []
 
 
-def test_create_diff(command_context: CommandContext):
+def test_create_diff(command_context: CommandContext) -> None:
     base = RemoveRenewablesCluster(area_id="foo", cluster_id="bar", command_context=command_context)
     other_match = RemoveRenewablesCluster(area_id="foo", cluster_id="bar", command_context=command_context)
     assert base.create_diff(other_match) == []

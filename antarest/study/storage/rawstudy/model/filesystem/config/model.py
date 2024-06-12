@@ -13,10 +13,25 @@ from .renewable import RenewableConfigType
 from .st_storage import STStorageConfigType
 from .thermal import ThermalConfigType
 
+DEFAULT_GROUP = "default"
+"""Default group for binding constraints (since v8.7)."""
+
 
 class EnrModelling(EnumIgnoreCase):
+    """
+    Renewable energy modelling type (since v8.1).
+
+    Attributes:
+        AGGREGATED: Simulations are done using aggregated data from wind and solar.
+        CLUSTERS: Simulations are done using renewable clusters
+    """
+
     AGGREGATED = "aggregated"
     CLUSTERS = "clusters"
+
+    def __str__(self) -> str:
+        """Return the string representation of the enum value."""
+        return self.value
 
 
 class Link(BaseModel, extra="ignore"):
@@ -101,10 +116,22 @@ class Simulation(BaseModel):
 
 
 class BindingConstraintDTO(BaseModel):
+    """
+    Object linked to `input/bindingconstraints/bindingconstraints.ini` information
+
+    Attributes:
+        id: The ID of the binding constraint.
+        group: The group for the scenario of BC (optional, required since v8.7).
+        areas: List of area IDs on which the BC applies (links or clusters).
+        clusters: List of thermal cluster IDs on which the BC applies (format: "area.cluster").
+    """
+
     id: str
     areas: t.Set[str]
     clusters: t.Set[str]
     time_step: BindingConstraintFrequency
+    # since v8.7
+    group: str = DEFAULT_GROUP
 
 
 class FileStudyTreeConfig(DTO):
@@ -125,7 +152,7 @@ class FileStudyTreeConfig(DTO):
         bindings: t.Optional[t.List[BindingConstraintDTO]] = None,
         store_new_set: bool = False,
         archive_input_series: t.Optional[t.List[str]] = None,
-        enr_modelling: str = EnrModelling.AGGREGATED.value,
+        enr_modelling: str = str(EnrModelling.AGGREGATED),
         cache: t.Optional[t.Dict[str, t.List[str]]] = None,
         zip_path: t.Optional[Path] = None,
     ):
@@ -185,7 +212,7 @@ class FileStudyTreeConfig(DTO):
         )
 
     def area_names(self) -> t.List[str]:
-        return self.cache.get("%areas", list(self.areas.keys()))
+        return self.cache.get("%areas", list(self.areas))
 
     def set_names(self, only_output: bool = True) -> t.List[str]:
         return self.cache.get(
@@ -211,7 +238,16 @@ class FileStudyTreeConfig(DTO):
         return self.cache.get(f"%st-storage%{area}", [s.id for s in self.areas[area].st_storages])
 
     def get_links(self, area: str) -> t.List[str]:
-        return self.cache.get(f"%links%{area}", list(self.areas[area].links.keys()))
+        return self.cache.get(f"%links%{area}", list(self.areas[area].links))
+
+    def get_binding_constraint_groups(self) -> t.List[str]:
+        """
+        Returns the list of binding constraint groups, without duplicates and
+        sorted alphabetically (case-insensitive).
+        Note that groups are stored in lower case in the binding constraints file.
+        """
+        lower_groups = {bc.group.lower(): bc.group for bc in self.bindings}
+        return self.cache.get("%binding-constraints", [grp for _, grp in sorted(lower_groups.items())])
 
     def get_filters_synthesis(self, area: str, link: t.Optional[str] = None) -> t.List[str]:
         if link:
@@ -260,7 +296,7 @@ class FileStudyTreeConfigDTO(BaseModel):
     bindings: t.List[BindingConstraintDTO] = list()
     store_new_set: bool = False
     archive_input_series: t.List[str] = list()
-    enr_modelling: str = EnrModelling.AGGREGATED.value
+    enr_modelling: str = str(EnrModelling.AGGREGATED)
     zip_path: t.Optional[Path] = None
 
     @staticmethod

@@ -62,7 +62,7 @@ function BindingConstraints() {
       response={constraints}
       ifPending={() => <SimpleLoader />}
       ifResolved={(data) => (
-        <SplitView direction="horizontal" sizes={[10, 90]} gutterSize={3}>
+        <SplitView id="binding-constraints" sizes={[10, 90]}>
           <Box>
             <BindingConstPropsView // TODO rename ConstraintsList
               list={data}
@@ -72,8 +72,10 @@ function BindingConstraints() {
             />
           </Box>
           <Box>
-            {currentConstraintId && (
+            {data.length > 0 && currentConstraintId ? (
               <BindingConstView constraintId={currentConstraintId} />
+            ) : (
+              <SimpleContent title="No Binding Constraints" />
             )}
           </Box>
         </SplitView>

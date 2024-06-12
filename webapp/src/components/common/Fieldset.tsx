@@ -37,6 +37,7 @@ function Fieldset(props: FieldsetProps) {
             gap: 2,
             ".MuiFormControl-root": {
               width: fullFieldWidth ? 1 : fieldWidth,
+              m: 0,
             },
           },
         },

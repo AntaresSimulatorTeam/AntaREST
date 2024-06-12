@@ -158,17 +158,6 @@ class MatrixNotFound(HTTPException):
         return self.detail
 
 
-class DuplicateSTStorageId(HTTPException):
-    """Exception raised when trying to create a short-term storage with an already existing id."""
-
-    def __init__(self, study_id: str, area_id: str, st_storage_id: str) -> None:
-        detail = f"Short term storage '{st_storage_id}' already exists in area '{area_id}'"
-        super().__init__(HTTPStatus.CONFLICT, detail)
-
-    def __str__(self) -> str:
-        return self.detail
-
-
 class ThermalClusterMatrixNotFound(MatrixNotFound):
     """Matrix of the thermal cluster is not found (404 Not Found)"""
 
@@ -325,6 +314,17 @@ class StudyDeletionNotAllowed(HTTPException):
         )
 
 
+class StudyVariantUpgradeError(HTTPException):
+    def __init__(self, is_variant: bool) -> None:
+        if is_variant:
+            super().__init__(
+                HTTPStatus.EXPECTATION_FAILED,
+                "Upgrade not supported for variant study",
+            )
+        else:
+            super().__init__(HTTPStatus.EXPECTATION_FAILED, "Upgrade not supported for parent of variants")
+
+
 class UnsupportedStudyVersion(HTTPException):
     def __init__(self, version: str) -> None:
         super().__init__(
@@ -346,6 +346,20 @@ class BadOutputError(HTTPException):
         super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, message)
 
 
+class OutputNotFound(HTTPException):
+    """
+    Exception raised when an output is not found in the study results directory.
+    """
+
+    def __init__(self, output_id: str) -> None:
+        message = f"Output '{output_id}' not found"
+        super().__init__(HTTPStatus.NOT_FOUND, message)
+
+    def __str__(self) -> str:
+        """Return a string representation of the exception."""
+        return self.detail
+
+
 class BadZipBinary(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.UNSUPPORTED_MEDIA_TYPE, message)
@@ -354,6 +368,15 @@ class BadZipBinary(HTTPException):
 class IncorrectPathError(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.NOT_FOUND, message)
+
+
+class FileTooLargeError(HTTPException):
+    def __init__(self, estimated_size: int, maximum_size: int) -> None:
+        message = (
+            f"Cannot aggregate output data."
+            f" The expected size: {estimated_size}Mo exceeds the max supported size: {maximum_size}"
+        )
+        super().__init__(HTTPStatus.REQUEST_ENTITY_TOO_LARGE, message)
 
 
 class UrlNotMatchJsonDataError(HTTPException):

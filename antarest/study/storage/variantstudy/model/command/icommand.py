@@ -3,6 +3,7 @@ import typing as t
 import uuid
 from abc import ABC, abstractmethod
 
+import typing_extensions as te
 from pydantic import BaseModel, Extra
 
 from antarest.core.utils.utils import assert_this
@@ -17,6 +18,9 @@ if t.TYPE_CHECKING:  # False at runtime, for mypy
 
 MATCH_SIGNATURE_SEPARATOR = "%"
 logger = logging.getLogger(__name__)
+
+# note: we ought to use a named tuple here ;-)
+OutputTuple: te.TypeAlias = t.Tuple[CommandOutput, t.Dict[str, t.Any]]
 
 
 class ICommand(ABC, BaseModel, extra=Extra.forbid, arbitrary_types_allowed=True, copy_on_model_validation="deep"):
@@ -36,7 +40,7 @@ class ICommand(ABC, BaseModel, extra=Extra.forbid, arbitrary_types_allowed=True,
     command_context: CommandContext
 
     @abstractmethod
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:
         """
         Applies configuration changes to the study data.
 

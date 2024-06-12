@@ -15,6 +15,7 @@ export const AreasContainer = styled(Box)(() => ({
 
 export const AreaHuePicker = styled(HuePicker)(({ theme }) => ({
   width: "90% !important",
+  maxWidth: 250,
   margin: theme.spacing(1),
 }));
 

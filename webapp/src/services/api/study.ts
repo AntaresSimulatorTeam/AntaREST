@@ -304,6 +304,19 @@ export const getLauncherCores = async (): Promise<Record<string, number>> => {
   return res.data;
 };
 
+/**
+ * Time limit for SLURM jobs.
+ * If a jobs exceed this time limit, SLURM kills the job and it is considered failed.
+ *
+ * @returns The min, defaultValue and max for the time limit in hours.
+ */
+export const getLauncherTimeLimit = async (): Promise<
+  Record<string, number>
+> => {
+  const res = await client.get("/v1/launcher/time-limit");
+  return res.data;
+};
+
 export const getLauncherMetrics = async (): Promise<LauncherMetrics> => {
   const res = await client.get("/v1/launcher/load");
   return res.data;
@@ -326,7 +339,7 @@ export const mapLaunchJobDTO = (j: LaunchJobDTO): LaunchJob => ({
   exitCode: j.exit_code,
 });
 
-export const getStudyJobs = async (
+export const getStudyJobs = (
   studyId?: string,
   filterOrphans = true,
   latest = false,

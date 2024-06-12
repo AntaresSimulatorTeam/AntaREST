@@ -35,13 +35,11 @@ from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskResu
 from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT, ITaskService, TaskUpdateNotifier, noop_notifier
 from antarest.core.utils.utils import assert_this, suppress_exception
 from antarest.matrixstore.service import MatrixService
-from antarest.study.common.default_values import AreasQueryFile, LinksQueryFile
 from antarest.study.model import RawStudy, Study, StudyAdditionalData, StudyMetadataDTO, StudySimResultDTO
 from antarest.study.storage.abstract_storage_service import AbstractStorageService
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.utils import assert_permission, export_study_flat, is_managed, remove_from_cache
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
@@ -379,7 +377,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         shutil.rmtree(self.get_study_path(variant_study), ignore_errors=True)
 
     def has_children(self, study: VariantStudy) -> bool:
-        return len(self.repository.get_children(parent_id=study.id)) > 0
+        return self.repository.has_children(study.id)
 
     def get_all_variants_children(
         self,
@@ -493,62 +491,6 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             formatted=formatted,
             use_cache=use_cache,
         )
-
-    def aggregate_areas_data(
-        self,
-        metadata: Study,
-        output_id: str,
-        query_file: AreasQueryFile,
-        frequency: MatrixFrequency,
-        mc_years: t.Sequence[int],
-        areas_ids: t.Sequence[str],
-        columns_names: t.Sequence[str],
-    ) -> t.Dict[str, t.Any]:
-        """
-        Entry point to fetch data inside study.
-        Args:
-            metadata: study
-            output_id: the simulation ID
-            query_file: "values", "details", "details-st-storage", "details-res"
-            frequency: "hourly", "daily", "weekly", "monthly", "annual"
-            mc_years: list of Monte Carlo years to be selected, if empty, all years are selected
-            areas_ids: list of areas to be selected, if empty, all areas are selected
-            columns_names: list of columns to be selected, if empty, all columns are selected
-
-        Returns: the aggregated data for areas in JSON (DataFrame.to_dict(orient='split'))
-
-        """
-        self._safe_generation(metadata, timeout=60)
-        self.repository.refresh(metadata)
-        return super().aggregate_areas_data(
-            metadata, output_id, query_file, frequency, mc_years, areas_ids, columns_names
-        )
-
-    def aggregate_links_data(
-        self,
-        metadata: Study,
-        output_id: str,
-        query_file: LinksQueryFile,
-        frequency: MatrixFrequency,
-        mc_years: t.Sequence[int],
-        columns_names: t.Sequence[str],
-    ) -> t.Dict[str, t.Any]:
-        """
-        Entry point to fetch data inside study.
-        Args:
-            metadata: study for which we want to aggregate output links raw data
-            output_id: the simulation ID
-            query_file: "values", "details"
-            frequency: "hourly", "daily", "weekly", "monthly", "annual"
-            mc_years: list of Monte Carlo years to be selected, if empty, all years are selected
-            columns_names: list of columns to be selected, if empty, all columns are selected
-
-        Returns: the aggregated data for links in JSON (DataFrame.to_dict(orient='split'))
-
-        """
-        self._safe_generation(metadata, timeout=60)
-        self.repository.refresh(metadata)
-        return super().aggregate_links_data(metadata, output_id, query_file, frequency, mc_years, columns_names)
 
     def create_variant_study(self, uuid: str, name: str, params: RequestParameters) -> VariantStudy:
         """

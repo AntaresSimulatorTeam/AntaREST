@@ -13,6 +13,7 @@ import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackba
 import TabWrapper from "../TabWrapper";
 import usePromiseWithSnackbarError from "../../../../../hooks/usePromiseWithSnackbarError";
 import UsePromiseCond from "../../../../common/utils/UsePromiseCond";
+import { Add } from "@mui/icons-material";
 
 function Xpansion() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -100,23 +101,15 @@ function Xpansion() {
         response={res}
         ifResolved={(data) =>
           !data && !exist ? (
-            <Box
-              display="flex"
-              justifyContent="center"
-              alignItems="center"
-              width="100%"
-              flexGrow={1}
+            <Button
+              color="primary"
+              variant="contained"
+              size="small"
+              startIcon={<Add />}
+              onClick={createXpansion}
             >
-              <Button
-                sx={{
-                  width: "140px",
-                }}
-                variant="contained"
-                onClick={createXpansion}
-              >
-                {t("xpansion.newXpansionConfig")}
-              </Button>
-            </Box>
+              {t("xpansion.newXpansionConfig")}
+            </Button>
           ) : (
             <TabWrapper
               study={study}

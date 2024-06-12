@@ -5,13 +5,26 @@ from pydantic import root_validator, validator
 from antarest.core.model import JSON
 from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
-from antarest.study.common.default_values import FilteringOptions, LinkProperties
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, Link
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol, validate_matrix
-from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
+from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, FilteringOptions
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
 from antarest.study.storage.variantstudy.model.model import CommandDTO
+
+
+class LinkProperties:
+    HURDLES_COST: bool = False
+    LOOP_FLOW: bool = False
+    USE_PHASE_SHIFTER: bool = False
+    DISPLAY_COMMENTS: bool = True
+    TRANSMISSION_CAPACITIES: str = "enabled"
+    ASSET_TYPE: str = "ac"
+    LINK_STYLE: str = "plain"
+    LINK_WIDTH: int = 1
+    COLORR: int = 112
+    COLORG: int = 112
+    COLORB: int = 112
 
 
 class LinkAlreadyExistError(Exception):

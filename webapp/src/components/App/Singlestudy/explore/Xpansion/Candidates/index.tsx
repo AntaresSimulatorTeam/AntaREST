@@ -7,7 +7,6 @@ import { usePromise as usePromiseWrapper } from "react-use";
 import { useSnackbar } from "notistack";
 import { MatrixType, StudyMetadata } from "../../../../../../common/types";
 import { XpansionCandidate } from "../types";
-import SplitLayoutView from "../../../../../common/SplitLayoutView";
 import {
   getAllCandidates,
   getAllCapacities,
@@ -29,6 +28,8 @@ import CreateCandidateDialog from "./CreateCandidateDialog";
 import CandidateForm from "./CandidateForm";
 import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithSnackbarError";
 import DataViewerDialog from "../../../../../common/dialogs/DataViewerDialog";
+import SimpleContent from "../../../../../common/page/SimpleContent";
+import SplitView from "../../../../../common/SplitView";
 
 function Candidates() {
   const [t] = useTranslation();
@@ -208,15 +209,14 @@ function Candidates() {
     }
   };
 
-  // TODO
   if (isRejected) {
-    return <Box />;
+    return <SimpleContent title={t("xpansion.error.loadConfiguration")} />;
   }
 
   return (
     <>
-      <SplitLayoutView
-        left={
+      <SplitView id="xpansion">
+        <Box>
           <XpansionPropsView
             candidateList={candidates || []}
             onAdd={() => setCandidateCreationDialog(true)}
@@ -224,25 +224,23 @@ function Candidates() {
             setSelectedItem={setSelectedItem}
             deleteXpansion={deleteXpansion}
           />
-        }
-        right={
-          <>
-            <Box width="100%" height="100%" boxSizing="border-box">
-              {renderView()}
-            </Box>
-            <Backdrop
-              open={isLoading && !candidates}
-              sx={{
-                position: "absolute",
-                zIndex: (theme) => theme.zIndex.drawer + 1,
-                opacity: "0.1 !important",
-              }}
-            >
-              <CircularProgress sx={{ color: "primary.main" }} />
-            </Backdrop>
-          </>
-        }
-      />
+        </Box>
+        <Box>
+          <Box width="100%" height="100%" boxSizing="border-box">
+            {renderView()}
+          </Box>
+          <Backdrop
+            open={isLoading && !candidates}
+            sx={{
+              position: "absolute",
+              zIndex: (theme) => theme.zIndex.drawer + 1,
+              opacity: "0.1 !important",
+            }}
+          >
+            <CircularProgress sx={{ color: "primary.main" }} />
+          </Backdrop>
+        </Box>
+      </SplitView>
 
       {candidateCreationDialog && (
         <CreateCandidateDialog

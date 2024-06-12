@@ -1,3 +1,4 @@
+import copy
 import typing as t
 
 import pytest
@@ -24,7 +25,7 @@ class TestTableMode:
     def test_lifecycle__nominal(
         self, client: TestClient, user_access_token: str, study_id: str, study_version: int
     ) -> None:
-        user_headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
         # In order to test the table mode for renewable clusters and short-term storage,
         # it is required that the study is either in version 8.1 for renewable energies
@@ -35,7 +36,6 @@ class TestTableMode:
         if study_version:
             res = client.put(
                 f"/v1/studies/{study_id}/upgrade",
-                headers={"Authorization": f"Bearer {user_access_token}"},
                 params={"target_version": study_version},
             )
             assert res.status_code == 200, res.json()
@@ -44,14 +44,15 @@ class TestTableMode:
             task = wait_task_completion(client, user_access_token, task_id)
             assert task.status == TaskStatus.COMPLETED, task
 
+        # Create another link to test specific bug.
+        res = client.post(f"/v1/studies/{study_id}/links", json={"area1": "de", "area2": "it"})
+        assert res.status_code in [200, 201], res.json()
+
         # Table Mode - Area
         # =================
 
         # Get the schema of the areas table
-        res = client.get(
-            "/v1/table-schema/areas",
-            headers=user_headers,
-        )
+        res = client.get("/v1/table-schema/areas")
         assert res.status_code == 200, res.json()
         actual = res.json()
         assert set(actual["properties"]) == {
@@ -83,7 +84,6 @@ class TestTableMode:
 
         res = client.put(
             f"/v1/studies/{study_id}/table-mode/areas",
-            headers=user_headers,
             json={
                 "de": _de_values,
                 "es": _es_values,
@@ -147,10 +147,24 @@ class TestTableMode:
         actual = res.json()
         assert actual == expected_areas
 
-        res = client.get(f"/v1/studies/{study_id}/table-mode/areas", headers=user_headers)
+        res = client.get(f"/v1/studies/{study_id}/table-mode/areas")
         assert res.status_code == 200, res.json()
         actual = res.json()
         assert actual == expected_areas
+
+        # Specific tests for averageSpilledEnergyCost and averageUnsuppliedEnergyCost
+        _de_values = {
+            "averageSpilledEnergyCost": 123,
+            "averageUnsuppliedEnergyCost": 456,
+        }
+        res = client.put(
+            f"/v1/studies/{study_id}/table-mode/areas",
+            json={"de": _de_values},
+        )
+        assert res.status_code == 200, res.json()
+        actual = res.json()["de"]
+        assert actual["averageSpilledEnergyCost"] == 123
+        assert actual["averageUnsuppliedEnergyCost"] == 456
 
         # Table Mode - Links
         # ==================
@@ -158,7 +172,6 @@ class TestTableMode:
         # Get the schema of the links table
         res = client.get(
             "/v1/table-schema/links",
-            headers=user_headers,
         )
         assert res.status_code == 200, res.json()
         actual = res.json()
@@ -179,7 +192,6 @@ class TestTableMode:
 
         res = client.put(
             f"/v1/studies/{study_id}/table-mode/links",
-            headers=user_headers,
             json={
                 "de / fr": {
                     "colorRgb": "#FFA500",
@@ -226,6 +238,20 @@ class TestTableMode:
                 "transmissionCapacities": "ignore",
                 "usePhaseShifter": False,
             },
+            "de / it": {
+                "assetType": "ac",
+                "colorRgb": "#707070",
+                "comments": "",
+                "displayComments": True,
+                "filterSynthesis": "hourly, daily, weekly, monthly, annual",
+                "filterYearByYear": "hourly, daily, weekly, monthly, annual",
+                "hurdlesCost": False,
+                "linkStyle": "plain",
+                "linkWidth": 1,
+                "loopFlow": False,
+                "transmissionCapacities": "enabled",
+                "usePhaseShifter": False,
+            },
             "es / fr": {
                 "assetType": "ac",
                 "colorRgb": "#FF6347",
@@ -255,12 +281,16 @@ class TestTableMode:
                 "usePhaseShifter": False,
             },
         }
+        # asserts actual equals expected without the non-updated link.
         actual = res.json()
-        assert actual == expected_links
+        expected_result = copy.deepcopy(expected_links)
+        del expected_result["de / it"]
+        assert actual == expected_result
 
-        res = client.get(f"/v1/studies/{study_id}/table-mode/links", headers=user_headers)
+        res = client.get(f"/v1/studies/{study_id}/table-mode/links")
         assert res.status_code == 200, res.json()
         actual = res.json()
+        # asserts the `de / it` link is not removed.
         assert actual == expected_links
 
         # Table Mode - Thermal Clusters
@@ -269,7 +299,6 @@ class TestTableMode:
         # Get the schema of the thermals table
         res = client.get(
             "/v1/table-schema/thermals",
-            headers=user_headers,
         )
         assert res.status_code == 200, res.json()
         actual = res.json()
@@ -326,7 +355,6 @@ class TestTableMode:
 
         res = client.put(
             f"/v1/studies/{study_id}/table-mode/thermals",
-            headers=user_headers,
             json={
                 "de / 01_solar": _solar_values,
                 "de / 02_wind_on": _wind_on_values,
@@ -410,7 +438,6 @@ class TestTableMode:
 
         res = client.get(
             f"/v1/studies/{study_id}/table-mode/thermals",
-            headers=user_headers,
             params={"columns": ",".join(["group", "unitCount", "nominalCapacity", "so2"])},
         )
         assert res.status_code == 200, res.json()
@@ -474,7 +501,6 @@ class TestTableMode:
             }
             res = client.post(
                 f"/v1/studies/{study_id}/commands",
-                headers={"Authorization": f"Bearer {user_access_token}"},
                 json=[{"action": "update_config", "args": args}],
             )
             assert res.status_code == 200, res.json()
@@ -534,7 +560,6 @@ class TestTableMode:
                 for generator_id, generator in generators.items():
                     res = client.post(
                         f"/v1/studies/{study_id}/areas/{area_id}/clusters/renewable",
-                        headers=user_headers,
                         json=generator,
                     )
                     res.raise_for_status()
@@ -542,7 +567,6 @@ class TestTableMode:
             # Get the schema of the renewables table
             res = client.get(
                 "/v1/table-schema/renewables",
-                headers=user_headers,
             )
             assert res.status_code == 200, res.json()
             actual = res.json()
@@ -561,7 +585,6 @@ class TestTableMode:
             # Update some generators using the table mode
             res = client.put(
                 f"/v1/studies/{study_id}/table-mode/renewables",
-                headers=user_headers,
                 json={
                     "fr / Dieppe": {"enabled": False},
                     "fr / La Rochelle": {"enabled": True, "nominalCapacity": 3.1, "unitCount": 2},
@@ -572,7 +595,6 @@ class TestTableMode:
 
             res = client.get(
                 f"/v1/studies/{study_id}/table-mode/renewables",
-                headers=user_headers,
                 params={"columns": ",".join(["group", "enabled", "unitCount", "nominalCapacity"])},
             )
             assert res.status_code == 200, res.json()
@@ -595,7 +617,6 @@ class TestTableMode:
             # Get the schema of the short-term storages table
             res = client.get(
                 "/v1/table-schema/st-storages",
-                headers=user_headers,
             )
             assert res.status_code == 200, res.json()
             actual = res.json()
@@ -659,7 +680,6 @@ class TestTableMode:
                 for storage_id, storage in storages.items():
                     res = client.post(
                         f"/v1/studies/{study_id}/areas/{area_id}/storages",
-                        headers=user_headers,
                         json=storage,
                     )
                     res.raise_for_status()
@@ -673,7 +693,6 @@ class TestTableMode:
 
             res = client.put(
                 f"/v1/studies/{study_id}/table-mode/st-storages",
-                headers=user_headers,
                 json={
                     "fr / siemens": _fr_siemes_values,
                     "fr / tesla": _fr_tesla_values,
@@ -742,7 +761,6 @@ class TestTableMode:
 
             res = client.get(
                 f"/v1/studies/{study_id}/table-mode/st-storages",
-                headers=user_headers,
                 params={
                     "columns": ",".join(
                         [
@@ -793,7 +811,6 @@ class TestTableMode:
         fr_id = "fr"
         res = client.post(
             f"/v1/studies/{study_id}/areas/{fr_id}/clusters/thermal",
-            headers=user_headers,
             json={
                 "name": "Cluster 1",
                 "group": "Nuclear",
@@ -812,7 +829,6 @@ class TestTableMode:
                 "time_step": "hourly",
                 "operator": "less",
             },
-            headers=user_headers,
         )
         assert res.status_code == 200, res.json()
 
@@ -826,14 +842,12 @@ class TestTableMode:
                 "comments": "This is a binding constraint",
                 "filter_synthesis": "hourly, daily, weekly",
             },
-            headers=user_headers,
         )
         assert res.status_code == 200, res.json()
 
         # Get the schema of the binding constraints table
         res = client.get(
             "/v1/table-schema/binding-constraints",
-            headers=user_headers,
         )
         assert res.status_code == 200, res.json()
         actual = res.json()
@@ -861,7 +875,6 @@ class TestTableMode:
 
         res = client.put(
             f"/v1/studies/{study_id}/table-mode/binding-constraints",
-            headers=user_headers,
             json={
                 "binding constraint 1": _bc1_values,
                 "binding constraint 2": _bc2_values,
@@ -897,7 +910,6 @@ class TestTableMode:
 
         res = client.get(
             f"/v1/studies/{study_id}/table-mode/binding-constraints",
-            headers=user_headers,
             params={"columns": ""},
         )
         assert res.status_code == 200, res.json()
@@ -910,8 +922,8 @@ def test_table_type_aliases(client: TestClient, user_access_token: str) -> None:
     """
     Ensure that we can use the old table type aliases to get the schema of the tables.
     """
-    user_headers = {"Authorization": f"Bearer {user_access_token}"}
+    client.headers = {"Authorization": f"Bearer {user_access_token}"}
     # do not use `pytest.mark.parametrize`, because it is too slow
     for table_type in ["area", "link", "cluster", "renewable", "binding constraint"]:
-        res = client.get(f"/v1/table-schema/{table_type}", headers=user_headers)
+        res = client.get(f"/v1/table-schema/{table_type}")
         assert res.status_code == 200, f"Failed to get schema for {table_type}: {res.json()}"

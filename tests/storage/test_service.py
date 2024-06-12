@@ -1,26 +1,26 @@
 import contextlib
 import os
+import typing as t
 import uuid
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Union
 from unittest.mock import ANY, Mock, call, patch, seal
-from uuid import uuid4
 
 import pytest
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session  # type: ignore
+from starlette.responses import Response
 
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
-from antarest.core.exceptions import TaskAlreadyRunning
+from antarest.core.exceptions import StudyVariantUpgradeError, TaskAlreadyRunning
 from antarest.core.filetransfer.model import FileDownload, FileDownloadTaskDTO
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import Event, EventType
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTGroup, JWTUser
-from antarest.core.model import JSON, SUB_JSON, PermissionInfo
-from antarest.core.permissions import StudyPermissionType
-from antarest.core.requests import RequestParameters
+from antarest.core.model import JSON, SUB_JSON, PermissionInfo, PublicMode, StudyPermissionType
+from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.roles import RoleType
 from antarest.core.tasks.model import TaskDTO, TaskStatus, TaskType
+from antarest.core.tasks.service import ITaskService
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group, GroupDTO, Role, User
 from antarest.login.service import LoginService
@@ -31,7 +31,6 @@ from antarest.study.model import (
     MatrixAggregationResultDTO,
     MatrixIndex,
     OwnerInfo,
-    PublicMode,
     RawStudy,
     Study,
     StudyAdditionalData,
@@ -45,7 +44,7 @@ from antarest.study.model import (
     TimeSeriesData,
 )
 from antarest.study.repository import AccessPermissions, StudyFilter, StudyMetadataRepository
-from antarest.study.service import MAX_MISSING_STUDY_TIMEOUT, StudyService, StudyUpgraderTask, UserHasNotPermissionError
+from antarest.study.service import MAX_MISSING_STUDY_TIMEOUT, StudyService, StudyUpgraderTask
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
@@ -75,10 +74,10 @@ def build_study_service(
     raw_study_service: RawStudyService,
     repository: StudyMetadataRepository,
     config: Config,
-    user_service: LoginService = Mock(),
-    cache_service: ICache = Mock(),
-    variant_study_service=Mock(),
-    task_service=Mock(),
+    user_service: LoginService = Mock(spec=LoginService),
+    cache_service: ICache = Mock(spec=ICache),
+    variant_study_service: VariantStudyService = Mock(spec=VariantStudyService),
+    task_service: ITaskService = Mock(spec=ITaskService),
 ) -> StudyService:
     return StudyService(
         raw_study_service=raw_study_service,
@@ -104,9 +103,11 @@ def study_to_dto(study: Study) -> StudyMetadataDTO:
         managed=True,
         type=study.type,
         archived=study.archived if study.archived is not None else False,
-        owner=OwnerInfo(id=study.owner.id, name=study.owner.name)
-        if study.owner is not None
-        else OwnerInfo(name="Unknown"),
+        owner=(
+            OwnerInfo(id=study.owner.id, name=study.owner.name)
+            if study.owner is not None
+            else OwnerInfo(name="Unknown")
+        ),
         groups=[GroupDTO(id=group.id, name=group.name) for group in study.groups],
         public_mode=study.public_mode or PublicMode.NONE,
         horizon=study.additional_data.horizon,
@@ -122,12 +123,13 @@ def test_study_listing(db_session: Session) -> None:
     bob = User(id=2, name="bob")
     alice = User(id=3, name="alice")
 
+    study_version = "810"
     a = RawStudy(
         id="A",
         owner=bob,
         type="rawstudy",
         name="A",
-        version=810,
+        version=study_version,
         created_at=datetime.utcnow(),
         updated_at=datetime.utcnow(),
         path="",
@@ -139,7 +141,7 @@ def test_study_listing(db_session: Session) -> None:
         owner=alice,
         type="rawstudy",
         name="B",
-        version=810,
+        version=study_version,
         created_at=datetime.utcnow(),
         updated_at=datetime.utcnow(),
         path="",
@@ -151,7 +153,7 @@ def test_study_listing(db_session: Session) -> None:
         owner=bob,
         type="rawstudy",
         name="C",
-        version=810,
+        version=study_version,
         created_at=datetime.utcnow(),
         updated_at=datetime.utcnow(),
         path="",
@@ -376,7 +378,7 @@ def test_create_study() -> None:
     group = Group(id="my-group", name="group")
 
     expected = RawStudy(
-        id=str(uuid4()),
+        id=str(uuid.uuid4()),
         name="new-study",
         version="VERSION",
         author="AUTHOR",
@@ -438,7 +440,7 @@ def test_save_metadata() -> None:
     # Mock
     repository = Mock()
 
-    uuid = str(uuid4())
+    study_id = str(uuid.uuid4())
 
     study_service = Mock()
     study_service.get_study_information.return_value = {
@@ -463,7 +465,7 @@ def test_save_metadata() -> None:
 
     # Expected
     study = RawStudy(
-        id=uuid,
+        id=study_id,
         content_status=StudyContentStatus.VALID,
         workspace=DEFAULT_WORKSPACE_NAME,
         owner=user,
@@ -472,11 +474,8 @@ def test_save_metadata() -> None:
     config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
     service = build_study_service(study_service, repository, config)
 
-    service.user_service.get_user.return_value = user
-    service._save_study(
-        RawStudy(id=uuid, workspace=DEFAULT_WORKSPACE_NAME),
-        owner=jwt,
-    )
+    service.user_service.get_user.return_value = user  # type: ignore
+    service._save_study(RawStudy(id=study_id, workspace=DEFAULT_WORKSPACE_NAME), owner=jwt)
     repository.save.assert_called_once_with(study)
 
 
@@ -484,12 +483,14 @@ def test_save_metadata() -> None:
 @pytest.mark.unit_test
 def test_download_output() -> None:
     study_service = Mock()
-    repository = Mock()
+    repository = Mock(spec=StudyMetadataRepository)
 
+    study_version = 870
     input_study = RawStudy(
         id="c",
         path="c",
         name="c",
+        version=str(study_version),
         content_status=StudyContentStatus.WARNING,
         workspace=DEFAULT_WORKSPACE_NAME,
         owner=User(id=0),
@@ -526,17 +527,17 @@ def test_download_output() -> None:
         playlist=[0],
         xpansion="",
     )
-    file_config = FileStudyTreeConfig(
-        study_path=input_study.path,
-        path=input_study.path,
-        study_id="",
-        version=-1,
+    file_study_tree_config = FileStudyTreeConfig(
+        study_path=Path(input_study.path),
+        path=Path(input_study.path),
+        study_id=str(uuid.uuid4()),
+        version=int(input_study.version),
         areas={"east": area},
         sets={"north": DistrictSet()},
         outputs={"output-id": sim},
         store_new_set=False,
     )
-    study = Mock()
+    file_study_tree = Mock(spec=FileStudyTree, config=file_study_tree_config)
 
     repository.get.return_value = input_study
     config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
@@ -547,7 +548,7 @@ def test_download_output() -> None:
         "columns": [["some cluster", "Euro/MWh"]],
         "data": [[0.8]],
     }
-    study_service.get_raw.return_value = FileStudy(config=file_config, tree=study)
+    study_service.get_raw.return_value = FileStudy(config=file_study_tree_config, tree=file_study_tree)
     output_config = {
         "general": {
             "first-month-in-year": "january",
@@ -558,7 +559,7 @@ def test_download_output() -> None:
             "simulation.end": 354,
         }
     }
-    study.get.side_effect = [
+    file_study_tree.get.side_effect = [
         output_config,
         res_study,
         res_study_details,
@@ -591,15 +592,18 @@ def test_download_output() -> None:
         ],
         warnings=[],
     )
-    result = service.download_outputs(
-        "study-id",
-        "output-id",
-        input_data,
-        use_task=False,
-        filetype=ExportFormat.JSON,
-        params=RequestParameters(JWTUser(id=0, impersonator=0, type="users")),
+    res = t.cast(
+        Response,
+        service.download_outputs(
+            "study-id",
+            "output-id",
+            input_data,
+            use_task=False,
+            filetype=ExportFormat.JSON,
+            params=RequestParameters(JWTUser(id=0, impersonator=0, type="users")),
+        ),
     )
-    assert MatrixAggregationResultDTO.parse_raw(result.body) == res_matrix
+    assert MatrixAggregationResultDTO.parse_raw(res.body) == res_matrix
 
     # AREA TYPE - ZIP & TASK
     export_file_download = FileDownload(
@@ -608,20 +612,22 @@ def test_download_output() -> None:
         name="name",
         ready=False,
         path="path",
-        owner=None,
         expiration_date=datetime.utcnow(),
     )
-    service.file_transfer_manager.request_download.return_value = export_file_download
+    service.file_transfer_manager.request_download.return_value = export_file_download  # type: ignore
     task_id = "task-id"
-    service.task_service.add_task.return_value = task_id
+    service.task_service.add_task.return_value = task_id  # type: ignore
 
-    result = service.download_outputs(
-        "study-id",
-        "output-id",
-        input_data,
-        use_task=True,
-        filetype=ExportFormat.ZIP,
-        params=RequestParameters(JWTUser(id=0, impersonator=0, type="users")),
+    result = t.cast(
+        FileDownloadTaskDTO,
+        service.download_outputs(
+            "study-id",
+            "output-id",
+            input_data,
+            use_task=True,
+            filetype=ExportFormat.ZIP,
+            params=RequestParameters(JWTUser(id=0, impersonator=0, type="users")),
+        ),
     )
 
     res_file_download = FileDownloadTaskDTO(file=export_file_download.to_dto(), task=task_id)
@@ -646,15 +652,18 @@ def test_download_output() -> None:
         ],
         warnings=[],
     )
-    result = service.download_outputs(
-        "study-id",
-        "output-id",
-        input_data,
-        use_task=False,
-        filetype=ExportFormat.JSON,
-        params=RequestParameters(JWTUser(id=0, impersonator=0, type="users")),
+    res = t.cast(
+        Response,
+        service.download_outputs(
+            "study-id",
+            "output-id",
+            input_data,
+            use_task=False,
+            filetype=ExportFormat.JSON,
+            params=RequestParameters(JWTUser(id=0, impersonator=0, type="users")),
+        ),
     )
-    assert MatrixAggregationResultDTO.parse_raw(result.body) == res_matrix
+    assert MatrixAggregationResultDTO.parse_raw(res.body) == res_matrix
 
     # CLUSTER TYPE
     input_data.type = StudyDownloadType.DISTRICT
@@ -681,50 +690,64 @@ def test_download_output() -> None:
         ],
         warnings=[],
     )
-    result = service.download_outputs(
-        "study-id",
-        "output-id",
-        input_data,
-        use_task=False,
-        filetype=ExportFormat.JSON,
-        params=RequestParameters(JWTUser(id=0, impersonator=0, type="users")),
+    res = t.cast(
+        Response,
+        service.download_outputs(
+            "study-id",
+            "output-id",
+            input_data,
+            use_task=False,
+            filetype=ExportFormat.JSON,
+            params=RequestParameters(JWTUser(id=0, impersonator=0, type="users")),
+        ),
     )
-    assert MatrixAggregationResultDTO.parse_raw(result.body) == res_matrix
+    assert MatrixAggregationResultDTO.parse_raw(res.body) == res_matrix
 
 
 # noinspection PyArgumentList
 @pytest.mark.unit_test
 def test_change_owner() -> None:
-    uuid = str(uuid4())
+    study_id = str(uuid.uuid4())
     alice = User(id=2)
     bob = User(id=3, name="Bob")
 
-    mock_file_study = Mock()
-    mock_file_study.tree.get_node.return_value = Mock(spec=IniFileNode)
+    file_study = Mock(spec=FileStudy, get_node=Mock(return_value=Mock(spec=IniFileNode)))
 
-    repository = Mock()
+    repository = Mock(spec=StudyMetadataRepository)
     user_service = Mock()
     study_service = Mock(spec=RawStudyService)
-    study_service.get_raw.return_value = mock_file_study
+    study_service.get_raw.return_value = file_study
     config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
-    service = build_study_service(study_service, repository, config, user_service=user_service)
-    service.storage_service.variant_study_service.command_factory.command_context = Mock(spec=CommandContext)
+    variant_study_service = Mock(
+        spec=VariantStudyService,
+        command_factory=Mock(
+            spec=GeneratorMatrixConstants,
+            command_context=Mock(spec=CommandContext),
+        ),
+    )
+    service = build_study_service(
+        study_service,
+        repository,
+        config,
+        user_service=user_service,
+        variant_study_service=variant_study_service,
+    )
 
-    study = RawStudy(id=uuid, owner=alice)
+    study = RawStudy(id=study_id, owner=alice)
     repository.get.return_value = study
     user_service.get_user.return_value = bob
     service._edit_study_using_command = Mock()
 
-    service.change_owner(uuid, 2, RequestParameters(JWTUser(id=2, impersonator=2, type="users")))
-    user_service.get_user.assert_called_once_with(2, RequestParameters(JWTUser(id=2, impersonator=2, type="users")))
-    repository.save.assert_called_with(RawStudy(id=uuid, owner=bob, last_access=ANY))
-    repository.save.assert_called_with(RawStudy(id=uuid, owner=bob))
+    service.change_owner(study_id, 2, RequestParameters(JWTUser(id=2, impersonator=2, type="users")))
 
     service._edit_study_using_command.assert_called_once_with(study=study, url="study/antares/author", data="Bob")
+    user_service.get_user.assert_called_once_with(2, RequestParameters(JWTUser(id=2, impersonator=2, type="users")))
+    repository.save.assert_called_with(RawStudy(id=study_id, owner=bob, last_access=ANY))
+    repository.save.assert_called_with(RawStudy(id=study_id, owner=bob))
 
     with pytest.raises(UserHasNotPermissionError):
         service.change_owner(
-            uuid,
+            study_id,
             1,
             RequestParameters(JWTUser(id=2, impersonator=2, type="users")),
         )
@@ -733,7 +756,7 @@ def test_change_owner() -> None:
 # noinspection PyArgumentList
 @pytest.mark.unit_test
 def test_manage_group() -> None:
-    uuid = str(uuid4())
+    study_id = str(uuid.uuid4())
     alice = User(id=1)
     group_a = Group(id="a", name="Group A")
     group_b = Group(id="b", name="Group B")
@@ -744,18 +767,18 @@ def test_manage_group() -> None:
     config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
     service = build_study_service(Mock(), repository, config, user_service=user_service)
 
-    repository.get.return_value = Study(id=uuid, owner=alice, groups=[group_a])
+    repository.get.return_value = Study(id=study_id, owner=alice, groups=[group_a])
 
     with pytest.raises(UserHasNotPermissionError):
         service.add_group(
-            uuid,
+            study_id,
             "b",
             RequestParameters(JWTUser(id=2, impersonator=2, type="users")),
         )
 
     user_service.get_group.return_value = group_b
     service.add_group(
-        uuid,
+        study_id,
         "b",
         RequestParameters(JWTUser(id=2, impersonator=2, type="users", groups=[group_a_admin])),
     )
@@ -764,11 +787,11 @@ def test_manage_group() -> None:
         "b",
         RequestParameters(JWTUser(id=2, impersonator=2, type="users", groups=[group_a_admin])),
     )
-    repository.save.assert_called_with(Study(id=uuid, owner=alice, groups=[group_a, group_b]))
+    repository.save.assert_called_with(Study(id=study_id, owner=alice, groups=[group_a, group_b]))
 
-    repository.get.return_value = Study(id=uuid, owner=alice, groups=[group_a, group_b])
+    repository.get.return_value = Study(id=study_id, owner=alice, groups=[group_a, group_b])
     service.add_group(
-        uuid,
+        study_id,
         "b",
         RequestParameters(JWTUser(id=2, impersonator=2, type="users", groups=[group_a_admin])),
     )
@@ -776,21 +799,21 @@ def test_manage_group() -> None:
         "b",
         RequestParameters(JWTUser(id=2, impersonator=2, type="users", groups=[group_a_admin])),
     )
-    repository.save.assert_called_with(Study(id=uuid, owner=alice, groups=[group_a, group_b]))
+    repository.save.assert_called_with(Study(id=study_id, owner=alice, groups=[group_a, group_b]))
 
-    repository.get.return_value = Study(id=uuid, owner=alice, groups=[group_a, group_b])
+    repository.get.return_value = Study(id=study_id, owner=alice, groups=[group_a, group_b])
     service.remove_group(
-        uuid,
+        study_id,
         "a",
         RequestParameters(JWTUser(id=2, impersonator=2, type="users", groups=[group_a_admin])),
     )
-    repository.save.assert_called_with(Study(id=uuid, owner=alice, groups=[group_b]))
+    repository.save.assert_called_with(Study(id=study_id, owner=alice, groups=[group_b]))
 
 
 # noinspection PyArgumentList
 @pytest.mark.unit_test
 def test_set_public_mode() -> None:
-    uuid = str(uuid4())
+    study_id = str(uuid.uuid4())
     group_admin = JWTGroup(id="admin", name="admin", role=RoleType.ADMIN)
 
     repository = Mock()
@@ -798,26 +821,26 @@ def test_set_public_mode() -> None:
     config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
     service = build_study_service(Mock(), repository, config, user_service=user_service)
 
-    repository.get.return_value = Study(id=uuid)
+    repository.get.return_value = Study(id=study_id)
 
     with pytest.raises(UserHasNotPermissionError):
         service.set_public_mode(
-            uuid,
+            study_id,
             PublicMode.FULL,
             RequestParameters(JWTUser(id=2, impersonator=2, type="users")),
         )
 
     service.set_public_mode(
-        uuid,
+        study_id,
         PublicMode.FULL,
         RequestParameters(JWTUser(id=2, impersonator=2, type="users", groups=[group_admin])),
     )
-    repository.save.assert_called_with(Study(id=uuid, public_mode=PublicMode.FULL))
+    repository.save.assert_called_with(Study(id=study_id, public_mode=PublicMode.FULL))
 
 
 # noinspection PyArgumentList
 @pytest.mark.unit_test
-def test_check_errors():
+def test_check_errors() -> None:
     study_service = Mock()
     study_service.check_errors.return_value = ["Hello", "World"]
 
@@ -857,7 +880,7 @@ def test_study_match() -> None:
 # noinspection PyArgumentList
 @pytest.mark.unit_test
 def test_assert_permission() -> None:
-    uuid = str(uuid4())
+    study_id = str(uuid.uuid4())
     admin_group = JWTGroup(id="admin", name="admin", role=RoleType.ADMIN)
     admin = JWTUser(id=1, impersonator=1, type="users", groups=[admin_group])
     group = JWTGroup(id="my-group", name="g", role=RoleType.ADMIN)
@@ -872,46 +895,52 @@ def test_assert_permission() -> None:
     service = build_study_service(Mock(), repository, config)
 
     # wrong owner
-    repository.get.return_value = Study(id=uuid, owner=wrong)
-    study = service.get_study(uuid)
+    repository.get.return_value = Study(id=study_id, owner=wrong)
+    study = service.get_study(study_id)
     with pytest.raises(UserHasNotPermissionError):
         assert_permission(jwt, study, StudyPermissionType.READ)
     assert not assert_permission(jwt, study, StudyPermissionType.READ, raising=False)
 
     # good owner
-    study = Study(id=uuid, owner=good)
+    study = Study(id=study_id, owner=good)
     assert assert_permission(jwt, study, StudyPermissionType.MANAGE_PERMISSIONS)
 
     # wrong group
-    study = Study(id=uuid, owner=wrong, groups=[Group(id="wrong")])
+    study = Study(id=study_id, owner=wrong, groups=[Group(id="wrong")])
     with pytest.raises(UserHasNotPermissionError):
         assert_permission(jwt, study, StudyPermissionType.READ)
     assert not assert_permission(jwt, study, StudyPermissionType.READ, raising=False)
 
     # good group
-    study = Study(id=uuid, owner=wrong, groups=[Group(id="my-group")])
+    study = Study(id=study_id, owner=wrong, groups=[Group(id="my-group")])
     assert assert_permission(jwt, study, StudyPermissionType.MANAGE_PERMISSIONS)
 
     # super admin can do whatever he wants..
-    study = Study(id=uuid)
+    study = Study(id=study_id)
     assert assert_permission(admin, study, StudyPermissionType.MANAGE_PERMISSIONS)
 
     # when study found in workspace without group
-    study = Study(id=uuid, public_mode=PublicMode.FULL)
+    study = Study(id=study_id, public_mode=PublicMode.FULL)
     assert not assert_permission(jwt, study, StudyPermissionType.MANAGE_PERMISSIONS, raising=False)
     assert assert_permission(jwt, study, StudyPermissionType.READ)
     assert assert_permission(jwt, study, StudyPermissionType.WRITE)
     assert assert_permission(jwt, study, StudyPermissionType.RUN)
 
     # some group roles
-    study = Study(id=uuid, owner=wrong, groups=[Group(id="my-group-2")])
+    study = Study(id=study_id, owner=wrong, groups=[Group(id="my-group-2")])
     assert not assert_permission(jwt_2, study, StudyPermissionType.WRITE, raising=False)
     assert assert_permission(jwt_2, study, StudyPermissionType.READ)
 
 
+class UserGroups(t.TypedDict):
+    name: str
+    role: RoleType
+    users: t.Sequence[str]
+
+
 def test_assert_permission_on_studies(db_session: Session) -> None:
     # Given the following user groups :
-    user_groups = [
+    user_groups: t.Sequence[UserGroups] = [
         {
             "name": "admin",
             "role": RoleType.ADMIN,
@@ -967,9 +996,9 @@ def test_assert_permission_on_studies(db_session: Session) -> None:
     # They all belong to the same group.
     writers = db_session.query(Group).filter(Group.name == "Writers").one()
     studies = [
-        Study(id=uuid4(), name="Main Study", owner_id=jwt_users["John"].id, groups=[writers]),
-        Study(id=uuid4(), name="Variant Study 1", owner_id=jwt_users["Jane"].id, groups=[writers]),
-        Study(id=uuid4(), name="Variant Study 2", owner_id=jwt_users["Jane"].id, groups=[writers]),
+        Study(id=uuid.uuid4(), name="Main Study", owner_id=jwt_users["John"].id, groups=[writers]),
+        Study(id=uuid.uuid4(), name="Variant Study 1", owner_id=jwt_users["Jane"].id, groups=[writers]),
+        Study(id=uuid.uuid4(), name="Variant Study 2", owner_id=jwt_users["Jane"].id, groups=[writers]),
     ]
 
     # All admin and writers should have WRITE access to the studies.
@@ -981,7 +1010,9 @@ def test_assert_permission_on_studies(db_session: Session) -> None:
 
     # Jack creates a additional variant study and adds it to the readers and writers groups.
     readers = db_session.query(Group).filter(Group.name == "Readers").one()
-    studies.append(Study(id=uuid4(), name="Variant Study 3", owner_id=jwt_users["Jack"].id, groups=[readers, writers]))
+    studies.append(
+        Study(id=uuid.uuid4(), name="Variant Study 3", owner_id=jwt_users["Jack"].id, groups=[readers, writers])
+    )
 
     # All admin and writers should have READ access to the studies.
     # Other members of the group should have no access, because they don't have access to the writers-only studies.
@@ -997,8 +1028,8 @@ def test_assert_permission_on_studies(db_session: Session) -> None:
 
 
 @pytest.mark.unit_test
-def test_delete_study_calls_callback(tmp_path: Path):
-    study_uuid = "my_study"
+def test_delete_study_calls_callback(tmp_path: Path) -> None:
+    study_uuid = str(uuid.uuid4())
     repository_mock = Mock()
     study_path = tmp_path / study_uuid
     study_path.mkdir()
@@ -1016,7 +1047,7 @@ def test_delete_study_calls_callback(tmp_path: Path):
     service = build_study_service(Mock(), repository_mock, Mock())
     callback = Mock()
     service.add_on_deletion_callback(callback)
-    service.storage_service.variant_study_service.has_children.return_value = False
+    service.storage_service.variant_study_service.has_children.return_value = False  # type: ignore
 
     service.delete_study(
         study_uuid,
@@ -1028,8 +1059,8 @@ def test_delete_study_calls_callback(tmp_path: Path):
 
 
 @pytest.mark.unit_test
-def test_delete_with_prefetch(tmp_path: Path):
-    study_uuid = "my_study"
+def test_delete_with_prefetch(tmp_path: Path) -> None:
+    study_uuid = str(uuid.uuid4())
 
     study_metadata_repository = Mock()
     raw_study_service = RawStudyService(Config(), Mock(), Mock(), Mock(), Mock())
@@ -1073,10 +1104,11 @@ def test_delete_with_prefetch(tmp_path: Path):
     seal(study_mock)
 
     study_metadata_repository.get.return_value = study_mock
-    variant_study_repository.get_children.return_value = []
+    variant_study_repository.has_children.return_value = False
 
-    # if this fails, it may means the study metadata mock is missing some attribute definition
-    # this test is here to prevent errors if we add attribute fetching from child classes (attributes in polymorphism are lazy)
+    # if this fails, it may mean the study metadata mock is missing some attribute definition
+    # this test is here to prevent errors if we add attribute fetching from child classes
+    # (attributes in polymorphism are lazy)
     # see the comment in the delete method for more information
     service.delete_study(
         study_uuid,
@@ -1101,7 +1133,7 @@ def test_delete_with_prefetch(tmp_path: Path):
     seal(study_mock)
 
     study_metadata_repository.get.return_value = study_mock
-    variant_study_repository.get_children.return_value = []
+    variant_study_repository.has_children.return_value = False
 
     # if this fails, it may means the study metadata mock is missing some definition
     # this test is here to prevent errors if we add attribute fetching from child classes (attributes in polymorphism are lazy)
@@ -1114,7 +1146,7 @@ def test_delete_with_prefetch(tmp_path: Path):
 
 
 # noinspection PyArgumentList
-def test_delete_recursively(tmp_path: Path):
+def test_delete_recursively(tmp_path: Path) -> None:
     study_metadata_repository = Mock()
     raw_study_service = RawStudyService(Config(), Mock(), Mock(), Mock(), Mock())
     variant_study_repository = Mock()
@@ -1137,19 +1169,18 @@ def test_delete_recursively(tmp_path: Path):
     )
 
     def create_study_fs_mock(variant: bool = False) -> str:
-        study_uuid = str(uuid4())
-        study_path = tmp_path / study_uuid
-        study_path.mkdir()
-        study_data = study_path
+        _study_dir = tmp_path / str(uuid.uuid4())
+        _study_dir.mkdir()
         if variant:
-            study_data = study_path / "snapshot"
-            study_data.mkdir()
-        (study_data / "study.antares").touch()
-        return str(study_path)
+            _study_data = _study_dir / "snapshot"
+            _study_data.mkdir()
+        else:
+            _study_data = _study_dir
+        (_study_data / "study.antares").touch()
+        return str(_study_dir)
 
     study_path = create_study_fs_mock()
-    study_mock = Mock(
-        spec=RawStudy,
+    study_mock = RawStudy(
         archived=False,
         id="my_study",
         path=study_path,
@@ -1159,33 +1190,72 @@ def test_delete_recursively(tmp_path: Path):
         workspace=DEFAULT_WORKSPACE_NAME,
         last_access=datetime.utcnow(),
     )
-    study_mock.to_json_summary.return_value = {"id": "my_study", "name": "foo"}
-
-    # it freezes the mock and raise Attribute error if anything else than defined is used
-    seal(study_mock)
 
     v1 = VariantStudy(id="variant_1", path=create_study_fs_mock(variant=True))
     v2 = VariantStudy(id="variant_2", path=create_study_fs_mock(variant=True))
     v3 = VariantStudy(id="sub_variant_1", path=create_study_fs_mock(variant=True))
 
-    study_metadata_repository.get.side_effect = [study_mock, v3, v1, v2]
-    variant_study_repository.get_children.side_effect = [
-        [
-            v1,
-            v2,
-        ],
-        [v3],
-        [],
-        [],
-        [],
-        [],
-        [],
-    ]
-    variant_study_repository.get.side_effect = [
-        VariantStudy(id="variant_1"),
-        VariantStudy(id="sub_variant_1"),
-        VariantStudy(id="variant_2"),
-    ]
+    def get_study(study_id: str) -> Study:
+        if study_id == "my_study":
+            return study_mock
+        elif study_id == "variant_1":
+            return v1
+        elif study_id == "variant_2":
+            return v2
+        elif study_id == "sub_variant_1":
+            return v3
+        raise ValueError(f"Unexpected study id: {study_id}")
+
+    class ChildrenProvider:
+        def __init__(self):
+            self.c0 = 0
+            self.c1 = 0
+
+        def get_children(self, parent_id: str) -> t.List[Study]:
+            if parent_id == "my_study":
+                if self.c0 > 0:
+                    return []
+                self.c0 = 1
+                return [v1, v2]
+            elif parent_id == "variant_1":
+                if self.c1 > 0:
+                    return []
+                self.c1 = 1
+                return [v3]
+            elif parent_id == "variant_2":
+                return []
+            elif parent_id == "sub_variant_1":
+                return []
+            raise ValueError(f"Unexpected study id: {parent_id}")
+
+    class HasChildrenProvider:
+        def __init__(self):
+            self.c1 = 0
+            self.c2 = 0
+
+        def has_children(self, study_id: str) -> bool:
+            if study_id == "my_study":
+                if self.c1 > 0:
+                    return False
+                self.c1 = 1
+                return True
+            elif study_id == "variant_1":
+                if self.c2 > 0:
+                    return False
+                self.c2 = 1
+                return True
+            elif study_id == "variant_2":
+                return False
+            elif study_id == "sub_variant_1":
+                return False
+            raise ValueError(f"Unexpected study id: {study_id}")
+
+    children_provider = ChildrenProvider()
+    hash_children_provider = HasChildrenProvider()
+    study_metadata_repository.get = get_study
+    variant_study_repository.get = get_study
+    variant_study_repository.get_children = children_provider.get_children
+    variant_study_repository.has_children = hash_children_provider.has_children
 
     service.delete_study(
         "my_study",
@@ -1195,8 +1265,8 @@ def test_delete_recursively(tmp_path: Path):
 
 
 @pytest.mark.unit_test
-def test_edit_study_with_command():
-    study_id = "study_id"
+def test_edit_study_with_command() -> None:
+    study_id = str(uuid.uuid4())
 
     service = build_study_service(
         raw_study_service=Mock(),
@@ -1236,59 +1306,63 @@ def test_edit_study_with_command():
     ],
 )
 def test_create_command(
-    tree_node: INode[JSON, Union[str, int, bool, float, bytes, JSON], JSON],
+    tree_node: INode[JSON, t.Union[str, int, bool, float, bytes, JSON], JSON],
     url: str,
     data: SUB_JSON,
     expected_name: str,
-):
-    service = build_study_service(
-        raw_study_service=Mock(),
-        repository=Mock(),
-        config=Mock(),
-    )
+) -> None:
+    matrix_id = "matrix_id"
 
-    matrix_service = Mock(spec=MatrixService)
-    matrix_service.create.return_value = "matrix_id"
     command_context = CommandContext(
         generator_matrix_constants=Mock(spec=GeneratorMatrixConstants),
-        matrix_service=matrix_service,
+        matrix_service=Mock(spec=MatrixService, create=Mock(return_value=matrix_id)),
         patch_service=Mock(spec=PatchService),
     )
 
-    service.storage_service.variant_study_service.command_factory.command_context = command_context
+    service = build_study_service(
+        raw_study_service=Mock(spec=RawStudyService),
+        repository=Mock(spec=StudyMetadataRepository),
+        config=Mock(spec=Config),
+        variant_study_service=Mock(
+            spec=VariantStudyService,
+            command_factory=Mock(spec=GeneratorMatrixConstants, command_context=command_context),
+        ),
+    )
 
     command = service._create_edit_study_command(tree_node=tree_node, url=url, data=data)
 
     assert command.command_name.value == expected_name
 
 
-def test_unarchive_output(tmp_path: Path):
-    service = build_study_service(
-        raw_study_service=Mock(),
-        repository=Mock(),
-        config=Mock(),
-    )
-
+def test_unarchive_output(tmp_path: Path) -> None:
+    study_id = str(uuid.uuid4())
+    study_name = "My Study"
     study_mock = Mock(
         spec=RawStudy,
         archived=False,
-        id="my_study",
-        name="my_study",
+        id=study_id,
         path=tmp_path,
         owner=None,
         groups=[],
         public_mode=PublicMode.NONE,
         workspace="other_workspace",
+        to_json_summary=Mock(return_value={"id": study_id, "name": study_name}),
     )
-    study_mock.name = "my_study"
-    study_mock.to_json_summary.return_value = {"id": "my_study", "name": "foo"}
-    service.task_service.reset_mock()
-    service.repository.get.return_value = study_mock
+    # The `name` attribute cannot be mocked during creation of the mock object
+    # https://stackoverflow.com/a/62552149/1513933
+    study_mock.name = study_name
 
-    study_id = "my_study"
+    service = build_study_service(
+        raw_study_service=Mock(spec=RawStudyService),
+        repository=Mock(spec=StudyMetadataRepository, get=Mock(return_value=study_mock)),
+        config=Mock(spec=Config),
+    )
+
+    service.task_service.reset_mock()
+
     output_id = "some-output"
-    service.task_service.add_worker_task.return_value = None
-    service.task_service.list_tasks.return_value = []
+    service.task_service.add_worker_task.return_value = None  # type: ignore
+    service.task_service.list_tasks.return_value = []  # type: ignore
     service.unarchive_output(
         study_id,
         output_id,
@@ -1304,13 +1378,13 @@ def test_unarchive_output(tmp_path: Path):
             dest=str(tmp_path / "output" / output_id),
             remove_src=False,
         ).dict(),
-        name=f"Unarchive output my_study/{output_id} ({study_id})",
-        ref_id="my_study",
+        name=f"Unarchive output {study_name}/{output_id} ({study_id})",
+        ref_id=study_id,
         request_params=RequestParameters(user=DEFAULT_ADMIN_USER),
     )
     service.task_service.add_task.assert_called_once_with(
         ANY,
-        f"Unarchive output my_study/{output_id} ({study_id})",
+        f"Unarchive output {study_name}/{output_id} ({study_id})",
         task_type=TaskType.UNARCHIVE,
         ref_id=study_id,
         custom_event_messages=None,
@@ -1318,33 +1392,34 @@ def test_unarchive_output(tmp_path: Path):
     )
 
 
-def test_archive_output_locks(tmp_path: Path):
-    service = build_study_service(
-        raw_study_service=Mock(),
-        repository=Mock(),
-        config=Mock(),
-    )
-
+def test_archive_output_locks(tmp_path: Path) -> None:
+    study_id = str(uuid.uuid4())
+    study_name = "My Study"
     study_mock = Mock(
         spec=RawStudy,
         archived=False,
-        id="my_study",
-        name="my_study",
+        id=study_id,
         path=tmp_path,
         owner=None,
         groups=[],
         public_mode=PublicMode.NONE,
         workspace="other_workspace",
+        to_json_summary=Mock(return_value={"id": study_id, "name": study_name}),
     )
-    study_mock.name = "my_study"
-    study_mock.to_json_summary.return_value = {"id": "my_study", "name": "foo"}
-    service.task_service.reset_mock()
-    service.repository.get.return_value = study_mock
+    # The `name` attribute cannot be mocked during creation of the mock object
+    # https://stackoverflow.com/a/62552149/1513933
+    study_mock.name = study_name
 
-    study_id = "my_study"
-    study_name = study_id
+    service = build_study_service(
+        raw_study_service=Mock(spec=RawStudyService),
+        repository=Mock(spec=StudyMetadataRepository, get=Mock(return_value=study_mock)),
+        config=Mock(spec=Config),
+    )
+
+    service.task_service.reset_mock()
+
     output_id = "some-output"
-    service.task_service.add_worker_task.return_value = None
+    service.task_service.add_worker_task.return_value = None  # type: ignore
     service.task_service.list_tasks.side_effect = [
         [
             TaskDTO(
@@ -1434,13 +1509,13 @@ def test_archive_output_locks(tmp_path: Path):
             dest=str(tmp_path / "output" / output_id),
             remove_src=False,
         ).dict(),
-        name=f"Unarchive output my_study/{output_id} ({study_id})",
-        ref_id="my_study",
+        name=f"Unarchive output {study_name}/{output_id} ({study_id})",
+        ref_id=study_id,
         request_params=RequestParameters(user=DEFAULT_ADMIN_USER),
     )
     service.task_service.add_task.assert_called_once_with(
         ANY,
-        f"Unarchive output my_study/{output_id} ({study_id})",
+        f"Unarchive output {study_name}/{output_id} ({study_id})",
         task_type=TaskType.UNARCHIVE,
         ref_id=study_id,
         custom_event_messages=None,
@@ -1448,36 +1523,38 @@ def test_archive_output_locks(tmp_path: Path):
     )
 
 
-def test_get_save_logs(tmp_path: Path):
-    service = build_study_service(
-        raw_study_service=Mock(),
-        repository=Mock(),
-        config=Mock(),
-    )
-
+def test_get_save_logs(tmp_path: Path) -> None:
+    study_id = str(uuid.uuid4())
+    study_name = "My Study"
     study_mock = Mock(
         spec=RawStudy,
         archived=False,
-        id="my_study",
-        name="my_study",
+        id=study_id,
         path=tmp_path,
         owner=None,
         groups=[],
         public_mode=PublicMode.NONE,
         workspace="other_workspace",
+        to_json_summary=Mock(return_value={"id": study_id, "name": study_name}),
+    )
+    # The `name` attribute cannot be mocked during creation of the mock object
+    # https://stackoverflow.com/a/62552149/1513933
+    study_mock.name = study_name
+
+    service = build_study_service(
+        raw_study_service=Mock(spec=RawStudyService),
+        repository=Mock(spec=StudyMetadataRepository, get=Mock(return_value=study_mock)),
+        config=Mock(spec=Config),
     )
 
-    study_mock.name = "my_study"
-    study_mock.to_json_summary.return_value = {"id": "my_study", "name": "foo"}
-    service.repository.get.return_value = study_mock
+    output_config = Mock(get_file=Mock(return_value="output_id"), archived=False)
+
     file_study_config = FileStudyTreeConfig(tmp_path, tmp_path, "study_id", 0, zip_path=None)
-    output_config = Mock()
     file_study_config.outputs = {"output_id": output_config}
-    output_config.get_file.return_value = "output_id"
-    output_config.archived = False
+
     context = Mock()
     context.resolver.resolve.return_value = None
-    service.storage_service.raw_study_service.get_raw.return_value = FileStudy(
+    service.storage_service.raw_study_service.get_raw.return_value = FileStudy(  # type: ignore
         config=file_study_config,
         tree=FileStudyTree(context, file_study_config),
     )
@@ -1489,7 +1566,7 @@ def test_get_save_logs(tmp_path: Path):
 
     assert (
         service.get_logs(
-            "my_study",
+            study_id,
             "output_id",
             "job_id",
             True,
@@ -1501,7 +1578,7 @@ def test_get_save_logs(tmp_path: Path):
     (output_path / "output_id" / "antares-out.log").write_text("some log 2")
     assert (
         service.get_logs(
-            "my_study",
+            study_id,
             "output_id",
             "job_id",
             False,
@@ -1510,11 +1587,11 @@ def test_get_save_logs(tmp_path: Path):
         == "some log 2"
     )
 
-    service.save_logs("my_study", "job_id", "out.log", "some log")
+    service.save_logs(study_id, "job_id", "out.log", "some log")
 
     assert (
         service.get_logs(
-            "my_study",
+            study_id,
             "output_id",
             "job_id",
             False,
@@ -1523,11 +1600,11 @@ def test_get_save_logs(tmp_path: Path):
         == "some log"
     )
 
-    service.save_logs("my_study", "job_id", "err.log", "some log 3")
+    service.save_logs(study_id, "job_id", "err.log", "some log 3")
 
     assert (
         service.get_logs(
-            "my_study",
+            study_id,
             "output_id",
             "job_id",
             True,
@@ -1537,7 +1614,7 @@ def test_get_save_logs(tmp_path: Path):
     )
 
 
-def test_task_upgrade_study(tmp_path: Path):
+def test_task_upgrade_study(tmp_path: Path) -> None:
     service = build_study_service(
         raw_study_service=Mock(),
         repository=Mock(),
@@ -1558,17 +1635,18 @@ def test_task_upgrade_study(tmp_path: Path):
     )
     study_mock.name = "my_study"
     study_mock.to_json_summary.return_value = {"id": "my_study", "name": "foo"}
-    service.repository.get.return_value = study_mock
+    service.repository.has_children.return_value = False  # type: ignore
+    service.repository.get.return_value = study_mock  # type: ignore
 
     study_id = "my_study"
-    service.task_service.reset_mock()
+    service.task_service.reset_mock()  # type: ignore
     service.task_service.list_tasks.side_effect = [
         [
             TaskDTO(
                 id="1",
                 name=f"Upgrade study my_study ({study_id}) to version 800",
                 status=TaskStatus.RUNNING,
-                creation_date_utc=str(datetime.utcnow()),
+                creation_date_utc=str(datetime.utcnow()),  # type: ignore
                 type=TaskType.UNARCHIVE,
                 ref_id=study_id,
             )
@@ -1598,6 +1676,56 @@ def test_task_upgrade_study(tmp_path: Path):
         request_params=RequestParameters(user=DEFAULT_ADMIN_USER),
     )
 
+    # check that a variant study or a raw study with children cannot be upgraded
+    parent_raw_study = Mock(
+        spec=RawStudy,
+        archived=False,
+        id="parent_raw_study",
+        name="parent_raw_study",
+        path=tmp_path,
+        version="720",
+        owner=None,
+        groups=[],
+        public_mode=PublicMode.NONE,
+        workspace="other_workspace",
+    )
+    study_mock.name = "parent_raw_study"
+    study_mock.to_json_summary.return_value = {"id": "parent_raw_study", "name": "parent_raw_study"}
+    service.repository.has_children.return_value = True  # type: ignore
+    service.repository.get.return_value = parent_raw_study  # type: ignore
+
+    with pytest.raises(StudyVariantUpgradeError):
+        service.upgrade_study(
+            "parent_raw_study",
+            target_version="",
+            params=RequestParameters(user=DEFAULT_ADMIN_USER),
+        )
+
+    variant_study = Mock(
+        spec=VariantStudy,
+        archived=False,
+        id="variant_study",
+        name="variant_study",
+        path=tmp_path,
+        version="720",
+        owner=None,
+        groups=[],
+        public_mode=PublicMode.NONE,
+        workspace="other_workspace",
+    )
+
+    study_mock.name = "variant_study"
+    study_mock.to_json_summary.return_value = {"id": "variant_study", "name": "variant_study"}
+    service.repository.has_children.return_value = True  # type: ignore
+    service.repository.get.return_value = variant_study  # type: ignore
+
+    with pytest.raises(StudyVariantUpgradeError):
+        service.upgrade_study(
+            "variant_study",
+            target_version="",
+            params=RequestParameters(user=DEFAULT_ADMIN_USER),
+        )
+
 
 @with_db_context
 @patch("antarest.study.service.upgrade_study")
@@ -1606,7 +1734,7 @@ def test_upgrade_study__raw_study__nominal(
     upgrade_study_mock: Mock,
     tmp_path: Path,
     workspace: str,
-):
+) -> None:
     study_id = str(uuid.uuid4())
     study_name = "my_study"
     target_version = "800"
@@ -1699,7 +1827,7 @@ def test_upgrade_study__raw_study__nominal(
 def test_upgrade_study__variant_study__nominal(
     upgrade_study_mock: Mock,
     tmp_path: Path,
-):
+) -> None:
     study_id = str(uuid.uuid4())
     study_name = "my_study"
     target_version = "800"
@@ -1785,7 +1913,7 @@ def test_upgrade_study__variant_study__nominal(
 
 @with_db_context
 @patch("antarest.study.service.upgrade_study")
-def test_upgrade_study__raw_study__failed(upgrade_study_mock: Mock, tmp_path: Path):
+def test_upgrade_study__raw_study__failed(upgrade_study_mock: Mock, tmp_path: Path) -> None:
     study_id = str(uuid.uuid4())
     study_name = "my_study"
     target_version = "800"

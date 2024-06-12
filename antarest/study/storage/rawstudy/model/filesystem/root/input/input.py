@@ -23,23 +23,27 @@ class Input(FolderNode):
     """
 
     def build(self) -> TREE:
+        config = self.config
+
         # noinspection SpellCheckingInspection
         children: TREE = {
-            "areas": InputAreas(self.context, self.config.next_file("areas")),
-            "bindingconstraints": BindingConstraints(self.context, self.config.next_file("bindingconstraints")),
-            "hydro": InputHydro(self.context, self.config.next_file("hydro")),
-            "links": InputLink(self.context, self.config.next_file("links")),
-            "load": InputLoad(self.context, self.config.next_file("load")),
-            "misc-gen": InputMiscGen(self.context, self.config.next_file("misc-gen")),
-            "reserves": InputReserves(self.context, self.config.next_file("reserves")),
-            "solar": InputSolar(self.context, self.config.next_file("solar")),
-            "thermal": InputThermal(self.context, self.config.next_file("thermal")),
-            "wind": InputWind(self.context, self.config.next_file("wind")),
+            "areas": InputAreas(self.context, config.next_file("areas")),
+            "bindingconstraints": BindingConstraints(self.context, config.next_file("bindingconstraints")),
+            "hydro": InputHydro(self.context, config.next_file("hydro")),
+            "links": InputLink(self.context, config.next_file("links")),
+            "load": InputLoad(self.context, config.next_file("load")),
+            "misc-gen": InputMiscGen(self.context, config.next_file("misc-gen")),
+            "reserves": InputReserves(self.context, config.next_file("reserves")),
+            "solar": InputSolar(self.context, config.next_file("solar")),
+            "thermal": InputThermal(self.context, config.next_file("thermal")),
+            "wind": InputWind(self.context, config.next_file("wind")),
         }
 
-        if self.config.enr_modelling == EnrModelling.CLUSTERS.value:
-            children["renewables"] = ClusteredRenewables(self.context, self.config.next_file("renewables"))
-        if self.config.version >= 860:
-            children["st-storage"] = InputSTStorage(self.context, self.config.next_file("st-storage"))
+        has_renewables = config.version >= 810 and EnrModelling(config.enr_modelling) == EnrModelling.CLUSTERS
+        if has_renewables:
+            children["renewables"] = ClusteredRenewables(self.context, config.next_file("renewables"))
+
+        if config.version >= 860:
+            children["st-storage"] = InputSTStorage(self.context, config.next_file("st-storage"))
 
         return children
