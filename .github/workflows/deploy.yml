@@ -1,4 +1,3 @@
-#file: noinspection YAMLSchemaValidation
 name: deploy
 on:
   push:

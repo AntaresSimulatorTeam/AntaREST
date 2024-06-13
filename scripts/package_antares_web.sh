@@ -3,7 +3,7 @@
 # Antares Web Packaging -- Desktop Version
 #
 # This script is launch by the GitHub Workflow `.github/workflows/deploy.yml`.
-# It builds the Desktop version of the Web Application and the Worker Application.
+# It builds the Desktop version of the Web Application.
 # Make sure you run the `npm install` stage before running this script.
 
 set -e
