@@ -285,7 +285,7 @@ class SlurmLauncher(AbstractLauncher):
         xpansion_mode: t.Optional[str] = None,
         log_dir: t.Optional[str] = None,
     ) -> t.Optional[str]:
-        if xpansion_mode is not None:
+        if xpansion_mode:
             self._import_xpansion_result(job_id, xpansion_mode)
 
         launcher_logs: t.Dict[str, t.List[Path]] = {}
@@ -331,14 +331,6 @@ class SlurmLauncher(AbstractLauncher):
                 )
                 output_path = unzipped_output_path
 
-            if (output_path / "updated_links").exists():
-                logger.warning("Skipping updated links")
-                self.callbacks.append_after_log(job_id, "Skipping updated links")
-            else:
-                shutil.copytree(
-                    self.local_workspace / STUDIES_OUTPUT_DIR_NAME / job_id / "input" / "links",
-                    output_path / "updated_links",
-                )
             if xpansion_mode == "r":
                 shutil.copytree(
                     self.local_workspace / STUDIES_OUTPUT_DIR_NAME / job_id / "user" / "expansion",
