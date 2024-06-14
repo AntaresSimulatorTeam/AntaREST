@@ -1,3 +1,4 @@
+import warnings
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Dict, Generic, List, Optional, Tuple, TypeVar
@@ -135,9 +136,16 @@ class INode(ABC, Generic[G, S, V]):
         Returns:
             The actual path of the extracted file
             the tmp_dir object which MUST be cleared after use of the file
+
+        Raises:
+            KeyError: If the file is not found in the ZIP archive.
+            FileNotFoundError: If the file is not found in the 7z archive.
         """
+        warnings.warn("This function is inefficient, it should no longer be used", DeprecationWarning)
+
         if self.config.archive_path is None:
             raise ShouldNotHappenException()
+        # fixme: It does not work with 7z!
         inside_archive_path = str(self.config.path)[len(str(self.config.archive_path)[:-4]) + 1 :]
         if self.config.archive_path:
             return extract_file_to_tmp_dir(self.config.archive_path, Path(inside_archive_path))
