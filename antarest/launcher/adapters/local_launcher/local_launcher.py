@@ -71,13 +71,7 @@ class LocalLauncher(AbstractLauncher):
 
         job = threading.Thread(
             target=LocalLauncher._compute,
-            args=(
-                self,
-                antares_solver_path,
-                study_uuid,
-                job_id,
-                launcher_parameters,
-            ),
+            args=(self, antares_solver_path, study_uuid, job_id, launcher_parameters, version),
             name=f"{self.__class__.__name__}-JobRunner",
         )
         job.start()
@@ -91,6 +85,7 @@ class LocalLauncher(AbstractLauncher):
         study_uuid: str,
         uuid: UUID,
         launcher_parameters: LauncherParametersDTO,
+        version: str,
     ) -> None:
         end = False
 
@@ -114,6 +109,8 @@ class LocalLauncher(AbstractLauncher):
                 f"--force-parallel={launcher_parameters.nb_cpu}",
                 str(export_path),
             ]
+            if int(version) >= 840:
+                args.append("-z")
             process = subprocess.Popen(
                 args,
                 stdout=subprocess.PIPE,
@@ -155,7 +152,8 @@ class LocalLauncher(AbstractLauncher):
 
             output_id: Optional[str] = None
             try:
-                output_id = self.callbacks.import_output(str(uuid), export_path / "output", {})
+                output_path = (export_path / "output").iterdir().__next__()
+                output_id = self.callbacks.import_output(str(uuid), output_path, {})
             except Exception as e:
                 logger.error(
                     f"Failed to import output for study {study_uuid} located at {export_path}",
