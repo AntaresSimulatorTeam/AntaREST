@@ -104,7 +104,7 @@ def retrieve_output_path(job_path: Path) -> Path:
         if len(output_folders) == 1:
             return output_inside_study / output_folders[0]
 
-    return Path()
+    raise FileNotFoundError(f"The output for job {job_path} does not exist.")
 
 
 def extract_output_name(path_output: Path, new_suffix_name: t.Optional[str] = None) -> str:
