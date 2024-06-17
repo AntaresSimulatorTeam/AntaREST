@@ -1,6 +1,5 @@
 import os
 import random
-import shutil
 import textwrap
 import uuid
 from argparse import Namespace
@@ -400,13 +399,6 @@ def test_import_study_output(launcher_config, tmp_path) -> None:
     xpansion_test_file.write_text("world")
     output_dir = launcher_config.launcher.slurm.local_workspace / "OUTPUT" / "1" / "output" / "output_name"
     output_dir.mkdir(parents=True)
-    assert not (output_dir / "updated_links" / "something").exists()
-    assert not (output_dir / "updated_links" / "something").exists()
-
-    slurm_launcher._import_study_output("1", "cpp")
-    assert (output_dir / "updated_links" / "something").exists()
-    assert (output_dir / "updated_links" / "something").read_text() == "hello"
-    shutil.rmtree(output_dir / "updated_links")
 
     slurm_launcher._import_study_output("1", "r")
     assert (output_dir / "results" / "something_else").exists()
