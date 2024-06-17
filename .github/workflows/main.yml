@@ -9,9 +9,9 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout github repo (+ download lfs dependencies)
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
           python-version: 3.8
       - name: Install dependencies
@@ -42,9 +42,9 @@ jobs:
 
     steps:
       - name: Checkout github repo (+ download lfs dependencies)
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
           python-version: 3.8
       - name: Install dependencies
@@ -60,7 +60,7 @@ jobs:
           sed -i 's/\/home\/runner\/work\/AntaREST\/AntaREST/\/github\/workspace/g' coverage.xml
       - name: Archive code coverage results
         if: matrix.os == 'ubuntu-20.04'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: python-code-coverage-report
           path: coverage.xml
@@ -72,7 +72,7 @@ jobs:
         os: [ ubuntu-20.04 ]
     steps:
       - name: Checkout github repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Set up Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v3
         with:
@@ -94,7 +94,7 @@ jobs:
     runs-on: ubuntu-20.04
     needs: [ python-test, npm-test ]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Download python coverage report
         uses: actions/download-artifact@v3
         with:

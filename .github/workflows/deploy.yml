@@ -15,7 +15,7 @@ jobs:
 
     steps:
       - name: 🐙 Checkout GitHub repo (+ download lfs dependencies)
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -39,7 +39,7 @@ jobs:
           NODE_OPTIONS: --max-old-space-size=8192
 
       - name: 🐍 Set up Python
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v5
         with:
           python-version: 3.8
 
@@ -77,7 +77,7 @@ jobs:
         working-directory: dist/package
 
       - name: 🚀 Upload binaries
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: AntaresWeb-${{ matrix.os }}-pkg
           path: dist/package/AntaresWeb.zip
