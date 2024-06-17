@@ -42,9 +42,11 @@ enum ReserveManagement {
   Global = "global",
 }
 
-enum UnitCommitmentMode {
+export enum UnitCommitmentMode {
   Fast = "fast",
   Accurate = "accurate",
+  // Since v8.8
+  MILP = "milp",
 }
 
 enum SimulationCore {

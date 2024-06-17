@@ -52,7 +52,7 @@ function AdvancedParameters() {
       onSubmitSuccessful={handleSubmitSuccessful}
       enableUndoRedo
     >
-      <Fields version={Number(study.version)} />
+      <Fields />
     </Form>
   );
 }

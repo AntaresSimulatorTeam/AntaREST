@@ -16,16 +16,16 @@ import {
   UNIT_COMMITMENT_MODE_OPTIONS,
   SIMULATION_CORES_OPTIONS,
   RENEWABLE_GENERATION_OPTIONS,
+  UnitCommitmentMode,
 } from "./utils";
+import { useOutletContext } from "react-router";
+import { StudyMetadata } from "../../../../../../common/types";
 
-interface Props {
-  version: number;
-}
-
-function Fields(props: Props) {
+function Fields() {
   const [t] = useTranslation();
   const { control } = useFormContextPlus<AdvancedParamsFormFields>();
-  const { version } = props;
+  const { study } = useOutletContext<{ study: StudyMetadata }>();
+  const studyVersion = Number(study.version);
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -178,7 +178,11 @@ function Fields(props: Props) {
         />
         <SelectFE
           label={t("study.configuration.advancedParameters.unitCommitmentMode")}
-          options={UNIT_COMMITMENT_MODE_OPTIONS}
+          options={UNIT_COMMITMENT_MODE_OPTIONS.filter(
+            (v) => v !== UnitCommitmentMode.MILP || studyVersion >= 880,
+          ).map((v) =>
+            v === UnitCommitmentMode.MILP ? { label: "MILP", value: v } : v,
+          )}
           name="unitCommitmentMode"
           control={control}
         />
@@ -188,7 +192,7 @@ function Fields(props: Props) {
           name="numberOfCoresMode"
           control={control}
         />
-        {version >= 810 && (
+        {studyVersion >= 810 && (
           <SelectFE
             label={t(
               "study.configuration.advancedParameters.renewableGenerationModeling",
