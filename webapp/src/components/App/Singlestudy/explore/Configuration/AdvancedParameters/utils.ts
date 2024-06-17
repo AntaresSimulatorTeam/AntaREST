@@ -1,3 +1,4 @@
+import { DeepPartial } from "react-hook-form";
 import { StudyMetadata } from "../../../../../../common/types";
 import client from "../../../../../../services/api/client";
 
@@ -41,9 +42,11 @@ enum ReserveManagement {
   Global = "global",
 }
 
-enum UnitCommitmentMode {
+export enum UnitCommitmentMode {
   Fast = "fast",
   Accurate = "accurate",
+  // Since v8.8
+  MILP = "milp",
 }
 
 enum SimulationCore {
@@ -82,7 +85,7 @@ export const RENEWABLE_GENERATION_OPTIONS = Object.values(
 ////////////////////////////////////////////////////////////////
 
 export interface AdvancedParamsFormFields {
-  accuracyOnCorrelation: string;
+  accuracyOnCorrelation: string[];
   dayAheadReserveManagement: string;
   hydroHeuristicPolicy: string;
   hydroPricingMode: string;
@@ -105,26 +108,47 @@ export interface AdvancedParamsFormFields {
   unitCommitmentMode: string;
 }
 
+type AdvancedParamsFormFields_RAW = Omit<
+  AdvancedParamsFormFields,
+  "accuracyOnCorrelation"
+> & {
+  accuracyOnCorrelation: string;
+};
+
+////////////////////////////////////////////////////////////////
+// API
+////////////////////////////////////////////////////////////////
+
 function makeRequestURL(studyId: StudyMetadata["id"]): string {
   return `v1/studies/${studyId}/config/advancedparameters/form`;
 }
 
 export async function getAdvancedParamsFormFields(
   studyId: StudyMetadata["id"],
-): Promise<AdvancedParamsFormFields> {
-  const res = await client.get(makeRequestURL(studyId));
+) {
+  const { data } = await client.get<AdvancedParamsFormFields_RAW>(
+    makeRequestURL(studyId),
+  );
 
-  // Get array of values from accuracyOnCorrelation string as expected for the SelectFE component
-  const accuracyOnCorrelation = res.data.accuracyOnCorrelation
-    .split(/\s*,\s*/)
-    .filter((v: string) => v.trim());
-
-  return { ...res.data, accuracyOnCorrelation };
+  return {
+    ...data,
+    accuracyOnCorrelation: data.accuracyOnCorrelation
+      .split(",")
+      .map((v) => v.trim())
+      .filter(Boolean),
+  } as AdvancedParamsFormFields;
 }
 
-export function setAdvancedParamsFormFields(
+export async function setAdvancedParamsFormFields(
   studyId: StudyMetadata["id"],
-  values: Partial<AdvancedParamsFormFields>,
-): Promise<void> {
-  return client.put(makeRequestURL(studyId), values);
+  values: DeepPartial<AdvancedParamsFormFields>,
+) {
+  const { accuracyOnCorrelation, ...rest } = values;
+  const newValues: Partial<AdvancedParamsFormFields_RAW> = rest;
+
+  if (accuracyOnCorrelation) {
+    newValues.accuracyOnCorrelation = accuracyOnCorrelation.join(", ");
+  }
+
+  await client.put(makeRequestURL(studyId), newValues);
 }

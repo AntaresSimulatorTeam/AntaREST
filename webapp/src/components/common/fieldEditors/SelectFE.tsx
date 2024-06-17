@@ -19,7 +19,7 @@ type OptionObj<T extends O.Object = O.Object> = {
 } & T;
 
 export interface SelectFEProps extends Omit<SelectProps, "labelId"> {
-  options: string[] | readonly string[] | OptionObj[];
+  options: Array<string | OptionObj> | readonly string[];
   helperText?: React.ReactNode;
   emptyValue?: boolean;
   startCaseLabel?: boolean;

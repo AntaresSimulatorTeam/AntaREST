@@ -19,28 +19,23 @@ function AdvancedParameters() {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = async (
-    data: SubmitHandlerPlus<AdvancedParamsFormFields>,
-  ) => {
-    const values = { ...data.dirtyValues };
+  const handleSubmit = ({
+    dirtyValues,
+  }: SubmitHandlerPlus<AdvancedParamsFormFields>) => {
+    return setAdvancedParamsFormFields(study.id, dirtyValues);
+  };
 
-    // Get a comma separated string from accuracyOnCorrelation array as expected by the api
-    if (values.accuracyOnCorrelation) {
-      values.accuracyOnCorrelation = (
-        values.accuracyOnCorrelation as unknown as string[]
-      ).join(", ");
+  const handleSubmitSuccessful = ({
+    dirtyValues: { renewableGenerationModelling },
+  }: SubmitHandlerPlus<AdvancedParamsFormFields>) => {
+    if (renewableGenerationModelling) {
+      dispatch(
+        updateStudySynthesis({
+          id: study.id,
+          changes: { enr_modelling: renewableGenerationModelling },
+        }),
+      );
     }
-
-    return setAdvancedParamsFormFields(study.id, values).then(() => {
-      if (values.renewableGenerationModelling) {
-        dispatch(
-          updateStudySynthesis({
-            id: study.id,
-            changes: { enr_modelling: values.renewableGenerationModelling },
-          }),
-        );
-      }
-    });
   };
 
   ////////////////////////////////////////////////////////////////
@@ -54,9 +49,10 @@ function AdvancedParameters() {
         defaultValues: () => getAdvancedParamsFormFields(study.id),
       }}
       onSubmit={handleSubmit}
+      onSubmitSuccessful={handleSubmitSuccessful}
       enableUndoRedo
     >
-      <Fields version={Number(study.version)} />
+      <Fields />
     </Form>
   );
 }
