@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Box, MenuItem } from "@mui/material";
+import { MenuItem } from "@mui/material";
 import { useOutletContext } from "react-router";
 import { useUpdateEffect } from "react-use";
 import { useTranslation } from "react-i18next";
@@ -17,6 +17,7 @@ import UpdateTemplateTableDialog from "./dialogs/UpdateTemplateTableDialog";
 import ConfirmationDialog from "../../../../common/dialogs/ConfirmationDialog";
 import TableMode from "../../../../common/TableMode";
 import SplitView from "../../../../common/SplitView";
+import ViewWrapper from "../../../../common/page/ViewWrapper";
 
 function TableModeList() {
   const { t } = useTranslation();
@@ -73,50 +74,50 @@ function TableModeList() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <Box sx={{ width: 1, height: 1, py: 1 }}>
+    <>
       <SplitView id="tablemode" sizes={[10, 90]}>
-        <Box>
-          <PropertiesView
-            mainContent={
-              <ListElement
-                list={templates}
-                currentElement={selectedTemplate?.id}
-                currentElementKeyToTest="id"
-                setSelectedItem={({ id }) => setSelectedTemplateId(id)}
-                contextMenuContent={({ element, close }) => (
-                  <>
-                    <MenuItem
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        setDialog({
-                          type: "edit",
-                          templateId: element.id,
-                        });
-                        close();
-                      }}
-                    >
-                      Edit
-                    </MenuItem>
-                    <MenuItem
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        setDialog({
-                          type: "delete",
-                          templateId: element.id,
-                        });
-                        close();
-                      }}
-                    >
-                      Delete
-                    </MenuItem>
-                  </>
-                )}
-              />
-            }
-            onAdd={() => setDialog({ type: "add", templateId: "" })}
-          />
-        </Box>
-        <Box>
+        {/* Left */}
+        <PropertiesView
+          mainContent={
+            <ListElement
+              list={templates}
+              currentElement={selectedTemplate?.id}
+              currentElementKeyToTest="id"
+              setSelectedItem={({ id }) => setSelectedTemplateId(id)}
+              contextMenuContent={({ element, close }) => (
+                <>
+                  <MenuItem
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setDialog({
+                        type: "edit",
+                        templateId: element.id,
+                      });
+                      close();
+                    }}
+                  >
+                    Edit
+                  </MenuItem>
+                  <MenuItem
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setDialog({
+                        type: "delete",
+                        templateId: element.id,
+                      });
+                      close();
+                    }}
+                  >
+                    Delete
+                  </MenuItem>
+                </>
+              )}
+            />
+          }
+          onAdd={() => setDialog({ type: "add", templateId: "" })}
+        />
+        {/* Right */}
+        <ViewWrapper>
           {selectedTemplate && (
             <TableMode
               studyId={study.id}
@@ -124,9 +125,8 @@ function TableModeList() {
               columns={selectedTemplate.columns}
             />
           )}
-        </Box>
+        </ViewWrapper>
       </SplitView>
-
       {dialog?.type === "add" && (
         <CreateTemplateTableDialog
           templates={templates}
@@ -157,7 +157,7 @@ function TableModeList() {
           })}
         </ConfirmationDialog>
       )}
-    </Box>
+    </>
   );
 }
 
