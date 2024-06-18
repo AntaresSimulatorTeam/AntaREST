@@ -115,10 +115,12 @@ function Form<TFieldValues extends FieldValues, TContext>(
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { t } = useTranslation();
   const autoSubmitConfig = toAutoSubmitConfig(autoSubmit);
+
   const [showAutoSubmitLoader, setShowAutoSubmitLoader] = useDebouncedState(
     false,
     750,
   );
+
   const fieldAutoSubmitListeners = useRef<
     Record<string, ((v: any) => any | Promise<any>) | undefined>
   >({});
@@ -129,6 +131,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   const submitSuccessfulCb = useRef(() => {});
   const preventClose = useRef(false);
+
   const contextValue = useMemo(
     () => ({ isAutoSubmitEnabled: autoSubmitConfig.enable }),
     [autoSubmitConfig.enable],
@@ -224,6 +227,9 @@ function Form<TFieldValues extends FieldValues, TContext>(
       if (preventClose.current) {
         // eslint-disable-next-line no-param-reassign
         event.returnValue = t("form.submit.inProgress");
+      } else if (isDirty) {
+        // eslint-disable-next-line no-param-reassign
+        event.returnValue = t("form.changeNotSaved");
       }
     };
 
@@ -232,13 +238,14 @@ function Form<TFieldValues extends FieldValues, TContext>(
     return () => {
       window.removeEventListener("beforeunload", listener);
     };
-  }, [t]);
+  }, [t, isDirty]);
 
   useUpdateEffect(() => onStateChange?.(formState), [formState]);
 
   useEffect(() => setRef(apiRef, formApiPlus));
 
   usePrompt(t("form.submit.inProgress"), preventClose.current);
+  usePrompt(t("form.changeNotSaved"), isDirty);
 
   ////////////////////////////////////////////////////////////////
   // Submit
