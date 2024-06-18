@@ -17,7 +17,7 @@ import {
 import { SubmitHandlerPlus } from "../../../../../common/Form/types";
 import ScenarioBuilderDialog from "./dialogs/ScenarioBuilderDialog";
 
-function GeneralParameters() {
+function General() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const [dialog, setDialog] = useState<SetDialogStateType>("");
 
@@ -90,4 +90,4 @@ function GeneralParameters() {
   );
 }
 
-export default GeneralParameters;
+export default General;
