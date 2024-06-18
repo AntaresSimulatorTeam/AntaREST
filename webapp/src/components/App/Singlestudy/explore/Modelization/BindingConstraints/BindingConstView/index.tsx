@@ -113,14 +113,14 @@ function BindingConstView({ constraintId }: Props) {
         height: 1,
         display: "flex",
         flexDirection: "column",
-        overflow: "hidden",
+        overflow: "auto",
       }}
     >
       <UsePromiseCond
         response={mergeResponses(constraint, linksAndClusters)}
         ifResolved={([defaultValues, linksAndClusters]) => (
           <>
-            <Box sx={{ position: "absolute", right: 15 }}>
+            <Box sx={{ alignSelf: "flex-end" }}>
               <Button
                 variant="outlined"
                 size="small"

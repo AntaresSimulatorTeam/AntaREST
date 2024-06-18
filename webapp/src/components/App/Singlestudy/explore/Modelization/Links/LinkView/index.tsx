@@ -1,4 +1,3 @@
-import { Box, Paper } from "@mui/material";
 import { useOutletContext } from "react-router";
 import { LinkElement, StudyMetadata } from "../../../../../../../common/types";
 import usePromise from "../../../../../../../hooks/usePromise";
@@ -24,18 +23,14 @@ function LinkView(props: Props) {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <Box sx={{ width: "100%", height: "100%", overflowY: "auto" }}>
-      <Paper sx={{ width: 1, height: 1, padding: 2, overflow: "auto" }}>
-        <UsePromiseCond
-          response={res}
-          ifResolved={(data) => (
-            <Form autoSubmit config={{ defaultValues: data }}>
-              <LinkForm link={link} study={study} />
-            </Form>
-          )}
-        />
-      </Paper>
-    </Box>
+    <UsePromiseCond
+      response={res}
+      ifResolved={(data) => (
+        <Form autoSubmit config={{ defaultValues: data }}>
+          <LinkForm link={link} study={study} />
+        </Form>
+      )}
+    />
   );
 }
 
