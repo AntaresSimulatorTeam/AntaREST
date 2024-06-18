@@ -1,4 +1,3 @@
-import { Box } from "@mui/material";
 import { useOutletContext } from "react-router";
 import { StudyMetadata } from "../../../../../../common/types";
 import SimpleContent from "../../../../../common/page/SimpleContent";
@@ -10,6 +9,7 @@ import { setCurrentLink } from "../../../../../../redux/ducks/studySyntheses";
 import LinkView from "./LinkView";
 import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
 import SplitView from "../../../../../common/SplitView";
+import ViewWrapper from "../../../../../common/page/ViewWrapper";
 
 function Links() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -34,23 +34,21 @@ function Links() {
 
   return (
     <SplitView id="links" sizes={[10, 90]}>
-      <Box width="100%" height="100%">
-        <LinkPropsView studyId={study.id} onClick={handleLinkClick} />
-      </Box>
-      <Box>
+      {/* Left */}
+      <LinkPropsView studyId={study.id} onClick={handleLinkClick} />
+      {/* Right */}
+      <ViewWrapper>
         <UsePromiseCond
           response={res}
           ifResolved={(currentLink) =>
             currentLink ? (
-              <Box sx={{ width: 1, height: 1 }}>
-                <LinkView link={currentLink} />
-              </Box>
+              <LinkView link={currentLink} />
             ) : (
               <SimpleContent title="No Links" />
             )
           }
         />
-      </Box>
+      </ViewWrapper>
     </SplitView>
   );
 }

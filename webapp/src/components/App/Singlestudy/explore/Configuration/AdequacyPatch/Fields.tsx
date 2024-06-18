@@ -17,7 +17,12 @@ function Fields() {
 
   return (
     <Box>
-      <Fieldset fullFieldWidth>
+      <Fieldset
+        legend={t(
+          "study.configuration.adequacyPatch.legend.operatingParameters",
+        )}
+        fullFieldWidth
+      >
         <SwitchFE
           label={t("study.configuration.adequacyPatch.enableAdequacyPatch")}
           name="enableAdequacyPatch"

@@ -63,14 +63,14 @@ function BindingConstraints() {
       ifPending={() => <SimpleLoader />}
       ifResolved={(data) => (
         <SplitView id="binding-constraints" sizes={[10, 90]}>
-          <Box>
-            <BindingConstPropsView // TODO rename ConstraintsList
-              list={data}
-              onClick={handleConstraintChange}
-              currentConstraint={currentConstraintId}
-              reloadConstraintsList={constraints.reload}
-            />
-          </Box>
+          {/* Left */}
+          <BindingConstPropsView // TODO rename ConstraintsList
+            list={data}
+            onClick={handleConstraintChange}
+            currentConstraint={currentConstraintId}
+            reloadConstraintsList={constraints.reload}
+          />
+          {/* Right */}
           <Box>
             {data.length > 0 && currentConstraintId ? (
               <BindingConstView constraintId={currentConstraintId} />

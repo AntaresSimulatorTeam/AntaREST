@@ -45,6 +45,7 @@ import { SubmitHandlerPlus, UseFormReturnPlus } from "./types";
 import FormContext from "./FormContext";
 import useFormApiPlus from "./useFormApiPlus";
 import useFormUndoRedo from "./useFormUndoRedo";
+import { mergeSxProp } from "../../../utils/muiUtils";
 
 export interface AutoSubmitConfig {
   enable: boolean;
@@ -76,6 +77,7 @@ export interface FormProps<
   submitButtonIcon?: LoadingButtonProps["startIcon"];
   miniSubmitButton?: boolean;
   hideSubmitButton?: boolean;
+  hideFooterDivider?: boolean;
   onStateChange?: (state: FormState<TFieldValues>) => void;
   autoSubmit?: boolean | AutoSubmitConfig;
   enableUndoRedo?: boolean;
@@ -100,6 +102,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
     submitButtonIcon = <SaveIcon />,
     miniSubmitButton,
     hideSubmitButton,
+    hideFooterDivider,
     onStateChange,
     autoSubmit,
     enableUndoRedo,
@@ -154,9 +157,9 @@ function Form<TFieldValues extends FieldValues, TContext>(
   // Don't add `isValid` because we need to trigger fields validation.
   // In case we have invalid default value for example.
   const isSubmitAllowed = isDirty && !isSubmitting;
-  const showSubmitButton = !hideSubmitButton && !autoSubmitConfig.enable;
-  const showFooter = showSubmitButton || enableUndoRedo;
   const rootError = errors.root?.[ROOT_ERROR_KEY];
+  const showSubmitButton = !hideSubmitButton && !autoSubmitConfig.enable;
+  const showFooter = showSubmitButton || enableUndoRedo || rootError;
 
   const formApiPlus = useFormApiPlus({
     formApi,
@@ -323,13 +326,22 @@ function Form<TFieldValues extends FieldValues, TContext>(
   return (
     <Box
       {...formProps}
-      sx={sx}
+      sx={mergeSxProp(
+        {
+          display: "flex",
+          flexDirection: "column",
+          height: 1,
+          overflow: "auto",
+        },
+        sx,
+      )}
       component="form"
       onSubmit={handleFormSubmit}
       className={clsx("Form", className)}
     >
       {showAutoSubmitLoader && (
         <Box
+          className="Form__Loader"
           sx={{
             position: "sticky",
             top: 0,
@@ -337,65 +349,78 @@ function Form<TFieldValues extends FieldValues, TContext>(
             height: 0,
             textAlign: "right",
           }}
-          className="Form__Loader"
         >
           <CircularProgress color="secondary" size={20} sx={{ mr: 1 }} />
         </Box>
       )}
-      <FormContext.Provider value={contextValue}>
-        {RA.isFunction(children) ? (
-          children(formApiPlus)
-        ) : (
-          <FormProvider {...formApiPlus}>{children}</FormProvider>
-        )}
-      </FormContext.Provider>
-      {rootError && (
-        <Box color="error.main" sx={{ fontSize: "0.9rem", mb: 2 }}>
-          {rootError.message || t("form.submit.error")}
-        </Box>
-      )}
+      <Box className="Form__Content" sx={{ overflow: "auto" }}>
+        <FormContext.Provider value={contextValue}>
+          {RA.isFunction(children) ? (
+            children(formApiPlus)
+          ) : (
+            <FormProvider {...formApiPlus}>{children}</FormProvider>
+          )}
+        </FormContext.Provider>
+      </Box>
       {showFooter && (
-        <Box sx={{ display: "flex", pt: 1 }} className="Form__Footer">
-          {showSubmitButton && (
-            <>
-              <LoadingButton
-                type="submit"
-                disabled={!isSubmitAllowed}
-                loading={isSubmitting}
-                {...(miniSubmitButton
-                  ? {
-                      children: submitButtonIcon,
-                    }
-                  : {
-                      loadingPosition: "start",
-                      startIcon: submitButtonIcon,
-                      variant: "contained",
-                      children: submitButtonText || t("global.save"),
-                    })}
-              />
-              {enableUndoRedo && (
-                <Divider sx={{ mx: 2 }} orientation="vertical" flexItem />
-              )}
-            </>
+        <Box
+          className="Form__Footer"
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 1.5,
+            mt: hideFooterDivider ? 0 : 1.5,
+          }}
+        >
+          {!hideFooterDivider && <Divider flexItem />}
+          {rootError && (
+            <Box color="error.main" sx={{ fontSize: "0.9rem" }}>
+              {rootError.message || t("form.submit.error")}
+            </Box>
           )}
-          {enableUndoRedo && (
-            <>
-              <Tooltip title={t("global.undo")}>
-                <span>
-                  <IconButton onClick={undo} disabled={!canUndo}>
-                    <UndoIcon />
-                  </IconButton>
-                </span>
-              </Tooltip>
-              <Tooltip title={t("global.redo")}>
-                <span>
-                  <IconButton onClick={redo} disabled={!canRedo}>
-                    <RedoIcon />
-                  </IconButton>
-                </span>
-              </Tooltip>
-            </>
-          )}
+          <Box className="Form__Footer__Actions" sx={{ display: "flex" }}>
+            {showSubmitButton && (
+              <>
+                <LoadingButton
+                  type="submit"
+                  size="small"
+                  disabled={!isSubmitAllowed}
+                  loading={isSubmitting}
+                  {...(miniSubmitButton
+                    ? {
+                        children: submitButtonIcon,
+                      }
+                    : {
+                        loadingPosition: "start",
+                        startIcon: submitButtonIcon,
+                        variant: "contained",
+                        children: submitButtonText || t("global.save"),
+                      })}
+                />
+                {enableUndoRedo && (
+                  <Divider sx={{ mx: 2 }} orientation="vertical" flexItem />
+                )}
+              </>
+            )}
+            {enableUndoRedo && (
+              <>
+                <Tooltip title={t("global.undo")}>
+                  <span>
+                    <IconButton size="small" onClick={undo} disabled={!canUndo}>
+                      <UndoIcon />
+                    </IconButton>
+                  </span>
+                </Tooltip>
+                <Tooltip title={t("global.redo")}>
+                  <span>
+                    <IconButton size="small" onClick={redo} disabled={!canRedo}>
+                      <RedoIcon />
+                    </IconButton>
+                  </span>
+                </Tooltip>
+              </>
+            )}
+          </Box>
         </Box>
       )}
     </Box>

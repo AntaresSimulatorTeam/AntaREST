@@ -2,7 +2,6 @@ import { useMemo } from "react";
 import { useOutletContext } from "react-router";
 import { StudyMetadata } from "../../../../../../../common/types";
 import TabWrapper from "../../../TabWrapper";
-import { Root } from "./style";
 import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../../redux/selectors";
 
@@ -37,11 +36,7 @@ function Hydro() {
   // JSX
   ////////////////////////////////////////////////////////////////
 
-  return (
-    <Root>
-      <TabWrapper study={study} tabList={tabList} isScrollable />
-    </Root>
-  );
+  return <TabWrapper study={study} tabList={tabList} />;
 }
 
 export default Hydro;
