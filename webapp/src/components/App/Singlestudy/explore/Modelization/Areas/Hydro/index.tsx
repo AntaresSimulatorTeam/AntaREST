@@ -39,7 +39,7 @@ function Hydro() {
 
   return (
     <Root>
-      <TabWrapper study={study} tabList={tabList} isScrollable />
+      <TabWrapper study={study} tabList={tabList} />
     </Root>
   );
 }
