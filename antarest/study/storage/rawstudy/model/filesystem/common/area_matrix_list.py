@@ -136,6 +136,21 @@ class ThermalMatrixList(FolderNode):
 
 
 class AreaMultipleMatrixList(FolderNode):
+    """
+    Node representing a folder structure containing multiple matrix files for each area.
+
+    Example of tree structure:
+
+    .. code-block:: text
+
+       ts-numbers/thermal
+       ├── at
+       │    ├── cluster_gas.txt
+       │    └── cluster2_gas.txt
+       └── be
+            └── cluster_nuclear.txt
+    """
+
     def __init__(
         self,
         context: ContextServer,
