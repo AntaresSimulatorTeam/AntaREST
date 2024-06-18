@@ -131,7 +131,7 @@ def test_export_flat(
         assert export_output_path.exists()
         files = set(export_output_path.iterdir())
         if output_list is None:
-            assert len(files) == 5
+            assert len(files) == 6
         elif len(output_list) == 0:
             assert not files
         else:
