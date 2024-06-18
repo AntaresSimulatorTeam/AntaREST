@@ -15,15 +15,15 @@ from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mod
     OutputSimulationModeMcAllGrid,
 )
 
-OUTPUT_SIMULATION_TYPE = t.Type[
-    t.Union[
-        OutputSimulationAreas,
-        OutputSimulationModeMcAllGrid,
-        OutputSimulationLinks,
-        OutputSimulationBindingConstraintItem,
-    ]
-]
-OUTPUT_MAPPING: t.Dict[str, OUTPUT_SIMULATION_TYPE] = {
+
+class OutputMappingType(t.TypedDict):
+    areas: t.Type[OutputSimulationAreas]
+    grid: t.Type[OutputSimulationModeMcAllGrid]
+    links: t.Type[OutputSimulationLinks]
+    binding_constraints: t.Type[OutputSimulationBindingConstraintItem]
+
+
+OUTPUT_MAPPING: OutputMappingType = {
     "areas": OutputSimulationAreas,
     "grid": OutputSimulationModeMcAllGrid,
     "links": OutputSimulationLinks,
@@ -38,5 +38,5 @@ class OutputSimulationModeCommon(FolderNode):
         children: TREE = {}
         for key, simulation_class in OUTPUT_MAPPING.items():
             if (self.config.path / key).exists():
-                children[key] = simulation_class(self.context, self.config.next_file(key))
+                children[key] = simulation_class(self.context, self.config.next_file(key))  # type: ignore
         return children
