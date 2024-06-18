@@ -365,6 +365,7 @@
   "study.configuration.optimization.simplexOptimizationRange": "Simplex optimization range",
   "study.configuration.adequacyPatch.tab.general": "General",
   "study.configuration.adequacyPatch.tab.perimeter": "Perimeter",
+  "study.configuration.adequacyPatch.legend.operatingParameters": "Operating parameters",
   "study.configuration.adequacyPatch.legend.localMatchingRule": "Local matching rule",
   "study.configuration.adequacyPatch.legend.curtailmentSharing": "Curtailment sharing",
   "study.configuration.adequacyPatch.legend.advanced": "Advanced",
