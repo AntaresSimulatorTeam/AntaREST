@@ -30,5 +30,5 @@ class OutputSimulationAreas(FolderNode):
         children: TREE = {a: Area(self.context, self.config.next_file(a), area=a) for a in areas}
 
         for s in sets:
-            children[f"@ {s}"] = Set(self.context, self.config.next_file(f"@ {s}"), set=s)
+            children[s] = Set(self.context, self.config.next_file(s), set=s)
         return children
