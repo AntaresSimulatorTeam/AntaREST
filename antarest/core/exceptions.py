@@ -4,6 +4,8 @@ from http import HTTPStatus
 
 from fastapi.exceptions import HTTPException
 
+MAX_BINDING_CONSTRAINTS_TO_DISPLAY = 10
+
 
 class ShouldNotHappenException(Exception):
     pass
@@ -326,10 +328,12 @@ class StudyVariantUpgradeError(HTTPException):
 
 
 class AreaDeletionNotAllowed(HTTPException):
-    def __init__(self, uuid: str, message: t.Optional[str] = None) -> None:
-        msg = f"Area {uuid} is not allowed to be deleted"
-        if message:
-            msg += f"\n{message}"
+    def __init__(self, uuid: str, binding_constraints_ids: t.List[str]) -> None:
+        first_bcs_ids = ""
+        for i, bc in enumerate(binding_constraints_ids[:MAX_BINDING_CONSTRAINTS_TO_DISPLAY]):
+            first_bcs_ids += f"{i+1}- {bc}\n"
+        message = "Area is referenced in the following binding constraints:\n" + first_bcs_ids
+        msg = f"Area {uuid} is not allowed to be deleted\n{message}"
         super().__init__(
             HTTPStatus.FORBIDDEN,
             msg,
@@ -337,10 +341,12 @@ class AreaDeletionNotAllowed(HTTPException):
 
 
 class LinkDeletionNotAllowed(HTTPException):
-    def __init__(self, uuid: str, message: t.Optional[str] = None) -> None:
-        msg = f"Link {uuid} is not allowed to be deleted"
-        if message:
-            msg += f"\n{message}"
+    def __init__(self, uuid: str, binding_constraints_ids: t.List[str]) -> None:
+        first_bcs_ids = ""
+        for i, bc in enumerate(binding_constraints_ids[:MAX_BINDING_CONSTRAINTS_TO_DISPLAY]):
+            first_bcs_ids += f"{i+1}- {bc}\n"
+        message = "Link is referenced in the following binding constraints:\n" + first_bcs_ids
+        msg = f"Link {uuid} is not allowed to be deleted\n{message}"
         super().__init__(
             HTTPStatus.FORBIDDEN,
             msg,
@@ -348,10 +354,12 @@ class LinkDeletionNotAllowed(HTTPException):
 
 
 class ClusterDeletionNotAllowed(HTTPException):
-    def __init__(self, uuid: str, message: t.Optional[str] = None) -> None:
-        msg = f"Cluster {uuid} is not allowed to be deleted"
-        if message:
-            msg += f"\n{message}"
+    def __init__(self, uuid: str, binding_constraints_ids: t.List[str]) -> None:
+        first_bcs_ids = ""
+        for i, bc in enumerate(binding_constraints_ids[:MAX_BINDING_CONSTRAINTS_TO_DISPLAY]):
+            first_bcs_ids += f"{i+1}- {bc}\n"
+        message = "Cluster is referenced in the following binding constraints:\n" + first_bcs_ids
+        msg = f"Cluster {uuid} is not allowed to be deleted\n{message}"
         super().__init__(
             HTTPStatus.FORBIDDEN,
             msg,

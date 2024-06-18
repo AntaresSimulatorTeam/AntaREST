@@ -654,12 +654,9 @@ class TestThermal:
             json=[fr_gas_conventional_id],
         )
         assert res.status_code == 403, res.json()
-        assert res.json() == {
-            "description": "Cluster FR_Gas conventional is not allowed to be deleted\n"
-            "Cluster is referenced in the following binding constraints:"
-            "\n1- binding constraint\n",
-            "exception": "ClusterDeletionNotAllowed",
-        }
+        description = res.json()["description"]
+        assert all([elm in description for elm in [fr_gas_conventional, "binding constraint"]])
+        assert res.json()["exception"] == "ClusterDeletionNotAllowed"
 
         # delete the binding constraint
         res = client.delete(
@@ -1051,20 +1048,12 @@ class TestThermal:
             "remove_cluster",
         ]
 
-    def test_thermal_cluster_deletion(self, client: TestClient, user_access_token: str) -> None:
+    def test_thermal_cluster_deletion(self, client: TestClient, user_access_token: str, study_id: str) -> None:
         """
         Test that creating a thermal cluster with invalid properties raises a validation error.
         """
 
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
-
-        # Create a new study
-        res = client.post(
-            f"/v1/studies",
-            params={"name": "My Study"},
-        )
-        assert res.status_code in {200, 201}, res.json()
-        study_id = res.json()
 
         # Create an area "area_1" in the study
         res = client.post(

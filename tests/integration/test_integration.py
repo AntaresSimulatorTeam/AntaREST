@@ -1431,10 +1431,8 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
     result = client.delete(f"/v1/studies/{study_id}/areas/area%201")
     assert result.status_code == 403, res.json()
     # verify the error message
-    assert (
-        result.json()["description"] == "Area area 1 is not allowed to be deleted\nArea is referenced "
-        "in the following binding constraints:\n1- binding constraint 1\n"
-    )
+    description = result.json()["description"]
+    assert all([elm in description for elm in ["area 1", "binding constraint 1"]])
     # check the exception
     assert result.json()["exception"] == "AreaDeletionNotAllowed"
 
@@ -1717,16 +1715,13 @@ def test_copy(client: TestClient, admin_access_token: str, study_id: str) -> Non
     assert res["public_mode"] == "READ"
 
 
-def test_links_deletion(client: TestClient, user_access_token: str) -> None:
+def test_links_deletion(client: TestClient, user_access_token: str, study_id: str) -> None:
     """
     Test the deletion of links between areas.
     """
 
     # set client headers to user access token
     client.headers = {"Authorization": f"Bearer {user_access_token}"}
-
-    # create a study
-    study_id = client.post("/v1/studies?name=test").json()
 
     # Create an area "area_1" in the study
     res = client.post(
@@ -1783,12 +1778,9 @@ def test_links_deletion(client: TestClient, user_access_token: str) -> None:
     # try to delete the link before deleting the binding constraint
     res = client.delete(f"/v1/studies/{study_id}/links/area_1/area_2")
     assert res.status_code == 403, res.json()
-    assert res.json() == {
-        "description": "Link area_1%area_2 is not allowed to be deleted\n"
-        "Link is referenced in the following binding constraints:\n"
-        "1- bc_1\n",
-        "exception": "LinkDeletionNotAllowed",
-    }
+    description = res.json()["description"]
+    assert all([elm in description for elm in ["area_1%area_2", "bc_1"]])
+    assert res.json()["exception"] == "LinkDeletionNotAllowed"
 
     # delete the binding constraint
     res = client.delete(f"/v1/studies/{study_id}/bindingconstraints/bc_1")

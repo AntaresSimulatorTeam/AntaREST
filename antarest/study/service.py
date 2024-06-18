@@ -140,7 +140,6 @@ from antarest.worker.simulator_worker import GenerateTimeseriesTaskArgs
 logger = logging.getLogger(__name__)
 
 MAX_MISSING_STUDY_TIMEOUT = 2  # days
-MAX_BINDING_CONSTRAINTS_TO_DISPLAY = 10
 
 
 def get_disk_usage(path: t.Union[str, Path]) -> int:
@@ -1864,14 +1863,9 @@ class StudyService:
         self._assert_study_unarchived(study)
         referencing_binding_constraints = self.binding_constraint_manager.get_binding_constraints(
             study, ConstraintFilters(area_name=area_id)
-        )[:MAX_BINDING_CONSTRAINTS_TO_DISPLAY]
+        )
         if referencing_binding_constraints:
-            first_bcs_ids = ""
-            for i, bc in enumerate(referencing_binding_constraints):
-                first_bcs_ids += f"{i+1}- {bc.id}\n"
-            raise AreaDeletionNotAllowed(
-                area_id, "Area is referenced in the following binding constraints:\n" + first_bcs_ids
-            )
+            raise AreaDeletionNotAllowed(area_id, [bc.id for bc in referencing_binding_constraints])
         self.areas.delete_area(study, area_id)
         self.event_bus.push(
             Event(
@@ -1894,14 +1888,9 @@ class StudyService:
         link_id = LinkTerm(area1=area_from, area2=area_to).generate_id()
         referencing_binding_constraints = self.binding_constraint_manager.get_binding_constraints(
             study, ConstraintFilters(link_id=link_id)
-        )[:MAX_BINDING_CONSTRAINTS_TO_DISPLAY]
+        )
         if referencing_binding_constraints:
-            first_bcs_ids = ""
-            for i, bc in enumerate(referencing_binding_constraints):
-                first_bcs_ids += f"{i+1}- {bc.id}\n"
-            raise LinkDeletionNotAllowed(
-                link_id, "Link is referenced in the following binding constraints:\n" + first_bcs_ids
-            )
+            raise LinkDeletionNotAllowed(link_id, [bc.id for bc in referencing_binding_constraints])
         self.links.delete_link(study, area_from, area_to)
         self.event_bus.push(
             Event(
@@ -2544,27 +2533,26 @@ class StudyService:
 
         return df_matrix
 
-    def assert_no_cluster_referenced_in_bcs(self, study: Study, area_id: str, cluster_ids: t.Sequence[str]) -> None:
+    def asserts_no_thermal_in_binding_constraints(
+        self, study: Study, area_id: str, cluster_ids: t.Sequence[str]
+    ) -> None:
         """
-        Check that no cluster is referenced in a binding constraint otherwise raise an ClusterDeletionNotAllowed Exception
+        Check that no cluster is referenced in a binding constraint otherwise raise an ClusterDeletionNotAllowed
+        Exception
 
         Args:
-            study: input study
+            study: input study for which an update is to be committed
             area_id: area ID to be checked
-            cluster_ids: cluster IDs to be checked
+            cluster_ids: IDs of the thermal clusters to be checked
 
-        Returns:
+        Returns: None
 
+        Raises: ClusterDeletionNotAllowed if a cluster is referenced in a binding constraint
         """
 
         for cluster_id in cluster_ids:
             referencing_binding_constraints = self.binding_constraint_manager.get_binding_constraints(
                 study, ConstraintFilters(cluster_id=f"{area_id}.{cluster_id}")
-            )[:MAX_BINDING_CONSTRAINTS_TO_DISPLAY]
+            )
             if referencing_binding_constraints:
-                first_bcs_ids = ""
-                for i, bc in enumerate(referencing_binding_constraints):
-                    first_bcs_ids += f"{i+1}- {bc.id}\n"
-                raise ClusterDeletionNotAllowed(
-                    cluster_id, "Cluster is referenced in the following binding constraints:\n" + first_bcs_ids
-                )
+                raise ClusterDeletionNotAllowed(cluster_id, [bc.id for bc in referencing_binding_constraints])

@@ -2185,7 +2185,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         request_params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, request_params)
-        study_service.assert_no_cluster_referenced_in_bcs(study, area_id, cluster_ids)
+        study_service.asserts_no_thermal_in_binding_constraints(study, area_id, cluster_ids)
         study_service.thermal_manager.delete_clusters(study, area_id, cluster_ids)
 
     @bp.get(
