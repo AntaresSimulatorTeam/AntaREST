@@ -17,7 +17,7 @@ class OutputSimulationMode(FolderNode):
         config: FileStudyTreeConfig,
         simulation: Simulation,
     ):
-        FolderNode.__init__(self, context, config)
+        super().__init__(context, config)
         self.simulation = simulation
 
     def build(self) -> TREE:

@@ -14,7 +14,7 @@ class OutputSimulationLinkItem(FolderNode):
         area: str,
         link: str,
     ):
-        FolderNode.__init__(self, context, config)
+        super().__init__(context, config)
         self.area = area
         self.link = link
 

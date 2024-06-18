@@ -17,7 +17,7 @@ class _OutputSimulationModeMcAllLinksBis(FolderNode):
         area_from: str,
         link_names: t.List[str],
     ):
-        FolderNode.__init__(self, context, config)
+        super().__init__(context, config)
         self.area_from = area_from
         self.link_names = link_names
 

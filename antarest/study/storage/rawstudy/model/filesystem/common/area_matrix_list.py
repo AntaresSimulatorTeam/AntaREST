@@ -63,10 +63,10 @@ class AreaMatrixList(FolderNode):
             and the value is the corresponding :class:`InputSeriesMatrix` node.
         """
         children: TREE = {}
-        if not self.prefix:  # Corresponds to the outputs
-            files = [d.name.split(".")[0] for d in self.config.path.iterdir()]
-        else:  # Corresponds to the inputs
+        if self.prefix:  # Corresponds to the inputs
             files = self.config.area_names()
+        else:  # Corresponds to the outputs
+            files = [d.with_suffix("").name for d in self.config.path.iterdir()]
 
         for file in files:
             name = f"{self.prefix}{file}"
@@ -129,9 +129,9 @@ class ThermalMatrixList(FolderNode):
     def build(self) -> TREE:
         # Note that cluster IDs are case-insensitive, but series IDs are in lower case.
         # For instance, if your cluster ID is "Base", then the series ID will be "base".
-        series_ids = self.config.path.glob(TXT_PATTERN)
+        series_files = self.config.path.glob(TXT_PATTERN)
         return {
-            series.stem: self.matrix_class(self.context, self.config.next_file(series.name)) for series in series_ids
+            series.stem: self.matrix_class(self.context, self.config.next_file(series.name)) for series in series_files
         }
 
 
@@ -159,7 +159,7 @@ class AreaMultipleMatrixList(FolderNode):
         self.matrix_class = matrix_class
 
     def build(self) -> TREE:
-        folders = [d.name for d in self.config.path.iterdir()]
+        folders = [d.name for d in self.config.path.iterdir() if d.is_dir()]
         children: TREE = {
             area: self.klass(
                 self.context,

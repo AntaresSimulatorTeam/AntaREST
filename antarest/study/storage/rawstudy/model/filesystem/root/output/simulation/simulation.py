@@ -27,7 +27,7 @@ class OutputSimulation(FolderNode):
         config: FileStudyTreeConfig,
         simulation: Simulation,
     ):
-        FolderNode.__init__(self, context, config)
+        super().__init__(context, config)
         self.simulation = simulation
 
     def build(self) -> TREE:
@@ -41,9 +41,9 @@ class OutputSimulation(FolderNode):
 
         if not self.simulation.error:
             for file in ["annualSystemCost", "checkIntegrity", "simulation-comments"]:
-                file_path = f"{file}.txt"
-                if (self.config.path / file_path).exists():
-                    children[file] = RawFileNode(self.context, self.config.next_file(file_path))
+                file_name = f"{file}.txt"
+                if (self.config.path / file_name).exists():
+                    children[file] = RawFileNode(self.context, self.config.next_file(file_name))
 
             file_name = "execution_info"
             if (self.config.path / f"{file_name}.ini").exists():

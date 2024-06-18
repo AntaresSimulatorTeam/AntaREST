@@ -14,14 +14,12 @@ class OutputSimulationModeMcInd(FolderNode):
         config: FileStudyTreeConfig,
         simulation: Simulation,
     ):
-        FolderNode.__init__(self, context, config)
+        super().__init__(context, config)
         self.simulation = simulation
 
     def build(self) -> TREE:
         children: TREE = {
-            str("{:05d}".format(scn)): OutputSimulationModeCommon(
-                self.context, self.config.next_file("{:05d}".format(scn))
-            )
+            f"{scn:05d}": OutputSimulationModeCommon(self.context, self.config.next_file(f"{scn:05d}"))
             for scn in self.simulation.playlist or range(1, self.simulation.nbyears + 1)
         }
         return children
