@@ -332,6 +332,10 @@ def test_sta_mini_input(storage_service, url: str, expected_output: dict):
             set_id_annual,
         ),
         (
+            "/v1/studies/STA-mini/raw?path=output/20241807-1540eco-extra-outputs/ts-numbers/bindingconstraints/default",
+            [1],
+        ),
+        (
             "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/annualSystemCost",
             b"EXP : 185808000\nSTD : 0\nMIN : 185808000\nMAX : 185808000\n",
         ),
