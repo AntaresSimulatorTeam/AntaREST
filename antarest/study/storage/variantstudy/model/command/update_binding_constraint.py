@@ -79,12 +79,13 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
         updated_cfg = binding_constraints[index]
         updated_cfg.update(obj)
 
-        updated_terms = set(self.coeffs) if self.coeffs else set()
-
-        # Remove the terms not in the current update but existing in the config
-        terms_to_remove = {key for key in updated_cfg if ("%" in key or "." in key) and key not in updated_terms}
-        for term_id in terms_to_remove:
-            updated_cfg.pop(term_id, None)
+        excluded_fields = set(ICommand.__fields__) | {"id"}
+        updated_properties = self.dict(exclude=excluded_fields, exclude_none=True)
+        # This 2nd check is here to remove the last term.
+        if self.coeffs or updated_properties == {"coeffs": {}}:
+            # Remove terms which IDs contain a "%" or a "." in their name
+            term_ids = {k for k in updated_cfg if "%" in k or "." in k}
+            binding_constraints[index] = {k: v for k, v in updated_cfg.items() if k not in term_ids}
 
         return super().apply_binding_constraint(study_data, binding_constraints, index, self.id, old_groups=old_groups)
 

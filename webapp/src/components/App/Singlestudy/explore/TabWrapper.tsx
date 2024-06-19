@@ -8,7 +8,7 @@ import { Outlet, matchPath, useLocation, useNavigate } from "react-router-dom";
 import { StudyMetadata } from "../../../../common/types";
 import { mergeSxProp } from "../../../../utils/muiUtils";
 
-export const StyledTab = styled(Tabs, {
+export const StyledTabs = styled(Tabs, {
   shouldForwardProp: (prop) => prop !== "border" && prop !== "tabStyle",
 })<{ border?: boolean; tabStyle?: "normal" | "withoutBorder" }>(
   ({ theme, border, tabStyle }) => ({
@@ -40,17 +40,9 @@ interface Props {
   border?: boolean;
   tabStyle?: "normal" | "withoutBorder";
   sx?: SxProps<Theme>;
-  isScrollable?: boolean;
 }
 
-function TabWrapper({
-  study,
-  tabList,
-  border,
-  tabStyle,
-  sx,
-  isScrollable = false,
-}: Props) {
+function TabWrapper({ study, tabList, border, tabStyle, sx }: Props) {
   const location = useLocation();
   const navigate = useNavigate();
   const [selectedTab, setSelectedTab] = useState(0);
@@ -78,37 +70,37 @@ function TabWrapper({
 
   return (
     <Box
+      className="TabWrapper"
       sx={mergeSxProp(
         {
-          width: "100%",
-          height: "100%",
+          width: 1,
+          height: 1,
           display: "flex",
           flexDirection: "column",
           justifyContent: "flex-start",
+          overflow: "auto",
         },
         sx,
       )}
     >
-      <StyledTab
-        border={border}
-        tabStyle={tabStyle}
-        value={selectedTab}
-        onChange={handleChange}
-        variant={isScrollable ? "scrollable" : "standard"}
-        sx={{
-          width: "98%",
-          borderBottom: border ? 1 : 0,
-          borderColor: border ? "divider" : "inherit",
-        }}
-      >
-        {tabList.map((tab) => (
-          <Tab
-            key={tab.path}
-            label={tab.label}
-            disabled={tab.disabled ?? false}
-          />
-        ))}
-      </StyledTab>
+      <Box sx={border ? { borderBottom: 1, borderColor: "divider" } : null}>
+        <StyledTabs
+          border={border}
+          tabStyle={tabStyle}
+          value={selectedTab}
+          onChange={handleChange}
+          variant="scrollable"
+        >
+          {tabList.map((tab) => (
+            <Tab
+              key={tab.path}
+              label={tab.label}
+              disabled={tab.disabled}
+              wrapped
+            />
+          ))}
+        </StyledTabs>
+      </Box>
       <Outlet context={{ study }} />
     </Box>
   );

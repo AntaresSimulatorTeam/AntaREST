@@ -1,4 +1,3 @@
-import { Box } from "@mui/material";
 import { useOutletContext } from "react-router";
 import { StudyMetadata } from "../../../../../../common/types";
 import SimpleContent from "../../../../../common/page/SimpleContent";
@@ -14,6 +13,7 @@ import { setCurrentArea } from "../../../../../../redux/ducks/studySyntheses";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
 import SplitView from "../../../../../common/SplitView";
+import ViewWrapper from "../../../../../common/page/ViewWrapper";
 
 function Areas() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -38,14 +38,14 @@ function Areas() {
 
   return (
     <SplitView id="areas" sizes={[10, 90]}>
-      <Box>
-        <AreaPropsView
-          studyId={study.id}
-          onClick={handleAreaClick}
-          currentArea={currentArea?.id}
-        />
-      </Box>
-      <Box>
+      {/* Left */}
+      <AreaPropsView
+        studyId={study.id}
+        onClick={handleAreaClick}
+        currentArea={currentArea?.id}
+      />
+      {/* Right */}
+      <ViewWrapper>
         <UsePromiseCond
           response={res}
           ifResolved={(renewablesClustering) =>
@@ -58,7 +58,7 @@ function Areas() {
             )
           }
         />
-      </Box>
+      </ViewWrapper>
     </SplitView>
   );
 }

@@ -54,7 +54,7 @@ from antarest.study.business.general_management import GeneralFormFields
 from antarest.study.business.link_management import LinkInfoDTO
 from antarest.study.business.optimization_management import OptimizationFormFields
 from antarest.study.business.playlist_management import PlaylistColumns
-from antarest.study.business.scenario_builder_management import Rulesets
+from antarest.study.business.scenario_builder_management import Rulesets, ScenarioType
 from antarest.study.business.table_mode_management import TableDataDTO, TableModeType
 from antarest.study.business.thematic_trimming_field_infos import ThematicTrimmingFormFields
 from antarest.study.business.timeseries_config_management import TSFormFields
@@ -65,6 +65,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint 
     BindingConstraintOperator,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.ruleset_matrices import TableForm as SBTableForm
 
 logger = logging.getLogger(__name__)
 
@@ -666,6 +667,88 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
 
         return study_service.scenario_builder_manager.get_config(study)
 
+    @bp.get(
+        path="/studies/{uuid}/config/scenariobuilder/{scenario_type}",
+        tags=[APITag.study_data],
+        summary="Get MC Scenario builder config",
+        response_model=t.Dict[str, SBTableForm],
+    )
+    def get_scenario_builder_config_by_type(
+        uuid: str,
+        scenario_type: ScenarioType,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> t.Dict[str, SBTableForm]:
+        """
+        Retrieve the scenario matrix corresponding to a specified scenario type.
+
+        The returned scenario matrix is structured as follows:
+
+        ```json
+        {
+            "scenario_type": {
+                "area_id": {
+                    "year": <TS number>,
+                    ...
+                },
+                ...
+            },
+        }
+        ```
+
+        For thermal and renewable scenarios, the format is:
+
+        ```json
+        {
+            "scenario_type": {
+                "area_id": {
+                    "cluster_id": {
+                        "year": <TS number>,
+                        ...
+                    },
+                    ...
+                },
+                ...
+            },
+        }
+        ```
+
+        For hydraulic levels scenarios, the format is:
+
+        ```json
+        {
+            "scenario_type": {
+                "area_id": {
+                    "year": <Percent 0-100>,
+                    ...
+                },
+                ...
+            },
+        }
+        ```
+
+        For binding constraints scenarios, the format is:
+
+        ```json
+        {
+            "scenario_type": {
+                "group_name": {
+                    "year": <TS number>,
+                    ...
+                },
+                ...
+            },
+        }
+        ```
+        """
+        logger.info(
+            f"Getting MC Scenario builder config for study {uuid} with scenario type filter: {scenario_type}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
+        table_form = study_service.scenario_builder_manager.get_scenario_by_type(study, scenario_type)
+        return {scenario_type: table_form}
+
     @bp.put(
         path="/studies/{uuid}/config/scenariobuilder",
         tags=[APITag.study_data],
@@ -683,6 +766,51 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
         study_service.scenario_builder_manager.update_config(study, data)
+
+    @bp.put(
+        path="/studies/{uuid}/config/scenariobuilder/{scenario_type}",
+        tags=[APITag.study_data],
+        summary="Set MC Scenario builder config",
+        response_model=t.Dict[str, SBTableForm],
+    )
+    def update_scenario_builder_config_by_type(
+        uuid: str,
+        scenario_type: ScenarioType,
+        data: t.Dict[str, SBTableForm],
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> t.Dict[str, SBTableForm]:
+        """
+        Update the scenario matrix corresponding to a specified scenario type.
+
+        Args:
+        - `data`: partial scenario matrix using the following structure:
+
+          ```json
+          {
+              "scenario_type": {
+                  "area_id": {
+                      "year": <TS number>,
+                      ...
+                  },
+                  ...
+              },
+          }
+          ```
+
+          > See the GET endpoint for the structure of the scenario matrix.
+
+        Returns:
+        - The updated scenario matrix.
+        """
+        logger.info(
+            f"Updating MC Scenario builder config for study {uuid} with scenario type filter: {scenario_type}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
+        table_form = data[scenario_type]
+        table_form = study_service.scenario_builder_manager.update_scenario_by_type(study, table_form, scenario_type)
+        return {scenario_type: table_form}
 
     @bp.get(
         path="/studies/{uuid}/config/general/form",

@@ -1,17 +1,17 @@
 import { TabContext, TabList, TabListProps, TabPanel } from "@mui/lab";
-import { Tab } from "@mui/material";
+import { Box, Tab } from "@mui/material";
 import { useState } from "react";
-import { mergeSxProp } from "../../utils/muiUtils";
 
 interface TabsViewProps {
   items: Array<{
     label: string;
     content?: React.ReactNode;
   }>;
-  TabListProps?: TabListProps;
+  onChange?: TabListProps["onChange"];
+  divider?: boolean;
 }
 
-function TabsView({ items, TabListProps }: TabsViewProps) {
+function TabsView({ items, onChange, divider }: TabsViewProps) {
   const [value, setValue] = useState("0");
 
   ////////////////////////////////////////////////////////////////
@@ -20,7 +20,7 @@ function TabsView({ items, TabListProps }: TabsViewProps) {
 
   const handleChange = (event: React.SyntheticEvent, newValue: string) => {
     setValue(newValue);
-    TabListProps?.onChange?.(event, newValue);
+    onChange?.(event, newValue);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -28,31 +28,34 @@ function TabsView({ items, TabListProps }: TabsViewProps) {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <TabContext value={value}>
-      <TabList
-        {...TabListProps}
-        onChange={handleChange}
-        sx={mergeSxProp(
-          { borderBottom: 1, borderColor: "divider" },
-          TabListProps?.sx,
-        )}
-      >
-        {items.map(({ label }, index) => (
-          <Tab key={index} label={label} value={index.toString()} />
+    <Box
+      className="TabsView"
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        height: 1,
+      }}
+    >
+      <TabContext value={value}>
+        {/* Don't set divider to `TabList`, this causes issue with `variant="scrollable"` */}
+        <Box sx={divider ? { borderBottom: 1, borderColor: "divider" } : null}>
+          <TabList variant="scrollable" onChange={handleChange}>
+            {items.map(({ label }, index) => (
+              <Tab key={index} label={label} value={index.toString()} wrapped />
+            ))}
+          </TabList>
+        </Box>
+        {items.map(({ content }, index) => (
+          <TabPanel
+            key={index}
+            value={index.toString()}
+            sx={{ px: 0, pb: 0, overflow: "auto" }}
+          >
+            {content}
+          </TabPanel>
         ))}
-      </TabList>
-      {items.map(({ content }, index) => (
-        <TabPanel
-          key={index}
-          value={index.toString()}
-          sx={{
-            px: 0,
-          }}
-        >
-          {content}
-        </TabPanel>
-      ))}
-    </TabContext>
+      </TabContext>
+    </Box>
   );
 }
 

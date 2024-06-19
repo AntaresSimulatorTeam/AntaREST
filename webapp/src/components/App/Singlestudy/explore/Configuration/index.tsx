@@ -1,4 +1,3 @@
-import { Paper } from "@mui/material";
 import * as R from "ramda";
 import { useMemo, useState } from "react";
 import { useOutletContext } from "react-router";
@@ -13,6 +12,7 @@ import Optimization from "./Optimization";
 import TimeSeriesManagement from "./TimeSeriesManagement";
 import TableMode from "../../../../common/TableMode";
 import SplitView from "../../../../common/SplitView";
+import ViewWrapper from "../../../../common/page/ViewWrapper";
 
 function Configuration() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -40,6 +40,7 @@ function Configuration() {
 
   return (
     <SplitView id="configuration" sizes={[15, 85]}>
+      {/* Left */}
       <PropertiesView
         mainContent={
           <ListElement
@@ -51,8 +52,8 @@ function Configuration() {
           />
         }
       />
-
-      <Paper sx={{ width: 1, height: 1, padding: 2, overflow: "auto" }}>
+      {/* Right */}
+      <ViewWrapper>
         {R.cond([
           [R.equals(0), () => <General />],
           [R.equals(1), () => <TimeSeriesManagement />],
@@ -108,7 +109,7 @@ function Configuration() {
             ),
           ],
         ])(tabList[currentTabIndex].id)}
-      </Paper>
+      </ViewWrapper>
     </SplitView>
   );
 }

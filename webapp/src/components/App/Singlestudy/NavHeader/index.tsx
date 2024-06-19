@@ -64,6 +64,8 @@ function NavHeader({
   const isLatestVersion = study?.version === latestVersion;
   const isManaged = !!study?.managed;
   const isArchived = !!study?.archived;
+  const isVariant = study?.type === "variantstudy";
+  const hasChildren = childrenTree && childrenTree.children.length > 0;
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -154,7 +156,7 @@ function NavHeader({
       key: "study.upgrade",
       icon: UpgradeIcon,
       action: () => setOpenUpgradeDialog(true),
-      condition: !isArchived && !isLatestVersion,
+      condition: !isArchived && !isLatestVersion && !isVariant && !hasChildren,
     },
     {
       key: "global.export",

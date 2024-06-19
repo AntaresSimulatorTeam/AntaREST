@@ -59,7 +59,6 @@ function AdequacyPatch() {
           ),
         },
       ]}
-      TabListProps={{ sx: { mt: -2 } }}
     />
   );
 }

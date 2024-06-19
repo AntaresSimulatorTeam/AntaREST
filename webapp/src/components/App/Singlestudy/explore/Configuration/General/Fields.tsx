@@ -186,7 +186,7 @@ function Fields(props: Props) {
         />
         <SwitchFE
           name="leapYear"
-          sx={{ flex: 1, flexBasis: "100%" }}
+          sx={{ flexBasis: "100%" }}
           label={t("study.configuration.general.leapYear")}
           control={control}
           rules={{

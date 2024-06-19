@@ -14,7 +14,7 @@ class TestVariantStudyRepository:
         """
         Given a root study with children and a grandchild
         When getting the children of the root study
-        Then the children are returned in chronological order
+        Then the children are returned in reverse chronological order
         """
         repository = VariantStudyRepository(cache_service=Mock(spec=ICache), session=db_session)
 
@@ -41,8 +41,8 @@ class TestVariantStudyRepository:
 
         # Ensure the root study has 2 children
         children = repository.get_children(parent_id=raw_study.id)
-        assert children == [variant1, variant2]
-        assert children[0].created_at < children[1].created_at
+        assert children == [variant2, variant1]
+        assert children[0].created_at > children[1].created_at
 
         # Ensure variants have no children
         children = repository.get_children(parent_id=variant1.id)
@@ -50,15 +50,15 @@ class TestVariantStudyRepository:
         children = repository.get_children(parent_id=variant2.id)
         assert children == []
 
-        # Add a variant study between the two existing ones (in chronological order)
+        # Add a variant study between the two existing ones (in reverse chronological order)
         variant3 = VariantStudy(name="My Variant 3", parent_id=raw_study.id, created_at=day2)
         db_session.add(variant3)
         db_session.commit()
 
         # Ensure the root study has 3 children in chronological order
         children = repository.get_children(parent_id=raw_study.id)
-        assert children == [variant1, variant3, variant2]
-        assert children[0].created_at < children[1].created_at < children[2].created_at
+        assert children == [variant2, variant3, variant1]
+        assert children[0].created_at > children[1].created_at > children[2].created_at
 
         # Add a variant of a variant
         variant3a = VariantStudy(name="My Variant 3a", parent_id=variant3.id, created_at=day4)
@@ -67,4 +67,4 @@ class TestVariantStudyRepository:
 
         # Ensure the root study has the 3 same children
         children = repository.get_children(parent_id=raw_study.id)
-        assert children == [variant1, variant3, variant2]
+        assert children == [variant2, variant3, variant1]

@@ -381,7 +381,7 @@ class AreaManager:
             if old_area.average_spilled_energy_cost != new_area.average_spilled_energy_cost:
                 commands.append(
                     UpdateConfig(
-                        target=f"input/thermal/areas/spilledenergycost:{area_id}",
+                        target=f"input/thermal/areas/spilledenergycost/{area_id}",
                         data=new_area.average_spilled_energy_cost,
                         command_context=command_context,
                     )

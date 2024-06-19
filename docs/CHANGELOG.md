@@ -1,6 +1,36 @@
 Antares Web Changelog
 =====================
 
+v2.17.2 (2024-06-19)
+--------------------
+
+### Features
+
+* **ui-api:** add scenario builder v8.7 full support [`#2054`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2054)
+* **api,ui-config:** add 'MILP' value option in 'Unit Commitment Mode' field for study >= v8.8 [`#2056`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2056)
+* **outputs:** remove useless folder `updated_links` [`#2065`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2065)
+* **ui:** add save button static at bottom and fix style issues [`#2068`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2068)
+* **ui-theme:** increase scrollbar size [`#2069`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2069)
+* **desktop:** add desktop version for ubuntu 22 [`#2072`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2072)
+
+### Bug Fixes
+
+* **variants:** display variants in reverse chronological order in the variants tree [`#2059`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2059)
+* **table-mode:** do not alter existing links that are not updated [`#2055`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2055)
+* **bc:** only remove terms when asked [`#2060`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2060)
+* **table-mode:** correct the update of the `average_spilled_energy_cost` field in table mode [`#2062`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2062)
+* **ui:** hide "upgrade" menu item for variant studies or studies with children [`#2063`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2063)
+* **ui-commons:** display a popup to warn of unsaved modifications on Form [`#2071`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2071)
+
+### Continuous integration
+
+* **worker:** deploy AntaresWebWorker on its own [`#2066`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2066)
+* **sonar:** bump github action download artifact [`#2070`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2070)
+
+
+**Full Changelog**: https://github.com/AntaresSimulatorTeam/AntaREST/compare/v2.17.1...v2.17.2
+
+
 v2.17.1 (2024-06-10)
 --------------------
 

@@ -10,6 +10,11 @@ export default defineConfig(({ mode }) => {
   return {
     // Serve the web app at the `/static` entry point on Desktop mode
     base: isDesktopMode ? "/static/" : "/",
+    esbuild: {
+      // Remove logs safely when building production bundle
+      // https://esbuild.github.io/api/#pure
+      pure: mode === "production" ? ["console"] : [],
+    },
     plugins: [react({ devTarget: "es2022" })],
     server: {
       port: 3000,
