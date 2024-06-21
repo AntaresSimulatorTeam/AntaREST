@@ -656,7 +656,7 @@ class TestThermal:
         assert res.status_code == 403, res.json()
         description = res.json()["description"]
         assert all([elm in description for elm in [fr_gas_conventional, "binding constraint"]])
-        assert res.json()["exception"] == "ClusterDeletionNotAllowed"
+        assert res.json()["exception"] == "BindingConstraintDeletionNotAllowed"
 
         # delete the binding constraint
         res = client.delete(

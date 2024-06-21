@@ -1434,7 +1434,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
     description = result.json()["description"]
     assert all([elm in description for elm in ["area 1", "binding constraint 1"]])
     # check the exception
-    assert result.json()["exception"] == "AreaDeletionNotAllowed"
+    assert result.json()["exception"] == "BindingConstraintDeletionNotAllowed"
 
     # delete binding constraint 1
     client.delete(f"/v1/studies/{study_id}/bindingconstraints/binding%20constraint%201")
@@ -1715,9 +1715,107 @@ def test_copy(client: TestClient, admin_access_token: str, study_id: str) -> Non
     assert res["public_mode"] == "READ"
 
 
-def test_links_deletion(client: TestClient, user_access_token: str, study_id: str) -> None:
+def test_areas_deletion_with_binding_constraints(client: TestClient, user_access_token: str, study_id: str) -> None:
     """
-    Test the deletion of links between areas.
+    Test the deletion of areas that are referenced in binding constraints.
+    """
+
+    # set client headers to user access token
+    client.headers = {"Authorization": f"Bearer {user_access_token}"}
+
+    area1_id = "france"
+    area2_id = "germany"
+    cluster_id = "nuclear power plant"
+
+    constraint_terms = [
+        {
+            # Link between two areas
+            "data": {"area1": area1_id, "area2": area2_id},
+            "id": f"{area1_id}%{area2_id}",
+            "offset": 2,
+            "weight": 1.0,
+        },
+        {
+            # Cluster in an area
+            "data": {"area": area1_id, "cluster": cluster_id.lower()},
+            "id": f"{area1_id}.{cluster_id.lower()}",
+            "offset": 2,
+            "weight": 1.0,
+        },
+    ]
+
+    for constraint_term in constraint_terms:
+        # Create an area "area_1" in the study
+        res = client.post(
+            f"/v1/studies/{study_id}/areas",
+            json={"name": area1_id.title(), "type": "AREA", "metadata": {"country": "FR"}},
+        )
+        res.raise_for_status()
+
+        if set(constraint_term["data"]) == {"area1", "area2"}:
+            # Create a second area and a link between the two areas
+            res = client.post(
+                f"/v1/studies/{study_id}/areas",
+                json={"name": area2_id.title(), "type": "AREA", "metadata": {"country": "DE"}},
+            )
+            res.raise_for_status()
+            res = client.post(
+                f"/v1/studies/{study_id}/links",
+                json={"area1": area1_id, "area2": area2_id},
+            )
+            res.raise_for_status()
+
+        elif set(constraint_term["data"]) == {"area", "cluster"}:
+            # Create a cluster in the first area
+            res = client.post(
+                f"/v1/studies/{study_id}/areas/{area1_id}/clusters/thermal",
+                json={"name": cluster_id.title(), "group": "Nuclear"},
+            )
+            res.raise_for_status()
+
+        else:
+            raise NotImplementedError(f"Unsupported constraint term: {constraint_term}")
+
+        # create a binding constraint that references the link
+        bc_id = "bc_1"
+        bc_obj = {
+            "name": bc_id,
+            "enabled": True,
+            "time_step": "daily",
+            "operator": "less",
+            "terms": [constraint_term],
+        }
+        res = client.post(f"/v1/studies/{study_id}/bindingconstraints", json=bc_obj)
+        res.raise_for_status()
+
+        if set(constraint_term["data"]) == {"area1", "area2"}:
+            areas_to_delete = [area1_id, area2_id]
+        elif set(constraint_term["data"]) == {"area", "cluster"}:
+            areas_to_delete = [area1_id]
+        else:
+            raise NotImplementedError(f"Unsupported constraint term: {constraint_term}")
+
+        for area_id in areas_to_delete:
+            # try to delete the areas
+            res = client.delete(f"/v1/studies/{study_id}/areas/{area_id}")
+            assert res.status_code == 403, res.json()
+            description = res.json()["description"]
+            assert all([elm in description for elm in [area_id, bc_id]])
+            assert res.json()["exception"] == "BindingConstraintDeletionNotAllowed"
+
+        # delete the binding constraint
+        res = client.delete(f"/v1/studies/{study_id}/bindingconstraints/{bc_id}")
+        assert res.status_code == 200, res.json()
+
+        for area_id in areas_to_delete:
+            # delete the area
+            res = client.delete(f"/v1/studies/{study_id}/areas/{area_id}")
+            assert res.status_code == 200, res.json()
+
+
+def test_links_deletion_with_binding_constraints(client: TestClient, user_access_token: str, study_id: str) -> None:
+    """
+    Test the deletion of links that are referenced in binding constraints.
     """
 
     # set client headers to user access token
@@ -1748,10 +1846,7 @@ def test_links_deletion(client: TestClient, user_access_token: str, study_id: st
     # create a link between the two areas
     res = client.post(
         f"/v1/studies/{study_id}/links",
-        json={
-            "area1": "area_1",
-            "area2": "area_2",
-        },
+        json={"area1": "area_1", "area2": "area_2"},
     )
     assert res.status_code == 200, res.json()
 
@@ -1769,10 +1864,7 @@ def test_links_deletion(client: TestClient, user_access_token: str, study_id: st
             }
         ],
     }
-    res = client.post(
-        f"/v1/studies/{study_id}/bindingconstraints",
-        json=bc_obj,
-    )
+    res = client.post(f"/v1/studies/{study_id}/bindingconstraints", json=bc_obj)
     assert res.status_code == 200, res.json()
 
     # try to delete the link before deleting the binding constraint
@@ -1780,7 +1872,7 @@ def test_links_deletion(client: TestClient, user_access_token: str, study_id: st
     assert res.status_code == 403, res.json()
     description = res.json()["description"]
     assert all([elm in description for elm in ["area_1%area_2", "bc_1"]])
-    assert res.json()["exception"] == "LinkDeletionNotAllowed"
+    assert res.json()["exception"] == "BindingConstraintDeletionNotAllowed"
 
     # delete the binding constraint
     res = client.delete(f"/v1/studies/{study_id}/bindingconstraints/bc_1")

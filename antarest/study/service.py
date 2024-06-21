@@ -20,12 +20,10 @@ from starlette.responses import FileResponse, Response
 
 from antarest.core.config import Config
 from antarest.core.exceptions import (
-    AreaDeletionNotAllowed,
     BadEditInstructionException,
-    ClusterDeletionNotAllowed,
+    BindingConstraintDeletionNotAllowed,
     CommandApplicationError,
     IncorrectPathError,
-    LinkDeletionNotAllowed,
     NotAManagedStudyException,
     StudyDeletionNotAllowed,
     StudyNotFoundError,
@@ -689,7 +687,7 @@ class StudyService:
             id=sid,
             name=study_name,
             workspace=DEFAULT_WORKSPACE_NAME,
-            path=study_path,
+            path=str(study_path),
             created_at=datetime.utcnow(),
             updated_at=datetime.utcnow(),
             version=version or NEW_DEFAULT_STUDY_VERSION,
@@ -1268,17 +1266,18 @@ class StudyService:
                 stopwatch.log_elapsed(
                     lambda x: logger.info(f"Study {study_id} filtered output {output_id} exported in {x}s")
                 )
-                return FileResponse(
-                    tmp_export_file,
-                    headers=(
-                        {"Content-Disposition": "inline"}
-                        if filetype == ExportFormat.JSON
-                        else {
-                            "Content-Disposition": f'attachment; filename="output-{output_id}.{"tar.gz" if filetype == ExportFormat.TAR_GZ else "zip"}'
-                        }
-                    ),
-                    media_type=filetype,
-                )
+
+                if filetype == ExportFormat.JSON:
+                    headers = {"Content-Disposition": "inline"}
+                elif filetype == ExportFormat.TAR_GZ:
+                    headers = {"Content-Disposition": f'attachment; filename="output-{output_id}.tar.gz'}
+                elif filetype == ExportFormat.ZIP:
+                    headers = {"Content-Disposition": f'attachment; filename="output-{output_id}.zip'}
+                else:  # pragma: no cover
+                    raise NotImplementedError(f"Export format {filetype} is not supported")
+
+                return FileResponse(tmp_export_file, headers=headers, media_type=filetype)
+
             else:
                 json_response = json.dumps(
                     matrix.dict(),
@@ -1317,26 +1316,20 @@ class StudyService:
         params: RequestParameters,
     ) -> None:
         """
-        Set simulation as the reference output
+        Set simulation as the reference output.
+
         Args:
-            study_id: study Id
-            output_id: output id
-            status: state of the reference status
+            study_id: study ID.
+            output_id: The ID of the output to set as reference.
+            status: state of the reference status.
             params: request parameters
-
-        Returns: None
-
         """
         study = self.get_study(study_id)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
 
         logger.info(
-            "output %s set by user %s as reference (%b) for study %s",
-            output_id,
-            params.get_user_id(),
-            status,
-            study_id,
+            f"output {output_id} set by user {params.get_user_id()} as reference ({status}) for study {study_id}"
         )
 
         self.storage_service.get_storage(study).set_reference_output(study, output_id, status)
@@ -1858,6 +1851,18 @@ class StudyService:
         return self.areas.update_thermal_cluster_metadata(study, area_id, clusters_metadata)
 
     def delete_area(self, uuid: str, area_id: str, params: RequestParameters) -> None:
+        """
+        Delete area from study if it is not referenced by a binding constraint,
+        otherwise raise an HTTP 403 Forbidden error.
+
+        Args:
+            uuid: The study ID.
+            area_id: The area ID to delete.
+            params: The request parameters used to check user permissions.
+
+        Raises:
+            BindingConstraintDeletionNotAllowed: If the area is referenced by a binding constraint.
+        """
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
@@ -1865,7 +1870,8 @@ class StudyService:
             study, ConstraintFilters(area_name=area_id)
         )
         if referencing_binding_constraints:
-            raise AreaDeletionNotAllowed(area_id, [bc.id for bc in referencing_binding_constraints])
+            binding_ids = [bc.id for bc in referencing_binding_constraints]
+            raise BindingConstraintDeletionNotAllowed(area_id, binding_ids, object_type="Area")
         self.areas.delete_area(study, area_id)
         self.event_bus.push(
             Event(
@@ -1882,6 +1888,19 @@ class StudyService:
         area_to: str,
         params: RequestParameters,
     ) -> None:
+        """
+        Delete link from study if it is not referenced by a binding constraint,
+        otherwise raise an HTTP 403 Forbidden error.
+
+        Args:
+            uuid: The study ID.
+            area_from: The area from which the link starts.
+            area_to: The area to which the link ends.
+            params: The request parameters used to check user permissions.
+
+        Raises:
+            BindingConstraintDeletionNotAllowed: If the link is referenced by a binding constraint.
+        """
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
@@ -1890,7 +1909,8 @@ class StudyService:
             study, ConstraintFilters(link_id=link_id)
         )
         if referencing_binding_constraints:
-            raise LinkDeletionNotAllowed(link_id, [bc.id for bc in referencing_binding_constraints])
+            binding_ids = [bc.id for bc in referencing_binding_constraints]
+            raise BindingConstraintDeletionNotAllowed(link_id, binding_ids, object_type="Link")
         self.links.delete_link(study, area_from, area_to)
         self.event_bus.push(
             Event(
@@ -2537,22 +2557,21 @@ class StudyService:
         self, study: Study, area_id: str, cluster_ids: t.Sequence[str]
     ) -> None:
         """
-        Check that no cluster is referenced in a binding constraint otherwise raise an ClusterDeletionNotAllowed
-        Exception
+        Check that no cluster is referenced in a binding constraint, otherwise raise an HTTP 403 Forbidden error.
 
         Args:
             study: input study for which an update is to be committed
             area_id: area ID to be checked
             cluster_ids: IDs of the thermal clusters to be checked
 
-        Returns: None
-
-        Raises: ClusterDeletionNotAllowed if a cluster is referenced in a binding constraint
+        Raises:
+            BindingConstraintDeletionNotAllowed: if a cluster is referenced in a binding constraint
         """
 
         for cluster_id in cluster_ids:
-            referencing_binding_constraints = self.binding_constraint_manager.get_binding_constraints(
+            ref_bcs = self.binding_constraint_manager.get_binding_constraints(
                 study, ConstraintFilters(cluster_id=f"{area_id}.{cluster_id}")
             )
-            if referencing_binding_constraints:
-                raise ClusterDeletionNotAllowed(cluster_id, [bc.id for bc in referencing_binding_constraints])
+            if ref_bcs:
+                binding_ids = [bc.id for bc in ref_bcs]
+                raise BindingConstraintDeletionNotAllowed(cluster_id, binding_ids, object_type="Cluster")
