@@ -1,3 +1,4 @@
+/// <reference types="vitest" />
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 
@@ -8,7 +9,7 @@ export default defineConfig(({ mode }) => {
   const isDesktopMode = mode === "desktop";
 
   return {
-    // Serve the web app at the `/static` entry point on Desktop mode
+    // Serve the web app at the `/static` entry point on Desktop mode (cf. 'antarest/main.py')
     base: isDesktopMode ? "/static/" : "/",
     esbuild: {
       // Remove logs safely when building production bundle
@@ -27,6 +28,12 @@ export default defineConfig(({ mode }) => {
           ws: true, // WebSocket support for hot module replacement
         },
       },
+    },
+    test: {
+      globals: true, // Use the APIs globally
+      environment: "jsdom",
+      css: true,
+      setupFiles: "./src/tests/setup.ts",
     },
   };
 });
