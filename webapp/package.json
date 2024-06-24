@@ -8,7 +8,10 @@
     "clean": "rm -rf dist node_modules/.vite",
     "dev": "vite",
     "lint": "tsc --noEmit && eslint . --ext ts,tsx --report-unused-disable-directives",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@emotion/react": "11.11.1",
@@ -69,6 +72,9 @@
     "xml-js": "1.6.11"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "6.4.6",
+    "@testing-library/react": "16.0.0",
+    "@testing-library/user-event": "14.5.2",
     "@total-typescript/ts-reset": "0.5.1",
     "@types/d3": "5.16.0",
     "@types/debug": "4.1.9",
@@ -90,10 +96,13 @@
     "@types/react-window": "1.8.6",
     "@types/redux-logger": "3.0.10",
     "@types/swagger-ui-react": "4.18.1",
+    "@types/testing-library__jest-dom": "6.0.0",
     "@types/uuid": "9.0.4",
     "@typescript-eslint/eslint-plugin": "6.14.0",
     "@typescript-eslint/parser": "6.14.0",
     "@vitejs/plugin-react-swc": "3.5.0",
+    "@vitest/coverage-v8": "1.6.0",
+    "@vitest/ui": "1.6.0",
     "eslint": "8.55.0",
     "eslint-config-prettier": "9.0.0",
     "eslint-plugin-jsdoc": "48.2.0",
@@ -102,9 +111,11 @@
     "eslint-plugin-react-hooks": "4.6.0",
     "eslint-plugin-react-refresh": "0.4.5",
     "husky": "8.0.3",
+    "jsdom": "24.1.0",
     "prettier": "3.0.3",
     "typescript": "5.2.2",
-    "vite": "5.0.8"
+    "vite": "5.0.8",
+    "vitest": "1.6.0"
   },
   "engines": {
     "node": "18.16.1"
