@@ -501,13 +501,12 @@ class BindingConstraintManager:
         :return: A dictionary of term IDs mapped to a list of their coefficients.
         """
         coeffs = {}
-        if terms is not None:
-            for term in terms:
-                if term.id and term.weight is not None:
-                    coeffs[term.id] = [term.weight]
-                    if term.offset:
-                        coeffs[term.id].append(term.offset)
-            return coeffs
+        for term in terms:
+            if term.id and term.weight is not None:
+                coeffs[term.id] = [term.weight]
+                if term.offset:
+                    coeffs[term.id].append(term.offset)
+        return coeffs
 
     def get_binding_constraint(self, study: Study, bc_id: str) -> ConstraintOutput:
         """
