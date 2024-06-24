@@ -9,7 +9,6 @@ import os
 import time
 import typing as t
 from datetime import datetime, timedelta
-from os.path import abspath
 from pathlib import Path, PurePosixPath
 from uuid import uuid4
 
@@ -1189,12 +1188,12 @@ class StudyService:
         """
         Download outputs
         Args:
-            study_id: study ID
-            output_id: output ID
+            study_id: study Id
+            output_id: output id
             data: Json parameters
             use_task: use task or not
             filetype: type of returning file,
-            tmp_export_file: temporary file (if `use_task` is false),
+            tmp_export_file: temporary file (if use_task is false),
             params: request parameters
 
         Returns: CSV content file
@@ -1277,7 +1276,7 @@ class StudyService:
                 else:  # pragma: no cover
                     raise NotImplementedError(f"Export format {filetype} is not supported")
 
-                return FileResponse(Path(abspath(tmp_export_file)), headers=headers, media_type=filetype)
+                return FileResponse(tmp_export_file, headers=headers, media_type=filetype)
 
             else:
                 json_response = json.dumps(
