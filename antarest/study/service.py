@@ -1188,13 +1188,13 @@ class StudyService:
         """
         Download outputs
         Args:
-            study_id: study Id
-            output_id: output id
-            data: Json parameters
-            use_task: use task or not
-            filetype: type of returning file,
-            tmp_export_file: temporary file (if use_task is false),
-            params: request parameters
+            study_id: study ID.
+            output_id: output ID.
+            data: Json parameters.
+            use_task: use task or not.
+            filetype: type of returning file,.
+            tmp_export_file: temporary file (if `use_task` is false),.
+            params: request parameters.
 
         Returns: CSV content file
 
@@ -1203,35 +1203,33 @@ class StudyService:
         study = self.get_study(study_id)
         assert_permission(params.user, study, StudyPermissionType.READ)
         self._assert_study_unarchived(study)
-        logger.info(
-            f"Study {study_id} output download asked by {params.get_user_id()}",
-        )
+        logger.info(f"Study {study_id} output download asked by {params.get_user_id()}")
 
         if use_task:
             logger.info(f"Exporting {output_id} from study {study_id}")
             export_name = f"Study filtered output {study.name}/{output_id} export"
             export_file_download = self.file_transfer_manager.request_download(
-                f"{study.name}-{study_id}-{output_id}_filtered.{'tar.gz' if filetype == ExportFormat.TAR_GZ else 'zip'}",
+                f"{study.name}-{study_id}-{output_id}_filtered{filetype.suffix}",
                 export_name,
                 params.user,
             )
             export_path = Path(export_file_download.path)
             export_id = export_file_download.id
 
-            def export_task(notifier: TaskUpdateNotifier) -> TaskResult:
+            def export_task(_notifier: TaskUpdateNotifier) -> TaskResult:
                 try:
-                    study = self.get_study(study_id)
-                    stopwatch = StopWatch()
-                    matrix = StudyDownloader.build(
-                        self.storage_service.get_storage(study).get_raw(study),
+                    _study = self.get_study(study_id)
+                    _stopwatch = StopWatch()
+                    _matrix = StudyDownloader.build(
+                        self.storage_service.get_storage(_study).get_raw(_study),
                         output_id,
                         data,
                     )
-                    stopwatch.log_elapsed(
+                    _stopwatch.log_elapsed(
                         lambda x: logger.info(f"Study {study_id} filtered output {output_id} built in {x}s")
                     )
-                    StudyDownloader.export(matrix, filetype, export_path)
-                    stopwatch.log_elapsed(
+                    StudyDownloader.export(_matrix, filetype, export_path)
+                    _stopwatch.log_elapsed(
                         lambda x: logger.info(f"Study {study_id} filtered output {output_id} exported in {x}s")
                     )
                     self.file_transfer_manager.set_ready(export_id)
@@ -1241,7 +1239,7 @@ class StudyService:
                     )
                 except Exception as e:
                     self.file_transfer_manager.fail(export_id, str(e))
-                    raise e
+                    raise
 
             task_id = self.task_service.add_task(
                 export_task,
