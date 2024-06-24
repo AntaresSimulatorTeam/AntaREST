@@ -1,12 +1,12 @@
-from antarest.core.exceptions import BindingConstraintDeletionNotAllowed
+from antarest.core.exceptions import ReferencedObjectDeletionNotAllowed
 
 
-class TestBindingConstraintDeletionNotAllowed:
+class TestReferencedObjectDeletionNotAllowed:
     def test_few_binding_constraints(self) -> None:
         object_id = "france"
         binding_ids = ["bc1", "bc2"]
         object_type = "Area"
-        exception = BindingConstraintDeletionNotAllowed(object_id, binding_ids, object_type=object_type)
+        exception = ReferencedObjectDeletionNotAllowed(object_id, binding_ids, object_type=object_type)
         message = str(exception)
         assert f"{object_type} '{object_id}'" in message
         assert "bc1" in message
@@ -17,7 +17,7 @@ class TestBindingConstraintDeletionNotAllowed:
         object_id = "france"
         binding_ids = [f"bc{i}" for i in range(1, 50)]
         object_type = "Area"
-        exception = BindingConstraintDeletionNotAllowed(object_id, binding_ids, object_type=object_type)
+        exception = ReferencedObjectDeletionNotAllowed(object_id, binding_ids, object_type=object_type)
         message = str(exception)
         assert f"{object_type} '{object_id}'" in message
         assert "bc1" in message

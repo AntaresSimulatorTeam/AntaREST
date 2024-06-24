@@ -21,10 +21,10 @@ from starlette.responses import FileResponse, Response
 from antarest.core.config import Config
 from antarest.core.exceptions import (
     BadEditInstructionException,
-    BindingConstraintDeletionNotAllowed,
     CommandApplicationError,
     IncorrectPathError,
     NotAManagedStudyException,
+    ReferencedObjectDeletionNotAllowed,
     StudyDeletionNotAllowed,
     StudyNotFoundError,
     StudyTypeUnsupported,
@@ -1861,7 +1861,7 @@ class StudyService:
             params: The request parameters used to check user permissions.
 
         Raises:
-            BindingConstraintDeletionNotAllowed: If the area is referenced by a binding constraint.
+            ReferencedObjectDeletionNotAllowed: If the area is referenced by a binding constraint.
         """
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
@@ -1871,7 +1871,7 @@ class StudyService:
         )
         if referencing_binding_constraints:
             binding_ids = [bc.id for bc in referencing_binding_constraints]
-            raise BindingConstraintDeletionNotAllowed(area_id, binding_ids, object_type="Area")
+            raise ReferencedObjectDeletionNotAllowed(area_id, binding_ids, object_type="Area")
         self.areas.delete_area(study, area_id)
         self.event_bus.push(
             Event(
@@ -1899,7 +1899,7 @@ class StudyService:
             params: The request parameters used to check user permissions.
 
         Raises:
-            BindingConstraintDeletionNotAllowed: If the link is referenced by a binding constraint.
+            ReferencedObjectDeletionNotAllowed: If the link is referenced by a binding constraint.
         """
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
@@ -1910,7 +1910,7 @@ class StudyService:
         )
         if referencing_binding_constraints:
             binding_ids = [bc.id for bc in referencing_binding_constraints]
-            raise BindingConstraintDeletionNotAllowed(link_id, binding_ids, object_type="Link")
+            raise ReferencedObjectDeletionNotAllowed(link_id, binding_ids, object_type="Link")
         self.links.delete_link(study, area_from, area_to)
         self.event_bus.push(
             Event(
@@ -2565,7 +2565,7 @@ class StudyService:
             cluster_ids: IDs of the thermal clusters to be checked
 
         Raises:
-            BindingConstraintDeletionNotAllowed: if a cluster is referenced in a binding constraint
+            ReferencedObjectDeletionNotAllowed: if a cluster is referenced in a binding constraint
         """
 
         for cluster_id in cluster_ids:
@@ -2574,4 +2574,4 @@ class StudyService:
             )
             if ref_bcs:
                 binding_ids = [bc.id for bc in ref_bcs]
-                raise BindingConstraintDeletionNotAllowed(cluster_id, binding_ids, object_type="Cluster")
+                raise ReferencedObjectDeletionNotAllowed(cluster_id, binding_ids, object_type="Cluster")

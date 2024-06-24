@@ -1434,7 +1434,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
     description = result.json()["description"]
     assert all([elm in description for elm in ["area 1", "binding constraint 1"]])
     # check the exception
-    assert result.json()["exception"] == "BindingConstraintDeletionNotAllowed"
+    assert result.json()["exception"] == "ReferencedObjectDeletionNotAllowed"
 
     # delete binding constraint 1
     client.delete(f"/v1/studies/{study_id}/bindingconstraints/binding%20constraint%201")
@@ -1801,7 +1801,7 @@ def test_areas_deletion_with_binding_constraints(client: TestClient, user_access
             assert res.status_code == 403, res.json()
             description = res.json()["description"]
             assert all([elm in description for elm in [area_id, bc_id]])
-            assert res.json()["exception"] == "BindingConstraintDeletionNotAllowed"
+            assert res.json()["exception"] == "ReferencedObjectDeletionNotAllowed"
 
         # delete the binding constraint
         res = client.delete(f"/v1/studies/{study_id}/bindingconstraints/{bc_id}")
@@ -1872,7 +1872,7 @@ def test_links_deletion_with_binding_constraints(client: TestClient, user_access
     assert res.status_code == 403, res.json()
     description = res.json()["description"]
     assert all([elm in description for elm in ["area_1%area_2", "bc_1"]])
-    assert res.json()["exception"] == "BindingConstraintDeletionNotAllowed"
+    assert res.json()["exception"] == "ReferencedObjectDeletionNotAllowed"
 
     # delete the binding constraint
     res = client.delete(f"/v1/studies/{study_id}/bindingconstraints/bc_1")

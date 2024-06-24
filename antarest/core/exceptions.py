@@ -325,7 +325,7 @@ class StudyVariantUpgradeError(HTTPException):
             super().__init__(HTTPStatus.EXPECTATION_FAILED, "Upgrade not supported for parent of variants")
 
 
-class BindingConstraintDeletionNotAllowed(HTTPException):
+class ReferencedObjectDeletionNotAllowed(HTTPException):
     """
     Exception raised when a binding constraint is not allowed to be deleted because it references
     other objects: areas, links or thermal clusters.
