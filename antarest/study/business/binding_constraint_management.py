@@ -2,6 +2,7 @@ import collections
 import itertools
 import json
 import logging
+import shutil
 import typing as t
 
 import numpy as np
@@ -30,6 +31,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint 
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series_after_v87 import (
     default_bc_hourly as default_bc_hourly_87,
@@ -392,6 +394,99 @@ def _validate_binding_constraints(file_study: FileStudy, bcs: t.Sequence[Constra
 _ALL_BINDING_CONSTRAINTS_PATH = "input/bindingconstraints/bindingconstraints"
 
 
+def update_matrices_names(
+    file_study: FileStudy,
+    binding_constraint_id: str,
+    existing_operator: BindingConstraintOperator,
+    new_operator: BindingConstraintOperator,
+) -> None:
+    """
+    Update the matrix file name according to the new operator.
+
+    Args:
+        file_study: the file study
+        binding_constraint_id: the binding constraint ID
+        existing_operator: the existing operator
+        new_operator: the new operator
+
+    Raises:
+        NotImplementedError: if the case is not handled
+    """
+    alias_operator_map = {
+        BindingConstraintOperator.EQUAL: "eq",
+        BindingConstraintOperator.LESS: "lt",
+        BindingConstraintOperator.GREATER: "gt",
+    }
+    parent_folder_node = file_study.tree.get_node(["input", "bindingconstraints"])
+    # fetch for bounds nodes
+    matrix_node_lt = parent_folder_node.get_node([f"{binding_constraint_id}_lt"])
+    assert isinstance(
+        matrix_node_lt, LazyNode
+    ), f"Node type not handled yet: LazyNode expected, got {type(matrix_node_lt)}"
+    matrix_node_eq = parent_folder_node.get_node([f"{binding_constraint_id}_eq"])
+    assert isinstance(
+        matrix_node_eq, LazyNode
+    ), f"Node type not handled yet: LazyNode expected, got {type(matrix_node_eq)}"
+    matrix_node_gt = parent_folder_node.get_node([f"{binding_constraint_id}_gt"])
+    assert isinstance(
+        matrix_node_gt, LazyNode
+    ), f"Node type not handled yet: LazyNode expected, got {type(matrix_node_gt)}"
+
+    matrix_path_lt = matrix_node_lt.get_link_path()
+    matrix_path_eq = matrix_node_eq.get_link_path()
+    matrix_path_gt = matrix_node_gt.get_link_path()
+
+    not_handled_case_err = NotImplementedError(
+        "This case is not implemented yet:" f"\nexisting_operator: {existing_operator}\nnew_operator: {new_operator}"
+    )
+    # TODO: due to legacy matrices generation, we need to check if the new matrix file already exists
+    #  and if it does, we need to first remove it before renaming the existing matrix file
+    if existing_operator != BindingConstraintOperator.BOTH and new_operator != BindingConstraintOperator.BOTH:
+        matrix_node = parent_folder_node.get_node([f"{binding_constraint_id}_{alias_operator_map[existing_operator]}"])
+        assert isinstance(
+            matrix_node, LazyNode
+        ), f"Node type not handled yet: LazyNode expected, got {type(matrix_node)}"
+        new_matrix_node = parent_folder_node.get_node([f"{binding_constraint_id}_{alias_operator_map[new_operator]}"])
+        assert isinstance(
+            new_matrix_node, LazyNode
+        ), f"Node type not handled yet: LazyNode expected, got {type(new_matrix_node)}"
+
+        matrix_path = matrix_node.get_link_path()
+        new_matrix_path = new_matrix_node.get_link_path()
+        new_matrix_path.unlink(missing_ok=True)
+        matrix_path.rename(new_matrix_path)
+
+    elif new_operator == BindingConstraintOperator.BOTH:
+        if existing_operator == BindingConstraintOperator.EQUAL:
+            matrix_path_lt.unlink(missing_ok=True)
+            matrix_path_gt.unlink(missing_ok=True)
+            matrix_path_eq.rename(matrix_path_lt)
+            # copy the matrix lt to gt
+            shutil.copy(matrix_path_lt, matrix_path_gt)
+        elif existing_operator == BindingConstraintOperator.LESS:
+            matrix_path_gt.unlink(missing_ok=True)
+            shutil.copy(matrix_path_lt, matrix_path_gt)
+        elif existing_operator == BindingConstraintOperator.GREATER:
+            matrix_path_lt.unlink(missing_ok=True)
+            shutil.copy(matrix_path_gt, matrix_path_lt)
+        else:  # pragma: no cover
+            raise not_handled_case_err
+    elif existing_operator == BindingConstraintOperator.BOTH:
+        if new_operator == BindingConstraintOperator.EQUAL:
+            # TODO: we may retrieve the mean of the two matrices, but here we just copy the lt matrix
+            shutil.copy(matrix_path_lt, matrix_path_eq)
+            matrix_path_gt.unlink(missing_ok=True)
+            matrix_path_lt.unlink(missing_ok=True)
+        elif new_operator == BindingConstraintOperator.LESS:
+            matrix_path_gt.unlink(missing_ok=True)
+        elif new_operator == BindingConstraintOperator.GREATER:
+            matrix_path_lt.unlink(missing_ok=True)
+        else:  # pragma: no cover
+            raise not_handled_case_err
+    else:  # pragma: no cover
+        raise not_handled_case_err
+
+
 class BindingConstraintManager:
     def __init__(
         self,
@@ -720,6 +815,12 @@ class BindingConstraintManager:
         existing_constraint = self.get_binding_constraint(study, binding_constraint_id)
         study_version = int(study.version)
         check_attributes_coherence(data, study_version)
+
+        # update matrix file name if the operator has changed
+        existing_operator = existing_constraint.operator
+        new_operator = data.operator
+        if existing_operator != new_operator:
+            update_matrices_names(file_study, binding_constraint_id, existing_operator, new_operator)
 
         upd_constraint = {
             "id": binding_constraint_id,
