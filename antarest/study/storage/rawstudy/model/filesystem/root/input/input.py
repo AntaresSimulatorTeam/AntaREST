@@ -5,16 +5,14 @@ from antarest.study.storage.rawstudy.model.filesystem.root.input.areas.areas imp
 from antarest.study.storage.rawstudy.model.filesystem.root.input.bindingconstraints.bindingcontraints import (
     BindingConstraints,
 )
+from antarest.study.storage.rawstudy.model.filesystem.root.input.commons.prepro_series import InputPreproSeries
 from antarest.study.storage.rawstudy.model.filesystem.root.input.hydro.hydro import InputHydro
 from antarest.study.storage.rawstudy.model.filesystem.root.input.link.link import InputLink
-from antarest.study.storage.rawstudy.model.filesystem.root.input.load.load import InputLoad
 from antarest.study.storage.rawstudy.model.filesystem.root.input.miscgen.miscgen import InputMiscGen
 from antarest.study.storage.rawstudy.model.filesystem.root.input.renewables.renewable import ClusteredRenewables
 from antarest.study.storage.rawstudy.model.filesystem.root.input.reserves.reserves import InputReserves
-from antarest.study.storage.rawstudy.model.filesystem.root.input.solar.solar import InputSolar
 from antarest.study.storage.rawstudy.model.filesystem.root.input.st_storage.st_storage import InputSTStorage
 from antarest.study.storage.rawstudy.model.filesystem.root.input.thermal.thermal import InputThermal
-from antarest.study.storage.rawstudy.model.filesystem.root.input.wind.wind import InputWind
 
 
 class Input(FolderNode):
@@ -31,12 +29,12 @@ class Input(FolderNode):
             "bindingconstraints": BindingConstraints(self.context, config.next_file("bindingconstraints")),
             "hydro": InputHydro(self.context, config.next_file("hydro")),
             "links": InputLink(self.context, config.next_file("links")),
-            "load": InputLoad(self.context, config.next_file("load")),
+            "load": InputPreproSeries(self.context, config.next_file("load"), "load_"),
             "misc-gen": InputMiscGen(self.context, config.next_file("misc-gen")),
             "reserves": InputReserves(self.context, config.next_file("reserves")),
-            "solar": InputSolar(self.context, config.next_file("solar")),
+            "solar": InputPreproSeries(self.context, config.next_file("solar"), "solar_"),
             "thermal": InputThermal(self.context, config.next_file("thermal")),
-            "wind": InputWind(self.context, config.next_file("wind")),
+            "wind": InputPreproSeries(self.context, config.next_file("wind"), "wind_"),
         }
 
         has_renewables = config.version >= 810 and EnrModelling(config.enr_modelling) == EnrModelling.CLUSTERS

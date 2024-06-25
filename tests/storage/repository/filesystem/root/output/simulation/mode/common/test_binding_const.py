@@ -1,3 +1,4 @@
+import typing as t
 import uuid
 from pathlib import Path
 from unittest.mock import Mock
@@ -14,44 +15,34 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matri
 )
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.common import binding_const
 
-# noinspection SpellCheckingInspection
-NOMINAL_CASE = {
-    "binding-constraints-annual": {"freq": MatrixFrequency.ANNUAL},
-    "binding-constraints-daily": {"freq": MatrixFrequency.DAILY},
-    "binding-constraints-hourly": {"freq": MatrixFrequency.HOURLY},
-    "binding-constraints-monthly": {"freq": MatrixFrequency.MONTHLY},
-    "binding-constraints-weekly": {"freq": MatrixFrequency.WEEKLY},
-}
-
 
 class TestOutputSimulationBindingConstraintItem:
     @pytest.mark.parametrize(
-        "expected",
+        "existing_files",
         [
-            pytest.param(NOMINAL_CASE, id="nominal-case-True"),
+            pytest.param(["binding-constraints-hourly.txt", "binding-constraints-daily.txt"]),
+            pytest.param([]),
         ],
     )
-    def test_build_output_simulation_binding_constraint_item(
-        self,
-        expected: dict,
-    ):
+    def test_build_output_simulation_binding_constraint_item(self, existing_files: t.List[str], tmp_path: Path):
+        expected = {}
+        for file in existing_files:
+            tmp_path.joinpath(file).touch()
+            name = Path(file).stem
+            expected[name] = {"freq": MatrixFrequency(name.replace("binding-constraints-", ""))}
         matrix = Mock(spec=ISimpleMatrixService)
         resolver = Mock(spec=UriResolverService)
         context = ContextServer(matrix=matrix, resolver=resolver)
         study_id = str(uuid.uuid4())
         config = FileStudyTreeConfig(
             study_path=Path("path/to/study"),
-            path=Path("path/to/study"),
+            path=tmp_path,
             study_id=study_id,
             version=850,  # will become a `str` in the future
             areas={},
         )
 
-        node = binding_const.OutputSimulationBindingConstraintItem(
-            context=context,
-            config=config,
-            children_glob_exceptions=None,
-        )
+        node = binding_const.OutputSimulationBindingConstraintItem(context=context, config=config)
         actual = node.build()
 
         # check the result

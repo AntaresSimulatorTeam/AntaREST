@@ -5,10 +5,8 @@ from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFi
 
 class OutputSimulationModeMcAllGrid(FolderNode):
     def build(self) -> TREE:
-        children: TREE = {
-            "areas": RawFileNode(self.context, self.config.next_file("areas.txt")),
-            "digest": RawFileNode(self.context, self.config.next_file("digest.txt")),
-            "links": RawFileNode(self.context, self.config.next_file("links.txt")),
-            "thermal": RawFileNode(self.context, self.config.next_file("thermal.txt")),
-        }
+        files = [d.stem for d in self.config.path.iterdir()]
+        children: TREE = {}
+        for file in files:
+            children[file] = RawFileNode(self.context, self.config.next_file(f"{file}.txt"))
         return children
