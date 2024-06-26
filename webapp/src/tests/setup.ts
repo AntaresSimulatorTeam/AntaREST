@@ -2,6 +2,8 @@ import * as matchers from "@testing-library/jest-dom/matchers";
 import "@testing-library/jest-dom";
 import { cleanup } from "@testing-library/react";
 import { expect } from "vitest";
+import "vitest-canvas-mock";
+import "./mocks/mockResizeObserver";
 
 // Extend Vitest's expect function with jest-dom matchers for enhanced DOM assertions.
 expect.extend(matchers);
