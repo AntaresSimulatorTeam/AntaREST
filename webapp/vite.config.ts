@@ -30,7 +30,12 @@ export default defineConfig(({ mode }) => {
       },
     },
     test: {
-      globals: true, // Use the APIs globally
+      globals: true, // Use the APIs globally,
+      poolOptions: {
+        threads: {
+          singleThread: true, // @see https://github.com/vitest-dev/vitest/issues/740
+        },
+      },
       environment: "jsdom",
       css: true,
       setupFiles: "./src/tests/setup.ts",
