@@ -5,7 +5,7 @@ from pathlib import Path
 import py7zr
 import pytest
 
-from antarest.core.utils.utils import BadArchiveContent, extract_zip
+from antarest.core.utils.utils import BadArchiveContent, extract_archive
 
 
 class TestExtractZip:
@@ -21,7 +21,7 @@ class TestExtractZip:
 
         # Then, call the function
         with open(zip_path, mode="rb") as stream:
-            extract_zip(stream, tmp_path)
+            extract_archive(stream, tmp_path)
 
         # Finally, check the result
         assert (tmp_path / "test.txt").read_text() == "Hello world!"
@@ -34,7 +34,7 @@ class TestExtractZip:
 
         # Then, call the function
         with open(zip_path, mode="rb") as stream:
-            extract_zip(stream, tmp_path)
+            extract_archive(stream, tmp_path)
 
         # Finally, check the result
         assert (tmp_path / "test.txt").read_text() == "Hello world!"
@@ -43,22 +43,22 @@ class TestExtractZip:
         stream = io.BytesIO(b"")
 
         with pytest.raises(BadArchiveContent):
-            extract_zip(stream, Path("dummy/path"))
+            extract_archive(stream, Path("dummy/path"))
 
     def test_extract_zip__corrupted_zip(self):
         stream = io.BytesIO(b"PK\x03\x04 BLURP")
 
         with pytest.raises(BadArchiveContent):
-            extract_zip(stream, Path("dummy/path"))
+            extract_archive(stream, Path("dummy/path"))
 
     def test_extract_zip__corrupted_7z(self):
         stream = io.BytesIO(b"7z BLURP")
 
         with pytest.raises(BadArchiveContent):
-            extract_zip(stream, Path("dummy/path"))
+            extract_archive(stream, Path("dummy/path"))
 
     def test_extract_zip__unknown_format(self):
         stream = io.BytesIO(b"ZORRO")
 
         with pytest.raises(BadArchiveContent):
-            extract_zip(stream, Path("dummy/path"))
+            extract_archive(stream, Path("dummy/path"))

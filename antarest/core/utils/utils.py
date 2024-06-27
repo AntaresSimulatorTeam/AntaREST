@@ -5,6 +5,7 @@ import shutil
 import tempfile
 import time
 import typing as t
+import warnings
 import zipfile
 from pathlib import Path
 
@@ -51,7 +52,7 @@ class BadArchiveContent(Exception):
         super().__init__(message)
 
 
-def extract_zip(stream: t.BinaryIO, target_dir: Path) -> None:
+def extract_archive(stream: t.BinaryIO, target_dir: Path) -> None:
     """
     Extract a ZIP archive to a given destination.
 
@@ -191,34 +192,74 @@ def is_zip(path: Path) -> bool:
     return path.name.endswith(".zip")
 
 
-def extract_file_to_tmp_dir(zip_path: Path, inside_zip_path: Path) -> t.Tuple[Path, t.Any]:
-    str_inside_zip_path = str(inside_zip_path).replace("\\", "/")
+def extract_file_to_tmp_dir(archive_path: Path, inside_archive_path: Path) -> t.Tuple[Path, t.Any]:
+    """
+    Extract a file from an archive to a temporary directory.
+
+    Args:
+        archive_path: Path to the archive file to extract, with a .zip or .7z extension.
+        inside_archive_path: Relative path to the file inside the archive.
+
+    Returns:
+        A tuple with the path to the extracted file and the temporary directory object.
+
+    Raises:
+        NotImplementedError: If the archive format is not supported. Supported formats are `.zip` and `.7z`.
+        KeyError: If the file is not found in the ZIP archive.
+        FileNotFoundError: If the file is not found in the 7z archive.
+    """
+    warnings.warn("This function is inefficient, it should no longer be used", DeprecationWarning)
+
+    str_inside_archive_path = inside_archive_path.as_posix()
     tmp_dir = tempfile.TemporaryDirectory()
     try:
-        with zipfile.ZipFile(zip_path) as zip_obj:
-            zip_obj.extract(str_inside_zip_path, tmp_dir.name)
+        if archive_path.suffix == ".zip":
+            with zipfile.ZipFile(archive_path, mode="r") as zip_obj:
+                zip_obj.extract(str_inside_archive_path, tmp_dir.name)
+        elif archive_path.suffix == ".7z":
+            with py7zr.SevenZipFile(archive_path, mode="r") as zip_obj:
+                zip_obj.extract(path=tmp_dir.name, targets=[str_inside_archive_path])
+        else:  # pragma: no cover
+            raise NotImplementedError(f"Unsupported archive format for {archive_path}")
     except Exception as e:
         logger.warning(
-            f"Failed to extract {str_inside_zip_path} in zip {zip_path}",
+            f"Failed to extract {str_inside_archive_path} in zip {archive_path}",
             exc_info=e,
         )
         tmp_dir.cleanup()
         raise
-    path = Path(tmp_dir.name) / inside_zip_path
+    path = Path(tmp_dir.name, str_inside_archive_path)
     return path, tmp_dir
 
 
 def read_in_zip(
-    zip_path: Path,
-    inside_zip_path: Path,
+    archive_path: Path,
+    inside_archive_path: Path,
     read: t.Callable[[t.Optional[Path]], None],
 ) -> None:
+    """
+    Read a file inside a ZIP archive, using a callback to process the file content.
+
+    Args:
+        archive_path: Path to the archive file to extract, with a .zip or .7z extension.
+        inside_archive_path: Relative path to the file inside the archive.
+        read: Callback to process the file content.
+            The argument is the path to the extracted file, or `None` if the file was not found.
+
+    Raises:
+        KeyError: If the file is not found in the ZIP archive.
+        FileNotFoundError: If the file is not found in the 7z archive.
+    """
+    warnings.warn("This function is inefficient, it should no longer be used", DeprecationWarning)
+
     tmp_dir = None
     try:
-        path, tmp_dir = extract_file_to_tmp_dir(zip_path, inside_zip_path)
+        path, tmp_dir = extract_file_to_tmp_dir(archive_path, inside_archive_path)
         read(path)
-    except KeyError:
-        logger.warning(f"{inside_zip_path} not found in {zip_path}")
+    except (KeyError, FileNotFoundError):
+        # ZipFile raises KeyError if the file is not found
+        # SevenZipFile raises FileNotFoundError if the file is not found
+        logger.warning(f"{inside_archive_path} not found in {archive_path}")
         read(None)
     finally:
         if tmp_dir is not None:

@@ -1498,7 +1498,7 @@ def test_archive(client: TestClient, admin_access_token: str, tmp_path: Path) ->
 
     res = client.get(f"/v1/studies/{study_id}")
     assert res.json()["archived"]
-    assert (tmp_path / "archive_dir" / f"{study_id}.zip").exists()
+    assert (tmp_path / "archive_dir" / f"{study_id}.7z").exists()
 
     res = client.put(f"/v1/studies/{study_id}/unarchive")
 
@@ -1507,12 +1507,12 @@ def test_archive(client: TestClient, admin_access_token: str, tmp_path: Path) ->
         lambda: client.get(
             f"/v1/tasks/{task_id}",
         ).json()["status"]
-        == 3
+        == 3,
     )
 
     res = client.get(f"/v1/studies/{study_id}")
     assert not res.json()["archived"]
-    assert not (tmp_path / "archive_dir" / f"{study_id}.zip").exists()
+    assert not (tmp_path / "archive_dir" / f"{study_id}.7z").exists()
 
 
 def test_maintenance(client: TestClient, admin_access_token: str) -> None:
