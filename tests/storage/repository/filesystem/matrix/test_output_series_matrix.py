@@ -1,0 +1,116 @@
+from pathlib import Path
+from unittest.mock import Mock
+
+import pandas as pd
+import pytest
+
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import ChildNotFoundError
+from antarest.study.storage.rawstudy.model.filesystem.matrix.head_writer import AreaHeadWriter
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
+from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import OutputSeriesMatrix
+
+MATRIX_DAILY_DATA = """\
+DE\tarea\tva\thourly
+\tVARIABLES\tBEGIN\tEND
+\t2\t1\t2
+
+DE\thourly\t\t\t\t01_solar\t02_wind_on
+\t\t\t\t\tMWh\tMWh
+\tindex\tday\tmonth\thourly\tEXP\tEXP
+\t1\t1\tJAN\t00:00\t27000\t600
+\t2\t1\tJAN\t01:00\t48000\t34400
+"""
+
+
+class TestOutputSeriesMatrix:
+    @pytest.fixture(name="my_study_config")
+    def fixture_my_study_config(self, tmp_path: Path) -> FileStudyTreeConfig:
+        """
+        Construct a FileStudyTreeConfig object for a dummy study stored in a temporary directory.
+        """
+        return FileStudyTreeConfig(
+            study_path=tmp_path,
+            path=tmp_path / "matrix-daily.txt",
+            study_id="df0a8aa9-6c6f-4e8b-a84e-45de2fb29cd3",
+            version=800,
+        )
+
+    def test_load(self, my_study_config: FileStudyTreeConfig) -> None:
+        file = my_study_config.path
+        file.write_text("\n\n\n\nmock\tfile\ndummy\tdummy\ndummy\tdummy\ndummy\tdummy")
+
+        serializer = Mock()
+        serializer.extract_date.return_value = (
+            pd.Index(["01/02", "01/01"]),
+            pd.DataFrame(
+                data={
+                    ("01_solar", "MWh", "EXP"): [27000, 48000],
+                    ("02_wind_on", "MWh", "EXP"): [600, 34400],
+                }
+            ),
+        )
+
+        matrix = pd.DataFrame(
+            data={
+                ("01_solar", "MWh", "EXP"): [27000, 48000],
+                ("02_wind_on", "MWh", "EXP"): [600, 34400],
+            },
+            index=["01/02", "01/01"],
+        )
+
+        node = OutputSeriesMatrix(
+            context=Mock(),
+            config=my_study_config,
+            freq=MatrixFrequency.DAILY,
+            date_serializer=serializer,
+            head_writer=AreaHeadWriter(area="", data_type="", freq=""),
+        )
+        assert node.load() == matrix.to_dict(orient="split")
+
+    def test_load__file_not_found(self, my_study_config: FileStudyTreeConfig) -> None:
+        node = OutputSeriesMatrix(
+            context=Mock(),
+            config=my_study_config,
+            freq=MatrixFrequency.DAILY,
+            date_serializer=Mock(),
+            head_writer=AreaHeadWriter(area="", data_type="", freq=""),
+        )
+        with pytest.raises(ChildNotFoundError) as ctx:
+            node.load()
+        err_msg = str(ctx.value)
+        assert "'matrix-daily.txt" in err_msg
+        assert my_study_config.study_id in err_msg
+        assert "not found" in err_msg.lower()
+
+    def test_save(self, my_study_config: FileStudyTreeConfig) -> None:
+        serializer = Mock()
+        serializer.build_date.return_value = pd.DataFrame(
+            {
+                0: ["DE", "", "", "", ""],
+                1: ["hourly", "", "index", 1, 2],
+                2: ["", "", "day", "1", "1"],
+                3: ["", "", "month", "JAN", "JAN"],
+                4: ["", "", "hourly", "00:00", "01:00"],
+            }
+        )
+
+        node = OutputSeriesMatrix(
+            context=Mock(),
+            config=my_study_config,
+            freq=MatrixFrequency.DAILY,
+            date_serializer=serializer,
+            head_writer=AreaHeadWriter(area="de", data_type="va", freq="hourly"),
+        )
+
+        matrix = pd.DataFrame(
+            data={
+                ("01_solar", "MWh", "EXP"): [27000, 48000],
+                ("02_wind_on", "MWh", "EXP"): [600, 34400],
+            },
+            index=["01/01", "01/02"],
+        )
+
+        node.dump(matrix.to_dict(orient="split"))  # type: ignore
+        actual = my_study_config.path.read_text()
+        assert actual == MATRIX_DAILY_DATA
