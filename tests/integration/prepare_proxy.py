@@ -164,7 +164,7 @@ class PreparerProxy:
         task = wait_task_completion(self.client, self.user_access_token, task_id, timeout=20)
         assert task.status == TaskStatus.COMPLETED
 
-    def create_area(self, study_id: str, *, name: str, country: str = "FR") -> str:
+    def create_area(self, study_id: str, *, name: str, country: str = "FR") -> t.Dict[str, t.Any]:
         """
         Create an area in a study.
 
@@ -174,7 +174,7 @@ class PreparerProxy:
             country: Country of the area.
 
         Returns:
-            The ID of the created area.
+            The area properties.
         """
         res = self.client.post(
             f"/v1/studies/{study_id}/areas",
@@ -182,8 +182,8 @@ class PreparerProxy:
             json={"name": name, "type": "AREA", "metadata": {"country": country}},
         )
         res.raise_for_status()
-        area_id = t.cast(str, res.json()["id"])
-        return area_id
+        properties = t.cast(t.Dict[str, t.Any], res.json())
+        return properties
 
     def update_general_data(self, study_id: str, **data: t.Any) -> None:
         """
@@ -200,7 +200,7 @@ class PreparerProxy:
         )
         res.raise_for_status()
 
-    def create_link(self, study_id: str, area1_id: str, area2_id: str) -> str:
+    def create_link(self, study_id: str, area1_id: str, area2_id: str) -> t.Dict[str, t.Any]:
         """
         Create a link between two areas in a study.
 
@@ -210,7 +210,7 @@ class PreparerProxy:
             area2_id: The ID of the second area.
 
         Returns:
-            The ID of the created link.
+            The link properties.
         """
         # Create a link between the two areas
         res = self.client.post(
@@ -219,10 +219,11 @@ class PreparerProxy:
             json={"area1": area1_id, "area2": area2_id},
         )
         assert res.status_code == 200, res.json()
-        link_id = f"{area1_id}%{area2_id}"
-        return link_id
+        properties = t.cast(t.Dict[str, t.Any], res.json())
+        properties["id"] = f"{area1_id}%{area2_id}"
+        return properties
 
-    def create_thermal(self, study_id: str, area1_id: str, *, name: str, **kwargs: t.Any) -> str:
+    def create_thermal(self, study_id: str, area1_id: str, *, name: str, **kwargs: t.Any) -> t.Dict[str, t.Any]:
         """
         Create a thermal cluster in an area.
 
@@ -231,6 +232,9 @@ class PreparerProxy:
             area1_id: The ID of the area.
             name: The name of the cluster.
             **kwargs: Additional cluster data.
+
+        Returns:
+            The cluster properties.
         """
         res = self.client.post(
             f"/v1/studies/{study_id}/areas/{area1_id}/clusters/thermal",
@@ -238,8 +242,8 @@ class PreparerProxy:
             json={"name": name, **kwargs},
         )
         res.raise_for_status()
-        cluster_id = t.cast(str, res.json()["id"])
-        return cluster_id
+        properties = t.cast(t.Dict[str, t.Any], res.json())
+        return properties
 
     def get_thermals(self, study_id: str, area1_id: str) -> t.List[t.Dict[str, t.Any]]:
         """
@@ -327,3 +331,13 @@ class PreparerProxy:
         res.raise_for_status()
         binding_constraints_list = t.cast(t.List[t.Dict[str, t.Any]], res.json())
         return binding_constraints_list
+
+    def drop_all_commands(self, variant_id: str) -> None:
+        """
+        Drop all commands of a variant.
+
+        Args:
+            variant_id: The ID of the variant.
+        """
+        res = self.client.delete(f"/v1/studies/{variant_id}/commands", headers=self.headers)
+        res.raise_for_status()
