@@ -21,7 +21,7 @@ class TestRenewableCluster:
         self,
         client: TestClient,
         user_access_token: str,
-        internal_study: str,
+        internal_study_id: str,
     ) -> None:
         # sourcery skip: extract-duplicate-method
 
@@ -32,7 +32,7 @@ class TestRenewableCluster:
         # We have an "old" study that we need to upgrade to version 810
         min_study_version = 810
         res = client.put(
-            f"/v1/studies/{internal_study}/upgrade",
+            f"/v1/studies/{internal_study_id}/upgrade",
             headers={"Authorization": f"Bearer {user_access_token}"},
             params={"target_version": min_study_version},
         )
@@ -51,7 +51,7 @@ class TestRenewableCluster:
             "data": {"renewable-generation-modelling": "clusters"},
         }
         res = client.post(
-            f"/v1/studies/{internal_study}/commands",
+            f"/v1/studies/{internal_study_id}/commands",
             headers={"Authorization": f"Bearer {user_access_token}"},
             json=[{"action": "update_config", "args": args}],
         )
@@ -76,7 +76,7 @@ class TestRenewableCluster:
             },
         }
         res = client.post(
-            f"/v1/studies/{internal_study}/commands",
+            f"/v1/studies/{internal_study_id}/commands",
             headers={"Authorization": f"Bearer {user_access_token}"},
             json=[{"action": "create_renewables_cluster", "args": args}],
         )
@@ -97,7 +97,7 @@ class TestRenewableCluster:
             },
         }
         res = client.post(
-            f"/v1/studies/{internal_study}/commands",
+            f"/v1/studies/{internal_study_id}/commands",
             headers={"Authorization": f"Bearer {user_access_token}"},
             json=[{"action": "create_renewables_cluster", "args": args}],
         )
@@ -105,7 +105,7 @@ class TestRenewableCluster:
 
         # Check the properties of the renewable clusters in the "FR" area
         res = client.get(
-            f"/v1/studies/{internal_study}/areas/{area_fr_id}/clusters/renewable/{cluster_fr1_id}",
+            f"/v1/studies/{internal_study_id}/areas/{area_fr_id}/clusters/renewable/{cluster_fr1_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         res.raise_for_status()
@@ -122,7 +122,7 @@ class TestRenewableCluster:
         assert properties == expected
 
         res = client.get(
-            f"/v1/studies/{internal_study}/areas/{area_fr_id}/clusters/renewable/{cluster_fr2_id}",
+            f"/v1/studies/{internal_study_id}/areas/{area_fr_id}/clusters/renewable/{cluster_fr2_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         res.raise_for_status()
@@ -156,7 +156,7 @@ class TestRenewableCluster:
             "matrix": values_fr2.tolist(),
         }
         res = client.post(
-            f"/v1/studies/{internal_study}/commands",
+            f"/v1/studies/{internal_study_id}/commands",
             headers={"Authorization": f"Bearer {user_access_token}"},
             json=[
                 {"action": "replace_matrix", "args": args_fr1},
@@ -167,7 +167,7 @@ class TestRenewableCluster:
 
         # Check the matrices of the renewable clusters in the "FR" area
         res = client.get(
-            f"/v1/studies/{internal_study}/raw?path=input/renewables/series/{area_fr_id}/{series_fr1_id}/series",
+            f"/v1/studies/{internal_study_id}/raw?path=input/renewables/series/{area_fr_id}/{series_fr1_id}/series",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         res.raise_for_status()
@@ -175,7 +175,7 @@ class TestRenewableCluster:
         assert np.array(matrix_fr1["data"], dtype=np.float64).all() == values_fr1.all()
 
         res = client.get(
-            f"/v1/studies/{internal_study}/raw?path=input/renewables/series/{area_fr_id}/{series_fr2_id}/series",
+            f"/v1/studies/{internal_study_id}/raw?path=input/renewables/series/{area_fr_id}/{series_fr2_id}/series",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         res.raise_for_status()
@@ -202,14 +202,14 @@ class TestRenewableCluster:
             },
         }
         res = client.post(
-            f"/v1/studies/{internal_study}/commands",
+            f"/v1/studies/{internal_study_id}/commands",
             headers={"Authorization": f"Bearer {user_access_token}"},
             json=[{"action": "create_renewables_cluster", "args": args}],
         )
         res.raise_for_status()
 
         res = client.get(
-            f"/v1/studies/{internal_study}/areas/{area_it_id}/clusters/renewable/{cluster_it1_id}",
+            f"/v1/studies/{internal_study_id}/areas/{area_it_id}/clusters/renewable/{cluster_it1_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         res.raise_for_status()
@@ -228,7 +228,7 @@ class TestRenewableCluster:
         # Check the matrices of the renewable clusters in the "IT" area
         series_it1_id = cluster_it1_id.lower()  # Series IDs are in lower case
         res = client.get(
-            f"/v1/studies/{internal_study}/raw?path=input/renewables/series/{area_it_id}/{series_it1_id}/series",
+            f"/v1/studies/{internal_study_id}/raw?path=input/renewables/series/{area_it_id}/{series_it1_id}/series",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         res.raise_for_status()
@@ -242,7 +242,7 @@ class TestRenewableCluster:
         # The `remove_renewables_cluster` command allows you to delete a Renewable Cluster.
         args = {"area_id": area_fr_id, "cluster_id": cluster_fr2_id}
         res = client.post(
-            f"/v1/studies/{internal_study}/commands",
+            f"/v1/studies/{internal_study_id}/commands",
             headers={"Authorization": f"Bearer {user_access_token}"},
             json=[{"action": "remove_renewables_cluster", "args": args}],
         )
@@ -250,7 +250,7 @@ class TestRenewableCluster:
 
         # Check the properties of all renewable clusters
         res = client.get(
-            f"/v1/studies/{internal_study}/raw?path=input/renewables/clusters&depth=4",
+            f"/v1/studies/{internal_study_id}/raw?path=input/renewables/clusters&depth=4",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         res.raise_for_status()
@@ -284,7 +284,7 @@ class TestRenewableCluster:
         # The `remove_renewables_cluster` command allows you to delete a Renewable Cluster.
         args = {"area_id": area_fr_id, "cluster_id": cluster_fr1_id}
         res = client.post(
-            f"/v1/studies/{internal_study}/commands",
+            f"/v1/studies/{internal_study_id}/commands",
             headers={"Authorization": f"Bearer {user_access_token}"},
             json=[{"action": "remove_renewables_cluster", "args": args}],
         )
@@ -292,7 +292,7 @@ class TestRenewableCluster:
 
         # Check the properties of all renewable clusters
         res = client.get(
-            f"/v1/studies/{internal_study}/raw?path=input/renewables/clusters&depth=4",
+            f"/v1/studies/{internal_study_id}/raw?path=input/renewables/clusters&depth=4",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         res.raise_for_status()
@@ -319,7 +319,7 @@ class TestRenewableCluster:
         # this behavior is not yet implemented, so you will encounter a 500 error.
         args = {"area_id": area_fr_id, "cluster_id": cluster_fr2_id}
         res = client.post(
-            f"/v1/studies/{internal_study}/commands",
+            f"/v1/studies/{internal_study_id}/commands",
             headers={"Authorization": f"Bearer {user_access_token}"},
             json=[{"action": "remove_renewables_cluster", "args": args}],
         )

@@ -10,7 +10,7 @@ class TestupdateStudyMetadata:
         self,
         client: TestClient,
         user_access_token: str,
-        internal_study: str,
+        internal_study_id: str,
     ) -> None:
         """
         This test verifies that we can update the tags of a study.
@@ -20,7 +20,7 @@ class TestupdateStudyMetadata:
         # Classic usage: set some tags to a study
         study_tags = ["Tag1", "Tag2"]
         res = client.put(
-            f"/v1/studies/{internal_study}",
+            f"/v1/studies/{internal_study_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
             json={"tags": study_tags},
         )
@@ -33,7 +33,7 @@ class TestupdateStudyMetadata:
         # - "Tag2" is replaced by "Tag3".
         study_tags = ["tag1", "Tag3"]
         res = client.put(
-            f"/v1/studies/{internal_study}",
+            f"/v1/studies/{internal_study_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
             json={"tags": study_tags},
         )
@@ -46,7 +46,7 @@ class TestupdateStudyMetadata:
         # consecutive whitespaces are replaced by a single one.
         study_tags = [" \xa0Foo  \t  Bar  \n  ", "  \t  Baz\xa0\xa0"]
         res = client.put(
-            f"/v1/studies/{internal_study}",
+            f"/v1/studies/{internal_study_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
             json={"tags": study_tags},
         )
@@ -57,7 +57,7 @@ class TestupdateStudyMetadata:
         # We can have symbols in the tags
         study_tags = ["Foo-Bar", ":Baz%"]
         res = client.put(
-            f"/v1/studies/{internal_study}",
+            f"/v1/studies/{internal_study_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
             json={"tags": study_tags},
         )
@@ -69,12 +69,12 @@ class TestupdateStudyMetadata:
         self,
         client: TestClient,
         user_access_token: str,
-        internal_study: str,
+        internal_study_id: str,
     ) -> None:
         # We cannot have empty tags
         study_tags = [""]
         res = client.put(
-            f"/v1/studies/{internal_study}",
+            f"/v1/studies/{internal_study_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
             json={"tags": study_tags},
         )
@@ -86,7 +86,7 @@ class TestupdateStudyMetadata:
         study_tags = ["very long tags, very long tags, very long tags"]
         assert len(study_tags[0]) > 40
         res = client.put(
-            f"/v1/studies/{internal_study}",
+            f"/v1/studies/{internal_study_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
             json={"tags": study_tags},
         )

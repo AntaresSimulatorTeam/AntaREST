@@ -45,13 +45,13 @@ class PreparerProxy(Proxy):
         assert task.status == TaskStatus.COMPLETED
         return study_820_id
 
-    def upload_matrix(self, internal_study: str, matrix_path: str, df: pd.DataFrame) -> None:
+    def upload_matrix(self, internal_study_id: str, matrix_path: str, df: pd.DataFrame) -> None:
         tsv = io.BytesIO()
         df.to_csv(tsv, sep="\t", index=False, header=False)
         tsv.seek(0)
         # noinspection SpellCheckingInspection
         res = self.client.put(
-            f"/v1/studies/{internal_study}/raw",
+            f"/v1/studies/{internal_study_id}/raw",
             params={"path": matrix_path, "create_missing": True},
             headers=self.headers,
             files={"file": tsv, "create_missing": "true"},
@@ -92,9 +92,9 @@ class PreparerProxy(Proxy):
         area_id = res.json()["id"]
         return area_id
 
-    def update_general_data(self, internal_study: str, **data: t.Any):
+    def update_general_data(self, internal_study_id: str, **data: t.Any):
         res = self.client.put(
-            f"/v1/studies/{internal_study}/config/general/form",
+            f"/v1/studies/{internal_study_id}/config/general/form",
             json=data,
             headers=self.headers,
         )
@@ -107,7 +107,7 @@ class TestDownloadMatrices:
     Checks the retrieval of matrices with the endpoint GET studies/uuid/raw/download
     """
 
-    def test_download_matrices(self, client: TestClient, user_access_token: str, internal_study: str) -> None:
+    def test_download_matrices(self, client: TestClient, user_access_token: str, internal_study_id: str) -> None:
         user_headers = {"Authorization": f"Bearer {user_access_token}"}
 
         # =====================
@@ -116,7 +116,7 @@ class TestDownloadMatrices:
 
         preparer = PreparerProxy(client, user_access_token)
 
-        study_820_id = preparer.copy_upgrade_study(internal_study, target_version=820)
+        study_820_id = preparer.copy_upgrade_study(internal_study_id, target_version=820)
 
         # Create Variant
         variant_id = preparer.create_variant(study_820_id, name="New Variant")
@@ -131,7 +131,7 @@ class TestDownloadMatrices:
         preparer.generate_snapshot(variant_id)
 
         # Prepare a managed study to test specific matrices for version 8.6
-        study_860_id = preparer.copy_upgrade_study(internal_study, target_version=860)
+        study_860_id = preparer.copy_upgrade_study(internal_study_id, target_version=860)
 
         # Import a Min Gen. matrix: shape=(8760, 3), with random integers between 0 and 1000
         generator = np.random.default_rng(11)
@@ -226,7 +226,7 @@ class TestDownloadMatrices:
 
         # tests links headers before v8.2
         res = client.get(
-            f"/v1/studies/{internal_study}/raw/download",
+            f"/v1/studies/{internal_study_id}/raw/download",
             params={"path": "input/links/de/fr", "format": "tsv", "index": False},
             headers=user_headers,
         )
@@ -275,7 +275,7 @@ class TestDownloadMatrices:
 
         # test for empty matrix
         res = client.get(
-            f"/v1/studies/{internal_study}/raw/download",
+            f"/v1/studies/{internal_study_id}/raw/download",
             params={"path": "input/hydro/common/capacity/waterValues_de", "format": "tsv"},
             headers=user_headers,
         )
@@ -305,7 +305,7 @@ class TestDownloadMatrices:
 
         # asserts endpoint returns the right columns for output matrix
         res = client.get(
-            f"/v1/studies/{internal_study}/raw/download",
+            f"/v1/studies/{internal_study_id}/raw/download",
             params={
                 "path": "output/20201014-1422eco-hello/economy/mc-ind/00001/links/de/fr/values-hourly",
                 "format": "tsv",
@@ -331,7 +331,7 @@ class TestDownloadMatrices:
 
         # test energy matrix to test the regex
         res = client.get(
-            f"/v1/studies/{internal_study}/raw/download",
+            f"/v1/studies/{internal_study_id}/raw/download",
             params={"path": "input/hydro/prepro/de/energy", "format": "tsv"},
             headers=user_headers,
         )
