@@ -20,12 +20,12 @@ class TestHydroCorrelation:
         self,
         client: TestClient,
         user_access_token: str,
-        internal_study: str,
+        internal_study_id: str,
     ):
         """Check `get_correlation_form_values` end point"""
         area_id = "fr"
         res = client.get(
-            f"/v1/studies/{internal_study}/areas/{area_id}/hydro/correlation/form",
+            f"/v1/studies/{internal_study_id}/areas/{area_id}/hydro/correlation/form",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code == HTTPStatus.OK, res.json()
@@ -44,7 +44,7 @@ class TestHydroCorrelation:
         self,
         client: TestClient,
         user_access_token: str,
-        internal_study: str,
+        internal_study_id: str,
     ):
         """Check `set_correlation_form_values` end point"""
         area_id = "fr"
@@ -57,7 +57,7 @@ class TestHydroCorrelation:
             ]
         }
         res = client.put(
-            f"/v1/studies/{internal_study}/areas/{area_id}/hydro/correlation/form",
+            f"/v1/studies/{internal_study_id}/areas/{area_id}/hydro/correlation/form",
             headers={"Authorization": f"Bearer {user_access_token}"},
             json=obj,
         )
@@ -74,7 +74,7 @@ class TestHydroCorrelation:
 
         # check that the form is updated correctly
         res = client.get(
-            f"/v1/studies/{internal_study}/areas/{area_id}/hydro/correlation/form",
+            f"/v1/studies/{internal_study_id}/areas/{area_id}/hydro/correlation/form",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code == HTTPStatus.OK, res.json()
@@ -90,7 +90,7 @@ class TestHydroCorrelation:
 
         # check that the matrix is symmetric
         res = client.get(
-            f"/v1/studies/{internal_study}/areas/hydro/correlation/matrix",
+            f"/v1/studies/{internal_study_id}/areas/hydro/correlation/matrix",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code == HTTPStatus.OK, res.json()
@@ -158,14 +158,14 @@ class TestHydroCorrelation:
         self,
         client: TestClient,
         user_access_token: str,
-        internal_study: str,
+        internal_study_id: str,
         columns: str,
         expected: List[List[float]],
     ):
         """Check `get_correlation_matrix` end point"""
         query = f"columns={columns}" if columns else ""
         res = client.get(
-            f"/v1/studies/{internal_study}/areas/hydro/correlation/matrix?{query}",
+            f"/v1/studies/{internal_study_id}/areas/hydro/correlation/matrix?{query}",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code == HTTPStatus.OK, res.json()
@@ -176,7 +176,7 @@ class TestHydroCorrelation:
         self,
         client: TestClient,
         user_access_token: str,
-        internal_study: str,
+        internal_study_id: str,
     ):
         """Check `set_correlation_matrix` end point"""
         obj = {
@@ -190,7 +190,7 @@ class TestHydroCorrelation:
             "index": ["de", "es", "fr", "it"],
         }
         res = client.put(
-            f"/v1/studies/{internal_study}/areas/hydro/correlation/matrix",
+            f"/v1/studies/{internal_study_id}/areas/hydro/correlation/matrix",
             headers={"Authorization": f"Bearer {user_access_token}"},
             json=obj,
         )
@@ -200,7 +200,7 @@ class TestHydroCorrelation:
         assert actual == expected
 
         res = client.get(
-            f"/v1/studies/{internal_study}/areas/hydro/correlation/matrix",
+            f"/v1/studies/{internal_study_id}/areas/hydro/correlation/matrix",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code == HTTPStatus.OK, res.json()
@@ -217,7 +217,7 @@ class TestHydroCorrelation:
         }
         assert actual == expected
 
-    def test_create_area(self, client: TestClient, user_access_token: str, internal_study: str):
+    def test_create_area(self, client: TestClient, user_access_token: str, internal_study_id: str):
         """
         Given a study, when an area is created, the hydraulic correlation
         column for this area must be updated with the following values:
@@ -227,14 +227,14 @@ class TestHydroCorrelation:
         """
         area_info = AreaInfoDTO(id="north", name="NORTH", type="AREA")
         res = client.post(
-            f"/v1/studies/{internal_study}/areas",
+            f"/v1/studies/{internal_study_id}/areas",
             headers={"Authorization": f"Bearer {user_access_token}"},
             data=area_info.json(),
         )
         assert res.status_code == HTTPStatus.OK, res.json()
 
         res = client.get(
-            f"/v1/studies/{internal_study}/areas/hydro/correlation/matrix",
+            f"/v1/studies/{internal_study_id}/areas/hydro/correlation/matrix",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code == HTTPStatus.OK
@@ -252,7 +252,7 @@ class TestHydroCorrelation:
         }
         assert actual == expected
 
-    def test_delete_area(self, client: TestClient, user_access_token: str, internal_study: str):
+    def test_delete_area(self, client: TestClient, user_access_token: str, internal_study_id: str):
         """
         Given a study, when an area is deleted, the hydraulic correlation
         column for this area must be removed.
@@ -270,7 +270,7 @@ class TestHydroCorrelation:
             }
         }
         res = client.post(
-            f"/v1/studies/{internal_study}/raw?path=input/hydro/prepro/correlation",
+            f"/v1/studies/{internal_study_id}/raw?path=input/hydro/prepro/correlation",
             headers={"Authorization": f"Bearer {user_access_token}"},
             json=correlation_cfg,
         )
@@ -279,7 +279,7 @@ class TestHydroCorrelation:
         # Then we remove the "fr" zone.
         # The deletion should update the correlation matrix of all other zones.
         res = client.delete(
-            f"/v1/studies/{internal_study}/areas/fr",
+            f"/v1/studies/{internal_study_id}/areas/fr",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code == HTTPStatus.OK, res.json()
@@ -287,7 +287,7 @@ class TestHydroCorrelation:
         # Check that the "fr" column is removed from the hydraulic correlation matrix.
         # The row corresponding to "fr" must also be deleted.
         res = client.get(
-            f"/v1/studies/{internal_study}/areas/hydro/correlation/matrix",
+            f"/v1/studies/{internal_study_id}/areas/hydro/correlation/matrix",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code == HTTPStatus.OK, res.json()

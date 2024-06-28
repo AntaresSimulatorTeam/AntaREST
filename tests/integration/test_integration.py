@@ -1566,7 +1566,7 @@ def test_maintenance(client: TestClient, admin_access_token: str) -> None:
     assert res.json() == message
 
 
-def test_import(client: TestClient, admin_access_token: str, internal_study: str) -> None:
+def test_import(client: TestClient, admin_access_token: str, internal_study_id: str) -> None:
     client.headers = {"Authorization": f"Bearer {admin_access_token}"}
 
     zip_path = ASSETS_DIR / "STA-mini.zip"
@@ -1642,12 +1642,12 @@ def test_import(client: TestClient, admin_access_token: str, internal_study: str
     # tests outputs import for .zip
     output_path_zip = ASSETS_DIR / "output_adq.zip"
     client.post(
-        f"/v1/studies/{internal_study}/output",
+        f"/v1/studies/{internal_study_id}/output",
         headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
         files={"output": io.BytesIO(output_path_zip.read_bytes())},
     )
     res = client.get(
-        f"/v1/studies/{internal_study}/outputs",
+        f"/v1/studies/{internal_study_id}/outputs",
         headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
     )
     assert len(res.json()) == 6
@@ -1655,12 +1655,12 @@ def test_import(client: TestClient, admin_access_token: str, internal_study: str
     # tests outputs import for .7z
     output_path_seven_zip = ASSETS_DIR / "output_adq.7z"
     client.post(
-        f"/v1/studies/{internal_study}/output",
+        f"/v1/studies/{internal_study_id}/output",
         headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
         files={"output": io.BytesIO(output_path_seven_zip.read_bytes())},
     )
     res = client.get(
-        f"/v1/studies/{internal_study}/outputs",
+        f"/v1/studies/{internal_study_id}/outputs",
         headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
     )
     assert len(res.json()) == 7
@@ -1688,11 +1688,11 @@ def test_import(client: TestClient, admin_access_token: str, internal_study: str
         assert result[1]["name"] == "it.txt"
 
 
-def test_copy(client: TestClient, admin_access_token: str, internal_study: str) -> None:
+def test_copy(client: TestClient, admin_access_token: str, internal_study_id: str) -> None:
     client.headers = {"Authorization": f"Bearer {admin_access_token}"}
 
     # Copy a study with admin user who belongs to a group
-    copied = client.post(f"/v1/studies/{internal_study}/copy?dest=copied&use_task=false")
+    copied = client.post(f"/v1/studies/{internal_study_id}/copy?dest=copied&use_task=false")
     assert copied.status_code == 201
     # asserts that it has admin groups and PublicMode to NONE
     res = client.get(f"/v1/studies/{copied.json()}").json()
@@ -1705,7 +1705,7 @@ def test_copy(client: TestClient, admin_access_token: str, internal_study: str) 
 
     # George copies a study
     copied = client.post(
-        f"/v1/studies/{internal_study}/copy?dest=copied&use_task=false",
+        f"/v1/studies/{internal_study_id}/copy?dest=copied&use_task=false",
         headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
     )
     assert copied.status_code == 201
@@ -1716,7 +1716,7 @@ def test_copy(client: TestClient, admin_access_token: str, internal_study: str) 
 
 
 def test_areas_deletion_with_binding_constraints(
-    client: TestClient, user_access_token: str, internal_study: str
+    client: TestClient, user_access_token: str, internal_study_id: str
 ) -> None:
     """
     Test the deletion of areas that are referenced in binding constraints.
@@ -1749,7 +1749,7 @@ def test_areas_deletion_with_binding_constraints(
     for constraint_term in constraint_terms:
         # Create an area "area_1" in the study
         res = client.post(
-            f"/v1/studies/{internal_study}/areas",
+            f"/v1/studies/{internal_study_id}/areas",
             json={"name": area1_id.title(), "type": "AREA", "metadata": {"country": "FR"}},
         )
         res.raise_for_status()
@@ -1757,12 +1757,12 @@ def test_areas_deletion_with_binding_constraints(
         if set(constraint_term["data"]) == {"area1", "area2"}:
             # Create a second area and a link between the two areas
             res = client.post(
-                f"/v1/studies/{internal_study}/areas",
+                f"/v1/studies/{internal_study_id}/areas",
                 json={"name": area2_id.title(), "type": "AREA", "metadata": {"country": "DE"}},
             )
             res.raise_for_status()
             res = client.post(
-                f"/v1/studies/{internal_study}/links",
+                f"/v1/studies/{internal_study_id}/links",
                 json={"area1": area1_id, "area2": area2_id},
             )
             res.raise_for_status()
@@ -1770,7 +1770,7 @@ def test_areas_deletion_with_binding_constraints(
         elif set(constraint_term["data"]) == {"area", "cluster"}:
             # Create a cluster in the first area
             res = client.post(
-                f"/v1/studies/{internal_study}/areas/{area1_id}/clusters/thermal",
+                f"/v1/studies/{internal_study_id}/areas/{area1_id}/clusters/thermal",
                 json={"name": cluster_id.title(), "group": "Nuclear"},
             )
             res.raise_for_status()
@@ -1787,7 +1787,7 @@ def test_areas_deletion_with_binding_constraints(
             "operator": "less",
             "terms": [constraint_term],
         }
-        res = client.post(f"/v1/studies/{internal_study}/bindingconstraints", json=bc_obj)
+        res = client.post(f"/v1/studies/{internal_study_id}/bindingconstraints", json=bc_obj)
         res.raise_for_status()
 
         if set(constraint_term["data"]) == {"area1", "area2"}:
@@ -1799,24 +1799,24 @@ def test_areas_deletion_with_binding_constraints(
 
         for area_id in areas_to_delete:
             # try to delete the areas
-            res = client.delete(f"/v1/studies/{internal_study}/areas/{area_id}")
+            res = client.delete(f"/v1/studies/{internal_study_id}/areas/{area_id}")
             assert res.status_code == 403, res.json()
             description = res.json()["description"]
             assert all([elm in description for elm in [area_id, bc_id]])
             assert res.json()["exception"] == "ReferencedObjectDeletionNotAllowed"
 
         # delete the binding constraint
-        res = client.delete(f"/v1/studies/{internal_study}/bindingconstraints/{bc_id}")
+        res = client.delete(f"/v1/studies/{internal_study_id}/bindingconstraints/{bc_id}")
         assert res.status_code == 200, res.json()
 
         for area_id in areas_to_delete:
             # delete the area
-            res = client.delete(f"/v1/studies/{internal_study}/areas/{area_id}")
+            res = client.delete(f"/v1/studies/{internal_study_id}/areas/{area_id}")
             assert res.status_code == 200, res.json()
 
 
 def test_links_deletion_with_binding_constraints(
-    client: TestClient, user_access_token: str, internal_study: str
+    client: TestClient, user_access_token: str, internal_study_id: str
 ) -> None:
     """
     Test the deletion of links that are referenced in binding constraints.
@@ -1827,7 +1827,7 @@ def test_links_deletion_with_binding_constraints(
 
     # Create an area "area_1" in the study
     res = client.post(
-        f"/v1/studies/{internal_study}/areas",
+        f"/v1/studies/{internal_study_id}/areas",
         json={
             "name": "area_1",
             "type": "AREA",
@@ -1838,7 +1838,7 @@ def test_links_deletion_with_binding_constraints(
 
     # Create an area "area_2" in the study
     res = client.post(
-        f"/v1/studies/{internal_study}/areas",
+        f"/v1/studies/{internal_study_id}/areas",
         json={
             "name": "area_2",
             "type": "AREA",
@@ -1849,7 +1849,7 @@ def test_links_deletion_with_binding_constraints(
 
     # create a link between the two areas
     res = client.post(
-        f"/v1/studies/{internal_study}/links",
+        f"/v1/studies/{internal_study_id}/links",
         json={"area1": "area_1", "area2": "area_2"},
     )
     assert res.status_code == 200, res.json()
@@ -1868,20 +1868,20 @@ def test_links_deletion_with_binding_constraints(
             }
         ],
     }
-    res = client.post(f"/v1/studies/{internal_study}/bindingconstraints", json=bc_obj)
+    res = client.post(f"/v1/studies/{internal_study_id}/bindingconstraints", json=bc_obj)
     assert res.status_code == 200, res.json()
 
     # try to delete the link before deleting the binding constraint
-    res = client.delete(f"/v1/studies/{internal_study}/links/area_1/area_2")
+    res = client.delete(f"/v1/studies/{internal_study_id}/links/area_1/area_2")
     assert res.status_code == 403, res.json()
     description = res.json()["description"]
     assert all([elm in description for elm in ["area_1%area_2", "bc_1"]])
     assert res.json()["exception"] == "ReferencedObjectDeletionNotAllowed"
 
     # delete the binding constraint
-    res = client.delete(f"/v1/studies/{internal_study}/bindingconstraints/bc_1")
+    res = client.delete(f"/v1/studies/{internal_study_id}/bindingconstraints/bc_1")
     assert res.status_code == 200, res.json()
 
     # delete the link
-    res = client.delete(f"/v1/studies/{internal_study}/links/area_1/area_2")
+    res = client.delete(f"/v1/studies/{internal_study_id}/links/area_1/area_2")
     assert res.status_code == 200, res.json()

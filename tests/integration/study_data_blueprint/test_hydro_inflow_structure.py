@@ -18,7 +18,7 @@ class TestHydroInflowStructure:
         self,
         client: TestClient,
         user_access_token: str,
-        internal_study: str,
+        internal_study_id: str,
     ):
         user_header = {"Authorization": f"Bearer {user_access_token}"}
         area_id = "fr"
@@ -29,7 +29,7 @@ class TestHydroInflowStructure:
 
         # Check that the default values are returned
         res = client.get(
-            f"/v1/studies/{internal_study}/areas/{area_id}/hydro/inflow-structure",
+            f"/v1/studies/{internal_study_id}/areas/{area_id}/hydro/inflow-structure",
             headers=user_header,
         )
         assert res.status_code == HTTPStatus.OK, res.json()
@@ -40,7 +40,7 @@ class TestHydroInflowStructure:
         # Update the values
         obj = {"interMonthlyCorrelation": 0.8}
         res = client.put(
-            f"/v1/studies/{internal_study}/areas/{area_id}/hydro/inflow-structure",
+            f"/v1/studies/{internal_study_id}/areas/{area_id}/hydro/inflow-structure",
             headers=user_header,
             json=obj,
         )
@@ -48,7 +48,7 @@ class TestHydroInflowStructure:
 
         # Check that the right values are returned
         res = client.get(
-            f"/v1/studies/{internal_study}/areas/{area_id}/hydro/inflow-structure",
+            f"/v1/studies/{internal_study_id}/areas/{area_id}/hydro/inflow-structure",
             headers=user_header,
         )
         assert res.status_code == HTTPStatus.OK, res.json()
@@ -62,7 +62,7 @@ class TestHydroInflowStructure:
 
         # Create a managed study from the RAW study.
         res = client.post(
-            f"/v1/studies/{internal_study}/copy",
+            f"/v1/studies/{internal_study_id}/copy",
             headers={"Authorization": f"Bearer {user_access_token}"},
             params={"dest": "Clone", "with_outputs": False, "use_task": False},
         )
@@ -132,7 +132,7 @@ class TestHydroInflowStructure:
         self,
         client: TestClient,
         user_access_token: str,
-        internal_study: str,
+        internal_study_id: str,
     ):
         user_header = {"Authorization": f"Bearer {user_access_token}"}
         area_id = "fr"
@@ -140,7 +140,7 @@ class TestHydroInflowStructure:
         # Update the values with invalid values
         obj = {"interMonthlyCorrelation": 1.1}
         res = client.put(
-            f"/v1/studies/{internal_study}/areas/{area_id}/hydro/inflow-structure",
+            f"/v1/studies/{internal_study_id}/areas/{area_id}/hydro/inflow-structure",
             headers=user_header,
             json=obj,
         )
@@ -148,7 +148,7 @@ class TestHydroInflowStructure:
 
         obj = {"interMonthlyCorrelation": -0.1}
         res = client.put(
-            f"/v1/studies/{internal_study}/areas/{area_id}/hydro/inflow-structure",
+            f"/v1/studies/{internal_study_id}/areas/{area_id}/hydro/inflow-structure",
             headers=user_header,
             json=obj,
         )

@@ -120,7 +120,7 @@ def user_access_token_fixture(
     return t.cast(str, credentials["access_token"])
 
 
-@pytest.fixture(name="internal_study")
+@pytest.fixture(name="internal_study_id")
 def internal_study_fixture(
     client: TestClient,
     user_access_token: str,

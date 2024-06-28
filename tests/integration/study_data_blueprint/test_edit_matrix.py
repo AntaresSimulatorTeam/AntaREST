@@ -241,7 +241,7 @@ class TestEditMatrix:
         self,
         client: TestClient,
         user_access_token: str,
-        internal_study: str,
+        internal_study_id: str,
     ):
         # Given the following Area
         area_id = "fr"
@@ -249,7 +249,7 @@ class TestEditMatrix:
         # Create a cluster
         cluster_id = "cluster 1"
         res = client.post(
-            f"/v1/studies/{internal_study}/commands",
+            f"/v1/studies/{internal_study_id}/commands",
             headers={"Authorization": f"Bearer {user_access_token}"},
             json=[
                 {
@@ -273,7 +273,7 @@ class TestEditMatrix:
             }
         ]
         res = client.put(
-            f"/v1/studies/{internal_study}/matrix?path=input/thermal/series/{area_id}/{cluster_id}/series",
+            f"/v1/studies/{internal_study_id}/matrix?path=input/thermal/series/{area_id}/{cluster_id}/series",
             headers={"Authorization": f"Bearer {user_access_token}"},
             json=obj,
         )
@@ -281,7 +281,7 @@ class TestEditMatrix:
 
         # We can check the modified matrix
         res = client.get(
-            f"/v1/studies/{internal_study}/raw?path=input/thermal/series/{area_id}/{cluster_id}/series",
+            f"/v1/studies/{internal_study_id}/raw?path=input/thermal/series/{area_id}/{cluster_id}/series",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         res.raise_for_status()
