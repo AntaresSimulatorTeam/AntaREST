@@ -1,104 +1,12 @@
 import datetime
 import io
-import typing as t
 
 import numpy as np
 import pandas as pd
 import pytest
 from starlette.testclient import TestClient
 
-from antarest.core.tasks.model import TaskStatus
-from tests.integration.utils import wait_task_completion
-
-
-class Proxy:
-    def __init__(self, client: TestClient, user_access_token: str):
-        self.client = client
-        self.user_access_token = user_access_token
-        self.headers = {"Authorization": f"Bearer {user_access_token}"}
-
-
-class PreparerProxy(Proxy):
-    def copy_upgrade_study(self, ref_study_id, target_version=820):
-        """
-        Copy a study in the managed workspace and upgrade it to a specific version
-        """
-        # Prepare a managed study to test specific matrices for version 8.2
-        res = self.client.post(
-            f"/v1/studies/{ref_study_id}/copy",
-            params={"dest": "copied-820", "use_task": False},
-            headers=self.headers,
-        )
-        res.raise_for_status()
-        study_820_id = res.json()
-
-        res = self.client.put(
-            f"/v1/studies/{study_820_id}/upgrade",
-            params={"target_version": target_version},
-            headers=self.headers,
-        )
-        res.raise_for_status()
-        task_id = res.json()
-        assert task_id
-
-        task = wait_task_completion(self.client, self.user_access_token, task_id, timeout=20)
-        assert task.status == TaskStatus.COMPLETED
-        return study_820_id
-
-    def upload_matrix(self, study_id: str, matrix_path: str, df: pd.DataFrame) -> None:
-        tsv = io.BytesIO()
-        df.to_csv(tsv, sep="\t", index=False, header=False)
-        tsv.seek(0)
-        # noinspection SpellCheckingInspection
-        res = self.client.put(
-            f"/v1/studies/{study_id}/raw",
-            params={"path": matrix_path, "create_missing": True},
-            headers=self.headers,
-            files={"file": tsv, "create_missing": "true"},
-        )
-        res.raise_for_status()
-
-    def create_variant(self, parent_id: str, *, name: str) -> str:
-        res = self.client.post(
-            f"/v1/studies/{parent_id}/variants",
-            headers=self.headers,
-            params={"name": name},
-        )
-        res.raise_for_status()
-        variant_id = res.json()
-        return variant_id
-
-    def generate_snapshot(self, variant_id: str, denormalize=False, from_scratch=True) -> None:
-        # Generate a snapshot for the variant
-        res = self.client.put(
-            f"/v1/studies/{variant_id}/generate",
-            headers=self.headers,
-            params={"denormalize": denormalize, "from_scratch": from_scratch},
-        )
-        res.raise_for_status()
-        task_id = res.json()
-        assert task_id
-
-        task = wait_task_completion(self.client, self.user_access_token, task_id, timeout=20)
-        assert task.status == TaskStatus.COMPLETED
-
-    def create_area(self, parent_id, *, name: str, country: str = "FR") -> str:
-        res = self.client.post(
-            f"/v1/studies/{parent_id}/areas",
-            headers=self.headers,
-            json={"name": name, "type": "AREA", "metadata": {"country": country}},
-        )
-        res.raise_for_status()
-        area_id = res.json()["id"]
-        return area_id
-
-    def update_general_data(self, study_id: str, **data: t.Any):
-        res = self.client.put(
-            f"/v1/studies/{study_id}/config/general/form",
-            json=data,
-            headers=self.headers,
-        )
-        res.raise_for_status()
+from tests.integration.prepare_proxy import PreparerProxy
 
 
 @pytest.mark.integration_test
@@ -116,13 +24,13 @@ class TestDownloadMatrices:
 
         preparer = PreparerProxy(client, user_access_token)
 
-        study_820_id = preparer.copy_upgrade_study(study_id, target_version=820)
+        study_820_id = preparer.copy_study_and_upgrade(study_id, target_version=820)
 
         # Create Variant
         variant_id = preparer.create_variant(study_820_id, name="New Variant")
 
         # Create a new area to implicitly create normalized matrices
-        area_id = preparer.create_area(variant_id, name="Mayenne", country="France")
+        area_id = preparer.create_area(variant_id, name="Mayenne", country="France")["id"]
 
         # Change study start_date
         preparer.update_general_data(variant_id, firstMonth="July")
@@ -131,7 +39,7 @@ class TestDownloadMatrices:
         preparer.generate_snapshot(variant_id)
 
         # Prepare a managed study to test specific matrices for version 8.6
-        study_860_id = preparer.copy_upgrade_study(study_id, target_version=860)
+        study_860_id = preparer.copy_study_and_upgrade(study_id, target_version=860)
 
         # Import a Min Gen. matrix: shape=(8760, 3), with random integers between 0 and 1000
         generator = np.random.default_rng(11)
