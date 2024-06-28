@@ -49,7 +49,7 @@ class TestSTStorage:
         self,
         client: TestClient,
         user_access_token: str,
-        study_id: str,
+        internal_study: str,
         study_type: str,
         study_version: int,
         default_output: t.Dict[str, t.Any],
@@ -85,7 +85,7 @@ class TestSTStorage:
 
         # Upgrade study to version 860 or above
         res = client.put(
-            f"/v1/studies/{study_id}/upgrade",
+            f"/v1/studies/{internal_study}/upgrade",
             headers=user_headers,
             params={"target_version": study_version},
         )
@@ -96,22 +96,22 @@ class TestSTStorage:
 
         # Copies the study, to convert it into a managed one.
         res = client.post(
-            f"/v1/studies/{study_id}/copy",
+            f"/v1/studies/{internal_study}/copy",
             headers={"Authorization": f"Bearer {user_access_token}"},
             params={"dest": "default", "with_outputs": False, "use_task": False},  # type: ignore
         )
         assert res.status_code == 201, res.json()
-        study_id = res.json()
+        internal_study = res.json()
 
         if study_type == "variant":
             # Create Variant
             res = client.post(
-                f"/v1/studies/{study_id}/variants",
+                f"/v1/studies/{internal_study}/variants",
                 headers=user_headers,
                 params={"name": "Variant 1"},
             )
             assert res.status_code in {200, 201}, res.json()
-            study_id = res.json()
+            internal_study = res.json()
 
         # =============================
         #  SHORT-TERM STORAGE CREATION
@@ -126,7 +126,7 @@ class TestSTStorage:
         attempts = [{}, {"name": ""}, {"name": "!??"}]
         for attempt in attempts:
             res = client.post(
-                f"/v1/studies/{study_id}/areas/{area_id}/storages",
+                f"/v1/studies/{internal_study}/areas/{area_id}/storages",
                 headers=user_headers,
                 json=attempt,
             )
@@ -143,7 +143,7 @@ class TestSTStorage:
             "reservoirCapacity": 1500,
         }
         res = client.post(
-            f"/v1/studies/{study_id}/areas/{area_id}/storages",
+            f"/v1/studies/{internal_study}/areas/{area_id}/storages",
             headers=user_headers,
             json=siemens_properties,
         )
@@ -155,7 +155,7 @@ class TestSTStorage:
 
         # reading the properties of a short-term storage
         res = client.get(
-            f"/v1/studies/{study_id}/areas/{area_id}/storages/{siemens_battery_id}",
+            f"/v1/studies/{internal_study}/areas/{area_id}/storages/{siemens_battery_id}",
             headers=user_headers,
         )
         assert res.status_code == 200, res.json()
@@ -169,7 +169,7 @@ class TestSTStorage:
         array = np.random.randint(0, 1000, size=(8760, 1))
         array_list = array.tolist()
         res = client.put(
-            f"/v1/studies/{study_id}/areas/{area_id}/storages/{siemens_battery_id}/series/inflows",
+            f"/v1/studies/{internal_study}/areas/{area_id}/storages/{siemens_battery_id}/series/inflows",
             headers=user_headers,
             json={
                 "index": list(range(array.shape[0])),
@@ -182,7 +182,7 @@ class TestSTStorage:
 
         # reading the matrix of a short-term storage
         res = client.get(
-            f"/v1/studies/{study_id}/areas/{area_id}/storages/{siemens_battery_id}/series/inflows",
+            f"/v1/studies/{internal_study}/areas/{area_id}/storages/{siemens_battery_id}/series/inflows",
             headers=user_headers,
         )
         assert res.status_code == 200, res.json()
@@ -192,7 +192,7 @@ class TestSTStorage:
 
         # validating the matrices of a short-term storage
         res = client.get(
-            f"/v1/studies/{study_id}/areas/{area_id}/storages/{siemens_battery_id}/validate",
+            f"/v1/studies/{internal_study}/areas/{area_id}/storages/{siemens_battery_id}/validate",
             headers=user_headers,
         )
         assert res.status_code == 200, res.json()
@@ -204,7 +204,7 @@ class TestSTStorage:
 
         # Reading the list of short-term storages
         res = client.get(
-            f"/v1/studies/{study_id}/areas/{area_id}/storages",
+            f"/v1/studies/{internal_study}/areas/{area_id}/storages",
             headers=user_headers,
         )
         assert res.status_code == 200, res.json()
@@ -212,7 +212,7 @@ class TestSTStorage:
 
         # updating properties
         res = client.patch(
-            f"/v1/studies/{study_id}/areas/{area_id}/storages/{siemens_battery_id}",
+            f"/v1/studies/{internal_study}/areas/{area_id}/storages/{siemens_battery_id}",
             headers=user_headers,
             json={
                 "name": "New Siemens Battery",
@@ -228,7 +228,7 @@ class TestSTStorage:
         assert res.json() == siemens_output
 
         res = client.get(
-            f"/v1/studies/{study_id}/areas/{area_id}/storages/{siemens_battery_id}",
+            f"/v1/studies/{internal_study}/areas/{area_id}/storages/{siemens_battery_id}",
             headers=user_headers,
         )
         assert res.status_code == 200, res.json()
@@ -240,7 +240,7 @@ class TestSTStorage:
 
         # updating properties
         res = client.patch(
-            f"/v1/studies/{study_id}/areas/{area_id}/storages/{siemens_battery_id}",
+            f"/v1/studies/{internal_study}/areas/{area_id}/storages/{siemens_battery_id}",
             headers=user_headers,
             json={
                 "initialLevel": 0.59,
@@ -260,7 +260,7 @@ class TestSTStorage:
         # The `efficiency` property must be a float between 0 and 1.
         bad_properties = {"efficiency": 2.0}
         res = client.patch(
-            f"/v1/studies/{study_id}/areas/{area_id}/storages/{siemens_battery_id}",
+            f"/v1/studies/{internal_study}/areas/{area_id}/storages/{siemens_battery_id}",
             headers=user_headers,
             json=bad_properties,
         )
@@ -269,7 +269,7 @@ class TestSTStorage:
 
         # The short-term storage properties should not have been updated.
         res = client.get(
-            f"/v1/studies/{study_id}/areas/{area_id}/storages/{siemens_battery_id}",
+            f"/v1/studies/{internal_study}/areas/{area_id}/storages/{siemens_battery_id}",
             headers=user_headers,
         )
         assert res.status_code == 200, res.json()
@@ -281,7 +281,7 @@ class TestSTStorage:
 
         new_name = "Duplicate of Siemens"
         res = client.post(
-            f"/v1/studies/{study_id}/areas/{area_id}/storages/{siemens_battery_id}",
+            f"/v1/studies/{internal_study}/areas/{area_id}/storages/{siemens_battery_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
             params={"newName": new_name},
         )
@@ -295,7 +295,7 @@ class TestSTStorage:
 
         # asserts the matrix has also been duplicated
         res = client.get(
-            f"/v1/studies/{study_id}/areas/{area_id}/storages/{duplicated_id}/series/inflows",
+            f"/v1/studies/{internal_study}/areas/{area_id}/storages/{duplicated_id}/series/inflows",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code == 200
@@ -308,7 +308,7 @@ class TestSTStorage:
         # To delete a short-term storage, we need to provide its ID.
         res = client.request(
             "DELETE",
-            f"/v1/studies/{study_id}/areas/{area_id}/storages",
+            f"/v1/studies/{internal_study}/areas/{area_id}/storages",
             headers=user_headers,
             json=[siemens_battery_id],
         )
@@ -318,7 +318,7 @@ class TestSTStorage:
         # If the short-term storage list is empty, the deletion should be a no-op.
         res = client.request(
             "DELETE",
-            f"/v1/studies/{study_id}/areas/{area_id}/storages",
+            f"/v1/studies/{internal_study}/areas/{area_id}/storages",
             headers=user_headers,
             json=[],
         )
@@ -338,7 +338,7 @@ class TestSTStorage:
             "initialLevelOptim": False,
         }
         res = client.post(
-            f"/v1/studies/{study_id}/areas/{area_id}/storages",
+            f"/v1/studies/{internal_study}/areas/{area_id}/storages",
             headers=user_headers,
             json=siemens_properties,
         )
@@ -357,7 +357,7 @@ class TestSTStorage:
             "initialLevel": 1,
         }
         res = client.post(
-            f"/v1/studies/{study_id}/areas/{area_id}/storages",
+            f"/v1/studies/{internal_study}/areas/{area_id}/storages",
             headers=user_headers,
             json=grand_maison_properties,
         )
@@ -367,7 +367,7 @@ class TestSTStorage:
         # We can check that we have 2 short-term storages in the list.
         # Reading the list of short-term storages
         res = client.get(
-            f"/v1/studies/{study_id}/areas/{area_id}/storages",
+            f"/v1/studies/{internal_study}/areas/{area_id}/storages",
             headers=user_headers,
         )
         assert res.status_code == 200, res.json()
@@ -378,7 +378,7 @@ class TestSTStorage:
         # We can delete the three short-term storages at once.
         res = client.request(
             "DELETE",
-            f"/v1/studies/{study_id}/areas/{area_id}/storages",
+            f"/v1/studies/{internal_study}/areas/{area_id}/storages",
             headers=user_headers,
             json=[grand_maison_id, duplicated_output["id"]],
         )
@@ -387,7 +387,7 @@ class TestSTStorage:
 
         # Only one st-storage should remain.
         res = client.get(
-            f"/v1/studies/{study_id}/areas/{area_id}/storages",
+            f"/v1/studies/{internal_study}/areas/{area_id}/storages",
             headers=user_headers,
         )
         assert res.status_code == 200, res.json()
@@ -401,7 +401,7 @@ class TestSTStorage:
         bad_area_id = "bad_area"
         res = client.request(
             "DELETE",
-            f"/v1/studies/{study_id}/areas/{bad_area_id}/storages",
+            f"/v1/studies/{internal_study}/areas/{bad_area_id}/storages",
             headers=user_headers,
             json=[siemens_battery_id],
         )
@@ -426,7 +426,7 @@ class TestSTStorage:
 
         # Check get with wrong `area_id`
         res = client.get(
-            f"/v1/studies/{study_id}/areas/{bad_area_id}/storages/{siemens_battery_id}",
+            f"/v1/studies/{internal_study}/areas/{bad_area_id}/storages/{siemens_battery_id}",
             headers=user_headers,
         )
         obj = res.json()
@@ -457,7 +457,7 @@ class TestSTStorage:
 
         # Check POST with wrong `area_id`
         res = client.post(
-            f"/v1/studies/{study_id}/areas/{bad_area_id}/storages",
+            f"/v1/studies/{internal_study}/areas/{bad_area_id}/storages",
             headers=user_headers,
             json={"name": siemens_battery, "group": "Battery"},
         )
@@ -468,7 +468,7 @@ class TestSTStorage:
 
         # Check POST with wrong `group`
         res = client.post(
-            f"/v1/studies/{study_id}/areas/{area_id}/storages",
+            f"/v1/studies/{internal_study}/areas/{area_id}/storages",
             headers=user_headers,
             json={"name": siemens_battery, "group": "GroupFoo"},
         )
@@ -479,7 +479,7 @@ class TestSTStorage:
 
         # Check PATCH with the wrong `area_id`
         res = client.patch(
-            f"/v1/studies/{study_id}/areas/{bad_area_id}/storages/{siemens_battery_id}",
+            f"/v1/studies/{internal_study}/areas/{bad_area_id}/storages/{siemens_battery_id}",
             headers=user_headers,
             json={"efficiency": 1.0},
         )
@@ -491,7 +491,7 @@ class TestSTStorage:
         # Check PATCH with the wrong `storage_id`
         bad_storage_id = "bad_storage"
         res = client.patch(
-            f"/v1/studies/{study_id}/areas/{area_id}/storages/{bad_storage_id}",
+            f"/v1/studies/{internal_study}/areas/{area_id}/storages/{bad_storage_id}",
             headers=user_headers,
             json={"efficiency": 1.0},
         )
@@ -516,7 +516,7 @@ class TestSTStorage:
         # Cannot duplicate a unknown st-storage
         unknown_id = "unknown"
         res = client.post(
-            f"/v1/studies/{study_id}/areas/{area_id}/storages/{unknown_id}",
+            f"/v1/studies/{internal_study}/areas/{area_id}/storages/{unknown_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
             params={"newName": "duplicata"},
         )
@@ -527,7 +527,7 @@ class TestSTStorage:
 
         # Cannot duplicate with an existing id
         res = client.post(
-            f"/v1/studies/{study_id}/areas/{area_id}/storages/{siemens_battery_id}",
+            f"/v1/studies/{internal_study}/areas/{area_id}/storages/{siemens_battery_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
             params={"newName": siemens_battery.upper()},  # different case, but same ID
         )
@@ -540,7 +540,7 @@ class TestSTStorage:
         # Cannot specify the field 'enabled' before v8.8
         properties = {"enabled": False, "name": "fake_name", "group": "Battery"}
         res = client.post(
-            f"/v1/studies/{study_id}/areas/{area_id}/storages",
+            f"/v1/studies/{internal_study}/areas/{area_id}/storages",
             headers=user_headers,
             json=properties,
         )

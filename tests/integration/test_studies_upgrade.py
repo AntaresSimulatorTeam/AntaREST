@@ -11,9 +11,9 @@ RUN_ON_WINDOWS = os.name == "nt"
 
 class TestStudyUpgrade:
     @pytest.mark.skipif(RUN_ON_WINDOWS, reason="This test runs randomly on Windows")
-    def test_upgrade_study__next_version(self, client: TestClient, user_access_token: str, study_id: str):
+    def test_upgrade_study__next_version(self, client: TestClient, user_access_token: str, internal_study: str):
         res = client.put(
-            f"/v1/studies/{study_id}/upgrade",
+            f"/v1/studies/{internal_study}/upgrade",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code == 200
@@ -24,10 +24,10 @@ class TestStudyUpgrade:
         assert "710" in task.result.message, f"Version not in {task.result.message=}"
 
     @pytest.mark.skipif(RUN_ON_WINDOWS, reason="This test runs randomly on Windows")
-    def test_upgrade_study__target_version(self, client: TestClient, user_access_token: str, study_id: str):
+    def test_upgrade_study__target_version(self, client: TestClient, user_access_token: str, internal_study: str):
         target_version = "720"
         res = client.put(
-            f"/v1/studies/{study_id}/upgrade",
+            f"/v1/studies/{internal_study}/upgrade",
             headers={"Authorization": f"Bearer {user_access_token}"},
             params={"target_version": target_version},
         )
@@ -39,10 +39,10 @@ class TestStudyUpgrade:
         assert target_version in task.result.message, f"Version not in {task.result.message=}"
 
     @pytest.mark.skipif(RUN_ON_WINDOWS, reason="This test runs randomly on Windows")
-    def test_upgrade_study__bad_target_version(self, client: TestClient, user_access_token: str, study_id: str):
+    def test_upgrade_study__bad_target_version(self, client: TestClient, user_access_token: str, internal_study: str):
         target_version = "999"
         res = client.put(
-            f"/v1/studies/{study_id}/upgrade",
+            f"/v1/studies/{internal_study}/upgrade",
             headers={"Authorization": f"Bearer {user_access_token}"},
             params={"target_version": target_version},
         )

@@ -43,7 +43,7 @@ class TestThermalCluster:
         self,
         client: TestClient,
         user_access_token: str,
-        study_id: str,
+        internal_study: str,
     ) -> None:
         """
         This test is based on the study "STA-mini.zip", which is a RAW study.
@@ -54,7 +54,7 @@ class TestThermalCluster:
         """
         # First, we create a copy of the study, and we convert it to a managed study.
         res = client.post(
-            f"/v1/studies/{study_id}/copy",
+            f"/v1/studies/{internal_study}/copy",
             headers={"Authorization": f"Bearer {user_access_token}"},
             params={"dest": "default", "with_outputs": False, "use_task": False},
         )

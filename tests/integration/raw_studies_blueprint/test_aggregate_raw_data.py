@@ -193,7 +193,7 @@ class TestRawDataAggregation:
         self,
         client: TestClient,
         user_access_token: str,
-        study_id: str,
+        internal_study: str,
     ):
         """
         Test the aggregation of areas data
@@ -202,7 +202,7 @@ class TestRawDataAggregation:
 
         for params, expected_result_filename in AREAS_REQUESTS:
             output_id = params.pop("output_id")
-            res = client.get(f"/v1/studies/{study_id}/areas/aggregate/{output_id}", params=params)
+            res = client.get(f"/v1/studies/{internal_study}/areas/aggregate/{output_id}", params=params)
             assert res.status_code == 200, res.json()
             content = io.BytesIO(res.content)
             df = pd.read_csv(content, index_col=0, sep=",")
@@ -222,7 +222,7 @@ class TestRawDataAggregation:
         self,
         client: TestClient,
         user_access_token: str,
-        study_id: str,
+        internal_study: str,
     ):
         """
         Test the aggregation of links data
@@ -231,7 +231,7 @@ class TestRawDataAggregation:
 
         for params, expected_result_filename in LINKS_REQUESTS:
             output_id = params.pop("output_id")
-            res = client.get(f"/v1/studies/{study_id}/links/aggregate/{output_id}", params=params)
+            res = client.get(f"/v1/studies/{internal_study}/links/aggregate/{output_id}", params=params)
             assert res.status_code == 200, res.json()
             content = io.BytesIO(res.content)
             df = pd.read_csv(content, index_col=0, sep=",")
@@ -251,7 +251,7 @@ class TestRawDataAggregation:
         self,
         client: TestClient,
         user_access_token: str,
-        study_id: str,
+        internal_study: str,
     ):
         """
         Tests that all formats work and produce the same result
@@ -260,7 +260,7 @@ class TestRawDataAggregation:
 
         for params, expected_result_filename in SAME_REQUEST_DIFFERENT_FORMATS:
             output_id = params.pop("output_id")
-            res = client.get(f"/v1/studies/{study_id}/links/aggregate/{output_id}", params=params)
+            res = client.get(f"/v1/studies/{internal_study}/links/aggregate/{output_id}", params=params)
             assert res.status_code == 200, res.json()
             content = io.BytesIO(res.content)
             export_format = params["format"]
@@ -282,31 +282,31 @@ class TestRawDataAggregation:
                 expected_df[col] = expected_df[col].astype(df[col].dtype)
             pd.testing.assert_frame_equal(df, expected_df)
 
-    def test_aggregation_with_incoherent_bodies(self, client: TestClient, user_access_token: str, study_id: str):
+    def test_aggregation_with_incoherent_bodies(self, client: TestClient, user_access_token: str, internal_study: str):
         """
         Asserts that requests with incoherent bodies don't crash but send empty dataframes
         """
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
         for params in INCOHERENT_REQUESTS_BODIES:
             output_id = params.pop("output_id")
-            res = client.get(f"/v1/studies/{study_id}/links/aggregate/{output_id}", params=params)
+            res = client.get(f"/v1/studies/{internal_study}/links/aggregate/{output_id}", params=params)
             assert res.status_code == 200, res.json()
             content = io.BytesIO(res.content)
             df = pd.read_csv(content, index_col=0, sep=",")
             assert df.empty
 
-    def test_wrongly_typed_request(self, client: TestClient, user_access_token: str, study_id: str):
+    def test_wrongly_typed_request(self, client: TestClient, user_access_token: str, internal_study: str):
         """
         Asserts that wrongly typed requests send an HTTP 422 Exception
         """
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
         for params in WRONGLY_TYPED_REQUESTS:
             output_id = params.pop("output_id")
-            res = client.get(f"/v1/studies/{study_id}/links/aggregate/{output_id}", params=params)
+            res = client.get(f"/v1/studies/{internal_study}/links/aggregate/{output_id}", params=params)
             assert res.status_code == 422
             assert res.json()["exception"] == "RequestValidationError"
 
-    def test_aggregation_with_wrong_output(self, client: TestClient, user_access_token: str, study_id: str):
+    def test_aggregation_with_wrong_output(self, client: TestClient, user_access_token: str, internal_study: str):
         """
         Asserts that requests with wrong output send an HTTP 422 Exception
         """
@@ -314,7 +314,7 @@ class TestRawDataAggregation:
 
         # test for areas
         res = client.get(
-            f"/v1/studies/{study_id}/areas/aggregate/unknown_id",
+            f"/v1/studies/{internal_study}/areas/aggregate/unknown_id",
             params={
                 "query_file": AreasQueryFile.VALUES,
                 "frequency": MatrixFrequency.HOURLY,
@@ -326,7 +326,7 @@ class TestRawDataAggregation:
 
         # test for links
         res = client.get(
-            f"/v1/studies/{study_id}/links/aggregate/unknown_id",
+            f"/v1/studies/{internal_study}/links/aggregate/unknown_id",
             params={
                 "query_file": LinksQueryFile.VALUES,
                 "frequency": MatrixFrequency.HOURLY,
