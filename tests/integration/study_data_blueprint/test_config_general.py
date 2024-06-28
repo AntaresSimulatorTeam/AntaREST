@@ -17,11 +17,11 @@ class TestConfigGeneralForm:
         self,
         client: TestClient,
         user_access_token: str,
-        study_id: str,
+        internal_study: str,
     ):
         """Check `set_general_form_values` end point"""
         res = client.get(
-            f"/v1/studies/{study_id}/config/general/form",
+            f"/v1/studies/{internal_study}/config/general/form",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code == HTTPStatus.OK, res.json()
@@ -49,12 +49,12 @@ class TestConfigGeneralForm:
         self,
         client: TestClient,
         user_access_token: str,
-        study_id: str,
+        internal_study: str,
     ):
         """Check `set_general_form_values` end point"""
         obj = {"horizon": 2020}
         res = client.put(
-            f"/v1/studies/{study_id}/config/general/form",
+            f"/v1/studies/{internal_study}/config/general/form",
             headers={"Authorization": f"Bearer {user_access_token}"},
             json=obj,
         )
