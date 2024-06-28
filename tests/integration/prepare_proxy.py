@@ -199,3 +199,131 @@ class PreparerProxy:
             headers=self.headers,
         )
         res.raise_for_status()
+
+    def create_link(self, study_id: str, area1_id: str, area2_id: str) -> str:
+        """
+        Create a link between two areas in a study.
+
+        Args:
+            study_id: The ID of the study.
+            area1_id: The ID of the first area.
+            area2_id: The ID of the second area.
+
+        Returns:
+            The ID of the created link.
+        """
+        # Create a link between the two areas
+        res = self.client.post(
+            f"/v1/studies/{study_id}/links",
+            headers=self.headers,
+            json={"area1": area1_id, "area2": area2_id},
+        )
+        assert res.status_code == 200, res.json()
+        link_id = f"{area1_id}%{area2_id}"
+        return link_id
+
+    def create_thermal(self, study_id: str, area1_id: str, *, name: str, **kwargs: t.Any) -> str:
+        """
+        Create a thermal cluster in an area.
+
+        Args:
+            study_id: The ID of the study.
+            area1_id: The ID of the area.
+            name: The name of the cluster.
+            **kwargs: Additional cluster data.
+        """
+        res = self.client.post(
+            f"/v1/studies/{study_id}/areas/{area1_id}/clusters/thermal",
+            headers=self.headers,
+            json={"name": name, **kwargs},
+        )
+        res.raise_for_status()
+        cluster_id = t.cast(str, res.json()["id"])
+        return cluster_id
+
+    def get_thermals(self, study_id: str, area1_id: str) -> t.List[t.Dict[str, t.Any]]:
+        """
+        Get the thermal clusters of an area in a study.
+
+        Args:
+            study_id: The ID of the study.
+            area1_id: The ID of the area.
+
+        Returns:
+            The list of cluster properties.
+        """
+        res = self.client.get(f"/v1/studies/{study_id}/areas/{area1_id}/clusters/thermal", headers=self.headers)
+        res.raise_for_status()
+        clusters_list = t.cast(t.List[t.Dict[str, t.Any]], res.json())
+        return clusters_list
+
+    def create_renewable(self, study_id: str, area1_id: str, *, name: str, **kwargs: t.Any) -> str:
+        """
+        Create a renewable cluster in an area.
+
+        Args:
+            study_id: The ID of the study.
+            area1_id: The ID of the area.
+            name: The name of the cluster.
+            **kwargs: Additional cluster data.
+        """
+        res = self.client.post(
+            f"/v1/studies/{study_id}/areas/{area1_id}/clusters/renewable",
+            headers=self.headers,
+            json={"name": name, **kwargs},
+        )
+        res.raise_for_status()
+        cluster_id = t.cast(str, res.json()["id"])
+        return cluster_id
+
+    def get_renewables(self, study_id: str, area1_id: str) -> t.List[t.Dict[str, t.Any]]:
+        """
+        Get the renewable clusters of an area in a study.
+
+        Args:
+            study_id: The ID of the study.
+            area1_id: The ID of the area.
+
+        Returns:
+            The list of cluster properties.
+        """
+        res = self.client.get(f"/v1/studies/{study_id}/areas/{area1_id}/clusters/renewable", headers=self.headers)
+        res.raise_for_status()
+        clusters_list = t.cast(t.List[t.Dict[str, t.Any]], res.json())
+        return clusters_list
+
+    def create_binding_constraint(self, study_id: str, *, name: str, **kwargs: t.Any) -> t.Dict[str, t.Any]:
+        """
+        Create a binding constraint in a study.
+
+        Args:
+            study_id: The ID of the study.
+            name: The name of the constraint.
+            **kwargs: Additional constraint data.
+
+        Returns:
+            The binding constraint properties.
+        """
+        res = self.client.post(
+            f"/v1/studies/{study_id}/bindingconstraints",
+            headers=self.headers,
+            json={"name": name, **kwargs},
+        )
+        res.raise_for_status()
+        properties = t.cast(t.Dict[str, t.Any], res.json())
+        return properties
+
+    def get_binding_constraints(self, study_id: str) -> t.List[t.Dict[str, t.Any]]:
+        """
+        Get the binding constraints of a study.
+
+        Args:
+            study_id: The ID of the study.
+
+        Returns:
+            The list of constraint properties.
+        """
+        res = self.client.get(f"/v1/studies/{study_id}/bindingconstraints", headers=self.headers)
+        res.raise_for_status()
+        binding_constraints_list = t.cast(t.List[t.Dict[str, t.Any]], res.json())
+        return binding_constraints_list
