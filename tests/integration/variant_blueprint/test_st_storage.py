@@ -22,7 +22,7 @@ class TestSTStorage:
         self,
         client: TestClient,
         user_access_token: str,
-        study_id: str,
+        internal_study_id: str,
     ):
         # =======================
         #  Study version upgrade
@@ -31,7 +31,7 @@ class TestSTStorage:
         # We have an "old" study that we need to upgrade to version 860
         min_study_version = 860
         res = client.put(
-            f"/v1/studies/{study_id}/upgrade",
+            f"/v1/studies/{internal_study_id}/upgrade",
             headers={"Authorization": f"Bearer {user_access_token}"},
             params={"target_version": min_study_version},
         )
@@ -42,12 +42,12 @@ class TestSTStorage:
 
         # We can check that the study is upgraded to the required version
         res = client.get(
-            f"/v1/studies/{study_id}",
+            f"/v1/studies/{internal_study_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         res.raise_for_status()
         assert res.json() == {
-            "id": study_id,
+            "id": internal_study_id,
             "name": "STA-mini",
             "version": min_study_version,
             "created": ANY,  # ISO8601 Date/time
@@ -69,7 +69,7 @@ class TestSTStorage:
 
         # Here is the list of available areas
         res = client.get(
-            f"/v1/studies/{study_id}/areas",
+            f"/v1/studies/{internal_study_id}/areas",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         res.raise_for_status()
@@ -104,7 +104,7 @@ class TestSTStorage:
             },
         }
         res = client.post(
-            f"/v1/studies/{study_id}/commands",
+            f"/v1/studies/{internal_study_id}/commands",
             headers={"Authorization": f"Bearer {user_access_token}"},
             json=[{"action": "create_st_storage", "args": args}],
         )
@@ -130,7 +130,7 @@ class TestSTStorage:
             "matrix": pmax_injection.tolist(),
         }
         res = client.post(
-            f"/v1/studies/{study_id}/commands",
+            f"/v1/studies/{internal_study_id}/commands",
             headers={"Authorization": f"Bearer {user_access_token}"},
             json=[
                 {"action": "replace_matrix", "args": args1},
@@ -166,7 +166,7 @@ class TestSTStorage:
             "inflows": inflows.tolist(),
         }
         res = client.post(
-            f"/v1/studies/{study_id}/commands",
+            f"/v1/studies/{internal_study_id}/commands",
             headers={"Authorization": f"Bearer {user_access_token}"},
             json=[{"action": "create_st_storage", "args": args}],
         )
@@ -179,7 +179,7 @@ class TestSTStorage:
         # The `remove_st_storage` command allows you to delete a Short-Term Storage.
         args = {"area_id": area_id, "storage_id": siemens_battery_id}
         res = client.post(
-            f"/v1/studies/{study_id}/commands",
+            f"/v1/studies/{internal_study_id}/commands",
             headers={"Authorization": f"Bearer {user_access_token}"},
             json=[{"action": "remove_st_storage", "args": args}],
         )
@@ -215,7 +215,7 @@ class TestSTStorage:
             "inflows": inflows.tolist(),
         }
         res = client.post(
-            f"/v1/studies/{study_id}/commands",
+            f"/v1/studies/{internal_study_id}/commands",
             headers={"Authorization": f"Bearer {user_access_token}"},
             json=[{"action": "create_st_storage", "args": args}],
         )

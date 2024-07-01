@@ -33,7 +33,7 @@ class TestStudySynthesis:
         self,
         client: TestClient,
         user_access_token: str,
-        study_id: str,
+        internal_study_id: str,
     ) -> None:
         """
         This test verifies that we can retrieve the synthesis of a study.
@@ -42,7 +42,7 @@ class TestStudySynthesis:
 
         # Get the synthesis of the study and compare with the expected file
         res = client.get(
-            f"/v1/studies/{study_id}/synthesis",
+            f"/v1/studies/{internal_study_id}/synthesis",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code == 200, res.json()
@@ -53,7 +53,7 @@ class TestStudySynthesis:
         # Ensure the duration is relatively short
         start = time.time()
         res = client.get(
-            f"/v1/studies/{study_id}/synthesis",
+            f"/v1/studies/{internal_study_id}/synthesis",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code == 200, res.json()
@@ -64,7 +64,7 @@ class TestStudySynthesis:
         self,
         client: TestClient,
         user_access_token: str,
-        study_id: str,
+        internal_study_id: str,
     ) -> None:
         """
         This test verifies that we can retrieve and modify the synthesis of a VARIANT study.
@@ -72,7 +72,7 @@ class TestStudySynthesis:
         """
         # First, we create a copy of the study, and we convert it to a managed study.
         res = client.post(
-            f"/v1/studies/{study_id}/copy",
+            f"/v1/studies/{internal_study_id}/copy",
             headers={"Authorization": f"Bearer {user_access_token}"},
             params={"dest": "default", "with_outputs": False, "use_task": False},  # type: ignore
         )

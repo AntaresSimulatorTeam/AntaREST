@@ -14,7 +14,7 @@ class TestStudyMatrixIndex:
         self,
         client: TestClient,
         user_access_token: str,
-        study_id: str,
+        internal_study_id: str,
     ) -> None:
         user_access_token = {"Authorization": f"Bearer {user_access_token}"}
 
@@ -23,7 +23,7 @@ class TestStudyMatrixIndex:
 
         # Check the Common matrix index
         res = client.get(
-            f"/v1/studies/{study_id}/matrixindex",
+            f"/v1/studies/{internal_study_id}/matrixindex",
             headers=user_access_token,
             params={"path": "input/thermal/prepro/fr/01_solar/modulation"},
         )
@@ -40,7 +40,7 @@ class TestStudyMatrixIndex:
 
         # Check the TS Generator matrix index
         res = client.get(
-            f"/v1/studies/{study_id}/matrixindex",
+            f"/v1/studies/{internal_study_id}/matrixindex",
             headers=user_access_token,
             params={"path": "input/thermal/prepro/fr/01_solar/data"},
         )
@@ -57,7 +57,7 @@ class TestStudyMatrixIndex:
 
         # Check the time series
         res = client.get(
-            f"/v1/studies/{study_id}/matrixindex",
+            f"/v1/studies/{internal_study_id}/matrixindex",
             headers=user_access_token,
             params={"path": "input/thermal/series/fr/01_solar/series"},
         )
@@ -75,7 +75,7 @@ class TestStudyMatrixIndex:
         # Check the default matrix index
         # ==============================
 
-        res = client.get(f"/v1/studies/{study_id}/matrixindex", headers=user_access_token)
+        res = client.get(f"/v1/studies/{internal_study_id}/matrixindex", headers=user_access_token)
         assert res.status_code == 200
         actual = res.json()
         expected = {
@@ -90,7 +90,7 @@ class TestStudyMatrixIndex:
         # =========================================================================
 
         res = client.get(
-            f"/v1/studies/{study_id}/matrixindex",
+            f"/v1/studies/{internal_study_id}/matrixindex",
             headers=user_access_token,
             params={"path": "output/20201014-1427eco/economy/mc-all/areas/es/details-daily"},
         )
