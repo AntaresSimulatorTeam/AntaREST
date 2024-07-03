@@ -2,6 +2,7 @@
 title: How to Upgrade a Study?
 author: Laurent LAPORTE <laurent.laporte.pro@gmail.com>
 date: 2023-03-10
+revision: 2024-07-03
 tags:
 
 - upgrade
@@ -30,6 +31,10 @@ improvements in Antares Web and Antares Simulator. If you encounter any difficul
 hesitate to contact our support team for assistance.
 
 ## Upgrading
+
+> **WARNING:** Upgrading a study is only possible if the study is a **raw study** without any variants,
+> as it is not possible to update its descendants. Also, upgrading a variant study is not possible.
+> If you have a variant study, you must first create a new raw study and then upgrade it.
 
 To upgrade your study to the latest version of Antares Web and Antares Simulator, you can follow these steps:
 
