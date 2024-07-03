@@ -402,7 +402,7 @@ Coming soon
 
 ### Composite commands
 
-Comming soon
+Coming soon
 
 ## CLI Tool
 
