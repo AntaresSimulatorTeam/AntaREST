@@ -1,3 +1,17 @@
+---
+title: Variant Manager
+author: Antares Web Team
+date: 2021-10-29
+category: User Guide
+tags:
+
+  - variant
+  - manager
+  - configuration
+  - command
+  - API
+---
+
 # Variant Manager
 
 ## Introduction

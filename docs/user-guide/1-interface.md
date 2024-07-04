@@ -1,3 +1,21 @@
+---
+title: User Interface
+author: Antares Web Team
+date: 2021-11-03
+category: User Guide
+tags:
+
+  - ui
+  - job
+  - api
+  - token
+  - variant
+  - matrix
+  - dataset
+  - batch
+  - launch
+---
+
 # User interface
 
 ## What's new (2.5.0)
