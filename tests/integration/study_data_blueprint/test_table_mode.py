@@ -23,7 +23,7 @@ class TestTableMode:
 
     @pytest.mark.parametrize("study_version", [0, 810, 830, 860, 870, 880])
     def test_lifecycle__nominal(
-        self, client: TestClient, user_access_token: str, study_id: str, study_version: int
+        self, client: TestClient, user_access_token: str, internal_study_id: str, study_version: int
     ) -> None:
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
@@ -35,7 +35,7 @@ class TestTableMode:
         # Upgrade the study to the desired version
         if study_version:
             res = client.put(
-                f"/v1/studies/{study_id}/upgrade",
+                f"/v1/studies/{internal_study_id}/upgrade",
                 params={"target_version": study_version},
             )
             assert res.status_code == 200, res.json()
@@ -45,7 +45,7 @@ class TestTableMode:
             assert task.status == TaskStatus.COMPLETED, task
 
         # Create another link to test specific bug.
-        res = client.post(f"/v1/studies/{study_id}/links", json={"area1": "de", "area2": "it"})
+        res = client.post(f"/v1/studies/{internal_study_id}/links", json={"area1": "de", "area2": "it"})
         assert res.status_code in [200, 201], res.json()
 
         # Table Mode - Area
@@ -83,7 +83,7 @@ class TestTableMode:
             _es_values["adequacyPatchMode"] = "inside"
 
         res = client.put(
-            f"/v1/studies/{study_id}/table-mode/areas",
+            f"/v1/studies/{internal_study_id}/table-mode/areas",
             json={
                 "de": _de_values,
                 "es": _es_values,
@@ -147,7 +147,7 @@ class TestTableMode:
         actual = res.json()
         assert actual == expected_areas
 
-        res = client.get(f"/v1/studies/{study_id}/table-mode/areas")
+        res = client.get(f"/v1/studies/{internal_study_id}/table-mode/areas")
         assert res.status_code == 200, res.json()
         actual = res.json()
         assert actual == expected_areas
@@ -158,7 +158,7 @@ class TestTableMode:
             "averageUnsuppliedEnergyCost": 456,
         }
         res = client.put(
-            f"/v1/studies/{study_id}/table-mode/areas",
+            f"/v1/studies/{internal_study_id}/table-mode/areas",
             json={"de": _de_values},
         )
         assert res.status_code == 200, res.json()
@@ -191,7 +191,7 @@ class TestTableMode:
         }
 
         res = client.put(
-            f"/v1/studies/{study_id}/table-mode/links",
+            f"/v1/studies/{internal_study_id}/table-mode/links",
             json={
                 "de / fr": {
                     "colorRgb": "#FFA500",
@@ -287,7 +287,7 @@ class TestTableMode:
         del expected_result["de / it"]
         assert actual == expected_result
 
-        res = client.get(f"/v1/studies/{study_id}/table-mode/links")
+        res = client.get(f"/v1/studies/{internal_study_id}/table-mode/links")
         assert res.status_code == 200, res.json()
         actual = res.json()
         # asserts the `de / it` link is not removed.
@@ -354,7 +354,7 @@ class TestTableMode:
             _solar_values.update({"costGeneration": "useCostTimeseries", "efficiency": 87, "variableOMCost": -12.5})
 
         res = client.put(
-            f"/v1/studies/{study_id}/table-mode/thermals",
+            f"/v1/studies/{internal_study_id}/table-mode/thermals",
             json={
                 "de / 01_solar": _solar_values,
                 "de / 02_wind_on": _wind_on_values,
@@ -437,7 +437,7 @@ class TestTableMode:
         assert res.json()["de / 02_wind_on"] == expected_thermals["de / 02_wind_on"]
 
         res = client.get(
-            f"/v1/studies/{study_id}/table-mode/thermals",
+            f"/v1/studies/{internal_study_id}/table-mode/thermals",
             params={"columns": ",".join(["group", "unitCount", "nominalCapacity", "so2"])},
         )
         assert res.status_code == 200, res.json()
@@ -500,7 +500,7 @@ class TestTableMode:
                 "data": {"renewable-generation-modelling": "clusters"},
             }
             res = client.post(
-                f"/v1/studies/{study_id}/commands",
+                f"/v1/studies/{internal_study_id}/commands",
                 json=[{"action": "update_config", "args": args}],
             )
             assert res.status_code == 200, res.json()
@@ -559,7 +559,7 @@ class TestTableMode:
             for area_id, generators in generators_by_country.items():
                 for generator_id, generator in generators.items():
                     res = client.post(
-                        f"/v1/studies/{study_id}/areas/{area_id}/clusters/renewable",
+                        f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/renewable",
                         json=generator,
                     )
                     res.raise_for_status()
@@ -584,7 +584,7 @@ class TestTableMode:
 
             # Update some generators using the table mode
             res = client.put(
-                f"/v1/studies/{study_id}/table-mode/renewables",
+                f"/v1/studies/{internal_study_id}/table-mode/renewables",
                 json={
                     "fr / Dieppe": {"enabled": False},
                     "fr / La Rochelle": {"enabled": True, "nominalCapacity": 3.1, "unitCount": 2},
@@ -594,7 +594,7 @@ class TestTableMode:
             assert res.status_code == 200, res.json()
 
             res = client.get(
-                f"/v1/studies/{study_id}/table-mode/renewables",
+                f"/v1/studies/{internal_study_id}/table-mode/renewables",
                 params={"columns": ",".join(["group", "enabled", "unitCount", "nominalCapacity"])},
             )
             assert res.status_code == 200, res.json()
@@ -679,7 +679,7 @@ class TestTableMode:
             for area_id, storages in storage_by_country.items():
                 for storage_id, storage in storages.items():
                     res = client.post(
-                        f"/v1/studies/{study_id}/areas/{area_id}/storages",
+                        f"/v1/studies/{internal_study_id}/areas/{area_id}/storages",
                         json=storage,
                     )
                     res.raise_for_status()
@@ -692,7 +692,7 @@ class TestTableMode:
                 _it_storage3_values["enabled"] = False
 
             res = client.put(
-                f"/v1/studies/{study_id}/table-mode/st-storages",
+                f"/v1/studies/{internal_study_id}/table-mode/st-storages",
                 json={
                     "fr / siemens": _fr_siemes_values,
                     "fr / tesla": _fr_tesla_values,
@@ -760,7 +760,7 @@ class TestTableMode:
             assert actual == expected
 
             res = client.get(
-                f"/v1/studies/{study_id}/table-mode/st-storages",
+                f"/v1/studies/{internal_study_id}/table-mode/st-storages",
                 params={
                     "columns": ",".join(
                         [
@@ -810,7 +810,7 @@ class TestTableMode:
         # Create a cluster in fr
         fr_id = "fr"
         res = client.post(
-            f"/v1/studies/{study_id}/areas/{fr_id}/clusters/thermal",
+            f"/v1/studies/{internal_study_id}/areas/{fr_id}/clusters/thermal",
             json={
                 "name": "Cluster 1",
                 "group": "Nuclear",
@@ -822,7 +822,7 @@ class TestTableMode:
 
         # Create Binding Constraints
         res = client.post(
-            f"/v1/studies/{study_id}/bindingconstraints",
+            f"/v1/studies/{internal_study_id}/bindingconstraints",
             json={
                 "name": "Binding Constraint 1",
                 "enabled": True,
@@ -833,7 +833,7 @@ class TestTableMode:
         assert res.status_code == 200, res.json()
 
         res = client.post(
-            f"/v1/studies/{study_id}/bindingconstraints",
+            f"/v1/studies/{internal_study_id}/bindingconstraints",
             json={
                 "name": "Binding Constraint 2",
                 "enabled": False,
@@ -874,7 +874,7 @@ class TestTableMode:
             _bc2_values["group"] = "My BC Group"
 
         res = client.put(
-            f"/v1/studies/{study_id}/table-mode/binding-constraints",
+            f"/v1/studies/{internal_study_id}/table-mode/binding-constraints",
             json={
                 "binding constraint 1": _bc1_values,
                 "binding constraint 2": _bc2_values,
@@ -909,7 +909,7 @@ class TestTableMode:
         assert actual == expected_binding
 
         res = client.get(
-            f"/v1/studies/{study_id}/table-mode/binding-constraints",
+            f"/v1/studies/{internal_study_id}/table-mode/binding-constraints",
             params={"columns": ""},
         )
         assert res.status_code == 200, res.json()
