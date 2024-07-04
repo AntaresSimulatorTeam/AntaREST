@@ -5,8 +5,12 @@ date: 2023-03-10
 revision: 2024-07-03
 tags:
 
-- upgrade
-- version
+  - tutorial
+  - guide
+  - upgrade
+  - version
+  - study management
+  - raw
 
 ---
 
@@ -63,5 +67,6 @@ Once the upgrade is complete, you can open your study and perform the manual upg
 
 ## See also
 
-- Create a new study in the latest version
-- Run a study in the latest version 
+- [How to Create a New Study?](studies-create.md) -- Create a new study in Antares Web
+- [How to Import a Compressed Study?](studies-import.md) - Import a study from a compressed file
+- How to Run a study simulation? - Run a simulation on a study

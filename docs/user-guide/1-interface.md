@@ -138,7 +138,7 @@ Example of the detailed view of a matrix node (txt data files):
 ## Data management
 
 The data view display dataset which are list of matrices.
-These matrices can then be used as argument in [variant manager commands](./3-variant_manager.md#base-commands).
+These matrices can then be used as argument in [variant manager commands](./3-variant_manager.md#command-list).
 
 ![](../assets/media/img/userguide_dataset_listing.png)
 
