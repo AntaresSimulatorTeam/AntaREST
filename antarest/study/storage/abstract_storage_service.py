@@ -142,11 +142,11 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
                 logger.info(f"Raw Study {metadata.id} read from cache")
                 data = from_cache
             else:
-                data = study.tree.get(parts, depth=depth)
+                data = study.tree.get(parts, depth=depth, format=format)
                 self.cache.put(cache_id, data)
                 logger.info(f"Cache new entry from RawStudyService (studyID: {metadata.id})")
         else:
-            data = study.tree.get(parts, depth=depth)
+            data = study.tree.get(parts, depth=depth, format=format)
         del study
         return data
 
