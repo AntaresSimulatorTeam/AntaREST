@@ -11,7 +11,7 @@ class UriResolverService:
     def __init__(self, matrix_service: ISimpleMatrixService):
         self.matrix_service = matrix_service
 
-    def resolve(self, uri: str, format: str = "") -> SUB_JSON:
+    def resolve(self, uri: str, format: str = "json") -> SUB_JSON:
         res = UriResolverService._extract_uri_components(uri)
         if res:
             protocol, uuid = res
@@ -37,7 +37,7 @@ class UriResolverService:
         res = UriResolverService._extract_uri_components(uri)
         return res[1] if res else None
 
-    def _resolve_matrix(self, id: str, format: str = "") -> SUB_JSON:
+    def _resolve_matrix(self, id: str, format: str) -> SUB_JSON:
         data = self.matrix_service.get(id)
         if data:
             if format == "json":
