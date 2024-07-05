@@ -16,21 +16,11 @@ class InputAreasList(INode[List[str], List[str], List[str]]):
         super().__init__(config)
         self.context = context
 
-    def get_node(
-        self,
-        url: Optional[List[str]] = None,
-        depth: int = -1,
-        expanded: bool = False,
-        formatted: bool = True,
-    ) -> INode[List[str], List[str], List[str]]:
+    def get_node(self, url: Optional[List[str]] = None) -> INode[List[str], List[str], List[str]]:
         return self
 
     def get(
-        self,
-        url: Optional[List[str]] = None,
-        depth: int = -1,
-        expanded: bool = False,
-        formatted: bool = True,
+        self, url: Optional[List[str]] = None, depth: int = -1, expanded: bool = False, format: str = ""
     ) -> List[str]:
         if self.config.zip_path:
             path, tmp_dir = self._extract_file_to_tmp_dir()

@@ -30,7 +30,7 @@ class IStudyStorageService(ABC, t.Generic[T]):
         metadata: T,
         url: str = "",
         depth: int = 3,
-        formatted: bool = True,
+        format: str = "",
     ) -> JSON:
         """
         Entry point to fetch data inside study.
@@ -38,7 +38,7 @@ class IStudyStorageService(ABC, t.Generic[T]):
             metadata: study
             url: path data inside study to reach
             depth: tree depth to reach after reach data path
-            formatted: indicate if raw files must be parsed and formatted
+            format: indicate if raw files must be parsed and formatted
 
         Returns: study data formatted in json
 

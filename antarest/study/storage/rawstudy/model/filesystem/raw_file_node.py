@@ -24,13 +24,7 @@ class RawFileNode(LazyNode[bytes, bytes, str]):
     ) -> str:
         return f"file://{self.config.path.name}"
 
-    def load(
-        self,
-        url: Optional[List[str]] = None,
-        depth: int = -1,
-        expanded: bool = False,
-        formatted: bool = True,
-    ) -> bytes:
+    def load(self, url: Optional[List[str]] = None, depth: int = -1, expanded: bool = False, format: str = "") -> bytes:
         file_path, tmp_dir = self._get_real_file_path()
 
         if file_path.exists():

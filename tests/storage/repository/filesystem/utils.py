@@ -28,13 +28,7 @@ class CheckSubNode(INode[int, int, int]):
     ) -> INode[int, int, int]:
         return self
 
-    def get(
-        self,
-        url: Optional[List[str]] = None,
-        depth: int = -1,
-        expanded: bool = True,
-        formatted: bool = True,
-    ) -> int:
+    def get(self, url: Optional[List[str]] = None, depth: int = -1, expanded: bool = False, format: str = "") -> int:
         return self.value
 
     def save(self, data: int, url: Optional[List[str]] = None) -> None:

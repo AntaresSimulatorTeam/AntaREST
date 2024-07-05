@@ -9,11 +9,7 @@ logger = logging.getLogger(__name__)
 
 class TsNumbersVector(LazyNode[List[int], List[int], JSON]):
     def load(
-        self,
-        url: Optional[List[str]] = None,
-        depth: int = -1,
-        expanded: bool = False,
-        formatted: bool = True,
+        self, url: Optional[List[str]] = None, depth: int = -1, expanded: bool = False, format: str = ""
     ) -> List[int]:
         file_path, tmp_dir = self._get_real_file_path()
 

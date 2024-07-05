@@ -61,7 +61,7 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
         url: Optional[List[str]] = None,
         depth: int = -1,
         expanded: bool = False,
-        formatted: bool = True,
+        format: str = "",
         get_node: bool = False,
     ) -> Union[Union[str, G], INode[G, S, V]]:
         self._assert_url_end(url)
@@ -74,21 +74,17 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
             if expanded:
                 return link
             else:
-                return cast(G, self.context.resolver.resolve(link, formatted))
+                return cast(G, self.context.resolver.resolve(link, format))
 
         if expanded:
             return self.get_lazy_content()
         else:
-            return self.load(url, depth, expanded, formatted)
+            return self.load(url, depth, expanded, format)
 
     def get(
-        self,
-        url: Optional[List[str]] = None,
-        depth: int = -1,
-        expanded: bool = False,
-        formatted: bool = True,
+        self, url: Optional[List[str]] = None, depth: int = -1, expanded: bool = False, format: str = ""
     ) -> Union[str, G]:
-        output = self._get(url, depth, expanded, formatted, get_node=False)
+        output = self._get(url, depth, expanded, format, get_node=False)
         assert not isinstance(output, INode)
         return output
 
@@ -140,7 +136,7 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
         url: Optional[List[str]] = None,
         depth: int = -1,
         expanded: bool = False,
-        formatted: bool = True,
+        format: str = "",
     ) -> G:
         """
         Fetch data on disk.
@@ -149,7 +145,7 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
             url: data path to retrieve
             depth: after url is reached, node expand tree until matches depth asked
             expanded: context parameter to determine if current node become from a expansion
-            formatted: ask for raw file transformation
+            format: ask for raw file transformation
 
         Returns:
 

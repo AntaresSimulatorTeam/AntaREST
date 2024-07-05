@@ -116,21 +116,14 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
             tags=[tag.label for tag in study.tags],
         )
 
-    def get(
-        self,
-        metadata: T,
-        url: str = "",
-        depth: int = 3,
-        formatted: bool = True,
-        use_cache: bool = True,
-    ) -> JSON:
+    def get(self, metadata: T, url: str = "", depth: int = 3, format: str = "", use_cache: bool = True) -> JSON:
         """
         Entry point to fetch data inside study.
         Args:
             metadata: study
             url: path data inside study to reach
             depth: tree depth to reach after reach data path
-            formatted: indicate if raw files must be parsed and formatted
+            format: indicate if raw files must be parsed and formatted
             use_cache: indicate if the cache must be used
 
         Returns: study data formatted in json
@@ -149,11 +142,11 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
                 logger.info(f"Raw Study {metadata.id} read from cache")
                 data = from_cache
             else:
-                data = study.tree.get(parts, depth=depth, formatted=formatted)
+                data = study.tree.get(parts, depth=depth)
                 self.cache.put(cache_id, data)
                 logger.info(f"Cache new entry from RawStudyService (studyID: {metadata.id})")
         else:
-            data = study.tree.get(parts, depth=depth, formatted=formatted)
+            data = study.tree.get(parts, depth=depth)
         del study
         return data
 
@@ -250,7 +243,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
             extension = ".zip" if is_zipped else ""
             path_output = path_output.rename(Path(path_output.parent, output_full_name + extension))
 
-            data = self.get(metadata, f"output/{output_full_name}", 1, use_cache=False)
+            data = self.get(metadata, f"output/{output_full_name}", 1)
 
             if data is None:
                 self.delete_output(metadata, "imported_output")

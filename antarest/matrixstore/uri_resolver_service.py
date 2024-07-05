@@ -11,7 +11,7 @@ class UriResolverService:
     def __init__(self, matrix_service: ISimpleMatrixService):
         self.matrix_service = matrix_service
 
-    def resolve(self, uri: str, formatted: bool = True) -> SUB_JSON:
+    def resolve(self, uri: str, format: str = "") -> SUB_JSON:
         res = UriResolverService._extract_uri_components(uri)
         if res:
             protocol, uuid = res
@@ -19,7 +19,7 @@ class UriResolverService:
             return None
 
         if protocol == "matrix":
-            return self._resolve_matrix(uuid, formatted)
+            return self._resolve_matrix(uuid, format)
         raise NotImplementedError(f"protocol {protocol} not implemented")
 
     @staticmethod
@@ -37,10 +37,10 @@ class UriResolverService:
         res = UriResolverService._extract_uri_components(uri)
         return res[1] if res else None
 
-    def _resolve_matrix(self, id: str, formatted: bool = True) -> SUB_JSON:
+    def _resolve_matrix(self, id: str, format: str = "") -> SUB_JSON:
         data = self.matrix_service.get(id)
         if data:
-            if formatted:
+            if format == "json":
                 return {
                     "data": data.data,
                     "index": data.index,

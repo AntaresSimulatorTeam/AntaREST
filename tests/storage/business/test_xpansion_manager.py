@@ -129,11 +129,11 @@ def test_create_configuration(tmp_path: Path, version: int, expected_output: JSO
     xpansion_manager = make_xpansion_manager(empty_study)
 
     with pytest.raises(ChildNotFoundError):
-        empty_study.tree.get(["user", "expansion"], expanded=True, depth=9)
+        empty_study.tree.get(["user", "expansion"], depth=9, expanded=True)
 
     xpansion_manager.create_xpansion_configuration(study)
 
-    actual = empty_study.tree.get(["user", "expansion"], expanded=True, depth=9)
+    actual = empty_study.tree.get(["user", "expansion"], depth=9, expanded=True)
     assert actual == expected_output
 
 
@@ -147,16 +147,16 @@ def test_delete_xpansion_configuration(tmp_path: Path) -> None:
     xpansion_manager = make_xpansion_manager(empty_study)
 
     with pytest.raises(ChildNotFoundError):
-        empty_study.tree.get(["user", "expansion"], expanded=True, depth=9)
+        empty_study.tree.get(["user", "expansion"], depth=9, expanded=True)
 
     xpansion_manager.create_xpansion_configuration(study)
 
-    assert empty_study.tree.get(["user", "expansion"], expanded=True, depth=9)
+    assert empty_study.tree.get(["user", "expansion"], depth=9, expanded=True)
 
     xpansion_manager.delete_xpansion_configuration(study)
 
     with pytest.raises(ChildNotFoundError):
-        empty_study.tree.get(["user", "expansion"], expanded=True, depth=9)
+        empty_study.tree.get(["user", "expansion"], depth=9, expanded=True)
 
 
 @pytest.mark.unit_test

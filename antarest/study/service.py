@@ -132,6 +132,7 @@ from antarest.study.storage.variantstudy.model.command.update_raw_file import Up
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
+from antarest.study.web.raw_studies_blueprint import MATRIX_FORMAT
 from antarest.worker.archive_worker import ArchiveTaskArgs
 from antarest.worker.simulator_worker import GenerateTimeseriesTaskArgs
 
@@ -307,7 +308,7 @@ class StudyService:
         uuid: str,
         url: str,
         depth: int,
-        formatted: bool,
+        format: str,
         params: RequestParameters,
     ) -> JSON:
         """
@@ -316,7 +317,7 @@ class StudyService:
             uuid: study uuid
             url: route to follow inside study structure
             depth: depth to expand tree when route matched
-            formatted: indicate if raw files must be parsed and formatted
+            format: indicate if raw files must be parsed and formatted
             params: request parameters
 
         Returns: data study formatted in json
@@ -325,7 +326,7 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
 
-        return self.storage_service.get_storage(study).get(study, url, depth, formatted)
+        return self.storage_service.get_storage(study).get(study, url, depth, format)
 
     def aggregate_output_data(
         self,
@@ -398,7 +399,7 @@ class StudyService:
             try:
                 log = t.cast(
                     bytes,
-                    file_study.tree.get(log_location, depth=1, formatted=True),
+                    file_study.tree.get(log_location, depth=1, format="json"),
                 ).decode(encoding="utf-8")
                 # when missing file, RawFileNode return empty bytes
                 if log:
@@ -2527,7 +2528,7 @@ class StudyService:
                 hydro_matrix = self.correlation_manager.get_correlation_matrix(all_areas, study, [])  # type: ignore
             return pd.DataFrame(data=hydro_matrix.data, columns=hydro_matrix.columns, index=hydro_matrix.index)
 
-        matrix_obj = self.get(study_id, path, depth=3, formatted=True, params=parameters)
+        matrix_obj = self.get(study_id, path, depth=3, format="json", params=parameters)
         if set(matrix_obj) != {"data", "index", "columns"}:
             raise IncorrectPathError(f"The provided path does not point to a valid matrix: '{path}'")
         if not matrix_obj["data"]:

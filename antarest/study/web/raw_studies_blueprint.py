@@ -19,6 +19,7 @@ from antarest.core.utils.utils import sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.study.business.aggregator_management import AreasQueryFile, LinksQueryFile
+from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.service import StudyService
 from antarest.study.storage.df_download import TableExportFormat, export_file
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
@@ -59,6 +60,13 @@ CONTENT_TYPES = {
     ".json": ("application/json", "utf-8"),
 }
 
+
+class MATRIX_FORMAT(EnumIgnoreCase):
+    JSON = "json"
+    BYTES = "bytes"
+    ARROW = "arrow"
+
+
 DEFAULT_EXPORT_FORMAT = Query(TableExportFormat.CSV, alias="format", description="Export format", title="Export Format")
 
 
@@ -97,6 +105,7 @@ def create_raw_study_routes(
         path: str = Param("/", examples=get_path_examples()),  # type: ignore
         depth: int = 3,
         formatted: bool = True,
+        format: t.Optional[MATRIX_FORMAT] = None,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> t.Any:
         """
@@ -117,12 +126,20 @@ def create_raw_study_routes(
             extra={"user": current_user.id},
         )
         parameters = RequestParameters(user=current_user)
-        output = study_service.get(uuid, path, depth=depth, formatted=formatted, params=parameters)
+
+        if not format:
+            real_format = "json" if formatted else "bytes"
+        else:
+            real_format = format.value
+
+        output = study_service.get(uuid, path, depth=depth, format=real_format, params=parameters)
 
         if isinstance(output, bytes):
             # Guess the suffix form the target data
             resource_path = PurePosixPath(path)
-            parent_cfg = study_service.get(uuid, str(resource_path.parent), depth=2, formatted=True, params=parameters)
+            parent_cfg = study_service.get(
+                uuid, str(resource_path.parent), depth=2, format=real_format, params=parameters
+            )
             child = parent_cfg[resource_path.name]
             suffix = PurePosixPath(child).suffix
 

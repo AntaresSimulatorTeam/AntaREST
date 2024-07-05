@@ -464,12 +464,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         return output_list
 
     def get(
-        self,
-        metadata: VariantStudy,
-        url: str = "",
-        depth: int = 3,
-        formatted: bool = True,
-        use_cache: bool = True,
+        self, metadata: VariantStudy, url: str = "", depth: int = 3, format: str = "", use_cache: bool = True
     ) -> JSON:
         """
         Entry point to fetch data inside study.
@@ -477,20 +472,14 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             metadata: study
             url: path data inside study to reach
             depth: tree depth to reach after reach data path
-            formatted: indicate if raw files must be parsed and formatted
+            format: indicate if raw files must be parsed and formatted
             use_cache: indicate if cache should be used
 
         Returns: study data formatted in json
         """
         self._safe_generation(metadata, timeout=60)
         self.repository.refresh(metadata)
-        return super().get(
-            metadata=metadata,
-            url=url,
-            depth=depth,
-            formatted=formatted,
-            use_cache=use_cache,
-        )
+        return super().get(metadata=metadata, url=url, depth=depth)
 
     def create_variant_study(self, uuid: str, name: str, params: RequestParameters) -> VariantStudy:
         """

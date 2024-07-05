@@ -20,13 +20,7 @@ class MockLazyNode(LazyNode[str, str, str]):
             context=context,
         )
 
-    def load(
-        self,
-        url: Optional[List[str]] = None,
-        depth: int = -1,
-        expanded: bool = False,
-        formatted: bool = False,
-    ) -> str:
+    def load(self, url: Optional[List[str]] = None, depth: int = -1, expanded: bool = False, format: str = "") -> str:
         return "Mock Matrix Content"
 
     def dump(self, data: str, url: Optional[List[str]] = None) -> None:
