@@ -90,7 +90,7 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
         self.get_link_path().unlink()
 
     def load(
-        self, url: Optional[List[str]] = None, depth: int = -1, expanded: bool = False, format: str = ""
+        self, url: Optional[List[str]] = None, depth: int = -1, expanded: bool = False, format: str = "json"
     ) -> Union[bytes, JSON]:
         file_path, tmp_dir = self._get_real_file_path()
         if format == "bytes":

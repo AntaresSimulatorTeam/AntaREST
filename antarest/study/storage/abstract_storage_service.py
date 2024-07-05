@@ -116,7 +116,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
             tags=[tag.label for tag in study.tags],
         )
 
-    def get(self, metadata: T, url: str = "", depth: int = 3, format: str = "", use_cache: bool = True) -> JSON:
+    def get(self, metadata: T, url: str = "", depth: int = 3, format: str = "json", use_cache: bool = True) -> JSON:
         """
         Entry point to fetch data inside study.
         Args:

@@ -52,7 +52,7 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
         self,
         url: t.List[str],
         depth: int = -1,
-        format: str = "",
+        format: str = "json",
         get_node: bool = False,
     ) -> t.Union[JSON, INode[JSON, SUB_JSON, JSON]]:
         children = self.build()
@@ -75,7 +75,7 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
                 raise ValueError("Multiple nodes requested")
 
     def _expand_get(
-        self, depth: int = -1, format: str = "", get_node: bool = False
+        self, depth: int = -1, format: str = "json", get_node: bool = False
     ) -> t.Union[JSON, INode[JSON, SUB_JSON, JSON]]:
         if get_node:
             return self
@@ -93,7 +93,7 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
         self,
         url: t.Optional[t.List[str]] = None,
         depth: int = -1,
-        format: str = "",
+        format: str = "json",
         get_node: bool = False,
     ) -> t.Union[JSON, INode[JSON, SUB_JSON, JSON]]:
         if url and url != [""]:
@@ -102,7 +102,7 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
             return self._expand_get(depth, format, get_node)
 
     def get(
-        self, url: t.Optional[t.List[str]] = None, depth: int = -1, expanded: bool = False, format: str = ""
+        self, url: t.Optional[t.List[str]] = None, depth: int = -1, expanded: bool = False, format: str = "json"
     ) -> JSON:
         output = self._get(url=url, depth=depth, format=format, get_node=False)
         assert not isinstance(output, INode)

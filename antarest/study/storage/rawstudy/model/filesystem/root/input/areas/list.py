@@ -20,7 +20,7 @@ class InputAreasList(INode[List[str], List[str], List[str]]):
         return self
 
     def get(
-        self, url: Optional[List[str]] = None, depth: int = -1, expanded: bool = False, format: str = ""
+        self, url: Optional[List[str]] = None, depth: int = -1, expanded: bool = False, format: str = "json"
     ) -> List[str]:
         if self.config.zip_path:
             path, tmp_dir = self._extract_file_to_tmp_dir()

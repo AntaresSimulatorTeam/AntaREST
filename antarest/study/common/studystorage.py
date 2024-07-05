@@ -30,7 +30,7 @@ class IStudyStorageService(ABC, t.Generic[T]):
         metadata: T,
         url: str = "",
         depth: int = 3,
-        format: str = "",
+        format: str = "json",
     ) -> JSON:
         """
         Entry point to fetch data inside study.

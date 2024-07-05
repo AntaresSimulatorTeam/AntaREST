@@ -464,7 +464,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         return output_list
 
     def get(
-        self, metadata: VariantStudy, url: str = "", depth: int = 3, format: str = "", use_cache: bool = True
+        self, metadata: VariantStudy, url: str = "", depth: int = 3, format: str = "json", use_cache: bool = True
     ) -> JSON:
         """
         Entry point to fetch data inside study.
