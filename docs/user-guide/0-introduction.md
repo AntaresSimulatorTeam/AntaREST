@@ -14,27 +14,35 @@ tags:
 
 # Introduction
 
-![](../assets/antares.png)
+![](../assets/antares.png "Antares Web Logo")
 
-This package works along with RTE's adequacy software [Antares Simulator](https://antares-simulator.org)
-that is also [hosted on github][antares-github]
+Welcome to `antares-web`, a comprehensive web application designed to interface with RTE’s adequacy software,
+the [Antares Simulator][antares-simulator-website], also [hosted on GitHub][antares-simulator-github].
+The Antares Simulator is an open-source power system simulator for anyone valuing the quantification of adequacy or the
+economic performance of interconnected energy systems over short or distant time horizons.
+It enables detailed modeling of energy consumption, generation, and transportation, performing probabilistic simulations
+across numerous year-long scenarios, each consisting of 8760 hourly time-frames.
 
-`antares-web` is a server api interfacing Antares Simulator studies. It provides a web application to manage studies
-adding more features to simple edition.
+`antares-web` serves as a server API interfacing with Antares Simulator studies, providing a web application to manage
+studies while adding features for enhanced edition capabilities.
 
-This brings:
+This integration brings:
 
-> - **application interoperability** : assign unique id to studies, expose operation endpoint api
->
-> - **optimized storage**: extract matrices data and share them between studies, archive mode
->
-> - **variant management**: add a new editing description language and generation tool
->
-> - **user accounts** : add user management and permission system
+- **Application Interoperability**: Assign unique IDs to studies and expose operations through an endpoint API,
+  facilitating integration with other applications and services.
+- **Optimized Storage**: Extract matrices data and share them between studies, supporting archive mode.
+- **Variant Management**: Introduce a new editing description language and generation tool.
+- **User Accounts**: Implement user management and permission systems.
 
-## Variant manager
+## Variant Manager
 
-`antares-web` brings an edition event store that provides a way to edit a study while keeping track of changes.
-It eases the creation of "variants" of a study and allow an explicit diff change between studies.
+`antares-web` introduces an edition event store that tracks changes, simplifying the creation of study "variants" and
+allowing for explicit diff change comparisons between studies.
 
-You can read more information in [using the variant manager here](./3-variant_manager.md)
+Explore the suite of features `antares-web` offers to enhance the Antares Simulator, improving study management,
+interoperability, and user collaboration.
+
+
+[antares-simulator-website]: https://antares-simulator.org
+
+[antares-simulator-github]: https://github.com/AntaresSimulatorTeam/Antares_Simulator
