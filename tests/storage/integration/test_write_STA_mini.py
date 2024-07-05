@@ -28,7 +28,7 @@ def assert_with_errors(
     res = storage_service.edit_study(uuid=uuid, url=url, new=new, params=params)
     assert res == new
 
-    res = storage_service.get(uuid=uuid, url=url, depth=-1, formatted=True, params=params)
+    res = storage_service.get(uuid=uuid, url=url, depth=-1, format="json", params=params)
     if expected is not None:
         assert res == expected
     else:

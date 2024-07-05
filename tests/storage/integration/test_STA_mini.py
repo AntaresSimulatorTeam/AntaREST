@@ -53,12 +53,12 @@ def assert_with_errors(
     storage_service: StudyService,
     url: str,
     expected_output: Union[str, dict],
-    formatted: bool = True,
+    format: str = "json",
 ) -> None:
     url = url[len("/v1/studies/") :]
     uuid, url = url.split("/raw?path=")
     params = RequestParameters(user=ADMIN)
-    output = storage_service.get(uuid=uuid, url=url, depth=3, formatted=formatted, params=params)
+    output = storage_service.get(uuid=uuid, url=url, depth=3, format=format, params=params)
     assert_study(
         output,
         expected_output,

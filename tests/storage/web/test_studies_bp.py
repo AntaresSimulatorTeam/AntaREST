@@ -72,9 +72,7 @@ def test_server() -> None:
     client = TestClient(app)
     client.get("/v1/studies/study1/raw?path=settings/general/params")
 
-    mock_service.get.assert_called_once_with(
-        "study1", "settings/general/params", depth=3, formatted=True, params=PARAMS
-    )
+    mock_service.get.assert_called_once_with("study1", "settings/general/params", depth=3, format="json", params=PARAMS)
 
 
 @pytest.mark.unit_test
@@ -123,7 +121,7 @@ def test_server_with_parameters() -> None:
     parameters = RequestParameters(user=ADMIN)
 
     assert result.status_code == HTTPStatus.OK
-    mock_storage_service.get.assert_called_once_with("study1", "/", depth=4, formatted=True, params=parameters)
+    mock_storage_service.get.assert_called_once_with("study1", "/", depth=4, format="json", params=parameters)
 
     result = client.get("/v1/studies/study2/raw?depth=WRONG_TYPE")
     assert result.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
@@ -132,7 +130,7 @@ def test_server_with_parameters() -> None:
     assert result.status_code == HTTPStatus.OK
 
     excepted_parameters = RequestParameters(user=ADMIN)
-    mock_storage_service.get.assert_called_with("study2", "/", depth=3, formatted=True, params=excepted_parameters)
+    mock_storage_service.get.assert_called_with("study2", "/", depth=3, format="json", params=excepted_parameters)
 
 
 @pytest.mark.unit_test
