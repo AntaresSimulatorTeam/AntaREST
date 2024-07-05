@@ -1,3 +1,17 @@
+---
+title: Variant Manager
+author: Antares Web Team
+date: 2021-10-29
+category: User Guide
+tags:
+
+  - variant
+  - manager
+  - configuration
+  - command
+  - API
+---
+
 # Variant Manager
 
 ## Introduction
@@ -222,9 +236,15 @@ Create a new binding constraint
   "enabled?": "<BOOLEAN> (default: True)",
   "time_step": "'hourly' | 'weekly' | 'daily'",
   "operator": "'equal' | 'both' | 'greater' | 'less'",
+  "comments?": "<STRING>",
+  "group?": "<STRING>",
+  "filter_year_by_year?": "<STRING>",
+  "filter_synthesis?": "<STRING>",
   "coeffs": "<LIST[CONSTRAINT_COEFF]>",
   "values?": "<MATRIX>",
-  "comments?": "<STRING>"
+  "less_term_matrix?": "<MATRIX>",
+  "greater_term_matrix?": "<MATRIX>",
+  "equal_term_matrix?": "<MATRIX>"
 }
 ```
 
@@ -250,6 +270,20 @@ Or link `CONSTRAINT_COEFF` is:
 }
 ```
 
+> **Available Since v8.3:**
+>
+> The `filter_year_by_year` and `filter_synthesis` fields are only available for studies since v8.3.
+> Those fields are used for the Geographic Trimming.
+> Possible values are on or several of the following: "hourly", "daily", "weekly", "monthly", "annual".
+
+> **Available Since v8.7:**
+>
+> The `group` fields and the `less_term_matrix`, `greater_term_matrix`, `equal_term_matrix` time series fields
+> are available since v8.7.
+> The `group` field is used to group constraints in the Monte Carlo Scenario Builder (default is `default`).
+> The time series matrices are used to define the Right-Hand Side (RHS) of the binding constraint.
+> Note that the `values` field must not be used when using the time series matrices.
+
 ### `update_binding_constraint`
 
 Update an existing binding constraint
@@ -260,11 +294,19 @@ Update an existing binding constraint
   "enabled?": "<BOOLEAN> (default: True)",
   "time_step": "'hourly' | 'weekly' | 'daily'",
   "operator": "'equal' | 'both' | 'greater' | 'less'",
+  "comments?": "<STRING>",
+  "group?": "<STRING>",
+  "filter_year_by_year?": "<STRING>",
+  "filter_synthesis?": "<STRING>",
   "coeffs": "<LIST[CONSTRAINT_COEFF]>",
   "values?": "<MATRIX>",
-  "comments?": "<STRING>"
+  "less_term_matrix?": "<MATRIX>",
+  "greater_term_matrix?": "<MATRIX>",
+  "equal_term_matrix?": "<MATRIX>"
 }
 ```
+
+See [create_binding_constraint](#create_binding_constraint) for the details of the fields.
 
 ### `remove_binding_constraint`
 
@@ -325,6 +367,8 @@ Replace arbitrary data file (must not be a matrix or ini target) with a base64 e
 
 ### `create_st_storage`
 
+> **Available Since v8.6**
+
 Create a new short-term storage
 
 ```json
@@ -340,6 +384,8 @@ Create a new short-term storage
 ```
 
 ### `remove_st_storage`
+
+> **Available Since v8.6**
 
 Remove an existing short-term storage
 
