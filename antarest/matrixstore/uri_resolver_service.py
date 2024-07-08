@@ -1,9 +1,9 @@
+import io
 import re
-from typing import Optional, Tuple
+import typing as t
 
 import pandas as pd
 
-from antarest.core.model import SUB_JSON
 from antarest.matrixstore.service import ISimpleMatrixService
 
 
@@ -11,7 +11,7 @@ class UriResolverService:
     def __init__(self, matrix_service: ISimpleMatrixService):
         self.matrix_service = matrix_service
 
-    def resolve(self, uri: str, format: str = "json") -> SUB_JSON:
+    def resolve(self, uri: str, format: str = "json") -> t.Union[io.BytesIO, str, t.Dict[str, t.Any], None]:
         res = UriResolverService._extract_uri_components(uri)
         if res:
             protocol, uuid = res
@@ -23,7 +23,7 @@ class UriResolverService:
         raise NotImplementedError(f"protocol {protocol} not implemented")
 
     @staticmethod
-    def _extract_uri_components(uri: str) -> Optional[Tuple[str, str]]:
+    def _extract_uri_components(uri: str) -> t.Optional[t.Tuple[str, str]]:
         match = re.match(r"^(\w+)://(.+)$", uri)
         if not match:
             return None
@@ -33,11 +33,11 @@ class UriResolverService:
         return protocol, uuid
 
     @staticmethod
-    def extract_id(uri: str) -> Optional[str]:
+    def extract_id(uri: str) -> t.Optional[str]:
         res = UriResolverService._extract_uri_components(uri)
         return res[1] if res else None
 
-    def _resolve_matrix(self, id: str, format: str) -> SUB_JSON:
+    def _resolve_matrix(self, id: str, format: str) -> t.Union[io.BytesIO, str, t.Dict[str, t.Any]]:
         data = self.matrix_service.get(id)
         if data:
             if format == "json":
@@ -54,6 +54,11 @@ class UriResolverService:
                 )
                 if df.empty:
                     return ""
+                elif format == "arrow":
+                    buffer = io.BytesIO()
+                    df.columns = df.columns.map(str)
+                    df.to_feather(buffer, compression="uncompressed")
+                    return buffer
                 else:
                     csv = df.to_csv(
                         None,

@@ -1,3 +1,4 @@
+import io
 import logging
 from pathlib import Path
 from typing import Any, List, Optional, Union, cast
@@ -45,7 +46,8 @@ class InputSeriesMatrix(MatrixNode):
         file_path: Optional[Path] = None,
         tmp_dir: Any = None,
         return_dataframe: bool = False,
-    ) -> Union[JSON, pd.DataFrame]:
+        format: str = "json",
+    ) -> Union[JSON, io.BytesIO, pd.DataFrame]:
         file_path = file_path or self.config.path
         try:
             # sourcery skip: extract-method
@@ -73,14 +75,21 @@ class InputSeriesMatrix(MatrixNode):
                     raise ChildNotFoundError(f"File '{relpath}' not found in the study '{study_id}'") from e
 
             stopwatch.log_elapsed(lambda x: logger.info(f"Matrix parsed in {x}s"))
-            matrix.dropna(how="any", axis=1, inplace=True)
+            matrix = matrix.dropna(how="any", axis=1)
             if return_dataframe:
                 return matrix
 
-            data = cast(JSON, matrix.to_dict(orient="split"))
-            stopwatch.log_elapsed(lambda x: logger.info(f"Matrix to dict in {x}s"))
+            if format == "json":
+                matrix_json = cast(JSON, matrix.to_dict(orient="split"))
+                stopwatch.log_elapsed(lambda x: logger.info(f"Matrix to dict in {x}s"))
+                return matrix_json
 
+            data = io.BytesIO()
+            matrix.columns = matrix.columns.map(str)
+            matrix.to_feather(data, compression="uncompressed")
+            stopwatch.log_elapsed(lambda x: logger.info(f"Matrix to arrow in {x}s"))
             return data
+
         except EmptyDataError:
             logger.warning(f"Empty file found when parsing {file_path}")
             matrix = pd.DataFrame(self.default_empty)

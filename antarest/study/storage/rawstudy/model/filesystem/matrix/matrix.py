@@ -1,3 +1,4 @@
+import io
 import logging
 from abc import ABC, abstractmethod
 from enum import Enum
@@ -63,6 +64,7 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
             return
 
         matrix = self.parse()
+        assert isinstance(matrix, dict)
 
         if "data" in matrix:
             data = cast(List[List[float]], matrix["data"])
@@ -89,9 +91,9 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
         self.dump(matrix)
         self.get_link_path().unlink()
 
-    def load(
+    def load(  # type: ignore
         self, url: Optional[List[str]] = None, depth: int = -1, expanded: bool = False, format: str = "json"
-    ) -> Union[bytes, JSON]:
+    ) -> Union[bytes, JSON, io.BytesIO, pd.DataFrame]:
         file_path, tmp_dir = self._get_real_file_path()
         if format == "bytes":
             if file_path.exists():
@@ -102,7 +104,10 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
                 tmp_dir.cleanup()
             return b""
 
-        return cast(JSON, self.parse(file_path, tmp_dir))
+        result = self.parse(file_path, tmp_dir, False, format)
+        if format == "json":
+            return cast(JSON, result)
+        return result
 
     @abstractmethod
     def parse(
@@ -110,7 +115,8 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
         file_path: Optional[Path] = None,
         tmp_dir: Any = None,
         return_dataframe: bool = False,
-    ) -> Union[JSON, pd.DataFrame]:
+        format: str = "json",
+    ) -> Union[JSON, io.BytesIO, pd.DataFrame]:
         """
         Parse the matrix content
         """

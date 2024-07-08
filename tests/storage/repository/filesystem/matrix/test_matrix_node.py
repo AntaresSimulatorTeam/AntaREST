@@ -32,6 +32,7 @@ class MockMatrixNode(MatrixNode):
         file_path: Optional[Path] = None,
         tmp_dir: Optional[TemporaryDirectory] = None,
         return_dataframe: bool = False,
+        format: str = "json",
     ) -> JSON:
         return MOCK_MATRIX_JSON
 

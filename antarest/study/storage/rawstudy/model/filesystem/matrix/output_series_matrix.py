@@ -1,3 +1,4 @@
+import io
 import logging
 from pathlib import Path
 from typing import Any, List, Optional, Union, cast
@@ -87,13 +88,15 @@ class OutputSeriesMatrix(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON])
         matrix.columns = body.columns
         return matrix
 
-    def parse(
-        self,
-        file_path: Optional[Path] = None,
-        tmp_dir: Any = None,
-    ) -> JSON:
+    def parse(self, file_path: Path, tmp_dir: Any, format: str) -> Union[JSON, io.BytesIO]:
         matrix = self.parse_dataframe(file_path, tmp_dir)
-        return cast(JSON, matrix.to_dict(orient="split"))
+        if format == "json":
+            return cast(JSON, matrix.to_dict(orient="split"))
+        else:
+            buffer = io.BytesIO()
+            matrix.columns = matrix.columns.map(str)
+            matrix.to_feather(buffer, compression="uncompressed")
+            return buffer
 
     def check_errors(
         self,
@@ -108,9 +111,9 @@ class OutputSeriesMatrix(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON])
             errors.append(f"Output Series Matrix f{self.config.path} not exists")
         return errors
 
-    def load(
+    def load(  # type: ignore
         self, url: Optional[List[str]] = None, depth: int = -1, expanded: bool = False, format: str = "json"
-    ) -> Union[bytes, JSON]:
+    ) -> Union[bytes, JSON, io.BytesIO]:
         try:
             file_path, tmp_dir = self._get_real_file_path()
             if format == "bytes":
@@ -127,7 +130,7 @@ class OutputSeriesMatrix(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON])
 
             if not file_path.exists():
                 raise FileNotFoundError(file_path)
-            return self.parse(file_path, tmp_dir)
+            return self.parse(file_path, tmp_dir, format)
         except FileNotFoundError as e:
             raise ChildNotFoundError(
                 f"Output file '{self.config.path.name}' not found in study {self.config.study_id}"

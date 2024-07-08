@@ -61,7 +61,7 @@ CONTENT_TYPES = {
 }
 
 
-class MATRIX_FORMAT(EnumIgnoreCase):
+class MatrixFormat(EnumIgnoreCase):
     JSON = "json"
     BYTES = "bytes"
     ARROW = "arrow"
@@ -105,9 +105,9 @@ def create_raw_study_routes(
         path: str = Param("/", examples=get_path_examples()),  # type: ignore
         depth: int = 3,
         formatted: bool = True,
-        format: t.Optional[MATRIX_FORMAT] = None,
+        format: t.Optional[MatrixFormat] = None,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> t.Any:
+    ) -> Response:
         """
         Fetches raw data from a study, and returns the data
         in different formats based on the file type, or as a JSON response.
@@ -116,7 +116,8 @@ def create_raw_study_routes(
         - `uuid`: The UUID of the study.
         - `path`: The path to the data to fetch.
         - `depth`: The depth of the data to retrieve.
-        - `formatted`: A flag specifying whether the data should be returned in a formatted manner.
+        - `formatted`: Deprecated flag, use `format` instead.
+        - `format`: The format you want your file to be displayed in. Arrow format is only supported by matrix files.
 
         Returns the fetched data: a JSON object (in most cases), a plain text file
         or a file attachment (Microsoft Office document, TSV/TSV file...).
@@ -177,6 +178,9 @@ def create_raw_study_routes(
                 # Unknown content types are considered binary,
                 # because it's better to avoid raising an exception.
                 return Response(content=output, media_type="application/octet-stream")
+
+        if isinstance(output, io.BytesIO):
+            return Response(content=output.read(), media_type="application/octet-stream")
 
         # We want to allow `NaN`, `+Infinity`, and `-Infinity` values in the JSON response
         # even though they are not standard JSON values because they are supported in JavaScript.
