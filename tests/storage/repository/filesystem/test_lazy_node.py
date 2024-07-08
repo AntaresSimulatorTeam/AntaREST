@@ -61,7 +61,7 @@ def test_get_no_expanded_link(tmp_path: Path):
         config=config,
     )
     assert "Mock Matrix Content" == node.get(expanded=False)
-    resolver.resolve.assert_called_once_with(uri, True)
+    resolver.resolve.assert_called_once_with(uri, "json")
 
 
 def test_get_expanded_txt(tmp_path: Path):

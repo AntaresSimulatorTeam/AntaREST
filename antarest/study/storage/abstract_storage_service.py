@@ -243,7 +243,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
             extension = ".zip" if is_zipped else ""
             path_output = path_output.rename(Path(path_output.parent, output_full_name + extension))
 
-            data = self.get(metadata, f"output/{output_full_name}", 1)
+            data = self.get(metadata, f"output/{output_full_name}", 1, use_cache=False)
 
             if data is None:
                 self.delete_output(metadata, "imported_output")

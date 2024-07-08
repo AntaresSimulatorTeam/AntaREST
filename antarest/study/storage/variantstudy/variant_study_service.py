@@ -479,7 +479,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         """
         self._safe_generation(metadata, timeout=60)
         self.repository.refresh(metadata)
-        return super().get(metadata=metadata, url=url, depth=depth)
+        return super().get(metadata=metadata, url=url, depth=depth, format=format, use_cache=use_cache)
 
     def create_variant_study(self, uuid: str, name: str, params: RequestParameters) -> VariantStudy:
         """
