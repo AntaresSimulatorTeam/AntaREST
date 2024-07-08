@@ -3,7 +3,6 @@ import re
 import typing as t
 
 import pandas as pd
-from starlette.responses import Response
 
 from antarest.matrixstore.service import ISimpleMatrixService
 
