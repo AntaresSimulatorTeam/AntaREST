@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any, Dict, Generic, List, Optional, Tuple, Union, cast
 from zipfile import ZipFile
 
+from antarest.core.exceptions import ChildNotFoundError
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.inode import G, INode, S, V
@@ -106,6 +107,25 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
             self.get_link_path().unlink()
         elif self.config.path.exists():
             self.config.path.unlink()
+
+    def infer_path(self) -> Path:
+        if self.get_link_path().exists():
+            return self.get_link_path()
+        elif self.config.path.exists():
+            return self.config.path
+        else:
+            raise ChildNotFoundError(
+                f"Neither link file {self.get_link_path} nor matrix file {self.config.path} exists"
+            )
+
+    def infer_target_path(self, is_link: bool) -> Path:
+        if is_link:
+            return self.get_link_path()
+        else:
+            return self.config.path
+
+    def infer_is_link_path(self) -> bool:
+        return self.get_link_path().exists()
 
     def get_link_path(self) -> Path:
         path = self.config.path.parent / (self.config.path.name + ".link")

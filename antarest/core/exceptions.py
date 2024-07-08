@@ -2,6 +2,7 @@ import re
 import typing as t
 from http import HTTPStatus
 
+from fastapi import HTTPException
 from fastapi.exceptions import HTTPException
 
 
@@ -603,3 +604,8 @@ class CannotScanInternalWorkspace(HTTPException):
             HTTPStatus.BAD_REQUEST,
             "You cannot scan the default internal workspace",
         )
+
+
+class ChildNotFoundError(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.NOT_FOUND, message)

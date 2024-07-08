@@ -1,11 +1,20 @@
 import json
-from typing import Any, Dict, List, Mapping, Optional, Tuple
+import shutil
+import typing as t
+from pathlib import Path
+
+from pydantic import BaseModel, Field
 
 from antarest.core.model import JSON
 from antarest.matrixstore.model import MatrixData
-from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
+from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
+    BindingConstraintFrequency,
+    BindingConstraintOperator,
+)
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
+from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import (
     DEFAULT_GROUP,
@@ -16,7 +25,189 @@ from antarest.study.storage.variantstudy.model.command.create_binding_constraint
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
-MatrixType = List[List[MatrixData]]
+MatrixType = t.List[t.List[MatrixData]]
+
+ALIAS_OPERATOR_MAP = {
+    BindingConstraintOperator.EQUAL: "eq",
+    BindingConstraintOperator.LESS: "lt",
+    BindingConstraintOperator.GREATER: "gt",
+}
+
+
+class MatrixInputTargetPaths(BaseModel, frozen=True, extra="forbid"):
+    """
+    Model used to store the input and target paths for matrices.
+    """
+
+    matrix_input_paths: t.List[Path] = Field(..., min_items=1, max_items=2)
+    matrix_target_paths: t.List[Path] = Field(..., min_items=1, max_items=2)
+
+
+def _infer_input_and_target_paths(
+    parent_node: FolderNode,
+    binding_constraint_id: str,
+    existing_operator: BindingConstraintOperator,
+    new_operator: BindingConstraintOperator,
+) -> MatrixInputTargetPaths:
+    """
+    Infer the target paths of the matrices to update according to the existing and new operators.
+
+    Args:
+        parent_node: the parent folder node
+        binding_constraint_id: the binding constraint ID
+        existing_operator: the existing operator
+        new_operator: the new operator
+
+    Returns:
+        the matrix input and target paths
+    """
+    # new and existing operators should be different
+    assert existing_operator != new_operator, "Existing and new operators should be different"
+
+    matrix_node_lt = parent_node.get_node([f"{binding_constraint_id}_lt"])
+    assert isinstance(
+        matrix_node_lt, LazyNode
+    ), f"Node type not handled yet: LazyNode expected, got {type(matrix_node_lt)}"
+    matrix_node_eq = parent_node.get_node([f"{binding_constraint_id}_eq"])
+    assert isinstance(
+        matrix_node_eq, LazyNode
+    ), f"Node type not handled yet: LazyNode expected, got {type(matrix_node_eq)}"
+    matrix_node_gt = parent_node.get_node([f"{binding_constraint_id}_gt"])
+    assert isinstance(
+        matrix_node_gt, LazyNode
+    ), f"Node type not handled yet: LazyNode expected, got {type(matrix_node_gt)}"
+
+    is_link_eq = matrix_node_eq.infer_is_link_path()
+    is_link_lt = matrix_node_lt.infer_is_link_path()
+    is_link_gt = matrix_node_gt.infer_is_link_path()
+
+    if existing_operator != BindingConstraintOperator.BOTH and new_operator != BindingConstraintOperator.BOTH:
+        matrix_node = parent_node.get_node([f"{binding_constraint_id}_{ALIAS_OPERATOR_MAP[existing_operator]}"])
+        assert isinstance(
+            matrix_node, LazyNode
+        ), f"Node type not handled yet: LazyNode expected, got {type(matrix_node)}"
+        new_matrix_node = parent_node.get_node([f"{binding_constraint_id}_{ALIAS_OPERATOR_MAP[new_operator]}"])
+        assert isinstance(
+            new_matrix_node, LazyNode
+        ), f"Node type not handled yet: LazyNode expected, got {type(new_matrix_node)}"
+        is_link = matrix_node.infer_is_link_path()
+        return MatrixInputTargetPaths(
+            matrix_input_paths=[matrix_node.infer_path()],
+            matrix_target_paths=[new_matrix_node.infer_target_path(is_link)],
+        )
+    elif new_operator == BindingConstraintOperator.BOTH:
+        if existing_operator == BindingConstraintOperator.EQUAL:
+            return MatrixInputTargetPaths(
+                matrix_input_paths=[matrix_node_eq.infer_path()],
+                matrix_target_paths=[
+                    matrix_node_lt.infer_target_path(is_link_eq),
+                    matrix_node_gt.infer_target_path(is_link_eq),
+                ],
+            )
+        elif existing_operator == BindingConstraintOperator.LESS:
+            return MatrixInputTargetPaths(
+                matrix_input_paths=[matrix_node_lt.infer_path()],
+                matrix_target_paths=[matrix_node_lt.infer_path(), matrix_node_gt.infer_target_path(is_link_lt)],
+            )
+        elif existing_operator == BindingConstraintOperator.GREATER:
+            return MatrixInputTargetPaths(
+                matrix_input_paths=[matrix_node_gt.infer_path()],
+                matrix_target_paths=[matrix_node_lt.infer_target_path(is_link_gt), matrix_node_gt.infer_path()],
+            )
+        else:
+            raise NotImplementedError(
+                f"Case not handled yet: existing_operator={existing_operator}, new_operator={new_operator}"
+            )
+    elif existing_operator == BindingConstraintOperator.BOTH:
+        if new_operator == BindingConstraintOperator.EQUAL:
+            return MatrixInputTargetPaths(
+                matrix_input_paths=[matrix_node_lt.infer_path(), matrix_node_gt.infer_path()],
+                matrix_target_paths=[matrix_node_eq.infer_target_path(is_link_lt)],
+            )
+        elif new_operator == BindingConstraintOperator.LESS:
+            return MatrixInputTargetPaths(
+                matrix_input_paths=[matrix_node_lt.infer_path(), matrix_node_gt.infer_path()],
+                matrix_target_paths=[matrix_node_lt.infer_target_path(is_link_lt)],
+            )
+        elif new_operator == BindingConstraintOperator.GREATER:
+            return MatrixInputTargetPaths(
+                matrix_input_paths=[matrix_node_lt.infer_path(), matrix_node_gt.infer_path()],
+                matrix_target_paths=[matrix_node_gt.infer_target_path(is_link_gt)],
+            )
+        else:
+            raise NotImplementedError(
+                f"Case not handled yet: existing_operator={existing_operator}, new_operator={new_operator}"
+            )
+    else:
+        raise NotImplementedError(
+            f"Case not handled yet: existing_operator={existing_operator}, new_operator={new_operator}"
+        )
+
+
+def _update_matrices_names(
+    file_study: FileStudy,
+    binding_constraint_id: str,
+    existing_operator: BindingConstraintOperator,
+    new_operator: BindingConstraintOperator,
+) -> None:
+    """
+    Update the matrix file name according to the new operator.
+
+    Args:
+        file_study: the file study
+        binding_constraint_id: the binding constraint ID
+        existing_operator: the existing operator
+        new_operator: the new operator
+
+    Raises:
+        NotImplementedError: if the case is not handled
+    """
+
+    if existing_operator == new_operator:
+        return
+
+    parent_folder_node = file_study.tree.get_node(["input", "bindingconstraints"])
+    assert isinstance(parent_folder_node, FolderNode), f"Node type not handled yet: {type(parent_folder_node)}"
+
+    matrix_paths = _infer_input_and_target_paths(
+        parent_folder_node, binding_constraint_id, existing_operator, new_operator
+    )
+
+    # TODO: due to legacy matrices generation, we need to check if the new matrix file already exists
+    #  and if it does, we need to first remove it before renaming the existing matrix file
+
+    if existing_operator != BindingConstraintOperator.BOTH and new_operator != BindingConstraintOperator.BOTH:
+        (matrix_path,) = matrix_paths.matrix_input_paths
+        (new_matrix_path,) = matrix_paths.matrix_target_paths
+        new_matrix_path.unlink(missing_ok=True)
+        matrix_path.rename(new_matrix_path)
+    elif new_operator == BindingConstraintOperator.BOTH:
+        matrix_path_lt, matrix_path_gt = matrix_paths.matrix_target_paths
+        if existing_operator == BindingConstraintOperator.EQUAL:
+            (matrix_path_eq,) = matrix_paths.matrix_input_paths
+            matrix_path_lt.unlink(missing_ok=True)
+            matrix_path_gt.unlink(missing_ok=True)
+            matrix_path_eq.rename(matrix_path_lt)
+            # copy the matrix lt to gt
+            shutil.copy(matrix_path_lt, matrix_path_gt)
+        elif existing_operator == BindingConstraintOperator.LESS:
+            matrix_path_gt.unlink(missing_ok=True)
+            shutil.copy(matrix_path_lt, matrix_path_gt)
+        elif existing_operator == BindingConstraintOperator.GREATER:
+            matrix_path_lt.unlink(missing_ok=True)
+            shutil.copy(matrix_path_gt, matrix_path_lt)
+    elif existing_operator == BindingConstraintOperator.BOTH:
+        matrix_path_lt, matrix_path_gt = matrix_paths.matrix_input_paths
+        if new_operator == BindingConstraintOperator.EQUAL:
+            # TODO: we may retrieve the mean of the two matrices, but here we just copy the lt matrix
+            (matrix_path_eq,) = matrix_paths.matrix_target_paths
+            shutil.copy(matrix_path_lt, matrix_path_eq)
+            matrix_path_gt.unlink(missing_ok=True)
+            matrix_path_lt.unlink(missing_ok=True)
+        elif new_operator == BindingConstraintOperator.LESS:
+            matrix_path_gt.unlink(missing_ok=True)
+        elif new_operator == BindingConstraintOperator.GREATER:
+            matrix_path_lt.unlink(missing_ok=True)
 
 
 class UpdateBindingConstraint(AbstractBindingConstraintCommand):
@@ -36,10 +227,10 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
     # Properties of the `UPDATE_BINDING_CONSTRAINT` command:
     id: str
 
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
         return CommandOutput(status=True), {}
 
-    def _find_binding_config(self, binding_constraints: Mapping[str, JSON]) -> Optional[Tuple[str, JSON]]:
+    def _find_binding_config(self, binding_constraints: t.Mapping[str, JSON]) -> t.Optional[t.Tuple[str, JSON]]:
         """
         Find the binding constraint with the given ID in the list of binding constraints,
         and returns its index and configuration, or `None` if it does not exist.
@@ -64,6 +255,12 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
             )
 
         index, actual_cfg = index_and_cfg
+
+        # rename matrices if the operator has changed
+        if self.operator:
+            existing_operator = BindingConstraintOperator(actual_cfg.get("operator"))
+            new_operator = BindingConstraintOperator(self.operator)
+            _update_matrices_names(study_data, self.id, existing_operator, new_operator)
 
         updated_matrices = [term for term in TERM_MATRICES if hasattr(self, term) and getattr(self, term)]
         study_version = study_data.config.version
@@ -104,7 +301,7 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
     def match_signature(self) -> str:
         return str(self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.id)
 
-    def _create_diff(self, other: "ICommand") -> List["ICommand"]:
+    def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
         return [other]
 
     def match(self, other: "ICommand", equal: bool = False) -> bool:

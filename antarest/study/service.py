@@ -21,6 +21,7 @@ from starlette.responses import FileResponse, Response
 from antarest.core.config import Config
 from antarest.core.exceptions import (
     BadEditInstructionException,
+    ChildNotFoundError,
     CommandApplicationError,
     IncorrectPathError,
     NotAManagedStudyException,
@@ -106,7 +107,6 @@ from antarest.study.repository import (
 )
 from antarest.study.storage.matrix_profile import adjust_matrix_columns_index
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
-from antarest.study.storage.rawstudy.model.filesystem.folder_node import ChildNotFoundError
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix

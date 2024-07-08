@@ -9,14 +9,14 @@ import zipfile
 from fastapi import HTTPException, UploadFile
 from pydantic import BaseModel, Extra, Field, ValidationError, root_validator, validator
 
-from antarest.core.exceptions import BadZipBinary
+from antarest.core.exceptions import BadZipBinary, ChildNotFoundError
 from antarest.core.model import JSON
 from antarest.study.business.all_optional_meta import AllOptionalMetaclass
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.model import Study
 from antarest.study.storage.rawstudy.model.filesystem.bucket_node import BucketNode
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.folder_node import ChildNotFoundError, FolderNode
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.root.user.expansion.expansion import Expansion
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.utils import fix_study_root
