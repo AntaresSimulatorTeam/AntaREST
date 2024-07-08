@@ -136,6 +136,9 @@ def create_raw_study_routes(
         output = study_service.get(uuid, path, depth=depth, format=real_format, params=parameters)
 
         if isinstance(output, bytes):
+            if real_format == "arrow":
+                return Response(content=output, media_type="application/octet-stream")
+
             # Guess the suffix form the target data
             resource_path = PurePosixPath(path)
             parent_cfg = study_service.get(
@@ -178,9 +181,6 @@ def create_raw_study_routes(
                 # Unknown content types are considered binary,
                 # because it's better to avoid raising an exception.
                 return Response(content=output, media_type="application/octet-stream")
-
-        if isinstance(output, io.BytesIO):
-            return Response(content=output.read(), media_type="application/octet-stream")
 
         # We want to allow `NaN`, `+Infinity`, and `-Infinity` values in the JSON response
         # even though they are not standard JSON values because they are supported in JavaScript.
