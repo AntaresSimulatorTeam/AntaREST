@@ -10,6 +10,7 @@ import pytest
 from fastapi import UploadFile
 from pandas.errors import ParserError
 
+from antarest.core.exceptions import ChildNotFoundError
 from antarest.core.model import JSON
 from antarest.study.business.xpansion_management import (
     FileCurrentlyUsedInSettings,
@@ -26,7 +27,6 @@ from antarest.study.business.xpansion_management import (
 from antarest.study.model import RawStudy
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.folder_node import ChildNotFoundError
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.storage_service import StudyStorageService
