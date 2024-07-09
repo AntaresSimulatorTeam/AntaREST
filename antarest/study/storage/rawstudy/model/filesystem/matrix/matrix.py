@@ -1,4 +1,3 @@
-import io
 import logging
 from abc import ABC, abstractmethod
 from enum import Enum
@@ -93,7 +92,7 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
 
     def load(  # type: ignore
         self, url: Optional[List[str]] = None, depth: int = -1, expanded: bool = False, format: str = "json"
-    ) -> Union[bytes, JSON, io.BytesIO, pd.DataFrame]:
+    ) -> Union[bytes, JSON, pd.DataFrame]:
         file_path, tmp_dir = self._get_real_file_path()
         if format == "bytes":
             if file_path.exists():
@@ -116,7 +115,7 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
         tmp_dir: Any = None,
         return_dataframe: bool = False,
         format: str = "json",
-    ) -> Union[JSON, io.BytesIO, pd.DataFrame]:
+    ) -> Union[JSON, bytes, pd.DataFrame]:
         """
         Parse the matrix content
         """

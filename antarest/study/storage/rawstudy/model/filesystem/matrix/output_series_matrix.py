@@ -88,15 +88,17 @@ class OutputSeriesMatrix(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON])
         matrix.columns = body.columns
         return matrix
 
-    def parse(self, file_path: Path, tmp_dir: Any, format: str) -> Union[JSON, io.BytesIO]:
+    def parse(self, file_path: Path, tmp_dir: Any, format: str) -> Union[JSON, bytes]:
         matrix = self.parse_dataframe(file_path, tmp_dir)
         if format == "json":
             return cast(JSON, matrix.to_dict(orient="split"))
         else:
-            buffer = io.BytesIO()
-            matrix.columns = matrix.columns.map(str)
-            matrix.to_feather(buffer, compression="uncompressed")
-            return buffer
+            with io.BytesIO() as buffer:
+                matrix.columns = matrix.columns.map(str)
+                matrix.reset_index(inplace=True)
+                matrix.rename(columns={matrix.columns[0]: "Index"}, inplace=True)
+                matrix.to_feather(buffer, compression="uncompressed")
+                return buffer.getvalue()
 
     def check_errors(
         self,
@@ -111,9 +113,9 @@ class OutputSeriesMatrix(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON])
             errors.append(f"Output Series Matrix f{self.config.path} not exists")
         return errors
 
-    def load(  # type: ignore
+    def load(
         self, url: Optional[List[str]] = None, depth: int = -1, expanded: bool = False, format: str = "json"
-    ) -> Union[bytes, JSON, io.BytesIO]:
+    ) -> Union[bytes, JSON]:
         try:
             file_path, tmp_dir = self._get_real_file_path()
             if format == "bytes":

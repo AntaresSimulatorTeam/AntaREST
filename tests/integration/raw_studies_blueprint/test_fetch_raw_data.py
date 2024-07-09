@@ -7,6 +7,8 @@ import shutil
 from unittest.mock import ANY
 
 import numpy as np
+import pyarrow as pa
+import pyarrow.feather as feather
 import pytest
 from starlette.testclient import TestClient
 
@@ -174,27 +176,77 @@ class TestFetchRawData:
 
         # If we ask for a matrix, we should have a JSON content if formatted is True
         rel_path = "/input/links/de/fr"
+        expected_row = [100000, 100000, 0.01, 0.01, 0, 0, 0, 0]
         res = client.get(
             f"/v1/studies/{internal_study_id}/raw",
             params={"path": rel_path, "formatted": True},
             headers=headers,
         )
         assert res.status_code == 200, res.json()
-        actual = res.json()
-        assert actual == {"index": ANY, "columns": ANY, "data": ANY}
+        old_result = res.json()
+        assert old_result == {"index": ANY, "columns": ANY, "data": ANY}
+        assert old_result["data"][0] == expected_row
+
+        # We should have the same result with new flag 'format' set to 'JSON'
+        res = client.get(
+            f"/v1/studies/{internal_study_id}/raw",
+            params={"path": rel_path, "format": "json"},
+            headers=headers,
+        )
+        assert res.status_code == 200, res.json()
+        new_result = res.json()
+        assert new_result == old_result
 
         # If we ask for a matrix, we should have a CSV content if formatted is False
-        rel_path = "/input/links/de/fr"
         res = client.get(
             f"/v1/studies/{internal_study_id}/raw",
             params={"path": rel_path, "formatted": False},
             headers=headers,
         )
         assert res.status_code == 200, res.json()
-        actual = res.text
-        actual_lines = actual.splitlines()
+        old_result = res.text
+        actual_lines = old_result.splitlines()
         first_row = [float(x) for x in actual_lines[0].split("\t")]
-        assert first_row == [100000, 100000, 0.01, 0.01, 0, 0, 0, 0]
+        assert first_row == expected_row
+
+        # We should have the same result with new flag 'format' set to 'bytes'
+        res = client.get(
+            f"/v1/studies/{internal_study_id}/raw",
+            params={"path": rel_path, "format": "bytes"},
+            headers=headers,
+        )
+        assert res.status_code == 200, res.json()
+        new_result = res.text
+        assert new_result == old_result
+
+        # If we ask for a matrix, we should have arrow binary if format = "arrow"
+        res = client.get(
+            f"/v1/studies/{internal_study_id}/raw",
+            params={"path": rel_path, "format": "arrow"},
+            headers=headers,
+        )
+        assert res.status_code == 200
+        assert isinstance(res.content, bytes)
+        assert res.text.startswith("ARROW")
+        buffer = pa.BufferReader(res.content)
+        table = feather.read_table(buffer)
+        df = table.to_pandas()
+        assert list(df.loc[0]) == expected_row
+
+        # Asserts output matrix (containing index and columns) can be retrieved with arrow
+        output_path = "/output/20201014-1422eco-hello/economy/mc-all/areas/de/id-daily"
+        res = client.get(
+            f"/v1/studies/{internal_study_id}/raw",
+            params={"path": output_path, "format": "arrow"},
+            headers=headers,
+        )
+        assert res.status_code == 200
+        assert isinstance(res.content, bytes)
+        assert res.text.startswith("ARROW")
+        buffer = pa.BufferReader(res.content)
+        table = feather.read_table(buffer)
+        df = table.to_pandas()
+        assert df.columns[0] == "Index"  # asserts the first columns corresponds to the index in such a case.
 
         # If ask for an empty matrix, we should have an empty binary content
         res = client.get(

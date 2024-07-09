@@ -128,15 +128,15 @@ def create_raw_study_routes(
         )
         parameters = RequestParameters(user=current_user)
 
-        if not format:
-            real_format = "json" if formatted else "bytes"
-        else:
+        if format:
             real_format = format.value
+        else:
+            real_format = "json" if formatted else "bytes"
 
         output = study_service.get(uuid, path, depth=depth, format=real_format, params=parameters)
 
         if isinstance(output, bytes):
-            if real_format == "arrow":
+            if real_format == MatrixFormat.ARROW:
                 return Response(content=output, media_type="application/octet-stream")
 
             # Guess the suffix form the target data
