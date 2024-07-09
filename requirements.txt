@@ -22,10 +22,8 @@ pydantic~=1.9.0
 PyQt5~=5.15.6
 python-json-logger~=2.0.7
 python-multipart~=0.0.5
-# See https://github.com/yaml/pyyaml/issues/724#issuecomment-1638801106
-PyYAML>=5.3.1; python_version <= '3.5'
-PyYAML>=5.3.1,!=5.4.0,!=5.4.1; python_version >= '3.6' and python_version <= '3.11'
-PyYAML>=5.3.1,!=5.4.0,!=5.4.1,!=6.0.0; python_version >= '3.12'
+PyYAML~=5.4.1; python_version <= '3.9'
+PyYAML~=6.0.1; python_version > '3.9'
 redis~=4.1.2
 requests~=2.27.1
 SQLAlchemy~=1.4.46
