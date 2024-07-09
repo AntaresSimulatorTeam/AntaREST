@@ -14,6 +14,8 @@ from uuid import uuid4
 
 import numpy as np
 import pandas as pd
+import pyarrow as pa
+import pyarrow.feather as feather
 from fastapi import HTTPException, UploadFile
 from markupsafe import escape
 from starlette.responses import FileResponse, Response
@@ -1440,9 +1442,15 @@ class StudyService:
             )
         elif isinstance(tree_node, InputSeriesMatrix):
             if isinstance(data, bytes):
-                # noinspection PyTypeChecker
-                matrix = np.loadtxt(io.BytesIO(data), delimiter="\t", dtype=np.float64, ndmin=2)
-                matrix = matrix.reshape((1, 0)) if matrix.size == 0 else matrix
+                # checks if it corresponds to arrow format or if it's a classic file.
+                if data[:5].decode("utf-8") == "ARROW":
+                    buffer = pa.BufferReader(data)  # type: ignore
+                    table = feather.read_table(buffer)
+                    df = table.to_pandas()
+                    matrix = df.to_numpy()
+                else:
+                    matrix = np.loadtxt(io.BytesIO(data), delimiter="\t", dtype=np.float64, ndmin=2)
+                    matrix = matrix.reshape((1, 0)) if matrix.size == 0 else matrix
                 return ReplaceMatrix(
                     target=url,
                     matrix=matrix.tolist(),

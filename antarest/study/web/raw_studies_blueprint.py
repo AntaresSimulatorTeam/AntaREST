@@ -385,7 +385,7 @@ def create_raw_study_routes(
         Parameters:
         - `uuid`: The UUID of the study.
         - `path`: The path to the data to update. Defaults to "/".
-        - `file`: The raw file to be posted (e.g. a CSV file opened in binary mode).
+        - `file`: The raw file to be posted (e.g. a CSV file opened in binary mode or a matrix in arrow format).
         - `create_missing`: Flag to indicate whether to create file or parent directories if missing.
         """
         logger.info(

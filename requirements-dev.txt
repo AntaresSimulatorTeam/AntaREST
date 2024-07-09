@@ -11,6 +11,7 @@ pyinstaller-hooks-contrib==2024.6
 # of the corresponding implementation libraries used in production (in `requirements.txt`).
 
 pandas-stubs~=1.4.0
+pyarrow-stubs~=10.0.1.7
 types-psycopg2~=2.9.4
 types-redis~=4.1.2
 types-requests~=2.27.1
