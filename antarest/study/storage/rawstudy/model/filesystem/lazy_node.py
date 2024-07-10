@@ -61,7 +61,7 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
         url: Optional[List[str]] = None,
         depth: int = -1,
         expanded: bool = False,
-        format: str = "json",
+        format: Optional[str] = None,
         get_node: bool = False,
     ) -> Union[Union[str, G], INode[G, S, V]]:
         self._assert_url_end(url)
@@ -82,7 +82,7 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
             return self.load(url, depth, expanded, format)
 
     def get(
-        self, url: Optional[List[str]] = None, depth: int = -1, expanded: bool = False, format: str = "json"
+        self, url: Optional[List[str]] = None, depth: int = -1, expanded: bool = False, format: Optional[str] = None
     ) -> Union[str, G]:
         output = self._get(url, depth, expanded, format, get_node=False)
         assert not isinstance(output, INode)
@@ -136,7 +136,7 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
         url: Optional[List[str]] = None,
         depth: int = -1,
         expanded: bool = False,
-        format: str = "json",
+        format: Optional[str] = None,
     ) -> G:
         """
         Fetch data on disk.

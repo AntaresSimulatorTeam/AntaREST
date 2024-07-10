@@ -304,21 +304,14 @@ class StudyService:
         for callback in self.on_deletion_callbacks:
             callback(uuid)
 
-    def get(
-        self,
-        uuid: str,
-        url: str,
-        depth: int,
-        format: str,
-        params: RequestParameters,
-    ) -> JSON:
+    def get(self, uuid: str, url: str, depth: int, params: RequestParameters, format: t.Optional[str] = None) -> JSON:
         """
         Get study data inside filesystem
         Args:
             uuid: study uuid
             url: route to follow inside study structure
             depth: depth to expand tree when route matched
-            format: indicate if raw files must be parsed and formatted
+            format: Indicates the file return format. Can be 'json', 'arrow' or None. If so, the file will be returned as is.
             params: request parameters
 
         Returns: data study formatted in json

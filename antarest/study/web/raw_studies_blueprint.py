@@ -63,7 +63,6 @@ CONTENT_TYPES = {
 
 class MatrixFormat(EnumIgnoreCase):
     JSON = "json"
-    BYTES = "bytes"
     ARROW = "arrow"
 
 
@@ -116,10 +115,10 @@ def create_raw_study_routes(
         - `uuid`: The UUID of the study.
         - `path`: The path to the data to fetch.
         - `depth`: The depth of the data to retrieve.
-        - `formatted`: Deprecated flag, use `format` instead.
-        - `format`: The format you want your file to be displayed in. Arrow format is only supported by matrix files.
+        - `formatted`: If false, returns the file as bytes. Else, the `format` flag applies.
+        - `format`: Either 'json' or 'arrow'. Arrow format is only supported by matrix files.
 
-        Returns the fetched data: a JSON object (in most cases), a plain text file
+        Returns the fetched data: a JSON object (in most cases), a plain text file, a matrix file in arrow format
         or a file attachment (Microsoft Office document, TSV/TSV file...).
         """
         logger.info(
@@ -128,21 +127,19 @@ def create_raw_study_routes(
         )
         parameters = RequestParameters(user=current_user)
 
-        if format:
-            real_format = format.value
-        else:
-            real_format = "json" if formatted else "bytes"
+        _format = format or MatrixFormat.JSON
+        real_format = _format.value if formatted else None
 
-        output = study_service.get(uuid, path, depth=depth, format=real_format, params=parameters)
+        output = study_service.get(uuid, path, depth=depth, params=parameters, format=real_format)
 
         if isinstance(output, bytes):
             if real_format == MatrixFormat.ARROW:
-                return Response(content=output, media_type="application/octet-stream")
+                return Response(content=output, media_type="application/vnd.apache.arrow.file")
 
             # Guess the suffix form the target data
             resource_path = PurePosixPath(path)
             parent_cfg = study_service.get(
-                uuid, str(resource_path.parent), depth=2, format=real_format, params=parameters
+                uuid, str(resource_path.parent), depth=2, params=parameters, format=real_format
             )
             child = parent_cfg[resource_path.name]
             suffix = PurePosixPath(child).suffix

@@ -83,7 +83,7 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
         # noinspection SpellCheckingInspection
         logger.info(f"Denormalizing matrix {self.config.path}")
         uuid = self.get_link_path().read_text()
-        matrix = self.context.resolver.resolve(uuid)
+        matrix = self.context.resolver.resolve(uuid, format="json")
         if not matrix or not isinstance(matrix, dict):
             raise DenormalizationException(f"Failed to retrieve original matrix for {self.config.path}")
 
@@ -91,10 +91,10 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
         self.get_link_path().unlink()
 
     def load(  # type: ignore
-        self, url: Optional[List[str]] = None, depth: int = -1, expanded: bool = False, format: str = "json"
+        self, url: Optional[List[str]] = None, depth: int = -1, expanded: bool = False, format: Optional[str] = None
     ) -> Union[bytes, JSON, pd.DataFrame]:
         file_path, tmp_dir = self._get_real_file_path()
-        if format == "bytes":
+        if not format:
             if file_path.exists():
                 return file_path.read_bytes()
 
@@ -114,7 +114,7 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
         file_path: Optional[Path] = None,
         tmp_dir: Any = None,
         return_dataframe: bool = False,
-        format: str = "json",
+        format: Optional[str] = None,
     ) -> Union[JSON, bytes, pd.DataFrame]:
         """
         Parse the matrix content

@@ -88,7 +88,7 @@ class OutputSeriesMatrix(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON])
         matrix.columns = body.columns
         return matrix
 
-    def parse(self, file_path: Path, tmp_dir: Any, format: str) -> Union[JSON, bytes]:
+    def parse(self, file_path: Path, tmp_dir: Any, format: Optional[str] = None) -> Union[JSON, bytes]:
         matrix = self.parse_dataframe(file_path, tmp_dir)
         if format == "json":
             return cast(JSON, matrix.to_dict(orient="split"))
@@ -114,11 +114,11 @@ class OutputSeriesMatrix(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON])
         return errors
 
     def load(
-        self, url: Optional[List[str]] = None, depth: int = -1, expanded: bool = False, format: str = "json"
+        self, url: Optional[List[str]] = None, depth: int = -1, expanded: bool = False, format: Optional[str] = None
     ) -> Union[bytes, JSON]:
         try:
             file_path, tmp_dir = self._get_real_file_path()
-            if format == "bytes":
+            if not format:
                 if file_path.exists():
                     file_content = file_path.read_bytes()
                     if tmp_dir:

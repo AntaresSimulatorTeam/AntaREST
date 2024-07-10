@@ -46,7 +46,7 @@ class InputSeriesMatrix(MatrixNode):
         file_path: Optional[Path] = None,
         tmp_dir: Any = None,
         return_dataframe: bool = False,
-        format: str = "json",
+        format: Optional[str] = None,
     ) -> Union[JSON, bytes, pd.DataFrame]:
         file_path = file_path or self.config.path
         try:

@@ -464,7 +464,12 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         return output_list
 
     def get(
-        self, metadata: VariantStudy, url: str = "", depth: int = 3, format: str = "json", use_cache: bool = True
+        self,
+        metadata: VariantStudy,
+        url: str = "",
+        depth: int = 3,
+        format: t.Optional[str] = None,
+        use_cache: bool = True,
     ) -> JSON:
         """
         Entry point to fetch data inside study.
@@ -472,7 +477,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             metadata: study
             url: path data inside study to reach
             depth: tree depth to reach after reach data path
-            format: indicate if raw files must be parsed and formatted
+            format: Indicates the file return format. Can be either Can be 'json', 'arrow' or None. If so, the file will be returned as is.
             use_cache: indicate if cache should be used
 
         Returns: study data formatted in json

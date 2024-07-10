@@ -25,7 +25,7 @@ class INode(ABC, Generic[G, S, V]):
         url: Optional[List[str]] = None,
         depth: int = -1,
         expanded: bool = False,
-        format: str = "json",
+        format: Optional[str] = None,
     ) -> G:
         """
         Ask data inside tree.

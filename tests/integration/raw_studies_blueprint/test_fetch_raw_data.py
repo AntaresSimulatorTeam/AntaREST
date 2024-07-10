@@ -153,77 +153,6 @@ class TestFetchRawData:
             "use-phase-shifter": False,
         }
 
-        # If we ask for a matrix, we should have a JSON content if formatted is True
-        rel_path = "/input/links/de/fr"
-        expected_row = [100000, 100000, 0.01, 0.01, 0, 0, 0, 0]
-        res = client.get(f"/v1/studies/{internal_study_id}/raw", params={"path": rel_path, "formatted": True})
-        assert res.status_code == 200, res.json()
-        old_result = res.json()
-        assert old_result == {"index": ANY, "columns": ANY, "data": ANY}
-        assert old_result["data"][0] == expected_row
-
-        # We should have the same result with new flag 'format' set to 'JSON'
-        res = client.get(f"/v1/studies/{internal_study_id}/raw", params={"path": rel_path, "format": "json"})
-        assert res.status_code == 200, res.json()
-        new_result = res.json()
-        assert new_result == old_result
-
-        # If we ask for a matrix, we should have a CSV content if formatted is False
-        res = client.get(f"/v1/studies/{internal_study_id}/raw", params={"path": rel_path, "formatted": False})
-        assert res.status_code == 200, res.json()
-        old_result = res.text
-        actual_lines = old_result.splitlines()
-        first_row = [float(x) for x in actual_lines[0].split("\t")]
-        assert first_row == expected_row
-
-        # We should have the same result with new flag 'format' set to 'bytes'
-        res = client.get(f"/v1/studies/{internal_study_id}/raw", params={"path": rel_path, "format": "bytes"})
-        assert res.status_code == 200, res.json()
-        new_result = res.text
-        assert new_result == old_result
-
-        # If we ask for a matrix, we should have arrow binary if format = "arrow"
-        res = client.get(f"/v1/studies/{internal_study_id}/raw", params={"path": rel_path, "format": "arrow"})
-        assert res.status_code == 200
-        assert isinstance(res.content, bytes)
-        assert res.text.startswith("ARROW")
-        arrow_bytes = res.content
-        buffer = pa.BufferReader(arrow_bytes)
-        table = feather.read_table(buffer)
-        df = table.to_pandas()
-        assert list(df.loc[0]) == expected_row
-
-        # Asserts output matrix (containing index and columns) can be retrieved with arrow
-        output_path = "/output/20201014-1422eco-hello/economy/mc-all/areas/de/id-daily"
-        res = client.get(f"/v1/studies/{internal_study_id}/raw", params={"path": output_path, "format": "arrow"})
-        assert res.status_code == 200
-        assert isinstance(res.content, bytes)
-        assert res.text.startswith("ARROW")
-        buffer = pa.BufferReader(res.content)
-        table = feather.read_table(buffer)
-        df = table.to_pandas()
-        assert df.columns[0] == "Index"  # asserts the first columns corresponds to the index in such a case.
-
-        # Try to replace a matrix with a one in arrow format
-        res = client.put(f"/v1/studies/{internal_study_id}/raw", params={"path": rel_path}, files={"file": arrow_bytes})
-        assert res.status_code in {201, 204}
-
-        # If ask for an empty matrix, we should have an empty binary content
-        res = client.get(
-            f"/v1/studies/{internal_study_id}/raw",
-            params={"path": "input/thermal/prepro/de/01_solar/data", "formatted": False},
-        )
-        assert res.status_code == 200, res.json()
-        assert res.content == b""
-
-        # But, if we use formatted = True, we should have a JSON objet representing and empty matrix
-        res = client.get(
-            f"/v1/studies/{internal_study_id}/raw",
-            params={"path": "input/thermal/prepro/de/01_solar/data", "formatted": True},
-        )
-        assert res.status_code == 200, res.json()
-        assert res.json() == {"index": [0], "columns": [], "data": []}
-
         # Some files can be corrupted
         user_folder_dir = study_dir.joinpath("user/bad")
         for file_path in user_folder_dir.glob("*.*"):
@@ -247,7 +176,84 @@ class TestFetchRawData:
         assert res.status_code == 200
         assert np.isnan(res.json()["data"][0]).any()
 
-        # Iterate over all possible combinations of path and depth
+        # Iterate over all possible combinations of path and depth (to mimic the debug view)
         for path, depth in itertools.product([None, "", "/"], [0, 1, 2]):
             res = client.get(f"/v1/studies/{internal_study_id}/raw", params={"path": path, "depth": depth})
             assert res.status_code == 200, f"Error for path={path} and depth={depth}"
+
+        # For an empty matrix, we should have an empty binary content
+        res = client.get(
+            f"/v1/studies/{internal_study_id}/raw",
+            params={"path": "input/thermal/prepro/de/01_solar/data", "formatted": False},
+        )
+        assert res.status_code == 200, res.json()
+        assert res.content == b""
+
+        # But, if we use formatted = True, we should have a JSON objet representing and empty matrix
+        res = client.get(
+            f"/v1/studies/{internal_study_id}/raw",
+            params={"path": "input/thermal/prepro/de/01_solar/data", "formatted": True},
+        )
+        assert res.status_code == 200, res.json()
+        assert res.json() == {"index": [0], "columns": [], "data": []}
+
+        # =============================
+        #  MATRICES
+        # =============================
+
+        matrix_types = {
+            "input": {"path": "/input/links/de/fr", "expected_row": [100000, 100000, 0.01, 0.01, 0, 0, 0, 0]},
+            "output": {
+                "path": "/output/20201014-1422eco-hello/economy/mc-all/areas/de/id-daily",
+                "expected_row": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+            },
+        }
+
+        for matrix_type, parameters in matrix_types.items():
+            path = parameters["path"]
+            expected_row = parameters["expected_row"]
+
+            # We should have a JSON content if formatted is True
+            res = client.get(f"/v1/studies/{internal_study_id}/raw", params={"path": path, "formatted": True})
+            assert res.status_code == 200, res.json()
+            old_result = res.json()
+            assert old_result == {"index": ANY, "columns": ANY, "data": ANY}
+            assert old_result["data"][0][:8] == expected_row
+
+            # We should have the same result with new flag 'format' set to 'JSON'
+            res = client.get(f"/v1/studies/{internal_study_id}/raw", params={"path": path, "format": "json"})
+            assert res.status_code == 200, res.json()
+            new_result = res.json()
+            assert new_result == old_result
+
+            # We should have a CSV content if formatted is False
+            res = client.get(f"/v1/studies/{internal_study_id}/raw", params={"path": path, "formatted": False})
+            assert res.status_code == 200, res.json()
+            actual_lines = res.text.splitlines()
+            if matrix_type == "input":
+                first_row = [float(x) for x in actual_lines[0].split("\t")]
+                assert first_row == expected_row
+            else:
+                assert actual_lines[0].split("\t") == ["DE", "area", "id", "daily"]
+
+            # We should have arrow binary if format = "arrow"
+            res = client.get(f"/v1/studies/{internal_study_id}/raw", params={"path": path, "format": "arrow"})
+            assert res.status_code == 200
+            assert isinstance(res.content, bytes)
+            assert res.text.startswith("ARROW")
+            arrow_bytes = res.content
+            buffer = pa.BufferReader(arrow_bytes)
+            table = feather.read_table(buffer)
+            df = table.to_pandas()
+            if matrix_type == "input":
+                assert list(df.loc[0]) == expected_row
+            else:
+                assert df.columns[0] == "Index"  # asserts the first columns corresponds to the index in such a case.
+                assert list(df.loc[0][:9]) == ["01/01"] + expected_row
+
+            if matrix_type == "input":
+                # Try to replace a matrix with a one in arrow format
+                res = client.put(
+                    f"/v1/studies/{internal_study_id}/raw", params={"path": path}, files={"file": arrow_bytes}
+                )
+                assert res.status_code in {201, 204}
