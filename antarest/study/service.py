@@ -311,7 +311,7 @@ class StudyService:
             uuid: study uuid
             url: route to follow inside study structure
             depth: depth to expand tree when route matched
-            format: Indicates the file return format. Can be 'json', 'arrow' or None. If so, the file will be returned as is.
+            format: Indicates the file return format. Can be 'json', 'arrow' or None. If None, the file will be returned as is.
             params: request parameters
 
         Returns: data study formatted in json

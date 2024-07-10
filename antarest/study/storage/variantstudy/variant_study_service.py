@@ -477,7 +477,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             metadata: study
             url: path data inside study to reach
             depth: tree depth to reach after reach data path
-            format: Indicates the file return format. Can be either Can be 'json', 'arrow' or None. If so, the file will be returned as is.
+            format: Indicates the file return format. Can be either Can be 'json', 'arrow' or None. If None, the file will be returned as is.
             use_cache: indicate if cache should be used
 
         Returns: study data formatted in json
