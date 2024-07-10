@@ -20,6 +20,7 @@ import {
   addClusterCapacity,
   capacityAggregationFn,
   getClustersWithCapacityTotals,
+  toCapacityString,
 } from "../common/clustersUtils";
 import { TRow } from "../../../../../../common/GroupedDataTable/types";
 import BooleanCell from "../../../../../../common/GroupedDataTable/cellRenderers/BooleanCell";
@@ -80,29 +81,26 @@ function Renewables() {
       columnHelper.accessor("nominalCapacity", {
         header: "Nominal Capacity (MW)",
         size: 220,
-        Cell: ({ cell }) => Math.floor(cell.getValue()),
+        Cell: ({ cell }) => cell.getValue().toFixed(1),
       }),
-      columnHelper.accessor("installedCapacity", {
-        header: "Enabled / Installed (MW)",
-        size: 220,
-        aggregationFn: capacityAggregationFn(),
-        AggregatedCell: ({ cell }) => (
-          <Box sx={{ color: "info.main", fontWeight: "bold" }}>
-            {cell.getValue() ?? ""}
-          </Box>
-        ),
-        Cell: ({ row }) => (
-          <>
-            {Math.floor(row.original.enabledCapacity)} /{" "}
-            {Math.floor(row.original.installedCapacity)}
-          </>
-        ),
-        Footer: () => (
-          <Box color="warning.main">
-            {totalEnabledCapacity} / {totalInstalledCapacity}
-          </Box>
-        ),
-      }),
+      columnHelper.accessor(
+        (row) => toCapacityString(row.enabledCapacity, row.installedCapacity),
+        {
+          header: "Enabled / Installed (MW)",
+          size: 220,
+          aggregationFn: capacityAggregationFn(),
+          AggregatedCell: ({ cell }) => (
+            <Box sx={{ color: "info.main", fontWeight: "bold" }}>
+              {cell.getValue()}
+            </Box>
+          ),
+          Footer: () => (
+            <Box color="warning.main">
+              {toCapacityString(totalEnabledCapacity, totalInstalledCapacity)}
+            </Box>
+          ),
+        },
+      ),
     ];
   }, [totals]);
 

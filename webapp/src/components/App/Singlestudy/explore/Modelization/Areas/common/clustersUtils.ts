@@ -2,6 +2,13 @@ import { MRT_AggregationFn } from "material-react-table";
 import { ThermalClusterWithCapacity } from "../Thermal/utils";
 import { RenewableClusterWithCapacity } from "../Renewables/utils";
 
+export function toCapacityString(
+  enabledCapacity: number,
+  installedCapacity: number,
+) {
+  return `${Math.round(enabledCapacity)} / ${Math.round(installedCapacity)}`;
+}
+
 /**
  * Custom aggregation function summing the values of each row,
  * to display enabled and installed capacity in the same cell. This function is
@@ -29,9 +36,7 @@ export const capacityAggregationFn = <
       { enabledCapacitySum: 0, installedCapacitySum: 0 },
     );
 
-    return `${Math.floor(enabledCapacitySum)} / ${Math.floor(
-      installedCapacitySum,
-    )}`;
+    return toCapacityString(enabledCapacitySum, installedCapacitySum);
   };
 };
 
