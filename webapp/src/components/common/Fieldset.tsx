@@ -40,6 +40,10 @@ function Fieldset(props: FieldsetProps) {
               m: 0,
             },
           },
+          // Remove padding from the last child of the dialog content
+          ".MuiDialogContent-root .Form__Content > &:last-child": {
+            pb: 0,
+          },
         },
         sx,
       )}
@@ -59,7 +63,7 @@ function Fieldset(props: FieldsetProps) {
           <Divider sx={{ mt: 1 }} />
         </>
       )}
-      <Box {...contentProps} sx={mergeSxProp({ pt: 2 }, contentProps?.sx)}>
+      <Box {...contentProps} sx={mergeSxProp({ pt: 1 }, contentProps?.sx)}>
         {children}
       </Box>
     </Box>
