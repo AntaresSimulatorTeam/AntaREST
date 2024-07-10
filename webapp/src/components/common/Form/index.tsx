@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { FormEvent, useEffect, useMemo, useRef } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
   DeepPartial,
   FieldPath,
@@ -116,6 +116,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
   const { t } = useTranslation();
   const autoSubmitConfig = toAutoSubmitConfig(autoSubmit);
 
+  const [isInProgress, setIsInProgress] = useState(false);
   const [showAutoSubmitLoader, setShowAutoSubmitLoader] = useDebouncedState(
     false,
     750,
@@ -130,7 +131,6 @@ function Form<TFieldValues extends FieldValues, TContext>(
   const lastSubmittedData = useRef<TFieldValues>();
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   const submitSuccessfulCb = useRef(() => {});
-  const preventClose = useRef(false);
 
   const contextValue = useMemo(
     () => ({ isAutoSubmitEnabled: autoSubmitConfig.enable }),
@@ -224,7 +224,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
   // Prevent browser close if a submit is pending
   useEffect(() => {
     const listener = (event: BeforeUnloadEvent) => {
-      if (preventClose.current) {
+      if (isInProgress) {
         // eslint-disable-next-line no-param-reassign
         event.returnValue = t("form.submit.inProgress");
       } else if (isDirty) {
@@ -238,14 +238,14 @@ function Form<TFieldValues extends FieldValues, TContext>(
     return () => {
       window.removeEventListener("beforeunload", listener);
     };
-  }, [t, isDirty]);
+  }, [t, isInProgress, isDirty]);
 
   useUpdateEffect(() => onStateChange?.(formState), [formState]);
 
   useEffect(() => setRef(apiRef, formApiPlus));
 
-  usePrompt(t("form.submit.inProgress"), preventClose.current);
-  usePrompt(t("form.changeNotSaved"), isDirty);
+  usePrompt(t("form.submit.inProgress"), isInProgress);
+  usePrompt(t("form.changeNotSaved"), isDirty && !isInProgress);
 
   ////////////////////////////////////////////////////////////////
   // Submit
@@ -299,7 +299,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
           });
         })
         .finally(() => {
-          preventClose.current = false;
+          setIsInProgress(false);
         });
     }, onInvalid);
 
@@ -309,7 +309,8 @@ function Form<TFieldValues extends FieldValues, TContext>(
   const submitDebounced = useDebounce(submit, autoSubmitConfig.wait);
 
   const requestSubmit = () => {
-    preventClose.current = true;
+    setIsInProgress(true);
+
     if (autoSubmitConfig.enable) {
       submitDebounced();
     } else {
