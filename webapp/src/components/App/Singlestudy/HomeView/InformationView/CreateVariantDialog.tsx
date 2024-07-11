@@ -58,7 +58,7 @@ function CreateVariantDialog(props: Props) {
 
   return (
     <FormDialog
-      maxWidth="sm"
+      maxWidth="sm" // Study name source can be long
       title={t("studies.createNewStudy")}
       titleIcon={AddCircleIcon}
       open={open}
@@ -68,7 +68,7 @@ function CreateVariantDialog(props: Props) {
       config={{ defaultValues }}
     >
       {({ control }) => (
-        <Fieldset fieldWidth={550}>
+        <Fieldset fullFieldWidth>
           <StringFE
             label={t("variants.newVariant")}
             name="name"
@@ -80,14 +80,14 @@ function CreateVariantDialog(props: Props) {
           />
           <SelectFE
             label={t("study.versionSource")}
+            name="sourceId"
             variant="outlined"
             options={sourceList.map((ver) => ({
               label: ver.name,
               value: ver.id,
             }))}
-            name="sourceId"
             control={control}
-            required
+            rules={{ required: true }}
           />
         </Fieldset>
       )}
