@@ -67,9 +67,9 @@ class TestInputSeriesMatrix:
         }
         link.write_text(matrix_uri)
 
-        def resolve(uri: str, formatted: bool = True) -> t.Dict[str, t.Any]:
+        def resolve(uri: str, format: t.Optional[str] = None) -> t.Dict[str, t.Any]:
             assert uri == matrix_uri
-            assert formatted is True
+            assert format == "json"
             return matrix_obj
 
         context = ContextServer(

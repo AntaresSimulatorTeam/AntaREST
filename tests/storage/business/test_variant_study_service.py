@@ -97,7 +97,7 @@ def test_get(tmp_path: str, project_path) -> None:
     study_service.task_service.await_task.assert_called()
 
     study_service.exists.return_value = True
-    output = study_service.get(metadata=metadata, url=sub_route, depth=2)
+    output = study_service.get(metadata=metadata, url=sub_route, depth=2, format="json")
 
     assert output == data
 

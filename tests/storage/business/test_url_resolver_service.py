@@ -30,7 +30,7 @@ def test_resolve_matrix():
 
     resolver = UriResolverService(matrix_service=matrix_service)
 
-    assert MOCK_MATRIX_JSON == resolver.resolve("matrix://my-id")
+    assert MOCK_MATRIX_JSON == resolver.resolve("matrix://my-id", format="json")
     matrix_service.get.assert_called_once_with("my-id")
 
     assert f"1.000000\t2.000000{os.linesep}3.000000\t4.000000{os.linesep}" == resolver.resolve("matrix://my-id", False)
