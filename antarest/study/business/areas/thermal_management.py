@@ -433,7 +433,7 @@ class ThermalManager:
         storage_service = self.storage_service.get_storage(study)
         command_context = self.storage_service.variant_study_service.command_factory.command_context
         for source_path, new_path in zip(source_paths, new_paths):
-            current_matrix = storage_service.get(study, source_path)["data"]
+            current_matrix = storage_service.get(study, source_path, format="json")["data"]
             command = ReplaceMatrix(target=new_path, matrix=current_matrix, command_context=command_context)
             commands.append(command)
 
@@ -451,7 +451,7 @@ class ThermalManager:
 
         ts_widths: t.MutableMapping[int, t.MutableSequence[str]] = {}
         for ts_path in series_path:
-            matrix = self.storage_service.get_storage(study).get(study, ts_path.as_posix())
+            matrix = self.storage_service.get_storage(study).get(study, ts_path.as_posix(), format="json")
             matrix_data = matrix["data"]
             matrix_height = len(matrix_data)
             # We ignore empty matrices as there are default matrices for the simulator.

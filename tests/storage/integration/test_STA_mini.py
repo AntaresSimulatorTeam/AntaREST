@@ -497,8 +497,8 @@ def test_sta_mini_copy(storage_service) -> None:
     uuid = result.json()
 
     parameters = RequestParameters(user=ADMIN)
-    data_source = storage_service.get(source_study_name, "/", -1, True, parameters)
-    data_destination = storage_service.get(uuid, "/", -1, True, parameters)
+    data_source = storage_service.get(source_study_name, "/", -1, parameters, format="json")
+    data_destination = storage_service.get(uuid, "/", -1, parameters, format="json")
 
     link_url_source = data_source["input"]["links"]["de"]["fr"]
     assert "matrixfile://fr.txt" == link_url_source

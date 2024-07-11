@@ -62,7 +62,7 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
         if self.get_link_path().exists() or self.config.zip_path:
             return
 
-        matrix = self.parse()
+        matrix = self.parse(format="json")
         assert isinstance(matrix, dict)
 
         if "data" in matrix:

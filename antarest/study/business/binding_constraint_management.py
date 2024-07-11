@@ -341,7 +341,7 @@ def _get_references_by_widths(
         bc_id = bc.id
         matrix_id = fmt.format(bc_id=bc.id)
         logger.info(f"⏲ Validating BC '{bc_id}': {matrix_id=} [{_index}/{_total}]")
-        obj = file_study.tree.get(url=["input", "bindingconstraints", matrix_id])
+        obj = file_study.tree.get(url=["input", "bindingconstraints", matrix_id], format="json")
         matrix = np.array(obj["data"], dtype=float)
         # We ignore empty matrices as there are default matrices for the simulator.
         if not matrix.size:

@@ -365,7 +365,7 @@ class CommandExtractor(ICommandExtractor):
 
         matrices: t.Dict[str, t.List[t.List[float]]] = {}
         for name, url in urls.items():
-            matrix = study_tree.get(url)
+            matrix = study_tree.get(url, format="json")
             if matrix is not None:
                 matrices[name] = matrix["data"]
 

@@ -471,20 +471,20 @@ def test_add_resources(tmp_path: Path) -> None:
         [UploadFile(filename=filename3, file=io.StringIO(content3))],
     )
 
-    assert filename1 in empty_study.tree.get(["user", "expansion", "constraints"])
-    expected1 = empty_study.tree.get(["user", "expansion", "constraints", filename1])
+    assert filename1 in empty_study.tree.get(url=["user", "expansion", "constraints"], format="json")
+    expected1 = empty_study.tree.get(url=["user", "expansion", "constraints", filename1], format="json")
     assert content1.encode() == t.cast(bytes, expected1)
 
-    assert filename2 in empty_study.tree.get(["user", "expansion", "constraints"])
-    expected2 = empty_study.tree.get(["user", "expansion", "constraints", filename2])
+    assert filename2 in empty_study.tree.get(url=["user", "expansion", "constraints"], format="json")
+    expected2 = empty_study.tree.get(url=["user", "expansion", "constraints", filename2], format="json")
     assert content2.encode() == t.cast(bytes, expected2)
 
-    assert filename3 in empty_study.tree.get(["user", "expansion", "weights"])
+    assert filename3 in empty_study.tree.get(url=["user", "expansion", "weights"], format="json")
     assert {
         "columns": [0],
         "data": [[2.0]],
         "index": [0],
-    } == empty_study.tree.get(["user", "expansion", "weights", filename3])
+    } == empty_study.tree.get(url=["user", "expansion", "weights", filename3], format="json")
 
     settings = xpansion_manager.get_xpansion_settings(study)
     settings.yearly_weights = filename3
@@ -573,19 +573,19 @@ def test_add_capa(tmp_path: Path) -> None:
 
     xpansion_manager.add_resource(study, XpansionResourceFileType.CAPACITIES, upload_file_list)
 
-    assert filename1 in empty_study.tree.get(["user", "expansion", "capa"])
+    assert filename1 in empty_study.tree.get(url=["user", "expansion", "capa"], format="json")
     assert {
         "columns": [0],
         "data": [[0.0]],
         "index": [0],
-    } == empty_study.tree.get(["user", "expansion", "capa", filename1])
+    } == empty_study.tree.get(url=["user", "expansion", "capa", filename1], format="json")
 
-    assert filename2 in empty_study.tree.get(["user", "expansion", "capa"])
+    assert filename2 in empty_study.tree.get(url=["user", "expansion", "capa"], format="json")
     assert {
         "columns": [0],
         "data": [[1.0]],
         "index": [0],
-    } == empty_study.tree.get(["user", "expansion", "capa", filename2])
+    } == empty_study.tree.get(url=["user", "expansion", "capa", filename2], format="json")
 
 
 @pytest.mark.unit_test

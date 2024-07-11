@@ -61,7 +61,7 @@ def test_get_no_expanded_link(tmp_path: Path):
         config=config,
     )
     assert "Mock Matrix Content" == node.get(expanded=False)
-    resolver.resolve.assert_called_once_with(uri, "json")
+    resolver.resolve.assert_called_once_with(uri, None)
 
 
 def test_get_expanded_txt(tmp_path: Path):
@@ -110,7 +110,7 @@ def test_save_uri(tmp_path: Path):
     node.save(uri)
     assert (file.parent / f"{file.name}.link").read_text() == uri
     assert not file.exists()
-    resolver.resolve.assert_called_once_with(uri)
+    resolver.resolve.assert_called_once_with(uri, format="json")
 
 
 def test_save_txt(tmp_path: Path):
@@ -131,4 +131,4 @@ def test_save_txt(tmp_path: Path):
     node.save(content)
     assert file.read_text() == content
     assert not link.exists()
-    resolver.resolve.assert_called_once_with(content)
+    resolver.resolve.assert_called_once_with(content, format="json")

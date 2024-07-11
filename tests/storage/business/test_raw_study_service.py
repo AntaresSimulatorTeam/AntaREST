@@ -71,7 +71,7 @@ def test_get(tmp_path: str, project_path) -> None:
     )
 
     metadata = RawStudy(id="study2.py", workspace=DEFAULT_WORKSPACE_NAME, path=str(path_study))
-    output = study_service.get(metadata=metadata, url=sub_route, depth=2)
+    output = study_service.get(metadata=metadata, url=sub_route, depth=2, format="json")
 
     assert output == data
 

@@ -37,7 +37,7 @@ class TestInputSeriesMatrix:
         file.write_text(content)
 
         node = InputSeriesMatrix(context=Mock(), config=my_study_config, nb_columns=8)
-        actual = node.load()
+        actual = node.load(format="json")
         expected = {
             "columns": [0, 1, 2, 3, 4, 5, 6, 7],
             "data": [
@@ -51,7 +51,7 @@ class TestInputSeriesMatrix:
     def test_load__file_not_found(self, my_study_config: FileStudyTreeConfig) -> None:
         node = InputSeriesMatrix(context=Mock(), config=my_study_config)
         with pytest.raises(ChildNotFoundError) as ctx:
-            node.load()
+            node.load(format="json")
         err_msg = str(ctx.value)
         assert "input.txt" in err_msg
         assert my_study_config.study_id in err_msg
@@ -78,7 +78,7 @@ class TestInputSeriesMatrix:
         )
 
         node = InputSeriesMatrix(context=context, config=my_study_config)
-        actual = node.load()
+        actual = node.load(format="json")
         assert actual == matrix_obj
 
     def test_save(self, my_study_config: FileStudyTreeConfig) -> None:

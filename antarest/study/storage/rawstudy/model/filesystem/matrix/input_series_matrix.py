@@ -55,7 +55,7 @@ class InputSeriesMatrix(MatrixNode):
             link_path = self.get_link_path()
             if link_path.exists():
                 link = link_path.read_text()
-                matrix_json = self.context.resolver.resolve(link)
+                matrix_json = self.context.resolver.resolve(link, format="json")
                 matrix_json = cast(JSON, matrix_json)
                 matrix: pd.DataFrame = pd.DataFrame(**matrix_json)
             else:

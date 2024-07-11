@@ -565,7 +565,7 @@ class STStorageManager:
         storage_service = self.storage_service.get_storage(study)
         command_context = self.storage_service.variant_study_service.command_factory.command_context
         for source_path, new_path in zip(source_paths, new_paths):
-            current_matrix = storage_service.get(study, source_path)["data"]
+            current_matrix = storage_service.get(study, source_path, format="json")["data"]
             command = ReplaceMatrix(target=new_path, matrix=current_matrix, command_context=command_context)
             commands.append(command)
 
@@ -605,7 +605,7 @@ class STStorageManager:
         file_study = self._get_file_study(study)
         path = _STORAGE_SERIES_PATH.format(area_id=area_id, storage_id=storage_id, ts_name=ts_name)
         try:
-            matrix = file_study.tree.get(path.split("/"), depth=1)
+            matrix = file_study.tree.get(path.split("/"), depth=1, format="json")
         except KeyError:
             raise STStorageMatrixNotFound(path) from None
         return matrix

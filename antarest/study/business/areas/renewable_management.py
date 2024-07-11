@@ -352,7 +352,7 @@ class RenewableManager:
         # Prepare and execute commands
         storage_service = self.storage_service.get_storage(study)
         command_context = self.storage_service.variant_study_service.command_factory.command_context
-        current_matrix = storage_service.get(study, source_path)["data"]
+        current_matrix = storage_service.get(study, source_path, format="json")["data"]
         replace_matrix_cmd = ReplaceMatrix(target=new_path, matrix=current_matrix, command_context=command_context)
         commands = [create_cluster_cmd, replace_matrix_cmd]
 

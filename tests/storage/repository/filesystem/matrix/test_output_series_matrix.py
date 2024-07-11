@@ -67,7 +67,7 @@ class TestOutputSeriesMatrix:
             date_serializer=serializer,
             head_writer=AreaHeadWriter(area="", data_type="", freq=""),
         )
-        assert node.load() == matrix.to_dict(orient="split")
+        assert node.load(format="json") == matrix.to_dict(orient="split")
 
     def test_load__file_not_found(self, my_study_config: FileStudyTreeConfig) -> None:
         node = OutputSeriesMatrix(
@@ -78,7 +78,7 @@ class TestOutputSeriesMatrix:
             head_writer=AreaHeadWriter(area="", data_type="", freq=""),
         )
         with pytest.raises(ChildNotFoundError) as ctx:
-            node.load()
+            node.load(format="json")
         err_msg = str(ctx.value)
         assert "'matrix-daily.txt" in err_msg
         assert my_study_config.study_id in err_msg
