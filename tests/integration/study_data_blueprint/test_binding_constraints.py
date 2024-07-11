@@ -513,7 +513,10 @@ class TestBindingConstraints:
         assert res.json()["exception"] == "InvalidFieldForVersionError"
         assert res.json()["description"] == "You cannot fill a 'matrix_term' as these values refer to v8.7+ studies"
 
-    @pytest.mark.parametrize("study_type", ["raw", "variant"])
+    @pytest.mark.parametrize(
+        "study_type",
+        ["raw", "variant"],
+    )
     def test_for_version_870(self, client: TestClient, user_access_token: str, study_type: str) -> None:
         client.headers = {"Authorization": f"Bearer {user_access_token}"}  # type: ignore
 
@@ -540,20 +543,34 @@ class TestBindingConstraints:
         # Creation of a bc without group
         bc_id_wo_group = "binding_constraint_1"
         args = {"enabled": True, "timeStep": "hourly", "operator": "less", "terms": [], "comments": "New API"}
+        operator_1 = "lt"
         properties = preparer.create_binding_constraint(study_id, name=bc_id_wo_group, **args)
         assert properties["group"] == "default"
 
         # Creation of bc with a group
         bc_id_w_group = "binding_constraint_2"
+        args["operator"], operator_2 = "greater", "gt"
         properties = preparer.create_binding_constraint(study_id, name=bc_id_w_group, group="specific_grp", **args)
         assert properties["group"] == "specific_grp"
 
         # Creation of bc with a matrix
         bc_id_w_matrix = "binding_constraint_3"
         matrix_lt3 = np.ones((8784, 3))
-        properties = preparer.create_binding_constraint(
-            study_id, name=bc_id_w_matrix, less_term_matrix=matrix_lt3.tolist(), **args
+        args["operator"], operator_3 = "equal", "eq"
+        # verify that trying to create a binding constraint with a less_term_matrix will
+        # while using an `equal` operator will raise an error 422
+        res = client.post(
+            f"/v1/studies/{study_id}/bindingconstraints",
+            json={"name": bc_id_w_matrix, "less_term_matrix": matrix_lt3.tolist(), **args},
         )
+        assert res.status_code == 422, res.json()
+
+        # now we create the binding constraint with the correct matrix
+        res = client.post(
+            f"/v1/studies/{study_id}/bindingconstraints",
+            json={"name": bc_id_w_matrix, "equal_term_matrix": matrix_lt3.tolist(), **args},
+        )
+        res.raise_for_status()
 
         if study_type == "variant":
             res = client.get(f"/v1/studies/{study_id}/commands")
@@ -561,21 +578,34 @@ class TestBindingConstraints:
             less_term_matrix = last_cmd_args["less_term_matrix"]
             equal_term_matrix = last_cmd_args["equal_term_matrix"]
             greater_term_matrix = last_cmd_args["greater_term_matrix"]
-            assert greater_term_matrix == equal_term_matrix != less_term_matrix
+            assert greater_term_matrix == less_term_matrix != equal_term_matrix
 
         # Check that raw matrices are created
-        for term in ["lt", "gt", "eq"]:
-            path = f"input/bindingconstraints/{bc_id_w_matrix}_{term}"
-            res = client.get(
-                f"/v1/studies/{study_id}/raw",
-                params={"path": path, "depth": 1, "formatted": True},  # type: ignore
-            )
-            assert res.status_code == 200, res.json()
-            data = res.json()["data"]
-            if term == "lt":
-                assert data == matrix_lt3.tolist()
-            else:
-                assert data == np.zeros((matrix_lt3.shape[0], 1)).tolist()
+        for bc_id, operator in zip(
+            [bc_id_wo_group, bc_id_w_matrix, bc_id_w_group], [operator_1, operator_2, operator_3]
+        ):
+            for term in zip(
+                [
+                    bc_id_wo_group,
+                    bc_id_w_matrix,
+                ],
+                ["lt", "gt", "eq"],
+            ):
+                path = f"input/bindingconstraints/{bc_id}_{term}"
+                res = client.get(
+                    f"/v1/studies/{study_id}/raw",
+                    params={"path": path, "depth": 1, "formatted": True},  # type: ignore
+                )
+                # as we save only the operator matrix, we should have a matrix only for the operator
+                if term != operator:
+                    assert res.status_code == 404, res.json()
+                    continue
+                assert res.status_code == 200, res.json()
+                data = res.json()["data"]
+                if term == "lt":
+                    assert data == matrix_lt3.tolist()
+                else:
+                    assert data == np.zeros((matrix_lt3.shape[0], 1)).tolist()
 
         # =============================
         # CONSTRAINT TERM MANAGEMENT
@@ -688,13 +718,29 @@ class TestBindingConstraints:
         assert res.status_code == 200, res.json()
         assert res.json()["group"] == grp_name
 
-        # Update matrix_term
+        # check that updating of a binding constraint that has an operator "equal"
+        # with a greater matrix will raise an error 422
+        res = client.put(
+            f"/v1/studies/{study_id}/bindingconstraints/{bc_id_w_matrix}",
+            json={"greater_term_matrix": matrix_lt3.tolist()},
+        )
+        assert res.status_code == 422, res.json()
+
+        # update the binding constraint operator first
+        res = client.put(
+            f"/v1/studies/{study_id}/bindingconstraints/{bc_id_w_matrix}",
+            json={"operator": "greater"},
+        )
+        assert res.status_code == 200, res.json()
+
+        # update the binding constraint matrix
         res = client.put(
             f"/v1/studies/{study_id}/bindingconstraints/{bc_id_w_matrix}",
             json={"greater_term_matrix": matrix_lt3.tolist()},
         )
         assert res.status_code == 200, res.json()
 
+        # check that the matrix has been updated
         res = client.get(
             f"/v1/studies/{study_id}/raw",
             params={"path": f"input/bindingconstraints/{bc_id_w_matrix}_gt"},
@@ -726,17 +772,44 @@ class TestBindingConstraints:
 
         # Check that the matrices are daily/weekly matrices
         expected_matrix = np.zeros((366, 1))
-        for term_alias in ["lt", "gt", "eq"]:
-            res = client.get(
-                f"/v1/studies/{study_id}/raw",
-                params={
-                    "path": f"input/bindingconstraints/{bc_id_w_matrix}_{term_alias}",
-                    "depth": 1,
-                    "formatted": True,
-                },  # type: ignore
-            )
+        for operator in ["less", "equal", "greater", "both"]:
+            if operator != "both":
+                res = client.put(
+                    f"/v1/studies/{study_id}/bindingconstraints/{bc_id_w_matrix}",
+                    json={"operator": operator, f"{operator}_term_matrix": expected_matrix.tolist()},
+                )
+            else:
+                res = client.put(
+                    f"/v1/studies/{study_id}/bindingconstraints/{bc_id_w_matrix}",
+                    json={
+                        "operator": operator,
+                        "greater_term_matrix": expected_matrix.tolist(),
+                        "less_term_matrix": expected_matrix.tolist(),
+                    },
+                )
             assert res.status_code == 200, res.json()
-            assert res.json()["data"] == expected_matrix.tolist()
+            for term_operator, term_alias in zip(["less", "equal", "greater"], ["lt", "eq", "gt"]):
+                res = client.get(
+                    f"/v1/studies/{study_id}/raw",
+                    params={
+                        "path": f"input/bindingconstraints/{bc_id_w_matrix}_{term_alias}",
+                        "depth": 1,
+                        "formatted": True,
+                    },  # type: ignore
+                )
+                # check that update is made if no conflict between the operator and the matrix term alias
+                if term_operator == operator or (operator == "both" and term_operator in ["less", "greater"]):
+                    assert res.status_code == 200, res.json()
+                    assert res.json()["data"] == expected_matrix.tolist()
+                else:
+                    assert res.status_code == 404, res.json()
+
+        # set binding constraint operator to "less"
+        res = client.put(
+            f"/v1/studies/{study_id}/bindingconstraints/{bc_id_w_matrix}",
+            json={"operator": "less"},
+        )
+        assert res.status_code == 200, res.json()
 
         # =============================
         #  DELETE
@@ -755,11 +828,22 @@ class TestBindingConstraints:
         # =============================
 
         # Creation with wrong matrix according to version
-        with pytest.raises(HTTPError) as ctx:
-            preparer.create_binding_constraint(study_id, name="binding_constraint_4", less_term_matrix=[], **args)
-        res = ctx.value.response
-        assert res.status_code == 422
-        assert res.json()["description"] == "You cannot fill 'values' as it refers to the matrix before v8.7"
+        for operator in ["less", "equal", "greater", "both"]:
+            args["operator"] = operator
+            res = client.post(
+                f"/v1/studies/{study_id}/bindingconstraints",
+                json={
+                    "name": "binding_constraint_4",
+                    "enabled": True,
+                    "timeStep": "hourly",
+                    "operator": operator,
+                    "terms": [],
+                    "comments": "New API",
+                    "values": [[]],
+                },
+            )
+            assert res.status_code == 422
+            assert res.json()["description"] == "You cannot fill 'values' as it refers to the matrix before v8.7"
 
         # Update with old matrices
         res = client.put(
@@ -795,14 +879,16 @@ class TestBindingConstraints:
         #
         # Creation of 1 BC
         # Update raw with wrong columns size -> OK but validation should fail
-        #
 
-        matrix_lt3 = np.ones((8784, 3))
+        # update the args operator field to "greater"
+        args["operator"] = "greater"
+
+        matrix_gt3 = np.ones((8784, 3))
         res = client.post(
             f"/v1/studies/{study_id}/bindingconstraints",
             json={
                 "name": "First BC",
-                "less_term_matrix": matrix_lt3.tolist(),
+                "greater_term_matrix": matrix_gt3.tolist(),
                 "group": "Group 1",
                 **args,
             },
@@ -824,7 +910,7 @@ class TestBindingConstraints:
         # So, we correct the shape of the matrix
         res = client.put(
             f"/v1/studies/{study_id}/bindingconstraints/{first_bc_id}",
-            json={"greater_term_matrix": matrix_lt3.tolist()},
+            json={"greater_term_matrix": matrix_gt3.tolist()},
         )
         assert res.status_code in {200, 201}, res.json()
 
@@ -872,6 +958,7 @@ class TestBindingConstraints:
         # third_bd group changes to group1 -> Fails validation
         #
 
+        args["operator"] = "less"
         matrix_lt4 = np.ones((8784, 4))
         res = client.post(
             f"/v1/studies/{study_id}/bindingconstraints",
@@ -900,9 +987,15 @@ class TestBindingConstraints:
         assert re.search(r"the most common width in the group is 3", description, flags=re.IGNORECASE)
         assert re.search(r"'third bc_lt' has 4 columns", description, flags=re.IGNORECASE)
 
+        # first change `second_bc` operator to greater
+        client.put(
+            f"v1/studies/{study_id}/bindingconstraints/{second_bc_id}",
+            json={"operator": "greater"},
+        )
+
         # So, we correct the shape of the matrix of the Second BC
         res = client.put(
-            f"/v1/studies/{study_id}/bindingconstraints/{third_bd_id}",
+            f"/v1/studies/{study_id}/bindingconstraints/{second_bc_id}",
             json={"greater_term_matrix": matrix_lt3.tolist()},
         )
         assert res.status_code in {200, 201}, res.json()
@@ -929,6 +1022,12 @@ class TestBindingConstraints:
         )
         # This should succeed but cause the validation endpoint to fail.
         assert res.status_code in {200, 201}, res.json()
+
+        # reset `second_bc` operator to less
+        client.put(
+            f"v1/studies/{study_id}/bindingconstraints/{second_bc_id}",
+            json={"operator": "less"},
+        )
 
         # Collect all the binding constraints groups
         res = client.get(f"/v1/studies/{study_id}/constraint-groups")
@@ -1059,7 +1158,9 @@ class TestBindingConstraints:
         # =============================
 
         # random matrices
-        matrices_by_time_steps = {time_step: np.random.rand(size, 1) for time_step, size in MATRIX_SIZES.items()}
+        matrices_by_time_steps = {
+            time_step: np.random.rand(size, 1).astype(np.float64) for time_step, size in MATRIX_SIZES.items()
+        }
 
         for bc_time_step in all_time_steps:
             for bc_operator in all_operators:
@@ -1097,7 +1198,7 @@ class TestBindingConstraints:
                 for matrix in required_matrices:
                     df = preparer.download_matrix(variant_id, f"input/bindingconstraints/{bc_id}_{matrix}")
                     assert df.shape == (MATRIX_SIZES[bc_time_step], 1)
-                    assert df.values.tolist() == matrices_by_time_steps[bc_time_step].tolist()
+                    assert np.allclose(df.values, matrices_by_time_steps[bc_time_step], atol=1e-6)
 
                 superfluous_matrices = {"lt", "gt", "eq"} - required_matrices
                 for matrix in superfluous_matrices:
@@ -1107,15 +1208,3 @@ class TestBindingConstraints:
                         assert e.response.status_code == 404
                     else:
                         assert False, "The matrix should not exist"
-
-        # =============================
-        #  UPDATE W/O MATRICES
-        # =============================
-
-        # todo: Continue the test here
-
-        # =============================
-        #  UPDATE WITH MATRICES
-        # =============================
-
-        # todo: Continue the test here

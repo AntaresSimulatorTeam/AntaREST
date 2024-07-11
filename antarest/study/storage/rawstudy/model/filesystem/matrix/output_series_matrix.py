@@ -5,8 +5,7 @@ from typing import Any, List, Optional, Union, cast
 import pandas as pd
 from pandas import DataFrame
 
-from antarest.core.exceptions import MustNotModifyOutputException
-from antarest.core.exceptions import ChildNotFoundError
+from antarest.core.exceptions import ChildNotFoundError, MustNotModifyOutputException
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer

@@ -72,10 +72,7 @@ def test_manage_binding_constraint(empty_study: FileStudy, command_context: Comm
         matrix_links = [
             # fmt: off
             "bd 1_lt.txt.link",
-            "bd 1_eq.txt.link",
-            "bd 1_gt.txt.link",
             "bd 2_lt.txt.link",
-            "bd 2_eq.txt.link",
             "bd 2_gt.txt.link",
             # fmt: on
         ]
