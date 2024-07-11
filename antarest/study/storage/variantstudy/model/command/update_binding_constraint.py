@@ -256,8 +256,8 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
 
         index, actual_cfg = index_and_cfg
 
-        # rename matrices if the operator has changed
-        if self.operator:
+        # rename matrices if the operator has changed for version >= 870
+        if self.operator and study_data.config.version >= 870:
             existing_operator = BindingConstraintOperator(actual_cfg.get("operator"))
             new_operator = BindingConstraintOperator(self.operator)
             _update_matrices_names(study_data, self.id, existing_operator, new_operator)
