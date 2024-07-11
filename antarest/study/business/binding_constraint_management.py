@@ -59,6 +59,14 @@ from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 logger = logging.getLogger(__name__)
 
 
+OPERATOR_CONFLICT_MAP = {
+    BindingConstraintOperator.EQUAL: ["less_term_matrix", "greater_term_matrix"],
+    BindingConstraintOperator.GREATER: ["less_term_matrix", "equal_term_matrix"],
+    BindingConstraintOperator.LESS: ["equal_term_matrix", "greater_term_matrix"],
+    BindingConstraintOperator.BOTH: ["equal_term_matrix"],
+}
+
+
 class LinkTerm(BaseModel):
     """
     DTO for a constraint term on a link between two areas.
@@ -335,9 +343,18 @@ def _get_references_by_widths(
     else:
         matrix_id_fmts = {"{bc_id}_eq", "{bc_id}_lt", "{bc_id}_gt"}
 
+    operator_matrix_file_map = {
+        BindingConstraintOperator.EQUAL: ["{bc_id}_eq"],
+        BindingConstraintOperator.GREATER: ["{bc_id}_gt"],
+        BindingConstraintOperator.LESS: ["{bc_id}_lt"],
+        BindingConstraintOperator.BOTH: ["{bc_id}_lt", "{bc_id}_gt"],
+    }
+
     references_by_width: t.Dict[int, t.List[t.Tuple[str, str]]] = {}
     _total = len(bcs) * len(matrix_id_fmts)
     for _index, (bc, fmt) in enumerate(itertools.product(bcs, matrix_id_fmts), 1):
+        if int(file_study.config.version) >= 870 and fmt not in operator_matrix_file_map.get(bc.operator, []):
+            continue
         bc_id = bc.id
         matrix_id = fmt.format(bc_id=bc.id)
         logger.info(f"⏲ Validating BC '{bc_id}': {matrix_id=} [{_index}/{_total}]")
@@ -718,8 +735,9 @@ class BindingConstraintManager:
     ) -> ConstraintOutput:
         file_study = self.storage_service.get_storage(study).get_raw(study)
         existing_constraint = self.get_binding_constraint(study, binding_constraint_id)
+
         study_version = int(study.version)
-        check_attributes_coherence(data, study_version)
+        check_attributes_coherence(data, study_version, existing_constraint.operator)
 
         upd_constraint = {
             "id": binding_constraint_id,
@@ -918,7 +936,11 @@ def _replace_matrices_according_to_frequency_and_version(
     return args
 
 
-def check_attributes_coherence(data: t.Union[ConstraintCreation, ConstraintInput], study_version: int) -> None:
+def check_attributes_coherence(
+    data: t.Union[ConstraintCreation, ConstraintInput],
+    study_version: int,
+    existing_operator: t.Optional[BindingConstraintOperator] = None,
+) -> None:
     if study_version < 870:
         if data.group:
             raise InvalidFieldForVersionError(
@@ -928,3 +950,19 @@ def check_attributes_coherence(data: t.Union[ConstraintCreation, ConstraintInput
             raise InvalidFieldForVersionError("You cannot fill a 'matrix_term' as these values refer to v8.7+ studies")
     elif data.values:
         raise InvalidFieldForVersionError("You cannot fill 'values' as it refers to the matrix before v8.7")
+    elif data.operator:
+        conflicting_matrices = [
+            getattr(data, matrix) for matrix in OPERATOR_CONFLICT_MAP[data.operator] if getattr(data, matrix)
+        ]
+        if conflicting_matrices:
+            raise InvalidFieldForVersionError(
+                f"You cannot fill matrices '{conflicting_matrices}' while using the operator '{data.operator}'"
+            )
+    elif existing_operator:
+        conflicting_matrices = [
+            getattr(data, matrix) for matrix in OPERATOR_CONFLICT_MAP[existing_operator] if getattr(data, matrix)
+        ]
+        if conflicting_matrices:
+            raise InvalidFieldForVersionError(
+                f"You cannot fill matrices '{conflicting_matrices}' while using the operator '{existing_operator}'"
+            )
