@@ -417,7 +417,7 @@ class CommandExtractor(ICommandExtractor):
         url: t.List[str],
         default_value: t.Optional[str] = None,
     ) -> ICommand:
-        data = study_tree.get(url)
+        data = study_tree.get(url, format="json")
         if isinstance(data, str):
             matrix = data
         elif isinstance(data, dict):
