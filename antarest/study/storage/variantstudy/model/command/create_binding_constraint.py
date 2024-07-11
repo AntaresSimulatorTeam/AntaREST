@@ -357,13 +357,17 @@ class AbstractBindingConstraintCommand(OptionalProperties, BindingConstraintMatr
                 study_data.tree.save(self.values, ["input", "bindingconstraints", bd_id])
 
         operator_matrices_map = {
-            BindingConstraintOperator.EQUAL: [(self.equal_term_matrix, "lt")],
+            BindingConstraintOperator.EQUAL: [(self.equal_term_matrix, "eq")],
             BindingConstraintOperator.GREATER: [(self.greater_term_matrix, "gt")],
             BindingConstraintOperator.LESS: [(self.less_term_matrix, "lt")],
             BindingConstraintOperator.BOTH: [(self.less_term_matrix, "lt"), (self.greater_term_matrix, "gt")],
         }
 
-        for matrix_term, matrix_alias in operator_matrices_map.get(self.operator, []):
+        current_operator = self.operator or BindingConstraintOperator(
+            [bc for bc in binding_constraints.values() if bc.get("id") == bd_id][0].get("operator")
+        )
+
+        for matrix_term, matrix_alias in operator_matrices_map.get(current_operator, []):
             if matrix_term:
                 if not isinstance(matrix_term, str):  # pragma: no cover
                     raise TypeError(repr(matrix_term))
