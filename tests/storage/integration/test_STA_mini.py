@@ -377,7 +377,7 @@ def test_sta_mini_input(storage_service, url: str, expected_output: dict):
         ),
         (
             "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/economy/mc-all/grid/areas",
-            b"id\tname\nde\tDE\nes\tES\nfr\tFR\nit\tIT\n",
+            {"columns": ["id", "name"], "data": [["de", "DE"], ["es", "ES"], ["fr", "FR"], ["it", "IT"]]},
         ),
         (
             "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/economy/mc-all/links/de/fr",

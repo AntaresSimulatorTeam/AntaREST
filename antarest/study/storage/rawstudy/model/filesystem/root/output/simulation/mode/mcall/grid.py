@@ -1,3 +1,4 @@
+import csv
 import typing as t
 
 import pandas as pd
@@ -76,14 +77,25 @@ class DigestSynthesis(OutputSynthesis):
         formatted: bool = True,
     ) -> JSON:
         file_path = self.config.path
-        df = pd.read_csv(
-            file_path,
-            sep="\t",
-            skiprows=4,
-            header=[0, 1, 2],
-            na_values="N/A",
-            float_precision="legacy",
-        )
+        with open(file_path, "r") as f:
+            csv_file = csv.reader(f, delimiter="\t")
+            longest_row = 0
+            for row in csv_file:
+                row_length = len(row)
+                if row_length > longest_row:
+                    longest_row = row_length
+
+        with open(file_path, "r") as f:
+            csv_file = csv.reader(f, delimiter="\t")
+            new_rows = []
+            for row in csv_file:
+                new_row = row
+                n = len(row)
+                if n < longest_row:
+                    difference = longest_row - n
+                    new_row += [""] * difference
+                new_rows.append(row)
+        df = pd.DataFrame(data=new_rows)
         output = df.to_dict(orient="split")
         del output["index"]
         return t.cast(JSON, output)
