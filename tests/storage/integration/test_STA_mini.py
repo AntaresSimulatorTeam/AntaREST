@@ -380,7 +380,7 @@ def test_sta_mini_input(storage_service, url: str, expected_output: dict):
             "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/economy/mc-all/grid/areas",
             {"columns": ["id", "name"], "data": [["de", "DE"], ["es", "ES"], ["fr", "FR"], ["it", "IT"]]},
         ),
-        ("/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/economy/mc-all/grid/digest", digest_file[0]),
+        ("/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/economy/mc-all/grid/digest", digest_file),
         (
             "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/economy/mc-all/grid/links",
             {"columns": ["upstream", "downstream"], "data": [["de", "fr"], ["es", "fr"], ["fr", "it"]]},
