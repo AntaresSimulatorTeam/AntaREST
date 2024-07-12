@@ -10,7 +10,9 @@ class ShouldNotHappenException(Exception):
 
 
 class MustNotModifyOutputException(Exception):
-    pass
+    def __init__(self, file_name: str) -> None:
+        msg = f"Should not modify output file {file_name}"
+        super().__init__(msg)
 
 
 # ============================================================
