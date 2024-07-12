@@ -9,6 +9,10 @@ class ShouldNotHappenException(Exception):
     pass
 
 
+class MustNotModifyOutputException(Exception):
+    pass
+
+
 # ============================================================
 # Exceptions related to the study configuration (`.ini` files)
 # ============================================================

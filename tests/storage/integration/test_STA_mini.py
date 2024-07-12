@@ -20,6 +20,7 @@ from antarest.study.service import StudyService
 from tests.helpers import assert_study
 from tests.storage.integration.data.de_details_hourly import de_details_hourly
 from tests.storage.integration.data.de_fr_values_hourly import de_fr_values_hourly
+from tests.storage.integration.data.digest_file import digest_file
 from tests.storage.integration.data.set_id_annual import set_id_annual
 from tests.storage.integration.data.set_values_monthly import set_values_monthly
 
@@ -378,6 +379,11 @@ def test_sta_mini_input(storage_service, url: str, expected_output: dict):
         (
             "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/economy/mc-all/grid/areas",
             {"columns": ["id", "name"], "data": [["de", "DE"], ["es", "ES"], ["fr", "FR"], ["it", "IT"]]},
+        ),
+        ("/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/economy/mc-all/grid/digest", digest_file[0]),
+        (
+            "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/economy/mc-all/grid/links",
+            {"columns": ["upstream", "downstream"], "data": [["de", "fr"], ["es", "fr"], ["fr", "it"]]},
         ),
         (
             "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/economy/mc-all/links/de/fr",

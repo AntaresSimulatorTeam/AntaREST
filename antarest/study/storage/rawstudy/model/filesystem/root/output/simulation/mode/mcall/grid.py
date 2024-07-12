@@ -1,8 +1,8 @@
-import csv
 import typing as t
 
 import pandas as pd
 
+from antarest.core.exceptions import MustNotModifyOutputException
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
@@ -31,7 +31,7 @@ class OutputSynthesis(LazyNode[JSON, bytes, bytes]):
         depth: int = -1,
         expanded: bool = False,
     ) -> str:
-        return f"matrix://{self.config.path.name}"
+        return f"matrix://{self.config.path.name}"  # prefix used by the front to parse the back-end response
 
     def load(
         self,
@@ -47,8 +47,7 @@ class OutputSynthesis(LazyNode[JSON, bytes, bytes]):
         return t.cast(JSON, output)
 
     def dump(self, data: bytes, url: t.Optional[t.List[str]] = None) -> None:
-        self.config.path.parent.mkdir(exist_ok=True, parents=True)
-        self.config.path.write_bytes(data)
+        raise MustNotModifyOutputException(self.config.path.name)
 
     def check_errors(self, data: str, url: t.Optional[t.List[str]] = None, raising: bool = False) -> t.List[str]:
         if not self.config.path.exists():
@@ -59,10 +58,10 @@ class OutputSynthesis(LazyNode[JSON, bytes, bytes]):
         return []
 
     def normalize(self) -> None:
-        pass  # no external store in this node
+        pass  # shouldn't be normalized as it's an output file
 
     def denormalize(self) -> None:
-        pass  # no external store in this node
+        pass  # shouldn't be denormalized as it's an output file
 
 
 class DigestSynthesis(OutputSynthesis):
@@ -78,23 +77,11 @@ class DigestSynthesis(OutputSynthesis):
     ) -> JSON:
         file_path = self.config.path
         with open(file_path, "r") as f:
-            csv_file = csv.reader(f, delimiter="\t")
-            longest_row = 0
-            for row in csv_file:
-                row_length = len(row)
-                if row_length > longest_row:
-                    longest_row = row_length
+            lines = f.read().splitlines()
+            splitted_rows = [row.split("\t") for row in lines]
+            longest_row = max(len(row) for row in splitted_rows)
+            new_rows = [row + [""] * (longest_row - len(row)) for row in splitted_rows]
 
-        with open(file_path, "r") as f:
-            csv_file = csv.reader(f, delimiter="\t")
-            new_rows = []
-            for row in csv_file:
-                new_row = row
-                n = len(row)
-                if n < longest_row:
-                    difference = longest_row - n
-                    new_row += [""] * difference
-                new_rows.append(row)
         df = pd.DataFrame(data=new_rows)
         output = df.to_dict(orient="split")
         del output["index"]
