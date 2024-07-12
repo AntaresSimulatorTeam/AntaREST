@@ -77,12 +77,30 @@ class DigestSynthesis(OutputSynthesis):
     ) -> JSON:
         file_path = self.config.path
         with open(file_path, "r") as f:
-            lines = f.read().splitlines()
-            splitted_rows = [row.split("\t") for row in lines]
-            longest_row = max(len(row) for row in splitted_rows)
-            new_rows = [row + [""] * (longest_row - len(row)) for row in splitted_rows]
+            df = _parse_digest_file(f)
 
-        df = pd.DataFrame(data=new_rows)
         output = df.to_dict(orient="split")
         del output["index"]
         return t.cast(JSON, output)
+
+
+def _parse_digest_file(digest_file: t.TextIO) -> pd.DataFrame:
+    """
+    Parse a digest file as a whole and return a single DataFrame.
+
+    The `digest.txt` file is a TSV file containing synthetic results of the simulation.
+    This file contains several data tables, each being separated by empty lines
+    and preceded by a header describing the nature and dimensions of the table.
+
+    Note that rows in the file may have different number of columns.
+    """
+
+    # Reads the file and find the maximum number of columns in any row
+    data = [row.split("\t") for row in digest_file.read().splitlines()]
+    max_cols = max(len(row) for row in data)
+
+    # Adjust the number of columns in each row
+    data = [row + [""] * (max_cols - len(row)) for row in data]
+
+    # Returns a DataFrame from the data (do not convert values to float)
+    return pd.DataFrame(data, dtype=object)
