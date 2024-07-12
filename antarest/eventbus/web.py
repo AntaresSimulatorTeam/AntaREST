@@ -91,7 +91,7 @@ def configure_websockets(application: FastAPI, config: Config, event_bus: IEvent
     @application.websocket("/ws")
     async def connect(
         websocket: WebSocket,
-        token: str = Query(),
+        token: str = Query(...),
         jwt_manager: AuthJWT = Depends(),
     ) -> None:
         user: Optional[JWTUser] = None
