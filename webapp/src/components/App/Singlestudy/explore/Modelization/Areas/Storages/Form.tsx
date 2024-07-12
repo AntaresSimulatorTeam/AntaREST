@@ -15,7 +15,7 @@ import Matrix from "./Matrix";
 import useNavigateOnCondition from "../../../../../../../hooks/useNavigateOnCondition";
 import { nameToId } from "../../../../../../../services/utils";
 
-function StorageForm() {
+function Storages() {
   const { t } = useTranslation();
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const navigate = useNavigate();
@@ -63,39 +63,45 @@ function StorageForm() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <Box sx={{ width: 1, p: 1, overflow: "auto" }}>
+    <Box sx={{ display: "flex", flexDirection: "column", overflow: "auto" }}>
       <Button
         color="secondary"
         size="small"
         onClick={() => navigate("../storages")}
         startIcon={<ArrowBackIcon color="secondary" />}
-        sx={{ alignSelf: "flex-start", px: 0 }}
+        sx={{ alignSelf: "flex-start", mb: 1 }}
       >
         {t("button.back")}
       </Button>
-      <Form
-        key={study.id + areaId}
-        config={{
-          defaultValues,
-        }}
-        onSubmit={handleSubmit}
-        enableUndoRedo
-      >
-        <Fields />
-      </Form>
-      <Box
-        sx={{
-          width: 1,
-          display: "flex",
-          flexDirection: "column",
-          py: 3,
-          height: "75vh",
-        }}
-      >
-        <Matrix study={study} areaId={areaId} storageId={nameToId(storageId)} />
+      <Box sx={{ overflow: "auto" }}>
+        <Form
+          key={study.id + areaId}
+          config={{
+            defaultValues,
+          }}
+          onSubmit={handleSubmit}
+          enableUndoRedo
+        >
+          <Fields />
+        </Form>
+        <Box
+          sx={{
+            width: 1,
+            display: "flex",
+            flexDirection: "column",
+            py: 3,
+            height: "75vh",
+          }}
+        >
+          <Matrix
+            study={study}
+            areaId={areaId}
+            storageId={nameToId(storageId)}
+          />
+        </Box>
       </Box>
     </Box>
   );
 }
 
-export default StorageForm;
+export default Storages;

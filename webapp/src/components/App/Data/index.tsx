@@ -21,10 +21,10 @@ import RootPage from "../../common/page/RootPage";
 import MatrixDialog from "./MatrixDialog";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import SimpleLoader from "../../common/loaders/SimpleLoader";
-import SplitLayoutView from "../../common/SplitLayoutView";
 import FileTable from "../../common/FileTable";
 import { getAuthUser } from "../../../redux/selectors";
 import useAppSelector from "../../../redux/hooks/useAppSelector";
+import SplitView from "../../common/SplitView";
 
 function Data() {
   const [t] = useTranslation();
@@ -144,106 +144,102 @@ function Data() {
   return (
     <RootPage title={t("data.title")} titleIcon={StorageIcon}>
       {loaded && (
-        <SplitLayoutView
-          left={
-            <DataPropsView
-              dataset={dataList}
-              onAdd={handleCreation}
-              selectedItem={selectedItem || ""}
-              setSelectedItem={setSelectedItem}
-            />
-          }
-          right={
-            <Box sx={{ width: "100%", height: "100%" }}>
-              {selectedItem ? (
-                <FileTable
-                  title={
-                    user &&
-                    user.id ===
-                      dataList.find((item) => item.id === selectedItem)?.owner
-                        .id ? (
-                      <Box
-                        sx={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                        }}
-                      >
-                        <Typography
-                          sx={{
-                            color: "text.primary",
-                            fontSize: "1.25rem",
-                            fontWeight: 400,
-                            lineHeight: 1.334,
-                          }}
-                        >
-                          {`Matrices - ${dataList.find(
-                            (item) => item.id === selectedItem,
-                          )?.name}`}
-                        </Typography>
-                        <Box>
-                          <IconButton>
-                            <Tooltip title={t("global.edit") as string}>
-                              <EditIcon
-                                onClick={() => {
-                                  onUpdateClick(selectedItem);
-                                }}
-                              />
-                            </Tooltip>
-                          </IconButton>
-                          <IconButton
-                            onClick={() => {
-                              onDownloadDataset(selectedItem);
-                            }}
-                          >
-                            <Tooltip title={t("global.download") as string}>
-                              <DownloadIcon />
-                            </Tooltip>
-                          </IconButton>
-                          <IconButton
-                            onClick={() => {
-                              handleDelete(selectedItem);
-                            }}
-                            sx={{
-                              color: "error.light",
-                            }}
-                          >
-                            <Tooltip title={t("global.delete") as string}>
-                              <DeleteIcon />
-                            </Tooltip>
-                          </IconButton>
-                        </Box>
-                      </Box>
-                    ) : (
+        <SplitView id="data" sizes={[15, 85]}>
+          <DataPropsView
+            dataset={dataList}
+            onAdd={handleCreation}
+            selectedItem={selectedItem || ""}
+            setSelectedItem={setSelectedItem}
+          />
+          <Box sx={{ width: "100%", height: "100%", px: 2 }}>
+            {selectedItem ? (
+              <FileTable
+                title={
+                  user &&
+                  user.id ===
+                    dataList.find((item) => item.id === selectedItem)?.owner
+                      .id ? (
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                      }}
+                    >
                       <Typography
                         sx={{
                           color: "text.primary",
                           fontSize: "1.25rem",
                           fontWeight: 400,
                           lineHeight: 1.334,
-                          height: "40px",
-                          display: "flex",
-                          alignItems: "center",
                         }}
                       >
                         {`Matrices - ${dataList.find(
                           (item) => item.id === selectedItem,
                         )?.name}`}
                       </Typography>
-                    )
-                  }
-                  content={matrices || []}
-                  onDelete={handleDelete}
-                  onRead={onMatrixClick}
-                  onFileDownload={getExportMatrixUrl}
-                  copyId
-                />
-              ) : (
-                <Box />
-              )}
-            </Box>
-          }
-        />
+                      <Box>
+                        <IconButton>
+                          <Tooltip title={t("global.edit") as string}>
+                            <EditIcon
+                              onClick={() => {
+                                onUpdateClick(selectedItem);
+                              }}
+                            />
+                          </Tooltip>
+                        </IconButton>
+                        <IconButton
+                          onClick={() => {
+                            onDownloadDataset(selectedItem);
+                          }}
+                        >
+                          <Tooltip title={t("global.download") as string}>
+                            <DownloadIcon />
+                          </Tooltip>
+                        </IconButton>
+                        <IconButton
+                          onClick={() => {
+                            handleDelete(selectedItem);
+                          }}
+                          sx={{
+                            color: "error.light",
+                          }}
+                        >
+                          <Tooltip title={t("global.delete") as string}>
+                            <DeleteIcon />
+                          </Tooltip>
+                        </IconButton>
+                      </Box>
+                    </Box>
+                  ) : (
+                    <Typography
+                      sx={{
+                        color: "text.primary",
+                        fontSize: "1.25rem",
+                        fontWeight: 400,
+                        lineHeight: 1.334,
+                        height: "40px",
+                        display: "flex",
+                        alignItems: "center",
+                      }}
+                    >
+                      {`Matrices - ${dataList.find(
+                        (item) => item.id === selectedItem,
+                      )?.name}`}
+                    </Typography>
+                  )
+                }
+                content={matrices || []}
+                onDelete={handleDelete}
+                onRead={onMatrixClick}
+                onFileDownload={getExportMatrixUrl}
+                copyId
+              />
+            ) : (
+              <Box />
+            )}
+          </Box>
+        </SplitView>
       )}
       {!loaded && <SimpleLoader />}
       {matrixModal && currentMatrix && (

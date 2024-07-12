@@ -102,7 +102,7 @@ function FormDialog<
       actions={
         <>
           <Button onClick={onCancel} disabled={isSubmitting}>
-            {cancelButtonText || t("button.close")}
+            {cancelButtonText || t("global.close")}
           </Button>
           {!autoSubmit && (
             <LoadingButton

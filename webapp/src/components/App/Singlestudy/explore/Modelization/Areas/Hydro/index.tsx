@@ -1,10 +1,7 @@
 import { useMemo } from "react";
 import { useOutletContext } from "react-router";
 import { StudyMetadata } from "../../../../../../../common/types";
-import DocLink from "../../../../../../common/DocLink";
 import TabWrapper from "../../../TabWrapper";
-import { ACTIVE_WINDOWS_DOC_PATH } from "../../BindingConstraints/BindingConstView/utils";
-import { Root } from "./style";
 import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../../redux/selectors";
 
@@ -39,12 +36,7 @@ function Hydro() {
   // JSX
   ////////////////////////////////////////////////////////////////
 
-  return (
-    <Root>
-      <DocLink to={`${ACTIVE_WINDOWS_DOC_PATH}#hydro`} isAbsolute />
-      <TabWrapper study={study} tabList={tabList} isScrollable />
-    </Root>
-  );
+  return <TabWrapper study={study} tabList={tabList} />;
 }
 
 export default Hydro;

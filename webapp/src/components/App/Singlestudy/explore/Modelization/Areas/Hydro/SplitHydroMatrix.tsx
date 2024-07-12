@@ -18,7 +18,11 @@ function SplitHydroMatrix({ types, direction, sizes, form: Form }: Props) {
           <Form />
         </Box>
       )}
-      <SplitView direction={direction} sizes={sizes}>
+      <SplitView
+        id={`hydro-${types[0]}-${types[1]}`}
+        direction={direction}
+        sizes={sizes}
+      >
         <HydroMatrix type={types[0]} />
         <HydroMatrix type={types[1]} />
       </SplitView>

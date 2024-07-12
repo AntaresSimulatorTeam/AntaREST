@@ -54,17 +54,18 @@ from antarest.study.business.general_management import GeneralFormFields
 from antarest.study.business.link_management import LinkInfoDTO
 from antarest.study.business.optimization_management import OptimizationFormFields
 from antarest.study.business.playlist_management import PlaylistColumns
+from antarest.study.business.scenario_builder_management import Rulesets, ScenarioType
 from antarest.study.business.table_mode_management import TableDataDTO, TableModeType
 from antarest.study.business.thematic_trimming_field_infos import ThematicTrimmingFormFields
 from antarest.study.business.timeseries_config_management import TSFormFields
 from antarest.study.model import PatchArea, PatchCluster
 from antarest.study.service import StudyService
-from antarest.study.storage.rawstudy.model.filesystem.config.area import AreaUI
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     BindingConstraintFrequency,
     BindingConstraintOperator,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.ruleset_matrices import TableForm as SBTableForm
 
 logger = logging.getLogger(__name__)
 
@@ -651,12 +652,12 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/config/scenariobuilder",
         tags=[APITag.study_data],
         summary="Get MC Scenario builder config",
-        response_model=t.Dict[str, t.Any],
+        response_model=Rulesets,
     )
     def get_scenario_builder_config(
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> t.Dict[str, t.Any]:
+    ) -> Rulesets:
         logger.info(
             f"Getting MC Scenario builder config for study {uuid}",
             extra={"user": current_user.id},
@@ -666,6 +667,88 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
 
         return study_service.scenario_builder_manager.get_config(study)
 
+    @bp.get(
+        path="/studies/{uuid}/config/scenariobuilder/{scenario_type}",
+        tags=[APITag.study_data],
+        summary="Get MC Scenario builder config",
+        response_model=t.Dict[str, SBTableForm],
+    )
+    def get_scenario_builder_config_by_type(
+        uuid: str,
+        scenario_type: ScenarioType,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> t.Dict[str, SBTableForm]:
+        """
+        Retrieve the scenario matrix corresponding to a specified scenario type.
+
+        The returned scenario matrix is structured as follows:
+
+        ```json
+        {
+            "scenario_type": {
+                "area_id": {
+                    "year": <TS number>,
+                    ...
+                },
+                ...
+            },
+        }
+        ```
+
+        For thermal and renewable scenarios, the format is:
+
+        ```json
+        {
+            "scenario_type": {
+                "area_id": {
+                    "cluster_id": {
+                        "year": <TS number>,
+                        ...
+                    },
+                    ...
+                },
+                ...
+            },
+        }
+        ```
+
+        For hydraulic levels scenarios, the format is:
+
+        ```json
+        {
+            "scenario_type": {
+                "area_id": {
+                    "year": <Percent 0-100>,
+                    ...
+                },
+                ...
+            },
+        }
+        ```
+
+        For binding constraints scenarios, the format is:
+
+        ```json
+        {
+            "scenario_type": {
+                "group_name": {
+                    "year": <TS number>,
+                    ...
+                },
+                ...
+            },
+        }
+        ```
+        """
+        logger.info(
+            f"Getting MC Scenario builder config for study {uuid} with scenario type filter: {scenario_type}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
+        table_form = study_service.scenario_builder_manager.get_scenario_by_type(study, scenario_type)
+        return {scenario_type: table_form}
+
     @bp.put(
         path="/studies/{uuid}/config/scenariobuilder",
         tags=[APITag.study_data],
@@ -673,7 +756,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     )
     def update_scenario_builder_config(
         uuid: str,
-        data: t.Dict[str, t.Any],
+        data: Rulesets,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
         logger.info(
@@ -683,6 +766,51 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
         study_service.scenario_builder_manager.update_config(study, data)
+
+    @bp.put(
+        path="/studies/{uuid}/config/scenariobuilder/{scenario_type}",
+        tags=[APITag.study_data],
+        summary="Set MC Scenario builder config",
+        response_model=t.Dict[str, SBTableForm],
+    )
+    def update_scenario_builder_config_by_type(
+        uuid: str,
+        scenario_type: ScenarioType,
+        data: t.Dict[str, SBTableForm],
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> t.Dict[str, SBTableForm]:
+        """
+        Update the scenario matrix corresponding to a specified scenario type.
+
+        Args:
+        - `data`: partial scenario matrix using the following structure:
+
+          ```json
+          {
+              "scenario_type": {
+                  "area_id": {
+                      "year": <TS number>,
+                      ...
+                  },
+                  ...
+              },
+          }
+          ```
+
+          > See the GET endpoint for the structure of the scenario matrix.
+
+        Returns:
+        - The updated scenario matrix.
+        """
+        logger.info(
+            f"Updating MC Scenario builder config for study {uuid} with scenario type filter: {scenario_type}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
+        table_form = data[scenario_type]
+        table_form = study_service.scenario_builder_manager.update_scenario_by_type(study, table_form, scenario_type)
+        return {scenario_type: table_form}
 
     @bp.get(
         path="/studies/{uuid}/config/general/form",
@@ -1204,14 +1332,49 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         binding_constraint_id: str,
         term: ConstraintTerm,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> t.Any:
+    ) -> None:
+        """
+        Append a new term to a given binding constraint
+
+        Args:
+        - `uuid`: The UUID of the study.
+        - `binding_constraint_id`: The binding constraint ID.
+        - `term`: The term to create.
+        """
         logger.info(
             f"Add constraint term {term.id} to {binding_constraint_id} for study {uuid}",
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
-        return study_service.binding_constraint_manager.create_constraint_term(study, binding_constraint_id, term)
+        return study_service.binding_constraint_manager.create_constraint_terms(study, binding_constraint_id, [term])
+
+    @bp.post(
+        "/studies/{uuid}/bindingconstraints/{binding_constraint_id}/terms",
+        tags=[APITag.study_data],
+        summary="Create terms for a given binding constraint",
+    )
+    def add_constraint_terms(
+        uuid: str,
+        binding_constraint_id: str,
+        terms: t.Sequence[ConstraintTerm],
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> None:
+        """
+        Append new terms to a given binding constraint
+
+        Args:
+        - `uuid`: The UUID of the study.
+        - `binding_constraint_id`: The binding constraint ID.
+        - `terms`: The list of terms to create.
+        """
+        logger.info(
+            f"Adding constraint terms to {binding_constraint_id} for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
+        return study_service.binding_constraint_manager.create_constraint_terms(study, binding_constraint_id, terms)
 
     @bp.put(
         "/studies/{uuid}/bindingconstraints/{binding_constraint_id}/term",
@@ -1223,14 +1386,49 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         binding_constraint_id: str,
         term: ConstraintTerm,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> t.Any:
+    ) -> None:
+        """
+        Update a term for a given binding constraint
+
+        Args:
+        - `uuid`: The UUID of the study.
+        - `binding_constraint_id`: The binding constraint ID.
+        - `term`: The term to update.
+        """
         logger.info(
             f"Update constraint term {term.id} from {binding_constraint_id} for study {uuid}",
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
-        return study_service.binding_constraint_manager.update_constraint_term(study, binding_constraint_id, term)
+        return study_service.binding_constraint_manager.update_constraint_terms(study, binding_constraint_id, [term])
+
+    @bp.put(
+        "/studies/{uuid}/bindingconstraints/{binding_constraint_id}/terms",
+        tags=[APITag.study_data],
+        summary="Update terms for a given binding constraint",
+    )
+    def update_constraint_terms(
+        uuid: str,
+        binding_constraint_id: str,
+        terms: t.Sequence[ConstraintTerm],
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> None:
+        """
+        Update several terms for a given binding constraint
+
+        Args:
+        - `uuid`: The UUID of the study.
+        - `binding_constraint_id`: The binding constraint ID.
+        - `terms`: The list of terms to update.
+        """
+        logger.info(
+            f"Updating constraint terms from {binding_constraint_id} for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
+        return study_service.binding_constraint_manager.update_constraint_terms(study, binding_constraint_id, terms)
 
     @bp.delete(
         "/studies/{uuid}/bindingconstraints/{binding_constraint_id}/term/{term_id}",
@@ -1987,6 +2185,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         request_params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, request_params)
+        study_service.asserts_no_thermal_in_binding_constraints(study, area_id, cluster_ids)
         study_service.thermal_manager.delete_clusters(study, area_id, cluster_ids)
 
     @bp.get(

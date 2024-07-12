@@ -20,7 +20,7 @@ class TestStudyComments:
         self,
         client: TestClient,
         user_access_token: str,
-        study_id: str,
+        internal_study_id: str,
     ) -> None:
         """
         This test verifies that we can retrieve and modify the comments of a study.
@@ -29,7 +29,7 @@ class TestStudyComments:
 
         # Get the comments of the study and compare with the expected file
         res = client.get(
-            f"/v1/studies/{study_id}/comments",
+            f"/v1/studies/{internal_study_id}/comments",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code == 200, res.json()
@@ -41,7 +41,7 @@ class TestStudyComments:
         # Ensure the duration is relatively short
         start = time.time()
         res = client.get(
-            f"/v1/studies/{study_id}/comments",
+            f"/v1/studies/{internal_study_id}/comments",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code == 200, res.json()
@@ -50,7 +50,7 @@ class TestStudyComments:
 
         # Update the comments of the study
         res = client.put(
-            f"/v1/studies/{study_id}/comments",
+            f"/v1/studies/{internal_study_id}/comments",
             headers={"Authorization": f"Bearer {user_access_token}"},
             json={"comments": "<text>Ceci est un commentaire en français.</text>"},
         )
@@ -58,7 +58,7 @@ class TestStudyComments:
 
         # Get the comments of the study and compare with the expected file
         res = client.get(
-            f"/v1/studies/{study_id}/comments",
+            f"/v1/studies/{internal_study_id}/comments",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code == 200, res.json()
@@ -68,7 +68,7 @@ class TestStudyComments:
         self,
         client: TestClient,
         user_access_token: str,
-        study_id: str,
+        internal_study_id: str,
     ) -> None:
         """
         This test verifies that we can retrieve and modify the comments of a VARIANT study.
@@ -76,7 +76,7 @@ class TestStudyComments:
         """
         # First, we create a copy of the study, and we convert it to a managed study.
         res = client.post(
-            f"/v1/studies/{study_id}/copy",
+            f"/v1/studies/{internal_study_id}/copy",
             headers={"Authorization": f"Bearer {user_access_token}"},
             params={"dest": "default", "with_outputs": False, "use_task": False},  # type: ignore
         )

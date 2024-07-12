@@ -45,13 +45,13 @@ class PreparerProxy(Proxy):
         assert task.status == TaskStatus.COMPLETED
         return study_820_id
 
-    def upload_matrix(self, study_id: str, matrix_path: str, df: pd.DataFrame) -> None:
+    def upload_matrix(self, internal_study_id: str, matrix_path: str, df: pd.DataFrame) -> None:
         tsv = io.BytesIO()
         df.to_csv(tsv, sep="\t", index=False, header=False)
         tsv.seek(0)
         # noinspection SpellCheckingInspection
         res = self.client.put(
-            f"/v1/studies/{study_id}/raw",
+            f"/v1/studies/{internal_study_id}/raw",
             params={"path": matrix_path, "create_missing": True},
             headers=self.headers,
             files={"file": tsv, "create_missing": "true"},
@@ -92,9 +92,9 @@ class PreparerProxy(Proxy):
         area_id = res.json()["id"]
         return area_id
 
-    def update_general_data(self, study_id: str, **data: t.Any):
+    def update_general_data(self, internal_study_id: str, **data: t.Any):
         res = self.client.put(
-            f"/v1/studies/{study_id}/config/general/form",
+            f"/v1/studies/{internal_study_id}/config/general/form",
             json=data,
             headers=self.headers,
         )
@@ -107,7 +107,7 @@ class TestDownloadMatrices:
     Checks the retrieval of matrices with the endpoint GET studies/uuid/raw/download
     """
 
-    def test_download_matrices(self, client: TestClient, user_access_token: str, study_id: str) -> None:
+    def test_download_matrices(self, client: TestClient, user_access_token: str, internal_study_id: str) -> None:
         user_headers = {"Authorization": f"Bearer {user_access_token}"}
 
         # =====================
@@ -116,7 +116,7 @@ class TestDownloadMatrices:
 
         preparer = PreparerProxy(client, user_access_token)
 
-        study_820_id = preparer.copy_upgrade_study(study_id, target_version=820)
+        study_820_id = preparer.copy_upgrade_study(internal_study_id, target_version=820)
 
         # Create Variant
         variant_id = preparer.create_variant(study_820_id, name="New Variant")
@@ -131,10 +131,11 @@ class TestDownloadMatrices:
         preparer.generate_snapshot(variant_id)
 
         # Prepare a managed study to test specific matrices for version 8.6
-        study_860_id = preparer.copy_upgrade_study(study_id, target_version=860)
+        study_860_id = preparer.copy_upgrade_study(internal_study_id, target_version=860)
 
         # Import a Min Gen. matrix: shape=(8760, 3), with random integers between 0 and 1000
-        min_gen_df = pd.DataFrame(np.random.randint(0, 1000, size=(8760, 3)))
+        generator = np.random.default_rng(11)
+        min_gen_df = pd.DataFrame(generator.integers(0, 10, size=(8760, 3)))
         preparer.upload_matrix(study_860_id, "input/hydro/series/de/mingen", min_gen_df)
 
         # =============================================
@@ -151,7 +152,7 @@ class TestDownloadMatrices:
             (study_820_id, raw_matrix_path, raw_start_date),
             (variant_id, variant_matrix_path, variant_start_date),
         ]:
-            # Export the matrix in xlsx format (which is the default format)
+            # Export the matrix in CSV format (which is the default format)
             # and retrieve it as binary content (a ZIP-like file).
             res = client.get(
                 f"/v1/studies/{uuid}/raw/download",
@@ -159,19 +160,16 @@ class TestDownloadMatrices:
                 headers=user_headers,
             )
             assert res.status_code == 200
-            # noinspection SpellCheckingInspection
-            assert res.headers["content-type"] == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            assert res.headers["content-type"] == "text/csv; charset=utf-8"
 
             # load into dataframe
-            # noinspection PyTypeChecker
-            dataframe = pd.read_excel(io.BytesIO(res.content), index_col=0)
+            dataframe = pd.read_csv(io.BytesIO(res.content), index_col=0, header="infer", sep=",")
 
             # check time coherence
             actual_index = dataframe.index
-            # noinspection PyUnresolvedReferences
-            first_date = actual_index[0].to_pydatetime()
-            # noinspection PyUnresolvedReferences
-            second_date = actual_index[1].to_pydatetime()
+            date_format = "%Y-%m-%d %H:%M:%S"
+            first_date = datetime.datetime.strptime(str(actual_index[0]), date_format)
+            second_date = datetime.datetime.strptime(str(actual_index[1]), date_format)
             first_month = 1 if uuid == study_820_id else 7  # July
             assert first_date.month == second_date.month == first_month
             assert first_date.day == second_date.day == 1
@@ -186,16 +184,17 @@ class TestDownloadMatrices:
             )
             expected_matrix = res.json()
             expected_matrix["columns"] = [f"TS-{n + 1}" for n in expected_matrix["columns"]]
-            time_column = pd.date_range(
-                start=start_date,
-                periods=len(expected_matrix["data"]),
-                freq="H",
-            )
+
+            time_column = [
+                (start_date + datetime.timedelta(hours=i)).strftime(date_format)
+                for i in range(len(expected_matrix["data"]))
+            ]
+
             expected_matrix["index"] = time_column
             expected = pd.DataFrame(**expected_matrix)
             assert dataframe.index.tolist() == expected.index.tolist()
             assert dataframe.columns.tolist() == expected.columns.tolist()
-            assert (dataframe == expected).all().all()
+            assert dataframe.equals(expected)
 
         # =============================
         # TESTS INDEX AND HEADER PARAMETERS
@@ -227,7 +226,7 @@ class TestDownloadMatrices:
 
         # tests links headers before v8.2
         res = client.get(
-            f"/v1/studies/{study_id}/raw/download",
+            f"/v1/studies/{internal_study_id}/raw/download",
             params={"path": "input/links/de/fr", "format": "tsv", "index": False},
             headers=user_headers,
         )
@@ -272,11 +271,11 @@ class TestDownloadMatrices:
             content = io.BytesIO(res.content)
             dataframe = pd.read_csv(content, index_col=0, sep="\t")
             assert list(dataframe.index) == list(dataframe.columns) == ["de", "es", "fr", "it"]
-            assert all(dataframe.iloc[i, i] == 1.0 for i in range(len(dataframe)))
+            assert all(np.isclose(dataframe.iloc[i, i], 1.0) for i in range(len(dataframe)))
 
         # test for empty matrix
         res = client.get(
-            f"/v1/studies/{study_id}/raw/download",
+            f"/v1/studies/{internal_study_id}/raw/download",
             params={"path": "input/hydro/common/capacity/waterValues_de", "format": "tsv"},
             headers=user_headers,
         )
@@ -306,7 +305,7 @@ class TestDownloadMatrices:
 
         # asserts endpoint returns the right columns for output matrix
         res = client.get(
-            f"/v1/studies/{study_id}/raw/download",
+            f"/v1/studies/{internal_study_id}/raw/download",
             params={
                 "path": "output/20201014-1422eco-hello/economy/mc-ind/00001/links/de/fr/values-hourly",
                 "format": "tsv",
@@ -332,7 +331,7 @@ class TestDownloadMatrices:
 
         # test energy matrix to test the regex
         res = client.get(
-            f"/v1/studies/{study_id}/raw/download",
+            f"/v1/studies/{internal_study_id}/raw/download",
             params={"path": "input/hydro/prepro/de/energy", "format": "tsv"},
             headers=user_headers,
         )
@@ -342,19 +341,22 @@ class TestDownloadMatrices:
         assert dataframe.empty
 
         # test the Min Gen of the 8.6 study
-        res = client.get(
-            f"/v1/studies/{study_860_id}/raw/download",
-            params={"path": "input/hydro/series/de/mingen", "format": "tsv"},
-            headers=user_headers,
-        )
-        assert res.status_code == 200
-        content = io.BytesIO(res.content)
-        dataframe = pd.read_csv(content, index_col=0, sep="\t")
-        assert dataframe.shape == (8760, 3)
-        assert dataframe.columns.tolist() == ["TS-1", "TS-2", "TS-3"]
-        assert dataframe.index[0] == "2018-01-01 00:00:00"
-        # noinspection PyUnresolvedReferences
-        assert (dataframe.values == min_gen_df.values).all()
+        for export_format in ["tsv", "xlsx"]:
+            res = client.get(
+                f"/v1/studies/{study_860_id}/raw/download",
+                params={"path": "input/hydro/series/de/mingen", "format": {export_format}},
+                headers=user_headers,
+            )
+            assert res.status_code == 200
+            content = io.BytesIO(res.content)
+            if export_format == "tsv":
+                dataframe = pd.read_csv(content, index_col=0, sep="\t")
+            else:
+                dataframe = pd.read_excel(content, index_col=0)  # type: ignore
+            assert dataframe.shape == (8760, 3)
+            assert dataframe.columns.tolist() == ["TS-1", "TS-2", "TS-3"]
+            assert str(dataframe.index[0]) == "2018-01-01 00:00:00"
+            assert np.array_equal(dataframe.to_numpy(), min_gen_df.to_numpy())
 
         # =============================
         #  ERRORS

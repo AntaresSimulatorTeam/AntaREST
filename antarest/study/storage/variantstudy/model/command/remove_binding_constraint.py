@@ -4,6 +4,10 @@ from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
+from antarest.study.storage.variantstudy.model.command.create_binding_constraint import (
+    DEFAULT_GROUP,
+    remove_bc_from_scenario_builder,
+)
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -48,8 +52,14 @@ class RemoveBindingConstraint(ICommand):
         else:
             for term in ["lt", "gt", "eq"]:
                 study_data.tree.delete(["input", "bindingconstraints", f"{self.id}_{term}"])
-        output, _ = self._apply_config(study_data.config)
-        return output
+
+            # When all BC of a given group are removed, the group should be removed from the scenario builder
+            old_groups = {bd.get("group", DEFAULT_GROUP).lower() for bd in binding_constraints.values()}
+            new_groups = {bd.get("group", DEFAULT_GROUP).lower() for bd in new_binding_constraints.values()}
+            removed_groups = old_groups - new_groups
+            remove_bc_from_scenario_builder(study_data, removed_groups)
+
+        return self._apply_config(study_data.config)[0]
 
     def to_dto(self) -> CommandDTO:
         return CommandDTO(

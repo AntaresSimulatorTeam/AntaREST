@@ -98,7 +98,10 @@ class StudyDownloader:
         data: StudyDownloadDTO,
     ) -> None:
         cluster_details = [f"details-{data.level.value}"]
-        if study.config.enr_modelling == EnrModelling.CLUSTERS.value:
+
+        config = study.config
+        has_renewables = config.version >= 810 and EnrModelling(config.enr_modelling) == EnrModelling.CLUSTERS
+        if has_renewables:
             cluster_details += [f"details-res-{data.level.value}"]
 
         files_matcher = (

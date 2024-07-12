@@ -57,8 +57,9 @@ def test_variant_manager(
         assert len(children["children"]) == 1
         assert children["children"][0]["node"]["name"] == "Variant1"
         assert len(children["children"][0]["children"]) == 2
-        assert children["children"][0]["children"][0]["node"]["name"] == "bar"
-        assert children["children"][0]["children"][1]["node"]["name"] == "baz"
+        # Variant children are sorted by creation date in reverse order
+        assert children["children"][0]["children"][0]["node"]["name"] == "baz"
+        assert children["children"][0]["children"][1]["node"]["name"] == "bar"
 
         # George creates a base study
         # He creates a variant from this study : assert that no command is created

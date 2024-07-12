@@ -1,28 +1,14 @@
 import { Help } from "@mui/icons-material";
 import { Tooltip, IconButton, SxProps, Theme } from "@mui/material";
-import { mergeSxProp } from "../../utils/muiUtils";
 
 interface Props {
   to: string;
-  isAbsolute?: boolean;
   sx?: SxProps<Theme>;
 }
 
-function DocLink({ to, isAbsolute, sx }: Props) {
+function DocLink({ to, sx }: Props) {
   return (
-    <Tooltip
-      title="View documentation"
-      sx={mergeSxProp(
-        isAbsolute
-          ? {
-              position: "absolute",
-              right: "20px",
-              top: "5px",
-            }
-          : {},
-        sx,
-      )}
-    >
+    <Tooltip title="View documentation" sx={sx}>
       <IconButton
         href={to}
         target="_blank"

@@ -13,7 +13,7 @@ from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFi
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
 from antarest.study.storage.rawstudy.model.filesystem.root.input.areas.list import InputAreasList
-from tests.storage.repository.filesystem.utils import TestMiddleNode, TestSubNode
+from tests.storage.repository.filesystem.utils import CheckSubNode, TestMiddleNode
 
 
 def build_tree() -> INode[t.Any, t.Any, t.Any]:
@@ -24,8 +24,8 @@ def build_tree() -> INode[t.Any, t.Any, t.Any]:
         context=Mock(),
         config=config,
         children={
-            "input": TestSubNode(value=100),
-            "output": TestSubNode(value=200),
+            "input": CheckSubNode(config, value=100),
+            "output": CheckSubNode(config, value=200),
         },
     )
 

@@ -1,6 +1,106 @@
 Antares Web Changelog
 =====================
 
+v2.17.2 (2024-06-19)
+--------------------
+
+### Features
+
+* **ui-api:** add scenario builder v8.7 full support [`#2054`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2054)
+* **api,ui-config:** add 'MILP' value option in 'Unit Commitment Mode' field for study >= v8.8 [`#2056`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2056)
+* **outputs:** remove useless folder `updated_links` [`#2065`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2065)
+* **ui:** add save button static at bottom and fix style issues [`#2068`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2068)
+* **ui-theme:** increase scrollbar size [`#2069`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2069)
+* **desktop:** add desktop version for ubuntu 22 [`#2072`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2072)
+
+### Bug Fixes
+
+* **variants:** display variants in reverse chronological order in the variants tree [`#2059`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2059)
+* **table-mode:** do not alter existing links that are not updated [`#2055`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2055)
+* **bc:** only remove terms when asked [`#2060`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2060)
+* **table-mode:** correct the update of the `average_spilled_energy_cost` field in table mode [`#2062`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2062)
+* **ui:** hide "upgrade" menu item for variant studies or studies with children [`#2063`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2063)
+* **ui-commons:** display a popup to warn of unsaved modifications on Form [`#2071`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2071)
+
+### Continuous integration
+
+* **worker:** deploy AntaresWebWorker on its own [`#2066`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2066)
+* **sonar:** bump github action download artifact [`#2070`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2070)
+
+
+**Full Changelog**: https://github.com/AntaresSimulatorTeam/AntaREST/compare/v2.17.1...v2.17.2
+
+
+v2.17.1 (2024-06-10)
+--------------------
+
+### Features
+
+* **launcher:** add new API endpoint `/v1/launcher/time-limit` and update `LauncherDialog` [`#2012`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2012)
+* **raw:** refactor aggregation endpoint [`#2031`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2031)
+* **ui-common:** add validation message in ImportDialog and update style [`#2040`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2040)
+* **ui-studies:** add studies "archive" tag [`#2043`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2043)
+* **ui:** add a the new split view on multiple pages [`#2046`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2046)
+* **desktop**: update Antares Web Desktop version [`#2036`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2036)
+* **ui-thermal:** minor adjustments to v8.7 `Thermal` fields [`#2053`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2053)
+* **ui-bc:** add empty screen [`#2052`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2052)
+* **ui-bc:** prevent `404` error after deletion of the current or last constraint [`#2052`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2052)
+
+
+### Bug Fixes
+
+* **import:** allow import for users that are reader only [`#2032`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2032)
+* **variant-command:** correct behavior of creation command in special context [`#2041`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2041)
+* **ui-study:** prevent `CreateVariantDialog` fields overflow [`#2044`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2044)
+* **ui-commons:** add of extensions accepted for matrix import in MatrixInput [`#2048`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2048)
+* **api-aggregation:** raise 404 HTTP exception for unfound output names [`#2050`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2050)
+* **scenario-builder:** handle missing objects in Scenario Builder configuration [`#2038`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2038)
+* **variants:** display variants in chronological order in the variants tree [`#2049`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2049)
+* **upgrade:** raise an HTTP 417 exception when an upgrade has unmet requirements [`#2047`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2047)
+* **ui-study:** disable `Areas` tab when no areas are present to prevent incorrect component display [`#2052`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2052)
+* **api-bc:** ensure removal of the last term in binding constraints [`#2052`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2052)
+
+
+### Refactoring
+
+* **ui-storages:** short-term storage update form [`#2025`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2025)
+
+
+### Build System
+
+* **pyinstaller:** upgrade version of pyinstaller in build requirements [`#2030`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2030)
+
+
+v2.17 (2024-05-15)
+------------------
+
+Support for evolutions relating to studies in versions 8.7:
+- Scenarized RHS for binding constraints,
+- Thermal cluster new properties (cost generation mode, efficiency, variable OM cost)
+
+Support for evolutions relating to studies in versions 8.8:
+- Short-term storage¶: add `enabled` property
+- Experimental "MILP" mode (using launcher options)
+
+### Features
+
+* **bc:** add endpoint for multiple terms edition [`#2020`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2020)
+* **table-mode:** add missing properties for v8.6 and 8.7 [`#1643`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1643)
+* **ui-table-mode:** translate table types in add/edit modal
+
+
+### Bug Fixes
+
+* **bc:** handle undefined v8.3 fields [`#2026`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2026)
+* **table-mode:** hide `adequacy_patch_mode` column from table-mode before v8.3 [`#2022`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2022)
+* **ui-common:** allow only import of TSV file in `MatrixInput` [`#2027`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2027)
+* **ui-settings:** prevent false duplicates on group form updates [`#1998`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1998)
+* **ui-table-mode:** reset 'column' field when 'type' field change in create/update modal
+* **ui-table-mode:** unable to edit tables with old types
+* **ui-table-mode:** add missing "ST Storage" in Table Mode template [`#2016`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2016)
+* **download**: improve performance of Excel file download
+
+
 v2.16.8 (2024-04-19)
 --------------------
 

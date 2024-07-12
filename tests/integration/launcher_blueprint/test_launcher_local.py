@@ -3,7 +3,7 @@ import http
 import pytest
 from starlette.testclient import TestClient
 
-from antarest.core.config import LocalConfig
+from antarest.core.config import LocalConfig, TimeLimitConfig
 
 
 # noinspection SpellCheckingInspection
@@ -60,6 +60,60 @@ class TestLauncherNbCores:
         # Check that the endpoint raise an exception when an unknown launcher is requested.
         res = client.get(
             "/v1/launcher/nbcores?launcher=unknown",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+        )
+        assert res.status_code == http.HTTPStatus.UNPROCESSABLE_ENTITY, res.json()
+        actual = res.json()
+        assert actual == {
+            "description": "Unknown solver configuration: 'unknown'",
+            "exception": "UnknownSolverConfig",
+        }
+
+    def test_get_launcher_time_limit(
+        self,
+        client: TestClient,
+        user_access_token: str,
+    ) -> None:
+        res = client.get(
+            "/v1/launcher/time-limit",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+        )
+        res.raise_for_status()
+        actual = res.json()
+        expected = TimeLimitConfig().to_json()
+        assert actual == expected
+
+        res = client.get(
+            "/v1/launcher/time-limit?launcher=default",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+        )
+        res.raise_for_status()
+        actual = res.json()
+        assert actual == expected
+
+        res = client.get(
+            "/v1/launcher/time-limit?launcher=local",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+        )
+        res.raise_for_status()
+        actual = res.json()
+        assert actual == expected
+
+        # Check that the endpoint raise an exception when the "slurm" launcher is requested.
+        res = client.get(
+            "/v1/launcher/time-limit?launcher=slurm",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+        )
+        assert res.status_code == http.HTTPStatus.UNPROCESSABLE_ENTITY, res.json()
+        actual = res.json()
+        assert actual == {
+            "description": "Unknown solver configuration: 'slurm'",
+            "exception": "UnknownSolverConfig",
+        }
+
+        # Check that the endpoint raise an exception when an unknown launcher is requested.
+        res = client.get(
+            "/v1/launcher/time-limit?launcher=unknown",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code == http.HTTPStatus.UNPROCESSABLE_ENTITY, res.json()

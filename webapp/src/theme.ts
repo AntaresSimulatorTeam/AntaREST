@@ -13,14 +13,20 @@ export const PAPER_BACKGROUND_NO_TRANSPARENCY = "#212c38";
 
 export const scrollbarStyle = {
   "&::-webkit-scrollbar": {
-    width: "7px",
-    height: "7px",
+    width: "10px",
+    height: "10px",
   },
   "&::-webkit-scrollbar-track": {
     boxShadow: "inset 0 0 6px rgba(0, 0, 0, 0.3)",
   },
   "&::-webkit-scrollbar-thumb": {
     backgroundColor: SECONDARY_MAIN_COLOR,
+    borderRadius: "10px",
+    border: "2px solid transparent",
+    backgroundClip: "padding-box",
+  },
+  "&::-webkit-scrollbar-thumb:hover": {
+    border: 0,
   },
 };
 

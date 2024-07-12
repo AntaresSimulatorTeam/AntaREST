@@ -8,9 +8,9 @@ class CommandOutput:
     message: str = ""
 
 
-class CoeffType(Enum):
-    THERMAL = "thermal"
-    LINK = "link"
+class FilteringOptions:
+    FILTER_SYNTHESIS: str = "hourly, daily, weekly, monthly, annual"
+    FILTER_YEAR_BY_YEAR: str = "hourly, daily, weekly, monthly, annual"
 
 
 class CommandName(Enum):

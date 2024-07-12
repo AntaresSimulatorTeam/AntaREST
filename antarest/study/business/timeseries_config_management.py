@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional
+import typing as t
 
 from pydantic import StrictBool, StrictInt, root_validator, validator
 
@@ -28,30 +28,30 @@ class SeasonCorrelation(EnumIgnoreCase):
 
 
 class TSFormFieldsForType(FormFieldsBaseModel):
-    stochastic_ts_status: Optional[StrictBool]
-    number: Optional[StrictInt]
-    refresh: Optional[StrictBool]
-    refresh_interval: Optional[StrictInt]
-    season_correlation: Optional[SeasonCorrelation]
-    store_in_input: Optional[StrictBool]
-    store_in_output: Optional[StrictBool]
-    intra_modal: Optional[StrictBool]
-    inter_modal: Optional[StrictBool]
+    stochastic_ts_status: t.Optional[StrictBool]
+    number: t.Optional[StrictInt]
+    refresh: t.Optional[StrictBool]
+    refresh_interval: t.Optional[StrictInt]
+    season_correlation: t.Optional[SeasonCorrelation]
+    store_in_input: t.Optional[StrictBool]
+    store_in_output: t.Optional[StrictBool]
+    intra_modal: t.Optional[StrictBool]
+    inter_modal: t.Optional[StrictBool]
 
 
 class TSFormFields(FormFieldsBaseModel):
-    load: Optional[TSFormFieldsForType] = None
-    hydro: Optional[TSFormFieldsForType] = None
-    thermal: Optional[TSFormFieldsForType] = None
-    wind: Optional[TSFormFieldsForType] = None
-    solar: Optional[TSFormFieldsForType] = None
-    renewables: Optional[TSFormFieldsForType] = None
-    ntc: Optional[TSFormFieldsForType] = None
+    load: t.Optional[TSFormFieldsForType] = None
+    hydro: t.Optional[TSFormFieldsForType] = None
+    thermal: t.Optional[TSFormFieldsForType] = None
+    wind: t.Optional[TSFormFieldsForType] = None
+    solar: t.Optional[TSFormFieldsForType] = None
+    renewables: t.Optional[TSFormFieldsForType] = None
+    ntc: t.Optional[TSFormFieldsForType] = None
 
     @root_validator(pre=True)
     def check_type_validity(
-        cls, values: Dict[str, Optional[TSFormFieldsForType]]
-    ) -> Dict[str, Optional[TSFormFieldsForType]]:
+        cls, values: t.Dict[str, t.Optional[TSFormFieldsForType]]
+    ) -> t.Dict[str, t.Optional[TSFormFieldsForType]]:
         def has_type(ts_type: TSType) -> bool:
             return values.get(ts_type.value, None) is not None
 
@@ -117,7 +117,7 @@ class TimeSeriesConfigManager:
         ts_type: TSType,
         field_values: TSFormFieldsForType,
     ) -> None:
-        commands: List[UpdateConfig] = []
+        commands: t.List[UpdateConfig] = []
         values = field_values.dict()
 
         for field, path in PATH_BY_TS_STR_FIELD.items():
@@ -155,7 +155,7 @@ class TimeSeriesConfigManager:
         if len(commands) > 0:
             execute_or_add_commands(study, file_study, commands, self.storage_service)
 
-    def __set_ts_types_str(self, file_study: FileStudy, path: str, values: Dict[TSType, bool]) -> UpdateConfig:
+    def __set_ts_types_str(self, file_study: FileStudy, path: str, values: t.Dict[TSType, bool]) -> UpdateConfig:
         """
         Set string value with the format: "[ts_type_1], [ts_type_2]"
         """
@@ -188,20 +188,22 @@ class TimeSeriesConfigManager:
         file_study: FileStudy,
         ts_type: TSType,
         general_data: JSON,
-    ) -> Optional[TSFormFieldsForType]:
+    ) -> t.Optional[TSFormFieldsForType]:
         general = general_data.get("general", {})
         input_ = general_data.get("input", {})
         output = general_data.get("output", {})
 
-        is_aggregated = file_study.config.enr_modelling == EnrModelling.AGGREGATED.value
+        config = file_study.config
+        study_version = config.version
+        has_renewables = config.version >= 810 and EnrModelling(config.enr_modelling) == EnrModelling.CLUSTERS
 
-        if ts_type == TSType.RENEWABLES and is_aggregated:
+        if ts_type == TSType.RENEWABLES and not has_renewables:
             return None
 
-        if ts_type in [TSType.WIND, TSType.SOLAR] and not is_aggregated:
+        if ts_type in [TSType.WIND, TSType.SOLAR] and has_renewables:
             return None
 
-        if ts_type == TSType.NTC and file_study.config.version < 820:
+        if ts_type == TSType.NTC and study_version < 820:
             return None
 
         is_special_type = ts_type == TSType.RENEWABLES or ts_type == TSType.NTC

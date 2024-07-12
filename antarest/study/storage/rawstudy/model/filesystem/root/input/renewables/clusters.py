@@ -31,7 +31,7 @@ class ClusteredRenewableCluster(FolderNode):
         config: FileStudyTreeConfig,
         area: str,
     ):
-        FolderNode.__init__(self, context, config)
+        super().__init__(context, config)
         self.area = area
 
     def build(self) -> TREE:

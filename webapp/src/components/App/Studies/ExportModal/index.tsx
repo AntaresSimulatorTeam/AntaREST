@@ -148,7 +148,7 @@ export default function ExportModal(props: BasicDialogProps & Props) {
             color="error"
             onClick={onClose ? () => onClose({}, "backdropClick") : undefined}
           >
-            {t("button.close")}
+            {t("global.close")}
           </Button>
           <Button
             sx={{ mx: 2 }}

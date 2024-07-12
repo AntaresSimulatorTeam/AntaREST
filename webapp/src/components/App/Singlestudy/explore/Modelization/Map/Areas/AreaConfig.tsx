@@ -70,6 +70,8 @@ function AreaConfig(props: Props) {
         mb: 1,
       }}
     >
+      <Divider sx={{ height: "1px", width: "90%", mt: 1, mb: 1.5 }} />
+      <DeleteAreaDialog currentArea={currentArea} currentLink={currentLink} />
       {currentArea && (
         <Box
           sx={{
@@ -102,8 +104,6 @@ function AreaConfig(props: Props) {
       )}
       {currentArea && <AreaLinks />}
       {currentLink && <AreaLink currentLink={currentLink} />}
-      <Divider sx={{ height: "1px", width: "90%", mt: 1, mb: 1.5 }} />
-      <DeleteAreaDialog currentArea={currentArea} currentLink={currentLink} />
     </Box>
   );
 }

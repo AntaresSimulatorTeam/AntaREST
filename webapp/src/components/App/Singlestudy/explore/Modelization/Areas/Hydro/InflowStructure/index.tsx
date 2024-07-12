@@ -38,7 +38,8 @@ function InflowStructure() {
       onSubmit={handleSubmit}
       miniSubmitButton
       enableUndoRedo
-      sx={{ display: "flex", alignItems: "center", ".Form__Footer": { p: 0 } }}
+      hideFooterDivider
+      sx={{ flexDirection: "row", alignItems: "center" }}
     >
       {({ control }) => (
         <NumberFE

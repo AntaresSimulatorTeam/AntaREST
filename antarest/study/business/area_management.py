@@ -232,8 +232,11 @@ class AreaOutput(_BaseAreaDTO, metaclass=AllOptionalMetaclass, use_none=True):
             nodal_optimization=nodal_optimization_section,
         )
 
-    def _to_adequacy_patch(self) -> AdequacyPathProperties:
+    def _to_adequacy_patch(self) -> t.Optional[AdequacyPathProperties]:
         obj = {name: getattr(self, name) for name in AdequacyPathProperties.AdequacyPathSection.__fields__}
+        # If all fields are `None`, the object is empty.
+        if all(value is None for value in obj.values()):
+            return None
         adequacy_path_section = AdequacyPathProperties.AdequacyPathSection(**obj)
         return AdequacyPathProperties(adequacy_patch=adequacy_path_section)
 
@@ -378,7 +381,7 @@ class AreaManager:
             if old_area.average_spilled_energy_cost != new_area.average_spilled_energy_cost:
                 commands.append(
                     UpdateConfig(
-                        target=f"input/thermal/areas/spilledenergycost:{area_id}",
+                        target=f"input/thermal/areas/spilledenergycost/{area_id}",
                         data=new_area.average_spilled_energy_cost,
                         command_context=command_context,
                     )

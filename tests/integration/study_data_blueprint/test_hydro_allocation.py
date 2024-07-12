@@ -20,12 +20,12 @@ class TestHydroAllocation:
         self,
         client: TestClient,
         user_access_token: str,
-        study_id: str,
+        internal_study_id: str,
     ) -> None:
         """Check `get_allocation_form_values` end point"""
         area_id = "de"
         res = client.get(
-            f"/v1/studies/{study_id}/areas/{area_id}/hydro/allocation/form",
+            f"/v1/studies/{internal_study_id}/areas/{area_id}/hydro/allocation/form",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code == http.HTTPStatus.OK, res.json()
@@ -37,7 +37,7 @@ class TestHydroAllocation:
         self,
         client: TestClient,
         user_access_token: str,
-        study_id: str,
+        internal_study_id: str,
     ) -> None:
         """
         The purpose of this test is to check that we can get the form parameters from a study variant.
@@ -46,7 +46,7 @@ class TestHydroAllocation:
         """
         # Create a managed study from the RAW study.
         res = client.post(
-            f"/v1/studies/{study_id}/copy",
+            f"/v1/studies/{internal_study_id}/copy",
             headers={"Authorization": f"Bearer {user_access_token}"},
             params={"dest": "Clone", "with_outputs": False, "use_task": False},
         )
@@ -109,13 +109,13 @@ class TestHydroAllocation:
         self,
         client: TestClient,
         user_access_token: str,
-        study_id: str,
+        internal_study_id: str,
         area_id: str,
         expected: t.List[t.List[float]],
     ) -> None:
         """Check `get_allocation_matrix` end point"""
         res = client.get(
-            f"/v1/studies/{study_id}/areas/hydro/allocation/matrix",
+            f"/v1/studies/{internal_study_id}/areas/hydro/allocation/matrix",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code == http.HTTPStatus.OK, res.json()
@@ -126,7 +126,7 @@ class TestHydroAllocation:
         self,
         client: TestClient,
         user_access_token: str,
-        study_id: str,
+        internal_study_id: str,
     ) -> None:
         """Check `set_allocation_form_values` end point"""
         area_id = "de"
@@ -137,7 +137,7 @@ class TestHydroAllocation:
             ]
         }
         res = client.put(
-            f"/v1/studies/{study_id}/areas/{area_id}/hydro/allocation/form",
+            f"/v1/studies/{internal_study_id}/areas/{area_id}/hydro/allocation/form",
             headers={"Authorization": f"Bearer {user_access_token}"},
             json=expected,
         )
@@ -147,7 +147,7 @@ class TestHydroAllocation:
 
         # check that the values are updated
         res = client.get(
-            f"/v1/studies/{study_id}/raw",
+            f"/v1/studies/{internal_study_id}/raw",
             headers={"Authorization": f"Bearer {user_access_token}"},
             params={"path": "input/hydro/allocation", "depth": 3},
         )
@@ -161,7 +161,7 @@ class TestHydroAllocation:
         }
         assert actual == expected
 
-    def test_create_area(self, client: TestClient, user_access_token: str, study_id: str) -> None:
+    def test_create_area(self, client: TestClient, user_access_token: str, internal_study_id: str) -> None:
         """
         Given a study, when an area is created, the hydraulic allocation
         column for this area must be updated with the following values:
@@ -171,14 +171,14 @@ class TestHydroAllocation:
         """
         area_info = AreaInfoDTO(id="north", name="NORTH", type=AreaType.AREA)
         res = client.post(
-            f"/v1/studies/{study_id}/areas",
+            f"/v1/studies/{internal_study_id}/areas",
             headers={"Authorization": f"Bearer {user_access_token}"},
             data=area_info.json(),
         )
         assert res.status_code == http.HTTPStatus.OK, res.json()
 
         res = client.get(
-            f"/v1/studies/{study_id}/areas/hydro/allocation/matrix",
+            f"/v1/studies/{internal_study_id}/areas/hydro/allocation/matrix",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code == http.HTTPStatus.OK
@@ -196,7 +196,7 @@ class TestHydroAllocation:
         }
         assert actual == expected
 
-    def test_delete_area(self, client: TestClient, user_access_token: str, study_id: str) -> None:
+    def test_delete_area(self, client: TestClient, user_access_token: str, internal_study_id: str) -> None:
         """
         Given a study, when an area is deleted, the hydraulic allocation
         column for this area must be removed.
@@ -211,7 +211,7 @@ class TestHydroAllocation:
         }
         for prod_area, allocation_cfg in obj.items():
             res = client.post(
-                f"/v1/studies/{study_id}/raw",
+                f"/v1/studies/{internal_study_id}/raw",
                 headers={"Authorization": f"Bearer {user_access_token}"},
                 params={"path": f"input/hydro/allocation/{prod_area}"},
                 json=allocation_cfg,
@@ -221,7 +221,7 @@ class TestHydroAllocation:
         # Then we remove the "fr" zone.
         # The deletion should update the allocation matrix of all other zones.
         res = client.delete(
-            f"/v1/studies/{study_id}/areas/fr",
+            f"/v1/studies/{internal_study_id}/areas/fr",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code == http.HTTPStatus.OK, res.json()
@@ -229,7 +229,7 @@ class TestHydroAllocation:
         # Check that the "fr" column is removed from the hydraulic allocation matrix.
         # The row corresponding to "fr" must also be deleted.
         res = client.get(
-            f"/v1/studies/{study_id}/areas/hydro/allocation/matrix",
+            f"/v1/studies/{internal_study_id}/areas/hydro/allocation/matrix",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code == http.HTTPStatus.OK, res.json()

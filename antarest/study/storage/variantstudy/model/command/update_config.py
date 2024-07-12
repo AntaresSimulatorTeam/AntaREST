@@ -1,4 +1,6 @@
-from typing import Any, Dict, List, Tuple, Union
+import typing as t
+
+import typing_extensions as te
 
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
@@ -7,6 +9,19 @@ from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFi
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
 from antarest.study.storage.variantstudy.model.model import CommandDTO
+
+_ENR_MODELLING_KEY = "settings/generaldata/other preferences/renewable-generation-modelling"
+
+_Data: te.TypeAlias = t.Union[str, int, float, bool, JSON, None]
+
+
+def _iter_dict(data: _Data, root_key: str = "") -> t.Generator[t.Tuple[str, t.Any], None, None]:
+    if isinstance(data, dict):
+        for key, value in data.items():
+            sub_key = f"{root_key}/{key}" if root_key else key
+            yield from _iter_dict(value, sub_key)
+    else:
+        yield root_key, data
 
 
 class UpdateConfig(ICommand):
@@ -24,9 +39,16 @@ class UpdateConfig(ICommand):
     # ==================
 
     target: str
-    data: Union[str, int, float, bool, JSON, None]
+    data: _Data
 
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
+        # The renewable-generation-modelling parameter must be reflected in the config
+        if self.target.startswith("settings"):
+            for key, value in _iter_dict(self.data, root_key=self.target):
+                if key == _ENR_MODELLING_KEY:
+                    study_data.enr_modelling = value
+                    break
+
         return CommandOutput(status=True, message="ok"), {}
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
@@ -63,8 +85,8 @@ class UpdateConfig(ICommand):
             return simple_match
         return simple_match and self.data == other.data
 
-    def _create_diff(self, other: "ICommand") -> List["ICommand"]:
+    def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
         return [other]
 
-    def get_inner_matrices(self) -> List[str]:
+    def get_inner_matrices(self) -> t.List[str]:
         return []

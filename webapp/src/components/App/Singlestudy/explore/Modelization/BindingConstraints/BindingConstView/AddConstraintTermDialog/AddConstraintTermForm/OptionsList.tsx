@@ -76,6 +76,7 @@ export default function OptionsList({ list, isLink, constraintTerms }: Props) {
         options={areaOptions}
         control={control}
         sx={{ width: 250 }}
+        rules={{ required: true }}
       />
       <SelectFE
         variant="outlined"
@@ -84,6 +85,7 @@ export default function OptionsList({ list, isLink, constraintTerms }: Props) {
         options={areaOrClusterOptions}
         control={control}
         sx={{ width: 250, ml: 1, mr: 3 }}
+        rules={{ required: true }}
       />
     </>
   );

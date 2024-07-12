@@ -36,7 +36,6 @@ function ManagementOptions() {
         defaultValues: () => getManagementOptionsFormFields(studyId, areaId),
       }}
       onSubmit={handleSubmit}
-      sx={{ pb: 2 }}
       enableUndoRedo
     >
       <Fields />

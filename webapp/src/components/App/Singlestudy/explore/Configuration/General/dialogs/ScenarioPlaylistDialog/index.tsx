@@ -86,7 +86,7 @@ function ScenarioPlaylistDialog(props: Props) {
       title={t("study.configuration.general.mcScenarioPlaylist")}
       open={open}
       onClose={onClose}
-      actions={<Button onClick={onClose}>{t("button.close")}</Button>}
+      actions={<Button onClick={onClose}>{t("global.close")}</Button>}
       // TODO: add `maxHeight` and `fullHeight` in BasicDialog`
       PaperProps={{ sx: { height: 500 } }}
       maxWidth="sm"

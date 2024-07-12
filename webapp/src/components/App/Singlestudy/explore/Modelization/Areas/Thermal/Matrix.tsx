@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
 import Box from "@mui/material/Box";
@@ -19,15 +19,57 @@ interface Props {
 
 function Matrix({ study, areaId, clusterId }: Props) {
   const [t] = useTranslation();
-  const [value, setValue] = useState(0);
+  const [value, setValue] = useState("common");
+  const studyVersion = Number(study.version);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleChange = (event: React.SyntheticEvent, newValue: number) => {
+  const handleTabChange = (event: React.SyntheticEvent, newValue: string) => {
     setValue(newValue);
   };
+
+  ////////////////////////////////////////////////////////////////
+  // Utils
+  ////////////////////////////////////////////////////////////////
+
+  const MATRICES = [
+    {
+      url: `input/thermal/prepro/${areaId}/${clusterId}/modulation`,
+      titleKey: "common",
+      columns: COMMON_MATRIX_COLS,
+    },
+    {
+      url: `input/thermal/prepro/${areaId}/${clusterId}/data`,
+      titleKey: "tsGen",
+      columns: TS_GEN_MATRIX_COLS,
+    },
+    {
+      url: `input/thermal/series/${areaId}/${clusterId}/series`,
+      titleKey: "availability",
+    },
+    {
+      url: `input/thermal/series/${areaId}/${clusterId}/fuelCost`,
+      titleKey: "fuelCosts",
+      minVersion: 870,
+    },
+    {
+      url: `input/thermal/series/${areaId}/${clusterId}/CO2Cost`,
+      titleKey: "co2Costs",
+      minVersion: 870,
+    },
+  ];
+
+  // Filter matrix data based on the study version.
+  const filteredMatrices = useMemo(
+    () =>
+      MATRICES.filter(({ minVersion }) =>
+        minVersion ? studyVersion >= minVersion : true,
+      ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [studyVersion],
+  );
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -44,61 +86,28 @@ function Matrix({ study, areaId, clusterId }: Props) {
         alignItems: "center",
       }}
     >
-      <Tabs sx={{ width: 1 }} value={value} onChange={handleChange}>
-        <Tab label={t("study.modelization.clusters.matrix.common")} />
-        <Tab label={t("study.modelization.clusters.matrix.tsGen")} />
-        <Tab label={t("study.modelization.clusters.matrix.timeSeries")} />
-        <Tab label={t("study.modelization.clusters.matrix.fuelCost")} />
-        <Tab label={t("study.modelization.clusters.matrix.co2Cost")} />
+      <Tabs sx={{ width: 1 }} value={value} onChange={handleTabChange}>
+        {filteredMatrices.map(({ titleKey }) => (
+          <Tab
+            key={titleKey}
+            value={titleKey}
+            label={t(`study.modelization.clusters.matrix.${titleKey}`)}
+          />
+        ))}
       </Tabs>
-      <Box
-        sx={{
-          display: "flex",
-          width: 1,
-          height: 1,
-        }}
-      >
-        {value === 0 && (
-          <MatrixInput
-            study={study}
-            url={`input/thermal/prepro/${areaId}/${clusterId}/modulation`}
-            computStats={MatrixStats.NOCOL}
-            title={t("study.modelization.clusters.matrix.common")}
-            columnsNames={COMMON_MATRIX_COLS}
-          />
-        )}
-        {value === 1 && (
-          <MatrixInput
-            study={study}
-            url={`input/thermal/prepro/${areaId}/${clusterId}/data`}
-            computStats={MatrixStats.NOCOL}
-            title={t("study.modelization.clusters.matrix.tsGen")}
-            columnsNames={TS_GEN_MATRIX_COLS}
-          />
-        )}
-        {value === 2 && (
-          <MatrixInput
-            study={study}
-            url={`input/thermal/series/${areaId}/${clusterId}/series`}
-            computStats={MatrixStats.NOCOL}
-            title={t("study.modelization.clusters.matrix.timeSeries")}
-          />
-        )}
-        {value === 3 && (
-          <MatrixInput
-            study={study}
-            url={`input/thermal/series/${areaId}/${clusterId}/fuelCost`}
-            computStats={MatrixStats.NOCOL}
-            title={t("study.modelization.clusters.matrix.fuelCost")}
-          />
-        )}
-        {value === 4 && (
-          <MatrixInput
-            study={study}
-            url={`input/thermal/series/${areaId}/${clusterId}/CO2Cost`}
-            computStats={MatrixStats.NOCOL}
-            title={t("study.modelization.clusters.matrix.co2Cost")}
-          />
+      <Box sx={{ width: 1, height: 1 }}>
+        {filteredMatrices.map(
+          ({ url, titleKey, columns }) =>
+            value === titleKey && (
+              <MatrixInput
+                key={titleKey}
+                study={study}
+                computStats={MatrixStats.NOCOL}
+                url={url}
+                title={t(`study.modelization.clusters.matrix.${titleKey}`)}
+                columnsNames={columns}
+              />
+            ),
         )}
       </Box>
     </Box>

@@ -50,6 +50,7 @@ class OutputSeriesMatrix(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON])
         depth: int = -1,
         expanded: bool = False,
     ) -> str:
+        # noinspection SpellCheckingInspection
         return f"matrixfile://{self.config.path.name}"
 
     def parse_dataframe(
@@ -58,14 +59,21 @@ class OutputSeriesMatrix(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON])
         tmp_dir: Any = None,
     ) -> DataFrame:
         file_path = file_path or self.config.path
-        df = pd.read_csv(
-            file_path,
-            sep="\t",
-            skiprows=4,
-            header=[0, 1, 2],
-            na_values="N/A",
-            float_precision="legacy",
-        )
+        try:
+            df = pd.read_csv(
+                file_path,
+                sep="\t",
+                skiprows=4,
+                header=[0, 1, 2],
+                na_values="N/A",
+                float_precision="legacy",
+            )
+        except FileNotFoundError as e:
+            # Raise 404 'Not Found' if the TSV file is not found
+            logger.warning(f"Matrix file'{file_path}' not found")
+            study_id = self.config.study_id
+            relpath = file_path.relative_to(self.config.study_path).as_posix()
+            raise ChildNotFoundError(f"File '{relpath}' not found in the study '{study_id}'") from e
 
         if tmp_dir:
             tmp_dir.cleanup()

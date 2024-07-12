@@ -9,6 +9,7 @@ from antarest.study.storage.variantstudy.business.command_reverter import Comman
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
+from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
@@ -20,9 +21,9 @@ class TestCreateArea:
         empty_study: FileStudy,
         command_context: CommandContext,
         # pytest parameters
-        version,
-        enr_modelling,
-    ):
+        version: int,
+        enr_modelling: EnrModelling,
+    ) -> None:
         empty_study.config.enr_modelling = enr_modelling.value
         empty_study.config.version = version
 
@@ -30,13 +31,23 @@ class TestCreateArea:
         area_name = "Area"
         area_id = transform_name_to_id(area_name)
 
-        create_area_command: ICommand = CreateArea.parse_obj(
-            {
-                "area_name": area_name,
-                "command_context": command_context,
-            }
-        )
-        output = create_area_command.apply(study_data=empty_study)
+        # Reset the configuration to check that the "unserverdenergycost" and "spilledenergycost" sections
+        # are dynamically created when the new area is added to the study.
+        output = UpdateConfig(
+            target="input/thermal/areas",
+            data={},
+            command_context=command_context,
+        ).apply(study_data=empty_study)
+        assert output.status, output.message
+
+        # When the CreateArea command is applied
+        output = CreateArea(
+            area_name=area_name,
+            command_context=command_context,
+        ).apply(study_data=empty_study)
+        assert output.status, output.message
+
+        # Then, check the study structure
 
         # Areas
         assert area_id in empty_study.config.areas
@@ -139,14 +150,14 @@ class TestCreateArea:
         # thermal/areas ini file
         assert (study_path / "input" / "thermal" / "areas.ini").exists()
 
-        assert output.status
+        assert output.status, output.message
 
         create_area_command: ICommand = CreateArea(area_name=area_name, command_context=command_context, metadata={})
         output = create_area_command.apply(study_data=empty_study)
         assert not output.status
 
 
-def test_match(command_context: CommandContext):
+def test_match(command_context: CommandContext) -> None:
     base = CreateArea(area_name="foo", command_context=command_context)
     other_match = CreateArea(area_name="foo", command_context=command_context)
     other_not_match = CreateArea(area_name="bar", command_context=command_context)
@@ -159,13 +170,13 @@ def test_match(command_context: CommandContext):
     assert base.get_inner_matrices() == []
 
 
-def test_revert(command_context: CommandContext):
+def test_revert(command_context: CommandContext) -> None:
     base = CreateArea(area_name="foo", command_context=command_context)
     actual = CommandReverter().revert(base, [], Mock(spec=FileStudy))
     assert actual == [RemoveArea(id="foo", command_context=command_context)]
 
 
-def test_create_diff(command_context: CommandContext):
+def test_create_diff(command_context: CommandContext) -> None:
     base = CreateArea(area_name="foo", command_context=command_context)
     other_match = CreateArea(area_name="foo", command_context=command_context)
     assert base.create_diff(other_match) == []

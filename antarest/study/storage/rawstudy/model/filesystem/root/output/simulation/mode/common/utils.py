@@ -13,15 +13,20 @@ from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mod
     OutputSimulationModeMcAllGrid,
 )
 
+OUTPUT_MAPPING = {
+    "areas": OutputSimulationAreas,
+    "grid": OutputSimulationModeMcAllGrid,
+    "links": OutputSimulationLinks,
+    "binding_constraints": OutputSimulationBindingConstraintItem,
+}
 
-class OutputSimulationModeMcAll(FolderNode):
+
+class OutputSimulationModeCommon(FolderNode):
     def build(self) -> TREE:
-        children: TREE = {
-            "areas": OutputSimulationAreas(self.context, self.config.next_file("areas")),
-            "grid": OutputSimulationModeMcAllGrid(self.context, self.config.next_file("grid")),
-            "links": OutputSimulationLinks(self.context, self.config.next_file("links")),
-            "binding_constraints": OutputSimulationBindingConstraintItem(
-                self.context, self.config.next_file("binding_constraints")
-            ),
-        }
+        if not self.config.output_path:
+            return {}
+        children: TREE = {}
+        for key, simulation_class in OUTPUT_MAPPING.items():
+            if (self.config.path / key).exists():
+                children[key] = simulation_class(self.context, self.config.next_file(key))
         return children

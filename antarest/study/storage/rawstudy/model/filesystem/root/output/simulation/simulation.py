@@ -1,6 +1,7 @@
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, Simulation
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
+from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.about.about import OutputSimulationAbout
@@ -26,7 +27,7 @@ class OutputSimulation(FolderNode):
         config: FileStudyTreeConfig,
         simulation: Simulation,
     ):
-        FolderNode.__init__(self, context, config)
+        super().__init__(context, config)
         self.simulation = simulation
 
     def build(self) -> TREE:
@@ -39,16 +40,19 @@ class OutputSimulation(FolderNode):
         }
 
         if not self.simulation.error:
-            children["annualSystemCost"] = RawFileNode(self.context, self.config.next_file("annualSystemCost.txt"))
-            children["checkIntegrity"] = RawFileNode(self.context, self.config.next_file("checkIntegrity.txt"))
-            children["simulation-comments"] = RawFileNode(
-                self.context, self.config.next_file("simulation-comments.txt")
-            )
+            for file in ["annualSystemCost", "checkIntegrity", "simulation-comments"]:
+                file_name = f"{file}.txt"
+                if (self.config.path / file_name).exists():
+                    children[file] = RawFileNode(self.context, self.config.next_file(file_name))
 
-            if self.config.store_new_set:
+            file_name = "execution_info"
+            if (self.config.path / f"{file_name}.ini").exists():
+                children[file_name] = IniFileNode(self.context, self.config.next_file(f"{file_name}.ini"))
+
+            if (self.config.path / "ts-numbers").exists():
                 children["ts-numbers"] = OutputSimulationTsNumbers(self.context, self.config.next_file("ts-numbers"))
 
-            if self.config.archive_input_series:
+            if (self.config.path / "ts-generator").exists():
                 children["ts-generator"] = OutputSimulationTsGenerator(
                     self.context, self.config.next_file("ts-generator")
                 )

@@ -1,3 +1,20 @@
+---
+title: Study Configuration
+author: Antares Web Team
+date: 2023-12-21
+category: User Guide
+tags:
+
+  - configuration
+  - map
+  - network
+  - areas
+  - links
+  - binding-constraints
+  - debug
+  - table-mode
+---
+
 # Study Configuration
 
 This page is dedicated to configuring the study in the Antares Web application.

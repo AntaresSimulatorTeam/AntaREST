@@ -15,7 +15,7 @@ class JsonReader(IReader):
     JSON file reader.
     """
 
-    def read(self, path: t.Any) -> JSON:
+    def read(self, path: t.Any, **kwargs: t.Any) -> JSON:
         content: t.Union[str, bytes]
 
         if isinstance(path, (Path, str)):

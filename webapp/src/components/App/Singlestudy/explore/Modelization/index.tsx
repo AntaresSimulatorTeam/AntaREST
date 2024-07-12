@@ -5,7 +5,11 @@ import { useTranslation } from "react-i18next";
 import { StudyMetadata } from "../../../../../common/types";
 import TabWrapper from "../TabWrapper";
 import useAppSelector from "../../../../../redux/hooks/useAppSelector";
-import { getAreas, getCurrentAreaId } from "../../../../../redux/selectors";
+import {
+  getAreas,
+  getCurrentAreaId,
+  getLinks,
+} from "../../../../../redux/selectors";
 import useAppDispatch from "../../../../../redux/hooks/useAppDispatch";
 import { setCurrentArea } from "../../../../../redux/ducks/studySyntheses";
 
@@ -16,6 +20,7 @@ function Modelization() {
   const navigate = useNavigate();
   const { areaId: paramAreaId } = useParams();
   const areas = useAppSelector((state) => getAreas(state, study.id));
+  const links = useAppSelector((state) => getLinks(state, study.id));
   const areaId = useAppSelector(getCurrentAreaId);
 
   useEffect(() => {
@@ -49,17 +54,19 @@ function Modelization() {
         label: t("study.areas"),
         path: `${basePath}/area/${encodeURI(areaId)}`,
         onClick: handleAreasClick,
+        disabled: areas.length === 0,
       },
       {
         label: t("study.links"),
         path: `${basePath}/links`,
+        disabled: links.length === 0,
       },
       {
         label: t("study.bindingconstraints"),
         path: `${basePath}/bindingcontraint`,
       },
     ];
-  }, [areaId, areas, dispatch, navigate, study?.id, t]);
+  }, [areaId, areas, dispatch, links, navigate, study.id, t]);
 
   return (
     <Box

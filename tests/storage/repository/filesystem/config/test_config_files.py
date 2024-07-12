@@ -86,6 +86,7 @@ def test_parse_bindings(study_path: Path) -> None:
     [bindB]
     id = bindB
     type = weekly
+    group = My Group
     """
     (study_path / "input/bindingconstraints/bindingconstraints.ini").write_text(textwrap.dedent(content))
 
@@ -105,6 +106,7 @@ def test_parse_bindings(study_path: Path) -> None:
                 areas=set(),
                 clusters=set(),
                 time_step=BindingConstraintFrequency.WEEKLY,
+                group="My Group",
             ),
         ],
         study_id="id",

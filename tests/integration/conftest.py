@@ -120,12 +120,12 @@ def user_access_token_fixture(
     return t.cast(str, credentials["access_token"])
 
 
-@pytest.fixture(name="study_id")
-def study_id_fixture(
+@pytest.fixture(name="internal_study_id")
+def internal_study_fixture(
     client: TestClient,
     user_access_token: str,
 ) -> str:
-    """Get the ID of the study stored in database"""
+    """Get the ID of the internal study which is scanned by the watcher"""
     res = client.get(
         "/v1/studies",
         headers={"Authorization": f"Bearer {user_access_token}"},

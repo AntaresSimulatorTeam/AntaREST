@@ -1,6 +1,7 @@
 import base64
 import collections
 import contextlib
+import http
 import io
 import json
 import logging
@@ -8,7 +9,6 @@ import os
 import time
 import typing as t
 from datetime import datetime, timedelta
-from http import HTTPStatus
 from pathlib import Path, PurePosixPath
 from uuid import uuid4
 
@@ -24,9 +24,11 @@ from antarest.core.exceptions import (
     CommandApplicationError,
     IncorrectPathError,
     NotAManagedStudyException,
+    ReferencedObjectDeletionNotAllowed,
     StudyDeletionNotAllowed,
     StudyNotFoundError,
     StudyTypeUnsupported,
+    StudyVariantUpgradeError,
     TaskAlreadyRunning,
     UnsupportedOperationOnArchivedStudy,
     UnsupportedStudyVersion,
@@ -38,7 +40,6 @@ from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTGroup, JWTUser
 from antarest.core.model import JSON, SUB_JSON, PermissionInfo, PublicMode, StudyPermissionType
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
-from antarest.core.roles import RoleType
 from antarest.core.tasks.model import TaskListFilter, TaskResult, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskService, TaskUpdateNotifier, noop_notifier
 from antarest.core.utils.fastapi_sqlalchemy import db
@@ -48,6 +49,7 @@ from antarest.login.service import LoginService
 from antarest.matrixstore.matrix_editor import MatrixEditInstruction
 from antarest.study.business.adequacy_patch_management import AdequacyPatchManager
 from antarest.study.business.advanced_parameters_management import AdvancedParamsManager
+from antarest.study.business.aggregator_management import AggregatorManager, AreasQueryFile, LinksQueryFile
 from antarest.study.business.allocation_management import AllocationManager
 from antarest.study.business.area_management import AreaCreationDTO, AreaInfoDTO, AreaManager, AreaType, UpdateAreaUi
 from antarest.study.business.areas.hydro_management import HydroManager
@@ -55,7 +57,7 @@ from antarest.study.business.areas.properties_management import PropertiesManage
 from antarest.study.business.areas.renewable_management import RenewableManager
 from antarest.study.business.areas.st_storage_management import STStorageManager
 from antarest.study.business.areas.thermal_management import ThermalManager
-from antarest.study.business.binding_constraint_management import BindingConstraintManager
+from antarest.study.business.binding_constraint_management import BindingConstraintManager, ConstraintFilters, LinkTerm
 from antarest.study.business.config_management import ConfigManager
 from antarest.study.business.correlation_management import CorrelationManager
 from antarest.study.business.district_manager import DistrictManager
@@ -75,7 +77,6 @@ from antarest.study.business.xpansion_management import (
     XpansionCandidateDTO,
     XpansionManager,
 )
-from antarest.study.common.default_values import AreasQueryFile, LinksQueryFile
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     NEW_DEFAULT_STUDY_VERSION,
@@ -104,7 +105,6 @@ from antarest.study.repository import (
     StudySortBy,
 )
 from antarest.study.storage.matrix_profile import adjust_matrix_columns_index
-from antarest.study.storage.rawstudy.model.filesystem.config.area import AreaUI
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import ChildNotFoundError
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
@@ -143,7 +143,7 @@ MAX_MISSING_STUDY_TIMEOUT = 2  # days
 def get_disk_usage(path: t.Union[str, Path]) -> int:
     """Calculate the total disk usage (in bytes) of a study in a compressed file or directory."""
     path = Path(path)
-    if path.suffix.lower() in {".zip", "7z"}:
+    if path.suffix.lower() in {".zip", ".7z"}:
         return os.path.getsize(path)
     total_size = 0
     with os.scandir(path) as it:
@@ -327,71 +327,47 @@ class StudyService:
 
         return self.storage_service.get_storage(study).get(study, url, depth, formatted)
 
-    def aggregate_areas_data(
+    def aggregate_output_data(
         self,
         uuid: str,
         output_id: str,
-        query_file: AreasQueryFile,
+        query_file: t.Union[AreasQueryFile, LinksQueryFile],
         frequency: MatrixFrequency,
         mc_years: t.Sequence[int],
-        areas_ids: t.Sequence[str],
         columns_names: t.Sequence[str],
+        ids_to_consider: t.Sequence[str],
         params: RequestParameters,
-    ) -> JSON:
+    ) -> pd.DataFrame:
         """
-        Get study data inside filesystem
+        Aggregates output data based on several filtering conditions
         Args:
             uuid: study uuid
             output_id: simulation output ID
             query_file: which types of data to retrieve ("values", "details", "details-st-storage", "details-res")
             frequency: yearly, monthly, weekly, daily or hourly.
             mc_years: list of monte-carlo years, if empty, all years are selected
-            areas_ids: list of areas names, if empty, all areas are selected
             columns_names: columns to be selected, if empty, all columns are selected
+            ids_to_consider: list of areas or links ids to consider, if empty, all areas are selected
             params: request parameters
 
-        Returns: data study formatted in json
+        Returns: the aggregated data as a DataFrame
 
         """
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
-        output = self.storage_service.get_storage(study).aggregate_areas_data(
-            study, output_id, query_file, frequency, mc_years, areas_ids, columns_names
+        study_path = self.storage_service.raw_study_service.get_study_path(study)
+        # fmt: off
+        aggregator_manager = AggregatorManager(
+            study_path,
+            output_id,
+            query_file,
+            frequency,
+            mc_years,
+            columns_names,
+            ids_to_consider
         )
-
-        return output
-
-    def aggregate_links_data(
-        self,
-        uuid: str,
-        output_id: str,
-        query_file: LinksQueryFile,
-        frequency: MatrixFrequency,
-        mc_years: t.Sequence[int],
-        columns_names: t.Sequence[str],
-        params: RequestParameters,
-    ) -> JSON:
-        """
-        Get study data inside filesystem
-        Args:
-            uuid: study uuid
-            output_id: simulation output ID
-            query_file: which types of data to retrieve ("values", "details")
-            frequency: yearly, monthly, weekly, daily or hourly.
-            mc_years: list of monte-carlo years, if empty, all years are selected
-            columns_names: columns to be selected, if empty, all columns are selected
-            params: request parameters
-
-        Returns: data study formatted in json
-
-        """
-        study = self.get_study(uuid)
-        assert_permission(params.user, study, StudyPermissionType.READ)
-        output = self.storage_service.get_storage(study).aggregate_links_data(
-            study, output_id, query_file, frequency, mc_years, columns_names
-        )
-
-        return output
+        # fmt: on
+        return aggregator_manager.aggregate_output_data()
 
     def get_logs(
         self,
@@ -711,7 +687,7 @@ class StudyService:
             id=sid,
             name=study_name,
             workspace=DEFAULT_WORKSPACE_NAME,
-            path=study_path,
+            path=str(study_path),
             created_at=datetime.utcnow(),
             updated_at=datetime.utcnow(),
             version=version or NEW_DEFAULT_STUDY_VERSION,
@@ -1212,13 +1188,13 @@ class StudyService:
         """
         Download outputs
         Args:
-            study_id: study Id
-            output_id: output id
-            data: Json parameters
-            use_task: use task or not
-            filetype: type of returning file,
-            tmp_export_file: temporary file (if use_task is false),
-            params: request parameters
+            study_id: study ID.
+            output_id: output ID.
+            data: Json parameters.
+            use_task: use task or not.
+            filetype: type of returning file,.
+            tmp_export_file: temporary file (if `use_task` is false),.
+            params: request parameters.
 
         Returns: CSV content file
 
@@ -1227,35 +1203,33 @@ class StudyService:
         study = self.get_study(study_id)
         assert_permission(params.user, study, StudyPermissionType.READ)
         self._assert_study_unarchived(study)
-        logger.info(
-            f"Study {study_id} output download asked by {params.get_user_id()}",
-        )
+        logger.info(f"Study {study_id} output download asked by {params.get_user_id()}")
 
         if use_task:
             logger.info(f"Exporting {output_id} from study {study_id}")
             export_name = f"Study filtered output {study.name}/{output_id} export"
             export_file_download = self.file_transfer_manager.request_download(
-                f"{study.name}-{study_id}-{output_id}_filtered.{'tar.gz' if filetype == ExportFormat.TAR_GZ else 'zip'}",
+                f"{study.name}-{study_id}-{output_id}_filtered{filetype.suffix}",
                 export_name,
                 params.user,
             )
             export_path = Path(export_file_download.path)
             export_id = export_file_download.id
 
-            def export_task(notifier: TaskUpdateNotifier) -> TaskResult:
+            def export_task(_notifier: TaskUpdateNotifier) -> TaskResult:
                 try:
-                    study = self.get_study(study_id)
-                    stopwatch = StopWatch()
-                    matrix = StudyDownloader.build(
-                        self.storage_service.get_storage(study).get_raw(study),
+                    _study = self.get_study(study_id)
+                    _stopwatch = StopWatch()
+                    _matrix = StudyDownloader.build(
+                        self.storage_service.get_storage(_study).get_raw(_study),
                         output_id,
                         data,
                     )
-                    stopwatch.log_elapsed(
+                    _stopwatch.log_elapsed(
                         lambda x: logger.info(f"Study {study_id} filtered output {output_id} built in {x}s")
                     )
-                    StudyDownloader.export(matrix, filetype, export_path)
-                    stopwatch.log_elapsed(
+                    StudyDownloader.export(_matrix, filetype, export_path)
+                    _stopwatch.log_elapsed(
                         lambda x: logger.info(f"Study {study_id} filtered output {output_id} exported in {x}s")
                     )
                     self.file_transfer_manager.set_ready(export_id)
@@ -1265,7 +1239,7 @@ class StudyService:
                     )
                 except Exception as e:
                     self.file_transfer_manager.fail(export_id, str(e))
-                    raise e
+                    raise
 
             task_id = self.task_service.add_task(
                 export_task,
@@ -1290,17 +1264,18 @@ class StudyService:
                 stopwatch.log_elapsed(
                     lambda x: logger.info(f"Study {study_id} filtered output {output_id} exported in {x}s")
                 )
-                return FileResponse(
-                    tmp_export_file,
-                    headers=(
-                        {"Content-Disposition": "inline"}
-                        if filetype == ExportFormat.JSON
-                        else {
-                            "Content-Disposition": f'attachment; filename="output-{output_id}.{"tar.gz" if filetype == ExportFormat.TAR_GZ else "zip"}'
-                        }
-                    ),
-                    media_type=filetype,
-                )
+
+                if filetype == ExportFormat.JSON:
+                    headers = {"Content-Disposition": "inline"}
+                elif filetype == ExportFormat.TAR_GZ:
+                    headers = {"Content-Disposition": f'attachment; filename="output-{output_id}.tar.gz'}
+                elif filetype == ExportFormat.ZIP:
+                    headers = {"Content-Disposition": f'attachment; filename="output-{output_id}.zip'}
+                else:  # pragma: no cover
+                    raise NotImplementedError(f"Export format {filetype} is not supported")
+
+                return FileResponse(tmp_export_file, headers=headers, media_type=filetype)
+
             else:
                 json_response = json.dumps(
                     matrix.dict(),
@@ -1339,26 +1314,20 @@ class StudyService:
         params: RequestParameters,
     ) -> None:
         """
-        Set simulation as the reference output
+        Set simulation as the reference output.
+
         Args:
-            study_id: study Id
-            output_id: output id
-            status: state of the reference status
+            study_id: study ID.
+            output_id: The ID of the output to set as reference.
+            status: state of the reference status.
             params: request parameters
-
-        Returns: None
-
         """
         study = self.get_study(study_id)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
 
         logger.info(
-            "output %s set by user %s as reference (%b) for study %s",
-            output_id,
-            params.get_user_id(),
-            status,
-            study_id,
+            f"output {output_id} set by user {params.get_user_id()} as reference ({status}) for study {study_id}"
         )
 
         self.storage_service.get_storage(study).set_reference_output(study, output_id, status)
@@ -1396,13 +1365,7 @@ class StudyService:
         study = self.storage_service.raw_study_service.import_study(study, stream)
         study.updated_at = datetime.utcnow()
 
-        # status = self._analyse_study(study)
-        self._save_study(
-            study,
-            owner=params.user,
-            group_ids=group_ids,
-            #    content_status=status,
-        )
+        self._save_study(study, params.user, group_ids)
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_CREATED,
@@ -1886,9 +1849,27 @@ class StudyService:
         return self.areas.update_thermal_cluster_metadata(study, area_id, clusters_metadata)
 
     def delete_area(self, uuid: str, area_id: str, params: RequestParameters) -> None:
+        """
+        Delete area from study if it is not referenced by a binding constraint,
+        otherwise raise an HTTP 403 Forbidden error.
+
+        Args:
+            uuid: The study ID.
+            area_id: The area ID to delete.
+            params: The request parameters used to check user permissions.
+
+        Raises:
+            ReferencedObjectDeletionNotAllowed: If the area is referenced by a binding constraint.
+        """
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
+        referencing_binding_constraints = self.binding_constraint_manager.get_binding_constraints(
+            study, ConstraintFilters(area_name=area_id)
+        )
+        if referencing_binding_constraints:
+            binding_ids = [bc.id for bc in referencing_binding_constraints]
+            raise ReferencedObjectDeletionNotAllowed(area_id, binding_ids, object_type="Area")
         self.areas.delete_area(study, area_id)
         self.event_bus.push(
             Event(
@@ -1905,9 +1886,29 @@ class StudyService:
         area_to: str,
         params: RequestParameters,
     ) -> None:
+        """
+        Delete link from study if it is not referenced by a binding constraint,
+        otherwise raise an HTTP 403 Forbidden error.
+
+        Args:
+            uuid: The study ID.
+            area_from: The area from which the link starts.
+            area_to: The area to which the link ends.
+            params: The request parameters used to check user permissions.
+
+        Raises:
+            ReferencedObjectDeletionNotAllowed: If the link is referenced by a binding constraint.
+        """
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
+        link_id = LinkTerm(area1=area_from, area2=area_to).generate_id()
+        referencing_binding_constraints = self.binding_constraint_manager.get_binding_constraints(
+            study, ConstraintFilters(link_id=link_id)
+        )
+        if referencing_binding_constraints:
+            binding_ids = [bc.id for bc in referencing_binding_constraints]
+            raise ReferencedObjectDeletionNotAllowed(link_id, binding_ids, object_type="Link")
         self.links.delete_link(study, area_from, area_to)
         self.event_bus.push(
             Event(
@@ -1966,7 +1967,7 @@ class StudyService:
     def unarchive(self, uuid: str, params: RequestParameters) -> str:
         study = self.get_study(uuid)
         if not study.archived:
-            raise HTTPException(HTTPStatus.BAD_REQUEST, "Study is not archived")
+            raise HTTPException(http.HTTPStatus.BAD_REQUEST, "Study is not archived")
 
         if self.task_service.list_tasks(
             TaskListFilter(
@@ -2014,7 +2015,6 @@ class StudyService:
         study: Study,
         owner: t.Optional[JWTUser] = None,
         group_ids: t.Sequence[str] = (),
-        content_status: StudyContentStatus = StudyContentStatus.VALID,
     ) -> None:
         """
         Create or update a study with specified attributes.
@@ -2026,29 +2026,24 @@ class StudyService:
             study: The study to be saved or updated.
             owner: The owner of the study (current authenticated user).
             group_ids: The list of group IDs to associate with the study.
-            content_status: The new content status for the study.
 
         Raises:
             UserHasNotPermissionError:
-                If the owner is not specified or has invalid authentication,
-                or if permission is denied for any of the specified group IDs.
+                If the owner or the group role is not specified.
         """
         if not owner:
             raise UserHasNotPermissionError("owner is not specified or has invalid authentication")
 
         if isinstance(study, RawStudy):
-            study.content_status = content_status
+            study.content_status = StudyContentStatus.VALID
 
         study.owner = self.user_service.get_user(owner.impersonator, params=RequestParameters(user=owner))
 
         study.groups.clear()
         for gid in group_ids:
-            jwt_group: t.Optional[JWTGroup] = next(filter(lambda g: g.id == gid, owner.groups), None)  # type: ignore
-            if (
-                jwt_group is None
-                or jwt_group.role is None
-                or (jwt_group.role < RoleType.WRITER and not owner.is_site_admin())
-            ):
+            owned_groups = (g for g in owner.groups if g.id == gid)
+            jwt_group: t.Optional[JWTGroup] = next(owned_groups, None)
+            if jwt_group is None or jwt_group.role is None:
                 raise UserHasNotPermissionError(f"Permission denied for group ID: {gid}")
             study.groups.append(Group(id=jwt_group.id, name=jwt_group.name))
 
@@ -2422,6 +2417,19 @@ class StudyService:
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
 
+        # The upgrade of a study variant requires the use of a command specifically dedicated to the upgrade.
+        # However, such a command does not currently exist. Moreover, upgrading a study (whether raw or variant)
+        # directly impacts its descendants, as it would necessitate upgrading all of them.
+        # It’s uncertain whether this would be an acceptable behavior.
+        # For this reason, upgrading a study is not possible if the study is a variant or if it has descendants.
+
+        # First check if the study is a variant study, if so throw an error
+        if isinstance(study, VariantStudy):
+            raise StudyVariantUpgradeError(True)
+        # If the study is a parent raw study, throw an error
+        elif self.repository.has_children(study_id):
+            raise StudyVariantUpgradeError(False)
+
         target_version = target_version or find_next_version(study.version)
         if not target_version:
             raise UnsupportedStudyVersion(study.version)
@@ -2480,8 +2488,31 @@ class StudyService:
         return get_disk_usage(study_path) if study_path.exists() else 0
 
     def get_matrix_with_index_and_header(
-        self, *, study_id: str, path: str, with_index: bool, with_header: bool, parameters: RequestParameters
+        self,
+        *,
+        study_id: str,
+        path: str,
+        with_index: bool,
+        with_header: bool,
+        parameters: RequestParameters,
     ) -> pd.DataFrame:
+        """
+        Retrieves a matrix from a study with the option to include the index and header.
+
+        Args:
+            study_id: The UUID of the study from which to retrieve the matrix.
+            path: The relative path to the matrix within the study.
+            with_index: A boolean indicating whether to include the index in the retrieved matrix.
+            with_header: A boolean indicating whether to include the header in the retrieved matrix.
+            parameters: The request parameters, including the user information.
+
+        Returns:
+            A DataFrame representing the matrix.
+
+        Raises:
+            HTTPException: If the matrix does not exist or the user does not have the necessary permissions.
+        """
+
         matrix_path = Path(path)
         study = self.get_study(study_id)
 
@@ -2519,3 +2550,26 @@ class StudyService:
         )
 
         return df_matrix
+
+    def asserts_no_thermal_in_binding_constraints(
+        self, study: Study, area_id: str, cluster_ids: t.Sequence[str]
+    ) -> None:
+        """
+        Check that no cluster is referenced in a binding constraint, otherwise raise an HTTP 403 Forbidden error.
+
+        Args:
+            study: input study for which an update is to be committed
+            area_id: area ID to be checked
+            cluster_ids: IDs of the thermal clusters to be checked
+
+        Raises:
+            ReferencedObjectDeletionNotAllowed: if a cluster is referenced in a binding constraint
+        """
+
+        for cluster_id in cluster_ids:
+            ref_bcs = self.binding_constraint_manager.get_binding_constraints(
+                study, ConstraintFilters(cluster_id=f"{area_id}.{cluster_id}")
+            )
+            if ref_bcs:
+                binding_ids = [bc.id for bc in ref_bcs]
+                raise ReferencedObjectDeletionNotAllowed(cluster_id, binding_ids, object_type="Cluster")

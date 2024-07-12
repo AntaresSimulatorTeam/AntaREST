@@ -13,6 +13,7 @@ export const MapContainer = styled(Box)(() => ({
   '& svg[name="svg-container-graph-id"]': {
     backgroundImage: `url("${mapbackground}")`,
   },
+  overflow: "hidden",
 }));
 
 export const MapHeader = styled(Box)(() => ({

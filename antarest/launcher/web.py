@@ -41,6 +41,25 @@ class UnknownSolverConfig(HTTPException):
         )
 
 
+LauncherQuery = Query(
+    "default",
+    examples={
+        "Default launcher": {
+            "description": "Default solver (auto-detected)",
+            "value": "default",
+        },
+        "SLURM launcher": {
+            "description": "SLURM solver configuration",
+            "value": "slurm",
+        },
+        "Local launcher": {
+            "description": "Local solver configuration",
+            "value": "local",
+        },
+    },
+)
+
+
 def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
     bp = APIRouter(prefix="/v1/launcher")
 
@@ -214,25 +233,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         summary="Get list of supported solver versions",
         response_model=List[str],
     )
-    def get_solver_versions(
-        solver: str = Query(
-            "default",
-            examples={
-                "Default solver": {
-                    "description": "Get the solver versions of the default configuration",
-                    "value": "default",
-                },
-                "SLURM solver": {
-                    "description": "Get the solver versions of the SLURM server if available",
-                    "value": "slurm",
-                },
-                "Local solver": {
-                    "description": "Get the solver versions of the Local server if available",
-                    "value": "local",
-                },
-            },
-        ),
-    ) -> List[str]:
+    def get_solver_versions(solver: str = LauncherQuery) -> List[str]:
         """
         Get list of supported solver versions defined in the configuration.
 
@@ -251,25 +252,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         summary="Retrieving Min, Default, and Max Core Count",
         response_model=Dict[str, int],
     )
-    def get_nb_cores(
-        launcher: str = Query(
-            "default",
-            examples={
-                "Default launcher": {
-                    "description": "Min, Default, and Max Core Count",
-                    "value": "default",
-                },
-                "SLURM launcher": {
-                    "description": "Min, Default, and Max Core Count",
-                    "value": "slurm",
-                },
-                "Local launcher": {
-                    "description": "Min, Default, and Max Core Count",
-                    "value": "local",
-                },
-            },
-        ),
-    ) -> Dict[str, int]:
+    def get_nb_cores(launcher: str = LauncherQuery) -> Dict[str, int]:
         """
         Retrieve the numer of cores of the launcher.
 
@@ -285,6 +268,33 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         logger.info(f"Fetching the number of cores for the '{launcher}' configuration")
         try:
             return service.config.launcher.get_nb_cores(launcher).to_json()
+        except InvalidConfigurationError:
+            raise UnknownSolverConfig(launcher)
+
+    # noinspection SpellCheckingInspection
+    @bp.get(
+        "/time-limit",
+        tags=[APITag.launcher],
+        summary="Retrieve the time limit for a job (in hours)",
+    )
+    def get_time_limit(launcher: str = LauncherQuery) -> Dict[str, int]:
+        """
+        Retrieve the time limit for a job (in hours) of the given launcher: "local" or "slurm".
+
+        If a jobs exceed this time limit, SLURM kills the job and it is considered failed.
+
+        Args:
+        - `launcher`: name of the configuration to read: "slurm" or "local".
+          If "default" is specified, retrieve the configuration of the default launcher.
+
+        Returns:
+        - "min": min allowed time limit
+        - "defaultValue": default time limit
+        - "max": max allowed time limit
+        """
+        logger.info(f"Fetching the time limit for the '{launcher}' configuration")
+        try:
+            return service.config.launcher.get_time_limit(launcher).to_json()
         except InvalidConfigurationError:
             raise UnknownSolverConfig(launcher)
 

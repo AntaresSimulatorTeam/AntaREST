@@ -31,13 +31,11 @@ import XpansionSettings from "./Singlestudy/explore/Xpansion/Settings";
 import Capacities from "./Singlestudy/explore/Xpansion/Capacities";
 import Properties from "./Singlestudy/explore/Modelization/Areas/Properties";
 import Load from "./Singlestudy/explore/Modelization/Areas/Load";
-import Thermal from "./Singlestudy/explore/Modelization/Areas/Thermal";
 import Hydro from "./Singlestudy/explore/Modelization/Areas/Hydro";
 import MiscGen from "./Singlestudy/explore/Modelization/Areas/MiscGen";
 import Reserve from "./Singlestudy/explore/Modelization/Areas/Reserve";
 import Wind from "./Singlestudy/explore/Modelization/Areas/Wind";
 import Solar from "./Singlestudy/explore/Modelization/Areas/Solar";
-import Renewables from "./Singlestudy/explore/Modelization/Areas/Renewables";
 import ResultDetails from "./Singlestudy/explore/Results/ResultDetails";
 import Constraints from "./Singlestudy/explore/Xpansion/Constraints";
 import Weights from "./Singlestudy/explore/Xpansion/Weights";
@@ -51,8 +49,10 @@ import Allocation from "./Singlestudy/explore/Modelization/Areas/Hydro/Allocatio
 import Correlation from "./Singlestudy/explore/Modelization/Areas/Hydro/Correlation";
 import Storages from "./Singlestudy/explore/Modelization/Areas/Storages";
 import StorageForm from "./Singlestudy/explore/Modelization/Areas/Storages/Form";
+import Thermal from "./Singlestudy/explore/Modelization/Areas/Thermal";
 import ThermalForm from "./Singlestudy/explore/Modelization/Areas/Thermal/Form";
-import RenewablesForm from "./Singlestudy/explore/Modelization/Areas/Renewables/Form";
+import Renewables from "./Singlestudy/explore/Modelization/Areas/Renewables";
+import RenewableForm from "./Singlestudy/explore/Modelization/Areas/Renewables/Form";
 import SplitHydroMatrix from "./Singlestudy/explore/Modelization/Areas/Hydro/SplitHydroMatrix";
 import CloseIcon from "@mui/icons-material/Close";
 
@@ -163,7 +163,7 @@ function App() {
                             <Route path="renewables" element={<Renewables />} />
                             <Route
                               path="renewables/:clusterId"
-                              element={<RenewablesForm />}
+                              element={<RenewableForm />}
                             />
                             <Route path="reserves" element={<Reserve />} />
                             <Route path="miscGen" element={<MiscGen />} />

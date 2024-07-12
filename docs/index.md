@@ -4,29 +4,32 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-00599c?style=for-the-badge&logo=TypeScript&logoColor=61DAFB)
 ![React](https://img.shields.io/badge/React-00599c?style=for-the-badge&logo=react&logoColor=61DAFB)
 
+![](assets/antares.png "Antares Web Logo")
+> Web API and UI for [Antares Simulator][antares-simulator-website]
 
-![antares logo](assets/antares.png)
-> Web API and UI for [Antares Simulator][antareswebsite]
-
-This package works along with RTE's adequacy software [Antares Simulator][antareswebsite] that is also [hosted on github][antares-github]
-
-Please see the [Antares Web Documentation][readthedocs] for an introductory tutorial,
-and a full user guide. Visit the [Antares-Simulator Documentation][readthedocs-antares] for more insights on ANTARES. 
+Please see the [Antares Web Documentation][antares-web-readthedocs] for an introductory tutorial,
+and a full user guide. Visit the [Antares-Simulator Documentation][antares-simulator-readthedocs] for more insights on
+ANTARES.
 
 ## Introduction
 
-`antares-web` is a server api interfacing Antares Simulator solver and studies management. It provides a web application to manage studies
-adding more features to simple edition.
+Welcome to `antares-web`, a comprehensive web application designed to interface with RTE’s adequacy software,
+the [Antares Simulator][antares-simulator-website], also [hosted on GitHub][antares-simulator-github].
+The Antares Simulator is an open-source power system simulator for anyone valuing the quantification of adequacy or the
+economic performance of interconnected energy systems over short or distant time horizons.
+It enables detailed modeling of energy consumption, generation, and transportation, performing probabilistic simulations
+across numerous year-long scenarios, each consisting of 8760 hourly time-frames.
 
-This brings:
+`antares-web` serves as a server API interfacing with Antares Simulator studies, providing a web application to manage
+studies while adding features for enhanced edition capabilities.
 
-> - **application interoperability** : assign unique id to studies, expose operation endpoint api
->
-> - **optimized storage**: extract matrices data and share them between studies, archive mode
->
-> - **variant management**: add a new editing description language and generation tool
->
-> - **user accounts** : add user management and permission system
+This integration brings:
+
+- **Application Interoperability**: Assign unique IDs to studies and expose operations through an endpoint API,
+  facilitating integration with other applications and services.
+- **Optimized Storage**: Extract matrices data and share them between studies, supporting archive mode.
+- **Variant Management**: Introduce a new editing description language and generation tool.
+- **User Accounts**: Implement user management and permission systems.
 
 ## Documentation
 
@@ -34,18 +37,24 @@ This brings:
 - [Using the application](./user-guide/0-introduction.md)
 - [Contributing to the application code](./architecture/0-introduction.md)
 
-
 `Antares-Web` is currently under development. Feel free to submit any issue.
 
+[ci_result]: https://github.com/AntaresSimulatorTeam/AntaREST/actions/workflows/main.yml/badge.svg
 
-[ci_result]: https://github.com/AntaresSimulatorTeam/AntaREST/workflows/main/badge.svg
-[ci_result_link]: https://github.com/AntaresSimulatorTeam/AntaREST/actions?query=workflow%3Amain
+[ci_result_link]: https://github.com/AntaresSimulatorTeam/AntaREST/actions/workflows/main.yml
+
 [coverage_result]: https://sonarcloud.io/api/project_badges/measure?project=AntaresSimulatorTeam_api-iso-antares&metric=coverage
+
 [coverage_result_link]: https://sonarcloud.io/dashboard?id=AntaresSimulatorTeam_api-iso-antares
+
 [license_badge]: https://img.shields.io/github/license/AntaresSimulatorTeam/AntaREST
+
 [license_link]: https://www.apache.org/licenses/LICENSE-2.0
 
-[antares-github]: https://github.com/AntaresSimulatorTeam/Antares_Simulator
-[readthedocs]: https://antares-web.readthedocs.io/
-[readthedocs-antares]: https://antares-simulator.readthedocs.io/
-[antareswebsite]: https://antares-simulator.org
+[antares-web-readthedocs]: https://antares-web.readthedocs.io/
+
+[antares-simulator-readthedocs]: https://antares-simulator.readthedocs.io/
+
+[antares-simulator-website]: https://antares-simulator.org
+
+[antares-simulator-github]: https://github.com/AntaresSimulatorTeam/Antares_Simulator

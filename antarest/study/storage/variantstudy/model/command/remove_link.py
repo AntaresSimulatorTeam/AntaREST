@@ -1,9 +1,11 @@
-from typing import Any, Dict, List, Tuple
+import typing as t
 
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
+from pydantic import root_validator, validator
+
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
-from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
+from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand, OutputTuple
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
@@ -25,102 +27,137 @@ class RemoveLink(ICommand):
     area1: str
     area2: str
 
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
-        result = self._check_link_exists(study_data)
-        if result[0].status:
-            area_from, area_to = sorted([self.area1, self.area2])
-            del study_data.areas[area_from].links[area_to]
-        return result
+    # noinspection PyMethodParameters
+    @validator("area1", "area2", pre=True)
+    def _validate_id(cls, area: str) -> str:
+        if isinstance(area, str):
+            # Area IDs must be in lowercase and not empty.
+            area_id = transform_name_to_id(area, lower=True)
+            if area_id:
+                return area_id
+            # Valid characters are `[a-zA-Z0-9_(),& -]` (including space).
+            raise ValueError(f"Invalid area '{area}': it must not be empty or contain invalid characters")
 
-    def _check_link_exists(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
-        if self.area1 not in study_data.areas:
-            return (
-                CommandOutput(
-                    status=False,
-                    message=f"The area '{self.area1}' does not exist.",
-                ),
-                dict(),
-            )
-        if self.area2 not in study_data.areas:
-            return (
-                CommandOutput(
-                    status=False,
-                    message=f"The area '{self.area2}' does not exist.",
-                ),
-                dict(),
-            )
+        # Delegates the validation to Pydantic validators (e.g: type checking).
+        return area
 
-        area_from, area_to = sorted([self.area1, self.area2])
+    # noinspection PyMethodParameters
+    @root_validator(pre=False)
+    def _validate_link(cls, values: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
+        area1 = values.get("area1")
+        area2 = values.get("area2")
 
-        if area_to not in study_data.areas[area_from].links:
-            return (
-                CommandOutput(
-                    status=False,
-                    message=f"The link between {self.area1} and {self.area2} does not exist.",
-                ),
-                dict(),
-            )
-        return (
-            CommandOutput(
-                status=True,
-                message=f"Link between {self.area1} and {self.area2} removed",
-            ),
-            {"area_from": area_from, "area_to": area_to},
-        )
+        if area1 and area2:
+            # By convention, the source area is always the smallest one (in lexicographic order).
+            values["area1"], values["area2"] = sorted([area1, area2])
+
+        return values
+
+    def _check_link_exists(self, study_cfg: FileStudyTreeConfig) -> OutputTuple:
+        """
+        Check if the source and target areas exist in the study configuration, and if a link between them exists.
+
+        Args:
+            study_cfg: The study configuration to check for the link.
+
+        Returns:
+            - The ``CommandOutput`` object indicates the status of the operation and a message.
+            - The dictionary contains the source and target areas if the link exists.
+        """
+
+        # Data is empty in case of error
+        data: t.Dict[str, t.Any] = {}
+
+        if self.area1 not in study_cfg.areas:
+            message = f"The source area '{self.area1}' does not exist."
+        elif self.area2 not in study_cfg.areas:
+            message = f"The target area '{self.area2}' does not exist."
+        elif self.area2 not in study_cfg.areas[self.area1].links:
+            message = f"The link between {self.area1} and {self.area2} does not exist."
+        else:
+            message = f"Link between {self.area1} and {self.area2} removed"
+            data = {"area_from": self.area1, "area_to": self.area2}
+
+        return CommandOutput(status=bool(data), message=message), data
+
+    def _apply_config(self, study_cfg: FileStudyTreeConfig) -> OutputTuple:
+        """
+        Update the study configuration by removing the link between the source and target areas.
+
+        Args:
+            study_cfg: The study configuration to update.
+
+        Returns:
+            A tuple containing the command output and a dictionary of extra data.
+            On success, the dictionary contains the source and target areas.
+        """
+        output, data = self._check_link_exists(study_cfg)
+
+        if output.status:
+            del study_cfg.areas[self.area1].links[self.area2]
+
+        return output, data
+
+    def _remove_link_from_scenario_builder(self, study_data: FileStudy) -> None:
+        """
+        Update the scenario builder by removing the rows that correspond to the link to remove.
+
+        NOTE: this update can be very long if the scenario builder configuration is large.
+        """
+        rulesets = study_data.tree.get(["settings", "scenariobuilder"])
+
+        for ruleset in rulesets.values():
+            for key in list(ruleset):
+                # The key is in the form "symbol,area1,area2,year".
+                symbol, *parts = key.split(",")
+                if symbol == "ntc" and parts[0] == self.area1 and parts[1] == self.area2:
+                    del ruleset[key]
+
+        study_data.tree.save(rulesets, ["settings", "scenariobuilder"])
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
-        output, data = self._check_link_exists(study_data.config)
-        if not output.status:
-            return output
-        area_from = data["area_from"]
-        area_to = data["area_to"]
-        if study_data.config.version < 820:
-            study_data.tree.delete(["input", "links", area_from, area_to])
-        else:
-            study_data.tree.delete(["input", "links", area_from, f"{area_to}_parameters"])
-            study_data.tree.delete(
-                [
-                    "input",
-                    "links",
-                    area_from,
-                    "capacities",
-                    f"{area_to}_direct",
-                ]
-            )
-            study_data.tree.delete(
-                [
-                    "input",
-                    "links",
-                    area_from,
-                    "capacities",
-                    f"{area_to}_indirect",
-                ]
-            )
-        study_data.tree.delete(["input", "links", area_from, "properties", area_to])
-        del study_data.config.areas[area_from].links[area_to]
-        return output
+        """
+        Update the configuration and the study data by removing the link between the source and target areas.
+
+        Args:
+            study_data (FileStudy): The study data from which the link will be removed.
+
+        Returns:
+            The status of the operation and a message.
+        """
+
+        output = self._check_link_exists(study_data.config)[0]
+
+        if output.status:
+            if study_data.config.version < 820:
+                study_data.tree.delete(["input", "links", self.area1, self.area2])
+            else:
+                study_data.tree.delete(["input", "links", self.area1, f"{self.area2}_parameters"])
+                study_data.tree.delete(["input", "links", self.area1, "capacities", f"{self.area2}_direct"])
+                study_data.tree.delete(["input", "links", self.area1, "capacities", f"{self.area2}_indirect"])
+            study_data.tree.delete(["input", "links", self.area1, "properties", self.area2])
+
+            self._remove_link_from_scenario_builder(study_data)
+
+        return self._apply_config(study_data.config)[0]
 
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
             action=CommandName.REMOVE_LINK.value,
-            args={
-                "area1": self.area1,
-                "area2": self.area2,
-            },
+            args={"area1": self.area1, "area2": self.area2},
         )
 
     def match_signature(self) -> str:
-        return str(
-            self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.area1 + MATCH_SIGNATURE_SEPARATOR + self.area2
-        )
+        sep = MATCH_SIGNATURE_SEPARATOR
+        return f"{self.command_name.value}{sep}{self.area1}{sep}{self.area2}"
 
     def match(self, other: ICommand, equal: bool = False) -> bool:
         if not isinstance(other, RemoveLink):
             return False
         return self.area1 == other.area1 and self.area2 == other.area2
 
-    def _create_diff(self, other: "ICommand") -> List["ICommand"]:
+    def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
         return []
 
-    def get_inner_matrices(self) -> List[str]:
+    def get_inner_matrices(self) -> t.List[str]:
         return []

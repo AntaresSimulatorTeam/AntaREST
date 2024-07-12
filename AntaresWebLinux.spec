@@ -1,5 +1,6 @@
 # -*- mode: python ; coding: utf-8 -*-
 from pathlib import Path
+from PyInstaller.utils.hooks import collect_dynamic_libs
 
 block_cipher = None
 
@@ -7,9 +8,11 @@ block_cipher = None
 migrations_dir = Path('alembic/versions')
 migration_files = [str(f) for f in migrations_dir.iterdir() if f.is_file() and f.suffix == '.py']
 
+binaries = [('./alembic.ini', './alembic.ini')]  + collect_dynamic_libs('tables')
+
 antares_web_server_a = Analysis(['antarest/gui.py', 'alembic/env.py'] + migration_files,
              pathex=[],
-             binaries=[('./alembic.ini', './alembic.ini')],
+             binaries=binaries,
              datas=[('./resources', './resources'), ('./alembic', './alembic')],
              hiddenimports=[
                  'cmath',

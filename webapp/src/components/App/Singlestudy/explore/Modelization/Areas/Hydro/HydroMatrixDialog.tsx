@@ -19,7 +19,7 @@ function HydroMatrixDialog({ open, onClose, type }: Props) {
     onClose,
     actions: (
       <Button onClick={onClose} color="primary" variant="outlined">
-        {t("button.close")}
+        {t("global.close")}
       </Button>
     ),
   };

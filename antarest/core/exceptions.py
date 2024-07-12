@@ -158,17 +158,6 @@ class MatrixNotFound(HTTPException):
         return self.detail
 
 
-class DuplicateSTStorageId(HTTPException):
-    """Exception raised when trying to create a short-term storage with an already existing id."""
-
-    def __init__(self, study_id: str, area_id: str, st_storage_id: str) -> None:
-        detail = f"Short term storage '{st_storage_id}' already exists in area '{area_id}'"
-        super().__init__(HTTPStatus.CONFLICT, detail)
-
-    def __str__(self) -> str:
-        return self.detail
-
-
 class ThermalClusterMatrixNotFound(MatrixNotFound):
     """Matrix of the thermal cluster is not found (404 Not Found)"""
 
@@ -325,6 +314,46 @@ class StudyDeletionNotAllowed(HTTPException):
         )
 
 
+class StudyVariantUpgradeError(HTTPException):
+    def __init__(self, is_variant: bool) -> None:
+        if is_variant:
+            super().__init__(
+                HTTPStatus.EXPECTATION_FAILED,
+                "Upgrade not supported for variant study",
+            )
+        else:
+            super().__init__(HTTPStatus.EXPECTATION_FAILED, "Upgrade not supported for parent of variants")
+
+
+class ReferencedObjectDeletionNotAllowed(HTTPException):
+    """
+    Exception raised when a binding constraint is not allowed to be deleted because it references
+    other objects: areas, links or thermal clusters.
+    """
+
+    def __init__(self, object_id: str, binding_ids: t.Sequence[str], *, object_type: str) -> None:
+        """
+        Initialize the exception.
+
+        Args:
+            object_id: ID of the object that is not allowed to be deleted.
+            binding_ids: Binding constraints IDs that reference the object.
+            object_type: Type of the object that is not allowed to be deleted: area, link or thermal cluster.
+        """
+        max_count = 10
+        first_bcs_ids = ",\n".join(f"{i}- '{bc}'" for i, bc in enumerate(binding_ids[:max_count], 1))
+        and_more = f",\nand {len(binding_ids) - max_count} more..." if len(binding_ids) > max_count else "."
+        message = (
+            f"{object_type} '{object_id}' is not allowed to be deleted, because it is referenced"
+            f" in the following binding constraints:\n{first_bcs_ids}{and_more}"
+        )
+        super().__init__(HTTPStatus.FORBIDDEN, message)
+
+    def __str__(self) -> str:
+        """Return a string representation of the exception."""
+        return self.detail
+
+
 class UnsupportedStudyVersion(HTTPException):
     def __init__(self, version: str) -> None:
         super().__init__(
@@ -346,6 +375,20 @@ class BadOutputError(HTTPException):
         super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, message)
 
 
+class OutputNotFound(HTTPException):
+    """
+    Exception raised when an output is not found in the study results directory.
+    """
+
+    def __init__(self, output_id: str) -> None:
+        message = f"Output '{output_id}' not found"
+        super().__init__(HTTPStatus.NOT_FOUND, message)
+
+    def __str__(self) -> str:
+        """Return a string representation of the exception."""
+        return self.detail
+
+
 class BadZipBinary(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.UNSUPPORTED_MEDIA_TYPE, message)
@@ -354,6 +397,15 @@ class BadZipBinary(HTTPException):
 class IncorrectPathError(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.NOT_FOUND, message)
+
+
+class FileTooLargeError(HTTPException):
+    def __init__(self, estimated_size: int, maximum_size: int) -> None:
+        message = (
+            f"Cannot aggregate output data."
+            f" The expected size: {estimated_size}Mo exceeds the max supported size: {maximum_size}"
+        )
+        super().__init__(HTTPStatus.REQUEST_ENTITY_TOO_LARGE, message)
 
 
 class UrlNotMatchJsonDataError(HTTPException):
@@ -372,11 +424,6 @@ class BindingConstraintNotFound(HTTPException):
 
 
 class NoConstraintError(HTTPException):
-    def __init__(self, message: str) -> None:
-        super().__init__(HTTPStatus.NOT_FOUND, message)
-
-
-class ConstraintAlreadyExistError(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.NOT_FOUND, message)
 
@@ -406,14 +453,61 @@ class WrongMatrixHeightError(HTTPException):
         super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, message)
 
 
-class MissingDataError(HTTPException):
-    def __init__(self, message: str) -> None:
+class ConstraintTermNotFound(HTTPException):
+    """
+    Exception raised when a constraint term is not found.
+    """
+
+    def __init__(self, binding_constraint_id: str, *ids: str) -> None:
+        count = len(ids)
+        id_enum = ", ".join(f"'{term}'" for term in ids)
+        message = {
+            0: f"Constraint terms not found in BC '{binding_constraint_id}'",
+            1: f"Constraint term {id_enum} not found in BC '{binding_constraint_id}'",
+            2: f"Constraint terms {id_enum} not found in BC '{binding_constraint_id}'",
+        }[min(count, 2)]
         super().__init__(HTTPStatus.NOT_FOUND, message)
 
+    def __str__(self) -> str:
+        """Return a string representation of the exception."""
+        return self.detail
 
-class ConstraintIdNotFoundError(HTTPException):
-    def __init__(self, message: str) -> None:
-        super().__init__(HTTPStatus.NOT_FOUND, message)
+
+class DuplicateConstraintTerm(HTTPException):
+    """
+    Exception raised when an attempt is made to create a constraint term which already exists.
+    """
+
+    def __init__(self, binding_constraint_id: str, *ids: str) -> None:
+        count = len(ids)
+        id_enum = ", ".join(f"'{term}'" for term in ids)
+        message = {
+            0: f"Constraint terms already exist in BC '{binding_constraint_id}'",
+            1: f"Constraint term {id_enum} already exists in BC '{binding_constraint_id}'",
+            2: f"Constraint terms {id_enum} already exist in BC '{binding_constraint_id}'",
+        }[min(count, 2)]
+        super().__init__(HTTPStatus.CONFLICT, message)
+
+    def __str__(self) -> str:
+        """Return a string representation of the exception."""
+        return self.detail
+
+
+class InvalidConstraintTerm(HTTPException):
+    """
+    Exception raised when a constraint term is not correctly specified (no term data).
+    """
+
+    def __init__(self, binding_constraint_id: str, term_json: str) -> None:
+        message = (
+            f"Invalid constraint term for binding constraint '{binding_constraint_id}': {term_json},"
+            f" term 'data' is missing or empty"
+        )
+        super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, message)
+
+    def __str__(self) -> str:
+        """Return a string representation of the exception."""
+        return self.detail
 
 
 class LayerNotFound(HTTPException):

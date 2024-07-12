@@ -68,6 +68,23 @@ class RemoveCluster(ICommand):
         message = f"Thermal cluster '{self.cluster_id}' removed from the area '{self.area_id}'."
         return CommandOutput(status=True, message=message), {}
 
+    def _remove_cluster_from_scenario_builder(self, study_data: FileStudy) -> None:
+        """
+        Update the scenario builder by removing the rows that correspond to the thermal cluster to remove.
+
+        NOTE: this update can be very long if the scenario builder configuration is large.
+        """
+        rulesets = study_data.tree.get(["settings", "scenariobuilder"])
+
+        for ruleset in rulesets.values():
+            for key in list(ruleset):
+                # The key is in the form "symbol,area,year,cluster"
+                symbol, *parts = key.split(",")
+                if symbol == "t" and parts[0] == self.area_id and parts[2] == self.cluster_id.lower():
+                    del ruleset[key]
+
+        study_data.tree.save(rulesets, ["settings", "scenariobuilder"])
+
     def _apply(self, study_data: FileStudy) -> CommandOutput:
         """
         Applies the study data to update thermal cluster configurations and saves the changes:
@@ -103,6 +120,7 @@ class RemoveCluster(ICommand):
             study_data.tree.delete(path)
 
         self._remove_cluster_from_binding_constraints(study_data)
+        self._remove_cluster_from_scenario_builder(study_data)
 
         # Deleting the renewable cluster in the configuration must be done AFTER
         # deleting the files and folders.

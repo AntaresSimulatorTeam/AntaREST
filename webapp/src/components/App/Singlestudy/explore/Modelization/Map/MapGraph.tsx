@@ -98,7 +98,7 @@ function MapGraph({
     }
   };
 
-  const handleOnClickNode = async (nodeId: string) => {
+  const handleOnClickNode = (nodeId: string) => {
     if (!sourceNode && nodes) {
       dispatch(setCurrentLink(""));
       dispatch(setCurrentArea(nodeId));

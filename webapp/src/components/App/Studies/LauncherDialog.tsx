@@ -18,12 +18,13 @@ import { useSnackbar } from "notistack";
 import { useMountedState } from "react-use";
 import { shallowEqual } from "react-redux";
 import {
+  LaunchOptions,
   StudyMetadata,
   StudyOutput,
-  LaunchOptions,
 } from "../../../common/types";
 import {
   getLauncherCores,
+  getLauncherTimeLimit,
   getLauncherVersions,
   getStudyOutputs,
   launchStudy,
@@ -38,10 +39,6 @@ import CheckBoxFE from "../../common/fieldEditors/CheckBoxFE";
 import { convertVersions } from "../../../services/utils";
 import UsePromiseCond from "../../common/utils/UsePromiseCond";
 import SwitchFE from "../../common/fieldEditors/SwitchFE";
-import moment from "moment";
-
-const DEFAULT_NB_CPU = 22;
-const DEFAULT_TIME_LIMIT = 240 * 3600; // 240 hours in seconds
 
 interface Props {
   open: boolean;
@@ -55,19 +52,18 @@ function LauncherDialog(props: Props) {
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [options, setOptions] = useState<LaunchOptions>({
-    nb_cpu: DEFAULT_NB_CPU,
     auto_unzip: true,
-    time_limit: DEFAULT_TIME_LIMIT,
   });
   const [solverVersion, setSolverVersion] = useState<string>();
   const [isLaunching, setIsLaunching] = useState(false);
   const isMounted = useMountedState();
+
   const studyNames = useAppSelector(
     (state) => studyIds.map((sid) => getStudy(state, sid)?.name),
     shallowEqual,
   );
 
-  const res = usePromiseWithSnackbarError(
+  const launcherCores = usePromiseWithSnackbarError(
     () =>
       getLauncherCores().then((cores) => {
         setOptions((prevOptions) => {
@@ -80,6 +76,22 @@ function LauncherDialog(props: Props) {
       }),
     {
       errorMessage: t("study.error.launcherCores"),
+    },
+  );
+
+  const launcherTimeLimit = usePromiseWithSnackbarError(
+    () =>
+      getLauncherTimeLimit().then((timeLimit) => {
+        setOptions((prevOptions) => {
+          return {
+            ...prevOptions,
+            time_limit: timeLimit.defaultValue * 3600,
+          };
+        });
+        return timeLimit;
+      }),
+    {
+      errorMessage: t("study.error.launcherTimeLimit"),
     },
   );
 
@@ -97,7 +109,7 @@ function LauncherDialog(props: Props) {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleLaunchClick = async () => {
+  const handleLaunchClick = () => {
     if (studyIds.length > 0) {
       setIsLaunching(true);
       Promise.all(
@@ -170,22 +182,6 @@ function LauncherDialog(props: Props) {
   };
 
   ////////////////////////////////////////////////////////////////
-  // Utils
-  ////////////////////////////////////////////////////////////////
-
-  /**
-   * Parses an hour value from a string and converts it to seconds.
-   * If the input is invalid, returns a default value.
-   *
-   * @param hourString - A string representing the number of hours.
-   * @returns The equivalent number of seconds, or a default value for invalid inputs.
-   */
-  const parseHoursToSeconds = (hourString: string): number => {
-    const seconds = moment.duration(hourString, "hours").asSeconds();
-    return seconds > 0 ? seconds : DEFAULT_TIME_LIMIT;
-  };
-
-  ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
 
@@ -194,9 +190,8 @@ function LauncherDialog(props: Props) {
       title={t("study.runStudy")}
       open={open}
       onClose={onClose}
-      contentProps={{
-        sx: { width: "600px", height: "500px", p: 0, overflow: "hidden" },
-      }}
+      maxWidth="md"
+      PaperProps={{ sx: { width: 700 } }}
       actions={
         <>
           <Button variant="text" color="primary" onClick={onClose}>
@@ -206,7 +201,11 @@ function LauncherDialog(props: Props) {
             sx={{ mx: 2 }}
             color="primary"
             variant="contained"
-            disabled={isLaunching || !res.isResolved}
+            disabled={
+              isLaunching ||
+              !launcherCores.isResolved ||
+              !launcherTimeLimit.isResolved
+            }
             onClick={handleLaunchClick}
           >
             {t("global.launch")}
@@ -255,7 +254,7 @@ function LauncherDialog(props: Props) {
             id="launcher-option-output-suffix"
             label={t("global.name")}
             type="text"
-            variant="filled"
+            variant="outlined"
             value={options.output_suffix}
             onChange={(e) =>
               handleChange("output_suffix", e.target.value.trim())
@@ -267,36 +266,56 @@ function LauncherDialog(props: Props) {
               width: "50%",
             }}
           />
-          <TextField
-            id="launcher-option-time-limit"
-            label={t("study.timeLimit")}
-            type="number"
-            variant="filled"
-            // Convert from seconds to hours the displayed value
-            value={(options.time_limit ?? DEFAULT_TIME_LIMIT) / 3600}
-            onChange={(e) =>
-              handleChange("time_limit", parseHoursToSeconds(e.target.value))
-            }
-            InputLabelProps={{
-              shrink: true,
-            }}
-            inputProps={{
-              min: 1,
-              max: 240,
-            }}
-            sx={{
-              minWidth: "125px",
-            }}
-          />
+
           <UsePromiseCond
-            response={res}
+            response={launcherTimeLimit}
+            ifResolved={(timeLimit) => (
+              <TextField
+                id="launcher-option-time-limit"
+                label={t("study.timeLimit")}
+                type="number"
+                variant="outlined"
+                required
+                value={
+                  options.time_limit
+                    ? options.time_limit / 3600
+                    : timeLimit.defaultValue
+                }
+                onChange={(e) => {
+                  const newValue = parseInt(e.target.value, 10);
+                  handleChange(
+                    "time_limit",
+                    Math.min(Math.max(newValue, timeLimit.min), timeLimit.max) *
+                      3600,
+                  );
+                }}
+                InputLabelProps={{
+                  shrink: true,
+                }}
+                inputProps={{
+                  min: timeLimit.min,
+                  max: timeLimit.max,
+                  step: 1,
+                }}
+                sx={{
+                  minWidth: "125px",
+                }}
+              />
+            )}
+            ifPending={() => <Skeleton width={125} height={60} />}
+            ifRejected={() => <Skeleton width={125} height={60} />}
+          />
+
+          <UsePromiseCond
+            response={launcherCores}
             ifResolved={(cores) => (
               <TextField
                 id="nb-cpu"
                 label={t("study.nbCpu")}
                 type="number"
-                variant="filled"
-                value={options.nb_cpu}
+                variant="outlined"
+                required
+                value={options.nb_cpu ? options.nb_cpu : cores.defaultValue}
                 onChange={(e) => {
                   const newValue = parseInt(e.target.value, 10);
                   handleChange(
@@ -307,6 +326,7 @@ function LauncherDialog(props: Props) {
                 inputProps={{
                   min: cores.min,
                   max: cores.max,
+                  step: 1,
                 }}
                 sx={{
                   minWidth: "125px",
@@ -332,16 +352,17 @@ function LauncherDialog(props: Props) {
           <Typography>Simulateur</Typography>
           <SelectSingle
             name={t("global.version")}
+            variant="outlined"
             list={launcherVersions}
             data={solverVersion}
             setValue={setSolverVersion}
-            sx={{ width: 1, mt: 2 }}
+            sx={{ width: 1, mt: 0.5 }}
           />
           <TextField
             id="other-options"
             label={t("study.otherOptions")}
             type="text"
-            variant="filled"
+            variant="outlined"
             value={options.other_options}
             onChange={(e) => handleChange("other_options", e.target.value)}
             sx={{
@@ -436,7 +457,7 @@ function LauncherDialog(props: Props) {
             />
           </Box>
           {outputList && outputList.length === 1 && (
-            <Box sx={{ display: "flex", gap: 2 }}>
+            <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
               <FormControlLabel
                 control={
                   <Checkbox
@@ -449,10 +470,11 @@ function LauncherDialog(props: Props) {
                     }
                   />
                 }
-                label={t("launcher.xpansion.sensitivityMode") as string}
+                label={t("launcher.xpansion.sensitivityMode")}
               />
               <SelectSingle
                 name={t("studies.selectOutput")}
+                variant="outlined"
                 list={outputList[0].map((o: StudyOutput) => ({
                   id: o.name,
                   name: o.name,
@@ -464,15 +486,11 @@ function LauncherDialog(props: Props) {
                     output_id: data,
                   })
                 }
-                sx={{ width: "300px", my: 3 }}
+                sx={{ minWidth: 400 }}
               />
             </Box>
           )}
         </FormGroup>
-        <Divider
-          sx={{ width: 1, my: 1, border: "0.5px solid", opacity: 0.7 }}
-          orientation="horizontal"
-        />
       </Box>
     </BasicDialog>
   );

@@ -130,10 +130,10 @@ class LinkManager:
 
             # Convert the DTO to a configuration object and update the configuration file.
             properties = LinkProperties(**new_link_dto.dict(by_alias=False))
-            path = f"{_ALL_LINKS_PATH}/{area1}/properties"
+            path = f"{_ALL_LINKS_PATH}/{area1}/properties/{area2}"
             cmd = UpdateConfig(
                 target=path,
-                data={area2: properties.to_config()},
+                data=properties.to_config(),
                 command_context=self.storage_service.variant_study_service.command_factory.command_context,
             )
             commands.append(cmd)

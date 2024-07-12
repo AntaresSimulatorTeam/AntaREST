@@ -9,6 +9,7 @@ import { useFormContextPlus } from "../../../../../../common/Form";
 import { STORAGE_GROUPS, Storage } from "./utils";
 import { useOutletContext } from "react-router";
 import { StudyMetadata } from "../../../../../../../common/types";
+import { validateNumber } from "../../../../../../../utils/validationUtils";
 
 function Fields() {
   const [t] = useTranslation();
@@ -21,131 +22,114 @@ function Fields() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <Fieldset legend={t("global.general")}>
-      <StringFE
-        label={t("global.name")}
-        name="name"
-        control={control}
-        disabled
-      />
-      <SelectFE
-        label={t("global.group")}
-        name="group"
-        control={control}
-        options={STORAGE_GROUPS}
-        sx={{
-          alignSelf: "center",
-        }}
-      />
-      {studyVersion >= 880 && (
+    <>
+      <Fieldset legend={t("global.general")}>
+        <StringFE
+          label={t("global.name")}
+          name="name"
+          control={control}
+          disabled
+        />
+        <SelectFE
+          label={t("global.group")}
+          name="group"
+          control={control}
+          options={STORAGE_GROUPS}
+          sx={{
+            alignSelf: "center",
+          }}
+        />
+      </Fieldset>
+      <Fieldset legend={t("study.modelization.clusters.operatingParameters")}>
+        {studyVersion >= 880 && (
+          <SwitchFE
+            label={t("global.enabled")}
+            name="enabled"
+            control={control}
+            sx={{
+              alignItems: "center",
+              alignSelf: "center",
+            }}
+          />
+        )}
+        <Tooltip
+          title={t("study.modelization.storages.injectionNominalCapacity.info")}
+          arrow
+          placement="top"
+        >
+          <Box>
+            <NumberFE
+              label={t("study.modelization.storages.injectionNominalCapacity")}
+              name="injectionNominalCapacity"
+              control={control}
+              rules={{
+                validate: validateNumber({ min: 0 }),
+              }}
+            />
+          </Box>
+        </Tooltip>
+        <Tooltip
+          title={t(
+            "study.modelization.storages.withdrawalNominalCapacity.info",
+          )}
+          arrow
+          placement="top"
+        >
+          <Box>
+            <NumberFE
+              label={t("study.modelization.storages.withdrawalNominalCapacity")}
+              name="withdrawalNominalCapacity"
+              control={control}
+              rules={{
+                validate: validateNumber({ min: 0 }),
+              }}
+            />
+          </Box>
+        </Tooltip>
+        <Tooltip
+          title={t("study.modelization.storages.reservoirCapacity.info")}
+          arrow
+          placement="top"
+        >
+          <Box>
+            <NumberFE
+              label={t("study.modelization.storages.reservoirCapacity")}
+              name="reservoirCapacity"
+              control={control}
+              rules={{
+                validate: validateNumber({ min: 0 }),
+              }}
+            />
+          </Box>
+        </Tooltip>
+        <NumberFE
+          label={t("study.modelization.storages.efficiency")}
+          name="efficiency"
+          control={control}
+          rules={{
+            validate: validateNumber({ min: 0, max: 100 }),
+          }}
+        />
+        <NumberFE
+          label={t("study.modelization.storages.initialLevel")}
+          name="initialLevel"
+          control={control}
+          rules={{
+            validate: validateNumber({ min: 0, max: 100 }),
+          }}
+        />
         <SwitchFE
-          label={t("global.enabled")}
-          name="enabled"
+          label={t("study.modelization.storages.initialLevelOptim")}
+          name="initialLevelOptim"
           control={control}
           sx={{
             alignItems: "center",
             alignSelf: "center",
+            width: 2,
           }}
         />
-      )}
-      <Tooltip
-        title={t("study.modelization.storages.injectionNominalCapacity.info")}
-        arrow
-        placement="top"
-      >
-        <Box>
-          <NumberFE
-            label={t("study.modelization.storages.injectionNominalCapacity")}
-            name="injectionNominalCapacity"
-            control={control}
-            rules={{
-              min: {
-                value: 0,
-                message: t("form.field.minValue", { 0: 0 }),
-              },
-            }}
-          />
-        </Box>
-      </Tooltip>
-      <Tooltip
-        title={t("study.modelization.storages.withdrawalNominalCapacity.info")}
-        arrow
-        placement="top"
-      >
-        <Box>
-          <NumberFE
-            label={t("study.modelization.storages.withdrawalNominalCapacity")}
-            name="withdrawalNominalCapacity"
-            control={control}
-            rules={{
-              min: {
-                value: 0,
-                message: t("form.field.minValue", { 0: 0 }),
-              },
-            }}
-          />
-        </Box>
-      </Tooltip>
-      <Tooltip
-        title={t("study.modelization.storages.reservoirCapacity.info")}
-        arrow
-        placement="top"
-      >
-        <Box>
-          <NumberFE
-            label={t("study.modelization.storages.reservoirCapacity")}
-            name="reservoirCapacity"
-            control={control}
-            rules={{
-              min: {
-                value: 0,
-                message: t("form.field.minValue", { 0: 0 }),
-              },
-            }}
-          />
-        </Box>
-      </Tooltip>
-
-      <NumberFE
-        label={t("study.modelization.storages.efficiency")}
-        name="efficiency"
-        control={control}
-        rules={{
-          min: {
-            value: 0,
-            message: t("form.field.minValue", { 0: 0 }),
-          },
-          max: {
-            value: 100,
-            message: t("form.field.maxValue", { 0: 100 }),
-          },
-        }}
-      />
-      <NumberFE
-        label={t("study.modelization.storages.initialLevel")}
-        name="initialLevel"
-        control={control}
-        rules={{
-          min: {
-            value: 0,
-            message: t("form.field.minValue", { 0: 0 }),
-          },
-          max: {
-            value: 100,
-            message: t("form.field.maxValue", { 0: 100 }),
-          },
-        }}
-      />
-      <SwitchFE
-        label={t("study.modelization.storages.initialLevelOptim")}
-        name="initialLevelOptim"
-        control={control}
-        sx={{
-          alignItems: "center",
-          alignSelf: "center",
-        }}
-      />
-    </Fieldset>
+      </Fieldset>
+    </>
   );
 }
 

@@ -1,6 +1,5 @@
 import { useEffect, useMemo } from "react";
 import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
-import { Paper } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { StudyMetadata } from "../../../../../../common/types";
 import TabWrapper from "../../TabWrapper";
@@ -83,23 +82,7 @@ function AreasTab({ renewablesClustering }: Props) {
       }));
   }, [study.id, areaId, renewablesClustering, t, study.version]);
 
-  return (
-    <Paper
-      sx={{
-        width: "100%",
-        height: "100%",
-        flexGrow: 1,
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "center",
-        alignItems: "center",
-        boxSizing: "border-box",
-        overflow: "hidden",
-      }}
-    >
-      <TabWrapper study={study} tabList={tabList} />
-    </Paper>
-  );
+  return <TabWrapper study={study} tabList={tabList} />;
 }
 
 export default AreasTab;

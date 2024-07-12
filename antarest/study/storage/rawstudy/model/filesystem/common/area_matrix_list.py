@@ -6,6 +6,8 @@ from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderN
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE, INode
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 
+TXT_PATTERN = "*.txt"
+
 
 class AreaMatrixList(FolderNode):
     """
@@ -60,14 +62,17 @@ class AreaMatrixList(FolderNode):
             A dictionary of child nodes, where the key is the matrix file name
             and the value is the corresponding :class:`InputSeriesMatrix` node.
         """
-        children: TREE = {
-            f"{self.prefix}{area}": self.matrix_class(
-                self.context,
-                self.config.next_file(f"{self.prefix}{area}.txt"),
-                **self.additional_matrix_params,
+        children: TREE = {}
+        if self.prefix:  # Corresponds to the inputs
+            files = self.config.area_names()
+        else:  # Corresponds to the outputs
+            files = [d.with_suffix("").name for d in self.config.path.iterdir()]
+
+        for file in files:
+            name = f"{self.prefix}{file}"
+            children[name] = self.matrix_class(
+                self.context, self.config.next_file(f"{name}.txt"), **self.additional_matrix_params
             )
-            for area in self.config.area_names()
-        }
         return children
 
 
@@ -105,7 +110,7 @@ class BindingConstraintMatrixList(FolderNode):
         """Builds the folder structure and creates child nodes representing each matrix file."""
         return {
             file.stem: self.matrix_class(self.context, self.config.next_file(file.name))
-            for file in self.config.path.glob("*.txt")
+            for file in self.config.path.glob(TXT_PATTERN)
         }
 
 
@@ -124,15 +129,28 @@ class ThermalMatrixList(FolderNode):
     def build(self) -> TREE:
         # Note that cluster IDs are case-insensitive, but series IDs are in lower case.
         # For instance, if your cluster ID is "Base", then the series ID will be "base".
-        series_ids = map(str.lower, self.config.get_thermal_ids(self.area))
-        children: TREE = {
-            series_id: self.matrix_class(self.context, self.config.next_file(f"{series_id}.txt"))
-            for series_id in series_ids
+        series_files = self.config.path.glob(TXT_PATTERN)
+        return {
+            series.stem: self.matrix_class(self.context, self.config.next_file(series.name)) for series in series_files
         }
-        return children
 
 
 class AreaMultipleMatrixList(FolderNode):
+    """
+    Node representing a folder structure containing multiple matrix files for each area.
+
+    Example of tree structure:
+
+    .. code-block:: text
+
+       ts-numbers/thermal
+       ├── at
+       │    ├── cluster_gas.txt
+       │    └── cluster2_gas.txt
+       └── be
+            └── cluster_nuclear.txt
+    """
+
     def __init__(
         self,
         context: ContextServer,
@@ -156,6 +174,7 @@ class AreaMultipleMatrixList(FolderNode):
         self.matrix_class = matrix_class
 
     def build(self) -> TREE:
+        folders = [d.name for d in self.config.path.iterdir() if d.is_dir()]
         children: TREE = {
             area: self.klass(
                 self.context,
@@ -163,6 +182,6 @@ class AreaMultipleMatrixList(FolderNode):
                 area,
                 self.matrix_class,
             )
-            for area in self.config.area_names()
+            for area in folders
         }
         return children

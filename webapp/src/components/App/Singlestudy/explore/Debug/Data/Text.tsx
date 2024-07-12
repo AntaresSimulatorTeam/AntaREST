@@ -1,12 +1,9 @@
 import { useState } from "react";
-import { AxiosError } from "axios";
-import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
 import { Button } from "@mui/material";
 import UploadOutlinedIcon from "@mui/icons-material/UploadOutlined";
 import { getStudyData, importFile } from "../../../../../../services/api/study";
 import { Content, Header, Root } from "./style";
-import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
 import ImportDialog from "../../../../../common/dialogs/ImportDialog";
 import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithSnackbarError";
 import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
@@ -20,8 +17,6 @@ interface Props {
 function Text({ studyId, path }: Props) {
   const [t] = useTranslation();
   const { reloadTreeData } = useDebugContext();
-  const { enqueueSnackbar } = useSnackbar();
-  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [openImportDialog, setOpenImportDialog] = useState(false);
 
   const res = usePromiseWithSnackbarError(() => getStudyData(studyId, path), {
@@ -34,15 +29,8 @@ function Text({ studyId, path }: Props) {
   ////////////////////////////////////////////////////////////////
 
   const handleImport = async (file: File) => {
-    try {
-      await importFile(file, studyId, path);
-      reloadTreeData();
-      enqueueSnackbar(t("studies.success.saveData"), {
-        variant: "success",
-      });
-    } catch (e) {
-      enqueueErrorSnackbar(t("studies.error.saveData"), e as AxiosError);
-    }
+    await importFile(file, studyId, path);
+    reloadTreeData();
   };
 
   ////////////////////////////////////////////////////////////////
@@ -73,7 +61,7 @@ function Text({ studyId, path }: Props) {
       {openImportDialog && (
         <ImportDialog
           open={openImportDialog}
-          onClose={() => setOpenImportDialog(false)}
+          onCancel={() => setOpenImportDialog(false)}
           onImport={handleImport}
         />
       )}

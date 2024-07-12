@@ -117,7 +117,7 @@ function DataViewerDialog(props: Props) {
       }}
       fullWidth
       maxWidth="lg"
-      okButtonText={t("button.close")}
+      okButtonText={t("global.close")}
       onOk={onClose}
     >
       {!!loading && !content && <SimpleLoader />}

@@ -23,15 +23,15 @@ function Fields() {
   const { control, watch } = useFormContextPlus<ThermalCluster>();
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const studyVersion = Number(study.version);
-  const isTSCost = watch("costGeneration") === "useCostTimeseries";
+  const isCostGenerationEnabled =
+    watch("costGeneration") === "useCostTimeseries";
 
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
 
   return (
-    // TODO: remove the margin reset after updating MUI Theme.
-    <Box sx={{ "& .MuiFormControl-root": { margin: 0 } }}>
+    <Box>
       <Fieldset legend={t("global.general")}>
         <StringFE
           label={t("global.name")}
@@ -74,7 +74,7 @@ function Fields() {
           name="unitCount"
           control={control}
           rules={{
-            validate: (v) => validateNumber(v, { min: 1 }),
+            validate: validateNumber({ min: 1 }),
             setValueAs: Math.floor,
           }}
         />
@@ -83,7 +83,7 @@ function Fields() {
           name="nominalCapacity"
           control={control}
           rules={{
-            validate: (v) => validateNumber(v, { min: 0 }),
+            validate: validateNumber({ min: 0 }),
           }}
         />
         <NumberFE
@@ -96,7 +96,7 @@ function Fields() {
           name="spinning"
           control={control}
           rules={{
-            validate: (v) => validateNumber(v, { min: 0, max: 100 }),
+            validate: validateNumber({ min: 0, max: 100 }),
           }}
         />
         <NumberFE
@@ -104,7 +104,7 @@ function Fields() {
           name="minUpTime"
           control={control}
           rules={{
-            validate: (v) => validateNumber(v, { min: 1, max: 168 }),
+            validate: validateNumber({ min: 1, max: 168 }),
             setValueAs: Math.floor,
           }}
         />
@@ -113,46 +113,59 @@ function Fields() {
           name="minDownTime"
           control={control}
           rules={{
-            validate: (v) => validateNumber(v, { min: 1, max: 168 }),
+            validate: validateNumber({ min: 1, max: 168 }),
             setValueAs: Math.floor,
           }}
         />
       </Fieldset>
       <Fieldset legend={t("study.modelization.clusters.operatingCosts")}>
-        <SelectFE
-          variant="outlined"
-          label={t("study.modelization.clusters.costGeneration")}
-          name="costGeneration"
-          options={COST_GENERATION_OPTIONS}
-          control={control}
-          sx={{
-            alignSelf: "center",
-          }}
-        />
-        <NumberFE
-          label={t("study.modelization.clusters.efficiency")}
-          name="efficiency"
-          control={control}
-          rules={{
-            validate: (v) => validateNumber(v, { min: 0 }),
-          }}
-          disabled={!isTSCost}
-        />
+        {studyVersion >= 870 && (
+          <>
+            <SelectFE
+              variant="outlined"
+              label={t("study.modelization.clusters.costGeneration")}
+              name="costGeneration"
+              options={COST_GENERATION_OPTIONS}
+              control={control}
+              sx={{
+                alignSelf: "center",
+              }}
+            />
+            <NumberFE
+              label={t("study.modelization.clusters.efficiency")}
+              name="efficiency"
+              control={control}
+              rules={{
+                validate: validateNumber({ min: 0 }),
+              }}
+              disabled={!isCostGenerationEnabled}
+            />
+            <NumberFE
+              label={t("study.modelization.clusters.variableOMCost")}
+              name="variableOMCost"
+              control={control}
+              rules={{
+                validate: validateNumber({ min: 0 }),
+              }}
+              disabled={!isCostGenerationEnabled}
+            />
+          </>
+        )}
         <NumberFE
           label={t("study.modelization.clusters.marginalCost")}
           name="marginalCost"
           control={control}
           rules={{
-            validate: (v) => validateNumber(v, { min: 0 }),
+            validate: validateNumber({ min: 0 }),
           }}
+          disabled={isCostGenerationEnabled}
         />
-
         <NumberFE
           label={t("study.modelization.clusters.startupCost")}
           name="startupCost"
           control={control}
           rules={{
-            validate: (v) => validateNumber(v, { min: 0 }),
+            validate: validateNumber({ min: 0 }),
           }}
         />
         <NumberFE
@@ -160,25 +173,17 @@ function Fields() {
           name="marketBidCost"
           control={control}
           rules={{
-            validate: (v) => validateNumber(v, { min: 0 }),
+            validate: validateNumber({ min: 0 }),
           }}
+          disabled={isCostGenerationEnabled}
         />
         <NumberFE
           label={t("study.modelization.clusters.fixedCost")}
           name="fixedCost"
           control={control}
           rules={{
-            validate: (v) => validateNumber(v, { min: 0 }),
+            validate: validateNumber({ min: 0 }),
           }}
-        />
-        <NumberFE
-          label={t("study.modelization.clusters.variableOMCost")}
-          name="variableOMCost"
-          control={control}
-          rules={{
-            validate: (v) => validateNumber(v, { min: 0 }),
-          }}
-          disabled={!isTSCost}
         />
         <NumberFE
           label={t("study.modelization.clusters.spreadCost")}
@@ -196,7 +201,7 @@ function Fields() {
                 name={name}
                 control={control}
                 rules={{
-                  validate: (v) => validateNumber(v, { min: 0 }),
+                  validate: validateNumber({ min: 0 }),
                 }}
               />
             ),
@@ -218,7 +223,7 @@ function Fields() {
           name="volatilityForced"
           control={control}
           rules={{
-            validate: (v) => validateNumber(v, { min: 0, max: 1 }),
+            validate: validateNumber({ min: 0, max: 1 }),
           }}
           inputProps={{ step: 0.1 }}
         />
@@ -227,7 +232,7 @@ function Fields() {
           name="volatilityPlanned"
           control={control}
           rules={{
-            validate: (v) => validateNumber(v, { min: 0, max: 1 }),
+            validate: validateNumber({ min: 0, max: 1 }),
           }}
           inputProps={{ step: 0.1 }}
         />

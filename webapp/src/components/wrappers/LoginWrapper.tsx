@@ -142,8 +142,9 @@ function LoginWrapper(props: Props) {
                     onSubmit={handleSubmit}
                     submitButtonText={t("global.connexion")}
                     submitButtonIcon={<LoginIcon />}
+                    hideFooterDivider
                     sx={{
-                      ".Form__Footer": {
+                      ".Form__Footer__Actions": {
                         justifyContent: "center",
                       },
                     }}

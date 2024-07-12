@@ -6,16 +6,18 @@ import { StudiesSortConf, StudiesState } from "../../redux/ducks/studies";
 import { UIState } from "../../redux/ducks/ui";
 import { TABLE_MODE_TYPES_ALIASES } from "../api/studies/tableMode/constants";
 
-export enum StorageKey {
-  Version = "version",
-  AuthUser = "authUser",
+export const StorageKey = {
+  Version: "version",
+  AuthUser: "authUser",
   // Studies
-  StudiesFavorites = "studies.favorites",
-  StudiesSort = "studies.sort",
-  StudiesModelTableModeTemplates = "studies.model.tableMode.templates",
+  StudiesFavorites: "studies.favorites",
+  StudiesSort: "studies.sort",
+  StudiesModelTableModeTemplates: "studies.model.tableMode.templates",
   // UI
-  UIMenuCollapsed = "ui.menuCollapsed",
-}
+  UIMenuCollapsed: "ui.menuCollapsed",
+} as const;
+
+type Key = (typeof StorageKey)[keyof typeof StorageKey] | string;
 
 const APP_NAME = packages.name;
 const SHARED_KEYS = [StorageKey.Version, StorageKey.AuthUser];
@@ -27,9 +29,10 @@ interface TypeFromKey {
   [StorageKey.StudiesSort]: Partial<StudiesSortConf>;
   [StorageKey.StudiesModelTableModeTemplates]: Array<Omit<TableTemplate, "id">>;
   [StorageKey.UIMenuCollapsed]: UIState["menuCollapsed"];
+  [key: string]: unknown;
 }
 
-function formalizeKey(key: StorageKey): string {
+function formalizeKey(key: Key): string {
   if (SHARED_KEYS.includes(key)) {
     return `${APP_NAME}.${key}`;
   }
@@ -41,7 +44,7 @@ function formalizeKey(key: StorageKey): string {
   return `${APP_NAME}.${authUser.id}.${key}`;
 }
 
-function getItem<T extends StorageKey>(key: T): TypeFromKey[T] | null {
+function getItem<T extends Key>(key: T): TypeFromKey[T] | null {
   try {
     const serializedState = localStorage.getItem(formalizeKey(key));
     if (serializedState === null) {
@@ -64,7 +67,7 @@ function getItem<T extends StorageKey>(key: T): TypeFromKey[T] | null {
   }
 }
 
-function setItem<T extends StorageKey>(
+function setItem<T extends Key>(
   key: T,
   data: TypeFromKey[T] | ((prev: TypeFromKey[T] | null) => TypeFromKey[T]),
 ): void {
@@ -80,7 +83,7 @@ function setItem<T extends StorageKey>(
   }
 }
 
-function removeItem(key: StorageKey): void {
+function removeItem(key: Key): void {
   try {
     localStorage.removeItem(formalizeKey(key));
   } catch {

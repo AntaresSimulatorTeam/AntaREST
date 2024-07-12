@@ -149,7 +149,7 @@ function ConstraintTermItem({
             type="number"
             value={weight}
             onChange={handleWeightChange}
-            sx={{ maxWidth: 150, mr: 0 }}
+            sx={{ maxWidth: 150 }}
           />
         }
         right={

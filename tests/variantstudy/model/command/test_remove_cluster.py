@@ -13,21 +13,27 @@ from antarest.study.storage.variantstudy.model.command.create_binding_constraint
 from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
 from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
 from antarest.study.storage.variantstudy.model.command.remove_cluster import RemoveCluster
+from antarest.study.storage.variantstudy.model.command.update_scenario_builder import UpdateScenarioBuilder
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.variantstudy.model.command.helpers import reset_line_separator
 
 
 class TestRemoveCluster:
     @pytest.mark.parametrize("empty_study", ["empty_study_720.zip", "empty_study_870.zip"], indirect=True)
-    def test_apply(self, empty_study: FileStudy, command_context: CommandContext):
+    def test_apply(self, empty_study: FileStudy, command_context: CommandContext) -> None:
         area_name = "Area_name"
         area_id = transform_name_to_id(area_name)
         cluster_name = "Cluster Name"
         cluster_id = transform_name_to_id(cluster_name, lower=False)
 
-        CreateArea(area_name=area_name, command_context=command_context).apply(empty_study)
+        output = CreateArea(area_name=area_name, command_context=command_context).apply(empty_study)
+        assert output.status, output.message
 
         ################################################################################################
-        hash_before_cluster = dirhash(empty_study.config.study_path, "md5")
+
+        # Line ending of the `settings/scenariobuilder.dat` must be reset before checksum
+        reset_line_separator(empty_study.config.study_path.joinpath("settings/scenariobuilder.dat"))
+        hash_before_removal = dirhash(empty_study.config.study_path, "md5")
 
         CreateCluster(
             area_id=area_id,
@@ -66,7 +72,14 @@ class TestRemoveCluster:
             less_term_matrix=less_term_matrix,
         )
         output = bind1_cmd.apply(study_data=empty_study)
-        assert output.status
+        assert output.status, output.message
+
+        # Add scenario builder data
+        output = UpdateScenarioBuilder(
+            data={"Default Ruleset": {f"t,{area_id},0,{cluster_name.lower()}": 1}},
+            command_context=command_context,
+        ).apply(study_data=empty_study)
+        assert output.status, output.message
 
         output = RemoveCluster(
             area_id=area_id,
@@ -74,8 +87,8 @@ class TestRemoveCluster:
             command_context=command_context,
         ).apply(empty_study)
 
-        assert output.status
-        assert dirhash(empty_study.config.study_path, "md5") == hash_before_cluster
+        assert output.status, output.message
+        assert dirhash(empty_study.config.study_path, "md5") == hash_before_removal
 
         output = RemoveCluster(
             area_id="non_existent_area",
@@ -92,7 +105,7 @@ class TestRemoveCluster:
         assert not output.status
 
 
-def test_match(command_context: CommandContext):
+def test_match(command_context: CommandContext) -> None:
     base = RemoveCluster(area_id="foo", cluster_id="bar", command_context=command_context)
     other_match = RemoveCluster(area_id="foo", cluster_id="bar", command_context=command_context)
     other_not_match = RemoveCluster(area_id="foo", cluster_id="baz", command_context=command_context)
@@ -104,7 +117,7 @@ def test_match(command_context: CommandContext):
     assert base.get_inner_matrices() == []
 
 
-def test_create_diff(command_context: CommandContext):
+def test_create_diff(command_context: CommandContext) -> None:
     base = RemoveCluster(area_id="foo", cluster_id="bar", command_context=command_context)
     other_match = RemoveCluster(area_id="foo", cluster_id="bar", command_context=command_context)
     assert base.create_diff(other_match) == []
