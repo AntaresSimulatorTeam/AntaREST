@@ -184,7 +184,7 @@ WRONGLY_TYPED_REQUESTS = [
 
 
 @pytest.mark.integration_test
-class TestRawDataAggregation:
+class TestRawDataAggregationMCInd:
     """
     Check the aggregation of Raw Data from studies outputs
     """
@@ -202,7 +202,7 @@ class TestRawDataAggregation:
 
         for params, expected_result_filename in AREAS_REQUESTS:
             output_id = params.pop("output_id")
-            res = client.get(f"/v1/studies/{internal_study_id}/areas/aggregate/{output_id}", params=params)
+            res = client.get(f"/v1/studies/{internal_study_id}/areas/aggregate/mc-ind/{output_id}", params=params)
             assert res.status_code == 200, res.json()
             content = io.BytesIO(res.content)
             df = pd.read_csv(content, index_col=0, sep=",")
@@ -231,7 +231,7 @@ class TestRawDataAggregation:
 
         for params, expected_result_filename in LINKS_REQUESTS:
             output_id = params.pop("output_id")
-            res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/{output_id}", params=params)
+            res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-ind/{output_id}", params=params)
             assert res.status_code == 200, res.json()
             content = io.BytesIO(res.content)
             df = pd.read_csv(content, index_col=0, sep=",")
@@ -260,7 +260,7 @@ class TestRawDataAggregation:
 
         for params, expected_result_filename in SAME_REQUEST_DIFFERENT_FORMATS:
             output_id = params.pop("output_id")
-            res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/{output_id}", params=params)
+            res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-ind/{output_id}", params=params)
             assert res.status_code == 200, res.json()
             content = io.BytesIO(res.content)
             export_format = params["format"]
@@ -291,7 +291,7 @@ class TestRawDataAggregation:
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
         for params in INCOHERENT_REQUESTS_BODIES:
             output_id = params.pop("output_id")
-            res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/{output_id}", params=params)
+            res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-ind/{output_id}", params=params)
             assert res.status_code == 200, res.json()
             content = io.BytesIO(res.content)
             df = pd.read_csv(content, index_col=0, sep=",")
@@ -304,7 +304,7 @@ class TestRawDataAggregation:
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
         for params in WRONGLY_TYPED_REQUESTS:
             output_id = params.pop("output_id")
-            res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/{output_id}", params=params)
+            res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-ind/{output_id}", params=params)
             assert res.status_code == 422
             assert res.json()["exception"] == "RequestValidationError"
 
@@ -316,7 +316,7 @@ class TestRawDataAggregation:
 
         # test for areas
         res = client.get(
-            f"/v1/studies/{internal_study_id}/areas/aggregate/unknown_id",
+            f"/v1/studies/{internal_study_id}/areas/aggregate/mc-ind/unknown_id",
             params={
                 "query_file": AreasQueryFile.VALUES,
                 "frequency": MatrixFrequency.HOURLY,
@@ -328,7 +328,7 @@ class TestRawDataAggregation:
 
         # test for links
         res = client.get(
-            f"/v1/studies/{internal_study_id}/links/aggregate/unknown_id",
+            f"/v1/studies/{internal_study_id}/links/aggregate/mc-ind/unknown_id",
             params={
                 "query_file": LinksQueryFile.VALUES,
                 "frequency": MatrixFrequency.HOURLY,
