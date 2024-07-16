@@ -237,8 +237,10 @@ class RemoveArea(ICommand):
             study_data.tree.delete(["input", "hydro", "common", "capacity", f"waterValues_{self.id}"])
 
         if study_data.config.version >= 810:
-            study_data.tree.delete(["input", "renewables", "clusters", self.id])
-            study_data.tree.delete(["input", "renewables", "series", self.id])
+            with contextlib.suppress(ChildNotFoundError):
+                #  renewables folder only exist in tree if study.renewable-generation-modelling is "clusters"
+                study_data.tree.delete(["input", "renewables", "clusters", self.id])
+                study_data.tree.delete(["input", "renewables", "series", self.id])
 
         if study_data.config.version >= 860:
             study_data.tree.delete(["input", "st-storage", "clusters", self.id])
