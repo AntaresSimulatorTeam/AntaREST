@@ -625,8 +625,11 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
     ]
 
     res = client.put(f"/v1/studies/{study_id}/layers/1?name=test2")
+    assert res.status_code in {200, 201}, res.json()
     res = client.put(f"/v1/studies/{study_id}/layers/1", json=["area 1"])
+    assert res.status_code in {200, 201}, res.json()
     res = client.put(f"/v1/studies/{study_id}/layers/1", json=["area 2"])
+    assert res.status_code in {200, 201}, res.json()
     res = client.get(f"/v1/studies/{study_id}/layers")
     assert res.json() == [
         LayerInfoDTO(id="0", name="All", areas=["area 1", "area 2"]).dict(),
