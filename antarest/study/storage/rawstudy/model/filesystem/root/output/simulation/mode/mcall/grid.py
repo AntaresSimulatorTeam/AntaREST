@@ -103,4 +103,4 @@ def _parse_digest_file(digest_file: t.TextIO) -> pd.DataFrame:
     data = [row + [""] * (max_cols - len(row)) for row in data]
 
     # Returns a DataFrame from the data (do not convert values to float)
-    return pd.DataFrame(data, dtype=object)
+    return pd.DataFrame(data=data, columns=[str(i) for i in range(max_cols)], dtype=object)
