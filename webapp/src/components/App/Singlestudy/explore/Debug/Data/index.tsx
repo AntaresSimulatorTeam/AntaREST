@@ -1,18 +1,18 @@
 import Text from "./Text";
 import Json from "./Json";
 import Matrix from "./Matrix";
-import { FileType } from "../utils";
+import type { FileInfo } from "../utils";
+import { Box } from "@mui/material";
 
-interface Props {
+interface Props extends FileInfo {
   studyId: string;
-  fileType: FileType;
-  filePath: string;
 }
 
 const componentByFileType = {
   matrix: Matrix,
   json: Json,
   file: Text,
+  folder: Box,
 } as const;
 
 function Data({ studyId, fileType, filePath }: Props) {
