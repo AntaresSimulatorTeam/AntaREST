@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@mui/material";
 import UploadOutlinedIcon from "@mui/icons-material/UploadOutlined";
@@ -7,7 +7,7 @@ import { Content, Header, Root } from "./style";
 import ImportDialog from "../../../../../common/dialogs/ImportDialog";
 import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithSnackbarError";
 import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
-import { useDebugContext } from "../DebugContext";
+import DebugContext from "../DebugContext";
 
 interface Props {
   studyId: string;
@@ -16,7 +16,7 @@ interface Props {
 
 function Text({ studyId, path }: Props) {
   const [t] = useTranslation();
-  const { reloadTreeData } = useDebugContext();
+  const { reloadTreeData } = useContext(DebugContext);
   const [openImportDialog, setOpenImportDialog] = useState(false);
 
   const res = usePromiseWithSnackbarError(() => getStudyData(studyId, path), {

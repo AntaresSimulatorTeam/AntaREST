@@ -9,17 +9,19 @@ import UsePromiseCond from "../../../../common/utils/UsePromiseCond";
 import usePromiseWithSnackbarError from "../../../../../hooks/usePromiseWithSnackbarError";
 import { getStudyData } from "../../../../../services/api/study";
 import DebugContext from "./DebugContext";
-import { TreeData, filterTreeData, File } from "./utils";
+import type { FileInfo, TreeFolder } from "./utils";
+import * as R from "ramda";
+import SplitView from "../../../../common/SplitView";
 
 function Debug() {
   const [t] = useTranslation();
   const { study } = useOutletContext<{ study: StudyMetadata }>();
-  const [selectedFile, setSelectedFile] = useState<File>();
+  const [selectedFile, setSelectedFile] = useState<FileInfo>();
 
   const res = usePromiseWithSnackbarError(
     async () => {
-      const treeData = await getStudyData<TreeData>(study.id, "", -1);
-      return filterTreeData(treeData);
+      const treeData = await getStudyData<TreeFolder>(study.id, "", -1);
+      return R.omit(["Desktop", "study", "logs"], treeData);
     },
     {
       errorMessage: t("studies.error.retrieveData"),
@@ -40,32 +42,19 @@ function Debug() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <DebugContext.Provider value={contextValue}>
-      <Box
-        sx={{
-          flex: 1,
-          width: 1,
-          display: "flex",
-          justifyContent: "flex-start",
-          alignItems: "center",
-          overflow: "auto",
-        }}
-      >
+    <SplitView id="debug" sizes={[15, 85]}>
+      <Box sx={{ overflow: "auto" }}>
         <UsePromiseCond
           response={res}
           ifResolved={(data) => (
-            <>
-              <Box sx={{ height: 1, flex: "0 0 20%", overflow: "auto" }}>
-                <Tree data={data} />
-              </Box>
-              <Box sx={{ height: 1, flex: 1, overflow: "auto" }}>
-                {selectedFile && <Data {...selectedFile} studyId={study.id} />}
-              </Box>
-            </>
+            <DebugContext.Provider value={contextValue}>
+              <Tree data={data} />
+            </DebugContext.Provider>
           )}
         />
       </Box>
-    </DebugContext.Provider>
+      <Box>{selectedFile && <Data {...selectedFile} studyId={study.id} />}</Box>
+    </SplitView>
   );
 }
 

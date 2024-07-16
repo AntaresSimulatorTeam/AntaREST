@@ -6,22 +6,22 @@
   "scripts": {
     "build": "tsc && vite build",
     "clean": "rm -rf dist node_modules/.vite",
+    "coverage": "vitest run --coverage",
     "dev": "vite",
     "lint": "tsc --noEmit && eslint . --ext ts,tsx --report-unused-disable-directives",
     "preview": "vite preview",
     "test": "vitest",
-    "test:ui": "vitest --ui",
-    "coverage": "vitest run --coverage"
+    "test:ui": "vitest --ui"
   },
   "dependencies": {
     "@emotion/react": "11.11.1",
     "@emotion/styled": "11.11.0",
     "@glideapps/glide-data-grid": "6.0.3",
     "@handsontable/react": "14.1.0",
-    "@mui/icons-material": "5.14.11",
-    "@mui/lab": "5.0.0-alpha.146",
-    "@mui/material": "5.14.11",
-    "@mui/x-date-pickers": "6.18.3",
+    "@mui/icons-material": "5.16.1",
+    "@mui/lab": "5.0.0-alpha.172",
+    "@mui/material": "5.16.1",
+    "@mui/x-tree-view": "7.10.0",
     "@reduxjs/toolkit": "1.9.6",
     "axios": "1.5.1",
     "clsx": "2.0.0",
