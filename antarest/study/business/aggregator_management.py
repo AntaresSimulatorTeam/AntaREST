@@ -244,19 +244,32 @@ class AggregatorManager:
                 estimated_binary_size = final_df.memory_usage().sum()
                 _checks_estimated_size(nb_files, estimated_binary_size, k)
 
+            # first columns df
+            # first we include the time id column
+            first_columns_df = pd.DataFrame(
+                {
+                    TIME_ID_COL: list(range(1, len(df) + 1)),
+                }
+            )
+
             # add column for links/areas
             relative_path_parts = file_path.relative_to(self.mc_all_path).parts
             column_name = AREA_COL if self.output_type == "areas" else LINK_COL
-            new_column_order = [column_name, TIME_ID_COL, TIME_COL] + list_of_df_columns
-            df[column_name] = relative_path_parts[AREA_OR_LINK_INDEX__ALL]
+            first_columns_df[column_name] = relative_path_parts[AREA_OR_LINK_INDEX__ALL]
 
-            # add a column for the time id
-            df[TIME_ID_COL] = list(range(1, len(df) + 1))
             # add horizon column
-            df[TIME_COL] = horizon
+            first_columns_df[TIME_COL] = horizon
 
-            # Reorganize the columns
-            df = df.reindex(columns=new_column_order)
+            # reorder first columns
+            new_column_order = [column_name, TIME_ID_COL, TIME_COL]
+            first_columns_df = first_columns_df.reindex(columns=new_column_order)
+
+            # reset index
+            # noinspection PyTypeChecker
+            first_columns_df.set_index(df.index, inplace=True)
+
+            # merge first columns with the rest of the df
+            df = pd.merge(first_columns_df, df, left_index=True, right_index=True)
 
             final_df = pd.concat([final_df, df], ignore_index=True)
 
