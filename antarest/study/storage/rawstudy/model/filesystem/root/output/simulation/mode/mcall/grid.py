@@ -42,6 +42,7 @@ class OutputSynthesis(LazyNode[JSON, bytes, bytes]):
     ) -> JSON:
         file_path = self.config.path
         df = pd.read_csv(file_path, sep="\t")
+        df.fillna("", inplace=True)  # replace NaN values for the front-end
         output = df.to_dict(orient="split")
         del output["index"]
         return t.cast(JSON, output)
@@ -79,6 +80,7 @@ class DigestSynthesis(OutputSynthesis):
         with open(file_path, "r") as f:
             df = _parse_digest_file(f)
 
+        df.fillna("", inplace=True)  # replace NaN values for the front-end
         output = df.to_dict(orient="split")
         del output["index"]
         return t.cast(JSON, output)
