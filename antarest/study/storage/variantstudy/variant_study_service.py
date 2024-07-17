@@ -1,3 +1,4 @@
+import base64
 import concurrent.futures
 import json
 import logging
@@ -569,8 +570,9 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         denormalize: bool = False,
         from_scratch: bool = False,
     ) -> str:
+        sanitized_study_id = metadata.id if metadata.id.isalnum() else base64.b64encode(metadata.id.encode("UTF-8"))
         with FileLock(str(self.config.storage.tmp_dir / f"study-generation-{metadata.id}.lock")):
-            logger.info(f"Starting variant study {metadata.id} generation")
+            logger.info(f"Starting variant study {sanitized_study_id} generation")
             self.repository.refresh(metadata)
             if metadata.generation_task:
                 try:
@@ -579,11 +581,11 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                         RequestParameters(DEFAULT_ADMIN_USER),
                     )
                     if not previous_task.status.is_final():
-                        logger.info(f"Returning already existing variant study {metadata.id} generation")
+                        logger.info(f"Returning already existing variant study {sanitized_study_id} generation")
                         return str(metadata.generation_task)
                 except HTTPException as e:
                     logger.warning(
-                        f"Failed to retrieve generation task for study {metadata.id}",
+                        f"Failed to retrieve generation task for study {sanitized_study_id}",
                         exc_info=e,
                     )
 
