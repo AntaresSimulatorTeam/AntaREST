@@ -1,6 +1,5 @@
 import {
   Box,
-  Paper,
   Skeleton,
   ToggleButton,
   ToggleButtonGroup,
@@ -138,11 +137,11 @@ function ResultDetails() {
     },
   );
 
-  const { data: synthesis } = usePromise(
+  const synthesisRes = usePromise(
     () => {
       if (outputId && selectedItem && isSynthesis) {
         const path = `output/${outputId}/economy/mc-all/grid/${selectedItem.id}`;
-        return getStudyData<string>(study.id, path);
+        return getStudyData(study.id, path);
       }
       return Promise.resolve(null);
     },
@@ -266,14 +265,22 @@ function ResultDetails() {
               overflow: "auto",
             }}
           >
-            <Paper
-              sx={{
-                p: 2,
-                overflow: "auto",
-              }}
-            >
-              <code style={{ whiteSpace: "pre" }}>{synthesis}</code>
-            </Paper>
+            <UsePromiseCond
+              response={synthesisRes}
+              ifPending={() => (
+                <Skeleton sx={{ height: 1, transform: "none" }} />
+              )}
+              ifResolved={(matrix) =>
+                matrix && (
+                  <EditableMatrix
+                    matrix={matrix}
+                    columnsNames={matrix.columns}
+                    matrixTime={false}
+                    readOnly
+                  />
+                )
+              }
+            />
           </Box>
         ) : (
           <Box

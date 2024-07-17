@@ -4,6 +4,7 @@ from unittest.mock import Mock
 import pandas as pd
 import pytest
 
+from antarest.core.exceptions import MustNotModifyOutputException
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import ChildNotFoundError
 from antarest.study.storage.rawstudy.model.filesystem.matrix.head_writer import AreaHeadWriter
@@ -84,33 +85,13 @@ class TestOutputSeriesMatrix:
         assert "not found" in err_msg.lower()
 
     def test_save(self, my_study_config: FileStudyTreeConfig) -> None:
-        serializer = Mock()
-        serializer.build_date.return_value = pd.DataFrame(
-            {
-                0: ["DE", "", "", "", ""],
-                1: ["hourly", "", "index", 1, 2],
-                2: ["", "", "day", "1", "1"],
-                3: ["", "", "month", "JAN", "JAN"],
-                4: ["", "", "hourly", "00:00", "01:00"],
-            }
-        )
-
         node = OutputSeriesMatrix(
             context=Mock(),
             config=my_study_config,
             freq=MatrixFrequency.DAILY,
-            date_serializer=serializer,
+            date_serializer=Mock(),
             head_writer=AreaHeadWriter(area="de", data_type="va", freq="hourly"),
         )
 
-        matrix = pd.DataFrame(
-            data={
-                ("01_solar", "MWh", "EXP"): [27000, 48000],
-                ("02_wind_on", "MWh", "EXP"): [600, 34400],
-            },
-            index=["01/01", "01/02"],
-        )
-
-        node.dump(matrix.to_dict(orient="split"))  # type: ignore
-        actual = my_study_config.path.read_text()
-        assert actual == MATRIX_DAILY_DATA
+        with pytest.raises(MustNotModifyOutputException, match="Should not modify output file"):
+            node.dump(data={})

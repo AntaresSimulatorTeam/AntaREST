@@ -9,6 +9,12 @@ class ShouldNotHappenException(Exception):
     pass
 
 
+class MustNotModifyOutputException(Exception):
+    def __init__(self, file_name: str) -> None:
+        msg = f"Should not modify output file {file_name}"
+        super().__init__(msg)
+
+
 # ============================================================
 # Exceptions related to the study configuration (`.ini` files)
 # ============================================================
