@@ -138,8 +138,9 @@ def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: 
         )
         params = RequestParameters(user=current_user)
         service.download_matrix(matrix_id, tmp_export_file, params)
+        sanitized_path = tmp_export_file.resolve()
         return FileResponse(
-            tmp_export_file,
+            sanitized_path,
             headers={"Content-Disposition": f'attachment; filename="matrix-{matrix_id}.txt'},
             media_type="text/plain",
         )
