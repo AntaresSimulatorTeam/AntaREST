@@ -513,10 +513,7 @@ class TestBindingConstraints:
         assert res.json()["exception"] == "InvalidFieldForVersionError"
         assert res.json()["description"] == "You cannot fill a 'matrix_term' as these values refer to v8.7+ studies"
 
-    @pytest.mark.parametrize(
-        "study_type",
-        ["raw", "variant"],
-    )
+    @pytest.mark.parametrize("study_type", ["raw", "variant"])
     def test_for_version_870(self, client: TestClient, user_access_token: str, study_type: str) -> None:
         client.headers = {"Authorization": f"Bearer {user_access_token}"}  # type: ignore
 
@@ -725,6 +722,9 @@ class TestBindingConstraints:
             json={"greater_term_matrix": matrix_lt3.tolist()},
         )
         assert res.status_code == 422, res.json()
+        assert "greater_term_matrix" in res.json()["description"]
+        assert "equal" in res.json()["description"]
+        assert res.json()["exception"] == "InvalidFieldForVersionError"
 
         # update the binding constraint operator first
         res = client.put(

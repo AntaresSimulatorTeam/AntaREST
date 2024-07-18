@@ -1,6 +1,7 @@
 import json
 import typing as t
 from abc import ABCMeta
+from enum import Enum
 
 import numpy as np
 from pydantic import BaseModel, Extra, Field, root_validator, validator
@@ -23,7 +24,6 @@ from antarest.study.storage.variantstudy.model.command.common import CommandName
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
-TERM_MATRICES = ["less_term_matrix", "equal_term_matrix", "greater_term_matrix"]
 DEFAULT_GROUP = "default"
 
 MatrixType = t.List[t.List[MatrixData]]
@@ -33,6 +33,12 @@ EXPECTED_MATRIX_SHAPES = {
     BindingConstraintFrequency.DAILY: (366, 3),
     BindingConstraintFrequency.WEEKLY: (366, 3),
 }
+
+
+class TermMatrices(str, Enum):
+    LESS = "less_term_matrix"
+    GREATER = "greater_term_matrix"
+    EQUAL = "equal_term_matrix"
 
 
 def check_matrix_values(time_step: BindingConstraintFrequency, values: MatrixType, version: int) -> None:
@@ -216,7 +222,7 @@ class AbstractBindingConstraintCommand(OptionalProperties, BindingConstraintMatr
             args["group"] = self.group
 
         matrix_service = self.command_context.matrix_service
-        for matrix_name in TERM_MATRICES + ["values"]:
+        for matrix_name in [m.value for m in TermMatrices] + ["values"]:
             matrix_attr = getattr(self, matrix_name, None)
             if matrix_attr is not None:
                 args[matrix_name] = matrix_service.get_matrix_id(matrix_attr)
@@ -363,11 +369,9 @@ class AbstractBindingConstraintCommand(OptionalProperties, BindingConstraintMatr
             BindingConstraintOperator.BOTH: [(self.less_term_matrix, "lt"), (self.greater_term_matrix, "gt")],
         }
 
-        current_operator = self.operator or BindingConstraintOperator(
-            [bc for bc in binding_constraints.values() if bc.get("id") == bd_id][0].get("operator")
-        )
+        current_operator = self.operator or BindingConstraintOperator(binding_constraints[new_key]["operator"])
 
-        for matrix_term, matrix_alias in operator_matrices_map.get(current_operator, []):
+        for matrix_term, matrix_alias in operator_matrices_map[current_operator]:
             if matrix_term:
                 if not isinstance(matrix_term, str):  # pragma: no cover
                     raise TypeError(repr(matrix_term))
@@ -449,7 +453,7 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
                 args[prop] = other_command[prop]
 
         matrix_service = self.command_context.matrix_service
-        for matrix_name in ["values"] + TERM_MATRICES:
+        for matrix_name in ["values"] + [m.value for m in TermMatrices]:
             self_matrix = getattr(self, matrix_name)  # matrix, ID or `None`
             other_matrix = getattr(other, matrix_name)  # matrix, ID or `None`
             self_matrix_id = None if self_matrix is None else matrix_service.get_matrix_id(self_matrix)

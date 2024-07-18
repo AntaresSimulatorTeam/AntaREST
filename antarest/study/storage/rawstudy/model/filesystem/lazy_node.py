@@ -1,8 +1,9 @@
+import shutil
+import typing as t
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, Generic, List, Optional, Tuple, Union, cast
 from zipfile import ZipFile
 
 from antarest.core.exceptions import ChildNotFoundError
@@ -13,16 +14,16 @@ from antarest.study.storage.rawstudy.model.filesystem.inode import G, INode, S, 
 
 @dataclass
 class SimpleCache:
-    value: Any
+    value: t.Any
     expiration_date: datetime
 
 
-class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
+class LazyNode(INode, ABC, t.Generic[G, S, V]):  # type: ignore
     """
     Abstract left with implemented a lazy loading for its daughter implementation.
     """
 
-    ZIP_FILELIST_CACHE: Dict[str, SimpleCache] = {}
+    ZIP_FILELIST_CACHE: t.Dict[str, SimpleCache] = {}
 
     def __init__(
         self,
@@ -34,7 +35,7 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
 
     def _get_real_file_path(
         self,
-    ) -> Tuple[Path, Any]:
+    ) -> t.Tuple[Path, t.Any]:
         tmp_dir = None
         if self.config.zip_path:
             path, tmp_dir = self._extract_file_to_tmp_dir()
@@ -59,12 +60,12 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
 
     def _get(
         self,
-        url: Optional[List[str]] = None,
+        url: t.Optional[t.List[str]] = None,
         depth: int = -1,
         expanded: bool = False,
         formatted: bool = True,
         get_node: bool = False,
-    ) -> Union[Union[str, G], INode[G, S, V]]:
+    ) -> t.Union[t.Union[str, G], INode[G, S, V]]:
         self._assert_url_end(url)
 
         if get_node:
@@ -75,7 +76,7 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
             if expanded:
                 return link
             else:
-                return cast(G, self.context.resolver.resolve(link, formatted))
+                return t.cast(G, self.context.resolver.resolve(link, formatted))
 
         if expanded:
             return self.get_lazy_content()
@@ -84,24 +85,24 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
 
     def get(
         self,
-        url: Optional[List[str]] = None,
+        url: t.Optional[t.List[str]] = None,
         depth: int = -1,
         expanded: bool = False,
         formatted: bool = True,
-    ) -> Union[str, G]:
+    ) -> t.Union[str, G]:
         output = self._get(url, depth, expanded, formatted, get_node=False)
         assert not isinstance(output, INode)
         return output
 
     def get_node(
         self,
-        url: Optional[List[str]] = None,
+        url: t.Optional[t.List[str]] = None,
     ) -> INode[G, S, V]:
         output = self._get(url, get_node=True)
         assert isinstance(output, INode)
         return output
 
-    def delete(self, url: Optional[List[str]] = None) -> None:
+    def delete(self, url: t.Optional[t.List[str]] = None) -> None:
         self._assert_url_end(url)
         if self.get_link_path().exists():
             self.get_link_path().unlink()
@@ -131,7 +132,7 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
         path = self.config.path.parent / (self.config.path.name + ".link")
         return path
 
-    def save(self, data: Union[str, bytes, S], url: Optional[List[str]] = None) -> None:
+    def save(self, data: t.Union[str, bytes, S], url: t.Optional[t.List[str]] = None) -> None:
         self._assert_not_in_zipped_file()
         self._assert_url_end(url)
 
@@ -141,14 +142,33 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
                 self.config.path.unlink()
             return None
 
-        self.dump(cast(S, data), url)
+        self.dump(t.cast(S, data), url)
         if self.get_link_path().exists():
             self.get_link_path().unlink()
         return None
 
+    def move_file_to(
+        self, target: t.Union[Path, "LazyNode[t.Any, t.Any, t.Any]"], force: bool = False, copy: bool = False
+    ) -> None:
+        if isinstance(target, Path):
+            target.unlink(missing_ok=True)
+            if copy:
+                shutil.copy2(self.infer_path(), target)
+            else:
+                self.infer_path().rename(target)
+        else:
+            target_path = target.infer_target_path(self.infer_is_link_path())
+            if not force and target_path.exists():
+                raise FileExistsError(f"Target path {target_path} already exists")
+            target_path.unlink(missing_ok=True)
+            if copy:
+                shutil.copy2(self.infer_path(), target_path)
+            else:
+                self.infer_path().rename(target_path)
+
     def get_lazy_content(
         self,
-        url: Optional[List[str]] = None,
+        url: t.Optional[t.List[str]] = None,
         depth: int = -1,
         expanded: bool = False,
     ) -> str:
@@ -157,7 +177,7 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
     @abstractmethod
     def load(
         self,
-        url: Optional[List[str]] = None,
+        url: t.Optional[t.List[str]] = None,
         depth: int = -1,
         expanded: bool = False,
         formatted: bool = True,
@@ -177,7 +197,7 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
         raise NotImplementedError()
 
     @abstractmethod
-    def dump(self, data: S, url: Optional[List[str]] = None) -> None:
+    def dump(self, data: S, url: t.Optional[t.List[str]] = None) -> None:
         """
         Store data on tree.
 

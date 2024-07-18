@@ -2,7 +2,6 @@ import re
 import typing as t
 from http import HTTPStatus
 
-from fastapi import HTTPException
 from fastapi.exceptions import HTTPException
 
 

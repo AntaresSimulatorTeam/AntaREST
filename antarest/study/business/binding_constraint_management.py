@@ -46,11 +46,11 @@ from antarest.study.storage.variantstudy.business.matrix_constants.binding_const
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import (
     DEFAULT_GROUP,
     EXPECTED_MATRIX_SHAPES,
-    TERM_MATRICES,
     BindingConstraintMatrices,
     BindingConstraintPropertiesBase,
     CreateBindingConstraint,
     OptionalProperties,
+    TermMatrices,
 )
 from antarest.study.storage.variantstudy.model.command.remove_binding_constraint import RemoveBindingConstraint
 from antarest.study.storage.variantstudy.model.command.update_binding_constraint import UpdateBindingConstraint
@@ -60,10 +60,10 @@ logger = logging.getLogger(__name__)
 
 
 OPERATOR_CONFLICT_MAP = {
-    BindingConstraintOperator.EQUAL: ["less_term_matrix", "greater_term_matrix"],
-    BindingConstraintOperator.GREATER: ["less_term_matrix", "equal_term_matrix"],
-    BindingConstraintOperator.LESS: ["equal_term_matrix", "greater_term_matrix"],
-    BindingConstraintOperator.BOTH: ["equal_term_matrix"],
+    BindingConstraintOperator.EQUAL: [TermMatrices.LESS.value, TermMatrices.GREATER.value],
+    BindingConstraintOperator.GREATER: [TermMatrices.LESS.value, TermMatrices.EQUAL.value],
+    BindingConstraintOperator.LESS: [TermMatrices.EQUAL.value, TermMatrices.GREATER.value],
+    BindingConstraintOperator.BOTH: [TermMatrices.EQUAL.value],
 }
 
 
@@ -254,7 +254,7 @@ class ConstraintCreation(ConstraintInput):
 
     @root_validator(pre=True)
     def check_matrices_dimensions(cls, values: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
-        for _key in ["time_step"] + TERM_MATRICES:
+        for _key in ["time_step"] + [m.value for m in TermMatrices]:
             _camel = to_camel_case(_key)
             values[_key] = values.pop(_camel, values.get(_key))
 
@@ -272,7 +272,7 @@ class ConstraintCreation(ConstraintInput):
 
         # Collect the matrix shapes
         matrix_shapes = {}
-        for _field_name in ["values"] + TERM_MATRICES:
+        for _field_name in ["values"] + [m.value for m in TermMatrices]:
             if _matrix := values.get(_field_name):
                 _array = np.array(_matrix)
                 # We only store the shape if the array is not empty
@@ -353,7 +353,7 @@ def _get_references_by_widths(
     references_by_width: t.Dict[int, t.List[t.Tuple[str, str]]] = {}
     _total = len(bcs) * len(matrix_id_fmts)
     for _index, (bc, fmt) in enumerate(itertools.product(bcs, matrix_id_fmts), 1):
-        if int(file_study.config.version) >= 870 and fmt not in operator_matrix_file_map.get(bc.operator, []):
+        if int(file_study.config.version) >= 870 and fmt not in operator_matrix_file_map[bc.operator]:
             continue
         bc_id = bc.id
         matrix_id = fmt.format(bc_id=bc.id)
@@ -758,7 +758,7 @@ class BindingConstraintManager:
 
         # Validates the matrices. Needed when the study is a variant because we only append the command to the list
         if isinstance(study, VariantStudy):
-            updated_matrices = [term for term in TERM_MATRICES if getattr(data, term)]
+            updated_matrices = [term for term in [m.value for m in TermMatrices] if getattr(data, term)]
             time_step = data.time_step or existing_constraint.time_step
             command.validates_and_fills_matrices(
                 time_step=time_step, specific_matrices=updated_matrices, version=study_version, create=False
@@ -930,7 +930,7 @@ def _replace_matrices_according_to_frequency_and_version(
             BindingConstraintFrequency.DAILY.value: default_bc_weekly_daily_87,
             BindingConstraintFrequency.WEEKLY.value: default_bc_weekly_daily_87,
         }[data.time_step].tolist()
-        for term in TERM_MATRICES:
+        for term in [m.value for m in TermMatrices]:
             if term not in args:
                 args[term] = matrix
     return args
@@ -941,6 +941,8 @@ def check_attributes_coherence(
     study_version: int,
     existing_operator: t.Optional[BindingConstraintOperator] = None,
 ) -> None:
+    update_operator = data.operator or existing_operator
+
     if study_version < 870:
         if data.group:
             raise InvalidFieldForVersionError(
@@ -950,19 +952,21 @@ def check_attributes_coherence(
             raise InvalidFieldForVersionError("You cannot fill a 'matrix_term' as these values refer to v8.7+ studies")
     elif data.values:
         raise InvalidFieldForVersionError("You cannot fill 'values' as it refers to the matrix before v8.7")
-    elif data.operator:
+    elif update_operator:
         conflicting_matrices = [
-            getattr(data, matrix) for matrix in OPERATOR_CONFLICT_MAP[data.operator] if getattr(data, matrix)
+            getattr(data, matrix) for matrix in OPERATOR_CONFLICT_MAP[update_operator] if getattr(data, matrix)
         ]
         if conflicting_matrices:
             raise InvalidFieldForVersionError(
-                f"You cannot fill matrices '{conflicting_matrices}' while using the operator '{data.operator}'"
+                f"You cannot fill matrices '{OPERATOR_CONFLICT_MAP[update_operator]}' while using the operator '{update_operator}'"
             )
-    elif existing_operator:
-        conflicting_matrices = [
-            getattr(data, matrix) for matrix in OPERATOR_CONFLICT_MAP[existing_operator] if getattr(data, matrix)
-        ]
-        if conflicting_matrices:
-            raise InvalidFieldForVersionError(
-                f"You cannot fill matrices '{conflicting_matrices}' while using the operator '{existing_operator}'"
-            )
+    # TODO: the default operator should be fixed somewhere so this condition can be consistent
+    elif [
+        getattr(data, matrix)
+        for matrix in OPERATOR_CONFLICT_MAP[BindingConstraintOperator.EQUAL]
+        if getattr(data, matrix)
+    ]:
+        raise InvalidFieldForVersionError(
+            f"You cannot fill one of the matrices '{OPERATOR_CONFLICT_MAP[BindingConstraintOperator.EQUAL]}' "
+            "while using the operator '{BindingConstraintOperator.EQUAL}'"
+        )
