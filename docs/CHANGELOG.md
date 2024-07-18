@@ -4,6 +4,29 @@ Antares Web Changelog
 v2.17.3 (2024-07-18)
 --------------------
 
+### Features
+
+* **api**: do not allow areas, links or thermals deletion when referenced in a binding constraint [`2061`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2061)
+* **outputs**: build outputs tree based on filesystem [`2064`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2064)
+* **api-raw**: raise a 404 Not Found error when a resource is missing in the study [`2078`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2078)
+
+### Bug Fixes
+
+* **ui-clusters**: improve cell number values accuracy by using rounding instead of truncating [`2087`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2087)
+* **ui-commons**: prompt from Form displayed on dialog validation [`2089`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2089)
+
+### Continuous integration
+
+*  **workflows**: update Actions in GitHub workflows [`2080`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2080)
+
+### Documentation
+
+* user-guide: updating Binding Constraints Commands documentation and metadata for search [`2082`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2082)
+* user-guide: improve the user guide and add "How to Create a New Study?" topic [`2081`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2081)
+
+
+**Full Changelog**: https://github.com/AntaresSimulatorTeam/AntaREST/compare/v2.17.2...v.2.17.3
+
 
 v2.17.2 (2024-06-19)
 --------------------
