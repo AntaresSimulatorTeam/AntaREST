@@ -24,6 +24,7 @@ from antarest.core.exceptions import (
     CommandApplicationError,
     IncorrectPathError,
     NotAManagedStudyException,
+    ReferencedObjectDeletionNotAllowed,
     StudyDeletionNotAllowed,
     StudyNotFoundError,
     StudyTypeUnsupported,
@@ -56,7 +57,7 @@ from antarest.study.business.areas.properties_management import PropertiesManage
 from antarest.study.business.areas.renewable_management import RenewableManager
 from antarest.study.business.areas.st_storage_management import STStorageManager
 from antarest.study.business.areas.thermal_management import ThermalManager
-from antarest.study.business.binding_constraint_management import BindingConstraintManager
+from antarest.study.business.binding_constraint_management import BindingConstraintManager, ConstraintFilters, LinkTerm
 from antarest.study.business.config_management import ConfigManager
 from antarest.study.business.correlation_management import CorrelationManager
 from antarest.study.business.district_manager import DistrictManager
@@ -686,7 +687,7 @@ class StudyService:
             id=sid,
             name=study_name,
             workspace=DEFAULT_WORKSPACE_NAME,
-            path=study_path,
+            path=str(study_path),
             created_at=datetime.utcnow(),
             updated_at=datetime.utcnow(),
             version=version or NEW_DEFAULT_STUDY_VERSION,
@@ -1187,13 +1188,13 @@ class StudyService:
         """
         Download outputs
         Args:
-            study_id: study Id
-            output_id: output id
-            data: Json parameters
-            use_task: use task or not
-            filetype: type of returning file,
-            tmp_export_file: temporary file (if use_task is false),
-            params: request parameters
+            study_id: study ID.
+            output_id: output ID.
+            data: Json parameters.
+            use_task: use task or not.
+            filetype: type of returning file,.
+            tmp_export_file: temporary file (if `use_task` is false),.
+            params: request parameters.
 
         Returns: CSV content file
 
@@ -1202,35 +1203,33 @@ class StudyService:
         study = self.get_study(study_id)
         assert_permission(params.user, study, StudyPermissionType.READ)
         self._assert_study_unarchived(study)
-        logger.info(
-            f"Study {study_id} output download asked by {params.get_user_id()}",
-        )
+        logger.info(f"Study {study_id} output download asked by {params.get_user_id()}")
 
         if use_task:
             logger.info(f"Exporting {output_id} from study {study_id}")
             export_name = f"Study filtered output {study.name}/{output_id} export"
             export_file_download = self.file_transfer_manager.request_download(
-                f"{study.name}-{study_id}-{output_id}_filtered.{'tar.gz' if filetype == ExportFormat.TAR_GZ else 'zip'}",
+                f"{study.name}-{study_id}-{output_id}_filtered{filetype.suffix}",
                 export_name,
                 params.user,
             )
             export_path = Path(export_file_download.path)
             export_id = export_file_download.id
 
-            def export_task(notifier: TaskUpdateNotifier) -> TaskResult:
+            def export_task(_notifier: TaskUpdateNotifier) -> TaskResult:
                 try:
-                    study = self.get_study(study_id)
-                    stopwatch = StopWatch()
-                    matrix = StudyDownloader.build(
-                        self.storage_service.get_storage(study).get_raw(study),
+                    _study = self.get_study(study_id)
+                    _stopwatch = StopWatch()
+                    _matrix = StudyDownloader.build(
+                        self.storage_service.get_storage(_study).get_raw(_study),
                         output_id,
                         data,
                     )
-                    stopwatch.log_elapsed(
+                    _stopwatch.log_elapsed(
                         lambda x: logger.info(f"Study {study_id} filtered output {output_id} built in {x}s")
                     )
-                    StudyDownloader.export(matrix, filetype, export_path)
-                    stopwatch.log_elapsed(
+                    StudyDownloader.export(_matrix, filetype, export_path)
+                    _stopwatch.log_elapsed(
                         lambda x: logger.info(f"Study {study_id} filtered output {output_id} exported in {x}s")
                     )
                     self.file_transfer_manager.set_ready(export_id)
@@ -1240,7 +1239,7 @@ class StudyService:
                     )
                 except Exception as e:
                     self.file_transfer_manager.fail(export_id, str(e))
-                    raise e
+                    raise
 
             task_id = self.task_service.add_task(
                 export_task,
@@ -1265,17 +1264,18 @@ class StudyService:
                 stopwatch.log_elapsed(
                     lambda x: logger.info(f"Study {study_id} filtered output {output_id} exported in {x}s")
                 )
-                return FileResponse(
-                    tmp_export_file,
-                    headers=(
-                        {"Content-Disposition": "inline"}
-                        if filetype == ExportFormat.JSON
-                        else {
-                            "Content-Disposition": f'attachment; filename="output-{output_id}.{"tar.gz" if filetype == ExportFormat.TAR_GZ else "zip"}'
-                        }
-                    ),
-                    media_type=filetype,
-                )
+
+                if filetype == ExportFormat.JSON:
+                    headers = {"Content-Disposition": "inline"}
+                elif filetype == ExportFormat.TAR_GZ:
+                    headers = {"Content-Disposition": f'attachment; filename="output-{output_id}.tar.gz'}
+                elif filetype == ExportFormat.ZIP:
+                    headers = {"Content-Disposition": f'attachment; filename="output-{output_id}.zip'}
+                else:  # pragma: no cover
+                    raise NotImplementedError(f"Export format {filetype} is not supported")
+
+                return FileResponse(tmp_export_file, headers=headers, media_type=filetype)
+
             else:
                 json_response = json.dumps(
                     matrix.dict(),
@@ -1314,26 +1314,20 @@ class StudyService:
         params: RequestParameters,
     ) -> None:
         """
-        Set simulation as the reference output
+        Set simulation as the reference output.
+
         Args:
-            study_id: study Id
-            output_id: output id
-            status: state of the reference status
+            study_id: study ID.
+            output_id: The ID of the output to set as reference.
+            status: state of the reference status.
             params: request parameters
-
-        Returns: None
-
         """
         study = self.get_study(study_id)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
 
         logger.info(
-            "output %s set by user %s as reference (%b) for study %s",
-            output_id,
-            params.get_user_id(),
-            status,
-            study_id,
+            f"output {output_id} set by user {params.get_user_id()} as reference ({status}) for study {study_id}"
         )
 
         self.storage_service.get_storage(study).set_reference_output(study, output_id, status)
@@ -1855,9 +1849,27 @@ class StudyService:
         return self.areas.update_thermal_cluster_metadata(study, area_id, clusters_metadata)
 
     def delete_area(self, uuid: str, area_id: str, params: RequestParameters) -> None:
+        """
+        Delete area from study if it is not referenced by a binding constraint,
+        otherwise raise an HTTP 403 Forbidden error.
+
+        Args:
+            uuid: The study ID.
+            area_id: The area ID to delete.
+            params: The request parameters used to check user permissions.
+
+        Raises:
+            ReferencedObjectDeletionNotAllowed: If the area is referenced by a binding constraint.
+        """
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
+        referencing_binding_constraints = self.binding_constraint_manager.get_binding_constraints(
+            study, ConstraintFilters(area_name=area_id)
+        )
+        if referencing_binding_constraints:
+            binding_ids = [bc.id for bc in referencing_binding_constraints]
+            raise ReferencedObjectDeletionNotAllowed(area_id, binding_ids, object_type="Area")
         self.areas.delete_area(study, area_id)
         self.event_bus.push(
             Event(
@@ -1874,9 +1886,29 @@ class StudyService:
         area_to: str,
         params: RequestParameters,
     ) -> None:
+        """
+        Delete link from study if it is not referenced by a binding constraint,
+        otherwise raise an HTTP 403 Forbidden error.
+
+        Args:
+            uuid: The study ID.
+            area_from: The area from which the link starts.
+            area_to: The area to which the link ends.
+            params: The request parameters used to check user permissions.
+
+        Raises:
+            ReferencedObjectDeletionNotAllowed: If the link is referenced by a binding constraint.
+        """
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
+        link_id = LinkTerm(area1=area_from, area2=area_to).generate_id()
+        referencing_binding_constraints = self.binding_constraint_manager.get_binding_constraints(
+            study, ConstraintFilters(link_id=link_id)
+        )
+        if referencing_binding_constraints:
+            binding_ids = [bc.id for bc in referencing_binding_constraints]
+            raise ReferencedObjectDeletionNotAllowed(link_id, binding_ids, object_type="Link")
         self.links.delete_link(study, area_from, area_to)
         self.event_bus.push(
             Event(
@@ -2518,3 +2550,26 @@ class StudyService:
         )
 
         return df_matrix
+
+    def asserts_no_thermal_in_binding_constraints(
+        self, study: Study, area_id: str, cluster_ids: t.Sequence[str]
+    ) -> None:
+        """
+        Check that no cluster is referenced in a binding constraint, otherwise raise an HTTP 403 Forbidden error.
+
+        Args:
+            study: input study for which an update is to be committed
+            area_id: area ID to be checked
+            cluster_ids: IDs of the thermal clusters to be checked
+
+        Raises:
+            ReferencedObjectDeletionNotAllowed: if a cluster is referenced in a binding constraint
+        """
+
+        for cluster_id in cluster_ids:
+            ref_bcs = self.binding_constraint_manager.get_binding_constraints(
+                study, ConstraintFilters(cluster_id=f"{area_id}.{cluster_id}")
+            )
+            if ref_bcs:
+                binding_ids = [bc.id for bc in ref_bcs]
+                raise ReferencedObjectDeletionNotAllowed(cluster_id, binding_ids, object_type="Cluster")

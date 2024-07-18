@@ -20,6 +20,8 @@ from antarest.study.service import StudyService
 from tests.helpers import assert_study
 from tests.storage.integration.data.de_details_hourly import de_details_hourly
 from tests.storage.integration.data.de_fr_values_hourly import de_fr_values_hourly
+from tests.storage.integration.data.set_id_annual import set_id_annual
+from tests.storage.integration.data.set_values_monthly import set_values_monthly
 
 ADMIN = JWTUser(
     id=1,
@@ -309,6 +311,31 @@ def test_sta_mini_input(storage_service, url: str, expected_output: dict):
     "url, expected_output",
     [
         (
+            "/v1/studies/STA-mini/raw?path=output/20241807-1540eco-extra-outputs/economy/mc-all/binding_constraints/binding-constraints-annual",
+            {
+                "columns": [
+                    ("contrainte (<)", " ", "EXP"),
+                    ("contrainte (<)", " ", "std"),
+                    ("contrainte (<)", " ", "min"),
+                    ("contrainte (<)", " ", "max"),
+                ],
+                "index": ["Annual"],
+                "data": [[0.0, 0.0, 0.0, 0.0]],
+            },
+        ),
+        (
+            "/v1/studies/STA-mini/raw?path=output/20241807-1540eco-extra-outputs/economy/mc-all/areas/@ all areas/values-monthly",
+            set_values_monthly,
+        ),
+        (
+            "/v1/studies/STA-mini/raw?path=output/20241807-1540eco-extra-outputs/economy/mc-all/areas/@ all areas/id-annual",
+            set_id_annual,
+        ),
+        (
+            "/v1/studies/STA-mini/raw?path=output/20241807-1540eco-extra-outputs/ts-numbers/bindingconstraints/default",
+            [1],
+        ),
+        (
             "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/annualSystemCost",
             b"EXP : 185808000\nSTD : 0\nMIN : 185808000\nMAX : 185808000\n",
         ),
@@ -354,28 +381,11 @@ def test_sta_mini_input(storage_service, url: str, expected_output: dict):
         ),
         (
             "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/economy/mc-all/links/de/fr",
-            {
-                "values-hourly": "matrixfile://values-hourly.txt",
-                "id-hourly": "matrixfile://id-hourly.txt",
-                "values-daily": "matrixfile://values-daily.txt",
-                "id-daily": "matrixfile://id-daily.txt",
-                "values-weekly": "matrixfile://values-weekly.txt",
-                "id-weekly": "matrixfile://id-weekly.txt",
-                "values-monthly": "matrixfile://values-monthly.txt",
-                "id-monthly": "matrixfile://id-monthly.txt",
-                "values-annual": "matrixfile://values-annual.txt",
-                "id-annual": "matrixfile://id-annual.txt",
-            },
+            {},
         ),
         (
             "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/economy/mc-ind/00001/links/de/fr",
-            {
-                "values-hourly": "matrixfile://values-hourly.txt",
-                "values-daily": "matrixfile://values-daily.txt",
-                "values-weekly": "matrixfile://values-weekly.txt",
-                "values-monthly": "matrixfile://values-monthly.txt",
-                "values-annual": "matrixfile://values-annual.txt",
-            },
+            {"values-hourly": "matrixfile://values-hourly.txt"},
         ),
         (
             "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/economy/mc-ind/00001/links/de/fr/values-hourly",

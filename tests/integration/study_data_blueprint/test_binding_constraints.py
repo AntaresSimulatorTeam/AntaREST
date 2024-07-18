@@ -46,6 +46,7 @@ class TestConstraintTerm:
             offset=123,
             data=LinkTerm(area1="Area 1", area2="Area 2"),
         )
+        assert term.data is not None
         assert term.generate_id() == term.data.generate_id()
 
     def test_constraint_id__cluster(self) -> None:
@@ -55,6 +56,7 @@ class TestConstraintTerm:
             offset=123,
             data=ClusterTerm(area="Area 1", cluster="Cluster X"),
         )
+        assert term.data is not None
         assert term.generate_id() == term.data.generate_id()
 
     def test_constraint_id__other(self) -> None:
@@ -66,18 +68,11 @@ class TestConstraintTerm:
         assert term.generate_id() == "foo"
 
 
-def _upload_matrix(
-    client: TestClient, user_access_token: str, study_id: str, matrix_path: str, df: pd.DataFrame
-) -> None:
+def _upload_matrix(client: TestClient, study_id: str, matrix_path: str, df: pd.DataFrame) -> None:
     tsv = io.BytesIO()
     df.to_csv(tsv, sep="\t", index=False, header=False)
     tsv.seek(0)
-    res = client.put(
-        f"/v1/studies/{study_id}/raw",
-        params={"path": matrix_path},
-        headers={"Authorization": f"Bearer {user_access_token}"},
-        files={"file": tsv},
-    )
+    res = client.put(f"/v1/studies/{study_id}/raw", params={"path": matrix_path}, files={"file": tsv})
     res.raise_for_status()
 
 
@@ -89,72 +84,43 @@ class TestBindingConstraints:
 
     @pytest.mark.parametrize("study_type", ["raw", "variant"])
     def test_lifecycle__nominal(self, client: TestClient, user_access_token: str, study_type: str) -> None:
-        user_headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = {"Authorization": f"Bearer {user_access_token}"}  # type: ignore
 
         # =============================
         #  STUDY PREPARATION
         # =============================
 
         # Create a Study
-        res = client.post(
-            "/v1/studies",
-            headers=user_headers,
-            params={"name": "foo", "version": "860"},
-        )
+        res = client.post("/v1/studies", params={"name": "foo", "version": "860"})
         assert res.status_code == 201, res.json()
         study_id = res.json()
 
         # Create Areas
-        res = client.post(
-            f"/v1/studies/{study_id}/areas",
-            headers=user_headers,
-            json={
-                "name": "Area 1",
-                "type": "AREA",
-            },
-        )
+        res = client.post(f"/v1/studies/{study_id}/areas", json={"name": "Area 1", "type": "AREA"})
         assert res.status_code == 200, res.json()
         area1_id = res.json()["id"]
         assert area1_id == "area 1"
 
-        res = client.post(
-            f"/v1/studies/{study_id}/areas",
-            headers=user_headers,
-            json={
-                "name": "Area 2",
-                "type": "AREA",
-            },
-        )
+        res = client.post(f"/v1/studies/{study_id}/areas", json={"name": "Area 2", "type": "AREA"})
         assert res.status_code == 200, res.json()
         area2_id = res.json()["id"]
         assert area2_id == "area 2"
 
         # Create a link between the two areas
-        res = client.post(
-            f"/v1/studies/{study_id}/links",
-            headers=user_headers,
-            json={
-                "area1": area1_id,
-                "area2": area2_id,
-            },
-        )
+        res = client.post(f"/v1/studies/{study_id}/links", json={"area1": area1_id, "area2": area2_id})
         assert res.status_code == 200, res.json()
 
         # Create a cluster in area1
         res = client.post(
             f"/v1/studies/{study_id}/areas/{area1_id}/clusters/thermal",
-            headers=user_headers,
-            json={
-                "name": "Cluster 1",
-                "group": "Nuclear",
-            },
+            json={"name": "Cluster 1", "group": "Nuclear"},
         )
         assert res.status_code == 200, res.json()
         cluster_id = res.json()["id"]
         assert cluster_id == "Cluster 1"
 
         # Get clusters list to check created cluster in area1
-        res = client.get(f"/v1/studies/{study_id}/areas/{area1_id}/clusters/thermal", headers=user_headers)
+        res = client.get(f"/v1/studies/{study_id}/areas/{area1_id}/clusters/thermal")
         clusters_list = res.json()
         assert res.status_code == 200, res.json()
         assert len(clusters_list) == 1
@@ -164,11 +130,7 @@ class TestBindingConstraints:
 
         if study_type == "variant":
             # Create Variant
-            res = client.post(
-                f"/v1/studies/{study_id}/variants",
-                headers=user_headers,
-                params={"name": "Variant 1"},
-            )
+            res = client.post(f"/v1/studies/{study_id}/variants", params={"name": "Variant 1"})
             assert res.status_code in {200, 201}, res.json()
             study_id = res.json()
 
@@ -192,7 +154,6 @@ class TestBindingConstraints:
                     },
                 }
             ],
-            headers=user_headers,
         )
         assert res.status_code in {200, 201}, res.json()
 
@@ -211,7 +172,6 @@ class TestBindingConstraints:
                     },
                 }
             ],
-            headers=user_headers,
         )
         assert res.status_code in {200, 201}, res.json()
 
@@ -226,12 +186,11 @@ class TestBindingConstraints:
                 "terms": [],
                 "comments": "New API",
             },
-            headers=user_headers,
         )
         assert res.status_code in {200, 201}, res.json()
 
         # Get Binding Constraint list
-        res = client.get(f"/v1/studies/{study_id}/bindingconstraints", headers=user_headers)
+        res = client.get(f"/v1/studies/{study_id}/bindingconstraints")
         binding_constraints_list = res.json()
         assert res.status_code == 200, res.json()
         assert len(binding_constraints_list) == 3
@@ -278,7 +237,7 @@ class TestBindingConstraints:
         bc_id = binding_constraints_list[0]["id"]
 
         # Asserts binding constraint configuration is valid.
-        res = client.get(f"/v1/studies/{study_id}/constraint-groups", headers=user_headers)
+        res = client.get(f"/v1/studies/{study_id}/constraint-groups")
         assert res.status_code == 200, res.json()
 
         # =============================
@@ -293,7 +252,6 @@ class TestBindingConstraints:
                 "offset": 2,
                 "data": {"area1": area1_id, "area2": area2_id},
             },
-            headers=user_headers,
         )
         assert res.status_code == 200, res.json()
 
@@ -303,21 +261,14 @@ class TestBindingConstraints:
             json={
                 "weight": 1,
                 "offset": 2,
-                "data": {
-                    "area": area1_id,
-                    "cluster": cluster_id,
-                },
-                # NOTE: cluster_id in term data can be uppercase, but it must be lowercase in the returned ini configuration file
+                "data": {"area": area1_id, "cluster": cluster_id},
+                # NOTE: cluster_id in term data can be uppercase, but it must be lowercase in the INI file
             },
-            headers=user_headers,
         )
         assert res.status_code == 200, res.json()
 
         # Get binding constraints list to check added terms
-        res = client.get(
-            f"/v1/studies/{study_id}/bindingconstraints/{bc_id}",
-            headers=user_headers,
-        )
+        res = client.get(f"/v1/studies/{study_id}/bindingconstraints/{bc_id}")
         assert res.status_code == 200, res.json()
         binding_constraint = res.json()
         constraint_terms = binding_constraint["terms"]
@@ -340,19 +291,12 @@ class TestBindingConstraints:
         # Update constraint cluster term with uppercase cluster_id
         res = client.put(
             f"/v1/studies/{study_id}/bindingconstraints/{bc_id}/term",
-            json={
-                "id": f"{area1_id}.{cluster_id}",
-                "weight": 3,
-            },
-            headers=user_headers,
+            json={"id": f"{area1_id}.{cluster_id}", "weight": 3},
         )
         assert res.status_code == 200, res.json()
 
         # Check updated terms, cluster_id should be lowercase in the returned configuration
-        res = client.get(
-            f"/v1/studies/{study_id}/bindingconstraints/{bc_id}",
-            headers=user_headers,
-        )
+        res = client.get(f"/v1/studies/{study_id}/bindingconstraints/{bc_id}")
         assert res.status_code == 200, res.json()
         binding_constraint = res.json()
         constraint_terms = binding_constraint["terms"]
@@ -376,7 +320,6 @@ class TestBindingConstraints:
         res = client.put(
             f"/v1/studies/{study_id}/bindingconstraints/{bc_id}/term",
             json={"id": f"{area1_id}.!!invalid#cluster%%", "weight": 4},
-            headers=user_headers,
         )
         assert res.status_code == 404, res.json()
         exception = res.json()["exception"]
@@ -388,11 +331,7 @@ class TestBindingConstraints:
         # Update constraint cluster term with empty data
         res = client.put(
             f"/v1/studies/{study_id}/bindingconstraints/{bc_id}/term",
-            json={
-                "id": f"{area1_id}.{cluster_id}",
-                "data": {},
-            },
-            headers=user_headers,
+            json={"id": f"{area1_id}.{cluster_id}", "data": {}},
         )
         assert res.status_code == 422, res.json()
         assert res.json() == {
@@ -402,17 +341,11 @@ class TestBindingConstraints:
         }
 
         # Remove Constraint term
-        res = client.delete(
-            f"/v1/studies/{study_id}/bindingconstraints/{bc_id}/term/{area1_id}%{area2_id}",
-            headers=user_headers,
-        )
+        res = client.delete(f"/v1/studies/{study_id}/bindingconstraints/{bc_id}/term/{area1_id}%{area2_id}")
         assert res.status_code == 200, res.json()
 
         # Check updated terms, the deleted term should no longer exist.
-        res = client.get(
-            f"/v1/studies/{study_id}/bindingconstraints/{bc_id}",
-            headers=user_headers,
-        )
+        res = client.get(f"/v1/studies/{study_id}/bindingconstraints/{bc_id}")
         assert res.status_code == 200, res.json()
         binding_constraint = res.json()
         constraint_terms = binding_constraint["terms"]
@@ -427,17 +360,10 @@ class TestBindingConstraints:
         assert constraint_terms == expected
 
         # Update random field, shouldn't remove the term.
-        res = client.put(
-            f"v1/studies/{study_id}/bindingconstraints/{bc_id}",
-            json={"enabled": False},
-            headers=user_headers,
-        )
+        res = client.put(f"v1/studies/{study_id}/bindingconstraints/{bc_id}", json={"enabled": False})
         assert res.status_code == 200, res.json()
 
-        res = client.get(
-            f"/v1/studies/{study_id}/bindingconstraints/{bc_id}",
-            headers=user_headers,
-        )
+        res = client.get(f"/v1/studies/{study_id}/bindingconstraints/{bc_id}")
         assert res.status_code == 200, res.json()
         binding_constraint = res.json()
         constraint_terms = binding_constraint["terms"]
@@ -449,27 +375,19 @@ class TestBindingConstraints:
 
         # Update element of Binding constraint
         new_comment = "We made it !"
-        res = client.put(
-            f"v1/studies/{study_id}/bindingconstraints/{bc_id}",
-            json={"comments": new_comment},
-            headers=user_headers,
-        )
+        res = client.put(f"v1/studies/{study_id}/bindingconstraints/{bc_id}", json={"comments": new_comment})
         assert res.status_code == 200
         assert res.json()["comments"] == new_comment
 
         # The user change the timeStep to daily instead of hourly.
         # We must check that the matrix is a daily/weekly matrix.
-        res = client.put(
-            f"/v1/studies/{study_id}/bindingconstraints/{bc_id}",
-            json={"timeStep": "daily"},
-            headers=user_headers,
-        )
+        res = client.put(f"/v1/studies/{study_id}/bindingconstraints/{bc_id}", json={"timeStep": "daily"})
         assert res.status_code == 200, res.json()
         assert res.json()["timeStep"] == "daily"
 
         # Check that the command corresponds to a change in `time_step`
         if study_type == "variant":
-            res = client.get(f"/v1/studies/{study_id}/commands", headers=user_headers)
+            res = client.get(f"/v1/studies/{study_id}/commands")
             commands = res.json()
             args = commands[-1]["args"]
             assert args["time_step"] == "daily"
@@ -479,7 +397,6 @@ class TestBindingConstraints:
         res = client.get(
             f"/v1/studies/{study_id}/raw",
             params={"path": f"input/bindingconstraints/{bc_id}", "depth": 1, "formatted": True},  # type: ignore
-            headers=user_headers,
         )
         assert res.status_code == 200, res.json()
         dataframe = res.json()
@@ -501,7 +418,6 @@ class TestBindingConstraints:
                 "terms": [],
                 "comments": "New API",
             },
-            headers=user_headers,
         )
         assert res.status_code == 400, res.json()
         assert res.json() == {
@@ -520,7 +436,6 @@ class TestBindingConstraints:
                 "terms": [],
                 "comments": "New API",
             },
-            headers=user_headers,
         )
         assert res.status_code == 400, res.json()
         assert res.json() == {
@@ -539,7 +454,6 @@ class TestBindingConstraints:
                 "terms": [],
                 "comments": "",
             },
-            headers=user_headers,
         )
         assert res.status_code == 409, res.json()
 
@@ -556,7 +470,6 @@ class TestBindingConstraints:
                 "values": [[]],
                 "less_term_matrix": [[]],
             },
-            headers=user_headers,
         )
         assert res.status_code == 422, res.json()
         description = res.json()["description"]
@@ -577,7 +490,6 @@ class TestBindingConstraints:
                 "comments": "Incoherent matrix with version",
                 "lessTermMatrix": [[]],
             },
-            headers=user_headers,
         )
         assert res.status_code == 422, res.json()
         description = res.json()["description"]
@@ -594,11 +506,7 @@ class TestBindingConstraints:
             "comments": "Creation with matrix",
             "values": wrong_matrix.tolist(),
         }
-        res = client.post(
-            f"/v1/studies/{study_id}/bindingconstraints",
-            json=wrong_request_args,
-            headers=user_headers,
-        )
+        res = client.post(f"/v1/studies/{study_id}/bindingconstraints", json=wrong_request_args)
         assert res.status_code == 422, res.json()
         exception = res.json()["exception"]
         description = res.json()["description"]
@@ -607,7 +515,7 @@ class TestBindingConstraints:
         assert "(366, 3)" in description
 
         # Delete a fake binding constraint
-        res = client.delete(f"/v1/studies/{study_id}/bindingconstraints/fake_bc", headers=user_headers)
+        res = client.delete(f"/v1/studies/{study_id}/bindingconstraints/fake_bc")
         assert res.status_code == 404, res.json()
         assert res.json()["exception"] == "BindingConstraintNotFound"
         assert res.json()["description"] == "Binding constraint 'fake_bc' not found"
@@ -617,7 +525,6 @@ class TestBindingConstraints:
         res = client.put(
             f"/v1/studies/{study_id}/bindingconstraints/binding_constraint_2",
             json={"group": grp_name},
-            headers=user_headers,
         )
         assert res.status_code == 422, res.json()
         assert res.json()["exception"] == "InvalidFieldForVersionError"
@@ -630,82 +537,48 @@ class TestBindingConstraints:
         res = client.put(
             f"/v1/studies/{study_id}/bindingconstraints/binding_constraint_2",
             json={"less_term_matrix": [[]]},
-            headers=user_headers,
         )
         assert res.status_code == 422, res.json()
         assert res.json()["exception"] == "InvalidFieldForVersionError"
         assert res.json()["description"] == "You cannot fill a 'matrix_term' as these values refer to v8.7+ studies"
 
     @pytest.mark.parametrize("study_type", ["raw", "variant"])
-    def test_for_version_870(self, client: TestClient, admin_access_token: str, study_type: str) -> None:
-        admin_headers = {"Authorization": f"Bearer {admin_access_token}"}
+    def test_for_version_870(self, client: TestClient, user_access_token: str, study_type: str) -> None:
+        client.headers = {"Authorization": f"Bearer {user_access_token}"}  # type: ignore
 
         # =============================
         #  STUDY PREPARATION
         # =============================
 
-        res = client.post(
-            "/v1/studies",
-            headers=admin_headers,
-            params={"name": "foo"},
-        )
+        res = client.post("/v1/studies", params={"name": "foo"})
         assert res.status_code == 201, res.json()
         study_id = res.json()
 
         if study_type == "variant":
             # Create Variant
-            res = client.post(
-                f"/v1/studies/{study_id}/variants",
-                headers=admin_headers,
-                params={"name": "Variant 1"},
-            )
+            res = client.post(f"/v1/studies/{study_id}/variants", params={"name": "Variant 1"})
             assert res.status_code in {200, 201}
             study_id = res.json()
 
         # Create Areas
-        res = client.post(
-            f"/v1/studies/{study_id}/areas",
-            headers=admin_headers,
-            json={
-                "name": "Area 1",
-                "type": "AREA",
-            },
-        )
+        res = client.post(f"/v1/studies/{study_id}/areas", json={"name": "Area 1", "type": "AREA"})
         assert res.status_code == 200, res.json()
         area1_id = res.json()["id"]
         assert area1_id == "area 1"
 
-        res = client.post(
-            f"/v1/studies/{study_id}/areas",
-            headers=admin_headers,
-            json={
-                "name": "Area 2",
-                "type": "AREA",
-            },
-        )
+        res = client.post(f"/v1/studies/{study_id}/areas", json={"name": "Area 2", "type": "AREA"})
         assert res.status_code == 200, res.json()
         area2_id = res.json()["id"]
         assert area2_id == "area 2"
 
         # Create a link between the two areas
-        res = client.post(
-            f"/v1/studies/{study_id}/links",
-            headers=admin_headers,
-            json={
-                "area1": area1_id,
-                "area2": area2_id,
-            },
-        )
+        res = client.post(f"/v1/studies/{study_id}/links", json={"area1": area1_id, "area2": area2_id})
         assert res.status_code == 200, res.json()
 
         # Create a cluster in area1
         res = client.post(
             f"/v1/studies/{study_id}/areas/{area1_id}/clusters/thermal",
-            headers=admin_headers,
-            json={
-                "name": "Cluster 1",
-                "group": "Nuclear",
-            },
+            json={"name": "Cluster 1", "group": "Nuclear"},
         )
         assert res.status_code == 200, res.json()
         cluster_id = res.json()["id"]
@@ -718,11 +591,7 @@ class TestBindingConstraints:
         # Creation of a bc without group
         bc_id_wo_group = "binding_constraint_1"
         args = {"enabled": True, "timeStep": "hourly", "operator": "less", "terms": [], "comments": "New API"}
-        res = client.post(
-            f"/v1/studies/{study_id}/bindingconstraints",
-            json={"name": bc_id_wo_group, **args},
-            headers=admin_headers,
-        )
+        res = client.post(f"/v1/studies/{study_id}/bindingconstraints", json={"name": bc_id_wo_group, **args})
         assert res.status_code in {200, 201}
         assert res.json()["group"] == "default"
 
@@ -731,7 +600,6 @@ class TestBindingConstraints:
         res = client.post(
             f"/v1/studies/{study_id}/bindingconstraints",
             json={"name": bc_id_w_group, "group": "specific_grp", **args},
-            headers=admin_headers,
         )
         assert res.status_code in {200, 201}
         assert res.json()["group"] == "specific_grp"
@@ -742,12 +610,11 @@ class TestBindingConstraints:
         res = client.post(
             f"/v1/studies/{study_id}/bindingconstraints",
             json={"name": bc_id_w_matrix, "less_term_matrix": matrix_lt3.tolist(), **args},
-            headers=admin_headers,
         )
         assert res.status_code in {200, 201}, res.json()
 
         if study_type == "variant":
-            res = client.get(f"/v1/studies/{study_id}/commands", headers=admin_headers)
+            res = client.get(f"/v1/studies/{study_id}/commands")
             last_cmd_args = res.json()[-1]["args"]
             less_term_matrix = last_cmd_args["less_term_matrix"]
             equal_term_matrix = last_cmd_args["equal_term_matrix"]
@@ -756,10 +623,10 @@ class TestBindingConstraints:
 
         # Check that raw matrices are created
         for term in ["lt", "gt", "eq"]:
+            path = f"input/bindingconstraints/{bc_id_w_matrix}_{term}"
             res = client.get(
                 f"/v1/studies/{study_id}/raw",
-                params={"path": f"input/bindingconstraints/{bc_id_w_matrix}_{term}", "depth": 1, "formatted": True},  # type: ignore
-                headers=admin_headers,
+                params={"path": path, "depth": 1, "formatted": True},  # type: ignore
             )
             assert res.status_code == 200, res.json()
             data = res.json()["data"]
@@ -779,7 +646,6 @@ class TestBindingConstraints:
                 {"weight": 1, "offset": 2, "data": {"area1": area1_id, "area2": area2_id}},
                 {"weight": 1, "offset": 2, "data": {"area": area1_id, "cluster": cluster_id}},
             ],
-            headers=admin_headers,
         )
         assert res.status_code == 200, res.json()
 
@@ -787,7 +653,6 @@ class TestBindingConstraints:
         res = client.post(
             f"/v1/studies/{study_id}/bindingconstraints/{bc_id_w_group}/terms",
             json=[{"weight": 1, "offset": 2}],
-            headers=admin_headers,
         )
         assert res.status_code == 422, res.json()
         exception = res.json()["exception"]
@@ -800,7 +665,6 @@ class TestBindingConstraints:
         res = client.post(
             f"/v1/studies/{study_id}/bindingconstraints/{bc_id_w_group}/terms",
             json=[{"weight": 99, "offset": 0, "data": {"area1": area1_id, "area2": area2_id}}],
-            headers=admin_headers,
         )
         assert res.status_code == 409, res.json()
         exception = res.json()["exception"]
@@ -810,10 +674,7 @@ class TestBindingConstraints:
         assert f"{area1_id}%{area2_id}" in description, "Error message should contain the duplicate term ID"
 
         # Get binding constraints list to check added terms
-        res = client.get(
-            f"/v1/studies/{study_id}/bindingconstraints/{bc_id_w_group}",
-            headers=admin_headers,
-        )
+        res = client.get(f"/v1/studies/{study_id}/bindingconstraints/{bc_id_w_group}")
         assert res.status_code == 200, res.json()
         binding_constraint = res.json()
         constraint_terms = binding_constraint["terms"]
@@ -837,22 +698,22 @@ class TestBindingConstraints:
         res = client.put(
             f"/v1/studies/{study_id}/bindingconstraints/{bc_id_w_group}/terms",
             json=[
-                {"id": f"{area1_id}%{area2_id}", "weight": 4.4, "offset": 1},
+                {
+                    "id": f"{area1_id}%{area2_id}",
+                    "weight": 4.4,
+                    "offset": 1,
+                },
                 {
                     "id": f"{area1_id}.{cluster_id}",
                     "weight": 5.1,
                     "data": {"area": area1_id, "cluster": cluster_id},
                 },
             ],
-            headers=admin_headers,
         )
         assert res.status_code == 200, res.json()
 
         # Asserts terms were updated
-        res = client.get(
-            f"/v1/studies/{study_id}/bindingconstraints/{bc_id_w_group}",
-            headers=admin_headers,
-        )
+        res = client.get(f"/v1/studies/{study_id}/bindingconstraints/{bc_id_w_group}")
         assert res.status_code == 200, res.json()
         binding_constraint = res.json()
         constraint_terms = binding_constraint["terms"]
@@ -881,7 +742,6 @@ class TestBindingConstraints:
         res = client.put(
             f"/v1/studies/{study_id}/bindingconstraints/{bc_id_w_matrix}",
             json={"group": grp_name},
-            headers=admin_headers,
         )
         assert res.status_code == 200, res.json()
         assert res.json()["group"] == grp_name
@@ -890,14 +750,12 @@ class TestBindingConstraints:
         res = client.put(
             f"/v1/studies/{study_id}/bindingconstraints/{bc_id_w_matrix}",
             json={"greater_term_matrix": matrix_lt3.tolist()},
-            headers=admin_headers,
         )
         assert res.status_code == 200, res.json()
 
         res = client.get(
             f"/v1/studies/{study_id}/raw",
             params={"path": f"input/bindingconstraints/{bc_id_w_matrix}_gt"},
-            headers=admin_headers,
         )
         assert res.status_code == 200, res.json()
         assert res.json()["data"] == matrix_lt3.tolist()
@@ -907,13 +765,12 @@ class TestBindingConstraints:
         res = client.put(
             f"/v1/studies/{study_id}/bindingconstraints/{bc_id_w_matrix}",
             json={"timeStep": "daily"},
-            headers=admin_headers,
         )
         assert res.status_code == 200, res.json()
 
         if study_type == "variant":
             # Check the last command is a change on `time_step` field only
-            res = client.get(f"/v1/studies/{study_id}/commands", headers=admin_headers)
+            res = client.get(f"/v1/studies/{study_id}/commands")
             commands = res.json()
             command_args = commands[-1]["args"]
             assert command_args["time_step"] == "daily"
@@ -935,7 +792,6 @@ class TestBindingConstraints:
                     "depth": 1,
                     "formatted": True,
                 },  # type: ignore
-                headers=admin_headers,
             )
             assert res.status_code == 200, res.json()
             assert res.json()["data"] == expected_matrix.tolist()
@@ -945,11 +801,11 @@ class TestBindingConstraints:
         # =============================
 
         # Delete a binding constraint
-        res = client.delete(f"/v1/studies/{study_id}/bindingconstraints/{bc_id_w_group}", headers=admin_headers)
+        res = client.delete(f"/v1/studies/{study_id}/bindingconstraints/{bc_id_w_group}")
         assert res.status_code == 200, res.json()
 
         # Asserts that the deletion worked
-        res = client.get(f"/v1/studies/{study_id}/bindingconstraints", headers=admin_headers)
+        res = client.get(f"/v1/studies/{study_id}/bindingconstraints")
         assert len(res.json()) == 2
 
         # =============================
@@ -968,7 +824,6 @@ class TestBindingConstraints:
                 "comments": "New API",
                 "values": [[]],
             },
-            headers=admin_headers,
         )
         assert res.status_code == 422, res.json()
         assert res.json()["description"] == "You cannot fill 'values' as it refers to the matrix before v8.7"
@@ -977,7 +832,6 @@ class TestBindingConstraints:
         res = client.put(
             f"/v1/studies/{study_id}/bindingconstraints/{bc_id_w_matrix}",
             json={"values": [[]]},
-            headers=admin_headers,
         )
         assert res.status_code == 422, res.json()
         assert res.json()["exception"] == "InvalidFieldForVersionError"
@@ -995,7 +849,6 @@ class TestBindingConstraints:
                 "greater_term_matrix": matrix_gt2.tolist(),
                 **args,
             },
-            headers=admin_headers,
         )
         assert res.status_code == 422, res.json()
         exception = res.json()["exception"]
@@ -1020,7 +873,6 @@ class TestBindingConstraints:
                 "group": "Group 1",
                 **args,
             },
-            headers=admin_headers,
         )
         assert res.status_code in {200, 201}, res.json()
         first_bc_id = res.json()["id"]
@@ -1029,17 +881,13 @@ class TestBindingConstraints:
         random_matrix = pd.DataFrame(generator.integers(0, 10, size=(4, 1)))
         _upload_matrix(
             client,
-            admin_access_token,
             study_id,
             f"input/bindingconstraints/{first_bc_id}_gt",
             random_matrix,
         )
 
         # Validation should fail
-        res = client.get(
-            f"/v1/studies/{study_id}/constraint-groups/Group 1/validate",
-            headers=admin_headers,
-        )
+        res = client.get(f"/v1/studies/{study_id}/constraint-groups/Group 1/validate")
         assert res.status_code == 422
         obj = res.json()
         assert obj["exception"] == "WrongMatrixHeightError"
@@ -1049,7 +897,6 @@ class TestBindingConstraints:
         res = client.put(
             f"/v1/studies/{study_id}/bindingconstraints/{first_bc_id}",
             json={"greater_term_matrix": matrix_lt3.tolist()},
-            headers=admin_headers,
         )
         assert res.status_code in {200, 201}, res.json()
 
@@ -1059,10 +906,7 @@ class TestBindingConstraints:
         #
 
         # Asserts everything is ok.
-        res = client.get(
-            f"/v1/studies/{study_id}/constraint-groups/Group 1/validate",
-            headers=admin_headers,
-        )
+        res = client.get(f"/v1/studies/{study_id}/constraint-groups/Group 1/validate")
         assert res.status_code == 200, res.json()
 
         matrix_gt4 = np.ones((8784, 4))  # Wrong number of columns
@@ -1074,13 +918,12 @@ class TestBindingConstraints:
                 "group": "group 1",  # Same group, but different case
                 **args,
             },
-            headers=admin_headers,
         )
         assert res.status_code in {200, 201}, res.json()
         second_bc_id = res.json()["id"]
 
         # validate the BC group "Group 1"
-        res = client.get(f"/v1/studies/{study_id}/constraint-groups/Group 1/validate", headers=admin_headers)
+        res = client.get(f"/v1/studies/{study_id}/constraint-groups/Group 1/validate")
         assert res.status_code == 422, res.json()
         assert res.json()["exception"] == "MatrixWidthMismatchError"
         description = res.json()["description"]
@@ -1091,7 +934,6 @@ class TestBindingConstraints:
         res = client.put(
             f"/v1/studies/{study_id}/bindingconstraints/{second_bc_id}",
             json={"greater_term_matrix": matrix_lt3.tolist()},
-            headers=admin_headers,
         )
         assert res.status_code in {200, 201}, res.json()
 
@@ -1111,7 +953,6 @@ class TestBindingConstraints:
                 "group": "Group 2",
                 **args,
             },
-            headers=admin_headers,
         )
         assert res.status_code in {200, 201}, res.json()
         third_bd_id = res.json()["id"]
@@ -1119,13 +960,12 @@ class TestBindingConstraints:
         res = client.put(
             f"v1/studies/{study_id}/bindingconstraints/{third_bd_id}",
             json={"group": "Group 1"},
-            headers=admin_headers,
         )
         # This should succeed but cause the validation endpoint to fail.
         assert res.status_code in {200, 201}, res.json()
 
         # validate the BC group "Group 1"
-        res = client.get(f"/v1/studies/{study_id}/constraint-groups/Group 1/validate", headers=admin_headers)
+        res = client.get(f"/v1/studies/{study_id}/constraint-groups/Group 1/validate")
         assert res.status_code == 422, res.json()
         assert res.json()["exception"] == "MatrixWidthMismatchError"
         description = res.json()["description"]
@@ -1136,7 +976,6 @@ class TestBindingConstraints:
         res = client.put(
             f"/v1/studies/{study_id}/bindingconstraints/{third_bd_id}",
             json={"greater_term_matrix": matrix_lt3.tolist()},
-            headers=admin_headers,
         )
         assert res.status_code in {200, 201}, res.json()
 
@@ -1149,24 +988,22 @@ class TestBindingConstraints:
         res = client.put(
             f"v1/studies/{study_id}/bindingconstraints/{second_bc_id}",
             json={"group": "Group 2"},
-            headers=admin_headers,
         )
         assert res.status_code in {200, 201}, res.json()
 
         # validate the "Group 2": for the moment the BC is valid
-        res = client.get(f"/v1/studies/{study_id}/constraint-groups/Group 2/validate", headers=admin_headers)
+        res = client.get(f"/v1/studies/{study_id}/constraint-groups/Group 2/validate")
         assert res.status_code in {200, 201}, res.json()
 
         res = client.put(
             f"v1/studies/{study_id}/bindingconstraints/{second_bc_id}",
             json={"greater_term_matrix": matrix_gt4.tolist()},
-            headers=admin_headers,
         )
         # This should succeed but cause the validation endpoint to fail.
         assert res.status_code in {200, 201}, res.json()
 
         # Collect all the binding constraints groups
-        res = client.get(f"/v1/studies/{study_id}/constraint-groups", headers=admin_headers)
+        res = client.get(f"/v1/studies/{study_id}/constraint-groups")
         assert res.status_code in {200, 201}, res.json()
         groups = res.json()
         assert set(groups) == {"default", "random_grp", "Group 1", "Group 2"}
@@ -1186,7 +1023,7 @@ class TestBindingConstraints:
         ]
 
         # Validate all binding constraints groups
-        res = client.get(f"/v1/studies/{study_id}/constraint-groups/validate-all", headers=admin_headers)
+        res = client.get(f"/v1/studies/{study_id}/constraint-groups/validate-all")
         assert res.status_code == 422, res.json()
         exception = res.json()["exception"]
         description = res.json()["description"]

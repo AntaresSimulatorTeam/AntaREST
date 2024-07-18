@@ -51,11 +51,11 @@ class TestRenewable:
         self,
         client: TestClient,
         user_access_token: str,
-        study_id: str,
+        internal_study_id: str,
     ) -> None:
         # Upgrade study to version 810
         res = client.put(
-            f"/v1/studies/{study_id}/upgrade",
+            f"/v1/studies/{internal_study_id}/upgrade",
             headers={"Authorization": f"Bearer {user_access_token}"},
             params={"target_version": 810},
         )
@@ -75,7 +75,7 @@ class TestRenewable:
             "data": {"renewable-generation-modelling": "clusters"},
         }
         res = client.post(
-            f"/v1/studies/{study_id}/commands",
+            f"/v1/studies/{internal_study_id}/commands",
             headers={"Authorization": f"Bearer {user_access_token}"},
             json=[{"action": "update_config", "args": args}],
         )
@@ -95,7 +95,7 @@ class TestRenewable:
         attempts = [{}, {"name": ""}, {"name": "!??"}]
         for attempt in attempts:
             res = client.post(
-                f"/v1/studies/{study_id}/areas/{area_id}/clusters/renewable",
+                f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/renewable",
                 headers={"Authorization": f"Bearer {user_access_token}"},
                 json=attempt,
             )
@@ -112,7 +112,7 @@ class TestRenewable:
             "tsInterpretation": "production-factor",
         }
         res = client.post(
-            f"/v1/studies/{study_id}/areas/{area_id}/clusters/renewable",
+            f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/renewable",
             headers={"Authorization": f"Bearer {user_access_token}"},
             json=fr_solar_pv_props,
         )
@@ -125,7 +125,7 @@ class TestRenewable:
 
         # reading the properties of a renewable cluster
         res = client.get(
-            f"/v1/studies/{study_id}/areas/{area_id}/clusters/renewable/{fr_solar_pv_id}",
+            f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/renewable/{fr_solar_pv_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code == 200, res.json()
@@ -139,14 +139,14 @@ class TestRenewable:
         matrix_path = f"input/renewables/series/{area_id}/{fr_solar_pv_id.lower()}/series"
         args = {"target": matrix_path, "matrix": matrix}
         res = client.post(
-            f"/v1/studies/{study_id}/commands",
+            f"/v1/studies/{internal_study_id}/commands",
             json=[{"action": "replace_matrix", "args": args}],
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code in {200, 201}, res.json()
 
         res = client.get(
-            f"/v1/studies/{study_id}/raw",
+            f"/v1/studies/{internal_study_id}/raw",
             params={"path": matrix_path},
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
@@ -159,7 +159,7 @@ class TestRenewable:
 
         # Reading the list of renewable clusters
         res = client.get(
-            f"/v1/studies/{study_id}/areas/{area_id}/clusters/renewable",
+            f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/renewable",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code == 200, res.json()
@@ -167,7 +167,7 @@ class TestRenewable:
 
         # updating properties
         res = client.patch(
-            f"/v1/studies/{study_id}/areas/{area_id}/clusters/renewable/{fr_solar_pv_id}",
+            f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/renewable/{fr_solar_pv_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
             json={
                 "name": "FR Solar pv old 1",
@@ -183,7 +183,7 @@ class TestRenewable:
         assert res.json() == fr_solar_pv_cfg
 
         res = client.get(
-            f"/v1/studies/{study_id}/areas/{area_id}/clusters/renewable/{fr_solar_pv_id}",
+            f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/renewable/{fr_solar_pv_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code == 200, res.json()
@@ -195,7 +195,7 @@ class TestRenewable:
 
         # updating properties
         res = client.patch(
-            f"/v1/studies/{study_id}/areas/{area_id}/clusters/renewable/{fr_solar_pv_id}",
+            f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/renewable/{fr_solar_pv_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
             json={
                 "nominalCapacity": 2260,
@@ -215,7 +215,7 @@ class TestRenewable:
         # The `unitCount` property must be an integer greater than 0.
         bad_properties = {"unitCount": 0}
         res = client.patch(
-            f"/v1/studies/{study_id}/areas/{area_id}/clusters/renewable/{fr_solar_pv_id}",
+            f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/renewable/{fr_solar_pv_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
             json=bad_properties,
         )
@@ -224,7 +224,7 @@ class TestRenewable:
 
         # The renewable cluster properties should not have been updated.
         res = client.get(
-            f"/v1/studies/{study_id}/areas/{area_id}/clusters/renewable/{fr_solar_pv_id}",
+            f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/renewable/{fr_solar_pv_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code == 200, res.json()
@@ -236,7 +236,7 @@ class TestRenewable:
 
         new_name = "Duplicate of SolarPV"
         res = client.post(
-            f"/v1/studies/{study_id}/areas/{area_id}/renewables/{fr_solar_pv_id}",
+            f"/v1/studies/{internal_study_id}/areas/{area_id}/renewables/{fr_solar_pv_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
             params={"newName": new_name},
         )
@@ -251,7 +251,7 @@ class TestRenewable:
         # asserts the matrix has also been duplicated
         new_cluster_matrix_path = f"input/renewables/series/{area_id}/{duplicated_id.lower()}/series"
         res = client.get(
-            f"/v1/studies/{study_id}/raw",
+            f"/v1/studies/{internal_study_id}/raw",
             params={"path": new_cluster_matrix_path},
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
@@ -265,7 +265,7 @@ class TestRenewable:
         # To delete a renewable cluster, we need to provide its ID.
         res = client.request(
             "DELETE",
-            f"/v1/studies/{study_id}/areas/{area_id}/clusters/renewable",
+            f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/renewable",
             headers={"Authorization": f"Bearer {user_access_token}"},
             json=[fr_solar_pv_id],
         )
@@ -275,7 +275,7 @@ class TestRenewable:
         # If the renewable cluster list is empty, the deletion should be a no-op.
         res = client.request(
             "DELETE",
-            f"/v1/studies/{study_id}/areas/{area_id}/clusters/renewable",
+            f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/renewable",
             headers={"Authorization": f"Bearer {user_access_token}"},
             json=[],
         )
@@ -286,7 +286,7 @@ class TestRenewable:
         # Create two clusters
         other_cluster_name = "Other Cluster 1"
         res = client.post(
-            f"/v1/studies/{study_id}/areas/{area_id}/clusters/renewable",
+            f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/renewable",
             headers={"Authorization": f"Bearer {user_access_token}"},
             json={"name": other_cluster_name},
         )
@@ -294,7 +294,7 @@ class TestRenewable:
         other_cluster_id1 = res.json()["id"]
 
         res = client.post(
-            f"/v1/studies/{study_id}/areas/{area_id}/clusters/renewable",
+            f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/renewable",
             headers={"Authorization": f"Bearer {user_access_token}"},
             json={"name": "Other Cluster 2"},
         )
@@ -304,7 +304,7 @@ class TestRenewable:
         # We can delete two renewable clusters at once.
         res = client.request(
             "DELETE",
-            f"/v1/studies/{study_id}/areas/{area_id}/clusters/renewable",
+            f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/renewable",
             headers={"Authorization": f"Bearer {user_access_token}"},
             json=[other_cluster_id2, duplicated_id],
         )
@@ -313,7 +313,7 @@ class TestRenewable:
 
         # There should only be one remaining cluster
         res = client.get(
-            f"/v1/studies/{study_id}/areas/{area_id}/clusters/renewable",
+            f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/renewable",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code == 200
@@ -328,7 +328,7 @@ class TestRenewable:
         bad_area_id = "bad_area"
         res = client.request(
             "DELETE",
-            f"/v1/studies/{study_id}/areas/{bad_area_id}/clusters/renewable",
+            f"/v1/studies/{internal_study_id}/areas/{bad_area_id}/clusters/renewable",
             headers={"Authorization": f"Bearer {user_access_token}"},
             json=[fr_solar_pv_id],
         )
@@ -357,7 +357,7 @@ class TestRenewable:
 
         # Check GET with wrong `area_id`
         res = client.get(
-            f"/v1/studies/{study_id}/areas/{bad_area_id}/clusters/renewable/{fr_solar_pv_id}",
+            f"/v1/studies/{internal_study_id}/areas/{bad_area_id}/clusters/renewable/{fr_solar_pv_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         obj = res.json()
@@ -388,7 +388,7 @@ class TestRenewable:
 
         # Check POST with wrong `area_id`
         res = client.post(
-            f"/v1/studies/{study_id}/areas/{bad_area_id}/clusters/renewable",
+            f"/v1/studies/{internal_study_id}/areas/{bad_area_id}/clusters/renewable",
             headers={"Authorization": f"Bearer {user_access_token}"},
             json={
                 "name": fr_solar_pv,
@@ -407,7 +407,7 @@ class TestRenewable:
 
         # Check POST with wrong `group`
         res = client.post(
-            f"/v1/studies/{study_id}/areas/{area_id}/clusters/renewable",
+            f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/renewable",
             headers={"Authorization": f"Bearer {user_access_token}"},
             json={"name": fr_solar_pv, "group": "GroupFoo"},
         )
@@ -418,7 +418,7 @@ class TestRenewable:
 
         # Check PATCH with the wrong `area_id`
         res = client.patch(
-            f"/v1/studies/{study_id}/areas/{bad_area_id}/clusters/renewable/{fr_solar_pv_id}",
+            f"/v1/studies/{internal_study_id}/areas/{bad_area_id}/clusters/renewable/{fr_solar_pv_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
             json={
                 "group": "Wind Onshore",
@@ -436,7 +436,7 @@ class TestRenewable:
         # Check PATCH with the wrong `cluster_id`
         bad_cluster_id = "bad_cluster"
         res = client.patch(
-            f"/v1/studies/{study_id}/areas/{area_id}/clusters/renewable/{bad_cluster_id}",
+            f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/renewable/{bad_cluster_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
             json={
                 "group": "Wind Onshore",
@@ -470,7 +470,7 @@ class TestRenewable:
         # Cannot duplicate a fake cluster
         unknown_id = "unknown"
         res = client.post(
-            f"/v1/studies/{study_id}/areas/{area_id}/renewables/{unknown_id}",
+            f"/v1/studies/{internal_study_id}/areas/{area_id}/renewables/{unknown_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
             params={"newName": "duplicata"},
         )
@@ -481,7 +481,7 @@ class TestRenewable:
 
         # Cannot duplicate with an existing id
         res = client.post(
-            f"/v1/studies/{study_id}/areas/{area_id}/renewables/{other_cluster_id1}",
+            f"/v1/studies/{internal_study_id}/areas/{area_id}/renewables/{other_cluster_id1}",
             headers={"Authorization": f"Bearer {user_access_token}"},
             params={"newName": other_cluster_name.upper()},  # different case, but same ID
         )

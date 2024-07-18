@@ -54,7 +54,7 @@ class TestMiddleNode(FolderNode):
         config: FileStudyTreeConfig,
         children: TREE,
     ):
-        FolderNode.__init__(self, context, config)
+        super().__init__(context, config)
         self.children = children
 
     def build(self) -> TREE:

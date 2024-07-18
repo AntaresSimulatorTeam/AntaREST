@@ -19,11 +19,11 @@ class TestAdvancedParametersForm:
         self,
         client: TestClient,
         user_access_token: str,
-        study_id: str,
+        internal_study_id: str,
     ):
         """Check `get_advanced_parameters_form_values` end point"""
         res = client.get(
-            f"/v1/studies/{study_id}/config/advancedparameters/form",
+            f"/v1/studies/{internal_study_id}/config/advancedparameters/form",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code == HTTPStatus.OK, res.json()
@@ -55,12 +55,12 @@ class TestAdvancedParametersForm:
 
     @pytest.mark.parametrize("study_version", [0, 880])
     def test_set_advanced_parameters_values(
-        self, client: TestClient, user_access_token: str, study_id: str, study_version: int
+        self, client: TestClient, user_access_token: str, internal_study_id: str, study_version: int
     ):
         """Check `set_advanced_parameters_values` end point"""
         obj = {"initialReservoirLevels": "hot start"}
         res = client.put(
-            f"/v1/studies/{study_id}/config/advancedparameters/form",
+            f"/v1/studies/{internal_study_id}/config/advancedparameters/form",
             headers={"Authorization": f"Bearer {user_access_token}"},
             json=obj,
         )
@@ -70,7 +70,7 @@ class TestAdvancedParametersForm:
 
         if study_version:
             res = client.put(
-                f"/v1/studies/{study_id}/upgrade",
+                f"/v1/studies/{internal_study_id}/upgrade",
                 headers={"Authorization": f"Bearer {user_access_token}"},
                 params={"target_version": study_version},
             )
@@ -82,7 +82,7 @@ class TestAdvancedParametersForm:
 
         obj = {"unitCommitmentMode": "milp"}
         res = client.put(
-            f"/v1/studies/{study_id}/config/advancedparameters/form",
+            f"/v1/studies/{internal_study_id}/config/advancedparameters/form",
             headers={"Authorization": f"Bearer {user_access_token}"},
             json=obj,
         )

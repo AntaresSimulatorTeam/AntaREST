@@ -25,7 +25,7 @@ class TestFetchRawData:
         self,
         client: TestClient,
         user_access_token: str,
-        study_id: str,
+        internal_study_id: str,
     ):
         """
         Test the `get_study` endpoint for fetching raw data from a study.
@@ -42,7 +42,7 @@ class TestFetchRawData:
         """
         # First copy the user resources in the Study directory
         with db():
-            study: RawStudy = db.session.get(Study, study_id)
+            study: RawStudy = db.session.get(Study, internal_study_id)
             study_dir = pathlib.Path(study.path)
         headers = {"Authorization": f"Bearer {user_access_token}"}
 
@@ -57,7 +57,7 @@ class TestFetchRawData:
         for file_path in user_folder_dir.glob("*.*"):
             rel_path = file_path.relative_to(study_dir).as_posix()
             res = client.get(
-                f"/v1/studies/{study_id}/raw",
+                f"/v1/studies/{internal_study_id}/raw",
                 params={"path": rel_path, "depth": 1},
                 headers=headers,
             )
@@ -83,7 +83,7 @@ class TestFetchRawData:
         for file_path in user_folder_dir.glob("*.*"):
             rel_path = file_path.relative_to(study_dir)
             res = client.get(
-                f"/v1/studies/{study_id}/raw",
+                f"/v1/studies/{internal_study_id}/raw",
                 params={"path": f"/{rel_path.as_posix()}", "depth": 1},
                 headers=headers,
             )
@@ -94,7 +94,7 @@ class TestFetchRawData:
 
         # If you try to retrieve a file that doesn't exist, we should have a 404 error
         res = client.get(
-            f"/v1/studies/{study_id}/raw",
+            f"/v1/studies/{internal_study_id}/raw",
             params={"path": "user/somewhere/something.txt"},
             headers=headers,
         )
@@ -107,7 +107,7 @@ class TestFetchRawData:
         # If you want to update an existing resource, you can use PUT method.
         # But, if the resource doesn't exist, you should have a 404 Not Found error.
         res = client.put(
-            f"/v1/studies/{study_id}/raw",
+            f"/v1/studies/{internal_study_id}/raw",
             params={"path": "user/somewhere/something.txt"},
             headers=headers,
             files={"file": io.BytesIO(b"Goodbye World!")},
@@ -121,7 +121,7 @@ class TestFetchRawData:
         # To create a resource, you can use PUT method and the `create_missing` flag.
         # The expected status code should be 204 No Content.
         res = client.put(
-            f"/v1/studies/{study_id}/raw",
+            f"/v1/studies/{internal_study_id}/raw",
             params={"path": "user/somewhere/something.txt", "create_missing": True},
             headers=headers,
             files={"file": io.BytesIO(b"Goodbye Cruel World!")},
@@ -131,7 +131,7 @@ class TestFetchRawData:
         # To update a resource, you can use PUT method, with or without the `create_missing` flag.
         # The expected status code should be 204 No Content.
         res = client.put(
-            f"/v1/studies/{study_id}/raw",
+            f"/v1/studies/{internal_study_id}/raw",
             params={"path": "user/somewhere/something.txt", "create_missing": True},
             headers=headers,
             files={"file": io.BytesIO(b"This is the end!")},
@@ -140,7 +140,7 @@ class TestFetchRawData:
 
         # You can check that the resource has been created or updated.
         res = client.get(
-            f"/v1/studies/{study_id}/raw",
+            f"/v1/studies/{internal_study_id}/raw",
             params={"path": "user/somewhere/something.txt"},
             headers=headers,
         )
@@ -150,7 +150,7 @@ class TestFetchRawData:
         # If we ask for properties, we should have a JSON content
         rel_path = "/input/links/de/properties/fr"
         res = client.get(
-            f"/v1/studies/{study_id}/raw",
+            f"/v1/studies/{internal_study_id}/raw",
             params={"path": rel_path, "depth": 2},
             headers=headers,
         )
@@ -175,7 +175,7 @@ class TestFetchRawData:
         # If we ask for a matrix, we should have a JSON content if formatted is True
         rel_path = "/input/links/de/fr"
         res = client.get(
-            f"/v1/studies/{study_id}/raw",
+            f"/v1/studies/{internal_study_id}/raw",
             params={"path": rel_path, "formatted": True},
             headers=headers,
         )
@@ -186,7 +186,7 @@ class TestFetchRawData:
         # If we ask for a matrix, we should have a CSV content if formatted is False
         rel_path = "/input/links/de/fr"
         res = client.get(
-            f"/v1/studies/{study_id}/raw",
+            f"/v1/studies/{internal_study_id}/raw",
             params={"path": rel_path, "formatted": False},
             headers=headers,
         )
@@ -198,7 +198,7 @@ class TestFetchRawData:
 
         # If ask for an empty matrix, we should have an empty binary content
         res = client.get(
-            f"/v1/studies/{study_id}/raw",
+            f"/v1/studies/{internal_study_id}/raw",
             params={"path": "input/thermal/prepro/de/01_solar/data", "formatted": False},
             headers=headers,
         )
@@ -207,7 +207,7 @@ class TestFetchRawData:
 
         # But, if we use formatted = True, we should have a JSON objet representing and empty matrix
         res = client.get(
-            f"/v1/studies/{study_id}/raw",
+            f"/v1/studies/{internal_study_id}/raw",
             params={"path": "input/thermal/prepro/de/01_solar/data", "formatted": True},
             headers=headers,
         )
@@ -219,7 +219,7 @@ class TestFetchRawData:
         for file_path in user_folder_dir.glob("*.*"):
             rel_path = file_path.relative_to(study_dir)
             res = client.get(
-                f"/v1/studies/{study_id}/raw",
+                f"/v1/studies/{internal_study_id}/raw",
                 params={"path": f"/{rel_path.as_posix()}", "depth": 1},
                 headers=headers,
             )
@@ -228,7 +228,7 @@ class TestFetchRawData:
         # We can access to the configuration the classic way,
         # for instance, we can get the list of areas:
         res = client.get(
-            f"/v1/studies/{study_id}/raw",
+            f"/v1/studies/{internal_study_id}/raw",
             params={"path": "/input/areas/list", "depth": 1},
             headers=headers,
         )
@@ -237,7 +237,7 @@ class TestFetchRawData:
 
         # asserts that the GET /raw endpoint is able to read matrix containing NaN values
         res = client.get(
-            f"/v1/studies/{study_id}/raw",
+            f"/v1/studies/{internal_study_id}/raw",
             params={"path": "output/20201014-1427eco/economy/mc-all/areas/de/id-monthly"},
             headers=headers,
         )
@@ -247,7 +247,7 @@ class TestFetchRawData:
         # Iterate over all possible combinations of path and depth
         for path, depth in itertools.product([None, "", "/"], [0, 1, 2]):
             res = client.get(
-                f"/v1/studies/{study_id}/raw",
+                f"/v1/studies/{internal_study_id}/raw",
                 params={"path": path, "depth": depth},
                 headers=headers,
             )

@@ -325,6 +325,35 @@ class StudyVariantUpgradeError(HTTPException):
             super().__init__(HTTPStatus.EXPECTATION_FAILED, "Upgrade not supported for parent of variants")
 
 
+class ReferencedObjectDeletionNotAllowed(HTTPException):
+    """
+    Exception raised when a binding constraint is not allowed to be deleted because it references
+    other objects: areas, links or thermal clusters.
+    """
+
+    def __init__(self, object_id: str, binding_ids: t.Sequence[str], *, object_type: str) -> None:
+        """
+        Initialize the exception.
+
+        Args:
+            object_id: ID of the object that is not allowed to be deleted.
+            binding_ids: Binding constraints IDs that reference the object.
+            object_type: Type of the object that is not allowed to be deleted: area, link or thermal cluster.
+        """
+        max_count = 10
+        first_bcs_ids = ",\n".join(f"{i}- '{bc}'" for i, bc in enumerate(binding_ids[:max_count], 1))
+        and_more = f",\nand {len(binding_ids) - max_count} more..." if len(binding_ids) > max_count else "."
+        message = (
+            f"{object_type} '{object_id}' is not allowed to be deleted, because it is referenced"
+            f" in the following binding constraints:\n{first_bcs_ids}{and_more}"
+        )
+        super().__init__(HTTPStatus.FORBIDDEN, message)
+
+    def __str__(self) -> str:
+        """Return a string representation of the exception."""
+        return self.detail
+
+
 class UnsupportedStudyVersion(HTTPException):
     def __init__(self, version: str) -> None:
         super().__init__(

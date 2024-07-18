@@ -69,13 +69,13 @@ function Storages() {
         aggregationFn: "sum",
         AggregatedCell: ({ cell }) => (
           <Box sx={{ color: "info.main", fontWeight: "bold" }}>
-            {Math.floor(cell.getValue())}
+            {Math.round(cell.getValue())}
           </Box>
         ),
-        Cell: ({ cell }) => Math.floor(cell.getValue()),
+        Cell: ({ cell }) => Math.round(cell.getValue()),
         Footer: () => (
           <Box color="warning.main">
-            {Math.floor(totalInjectionNominalCapacity)}
+            {Math.round(totalInjectionNominalCapacity)}
           </Box>
         ),
       }),
@@ -96,13 +96,13 @@ function Storages() {
         aggregationFn: "sum",
         AggregatedCell: ({ cell }) => (
           <Box sx={{ color: "info.main", fontWeight: "bold" }}>
-            {Math.floor(cell.getValue())}
+            {Math.round(cell.getValue())}
           </Box>
         ),
-        Cell: ({ cell }) => Math.floor(cell.getValue()),
+        Cell: ({ cell }) => Math.round(cell.getValue()),
         Footer: () => (
           <Box color="warning.main">
-            {Math.floor(totalWithdrawalNominalCapacity)}
+            {Math.round(totalWithdrawalNominalCapacity)}
           </Box>
         ),
       }),
@@ -123,12 +123,12 @@ function Storages() {
       columnHelper.accessor("efficiency", {
         header: t("study.modelization.storages.efficiency"),
         size: 50,
-        Cell: ({ cell }) => `${Math.floor(cell.getValue() * 100)}`,
+        Cell: ({ cell }) => `${Math.round(cell.getValue() * 100)}`,
       }),
       columnHelper.accessor("initialLevel", {
         header: t("study.modelization.storages.initialLevel"),
         size: 50,
-        Cell: ({ cell }) => `${Math.floor(cell.getValue() * 100)}`,
+        Cell: ({ cell }) => `${Math.round(cell.getValue() * 100)}`,
       }),
       columnHelper.accessor("initialLevelOptim", {
         header: t("study.modelization.storages.initialLevelOptim"),

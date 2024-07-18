@@ -1,3 +1,5 @@
+import typing as t
+
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
@@ -12,23 +14,19 @@ class _OutputSimulationModeMcAllLinksBis(FolderNode):
         self,
         context: ContextServer,
         config: FileStudyTreeConfig,
-        area: str,
-        mc_all: bool,
+        area_from: str,
+        link_names: t.List[str],
     ):
-        FolderNode.__init__(self, context, config)
-        self.area = area
-        self.mc_all = mc_all
+        super().__init__(context, config)
+        self.area_from = area_from
+        self.link_names = link_names
 
     def build(self) -> TREE:
         children: TREE = {}
-        for link in self.config.get_links(self.area):
-            name = f"{self.area} - {link}"
+        for link_name in self.link_names:
+            link = link_name.split(" - ")[1]
             children[link] = OutputSimulationLinkItem(
-                self.context,
-                self.config.next_file(name),
-                self.area,
-                link,
-                mc_all=self.mc_all,
+                self.context, self.config.next_file(link_name), self.area_from, link
             )
         return children
 
@@ -38,15 +36,16 @@ class OutputSimulationLinks(FolderNode):
         self,
         context: ContextServer,
         config: FileStudyTreeConfig,
-        mc_all: bool = True,
     ):
         super().__init__(context, config)
-        self.mc_all = mc_all
 
     def build(self) -> TREE:
         children: TREE = {}
-
-        for area in self.config.area_names():
-            children[area] = _OutputSimulationModeMcAllLinksBis(self.context, self.config, area, self.mc_all)
+        links = [d.stem for d in self.config.path.iterdir()]
+        areas: t.Dict[str, t.List[str]] = {}
+        for link in links:
+            areas.setdefault(link.split(" - ")[0], []).append(link)
+        for area_from, link_names in areas.items():
+            children[area_from] = _OutputSimulationModeMcAllLinksBis(self.context, self.config, area_from, link_names)
 
         return children

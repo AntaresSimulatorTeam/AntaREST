@@ -11,6 +11,7 @@ from antarest.core.model import JSON
 from antarest.core.utils.utils import StopWatch
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import ChildNotFoundError
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency, MatrixNode
 
 logger = logging.getLogger(__name__)
@@ -49,23 +50,28 @@ class InputSeriesMatrix(MatrixNode):
         try:
             # sourcery skip: extract-method
             stopwatch = StopWatch()
-            if self.get_link_path().exists():
-                link = self.get_link_path().read_text()
+            link_path = self.get_link_path()
+            if link_path.exists():
+                link = link_path.read_text()
                 matrix_json = self.context.resolver.resolve(link)
                 matrix_json = cast(JSON, matrix_json)
-                matrix: pd.DataFrame = pd.DataFrame(
-                    data=matrix_json["data"],
-                    columns=matrix_json["columns"],
-                    index=matrix_json["index"],
-                )
+                matrix: pd.DataFrame = pd.DataFrame(**matrix_json)
             else:
-                matrix = pd.read_csv(
-                    file_path,
-                    sep="\t",
-                    dtype=float,
-                    header=None,
-                    float_precision="legacy",
-                )
+                try:
+                    matrix = pd.read_csv(
+                        file_path,
+                        sep="\t",
+                        dtype=float,
+                        header=None,
+                        float_precision="legacy",
+                    )
+                except FileNotFoundError as e:
+                    # Raise 404 'Not Found' if the TSV file is not found
+                    logger.warning(f"Matrix file'{file_path}' not found")
+                    study_id = self.config.study_id
+                    relpath = file_path.relative_to(self.config.study_path).as_posix()
+                    raise ChildNotFoundError(f"File '{relpath}' not found in the study '{study_id}'") from e
+
             stopwatch.log_elapsed(lambda x: logger.info(f"Matrix parsed in {x}s"))
             matrix.dropna(how="any", axis=1, inplace=True)
             if return_dataframe:

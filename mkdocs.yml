@@ -58,6 +58,7 @@ nav:
               - 'Main Topics': 'user-guide/study/06-table-mode.md'
       - 'Variant manager': 'user-guide/3-variant_manager.md'
   - 'How to':
+      - 'Create a study': 'how-to/studies-create.md'
       - 'Import a study': 'how-to/studies-import.md'
       - 'Upgrade a study': 'how-to/studies-upgrade.md'
   - 'Build':
