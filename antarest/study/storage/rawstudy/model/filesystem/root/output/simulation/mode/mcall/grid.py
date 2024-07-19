@@ -38,7 +38,7 @@ class OutputSynthesis(LazyNode[JSON, bytes, bytes]):
         url: t.Optional[t.List[str]] = None,
         depth: int = -1,
         expanded: bool = False,
-        formatted: bool = True,
+        format: t.Optional[str] = None,
     ) -> JSON:
         file_path = self.config.path
         df = pd.read_csv(file_path, sep="\t")
@@ -74,7 +74,7 @@ class DigestSynthesis(OutputSynthesis):
         url: t.Optional[t.List[str]] = None,
         depth: int = -1,
         expanded: bool = False,
-        formatted: bool = True,
+        format: t.Optional[str] = None,
     ) -> JSON:
         file_path = self.config.path
         with open(file_path, "r") as f:
