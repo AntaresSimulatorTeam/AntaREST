@@ -148,13 +148,13 @@ def _extract_data_from_file(
 
     is_zip_file: bool = root.suffix.lower() == ".zip"
     posix_path: str = inside_root_path.as_posix()
+    output_data_path = root.resolve() / inside_root_path
 
     if file_type == FileType.TXT:
         # Parse the file as a list of lines, return an empty list if missing.
         if is_zip_file:
             return _extract_text_from_zip(root, posix_path)
         else:
-            output_data_path = root / inside_root_path
             try:
                 return output_data_path.read_text(encoding="utf-8").splitlines(keepends=False)
             except FileNotFoundError:
@@ -165,7 +165,6 @@ def _extract_data_from_file(
         if is_zip_file:
             return _extract_ini_from_zip(root, posix_path, multi_ini_keys=multi_ini_keys)
         else:
-            output_data_path = root / inside_root_path
             try:
                 reader = IniReader(multi_ini_keys)
                 return reader.read(output_data_path)

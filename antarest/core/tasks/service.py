@@ -1,3 +1,4 @@
+import base64
 import datetime
 import logging
 import time
@@ -302,32 +303,36 @@ class TaskJobService(ITaskService):
         return self.repo.list(task_filter, user)
 
     def await_task(self, task_id: str, timeout_sec: int = DEFAULT_AWAIT_MAX_TIMEOUT) -> None:
-        if task_id in self.tasks:
+        sanitized_task_id = base64.b64decode(base64.b64encode(task_id.encode("utf-8"))).decode("utf-8")
+
+        if sanitized_task_id in self.tasks:
             try:
-                logger.info(f"🤔 Awaiting task '{task_id}' {timeout_sec}s...")
-                self.tasks[task_id].result(timeout_sec)
-                logger.info(f"📌 Task '{task_id}' done.")
+                logger.info(f"🤔 Awaiting task '{sanitized_task_id}' {timeout_sec}s...")
+                self.tasks[sanitized_task_id].result(timeout_sec)
+                logger.info(f"📌 Task '{sanitized_task_id}' done.")
             except Exception as exc:
-                logger.critical(f"🤕 Task '{task_id}' failed: {exc}.")
+                logger.critical(f"🤕 Task '{sanitized_task_id}' failed: {exc}.")
                 raise
         else:
-            logger.warning(f"Task '{task_id}' not handled by this worker, will poll for task completion from db")
+            logger.warning(
+                f"Task '{sanitized_task_id}' not handled by this worker, will poll for task completion from db"
+            )
             end = time.time() + timeout_sec
             while time.time() < end:
-                task_status = db.session.query(TaskJob.status).filter(TaskJob.id == task_id).scalar()
+                task_status = db.session.query(TaskJob.status).filter(TaskJob.id == sanitized_task_id).scalar()
                 if task_status is None:
-                    logger.error(f"Awaited task '{task_id}' was not found")
+                    logger.error(f"Awaited task '{sanitized_task_id}' was not found")
                     return
                 if TaskStatus(task_status).is_final():
                     return
                 logger.info("💤 Sleeping 2 seconds...")
                 time.sleep(2)
 
-            logger.error(f"Timeout while awaiting task '{task_id}'")
-            db.session.query(TaskJob).filter(TaskJob.id == task_id).update(
+            logger.error(f"Timeout while awaiting task '{sanitized_task_id}'")
+            db.session.query(TaskJob).filter(TaskJob.id == sanitized_task_id).update(
                 {
                     TaskJob.status: TaskStatus.TIMEOUT.value,
-                    TaskJob.result_msg: f"Task '{task_id}' timeout after {timeout_sec} seconds",
+                    TaskJob.result_msg: f"Task '{sanitized_task_id}' timeout after {timeout_sec} seconds",
                     TaskJob.result_status: False,
                 }
             )

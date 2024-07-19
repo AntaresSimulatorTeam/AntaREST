@@ -1274,7 +1274,8 @@ class StudyService:
                 else:  # pragma: no cover
                     raise NotImplementedError(f"Export format {filetype} is not supported")
 
-                return FileResponse(tmp_export_file, headers=headers, media_type=filetype)
+                sanitized_path = tmp_export_file.resolve()
+                return FileResponse(sanitized_path, headers=headers, media_type=filetype)
 
             else:
                 json_response = json.dumps(
