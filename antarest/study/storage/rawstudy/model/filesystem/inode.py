@@ -1,3 +1,4 @@
+import warnings
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Dict, Generic, List, Optional, Tuple, TypeVar
@@ -135,18 +136,25 @@ class INode(ABC, Generic[G, S, V]):
         Returns:
             The actual path of the extracted file
             the tmp_dir object which MUST be cleared after use of the file
+
+        Raises:
+            KeyError: If the file is not found in the ZIP archive.
+            FileNotFoundError: If the file is not found in the 7z archive.
         """
-        if self.config.zip_path is None:
+        warnings.warn("This function is inefficient, it should no longer be used", DeprecationWarning)
+
+        if self.config.archive_path is None:
             raise ShouldNotHappenException()
-        inside_zip_path = str(self.config.path)[len(str(self.config.zip_path)[:-4]) + 1 :]
-        if self.config.zip_path:
-            return extract_file_to_tmp_dir(self.config.zip_path, Path(inside_zip_path))
+        # fixme: It does not work with 7z!
+        inside_archive_path = str(self.config.path)[len(str(self.config.archive_path)[:-4]) + 1 :]
+        if self.config.archive_path:
+            return extract_file_to_tmp_dir(self.config.archive_path, Path(inside_archive_path))
         else:
             raise ShouldNotHappenException()
 
     def _assert_not_in_zipped_file(self) -> None:
         """Prevents writing inside a zip file"""
-        if self.config.zip_path:
+        if self.config.archive_path:
             raise WritingInsideZippedFileException("Trying to save inside a zipped file")
 
 
