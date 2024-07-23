@@ -701,7 +701,8 @@ class BindingConstraintManager:
         if bc_id in {bc.id for bc in self.get_binding_constraints(study)}:
             raise DuplicateConstraintName(f"A binding constraint with the same name already exists: {bc_id}.")
 
-        check_attributes_coherence(data, version)
+        # TODO: the default operator should be fixed somewhere so this condition can be consistent
+        check_attributes_coherence(data, version, data.operator or BindingConstraintOperator.EQUAL)
 
         new_constraint = {"name": data.name, **json.loads(data.json(exclude={"terms", "name"}, exclude_none=True))}
         args = {
@@ -737,7 +738,7 @@ class BindingConstraintManager:
         existing_constraint = self.get_binding_constraint(study, binding_constraint_id)
 
         study_version = int(study.version)
-        check_attributes_coherence(data, study_version, existing_constraint.operator)
+        check_attributes_coherence(data, study_version, data.operator or existing_constraint.operator)
 
         upd_constraint = {
             "id": binding_constraint_id,
@@ -939,10 +940,8 @@ def _replace_matrices_according_to_frequency_and_version(
 def check_attributes_coherence(
     data: t.Union[ConstraintCreation, ConstraintInput],
     study_version: int,
-    existing_operator: t.Optional[BindingConstraintOperator] = None,
+    operator: BindingConstraintOperator,
 ) -> None:
-    update_operator = data.operator or existing_operator
-
     if study_version < 870:
         if data.group:
             raise InvalidFieldForVersionError(
@@ -952,22 +951,10 @@ def check_attributes_coherence(
             raise InvalidFieldForVersionError("You cannot fill a 'matrix_term' as these values refer to v8.7+ studies")
     elif data.values:
         raise InvalidFieldForVersionError("You cannot fill 'values' as it refers to the matrix before v8.7")
-    elif update_operator:
-        conflicting_matrices = [
-            getattr(data, matrix) for matrix in OPERATOR_CONFLICT_MAP[update_operator] if getattr(data, matrix)
-        ]
-        if conflicting_matrices:
-            raise InvalidFieldForVersionError(
-                f"You cannot fill matrices '{OPERATOR_CONFLICT_MAP[update_operator]}' while using the operator "
-                f"'{update_operator}'"
-            )
-    # TODO: the default operator should be fixed somewhere so this condition can be consistent
-    elif [
-        getattr(data, matrix)
-        for matrix in OPERATOR_CONFLICT_MAP[BindingConstraintOperator.EQUAL]
-        if getattr(data, matrix)
-    ]:
+    conflicting_matrices = [
+        getattr(data, matrix) for matrix in OPERATOR_CONFLICT_MAP[operator] if getattr(data, matrix)
+    ]
+    if conflicting_matrices:
         raise InvalidFieldForVersionError(
-            f"You cannot fill one of the matrices '{OPERATOR_CONFLICT_MAP[BindingConstraintOperator.EQUAL]}' "
-            "while using the operator '{BindingConstraintOperator.EQUAL}'"
+            f"You cannot fill matrices '{OPERATOR_CONFLICT_MAP[operator]}' while using the operator " f"'{operator}'"
         )
