@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { AllClustersAndLinks } from "../../../../../../../../common/types";
 import SelectSingle from "../../../../../../../common/SelectSingle";
 import { ConstraintTerm, generateTermId, isTermExist } from "../utils";
+import { Box } from "@mui/material";
 
 interface Option {
   id: string;
@@ -108,7 +109,7 @@ export default function OptionsList({
   ////////////////////////////////////////////////////////////////
 
   return (
-    <>
+    <Box sx={{ display: "flex", gap: 1 }}>
       <SelectSingle
         disabled
         size="small"
@@ -119,8 +120,7 @@ export default function OptionsList({
         list={areaOptions}
         handleChange={(key, value) => handleAreaChange(value as string)}
         sx={{
-          maxWidth: 200,
-          mr: 1,
+          minWidth: 300,
         }}
       />
       <SelectSingle
@@ -134,9 +134,9 @@ export default function OptionsList({
           handleClusterOrAreaChange(value as string)
         }
         sx={{
-          maxWidth: 200,
+          minWidth: 300,
         }}
       />
-    </>
+    </Box>
   );
 }
