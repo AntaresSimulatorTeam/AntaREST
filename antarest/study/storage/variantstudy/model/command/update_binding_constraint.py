@@ -81,10 +81,10 @@ def _update_matrices_names(
         assert isinstance(
             new_matrix_node, LazyNode
         ), f"Node type not handled yet: LazyNode expected, got {type(new_matrix_node)}"
-        matrix_node.rename_filename(new_matrix_node)
+        matrix_node.rename_file(new_matrix_node)
     elif new_operator == BindingConstraintOperator.BOTH:
         if existing_operator == BindingConstraintOperator.EQUAL:
-            matrix_eq.rename_filename(matrix_lt)
+            matrix_eq.rename_file(matrix_lt)
             matrix_gt.delete()
             # copy the matrix lt to gt
             matrix_lt.copy_file(matrix_gt)
@@ -97,7 +97,7 @@ def _update_matrices_names(
     else:
         if new_operator == BindingConstraintOperator.EQUAL:
             # we may retrieve the mean of the two matrices, but here we just copy the lt matrix
-            matrix_lt.rename_filename(matrix_eq)
+            matrix_lt.rename_file(matrix_eq)
             matrix_gt.delete()
         elif new_operator == BindingConstraintOperator.LESS:
             matrix_gt.delete()

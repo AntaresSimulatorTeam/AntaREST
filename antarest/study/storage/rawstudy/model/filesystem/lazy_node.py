@@ -144,7 +144,7 @@ class LazyNode(INode, ABC, t.Generic[G, S, V]):  # type: ignore
             self.get_link_path().unlink()
         return None
 
-    def rename_filename(self, target: t.Union[Path, "LazyNode[t.Any, t.Any, t.Any]"]) -> None:
+    def rename_file(self, target: t.Union[Path, "LazyNode[t.Any, t.Any, t.Any]"]) -> None:
         target_path = target if isinstance(target, Path) else target._infer_target_path(self.get_link_path().exists())
         target_path.unlink(missing_ok=True)
         self._infer_path().rename(target_path)
@@ -176,7 +176,7 @@ class LazyNode(INode, ABC, t.Generic[G, S, V]):  # type: ignore
         Args:
             url: data path to retrieve
             depth: after url is reached, node expand tree until matches depth asked
-            expanded: context parameter to determine if current node become from an expansion
+            expanded: context parameter to determine if current node comes from an expansion
             formatted: ask for raw file transformation
 
         Returns:
