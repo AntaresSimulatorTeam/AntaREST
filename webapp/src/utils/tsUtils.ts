@@ -7,6 +7,12 @@ import { O } from "ts-toolbelt";
 export type PromiseAny = Promise<any>;
 
 /**
+ * Allow to define an empty object.
+ * Don't use `{}` as a type. `{}` actually means "any non-nullish value".
+ */
+export type EmptyObject = Record<string, never>;
+
+/**
  * Make all properties in T optional, except for those specified by K.
  */
 export type PartialExceptFor<T, K extends keyof T> = O.Required<Partial<T>, K>;
