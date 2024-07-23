@@ -35,7 +35,7 @@ EXPECTED_MATRIX_SHAPES = {
 }
 
 
-class TermMatrices(str, Enum):
+class TermMatrices(Enum):
     LESS = "less_term_matrix"
     GREATER = "greater_term_matrix"
     EQUAL = "equal_term_matrix"

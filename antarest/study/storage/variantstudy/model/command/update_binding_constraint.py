@@ -28,13 +28,6 @@ ALIAS_OPERATOR_MAP = {
     BindingConstraintOperator.GREATER: "gt",
 }
 
-HANDLED_OPERATORS = [
-    BindingConstraintOperator.EQUAL,
-    BindingConstraintOperator.LESS,
-    BindingConstraintOperator.GREATER,
-    BindingConstraintOperator.BOTH,
-]
-
 
 def _update_matrices_names(
     file_study: FileStudy,
@@ -63,10 +56,17 @@ def _update_matrices_names(
     matrix_gt = parent_folder_node.get_node([f"{binding_constraint_id}_gt"])
     assert isinstance(matrix_gt, LazyNode), f"Node type not handled yet: LazyNode expected, got {type(matrix_gt)}"
 
-    # TODO: due to legacy matrices generation, we need to check if the new matrix file already exists
+    # Due to legacy matrices generation, we need to check if the new matrix file already exists
     #  and if it does, we need to first remove it before renaming the existing matrix file
 
-    if (existing_operator not in HANDLED_OPERATORS) or (new_operator not in HANDLED_OPERATORS):
+    handled_operators = [
+        BindingConstraintOperator.EQUAL,
+        BindingConstraintOperator.LESS,
+        BindingConstraintOperator.GREATER,
+        BindingConstraintOperator.BOTH,
+    ]
+
+    if (existing_operator not in handled_operators) or (new_operator not in handled_operators):
         raise NotImplementedError(
             f"Case not handled yet: existing_operator={existing_operator}, new_operator={new_operator}"
         )
@@ -81,23 +81,23 @@ def _update_matrices_names(
         assert isinstance(
             new_matrix_node, LazyNode
         ), f"Node type not handled yet: LazyNode expected, got {type(new_matrix_node)}"
-        matrix_node.move_file_to(new_matrix_node, force=True)
+        matrix_node.rename_filename(new_matrix_node)
     elif new_operator == BindingConstraintOperator.BOTH:
         if existing_operator == BindingConstraintOperator.EQUAL:
-            matrix_eq.move_file_to(matrix_lt, force=True)
+            matrix_eq.rename_filename(matrix_lt)
             matrix_gt.delete()
             # copy the matrix lt to gt
-            matrix_lt.move_file_to(matrix_gt, force=True, copy=True)
+            matrix_lt.copy_file(matrix_gt)
         elif existing_operator == BindingConstraintOperator.LESS:
             matrix_gt.delete()
-            matrix_lt.move_file_to(matrix_gt, force=True, copy=True)
+            matrix_lt.copy_file(matrix_gt)
         else:
             matrix_lt.delete()
-            matrix_gt.move_file_to(matrix_lt, force=True, copy=True)
+            matrix_gt.copy_file(matrix_lt)
     else:
         if new_operator == BindingConstraintOperator.EQUAL:
-            # TODO: we may retrieve the mean of the two matrices, but here we just copy the lt matrix
-            matrix_lt.move_file_to(matrix_eq, force=True)
+            # we may retrieve the mean of the two matrices, but here we just copy the lt matrix
+            matrix_lt.rename_filename(matrix_eq)
             matrix_gt.delete()
         elif new_operator == BindingConstraintOperator.LESS:
             matrix_gt.delete()

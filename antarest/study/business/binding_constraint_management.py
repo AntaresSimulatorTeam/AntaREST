@@ -958,7 +958,8 @@ def check_attributes_coherence(
         ]
         if conflicting_matrices:
             raise InvalidFieldForVersionError(
-                f"You cannot fill matrices '{OPERATOR_CONFLICT_MAP[update_operator]}' while using the operator '{update_operator}'"
+                f"You cannot fill matrices '{OPERATOR_CONFLICT_MAP[update_operator]}' while using the operator "
+                f"'{update_operator}'"
             )
     # TODO: the default operator should be fixed somewhere so this condition can be consistent
     elif [

@@ -109,7 +109,7 @@ class LazyNode(INode, ABC, t.Generic[G, S, V]):  # type: ignore
         elif self.config.path.exists():
             self.config.path.unlink()
 
-    def infer_path(self) -> Path:
+    def _infer_path(self) -> Path:
         if self.get_link_path().exists():
             return self.get_link_path()
         elif self.config.path.exists():
@@ -119,14 +119,11 @@ class LazyNode(INode, ABC, t.Generic[G, S, V]):  # type: ignore
                 f"Neither link file {self.get_link_path} nor matrix file {self.config.path} exists"
             )
 
-    def infer_target_path(self, is_link: bool) -> Path:
+    def _infer_target_path(self, is_link: bool) -> Path:
         if is_link:
             return self.get_link_path()
         else:
             return self.config.path
-
-    def infer_is_link_path(self) -> bool:
-        return self.get_link_path().exists()
 
     def get_link_path(self) -> Path:
         path = self.config.path.parent / (self.config.path.name + ".link")
@@ -147,24 +144,15 @@ class LazyNode(INode, ABC, t.Generic[G, S, V]):  # type: ignore
             self.get_link_path().unlink()
         return None
 
-    def move_file_to(
-        self, target: t.Union[Path, "LazyNode[t.Any, t.Any, t.Any]"], force: bool = False, copy: bool = False
-    ) -> None:
-        if isinstance(target, Path):
-            target.unlink(missing_ok=True)
-            if copy:
-                shutil.copy2(self.infer_path(), target)
-            else:
-                self.infer_path().rename(target)
-        else:
-            target_path = target.infer_target_path(self.infer_is_link_path())
-            if not force and target_path.exists():
-                raise FileExistsError(f"Target path {target_path} already exists")
-            target_path.unlink(missing_ok=True)
-            if copy:
-                shutil.copy2(self.infer_path(), target_path)
-            else:
-                self.infer_path().rename(target_path)
+    def rename_filename(self, target: t.Union[Path, "LazyNode[t.Any, t.Any, t.Any]"]) -> None:
+        target_path = target if isinstance(target, Path) else target._infer_target_path(self.get_link_path().exists())
+        target_path.unlink(missing_ok=True)
+        self._infer_path().rename(target_path)
+
+    def copy_file(self, target: t.Union[Path, "LazyNode[t.Any, t.Any, t.Any]"]) -> None:
+        target_path = target if isinstance(target, Path) else target._infer_target_path(self.get_link_path().exists())
+        target_path.unlink(missing_ok=True)
+        shutil.copy(self._infer_path(), target_path)
 
     def get_lazy_content(
         self,
@@ -188,7 +176,7 @@ class LazyNode(INode, ABC, t.Generic[G, S, V]):  # type: ignore
         Args:
             url: data path to retrieve
             depth: after url is reached, node expand tree until matches depth asked
-            expanded: context parameter to determine if current node become from a expansion
+            expanded: context parameter to determine if current node become from an expansion
             formatted: ask for raw file transformation
 
         Returns:
