@@ -6,6 +6,7 @@ import { SubmitHandlerPlus } from "../../../../../common/Form/types";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 import { getAreas } from "../../../../../../redux/selectors";
 import { validateString } from "../../../../../../utils/validationUtils";
+import Fieldset from "../../../../../common/Fieldset";
 
 interface Props {
   studyId: string;
@@ -41,6 +42,7 @@ function CreateAreaDialog(props: Props) {
     <FormDialog
       title={t("study.modelization.map.newArea")}
       titleIcon={AddCircleIcon}
+      maxWidth="sm"
       open={open}
       onCancel={onClose}
       onSubmit={handleSubmit}
@@ -49,16 +51,18 @@ function CreateAreaDialog(props: Props) {
       }}
     >
       {({ control }) => (
-        <StringFE
-          label={t("global.name")}
-          name="name"
-          control={control}
-          fullWidth
-          rules={{
-            validate: (v) =>
-              validateString(v, { existingValues: existingAreas }),
-          }}
-        />
+        <Fieldset fullFieldWidth>
+          <StringFE
+            label={t("global.name")}
+            name="name"
+            control={control}
+            fullWidth
+            rules={{
+              validate: (v) =>
+                validateString(v, { existingValues: existingAreas }),
+            }}
+          />
+        </Fieldset>
       )}
     </FormDialog>
   );
