@@ -144,13 +144,13 @@ class LazyNode(INode, ABC, t.Generic[G, S, V]):  # type: ignore
             self.get_link_path().unlink()
         return None
 
-    def rename_file(self, target: t.Union[Path, "LazyNode[t.Any, t.Any, t.Any]"]) -> None:
-        target_path = target if isinstance(target, Path) else target._infer_target_path(self.get_link_path().exists())
+    def rename_file(self, target: "LazyNode[t.Any, t.Any, t.Any]") -> None:
+        target_path = target._infer_target_path(self.get_link_path().exists())
         target_path.unlink(missing_ok=True)
         self._infer_path().rename(target_path)
 
-    def copy_file(self, target: t.Union[Path, "LazyNode[t.Any, t.Any, t.Any]"]) -> None:
-        target_path = target if isinstance(target, Path) else target._infer_target_path(self.get_link_path().exists())
+    def copy_file(self, target: "LazyNode[t.Any, t.Any, t.Any]") -> None:
+        target_path = target._infer_target_path(self.get_link_path().exists())
         target_path.unlink(missing_ok=True)
         shutil.copy(self._infer_path(), target_path)
 
