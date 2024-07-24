@@ -26,7 +26,10 @@ from antarest.study.storage.variantstudy.model.command.create_link import Create
 from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
 from antarest.study.storage.variantstudy.model.command.remove_binding_constraint import RemoveBindingConstraint
 from antarest.study.storage.variantstudy.model.command.remove_link import RemoveLink
-from antarest.study.storage.variantstudy.model.command.update_binding_constraint import UpdateBindingConstraint
+from antarest.study.storage.variantstudy.model.command.update_binding_constraint import (
+    UpdateBindingConstraint,
+    _update_matrices_names,
+)
 from antarest.study.storage.variantstudy.model.command.update_scenario_builder import UpdateScenarioBuilder
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
@@ -511,3 +514,94 @@ def test_create_diff(command_context: CommandContext):
     base = RemoveBindingConstraint(id="foo", command_context=command_context)
     other_match = RemoveBindingConstraint(id="foo", command_context=command_context)
     assert base.create_diff(other_match) == []
+
+
+@pytest.mark.parametrize(
+    "existing_operator, new_operator",
+    [
+        (BindingConstraintOperator.LESS, BindingConstraintOperator.LESS),
+        (BindingConstraintOperator.LESS, BindingConstraintOperator.GREATER),
+        (BindingConstraintOperator.LESS, BindingConstraintOperator.BOTH),
+        (BindingConstraintOperator.LESS, BindingConstraintOperator.EQUAL),
+        (BindingConstraintOperator.GREATER, BindingConstraintOperator.LESS),
+        (BindingConstraintOperator.GREATER, BindingConstraintOperator.GREATER),
+        (BindingConstraintOperator.GREATER, BindingConstraintOperator.BOTH),
+        (BindingConstraintOperator.GREATER, BindingConstraintOperator.EQUAL),
+        (BindingConstraintOperator.BOTH, BindingConstraintOperator.LESS),
+        (BindingConstraintOperator.BOTH, BindingConstraintOperator.GREATER),
+        (BindingConstraintOperator.BOTH, BindingConstraintOperator.BOTH),
+        (BindingConstraintOperator.BOTH, BindingConstraintOperator.EQUAL),
+        (BindingConstraintOperator.EQUAL, BindingConstraintOperator.LESS),
+        (BindingConstraintOperator.EQUAL, BindingConstraintOperator.GREATER),
+        (BindingConstraintOperator.EQUAL, BindingConstraintOperator.BOTH),
+        (BindingConstraintOperator.EQUAL, BindingConstraintOperator.EQUAL),
+    ],
+)
+@pytest.mark.parametrize("empty_study", ["empty_study_870.zip"], indirect=True)
+def test__update_matrices_names(
+    empty_study: FileStudy,
+    command_context: CommandContext,
+    existing_operator: BindingConstraintOperator,
+    new_operator: BindingConstraintOperator,
+):
+    study_path = empty_study.config.study_path
+
+    all_file_templates = {"{bc_id}_eq.txt.link", "{bc_id}_gt.txt.link", "{bc_id}_lt.txt.link"}
+
+    operator_matrix_file_map = {
+        BindingConstraintOperator.EQUAL: ["{bc_id}_eq.txt.link"],
+        BindingConstraintOperator.GREATER: ["{bc_id}_gt.txt.link"],
+        BindingConstraintOperator.LESS: ["{bc_id}_lt.txt.link"],
+        BindingConstraintOperator.BOTH: ["{bc_id}_lt.txt.link", "{bc_id}_gt.txt.link"],
+    }
+
+    area1 = "area1"
+    area2 = "area2"
+    cluster = "cluster"
+    CreateArea(area_name=area1, command_context=command_context).apply(empty_study)
+    CreateArea(area_name=area2, command_context=command_context).apply(empty_study)
+    CreateLink(area1=area1, area2=area2, command_context=command_context).apply(empty_study)
+    CreateCluster(area_id=area1, cluster_name=cluster, parameters={}, command_context=command_context).apply(
+        empty_study
+    )
+
+    # create a binding constraint
+    _ = CreateBindingConstraint(
+        name="BD_RENAME_MATRICES",
+        time_step=BindingConstraintFrequency.HOURLY,
+        operator=existing_operator,
+        coeffs={"area1%area2": [800, 30]},
+        command_context=command_context,
+    ).apply(empty_study)
+
+    # check that the matrices are created
+    file_templates = set(operator_matrix_file_map[existing_operator])
+    superfluous_templates = all_file_templates - file_templates
+    existing_matrices = [file_template.format(bc_id="bd_rename_matrices") for file_template in file_templates]
+    superfluous_matrices = [file_template.format(bc_id="bd_rename_matrices") for file_template in superfluous_templates]
+    for matrix_link in existing_matrices:
+        link_path = study_path / f"input/bindingconstraints/{matrix_link}"
+        assert link_path.exists(), f"Missing matrix link: {matrix_link!r}"
+    for matrix_link in superfluous_matrices:
+        link_path = study_path / f"input/bindingconstraints/{matrix_link}"
+        assert not link_path.exists(), f"Superfluous matrix link: {matrix_link!r}"
+
+    # update matrices names
+    _update_matrices_names(
+        file_study=empty_study,
+        binding_constraint_id="bd_rename_matrices",
+        existing_operator=existing_operator,
+        new_operator=new_operator,
+    )
+
+    # check that the matrices are renamed
+    file_templates = set(operator_matrix_file_map[new_operator])
+    superfluous_templates = all_file_templates - file_templates
+    new_matrices = [file_template.format(bc_id="bd_rename_matrices") for file_template in file_templates]
+    superfluous_matrices = [file_template.format(bc_id="bd_rename_matrices") for file_template in superfluous_templates]
+    for matrix_link in new_matrices:
+        link_path = study_path / f"input/bindingconstraints/{matrix_link}"
+        assert link_path.exists(), f"Missing matrix link: {matrix_link!r}"
+    for matrix_link in superfluous_matrices:
+        link_path = study_path / f"input/bindingconstraints/{matrix_link}"
+        assert not link_path.exists(), f"Superfluous matrix link: {matrix_link!r}"
