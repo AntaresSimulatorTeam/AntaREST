@@ -64,7 +64,8 @@ def test_get(tmp_path: str, project_path) -> None:
         patch_service=Mock(),
     )
 
-    metadata = VariantStudy(id="study2.py", path=str(path_study), generation_task="1")
+    study_id = "5722d22c-58d8-4ef4-b70f-01ca4406fa14"
+    metadata = VariantStudy(id=study_id, path=str(path_study), generation_task="1")
     study_service.exists = Mock()
     study_service.exists.return_value = False
 
@@ -92,7 +93,7 @@ def test_get(tmp_path: str, project_path) -> None:
             yield t
 
     study_service.task_service.status_task.side_effect = task_status()
-    with pytest.raises(VariantGenerationError, match="Error while generating study2.py"):
+    with pytest.raises(VariantGenerationError, match=f"Error while generating {study_id}"):
         study_service.get(metadata=metadata, url=sub_route, depth=2)
     study_service.task_service.await_task.assert_called()
 
