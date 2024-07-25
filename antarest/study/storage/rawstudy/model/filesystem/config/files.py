@@ -148,7 +148,7 @@ def _extract_data_from_file(
 
     is_zip_file: bool = root.suffix.lower() == ".zip"
     posix_path: str = inside_root_path.as_posix()
-    output_data_path = root.resolve() / inside_root_path
+    output_data_path = root / inside_root_path
 
     if file_type == FileType.TXT:
         # Parse the file as a list of lines, return an empty list if missing.

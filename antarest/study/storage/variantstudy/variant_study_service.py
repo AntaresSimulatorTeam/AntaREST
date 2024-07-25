@@ -570,7 +570,12 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         denormalize: bool = False,
         from_scratch: bool = False,
     ) -> str:
-        sanitized_study_id = base64.b64decode(base64.b64encode(metadata.id.encode("utf-8"))).decode("utf-8")
+        expected_pattern = "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        if re.compile(expected_pattern).match(metadata.id):
+            sanitized_study_id = metadata.id
+        else:
+            sanitized_study_id = base64.b64encode(metadata.id.encode("utf-8")).decode("utf-8")
+
         with FileLock(str(self.config.storage.tmp_dir / f"study-generation-{metadata.id}.lock")):
             logger.info(f"Starting variant study {sanitized_study_id} generation")
             self.repository.refresh(metadata)

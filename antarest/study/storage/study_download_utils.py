@@ -330,9 +330,8 @@ class StudyDownloader:
         filetype: ExportFormat,
         target_file: Path,
     ) -> None:
-        sanitized_path = target_file.resolve()
         if filetype == ExportFormat.JSON:
-            with open(sanitized_path, "w") as fh:
+            with open(target_file, "w") as fh:
                 json.dump(
                     matrix.dict(),
                     fh,
@@ -342,7 +341,7 @@ class StudyDownloader:
                     separators=(",", ":"),
                 )
         else:
-            StudyDownloader.write_inside_archive(sanitized_path, filetype, matrix)
+            StudyDownloader.write_inside_archive(target_file, filetype, matrix)
 
     @staticmethod
     def write_inside_archive(path: Path, file_type: ExportFormat, matrix: MatrixAggregationResultDTO) -> None:

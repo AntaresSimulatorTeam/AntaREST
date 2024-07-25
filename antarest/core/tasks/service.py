@@ -1,6 +1,7 @@
 import base64
 import datetime
 import logging
+import re
 import time
 import typing as t
 from abc import ABC, abstractmethod
@@ -303,7 +304,11 @@ class TaskJobService(ITaskService):
         return self.repo.list(task_filter, user)
 
     def await_task(self, task_id: str, timeout_sec: int = DEFAULT_AWAIT_MAX_TIMEOUT) -> None:
-        sanitized_task_id = base64.b64decode(base64.b64encode(task_id.encode("utf-8"))).decode("utf-8")
+        expected_pattern = "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        if re.compile(expected_pattern).match(task_id):
+            sanitized_task_id = task_id
+        else:
+            sanitized_task_id = base64.b64encode(task_id.encode("utf-8")).decode("utf-8")
 
         if sanitized_task_id in self.tasks:
             try:
