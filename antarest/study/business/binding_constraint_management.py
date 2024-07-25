@@ -1,5 +1,4 @@
 import collections
-import itertools
 import json
 import logging
 import typing as t
@@ -338,11 +337,6 @@ def _get_references_by_widths(
         The height of the matrices may vary depending on the time step,
         but the width should be consistent within a group of binding constraints.
     """
-    if int(file_study.config.version) < 870:
-        matrix_id_fmts = {"{bc_id}"}
-    else:
-        matrix_id_fmts = {"{bc_id}_eq", "{bc_id}_lt", "{bc_id}_gt"}
-
     operator_matrix_file_map = {
         BindingConstraintOperator.EQUAL: ["{bc_id}_eq"],
         BindingConstraintOperator.GREATER: ["{bc_id}_gt"],
@@ -351,28 +345,27 @@ def _get_references_by_widths(
     }
 
     references_by_width: t.Dict[int, t.List[t.Tuple[str, str]]] = {}
-    _total = len(bcs) * len(matrix_id_fmts)
-    for _index, (bc, fmt) in enumerate(itertools.product(bcs, matrix_id_fmts), 1):
-        if int(file_study.config.version) >= 870 and fmt not in operator_matrix_file_map[bc.operator]:
-            continue
-        bc_id = bc.id
-        matrix_id = fmt.format(bc_id=bc.id)
-        logger.info(f"⏲ Validating BC '{bc_id}': {matrix_id=} [{_index}/{_total}]")
-        obj = file_study.tree.get(url=["input", "bindingconstraints", matrix_id])
-        matrix = np.array(obj["data"], dtype=float)
-        # We ignore empty matrices as there are default matrices for the simulator.
-        if not matrix.size:
-            continue
+    _total = len(bcs)
+    for _index, bc in enumerate(bcs):
+        matrices_name = operator_matrix_file_map[bc.operator] if file_study.config.version >= 870 else ["{bc_id}"]
+        for matrix_name in matrices_name:
+            matrix_id = matrix_name.format(bc_id=bc.id)
+            logger.info(f"⏲ Validating BC '{bc.id}': {matrix_id=} [{_index+1}/{_total}]")
+            obj = file_study.tree.get(url=["input", "bindingconstraints", matrix_id])
+            matrix = np.array(obj["data"], dtype=float)
+            # We ignore empty matrices as there are default matrices for the simulator.
+            if not matrix.size:
+                continue
 
-        matrix_height = matrix.shape[0]
-        expected_height = EXPECTED_MATRIX_SHAPES[bc.time_step][0]
-        if matrix_height != expected_height:
-            raise WrongMatrixHeightError(
-                f"The binding constraint '{bc.name}' should have {expected_height} rows, currently: {matrix_height}"
-            )
-        matrix_width = matrix.shape[1]
-        if matrix_width > 1:
-            references_by_width.setdefault(matrix_width, []).append((bc_id, matrix_id))
+            matrix_height = matrix.shape[0]
+            expected_height = EXPECTED_MATRIX_SHAPES[bc.time_step][0]
+            if matrix_height != expected_height:
+                raise WrongMatrixHeightError(
+                    f"The binding constraint '{bc.name}' should have {expected_height} rows, currently: {matrix_height}"
+                )
+            matrix_width = matrix.shape[1]
+            if matrix_width > 1:
+                references_by_width.setdefault(matrix_width, []).append((bc.id, matrix_id))
 
     return references_by_width
 
