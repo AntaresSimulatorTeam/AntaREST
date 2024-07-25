@@ -1,13 +1,13 @@
-from typing import Any, Dict, List, Tuple, Union
+import typing as t
 
 from pydantic import validator
 
+from antarest.core.exceptions import ChildNotFoundError
 from antarest.core.model import JSON
 from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.folder_node import ChildNotFoundError
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
 from antarest.study.storage.variantstudy.business.utils import AliasDecoder, strip_matrix_protocol, validate_matrix
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
@@ -30,11 +30,11 @@ class ReplaceMatrix(ICommand):
     # ==================
 
     target: str
-    matrix: Union[List[List[MatrixData]], str]
+    matrix: t.Union[t.List[t.List[MatrixData]], str]
 
     _validate_matrix = validator("matrix", each_item=True, always=True, allow_reuse=True)(validate_matrix)
 
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
         return (
             CommandOutput(
                 status=True,
@@ -93,9 +93,9 @@ class ReplaceMatrix(ICommand):
             return self.target == other.target and self.matrix == other.matrix
         return self.target == other.target
 
-    def _create_diff(self, other: "ICommand") -> List["ICommand"]:
+    def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
         return [other]
 
-    def get_inner_matrices(self) -> List[str]:
+    def get_inner_matrices(self) -> t.List[str]:
         assert_this(isinstance(self.matrix, str))
         return [strip_matrix_protocol(self.matrix)]
