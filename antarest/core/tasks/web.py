@@ -81,7 +81,7 @@ def create_tasks_api(service: TaskJobService, config: Config) -> APIRouter:
             except concurrent.futures.TimeoutError as exc:  # pragma: no cover
                 # Note that if the task does not complete within the specified time,
                 # the task will continue running but the user will receive a timeout.
-                # In this case, it is the user's responsibility to cancel the task.N
+                # In this case, it is the user's responsibility to cancel the task.
                 raise HTTPException(
                     status_code=http.HTTPStatus.REQUEST_TIMEOUT,
                     detail="The request timed out while waiting for task completion.",
