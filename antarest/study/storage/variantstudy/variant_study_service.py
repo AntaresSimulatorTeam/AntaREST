@@ -1,4 +1,3 @@
-import base64
 import concurrent.futures
 import json
 import logging
@@ -571,12 +570,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         from_scratch: bool = False,
     ) -> str:
         study_id = metadata.id
-        expected_pattern = "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
-        if not re.compile(expected_pattern).match(study_id):
-            sanitized_study_id = base64.b64encode(metadata.id.encode("utf-8")).decode("utf-8")
-            raise StudyNotFoundError(f"Study id {sanitized_study_id} is not a valid study_id")
-
-        with FileLock(str(self.config.storage.tmp_dir / f"study-generation-{metadata.id}.lock")):
+        with FileLock(str(self.config.storage.tmp_dir / f"study-generation-{study_id}.lock")):
             logger.info(f"Starting variant study {study_id} generation")
             self.repository.refresh(metadata)
             if metadata.generation_task:

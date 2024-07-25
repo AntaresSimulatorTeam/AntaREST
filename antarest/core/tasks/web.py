@@ -1,6 +1,8 @@
+import base64
 import concurrent.futures
 import http
 import logging
+import re
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -61,6 +63,13 @@ def create_tasks_api(service: TaskJobService, config: Config) -> APIRouter:
         Returns:
             TaskDTO: Information about the specified task.
         """
+        expected_pattern = "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        if not re.compile(expected_pattern).match(task_id):
+            sanitized_task_id = base64.b64encode(task_id.encode("utf-8")).decode("utf-8")
+            raise HTTPException(
+                status_code=http.HTTPStatus.NOT_FOUND, detail=f"Task id {sanitized_task_id} is not a valid task id"
+            )
+
         request_params = RequestParameters(user=current_user)
         task_status = service.status_task(task_id, request_params, with_logs)
 
@@ -72,7 +81,7 @@ def create_tasks_api(service: TaskJobService, config: Config) -> APIRouter:
             except concurrent.futures.TimeoutError as exc:  # pragma: no cover
                 # Note that if the task does not complete within the specified time,
                 # the task will continue running but the user will receive a timeout.
-                # In this case, it is the user's responsibility to cancel the task.
+                # In this case, it is the user's responsibility to cancel the task.N
                 raise HTTPException(
                     status_code=http.HTTPStatus.REQUEST_TIMEOUT,
                     detail="The request timed out while waiting for task completion.",
