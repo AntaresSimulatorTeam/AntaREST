@@ -15,7 +15,7 @@ import usePromiseWithSnackbarError from "../../../hooks/usePromiseWithSnackbarEr
 import { editMatrix, getStudyMatrixIndex } from "../../../services/api/matrix";
 import { Root, Content, Header } from "./style";
 import SimpleLoader from "../loaders/SimpleLoader";
-import SimpleContent from "../page/SimpleContent";
+import EmptyView from "../page/SimpleContent";
 import EditableMatrix from "../EditableMatrix";
 import ImportDialog from "../dialogs/ImportDialog";
 import MatrixAssignDialog from "./MatrixAssignDialog";
@@ -183,7 +183,7 @@ function MatrixInput({
             isPercentDisplayEnabled={enablePercentDisplay}
           />
         ) : (
-          !isLoading && <SimpleContent title="matrix.message.matrixEmpty" />
+          !isLoading && <EmptyView title="matrix.message.matrixEmpty" />
         )}
       </Content>
       {openImportDialog && (

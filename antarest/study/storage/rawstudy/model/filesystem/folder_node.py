@@ -1,10 +1,8 @@
 import shutil
 import typing as t
 from abc import ABC, abstractmethod
-from http import HTTPStatus
 
-from fastapi import HTTPException
-
+from antarest.core.exceptions import ChildNotFoundError
 from antarest.core.model import JSON, SUB_JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
@@ -13,11 +11,6 @@ from antarest.study.storage.rawstudy.model.filesystem.inode import TREE, INode
 
 class FilterError(Exception):
     pass
-
-
-class ChildNotFoundError(HTTPException):
-    def __init__(self, message: str) -> None:
-        super().__init__(HTTPStatus.NOT_FOUND, message)
 
 
 class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):

@@ -1,12 +1,23 @@
-import io
 import re
 
 import numpy as np
 import pandas as pd
 import pytest
+from requests.exceptions import HTTPError
 from starlette.testclient import TestClient
 
 from antarest.study.business.binding_constraint_management import ClusterTerm, ConstraintTerm, LinkTerm
+from tests.integration.prepare_proxy import PreparerProxy
+
+MATRIX_SIZES = {"hourly": 8784, "daily": 366, "weekly": 366}
+
+
+REQUIRED_MATRICES = {
+    "less": {"lt"},
+    "equal": {"eq"},
+    "greater": {"gt"},
+    "both": {"lt", "gt"},
+}
 
 
 class TestLinkTerm:
@@ -68,14 +79,6 @@ class TestConstraintTerm:
         assert term.generate_id() == "foo"
 
 
-def _upload_matrix(client: TestClient, study_id: str, matrix_path: str, df: pd.DataFrame) -> None:
-    tsv = io.BytesIO()
-    df.to_csv(tsv, sep="\t", index=False, header=False)
-    tsv.seek(0)
-    res = client.put(f"/v1/studies/{study_id}/raw", params={"path": matrix_path}, files={"file": tsv})
-    res.raise_for_status()
-
-
 @pytest.mark.unit_test
 class TestBindingConstraints:
     """
@@ -90,49 +93,22 @@ class TestBindingConstraints:
         #  STUDY PREPARATION
         # =============================
 
-        # Create a Study
-        res = client.post("/v1/studies", params={"name": "foo", "version": "860"})
-        assert res.status_code == 201, res.json()
-        study_id = res.json()
-
-        # Create Areas
-        res = client.post(f"/v1/studies/{study_id}/areas", json={"name": "Area 1", "type": "AREA"})
-        assert res.status_code == 200, res.json()
-        area1_id = res.json()["id"]
-        assert area1_id == "area 1"
-
-        res = client.post(f"/v1/studies/{study_id}/areas", json={"name": "Area 2", "type": "AREA"})
-        assert res.status_code == 200, res.json()
-        area2_id = res.json()["id"]
-        assert area2_id == "area 2"
-
-        # Create a link between the two areas
-        res = client.post(f"/v1/studies/{study_id}/links", json={"area1": area1_id, "area2": area2_id})
-        assert res.status_code == 200, res.json()
+        preparer = PreparerProxy(client, user_access_token)
+        study_id = preparer.create_study("foo", version=860)
+        area1_id = preparer.create_area(study_id, name="Area 1")["id"]
+        area2_id = preparer.create_area(study_id, name="Area 2")["id"]
+        link_id = preparer.create_link(study_id, area1_id=area1_id, area2_id=area2_id)["id"]
 
         # Create a cluster in area1
-        res = client.post(
-            f"/v1/studies/{study_id}/areas/{area1_id}/clusters/thermal",
-            json={"name": "Cluster 1", "group": "Nuclear"},
-        )
-        assert res.status_code == 200, res.json()
-        cluster_id = res.json()["id"]
-        assert cluster_id == "Cluster 1"
-
-        # Get clusters list to check created cluster in area1
-        res = client.get(f"/v1/studies/{study_id}/areas/{area1_id}/clusters/thermal")
-        clusters_list = res.json()
-        assert res.status_code == 200, res.json()
+        cluster_id = preparer.create_thermal(study_id, area1_id, name="Cluster 1", group="Nuclear")["id"]
+        clusters_list = preparer.get_thermals(study_id, area1_id)
         assert len(clusters_list) == 1
         assert clusters_list[0]["id"] == cluster_id
         assert clusters_list[0]["name"] == "Cluster 1"
         assert clusters_list[0]["group"] == "Nuclear"
 
         if study_type == "variant":
-            # Create Variant
-            res = client.post(f"/v1/studies/{study_id}/variants", params={"name": "Variant 1"})
-            assert res.status_code in {200, 201}, res.json()
-            study_id = res.json()
+            study_id = preparer.create_variant(study_id, name="Variant 1")
 
         # =============================
         # CREATION
@@ -176,23 +152,18 @@ class TestBindingConstraints:
         assert res.status_code in {200, 201}, res.json()
 
         # Creates a binding constraint with the new API
-        res = client.post(
-            f"/v1/studies/{study_id}/bindingconstraints",
-            json={
-                "name": "binding_constraint_3",
-                "enabled": True,
-                "timeStep": "hourly",
-                "operator": "less",
-                "terms": [],
-                "comments": "New API",
-            },
+        preparer.create_binding_constraint(
+            study_id,
+            name="binding_constraint_3",
+            enabled=True,
+            timeStep="hourly",
+            operator="less",
+            terms=[],
+            comments="New API",
         )
-        assert res.status_code in {200, 201}, res.json()
 
         # Get Binding Constraint list
-        res = client.get(f"/v1/studies/{study_id}/bindingconstraints")
-        binding_constraints_list = res.json()
-        assert res.status_code == 200, res.json()
+        binding_constraints_list = preparer.get_binding_constraints(study_id)
         assert len(binding_constraints_list) == 3
         # Group section should not exist as the study version is prior to 8.7
         assert "group" not in binding_constraints_list[0]
@@ -275,7 +246,7 @@ class TestBindingConstraints:
         expected = [
             {
                 "data": {"area1": area1_id, "area2": area2_id},
-                "id": f"{area1_id}%{area2_id}",
+                "id": link_id,
                 "offset": 2,
                 "weight": 1.0,
             },
@@ -303,7 +274,7 @@ class TestBindingConstraints:
         expected = [
             {
                 "data": {"area1": area1_id, "area2": area2_id},
-                "id": f"{area1_id}%{area2_id}",
+                "id": link_id,
                 "offset": 2,
                 "weight": 1.0,
             },
@@ -341,7 +312,7 @@ class TestBindingConstraints:
         }
 
         # Remove Constraint term
-        res = client.delete(f"/v1/studies/{study_id}/bindingconstraints/{bc_id}/term/{area1_id}%{area2_id}")
+        res = client.delete(f"/v1/studies/{study_id}/bindingconstraints/{bc_id}/term/{link_id}")
         assert res.status_code == 200, res.json()
 
         # Check updated terms, the deleted term should no longer exist.
@@ -550,39 +521,17 @@ class TestBindingConstraints:
         #  STUDY PREPARATION
         # =============================
 
-        res = client.post("/v1/studies", params={"name": "foo"})
-        assert res.status_code == 201, res.json()
-        study_id = res.json()
+        preparer = PreparerProxy(client, user_access_token)
+        study_id = preparer.create_study("foo", version=870)
 
         if study_type == "variant":
-            # Create Variant
-            res = client.post(f"/v1/studies/{study_id}/variants", params={"name": "Variant 1"})
-            assert res.status_code in {200, 201}
-            study_id = res.json()
+            study_id = preparer.create_variant(study_id, name="Variant 1")
 
-        # Create Areas
-        res = client.post(f"/v1/studies/{study_id}/areas", json={"name": "Area 1", "type": "AREA"})
-        assert res.status_code == 200, res.json()
-        area1_id = res.json()["id"]
-        assert area1_id == "area 1"
-
-        res = client.post(f"/v1/studies/{study_id}/areas", json={"name": "Area 2", "type": "AREA"})
-        assert res.status_code == 200, res.json()
-        area2_id = res.json()["id"]
-        assert area2_id == "area 2"
-
-        # Create a link between the two areas
-        res = client.post(f"/v1/studies/{study_id}/links", json={"area1": area1_id, "area2": area2_id})
-        assert res.status_code == 200, res.json()
-
-        # Create a cluster in area1
-        res = client.post(
-            f"/v1/studies/{study_id}/areas/{area1_id}/clusters/thermal",
-            json={"name": "Cluster 1", "group": "Nuclear"},
-        )
-        assert res.status_code == 200, res.json()
-        cluster_id = res.json()["id"]
-        assert cluster_id == "Cluster 1"
+        # Create Areas, link and cluster
+        area1_id = preparer.create_area(study_id, name="Area 1")["id"]
+        area2_id = preparer.create_area(study_id, name="Area 2")["id"]
+        link_id = preparer.create_link(study_id, area1_id=area1_id, area2_id=area2_id)["id"]
+        cluster_id = preparer.create_thermal(study_id, area1_id, name="Cluster 1", group="Nuclear")["id"]
 
         # =============================
         #  CREATION
@@ -591,27 +540,34 @@ class TestBindingConstraints:
         # Creation of a bc without group
         bc_id_wo_group = "binding_constraint_1"
         args = {"enabled": True, "timeStep": "hourly", "operator": "less", "terms": [], "comments": "New API"}
-        res = client.post(f"/v1/studies/{study_id}/bindingconstraints", json={"name": bc_id_wo_group, **args})
-        assert res.status_code in {200, 201}
-        assert res.json()["group"] == "default"
+        operator_1 = "lt"
+        properties = preparer.create_binding_constraint(study_id, name=bc_id_wo_group, **args)
+        assert properties["group"] == "default"
 
         # Creation of bc with a group
         bc_id_w_group = "binding_constraint_2"
-        res = client.post(
-            f"/v1/studies/{study_id}/bindingconstraints",
-            json={"name": bc_id_w_group, "group": "specific_grp", **args},
-        )
-        assert res.status_code in {200, 201}
-        assert res.json()["group"] == "specific_grp"
+        args["operator"], operator_2 = "greater", "gt"
+        properties = preparer.create_binding_constraint(study_id, name=bc_id_w_group, group="specific_grp", **args)
+        assert properties["group"] == "specific_grp"
 
         # Creation of bc with a matrix
         bc_id_w_matrix = "binding_constraint_3"
         matrix_lt3 = np.ones((8784, 3))
+        args["operator"], operator_3 = "equal", "eq"
+        # verify that trying to create a binding constraint with a less_term_matrix will
+        # while using an `equal` operator will raise an error 422
         res = client.post(
             f"/v1/studies/{study_id}/bindingconstraints",
             json={"name": bc_id_w_matrix, "less_term_matrix": matrix_lt3.tolist(), **args},
         )
-        assert res.status_code in {200, 201}, res.json()
+        assert res.status_code == 422, res.json()
+
+        # now we create the binding constraint with the correct matrix
+        res = client.post(
+            f"/v1/studies/{study_id}/bindingconstraints",
+            json={"name": bc_id_w_matrix, "equal_term_matrix": matrix_lt3.tolist(), **args},
+        )
+        res.raise_for_status()
 
         if study_type == "variant":
             res = client.get(f"/v1/studies/{study_id}/commands")
@@ -619,21 +575,34 @@ class TestBindingConstraints:
             less_term_matrix = last_cmd_args["less_term_matrix"]
             equal_term_matrix = last_cmd_args["equal_term_matrix"]
             greater_term_matrix = last_cmd_args["greater_term_matrix"]
-            assert greater_term_matrix == equal_term_matrix != less_term_matrix
+            assert greater_term_matrix == less_term_matrix != equal_term_matrix
 
         # Check that raw matrices are created
-        for term in ["lt", "gt", "eq"]:
-            path = f"input/bindingconstraints/{bc_id_w_matrix}_{term}"
-            res = client.get(
-                f"/v1/studies/{study_id}/raw",
-                params={"path": path, "depth": 1, "formatted": True},  # type: ignore
-            )
-            assert res.status_code == 200, res.json()
-            data = res.json()["data"]
-            if term == "lt":
-                assert data == matrix_lt3.tolist()
-            else:
-                assert data == np.zeros((matrix_lt3.shape[0], 1)).tolist()
+        for bc_id, operator in zip(
+            [bc_id_wo_group, bc_id_w_matrix, bc_id_w_group], [operator_1, operator_2, operator_3]
+        ):
+            for term in zip(
+                [
+                    bc_id_wo_group,
+                    bc_id_w_matrix,
+                ],
+                ["lt", "gt", "eq"],
+            ):
+                path = f"input/bindingconstraints/{bc_id}_{term}"
+                res = client.get(
+                    f"/v1/studies/{study_id}/raw",
+                    params={"path": path, "depth": 1, "formatted": True},  # type: ignore
+                )
+                # as we save only the operator matrix, we should have a matrix only for the operator
+                if term != operator:
+                    assert res.status_code == 404, res.json()
+                    continue
+                assert res.status_code == 200, res.json()
+                data = res.json()["data"]
+                if term == "lt":
+                    assert data == matrix_lt3.tolist()
+                else:
+                    assert data == np.zeros((matrix_lt3.shape[0], 1)).tolist()
 
         # =============================
         # CONSTRAINT TERM MANAGEMENT
@@ -671,7 +640,7 @@ class TestBindingConstraints:
         description = res.json()["description"]
         assert exception == "DuplicateConstraintTerm"
         assert bc_id_w_group in description, "Error message should contain the binding constraint ID"
-        assert f"{area1_id}%{area2_id}" in description, "Error message should contain the duplicate term ID"
+        assert link_id in description, "Error message should contain the duplicate term ID"
 
         # Get binding constraints list to check added terms
         res = client.get(f"/v1/studies/{study_id}/bindingconstraints/{bc_id_w_group}")
@@ -681,7 +650,7 @@ class TestBindingConstraints:
         expected = [
             {
                 "data": {"area1": area1_id, "area2": area2_id},
-                "id": f"{area1_id}%{area2_id}",
+                "id": link_id,
                 "offset": 2,
                 "weight": 1.0,
             },
@@ -699,7 +668,7 @@ class TestBindingConstraints:
             f"/v1/studies/{study_id}/bindingconstraints/{bc_id_w_group}/terms",
             json=[
                 {
-                    "id": f"{area1_id}%{area2_id}",
+                    "id": link_id,
                     "weight": 4.4,
                     "offset": 1,
                 },
@@ -720,7 +689,7 @@ class TestBindingConstraints:
         expected = [
             {
                 "data": {"area1": area1_id, "area2": area2_id},
-                "id": f"{area1_id}%{area2_id}",
+                "id": link_id,
                 "offset": 1,
                 "weight": 4.4,
             },
@@ -746,13 +715,32 @@ class TestBindingConstraints:
         assert res.status_code == 200, res.json()
         assert res.json()["group"] == grp_name
 
-        # Update matrix_term
+        # check that updating of a binding constraint that has an operator "equal"
+        # with a greater matrix will raise an error 422
+        res = client.put(
+            f"/v1/studies/{study_id}/bindingconstraints/{bc_id_w_matrix}",
+            json={"greater_term_matrix": matrix_lt3.tolist()},
+        )
+        assert res.status_code == 422, res.json()
+        assert "greater_term_matrix" in res.json()["description"]
+        assert "equal" in res.json()["description"]
+        assert res.json()["exception"] == "InvalidFieldForVersionError"
+
+        # update the binding constraint operator first
+        res = client.put(
+            f"/v1/studies/{study_id}/bindingconstraints/{bc_id_w_matrix}",
+            json={"operator": "greater"},
+        )
+        assert res.status_code == 200, res.json()
+
+        # update the binding constraint matrix
         res = client.put(
             f"/v1/studies/{study_id}/bindingconstraints/{bc_id_w_matrix}",
             json={"greater_term_matrix": matrix_lt3.tolist()},
         )
         assert res.status_code == 200, res.json()
 
+        # check that the matrix has been updated
         res = client.get(
             f"/v1/studies/{study_id}/raw",
             params={"path": f"input/bindingconstraints/{bc_id_w_matrix}_gt"},
@@ -784,17 +772,44 @@ class TestBindingConstraints:
 
         # Check that the matrices are daily/weekly matrices
         expected_matrix = np.zeros((366, 1))
-        for term_alias in ["lt", "gt", "eq"]:
-            res = client.get(
-                f"/v1/studies/{study_id}/raw",
-                params={
-                    "path": f"input/bindingconstraints/{bc_id_w_matrix}_{term_alias}",
-                    "depth": 1,
-                    "formatted": True,
-                },  # type: ignore
-            )
+        for operator in ["less", "equal", "greater", "both"]:
+            if operator != "both":
+                res = client.put(
+                    f"/v1/studies/{study_id}/bindingconstraints/{bc_id_w_matrix}",
+                    json={"operator": operator, f"{operator}_term_matrix": expected_matrix.tolist()},
+                )
+            else:
+                res = client.put(
+                    f"/v1/studies/{study_id}/bindingconstraints/{bc_id_w_matrix}",
+                    json={
+                        "operator": operator,
+                        "greater_term_matrix": expected_matrix.tolist(),
+                        "less_term_matrix": expected_matrix.tolist(),
+                    },
+                )
             assert res.status_code == 200, res.json()
-            assert res.json()["data"] == expected_matrix.tolist()
+            for term_operator, term_alias in zip(["less", "equal", "greater"], ["lt", "eq", "gt"]):
+                res = client.get(
+                    f"/v1/studies/{study_id}/raw",
+                    params={
+                        "path": f"input/bindingconstraints/{bc_id_w_matrix}_{term_alias}",
+                        "depth": 1,
+                        "formatted": True,
+                    },  # type: ignore
+                )
+                # check that update is made if no conflict between the operator and the matrix term alias
+                if term_operator == operator or (operator == "both" and term_operator in ["less", "greater"]):
+                    assert res.status_code == 200, res.json()
+                    assert res.json()["data"] == expected_matrix.tolist()
+                else:
+                    assert res.status_code == 404, res.json()
+
+        # set binding constraint operator to "less"
+        res = client.put(
+            f"/v1/studies/{study_id}/bindingconstraints/{bc_id_w_matrix}",
+            json={"operator": "less"},
+        )
+        assert res.status_code == 200, res.json()
 
         # =============================
         #  DELETE
@@ -805,28 +820,30 @@ class TestBindingConstraints:
         assert res.status_code == 200, res.json()
 
         # Asserts that the deletion worked
-        res = client.get(f"/v1/studies/{study_id}/bindingconstraints")
-        assert len(res.json()) == 2
+        binding_constraints_list = preparer.get_binding_constraints(study_id)
+        assert len(binding_constraints_list) == 2
 
         # =============================
         #  ERRORS
         # =============================
 
         # Creation with wrong matrix according to version
-        res = client.post(
-            f"/v1/studies/{study_id}/bindingconstraints",
-            json={
-                "name": "binding_constraint_700",
-                "enabled": True,
-                "timeStep": "hourly",
-                "operator": "less",
-                "terms": [],
-                "comments": "New API",
-                "values": [[]],
-            },
-        )
-        assert res.status_code == 422, res.json()
-        assert res.json()["description"] == "You cannot fill 'values' as it refers to the matrix before v8.7"
+        for operator in ["less", "equal", "greater", "both"]:
+            args["operator"] = operator
+            res = client.post(
+                f"/v1/studies/{study_id}/bindingconstraints",
+                json={
+                    "name": "binding_constraint_4",
+                    "enabled": True,
+                    "timeStep": "hourly",
+                    "operator": operator,
+                    "terms": [],
+                    "comments": "New API",
+                    "values": [[]],
+                },
+            )
+            assert res.status_code == 422
+            assert res.json()["description"] == "You cannot fill 'values' as it refers to the matrix before v8.7"
 
         # Update with old matrices
         res = client.put(
@@ -862,14 +879,16 @@ class TestBindingConstraints:
         #
         # Creation of 1 BC
         # Update raw with wrong columns size -> OK but validation should fail
-        #
 
-        matrix_lt3 = np.ones((8784, 3))
+        # update the args operator field to "greater"
+        args["operator"] = "greater"
+
+        matrix_gt3 = np.ones((8784, 3))
         res = client.post(
             f"/v1/studies/{study_id}/bindingconstraints",
             json={
                 "name": "First BC",
-                "less_term_matrix": matrix_lt3.tolist(),
+                "greater_term_matrix": matrix_gt3.tolist(),
                 "group": "Group 1",
                 **args,
             },
@@ -879,12 +898,7 @@ class TestBindingConstraints:
 
         generator = np.random.default_rng(11)
         random_matrix = pd.DataFrame(generator.integers(0, 10, size=(4, 1)))
-        _upload_matrix(
-            client,
-            study_id,
-            f"input/bindingconstraints/{first_bc_id}_gt",
-            random_matrix,
-        )
+        preparer.upload_matrix(study_id, f"input/bindingconstraints/{first_bc_id}_gt", random_matrix)
 
         # Validation should fail
         res = client.get(f"/v1/studies/{study_id}/constraint-groups/Group 1/validate")
@@ -896,7 +910,7 @@ class TestBindingConstraints:
         # So, we correct the shape of the matrix
         res = client.put(
             f"/v1/studies/{study_id}/bindingconstraints/{first_bc_id}",
-            json={"greater_term_matrix": matrix_lt3.tolist()},
+            json={"greater_term_matrix": matrix_gt3.tolist()},
         )
         assert res.status_code in {200, 201}, res.json()
 
@@ -944,6 +958,7 @@ class TestBindingConstraints:
         # third_bd group changes to group1 -> Fails validation
         #
 
+        args["operator"] = "less"
         matrix_lt4 = np.ones((8784, 4))
         res = client.post(
             f"/v1/studies/{study_id}/bindingconstraints",
@@ -972,9 +987,15 @@ class TestBindingConstraints:
         assert re.search(r"the most common width in the group is 3", description, flags=re.IGNORECASE)
         assert re.search(r"'third bc_lt' has 4 columns", description, flags=re.IGNORECASE)
 
+        # first change `second_bc` operator to greater
+        client.put(
+            f"v1/studies/{study_id}/bindingconstraints/{second_bc_id}",
+            json={"operator": "greater"},
+        )
+
         # So, we correct the shape of the matrix of the Second BC
         res = client.put(
-            f"/v1/studies/{study_id}/bindingconstraints/{third_bd_id}",
+            f"/v1/studies/{study_id}/bindingconstraints/{second_bc_id}",
             json={"greater_term_matrix": matrix_lt3.tolist()},
         )
         assert res.status_code in {200, 201}, res.json()
@@ -1001,6 +1022,12 @@ class TestBindingConstraints:
         )
         # This should succeed but cause the validation endpoint to fail.
         assert res.status_code in {200, 201}, res.json()
+
+        # reset `second_bc` operator to less
+        client.put(
+            f"v1/studies/{study_id}/bindingconstraints/{second_bc_id}",
+            json={"operator": "less"},
+        )
 
         # Collect all the binding constraints groups
         res = client.get(f"/v1/studies/{study_id}/constraint-groups")
@@ -1031,3 +1058,153 @@ class TestBindingConstraints:
         assert re.search(r"'Group 1':", description, flags=re.IGNORECASE)
         assert re.search(r"the most common width in the group is 3", description, flags=re.IGNORECASE)
         assert re.search(r"'third bc_lt' has 4 columns", description, flags=re.IGNORECASE)
+
+    @pytest.mark.parametrize("study_version", [870])
+    @pytest.mark.parametrize("denormalize", [True, False])
+    def test_rhs_matrices(
+        self, client: TestClient, user_access_token: str, study_version: int, denormalize: bool
+    ) -> None:
+        """
+        The goal of this test is to verify that there are no unnecessary RHS matrices created
+        in the case of **creation** or **update** of a binding constraint.
+        This test only concerns studies in **version >= 8.7** for which we have a specific matrix
+        for each operation: "less", "equal", "greater" or "both".
+
+        To perform this test, we will create a raw study "Base Study" with a "France" area
+        and a single thermal cluster "Nuclear".
+        We will then create a variant study "Variant Study" based on the raw study "Base Study"
+        to apply binding constraint creation or update commands.
+
+        The use of a variant and commands allows to check the behavior for both variant studies
+        and raw studies by generating the variant snapshot.
+
+        To verify the expected behaviors, we must control the number and naming of the matrices
+        after generating the snapshot.
+        In the case of an update and depending on the values of the `operator` and `time_step` parameters,
+        we must also control the preservation or zeroing of the matrix values.
+        """
+        client.headers = {"Authorization": f"Bearer {user_access_token}"}  # type: ignore
+
+        # =======================
+        #  RAW STUDY PREPARATION
+        # =======================
+
+        preparer = PreparerProxy(client, user_access_token)
+        study_id = preparer.create_study("Base Study", version=study_version)
+        area_id = preparer.create_area(study_id, name="France")["id"]
+        cluster_id = preparer.create_thermal(study_id, area_id, name="Nuclear", group="Nuclear")["id"]
+
+        # =============================
+        # VARIANT STUDY CREATION
+        # =============================
+
+        variant_id = preparer.create_variant(study_id, name="Variant Study")
+
+        # =============================
+        #  CREATION W/O MATRICES
+        # =============================
+
+        all_time_steps = set(MATRIX_SIZES)
+        all_operators = set(REQUIRED_MATRICES)
+
+        for bc_time_step in all_time_steps:
+            for bc_operator in all_operators:
+                bc_name = f"BC_{bc_time_step}_{bc_operator}"
+                # Creation of a binding constraint without matrices using a command
+                res = client.post(
+                    f"/v1/studies/{variant_id}/commands",
+                    json=[
+                        {
+                            "action": "create_binding_constraint",
+                            "args": {
+                                "name": bc_name,
+                                "type": bc_time_step,
+                                "operator": bc_operator,
+                                "coeffs": {f"{area_id}.{cluster_id.lower()}": [1, 2]},
+                            },
+                        }
+                    ],
+                )
+                assert res.status_code == 200, res.json()
+
+        preparer.generate_snapshot(variant_id, denormalize=denormalize)
+
+        # Check the matrices size, values and existence
+        for bc_time_step in all_time_steps:
+            for bc_operator in all_operators:
+                bc_name = f"BC_{bc_time_step}_{bc_operator}"
+                bc_id = bc_name.lower()
+
+                required_matrices = REQUIRED_MATRICES[bc_operator]
+                for matrix in required_matrices:
+                    df = preparer.download_matrix(variant_id, f"input/bindingconstraints/{bc_id}_{matrix}")
+                    assert df.shape == (MATRIX_SIZES[bc_time_step], 1)
+                    assert (df == 0).all().all()
+
+                superfluous_matrices = {"lt", "gt", "eq"} - required_matrices
+                for matrix in superfluous_matrices:
+                    try:
+                        preparer.download_matrix(variant_id, f"input/bindingconstraints/{bc_id}_{matrix}")
+                    except HTTPError as e:
+                        assert e.response.status_code == 404
+                    else:
+                        assert False, "The matrix should not exist"
+
+        # drop all commands to avoid conflicts with the next test
+        preparer.drop_all_commands(variant_id)
+
+        # =============================
+        #  CREATION WITH MATRICES
+        # =============================
+
+        # random matrices
+        matrices_by_time_steps = {
+            time_step: np.random.rand(size, 1).astype(np.float64) for time_step, size in MATRIX_SIZES.items()
+        }
+
+        for bc_time_step in all_time_steps:
+            for bc_operator in all_operators:
+                bc_name = f"BC_{bc_time_step}_{bc_operator}"
+                matrix = matrices_by_time_steps[bc_time_step].tolist()
+                args = {
+                    "name": bc_name,
+                    "type": bc_time_step,
+                    "operator": bc_operator,
+                    "coeffs": {f"{area_id}.{cluster_id.lower()}": [1, 2]},
+                }
+                if bc_operator == "less":
+                    args["lessTermMatrix"] = matrix
+                elif bc_operator == "greater":
+                    args["greaterTermMatrix"] = matrix
+                elif bc_operator == "equal":
+                    args["equalTermMatrix"] = matrix
+                else:
+                    args["lessTermMatrix"] = args["greaterTermMatrix"] = matrix
+                res = client.post(
+                    f"/v1/studies/{variant_id}/commands",
+                    json=[{"action": "create_binding_constraint", "args": args}],
+                )
+                assert res.status_code == 200, res.json()
+
+        preparer.generate_snapshot(variant_id, denormalize=denormalize)
+
+        # Check the matrices size, values and existence
+        for bc_time_step in all_time_steps:
+            for bc_operator in all_operators:
+                bc_name = f"BC_{bc_time_step}_{bc_operator}"
+                bc_id = bc_name.lower()
+
+                required_matrices = REQUIRED_MATRICES[bc_operator]
+                for matrix in required_matrices:
+                    df = preparer.download_matrix(variant_id, f"input/bindingconstraints/{bc_id}_{matrix}")
+                    assert df.shape == (MATRIX_SIZES[bc_time_step], 1)
+                    assert np.allclose(df.values, matrices_by_time_steps[bc_time_step], atol=1e-6)
+
+                superfluous_matrices = {"lt", "gt", "eq"} - required_matrices
+                for matrix in superfluous_matrices:
+                    try:
+                        preparer.download_matrix(variant_id, f"input/bindingconstraints/{bc_id}_{matrix}")
+                    except HTTPError as e:
+                        assert e.response.status_code == 404
+                    else:
+                        assert False, "The matrix should not exist"

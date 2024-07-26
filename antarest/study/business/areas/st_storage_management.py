@@ -11,6 +11,7 @@ from typing_extensions import Literal
 
 from antarest.core.exceptions import (
     AreaNotFound,
+    ChildNotFoundError,
     DuplicateSTStorage,
     STStorageConfigNotFound,
     STStorageMatrixNotFound,
@@ -29,7 +30,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
     create_st_storage_config,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.folder_node import ChildNotFoundError
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
 from antarest.study.storage.variantstudy.model.command.remove_st_storage import RemoveSTStorage

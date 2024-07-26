@@ -14,7 +14,7 @@ import { SubmitHandlerPlus } from "./Form/types";
 import TableForm from "./TableForm";
 import UsePromiseCond from "./utils/UsePromiseCond";
 import GridOffIcon from "@mui/icons-material/GridOff";
-import SimpleContent from "./page/SimpleContent";
+import EmptyView from "./page/SimpleContent";
 
 export interface TableModeProps<T extends TableModeType = TableModeType> {
   studyId: StudyMetadata["id"];
@@ -75,7 +75,7 @@ function TableMode<T extends TableModeType>(props: TableModeProps<T>) {
             autoSubmit={false}
           />
         ) : (
-          <SimpleContent icon={<GridOffIcon />} title="study.results.noData" />
+          <EmptyView icon={GridOffIcon} title="study.results.noData" />
         )
       }
     />

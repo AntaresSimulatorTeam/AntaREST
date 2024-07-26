@@ -1,13 +1,13 @@
 import re
+import typing as t
 from builtins import sorted
-from typing import Any, Dict, Iterable, List, Optional, Set, cast
 
 from pydantic import root_validator
 
+from antarest.core.exceptions import ChildNotFoundError
 from antarest.study.business.utils import FieldInfo, FormFieldsBaseModel, execute_or_add_commands
 from antarest.study.model import Study
 from antarest.study.storage.rawstudy.model.filesystem.config.area import AdequacyPatchMode
-from antarest.study.storage.rawstudy.model.filesystem.folder_node import ChildNotFoundError
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 
@@ -21,35 +21,35 @@ FILTER_OPTIONS = ["hourly", "daily", "weekly", "monthly", "annual"]
 DEFAULT_FILTER_VALUE = FILTER_OPTIONS
 
 
-def sort_filter_options(options: Iterable[str]) -> List[str]:
+def sort_filter_options(options: t.Iterable[str]) -> t.List[str]:
     return sorted(
         options,
         key=lambda x: FILTER_OPTIONS.index(x),
     )
 
 
-def encode_filter(value: str) -> Set[str]:
+def encode_filter(value: str) -> t.Set[str]:
     stripped = value.strip()
     return set(re.split(r"\s*,\s*", stripped) if stripped else [])
 
 
-def decode_filter(encoded_value: Set[str], current_filter: Optional[str] = None) -> str:
+def decode_filter(encoded_value: t.Set[str], current_filter: t.Optional[str] = None) -> str:
     return ", ".join(sort_filter_options(encoded_value))
 
 
 class PropertiesFormFields(FormFieldsBaseModel):
-    energy_cost_unsupplied: Optional[float]
-    energy_cost_spilled: Optional[float]
-    non_dispatch_power: Optional[bool]
-    dispatch_hydro_power: Optional[bool]
-    other_dispatch_power: Optional[bool]
-    filter_synthesis: Optional[Set[str]]
-    filter_by_year: Optional[Set[str]]
+    energy_cost_unsupplied: t.Optional[float]
+    energy_cost_spilled: t.Optional[float]
+    non_dispatch_power: t.Optional[bool]
+    dispatch_hydro_power: t.Optional[bool]
+    other_dispatch_power: t.Optional[bool]
+    filter_synthesis: t.Optional[t.Set[str]]
+    filter_by_year: t.Optional[t.Set[str]]
     # version 830
-    adequacy_patch_mode: Optional[AdequacyPatchMode]
+    adequacy_patch_mode: t.Optional[AdequacyPatchMode]
 
     @root_validator
-    def validation(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    def validation(cls, values: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
         filters = {
             "filter_synthesis": values.get("filter_synthesis"),
             "filter_by_year": values.get("filter_by_year"),
@@ -63,7 +63,7 @@ class PropertiesFormFields(FormFieldsBaseModel):
         return values
 
 
-FIELDS_INFO: Dict[str, FieldInfo] = {
+FIELDS_INFO: t.Dict[str, FieldInfo] = {
     "energy_cost_unsupplied": {
         "path": THERMAL_PATH.format(field="unserverdenergycost"),
         "default_value": 0.0,
@@ -116,9 +116,9 @@ class PropertiesManager:
         file_study = self.storage_service.get_storage(study).get_raw(study)
         study_ver = file_study.config.version
 
-        def get_value(field_info: FieldInfo) -> Any:
-            start_ver = cast(int, field_info.get("start_version", 0))
-            end_ver = cast(int, field_info.get("end_version", study_ver))
+        def get_value(field_info: FieldInfo) -> t.Any:
+            start_ver = t.cast(int, field_info.get("start_version", 0))
+            end_ver = t.cast(int, field_info.get("end_version", study_ver))
             is_in_version = start_ver <= study_ver <= end_ver
             if not is_in_version:
                 return None
@@ -139,7 +139,7 @@ class PropertiesManager:
         area_id: str,
         field_values: PropertiesFormFields,
     ) -> None:
-        commands: List[UpdateConfig] = []
+        commands: t.List[UpdateConfig] = []
         file_study = self.storage_service.get_storage(study).get_raw(study)
         context = self.storage_service.variant_study_service.command_factory.command_context
 

@@ -4,6 +4,7 @@ import typing as t
 import numpy as np
 import pandas as pd
 
+from antarest.core.exceptions import ChildNotFoundError
 from antarest.core.model import JSON
 from antarest.study.business.area_management import AreaManager, AreaOutput
 from antarest.study.business.areas.renewable_management import RenewableClusterInput, RenewableManager
@@ -13,7 +14,6 @@ from antarest.study.business.binding_constraint_management import BindingConstra
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.link_management import LinkManager, LinkOutput
 from antarest.study.model import RawStudy
-from antarest.study.storage.rawstudy.model.filesystem.folder_node import ChildNotFoundError
 
 _TableIndex = str  # row name
 _TableColumn = str  # column name
