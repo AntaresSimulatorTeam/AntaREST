@@ -1,51 +1,31 @@
-import { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import LiveHelpRoundedIcon from "@mui/icons-material/LiveHelpRounded";
-import { Box, styled } from "@mui/material";
+import { Box } from "@mui/material";
+import { SvgIconComponent } from "@mui/icons-material";
 
-const Root = styled(Box)(({ theme }) => ({
-  flex: 1,
-  width: "100%",
-  height: "100%",
-  display: "flex",
-  flexFlow: "column nowrap",
-  justifyContent: "center",
-  alignItems: "center",
-  overflowX: "hidden",
-  overflowY: "auto",
-  position: "relative",
-  "&& div": {
-    paddingTop: theme.spacing(1),
-    paddingBottom: theme.spacing(1),
-  },
-}));
-
-interface Props {
+export interface EmptyViewProps {
   title?: string;
-  icon?: ReactNode;
-  callToAction?: ReactNode;
+  icon?: SvgIconComponent;
 }
 
-function SimpleContent(props: Props) {
-  const { title = "common.nocontent", icon, callToAction } = props;
-  const [t] = useTranslation();
+function EmptyView(props: EmptyViewProps) {
+  const { title, icon: Icon = LiveHelpRoundedIcon } = props;
+  const { t } = useTranslation();
 
   return (
-    <Root>
-      <div>{icon}</div>
-      <div>{t(title)}</div>
-      <div>{callToAction}</div>
-    </Root>
+    <Box
+      sx={{
+        height: 1,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      {Icon && <Icon sx={{ height: 100, width: 100 }} />}
+      <div>{title || t("common.noContent")}</div>
+    </Box>
   );
 }
 
-SimpleContent.defaultProps = {
-  icon: (
-    <LiveHelpRoundedIcon
-      sx={{ height: "100px", width: "100%", color: "text.primary" }}
-    />
-  ),
-  callToAction: <div />,
-};
-
-export default SimpleContent;
+export default EmptyView;

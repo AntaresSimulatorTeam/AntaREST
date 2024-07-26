@@ -51,7 +51,7 @@ import {
 } from "../../../../../services/webSockets";
 import ConfirmationDialog from "../../../../common/dialogs/ConfirmationDialog";
 import CheckBoxFE from "../../../../common/fieldEditors/CheckBoxFE";
-import SimpleContent from "../../../../common/page/SimpleContent";
+import EmptyView from "../../../../common/page/SimpleContent";
 
 const logError = debug("antares:variantedition:error");
 
@@ -506,7 +506,7 @@ function EditionView(props: Props) {
         loaded && (
           <Body sx={{ alignItems: "left" }}>
             <Box height="85%">
-              <SimpleContent title="variants.error.noCommands" />
+              <EmptyView title="variants.error.noCommands" />
             </Box>
           </Body>
         )

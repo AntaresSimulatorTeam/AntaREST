@@ -28,7 +28,7 @@ import CreateCandidateDialog from "./CreateCandidateDialog";
 import CandidateForm from "./CandidateForm";
 import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithSnackbarError";
 import DataViewerDialog from "../../../../../common/dialogs/DataViewerDialog";
-import SimpleContent from "../../../../../common/page/SimpleContent";
+import EmptyView from "../../../../../common/page/SimpleContent";
 import SplitView from "../../../../../common/SplitView";
 
 function Candidates() {
@@ -210,7 +210,7 @@ function Candidates() {
   };
 
   if (isRejected) {
-    return <SimpleContent title={t("xpansion.error.loadConfiguration")} />;
+    return <EmptyView title={t("xpansion.error.loadConfiguration")} />;
   }
 
   return (
