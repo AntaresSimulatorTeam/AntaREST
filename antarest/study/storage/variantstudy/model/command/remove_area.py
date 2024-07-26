@@ -1,11 +1,11 @@
 import contextlib
 import logging
-from typing import Any, Dict, List, Tuple
+import typing as t
 
+from antarest.core.exceptions import ChildNotFoundError
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.folder_node import ChildNotFoundError
 from antarest.study.storage.variantstudy.business.utils_binding_constraint import (
     remove_area_cluster_from_binding_constraints,
 )
@@ -44,7 +44,7 @@ class RemoveArea(ICommand):
                     set_.areas.remove(self.id)
                     study_data_config.sets[id_] = set_
 
-    def _apply_config(self, study_data_config: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
+    def _apply_config(self, study_data_config: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
         del study_data_config.areas[self.id]
 
         self._remove_area_from_links_in_config(study_data_config)
@@ -237,8 +237,10 @@ class RemoveArea(ICommand):
             study_data.tree.delete(["input", "hydro", "common", "capacity", f"waterValues_{self.id}"])
 
         if study_data.config.version >= 810:
-            study_data.tree.delete(["input", "renewables", "clusters", self.id])
-            study_data.tree.delete(["input", "renewables", "series", self.id])
+            with contextlib.suppress(ChildNotFoundError):
+                #  renewables folder only exist in tree if study.renewable-generation-modelling is "clusters"
+                study_data.tree.delete(["input", "renewables", "clusters", self.id])
+                study_data.tree.delete(["input", "renewables", "series", self.id])
 
         if study_data.config.version >= 860:
             study_data.tree.delete(["input", "st-storage", "clusters", self.id])
@@ -278,8 +280,8 @@ class RemoveArea(ICommand):
     def match(self, other: ICommand, equal: bool = False) -> bool:
         return isinstance(other, RemoveArea) and self.id == other.id
 
-    def _create_diff(self, other: "ICommand") -> List["ICommand"]:
+    def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
         return []
 
-    def get_inner_matrices(self) -> List[str]:
+    def get_inner_matrices(self) -> t.List[str]:
         return []

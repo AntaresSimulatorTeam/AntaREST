@@ -1,7 +1,7 @@
 import * as R from "ramda";
 import { PromiseStatus, UsePromiseResponse } from "../../../hooks/usePromise";
 import SimpleLoader from "../loaders/SimpleLoader";
-import SimpleContent from "../page/SimpleContent";
+import EmptyView from "../page/SimpleContent";
 
 export type Response<T = unknown> = Pick<
   UsePromiseResponse<T>,
@@ -48,7 +48,7 @@ function UsePromiseCond<T>(props: UsePromiseCondProps<T>) {
   const {
     response,
     ifPending = () => <SimpleLoader />,
-    ifRejected = (error) => <SimpleContent title={error?.toString()} />,
+    ifRejected = (error) => <EmptyView title={error?.toString()} />,
     ifResolved,
     keepLastResolvedOnReload = false,
   } = props;

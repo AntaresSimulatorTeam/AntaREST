@@ -30,9 +30,25 @@ function ConfirmationDialog(props: ConfirmationDialogProps) {
 
   const { t } = useTranslation();
 
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
+
+  const handleClose = (
+    ...args: Parameters<NonNullable<BasicDialogProps["onClose"]>>
+  ) => {
+    onCancel();
+    onClose?.(...args);
+  };
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
+
   return (
     <BasicDialog
       title={t("dialog.title.confirmation")}
+      onClose={handleClose}
       {...basicDialogProps}
       actions={
         <>

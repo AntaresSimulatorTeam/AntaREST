@@ -4,6 +4,7 @@ import StepLabel from "@mui/material/StepLabel";
 import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
 import BlockIcon from "@mui/icons-material/Block";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import EqualizerIcon from "@mui/icons-material/Equalizer";
 import { StepIconProps, Tooltip, Typography } from "@mui/material";
 import moment from "moment";
 import { useState } from "react";
@@ -29,12 +30,23 @@ import {
 } from "./style";
 import ConfirmationDialog from "../../../../../common/dialogs/ConfirmationDialog";
 import LinearProgressWithLabel from "../../../../../common/LinearProgressWithLabel";
+import DigestDialog from "../../../../../common/dialogs/DigestDialog";
+import type { EmptyObject } from "../../../../../../utils/tsUtils";
 
 export const ColorStatus = {
   running: "warning.main",
   pending: "grey.400",
   success: "success.main",
   failed: "error.main",
+};
+
+const iconStyle = {
+  m: 0.5,
+  height: 22,
+  cursor: "pointer",
+  "&:hover": {
+    color: "action.hover",
+  },
 };
 
 function QontoStepIcon(props: {
@@ -55,6 +67,13 @@ function QontoStepIcon(props: {
   );
 }
 
+type DialogState =
+  | {
+      type: "killJob" | "digest";
+      job: LaunchJob;
+    }
+  | EmptyObject;
+
 interface Props {
   jobs: LaunchJob[];
   jobsProgress: LaunchJobsProgress;
@@ -65,29 +84,32 @@ export default function VerticalLinearStepper(props: Props) {
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
-  const [openConfirmationDialog, setOpenConfirmationDialog] =
-    useState<boolean>(false);
-  const [jobIdKill, setJobIdKill] = useState<string>();
+  const [dialogState, setDialogState] = useState<DialogState>({});
 
-  const openConfirmModal = (jobId: string) => {
-    setOpenConfirmationDialog(true);
-    setJobIdKill(jobId);
+  ////////////////////////////////////////////////////////////////
+  // Utils
+  ////////////////////////////////////////////////////////////////
+
+  const closeDialog = () => setDialogState({});
+
+  ////////////////////////////////////////////////////////////////
+  // Actions
+  ////////////////////////////////////////////////////////////////
+
+  const killTask = async (jobId: LaunchJob["id"]) => {
+    closeDialog();
+
+    try {
+      await killStudy(jobId);
+    } catch (e) {
+      enqueueErrorSnackbar(t("study.failtokilltask"), e as AxiosError);
+    }
   };
 
-  const killTask = (jobId: string) => {
-    (async () => {
-      try {
-        await killStudy(jobId);
-      } catch (e) {
-        enqueueErrorSnackbar(t("study.failtokilltask"), e as AxiosError);
-      }
-      setOpenConfirmationDialog(false);
-    })();
-  };
-
-  const copyId = (jobId: string): void => {
+  const copyId = (jobId: LaunchJob["id"]) => {
     try {
       navigator.clipboard.writeText(jobId);
+
       enqueueSnackbar(t("study.success.jobIdCopy"), {
         variant: "success",
       });
@@ -95,6 +117,10 @@ export default function VerticalLinearStepper(props: Props) {
       enqueueErrorSnackbar(t("study.error.jobIdCopy"), e as AxiosError);
     }
   };
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
 
   return (
     <JobRoot jobLength={jobs.length}>
@@ -140,17 +166,18 @@ export default function VerticalLinearStepper(props: Props) {
                   <Tooltip title={t("study.copyJobId") as string}>
                     <ContentCopyIcon
                       onClick={() => copyId(job.id)}
-                      sx={{
-                        m: 0.5,
-                        height: "22px",
-                        cursor: "pointer",
-                        "&:hover": {
-                          color: "action.hover",
-                        },
-                      }}
+                      sx={iconStyle}
                     />
                   </Tooltip>
                   <LaunchJobLogView job={job} logButton logErrorButton />
+                  {job.status === "success" && (
+                    <Tooltip title="Digest">
+                      <EqualizerIcon
+                        onClick={() => setDialogState({ type: "digest", job })}
+                        sx={iconStyle}
+                      />
+                    </Tooltip>
+                  )}
                   {job.status === "running" && (
                     <CancelContainer>
                       <LinearProgressWithLabel
@@ -160,11 +187,11 @@ export default function VerticalLinearStepper(props: Props) {
                       />
                       <Tooltip title={t("study.killStudy") as string}>
                         <BlockIcon
-                          onClick={() => openConfirmModal(job.id)}
+                          onClick={() =>
+                            setDialogState({ type: "killJob", job })
+                          }
                           sx={{
-                            m: 0.5,
-                            height: "22px",
-                            cursor: "pointer",
+                            ...iconStyle,
                             color: "error.light",
                             "&:hover": { color: "error.dark" },
                           }}
@@ -178,15 +205,23 @@ export default function VerticalLinearStepper(props: Props) {
           </Step>
         ))}
       </Stepper>
-      {openConfirmationDialog && (
+      {dialogState.type === "killJob" && (
         <ConfirmationDialog
-          onCancel={() => setOpenConfirmationDialog(false)}
-          onConfirm={() => killTask(jobIdKill as string)}
-          alert="warning"
           open
+          alert="warning"
+          onConfirm={() => killTask(dialogState.job.id)}
+          onCancel={closeDialog}
         >
           {t("study.question.killJob")}
         </ConfirmationDialog>
+      )}
+      {dialogState.type === "digest" && (
+        <DigestDialog
+          open
+          studyId={dialogState.job.studyId}
+          outputId={dialogState.job.outputId}
+          onOk={closeDialog}
+        />
       )}
     </JobRoot>
   );

@@ -61,5 +61,5 @@ services:
       - 80:80
     volumes:
       - ./resources/deploy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./webapp/build:/www
+      - ./webapp/dist:/www
       - ./resources/deploy/web.config.json:/www/config.json:ro

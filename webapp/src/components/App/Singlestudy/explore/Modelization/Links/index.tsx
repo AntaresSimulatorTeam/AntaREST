@@ -1,6 +1,6 @@
 import { useOutletContext } from "react-router";
 import { StudyMetadata } from "../../../../../../common/types";
-import SimpleContent from "../../../../../common/page/SimpleContent";
+import EmptyView from "../../../../../common/page/SimpleContent";
 import LinkPropsView from "./LinkPropsView";
 import useStudySynthesis from "../../../../../../redux/hooks/useStudySynthesis";
 import { getCurrentLink } from "../../../../../../redux/selectors";
@@ -44,7 +44,7 @@ function Links() {
             currentLink ? (
               <LinkView link={currentLink} />
             ) : (
-              <SimpleContent title="No Links" />
+              <EmptyView title="No Links" />
             )
           }
         />

@@ -5,10 +5,10 @@ from typing import Any, List, Optional, Union, cast
 import pandas as pd
 from pandas import DataFrame
 
+from antarest.core.exceptions import ChildNotFoundError, MustNotModifyOutputException
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
-from antarest.study.storage.rawstudy.model.filesystem.folder_node import ChildNotFoundError
 from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
 from antarest.study.storage.rawstudy.model.filesystem.matrix.date_serializer import (
     FactoryDateSerializer,
@@ -94,29 +94,6 @@ class OutputSeriesMatrix(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON])
         matrix = self.parse_dataframe(file_path, tmp_dir)
         return cast(JSON, matrix.to_dict(orient="split"))
 
-    def _dump_json(self, data: JSON) -> None:
-        df = pd.DataFrame(**data)
-
-        headers = pd.DataFrame(df.columns.values.tolist()).T
-        matrix = pd.concat([headers, pd.DataFrame(df.values)], axis=0)
-
-        time = self.date_serializer.build_date(df.index)
-        matrix.index = time.index
-
-        matrix = pd.concat([time, matrix], axis=1)
-
-        head = self.head_writer.build(var=df.columns.size, end=df.index.size)
-        with self.config.path.open(mode="w", newline="\n") as fd:
-            fd.write(head)
-            if not matrix.empty:
-                matrix.to_csv(
-                    fd,
-                    sep="\t",
-                    header=False,
-                    index=False,
-                    float_format="%.6f",
-                )
-
     def check_errors(
         self,
         data: JSON,
@@ -160,11 +137,7 @@ class OutputSeriesMatrix(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON])
             ) from e
 
     def dump(self, data: Union[bytes, JSON], url: Optional[List[str]] = None) -> None:
-        if isinstance(data, bytes):
-            self.config.path.parent.mkdir(exist_ok=True, parents=True)
-            self.config.path.write_bytes(data)
-        else:
-            self._dump_json(data)
+        raise MustNotModifyOutputException(self.config.path.name)
 
     def normalize(self) -> None:
         pass  # no external store in this node

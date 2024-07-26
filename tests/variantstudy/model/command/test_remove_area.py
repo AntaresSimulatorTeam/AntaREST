@@ -24,9 +24,7 @@ from tests.variantstudy.model.command.helpers import reset_line_separator
 
 
 class TestRemoveArea:
-    @pytest.mark.parametrize("empty_study", ["empty_study_810.zip", "empty_study_840.zip"], indirect=True)
-    def test_apply(self, empty_study: FileStudy, command_context: CommandContext):
-        # noinspection SpellCheckingInspection
+    def _set_up(self, empty_study: FileStudy, command_context: CommandContext):
         empty_study.tree.save(
             {
                 "input": {
@@ -56,6 +54,19 @@ class TestRemoveArea:
         create_area_command: ICommand = CreateArea(area_name=area_name, command_context=command_context)
         output = create_area_command.apply(study_data=empty_study)
         assert output.status, output.message
+        return empty_study, area_id
+
+    @pytest.mark.parametrize("empty_study", ["empty_study_810.zip"], indirect=True)
+    def test_remove_with_aggregated(self, empty_study: FileStudy, command_context: CommandContext):
+        (empty_study, area_id) = self._set_up(empty_study, command_context)
+        remove_area_command = RemoveArea(id=area_id, command_context=command_context)
+        output = remove_area_command.apply(study_data=empty_study)
+        assert output.status, output.message
+
+    @pytest.mark.parametrize("empty_study", ["empty_study_810.zip", "empty_study_840.zip"], indirect=True)
+    def test_apply(self, empty_study: FileStudy, command_context: CommandContext):
+        # noinspection SpellCheckingInspection
+        (empty_study, area_id) = self._set_up(empty_study, command_context)
 
         create_district_command = CreateDistrict(
             name="foo",

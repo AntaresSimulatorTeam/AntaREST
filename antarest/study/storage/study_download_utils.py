@@ -13,6 +13,7 @@ from zipfile import ZIP_DEFLATED, ZipFile
 
 from fastapi import HTTPException
 
+from antarest.core.exceptions import ChildNotFoundError
 from antarest.study.model import (
     ExportFormat,
     MatrixAggregationResult,
@@ -24,7 +25,7 @@ from antarest.study.model import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, EnrModelling, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.folder_node import ChildNotFoundError, FilterError, FolderNode
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import FilterError, FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode
 from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
 from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import OutputSeriesMatrix

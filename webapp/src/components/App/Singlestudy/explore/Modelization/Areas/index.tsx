@@ -1,6 +1,6 @@
 import { useOutletContext } from "react-router";
 import { StudyMetadata } from "../../../../../../common/types";
-import SimpleContent from "../../../../../common/page/SimpleContent";
+import EmptyView from "../../../../../common/page/SimpleContent";
 import AreaPropsView from "./AreaPropsView";
 import AreasTab from "./AreasTab";
 import useStudySynthesis from "../../../../../../redux/hooks/useStudySynthesis";
@@ -54,7 +54,7 @@ function Areas() {
                 renewablesClustering={renewablesClustering !== "aggregated"}
               />
             ) : (
-              <SimpleContent title="No areas" />
+              <EmptyView title="No areas" />
             )
           }
         />

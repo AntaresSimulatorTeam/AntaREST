@@ -7,7 +7,7 @@ import {
   updateScenarioBuilderConfig,
 } from "./utils";
 import { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
-import SimpleContent from "../../../../../../../common/page/SimpleContent";
+import EmptyView from "../../../../../../../common/page/SimpleContent";
 import useEnqueueErrorSnackbar from "../../../../../../../../hooks/useEnqueueErrorSnackbar";
 import { toError } from "../../../../../../../../utils/fnUtils";
 import { useOutletContext } from "react-router";
@@ -53,7 +53,7 @@ function Table({ config, type, areaId }: Props) {
   ////////////////////////////////////////////////////////////////
 
   if (Object.keys(config).length === 0) {
-    return <SimpleContent title="No scenario configuration." />;
+    return <EmptyView title="No scenario configuration." />;
   }
 
   return (
