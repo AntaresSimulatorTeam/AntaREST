@@ -83,6 +83,7 @@
   "global.error.failedtoretrievejobs": "Échec de la récupération des tâches",
   "global.error.failedtoretrievelogs": "Échec de la récupération des logs",
   "global.error.failedtoretrievedownloads": "Échec de la récupération des exports",
+  "global.error.fileNotFound": "Fichier introuvable",
   "global.error.create": "La création a échoué",
   "global.error.delete": "La suppression a échoué",
   "global.area.add": "Ajouter une zone",

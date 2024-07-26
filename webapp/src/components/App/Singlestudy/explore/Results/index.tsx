@@ -20,6 +20,7 @@ import ArchiveIcon from "@mui/icons-material/Archive";
 import UnarchiveIcon from "@mui/icons-material/Unarchive";
 import DownloadIcon from "@mui/icons-material/Download";
 import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
+import EqualizerIcon from "@mui/icons-material/Equalizer";
 import * as R from "ramda";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { grey } from "@mui/material/colors";
@@ -43,6 +44,8 @@ import { convertUTCToLocalTime } from "../../../../../services/utils";
 import LaunchJobLogView from "../../../Tasks/LaunchJobLogView";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
 import ConfirmationDialog from "../../../../common/dialogs/ConfirmationDialog";
+import type { EmptyObject } from "../../../../../utils/tsUtils";
+import DigestDialog from "../../../../common/dialogs/DigestDialog";
 
 interface OutputDetail {
   name: string;
@@ -52,6 +55,17 @@ interface OutputDetail {
   output?: StudyOutput;
   archived?: boolean;
 }
+
+type DialogState =
+  | {
+      type: "confirmDelete";
+      data: string;
+    }
+  | {
+      type: "digest";
+      data: LaunchJob;
+    }
+  | EmptyObject;
 
 const combineJobsAndOutputs = (
   jobs: LaunchJob[],
@@ -90,12 +104,19 @@ const combineJobsAndOutputs = (
   return runningJobs.concat(outputDetails);
 };
 
+const iconStyle = {
+  fontSize: 22,
+  color: "action.active",
+  cursor: "pointer",
+  "&:hover": { color: "action.hover" },
+};
+
 function Results() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
-  const [outputToDelete, setOutputToDelete] = useState<string>();
+  const [dialogState, setDialogState] = useState<DialogState>({});
 
   const { data: studyJobs, isLoading: studyJobsLoading } =
     usePromiseWithSnackbarError(() => getStudyJobs(study.id), {
@@ -150,12 +171,7 @@ function Results() {
       <Box sx={{ height: "24px", margin: 0.5 }}>
         <Tooltip title={t(title) as string}>
           <Component
-            sx={{
-              fontSize: 22,
-              color: "action.active",
-              cursor: "pointer",
-              "&:hover": { color: "action.hover" },
-            }}
+            sx={iconStyle}
             onClick={async () => {
               handler().catch((e) => {
                 enqueueErrorSnackbar(
@@ -171,6 +187,12 @@ function Results() {
   };
 
   ////////////////////////////////////////////////////////////////
+  // Utils
+  ////////////////////////////////////////////////////////////////
+
+  const closeDialog = () => setDialogState({});
+
+  ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
@@ -180,12 +202,10 @@ function Results() {
     });
   };
 
-  const handleDeleteOutput = async () => {
-    if (outputToDelete) {
-      await deleteOutput(study.id, outputToDelete);
-      setOutputToDelete(undefined);
-      reloadOutputs();
-    }
+  const handleDeleteOutput = async (outputName: string) => {
+    closeDialog();
+    await deleteOutput(study.id, outputName);
+    reloadOutputs();
   };
 
   ////////////////////////////////////////////////////////////////
@@ -350,12 +370,7 @@ function Results() {
                               <Box sx={{ height: "24px", margin: 0.5 }}>
                                 <Tooltip title={t("global.download") as string}>
                                   <DownloadIcon
-                                    sx={{
-                                      fontSize: 22,
-                                      color: "action.active",
-                                      cursor: "pointer",
-                                      "&:hover": { color: "action.hover" },
-                                    }}
+                                    sx={iconStyle}
                                     onClick={() => {
                                       if (row.job) {
                                         downloadJobOutput(row.job.id);
@@ -365,6 +380,7 @@ function Results() {
                                 </Tooltip>
                               </Box>
                             )}
+
                             {row.job && (
                               <LaunchJobLogView
                                 job={row.job}
@@ -372,17 +388,31 @@ function Results() {
                                 logErrorButton
                               />
                             )}
+                            {row.job?.status === "success" && (
+                              <Tooltip title="Digest">
+                                <EqualizerIcon
+                                  onClick={() => {
+                                    setDialogState({
+                                      type: "digest",
+                                      data: row.job as LaunchJob,
+                                    });
+                                  }}
+                                  sx={iconStyle}
+                                />
+                              </Tooltip>
+                            )}
                             <Box sx={{ height: "24px", margin: 0.5 }}>
                               <Tooltip title={t("global.delete") as string}>
                                 <DeleteForeverIcon
                                   sx={{
-                                    fontSize: 22,
-                                    color: "action.active",
-                                    cursor: "pointer",
+                                    ...iconStyle,
                                     "&:hover": { color: "error.light" },
                                   }}
                                   onClick={() => {
-                                    setOutputToDelete(row.name);
+                                    setDialogState({
+                                      type: "confirmDelete",
+                                      data: row.name,
+                                    });
                                   }}
                                 />
                               </Tooltip>
@@ -420,13 +450,23 @@ function Results() {
           </TableBody>
         </Table>
       </TableContainer>
-      <ConfirmationDialog
-        open={!!outputToDelete}
-        onConfirm={handleDeleteOutput}
-        onCancel={() => setOutputToDelete(undefined)}
-      >
-        {t("results.question.deleteOutput", { outputname: outputToDelete })}
-      </ConfirmationDialog>
+      {dialogState.type === "confirmDelete" && (
+        <ConfirmationDialog
+          open
+          onConfirm={() => handleDeleteOutput(dialogState.data)}
+          onCancel={closeDialog}
+        >
+          {t("results.question.deleteOutput", { outputname: dialogState.data })}
+        </ConfirmationDialog>
+      )}
+      {dialogState.type === "digest" && (
+        <DigestDialog
+          open
+          studyId={dialogState.data.studyId}
+          outputId={dialogState.data.outputId}
+          onOk={closeDialog}
+        />
+      )}
     </Box>
   );
 }

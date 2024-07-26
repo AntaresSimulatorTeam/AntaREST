@@ -30,7 +30,7 @@ import {
 } from "./style";
 import ConfirmationDialog from "../../../../../common/dialogs/ConfirmationDialog";
 import LinearProgressWithLabel from "../../../../../common/LinearProgressWithLabel";
-import DigestDialog from "./DigestDialog";
+import DigestDialog from "../../../../../common/dialogs/DigestDialog";
 import type { EmptyObject } from "../../../../../../utils/tsUtils";
 
 export const ColorStatus = {
