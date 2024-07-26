@@ -84,7 +84,11 @@ class LazyNode(INode, ABC, t.Generic[G, S, V]):  # type: ignore
             return self.load(url, depth, expanded, format)
 
     def get(
-        self, url: t.Optional[t.List[str]] = None, depth: int = -1, expanded: bool = False, format: t.Optional[str] = None
+        self,
+        url: t.Optional[t.List[str]] = None,
+        depth: int = -1,
+        expanded: bool = False,
+        format: t.Optional[str] = None,
     ) -> t.Union[str, G]:
         output = self._get(url, depth, expanded, format, get_node=False)
         assert not isinstance(output, INode)
@@ -164,7 +168,7 @@ class LazyNode(INode, ABC, t.Generic[G, S, V]):  # type: ignore
         url: t.Optional[t.List[str]] = None,
         depth: int = -1,
         expanded: bool = False,
-        format: Optional[str] = None,
+        format: t.Optional[str] = None,
     ) -> G:
         """
         Fetch data on disk.

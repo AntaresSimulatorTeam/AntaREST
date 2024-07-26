@@ -180,7 +180,7 @@ def test_rename_file(tmp_path: Path, target_is_link: bool):
         assert file.read_text() == content
         assert not link.exists()
         assert not renaming_file.exists()
-        resolver.resolve.assert_called_once_with(content)
+        resolver.resolve.assert_called_once_with(content, format="json")
 
         node.rename_file(target)
 
@@ -235,7 +235,7 @@ def test_copy_file(tmp_path: Path, target_is_link: bool):
         assert file.read_text() == content
         assert not link.exists()
         assert not copied_file.exists()
-        resolver.resolve.assert_called_once_with(content)
+        resolver.resolve.assert_called_once_with(content, format="json")
 
         node.copy_file(target)
 
