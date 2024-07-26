@@ -784,9 +784,7 @@ class BindingConstraintManager:
         for field in new_fields:
             if field not in upd_constraint:
                 upd_constraint[field] = getattr(data, field) or getattr(existing_constraint, field)
-
-        output = self.constraint_model_adapter(upd_constraint, study_version)
-        return output
+        return self.constraint_model_adapter(upd_constraint, study_version)
 
     def update_binding_constraints(
         self,
@@ -801,9 +799,10 @@ class BindingConstraintManager:
             bcs_by_ids: A mapping of binding constraint IDs to their updated configurations.
 
         If there's more than 50 BCs updated as the same time, the 'update_binding_constraint' command takes more than 1 second.
+        And for thousands of BCs updated as the same time, it takes several minutes.
         This is mainly because we open/close the 'bindingconstraints.ini' file multiple times for each constraint.
         To avoid this, when dealing with such a case we'll use the 'update_config' command to write all the data at once.
-        However, such command is not really clear, so we don't want to use it every time.
+        However, such command is not really clear, so we won't use it on variants with less than 50 updated BCs.
 
         Returns:
             A dictionary of the updated binding constraints, indexed by their IDs.
@@ -812,9 +811,9 @@ class BindingConstraintManager:
             BindingConstraintNotFound: If any of the specified binding constraint IDs are not found.
         """
 
-        # Nominal case
+        # Variant study with less than 50 updated constraints
         updated_constraints = {}
-        if len(bcs_by_ids) < 50:
+        if len(bcs_by_ids) < 50 and isinstance(study, VariantStudy):
             existing_constraints = {bc.id: bc for bc in self.get_binding_constraints(study)}
             for bc_id, data in bcs_by_ids.items():
                 updated_constraints[bc_id] = self.update_binding_constraint(
@@ -822,7 +821,7 @@ class BindingConstraintManager:
                 )
             return updated_constraints
 
-        # More efficient way of doing things but uglier.
+        # More efficient way of doing things but using less readable commands.
         study_version = int(study.version)
         commands = []
         command_context = self.storage_service.variant_study_service.command_factory.command_context
@@ -851,9 +850,10 @@ class BindingConstraintManager:
 
             if value.operator and study_version >= 870:
                 # The user changed the operator, we have to rename matrices accordingly
-                existing_operator = BindingConstraintOperator(current_value.get("operator"))
+                existing_operator = BindingConstraintOperator(current_value["operator"])
                 update_matrices_names(file_study, bc_id, existing_operator, value.operator)
 
+        # Updates the file only once with all the information
         command = UpdateConfig(
             target="input/bindingconstraints/bindingconstraints",
             data=config,
