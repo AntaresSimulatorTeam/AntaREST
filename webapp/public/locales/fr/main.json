@@ -112,7 +112,7 @@
   "button.save": "Sauvegarder",
   "button.explore": "Explorer",
   "button.newCommand": "Nouvelle commande",
-  "common.nocontent": "Pas de contenu",
+  "common.noContent": "Pas de contenu",
   "common.underConstruction": "Page en construction",
   "common.dialog.import.dropzoneText": "Glisser un fichier ici, ou cliquer pour en sélectionner un",
   "common.dialog.import.importSuccess": "Fichier importé avec succès",

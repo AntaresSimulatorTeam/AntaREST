@@ -2,7 +2,7 @@ import { Box } from "@mui/material";
 import { useOutletContext } from "react-router";
 import { StudyMetadata } from "../../../../../../common/types";
 import SimpleLoader from "../../../../../common/loaders/SimpleLoader";
-import SimpleContent from "../../../../../common/page/SimpleContent";
+import EmptyView from "../../../../../common/page/SimpleContent";
 import BindingConstPropsView from "./BindingConstPropsView";
 import {
   getBindingConst,
@@ -75,12 +75,12 @@ function BindingConstraints() {
             {data.length > 0 && currentConstraintId ? (
               <BindingConstView constraintId={currentConstraintId} />
             ) : (
-              <SimpleContent title="No Binding Constraints" />
+              <EmptyView title="No Binding Constraints" />
             )}
           </Box>
         </SplitView>
       )}
-      ifRejected={(error) => <SimpleContent title={error?.toString()} />}
+      ifRejected={(error) => <EmptyView title={error?.toString()} />}
     />
   );
 }
