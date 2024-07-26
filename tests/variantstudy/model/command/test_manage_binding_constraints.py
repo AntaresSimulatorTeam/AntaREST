@@ -28,7 +28,7 @@ from antarest.study.storage.variantstudy.model.command.remove_binding_constraint
 from antarest.study.storage.variantstudy.model.command.remove_link import RemoveLink
 from antarest.study.storage.variantstudy.model.command.update_binding_constraint import (
     UpdateBindingConstraint,
-    _update_matrices_names,
+    update_matrices_names,
 )
 from antarest.study.storage.variantstudy.model.command.update_scenario_builder import UpdateScenarioBuilder
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
@@ -587,7 +587,7 @@ def test__update_matrices_names(
         assert not link_path.exists(), f"Superfluous matrix link: {matrix_link!r}"
 
     # update matrices names
-    _update_matrices_names(
+    update_matrices_names(
         file_study=empty_study,
         binding_constraint_id="bd_rename_matrices",
         existing_operator=existing_operator,
