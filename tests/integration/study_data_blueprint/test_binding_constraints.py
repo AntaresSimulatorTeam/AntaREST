@@ -1,4 +1,5 @@
 import re
+import time
 
 import numpy as np
 import pandas as pd
@@ -85,9 +86,32 @@ class TestBindingConstraints:
     Test the end points related to binding constraints.
     """
 
+    def test_update_lots_of_binding_constraints(self, client: TestClient, user_access_token: str) -> None:
+        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        preparer = PreparerProxy(client, user_access_token)
+        study_id = preparer.create_study("foo", version=880)
+        body = {}
+        for k in range(50):
+            bc_id = f"bc_{k}"
+            client.post(
+                f"/v1/studies/{study_id}/commands",
+                json=[{"action": "create_binding_constraint", "args": {"name": bc_id}}],
+            )
+            body[bc_id] = {"filterSynthesis": "hourly"}
+        start = time.time()
+        res = client.put(f"/v1/studies/{study_id}/table-mode/binding-constraints", json=body)
+        assert res.status_code in {200, 201}
+        end = time.time()
+        duration = end - start
+        assert duration < 0.2
+        res = client.get(f"/v1/studies/{study_id}/bindingconstraints")
+        assert res.status_code == 200
+        for bc in res.json():
+            assert bc["filterSynthesis"] == "hourly"
+
     @pytest.mark.parametrize("study_type", ["raw", "variant"])
     def test_lifecycle__nominal(self, client: TestClient, user_access_token: str, study_type: str) -> None:
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}  # type: ignore
+        client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
         # =============================
         #  STUDY PREPARATION
