@@ -37,6 +37,7 @@ from antarest.study.model import (
     TimeSeriesData,
 )
 from tests.storage.conftest import SimpleFileTransferManager
+from tests.storage.integration.conftest import UUID
 
 ADMIN = JWTUser(
     id=1,
@@ -51,8 +52,6 @@ CONFIG = Config(
     security=SecurityConfig(disabled=True),
     storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=Path())}),
 )
-
-UUID = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 
 
 @pytest.mark.unit_test
