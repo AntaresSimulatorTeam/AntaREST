@@ -13,9 +13,14 @@ import pytest
 from antarest.study.storage.rawstudy.ini_reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata import DUPLICATE_KEYS
-from antarest.study.storage.study_upgrader import UPGRADE_METHODS, InvalidUpgrade, upgrade_study
-from antarest.study.storage.study_upgrader.upgrader_840 import MAPPING_TRANSMISSION_CAPACITIES
+from antarest.study.storage.study_upgrader import UPGRADE_METHODS, InvalidUpgrade, StudyUpgrader
 from tests.storage.business.assets import ASSETS_DIR
+
+MAPPING_TRANSMISSION_CAPACITIES = {
+    True: "local-values",
+    False: "null-for-all-links",
+    "infinite": "infinite-for-all-links",
+}
 
 
 def test_end_to_end_upgrades(tmp_path: Path):
@@ -32,7 +37,8 @@ def test_end_to_end_upgrades(tmp_path: Path):
     old_binding_constraint_values = get_old_binding_constraint_values(study_dir)
     # Only checks if the study_upgrader can go from the first supported version to the last one
     target_version = "880"
-    upgrade_study(study_dir, target_version)
+    study_upgrader = StudyUpgrader(study_dir, target_version)
+    study_upgrader.upgrade()
     assert_study_antares_file_is_updated(study_dir, target_version)
     assert_settings_are_updated(study_dir, old_values)
     assert_inputs_are_updated(study_dir, old_areas_values, old_binding_constraint_values)
@@ -50,22 +56,22 @@ def test_fails_because_of_versions_asked(tmp_path: Path):
         InvalidUpgrade,
         match=f"Version '600' unknown: possible versions are {', '.join([u[1] for u in UPGRADE_METHODS])}",
     ):
-        upgrade_study(study_dir, "600")
+        StudyUpgrader(study_dir, "600").upgrade()
     # Try to upgrade with the current version
     with pytest.raises(InvalidUpgrade, match="Your study is already in version '720'"):
-        upgrade_study(study_dir, "720")
+        StudyUpgrader(study_dir, "720").upgrade()
     # Try to upgrade with an old version
     with pytest.raises(
         InvalidUpgrade,
         match="Impossible to upgrade from version '720' to version '710'",
     ):
-        upgrade_study(study_dir, "710")
+        StudyUpgrader(study_dir, "710").upgrade()
     # Try to upgrade with a version that does not exist
     with pytest.raises(
         InvalidUpgrade,
         match=f"Version '820.rc' unknown: possible versions are {', '.join([u[1] for u in UPGRADE_METHODS])}",
     ):
-        upgrade_study(study_dir, "820.rc")
+        StudyUpgrader(study_dir, "820.rc").upgrade()
 
 
 def test_fallback_if_study_input_broken(tmp_path):
@@ -81,7 +87,7 @@ def test_fallback_if_study_input_broken(tmp_path):
         expected_exception=pandas.errors.EmptyDataError,
         match="No columns to parse from file",
     ):
-        upgrade_study(study_dir, "850")
+        StudyUpgrader(study_dir, "850").upgrade()
     assert are_same_dir(study_dir, before_upgrade_dir)
 
 

@@ -7,7 +7,7 @@ from pydantic import ValidationError
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import STStorageConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.study_upgrader import upgrade_study
+from antarest.study.storage.study_upgrader import StudyUpgrader
 from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol
 from antarest.study.storage.variantstudy.model.command.common import CommandName
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
@@ -29,7 +29,7 @@ def recent_study_fixture(empty_study: FileStudy) -> FileStudy:
     Returns:
         FileStudy: The FileStudy object upgraded to the required version.
     """
-    upgrade_study(empty_study.config.study_path, str(REQUIRED_VERSION))
+    StudyUpgrader(empty_study.config.study_path, str(REQUIRED_VERSION)).upgrade()
     empty_study.config.version = REQUIRED_VERSION
     return empty_study
 
