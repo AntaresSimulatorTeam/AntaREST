@@ -373,8 +373,8 @@ class TestDownloadMatrices:
             params={"path": raw_matrix_path, "format": "tsv"},
             headers=user_headers,
         )
-        assert res.status_code == 404
-        assert res.json()["exception"] == "StudyNotFoundError"
+        assert res.status_code == 400
+        assert "is not a valid UUID" in res.json()["description"]
 
         # fake path
         res = client.get(

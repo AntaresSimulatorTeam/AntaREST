@@ -1,8 +1,6 @@
-import base64
 import concurrent.futures
 import http
 import logging
-import re
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -12,6 +10,7 @@ from antarest.core.jwt import JWTUser
 from antarest.core.requests import RequestParameters
 from antarest.core.tasks.model import TaskDTO, TaskListFilter
 from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT, TaskJobService
+from antarest.core.utils.utils import sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 
@@ -63,12 +62,7 @@ def create_tasks_api(service: TaskJobService, config: Config) -> APIRouter:
         Returns:
             TaskDTO: Information about the specified task.
         """
-        expected_pattern = "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
-        if not re.compile(expected_pattern).match(task_id):
-            sanitized_task_id = base64.b64encode(task_id.encode("utf-8")).decode("utf-8")
-            raise HTTPException(
-                status_code=http.HTTPStatus.NOT_FOUND, detail=f"Task id {sanitized_task_id} is not a valid task id"
-            )
+        task_id = sanitize_uuid(task_id)
 
         request_params = RequestParameters(user=current_user)
         task_status = service.status_task(task_id, request_params, with_logs)
