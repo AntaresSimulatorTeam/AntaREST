@@ -890,7 +890,7 @@ class BindingConstraintManager:
             }[value.time_step].tolist()
             matrices_to_replace = OPERATOR_MATRIX_FILE_MAP[operator]
             for matrix_name in matrices_to_replace:
-                matrix_id = matrix_name.format(bc_id)
+                matrix_id = matrix_name.format(bc_id=bc_id)
                 command = ReplaceMatrix(
                     target=f"input/bindingconstraints/{matrix_id}", matrix=matrix, command_context=command_context
                 )
