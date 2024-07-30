@@ -101,14 +101,29 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
         else:
             data = self.reader.read(self.path, **kwargs)
 
+        data = self._handle_urls(data, depth, url)
+        return t.cast(SUB_JSON, data)
+
+    @staticmethod
+    def _handle_urls(data: t.Dict[str, t.Any], depth: int, url: t.List[str]) -> t.Dict[str, t.Any]:
         if len(url) == 2:
-            data = data[url[0]][url[1]]
+            if url[0] in data and url[1] in data[url[0]]:
+                data = data[url[0]][url[1]]
+            else:
+                # lower keys to find a match
+                data = {k.lower(): v for k, v in {k.lower(): v for k, v in data.items()}[url[0].lower()].items()}[
+                    url[1].lower()
+                ]
         elif len(url) == 1:
-            data = data[url[0]]
+            if url[0] in data:
+                data = data[url[0]]
+            else:
+                # lower keys to find a match
+                data = {k.lower(): v for k, v in data.items()}[url[0].lower()]
+
         else:
             data = {k: {} for k in data} if depth == 1 else data
-
-        return t.cast(SUB_JSON, data)
+        return data
 
     # noinspection PyMethodMayBeStatic
     def _get_filtering_kwargs(self, url: t.List[str]) -> t.Dict[str, str]:
