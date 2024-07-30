@@ -188,7 +188,7 @@ class StudyUpgraderTask:
                 else:
                     study_path = Path(study_to_upgrade.path)
                     study_upgrader = StudyUpgrader(study_path, target_version)
-                    if is_managed(study_to_upgrade) and study_upgrader.should_denormalize():
+                    if is_managed(study_to_upgrade) and study_upgrader.should_denormalize_study():
                         # We have to denormalize the study because the upgrade impacts study matrices
                         file_study = self.storage_service.get_storage(study_to_upgrade).get_raw(study_to_upgrade)
                         file_study.tree.denormalize()
