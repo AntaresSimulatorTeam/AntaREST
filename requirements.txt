@@ -1,4 +1,5 @@
 Antares-Launcher~=1.3.2
+antares-study-version~=1.0.0
 
 alembic~=1.7.5
 asgi-ratelimit[redis]==0.7.0
