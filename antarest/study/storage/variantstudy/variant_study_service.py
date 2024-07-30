@@ -569,8 +569,9 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         denormalize: bool = False,
         from_scratch: bool = False,
     ) -> str:
-        with FileLock(str(self.config.storage.tmp_dir / f"study-generation-{metadata.id}.lock")):
-            logger.info(f"Starting variant study {metadata.id} generation")
+        study_id = metadata.id
+        with FileLock(str(self.config.storage.tmp_dir / f"study-generation-{study_id}.lock")):
+            logger.info(f"Starting variant study {study_id} generation")
             self.repository.refresh(metadata)
             if metadata.generation_task:
                 try:
@@ -579,11 +580,11 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                         RequestParameters(DEFAULT_ADMIN_USER),
                     )
                     if not previous_task.status.is_final():
-                        logger.info(f"Returning already existing variant study {metadata.id} generation")
+                        logger.info(f"Returning already existing variant study {study_id} generation")
                         return str(metadata.generation_task)
                 except HTTPException as e:
                     logger.warning(
-                        f"Failed to retrieve generation task for study {metadata.id}",
+                        f"Failed to retrieve generation task for study {study_id}",
                         exc_info=e,
                     )
 

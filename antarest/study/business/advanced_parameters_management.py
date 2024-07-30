@@ -1,4 +1,3 @@
-import re
 from typing import Any, Dict, List, Optional
 
 from pydantic import validator
@@ -89,15 +88,15 @@ class AdvancedParamsFormFields(FormFieldsBaseModel):
 
     @validator("accuracy_on_correlation")
     def check_accuracy_on_correlation(cls, v: str) -> str:
-        if len(v.strip()) == 0:
+        sanitized_v = v.strip().replace(" ", "")
+        if not sanitized_v:
             return ""
 
-        allowed_values = ["wind", "load", "solar"]
-        values_list = re.split(r"\s*,\s*", v.strip())
-
+        values_list = sanitized_v.split(",")
         if len(values_list) != len(set(values_list)):
             raise ValueError("Duplicate value")
 
+        allowed_values = ["wind", "load", "solar"]
         for value in values_list:
             if value not in allowed_values:
                 raise ValueError(f"Invalid value: {value}")

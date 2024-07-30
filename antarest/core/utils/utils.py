@@ -1,6 +1,9 @@
+import base64
 import glob
+import http
 import logging
 import os
+import re
 import shutil
 import tempfile
 import time
@@ -10,11 +13,14 @@ from pathlib import Path
 
 import py7zr
 import redis
+from fastapi import HTTPException
 
 from antarest.core.config import RedisConfig
 from antarest.core.exceptions import ShouldNotHappenException
 
 logger = logging.getLogger(__name__)
+
+UUID_PATTERN = re.compile("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
 
 
 class DTO:
@@ -39,7 +45,14 @@ class DTO:
 
 
 def sanitize_uuid(uuid: str) -> str:
-    return str(glob.escape(uuid))
+    if not UUID_PATTERN.match(uuid):
+        sanitized_id = base64.b64encode(uuid.encode("utf-8")).decode("utf-8")
+        raise HTTPException(status_code=http.HTTPStatus.BAD_REQUEST, detail=f"uuid {sanitized_id} is not a valid UUID")
+    return uuid
+
+
+def sanitize_string(string: str) -> str:
+    return str(glob.escape(string))
 
 
 class BadArchiveContent(Exception):
