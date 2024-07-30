@@ -19,6 +19,7 @@ from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy
 from antarest.study.storage.utils import export_study_flat
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from tests.storage.conftest import SimpleFileTransferManager, SimpleSyncTaskService
+from tests.storage.integration.conftest import UUID
 
 
 def assert_url_content(url: str, tmp_dir: Path, sta_mini_zip_path: Path) -> bytes:
@@ -34,7 +35,7 @@ def assert_url_content(url: str, tmp_dir: Path, sta_mini_zip_path: Path) -> byte
     )
 
     md = RawStudy(
-        id="STA-mini",
+        id=UUID,
         workspace=DEFAULT_WORKSPACE_NAME,
         path=str(path_studies / "STA-mini"),
     )
@@ -82,7 +83,7 @@ def assert_url_content(url: str, tmp_dir: Path, sta_mini_zip_path: Path) -> byte
 
 def test_exporter_file(tmp_path: Path, sta_mini_zip_path: Path) -> None:
     data = assert_url_content(
-        url="/v1/studies/STA-mini/export",
+        url=f"/v1/studies/{UUID}/export",
         tmp_dir=tmp_path,
         sta_mini_zip_path=sta_mini_zip_path,
     )
@@ -91,7 +92,7 @@ def test_exporter_file(tmp_path: Path, sta_mini_zip_path: Path) -> None:
 
 def test_exporter_file_no_output(tmp_path: Path, sta_mini_zip_path: Path) -> None:
     data = assert_url_content(
-        url="/v1/studies/STA-mini/export?no-output",
+        url=f"/v1/studies/{UUID}/export?no-output",
         tmp_dir=tmp_path,
         sta_mini_zip_path=sta_mini_zip_path,
     )

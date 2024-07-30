@@ -18,6 +18,8 @@ from antarest.study.main import build_study_service
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, StudyAdditionalData
 from antarest.study.service import StudyService
 
+UUID = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+
 
 @pytest.fixture
 def sta_mini_path(tmp_path: Path) -> Path:
@@ -46,12 +48,14 @@ def storage_service(tmp_path: Path, project_path: Path, sta_mini_zip_path: Path)
     with ZipFile(sta_mini_zip_path) as zip_output:
         zip_output.extractall(path=path_studies)
 
+    (path_studies / "STA-mini").rename(path_studies / UUID)
+
     # noinspection PyArgumentList
     md = RawStudy(
-        id="STA-mini",
+        id=UUID,
         name="STA-mini",
         workspace=DEFAULT_WORKSPACE_NAME,
-        path=str(path_studies / "STA-mini"),
+        path=str(path_studies / UUID),
         created_at=datetime.datetime.fromtimestamp(1480683452),
         updated_at=datetime.datetime.fromtimestamp(1602678639),
         version=700,

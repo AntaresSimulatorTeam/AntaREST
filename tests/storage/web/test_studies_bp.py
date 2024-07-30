@@ -37,6 +37,7 @@ from antarest.study.model import (
     TimeSeriesData,
 )
 from tests.storage.conftest import SimpleFileTransferManager
+from tests.storage.integration.conftest import UUID
 
 ADMIN = JWTUser(
     id=1,
@@ -221,10 +222,10 @@ def test_copy_study(tmp_path: Path) -> None:
     )
     client = TestClient(app)
 
-    result = client.post("/v1/studies/existing-study/copy?dest=study-copied")
+    result = client.post(f"/v1/studies/{UUID}/copy?dest=study-copied")
 
     storage_service.copy_study.assert_called_with(
-        src_uuid="existing-study",
+        src_uuid=UUID,
         dest_study_name="study-copied",
         group_ids=["admin"],
         with_outputs=False,
@@ -354,14 +355,14 @@ def test_export_files(tmp_path: Path) -> None:
     if client.stream is False:
         # `TestClient` is based on `Requests` (old way before AntaREST-v2.15)
         # noinspection PyArgumentList
-        res = client.get("/v1/studies/name/export", stream=True)
+        res = client.get(f"/v1/studies/{UUID}/export", stream=True)
         res.raise_for_status()
         result = res.json()
     else:
         # `TestClient` is based on `httpx` (new way since AntaREST-v2.15)
         data = io.BytesIO()
         # noinspection PyCallingNonCallable
-        with client.stream("GET", "/v1/studies/name/export") as res:
+        with client.stream("GET", f"/v1/studies/{UUID}/export") as res:
             for chunk in res.iter_bytes():
                 data.write(chunk)
         res.raise_for_status()
@@ -369,7 +370,7 @@ def test_export_files(tmp_path: Path) -> None:
 
     assert FileDownloadTaskDTO(**result).json() == expected.json()
 
-    mock_storage_service.export_study.assert_called_once_with("name", PARAMS, True)
+    mock_storage_service.export_study.assert_called_once_with(UUID, PARAMS, True)
 
 
 @pytest.mark.unit_test
@@ -399,12 +400,12 @@ def test_export_params(tmp_path: Path) -> None:
         matrix_service=Mock(spec=MatrixService),
     )
     client = TestClient(app)
-    client.get("/v1/studies/name/export?no_output=true")
-    client.get("/v1/studies/name/export?no_output=false")
+    client.get(f"/v1/studies/{UUID}/export?no_output=true")
+    client.get(f"/v1/studies/{UUID}/export?no_output=false")
     mock_storage_service.export_study.assert_has_calls(
         [
-            call(Markup("name"), PARAMS, False),
-            call(Markup("name"), PARAMS, True),
+            call(Markup(UUID), PARAMS, False),
+            call(Markup(UUID), PARAMS, True),
         ]
     )
 
@@ -550,7 +551,7 @@ def test_output_download(tmp_path: Path) -> None:
     )
     client = TestClient(app, raise_server_exceptions=False)
     res = client.post(
-        "/v1/studies/my-uuid/outputs/my-output-id/download",
+        f"/v1/studies/{UUID}/outputs/my-output-id/download",
         json=study_download.dict(),
     )
     assert res.json() == output_data.dict()
@@ -586,7 +587,7 @@ def test_output_whole_download(tmp_path: Path) -> None:
     )
     client = TestClient(app, raise_server_exceptions=False)
     res = client.get(
-        f"/v1/studies/my-uuid/outputs/{output_id}/export",
+        f"/v1/studies/{UUID}/outputs/{output_id}/export",
     )
     assert res.status_code == HTTPStatus.OK
 
@@ -674,39 +675,39 @@ def test_study_permission_management(tmp_path: Path) -> None:
     )
     client = TestClient(app, raise_server_exceptions=False)
 
-    result = client.put("/v1/studies/existing-study/owner/2")
+    result = client.put(f"/v1/studies/{UUID}/owner/2")
     storage_service.change_owner.assert_called_with(
-        "existing-study",
+        UUID,
         2,
         PARAMS,
     )
     assert result.status_code == HTTPStatus.OK
 
-    result = client.put("/v1/studies/existing-study/groups/group-a")
+    result = client.put(f"/v1/studies/{UUID}/groups/group-a")
     storage_service.add_group.assert_called_with(
-        "existing-study",
+        UUID,
         "group-a",
         PARAMS,
     )
     assert result.status_code == HTTPStatus.OK
 
-    result = client.delete("/v1/studies/existing-study/groups/group-b")
+    result = client.delete(f"/v1/studies/{UUID}/groups/group-b")
     storage_service.remove_group.assert_called_with(
-        "existing-study",
+        UUID,
         "group-b",
         PARAMS,
     )
     assert result.status_code == HTTPStatus.OK
 
-    result = client.put("/v1/studies/existing-study/public_mode/FULL")
+    result = client.put(f"/v1/studies/{UUID}/public_mode/FULL")
     storage_service.set_public_mode.assert_called_with(
-        "existing-study",
+        UUID,
         PublicMode.FULL,
         PARAMS,
     )
     assert result.status_code == HTTPStatus.OK
 
-    result = client.put("/v1/studies/existing-study/public_mode/UNKNOWN")
+    result = client.put(f"/v1/studies/{UUID}/public_mode/UNKNOWN")
     assert result.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
 

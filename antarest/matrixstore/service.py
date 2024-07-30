@@ -447,12 +447,12 @@ class MatrixService(ISimpleMatrixService):
                 if not mtx:
                     continue
                 name = f"matrix-{mtx.id}.txt"
-                filepath = f"{tmpdir}/{name}"
+                filepath = Path(tmpdir).joinpath(name)
                 array = np.array(mtx.data, dtype=np.float64)
                 if array.size == 0:
                     # If the array or dataframe is empty, create an empty file instead of
                     # traditional saving to avoid unwanted line breaks.
-                    open(filepath, mode="wb").close()
+                    filepath.touch()
                 else:
                     # noinspection PyTypeChecker
                     np.savetxt(filepath, array, delimiter="\t", fmt="%.18f")
@@ -544,7 +544,7 @@ class MatrixService(ISimpleMatrixService):
             if array.size == 0:
                 # If the array or dataframe is empty, create an empty file instead of
                 # traditional saving to avoid unwanted line breaks.
-                open(filepath, mode="wb").close()
+                filepath.touch()
             else:
                 # noinspection PyTypeChecker
                 np.savetxt(filepath, array, delimiter="\t", fmt="%.18f")

@@ -63,13 +63,13 @@ class IniFilter:
             The newly created instance
         """
         if section:
-            section_regex = re.compile(re.escape(section))
+            section_regex = re.compile(re.escape(section), re.IGNORECASE)
         if option:
-            option_regex = re.compile(re.escape(option))
+            option_regex = re.compile(re.escape(option), re.IGNORECASE)
         if isinstance(section_regex, str):
-            section_regex = re.compile(section_regex) if section_regex else None
+            section_regex = re.compile(section_regex, re.IGNORECASE) if section_regex else None
         if isinstance(option_regex, str):
-            option_regex = re.compile(option_regex) if option_regex else None
+            option_regex = re.compile(option_regex, re.IGNORECASE) if option_regex else None
         return cls(section_regex=section_regex, option_regex=option_regex)
 
     def select_section_option(self, section: str, option: str = "") -> bool:

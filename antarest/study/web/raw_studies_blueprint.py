@@ -15,7 +15,7 @@ from antarest.core.jwt import JWTUser
 from antarest.core.model import SUB_JSON
 from antarest.core.requests import RequestParameters
 from antarest.core.swagger import get_path_examples
-from antarest.core.utils.utils import sanitize_uuid
+from antarest.core.utils.utils import sanitize_string, sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.study.business.aggregator_management import AreasQueryFile, LinksQueryFile
@@ -233,7 +233,7 @@ def create_raw_study_routes(
 
         # Avoid vulnerabilities by sanitizing the `uuid` and `output_id` parameters
         uuid = sanitize_uuid(uuid)
-        output_id = sanitize_uuid(output_id)
+        output_id = sanitize_string(output_id)
 
         parameters = RequestParameters(user=current_user)
         df_matrix = study_service.aggregate_output_data(
@@ -301,7 +301,7 @@ def create_raw_study_routes(
 
         # Avoid vulnerabilities by sanitizing the `uuid` and `output_id` parameters
         uuid = sanitize_uuid(uuid)
-        output_id = sanitize_uuid(output_id)
+        output_id = sanitize_string(output_id)
 
         parameters = RequestParameters(user=current_user)
         df_matrix = study_service.aggregate_output_data(
@@ -356,7 +356,7 @@ def create_raw_study_routes(
             f"Editing data at {path} for study {uuid}",
             extra={"user": current_user.id},
         )
-        path = sanitize_uuid(path)
+        path = sanitize_string(path)
         params = RequestParameters(user=current_user)
         study_service.edit_study(uuid, path, data, params)
 
@@ -389,7 +389,7 @@ def create_raw_study_routes(
             f"Uploading new data file at {path} for study {uuid}",
             extra={"user": current_user.id},
         )
-        path = sanitize_uuid(path)
+        path = sanitize_string(path)
         params = RequestParameters(user=current_user)
         study_service.edit_study(uuid, path, file, params, create_missing=create_missing)
 
@@ -459,7 +459,7 @@ def create_raw_study_routes(
 
         # Avoid vulnerabilities by sanitizing the `uuid` and `output_id` parameters
         uuid = sanitize_uuid(uuid)
-        matrix_path = sanitize_uuid(matrix_path)
+        matrix_path = sanitize_string(matrix_path)
 
         parameters = RequestParameters(user=current_user)
         df_matrix = study_service.get_matrix_with_index_and_header(

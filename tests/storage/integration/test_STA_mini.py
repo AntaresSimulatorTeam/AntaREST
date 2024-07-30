@@ -17,7 +17,9 @@ from antarest.core.roles import RoleType
 from antarest.matrixstore.service import MatrixService
 from antarest.study.main import build_study_service
 from antarest.study.service import StudyService
+from antarest.study.storage.study_download_utils import BadOutputFormat
 from tests.helpers import assert_study
+from tests.storage.integration.conftest import UUID
 from tests.storage.integration.data.de_details_hourly import de_details_hourly
 from tests.storage.integration.data.de_fr_values_hourly import de_fr_values_hourly
 from tests.storage.integration.data.digest_file import digest_file
@@ -70,10 +72,10 @@ def assert_with_errors(
     "url, expected_output",
     [
         (
-            "/v1/studies/STA-mini/raw?path=settings/generaldata/general/horizon",
+            f"/v1/studies/{UUID}/raw?path=settings/generaldata/general/horizon",
             2030,
         ),
-        ("/v1/studies/STA-mini/raw?path=settings/simulations", {}),
+        (f"/v1/studies/{UUID}/raw?path=settings/simulations", {}),
     ],
 )
 def test_sta_mini_settings(storage_service, url: str, expected_output: str):
@@ -89,11 +91,11 @@ def test_sta_mini_settings(storage_service, url: str, expected_output: str):
     "url, expected_output",
     [
         (
-            "/v1/studies/STA-mini/raw?path=layers/layers/activeLayer/showAllLayer",
+            f"/v1/studies/{UUID}/raw?path=layers/layers/activeLayer/showAllLayer",
             True,
         ),
         (
-            "/v1/studies/STA-mini/raw?path=layers/layers/layers/0",
+            f"/v1/studies/{UUID}/raw?path=layers/layers/layers/0",
             "All",
         ),
     ],
@@ -111,14 +113,14 @@ def test_sta_mini_layers_layers(storage_service, url: str, expected_output: str)
     "url, expected_output",
     [
         (
-            "/v1/studies/STA-mini/raw?path=Desktop/.shellclassinfo/iconfile",
+            f"/v1/studies/{UUID}/raw?path=Desktop/.shellclassinfo/iconfile",
             "settings/resources/study.ico",
         ),
         (
-            "/v1/studies/STA-mini/raw?path=Desktop/.shellclassinfo/infotip",
+            f"/v1/studies/{UUID}/raw?path=Desktop/.shellclassinfo/infotip",
             "Antares Study7.0: STA-mini",
         ),
-        ("/v1/studies/STA-mini/raw?path=Desktop/.shellclassinfo/iconindex", 0),
+        (f"/v1/studies/{UUID}/raw?path=Desktop/.shellclassinfo/iconindex", 0),
     ],
 )
 def test_sta_mini_desktop(storage_service, url: str, expected_output: str):
@@ -134,11 +136,11 @@ def test_sta_mini_desktop(storage_service, url: str, expected_output: str):
     "url, expected_output",
     [
         (
-            "/v1/studies/STA-mini/raw?path=study/antares/created",
+            f"/v1/studies/{UUID}/raw?path=study/antares/created",
             1480683452,
         ),
         (
-            "/v1/studies/STA-mini/raw?path=study/antares/author",
+            f"/v1/studies/{UUID}/raw?path=study/antares/author",
             "Andrea SGATTONI",
         ),
     ],
@@ -156,11 +158,11 @@ def test_sta_mini_study_antares(storage_service, url: str, expected_output: str)
     "url, expected_output",
     [
         (
-            "/v1/studies/STA-mini/raw?path=input/bindingconstraints/bindingconstraints",
+            f"/v1/studies/{UUID}/raw?path=input/bindingconstraints/bindingconstraints",
             {},
         ),
         (
-            "/v1/studies/STA-mini/raw?path=input/hydro/series/de/mod",
+            f"/v1/studies/{UUID}/raw?path=input/hydro/series/de/mod",
             {
                 "columns": [0, 1, 2],
                 "index": list(range(365)),
@@ -168,24 +170,24 @@ def test_sta_mini_study_antares(storage_service, url: str, expected_output: str)
             },
         ),
         (
-            "/v1/studies/STA-mini/raw?path=input/areas/list",
+            f"/v1/studies/{UUID}/raw?path=input/areas/list",
             ["DE", "ES", "FR", "IT"],
         ),
         (
-            "/v1/studies/STA-mini/raw?path=input/areas/sets/all areas/output",
+            f"/v1/studies/{UUID}/raw?path=input/areas/sets/all areas/output",
             False,
         ),
         (
-            "/v1/studies/STA-mini/raw?path=input/areas/de/optimization/nodal optimization/spread-spilled-energy-cost",
+            f"/v1/studies/{UUID}/raw?path=input/areas/de/optimization/nodal optimization/spread-spilled-energy-cost",
             0,
         ),
-        ("/v1/studies/STA-mini/raw?path=input/areas/de/ui/layerX/0", 1),
+        (f"/v1/studies/{UUID}/raw?path=input/areas/de/ui/layerX/0", 1),
         (
-            "/v1/studies/STA-mini/raw?path=input/hydro/allocation/de/[allocation]/de",
+            f"/v1/studies/{UUID}/raw?path=input/hydro/allocation/de/[allocation]/de",
             1,
         ),
         (
-            "/v1/studies/STA-mini/raw?path=input/hydro/common/capacity/reservoir_fr",
+            f"/v1/studies/{UUID}/raw?path=input/hydro/common/capacity/reservoir_fr",
             {
                 "columns": [0, 1, 2],
                 "index": list(range(365)),
@@ -193,7 +195,7 @@ def test_sta_mini_study_antares(storage_service, url: str, expected_output: str)
             },
         ),
         (
-            "/v1/studies/STA-mini/raw?path=input/thermal/series/fr/05_nuclear/series",
+            f"/v1/studies/{UUID}/raw?path=input/thermal/series/fr/05_nuclear/series",
             {
                 "columns": [0],
                 "index": list(range(8760)),
@@ -201,35 +203,35 @@ def test_sta_mini_study_antares(storage_service, url: str, expected_output: str)
             },
         ),
         (
-            "/v1/studies/STA-mini/raw?path=input/hydro/prepro/correlation/general/mode",
+            f"/v1/studies/{UUID}/raw?path=input/hydro/prepro/correlation/general/mode",
             "annual",
         ),
         (
-            "/v1/studies/STA-mini/raw?path=input/hydro/prepro/fr/prepro/prepro/intermonthly-correlation",
+            f"/v1/studies/{UUID}/raw?path=input/hydro/prepro/fr/prepro/prepro/intermonthly-correlation",
             0.5,
         ),
         (
-            "/v1/studies/STA-mini/raw?path=input/hydro/prepro/fr/energy",
+            f"/v1/studies/{UUID}/raw?path=input/hydro/prepro/fr/energy",
             {"data": [[]], "index": [0], "columns": []},
         ),
         (
-            "/v1/studies/STA-mini/raw?path=input/hydro/hydro/inter-monthly-breakdown/fr",
+            f"/v1/studies/{UUID}/raw?path=input/hydro/hydro/inter-monthly-breakdown/fr",
             1,
         ),
         (
-            "/v1/studies/STA-mini/raw?path=input/thermal/areas/unserverdenergycost/de",
+            f"/v1/studies/{UUID}/raw?path=input/thermal/areas/unserverdenergycost/de",
             3000.0,
         ),
         (
-            "/v1/studies/STA-mini/raw?path=input/thermal/clusters/fr/list/05_nuclear/marginal-cost",
+            f"/v1/studies/{UUID}/raw?path=input/thermal/clusters/fr/list/05_nuclear/marginal-cost",
             50,
         ),
         (
-            "/v1/studies/STA-mini/raw?path=input/links/fr/properties/it/hurdles-cost",
+            f"/v1/studies/{UUID}/raw?path=input/links/fr/properties/it/hurdles-cost",
             True,
         ),
         (
-            "/v1/studies/STA-mini/raw?path=input/links/fr/it",
+            f"/v1/studies/{UUID}/raw?path=input/links/fr/it",
             {
                 "columns": list(range(8)),
                 "index": list(range(8760)),
@@ -237,11 +239,11 @@ def test_sta_mini_study_antares(storage_service, url: str, expected_output: str)
             },
         ),
         (
-            "/v1/studies/STA-mini/raw?path=input/load/prepro/fr/k",
+            f"/v1/studies/{UUID}/raw?path=input/load/prepro/fr/k",
             {"data": [[]], "index": [0], "columns": []},
         ),
         (
-            "/v1/studies/STA-mini/raw?path=input/load/series",
+            f"/v1/studies/{UUID}/raw?path=input/load/series",
             {
                 "load_de": "matrixfile://load_de.txt",
                 "load_es": "matrixfile://load_es.txt",
@@ -250,7 +252,7 @@ def test_sta_mini_study_antares(storage_service, url: str, expected_output: str)
             },
         ),
         (
-            "/v1/studies/STA-mini/raw?path=input/load/series/load_fr",
+            f"/v1/studies/{UUID}/raw?path=input/load/series/load_fr",
             {
                 "columns": [0],
                 "index": list(range(8760)),
@@ -258,7 +260,7 @@ def test_sta_mini_study_antares(storage_service, url: str, expected_output: str)
             },
         ),
         (
-            "/v1/studies/STA-mini/raw?path=input/misc-gen/miscgen-fr",
+            f"/v1/studies/{UUID}/raw?path=input/misc-gen/miscgen-fr",
             {
                 "columns": [0, 1, 2, 3, 4, 5, 6, 7],
                 "index": list(range(8760)),
@@ -266,7 +268,7 @@ def test_sta_mini_study_antares(storage_service, url: str, expected_output: str)
             },
         ),
         (
-            "/v1/studies/STA-mini/raw?path=input/reserves/fr",
+            f"/v1/studies/{UUID}/raw?path=input/reserves/fr",
             {
                 "columns": [0],
                 "index": list(range(8760)),
@@ -274,11 +276,11 @@ def test_sta_mini_study_antares(storage_service, url: str, expected_output: str)
             },
         ),
         (
-            "/v1/studies/STA-mini/raw?path=input/solar/prepro/fr/k",
+            f"/v1/studies/{UUID}/raw?path=input/solar/prepro/fr/k",
             {"data": [[]], "index": [0], "columns": []},
         ),
         (
-            "/v1/studies/STA-mini/raw?path=input/solar/series/solar_fr",
+            f"/v1/studies/{UUID}/raw?path=input/solar/series/solar_fr",
             {
                 "columns": [0],
                 "index": list(range(8760)),
@@ -286,11 +288,11 @@ def test_sta_mini_study_antares(storage_service, url: str, expected_output: str)
             },
         ),
         (
-            "/v1/studies/STA-mini/raw?path=input/wind/prepro/fr/k",
+            f"/v1/studies/{UUID}/raw?path=input/wind/prepro/fr/k",
             {"data": [[]], "index": [0], "columns": []},
         ),
         (
-            "/v1/studies/STA-mini/raw?path=input/wind/series/wind_fr",
+            f"/v1/studies/{UUID}/raw?path=input/wind/series/wind_fr",
             {
                 "columns": [0],
                 "index": list(range(8760)),
@@ -312,7 +314,7 @@ def test_sta_mini_input(storage_service, url: str, expected_output: dict):
     "url, expected_output",
     [
         (
-            "/v1/studies/STA-mini/raw?path=output/20241807-1540eco-extra-outputs/economy/mc-all/binding_constraints/binding-constraints-annual",
+            f"/v1/studies/{UUID}/raw?path=output/20241807-1540eco-extra-outputs/economy/mc-all/binding_constraints/binding-constraints-annual",
             {
                 "columns": [
                     ("contrainte (<)", " ", "EXP"),
@@ -325,23 +327,23 @@ def test_sta_mini_input(storage_service, url: str, expected_output: dict):
             },
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/20241807-1540eco-extra-outputs/economy/mc-all/areas/@ all areas/values-monthly",
+            f"/v1/studies/{UUID}/raw?path=output/20241807-1540eco-extra-outputs/economy/mc-all/areas/@ all areas/values-monthly",
             set_values_monthly,
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/20241807-1540eco-extra-outputs/economy/mc-all/areas/@ all areas/id-annual",
+            f"/v1/studies/{UUID}/raw?path=output/20241807-1540eco-extra-outputs/economy/mc-all/areas/@ all areas/id-annual",
             set_id_annual,
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/20241807-1540eco-extra-outputs/ts-numbers/bindingconstraints/default",
+            f"/v1/studies/{UUID}/raw?path=output/20241807-1540eco-extra-outputs/ts-numbers/bindingconstraints/default",
             [1],
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/annualSystemCost",
+            f"/v1/studies/{UUID}/raw?path=output/20201014-1422eco-hello/annualSystemCost",
             b"EXP : 185808000\nSTD : 0\nMIN : 185808000\nMAX : 185808000\n",
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/checkIntegrity",
+            f"/v1/studies/{UUID}/raw?path=output/20201014-1422eco-hello/checkIntegrity",
             b"""1.85808475215665e+08
 0.00000000000000e+00
 1.85808475215665e+08
@@ -353,76 +355,76 @@ def test_sta_mini_input(storage_service, url: str, expected_output: dict):
 """,
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/20201014-1425eco-goodbye/simulation-comments",
+            f"/v1/studies/{UUID}/raw?path=output/20201014-1425eco-goodbye/simulation-comments",
             b"",
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/about-the-study/areas",
+            f"/v1/studies/{UUID}/raw?path=output/20201014-1422eco-hello/about-the-study/areas",
             b"DE\r\nES\r\nFR\r\nIT\r\n",
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/20201014-1425eco-goodbye/about-the-study/comments",
+            f"/v1/studies/{UUID}/raw?path=output/20201014-1425eco-goodbye/about-the-study/comments",
             b"",
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/20201014-1427eco/about-the-study/links",
+            f"/v1/studies/{UUID}/raw?path=output/20201014-1427eco/about-the-study/links",
             b"de\n\tfr\nes\n\tfr\nfr\n\tit\nit\n",
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/20201014-1430adq/about-the-study/parameters/general/horizon",
+            f"/v1/studies/{UUID}/raw?path=output/20201014-1430adq/about-the-study/parameters/general/horizon",
             2030,
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/about-the-study/study/antares/author",
+            f"/v1/studies/{UUID}/raw?path=output/20201014-1422eco-hello/about-the-study/study/antares/author",
             "Andrea SGATTONI",
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/economy/mc-all/grid/areas",
+            f"/v1/studies/{UUID}/raw?path=output/20201014-1422eco-hello/economy/mc-all/grid/areas",
             {"columns": ["id", "name"], "data": [["de", "DE"], ["es", "ES"], ["fr", "FR"], ["it", "IT"]]},
         ),
-        ("/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/economy/mc-all/grid/digest", digest_file),
+        (f"/v1/studies/{UUID}/raw?path=output/20201014-1422eco-hello/economy/mc-all/grid/digest", digest_file),
         (
-            "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/economy/mc-all/grid/links",
+            f"/v1/studies/{UUID}/raw?path=output/20201014-1422eco-hello/economy/mc-all/grid/links",
             {"columns": ["upstream", "downstream"], "data": [["de", "fr"], ["es", "fr"], ["fr", "it"]]},
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/economy/mc-all/links/de/fr",
+            f"/v1/studies/{UUID}/raw?path=output/20201014-1422eco-hello/economy/mc-all/links/de/fr",
             {},
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/economy/mc-ind/00001/links/de/fr",
+            f"/v1/studies/{UUID}/raw?path=output/20201014-1422eco-hello/economy/mc-ind/00001/links/de/fr",
             {"values-hourly": "matrixfile://values-hourly.txt"},
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/economy/mc-ind/00001/links/de/fr/values-hourly",
+            f"/v1/studies/{UUID}/raw?path=output/20201014-1422eco-hello/economy/mc-ind/00001/links/de/fr/values-hourly",
             de_fr_values_hourly,
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/economy/mc-ind/00001/areas/de/details-annual",
+            f"/v1/studies/{UUID}/raw?path=output/20201014-1422eco-hello/economy/mc-ind/00001/areas/de/details-annual",
             de_details_hourly,
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/ts-numbers/hydro/de",
+            f"/v1/studies/{UUID}/raw?path=output/20201014-1422eco-hello/ts-numbers/hydro/de",
             [1],
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/ts-numbers/load/de",
+            f"/v1/studies/{UUID}/raw?path=output/20201014-1422eco-hello/ts-numbers/load/de",
             [1],
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/ts-numbers/solar/de",
+            f"/v1/studies/{UUID}/raw?path=output/20201014-1422eco-hello/ts-numbers/solar/de",
             [1],
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/ts-numbers/wind/de",
+            f"/v1/studies/{UUID}/raw?path=output/20201014-1422eco-hello/ts-numbers/wind/de",
             [1],
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/ts-numbers/thermal/de/07_gas",
+            f"/v1/studies/{UUID}/raw?path=output/20201014-1422eco-hello/ts-numbers/thermal/de/07_gas",
             [1],
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/info/general/version",
+            f"/v1/studies/{UUID}/raw?path=output/20201014-1422eco-hello/info/general/version",
             700,
         ),
     ],
@@ -440,7 +442,7 @@ def test_sta_mini_output(storage_service, url: str, expected_output: dict):
     "url, expected_output",
     [
         (
-            "/v1/studies/STA-mini/raw?path=user/expansion/settings",
+            f"/v1/studies/{UUID}/raw?path=user/expansion/settings",
             {
                 "optimality_gap": 1,
                 "max_iteration": "+Inf",
@@ -457,11 +459,11 @@ def test_sta_mini_output(storage_service, url: str, expected_output: dict):
             },
         ),
         (
-            "/v1/studies/STA-mini/raw?path=user/expansion/candidates",
+            f"/v1/studies/{UUID}/raw?path=user/expansion/candidates",
             {},
         ),
         (
-            "/v1/studies/STA-mini/raw?path=user/expansion/capa",
+            f"/v1/studies/{UUID}/raw?path=user/expansion/capa",
             {},
         ),
     ],
@@ -476,7 +478,7 @@ def test_sta_mini_expansion(storage_service, url: str, expected_output: dict):
 
 @pytest.mark.integration_test
 def test_sta_mini_copy(storage_service) -> None:
-    source_study_name = "STA-mini"
+    source_study_name = UUID
     destination_study_name = "copy-STA-mini"
 
     app = FastAPI(title=__name__)
@@ -525,8 +527,8 @@ def test_sta_mini_copy(storage_service) -> None:
 @pytest.mark.integration_test
 def test_sta_mini_list_studies(storage_service) -> None:
     expected_output = {
-        "STA-mini": {
-            "id": "STA-mini",
+        UUID: {
+            "id": UUID,
             "name": "STA-mini",
             "version": 700,
             "created": str(datetime.fromtimestamp(1480683452)),
@@ -559,7 +561,7 @@ def notest_sta_mini_with_wrong_output_folder(storage_service: StudyService, sta_
     # TODO why a wrong test should success
     (sta_mini_path / "output" / "maps").mkdir()
 
-    url = "/v1/studies/STA-mini/raw?path=Desktop/.shellclassinfo/infotip"
+    url = f"/v1/studies/{UUID}/raw?path=Desktop/.shellclassinfo/infotip"
     expected_output = "Antares Study7.0: STA-mini"
 
     assert_with_errors(
@@ -572,7 +574,7 @@ def notest_sta_mini_with_wrong_output_folder(storage_service: StudyService, sta_
 @pytest.mark.integration_test
 def test_sta_mini_import(tmp_path: Path, storage_service) -> None:
     params = RequestParameters(user=ADMIN)
-    path_study = storage_service.get_study_path("STA-mini", params)
+    path_study = storage_service.get_study_path(UUID, params)
     sta_mini_zip_filepath = shutil.make_archive(tmp_path, "zip", path_study)
     sta_mini_zip_path = Path(sta_mini_zip_filepath)
 
@@ -599,7 +601,7 @@ def test_sta_mini_import(tmp_path: Path, storage_service) -> None:
 def test_sta_mini_import_output(tmp_path: Path, storage_service) -> None:
     params = RequestParameters(user=ADMIN)
 
-    path_study_output = storage_service.get_study_path("STA-mini", params) / "output" / "20201014-1422eco-hello"
+    path_study_output = storage_service.get_study_path(UUID, params) / "output" / "20201014-1422eco-hello"
     sta_mini_output_zip_filepath = shutil.make_archive(tmp_path, "zip", path_study_output)
 
     shutil.rmtree(path_study_output)
@@ -621,7 +623,7 @@ def test_sta_mini_import_output(tmp_path: Path, storage_service) -> None:
 
     study_output_data = io.BytesIO(sta_mini_output_zip_path.read_bytes())
     result = client.post(
-        "/v1/studies/STA-mini/output",
+        f"/v1/studies/{UUID}/output",
         files={"output": study_output_data},
     )
 
@@ -633,14 +635,14 @@ def test_sta_mini_import_output(tmp_path: Path, storage_service) -> None:
     "url, expected_output",
     [
         (
-            "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/ts-numbers/hydro/de,fr/",
+            f"/v1/studies/{UUID}/raw?path=output/20201014-1422eco-hello/ts-numbers/hydro/de,fr/",
             {
                 "de": [1],
                 "fr": [1],
             },
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/ts-numbers/hydro/*/",
+            f"/v1/studies/{UUID}/raw?path=output/20201014-1422eco-hello/ts-numbers/hydro/*/",
             {
                 "de": [1],
                 "fr": [1],
@@ -658,9 +660,9 @@ def test_sta_mini_filter(storage_service, url: str, expected_output: dict):
     )
 
 
-def test_sta_mini_output_variables(storage_service):
+def test_sta_mini_output_variables_nominal_case(storage_service):
     variables = storage_service.output_variables_information(
-        "STA-mini",
+        UUID,
         "20201014-1422eco-hello",
         RequestParameters(user=DEFAULT_ADMIN_USER),
     )
@@ -713,3 +715,40 @@ def test_sta_mini_output_variables(storage_service):
         "CONG. PROB -",
         "HURDLE COST",
     ]
+
+
+def test_sta_mini_output_variables_no_mc_ind(storage_service):
+    with pytest.raises(BadOutputFormat, match=r"Not a year by year simulation"):
+        storage_service.output_variables_information(
+            UUID,
+            "20201014-1427eco",
+            RequestParameters(user=DEFAULT_ADMIN_USER),
+        )
+
+
+def test_sta_mini_output_variables_no_links(storage_service):
+    study_path = Path(storage_service.get_study(UUID).path)
+    links_folder = study_path / "output" / "20201014-1422eco-hello" / "economy" / "mc-ind" / "00001" / "links"
+    shutil.rmtree(links_folder)
+    variables = storage_service.output_variables_information(
+        UUID,
+        "20201014-1422eco-hello",
+        RequestParameters(user=DEFAULT_ADMIN_USER),
+    )
+    # When there's no links folder, asserts the endpoint doesn't fail and simply return an empty list
+    assert variables["link"] == []
+
+
+def test_sta_mini_output_variables_no_areas(storage_service):
+    study_path = Path(storage_service.get_study(UUID).path)
+    areas_mc_ind_folder = study_path / "output" / "20201014-1422eco-hello" / "economy" / "mc-ind" / "00001" / "areas"
+    areas_mc_all_folder = study_path / "output" / "20201014-1422eco-hello" / "economy" / "mc-all" / "areas"
+    shutil.rmtree(areas_mc_ind_folder)
+    shutil.rmtree(areas_mc_all_folder)
+    variables = storage_service.output_variables_information(
+        UUID,
+        "20201014-1422eco-hello",
+        RequestParameters(user=DEFAULT_ADMIN_USER),
+    )
+    # When there's no areas folder, asserts the endpoint doesn't fail and simply return an empty list
+    assert variables["area"] == []

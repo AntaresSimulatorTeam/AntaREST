@@ -7,6 +7,7 @@ from antarest.core.model import SUB_JSON
 from antarest.core.requests import RequestParameters
 from antarest.core.roles import RoleType
 from antarest.study.service import StudyService
+from tests.storage.integration.conftest import UUID
 
 ADMIN = JWTUser(
     id=1,
@@ -40,7 +41,7 @@ def assert_with_errors(
     "url, new",
     [
         (
-            "/v1/studies/STA-mini/raw?path=settings/generaldata/general/horizon",
+            f"/v1/studies/{UUID}/raw?path=settings/generaldata/general/horizon",
             3000,
         ),
     ],
@@ -58,7 +59,7 @@ def test_sta_mini_settings(storage_service, url: str, new: SUB_JSON):
     "url, new",
     [
         (
-            "/v1/studies/STA-mini/raw?path=layers/layers/activeLayer/showAllLayer",
+            f"/v1/studies/{UUID}/raw?path=layers/layers/activeLayer/showAllLayer",
             False,
         ),
     ],
@@ -76,7 +77,7 @@ def test_sta_mini_layers_layers(storage_service, url: str, new: SUB_JSON):
     "url, new",
     [
         (
-            "/v1/studies/STA-mini/raw?path=layers/layers/activeLayer/showAllLayer",
+            f"/v1/studies/{UUID}/raw?path=layers/layers/activeLayer/showAllLayer",
             False,
         ),
     ],
@@ -94,7 +95,7 @@ def test_sta_mini_layers_layers(storage_service, url: str, new: SUB_JSON):
     "url, new",
     [
         (
-            "/v1/studies/STA-mini/raw?path=Desktop/.shellclassinfo",
+            f"/v1/studies/{UUID}/raw?path=Desktop/.shellclassinfo",
             {
                 "iconfile": "This is a test",
                 "iconindex": 42,
@@ -102,7 +103,7 @@ def test_sta_mini_layers_layers(storage_service, url: str, new: SUB_JSON):
             },
         ),
         (
-            "/v1/studies/STA-mini/raw?path=Desktop/.shellclassinfo/iconindex",
+            f"/v1/studies/{UUID}/raw?path=Desktop/.shellclassinfo/iconindex",
             42,
         ),
     ],
@@ -120,11 +121,11 @@ def test_sta_mini_desktop(storage_service, url: str, new: SUB_JSON):
     "url, new",
     [
         (
-            "/v1/studies/STA-mini/raw?path=study/antares/created",
+            f"/v1/studies/{UUID}/raw?path=study/antares/created",
             42,
         ),
         (
-            "/v1/studies/STA-mini/raw?path=study/antares/author",
+            f"/v1/studies/{UUID}/raw?path=study/antares/author",
             "John Smith",
         ),
     ],
@@ -142,33 +143,33 @@ def test_sta_mini_study_antares(storage_service, url: str, new: SUB_JSON):
     "url, new, expected",
     [
         (
-            "/v1/studies/STA-mini/raw?path=input/bindingconstraints/bindingconstraints",
+            f"/v1/studies/{UUID}/raw?path=input/bindingconstraints/bindingconstraints",
             {},
             None,
         ),
         (
-            "/v1/studies/STA-mini/raw?path=input/areas/sets/all areas/output",
+            f"/v1/studies/{UUID}/raw?path=input/areas/sets/all areas/output",
             True,
             None,
         ),
         (
-            "/v1/studies/STA-mini/raw?path=input/areas/de/optimization/nodal optimization/spread-spilled-energy-cost",
+            f"/v1/studies/{UUID}/raw?path=input/areas/de/optimization/nodal optimization/spread-spilled-energy-cost",
             42,
             None,
         ),
-        ("/v1/studies/STA-mini/raw?path=input/areas/de/ui/layerX/0", 42, None),
+        (f"/v1/studies/{UUID}/raw?path=input/areas/de/ui/layerX/0", 42, None),
         (
-            "/v1/studies/STA-mini/raw?path=input/hydro/allocation/de/[allocation]/de",
+            f"/v1/studies/{UUID}/raw?path=input/hydro/allocation/de/[allocation]/de",
             42,
             None,
         ),
         (
-            "/v1/studies/STA-mini/raw?path=input/load/prepro/fr/k",
+            f"/v1/studies/{UUID}/raw?path=input/load/prepro/fr/k",
             [[0]],
             {"data": [[0.0]], "index": [0], "columns": [0]},
         ),
         (
-            "/v1/studies/STA-mini/raw?path=input/load/series/load_fr",
+            f"/v1/studies/{UUID}/raw?path=input/load/series/load_fr",
             [[i] for i in range(100)],
             {
                 "data": [
@@ -379,27 +380,27 @@ def test_sta_mini_study_antares(storage_service, url: str, new: SUB_JSON):
             },
         ),
         (
-            "/v1/studies/STA-mini/raw?path=input/hydro/prepro/correlation/general/mode",
+            f"/v1/studies/{UUID}/raw?path=input/hydro/prepro/correlation/general/mode",
             "hourly",
             None,
         ),
         (
-            "/v1/studies/STA-mini/raw?path=input/hydro/prepro/fr/prepro/prepro/intermonthly-correlation",
+            f"/v1/studies/{UUID}/raw?path=input/hydro/prepro/fr/prepro/prepro/intermonthly-correlation",
             0.42,
             None,
         ),
         (
-            "/v1/studies/STA-mini/raw?path=input/hydro/hydro/inter-monthly-breakdown/fr",
+            f"/v1/studies/{UUID}/raw?path=input/hydro/hydro/inter-monthly-breakdown/fr",
             43,
             None,
         ),
         (
-            "/v1/studies/STA-mini/raw?path=input/thermal/clusters/fr/list/05_nuclear/marginal-cost",
+            f"/v1/studies/{UUID}/raw?path=input/thermal/clusters/fr/list/05_nuclear/marginal-cost",
             42,
             None,
         ),
         (
-            "/v1/studies/STA-mini/raw?path=input/links/fr/properties/it/hurdles-cost",
+            f"/v1/studies/{UUID}/raw?path=input/links/fr/properties/it/hurdles-cost",
             False,
             None,
         ),
@@ -419,15 +420,15 @@ def test_sta_mini_input(storage_service, url: str, new: SUB_JSON, expected: Opti
     "url, new",
     [
         (
-            "/v1/studies/STA-mini/raw?path=output/20201014-1430adq/about-the-study/parameters/general/horizon",
+            f"/v1/studies/{UUID}/raw?path=output/20201014-1430adq/about-the-study/parameters/general/horizon",
             2042,
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/about-the-study/study/antares/author",
+            f"/v1/studies/{UUID}/raw?path=output/20201014-1422eco-hello/about-the-study/study/antares/author",
             "John Smith",
         ),
         (
-            "/v1/studies/STA-mini/raw?path=output/20201014-1422eco-hello/info/general/version",
+            f"/v1/studies/{UUID}/raw?path=output/20201014-1422eco-hello/info/general/version",
             42,
         ),
     ],
