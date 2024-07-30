@@ -80,6 +80,24 @@ class TestAdvancedParametersForm:
             task = wait_task_completion(client, user_access_token, task_id)
             assert task.status == TaskStatus.COMPLETED, task
 
+        valid_params = "wind, solar"
+        res = client.put(
+            f"/v1/studies/{internal_study_id}/config/advancedparameters/form",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+            json={"accuracyOnCorrelation": valid_params},
+        )
+        assert res.status_code in {200, 201}, res.json()
+
+        invalid_params = "fake_correlation, solar"
+        res = client.put(
+            f"/v1/studies/{internal_study_id}/config/advancedparameters/form",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+            json={"accuracyOnCorrelation": invalid_params},
+        )
+        assert res.status_code == 422
+        assert res.json()["exception"] == "RequestValidationError"
+        assert res.json()["description"] == "Invalid value: fake_correlation"
+
         obj = {"unitCommitmentMode": "milp"}
         res = client.put(
             f"/v1/studies/{internal_study_id}/config/advancedparameters/form",

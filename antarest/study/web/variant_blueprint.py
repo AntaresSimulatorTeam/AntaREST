@@ -8,7 +8,7 @@ from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.jwt import JWTUser
 from antarest.core.requests import RequestParameters
 from antarest.core.tasks.model import TaskDTO
-from antarest.core.utils.utils import sanitize_uuid
+from antarest.core.utils.utils import sanitize_string, sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.study.model import StudyMetadataDTO
@@ -274,7 +274,7 @@ def create_study_variant_routes(
         )
         params = RequestParameters(user=current_user)
         sanitized_uuid = sanitize_uuid(uuid)
-        sanitized_cid = sanitize_uuid(cid)
+        sanitized_cid = sanitize_string(cid)
         return variant_study_service.get_command(sanitized_uuid, sanitized_cid, params)
 
     @bp.put(
@@ -294,7 +294,7 @@ def create_study_variant_routes(
         )
         params = RequestParameters(user=current_user)
         sanitized_uuid = sanitize_uuid(uuid)
-        sanitized_cid = sanitize_uuid(cid)
+        sanitized_cid = sanitize_string(cid)
         variant_study_service.move_command(sanitized_uuid, sanitized_cid, index, params)
 
     @bp.put(
@@ -314,7 +314,7 @@ def create_study_variant_routes(
         )
         params = RequestParameters(user=current_user)
         sanitized_uuid = sanitize_uuid(uuid)
-        sanitized_cid = sanitize_uuid(cid)
+        sanitized_cid = sanitize_string(cid)
         variant_study_service.update_command(sanitized_uuid, sanitized_cid, command, params)
 
     @bp.delete(
@@ -333,7 +333,7 @@ def create_study_variant_routes(
         )
         params = RequestParameters(user=current_user)
         sanitized_uuid = sanitize_uuid(uuid)
-        sanitized_cid = sanitize_uuid(cid)
+        sanitized_cid = sanitize_string(cid)
         variant_study_service.remove_command(sanitized_uuid, sanitized_cid, params)
 
     @bp.delete(
