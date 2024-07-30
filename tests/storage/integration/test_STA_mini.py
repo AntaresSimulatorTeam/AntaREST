@@ -17,6 +17,7 @@ from antarest.core.roles import RoleType
 from antarest.matrixstore.service import MatrixService
 from antarest.study.main import build_study_service
 from antarest.study.service import StudyService
+from antarest.study.storage.study_download_utils import BadOutputFormat
 from tests.helpers import assert_study
 from tests.storage.integration.conftest import UUID
 from tests.storage.integration.data.de_details_hourly import de_details_hourly
@@ -659,7 +660,7 @@ def test_sta_mini_filter(storage_service, url: str, expected_output: dict):
     )
 
 
-def test_sta_mini_output_variables(storage_service):
+def test_sta_mini_output_variables_nominal_case(storage_service):
     variables = storage_service.output_variables_information(
         UUID,
         "20201014-1422eco-hello",
@@ -714,3 +715,40 @@ def test_sta_mini_output_variables(storage_service):
         "CONG. PROB -",
         "HURDLE COST",
     ]
+
+
+def test_sta_mini_output_variables_no_mc_ind(storage_service):
+    with pytest.raises(BadOutputFormat, match=r"Not a year by year simulation"):
+        storage_service.output_variables_information(
+            UUID,
+            "20201014-1427eco",
+            RequestParameters(user=DEFAULT_ADMIN_USER),
+        )
+
+
+def test_sta_mini_output_variables_no_links(storage_service):
+    study_path = Path(storage_service.get_study(UUID).path)
+    links_folder = study_path / "output" / "20201014-1422eco-hello" / "economy" / "mc-ind" / "00001" / "links"
+    shutil.rmtree(links_folder)
+    variables = storage_service.output_variables_information(
+        UUID,
+        "20201014-1422eco-hello",
+        RequestParameters(user=DEFAULT_ADMIN_USER),
+    )
+    # When there's no links folder, asserts the endpoint doesn't fail and simply return an empty list
+    assert variables["link"] == []
+
+
+def test_sta_mini_output_variables_no_areas(storage_service):
+    study_path = Path(storage_service.get_study(UUID).path)
+    areas_mc_ind_folder = study_path / "output" / "20201014-1422eco-hello" / "economy" / "mc-ind" / "00001" / "areas"
+    areas_mc_all_folder = study_path / "output" / "20201014-1422eco-hello" / "economy" / "mc-all" / "areas"
+    shutil.rmtree(areas_mc_ind_folder)
+    shutil.rmtree(areas_mc_all_folder)
+    variables = storage_service.output_variables_information(
+        UUID,
+        "20201014-1422eco-hello",
+        RequestParameters(user=DEFAULT_ADMIN_USER),
+    )
+    # When there's no areas folder, asserts the endpoint doesn't fail and simply return an empty list
+    assert variables["area"] == []
