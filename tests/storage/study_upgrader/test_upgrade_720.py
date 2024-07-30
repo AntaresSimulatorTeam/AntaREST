@@ -13,4 +13,4 @@ def test_nominal_case(study_assets: StudyAssets):
     study_upgrader.upgrade()
 
     # compare folder
-    assert are_same_dir(study_assets.study_dir, study_assets.expected_dir)
+    assert are_same_dir(study_assets.study_dir, study_assets.expected_dir, ignore=["study.antares"])

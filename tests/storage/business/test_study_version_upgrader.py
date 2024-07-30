@@ -5,7 +5,7 @@ import re
 import shutil
 import zipfile
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 import pandas
 import pytest
@@ -13,7 +13,7 @@ import pytest
 from antarest.study.storage.rawstudy.ini_reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata import DUPLICATE_KEYS
-from antarest.study.storage.study_upgrader import UPGRADE_METHODS, InvalidUpgrade, StudyUpgrader
+from antarest.study.storage.study_upgrader import InvalidUpgrade, StudyUpgrader
 from tests.storage.business.assets import ASSETS_DIR
 
 MAPPING_TRANSMISSION_CAPACITIES = {
@@ -52,25 +52,19 @@ def test_fails_because_of_versions_asked(tmp_path: Path):
     with zipfile.ZipFile(path_study) as zip_output:
         zip_output.extractall(path=study_dir)
     # Try to upgrade with an unknown version
-    with pytest.raises(
-        InvalidUpgrade,
-        match=f"Version '600' unknown: possible versions are {', '.join([u[1] for u in UPGRADE_METHODS])}",
-    ):
+    with pytest.raises(InvalidUpgrade, match="Cannot downgrade from version '7.2' to '6'"):
         StudyUpgrader(study_dir, "600").upgrade()
     # Try to upgrade with the current version
-    with pytest.raises(InvalidUpgrade, match="Your study is already in version '720'"):
+    with pytest.raises(InvalidUpgrade, match="Your study is already in version '7.2'"):
         StudyUpgrader(study_dir, "720").upgrade()
     # Try to upgrade with an old version
     with pytest.raises(
         InvalidUpgrade,
-        match="Impossible to upgrade from version '720' to version '710'",
+        match="Cannot downgrade from version '7.2' to '7.1'",
     ):
         StudyUpgrader(study_dir, "710").upgrade()
     # Try to upgrade with a version that does not exist
-    with pytest.raises(
-        InvalidUpgrade,
-        match=f"Version '820.rc' unknown: possible versions are {', '.join([u[1] for u in UPGRADE_METHODS])}",
-    ):
+    with pytest.raises(InvalidUpgrade, match="Invalid version number '820.rc'"):
         StudyUpgrader(study_dir, "820.rc").upgrade()
 
 
@@ -84,7 +78,7 @@ def test_fallback_if_study_input_broken(tmp_path):
     before_upgrade_dir = tmp_path / "backup"
     shutil.copytree(study_dir, before_upgrade_dir, dirs_exist_ok=True)
     with pytest.raises(
-        expected_exception=pandas.errors.EmptyDataError,
+        expected_exception=InvalidUpgrade,
         match="No columns to parse from file",
     ):
         StudyUpgrader(study_dir, "850").upgrade()
@@ -237,8 +231,8 @@ def assert_folder_is_created(path: Path) -> None:
     assert (path / "series").is_dir()
 
 
-def are_same_dir(dir1, dir2) -> bool:
-    dirs_cmp = filecmp.dircmp(dir1, dir2)
+def are_same_dir(dir1, dir2, ignore: Optional[List[str]] = None) -> bool:
+    dirs_cmp = filecmp.dircmp(dir1, dir2, ignore=ignore)
     if len(dirs_cmp.left_only) > 0 or len(dirs_cmp.right_only) > 0 or len(dirs_cmp.funny_files) > 0:
         return False
     path_dir1 = Path(dir1)

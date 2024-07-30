@@ -1,5 +1,6 @@
 import contextlib
 import os
+import textwrap
 import typing as t
 import uuid
 from datetime import datetime, timedelta, timezone
@@ -1728,7 +1729,7 @@ def test_task_upgrade_study(tmp_path: Path) -> None:
 
 
 @with_db_context
-@patch("antarest.study.service.upgrade_study")
+@patch("antarest.study.storage.study_upgrader.StudyUpgrader.upgrade")
 @pytest.mark.parametrize("workspace", ["other_workspace", DEFAULT_WORKSPACE_NAME])
 def test_upgrade_study__raw_study__nominal(
     upgrade_study_mock: Mock,
@@ -1740,7 +1741,17 @@ def test_upgrade_study__raw_study__nominal(
     target_version = "800"
     current_version = "720"
     (tmp_path / "study.antares").touch()
-    (tmp_path / "study.antares").write_text(f"version = {current_version}")
+    (tmp_path / "study.antares").write_text(
+        textwrap.dedent(
+            f"""
+                [antares]
+                version = {current_version}
+                caption =
+                created = 1682506382.235618
+                lastsave = 1682506382.23562
+                author = Unknown"""
+        )
+    )
 
     # Prepare a RAW study
     # noinspection PyArgumentList
@@ -1796,8 +1807,7 @@ def test_upgrade_study__raw_study__nominal(
     notifier = Mock()
     actual = task(notifier)
 
-    # The `upgrade_study()` function must be called with the right parameters
-    upgrade_study_mock.assert_called_with(tmp_path, target_version)
+    upgrade_study_mock.assert_called_once_with()
 
     # The study must be updated in the database
     actual_study: RawStudy = db.session.query(Study).get(study_id)
@@ -1823,7 +1833,7 @@ def test_upgrade_study__raw_study__nominal(
 
 
 @with_db_context
-@patch("antarest.study.service.upgrade_study")
+@patch("antarest.study.storage.study_upgrader.StudyUpgrader.upgrade")
 def test_upgrade_study__variant_study__nominal(
     upgrade_study_mock: Mock,
     tmp_path: Path,
@@ -1912,14 +1922,14 @@ def test_upgrade_study__variant_study__nominal(
 
 
 @with_db_context
-@patch("antarest.study.service.upgrade_study")
-def test_upgrade_study__raw_study__failed(upgrade_study_mock: Mock, tmp_path: Path) -> None:
+def test_upgrade_study__raw_study__failed(tmp_path: Path) -> None:
     study_id = str(uuid.uuid4())
     study_name = "my_study"
     target_version = "800"
     old_version = "720"
     (tmp_path / "study.antares").touch()
     (tmp_path / "study.antares").write_text(f"version = {old_version}")
+    # The study.antares file doesn't have an header the upgrade should fail.
 
     # Prepare a RAW study
     # noinspection PyArgumentList
@@ -1960,9 +1970,6 @@ def test_upgrade_study__raw_study__failed(upgrade_study_mock: Mock, tmp_path: Pa
     # An event of type `STUDY_EDITED` must be pushed when the upgrade is done.
     event_bus = Mock()
 
-    # The `upgrade_study()` function raise an exception
-    upgrade_study_mock.side_effect = Exception("INVALID_UPGRADE")
-
     # Prepare the task for an upgrade
     task = StudyUpgraderTask(
         study_id,
@@ -1976,7 +1983,7 @@ def test_upgrade_study__raw_study__failed(upgrade_study_mock: Mock, tmp_path: Pa
     # The task is called with a `TaskUpdateNotifier` a parameter.
     # Some messages could be emitted using the notifier (not a requirement).
     notifier = Mock()
-    with pytest.raises(Exception, match="INVALID_UPGRADE"):
+    with pytest.raises(Exception, match="File contains no section headers"):
         task(notifier)
 
     # The study must not be updated in the database
