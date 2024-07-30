@@ -469,10 +469,11 @@ def get_output_variables_information(study: FileStudy, output_name: str) -> Dict
         "link": [],
     }
 
-    try:
-        output_variables["area"] = get_output_variables(first_year_result["areas"], 1)
-    except BadOutputFormat:
-        logger.warning(f"Failed to retrieve output variables in {study.config.study_id} ({output_name}) for areas")
+    if "areas" in first_year_result:
+        try:
+            output_variables["area"] = get_output_variables(first_year_result["areas"], 1)
+        except BadOutputFormat:
+            logger.warning(f"Failed to retrieve output variables in {study.config.study_id} ({output_name}) for areas")
 
     if len(output_variables["area"]) == 0 and "areas" in mc_all_result:
         try:
@@ -480,10 +481,11 @@ def get_output_variables_information(study: FileStudy, output_name: str) -> Dict
         except BadOutputFormat:
             logger.warning(f"Failed to retrieve output variables in {study.config.study_id} ({output_name}) for areas")
 
-    try:
-        output_variables["link"] = get_output_variables(first_year_result["links"], 2)
-    except BadOutputFormat:
-        logger.warning(f"Failed to retrieve output variables in {study.config.study_id} ({output_name}) for links")
+    if "links" in first_year_result:
+        try:
+            output_variables["link"] = get_output_variables(first_year_result["links"], 2)
+        except BadOutputFormat:
+            logger.warning(f"Failed to retrieve output variables in {study.config.study_id} ({output_name}) for links")
 
     if len(output_variables["link"]) == 0 and "links" in mc_all_result:
         try:
