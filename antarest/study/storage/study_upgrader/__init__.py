@@ -1,13 +1,9 @@
-import re
-import typing as t
 from http import HTTPStatus
 from http.client import HTTPException
 from pathlib import Path
 
 from antares.study.version import StudyVersion
-from antares.study.version.upgrade_app import UpgradeApp, UpgradeMethod
-
-from antarest.core.exceptions import StudyValidationError
+from antares.study.version.upgrade_app import UpgradeApp
 
 
 class InvalidUpgrade(HTTPException):
@@ -30,9 +26,6 @@ class StudyUpgrader:
         except Exception as e:
             raise InvalidUpgrade(str(e)) from e
 
-    def get_upgrade_method(self) -> t.List[UpgradeMethod]:
-        return self.app.upgrade_methods
-
     def should_denormalize_study(self) -> bool:
         return self.app.should_denormalize
 
@@ -52,30 +45,3 @@ def find_next_version(from_version: str) -> str:
     for k, version in enumerate(available_versions):
         if version == from_version:
             return available_versions[k]
-
-
-def get_current_version(study_path: Path) -> str:
-    """
-    Get the current version of a study.
-
-    Args:
-        study_path: Path to the study.
-
-    Returns:
-        The current version of the study.
-
-    Raises:
-        StudyValidationError: If the version number is not found in the
-        `study.antares` file or does not match the expected format.
-    """
-
-    antares_path = study_path / "study.antares"
-    pattern = r"version\s*=\s*([\w.-]+)\s*"
-    with antares_path.open(encoding="utf-8") as lines:
-        for line in lines:
-            if match := re.fullmatch(pattern, line):
-                return match[1].rstrip()
-    raise StudyValidationError(
-        f"File parsing error: the version number is not found in '{antares_path}'"
-        f" or does not match the expected '{pattern}' format."
-    )
