@@ -32,7 +32,6 @@ from antarest.core.exceptions import (
     StudyVariantUpgradeError,
     TaskAlreadyRunning,
     UnsupportedOperationOnArchivedStudy,
-    UnsupportedStudyVersion,
 )
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
@@ -2426,8 +2425,6 @@ class StudyService:
             raise StudyVariantUpgradeError(False)
 
         target_version = target_version or find_next_version(study.version)
-        if not target_version:
-            raise UnsupportedStudyVersion(study.version)
 
         task_name = f"Upgrade study {study.name} ({study.id}) to version {target_version}"
         study_tasks = self.task_service.list_tasks(

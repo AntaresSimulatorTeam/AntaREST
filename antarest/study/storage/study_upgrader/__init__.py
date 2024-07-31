@@ -5,6 +5,8 @@ from pathlib import Path
 from antares.study.version import StudyVersion
 from antares.study.version.upgrade_app import UpgradeApp
 
+from antarest.core.exceptions import UnsupportedStudyVersion
+
 
 class InvalidUpgrade(HTTPException):
     def __init__(self, message: str) -> None:
@@ -27,7 +29,10 @@ class StudyUpgrader:
             raise InvalidUpgrade(str(e)) from e
 
     def should_denormalize_study(self) -> bool:
-        return self.app.should_denormalize
+        try:
+            return self.app.should_denormalize
+        except Exception as e:
+            raise InvalidUpgrade(str(e)) from e
 
 
 def find_next_version(from_version: str) -> str:
@@ -39,9 +44,16 @@ def find_next_version(from_version: str) -> str:
 
     Returns:
         The next version as a string.
-        If no next version was found, returns an empty string.
+
+    Raises:
+        UnsupportedStudyVersion if the current version is not supported or if the study is already in last version.
     """
     available_versions = ["700", "710", "720", "800", "810", "820", "830", "840", "850", "860", "870", "880"]
     for k, version in enumerate(available_versions):
         if version == from_version:
-            return available_versions[k]
+            if k == len(available_versions) - 1:
+                raise UnsupportedStudyVersion(f"Your study is already in latest supported version: '{from_version}'")
+            return available_versions[k + 1]
+    raise UnsupportedStudyVersion(
+        f"{from_version} is not a supported version, supported versions are: {available_versions}"
+    )

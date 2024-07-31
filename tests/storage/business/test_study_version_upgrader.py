@@ -10,10 +10,11 @@ from typing import List, Optional
 import pandas
 import pytest
 
+from antarest.core.exceptions import UnsupportedStudyVersion
 from antarest.study.storage.rawstudy.ini_reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata import DUPLICATE_KEYS
-from antarest.study.storage.study_upgrader import InvalidUpgrade, StudyUpgrader
+from antarest.study.storage.study_upgrader import InvalidUpgrade, StudyUpgrader, find_next_version
 from tests.storage.business.assets import ASSETS_DIR
 
 MAPPING_TRANSMISSION_CAPACITIES = {
@@ -21,6 +22,28 @@ MAPPING_TRANSMISSION_CAPACITIES = {
     False: "null-for-all-links",
     "infinite": "infinite-for-all-links",
 }
+
+
+class TestFindNextVersion:
+    @pytest.mark.parametrize(
+        "from_version, expected",
+        [("700", "710"), ("870", "880")],
+    )
+    def test_find_next_version_nominal(self, from_version: str, expected: str):
+        actual = find_next_version(from_version)
+        assert actual == expected
+
+    @pytest.mark.parametrize(
+        "from_version, message",
+        [
+            ("3.14", "3.14 is not a supported version"),
+            ("880", "Your study is already in latest supported version: '880'"),
+            ("900", "900 is not a supported version"),
+        ],
+    )
+    def test_find_next_version_fails(self, from_version: str, message: str):
+        with pytest.raises(UnsupportedStudyVersion, match=message):
+            find_next_version(from_version)
 
 
 def test_end_to_end_upgrades(tmp_path: Path):
