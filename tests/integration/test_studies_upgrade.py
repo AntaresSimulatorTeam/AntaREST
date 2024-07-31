@@ -53,7 +53,7 @@ class TestStudyUpgrade:
         assert task_id
         task = wait_task_completion(client, user_access_token, task_id)
         assert task.status == TaskStatus.FAILED
-        assert target_version in task.result.message, f"Version not in {task.result.message=}"
+        assert "Cannot upgrade to version '9.9': version unreachable" in task.result.message
 
     def test_upgrade_study__unmet_requirements(self, client: TestClient, admin_access_token: str):
         """

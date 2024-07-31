@@ -2,7 +2,7 @@ from http import HTTPStatus
 from http.client import HTTPException
 from pathlib import Path
 
-from antares.study.version import StudyVersion
+from antares.study.version.model.study_version import StudyVersion
 from antares.study.version.upgrade_app import UpgradeApp
 
 from antarest.core.exceptions import UnsupportedStudyVersion
