@@ -7,6 +7,8 @@ from antares.study.version.upgrade_app import UpgradeApp
 
 from antarest.core.exceptions import UnsupportedStudyVersion
 
+AVAILABLE_VERSIONS = ["700", "710", "720", "800", "810", "820", "830", "840", "850", "860", "870", "880"]
+
 
 class InvalidUpgrade(HTTPException):
     def __init__(self, message: str) -> None:
@@ -35,6 +37,13 @@ class StudyUpgrader:
             raise InvalidUpgrade(str(e)) from e
 
 
+def _get_version_index(version: str) -> int:
+    try:
+        return AVAILABLE_VERSIONS.index(version)
+    except ValueError:
+        raise UnsupportedStudyVersion(f"Version '{version}' isn't among supported versions: {AVAILABLE_VERSIONS}")
+
+
 def find_next_version(from_version: str) -> str:
     """
     Find the next study version from the given version.
@@ -48,12 +57,16 @@ def find_next_version(from_version: str) -> str:
     Raises:
         UnsupportedStudyVersion if the current version is not supported or if the study is already in last version.
     """
-    available_versions = ["700", "710", "720", "800", "810", "820", "830", "840", "850", "860", "870", "880"]
-    for k, version in enumerate(available_versions):
-        if version == from_version:
-            if k == len(available_versions) - 1:
-                raise UnsupportedStudyVersion(f"Your study is already in latest supported version: '{from_version}'")
-            return available_versions[k + 1]
-    raise UnsupportedStudyVersion(
-        f"{from_version} is not a supported version, supported versions are: {available_versions}"
-    )
+    start_pos = _get_version_index(from_version)
+    if start_pos == len(AVAILABLE_VERSIONS) - 1:
+        raise UnsupportedStudyVersion(f"Your study is already in the latest supported version: '{from_version}'")
+    return AVAILABLE_VERSIONS[start_pos + 1]
+
+
+def check_versions_coherence(from_version: str, target_version: str) -> None:
+    start_pos = _get_version_index(from_version)
+    final_pos = _get_version_index(target_version)
+    if final_pos == start_pos:
+        raise UnsupportedStudyVersion(f"Your study is already in the version you asked: {from_version}")
+    elif final_pos < start_pos:
+        raise UnsupportedStudyVersion(f"Cannot downgrade your study version : from {from_version} to {target_version}")

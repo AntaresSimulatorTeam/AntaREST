@@ -14,7 +14,12 @@ from antarest.core.exceptions import UnsupportedStudyVersion
 from antarest.study.storage.rawstudy.ini_reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata import DUPLICATE_KEYS
-from antarest.study.storage.study_upgrader import InvalidUpgrade, StudyUpgrader, find_next_version
+from antarest.study.storage.study_upgrader import (
+    InvalidUpgrade,
+    StudyUpgrader,
+    check_versions_coherence,
+    find_next_version,
+)
 from tests.storage.business.assets import ASSETS_DIR
 
 MAPPING_TRANSMISSION_CAPACITIES = {
@@ -36,14 +41,36 @@ class TestFindNextVersion:
     @pytest.mark.parametrize(
         "from_version, message",
         [
-            ("3.14", "3.14 is not a supported version"),
-            ("880", "Your study is already in latest supported version: '880'"),
-            ("900", "900 is not a supported version"),
+            ("3.14", "Version '3.14' isn't among supported versions"),
+            ("880", "Your study is already in the latest supported version: '880'"),
+            ("900", "Version '900' isn't among supported versions"),
         ],
     )
     def test_find_next_version_fails(self, from_version: str, message: str):
         with pytest.raises(UnsupportedStudyVersion, match=message):
             find_next_version(from_version)
+
+
+class TestCheckVersionCoherence:
+    @pytest.mark.parametrize(
+        "from_version, target_version",
+        [("700", "710"), ("870", "880"), ("820", "840")],
+    )
+    def test_check_version_coherence_nominal(self, from_version: str, target_version: str):
+        check_versions_coherence(from_version, target_version)
+
+    @pytest.mark.parametrize(
+        "from_version, target_version, message",
+        [
+            ("1000", "710", "Version '1000' isn't among supported versions"),
+            ("820", "32", "Version '32' isn't among supported versions"),
+            ("860", "860", "Your study is already in the version you asked: 860"),
+            ("870", "840", "Cannot downgrade your study version : from 870 to 840"),
+        ],
+    )
+    def test_check_version_coherence_fails(self, from_version: str, target_version: str, message: str):
+        with pytest.raises(UnsupportedStudyVersion, match=message):
+            check_versions_coherence(from_version, target_version)
 
 
 def test_end_to_end_upgrades(tmp_path: Path):

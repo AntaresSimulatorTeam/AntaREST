@@ -115,7 +115,7 @@ from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFi
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.study_download_utils import StudyDownloader, get_output_variables_information
-from antarest.study.storage.study_upgrader import StudyUpgrader, find_next_version
+from antarest.study.storage.study_upgrader import StudyUpgrader, check_versions_coherence, find_next_version
 from antarest.study.storage.utils import assert_permission, get_start_date, is_managed, remove_from_cache
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
@@ -2420,11 +2420,15 @@ class StudyService:
         # First check if the study is a variant study, if so throw an error
         if isinstance(study, VariantStudy):
             raise StudyVariantUpgradeError(True)
-        # If the study is a parent raw study, throw an error
+        # If the study is a parent raw study and has variants, throw an error
         elif self.repository.has_children(study_id):
             raise StudyVariantUpgradeError(False)
 
-        target_version = target_version or find_next_version(study.version)
+        # Checks versions coherence before launching the task
+        if not target_version:
+            target_version = find_next_version(study.version)
+        else:
+            check_versions_coherence(study.version, target_version)
 
         task_name = f"Upgrade study {study.name} ({study.id}) to version {target_version}"
         study_tasks = self.task_service.list_tasks(
