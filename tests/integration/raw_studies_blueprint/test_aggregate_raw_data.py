@@ -5,7 +5,12 @@ import pandas as pd
 import pytest
 from starlette.testclient import TestClient
 
-from antarest.study.business.aggregator_management import AreasQueryFile, LinksQueryFile
+from antarest.study.business.aggregator_management import (
+    MCAllAreasQueryFile,
+    MCAllLinksQueryFile,
+    MCIndAreasQueryFile,
+    MCIndLinksQueryFile,
+)
 from antarest.study.storage.df_download import TableExportFormat
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from tests.integration.raw_studies_blueprint.assets import ASSETS_DIR
@@ -15,7 +20,7 @@ AREAS_REQUESTS__IND = [
     (
         {
             "output_id": "20201014-1425eco-goodbye",
-            "query_file": AreasQueryFile.VALUES,
+            "query_file": MCIndAreasQueryFile.VALUES,
             "frequency": MatrixFrequency.HOURLY,
             "mc_years": "",
             "areas_ids": "",
@@ -26,7 +31,7 @@ AREAS_REQUESTS__IND = [
     (
         {
             "output_id": "20201014-1425eco-goodbye",
-            "query_file": AreasQueryFile.DETAILS,
+            "query_file": MCIndAreasQueryFile.DETAILS,
             "frequency": MatrixFrequency.HOURLY,
             "mc_years": "1",
             "areas_ids": "de,fr,it",
@@ -37,7 +42,7 @@ AREAS_REQUESTS__IND = [
     (
         {
             "output_id": "20201014-1425eco-goodbye",
-            "query_file": AreasQueryFile.VALUES,
+            "query_file": MCIndAreasQueryFile.VALUES,
             "frequency": MatrixFrequency.WEEKLY,
             "mc_years": "1,2",
             "areas_ids": "",
@@ -48,7 +53,7 @@ AREAS_REQUESTS__IND = [
     (
         {
             "output_id": "20201014-1425eco-goodbye",
-            "query_file": AreasQueryFile.VALUES,
+            "query_file": MCIndAreasQueryFile.VALUES,
             "frequency": MatrixFrequency.HOURLY,
             "mc_years": "2",
             "areas_ids": "es,fr,de",
@@ -59,7 +64,7 @@ AREAS_REQUESTS__IND = [
     (
         {
             "output_id": "20201014-1425eco-goodbye",
-            "query_file": AreasQueryFile.VALUES,
+            "query_file": MCIndAreasQueryFile.VALUES,
             "frequency": MatrixFrequency.ANNUAL,
             "mc_years": "",
             "areas_ids": "",
@@ -73,7 +78,7 @@ LINKS_REQUESTS__IND = [
     (
         {
             "output_id": "20201014-1425eco-goodbye",
-            "query_file": LinksQueryFile.VALUES,
+            "query_file": MCIndLinksQueryFile.VALUES,
             "frequency": MatrixFrequency.HOURLY,
             "mc_years": "",
             "columns_names": "",
@@ -83,7 +88,7 @@ LINKS_REQUESTS__IND = [
     (
         {
             "output_id": "20201014-1425eco-goodbye",
-            "query_file": LinksQueryFile.VALUES,
+            "query_file": MCIndLinksQueryFile.VALUES,
             "frequency": MatrixFrequency.HOURLY,
             "mc_years": "1",
             "columns_names": "",
@@ -93,7 +98,7 @@ LINKS_REQUESTS__IND = [
     (
         {
             "output_id": "20201014-1425eco-goodbye",
-            "query_file": LinksQueryFile.VALUES,
+            "query_file": MCIndLinksQueryFile.VALUES,
             "frequency": MatrixFrequency.HOURLY,
             "mc_years": "1,2",
             "columns_names": "UCAP LIN.,FLOW QUAD.",
@@ -103,7 +108,7 @@ LINKS_REQUESTS__IND = [
     (
         {
             "output_id": "20201014-1425eco-goodbye",
-            "query_file": LinksQueryFile.VALUES,
+            "query_file": MCIndLinksQueryFile.VALUES,
             "frequency": MatrixFrequency.HOURLY,
             "mc_years": "1",
             "links_ids": "de - fr",
@@ -116,7 +121,7 @@ SAME_REQUEST_DIFFERENT_FORMATS__IND = [
     (
         {
             "output_id": "20201014-1425eco-goodbye",
-            "query_file": LinksQueryFile.VALUES,
+            "query_file": MCIndLinksQueryFile.VALUES,
             "frequency": MatrixFrequency.HOURLY,
             "format": "csv",
         },
@@ -125,7 +130,7 @@ SAME_REQUEST_DIFFERENT_FORMATS__IND = [
     (
         {
             "output_id": "20201014-1425eco-goodbye",
-            "query_file": LinksQueryFile.VALUES,
+            "query_file": MCIndLinksQueryFile.VALUES,
             "frequency": MatrixFrequency.HOURLY,
             "format": "tsv",
         },
@@ -134,7 +139,7 @@ SAME_REQUEST_DIFFERENT_FORMATS__IND = [
     (
         {
             "output_id": "20201014-1425eco-goodbye",
-            "query_file": LinksQueryFile.VALUES,
+            "query_file": MCIndLinksQueryFile.VALUES,
             "frequency": MatrixFrequency.HOURLY,
             "format": "xlsx",
         },
@@ -146,19 +151,19 @@ SAME_REQUEST_DIFFERENT_FORMATS__IND = [
 INCOHERENT_REQUESTS_BODIES__IND = [
     {
         "output_id": "20201014-1425eco-goodbye",
-        "query_file": AreasQueryFile.VALUES,
+        "query_file": MCIndAreasQueryFile.VALUES,
         "frequency": MatrixFrequency.HOURLY,
         "mc_years": "123456789",
     },
     {
         "output_id": "20201014-1425eco-goodbye",
-        "query_file": LinksQueryFile.VALUES,
+        "query_file": MCIndLinksQueryFile.VALUES,
         "frequency": MatrixFrequency.HOURLY,
         "columns_names": "fake_col",
     },
     {
         "output_id": "20201014-1425eco-goodbye",
-        "query_file": AreasQueryFile.VALUES,
+        "query_file": MCIndAreasQueryFile.VALUES,
         "frequency": MatrixFrequency.HOURLY,
         "links_ids": "fake_id",
     },
@@ -172,12 +177,12 @@ WRONGLY_TYPED_REQUESTS__IND = [
     },
     {
         "output_id": "20201014-1425eco-goodbye",
-        "query_file": AreasQueryFile.VALUES,
+        "query_file": MCIndAreasQueryFile.VALUES,
         "frequency": "fake_frequency",
     },
     {
         "output_id": "20201014-1425eco-goodbye",
-        "query_file": AreasQueryFile.VALUES,
+        "query_file": MCIndAreasQueryFile.VALUES,
         "frequency": MatrixFrequency.HOURLY,
         "format": "fake_format",
     },
@@ -188,7 +193,7 @@ AREAS_REQUESTS__ALL = [
     (
         {
             "output_id": "20201014-1427eco",
-            "query_file": AreasQueryFile.VALUES,
+            "query_file": MCAllAreasQueryFile.VALUES,
             "frequency": MatrixFrequency.DAILY,
             "areas_ids": "",
             "columns_names": "",
@@ -198,7 +203,7 @@ AREAS_REQUESTS__ALL = [
     (
         {
             "output_id": "20201014-1427eco",
-            "query_file": AreasQueryFile.DETAILS,
+            "query_file": MCAllAreasQueryFile.DETAILS,
             "frequency": MatrixFrequency.MONTHLY,
             "areas_ids": "de,fr,it",
             "columns_names": "",
@@ -208,17 +213,17 @@ AREAS_REQUESTS__ALL = [
     (
         {
             "output_id": "20201014-1427eco",
-            "query_file": AreasQueryFile.VALUES,
+            "query_file": MCAllAreasQueryFile.VALUES,
             "frequency": MatrixFrequency.DAILY,
             "areas_ids": "",
-            "columns_names": "",
+            "columns_names": "OP. COST,MRG. PRICE",
         },
         "test-03-all.result.tsv",
     ),
     (
         {
             "output_id": "20201014-1427eco",
-            "query_file": AreasQueryFile.VALUES,
+            "query_file": MCAllAreasQueryFile.VALUES,
             "frequency": MatrixFrequency.DAILY,
             "areas_ids": "es,fr,de",
             "columns_names": "",
@@ -228,20 +233,30 @@ AREAS_REQUESTS__ALL = [
     (
         {
             "output_id": "20201014-1427eco",
-            "query_file": AreasQueryFile.VALUES,
+            "query_file": MCAllAreasQueryFile.VALUES,
             "frequency": MatrixFrequency.MONTHLY,
             "areas_ids": "",
             "columns_names": "",
         },
         "test-05-all.result.tsv",
     ),
+    (
+        {
+            "output_id": "20201014-1427eco",
+            "query_file": MCAllAreasQueryFile.ID,
+            "frequency": MatrixFrequency.DAILY,
+            "areas_ids": "",
+            "columns_names": "",
+        },
+        "test-06-all.result.tsv",
+    ),
 ]
 
 LINKS_REQUESTS__ALL = [
     (
         {
-            "output_id": "20201014-1427eco",
-            "query_file": LinksQueryFile.VALUES,
+            "output_id": "20241807-1540eco-extra-outputs",
+            "query_file": MCAllLinksQueryFile.VALUES,
             "frequency": MatrixFrequency.DAILY,
             "columns_names": "",
         },
@@ -249,8 +264,8 @@ LINKS_REQUESTS__ALL = [
     ),
     (
         {
-            "output_id": "20201014-1427eco",
-            "query_file": LinksQueryFile.VALUES,
+            "output_id": "20241807-1540eco-extra-outputs",
+            "query_file": MCAllLinksQueryFile.VALUES,
             "frequency": MatrixFrequency.MONTHLY,
             "columns_names": "",
         },
@@ -258,8 +273,8 @@ LINKS_REQUESTS__ALL = [
     ),
     (
         {
-            "output_id": "20201014-1427eco",
-            "query_file": LinksQueryFile.VALUES,
+            "output_id": "20241807-1540eco-extra-outputs",
+            "query_file": MCAllLinksQueryFile.VALUES,
             "frequency": MatrixFrequency.DAILY,
             "columns_names": "",
         },
@@ -267,20 +282,29 @@ LINKS_REQUESTS__ALL = [
     ),
     (
         {
-            "output_id": "20201014-1427eco",
-            "query_file": LinksQueryFile.VALUES,
+            "output_id": "20241807-1540eco-extra-outputs",
+            "query_file": MCAllLinksQueryFile.VALUES,
             "frequency": MatrixFrequency.MONTHLY,
             "links_ids": "de - fr",
         },
         "test-04-all.result.tsv",
+    ),
+    (
+        {
+            "output_id": "20241807-1540eco-extra-outputs",
+            "query_file": MCAllLinksQueryFile.ID,
+            "frequency": MatrixFrequency.DAILY,
+            "links_ids": "",
+        },
+        "test-05-all.result.tsv",
     ),
 ]
 
 SAME_REQUEST_DIFFERENT_FORMATS__ALL = [
     (
         {
-            "output_id": "20201014-1427eco",
-            "query_file": LinksQueryFile.VALUES,
+            "output_id": "20241807-1540eco-extra-outputs",
+            "query_file": MCAllLinksQueryFile.VALUES,
             "frequency": MatrixFrequency.DAILY,
             "format": "csv",
         },
@@ -288,18 +312,18 @@ SAME_REQUEST_DIFFERENT_FORMATS__ALL = [
     ),
     (
         {
-            "output_id": "20201014-1427eco",
-            "query_file": LinksQueryFile.VALUES,
-            "frequency": MatrixFrequency.MONTHLY,
+            "output_id": "20241807-1540eco-extra-outputs",
+            "query_file": MCAllLinksQueryFile.VALUES,
+            "frequency": MatrixFrequency.DAILY,
             "format": "tsv",
         },
         "test-01-all.result.tsv",
     ),
     (
         {
-            "output_id": "20201014-1427eco",
-            "query_file": LinksQueryFile.VALUES,
-            "frequency": MatrixFrequency.MONTHLY,
+            "output_id": "20241807-1540eco-extra-outputs",
+            "query_file": MCAllLinksQueryFile.VALUES,
+            "frequency": MatrixFrequency.DAILY,
             "format": "xlsx",
         },
         "test-01-all.result.tsv",
@@ -310,18 +334,18 @@ SAME_REQUEST_DIFFERENT_FORMATS__ALL = [
 INCOHERENT_REQUESTS_BODIES__ALL = [
     {
         "output_id": "20201014-1427eco",
-        "query_file": AreasQueryFile.VALUES,
+        "query_file": MCAllAreasQueryFile.VALUES,
         "frequency": MatrixFrequency.DAILY,
     },
     {
         "output_id": "20201014-1427eco",
-        "query_file": LinksQueryFile.VALUES,
+        "query_file": MCAllLinksQueryFile.VALUES,
         "frequency": MatrixFrequency.DAILY,
         "columns_names": "fake_col",
     },
     {
         "output_id": "20201014-1427eco",
-        "query_file": AreasQueryFile.VALUES,
+        "query_file": MCAllAreasQueryFile.VALUES,
         "frequency": MatrixFrequency.MONTHLY,
         "links_ids": "fake_id",
     },
@@ -335,12 +359,12 @@ WRONGLY_TYPED_REQUESTS__ALL = [
     },
     {
         "output_id": "20201014-1427eco",
-        "query_file": AreasQueryFile.VALUES,
+        "query_file": MCAllAreasQueryFile.VALUES,
         "frequency": "fake_frequency",
     },
     {
         "output_id": "20201014-1427eco",
-        "query_file": AreasQueryFile.VALUES,
+        "query_file": MCAllAreasQueryFile.VALUES,
         "frequency": MatrixFrequency.DAILY,
         "format": "fake_format",
     },
@@ -482,7 +506,7 @@ class TestRawDataAggregationMCInd:
         res = client.get(
             f"/v1/studies/{internal_study_id}/areas/aggregate/mc-ind/unknown_id",
             params={
-                "query_file": AreasQueryFile.VALUES,
+                "query_file": MCIndAreasQueryFile.VALUES,
                 "frequency": MatrixFrequency.HOURLY,
             },
         )
@@ -494,7 +518,7 @@ class TestRawDataAggregationMCInd:
         res = client.get(
             f"/v1/studies/{internal_study_id}/links/aggregate/mc-ind/unknown_id",
             params={
-                "query_file": LinksQueryFile.VALUES,
+                "query_file": MCIndLinksQueryFile.VALUES,
                 "frequency": MatrixFrequency.HOURLY,
             },
         )
@@ -538,7 +562,6 @@ class TestRawDataAggregationMCAll:
                 expected_df[col] = expected_df[col].astype(df[col].dtype)
             pd.testing.assert_frame_equal(df, expected_df)
 
-    @pytest.mark.skip(reason="Links aggregation data for `economies/mc-all` is not available yet.")
     def test_links_aggregation(
         self,
         client: TestClient,
@@ -568,7 +591,6 @@ class TestRawDataAggregationMCAll:
                 expected_df[col] = expected_df[col].astype(df[col].dtype)
             pd.testing.assert_frame_equal(df, expected_df)
 
-    @pytest.mark.skip(reason="Links aggregation data for `economies/mc-all` is not available yet.")
     def test_different_formats(
         self,
         client: TestClient,
@@ -640,7 +662,7 @@ class TestRawDataAggregationMCAll:
         res = client.get(
             f"/v1/studies/{internal_study_id}/areas/aggregate/mc-all/unknown_id",
             params={
-                "query_file": AreasQueryFile.VALUES,
+                "query_file": MCIndAreasQueryFile.VALUES,
                 "frequency": MatrixFrequency.HOURLY,
             },
         )
@@ -652,7 +674,7 @@ class TestRawDataAggregationMCAll:
         res = client.get(
             f"/v1/studies/{internal_study_id}/links/aggregate/mc-all/unknown_id",
             params={
-                "query_file": LinksQueryFile.VALUES,
+                "query_file": MCIndLinksQueryFile.VALUES,
                 "frequency": MatrixFrequency.HOURLY,
             },
         )
