@@ -49,7 +49,13 @@ from antarest.login.service import LoginService
 from antarest.matrixstore.matrix_editor import MatrixEditInstruction
 from antarest.study.business.adequacy_patch_management import AdequacyPatchManager
 from antarest.study.business.advanced_parameters_management import AdvancedParamsManager
-from antarest.study.business.aggregator_management import AggregatorManager, AreasQueryFile, LinksQueryFile
+from antarest.study.business.aggregator_management import (
+    AggregatorManager,
+    MCAllAreasQueryFile,
+    MCAllLinksQueryFile,
+    MCIndAreasQueryFile,
+    MCIndLinksQueryFile,
+)
 from antarest.study.business.allocation_management import AllocationManager
 from antarest.study.business.area_management import AreaCreationDTO, AreaInfoDTO, AreaManager, AreaType, UpdateAreaUi
 from antarest.study.business.areas.hydro_management import HydroManager
@@ -372,7 +378,7 @@ class StudyService:
         self,
         uuid: str,
         output_id: str,
-        query_file: t.Union[AreasQueryFile, LinksQueryFile],
+        query_file: t.Union[MCIndAreasQueryFile, MCIndLinksQueryFile],
         frequency: MatrixFrequency,
         mc_years: t.Sequence[int],
         columns_names: t.Sequence[str],
@@ -407,7 +413,7 @@ class StudyService:
         self,
         uuid: str,
         output_id: str,
-        query_file: t.Union[AreasQueryFile, LinksQueryFile],
+        query_file: t.Union[MCAllAreasQueryFile, MCAllLinksQueryFile],
         frequency: MatrixFrequency,
         columns_names: t.Sequence[str],
         ids_to_consider: t.Sequence[str],

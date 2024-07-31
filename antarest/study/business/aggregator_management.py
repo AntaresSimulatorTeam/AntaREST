@@ -40,15 +40,28 @@ AREA_OR_LINK_INDEX__ALL = 1
 logger = logging.getLogger(__name__)
 
 
-class AreasQueryFile(str, Enum):
+class MCIndAreasQueryFile(str, Enum):
     VALUES = "values"
     DETAILS = "details"
     DETAILS_ST_STORAGE = "details-STstorage"
     DETAILS_RES = "details-res"
 
 
-class LinksQueryFile(str, Enum):
+class MCAllAreasQueryFile(str, Enum):
     VALUES = "values"
+    DETAILS = "details"
+    DETAILS_ST_STORAGE = "details-STstorage"
+    DETAILS_RES = "details-res"
+    ID = "id"
+
+
+class MCIndLinksQueryFile(str, Enum):
+    VALUES = "values"
+
+
+class MCAllLinksQueryFile(str, Enum):
+    VALUES = "values"
+    ID = "id"
 
 
 def _checks_estimated_size(nb_files: int, df_bytes_size: int, nb_files_checked: int) -> None:
@@ -63,7 +76,7 @@ class AggregatorManager:
         self,
         study_path: Path,
         output_id: str,
-        query_file: t.Union[AreasQueryFile, LinksQueryFile],
+        query_file: t.Union[MCIndAreasQueryFile, MCAllAreasQueryFile, MCIndLinksQueryFile, MCAllLinksQueryFile],
         frequency: MatrixFrequency,
         ids_to_consider: t.Sequence[str],
         columns_names: t.Sequence[str],
@@ -71,12 +84,18 @@ class AggregatorManager:
     ):
         self.study_path: Path = study_path
         self.output_id: str = output_id
-        self.query_file: t.Union[AreasQueryFile, LinksQueryFile] = query_file
+        self.query_file: t.Union[
+            MCIndAreasQueryFile, MCAllAreasQueryFile, MCIndLinksQueryFile, MCAllLinksQueryFile
+        ] = query_file
         self.frequency: MatrixFrequency = frequency
         self.mc_years: t.Optional[t.Sequence[int]] = mc_years
         self.columns_names: t.Sequence[str] = columns_names
         self.ids_to_consider: t.Sequence[str] = ids_to_consider
-        self.output_type = "areas" if isinstance(query_file, AreasQueryFile) else "links"
+        self.output_type = (
+            "areas"
+            if (isinstance(query_file, MCIndAreasQueryFile) or isinstance(query_file, MCAllAreasQueryFile))
+            else "links"
+        )
         self.mc_ind_path = self.study_path / MC_IND_TEMPLATE_PARTS.format(sim_id=self.output_id)
         self.mc_all_path = self.study_path / MC_ALL_TEMPLATE_PARTS.format(sim_id=self.output_id)
 
@@ -96,7 +115,7 @@ class AggregatorManager:
         # normalize columns names
         new_cols = []
         for col in body.columns:
-            name_to_consider = col[0] if self.query_file.value == AreasQueryFile.VALUES else " ".join(col)
+            name_to_consider = col[0] if self.query_file.value == MCIndAreasQueryFile.VALUES else " ".join(col)
             new_cols.append(name_to_consider.upper().strip())
 
         df.index = date
@@ -150,11 +169,6 @@ class AggregatorManager:
         return all_output_files
 
     def _gather_all_files_to_consider__all(self) -> t.Sequence[Path]:
-        # Monte Carlo years filtering
-        all_mc_years = [d.name for d in self.mc_all_path.iterdir()]
-        if not all_mc_years:
-            return []
-
         # Links / Areas ids filtering
         areas_or_links_ids = self._filter_ids(self.mc_all_path / self.output_type)
 

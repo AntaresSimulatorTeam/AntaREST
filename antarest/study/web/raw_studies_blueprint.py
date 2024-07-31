@@ -18,7 +18,12 @@ from antarest.core.swagger import get_path_examples
 from antarest.core.utils.utils import sanitize_string, sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
-from antarest.study.business.aggregator_management import AreasQueryFile, LinksQueryFile
+from antarest.study.business.aggregator_management import (
+    MCAllAreasQueryFile,
+    MCAllLinksQueryFile,
+    MCIndAreasQueryFile,
+    MCIndLinksQueryFile,
+)
 from antarest.study.service import StudyService
 from antarest.study.storage.df_download import TableExportFormat, export_file
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
@@ -182,7 +187,7 @@ def create_raw_study_routes(
     def aggregate_areas_raw_data(
         uuid: str,
         output_id: str,
-        query_file: AreasQueryFile,
+        query_file: MCIndAreasQueryFile,
         frequency: MatrixFrequency,
         mc_years: str = "",
         areas_ids: str = "",
@@ -251,7 +256,7 @@ def create_raw_study_routes(
     def aggregate_links_raw_data(
         uuid: str,
         output_id: str,
-        query_file: LinksQueryFile,
+        query_file: MCIndLinksQueryFile,
         frequency: MatrixFrequency,
         mc_years: str = "",
         links_ids: str = "",
@@ -319,7 +324,7 @@ def create_raw_study_routes(
     def aggregate_areas_raw_data__all(
         uuid: str,
         output_id: str,
-        query_file: AreasQueryFile,
+        query_file: MCAllAreasQueryFile,
         frequency: MatrixFrequency,
         areas_ids: str = "",
         columns_names: str = "",
@@ -385,7 +390,7 @@ def create_raw_study_routes(
     def aggregate_links_raw_data__all(
         uuid: str,
         output_id: str,
-        query_file: LinksQueryFile,
+        query_file: MCAllLinksQueryFile,
         frequency: MatrixFrequency,
         links_ids: str = "",
         columns_names: str = "",
