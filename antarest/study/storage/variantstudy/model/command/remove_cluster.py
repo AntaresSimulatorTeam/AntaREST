@@ -193,9 +193,11 @@ class RemoveCluster(ICommand):
 
         matrix_suffixes = ["_lt", "_gt", "_eq"] if study_data.config.version >= 870 else [""]
 
+        existing_files = study_data.tree.get(["input", "bindingconstraints"], depth=1)
         for bc_index, bc in bc_to_remove.items():
             for suffix in matrix_suffixes:
-                # noinspection SpellCheckingInspection
-                study_data.tree.delete(["input", "bindingconstraints", f"{bc['id']}{suffix}"])
+                matrix_id = f"{bc['id']}{suffix}"
+                if matrix_id in existing_files:
+                    study_data.tree.delete(["input", "bindingconstraints", matrix_id])
 
         study_data.tree.save(binding_constraints, url)
