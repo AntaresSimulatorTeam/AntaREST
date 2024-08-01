@@ -65,37 +65,41 @@ def _update_matrices_names(
         BindingConstraintOperator.LESS: "lt",
     }
 
+    def get_matrix_path(constraint_folder: Path, matrix_id: str) -> Path:
+        raw_file = constraint_folder / f"{matrix_id}.txt"
+        return raw_file if raw_file.exists() else raw_file.with_suffix(".txt.link")
+
+    def get_target_path(existing_path: Path, constraint_folder: Path, matrix_id: str) -> Path:
+        new_path = constraint_folder / f"{matrix_id}{''.join(existing_path.suffixes)}"
+        new_path.unlink(missing_ok=True)
+        return new_path
+
     base_path = file_study.config.study_path / "input" / "bindingconstraints"
     if existing_operator != BindingConstraintOperator.BOTH and new_operator != BindingConstraintOperator.BOTH:
-        current_path = _get_matrix_path(base_path, f"{bc_id}_{operator_matrices_map[existing_operator]}")
-        target_path = _get_target_path(current_path, base_path, f"{bc_id}_{operator_matrices_map[new_operator]}")
+        current_path = get_matrix_path(base_path, f"{bc_id}_{operator_matrices_map[existing_operator]}")
+        target_path = get_target_path(current_path, base_path, f"{bc_id}_{operator_matrices_map[new_operator]}")
         current_path.rename(target_path)
     elif new_operator == BindingConstraintOperator.BOTH:
-        current_path = _get_matrix_path(base_path, f"{bc_id}_{operator_matrices_map[existing_operator]}")
+        current_path = get_matrix_path(base_path, f"{bc_id}_{operator_matrices_map[existing_operator]}")
         if existing_operator == BindingConstraintOperator.EQUAL:
-            lt_path = _get_target_path(current_path, base_path, f"{bc_id}_lt")
-            gt_path = _get_target_path(current_path, base_path, f"{bc_id}_gt")
+            lt_path = get_target_path(current_path, base_path, f"{bc_id}_lt")
+            gt_path = get_target_path(current_path, base_path, f"{bc_id}_gt")
             current_path.rename(lt_path)
             shutil.copy(lt_path, gt_path)
         else:
             term = "lt" if existing_operator == BindingConstraintOperator.GREATER else "gt"
-            target_path = _get_target_path(current_path, base_path, f"{bc_id}_{term}")
+            target_path = get_target_path(current_path, base_path, f"{bc_id}_{term}")
             shutil.copy(current_path, target_path)
     else:
         if new_operator == BindingConstraintOperator.EQUAL:
-            _get_matrix_path(base_path, f"{bc_id}_gt").unlink(missing_ok=True)
-            current_path = _get_matrix_path(base_path, f"{bc_id}_lt")
-            target_path = _get_target_path(current_path, base_path, f"{bc_id}_eq")
+            get_matrix_path(base_path, f"{bc_id}_gt").unlink(missing_ok=True)
+            current_path = get_matrix_path(base_path, f"{bc_id}_lt")
+            target_path = get_target_path(current_path, base_path, f"{bc_id}_eq")
             current_path.rename(target_path)
         elif new_operator == BindingConstraintOperator.LESS:
-            _get_matrix_path(base_path, f"{bc_id}_gt").unlink(missing_ok=True)
+            get_matrix_path(base_path, f"{bc_id}_gt").unlink(missing_ok=True)
         else:
-            _get_matrix_path(base_path, f"{bc_id}_lt").unlink(missing_ok=True)
-
-
-def _get_matrix_path(base_path: Path, matrix_id: str) -> Path:
-    raw_file = base_path / f"{matrix_id}.txt"
-    return raw_file if raw_file.exists() else raw_file.with_suffix(".txt.link")
+            get_matrix_path(base_path, f"{bc_id}_lt").unlink(missing_ok=True)
 
 
 def _get_target_path(current_path: Path, base_path: Path, matrix_id: str) -> Path:
