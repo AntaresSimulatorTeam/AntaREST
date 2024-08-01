@@ -1,71 +1,96 @@
-import { useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@mui/material";
-import UploadOutlinedIcon from "@mui/icons-material/UploadOutlined";
-import { getStudyData, importFile } from "../../../../../../services/api/study";
-import { Content, Header, Root } from "./style";
-import ImportDialog from "../../../../../common/dialogs/ImportDialog";
+import { Box, useTheme } from "@mui/material";
+import { getStudyData } from "../../../../../../services/api/study";
 import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithSnackbarError";
 import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
-import DebugContext from "../DebugContext";
+import ViewWrapper from "../../../../../common/page/ViewWrapper";
+import {
+  Light as SyntaxHighlighter,
+  type SyntaxHighlighterProps,
+} from "react-syntax-highlighter";
+import xml from "react-syntax-highlighter/dist/esm/languages/hljs/xml";
+import plaintext from "react-syntax-highlighter/dist/esm/languages/hljs/plaintext";
+import ini from "react-syntax-highlighter/dist/esm/languages/hljs/ini";
+import properties from "react-syntax-highlighter/dist/esm/languages/hljs/properties";
+import { atomOneDark } from "react-syntax-highlighter/dist/esm/styles/hljs";
+
+SyntaxHighlighter.registerLanguage("xml", xml);
+SyntaxHighlighter.registerLanguage("plaintext", plaintext);
+SyntaxHighlighter.registerLanguage("ini", ini);
+SyntaxHighlighter.registerLanguage("properties", properties);
+
+// Ex: "[2024-05-21 17:18:57][solver][check]"
+const logsRegex = /^(\[[^\]]*\]){3}/;
+// Ex: "EXP : 0"
+const propertiesRegex = /^[^:]+ : [^:]+/;
 
 interface Props {
   studyId: string;
   path: string;
 }
 
-function Text({ studyId, path }: Props) {
-  const [t] = useTranslation();
-  const { reloadTreeData } = useContext(DebugContext);
-  const [openImportDialog, setOpenImportDialog] = useState(false);
+function getSyntaxProps(data: string | string[]): SyntaxHighlighterProps {
+  const isArray = Array.isArray(data);
+  const text = isArray ? data.join("\n") : data;
 
-  const res = usePromiseWithSnackbarError(() => getStudyData(studyId, path), {
-    errorMessage: t("studies.error.retrieveData"),
-    deps: [studyId, path],
-  });
-
-  ////////////////////////////////////////////////////////////////
-  // Event Handlers
-  ////////////////////////////////////////////////////////////////
-
-  const handleImport = async (file: File) => {
-    await importFile(file, studyId, path);
-    reloadTreeData();
+  return {
+    children: text,
+    showLineNumbers: isArray,
+    language: (() => {
+      const firstLine = text.split("\n")[0];
+      if (firstLine.startsWith("<?xml")) {
+        return "xml";
+      } else if (logsRegex.test(firstLine)) {
+        return "ini";
+      } else if (propertiesRegex.test(firstLine)) {
+        return "properties";
+      }
+      return "plaintext";
+    })(),
   };
+}
+
+function Text({ studyId, path }: Props) {
+  const { t } = useTranslation();
+  const theme = useTheme();
+
+  const res = usePromiseWithSnackbarError(
+    () => getStudyData<string>(studyId, path),
+    {
+      errorMessage: t("studies.error.retrieveData"),
+      deps: [studyId, path],
+    },
+  );
 
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
 
   return (
-    <Root>
-      <Header>
-        <Button
-          variant="outlined"
-          color="primary"
-          startIcon={<UploadOutlinedIcon />}
-          onClick={() => setOpenImportDialog(true)}
-          sx={{ mb: 1 }}
-        >
-          {t("global.import")}
-        </Button>
-      </Header>
+    <ViewWrapper>
       <UsePromiseCond
         response={res}
         ifResolved={(data) => (
-          <Content>
-            <code style={{ whiteSpace: "pre" }}>{data}</code>
-          </Content>
+          <Box sx={{ height: 1, display: "flex", flexDirection: "column" }}>
+            <SyntaxHighlighter
+              style={atomOneDark}
+              lineNumberStyle={{
+                opacity: 0.5,
+                paddingRight: theme.spacing(3),
+              }}
+              customStyle={{
+                margin: 0,
+                overflow: "auto",
+                padding: theme.spacing(2),
+                borderRadius: theme.shape.borderRadius,
+                fontSize: theme.typography.body2.fontSize,
+              }}
+              {...getSyntaxProps(data)}
+            />
+          </Box>
         )}
       />
-      {openImportDialog && (
-        <ImportDialog
-          open={openImportDialog}
-          onCancel={() => setOpenImportDialog(false)}
-          onImport={handleImport}
-        />
-      )}
-    </Root>
+    </ViewWrapper>
   );
 }
 
