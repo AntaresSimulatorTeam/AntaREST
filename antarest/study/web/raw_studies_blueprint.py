@@ -355,7 +355,7 @@ def create_raw_study_routes(
 
         # Avoid vulnerabilities by sanitizing the `uuid` and `output_id` parameters
         uuid = sanitize_uuid(uuid)
-        output_id = sanitize_uuid(output_id)
+        output_id = sanitize_string(output_id)
 
         parameters = RequestParameters(user=current_user)
         df_matrix = study_service.aggregate_output_data__all(
@@ -420,7 +420,7 @@ def create_raw_study_routes(
 
         # Avoid vulnerabilities by sanitizing the `uuid` and `output_id` parameters
         uuid = sanitize_uuid(uuid)
-        output_id = sanitize_uuid(output_id)
+        output_id = sanitize_string(output_id)
 
         parameters = RequestParameters(user=current_user)
         df_matrix = study_service.aggregate_output_data__all(

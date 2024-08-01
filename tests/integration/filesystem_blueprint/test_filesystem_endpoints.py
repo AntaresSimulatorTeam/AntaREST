@@ -256,8 +256,8 @@ class TestFilesystemEndpoints:
                 {
                     "path": str(ext_workspace_path / "STA-mini"),
                     "file_type": "directory",
-                    "file_count": IntegerRange(900, 1000),  # 918
-                    "size_bytes": IntegerRange(7_000_000, 9_000_000),  # nt: 7_741_619, posix: 8_597_683
+                    "file_count": IntegerRange(1000, 1100),  # 1043
+                    "size_bytes": IntegerRange(9_000_000, 11_000_000),  # 10_428_620
                     "created": AnyIsoDateTime(),
                     "accessed": AnyIsoDateTime(),
                     "modified": AnyIsoDateTime(),
@@ -415,7 +415,7 @@ class TestFilesystemEndpoints:
                 sizes.append(actual[0]["size_bytes"])
 
             # Check the sizes
-            # The size of the new study should be between 140 and 300 KB.
-            # The suze of 'STA-mini' should be between 7 and 9 MB.
+            # The size of the new study should be between 140 and 350 KB.
+            # The suze of 'STA-mini' should be between 9 and 11 MB.
             sizes.sort()
-            assert sizes == [IntegerRange(140_000, 300_000), IntegerRange(7_000_000, 9_000_000)]
+            assert sizes == [IntegerRange(140_000, 350_000), IntegerRange(9_000_000, 11_000_000)]
