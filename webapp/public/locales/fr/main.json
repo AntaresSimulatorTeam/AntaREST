@@ -239,6 +239,7 @@
   "study.district": "District",
   "study.bindingconstraints": "Contraintes Couplantes",
   "study.debug": "Debug",
+  "study.debug.file.image": "Fichier image",
   "study.failtofetchlogs": "Échec du chargement des logs",
   "study.failtokilltask": "Échec de l'annulation de l'étude",
   "study.publicMode": "Mode public",
