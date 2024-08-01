@@ -1,5 +1,6 @@
 import DataObjectIcon from "@mui/icons-material/DataObject";
 import TextSnippetIcon from "@mui/icons-material/TextSnippet";
+import ImageIcon from "@mui/icons-material/Image";
 import FolderIcon from "@mui/icons-material/Folder";
 import DatasetIcon from "@mui/icons-material/Dataset";
 import { SvgIconComponent } from "@mui/icons-material";
@@ -9,7 +10,7 @@ import * as RA from "ramda-adjunct";
 // Types
 ////////////////////////////////////////////////////////////////
 
-export type FileType = "json" | "matrix" | "file" | "folder";
+export type FileType = "json" | "matrix" | "text" | "image" | "folder";
 
 export interface FileInfo {
   fileType: FileType;
@@ -32,8 +33,9 @@ export type TreeData = TreeFolder | TreeFile;
 const iconByFileType: Record<FileType, SvgIconComponent> = {
   matrix: DatasetIcon,
   json: DataObjectIcon,
+  text: TextSnippetIcon,
+  image: ImageIcon,
   folder: FolderIcon,
-  file: TextSnippetIcon,
 } as const;
 
 /**
@@ -67,6 +69,9 @@ export function getFileType(treeData: TreeData): FileType {
     if (treeData.startsWith("json://") || treeData.endsWith(".json")) {
       return "json";
     }
+    if (treeData.startsWith("file://") && treeData.endsWith(".ico")) {
+      return "image";
+    }
   }
-  return isFolder(treeData) ? "folder" : "file";
+  return isFolder(treeData) ? "folder" : "text";
 }

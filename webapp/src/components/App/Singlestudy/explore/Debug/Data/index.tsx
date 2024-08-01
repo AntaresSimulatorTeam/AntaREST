@@ -1,18 +1,25 @@
 import Text from "./Text";
+import Image from "./Image";
 import Json from "./Json";
 import Matrix from "./Matrix";
-import type { FileInfo } from "../utils";
-import { Box } from "@mui/material";
+import type { FileInfo, FileType } from "../utils";
 
 interface Props extends FileInfo {
   studyId: string;
 }
 
-const componentByFileType = {
+interface DataComponentProps {
+  studyId: string;
+  path: string;
+}
+type DataComponent = React.ComponentType<DataComponentProps>;
+
+const componentByFileType: Record<FileType, DataComponent> = {
   matrix: Matrix,
   json: Json,
-  file: Text,
-  folder: Box,
+  text: Text,
+  image: Image,
+  folder: ({ path }) => path,
 } as const;
 
 function Data({ studyId, fileType, filePath }: Props) {
