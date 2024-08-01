@@ -1,5 +1,7 @@
 import json
+import shutil
 import typing as t
+from pathlib import Path
 
 from antarest.core.model import JSON
 from antarest.matrixstore.model import MatrixData
@@ -9,7 +11,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint 
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import (
     DEFAULT_GROUP,
@@ -22,42 +23,27 @@ from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 MatrixType = t.List[t.List[MatrixData]]
 
-ALIAS_OPERATOR_MAP = {
-    BindingConstraintOperator.EQUAL: "eq",
-    BindingConstraintOperator.LESS: "lt",
-    BindingConstraintOperator.GREATER: "gt",
-}
-
 
 def _update_matrices_names(
     file_study: FileStudy,
-    binding_constraint_id: str,
+    bc_id: str,
     existing_operator: BindingConstraintOperator,
     new_operator: BindingConstraintOperator,
 ) -> None:
     """
     Update the matrix file name according to the new operator.
+    Due to legacy matrices generation, we need to check if the new matrix file already exists
+    and if it does, we need to first remove it before renaming the existing matrix file
 
     Args:
         file_study: the file study
-        binding_constraint_id: the binding constraint ID
+        bc_id: the binding constraint ID
         existing_operator: the existing operator
         new_operator: the new operator
 
     Raises:
         NotImplementedError: if the case is not handled
     """
-
-    parent_folder_node = file_study.tree.get_node(["input", "bindingconstraints"])
-    matrix_lt = parent_folder_node.get_node([f"{binding_constraint_id}_lt"])
-    assert isinstance(matrix_lt, LazyNode), f"Node type not handled yet: LazyNode expected, got {type(matrix_lt)}"
-    matrix_eq = parent_folder_node.get_node([f"{binding_constraint_id}_eq"])
-    assert isinstance(matrix_eq, LazyNode), f"Node type not handled yet: LazyNode expected, got {type(matrix_eq)}"
-    matrix_gt = parent_folder_node.get_node([f"{binding_constraint_id}_gt"])
-    assert isinstance(matrix_gt, LazyNode), f"Node type not handled yet: LazyNode expected, got {type(matrix_gt)}"
-
-    # Due to legacy matrices generation, we need to check if the new matrix file already exists
-    #  and if it does, we need to first remove it before renaming the existing matrix file
 
     handled_operators = [
         BindingConstraintOperator.EQUAL,
@@ -72,37 +58,50 @@ def _update_matrices_names(
         )
     elif existing_operator == new_operator:
         return  # nothing to do
-    elif existing_operator != BindingConstraintOperator.BOTH and new_operator != BindingConstraintOperator.BOTH:
-        matrix_node = parent_folder_node.get_node([f"{binding_constraint_id}_{ALIAS_OPERATOR_MAP[existing_operator]}"])
-        assert isinstance(
-            matrix_node, LazyNode
-        ), f"Node type not handled yet: LazyNode expected, got {type(matrix_node)}"
-        new_matrix_node = parent_folder_node.get_node([f"{binding_constraint_id}_{ALIAS_OPERATOR_MAP[new_operator]}"])
-        assert isinstance(
-            new_matrix_node, LazyNode
-        ), f"Node type not handled yet: LazyNode expected, got {type(new_matrix_node)}"
-        matrix_node.rename_file(new_matrix_node)
+
+    operator_matrices_map = {
+        BindingConstraintOperator.EQUAL: "eq",
+        BindingConstraintOperator.GREATER: "gt",
+        BindingConstraintOperator.LESS: "lt",
+    }
+
+    base_path = file_study.config.study_path / "input" / "bindingconstraints"
+    if existing_operator != BindingConstraintOperator.BOTH and new_operator != BindingConstraintOperator.BOTH:
+        current_path = _get_matrix_path(base_path, f"{bc_id}_{operator_matrices_map[existing_operator]}")
+        target_path = _get_target_path(current_path, base_path, f"{bc_id}_{operator_matrices_map[new_operator]}")
+        current_path.rename(target_path)
     elif new_operator == BindingConstraintOperator.BOTH:
+        current_path = _get_matrix_path(base_path, f"{bc_id}_{operator_matrices_map[existing_operator]}")
         if existing_operator == BindingConstraintOperator.EQUAL:
-            matrix_eq.rename_file(matrix_lt)
-            matrix_gt.delete()
-            # copy the matrix lt to gt
-            matrix_lt.copy_file(matrix_gt)
-        elif existing_operator == BindingConstraintOperator.LESS:
-            matrix_gt.delete()
-            matrix_lt.copy_file(matrix_gt)
+            lt_path = _get_target_path(current_path, base_path, f"{bc_id}_lt")
+            gt_path = _get_target_path(current_path, base_path, f"{bc_id}_gt")
+            current_path.rename(lt_path)
+            shutil.copy(lt_path, gt_path)
         else:
-            matrix_lt.delete()
-            matrix_gt.copy_file(matrix_lt)
+            term = "lt" if existing_operator == BindingConstraintOperator.GREATER else "gt"
+            target_path = _get_target_path(current_path, base_path, f"{bc_id}_{term}")
+            shutil.copy(current_path, target_path)
     else:
         if new_operator == BindingConstraintOperator.EQUAL:
-            # we may retrieve the mean of the two matrices, but here we just copy the lt matrix
-            matrix_lt.rename_file(matrix_eq)
-            matrix_gt.delete()
+            _get_matrix_path(base_path, f"{bc_id}_gt").unlink(missing_ok=True)
+            current_path = _get_matrix_path(base_path, f"{bc_id}_lt")
+            target_path = _get_target_path(current_path, base_path, f"{bc_id}_eq")
+            current_path.rename(target_path)
         elif new_operator == BindingConstraintOperator.LESS:
-            matrix_gt.delete()
+            _get_matrix_path(base_path, f"{bc_id}_gt").unlink(missing_ok=True)
         else:
-            matrix_lt.delete()
+            _get_matrix_path(base_path, f"{bc_id}_lt").unlink(missing_ok=True)
+
+
+def _get_matrix_path(base_path: Path, matrix_id: str) -> Path:
+    raw_file = base_path / f"{matrix_id}.txt"
+    return raw_file if raw_file.exists() else raw_file.with_suffix(".txt.link")
+
+
+def _get_target_path(current_path: Path, base_path: Path, matrix_id: str) -> Path:
+    target_path = base_path / f"{matrix_id}{''.join(current_path.suffixes)}"
+    target_path.unlink(missing_ok=True)
+    return target_path
 
 
 class UpdateBindingConstraint(AbstractBindingConstraintCommand):

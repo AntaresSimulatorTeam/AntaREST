@@ -50,8 +50,11 @@ class RemoveBindingConstraint(ICommand):
         if study_data.config.version < 870:
             study_data.tree.delete(["input", "bindingconstraints", self.id])
         else:
+            existing_files = study_data.tree.get(["input", "bindingconstraints"], depth=1)
             for term in ["lt", "gt", "eq"]:
-                study_data.tree.delete(["input", "bindingconstraints", f"{self.id}_{term}"])
+                matrix_id = f"{self.id}_{term}"
+                if matrix_id in existing_files:
+                    study_data.tree.delete(["input", "bindingconstraints", matrix_id])
 
             # When all BC of a given group are removed, the group should be removed from the scenario builder
             old_groups = {bd.get("group", DEFAULT_GROUP).lower() for bd in binding_constraints.values()}

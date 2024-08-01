@@ -1,3 +1,5 @@
+import itertools
+
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
@@ -51,9 +53,9 @@ class BindingConstraints(FolderNode):
                 BindingConstraintFrequency.WEEKLY: default_bc_weekly_daily_87,
             }
             children = {}
-            for binding in self.config.bindings:
-                for term in ["lt", "gt", "eq"]:
-                    matrix_id = f"{binding.id}_{term}"
+            for binding, term in itertools.product(self.config.bindings, ["lt", "gt", "eq"]):
+                matrix_id = f"{binding.id}_{term}"
+                if self._matrix_exists(matrix_id):
                     children[matrix_id] = InputSeriesMatrix(
                         self.context,
                         self.config.next_file(f"{matrix_id}.txt"),
@@ -66,3 +68,8 @@ class BindingConstraints(FolderNode):
         )
 
         return children
+
+    def _matrix_exists(self, matrix_id: str) -> bool:
+        matrix_wo_link = self.config.path / f"{matrix_id}.txt"
+        matrix_w_link = self.config.path / f"{matrix_id}.txt.link"
+        return matrix_wo_link.exists() or matrix_w_link.exists()

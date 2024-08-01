@@ -371,12 +371,16 @@ class AbstractBindingConstraintCommand(OptionalProperties, BindingConstraintMatr
 
         current_operator = self.operator or BindingConstraintOperator(binding_constraints[new_key]["operator"])
 
+        existing_files = study_data.tree.get(["input", "bindingconstraints"], depth=1)
         for matrix_term, matrix_alias in operator_matrices_map[current_operator]:
             if matrix_term:
                 if not isinstance(matrix_term, str):  # pragma: no cover
                     raise TypeError(repr(matrix_term))
                 if version >= 870:
-                    study_data.tree.save(matrix_term, ["input", "bindingconstraints", f"{bd_id}_{matrix_alias}"])
+                    matrix_id = f"{bd_id}_{matrix_alias}"
+                    if matrix_id not in existing_files:
+                        (study_data.config.study_path / "input" / "bindingconstraints" / f"{matrix_id}.txt").touch()
+                    study_data.tree.save(matrix_term, ["input", "bindingconstraints", matrix_id])
         return CommandOutput(status=True)
 
 
