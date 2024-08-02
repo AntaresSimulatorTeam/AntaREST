@@ -1758,6 +1758,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     )
     def generate_timeseries(
         uuid: str,
+        nb_years: int,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> t.Any:
         logger.info(
@@ -1767,7 +1768,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
 
-        return study_service.generate_timeseries(study)
+        return study_service.generate_timeseries(study, nb_years)
 
     @bp.get(
         path="/studies/{uuid}/areas/{area_id}/properties/form",
