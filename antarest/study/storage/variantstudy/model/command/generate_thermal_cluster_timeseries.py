@@ -64,13 +64,14 @@ class GenerateThermalClusterTimeSeries(ICommand):
                 fo_duration, po_duration, fo_rate, po_rate, npo_min, npo_max = [
                     np.array(col) for col in zip(*ts_generator_matrix)
                 ]
+                # todo: j'ai cette erreur: hourly modulation array must have 24 values. Moi j'en donne 8760 :/
                 cluster = ThermalCluster(
                     unit_count=thermal.unit_count,
                     nominal_power=thermal.nominal_capacity,
-                    modulation=modulation_capacity,
-                    fo_law=ProbabilityLaw(thermal.law_forced.value),
+                    modulation=modulation_capacity[:24],  # this is temporary juste to make the code work.
+                    fo_law=ProbabilityLaw(thermal.law_forced.value.upper()),
                     fo_volatility=thermal.volatility_forced,
-                    po_law=ProbabilityLaw(thermal.law_planned.value),
+                    po_law=ProbabilityLaw(thermal.law_planned.value.upper()),
                     po_volatility=thermal.volatility_planned,
                     fo_duration=fo_duration,
                     fo_rate=fo_rate,
@@ -81,13 +82,13 @@ class GenerateThermalClusterTimeSeries(ICommand):
                 )
                 # 7- Generate the time-series
                 results = generator.generate_time_series(cluster, self.nb_years)
-                generated_matrix = results.available_power.tolist()
+                generated_matrix = results.available_power.T.tolist()
                 # 8- Generates the UUID for the `get_inner_matrices` method
                 uuid = study_data.tree.context.matrix.create(generated_matrix)
                 self._INNER_MATRICES.append(uuid)
                 # 9- Write the matrix inside the input folder.
                 matrix_path = ["input", "thermal", "series", area_id, thermal.id.lower(), "series"]
-                study_data.tree.save(generated_matrix, matrix_path)
+                study_data.tree.save({"data": generated_matrix}, matrix_path)
         return CommandOutput(status=True, message="All time series were generated successfully")
 
     def to_dto(self) -> CommandDTO:
