@@ -317,6 +317,12 @@ class CommandReverter:
         extractor = base_command.get_command_extractor()
         return [extractor.generate_update_district(base, base_command.id)]
 
+    @staticmethod
+    def _revert_generate_thermal_cluster_timeseries(
+        base_command: UpdateRawFile, history: t.List["ICommand"], base: FileStudy
+    ) -> t.List[ICommand]:
+        raise NotImplementedError("The revert function for GenerateThermalClusterTimeSeries is not available")
+
     def revert(
         self,
         base_command: ICommand,
