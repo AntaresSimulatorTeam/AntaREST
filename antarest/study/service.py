@@ -136,7 +136,6 @@ from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 from antarest.worker.archive_worker import ArchiveTaskArgs
-from antarest.worker.simulator_worker import GenerateTimeseriesTaskArgs
 
 logger = logging.getLogger(__name__)
 
@@ -2401,7 +2400,6 @@ class StudyService:
         command = GenerateThermalClusterTimeSeries(nb_years=nb_years, command_context=command_context)
         file_study = self.storage_service.get_storage(study).get_raw(study)
         execute_or_add_commands(study, file_study, [command], self.storage_service)
-        raise NotImplementedError
 
     def upgrade_study(
         self,

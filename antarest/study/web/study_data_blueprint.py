@@ -1760,7 +1760,14 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         uuid: str,
         nb_years: int,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> t.Any:
+    ) -> None:
+        """
+        Generates time-series for thermal clusters and put them inside input data.
+
+        Args:
+        - `uuid`: The UUID of the study.
+        - `nb_years`: The amount of MonteCarlo years you want to generate for each matrix.
+        """
         logger.info(
             f"Generating timeseries for study {uuid}",
             extra={"user": current_user.id},

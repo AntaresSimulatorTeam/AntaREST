@@ -9,7 +9,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, 
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import LocalTSGenerationBehavior
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
-from antarest.study.storage.variantstudy.model.command.icommand import ICommand, OutputTuple
+from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand, OutputTuple
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
@@ -49,6 +49,7 @@ class GenerateThermalClusterTimeSeries(ICommand):
                 if thermal.gen_ts == LocalTSGenerationBehavior.FORCE_NO_GENERATION:
                     continue
                 # 5 - Build the generator
+                # todo: I didn't understand if we need a global Generator or one for each cluster.
                 rng = MersenneTwisterRNG(seed=thermal_seed)
                 generator = ThermalDataGenerator(rng=rng, days=365)
                 # todo: Wait for Florian to know if we should use 366 in case of a leap-year study.
@@ -67,9 +68,9 @@ class GenerateThermalClusterTimeSeries(ICommand):
                     unit_count=thermal.unit_count,
                     nominal_power=thermal.nominal_capacity,
                     modulation=modulation_capacity,
-                    fo_law=ProbabilityLaw(thermal.law_forced),
+                    fo_law=ProbabilityLaw(thermal.law_forced.value),
                     fo_volatility=thermal.volatility_forced,
-                    po_law=ProbabilityLaw(thermal.law_planned),
+                    po_law=ProbabilityLaw(thermal.law_planned.value),
                     po_volatility=thermal.volatility_planned,
                     fo_duration=fo_duration,
                     fo_rate=fo_rate,
@@ -90,10 +91,10 @@ class GenerateThermalClusterTimeSeries(ICommand):
         return CommandOutput(status=True, message="All time series were generated successfully")
 
     def to_dto(self) -> CommandDTO:
-        return CommandDTO(action=self.command_name.value, args={})
+        return CommandDTO(action=self.command_name.value, args={"nb_years": self.nb_years})
 
     def match_signature(self) -> str:
-        return str(self.command_name.value)
+        return str(self.command_name.value + MATCH_SIGNATURE_SEPARATOR + str(self.nb_years))
 
     def match(self, other: "ICommand", equal: bool = False) -> bool:
         # Only used inside the cli app that no one uses I believe.
