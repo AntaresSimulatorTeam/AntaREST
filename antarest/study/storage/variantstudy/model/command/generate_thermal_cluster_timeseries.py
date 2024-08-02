@@ -16,22 +16,28 @@ class GenerateThermalClusterTimeSeries(ICommand):
     version = 1
 
     def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:
-        raise NotImplementedError()
+        return CommandOutput(status=True, message=""), {}
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
+        # todo: all the logic is here
         raise NotImplementedError()
 
     def to_dto(self) -> CommandDTO:
-        raise NotImplementedError()
+        return CommandDTO(action=self.command_name.value, args={})
 
     def match_signature(self) -> str:
-        raise NotImplementedError()
+        # This command has no attribute, therefore we can't differentiate 2 of these commands on the same study.
+        return str(self.command_name.value)
 
     def match(self, other: "ICommand", equal: bool = False) -> bool:
+        # Same here
         raise NotImplementedError()
 
     def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
+        # Only used inside the cli app that no one uses I believe.
         raise NotImplementedError()
 
     def get_inner_matrices(self) -> t.List[str]:
+        # This is used to get used matrices and not remove them inside the garbage collector loop.
+        # todo: We should run the algo without the generation to know which clusters are concerned and then get the associated matrices
         raise NotImplementedError()
