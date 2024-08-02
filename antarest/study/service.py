@@ -124,6 +124,9 @@ from antarest.study.storage.study_upgrader import (
 )
 from antarest.study.storage.utils import assert_permission, get_start_date, is_managed, remove_from_cache
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
+from antarest.study.storage.variantstudy.model.command.generate_thermal_cluster_timeseries import (
+    GenerateThermalClusterTimeSeries,
+)
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command.update_comments import UpdateComments
@@ -2391,21 +2394,13 @@ class StudyService:
 
         return task_id
 
-    def generate_timeseries(self, study: Study, params: RequestParameters) -> None:
+    def generate_timeseries(self, study: Study) -> None:
         self._assert_study_unarchived(study)
-        self.task_service.add_worker_task(
-            TaskType.WORKER_TASK,
-            "generate-timeseries",
-            GenerateTimeseriesTaskArgs(
-                study_id=study.id,
-                managed=is_managed(study),
-                study_path=str(study.path),
-                study_version=str(study.version),
-            ).dict(),
-            name=f"Generate timeseries for study {study.id}",
-            ref_id=study.id,
-            request_params=params,
-        )
+        command_context = self.storage_service.variant_study_service.command_factory.command_context
+        command = GenerateThermalClusterTimeSeries(command_context=command_context)
+        file_study = self.storage_service.get_storage(study).get_raw(study)
+        execute_or_add_commands(study, file_study, [command], self.storage_service)
+        raise NotImplementedError
 
     def upgrade_study(
         self,

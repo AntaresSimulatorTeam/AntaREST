@@ -1767,7 +1767,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
 
-        return study_service.generate_timeseries(study, params)
+        return study_service.generate_timeseries(study)
 
     @bp.get(
         path="/studies/{uuid}/areas/{area_id}/properties/form",
