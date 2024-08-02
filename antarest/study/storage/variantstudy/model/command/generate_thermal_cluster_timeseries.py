@@ -1,5 +1,6 @@
 import typing as t
 
+import numpy as np
 from antares.tsgen.duration_generator import ProbabilityLaw
 from antares.tsgen.random_generator import MersenneTwisterRNG
 from antares.tsgen.ts_generator import ThermalCluster, ThermalDataGenerator
@@ -55,12 +56,12 @@ class GenerateThermalClusterTimeSeries(ICommand):
                 modulation_matrix = study_data.tree.get(
                     ["input", "thermal", "prepro", area_id, thermal.id.lower(), "modulation"]
                 )["data"]
-                modulation_capacity = [row[2] for row in modulation_matrix]
+                modulation_capacity = np.array([row[2] for row in modulation_matrix])
                 ts_generator_matrix = study_data.tree.get(
                     ["input", "thermal", "prepro", area_id, thermal.id.lower(), "data"]
                 )["data"]
                 fo_duration, po_duration, fo_rate, po_rate, npo_min, npo_max = [
-                    list(col) for col in zip(*ts_generator_matrix)
+                    np.array(col) for col in zip(*ts_generator_matrix)
                 ]
                 cluster = ThermalCluster(
                     unit_count=thermal.unit_count,
@@ -79,7 +80,7 @@ class GenerateThermalClusterTimeSeries(ICommand):
                 )
                 # 7- Generate the time-series
                 results = generator.generate_time_series(cluster, self.nb_years)
-                generated_matrix = results.available_power()
+                generated_matrix = results.available_power.tolist()
                 # 8- Generates the UUID for the `get_inner_matrices` method
                 uuid = study_data.tree.context.matrix.create(generated_matrix)
                 self._INNER_MATRICES.append(uuid)
