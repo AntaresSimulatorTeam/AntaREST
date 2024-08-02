@@ -1,6 +1,11 @@
 import typing as t
 
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
+from antares.tsgen.duration_generator import ProbabilityLaw
+from antares.tsgen.random_generator import MersenneTwisterRNG
+from antares.tsgen.ts_generator import ThermalCluster, ThermalDataGenerator
+
+from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.config.thermal import LocalTSGenerationBehavior
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand, OutputTuple
@@ -15,23 +20,85 @@ class GenerateThermalClusterTimeSeries(ICommand):
     command_name = CommandName.GENERATE_THERMAL_CLUSTER_TIMESERIES
     version = 1
 
+    nb_years: int
+
+    _INNER_MATRICES: t.List[str] = []
+
     def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:
-        return CommandOutput(status=True, message=""), {}
+        return CommandOutput(status=True, message="Nothing to do"), {}
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
-        # todo: all the logic is here
-        raise NotImplementedError()
+        # 1- Get the seed
+        default_seed = (
+            3005489  # todo: Wait for Florian: Default value in antares-timeseries-generation: 5489. Should we use it ?
+        )
+        try:
+            thermal_seed: int = study_data.tree.get(["settings", "generaldata", "seeds - Mersenne Twister", "seed-tsgen-thermal"])  # type: ignore
+        except KeyError:
+            thermal_seed = default_seed
+
+        # 2- Loop through areas in alphabetical order
+        areas: t.Dict[str, Area] = study_data.config.areas
+        sorted_areas = {k: areas[k] for k in sorted(areas)}
+        for area_id, area in sorted_areas.items():
+            # 3- Loop through thermal clusters in alphabetical order
+            sorted_thermals = sorted(area.thermals, key=lambda x: x.id)
+            for thermal in sorted_thermals:
+                # 4 - Filters out clusters with no generation
+                if thermal.gen_ts == LocalTSGenerationBehavior.FORCE_NO_GENERATION:
+                    continue
+                # 5 - Build the generator
+                rng = MersenneTwisterRNG(seed=thermal_seed)
+                generator = ThermalDataGenerator(rng=rng, days=365)
+                # todo: Wait for Florian to know if we should use 366 in case of a leap-year study.
+                # 6- Build the cluster
+                modulation_matrix = study_data.tree.get(
+                    ["input", "thermal", "prepro", area_id, thermal.id.lower(), "modulation"]
+                )["data"]
+                modulation_capacity = [row[2] for row in modulation_matrix]
+                ts_generator_matrix = study_data.tree.get(
+                    ["input", "thermal", "prepro", area_id, thermal.id.lower(), "data"]
+                )["data"]
+                fo_duration, po_duration, fo_rate, po_rate, npo_min, npo_max = [
+                    list(col) for col in zip(*ts_generator_matrix)
+                ]
+                cluster = ThermalCluster(
+                    unit_count=thermal.unit_count,
+                    nominal_power=thermal.nominal_capacity,
+                    modulation=modulation_capacity,
+                    fo_law=ProbabilityLaw(thermal.law_forced),
+                    fo_volatility=thermal.volatility_forced,
+                    po_law=ProbabilityLaw(thermal.law_planned),
+                    po_volatility=thermal.volatility_planned,
+                    fo_duration=fo_duration,
+                    fo_rate=fo_rate,
+                    po_duration=po_duration,
+                    po_rate=po_rate,
+                    npo_min=npo_min,
+                    npo_max=npo_max,
+                )
+                # 7- Generate the time-series
+                results = generator.generate_time_series(cluster, self.nb_years)
+                generated_matrix = results.available_power()
+                # 8- Generates the UUID for the `get_inner_matrices` method
+                uuid = study_data.tree.context.matrix.create(generated_matrix)
+                self._INNER_MATRICES.append(uuid)
+                # 9- Write the matrix inside the input folder.
+                matrix_path = ["input", "thermal", "series", area_id, thermal.id.lower(), "series"]
+                study_data.tree.save(generated_matrix, matrix_path)
+        return CommandOutput(status=True, message="All time series were generated successfully")
 
     def to_dto(self) -> CommandDTO:
         return CommandDTO(action=self.command_name.value, args={})
 
     def match_signature(self) -> str:
-        # This command has no attribute, therefore we can't differentiate 2 of these commands on the same study.
         return str(self.command_name.value)
 
     def match(self, other: "ICommand", equal: bool = False) -> bool:
-        # Same here
-        raise NotImplementedError()
+        # Only used inside the cli app that no one uses I believe.
+        if not isinstance(other, GenerateThermalClusterTimeSeries):
+            return False
+        return self.nb_years == other.nb_years
 
     def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
         # Only used inside the cli app that no one uses I believe.
@@ -39,5 +106,4 @@ class GenerateThermalClusterTimeSeries(ICommand):
 
     def get_inner_matrices(self) -> t.List[str]:
         # This is used to get used matrices and not remove them inside the garbage collector loop.
-        # todo: We should run the algo without the generation to know which clusters are concerned and then get the associated matrices
-        raise NotImplementedError()
+        return self._INNER_MATRICES
