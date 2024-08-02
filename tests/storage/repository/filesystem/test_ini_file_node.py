@@ -1,7 +1,7 @@
 import shutil
 import textwrap
+import typing as t
 from pathlib import Path
-from typing import Tuple
 from unittest.mock import Mock
 
 import pytest
@@ -11,7 +11,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import FileSt
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 
 
-def build_dataset(study_dir: Path) -> Tuple[Path, JSON]:
+def build_dataset(study_dir: Path) -> t.Tuple[Path, JSON]:
     ini_path = study_dir.joinpath("test.ini")
     ini_content = textwrap.dedent(
         """\
@@ -277,3 +277,44 @@ def test_save(tmp_path: Path) -> None:
         """
     )
     assert ini_path.read_text().strip() == expected.strip()
+
+
+@pytest.mark.parametrize(
+    ("ini_section", "url"),
+    [
+        ("default ruleset", ["default ruleset"]),
+        ("default ruleset", ["Default Ruleset"]),
+        ("Default Ruleset", ["default ruleset"]),
+        ("Default Ruleset", ["Default Ruleset"]),
+    ],
+)
+def test_get_scenario_builder(tmp_path: Path, ini_section: str, url: t.List[str]) -> None:
+    ini_path = tmp_path.joinpath("test.ini")
+    ini_content = textwrap.dedent(
+        f"""\
+        [{ini_section}]
+        key_int = 1
+        key_float = 2.1
+        key_str = value1
+
+        [Other ruleset]
+        key_bool = True
+        key_bool2 = False
+        """
+    )
+    ini_path.write_text(ini_content)
+    node = IniFileNode(
+        context=Mock(),
+        config=FileStudyTreeConfig(
+            study_path=tmp_path,
+            path=ini_path,
+            version=-1,
+            study_id="id",
+            areas={},
+            outputs={},
+        ),
+        types={},
+    )
+    expected_ruleset = {"key_float": 2.1, "key_int": 1, "key_str": "value1"}
+    ruleset = node.get(url)
+    assert ruleset == expected_ruleset

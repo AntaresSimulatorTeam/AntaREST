@@ -10,6 +10,7 @@ from antarest.core.jwt import JWTUser
 from antarest.core.requests import RequestParameters
 from antarest.core.tasks.model import TaskDTO, TaskListFilter
 from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT, TaskJobService
+from antarest.core.utils.utils import sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 
@@ -61,14 +62,16 @@ def create_tasks_api(service: TaskJobService, config: Config) -> APIRouter:
         Returns:
             TaskDTO: Information about the specified task.
         """
+        sanitized_task_id = sanitize_uuid(task_id)
+
         request_params = RequestParameters(user=current_user)
-        task_status = service.status_task(task_id, request_params, with_logs)
+        task_status = service.status_task(sanitized_task_id, request_params, with_logs)
 
         if wait_for_completion and not task_status.status.is_final():
             # Ensure 0 <= timeout <= 48 h
             timeout = min(max(0, timeout), DEFAULT_AWAIT_MAX_TIMEOUT)
             try:
-                service.await_task(task_id, timeout_sec=timeout)
+                service.await_task(sanitized_task_id, timeout_sec=timeout)
             except concurrent.futures.TimeoutError as exc:  # pragma: no cover
                 # Note that if the task does not complete within the specified time,
                 # the task will continue running but the user will receive a timeout.
@@ -78,7 +81,7 @@ def create_tasks_api(service: TaskJobService, config: Config) -> APIRouter:
                     detail="The request timed out while waiting for task completion.",
                 ) from exc
 
-        return service.status_task(task_id, request_params, with_logs)
+        return service.status_task(sanitized_task_id, request_params, with_logs)
 
     @bp.put("/tasks/{task_id}/cancel", tags=[APITag.tasks])
     def cancel_task(
