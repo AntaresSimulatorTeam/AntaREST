@@ -102,12 +102,6 @@ def _update_matrices_names(
             get_matrix_path(base_path, f"{bc_id}_lt").unlink(missing_ok=True)
 
 
-def _get_target_path(current_path: Path, base_path: Path, matrix_id: str) -> Path:
-    target_path = base_path / f"{matrix_id}{''.join(current_path.suffixes)}"
-    target_path.unlink(missing_ok=True)
-    return target_path
-
-
 class UpdateBindingConstraint(AbstractBindingConstraintCommand):
     """
     Command used to update a binding constraint.
