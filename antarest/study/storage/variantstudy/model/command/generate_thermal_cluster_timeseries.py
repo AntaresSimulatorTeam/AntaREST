@@ -86,11 +86,10 @@ class GenerateThermalClusterTimeSeries(ICommand):
                 fo_duration, po_duration, fo_rate, po_rate, npo_min, npo_max = [
                     np.array(col) for col in zip(*ts_generator_matrix)
                 ]
-                # todo: j'ai cette erreur: hourly modulation array must have 24 values. Moi j'en donne 8760 :/
                 cluster = ThermalCluster(
                     unit_count=thermal.unit_count,
                     nominal_power=thermal.nominal_capacity,
-                    modulation=modulation_capacity[:24],  # this is temporary juste to make the code work.
+                    modulation=modulation_capacity,
                     fo_law=ProbabilityLaw(thermal.law_forced.value.upper()),
                     fo_volatility=thermal.volatility_forced,
                     po_law=ProbabilityLaw(thermal.law_planned.value.upper()),
