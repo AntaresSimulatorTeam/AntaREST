@@ -59,21 +59,22 @@ class GenerateThermalClusterTimeSeries(ICommand):
         except KeyError:
             thermal_seed = default_seed
 
-        # 2- Loop through areas in alphabetical order
+        # 2 - Build the generator
+        # todo: I'm not 100% sure if we need a global Generator or one for each cluster.
+        rng = MersenneTwisterRNG(seed=thermal_seed)
+        generator = ThermalDataGenerator(rng=rng, days=365)
+        # todo: Wait for Florian to know if we should use 366 in case of a leap-year study.
+
+        # 3- Loop through areas in alphabetical order
         areas: t.Dict[str, Area] = study_data.config.areas
         sorted_areas = {k: areas[k] for k in sorted(areas)}
         for area_id, area in sorted_areas.items():
-            # 3- Loop through thermal clusters in alphabetical order
+            # 4- Loop through thermal clusters in alphabetical order
             sorted_thermals = sorted(area.thermals, key=lambda x: x.id)
             for thermal in sorted_thermals:
-                # 4 - Filters out clusters with no generation
+                # 5 - Filters out clusters with no generation
                 if thermal.gen_ts == LocalTSGenerationBehavior.FORCE_NO_GENERATION:
                     continue
-                # 5 - Build the generator
-                # todo: I didn't understand if we need a global Generator or one for each cluster.
-                rng = MersenneTwisterRNG(seed=thermal_seed)
-                generator = ThermalDataGenerator(rng=rng, days=365)
-                # todo: Wait for Florian to know if we should use 366 in case of a leap-year study.
                 # 6- Build the cluster
                 modulation_matrix = study_data.tree.get(
                     ["input", "thermal", "prepro", area_id, thermal.id.lower(), "modulation"]
@@ -110,7 +111,9 @@ class GenerateThermalClusterTimeSeries(ICommand):
                 # 9- Write the matrix inside the input folder.
                 df = pd.DataFrame(data=generated_matrix)
                 target_path = self._build_matrix_path(tmp_path / area_id / thermal.id.lower())
-                df.to_csv(target_path, sep="\t", header=False, index=False, float_format="%.6f")
+                df.to_csv(target_path, sep="\t", header=False, index=False)
+                # todo: Savoir le nbr de virgules potentielles à sauvegarder psq passer de ".6f" à None fait gagner
+                # énormément de temps.
                 print("ok")
 
     def to_dto(self) -> CommandDTO:
