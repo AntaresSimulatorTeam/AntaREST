@@ -72,6 +72,15 @@ AREAS_REQUESTS__IND = [
         },
         "test-05.result.tsv",
     ),
+    (
+        {
+            "output_id": "20201014-1425eco-goodbye",
+            "query_file": MCIndAreasQueryFile.VALUES,
+            "frequency": MatrixFrequency.HOURLY,
+            "columns_regexes": "COST,NODU",
+        },
+        "test-06.result.tsv",
+    ),
 ]
 
 LINKS_REQUESTS__IND = [
@@ -114,6 +123,15 @@ LINKS_REQUESTS__IND = [
             "links_ids": "de - fr",
         },
         "test-04.result.tsv",
+    ),
+    (
+        {
+            "output_id": "20201014-1425eco-goodbye",
+            "query_file": MCIndLinksQueryFile.VALUES,
+            "frequency": MatrixFrequency.HOURLY,
+            "columns_regexes": "COST,PROB",
+        },
+        "test-05.result.tsv",
     ),
 ]
 
@@ -250,6 +268,15 @@ AREAS_REQUESTS__ALL = [
         },
         "test-06-all.result.tsv",
     ),
+    (
+        {
+            "output_id": "20201014-1427eco",
+            "query_file": MCAllAreasQueryFile.VALUES,
+            "frequency": MatrixFrequency.DAILY,
+            "columns_regexes": "COST,NODU",
+        },
+        "test-07-all.result.tsv",
+    ),
 ]
 
 LINKS_REQUESTS__ALL = [
@@ -297,6 +324,15 @@ LINKS_REQUESTS__ALL = [
             "links_ids": "",
         },
         "test-05-all.result.tsv",
+    ),
+    (
+        {
+            "output_id": "20241807-1540eco-extra-outputs",
+            "query_file": MCAllLinksQueryFile.VALUES,
+            "frequency": MatrixFrequency.DAILY,
+            "columns_regexes": "COST,PROB",
+        },
+        "test-06-all.result.tsv",
     ),
 ]
 
