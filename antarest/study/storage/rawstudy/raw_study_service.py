@@ -13,7 +13,7 @@ from antarest.core.exceptions import StudyDeletionNotAllowed
 from antarest.core.interfaces.cache import ICache
 from antarest.core.model import PublicMode
 from antarest.core.requests import RequestParameters
-from antarest.core.utils.utils import extract_zip
+from antarest.core.utils.utils import extract_archive
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, Patch, RawStudy, Study, StudyAdditionalData
 from antarest.study.storage.abstract_storage_service import AbstractStorageService
 from antarest.study.storage.patch_service import PatchService
@@ -278,21 +278,20 @@ class RawStudyService(AbstractStorageService[RawStudy]):
 
     def delete_output(self, metadata: RawStudy, output_name: str) -> None:
         """
-        Delete output folder
+        Delete output folder or archive (zip or 7z) of a study.
+
         Args:
-            metadata: study
-            output_name: output simulation
-
-        Returns:
-
+            metadata: The study metadata.
+            output_name: Output name to be deleted.
         """
         study_path = self.get_study_path(metadata)
         output_path = study_path / "output" / output_name
-        if output_path.exists() and output_path.is_dir():
+        if output_path.is_dir():
             shutil.rmtree(output_path, ignore_errors=True)
         else:
-            output_path = output_path.parent / f"{output_name}.zip"
-            output_path.unlink(missing_ok=True)
+            locations = [output_path.with_suffix(".7z"), output_path.with_suffix(".zip")]
+            for path in locations:
+                path.unlink(missing_ok=True)
         remove_from_cache(self.cache, metadata.id)
 
     def import_study(self, metadata: RawStudy, stream: t.BinaryIO) -> Study:
@@ -313,7 +312,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         path_study.mkdir()
 
         try:
-            extract_zip(stream, path_study)
+            extract_archive(stream, path_study)
             fix_study_root(path_study)
             self.update_from_raw_meta(metadata)
 

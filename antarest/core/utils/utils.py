@@ -64,9 +64,9 @@ class BadArchiveContent(Exception):
         super().__init__(message)
 
 
-def extract_zip(stream: t.BinaryIO, target_dir: Path) -> None:
+def extract_archive(stream: t.BinaryIO, target_dir: Path) -> None:
     """
-    Extract a ZIP archive to a given destination.
+    Extract a ZIP or a 7zip archive to a given destination.
 
     Args:
         stream: The stream containing the archive.
