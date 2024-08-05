@@ -1758,7 +1758,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     )
     def generate_timeseries(
         uuid: str,
-        nb_years: int,
+        nb_years: int = Query(1, gt=0),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
         """
