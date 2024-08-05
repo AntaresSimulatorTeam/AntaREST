@@ -14,10 +14,7 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.date_serializer imp
 )
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 
-MC_IND_TEMPLATE_PARTS = "output/{sim_id}/economy/mc-ind"
-"""Template for the path to reach the output data in economy/mc-ind."""
-MC_ALL_TEMPLATE_PARTS = "output/{sim_id}/economy/mc-all"
-"""Template for the path to reach the output data in economy/mc-all."""
+MC_TEMPLATE_PARTS = "output/{sim_id}/economy/{mc_root}"
 HORIZON_TEMPLATE = "output/{sim_id}/about-the-study/parameters.ini"
 # noinspection SpellCheckingInspection
 MCYEAR_COL = "mcYear"
@@ -32,12 +29,15 @@ TIME_COL = "time"
 """Column name for the timestamp."""
 MC_YEAR_INDEX = 0
 """Index in path parts starting from the Monte Carlo year to determine the Monte Carlo year."""
-AREA_OR_LINK_INDEX__IND = 2
-"""Index in path parts starting from the Monte Carlo year to determine the area/link name."""
-AREA_OR_LINK_INDEX__ALL = 1
-"""Index in path parts starting from the `economy/mc-all` to determine the area/link name."""
+AREA_OR_LINK_INDEX__IND, AREA_OR_LINK_INDEX__ALL = 2, 1
+"""Indexes in path parts starting from the output root `economy//mc-(ind/all)` to determine the area/link name."""
 
 logger = logging.getLogger(__name__)
+
+
+class MCRoot(str, Enum):
+    MC_IND = "mc-ind"
+    MC_ALL = "mc-all"
 
 
 class MCIndAreasQueryFile(str, Enum):
@@ -80,6 +80,7 @@ class AggregatorManager:
         frequency: MatrixFrequency,
         ids_to_consider: t.Sequence[str],
         columns_names: t.Sequence[str],
+        columns_regexes: t.Sequence[str],
         mc_years: t.Optional[t.Sequence[int]] = None,
     ):
         self.study_path: Path = study_path
@@ -90,14 +91,24 @@ class AggregatorManager:
         self.frequency: MatrixFrequency = frequency
         self.mc_years: t.Optional[t.Sequence[int]] = mc_years
         self.columns_names: t.Sequence[str] = columns_names
+        self.columns_regexes: t.Sequence[str] = columns_regexes
         self.ids_to_consider: t.Sequence[str] = ids_to_consider
         self.output_type = (
             "areas"
             if (isinstance(query_file, MCIndAreasQueryFile) or isinstance(query_file, MCAllAreasQueryFile))
             else "links"
         )
-        self.mc_ind_path = self.study_path / MC_IND_TEMPLATE_PARTS.format(sim_id=self.output_id)
-        self.mc_all_path = self.study_path / MC_ALL_TEMPLATE_PARTS.format(sim_id=self.output_id)
+        self.mc_ind_path = self.study_path / MC_TEMPLATE_PARTS.format(
+            sim_id=self.output_id, mc_root=MCRoot.MC_IND.value
+        )
+        self.mc_all_path = self.study_path / MC_TEMPLATE_PARTS.format(
+            sim_id=self.output_id, mc_root=MCRoot.MC_ALL.value
+        )
+        self.mc_root = (
+            MCRoot.MC_IND
+            if (isinstance(query_file, MCIndAreasQueryFile) or isinstance(query_file, MCIndLinksQueryFile))
+            else MCRoot.MC_ALL
+        )
 
     def _parse_output_file(self, file_path: Path) -> pd.DataFrame:
         csv_file = pd.read_csv(
@@ -188,16 +199,24 @@ class AggregatorManager:
         ]
         return all_output_files
 
-    def _build_dataframe__ind(self, files: t.Sequence[Path], horizon: int) -> pd.DataFrame:
+    def columns_filtering(self, df: pd.DataFrame) -> pd.DataFrame:
+        # columns filtering
+        if self.columns_names:
+            filtered_columns = [c for c in df.columns.tolist() if c in self.columns_names]
+            df = df.loc[:, filtered_columns]
+        if self.columns_regexes:
+            filtered_columns = [c for c in df.columns.tolist() if any(regex in c for regex in self.columns_regexes)]
+            df = df.loc[:, filtered_columns]
+        return df
+
+    def _build_dataframe(self, files: t.Sequence[Path], horizon: int) -> pd.DataFrame:
         final_df = pd.DataFrame()
         nb_files = len(files)
         for k, file_path in enumerate(files):
             df = self._parse_output_file(file_path)
 
             # columns filtering
-            if self.columns_names:
-                filtered_columns = [c for c in df.columns.tolist() if c in self.columns_names]
-                df = df.loc[:, filtered_columns]
+            df = self.columns_filtering(df)
 
             # if no columns, no need to continue
             list_of_df_columns = df.columns.tolist()
@@ -211,79 +230,50 @@ class AggregatorManager:
                 estimated_binary_size = final_df.memory_usage().sum()
                 _checks_estimated_size(nb_files, estimated_binary_size, k)
 
-            # add column for links/areas
-            relative_path_parts = file_path.relative_to(self.mc_ind_path).parts
-            column_name = AREA_COL if self.output_type == "areas" else LINK_COL
-            new_column_order = [column_name, MCYEAR_COL, TIME_ID_COL, TIME_COL] + list_of_df_columns
-            df[column_name] = relative_path_parts[AREA_OR_LINK_INDEX__IND]
+            if self.mc_root == MCRoot.MC_IND:
+                # add column for links/areas
+                relative_path_parts = file_path.relative_to(self.mc_ind_path).parts
+                column_name = AREA_COL if self.output_type == "areas" else LINK_COL
+                new_column_order = [column_name, MCYEAR_COL, TIME_ID_COL, TIME_COL] + list_of_df_columns
+                df[column_name] = relative_path_parts[AREA_OR_LINK_INDEX__IND]
 
-            # add column to record the Monte Carlo year
-            df[MCYEAR_COL] = int(relative_path_parts[MC_YEAR_INDEX])
+                # add column to record the Monte Carlo year
+                df[MCYEAR_COL] = int(relative_path_parts[MC_YEAR_INDEX])
 
-            # add a column for the time id
-            df[TIME_ID_COL] = list(range(1, len(df) + 1))
-            # add horizon column
-            df[TIME_COL] = horizon
+                # add a column for the time id
+                df[TIME_ID_COL] = list(range(1, len(df) + 1))
+                # add horizon column
+                df[TIME_COL] = horizon
 
-            # Reorganize the columns
-            df = df.reindex(columns=new_column_order)
+                # Reorganize the columns
+                df = df.reindex(columns=new_column_order)
+            else:
+                # first columns df
+                # first we include the time id column
+                first_columns_df = pd.DataFrame(
+                    {
+                        TIME_ID_COL: list(range(1, len(df) + 1)),
+                    }
+                )
 
-            final_df = pd.concat([final_df, df], ignore_index=True)
+                # add column for links/areas
+                relative_path_parts = file_path.relative_to(self.mc_all_path).parts
+                column_name = AREA_COL if self.output_type == "areas" else LINK_COL
+                first_columns_df[column_name] = relative_path_parts[AREA_OR_LINK_INDEX__ALL]
 
-        # replace np.nan by None
-        final_df = final_df.replace({np.nan: None})
+                # add horizon column
+                first_columns_df[TIME_COL] = horizon
 
-        return final_df
+                # reorder first columns
+                new_column_order = [column_name, TIME_ID_COL, TIME_COL]
+                first_columns_df = first_columns_df.reindex(columns=new_column_order)
 
-    def _build_dataframe__all(self, files: t.Sequence[Path], horizon: int) -> pd.DataFrame:
-        final_df = pd.DataFrame()
-        nb_files = len(files)
-        for k, file_path in enumerate(files):
-            df = self._parse_output_file(file_path)
+                # reset index
+                # noinspection PyTypeChecker
+                first_columns_df.set_index(df.index, inplace=True)
 
-            # columns filtering
-            if self.columns_names:
-                filtered_columns = [c for c in df.columns.tolist() if c in self.columns_names]
-                df = df.loc[:, filtered_columns]
-
-            # if no columns, no need to continue
-            list_of_df_columns = df.columns.tolist()
-            if not list_of_df_columns:
-                return pd.DataFrame()
-
-            # checks if the estimated dataframe size does not exceed the limit
-            # This check is performed on 10 aggregated files to have a more accurate view of the final df.
-            if k == 10:
-                # The following formula is the more accurate one compared to the final csv file.
-                estimated_binary_size = final_df.memory_usage().sum()
-                _checks_estimated_size(nb_files, estimated_binary_size, k)
-
-            # first columns df
-            # first we include the time id column
-            first_columns_df = pd.DataFrame(
-                {
-                    TIME_ID_COL: list(range(1, len(df) + 1)),
-                }
-            )
-
-            # add column for links/areas
-            relative_path_parts = file_path.relative_to(self.mc_all_path).parts
-            column_name = AREA_COL if self.output_type == "areas" else LINK_COL
-            first_columns_df[column_name] = relative_path_parts[AREA_OR_LINK_INDEX__ALL]
-
-            # add horizon column
-            first_columns_df[TIME_COL] = horizon
-
-            # reorder first columns
-            new_column_order = [column_name, TIME_ID_COL, TIME_COL]
-            first_columns_df = first_columns_df.reindex(columns=new_column_order)
-
-            # reset index
-            # noinspection PyTypeChecker
-            first_columns_df.set_index(df.index, inplace=True)
-
-            # merge first columns with the rest of the df
-            df = pd.merge(first_columns_df, df, left_index=True, right_index=True)
+                # merge first columns with the rest of the df
+                df = pd.merge(first_columns_df, df, left_index=True, right_index=True)
 
             final_df = pd.concat([final_df, df], ignore_index=True)
 
@@ -317,7 +307,7 @@ class AggregatorManager:
             f"to build the aggregated output for study `{self.study_path.name}`"
         )
         # builds final dataframe
-        final_df = self._build_dataframe__ind(all_output_files, horizon)
+        final_df = self._build_dataframe(all_output_files, horizon)
 
         return final_df
 
@@ -343,6 +333,6 @@ class AggregatorManager:
             f"to build the aggregated output for study `{self.study_path.name}`"
         )
         # builds final dataframe
-        final_df = self._build_dataframe__all(all_output_files, horizon)
+        final_df = self._build_dataframe(all_output_files, horizon)
 
         return final_df
