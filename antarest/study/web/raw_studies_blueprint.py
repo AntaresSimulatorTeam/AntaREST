@@ -192,6 +192,7 @@ def create_raw_study_routes(
         mc_years: str = "",
         areas_ids: str = "",
         columns_names: str = "",
+        columns_regexes: str = "",
         export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,  # type: ignore
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> FileResponse:
@@ -207,6 +208,7 @@ def create_raw_study_routes(
         - `mc_years`: which Monte Carlo years to be selected. If empty, all are selected (comma separated)
         - `areas_ids`: which areas to be selected. If empty, all are selected (comma separated)
         - `columns_names`: which columns to be selected. If empty, all are selected (comma separated)
+        - `columns_regexes`: which columns to be selected using comma separated regexes. If empty, all are selected
         - `export_format`: Returned file format (csv by default).
 
         Returns:
@@ -230,6 +232,7 @@ def create_raw_study_routes(
             frequency=frequency,
             mc_years=[int(mc_year) for mc_year in _split_comma_separated_values(mc_years)],
             columns_names=_split_comma_separated_values(columns_names),
+            columns_regexes=_split_comma_separated_values(columns_regexes),
             ids_to_consider=_split_comma_separated_values(areas_ids),
             params=parameters,
         )
@@ -261,6 +264,7 @@ def create_raw_study_routes(
         mc_years: str = "",
         links_ids: str = "",
         columns_names: str = "",
+        columns_regexes: str = "",
         export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,  # type: ignore
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> FileResponse:
@@ -275,6 +279,7 @@ def create_raw_study_routes(
         - `mc_years`: which Monte Carlo years to be selected. If empty, all are selected (comma separated)
         - `links_ids`: which links to be selected (ex: "be - fr"). If empty, all are selected (comma separated)
         - `columns_names`: which columns to be selected. If empty, all are selected (comma separated)
+        - `columns_regexes`: which columns to be selected using comma separated regexes. If empty, all are selected
         - `export_format`: Returned file format (csv by default).
 
         Returns:
@@ -298,6 +303,7 @@ def create_raw_study_routes(
             frequency=frequency,
             mc_years=[int(mc_year) for mc_year in _split_comma_separated_values(mc_years)],
             columns_names=_split_comma_separated_values(columns_names),
+            columns_regexes=_split_comma_separated_values(columns_regexes),
             ids_to_consider=_split_comma_separated_values(links_ids),
             params=parameters,
         )
@@ -328,6 +334,7 @@ def create_raw_study_routes(
         frequency: MatrixFrequency,
         areas_ids: str = "",
         columns_names: str = "",
+        columns_regexes: str = "",
         export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,  # type: ignore
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> FileResponse:
@@ -342,6 +349,7 @@ def create_raw_study_routes(
         - `frequency`: "hourly", "daily", "weekly", "monthly", "annual"
         - `areas_ids`: which areas to be selected. If empty, all are selected (comma separated)
         - `columns_names`: which columns to be selected. If empty, all are selected (comma separated)
+        - `columns_regexes`: which columns to be selected using comma separated regexes. If empty, all are selected
         - `export_format`: Returned file format (csv by default).
 
         Returns:
@@ -364,6 +372,7 @@ def create_raw_study_routes(
             query_file=query_file,
             frequency=frequency,
             columns_names=_split_comma_separated_values(columns_names),
+            columns_regexes=_split_comma_separated_values(columns_regexes),
             ids_to_consider=_split_comma_separated_values(areas_ids),
             params=parameters,
         )
@@ -394,6 +403,7 @@ def create_raw_study_routes(
         frequency: MatrixFrequency,
         links_ids: str = "",
         columns_names: str = "",
+        columns_regexes: str = "",
         export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,  # type: ignore
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> FileResponse:
@@ -407,6 +417,7 @@ def create_raw_study_routes(
         - `frequency`: "hourly", "daily", "weekly", "monthly", "annual"
         - `links_ids`: which links to be selected (ex: "be - fr"). If empty, all are selected (comma separated)
         - `columns_names`: which columns to be selected. If empty, all are selected (comma separated)
+        - `columns_regexes`: which columns to be selected using comma separated regexes. If empty, all are selected
         - `export_format`: Returned file format (csv by default).
 
         Returns:
@@ -429,6 +440,7 @@ def create_raw_study_routes(
             query_file=query_file,
             frequency=frequency,
             columns_names=_split_comma_separated_values(columns_names),
+            columns_regexes=_split_comma_separated_values(columns_regexes),
             ids_to_consider=_split_comma_separated_values(links_ids),
             params=parameters,
         )
