@@ -111,9 +111,7 @@ class GenerateThermalClusterTimeSeries(ICommand):
                 df = pd.DataFrame(data=generated_matrix)
                 target_path = self._build_matrix_path(tmp_path / area_id / thermal.id.lower())
                 df.to_csv(target_path, sep="\t", header=False, index=False)
-                # todo: Savoir le nbr de virgules potentielles à sauvegarder psq passer de ".6f" à None fait gagner
-                # énormément de temps.
-                print("ok")
+                # todo: Combien de chiffres après la virgules car passer de ".6f" à None fait gagner bcp de temps.
 
     def to_dto(self) -> CommandDTO:
         return CommandDTO(action=self.command_name.value, args={"nb_years": self.nb_years})
