@@ -1,7 +1,9 @@
 import numpy as np
 from starlette.testclient import TestClient
 
+from antarest.core.tasks.model import TaskStatus
 from tests.integration.prepare_proxy import PreparerProxy
+from tests.integration.utils import wait_task_completion
 
 
 class TestGenerateThermalClusterTimeseries:
@@ -45,7 +47,11 @@ class TestGenerateThermalClusterTimeseries:
 
         # Timeseries generation should succeed
         res = client.put(f"/v1/studies/{study_id}/timeseries/generate")
-        assert res.status_code in {200, 201}
+        assert res.status_code == 200
+        task_id = res.json()
+        assert task_id
+        task = wait_task_completion(client, user_access_token, task_id)
+        assert task.status == TaskStatus.COMPLETED
 
         # Check matrices
         # First one
@@ -85,5 +91,9 @@ class TestGenerateThermalClusterTimeseries:
         preparer.create_thermal(study_id, area1_id, name=cluster_name, group="Lignite")
         # Timeseries generation fails because there's no nominal power
         res = client.put(f"/v1/studies/{study_id}/timeseries/generate")
-        assert res.status_code == 500
-        assert "Nominal power must be strictly positive, got 0.0" in res.json()["description"]
+        assert res.status_code == 200
+        task_id = res.json()
+        assert task_id
+        task = wait_task_completion(client, user_access_token, task_id)
+        assert task.status == TaskStatus.FAILED
+        assert "Nominal power must be strictly positive, got 0.0" in task.result.message
