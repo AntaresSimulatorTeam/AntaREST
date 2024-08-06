@@ -1758,7 +1758,6 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     )
     def generate_timeseries(
         uuid: str,
-        nb_years: int = Query(1, gt=0),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
         """
@@ -1766,7 +1765,6 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
 
         Args:
         - `uuid`: The UUID of the study.
-        - `nb_years`: The amount of MonteCarlo years you want to generate for each matrix.
         """
         logger.info(
             f"Generating timeseries for study {uuid}",
@@ -1775,7 +1773,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
 
-        return study_service.generate_timeseries(study, nb_years)
+        return study_service.generate_timeseries(study)
 
     @bp.get(
         path="/studies/{uuid}/areas/{area_id}/properties/form",

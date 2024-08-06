@@ -2393,10 +2393,10 @@ class StudyService:
 
         return task_id
 
-    def generate_timeseries(self, study: Study, nb_years: int) -> None:
+    def generate_timeseries(self, study: Study) -> None:
         self._assert_study_unarchived(study)
         command_context = self.storage_service.variant_study_service.command_factory.command_context
-        command = GenerateThermalClusterTimeSeries(nb_years=nb_years, command_context=command_context)
+        command = GenerateThermalClusterTimeSeries(command_context=command_context)
         file_study = self.storage_service.get_storage(study).get_raw(study)
         execute_or_add_commands(study, file_study, [command], self.storage_service)
 

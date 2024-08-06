@@ -14,7 +14,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, 
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import LocalTSGenerationBehavior
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
-from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand, OutputTuple
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand, OutputTuple
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 logger = logging.getLogger(__name__)
@@ -27,8 +27,6 @@ class GenerateThermalClusterTimeSeries(ICommand):
 
     command_name = CommandName.GENERATE_THERMAL_CLUSTER_TIMESERIES
     version = 1
-
-    nb_years: int
 
     _INNER_MATRICES: t.List[str] = []
 
@@ -52,13 +50,10 @@ class GenerateThermalClusterTimeSeries(ICommand):
                 return CommandOutput(status=True, message="All time series were generated successfully")
 
     def _build_timeseries(self, study_data: FileStudy, tmp_path: Path) -> None:
-        # 1- Get the seed
-        default_seed = 3005489  # NB: Default value in package: 5489, default seed in web: 3005489.
-        try:
-            thermal_seed: int = study_data.tree.get(["settings", "generaldata", "seeds - Mersenne Twister", "seed-tsgen-thermal"])  # type: ignore
-        except KeyError:
-            thermal_seed = default_seed
-
+        # 1- Get the seed and nb_years to generate
+        # NB: Default seed in IHM Legacy: 5489, default seed in web: 3005489.
+        thermal_seed: int = study_data.tree.get(["settings", "generaldata", "seeds - Mersenne Twister", "seed-tsgen-thermal"])  # type: ignore
+        nb_years: int = study_data.tree.get(["settings", "generaldata", "general", "nbtimeseriesthermal"])  # type: ignore
         # 2 - Build the generator
         rng = MersenneTwisterRNG(seed=thermal_seed)
         generator = ThermalDataGenerator(rng=rng, days=365)
@@ -100,7 +95,7 @@ class GenerateThermalClusterTimeSeries(ICommand):
                     npo_max=npo_max,
                 )
                 # 7- Generate the time-series
-                results = generator.generate_time_series(cluster, self.nb_years)
+                results = generator.generate_time_series(cluster, nb_years)
                 generated_matrix = results.available_power.T.tolist()
                 # 8- Generates the UUID for the `get_inner_matrices` method
                 uuid = study_data.tree.context.matrix.create(generated_matrix)
@@ -111,16 +106,16 @@ class GenerateThermalClusterTimeSeries(ICommand):
                 df.to_csv(target_path, sep="\t", header=False, index=False)
 
     def to_dto(self) -> CommandDTO:
-        return CommandDTO(action=self.command_name.value, args={"nb_years": self.nb_years})
+        return CommandDTO(action=self.command_name.value, args={})
 
     def match_signature(self) -> str:
-        return str(self.command_name.value + MATCH_SIGNATURE_SEPARATOR + str(self.nb_years))
+        return str(self.command_name.value)
 
     def match(self, other: "ICommand", equal: bool = False) -> bool:
         # Only used inside the cli app that no one uses I believe.
         if not isinstance(other, GenerateThermalClusterTimeSeries):
             return False
-        return self.nb_years == other.nb_years
+        return True
 
     def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
         # Only used inside the cli app that no one uses I believe.
