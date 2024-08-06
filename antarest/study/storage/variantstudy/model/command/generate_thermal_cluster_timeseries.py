@@ -52,8 +52,9 @@ class GenerateThermalClusterTimeSeries(ICommand):
     def _build_timeseries(self, study_data: FileStudy, tmp_path: Path) -> None:
         # 1- Get the seed and nb_years to generate
         # NB: Default seed in IHM Legacy: 5489, default seed in web: 3005489.
-        thermal_seed: int = study_data.tree.get(["settings", "generaldata", "seeds - Mersenne Twister", "seed-tsgen-thermal"])  # type: ignore
-        nb_years: int = study_data.tree.get(["settings", "generaldata", "general", "nbtimeseriesthermal"])  # type: ignore
+        general_data = study_data.tree.get(["settings", "generaldata"], depth=3)
+        thermal_seed = general_data["seeds - Mersenne Twister"]["seed-tsgen-thermal"]
+        nb_years = general_data["general"]["nbtimeseriesthermal"]
         # 2 - Build the generator
         rng = MersenneTwisterRNG(seed=thermal_seed)
         generator = ThermalDataGenerator(rng=rng, days=365)
