@@ -12,6 +12,11 @@ class TestGenerateThermalClusterTimeseries:
         study_id = preparer.create_study("foo", version=860)
         area1_id = preparer.create_area(study_id, name="Area 1")["id"]
         area2_id = preparer.create_area(study_id, name="Area 2")["id"]
+        # Set nb timeseries thermal to 3.
+        nb_years = 3
+        body = {"thermal": {"number": nb_years}}
+        res = client.put(f"/v1/studies/{study_id}/config/timeseries/form", json=body)
+        assert res.status_code in {200, 201}
 
         # Create 1 cluster in area1
         cluster_1 = "Cluster 1"
@@ -39,8 +44,7 @@ class TestGenerateThermalClusterTimeseries:
         assert res.status_code == 204
 
         # Timeseries generation should succeed
-        nb_years = 3
-        res = client.put(f"/v1/studies/{study_id}/timeseries/generate", params={"nb_years": nb_years})
+        res = client.put(f"/v1/studies/{study_id}/timeseries/generate")
         assert res.status_code in {200, 201}
 
         # Check matrices
@@ -83,9 +87,3 @@ class TestGenerateThermalClusterTimeseries:
         res = client.put(f"/v1/studies/{study_id}/timeseries/generate")
         assert res.status_code == 500
         assert "Nominal power must be strictly positive, got 0.0" in res.json()["description"]
-
-        # Timeseries generation fails because `nb_years` minimal value is 0.
-        res = client.put(f"/v1/studies/{study_id}/timeseries/generate", params={"nb_years": -4})
-        assert res.status_code == 422
-        assert res.json()["exception"] == "RequestValidationError"
-        assert res.json()["description"] == "ensure this value is greater than 0"
