@@ -157,6 +157,51 @@ def get_disk_usage(path: t.Union[str, Path]) -> int:
     return total_size
 
 
+class ThermalClusterTimeSeriesGeneratorTask:
+    """
+    Task to generate thermal clusters time series
+    """
+
+    def __init__(
+        self,
+        _study_id: str,
+        repository: StudyMetadataRepository,
+        storage_service: StudyStorageService,
+        event_bus: IEventBus,
+    ):
+        self._study_id = _study_id
+        self.repository = repository
+        self.storage_service = storage_service
+        self.event_bus = event_bus
+
+    def _generate_timeseries(self) -> None:
+        """Run the task (lock the database)."""
+        command_context = self.storage_service.variant_study_service.command_factory.command_context
+        command = GenerateThermalClusterTimeSeries(command_context=command_context)
+        with db():
+            study = self.repository.one(self._study_id)
+            file_study = self.storage_service.get_storage(study).get_raw(study)
+            execute_or_add_commands(study, file_study, [command], self.storage_service)
+            self.event_bus.push(
+                Event(
+                    type=EventType.STUDY_EDITED,
+                    payload=study.to_json_summary(),
+                    permissions=PermissionInfo.from_study(study),
+                )
+            )
+
+    def run_task(self, notifier: TaskUpdateNotifier) -> TaskResult:
+        msg = f"Generating thermal timeseries for study '{self._study_id}'"
+        notifier(msg)
+        self._generate_timeseries()
+        msg = f"Successfully generated thermal timeseries for study '{self._study_id}'"
+        notifier(msg)
+        return TaskResult(success=True, message=msg)
+
+    # Make `ThermalClusterTimeSeriesGeneratorTask` object callable
+    __call__ = run_task
+
+
 class StudyUpgraderTask:
     """
     Task to perform a study upgrade.
@@ -2393,12 +2438,34 @@ class StudyService:
 
         return task_id
 
-    def generate_timeseries(self, study: Study) -> None:
-        self._assert_study_unarchived(study)
-        command_context = self.storage_service.variant_study_service.command_factory.command_context
-        command = GenerateThermalClusterTimeSeries(command_context=command_context)
-        file_study = self.storage_service.get_storage(study).get_raw(study)
-        execute_or_add_commands(study, file_study, [command], self.storage_service)
+    def generate_timeseries(self, study: Study, params: RequestParameters) -> str:
+        task_name = f"Generating thermal timeseries for study {study.name} ({study.id})"
+        study_tasks = self.task_service.list_tasks(
+            TaskListFilter(
+                ref_id=study.id,
+                type=[TaskType.THERMAL_CLUSTER_SERIES_GENERATION],
+                status=[TaskStatus.RUNNING, TaskStatus.PENDING],
+            ),
+            RequestParameters(user=DEFAULT_ADMIN_USER),
+        )
+        if len(study_tasks) > 0:
+            raise TaskAlreadyRunning()
+
+        thermal_cluster_timeseries_generation_task = ThermalClusterTimeSeriesGeneratorTask(
+            study.id,
+            repository=self.repository,
+            storage_service=self.storage_service,
+            event_bus=self.event_bus,
+        )
+
+        return self.task_service.add_task(
+            thermal_cluster_timeseries_generation_task,
+            task_name,
+            task_type=TaskType.THERMAL_CLUSTER_SERIES_GENERATION,
+            ref_id=study.id,
+            custom_event_messages=None,
+            request_params=params,
+        )
 
     def upgrade_study(
         self,
