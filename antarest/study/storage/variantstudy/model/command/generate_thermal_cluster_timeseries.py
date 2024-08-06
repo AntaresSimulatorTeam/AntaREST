@@ -53,18 +53,15 @@ class GenerateThermalClusterTimeSeries(ICommand):
 
     def _build_timeseries(self, study_data: FileStudy, tmp_path: Path) -> None:
         # 1- Get the seed
-        default_seed = 3005489  # todo: Default value in antares-timeseries-generation: 5489. Should we use it ? (Flo)
+        default_seed = 3005489  # NB: Default value in package: 5489, default seed in web: 3005489.
         try:
             thermal_seed: int = study_data.tree.get(["settings", "generaldata", "seeds - Mersenne Twister", "seed-tsgen-thermal"])  # type: ignore
         except KeyError:
             thermal_seed = default_seed
 
         # 2 - Build the generator
-        # todo: I'm not 100% sure if we need a global Generator or one for each cluster.
         rng = MersenneTwisterRNG(seed=thermal_seed)
         generator = ThermalDataGenerator(rng=rng, days=365)
-        # todo: Wait for Florian to know if we should use 366 in case of a leap-year study.
-
         # 3- Loop through areas in alphabetical order
         areas: t.Dict[str, Area] = study_data.config.areas
         sorted_areas = {k: areas[k] for k in sorted(areas)}
@@ -84,7 +81,8 @@ class GenerateThermalClusterTimeSeries(ICommand):
                     ["input", "thermal", "prepro", area_id, thermal.id.lower(), "data"]
                 )["data"]
                 fo_duration, po_duration, fo_rate, po_rate, npo_min, npo_max = [
-                    np.array(col) for col in zip(*ts_generator_matrix)
+                    np.array(col, dtype=int) if i not in [2, 3] else np.array(col, dtype=float)
+                    for i, col in enumerate(zip(*ts_generator_matrix))
                 ]
                 cluster = ThermalCluster(
                     unit_count=thermal.unit_count,
@@ -108,10 +106,9 @@ class GenerateThermalClusterTimeSeries(ICommand):
                 uuid = study_data.tree.context.matrix.create(generated_matrix)
                 self._INNER_MATRICES.append(uuid)
                 # 9- Write the matrix inside the input folder.
-                df = pd.DataFrame(data=generated_matrix)
+                df = pd.DataFrame(data=generated_matrix, dtype=int)
                 target_path = self._build_matrix_path(tmp_path / area_id / thermal.id.lower())
                 df.to_csv(target_path, sep="\t", header=False, index=False)
-                # todo: Combien de chiffres après la virgules car passer de ".6f" à None fait gagner bcp de temps.
 
     def to_dto(self) -> CommandDTO:
         return CommandDTO(action=self.command_name.value, args={"nb_years": self.nb_years})
