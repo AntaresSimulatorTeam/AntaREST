@@ -391,11 +391,7 @@ class TestCommandFactory:
             ),
             CommandDTO(
                 action=CommandName.GENERATE_THERMAL_CLUSTER_TIMESERIES.value,
-                args=[
-                    {
-                        "nb_years": 1000,
-                    }
-                ],
+                args=[{}],
             ),
         ],
     )
