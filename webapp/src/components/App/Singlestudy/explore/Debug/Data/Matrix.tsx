@@ -1,25 +1,26 @@
-import { useOutletContext } from "react-router";
-import { MatrixStats, StudyMetadata } from "../../../../../../common/types";
-import { Root, Content } from "./style";
+import { MatrixStats } from "../../../../../../common/types";
 import MatrixInput from "../../../../../common/MatrixInput";
+import ViewWrapper from "../../../../../common/page/ViewWrapper";
 
 interface Props {
+  studyId: string;
   path: string;
 }
 
-function Matrix({ path }: Props) {
-  const { study } = useOutletContext<{ study: StudyMetadata }>();
-
-  ////////////////////////////////////////////////////////////////
-  // JSX
-  ////////////////////////////////////////////////////////////////
+function Matrix({ studyId, path }: Props) {
+  const filename = path.split("/").pop();
+  const isUserFolder = path.startsWith("/user/");
 
   return (
-    <Root>
-      <Content>
-        <MatrixInput study={study} url={path} computStats={MatrixStats.NOCOL} />
-      </Content>
-    </Root>
+    <ViewWrapper>
+      <MatrixInput
+        title={filename}
+        study={studyId}
+        url={path}
+        computStats={MatrixStats.NOCOL}
+        disableImport={!isUserFolder}
+      />
+    </ViewWrapper>
   );
 }
 
