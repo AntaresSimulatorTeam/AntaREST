@@ -80,7 +80,6 @@ class AggregatorManager:
         frequency: MatrixFrequency,
         ids_to_consider: t.Sequence[str],
         columns_names: t.Sequence[str],
-        columns_regexes: t.Sequence[str],
         mc_years: t.Optional[t.Sequence[int]] = None,
     ):
         self.study_path: Path = study_path
@@ -91,7 +90,6 @@ class AggregatorManager:
         self.frequency: MatrixFrequency = frequency
         self.mc_years: t.Optional[t.Sequence[int]] = mc_years
         self.columns_names: t.Sequence[str] = columns_names
-        self.columns_regexes: t.Sequence[str] = columns_regexes
         self.ids_to_consider: t.Sequence[str] = ids_to_consider
         self.output_type = (
             "areas"
@@ -199,24 +197,35 @@ class AggregatorManager:
         ]
         return all_output_files
 
-    def columns_filtering(self, df: pd.DataFrame) -> pd.DataFrame:
+    def columns_filtering(self, df: pd.DataFrame, is_details: bool) -> pd.DataFrame:
         # columns filtering
-        if self.columns_names:
-            filtered_columns = [c for c in df.columns.tolist() if c in self.columns_names]
-            df = df.loc[:, filtered_columns]
-        if self.columns_regexes:
-            filtered_columns = [c for c in df.columns.tolist() if any(regex in c for regex in self.columns_regexes)]
+        lower_case_columns = [c.lower() for c in self.columns_names]
+        if lower_case_columns:
+            if is_details:
+                filtered_columns = [
+                    c for c in df.columns.tolist() if any(regex in c.lower() for regex in lower_case_columns)
+                ]
+            else:
+                filtered_columns = [c for c in df.columns.tolist() if c.lower() in lower_case_columns]
             df = df.loc[:, filtered_columns]
         return df
 
     def _build_dataframe(self, files: t.Sequence[Path], horizon: int) -> pd.DataFrame:
+        is_details = self.query_file in [
+            MCIndAreasQueryFile.DETAILS,
+            MCAllAreasQueryFile.DETAILS,
+            MCIndAreasQueryFile.DETAILS_ST_STORAGE,
+            MCAllAreasQueryFile.DETAILS_ST_STORAGE,
+            MCIndAreasQueryFile.DETAILS_RES,
+            MCAllAreasQueryFile.DETAILS_RES,
+        ]
         final_df = pd.DataFrame()
         nb_files = len(files)
         for k, file_path in enumerate(files):
             df = self._parse_output_file(file_path)
 
             # columns filtering
-            df = self.columns_filtering(df)
+            df = self.columns_filtering(df, is_details)
 
             # if no columns, no need to continue
             list_of_df_columns = df.columns.tolist()

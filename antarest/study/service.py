@@ -382,7 +382,6 @@ class StudyService:
         frequency: MatrixFrequency,
         mc_years: t.Sequence[int],
         columns_names: t.Sequence[str],
-        columns_regexes: t.Sequence[str],
         ids_to_consider: t.Sequence[str],
         params: RequestParameters,
     ) -> pd.DataFrame:
@@ -394,8 +393,7 @@ class StudyService:
             query_file: which types of data to retrieve ("values", "details", "details-st-storage", "details-res")
             frequency: yearly, monthly, weekly, daily or hourly.
             mc_years: list of monte-carlo years, if empty, all years are selected
-            columns_names: columns to be selected, if empty, all columns are selected
-            columns_regexes: columns to be selected using list of regexes, if empty, all columns are selected
+            columns_names: regexes (if details) or columns to be selected, if empty, all columns are selected
             ids_to_consider: list of areas or links ids to consider, if empty, all areas are selected
             params: request parameters
 
@@ -407,7 +405,7 @@ class StudyService:
         study_path = self.storage_service.raw_study_service.get_study_path(study)
         # fmt: off
         aggregator_manager = AggregatorManager(study_path, output_id, query_file, frequency, ids_to_consider,
-                                               columns_names, columns_regexes, mc_years)
+                                               columns_names, mc_years)
         # fmt: on
         return aggregator_manager.aggregate_output_data()
 
@@ -418,7 +416,6 @@ class StudyService:
         query_file: t.Union[MCAllAreasQueryFile, MCAllLinksQueryFile],
         frequency: MatrixFrequency,
         columns_names: t.Sequence[str],
-        columns_regexes: t.Sequence[str],
         ids_to_consider: t.Sequence[str],
         params: RequestParameters,
     ) -> pd.DataFrame:
@@ -429,8 +426,7 @@ class StudyService:
             output_id: simulation output ID
             query_file: which types of data to retrieve ("values", "details", "details-st-storage", "details-res")
             frequency: yearly, monthly, weekly, daily or hourly.
-            columns_names: columns to be selected, if empty, all columns are selected
-            columns_regexes: columns to be selected using list of regexes, if empty, all columns are selected
+            columns_names: regexes (if details) or columns to be selected, if empty, all columns are selected
             ids_to_consider: list of areas or links ids to consider, if empty, all areas are selected
             params: request parameters
 
@@ -442,7 +438,7 @@ class StudyService:
         study_path = self.storage_service.raw_study_service.get_study_path(study)
         # fmt: off
         aggregator_manager = AggregatorManager(study_path, output_id, query_file, frequency, ids_to_consider,
-                                               columns_names, columns_regexes)
+                                               columns_names)
         # fmt: on
         return aggregator_manager.aggregate_output_data__all()
 
