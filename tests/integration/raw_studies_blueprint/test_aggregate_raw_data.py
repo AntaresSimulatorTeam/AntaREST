@@ -77,9 +77,18 @@ AREAS_REQUESTS__IND = [
             "output_id": "20201014-1425eco-goodbye",
             "query_file": MCIndAreasQueryFile.VALUES,
             "frequency": MatrixFrequency.HOURLY,
-            "columns_regexes": "COST,NODU",
+            "columns_names": "COSt,NODu",
         },
         "test-06.result.tsv",
+    ),
+    (
+        {
+            "output_id": "20201014-1425eco-goodbye",
+            "query_file": MCIndAreasQueryFile.DETAILS,
+            "frequency": MatrixFrequency.HOURLY,
+            "columns_names": "COSt,NODu",
+        },
+        "test-07.result.tsv",
     ),
 ]
 
@@ -110,7 +119,7 @@ LINKS_REQUESTS__IND = [
             "query_file": MCIndLinksQueryFile.VALUES,
             "frequency": MatrixFrequency.HOURLY,
             "mc_years": "1,2",
-            "columns_names": "UCAP LIN.,FLOW QUAD.",
+            "columns_names": "UCAP LIn.,FLOw qUAD.",
         },
         "test-03.result.tsv",
     ),
@@ -129,7 +138,7 @@ LINKS_REQUESTS__IND = [
             "output_id": "20201014-1425eco-goodbye",
             "query_file": MCIndLinksQueryFile.VALUES,
             "frequency": MatrixFrequency.HOURLY,
-            "columns_regexes": "COST,PROB",
+            "columns_names": "MArG. COsT,CONG. PRoB +",
         },
         "test-05.result.tsv",
     ),
@@ -234,7 +243,7 @@ AREAS_REQUESTS__ALL = [
             "query_file": MCAllAreasQueryFile.VALUES,
             "frequency": MatrixFrequency.DAILY,
             "areas_ids": "",
-            "columns_names": "OP. COST,MRG. PRICE",
+            "columns_names": "OP. CoST,MRG. PrICE",
         },
         "test-03-all.result.tsv",
     ),
@@ -273,9 +282,18 @@ AREAS_REQUESTS__ALL = [
             "output_id": "20201014-1427eco",
             "query_file": MCAllAreasQueryFile.VALUES,
             "frequency": MatrixFrequency.DAILY,
-            "columns_regexes": "COST,NODU",
+            "columns_names": "COsT,NoDU",
         },
         "test-07-all.result.tsv",
+    ),
+    (
+        {
+            "output_id": "20201014-1427eco",
+            "query_file": MCAllAreasQueryFile.DETAILS,
+            "frequency": MatrixFrequency.MONTHLY,
+            "columns_names": "COsT,NoDU",
+        },
+        "test-08-all.result.tsv",
     ),
 ]
 
@@ -330,7 +348,7 @@ LINKS_REQUESTS__ALL = [
             "output_id": "20241807-1540eco-extra-outputs",
             "query_file": MCAllLinksQueryFile.VALUES,
             "frequency": MatrixFrequency.DAILY,
-            "columns_regexes": "COST,PROB",
+            "columns_names": "MARG. COsT,CONG. ProB +",
         },
         "test-06-all.result.tsv",
     ),
@@ -562,6 +580,38 @@ class TestRawDataAggregationMCInd:
         assert res.json()["exception"] == "OutputNotFound"
         assert "unknown_id" in res.json()["description"], "The output_id should be in the message"
 
+    def test_empty_columns(self, client: TestClient, user_access_token: str, internal_study_id: str):
+        """
+        Asserts that requests get an empty dataframe when columns are not existing
+        """
+        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+
+        # test for areas
+        res = client.get(
+            f"/v1/studies/{internal_study_id}/areas/aggregate/mc-ind/20201014-1425eco-goodbye",
+            params={
+                "query_file": MCIndAreasQueryFile.DETAILS,
+                "frequency": MatrixFrequency.HOURLY,
+                "columns_names": "fake_col",
+            },
+        )
+        assert res.status_code == 200, res.json()
+        df = pd.read_csv(io.BytesIO(res.content), index_col=0, sep=",")
+        assert df.empty
+
+        # test for links
+        res = client.get(
+            f"/v1/studies/{internal_study_id}/links/aggregate/mc-ind/20201014-1425eco-goodbye",
+            params={
+                "query_file": MCIndLinksQueryFile.VALUES,
+                "frequency": MatrixFrequency.HOURLY,
+                "columns_names": "fake_col",
+            },
+        )
+        assert res.status_code == 200, res.json()
+        df = pd.read_csv(io.BytesIO(res.content), index_col=0, sep=",")
+        assert df.empty
+
 
 @pytest.mark.integration_test
 class TestRawDataAggregationMCAll:
@@ -717,3 +767,36 @@ class TestRawDataAggregationMCAll:
         assert res.status_code == 404, res.json()
         assert res.json()["exception"] == "OutputNotFound"
         assert "unknown_id" in res.json()["description"], "The output_id should be in the message"
+
+    def test_empty_columns(self, client: TestClient, user_access_token: str, internal_study_id: str):
+        """
+        Asserts that requests get an empty dataframe when columns are not existing
+        """
+
+        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+
+        # test for areas
+        res = client.get(
+            f"/v1/studies/{internal_study_id}/areas/aggregate/mc-all/20201014-1427eco",
+            params={
+                "query_file": MCAllAreasQueryFile.DETAILS,
+                "frequency": MatrixFrequency.MONTHLY,
+                "columns_names": "fake_col",
+            },
+        )
+        assert res.status_code == 200, res.json()
+        df = pd.read_csv(io.BytesIO(res.content), index_col=0, sep=",")
+        assert df.empty
+
+        # test for links
+        res = client.get(
+            f"/v1/studies/{internal_study_id}/links/aggregate/mc-all/20241807-1540eco-extra-outputs",
+            params={
+                "query_file": MCAllLinksQueryFile.VALUES,
+                "frequency": MatrixFrequency.DAILY,
+                "columns_names": "fake_col",
+            },
+        )
+        assert res.status_code == 200, res.json()
+        df = pd.read_csv(io.BytesIO(res.content), index_col=0, sep=",")
+        assert df.empty
