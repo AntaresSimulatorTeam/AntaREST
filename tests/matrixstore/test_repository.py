@@ -170,7 +170,7 @@ class TestMatrixRepository:
 class TestMatrixContentRepository:
     def test_save(self, matrix_content_repo: MatrixContentRepository) -> None:
         """
-        Saves the content of a matrix as a TSV file in the directory
+        Saves the content of a matrix as an HDF file in the directory
         and returns its SHA256 hash.
         """
         # sourcery skip: extract-duplicate-method
@@ -180,17 +180,16 @@ class TestMatrixContentRepository:
         data: ArrayData
         data = [[1, 2, 3], [4, 5, 6]]
         matrix_hash = matrix_content_repo.save(data)
-        # then a TSV file is created in the repo directory
+        # then a HDF file is created in the repo directory
         matrix_file = bucket_dir.joinpath(f"{matrix_hash}.hdf")
-        df = pd.read_hdf(matrix_file)
-        array = df.values
+        array = pd.read_hdf(matrix_file).values
         assert array.tolist() == data
         modif_time = matrix_file.stat().st_mtime
 
         # when the data is saved again with same float values
         data = [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]
         matrix_content_repo.save(data)
-        # then no new TSV file is created
+        # then no new HDF file is created
         matrix_files = list(bucket_dir.glob("*.hdf"))
         assert matrix_files == [matrix_file]
         assert matrix_file.stat().st_mtime == modif_time, "date changed!"
@@ -198,7 +197,7 @@ class TestMatrixContentRepository:
         # when the data is saved again as NumPy array
         data = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], dtype=np.float64)
         matrix_content_repo.save(data)
-        # then no new TSV file is created
+        # then no new HDF file is created
         matrix_files = list(bucket_dir.glob("*.hdf"))
         assert matrix_files == [matrix_file]
         assert matrix_file.stat().st_mtime == modif_time, "date changed!"
@@ -206,14 +205,14 @@ class TestMatrixContentRepository:
         # when other data is saved with different values
         other_data = [[9.0, 2.0, 3.0], [10.0, 20.0, 30.0]]
         other_matrix_hash = matrix_content_repo.save(other_data)
-        # then a new TSV file is created
+        # then a new HDF file is created
         matrix_files = list(bucket_dir.glob("*.hdf"))
         other_matrix_file = bucket_dir.joinpath(f"{other_matrix_hash}.hdf")
         assert set(matrix_files) == {matrix_file, other_matrix_file}
 
     def test_save_and_retrieve_empty_matrix(self, matrix_content_repo: MatrixContentRepository) -> None:
         """
-        Test saving and retrieving empty matrices as TSV files.
+        Test saving and retrieving empty matrices as HDF files.
         Il all cases the file must be empty.
         """
         bucket_dir = matrix_content_repo.bucket_dir
@@ -272,7 +271,7 @@ class TestMatrixContentRepository:
 
     def test_delete(self, matrix_content_repo: MatrixContentRepository) -> None:
         """
-        Deletes the tsv file containing the content of a matrix with a given SHA256 hash.
+        Deletes the HDF file containing the content of a matrix with a given SHA256 hash.
         """
         # when the data is saved in the repo
         data: ArrayData = [[1, 2, 3], [4, 5, 6]]
