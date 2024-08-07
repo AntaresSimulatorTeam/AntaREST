@@ -1,5 +1,5 @@
 from antarest.study.storage.rawstudy.ini_reader import IniReader
-from antarest.study.storage.study_upgrader import upgrade_830
+from antarest.study.storage.study_upgrader import StudyUpgrader
 from tests.storage.business.test_study_version_upgrader import are_same_dir
 from tests.storage.study_upgrader.conftest import StudyAssets
 
@@ -10,7 +10,8 @@ def test_nominal_case(study_assets: StudyAssets):
     """
 
     # upgrade the study
-    upgrade_830(study_assets.study_dir)
+    study_upgrader = StudyUpgrader(study_assets.study_dir, "830")
+    study_upgrader.upgrade()
 
     # compare generaldata.ini
     actual_path = study_assets.study_dir.joinpath("settings/generaldata.ini")
