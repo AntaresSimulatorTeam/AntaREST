@@ -3,6 +3,7 @@ import typing as t
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 import pytest
 from numpy import typing as npt
 from sqlalchemy.orm import Session  # type: ignore
@@ -180,8 +181,9 @@ class TestMatrixContentRepository:
         data = [[1, 2, 3], [4, 5, 6]]
         matrix_hash = matrix_content_repo.save(data)
         # then a TSV file is created in the repo directory
-        matrix_file = bucket_dir.joinpath(f"{matrix_hash}.tsv")
-        array = np.loadtxt(matrix_file, delimiter="\t", dtype=np.float64, ndmin=2)
+        matrix_file = bucket_dir.joinpath(f"{matrix_hash}.hdf")
+        df = pd.read_hdf(matrix_file)
+        array = df.values
         assert array.tolist() == data
         modif_time = matrix_file.stat().st_mtime
 
@@ -189,7 +191,7 @@ class TestMatrixContentRepository:
         data = [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]
         matrix_content_repo.save(data)
         # then no new TSV file is created
-        matrix_files = list(bucket_dir.glob("*.tsv"))
+        matrix_files = list(bucket_dir.glob("*.hdf"))
         assert matrix_files == [matrix_file]
         assert matrix_file.stat().st_mtime == modif_time, "date changed!"
 
@@ -197,7 +199,7 @@ class TestMatrixContentRepository:
         data = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], dtype=np.float64)
         matrix_content_repo.save(data)
         # then no new TSV file is created
-        matrix_files = list(bucket_dir.glob("*.tsv"))
+        matrix_files = list(bucket_dir.glob("*.hdf"))
         assert matrix_files == [matrix_file]
         assert matrix_file.stat().st_mtime == modif_time, "date changed!"
 
@@ -205,8 +207,8 @@ class TestMatrixContentRepository:
         other_data = [[9.0, 2.0, 3.0], [10.0, 20.0, 30.0]]
         other_matrix_hash = matrix_content_repo.save(other_data)
         # then a new TSV file is created
-        matrix_files = list(bucket_dir.glob("*.tsv"))
-        other_matrix_file = bucket_dir.joinpath(f"{other_matrix_hash}.tsv")
+        matrix_files = list(bucket_dir.glob("*.hdf"))
+        other_matrix_file = bucket_dir.joinpath(f"{other_matrix_hash}.hdf")
         assert set(matrix_files) == {matrix_file, other_matrix_file}
 
     def test_save_and_retrieve_empty_matrix(self, matrix_content_repo: MatrixContentRepository) -> None:
@@ -219,7 +221,7 @@ class TestMatrixContentRepository:
         # Test with an empty matrix
         empty_array: ArrayData = []
         matrix_hash = matrix_content_repo.save(empty_array)
-        matrix_file = bucket_dir.joinpath(f"{matrix_hash}.tsv")
+        matrix_file = bucket_dir.joinpath(f"{matrix_hash}.hdf")
         retrieved_matrix = matrix_content_repo.get(matrix_hash)
 
         assert not matrix_file.read_bytes()
@@ -228,7 +230,7 @@ class TestMatrixContentRepository:
         # Test with an empty 2D array
         empty_2d_array: ArrayData = [[]]
         matrix_hash = matrix_content_repo.save(empty_2d_array)
-        matrix_file = bucket_dir.joinpath(f"{matrix_hash}.tsv")
+        matrix_file = bucket_dir.joinpath(f"{matrix_hash}.hdf")
         retrieved_matrix = matrix_content_repo.get(matrix_hash)
 
         assert not matrix_file.read_bytes()
@@ -278,7 +280,7 @@ class TestMatrixContentRepository:
         # then the saved matrix object can be deleted
         matrix_content_repo.delete(matrix_hash)
         # and the file doesn't exist anymore
-        matrix_files = list(matrix_content_repo.bucket_dir.glob("*.tsv"))
+        matrix_files = list(matrix_content_repo.bucket_dir.glob("*.hdf"))
         assert not matrix_files
 
         # when the data is missing (wrong SHA256)
