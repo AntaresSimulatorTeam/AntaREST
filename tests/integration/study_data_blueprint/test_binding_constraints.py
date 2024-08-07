@@ -604,6 +604,16 @@ class TestBindingConstraints:
                 else:
                     assert data == np.zeros((matrix_lt3.shape[0], 1)).tolist()
 
+        # Checks that we only see existing matrices inside the Debug View
+        res = client.get(f"/v1/studies/{study_id}/raw", params={"path": "/input/bindingconstraints", "depth": 1})
+        assert res.status_code in {200, 201}
+        assert res.json() == {
+            f"{bc_id_wo_group}_lt": {},
+            f"{bc_id_w_group}_gt": {},
+            f"{bc_id_w_matrix}_eq": {},
+            "bindingconstraints": {},
+        }
+
         # =============================
         # CONSTRAINT TERM MANAGEMENT
         # =============================
