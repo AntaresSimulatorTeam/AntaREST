@@ -4,6 +4,7 @@ import typing as t
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 from filelock import FileLock
 from numpy import typing as npt
 from sqlalchemy import exists  # type: ignore
@@ -126,7 +127,7 @@ class MatrixContentRepository:
 
     This class provides methods to get, check existence,
     save, and delete the content of matrices stored in a directory.
-    The matrices are stored as tab-separated values (TSV) files and
+    The matrices are stored as Hierarchical Data Format (HDF) files and
     are accessed and modified using their SHA256 hash as their unique identifier.
 
     Attributes:
@@ -148,12 +149,13 @@ class MatrixContentRepository:
             The matrix content or `None` if the file is not found.
         """
 
-        matrix_file = self.bucket_dir.joinpath(f"{matrix_hash}.tsv")
-        matrix = np.loadtxt(matrix_file, delimiter="\t", dtype=np.float64, ndmin=2)
-        matrix = matrix.reshape((1, 0)) if matrix.size == 0 else matrix
-        data = matrix.tolist()
-        index = list(range(matrix.shape[0]))
-        columns = list(range(matrix.shape[1]))
+        matrix_file = self.bucket_dir.joinpath(f"{matrix_hash}.hdf")
+        if matrix_file.stat().st_size == 0:
+            pass
+        df = pd.read_hdf(matrix_file)
+        data = df.values.tolist()
+        index = list(range(df.shape[0]))
+        columns = list(range(df.shape[1]))
         return MatrixContent.construct(data=data, columns=columns, index=index)
 
     def exists(self, matrix_hash: str) -> bool:
@@ -166,15 +168,15 @@ class MatrixContentRepository:
         Returns:
             `True` if the matrix exist else `None`.
         """
-        matrix_file = self.bucket_dir.joinpath(f"{matrix_hash}.tsv")
+        matrix_file = self.bucket_dir.joinpath(f"{matrix_hash}.hdf")
         return matrix_file.exists()
 
     def save(self, content: t.Union[t.List[t.List[MatrixData]], npt.NDArray[np.float64]]) -> str:
         """
-        Saves the content of a matrix as a TSV file in the bucket directory
+        Saves the content of a matrix as an HDF file in the bucket directory
         and returns its SHA256 hash.
 
-        The matrix content will be saved in a TSV file format, where each row represents
+        The matrix content will be saved in an HDF file format, where each row represents
         a line in the file and the values are separated by tabs. The file will be saved
         in the bucket directory using a unique filename. The SHA256 hash of the NumPy array
         is returned as a string.
@@ -185,7 +187,7 @@ class MatrixContentRepository:
                 or a NumPy array of type np.float64.
 
         Returns:
-            The SHA256 hash of the saved TSV file.
+            The SHA256 hash of the saved HDF file.
 
         Raises:
             ValueError:
@@ -203,18 +205,17 @@ class MatrixContentRepository:
         # for a non-mutable NumPy Array.
         matrix = content if isinstance(content, np.ndarray) else np.array(content, dtype=np.float64)
         matrix_hash = hashlib.sha256(matrix.data).hexdigest()
-        matrix_file = self.bucket_dir.joinpath(f"{matrix_hash}.tsv")
+        matrix_file = self.bucket_dir.joinpath(f"{matrix_hash}.hdf")
         # Avoid having to save the matrix again (that's the whole point of using a hash).
         if not matrix_file.exists():
             # Ensure exclusive access to the matrix file between multiple processes (or threads).
-            lock_file = matrix_file.with_suffix(".tsv.lock")
+            lock_file = matrix_file.with_suffix(".hdf.lock")
             with FileLock(lock_file, timeout=15):
                 if matrix.size == 0:
-                    # If the array or dataframe is empty, create an empty file instead of
-                    # traditional saving to avoid unwanted line breaks.
-                    open(matrix_file, mode="wb").close()
+                    matrix_file.touch()
                 else:
-                    np.savetxt(matrix_file, matrix, delimiter="\t", fmt="%.18f")
+                    df = pd.DataFrame(matrix)
+                    df.to_hdf(matrix_file, "data")
 
             # IMPORTANT: Deleting the lock file under Linux can make locking unreliable.
             # See https://github.com/tox-dev/py-filelock/issues/31
@@ -225,21 +226,21 @@ class MatrixContentRepository:
 
     def delete(self, matrix_hash: str) -> None:
         """
-        Deletes the TSV file containing the content of a matrix with the given SHA256 hash.
+        Deletes the HDF file containing the content of a matrix with the given SHA256 hash.
 
         Parameters:
             matrix_hash: The SHA256 hash of the matrix.
 
         Raises:
-            FileNotFoundError: If the TSV file does not exist.
+            FileNotFoundError: If the HDF file does not exist.
 
         Note:
             This method also deletes any abandoned lock file.
         """
-        matrix_file = self.bucket_dir.joinpath(f"{matrix_hash}.tsv")
+        matrix_file = self.bucket_dir.joinpath(f"{matrix_hash}.hdf")
         matrix_file.unlink()
 
         # IMPORTANT: Deleting the lock file under Linux can make locking unreliable.
         # Abandoned lock files are deleted here to maintain consistent behavior.
-        lock_file = matrix_file.with_suffix(".tsv.lock")
+        lock_file = matrix_file.with_suffix(".hdf.lock")
         lock_file.unlink(missing_ok=True)
