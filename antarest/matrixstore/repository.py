@@ -152,8 +152,8 @@ class MatrixContentRepository:
         matrix_file = self.bucket_dir.joinpath(f"{matrix_hash}.hdf")
         if matrix_file.stat().st_size == 0:  # hdf5 doesn't support reading empty files.
             data: t.List[t.List[int]] = [[]]
-            columns = [0]
-            index = []
+            columns = []
+            index = [0]
         else:
             df = t.cast(pd.DataFrame, pd.read_hdf(matrix_file))
             data = df.values.tolist()
