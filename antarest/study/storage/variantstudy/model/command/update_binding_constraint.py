@@ -29,7 +29,7 @@ ALIAS_OPERATOR_MAP = {
 }
 
 
-def _update_matrices_names(
+def update_matrices_names(
     file_study: FileStudy,
     binding_constraint_id: str,
     existing_operator: BindingConstraintOperator,
@@ -155,7 +155,7 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
         if self.operator and study_data.config.version >= 870:
             existing_operator = BindingConstraintOperator(actual_cfg.get("operator"))
             new_operator = BindingConstraintOperator(self.operator)
-            _update_matrices_names(study_data, self.id, existing_operator, new_operator)
+            update_matrices_names(study_data, self.id, existing_operator, new_operator)
 
         updated_matrices = [
             term for term in [m.value for m in TermMatrices] if hasattr(self, term) and getattr(self, term)
