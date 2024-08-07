@@ -1,6 +1,17 @@
 Antares Web Changelog
 =====================
 
+v2.17.5 (2024-08-05)
+--------------------
+
+### Bug Fixes
+
+* **sonar:** resolve sonar security issues [`2098`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2098)
+* **sc_builder:** make section case insensitive [`2106`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2106)
+* **output:** endpoint GET `/variables` works with no `areas` or `links` folder [`2107`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2107)
+
+**Full Changelog**: https://github.com/AntaresSimulatorTeam/AntaREST/compare/v2.17.4...v2.17.5
+
 v2.17.4 (2024-07-29)
 --------------------
 
