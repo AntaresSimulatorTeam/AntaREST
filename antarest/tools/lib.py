@@ -4,10 +4,11 @@ import os
 import shutil
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import List, Optional, Set, Union
+from typing import List, Optional, Set, Union, cast
 from zipfile import ZipFile
 
 import numpy as np
+import pandas as pd
 
 try:
     # The HTTPX equivalent of `requests.Session` is `httpx.Client`.
@@ -88,9 +89,11 @@ class RemoteVariantGenerator(IVariantGenerator):
         logger.info("Uploading matrices")
         matrix_dataset: List[str] = []
         for matrix_file in matrices_dir.iterdir():
-            matrix = np.loadtxt(matrix_file, delimiter="\t", dtype=np.float64, ndmin=2)
-            matrix = matrix.reshape((1, 0)) if matrix.size == 0 else matrix
-            matrix_data = matrix.tolist()
+            if matrix_file.stat().st_size == 0:
+                matrix_data: List[List[int]] = [[]]
+            else:
+                matrix = cast(pd.DataFrame, pd.read_hdf(matrix_file))
+                matrix_data = matrix.values.tolist()
             res = self.session.post(self.build_url("/v1/matrix"), json=matrix_data)
             res.raise_for_status()
             matrix_id = res.json()
