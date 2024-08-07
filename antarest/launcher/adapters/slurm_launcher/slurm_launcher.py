@@ -27,6 +27,7 @@ from antarest.launcher.adapters.log_manager import LogTailManager
 from antarest.launcher.model import JobStatus, LauncherParametersDTO, LogType, XpansionParametersDTO
 from antarest.study.storage.rawstudy.ini_reader import IniReader
 from antarest.study.storage.rawstudy.ini_writer import IniWriter
+from antarest.study.storage.utils import retrieve_output_path
 
 logger = logging.getLogger(__name__)
 logging.getLogger("paramiko").setLevel("WARN")
@@ -311,14 +312,12 @@ class SlurmLauncher(AbstractLauncher):
         # `antarest.launcher.service.LauncherService._import_output`
         return self.callbacks.import_output(
             job_id,
-            self.local_workspace / STUDIES_OUTPUT_DIR_NAME / job_id / "output",
+            self.local_workspace / STUDIES_OUTPUT_DIR_NAME / job_id,
             launcher_logs,
         )
 
     def _import_xpansion_result(self, job_id: str, xpansion_mode: str) -> None:
-        output_path = self.local_workspace / STUDIES_OUTPUT_DIR_NAME / job_id / "output"
-        if output_path.exists() and len(os.listdir(output_path)) == 1:
-            output_path = output_path / os.listdir(output_path)[0]
+        if output_path := retrieve_output_path(self.local_workspace / STUDIES_OUTPUT_DIR_NAME / job_id):
             if output_path.name.endswith(".zip"):
                 logger.info("Unzipping zipped output for xpansion result storage")
                 unzipped_output_path = (

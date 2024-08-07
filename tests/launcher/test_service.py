@@ -730,17 +730,15 @@ class TestLauncherService:
         )
 
         output_path = tmp_path / "output"
-        zipped_output_path = tmp_path / "zipped_output"
         os.mkdir(output_path)
-        os.mkdir(zipped_output_path)
         new_output_path = output_path / "new_output"
         os.mkdir(new_output_path)
         (new_output_path / "log").touch()
         (new_output_path / "data").touch()
         additional_log = tmp_path / "output.log"
         additional_log.write_text("some log")
-        new_output_zipped_path = zipped_output_path / "test.zip"
-        with ZipFile(new_output_zipped_path, "w", ZIP_DEFLATED) as output_data:
+        zipped_path = tmp_path / "test.zip"
+        with ZipFile(zipped_path, "w", ZIP_DEFLATED) as output_data:
             output_data.writestr("some output", "0\n1")
         job_id = "job_id"
         zipped_job_id = "zipped_job_id"
@@ -766,9 +764,9 @@ class TestLauncherService:
             ),
         ]
         with pytest.raises(JobNotFound):
-            launcher_service._import_output(job_id, output_path, {"out.log": [additional_log]})
+            launcher_service._import_output(job_id, tmp_path, {"out.log": [additional_log]})
 
-        launcher_service._import_output(job_id, output_path, {"out.log": [additional_log]})
+        launcher_service._import_output(job_id, tmp_path, {"out.log": [additional_log]})
         assert not launcher_service._get_job_output_fallback_path(job_id).exists()
         launcher_service.study_service.import_output.assert_called()
 
@@ -777,7 +775,7 @@ class TestLauncherService:
 
         launcher_service._import_output(
             zipped_job_id,
-            zipped_output_path,
+            zipped_path,
             {
                 "out.log": [additional_log],
                 "antares-out": [additional_log],
@@ -797,10 +795,10 @@ class TestLauncherService:
             StudyNotFoundError(""),
         ]
 
-        assert launcher_service._import_output(job_id, output_path, {"out.log": [additional_log]}) is None
+        assert launcher_service._import_output(job_id, tmp_path, {"out.log": [additional_log]}) is None
 
         (new_output_path / "info.antares-output").write_text(f"[general]\nmode=eco\nname=foo\ntimestamp={time.time()}")
-        output_name = launcher_service._import_output(job_id, output_path, {"out.log": [additional_log]})
+        output_name = launcher_service._import_output(job_id, tmp_path, {"out.log": [additional_log]})
         assert output_name is not None
         assert output_name.endswith("-hello")
         assert launcher_service._get_job_output_fallback_path(job_id).exists()

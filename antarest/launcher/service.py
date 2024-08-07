@@ -2,6 +2,7 @@ import functools
 import logging
 import os
 import shutil
+import zipfile
 from datetime import datetime, timedelta
 from http import HTTPStatus
 from pathlib import Path
@@ -42,7 +43,7 @@ from antarest.launcher.ssh_client import calculates_slurm_load
 from antarest.launcher.ssh_config import SSHConfigDTO
 from antarest.study.repository import AccessPermissions, StudyFilter
 from antarest.study.service import StudyService
-from antarest.study.storage.utils import assert_permission, extract_output_name, find_single_output_path
+from antarest.study.storage.utils import assert_permission, extract_output_name, retrieve_output_path
 
 logger = logging.getLogger(__name__)
 
@@ -510,9 +511,9 @@ class LauncherService:
             study_id = job_result.study_id
             job_launch_params = LauncherParametersDTO.from_launcher_params(job_result.launcher_params)
 
-            # this now can be a zip file instead of a directory !
-            output_true_path = find_single_output_path(output_path)
-            output_is_zipped = is_zip(output_true_path)
+            # this now can be a zip file instead of a directory!
+            output_true_path = retrieve_output_path(output_path)
+            output_is_zipped = output_true_path.suffix.lower() == ".zip"
             output_suffix = cast(
                 Optional[str],
                 getattr(
@@ -535,6 +536,12 @@ class LauncherService:
                         log_paths,
                         output_true_path / log_name,
                     )
+            if additional_logs and output_is_zipped:
+                with zipfile.ZipFile(output_true_path, "a") as zf:
+                    for log_paths in additional_logs.values():
+                        for path in log_paths:
+                            dest_name = path.name[: path.name.rfind("-")] + ".log"
+                            zf.write(filename=path, arcname=dest_name)
 
         if study_id:
             zip_path: Optional[Path] = None
@@ -548,18 +555,6 @@ class LauncherService:
             final_output_path = zip_path or output_true_path
             with db():
                 try:
-                    if additional_logs and output_is_zipped:
-                        for log_name, log_paths in additional_logs.items():
-                            log_type = LogType.from_filename(log_name)
-                            log_suffix = log_name
-                            if log_type:
-                                log_suffix = log_type.to_suffix()
-                            self.study_service.save_logs(
-                                study_id,
-                                job_id,
-                                log_suffix,
-                                concat_files_to_str(log_paths),
-                            )
                     return self.study_service.import_output(
                         study_id,
                         final_output_path,
@@ -576,6 +571,8 @@ class LauncherService:
                 finally:
                     if zip_path:
                         os.unlink(zip_path)
+                    if output_is_zipped:
+                        os.unlink(output_true_path)
         raise JobNotFound()
 
     def _download_fallback_output(self, job_id: str, params: RequestParameters) -> FileDownloadTaskDTO:
