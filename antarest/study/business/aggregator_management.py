@@ -27,10 +27,17 @@ TIME_ID_COL = "timeId"
 """Column name for the time index."""
 TIME_COL = "time"
 """Column name for the timestamp."""
+CLUSTER_ID_COL = "cluster"
+"""Column name for the cluster id."""
 MC_YEAR_INDEX = 0
 """Index in path parts starting from the Monte Carlo year to determine the Monte Carlo year."""
 AREA_OR_LINK_INDEX__IND, AREA_OR_LINK_INDEX__ALL = 2, 1
 """Indexes in path parts starting from the output root `economy//mc-(ind/all)` to determine the area/link name."""
+PRODUCTION_COLUMN_NAME = "production"
+PRODUCTION_COLUMN_REGEX = "mwh"
+CLUSTER_ID_COMPONENT = 0
+ACTUAL_COLUMN_COMPONENT = 1
+DUMMY_COMPONENT = 2
 
 logger = logging.getLogger(__name__)
 
@@ -71,6 +78,42 @@ def _checks_estimated_size(nb_files: int, df_bytes_size: int, nb_files_checked: 
         raise FileTooLargeError(estimated_df_size, maximum_size)
 
 
+def _columns_ordering(df_cols: t.List[str], column_name: str, is_details: bool, mc_root: MCRoot) -> t.Sequence[str]:
+    org_cols = df_cols.copy()
+    if mc_root == MCRoot.MC_ALL:
+        org_cols = [
+            col for col in org_cols if col not in {column_name, CLUSTER_ID_COL, MCYEAR_COL, TIME_ID_COL, TIME_COL}
+        ]
+    if is_details:
+        org_cols = [col for col in org_cols if col != CLUSTER_ID_COL and col != TIME_ID_COL]
+    if mc_root == MCRoot.MC_IND:
+        new_column_order = (
+            [column_name] + ([CLUSTER_ID_COL] if is_details else []) + [MCYEAR_COL, TIME_ID_COL, TIME_COL] + org_cols
+        )
+    elif mc_root == MCRoot.MC_ALL:
+        new_column_order = [column_name] + ([CLUSTER_ID_COL] if is_details else []) + [TIME_ID_COL, TIME_COL] + org_cols
+    else:
+        raise NotImplementedError(f"Unknown Monte Carlo root: {mc_root}")
+
+    return new_column_order
+
+
+def _infer_production_column(cols: t.Sequence[str]) -> t.Optional[str]:
+    prod_col = None
+    for c in cols:
+        if PRODUCTION_COLUMN_REGEX in c.lower().strip():
+            prod_col = c
+            break
+    return prod_col
+
+
+def _infer_time_id(df: pd.DataFrame, is_details: bool) -> t.List[int]:
+    if is_details:
+        return df[TIME_ID_COL].tolist()
+    else:
+        return list(range(1, len(df) + 1))
+
+
 class AggregatorManager:
     def __init__(
         self,
@@ -108,7 +151,7 @@ class AggregatorManager:
             else MCRoot.MC_ALL
         )
 
-    def _parse_output_file(self, file_path: Path) -> pd.DataFrame:
+    def _parse_output_file(self, file_path: Path, normalize: bool = True) -> pd.DataFrame:
         csv_file = pd.read_csv(
             file_path,
             sep="\t",
@@ -121,10 +164,17 @@ class AggregatorManager:
         date, body = date_serializer.extract_date(csv_file)
         df = rename_unnamed(body).astype(float)
 
+        if not normalize:
+            df.index = date
+            return df
+
         # normalize columns names
         new_cols = []
         for col in body.columns:
-            name_to_consider = col[0] if self.query_file.value == MCIndAreasQueryFile.VALUES else " ".join(col)
+            if self.mc_root == MCRoot.MC_IND:
+                name_to_consider = col[0] if self.query_file.value == MCIndAreasQueryFile.VALUES else " ".join(col)
+            else:
+                name_to_consider = " ".join([col[0], col[2]])
             new_cols.append(name_to_consider.upper().strip())
 
         df.index = date
@@ -202,6 +252,10 @@ class AggregatorManager:
         lower_case_columns = [c.lower() for c in self.columns_names]
         if lower_case_columns:
             if is_details:
+                filtered_columns = [CLUSTER_ID_COL, TIME_ID_COL] + [
+                    c for c in df.columns.tolist() if any(regex in c.lower() for regex in lower_case_columns)
+                ]
+            elif self.mc_root == MCRoot.MC_ALL:
                 filtered_columns = [
                     c for c in df.columns.tolist() if any(regex in c.lower() for regex in lower_case_columns)
                 ]
@@ -210,7 +264,41 @@ class AggregatorManager:
             df = df.loc[:, filtered_columns]
         return df
 
+    def _process_df(self, file_path: Path, is_details: bool) -> pd.DataFrame:
+        if is_details:
+            un_normalized_df = self._parse_output_file(file_path, normalize=False)
+            df_len = len(un_normalized_df)
+            cluster_dummy_product_cols = sorted(
+                set([(x[CLUSTER_ID_COMPONENT], x[DUMMY_COMPONENT]) for x in un_normalized_df.columns])
+            )
+            actual_cols = sorted(set(un_normalized_df.columns.map(lambda x: x[ACTUAL_COLUMN_COMPONENT])))
+            new_obj: t.Dict[str, t.Any] = {k: [] for k in actual_cols}
+            new_obj[CLUSTER_ID_COL] = []
+            new_obj[TIME_ID_COL] = []
+            for cluster_id, dummy_component in cluster_dummy_product_cols:
+                for actual_col in actual_cols:
+                    col_values = un_normalized_df[(cluster_id, actual_col, dummy_component)].tolist()  # type: ignore
+                    new_obj[actual_col] += col_values
+                new_obj[CLUSTER_ID_COL] += [cluster_id for _ in range(df_len)]
+                new_obj[TIME_ID_COL] += list(range(1, df_len + 1))
+
+            prod_col = _infer_production_column(actual_cols)
+            if prod_col is not None:
+                new_obj[PRODUCTION_COLUMN_NAME] = new_obj.pop(prod_col)
+                actual_cols.remove(prod_col)
+
+            add_prod = [PRODUCTION_COLUMN_NAME] if prod_col is not None else []
+            columns_order = [CLUSTER_ID_COL, TIME_ID_COL] + add_prod + list(actual_cols)
+            df = pd.DataFrame(new_obj).reindex(columns=columns_order).sort_values(by=[TIME_ID_COL, CLUSTER_ID_COL])
+            df.index = pd.Index(list(range(1, len(df) + 1)))
+
+            return df
+
+        else:
+            return self._parse_output_file(file_path)
+
     def _build_dataframe(self, files: t.Sequence[Path], horizon: int) -> pd.DataFrame:
+        assert self.mc_root in [MCRoot.MC_IND, MCRoot.MC_ALL], f"Unknown Monte Carlo root: {self.mc_root}"
         is_details = self.query_file in [
             MCIndAreasQueryFile.DETAILS,
             MCAllAreasQueryFile.DETAILS,
@@ -222,14 +310,14 @@ class AggregatorManager:
         final_df = pd.DataFrame()
         nb_files = len(files)
         for k, file_path in enumerate(files):
-            df = self._parse_output_file(file_path)
+            df = self._process_df(file_path, is_details)
 
             # columns filtering
             df = self.columns_filtering(df, is_details)
 
             # if no columns, no need to continue
             list_of_df_columns = df.columns.tolist()
-            if not list_of_df_columns:
+            if not list_of_df_columns or set(list_of_df_columns) == {CLUSTER_ID_COL, TIME_ID_COL}:
                 return pd.DataFrame()
 
             # checks if the estimated dataframe size does not exceed the limit
@@ -239,50 +327,26 @@ class AggregatorManager:
                 estimated_binary_size = final_df.memory_usage().sum()
                 _checks_estimated_size(nb_files, estimated_binary_size, k)
 
+            column_name = AREA_COL if self.output_type == "areas" else LINK_COL
+            new_column_order = _columns_ordering(list_of_df_columns, column_name, is_details, self.mc_root)
+
             if self.mc_root == MCRoot.MC_IND:
                 # add column for links/areas
                 relative_path_parts = file_path.relative_to(self.mc_ind_path).parts
-                column_name = AREA_COL if self.output_type == "areas" else LINK_COL
-                new_column_order = [column_name, MCYEAR_COL, TIME_ID_COL, TIME_COL] + list_of_df_columns
                 df[column_name] = relative_path_parts[AREA_OR_LINK_INDEX__IND]
-
                 # add column to record the Monte Carlo year
                 df[MCYEAR_COL] = int(relative_path_parts[MC_YEAR_INDEX])
-
-                # add a column for the time id
-                df[TIME_ID_COL] = list(range(1, len(df) + 1))
-                # add horizon column
-                df[TIME_COL] = horizon
-
-                # Reorganize the columns
-                df = df.reindex(columns=new_column_order)
             else:
-                # first columns df
-                # first we include the time id column
-                first_columns_df = pd.DataFrame(
-                    {
-                        TIME_ID_COL: list(range(1, len(df) + 1)),
-                    }
-                )
-
                 # add column for links/areas
                 relative_path_parts = file_path.relative_to(self.mc_all_path).parts
-                column_name = AREA_COL if self.output_type == "areas" else LINK_COL
-                first_columns_df[column_name] = relative_path_parts[AREA_OR_LINK_INDEX__ALL]
+                df[column_name] = relative_path_parts[AREA_OR_LINK_INDEX__ALL]
 
-                # add horizon column
-                first_columns_df[TIME_COL] = horizon
-
-                # reorder first columns
-                new_column_order = [column_name, TIME_ID_COL, TIME_COL]
-                first_columns_df = first_columns_df.reindex(columns=new_column_order)
-
-                # reset index
-                # noinspection PyTypeChecker
-                first_columns_df.set_index(df.index, inplace=True)
-
-                # merge first columns with the rest of the df
-                df = pd.merge(first_columns_df, df, left_index=True, right_index=True)
+            # add a column for the time id
+            df[TIME_ID_COL] = _infer_time_id(df, is_details)
+            # add horizon column
+            df[TIME_COL] = horizon
+            # Reorganize the columns
+            df = df.reindex(columns=pd.Index(new_column_order))
 
             final_df = pd.concat([final_df, df], ignore_index=True)
 
