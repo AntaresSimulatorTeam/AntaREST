@@ -1,3 +1,4 @@
+import io
 import logging
 from pathlib import Path
 from typing import Any, List, Optional, Union, cast
@@ -86,13 +87,17 @@ class OutputSeriesMatrix(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON])
         matrix.columns = body.columns
         return matrix
 
-    def parse(
-        self,
-        file_path: Optional[Path] = None,
-        tmp_dir: Any = None,
-    ) -> JSON:
+    def parse(self, file_path: Path, tmp_dir: Any, format: Optional[str] = None) -> Union[JSON, bytes]:
         matrix = self.parse_dataframe(file_path, tmp_dir)
-        return cast(JSON, matrix.to_dict(orient="split"))
+        if format == "json":
+            return cast(JSON, matrix.to_dict(orient="split"))
+        else:
+            with io.BytesIO() as buffer:
+                matrix.columns = matrix.columns.map(str)
+                matrix.reset_index(inplace=True)
+                matrix.rename(columns={matrix.columns[0]: "Index"}, inplace=True)
+                matrix.to_feather(buffer, compression="uncompressed")
+                return buffer.getvalue()
 
     def check_errors(
         self,
@@ -108,15 +113,11 @@ class OutputSeriesMatrix(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON])
         return errors
 
     def load(
-        self,
-        url: Optional[List[str]] = None,
-        depth: int = -1,
-        expanded: bool = False,
-        formatted: bool = True,
+        self, url: Optional[List[str]] = None, depth: int = -1, expanded: bool = False, format: Optional[str] = None
     ) -> Union[bytes, JSON]:
         try:
             file_path, tmp_dir = self._get_real_file_path()
-            if not formatted:
+            if not format:
                 if file_path.exists():
                     file_content = file_path.read_bytes()
                     if tmp_dir:
@@ -130,7 +131,7 @@ class OutputSeriesMatrix(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON])
 
             if not file_path.exists():
                 raise FileNotFoundError(file_path)
-            return self.parse(file_path, tmp_dir)
+            return self.parse(file_path, tmp_dir, format)
         except FileNotFoundError as e:
             raise ChildNotFoundError(
                 f"Output file '{self.config.path.name}' not found in study {self.config.study_id}"

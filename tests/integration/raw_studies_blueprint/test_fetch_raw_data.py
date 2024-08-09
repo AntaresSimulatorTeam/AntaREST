@@ -7,6 +7,8 @@ import shutil
 from unittest.mock import ANY
 
 import numpy as np
+import pyarrow as pa
+import pyarrow.feather as feather
 import pytest
 from starlette.testclient import TestClient
 
@@ -44,7 +46,7 @@ class TestFetchRawData:
         with db():
             study: RawStudy = db.session.get(Study, internal_study_id)
             study_dir = pathlib.Path(study.path)
-        headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
         shutil.copytree(
             ASSETS_DIR.joinpath("user"),
@@ -56,11 +58,7 @@ class TestFetchRawData:
         user_folder_dir = study_dir.joinpath("user/folder")
         for file_path in user_folder_dir.glob("*.*"):
             rel_path = file_path.relative_to(study_dir).as_posix()
-            res = client.get(
-                f"/v1/studies/{internal_study_id}/raw",
-                params={"path": rel_path, "depth": 1},
-                headers=headers,
-            )
+            res = client.get(f"/v1/studies/{internal_study_id}/raw", params={"path": rel_path, "depth": 1})
             assert res.status_code == 200, res.json()
             if file_path.suffix == ".json":
                 # special case for JSON files
@@ -83,9 +81,7 @@ class TestFetchRawData:
         for file_path in user_folder_dir.glob("*.*"):
             rel_path = file_path.relative_to(study_dir)
             res = client.get(
-                f"/v1/studies/{internal_study_id}/raw",
-                params={"path": f"/{rel_path.as_posix()}", "depth": 1},
-                headers=headers,
+                f"/v1/studies/{internal_study_id}/raw", params={"path": f"/{rel_path.as_posix()}", "depth": 1}
             )
             assert res.status_code == 200, res.json()
             actual = res.content
@@ -93,11 +89,7 @@ class TestFetchRawData:
             assert actual == expected
 
         # If you try to retrieve a file that doesn't exist, we should have a 404 error
-        res = client.get(
-            f"/v1/studies/{internal_study_id}/raw",
-            params={"path": "user/somewhere/something.txt"},
-            headers=headers,
-        )
+        res = client.get(f"/v1/studies/{internal_study_id}/raw", params={"path": "user/somewhere/something.txt"})
         assert res.status_code == 404, res.json()
         assert res.json() == {
             "description": "'somewhere' not a child of User",
@@ -109,7 +101,6 @@ class TestFetchRawData:
         res = client.put(
             f"/v1/studies/{internal_study_id}/raw",
             params={"path": "user/somewhere/something.txt"},
-            headers=headers,
             files={"file": io.BytesIO(b"Goodbye World!")},
         )
         assert res.status_code == 404, res.json()
@@ -123,7 +114,6 @@ class TestFetchRawData:
         res = client.put(
             f"/v1/studies/{internal_study_id}/raw",
             params={"path": "user/somewhere/something.txt", "create_missing": True},
-            headers=headers,
             files={"file": io.BytesIO(b"Goodbye Cruel World!")},
         )
         assert res.status_code == 204, res.json()
@@ -133,27 +123,18 @@ class TestFetchRawData:
         res = client.put(
             f"/v1/studies/{internal_study_id}/raw",
             params={"path": "user/somewhere/something.txt", "create_missing": True},
-            headers=headers,
             files={"file": io.BytesIO(b"This is the end!")},
         )
         assert res.status_code == 204, res.json()
 
         # You can check that the resource has been created or updated.
-        res = client.get(
-            f"/v1/studies/{internal_study_id}/raw",
-            params={"path": "user/somewhere/something.txt"},
-            headers=headers,
-        )
+        res = client.get(f"/v1/studies/{internal_study_id}/raw", params={"path": "user/somewhere/something.txt"})
         assert res.status_code == 200, res.json()
         assert res.content == b"This is the end!"
 
         # If we ask for properties, we should have a JSON content
         rel_path = "/input/links/de/properties/fr"
-        res = client.get(
-            f"/v1/studies/{internal_study_id}/raw",
-            params={"path": rel_path, "depth": 2},
-            headers=headers,
-        )
+        res = client.get(f"/v1/studies/{internal_study_id}/raw", params={"path": rel_path, "depth": 2})
         assert res.status_code == 200, res.json()
         actual = res.json()
         assert actual == {
@@ -172,35 +153,38 @@ class TestFetchRawData:
             "use-phase-shifter": False,
         }
 
-        # If we ask for a matrix, we should have a JSON content if formatted is True
-        rel_path = "/input/links/de/fr"
+        # Some files can be corrupted
+        user_folder_dir = study_dir.joinpath("user/bad")
+        for file_path in user_folder_dir.glob("*.*"):
+            rel_path = file_path.relative_to(study_dir)
+            res = client.get(
+                f"/v1/studies/{internal_study_id}/raw", params={"path": f"/{rel_path.as_posix()}", "depth": 1}
+            )
+            assert res.status_code == http.HTTPStatus.UNPROCESSABLE_ENTITY
+
+        # We can access to the configuration the classic way,
+        # for instance, we can get the list of areas:
+        res = client.get(f"/v1/studies/{internal_study_id}/raw", params={"path": "/input/areas/list", "depth": 1})
+        assert res.status_code == 200, res.json()
+        assert res.json() == ["DE", "ES", "FR", "IT"]
+
+        # asserts that the GET /raw endpoint is able to read matrix containing NaN values
         res = client.get(
             f"/v1/studies/{internal_study_id}/raw",
-            params={"path": rel_path, "formatted": True},
-            headers=headers,
+            params={"path": "output/20201014-1427eco/economy/mc-all/areas/de/id-monthly"},
         )
-        assert res.status_code == 200, res.json()
-        actual = res.json()
-        assert actual == {"index": ANY, "columns": ANY, "data": ANY}
+        assert res.status_code == 200
+        assert np.isnan(res.json()["data"][0]).any()
 
-        # If we ask for a matrix, we should have a CSV content if formatted is False
-        rel_path = "/input/links/de/fr"
-        res = client.get(
-            f"/v1/studies/{internal_study_id}/raw",
-            params={"path": rel_path, "formatted": False},
-            headers=headers,
-        )
-        assert res.status_code == 200, res.json()
-        actual = res.text
-        actual_lines = actual.splitlines()
-        first_row = [float(x) for x in actual_lines[0].split("\t")]
-        assert first_row == [100000, 100000, 0.01, 0.01, 0, 0, 0, 0]
+        # Iterate over all possible combinations of path and depth (to mimic the debug view)
+        for path, depth in itertools.product([None, "", "/"], [0, 1, 2]):
+            res = client.get(f"/v1/studies/{internal_study_id}/raw", params={"path": path, "depth": depth})
+            assert res.status_code == 200, f"Error for path={path} and depth={depth}"
 
-        # If ask for an empty matrix, we should have an empty binary content
+        # For an empty matrix, we should have an empty binary content
         res = client.get(
             f"/v1/studies/{internal_study_id}/raw",
             params={"path": "input/thermal/prepro/de/01_solar/data", "formatted": False},
-            headers=headers,
         )
         assert res.status_code == 200, res.json()
         assert res.content == b""
@@ -209,46 +193,67 @@ class TestFetchRawData:
         res = client.get(
             f"/v1/studies/{internal_study_id}/raw",
             params={"path": "input/thermal/prepro/de/01_solar/data", "formatted": True},
-            headers=headers,
         )
         assert res.status_code == 200, res.json()
         assert res.json() == {"index": [0], "columns": [], "data": []}
 
-        # Some files can be corrupted
-        user_folder_dir = study_dir.joinpath("user/bad")
-        for file_path in user_folder_dir.glob("*.*"):
-            rel_path = file_path.relative_to(study_dir)
-            res = client.get(
-                f"/v1/studies/{internal_study_id}/raw",
-                params={"path": f"/{rel_path.as_posix()}", "depth": 1},
-                headers=headers,
-            )
-            assert res.status_code == http.HTTPStatus.UNPROCESSABLE_ENTITY
+        # =============================
+        #  MATRICES
+        # =============================
 
-        # We can access to the configuration the classic way,
-        # for instance, we can get the list of areas:
-        res = client.get(
-            f"/v1/studies/{internal_study_id}/raw",
-            params={"path": "/input/areas/list", "depth": 1},
-            headers=headers,
-        )
-        assert res.status_code == 200, res.json()
-        assert res.json() == ["DE", "ES", "FR", "IT"]
+        matrix_types = {
+            "input": {"path": "/input/links/de/fr", "expected_row": [100000, 100000, 0.01, 0.01, 0, 0, 0, 0]},
+            "output": {
+                "path": "/output/20201014-1422eco-hello/economy/mc-all/areas/de/id-daily",
+                "expected_row": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+            },
+        }
 
-        # asserts that the GET /raw endpoint is able to read matrix containing NaN values
-        res = client.get(
-            f"/v1/studies/{internal_study_id}/raw",
-            params={"path": "output/20201014-1427eco/economy/mc-all/areas/de/id-monthly"},
-            headers=headers,
-        )
-        assert res.status_code == 200
-        assert np.isnan(res.json()["data"][0]).any()
+        for matrix_type, parameters in matrix_types.items():
+            path = parameters["path"]
+            expected_row = parameters["expected_row"]
 
-        # Iterate over all possible combinations of path and depth
-        for path, depth in itertools.product([None, "", "/"], [0, 1, 2]):
-            res = client.get(
-                f"/v1/studies/{internal_study_id}/raw",
-                params={"path": path, "depth": depth},
-                headers=headers,
-            )
-            assert res.status_code == 200, f"Error for path={path} and depth={depth}"
+            # We should have a JSON content if formatted is True
+            res = client.get(f"/v1/studies/{internal_study_id}/raw", params={"path": path, "formatted": True})
+            assert res.status_code == 200, res.json()
+            old_result = res.json()
+            assert old_result == {"index": ANY, "columns": ANY, "data": ANY}
+            assert old_result["data"][0][:8] == expected_row
+
+            # We should have the same result with new flag 'format' set to 'JSON'
+            res = client.get(f"/v1/studies/{internal_study_id}/raw", params={"path": path, "format": "json"})
+            assert res.status_code == 200, res.json()
+            new_result = res.json()
+            assert new_result == old_result
+
+            # We should have a CSV content if formatted is False
+            res = client.get(f"/v1/studies/{internal_study_id}/raw", params={"path": path, "formatted": False})
+            assert res.status_code == 200, res.json()
+            actual_lines = res.text.splitlines()
+            if matrix_type == "input":
+                first_row = [float(x) for x in actual_lines[0].split("\t")]
+                assert first_row == expected_row
+            else:
+                assert actual_lines[0].split("\t") == ["DE", "area", "id", "daily"]
+
+            # We should have arrow binary if format = "arrow"
+            res = client.get(f"/v1/studies/{internal_study_id}/raw", params={"path": path, "format": "arrow"})
+            assert res.status_code == 200
+            assert isinstance(res.content, bytes)
+            assert res.text.startswith("ARROW")
+            arrow_bytes = res.content
+            buffer = pa.BufferReader(arrow_bytes)
+            table = feather.read_table(buffer)
+            df = table.to_pandas()
+            if matrix_type == "input":
+                assert list(df.loc[0]) == expected_row
+            else:
+                assert df.columns[0] == "Index"  # asserts the first columns corresponds to the index in such a case.
+                assert list(df.loc[0][:9]) == ["01/01"] + expected_row
+
+            if matrix_type == "input":
+                # Try to replace a matrix with a one in arrow format
+                res = client.put(
+                    f"/v1/studies/{internal_study_id}/raw", params={"path": path}, files={"file": arrow_bytes}
+                )
+                assert res.status_code in {201, 204}

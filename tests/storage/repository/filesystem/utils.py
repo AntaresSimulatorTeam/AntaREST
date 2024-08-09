@@ -29,11 +29,7 @@ class CheckSubNode(INode[int, int, int]):
         return self
 
     def get(
-        self,
-        url: Optional[List[str]] = None,
-        depth: int = -1,
-        expanded: bool = True,
-        formatted: bool = True,
+        self, url: Optional[List[str]] = None, depth: int = -1, expanded: bool = False, format: str = "json"
     ) -> int:
         return self.value
 

@@ -63,7 +63,7 @@ class LazyNode(INode, ABC, t.Generic[G, S, V]):  # type: ignore
         url: t.Optional[t.List[str]] = None,
         depth: int = -1,
         expanded: bool = False,
-        formatted: bool = True,
+        format: t.Optional[str] = None,
         get_node: bool = False,
     ) -> t.Union[t.Union[str, G], INode[G, S, V]]:
         self._assert_url_end(url)
@@ -76,21 +76,21 @@ class LazyNode(INode, ABC, t.Generic[G, S, V]):  # type: ignore
             if expanded:
                 return link
             else:
-                return t.cast(G, self.context.resolver.resolve(link, formatted))
+                return t.cast(G, self.context.resolver.resolve(link, format))
 
         if expanded:
             return self.get_lazy_content()
         else:
-            return self.load(url, depth, expanded, formatted)
+            return self.load(url, depth, expanded, format)
 
     def get(
         self,
         url: t.Optional[t.List[str]] = None,
         depth: int = -1,
         expanded: bool = False,
-        formatted: bool = True,
+        format: t.Optional[str] = None,
     ) -> t.Union[str, G]:
-        output = self._get(url, depth, expanded, formatted, get_node=False)
+        output = self._get(url, depth, expanded, format, get_node=False)
         assert not isinstance(output, INode)
         return output
 
@@ -133,7 +133,7 @@ class LazyNode(INode, ABC, t.Generic[G, S, V]):  # type: ignore
         self._assert_not_in_zipped_file()
         self._assert_url_end(url)
 
-        if isinstance(data, str) and self.context.resolver.resolve(data):
+        if isinstance(data, str) and self.context.resolver.resolve(data, format="json"):
             self.get_link_path().write_text(data)
             if self.config.path.exists():
                 self.config.path.unlink()
@@ -168,7 +168,7 @@ class LazyNode(INode, ABC, t.Generic[G, S, V]):  # type: ignore
         url: t.Optional[t.List[str]] = None,
         depth: int = -1,
         expanded: bool = False,
-        formatted: bool = True,
+        format: t.Optional[str] = None,
     ) -> G:
         """
         Fetch data on disk.
@@ -177,7 +177,7 @@ class LazyNode(INode, ABC, t.Generic[G, S, V]):  # type: ignore
             url: data path to retrieve
             depth: after url is reached, node expand tree until matches depth asked
             expanded: context parameter to determine if current node comes from an expansion
-            formatted: ask for raw file transformation
+            format: ask for raw file transformation
 
         Returns:
 

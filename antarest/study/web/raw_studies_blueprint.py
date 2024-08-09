@@ -19,6 +19,7 @@ from antarest.core.utils.utils import sanitize_string, sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.study.business.aggregator_management import AreasQueryFile, LinksQueryFile
+from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.service import StudyService
 from antarest.study.storage.df_download import TableExportFormat, export_file
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
@@ -59,6 +60,12 @@ CONTENT_TYPES = {
     ".json": ("application/json", "utf-8"),
 }
 
+
+class MatrixFormat(EnumIgnoreCase):
+    JSON = "json"
+    ARROW = "arrow"
+
+
 DEFAULT_EXPORT_FORMAT = Query(TableExportFormat.CSV, alias="format", description="Export format", title="Export Format")
 
 
@@ -97,8 +104,9 @@ def create_raw_study_routes(
         path: str = Param("/", examples=get_path_examples()),  # type: ignore
         depth: int = 3,
         formatted: bool = True,
+        format: t.Optional[MatrixFormat] = None,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> t.Any:
+    ) -> Response:
         """
         Fetches raw data from a study, and returns the data
         in different formats based on the file type, or as a JSON response.
@@ -107,9 +115,10 @@ def create_raw_study_routes(
         - `uuid`: The UUID of the study.
         - `path`: The path to the data to fetch.
         - `depth`: The depth of the data to retrieve.
-        - `formatted`: A flag specifying whether the data should be returned in a formatted manner.
+        - `formatted`: If false, returns the file as bytes. Else, the `format` flag applies.
+        - `format`: Either 'json' or 'arrow'. Arrow format is only supported by matrix files.
 
-        Returns the fetched data: a JSON object (in most cases), a plain text file
+        Returns the fetched data: a JSON object (in most cases), a plain text file, a matrix file in arrow format
         or a file attachment (Microsoft Office document, TSV/TSV file...).
         """
         logger.info(
@@ -117,12 +126,21 @@ def create_raw_study_routes(
             extra={"user": current_user.id},
         )
         parameters = RequestParameters(user=current_user)
-        output = study_service.get(uuid, path, depth=depth, formatted=formatted, params=parameters)
+
+        _format = format or MatrixFormat.JSON
+        real_format = _format.value if formatted else None
+
+        output = study_service.get(uuid, path, depth=depth, params=parameters, format=real_format)
 
         if isinstance(output, bytes):
+            if real_format == MatrixFormat.ARROW:
+                return Response(content=output, media_type="application/vnd.apache.arrow.file")
+
             # Guess the suffix form the target data
             resource_path = PurePosixPath(path)
-            parent_cfg = study_service.get(uuid, str(resource_path.parent), depth=2, formatted=True, params=parameters)
+            parent_cfg = study_service.get(
+                uuid, str(resource_path.parent), depth=2, params=parameters, format=real_format
+            )
             child = parent_cfg[resource_path.name]
             suffix = PurePosixPath(child).suffix
 
@@ -364,7 +382,7 @@ def create_raw_study_routes(
         Parameters:
         - `uuid`: The UUID of the study.
         - `path`: The path to the data to update. Defaults to "/".
-        - `file`: The raw file to be posted (e.g. a CSV file opened in binary mode).
+        - `file`: The raw file to be posted (e.g. a CSV file opened in binary mode or a matrix in arrow format).
         - `create_missing`: Flag to indicate whether to create file or parent directories if missing.
         """
         logger.info(

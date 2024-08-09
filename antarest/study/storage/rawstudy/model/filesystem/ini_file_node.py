@@ -152,7 +152,7 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
         url: t.Optional[t.List[str]] = None,
         depth: int = -1,
         expanded: bool = False,
-        formatted: bool = True,
+        format: t.Optional[str] = None,
     ) -> SUB_JSON:
         output = self._get(url, depth, expanded, get_node=False)
         assert not isinstance(output, INode)

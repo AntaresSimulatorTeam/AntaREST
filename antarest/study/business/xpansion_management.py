@@ -691,7 +691,7 @@ class XpansionManager:
     ) -> t.Union[JSON, bytes]:
         logger.info(f"Getting xpansion {resource_type} resource file '{filename}' from study '{study.id}'")
         file_study = self.study_storage_service.get_storage(study).get_raw(study)
-        return file_study.tree.get(self._raw_file_dir(resource_type) + [filename])
+        return file_study.tree.get(url=self._raw_file_dir(resource_type) + [filename], format="json")
 
     def list_resources(self, study: Study, resource_type: XpansionResourceFileType) -> t.List[str]:
         logger.info(f"Getting all xpansion {resource_type} files from study '{study.id}'")

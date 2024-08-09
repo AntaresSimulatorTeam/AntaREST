@@ -14,6 +14,8 @@ from uuid import uuid4
 
 import numpy as np
 import pandas as pd
+import pyarrow as pa
+import pyarrow.feather as feather
 from fastapi import HTTPException, UploadFile
 from markupsafe import escape
 from starlette.responses import FileResponse, Response
@@ -302,21 +304,14 @@ class StudyService:
         for callback in self.on_deletion_callbacks:
             callback(uuid)
 
-    def get(
-        self,
-        uuid: str,
-        url: str,
-        depth: int,
-        formatted: bool,
-        params: RequestParameters,
-    ) -> JSON:
+    def get(self, uuid: str, url: str, depth: int, params: RequestParameters, format: t.Optional[str] = None) -> JSON:
         """
         Get study data inside filesystem
         Args:
             uuid: study uuid
             url: route to follow inside study structure
             depth: depth to expand tree when route matched
-            formatted: indicate if raw files must be parsed and formatted
+            format: Indicates the file return format. Can be 'json', 'arrow' or None. If None, the file will be returned as is.
             params: request parameters
 
         Returns: data study formatted in json
@@ -325,7 +320,7 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
 
-        return self.storage_service.get_storage(study).get(study, url, depth, formatted)
+        return self.storage_service.get_storage(study).get(study, url, depth, format)
 
     def aggregate_output_data(
         self,
@@ -398,7 +393,7 @@ class StudyService:
             try:
                 log = t.cast(
                     bytes,
-                    file_study.tree.get(log_location, depth=1, formatted=True),
+                    file_study.tree.get(log_location, depth=1, format="json"),
                 ).decode(encoding="utf-8")
                 # when missing file, RawFileNode return empty bytes
                 if log:
@@ -1440,9 +1435,15 @@ class StudyService:
             )
         elif isinstance(tree_node, InputSeriesMatrix):
             if isinstance(data, bytes):
-                # noinspection PyTypeChecker
-                matrix = np.loadtxt(io.BytesIO(data), delimiter="\t", dtype=np.float64, ndmin=2)
-                matrix = matrix.reshape((1, 0)) if matrix.size == 0 else matrix
+                # checks if it corresponds to arrow format or if it's a classic file.
+                if data[:5].decode("utf-8") == "ARROW":
+                    buffer = pa.BufferReader(data)  # type: ignore
+                    table = feather.read_table(buffer)
+                    df = table.to_pandas()
+                    matrix = df.to_numpy()
+                else:
+                    matrix = np.loadtxt(io.BytesIO(data), delimiter="\t", dtype=np.float64, ndmin=2)
+                    matrix = matrix.reshape((1, 0)) if matrix.size == 0 else matrix
                 return ReplaceMatrix(
                     target=url,
                     matrix=matrix.tolist(),
@@ -2527,7 +2528,7 @@ class StudyService:
                 hydro_matrix = self.correlation_manager.get_correlation_matrix(all_areas, study, [])  # type: ignore
             return pd.DataFrame(data=hydro_matrix.data, columns=hydro_matrix.columns, index=hydro_matrix.index)
 
-        matrix_obj = self.get(study_id, path, depth=3, formatted=True, params=parameters)
+        matrix_obj = self.get(study_id, path, depth=3, format="json", params=parameters)
         if set(matrix_obj) != {"data", "index", "columns"}:
             raise IncorrectPathError(f"The provided path does not point to a valid matrix: '{path}'")
         if not matrix_obj["data"]:

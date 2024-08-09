@@ -55,12 +55,12 @@ def assert_with_errors(
     storage_service: StudyService,
     url: str,
     expected_output: Union[str, dict],
-    formatted: bool = True,
+    format: str = "json",
 ) -> None:
     url = url[len("/v1/studies/") :]
     uuid, url = url.split("/raw?path=")
     params = RequestParameters(user=ADMIN)
-    output = storage_service.get(uuid=uuid, url=url, depth=3, formatted=formatted, params=params)
+    output = storage_service.get(uuid=uuid, url=url, depth=3, format=format, params=params)
     assert_study(
         output,
         expected_output,
@@ -499,8 +499,8 @@ def test_sta_mini_copy(storage_service) -> None:
     uuid = result.json()
 
     parameters = RequestParameters(user=ADMIN)
-    data_source = storage_service.get(source_study_name, "/", -1, True, parameters)
-    data_destination = storage_service.get(uuid, "/", -1, True, parameters)
+    data_source = storage_service.get(source_study_name, "/", -1, parameters, format="json")
+    data_destination = storage_service.get(uuid, "/", -1, parameters, format="json")
 
     link_url_source = data_source["input"]["links"]["de"]["fr"]
     assert "matrixfile://fr.txt" == link_url_source

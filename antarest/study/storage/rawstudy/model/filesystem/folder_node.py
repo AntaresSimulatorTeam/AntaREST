@@ -45,7 +45,7 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
         self,
         url: t.List[str],
         depth: int = -1,
-        formatted: bool = True,
+        format: t.Optional[str] = None,
         get_node: bool = False,
     ) -> t.Union[JSON, INode[JSON, SUB_JSON, JSON]]:
         children = self.build()
@@ -55,7 +55,7 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
         if len(names) == 1:
             child = children[names[0]]
             if not get_node:
-                return child.get(sub_url, depth=depth, expanded=False, formatted=formatted)  # type: ignore
+                return child.get(sub_url, depth=depth, expanded=False, format=format)  # type: ignore
             else:
                 return child.get_node(
                     sub_url,
@@ -63,20 +63,12 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
         # many items asked or * asked
         else:
             if not get_node:
-                return {
-                    key: children[key].get(
-                        sub_url,
-                        depth=depth,
-                        expanded=False,
-                        formatted=formatted,
-                    )
-                    for key in names
-                }
+                return {key: children[key].get(sub_url, depth=depth, expanded=False, format=format) for key in names}
             else:
                 raise ValueError("Multiple nodes requested")
 
     def _expand_get(
-        self, depth: int = -1, formatted: bool = True, get_node: bool = False
+        self, depth: int = -1, format: t.Optional[str] = None, get_node: bool = False
     ) -> t.Union[JSON, INode[JSON, SUB_JSON, JSON]]:
         if get_node:
             return self
@@ -86,7 +78,7 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
         if depth == 0:
             return {}
         return {
-            name: node.get(depth=depth - 1, expanded=True, formatted=formatted) if depth != 1 else {}
+            name: node.get(depth=depth - 1, expanded=True, format=format) if depth != 1 else {}
             for name, node in children.items()
         }
 
@@ -94,22 +86,22 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
         self,
         url: t.Optional[t.List[str]] = None,
         depth: int = -1,
-        formatted: bool = True,
+        format: t.Optional[str] = None,
         get_node: bool = False,
     ) -> t.Union[JSON, INode[JSON, SUB_JSON, JSON]]:
         if url and url != [""]:
-            return self._forward_get(url, depth, formatted, get_node)
+            return self._forward_get(url, depth, format, get_node)
         else:
-            return self._expand_get(depth, formatted, get_node)
+            return self._expand_get(depth, format, get_node)
 
     def get(
         self,
         url: t.Optional[t.List[str]] = None,
         depth: int = -1,
         expanded: bool = False,
-        formatted: bool = True,
+        format: t.Optional[str] = None,
     ) -> JSON:
-        output = self._get(url=url, depth=depth, formatted=formatted, get_node=False)
+        output = self._get(url=url, depth=depth, format=format, get_node=False)
         assert not isinstance(output, INode)
         return output
 

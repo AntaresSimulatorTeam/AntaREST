@@ -22,13 +22,7 @@ class MockLazyNode(LazyNode[str, str, str]):
             context=context,
         )
 
-    def load(
-        self,
-        url: Optional[List[str]] = None,
-        depth: int = -1,
-        expanded: bool = False,
-        formatted: bool = False,
-    ) -> str:
+    def load(self, url: Optional[List[str]] = None, depth: int = -1, expanded: bool = False, format: str = "") -> str:
         return "Mock Matrix Content"
 
     def dump(self, data: str, url: Optional[List[str]] = None) -> None:
@@ -69,7 +63,7 @@ def test_get_no_expanded_link(tmp_path: Path):
         config=config,
     )
     assert "Mock Matrix Content" == node.get(expanded=False)
-    resolver.resolve.assert_called_once_with(uri, True)
+    resolver.resolve.assert_called_once_with(uri, None)
 
 
 def test_get_expanded_txt(tmp_path: Path):
@@ -118,7 +112,7 @@ def test_save_uri(tmp_path: Path):
     node.save(uri)
     assert (file.parent / f"{file.name}.link").read_text() == uri
     assert not file.exists()
-    resolver.resolve.assert_called_once_with(uri)
+    resolver.resolve.assert_called_once_with(uri, format="json")
 
 
 def test_save_txt(tmp_path: Path):
@@ -139,7 +133,7 @@ def test_save_txt(tmp_path: Path):
     node.save(content)
     assert file.read_text() == content
     assert not link.exists()
-    resolver.resolve.assert_called_once_with(content)
+    resolver.resolve.assert_called_once_with(content, format="json")
 
 
 @pytest.mark.parametrize("target_is_link", [True, False])
@@ -186,7 +180,7 @@ def test_rename_file(tmp_path: Path, target_is_link: bool):
         assert file.read_text() == content
         assert not link.exists()
         assert not renaming_file.exists()
-        resolver.resolve.assert_called_once_with(content)
+        resolver.resolve.assert_called_once_with(content, format="json")
 
         node.rename_file(target)
 
@@ -241,7 +235,7 @@ def test_copy_file(tmp_path: Path, target_is_link: bool):
         assert file.read_text() == content
         assert not link.exists()
         assert not copied_file.exists()
-        resolver.resolve.assert_called_once_with(content)
+        resolver.resolve.assert_called_once_with(content, format="json")
 
         node.copy_file(target)
 

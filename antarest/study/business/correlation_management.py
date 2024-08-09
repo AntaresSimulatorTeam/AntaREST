@@ -187,7 +187,7 @@ class CorrelationManager:
         file_study: FileStudy,
         area_ids: Sequence[str],
     ) -> npt.NDArray[np.float64]:
-        correlation_cfg = file_study.tree.get(self.url, depth=3)
+        correlation_cfg = file_study.tree.get(self.url, depth=3, format="json")
         return _config_to_array(area_ids, correlation_cfg)
 
     def _set_array(

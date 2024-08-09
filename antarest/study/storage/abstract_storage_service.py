@@ -117,12 +117,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         )
 
     def get(
-        self,
-        metadata: T,
-        url: str = "",
-        depth: int = 3,
-        formatted: bool = True,
-        use_cache: bool = True,
+        self, metadata: T, url: str = "", depth: int = 3, format: t.Optional[str] = None, use_cache: bool = True
     ) -> JSON:
         """
         Entry point to fetch data inside study.
@@ -130,7 +125,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
             metadata: study
             url: path data inside study to reach
             depth: tree depth to reach after reach data path
-            formatted: indicate if raw files must be parsed and formatted
+            format: Indicates the file return format. Can be 'json', 'arrow' or None. If None, the file will be returned as is.
             use_cache: indicate if the cache must be used
 
         Returns: study data formatted in json
@@ -149,11 +144,11 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
                 logger.info(f"Raw Study {metadata.id} read from cache")
                 data = from_cache
             else:
-                data = study.tree.get(parts, depth=depth, formatted=formatted)
+                data = study.tree.get(parts, depth=depth, format=format)
                 self.cache.put(cache_id, data)
                 logger.info(f"Cache new entry from RawStudyService (studyID: {metadata.id})")
         else:
-            data = study.tree.get(parts, depth=depth, formatted=formatted)
+            data = study.tree.get(parts, depth=depth, format=format)
         del study
         return data
 

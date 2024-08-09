@@ -62,7 +62,8 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
         if self.get_link_path().exists() or self.config.zip_path:
             return
 
-        matrix = self.parse()
+        matrix = self.parse(format="json")
+        assert isinstance(matrix, dict)
 
         if "data" in matrix:
             data = cast(List[List[float]], matrix["data"])
@@ -82,22 +83,18 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
         # noinspection SpellCheckingInspection
         logger.info(f"Denormalizing matrix {self.config.path}")
         uuid = self.get_link_path().read_text()
-        matrix = self.context.resolver.resolve(uuid)
+        matrix = self.context.resolver.resolve(uuid, format="json")
         if not matrix or not isinstance(matrix, dict):
             raise DenormalizationException(f"Failed to retrieve original matrix for {self.config.path}")
 
         self.dump(matrix)
         self.get_link_path().unlink()
 
-    def load(
-        self,
-        url: Optional[List[str]] = None,
-        depth: int = -1,
-        expanded: bool = False,
-        formatted: bool = True,
-    ) -> Union[bytes, JSON]:
+    def load(  # type: ignore
+        self, url: Optional[List[str]] = None, depth: int = -1, expanded: bool = False, format: Optional[str] = None
+    ) -> Union[bytes, JSON, pd.DataFrame]:
         file_path, tmp_dir = self._get_real_file_path()
-        if not formatted:
+        if not format:
             if file_path.exists():
                 return file_path.read_bytes()
 
@@ -106,7 +103,10 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
                 tmp_dir.cleanup()
             return b""
 
-        return cast(JSON, self.parse(file_path, tmp_dir))
+        result = self.parse(file_path, tmp_dir, False, format)
+        if format == "json":
+            return cast(JSON, result)
+        return result
 
     @abstractmethod
     def parse(
@@ -114,7 +114,8 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
         file_path: Optional[Path] = None,
         tmp_dir: Any = None,
         return_dataframe: bool = False,
-    ) -> Union[JSON, pd.DataFrame]:
+        format: Optional[str] = None,
+    ) -> Union[JSON, bytes, pd.DataFrame]:
         """
         Parse the matrix content
         """
