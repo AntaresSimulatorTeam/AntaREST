@@ -5,6 +5,10 @@ on:
       - "**"
 
 jobs:
+  ################################################################
+  ## Python
+  ################################################################
+
   python-lint:
     runs-on: ubuntu-20.04
     steps:
@@ -65,6 +69,29 @@ jobs:
           name: python-code-coverage-report
           path: coverage.xml
 
+  ################################################################
+  ## npm
+  ################################################################
+
+  npm-lint:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ ubuntu-20.04 ]
+    steps:
+      - name: Checkout github repo
+        uses: actions/checkout@v4
+      - name: Set up Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18.16.1
+      - name: Install dependencies
+        run: npm install
+        working-directory: webapp
+      - name: Type and ESLint checking
+        run: npm run lint
+        working-directory: webapp
+
   npm-test:
     runs-on: ${{ matrix.os }}
     strategy:
@@ -86,12 +113,13 @@ jobs:
         env:
           NODE_OPTIONS: --max-old-space-size=8192
           DISABLE_ESLINT_PLUGIN: true
-      - name: Lint
-        run: npm run lint
-        working-directory: webapp
       - name: Test
         run: npm run test
         working-directory: webapp
+
+  ################################################################
+  ## SonarCloud
+  ################################################################
 
   sonarcloud:
     runs-on: ubuntu-20.04
