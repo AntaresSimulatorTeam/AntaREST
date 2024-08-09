@@ -1,7 +1,8 @@
 import { Box } from "@mui/material";
-import { TreeItem } from "@mui/x-tree-view";
-import { TreeData, determineFileType, getFileIcon } from "../utils";
-import { useDebugContext } from "../DebugContext";
+import { TreeItem } from "@mui/x-tree-view/TreeItem";
+import { TreeData, getFileType, getFileIcon, isFolder } from "../utils";
+import DebugContext from "../DebugContext";
+import { useContext } from "react";
 
 interface Props {
   name: string;
@@ -10,11 +11,10 @@ interface Props {
 }
 
 function FileTreeItem({ name, content, path }: Props) {
-  const { onFileSelect } = useDebugContext();
+  const { onFileSelect } = useContext(DebugContext);
   const filePath = `${path}/${name}`;
-  const fileType = determineFileType(content);
+  const fileType = getFileType(content);
   const FileIcon = getFileIcon(fileType);
-  const isFolderEmpty = !Object.keys(content).length;
 
   ////////////////////////////////////////////////////////////////
   // Event handlers
@@ -32,23 +32,16 @@ function FileTreeItem({ name, content, path }: Props) {
 
   return (
     <TreeItem
-      nodeId={filePath}
+      itemId={filePath}
       label={
-        <Box
-          role="button"
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            ...(isFolderEmpty && { opacity: 0.5 }),
-          }}
-          onClick={handleClick}
-        >
-          <FileIcon sx={{ width: 20, height: "auto", p: 0.2 }} />
-          <span style={{ marginLeft: 4 }}>{name}</span>
+        <Box sx={{ display: "flex" }}>
+          <FileIcon sx={{ width: 20, height: "auto", p: 0.2, mr: 0.5 }} />
+          {name}
         </Box>
       }
+      onClick={handleClick}
     >
-      {typeof content === "object" &&
+      {isFolder(content) &&
         Object.keys(content).map((childName) => (
           <FileTreeItem
             key={childName}
