@@ -24,8 +24,8 @@ BEFORE_650 = {
 AFTER_650 = {
     "creditmodulations_en": {"default_empty": [[]], "freq": MatrixFrequency.HOURLY, "nb_columns": None},
     "creditmodulations_fr": {"default_empty": [[]], "freq": MatrixFrequency.HOURLY, "nb_columns": None},
-    "inflowPattern_en": {"default_empty": [[]], "freq": MatrixFrequency.HOURLY, "nb_columns": None},
-    "inflowPattern_fr": {"default_empty": [[]], "freq": MatrixFrequency.HOURLY, "nb_columns": None},
+    "inflowPattern_en": {"default_empty": [[]], "freq": MatrixFrequency.DAILY, "nb_columns": None},
+    "inflowPattern_fr": {"default_empty": [[]], "freq": MatrixFrequency.DAILY, "nb_columns": None},
     "maxpower_en": {"default_empty": [[]], "freq": MatrixFrequency.DAILY, "nb_columns": None},
     "maxpower_fr": {"default_empty": [[]], "freq": MatrixFrequency.DAILY, "nb_columns": None},
     "reservoir_en": {"default_empty": [[]], "freq": MatrixFrequency.DAILY, "nb_columns": None},
