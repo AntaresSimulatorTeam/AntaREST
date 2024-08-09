@@ -7,6 +7,7 @@ import zipfile
 from unittest.mock import ANY, Mock
 
 import numpy as np
+import pandas as pd
 import pytest
 from fastapi import UploadFile
 from starlette.datastructures import Headers
@@ -40,11 +41,11 @@ class TestMatrixService:
         # A "real" hash value is calculated
         assert matrix_id, "ID can't be empty"
 
-        # The matrix is saved in the content repository as a TSV file
+        # The matrix is saved in the content repository as a HDF file
         bucket_dir = matrix_service.matrix_content_repository.bucket_dir
-        content_path = bucket_dir.joinpath(f"{matrix_id}.tsv")
-        array = np.loadtxt(content_path)
-        assert array.all() == np.array(data).all()
+        content_path = bucket_dir.joinpath(f"{matrix_id}.hdf")
+        array = pd.read_hdf(content_path).__array__()
+        assert (array == np.array(data)).all()
 
         # A matrix object is stored in the database
         with db():
@@ -64,11 +65,11 @@ class TestMatrixService:
         # A "real" hash value is calculated
         assert matrix_id, "ID can't be empty"
 
-        # The matrix is saved in the content repository as a TSV file
+        # The matrix is saved in the content repository as an HDF file
         bucket_dir = matrix_service.matrix_content_repository.bucket_dir
-        content_path = bucket_dir.joinpath(f"{matrix_id}.tsv")
-        array = np.loadtxt(content_path)
-        assert array.all() == data.all()
+        content_path = bucket_dir.joinpath(f"{matrix_id}.hdf")
+        array = pd.read_hdf(content_path).__array__()
+        assert (array == data).all()
 
         # A matrix object is stored in the database
         with db():
@@ -90,8 +91,8 @@ class TestMatrixService:
 
         # the associated matrix file must not be deleted
         bucket_dir = matrix_service.matrix_content_repository.bucket_dir
-        tsv_files = list(bucket_dir.glob("*.tsv"))
-        assert tsv_files
+        hdf_files = list(bucket_dir.glob("*.hdf"))
+        assert hdf_files
 
         # Nothing is stored in the database
         with db():
@@ -147,8 +148,8 @@ class TestMatrixService:
 
         # The matrix in no more available in the content repository
         bucket_dir = matrix_service.matrix_content_repository.bucket_dir
-        tsv_files = list(bucket_dir.glob("*.tsv"))
-        assert not tsv_files
+        hdf_files = list(bucket_dir.glob("*.hdf"))
+        assert not hdf_files
 
         # The matrix object is deleted from the database
         with db():
@@ -163,8 +164,8 @@ class TestMatrixService:
 
         # then, the matrix in no more available in the content repository
         bucket_dir = matrix_service.matrix_content_repository.bucket_dir
-        tsv_files = list(bucket_dir.glob("*.tsv"))
-        assert not tsv_files
+        hdf_files = list(bucket_dir.glob("*.hdf"))
+        assert not hdf_files
 
         # The matrix object is deleted from the database
         with db():
@@ -219,11 +220,14 @@ class TestMatrixService:
         # A "real" hash value is calculated
         assert info.id, "ID can't be empty"
 
-        # The matrix is saved in the content repository as a TSV file
+        # The matrix is saved in the content repository as an HDF file
         bucket_dir = matrix_service.matrix_content_repository.bucket_dir
-        content_path = bucket_dir.joinpath(f"{info.id}.tsv")
-        actual = np.loadtxt(content_path)
-        assert actual.all() == matrix.all()
+        content_path = bucket_dir.joinpath(f"{info.id}.hdf")
+        if content_path.stat().st_size == 0:
+            actual = np.empty(shape=1)
+        else:
+            actual = pd.read_hdf(content_path).__array__()
+        assert (actual == matrix).all()
 
         # A matrix object is stored in the database
         with db():
@@ -286,11 +290,14 @@ class TestMatrixService:
             # A "real" hash value is calculated
             assert info.id, "ID can't be empty"
 
-            # The matrix is saved in the content repository as a TSV file
+            # The matrix is saved in the content repository as an HDF file
             bucket_dir = matrix_service.matrix_content_repository.bucket_dir
-            content_path = bucket_dir.joinpath(f"{info.id}.tsv")
-            actual = np.loadtxt(content_path)
-            assert actual.all() == matrix.all()
+            content_path = bucket_dir.joinpath(f"{info.id}.hdf")
+            if content_path.stat().st_size == 0:
+                actual = np.empty(shape=1)
+            else:
+                actual = pd.read_hdf(content_path).__array__()
+            assert (actual == matrix).all()
 
             # A matrix object is stored in the database
             with db():
