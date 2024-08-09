@@ -197,7 +197,7 @@ def test_nominal_case_of_an_api_user(client: TestClient, admin_access_token: str
 
     # read a result
     res = client.get(f"/v1/studies/{study_id}/outputs", headers=bot_headers)
-    assert len(res.json()) == 5
+    assert len(res.json()) == 6
     first_output_name = res.json()[0]["name"]
     res = client.get(
         f"/v1/studies/{study_id}/raw",
@@ -212,7 +212,7 @@ def test_nominal_case_of_an_api_user(client: TestClient, admin_access_token: str
     # remove output
     client.delete(f"/v1/studies/{study_id}/outputs/{first_output_name}", headers=bot_headers)
     res = client.get(f"/v1/studies/{study_id}/outputs", headers=bot_headers)
-    assert len(res.json()) == 4
+    assert len(res.json()) == 5
 
     # delete variant
     res = client.delete(f"/v1/studies/{variant_id}", headers=bot_headers)
