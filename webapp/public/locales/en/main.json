@@ -409,7 +409,7 @@
   "study.configuration.geographicTrimmingLinks": "Geographic Trimming (Links)",
   "study.configuration.geographicTrimmingBindingConstraints": "Geographic Trimming (Binding Constraints)",
   "study.modelization.properties": "Properties",
-  "study.modelization.properties.energyCost": "Energy cost (€/Wh)",
+  "study.modelization.properties.energyCost": "Energy cost (€/MWh)",
   "study.modelization.properties.unsupplied": "Unsupplied",
   "study.modelization.properties.spilled": "Spilled",
   "study.modelization.properties.lastResortShedding": "Last resort shedding status",
