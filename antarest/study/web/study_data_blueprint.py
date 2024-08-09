@@ -1759,7 +1759,13 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     def generate_timeseries(
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> t.Any:
+    ) -> str:
+        """
+        Generates time-series for thermal clusters and put them inside input data.
+
+        Args:
+        - `uuid`: The UUID of the study.
+        """
         logger.info(
             f"Generating timeseries for study {uuid}",
             extra={"user": current_user.id},
