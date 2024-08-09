@@ -2,8 +2,11 @@ import numpy as np
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskStatus
+from tests.integration.assets import ASSETS_DIR
 from tests.integration.prepare_proxy import PreparerProxy
 from tests.integration.utils import wait_task_completion
+
+TIMESERIES_ASSETS_DIR = ASSETS_DIR.joinpath("timeseries_generation")
 
 
 class TestGenerateThermalClusterTimeseries:
@@ -97,3 +100,101 @@ class TestGenerateThermalClusterTimeseries:
         task = wait_task_completion(client, user_access_token, task_id)
         assert task.status == TaskStatus.FAILED
         assert "Nominal power must be strictly positive, got 0.0" in task.result.message
+
+    def test_advanced_results(self, client: TestClient, user_access_token: str) -> None:
+        # Study Preparation
+        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        preparer = PreparerProxy(client, user_access_token)
+        study_id = preparer.create_study("foo", version=860)
+        area_id = preparer.create_area(study_id, name="test")["id"]
+        nb_years = 10
+        body = {"thermal": {"number": nb_years}}
+        res = client.put(f"/v1/studies/{study_id}/config/timeseries/form", json=body)
+        cluster_id = "cluster_test"
+        assert res.status_code in {200, 201}
+
+        # Create cluster with specific properties
+        body = {
+            "name": cluster_id,
+            "group": "Nuclear",
+            "unitCount": 10,
+            "nominalCapacity": 500,
+            "volatilityForced": 0.5,
+            "volatilityPlanned": 0.5,
+            "lawPlanned": "geometric",
+        }
+        res = client.post(f"/v1/studies/{study_id}/areas/{area_id}/clusters/thermal", json=body)
+        assert res.status_code in {200, 201}
+
+        mapping = {
+            "reference_case": {
+                "modulation_to_1": False,
+                "fo_duration_to_1": False,
+                "po_duration_to_1": False,
+                "february": False,
+            },
+            "case_1": {
+                "modulation_to_1": False,
+                "fo_duration_to_1": False,
+                "po_duration_to_1": True,
+                "february": True,
+            },
+            "case_2": {
+                "modulation_to_1": True,
+                "fo_duration_to_1": True,
+                "po_duration_to_1": False,
+                "february": True,
+            },
+            "case_3": {
+                "modulation_to_1": True,
+                "fo_duration_to_1": True,
+                "po_duration_to_1": True,
+                "february": False,
+            },
+        }
+        for test_case, variations in mapping.items():
+            # Replace modulation matrix
+            modulation_matrix = np.ones(shape=(8760, 4))
+            if not variations["modulation_to_1"]:
+                modulation_matrix[:24, 2] = 0.5
+                modulation_matrix[24:52, 2] = 0.1
+            res = client.post(
+                f"/v1/studies/{study_id}/raw",
+                params={"path": f"/input/thermal/prepro/{area_id}/{cluster_id}/modulation"},
+                json=modulation_matrix.tolist(),
+            )
+            assert res.status_code == 204
+
+            # Replace gen_ts matrix
+            input_gen_ts = np.loadtxt(TIMESERIES_ASSETS_DIR.joinpath("input_gen_ts.txt"), delimiter="\t")
+            if variations["february"]:
+                input_gen_ts[:59, 0] = 2
+                input_gen_ts[:59, 1] = 3
+            if variations["fo_duration_to_1"]:
+                input_gen_ts[:, 0] = 1
+            if variations["po_duration_to_1"]:
+                input_gen_ts[:, 1] = 1
+            res = client.post(
+                f"/v1/studies/{study_id}/raw",
+                params={"path": f"/input/thermal/prepro/{area_id}/{cluster_id}/data"},
+                json=input_gen_ts.tolist(),
+            )
+            assert res.status_code == 204
+
+            # Get expected matrix
+            expected_matrix = np.loadtxt(TIMESERIES_ASSETS_DIR.joinpath(f"{test_case}.txt"), delimiter="\t").tolist()
+
+            # Generate timeseries
+            res = client.put(f"/v1/studies/{study_id}/timeseries/generate")
+            assert res.status_code == 200
+            task_id = res.json()
+            assert task_id
+            task = wait_task_completion(client, user_access_token, task_id)
+            assert task.status == TaskStatus.COMPLETED
+
+            # Compare results
+            generated_matrix = client.get(
+                f"/v1/studies/{study_id}/raw", params={"path": f"input/thermal/series/{area_id}/{cluster_id}/series"}
+            ).json()["data"]
+            if generated_matrix != expected_matrix:
+                raise AssertionError(f"Test case {test_case} failed")
