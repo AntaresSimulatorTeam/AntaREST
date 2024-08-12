@@ -23,7 +23,7 @@
     "@mui/material": "5.14.11",
     "@mui/x-date-pickers": "6.18.3",
     "@reduxjs/toolkit": "1.9.6",
-    "axios": "1.5.1",
+    "axios": "1.7.3",
     "clsx": "2.0.0",
     "d3": "5.16.0",
     "debug": "4.3.4",
