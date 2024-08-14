@@ -1,14 +1,47 @@
 name: main
-on:
-  push:
-    branches:
-      - "**"
+
+# If a workflow is skipped due to path filtering, branch filtering or a commit message, 
+# then checks associated with that workflow will remain in a "Pending" state. 
+# A pull request that requires those checks to be successful will be blocked from merging.
+#
+# So we use conditions to control job execution (`if: ...`) instead of `pull_request` event parameters.
+# A job that is skipped will report its status as "Success".
+# It will not prevent a pull request from merging, even if it is a required check.
+on: [pull_request]
 
 jobs:
+
+  ################################################################
+  ## Back-end
+  ################################################################
+
+  detect-backend-changes:
+    runs-on: ubuntu-20.04
+    outputs:
+      has-changes: ${{ steps.detect-changes.outputs.has-changes }}
+    steps:
+      - name: Checkout GitHub repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Ensure full history is fetched
+      - name: Check if backend files have changed
+        id: detect-changes
+        run: |
+          git fetch origin ${{ github.event.pull_request.base.ref }} --depth=1
+          if git diff --name-only origin/${{ github.event.pull_request.base.ref }}...HEAD | grep -Eq '^antarest/|^tests/|^resources/|^requirements.*\.txt$'; then
+            echo "Backend files have changed"
+            echo "has-changes=true" >> $GITHUB_OUTPUT
+          else
+            echo "No backend files have changed"
+            echo "has-changes=false" >> $GITHUB_OUTPUT
+          fi
+
   python-lint:
+    needs: detect-backend-changes
+    if: ${{ needs.detect-backend-changes.outputs.has-changes == 'true' }}
     runs-on: ubuntu-20.04
     steps:
-      - name: Checkout github repo (+ download lfs dependencies)
+      - name: Checkout GitHub repo (+ download lfs dependencies)
         uses: actions/checkout@v4
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -34,14 +67,15 @@ jobs:
           mypy --install-types --non-interactive
 
   python-test:
+    needs: detect-backend-changes
+    if: ${{ needs.detect-backend-changes.outputs.has-changes == 'true' }}
     runs-on: ${{ matrix.os }}
     strategy:
       max-parallel: 9
       matrix:
         os: [windows-latest, ubuntu-20.04]
-
     steps:
-      - name: Checkout github repo (+ download lfs dependencies)
+      - name: Checkout GitHub repo (+ download lfs dependencies)
         uses: actions/checkout@v4
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -61,10 +95,50 @@ jobs:
           name: python-code-coverage-report
           path: coverage.xml
 
-  npm-setup:
+  python-tests:
+    needs: [detect-backend-changes, python-test]
+    if: ${{ needs.detect-backend-changes.outputs.has-changes == 'true' && always() }}
     runs-on: ubuntu-20.04
     steps:
-      - name: Checkout github repo
+      - name: Results of Python tests by OS
+        run: exit 1
+        # See https://stackoverflow.com/a/67532120/4907315
+        if: >-
+          ${{
+               contains(needs.*.result, 'failure')
+            || contains(needs.*.result, 'cancelled') }}
+          
+  ################################################################
+  ## Front-end
+  ################################################################
+
+  detect-frontend-changes:
+    runs-on: ubuntu-20.04
+    outputs:
+      has-changes: ${{ steps.detect-changes.outputs.has-changes }}
+    steps:
+      - name: Checkout GitHub repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Ensure full history is fetched
+      - name: Check if front-end files have changed
+        id: detect-changes
+        run: |
+          git fetch origin ${{ github.event.pull_request.base.ref }} --depth=1
+          if git diff --name-only origin/${{ github.event.pull_request.base.ref }}...HEAD | grep -q '^webapp/'; then
+            echo "Front-end files have changed"
+            echo "has-changes=true" >> $GITHUB_OUTPUT
+          else
+            echo "No front-end files in have changed"
+            echo "has-changes=false" >> $GITHUB_OUTPUT
+          fi
+
+  npm-setup:
+    needs: detect-frontend-changes
+    if: ${{ needs.detect-frontend-changes.outputs.has-changes == 'true' }}
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout GitHub repo
         uses: actions/checkout@v4
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -87,7 +161,7 @@ jobs:
     needs: npm-setup
     runs-on: ubuntu-20.04
     steps:
-      - name: Checkout github repo
+      - name: Checkout GitHub repo
         uses: actions/checkout@v4
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -107,7 +181,7 @@ jobs:
     needs: npm-setup
     runs-on: ubuntu-20.04
     steps:
-      - name: Checkout github repo
+      - name: Checkout GitHub repo
         uses: actions/checkout@v4
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -127,7 +201,7 @@ jobs:
     needs: npm-setup
     runs-on: ubuntu-20.04
     steps:
-      - name: Checkout github repo
+      - name: Checkout GitHub repo
         uses: actions/checkout@v4
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -146,15 +220,22 @@ jobs:
           NODE_OPTIONS: --max-old-space-size=8192
           DISABLE_ESLINT_PLUGIN: true
 
+  ################################################################
+  ## SonarCloud
+  ################################################################
+
   sonarcloud:
-    runs-on: ubuntu-20.04
+    if: ${{ always() }}
     needs: [python-test, npm-test]
+    runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout GitHub repo
+        uses: actions/checkout@v4
       - name: Download python coverage report
         uses: actions/download-artifact@v4
         with:
           name: python-code-coverage-report
+      # Config in `sonar-project.properties` file
       - name: SonarCloud Scan
         uses: sonarsource/sonarcloud-github-action@v3.1.0
         env:
