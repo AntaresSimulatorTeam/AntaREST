@@ -26,7 +26,7 @@ MATRICES_INFO: List[MatrixInfo] = [
     },
     {
         "name": "inflowPattern",
-        "freq": MatrixFrequency.HOURLY,
+        "freq": MatrixFrequency.DAILY,
         "start_version": 650,
     },
     {

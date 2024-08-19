@@ -409,7 +409,7 @@
   "study.configuration.geographicTrimmingLinks": "Filtre géographique (liens)",
   "study.configuration.geographicTrimmingBindingConstraints": "Filtre géographique (contraintes couplantes)",
   "study.modelization.properties": "Propriétés",
-  "study.modelization.properties.energyCost": "Coût de l'énergie",
+  "study.modelization.properties.energyCost": "Coût de l'énergie (€/MWh)",
   "study.modelization.properties.unsupplied": "Non distribuée",
   "study.modelization.properties.spilled": "Non évacuée",
   "study.modelization.properties.lastResortShedding": "Moyen de dernier recours pour l'écrêtement",
