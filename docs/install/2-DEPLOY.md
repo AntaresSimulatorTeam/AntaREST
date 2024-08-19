@@ -81,7 +81,8 @@ You can download the latest version here:
 - [For Windows](https://github.com/AntaresSimulatorTeam/AntaREST/releases/download/v2.5.0/AntaresWeb-windows-latest.zip)
 - [For Ubuntu](https://github.com/AntaresSimulatorTeam/AntaREST/releases/download/v2.5.0/AntaresWeb-ubuntu-latest.zip)
 
-The local application contains an installer program that you can use to manage the installation.
+The local application contains an installer program that you can use to manage the installation. 
+This program will keep your local data while updating the functional parts of the server.
 
 ### GUI installer (windows only)
 
@@ -98,8 +99,7 @@ Run the following command:
 AntaresWebInstaller -t <TARGET_DIR>
 ```
 
-where `<TARGET_DIR>` is the directory where you want to install the Antares Web Desktop and `<SOURCE_DIR>`
-the directory to copy files from.
+where `<TARGET_DIR>` is the directory where you want to install the Antares Web Desktop.
 
 Note that you can specify an existing directory as value of `TARGET_DIR`, in which case the installer will update the
 existing installation.
