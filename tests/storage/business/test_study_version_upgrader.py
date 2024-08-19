@@ -9,6 +9,8 @@ from typing import List, Optional
 
 import pandas
 import pytest
+from antares.study.version.exceptions import ApplicationError
+from pandas.errors import EmptyDataError
 
 from antarest.core.exceptions import UnsupportedStudyVersion
 from antarest.study.storage.rawstudy.ini_reader import IniReader
@@ -64,12 +66,21 @@ class TestCheckVersionCoherence:
         [
             ("1000", "710", "Version '1000' isn't among supported versions"),
             ("820", "32", "Version '32' isn't among supported versions"),
+        ],
+    )
+    def test_invalid_versions_fails(self, from_version: str, target_version: str, message: str):
+        with pytest.raises(UnsupportedStudyVersion, match=message):
+            check_versions_coherence(from_version, target_version)
+
+    @pytest.mark.parametrize(
+        "from_version, target_version, message",
+        [
             ("860", "860", "Your study is already in the version you asked: 860"),
             ("870", "840", "Cannot downgrade your study version : from 870 to 840"),
         ],
     )
     def test_check_version_coherence_fails(self, from_version: str, target_version: str, message: str):
-        with pytest.raises(UnsupportedStudyVersion, match=message):
+        with pytest.raises(InvalidUpgrade, match=message):
             check_versions_coherence(from_version, target_version)
 
 
@@ -102,14 +113,14 @@ def test_fails_because_of_versions_asked(tmp_path: Path):
     with zipfile.ZipFile(path_study) as zip_output:
         zip_output.extractall(path=study_dir)
     # Try to upgrade with an unknown version
-    with pytest.raises(InvalidUpgrade, match="Cannot downgrade from version '7.2' to '6'"):
+    with pytest.raises(ApplicationError, match="Cannot downgrade from version '7.2' to '6'"):
         StudyUpgrader(study_dir, "600").upgrade()
     # Try to upgrade with the current version
-    with pytest.raises(InvalidUpgrade, match="Your study is already in version '7.2'"):
+    with pytest.raises(ApplicationError, match="Your study is already in version '7.2'"):
         StudyUpgrader(study_dir, "720").upgrade()
     # Try to upgrade with an old version
     with pytest.raises(
-        InvalidUpgrade,
+        ApplicationError,
         match="Cannot downgrade from version '7.2' to '7.1'",
     ):
         StudyUpgrader(study_dir, "710").upgrade()
@@ -128,7 +139,7 @@ def test_fallback_if_study_input_broken(tmp_path):
     before_upgrade_dir = tmp_path / "backup"
     shutil.copytree(study_dir, before_upgrade_dir, dirs_exist_ok=True)
     with pytest.raises(
-        expected_exception=InvalidUpgrade,
+        expected_exception=EmptyDataError,
         match="No columns to parse from file",
     ):
         StudyUpgrader(study_dir, "850").upgrade()

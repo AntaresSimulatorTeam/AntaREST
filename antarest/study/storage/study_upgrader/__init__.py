@@ -25,16 +25,10 @@ class StudyUpgrader:
             self.app = UpgradeApp(study_path, version=version)
 
     def upgrade(self) -> None:
-        try:
-            self.app()
-        except Exception as e:
-            raise InvalidUpgrade(str(e)) from e
+        self.app()
 
     def should_denormalize_study(self) -> bool:
-        try:
-            return self.app.should_denormalize
-        except Exception as e:
-            raise InvalidUpgrade(str(e)) from e
+        return self.app.should_denormalize
 
 
 def _get_version_index(version: str) -> int:
@@ -67,6 +61,6 @@ def check_versions_coherence(from_version: str, target_version: str) -> None:
     start_pos = _get_version_index(from_version)
     final_pos = _get_version_index(target_version)
     if final_pos == start_pos:
-        raise UnsupportedStudyVersion(f"Your study is already in the version you asked: {from_version}")
+        raise InvalidUpgrade(f"Your study is already in the version you asked: {from_version}")
     elif final_pos < start_pos:
-        raise UnsupportedStudyVersion(f"Cannot downgrade your study version : from {from_version} to {target_version}")
+        raise InvalidUpgrade(f"Cannot downgrade your study version : from {from_version} to {target_version}")

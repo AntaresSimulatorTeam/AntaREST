@@ -3,6 +3,7 @@ import os
 import textwrap
 import typing as t
 import uuid
+from configparser import MissingSectionHeaderError
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest.mock import ANY, Mock, call, patch, seal
@@ -61,7 +62,6 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
-from antarest.study.storage.study_upgrader import InvalidUpgrade
 from antarest.study.storage.utils import assert_permission, assert_permission_on_studies, study_matcher
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
@@ -1984,7 +1984,7 @@ def test_upgrade_study__raw_study__failed(tmp_path: Path) -> None:
     # The task is called with a `TaskUpdateNotifier` a parameter.
     # Some messages could be emitted using the notifier (not a requirement).
     notifier = Mock()
-    with pytest.raises(InvalidUpgrade, match="File contains no section headers"):
+    with pytest.raises(MissingSectionHeaderError, match="File contains no section headers"):
         task(notifier)
 
     # The study must not be updated in the database
