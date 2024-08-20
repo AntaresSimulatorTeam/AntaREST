@@ -111,6 +111,7 @@ function Fields() {
                   value: 0,
                   message: t("form.field.minValue", { 0: 0 }),
                 },
+                  validate: (v) => Number.isInteger(v) || t("form.field.mustBeInteger")
               }}
             />
             <Fieldset.Break />
