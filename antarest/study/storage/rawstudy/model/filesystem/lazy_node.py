@@ -1,3 +1,4 @@
+import shutil
 import typing as t
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -5,6 +6,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from zipfile import ZipFile
 
+from antarest.core.exceptions import ChildNotFoundError
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.inode import G, INode, S, V
@@ -125,6 +127,26 @@ class LazyNode(INode, ABC, t.Generic[G, S, V]):  # type: ignore
         if self.get_link_path().exists():
             self.get_link_path().unlink()
         return None
+
+    def _infer_path(self) -> Path:
+        if self.get_link_path().exists():
+            return self.get_link_path()
+        elif self.config.path.exists():
+            return self.config.path
+        raise ChildNotFoundError(f"Neither link file {self.get_link_path()} nor matrix file {self.config.path} exists")
+
+    def get_suffixes(self) -> t.List[str]:
+        return self._infer_path().suffixes
+
+    def rename_file(self, url: t.List[str]) -> None:
+        target_path = self.config.study_path.joinpath(*url)
+        target_path.unlink(missing_ok=True)
+        self._infer_path().rename(target_path)
+
+    def copy_file(self, url: t.List[str]) -> None:
+        target_path = self.config.study_path.joinpath(*url)
+        target_path.unlink(missing_ok=True)
+        shutil.copy(self._infer_path(), target_path)
 
     def get_lazy_content(
         self,

@@ -1,16 +1,14 @@
 import json
-import shutil
 import typing as t
-from pathlib import Path
 
 from antarest.core.model import JSON
-from antarest.matrixstore.model import MatrixData
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     BindingConstraintFrequency,
     BindingConstraintOperator,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import (
     DEFAULT_GROUP,
@@ -20,8 +18,6 @@ from antarest.study.storage.variantstudy.model.command.create_binding_constraint
 )
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
 from antarest.study.storage.variantstudy.model.model import CommandDTO
-
-MatrixType = t.List[t.List[MatrixData]]
 
 
 def _update_matrices_names(
@@ -65,41 +61,39 @@ def _update_matrices_names(
         BindingConstraintOperator.LESS: "lt",
     }
 
-    def get_matrix_path(constraint_folder: Path, matrix_id: str) -> Path:
-        raw_file = constraint_folder / f"{matrix_id}.txt"
-        return raw_file if raw_file.exists() else raw_file.with_suffix(".txt.link")
+    def _get_matrix_url(node: InputSeriesMatrix, bc_term: str) -> t.List[str]:
+        matrix_path = node.config.path.parent / f"{bc_id}_{bc_term}{''.join(node.get_suffixes())}"
+        return list(matrix_path.relative_to(file_study.config.study_path).parts)
 
-    def get_target_path(existing_path: Path, constraint_folder: Path, matrix_id: str) -> Path:
-        new_path = constraint_folder / f"{matrix_id}{''.join(existing_path.suffixes)}"
-        new_path.unlink(missing_ok=True)
-        return new_path
-
-    base_path = file_study.config.study_path / "input" / "bindingconstraints"
+    parent_folder_node = file_study.tree.get_node(["input", "bindingconstraints"])
+    error_msg = "Unhandled node type, expected InputSeriesMatrix, got "
     if existing_operator != BindingConstraintOperator.BOTH and new_operator != BindingConstraintOperator.BOTH:
-        current_path = get_matrix_path(base_path, f"{bc_id}_{operator_matrices_map[existing_operator]}")
-        target_path = get_target_path(current_path, base_path, f"{bc_id}_{operator_matrices_map[new_operator]}")
-        current_path.rename(target_path)
+        current_node = parent_folder_node.get_node([f"{bc_id}_{operator_matrices_map[existing_operator]}"])
+        assert isinstance(current_node, InputSeriesMatrix), f"{error_msg}{type(current_node)}"
+        target_url = _get_matrix_url(current_node, operator_matrices_map[new_operator])
+        current_node.rename_file(target_url)
     elif new_operator == BindingConstraintOperator.BOTH:
-        current_path = get_matrix_path(base_path, f"{bc_id}_{operator_matrices_map[existing_operator]}")
+        current_node = parent_folder_node.get_node([f"{bc_id}_{operator_matrices_map[existing_operator]}"])
+        assert isinstance(current_node, InputSeriesMatrix), f"{error_msg}{type(current_node)}"
         if existing_operator == BindingConstraintOperator.EQUAL:
-            lt_path = get_target_path(current_path, base_path, f"{bc_id}_lt")
-            gt_path = get_target_path(current_path, base_path, f"{bc_id}_gt")
-            current_path.rename(lt_path)
-            shutil.copy(lt_path, gt_path)
+            lt_url = _get_matrix_url(current_node, "lt")
+            gt_url = _get_matrix_url(current_node, "gt")
+            current_node.copy_file(gt_url)
+            current_node.rename_file(lt_url)
         else:
             term = "lt" if existing_operator == BindingConstraintOperator.GREATER else "gt"
-            target_path = get_target_path(current_path, base_path, f"{bc_id}_{term}")
-            shutil.copy(current_path, target_path)
+            target_url = _get_matrix_url(current_node, term)
+            current_node.copy_file(target_url)
     else:
-        if new_operator == BindingConstraintOperator.EQUAL:
-            get_matrix_path(base_path, f"{bc_id}_gt").unlink(missing_ok=True)
-            current_path = get_matrix_path(base_path, f"{bc_id}_lt")
-            target_path = get_target_path(current_path, base_path, f"{bc_id}_eq")
-            current_path.rename(target_path)
-        elif new_operator == BindingConstraintOperator.LESS:
-            get_matrix_path(base_path, f"{bc_id}_gt").unlink(missing_ok=True)
+        current_node = parent_folder_node.get_node([f"{bc_id}_lt"])
+        assert isinstance(current_node, InputSeriesMatrix), f"{error_msg}{type(current_node)}"
+        if new_operator == BindingConstraintOperator.GREATER:
+            current_node.delete()
         else:
-            get_matrix_path(base_path, f"{bc_id}_lt").unlink(missing_ok=True)
+            parent_folder_node.get_node([f"{bc_id}_gt"]).delete()
+            if new_operator == BindingConstraintOperator.EQUAL:
+                eq_url = _get_matrix_url(current_node, "eq")
+                current_node.rename_file(eq_url)
 
 
 class UpdateBindingConstraint(AbstractBindingConstraintCommand):
