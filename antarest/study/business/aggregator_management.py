@@ -81,10 +81,6 @@ def _checks_estimated_size(nb_files: int, df_bytes_size: int, nb_files_checked: 
 def _columns_ordering(df_cols: t.List[str], column_name: str, is_details: bool, mc_root: MCRoot) -> t.Sequence[str]:
     # original columns
     org_cols = df_cols.copy()
-    if mc_root == MCRoot.MC_ALL:
-        org_cols = [
-            col for col in org_cols if col not in {column_name, CLUSTER_ID_COL, MCYEAR_COL, TIME_ID_COL, TIME_COL}
-        ]
     if is_details:
         org_cols = [col for col in org_cols if col != CLUSTER_ID_COL and col != TIME_ID_COL]
     if mc_root == MCRoot.MC_IND:
@@ -92,6 +88,7 @@ def _columns_ordering(df_cols: t.List[str], column_name: str, is_details: bool, 
             [column_name] + ([CLUSTER_ID_COL] if is_details else []) + [MCYEAR_COL, TIME_ID_COL, TIME_COL] + org_cols
         )
     elif mc_root == MCRoot.MC_ALL:
+        org_cols = [col for col in org_cols if col not in {column_name, MCYEAR_COL, TIME_COL}]
         new_column_order = [column_name] + ([CLUSTER_ID_COL] if is_details else []) + [TIME_ID_COL, TIME_COL] + org_cols
     else:
         raise InvalidFieldForVersionError(f"Unknown Monte Carlo root: {mc_root}")
@@ -152,7 +149,7 @@ class AggregatorManager:
             else MCRoot.MC_ALL
         )
 
-    def _parse_output_file(self, file_path: Path, normalize: bool = True) -> pd.DataFrame:
+    def _parse_output_file(self, file_path: Path, normalize_column_name: bool = True) -> pd.DataFrame:
         csv_file = pd.read_csv(
             file_path,
             sep="\t",
@@ -165,8 +162,9 @@ class AggregatorManager:
         date, body = date_serializer.extract_date(csv_file)
         df = rename_unnamed(body).astype(float)
 
-        if not normalize:
-            df.index = date
+        df.index = date
+
+        if not normalize_column_name:
             return df
 
         # normalize columns names
@@ -178,7 +176,6 @@ class AggregatorManager:
                 name_to_consider = " ".join([col[0], col[2]])
             new_cols.append(name_to_consider.upper().strip())
 
-        df.index = date
         df.columns = pd.Index(new_cols)
         return df
 
@@ -267,7 +264,7 @@ class AggregatorManager:
 
     def _process_df(self, file_path: Path, is_details: bool) -> pd.DataFrame:
         if is_details:
-            un_normalized_df = self._parse_output_file(file_path, normalize=False)
+            un_normalized_df = self._parse_output_file(file_path, normalize_column_name=False)
             df_len = len(un_normalized_df)
             cluster_dummy_product_cols = sorted(
                 set([(x[CLUSTER_ID_COMPONENT], x[DUMMY_COMPONENT]) for x in un_normalized_df.columns])
