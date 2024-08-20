@@ -152,7 +152,8 @@ def remove_from_cache(cache: ICache, root_id: str) -> None:
 def create_new_empty_study(version: str, path_study: Path, path_resources: Path) -> None:
     version_template: t.Optional[str] = STUDY_REFERENCE_TEMPLATES.get(version, None)
     if version_template is None:
-        raise UnsupportedStudyVersion(version)
+        msg = f"{version} is not a supported version, supported versions are: {list(STUDY_REFERENCE_TEMPLATES.keys())}"
+        raise UnsupportedStudyVersion(msg)
 
     empty_study_zip = path_resources / version_template
 
