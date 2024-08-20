@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from antarest.core.exceptions import FileTooLargeError, OutputNotFound
+from antarest.core.exceptions import FileTooLargeError, InvalidFieldForVersionError, OutputNotFound
 from antarest.study.storage.rawstudy.ini_reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.matrix.date_serializer import (
     FactoryDateSerializer,
@@ -79,6 +79,7 @@ def _checks_estimated_size(nb_files: int, df_bytes_size: int, nb_files_checked: 
 
 
 def _columns_ordering(df_cols: t.List[str], column_name: str, is_details: bool, mc_root: MCRoot) -> t.Sequence[str]:
+    # original columns
     org_cols = df_cols.copy()
     if mc_root == MCRoot.MC_ALL:
         org_cols = [
@@ -93,7 +94,7 @@ def _columns_ordering(df_cols: t.List[str], column_name: str, is_details: bool, 
     elif mc_root == MCRoot.MC_ALL:
         new_column_order = [column_name] + ([CLUSTER_ID_COL] if is_details else []) + [TIME_ID_COL, TIME_COL] + org_cols
     else:
-        raise NotImplementedError(f"Unknown Monte Carlo root: {mc_root}")
+        raise InvalidFieldForVersionError(f"Unknown Monte Carlo root: {mc_root}")
 
     return new_column_order
 
@@ -298,7 +299,8 @@ class AggregatorManager:
             return self._parse_output_file(file_path)
 
     def _build_dataframe(self, files: t.Sequence[Path], horizon: int) -> pd.DataFrame:
-        assert self.mc_root in [MCRoot.MC_IND, MCRoot.MC_ALL], f"Unknown Monte Carlo root: {self.mc_root}"
+        if self.mc_root not in [MCRoot.MC_IND, MCRoot.MC_ALL]:
+            raise InvalidFieldForVersionError(f"Unknown Monte Carlo root: {self.mc_root}")
         is_details = self.query_file in [
             MCIndAreasQueryFile.DETAILS,
             MCAllAreasQueryFile.DETAILS,
@@ -380,7 +382,7 @@ class AggregatorManager:
             all_output_files = sorted(self._gather_all_files_to_consider__all())
 
         else:
-            raise NotImplementedError(f"Unknown Monte Carlo root: {self.mc_root}")
+            raise InvalidFieldForVersionError(f"Unknown Monte Carlo root: {self.mc_root}")
 
         # Retrieves the horizon from the study output
         horizon_path = self.study_path / HORIZON_TEMPLATE.format(sim_id=self.output_id)
