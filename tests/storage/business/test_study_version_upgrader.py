@@ -9,7 +9,6 @@ from typing import List, Optional
 
 import pandas
 import pytest
-from antares.study.version.exceptions import ApplicationError
 from pandas.errors import EmptyDataError
 
 from antarest.core.exceptions import UnsupportedStudyVersion
