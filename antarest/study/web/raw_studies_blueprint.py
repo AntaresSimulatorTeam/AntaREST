@@ -200,13 +200,14 @@ def create_raw_study_routes(
         Create an aggregation of areas raw data
 
         Parameters:
+
         - `uuid`: study ID
         - `output_id`: the output ID aka the simulation ID
         - `query_file`: "values", "details", "details-STstorage", "details-res"
         - `frequency`: "hourly", "daily", "weekly", "monthly", "annual"
         - `mc_years`: which Monte Carlo years to be selected. If empty, all are selected (comma separated)
         - `areas_ids`: which areas to be selected. If empty, all are selected (comma separated)
-        - `columns_names`: regexes (if details) or columns to be selected, if empty, all columns are selected
+        - `columns_names`: names or regexes (if `query_file` is of type `details`) to select columns (comma separated)
         - `export_format`: Returned file format (csv by default).
 
         Returns:
@@ -268,13 +269,14 @@ def create_raw_study_routes(
         Create an aggregation of links raw data
 
         Parameters:
+
         - `uuid`: study ID
         - `output_id`: the output ID aka the simulation ID
         - `query_file`: "values" (currently the only available option)
         - `frequency`: "hourly", "daily", "weekly", "monthly", "annual"
         - `mc_years`: which Monte Carlo years to be selected. If empty, all are selected (comma separated)
         - `links_ids`: which links to be selected (ex: "be - fr"). If empty, all are selected (comma separated)
-        - `columns_names`: regexes (if details) or columns to be selected, if empty, all columns are selected
+        - `columns_names`: names or regexes (if `query_file` is of type `details`) to select columns (comma separated)
         - `export_format`: Returned file format (csv by default).
 
         Returns:
@@ -336,12 +338,13 @@ def create_raw_study_routes(
         Create an aggregation of areas raw data in mc-all
 
         Parameters:
+
         - `uuid`: study ID
         - `output_id`: the output ID aka the simulation ID
         - `query_file`: "values", "details", "details-STstorage", "details-res"
         - `frequency`: "hourly", "daily", "weekly", "monthly", "annual"
         - `areas_ids`: which areas to be selected. If empty, all are selected (comma separated)
-        - `columns_names`: regexes (if details) or columns to be selected, if empty, all columns are selected
+        - `columns_names`: names or regexes (if `query_file` is of type `details`) to select columns (comma separated)
         - `export_format`: Returned file format (csv by default).
 
         Returns:
@@ -401,12 +404,13 @@ def create_raw_study_routes(
         Create an aggregation of links in mc-all
 
         Parameters:
+
         - `uuid`: study ID
         - `output_id`: the output ID aka the simulation ID
         - `query_file`: "values" (currently the only available option)
         - `frequency`: "hourly", "daily", "weekly", "monthly", "annual"
         - `links_ids`: which links to be selected (ex: "be - fr"). If empty, all are selected (comma separated)
-        - `columns_names`: regexes (if details) or columns to be selected, if empty, all columns are selected
+        - `columns_names`: names or regexes (if `query_file` is of type `details`) to select columns (comma separated)
         - `export_format`: Returned file format (csv by default).
 
         Returns:
@@ -465,6 +469,7 @@ def create_raw_study_routes(
         > NOTE: use the PUT endpoint to upload a file.
 
         Parameters:
+
         - `uuid`: The UUID of the study.
         - `path`: The path to the data to update. Defaults to "/".
         - `data`: The formatted data to be posted. Defaults to an empty string.
@@ -498,6 +503,7 @@ def create_raw_study_routes(
         Update raw data for a study by posting a raw file.
 
         Parameters:
+
         - `uuid`: The UUID of the study.
         - `path`: The path to the data to update. Defaults to "/".
         - `file`: The raw file to be posted (e.g. a CSV file opened in binary mode).
@@ -561,6 +567,7 @@ def create_raw_study_routes(
         Download a matrix in a given format.
 
         Parameters:
+
         - `uuid`: study ID
         - `matrix_path`: Relative path of the matrix to download.
         - `export_format`: Returned file format (csv by default).
