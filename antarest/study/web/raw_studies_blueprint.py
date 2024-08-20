@@ -229,10 +229,10 @@ def create_raw_study_routes(
             output_id=output_id,
             query_file=query_file,
             frequency=frequency,
-            mc_years=[int(mc_year) for mc_year in _split_comma_separated_values(mc_years)],
             columns_names=_split_comma_separated_values(columns_names),
             ids_to_consider=_split_comma_separated_values(areas_ids),
             params=parameters,
+            mc_years=[int(mc_year) for mc_year in _split_comma_separated_values(mc_years)],
         )
 
         download_name = f"aggregated_output_{uuid}_{output_id}{export_format.suffix}"
@@ -298,10 +298,10 @@ def create_raw_study_routes(
             output_id=output_id,
             query_file=query_file,
             frequency=frequency,
-            mc_years=[int(mc_year) for mc_year in _split_comma_separated_values(mc_years)],
             columns_names=_split_comma_separated_values(columns_names),
             ids_to_consider=_split_comma_separated_values(links_ids),
             params=parameters,
+            mc_years=[int(mc_year) for mc_year in _split_comma_separated_values(mc_years)],
         )
 
         download_name = f"aggregated_output_{uuid}_{output_id}{export_format.suffix}"
@@ -361,7 +361,7 @@ def create_raw_study_routes(
         output_id = sanitize_string(output_id)
 
         parameters = RequestParameters(user=current_user)
-        df_matrix = study_service.aggregate_output_data__all(
+        df_matrix = study_service.aggregate_output_data(
             uuid,
             output_id=output_id,
             query_file=query_file,
@@ -427,7 +427,7 @@ def create_raw_study_routes(
         output_id = sanitize_string(output_id)
 
         parameters = RequestParameters(user=current_user)
-        df_matrix = study_service.aggregate_output_data__all(
+        df_matrix = study_service.aggregate_output_data(
             uuid,
             output_id=output_id,
             query_file=query_file,

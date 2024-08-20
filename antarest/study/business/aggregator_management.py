@@ -360,46 +360,32 @@ class AggregatorManager:
         Aggregates the output data of a study and returns it as a DataFrame
         """
 
-        # check that the `mc_years` is Sequence[int]
-        assert self.mc_years is not None, "mc_years should be a `Sequence` of integers"
+        if self.mc_root == MCRoot.MC_IND:
+            # check that the `mc_years` is Sequence[int]
+            assert self.mc_years is not None, "mc_years should be a `Sequence` of integers"
 
-        # Checks if mc-ind results exist
-        if not self.mc_ind_path.exists():
-            raise OutputNotFound(self.output_id)
+            # Checks if mc-ind results exist
+            if not self.mc_ind_path.exists():
+                raise OutputNotFound(self.output_id)
 
-        # Retrieves the horizon from the study output
-        horizon_path = self.study_path / HORIZON_TEMPLATE.format(sim_id=self.output_id)
-        launching_config = IniReader().read(horizon_path)
-        horizon = launching_config.get("general", {}).get("horizon", 2018)
+            # filters files to consider
+            all_output_files = sorted(self._gather_all_files_to_consider__ind())
 
-        # filters files to consider
-        all_output_files = sorted(self._gather_all_files_to_consider__ind())
+        elif self.mc_root == MCRoot.MC_ALL:
+            # Checks if mc-all results exist
+            if not self.mc_all_path.exists():
+                raise OutputNotFound(self.output_id)
 
-        logger.info(
-            f"Parsing {len(all_output_files)} {self.frequency.value} files"
-            f"to build the aggregated output for study `{self.study_path.name}`"
-        )
-        # builds final dataframe
-        final_df = self._build_dataframe(all_output_files, horizon)
+            # filters files to consider
+            all_output_files = sorted(self._gather_all_files_to_consider__all())
 
-        return final_df
-
-    def aggregate_output_data__all(self) -> pd.DataFrame:
-        """
-        Aggregates the output data of a study and returns it as a DataFrame
-        """
-
-        # Checks if mc-all results exist
-        if not self.mc_all_path.exists():
-            raise OutputNotFound(self.output_id)
+        else:
+            raise NotImplementedError(f"Unknown Monte Carlo root: {self.mc_root}")
 
         # Retrieves the horizon from the study output
         horizon_path = self.study_path / HORIZON_TEMPLATE.format(sim_id=self.output_id)
         launching_config = IniReader().read(horizon_path)
         horizon = launching_config.get("general", {}).get("horizon", 2018)
-
-        # filters files to consider
-        all_output_files = sorted(self._gather_all_files_to_consider__all())
 
         logger.info(
             f"Parsing {len(all_output_files)} {self.frequency.value} files"
