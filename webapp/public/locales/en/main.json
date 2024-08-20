@@ -133,6 +133,7 @@
   "form.field.minValue": "The minimum value is {{0}}",
   "form.field.maxValue": "The maximum value is {{0}}",
   "form.field.invalidNumber": "Invalid number",
+  "form.field.mustBeInteger": "The value must be an integer",
   "form.field.notAllowedValue": "Not allowed value",
   "form.field.specialChars": "Special characters allowed: {{0}}",
   "form.field.specialCharsNotAllowed": "Special characters are not allowed",

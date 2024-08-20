@@ -806,6 +806,15 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
         "thresholdCsrVariableBoundsRelaxation": 3,
     }
 
+    # asserts csr field is an int
+    res = client.put(
+        f"/v1/studies/{study_id}/config/adequacypatch/form",
+        json={"thresholdCsrVariableBoundsRelaxation": 0.8},
+    )
+    assert res.status_code == 422
+    assert res.json()["exception"] == "RequestValidationError"
+    assert res.json()["description"] == "value is not a valid integer"
+
     # General form
 
     res_general_config = client.get(f"/v1/studies/{study_id}/config/general/form")
