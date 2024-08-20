@@ -1,4 +1,4 @@
-from antarest.study.storage.study_upgrader import upgrade_870
+from antarest.study.storage.study_upgrader import StudyUpgrader
 from tests.storage.business.test_study_version_upgrader import are_same_dir
 from tests.storage.study_upgrader.conftest import StudyAssets
 
@@ -9,7 +9,8 @@ def test_nominal_case(study_assets: StudyAssets):
     """
 
     # upgrade the study
-    upgrade_870(study_assets.study_dir)
+    study_upgrader = StudyUpgrader(study_assets.study_dir, "870")
+    study_upgrader.upgrade()
 
     # compare input folders (bindings + thermals)
     actual_input_path = study_assets.study_dir.joinpath("input")
@@ -23,7 +24,8 @@ def test_empty_binding_constraints(study_assets: StudyAssets):
     """
 
     # upgrade the study
-    upgrade_870(study_assets.study_dir)
+    study_upgrader = StudyUpgrader(study_assets.study_dir, "870")
+    study_upgrader.upgrade()
 
     # compare input folders (bindings + thermals)
     actual_input_path = study_assets.study_dir.joinpath("input")

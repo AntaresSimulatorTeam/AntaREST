@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional
 
-from pydantic.types import StrictBool, confloat
+from pydantic.types import StrictBool, confloat, conint
 
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.utils import GENERAL_DATA_PATH, FieldInfo, FormFieldsBaseModel, execute_or_add_commands
@@ -28,7 +28,7 @@ class AdequacyPatchFormFields(FormFieldsBaseModel):
     check_csr_cost_function: Optional[StrictBool]
     threshold_initiate_curtailment_sharing_rule: Optional[ThresholdType]  # type: ignore
     threshold_display_local_matching_rule_violations: Optional[ThresholdType]  # type: ignore
-    threshold_csr_variable_bounds_relaxation: Optional[ThresholdType]  # type: ignore
+    threshold_csr_variable_bounds_relaxation: Optional[conint(ge=0, strict=True)]  # type: ignore
 
 
 ADEQUACY_PATCH_PATH = f"{GENERAL_DATA_PATH}/adequacy patch"
