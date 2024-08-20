@@ -341,7 +341,7 @@ def create_raw_study_routes(
 
         - `uuid`: study ID
         - `output_id`: the output ID aka the simulation ID
-        - `query_file`: "values", "details", "details-STstorage", "details-res"
+        - `query_file`: "values", "details", "details-STstorage", "details-res", "id"
         - `frequency`: "hourly", "daily", "weekly", "monthly", "annual"
         - `areas_ids`: which areas to be selected. If empty, all are selected (comma separated)
         - `columns_names`: names or regexes (if `query_file` is of type `details`) to select columns (comma separated)
@@ -407,7 +407,7 @@ def create_raw_study_routes(
 
         - `uuid`: study ID
         - `output_id`: the output ID aka the simulation ID
-        - `query_file`: "values" (currently the only available option)
+        - `query_file`: "values", "id"
         - `frequency`: "hourly", "daily", "weekly", "monthly", "annual"
         - `links_ids`: which links to be selected (ex: "be - fr"). If empty, all are selected (comma separated)
         - `columns_names`: names or regexes (if `query_file` is of type `details`) to select columns (comma separated)
