@@ -113,14 +113,14 @@ def test_fails_because_of_versions_asked(tmp_path: Path):
     with zipfile.ZipFile(path_study) as zip_output:
         zip_output.extractall(path=study_dir)
     # Try to upgrade with an unknown version
-    with pytest.raises(ApplicationError, match="Cannot downgrade from version '7.2' to '6'"):
+    with pytest.raises(InvalidUpgrade, match="Cannot downgrade from version '7.2' to '6'"):
         StudyUpgrader(study_dir, "600").upgrade()
     # Try to upgrade with the current version
-    with pytest.raises(ApplicationError, match="Your study is already in version '7.2'"):
+    with pytest.raises(InvalidUpgrade, match="Your study is already in version '7.2'"):
         StudyUpgrader(study_dir, "720").upgrade()
     # Try to upgrade with an old version
     with pytest.raises(
-        ApplicationError,
+        InvalidUpgrade,
         match="Cannot downgrade from version '7.2' to '7.1'",
     ):
         StudyUpgrader(study_dir, "710").upgrade()

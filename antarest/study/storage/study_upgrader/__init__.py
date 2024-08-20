@@ -2,6 +2,7 @@ from http import HTTPStatus
 from http.client import HTTPException
 from pathlib import Path
 
+from antares.study.version.exceptions import ApplicationError
 from antares.study.version.model.study_version import StudyVersion
 from antares.study.version.upgrade_app import UpgradeApp
 
@@ -25,7 +26,10 @@ class StudyUpgrader:
             self.app = UpgradeApp(study_path, version=version)
 
     def upgrade(self) -> None:
-        self.app()
+        try:
+            self.app()
+        except ApplicationError as e:
+            raise InvalidUpgrade(str(e)) from e
 
     def should_denormalize_study(self) -> bool:
         return self.app.should_denormalize
