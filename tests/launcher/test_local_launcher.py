@@ -2,7 +2,7 @@ import os
 import textwrap
 import uuid
 from pathlib import Path
-from unittest.mock import Mock, call
+from unittest.mock import Mock, call, patch
 
 import pytest
 
@@ -39,7 +39,9 @@ def test_local_launcher__launcher_init_exception():
 
 
 @pytest.mark.unit_test
-def test_compute(tmp_path: Path, launcher_config: Config):
+@patch("antarest.launcher.service.Path.iterdir")
+# This is weird but needed for this unit test to run and avoid the FileNotFoundException.
+def test_compute(mock, tmp_path: Path, launcher_config: Config):
     local_launcher = LocalLauncher(launcher_config, callbacks=Mock(), event_bus=Mock(), cache=Mock())
 
     # prepare a dummy executable to simulate Antares Solver
@@ -87,6 +89,7 @@ def test_compute(tmp_path: Path, launcher_config: Config):
         study_uuid="study-id",
         uuid=study_id,
         launcher_parameters=launcher_parameters,
+        version="0",
     )
 
     # noinspection PyUnresolvedReferences
