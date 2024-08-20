@@ -28,7 +28,7 @@ class GenerateThermalClusterTimeSeries(ICommand):
     command_name = CommandName.GENERATE_THERMAL_CLUSTER_TIMESERIES
     version = 1
 
-    _INNER_MATRICES: t.List[str] = []
+    _inner_matrices: t.List[str] = []
 
     def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:
         return CommandOutput(status=True, message="Nothing to do"), {}
@@ -69,16 +69,16 @@ class GenerateThermalClusterTimeSeries(ICommand):
                 if thermal.gen_ts == LocalTSGenerationBehavior.FORCE_NO_GENERATION:
                     continue
                 # 6- Build the cluster
-                modulation_matrix = study_data.tree.get(
-                    ["input", "thermal", "prepro", area_id, thermal.id.lower(), "modulation"]
-                )["data"]
-                modulation_capacity = np.array([row[2] for row in modulation_matrix])
-                ts_generator_matrix = study_data.tree.get(
-                    ["input", "thermal", "prepro", area_id, thermal.id.lower(), "data"]
-                )["data"]
+                url = ["input", "thermal", "prepro", area_id, thermal.id.lower(), "modulation"]
+                matrix = study_data.tree.get_node(url)
+                matrix_df = matrix.parse(return_dataframe=True)  # type: ignore
+                modulation_capacity = matrix_df[2].to_numpy()
+                url = ["input", "thermal", "prepro", area_id, thermal.id.lower(), "data"]
+                matrix = study_data.tree.get_node(url)
+                matrix_df = matrix.parse(return_dataframe=True)  # type: ignore
                 fo_duration, po_duration, fo_rate, po_rate, npo_min, npo_max = [
-                    np.array(col, dtype=int) if i not in [2, 3] else np.array(col, dtype=float)
-                    for i, col in enumerate(zip(*ts_generator_matrix))
+                    np.array(matrix_df[i], dtype=int) if i not in [2, 3] else np.array(matrix_df[i], dtype=float)
+                    for i in list(matrix_df.columns)
                 ]
                 cluster = ThermalCluster(
                     unit_count=thermal.unit_count,
@@ -100,7 +100,7 @@ class GenerateThermalClusterTimeSeries(ICommand):
                 generated_matrix = results.available_power.T.tolist()
                 # 8- Generates the UUID for the `get_inner_matrices` method
                 uuid = study_data.tree.context.matrix.create(generated_matrix)
-                self._INNER_MATRICES.append(uuid)
+                self._inner_matrices.append(uuid)
                 # 9- Write the matrix inside the input folder.
                 df = pd.DataFrame(data=generated_matrix, dtype=int)
                 target_path = self._build_matrix_path(tmp_path / area_id / thermal.id.lower())
@@ -124,22 +124,13 @@ class GenerateThermalClusterTimeSeries(ICommand):
 
     def get_inner_matrices(self) -> t.List[str]:
         # This is used to get used matrices and not remove them inside the garbage collector loop.
-        return self._INNER_MATRICES
+        return self._inner_matrices
 
     @staticmethod
     def _replace_safely_original_files(study_path: Path, tmp_path: Path) -> None:
-        backup_dir = Path(
-            tempfile.mkdtemp(
-                suffix=".backup_timeseries_generation.tmp",
-                prefix="~",
-                dir=study_path.parent,
-            )
-        )
-        backup_dir.rmdir()
         original_path = study_path / "input" / "thermal" / "series"
-        original_path.rename(backup_dir)
+        shutil.rmtree(original_path)
         tmp_path.rename(original_path)
-        shutil.rmtree(backup_dir)
 
     @staticmethod
     def _build_matrix_path(matrix_path: Path) -> Path:
