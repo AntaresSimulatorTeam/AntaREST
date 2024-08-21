@@ -117,9 +117,9 @@ def upgrade_version(new_version: str, new_date: str) -> None:
     # Patching version number
     files_to_patch = [
         (
-            "setup.py",
-            "version=.*",
-            f'version="{new_version}",',
+            "pyproject.toml",
+            "\nversion = .*",
+            f'\nversion = "{new_version}"',
         ),
         (
             "sonar-project.properties",
