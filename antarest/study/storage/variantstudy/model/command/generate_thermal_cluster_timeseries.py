@@ -13,11 +13,17 @@ from antares.tsgen.ts_generator import ThermalCluster, ThermalDataGenerator
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import LocalTSGenerationBehavior
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import dump_dataframe
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand, OutputTuple
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 logger = logging.getLogger(__name__)
+
+
+MODULATION_CAPACITY_COLUMN = 2
+FO_RATE_COLUMN = 2
+PO_RATE_COLUMN = 3
 
 
 class GenerateThermalClusterTimeSeries(ICommand):
@@ -27,8 +33,6 @@ class GenerateThermalClusterTimeSeries(ICommand):
 
     command_name = CommandName.GENERATE_THERMAL_CLUSTER_TIMESERIES
     version = 1
-
-    _inner_matrices: t.List[str] = []
 
     def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:
         return CommandOutput(status=True, message="Nothing to do"), {}
@@ -72,13 +76,13 @@ class GenerateThermalClusterTimeSeries(ICommand):
                 url = ["input", "thermal", "prepro", area_id, thermal.id.lower(), "modulation"]
                 matrix = study_data.tree.get_node(url)
                 matrix_df = matrix.parse(return_dataframe=True)  # type: ignore
-                modulation_capacity = matrix_df[2].to_numpy()
+                modulation_capacity = matrix_df[MODULATION_CAPACITY_COLUMN].to_numpy()
                 url = ["input", "thermal", "prepro", area_id, thermal.id.lower(), "data"]
                 matrix = study_data.tree.get_node(url)
                 matrix_df = matrix.parse(return_dataframe=True)  # type: ignore
                 fo_duration, po_duration, fo_rate, po_rate, npo_min, npo_max = [
-                    np.array(matrix_df[i], dtype=int) if i not in [2, 3] else np.array(matrix_df[i], dtype=float)
-                    for i in list(matrix_df.columns)
+                    np.array(matrix_df[i], dtype=float if i in [FO_RATE_COLUMN, PO_RATE_COLUMN] else int)
+                    for i in matrix_df.columns
                 ]
                 cluster = ThermalCluster(
                     unit_count=thermal.unit_count,
@@ -97,14 +101,11 @@ class GenerateThermalClusterTimeSeries(ICommand):
                 )
                 # 7- Generate the time-series
                 results = generator.generate_time_series(cluster, nb_years)
-                generated_matrix = results.available_power.T.tolist()
-                # 8- Generates the UUID for the `get_inner_matrices` method
-                uuid = study_data.tree.context.matrix.create(generated_matrix)
-                self._inner_matrices.append(uuid)
-                # 9- Write the matrix inside the input folder.
+                generated_matrix = results.available_power
+                # 8- Write the matrix inside the input folder.
                 df = pd.DataFrame(data=generated_matrix, dtype=int)
                 target_path = self._build_matrix_path(tmp_path / area_id / thermal.id.lower())
-                df.to_csv(target_path, sep="\t", header=False, index=False)
+                dump_dataframe(df, target_path, None)
 
     def to_dto(self) -> CommandDTO:
         return CommandDTO(action=self.command_name.value, args={})
@@ -124,7 +125,7 @@ class GenerateThermalClusterTimeSeries(ICommand):
 
     def get_inner_matrices(self) -> t.List[str]:
         # This is used to get used matrices and not remove them inside the garbage collector loop.
-        return self._inner_matrices
+        return []
 
     @staticmethod
     def _replace_safely_original_files(study_path: Path, tmp_path: Path) -> None:
