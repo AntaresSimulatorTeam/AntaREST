@@ -29,6 +29,19 @@ class MatrixFrequency(str, Enum):
     HOURLY = "hourly"
 
 
+def dump_dataframe(df: pd.DataFrame, path: Path, float_format: Optional[str] = "%.6f") -> None:
+    if df.empty:
+        path.write_bytes(b"")
+    else:
+        df.to_csv(
+            path,
+            sep="\t",
+            header=False,
+            index=False,
+            float_format=float_format,
+        )
+
+
 class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
     def __init__(
         self,
@@ -142,13 +155,4 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
             self.config.path.write_bytes(data)
         else:
             df = pd.DataFrame(**data)
-            if df.empty:
-                self.config.path.write_bytes(b"")
-            else:
-                df.to_csv(
-                    self.config.path,
-                    sep="\t",
-                    header=False,
-                    index=False,
-                    float_format="%.6f",
-                )
+            dump_dataframe(df, self.config.path)
