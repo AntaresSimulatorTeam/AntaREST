@@ -125,9 +125,7 @@ class AggregatorManager:
     ):
         self.study_path: Path = study_path
         self.output_id: str = output_id
-        self.query_file: t.Union[
-            MCIndAreasQueryFile, MCAllAreasQueryFile, MCIndLinksQueryFile, MCAllLinksQueryFile
-        ] = query_file
+        self.query_file = query_file
         self.frequency: MatrixFrequency = frequency
         self.mc_years: t.Optional[t.Sequence[int]] = mc_years
         self.columns_names: t.Sequence[str] = columns_names
