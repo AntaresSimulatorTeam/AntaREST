@@ -17,6 +17,7 @@ PROJECT_DIR=$(dirname -- "${SCRIPT_DIR}")
 DIST_DIR="${PROJECT_DIR}/dist/package"
 RESOURCES_DIR="${PROJECT_DIR}/resources"
 ANTARES_SOLVER_DIR="${DIST_DIR}/AntaresWeb/antares_solver"
+INSTALLER_DIR="${PROJECT_DIR}/installer/src/antares_web_installer/"
 
 if [[ "$OSTYPE" == "msys"* ]]; then
   ANTARES_SOLVER_FOLDER_NAME="rte-antares-$ANTARES_SOLVER_FULL_VERSION-installer-64bits"
@@ -43,6 +44,18 @@ else
   pushd ${PROJECT_DIR}
   pyinstaller --distpath ${DIST_DIR} AntaresWebLinux.spec
   popd
+fi
+
+echo "INFO: Generating the Installer for the Desktop application..."
+echo which python
+if [[ "$OSTYPE" == "msys"* ]]; then
+    pushd ${PROJECT_DIR}
+    pyinstaller --onefile "${INSTALLER_DIR}gui/__main__.py" --distpath "${DIST_DIR}" --hidden-import antares_web_installer.shortcuts._linux_shell --hidden-import antares_web_installer.shortcuts._win32_shell --noconsole --name AntaresWebInstaller
+    popd
+else
+    pushd ${PROJECT_DIR}
+    pyinstaller --onefile "${INSTALLER_DIR}cli/__main__.py" --distpath "${DIST_DIR}" --hidden-import antares_web_installer.shortcuts._linux_shell --hidden-import antares_web_installer.shortcuts._win32_shell --noconsole --name AntaresWebInstallerCLI
+    popd
 fi
 
 echo "INFO: Creating destination directory '${ANTARES_SOLVER_DIR}'..."
