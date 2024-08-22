@@ -54,8 +54,17 @@ jobs:
         if: matrix.os == 'windows-latest'
         run: pip install -r requirements-windows.txt
 
-      - name: 📦 Packaging
-        run: bash ./package_antares_web.sh
+      - name: Initialize installer environment
+        run: |
+          python -m venv .installer
+          source .installer/bin/activate
+          python -m pip install -r requirements.txt
+        working-directory: scripts
+
+      - name: Build installer
+        run: |
+          bash ./package_antares_installer.sh
+          deactivate
         working-directory: scripts
 
       - name: Add installer in package
