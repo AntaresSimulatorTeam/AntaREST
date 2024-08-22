@@ -4,6 +4,7 @@ on:
     branches:
       - "master"
       - "hotfix/**"
+      - "feature/add-installer-submodule"
 
 jobs:
   binary:
@@ -48,14 +49,22 @@ jobs:
           python -m pip install --upgrade pip
           pip install pydantic --no-binary pydantic
           pip install -r requirements-dev.txt
-          pip install -r installer/requirements.txt 
 
       - name: 🐍 Install Windows dependencies
         if: matrix.os == 'windows-latest'
         run: pip install -r requirements-windows.txt
 
-      - name: 📦 Packaging
-        run: bash ./package_antares_web.sh
+      - name: Initialize installer environment
+        run: |
+          python -m venv .installer
+          source .installer/bin/activate
+          python -m pip install -r requirements.txt
+        working-directory: scripts
+
+      - name: Build installer
+        run: |
+          bash ./package_antares_installer.sh
+          deactivate
         working-directory: scripts
 
       - name: 📜 Install changelog requirements
