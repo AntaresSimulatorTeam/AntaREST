@@ -49,7 +49,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install pydantic --no-binary pydantic
           pip install -r requirements-dev.txt
-          pip install -r installer/requirements.txt 
 
       - name: 🐍 Install Windows dependencies
         if: matrix.os == 'windows-latest'
