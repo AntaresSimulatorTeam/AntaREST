@@ -1,4 +1,6 @@
 import io
+import shutil
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -612,6 +614,26 @@ class TestRawDataAggregationMCInd:
         df = pd.read_csv(io.BytesIO(res.content), index_col=0, sep=",")
         assert df.empty
 
+    def test_non_existing_folder(
+        self, tmp_path: Path, client: TestClient, user_access_token: str, internal_study_id: str
+    ):
+        """
+        Asserts that requests with non-existing folders send an HTTP 404 Exception
+        """
+        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+
+        # the mc-ind folder
+        mc_ind_folder = tmp_path.joinpath("ext_workspace/STA-mini/output/20201014-1425eco-goodbye/economy/mc-ind")
+        # delete the folder
+        shutil.rmtree(mc_ind_folder)
+        res = client.get(
+            f"/v1/studies/{internal_study_id}/areas/aggregate/mc-ind/20201014-1425eco-goodbye",
+            params={"query_file": MCIndAreasQueryFile.VALUES, "frequency": MatrixFrequency.HOURLY},
+        )
+        assert res.status_code == 404, res.json()
+        assert "economy/mc-ind" in res.json()["description"]
+        assert res.json()["exception"] == "OutputSubFolderNotFound"
+
 
 @pytest.mark.integration_test
 class TestRawDataAggregationMCAll:
@@ -800,3 +822,21 @@ class TestRawDataAggregationMCAll:
         assert res.status_code == 200, res.json()
         df = pd.read_csv(io.BytesIO(res.content), index_col=0, sep=",")
         assert df.empty
+
+    def test_non_existing_folder(
+        self, tmp_path: Path, client: TestClient, user_access_token: str, internal_study_id: str
+    ):
+        """
+        Test that an error 404 is raised when the `economy/mc-all` folder does not exist
+        """
+        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        mc_all_path = tmp_path.joinpath("ext_workspace/STA-mini/output/20241807-1540eco-extra-outputs/economy/mc-all")
+        # delete the folder
+        shutil.rmtree(mc_all_path)
+        res = client.get(
+            f"/v1/studies/{internal_study_id}/links/aggregate/mc-all/20241807-1540eco-extra-outputs",
+            params={"query_file": MCAllLinksQueryFile.VALUES, "frequency": MatrixFrequency.DAILY},
+        )
+        assert res.status_code == 404, res.json()
+        assert "economy/mc-all" in res.json()["description"]
+        assert res.json()["exception"] == "OutputSubFolderNotFound"
