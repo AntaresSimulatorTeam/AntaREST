@@ -56,29 +56,21 @@ def _update_matrices_names(
     elif existing_operator == new_operator:
         return  # nothing to do
 
-    def _get_matrix_url(node: InputSeriesMatrix, bc_term: str) -> t.List[str]:
-        matrix_path = node.config.path.parent / f"{bc_id}_{bc_term}{''.join(node.get_suffixes())}"
-        return list(matrix_path.relative_to(file_study.config.study_path).parts)
-
     parent_folder_node = file_study.tree.get_node(["input", "bindingconstraints"])
     error_msg = "Unhandled node type, expected InputSeriesMatrix, got "
     if existing_operator != BindingConstraintOperator.BOTH and new_operator != BindingConstraintOperator.BOTH:
         current_node = parent_folder_node.get_node([f"{bc_id}_{OPERATOR_MATRICES_MAP[existing_operator][0]}"])
         assert isinstance(current_node, InputSeriesMatrix), f"{error_msg}{type(current_node)}"
-        target_url = _get_matrix_url(current_node, OPERATOR_MATRICES_MAP[new_operator][0])
-        current_node.rename_file(target_url)
+        current_node.rename_file(f"{bc_id}_{OPERATOR_MATRICES_MAP[new_operator][0]}")
     elif new_operator == BindingConstraintOperator.BOTH:
         current_node = parent_folder_node.get_node([f"{bc_id}_{OPERATOR_MATRICES_MAP[existing_operator][0]}"])
         assert isinstance(current_node, InputSeriesMatrix), f"{error_msg}{type(current_node)}"
         if existing_operator == BindingConstraintOperator.EQUAL:
-            lt_url = _get_matrix_url(current_node, "lt")
-            gt_url = _get_matrix_url(current_node, "gt")
-            current_node.copy_file(gt_url)
-            current_node.rename_file(lt_url)
+            current_node.copy_file(f"{bc_id}_gt")
+            current_node.rename_file(f"{bc_id}_lt")
         else:
             term = "lt" if existing_operator == BindingConstraintOperator.GREATER else "gt"
-            target_url = _get_matrix_url(current_node, term)
-            current_node.copy_file(target_url)
+            current_node.copy_file(f"{bc_id}_{term}")
     else:
         current_node = parent_folder_node.get_node([f"{bc_id}_lt"])
         assert isinstance(current_node, InputSeriesMatrix), f"{error_msg}{type(current_node)}"
@@ -87,8 +79,7 @@ def _update_matrices_names(
         else:
             parent_folder_node.get_node([f"{bc_id}_gt"]).delete()
             if new_operator == BindingConstraintOperator.EQUAL:
-                eq_url = _get_matrix_url(current_node, "eq")
-                current_node.rename_file(eq_url)
+                current_node.rename_file(f"{bc_id}_eq")
 
 
 class UpdateBindingConstraint(AbstractBindingConstraintCommand):
@@ -148,6 +139,8 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
         return None
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
+        self._apply_config(study_data.config)
+
         binding_constraints = study_data.tree.get(["input", "bindingconstraints", "bindingconstraints"])
 
         # When all BC of a given group are removed, the group should be removed from the scenario builder

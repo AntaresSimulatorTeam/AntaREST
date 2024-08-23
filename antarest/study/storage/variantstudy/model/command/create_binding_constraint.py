@@ -347,7 +347,7 @@ class AbstractBindingConstraintCommand(OptionalProperties, BindingConstraintMatr
         current_operator = self.operator or BindingConstraintOperator(
             existing_constraint.get("operator", DEFAULT_OPERATOR)
         )
-        group = self.group or BindingConstraintOperator(existing_constraint.get("group", DEFAULT_GROUP))
+        group = self.group or existing_constraint.get("group", DEFAULT_GROUP)
         time_step = self.time_step or BindingConstraintFrequency(existing_constraint.get("type", DEFAULT_TIMESTEP))
         parse_bindings_coeffs_and_save_into_config(
             bd_id, study_data.config, self.coeffs or {}, operator=current_operator, time_step=time_step, group=group

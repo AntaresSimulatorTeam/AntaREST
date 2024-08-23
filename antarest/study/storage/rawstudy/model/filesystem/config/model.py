@@ -7,7 +7,13 @@ from pydantic import BaseModel, Field, root_validator
 from antarest.core.utils.utils import DTO
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 
-from .binding_constraint import DEFAULT_GROUP, BindingConstraintFrequency, BindingConstraintOperator
+from .binding_constraint import (
+    DEFAULT_GROUP,
+    DEFAULT_OPERATOR,
+    DEFAULT_TIMESTEP,
+    BindingConstraintFrequency,
+    BindingConstraintOperator,
+)
 from .field_validators import extract_filtering
 from .renewable import RenewableConfigType
 from .st_storage import STStorageConfigType
@@ -128,8 +134,8 @@ class BindingConstraintDTO(BaseModel):
     id: str
     areas: t.Set[str]
     clusters: t.Set[str]
-    time_step: BindingConstraintFrequency
-    operator: BindingConstraintOperator
+    time_step: BindingConstraintFrequency = DEFAULT_TIMESTEP
+    operator: BindingConstraintOperator = DEFAULT_OPERATOR
     # since v8.7
     group: str = DEFAULT_GROUP
 
