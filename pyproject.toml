@@ -1,3 +1,70 @@
+[build-system]
+requires = ["setuptools"]
+
+[project]
+name = "AntaREST"
+version = "2.17.5"
+authors = [{name="RTE, Antares Web Team", email="andrea.sgattoni@rte-france.com" }]
+description="Antares Server"
+readme = {file = "README.md", content-type = "text/markdown"}
+license = {file = "LICENSE"}
+requires-python = ">=3.8"
+classifiers=[
+        "Programming Language :: Python :: 3 :: Only",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "License :: Apache License :: 2.0",
+        "Operating System :: OS Independent",
+    ]
+
+[project.urls]
+Repository="https://github.com/AntaresSimulatorTeam/api-iso-antares"
+
+[tool.setuptools]
+platforms = [
+    "linux-x86_64",
+    "macosx-10.14-x86_64",
+    "macosx-10.15-x86_64",
+    "macosx-11-x86_64",
+    "macosx-12-x86_64",
+    "macosx-13-x86_64",
+    "win-amd64",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["antarest*"]  # alternatively: `exclude = ["additional*"]`
+
+[tool.mypy]
+strict = true
+files = "antarest/**/*.py"
+
+[[tool.mypy.overrides]]
+module = [
+    "antareslauncher.*",
+    "jsonschema",
+    "pytest",
+    "httpx",
+    "jsonref",
+    "jsonref",
+]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "alembic.*"
+no_implicit_reexport = false
+
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "unit_test",
+    "integration_test"
+]
+
+
 [tool.black]
 target-version = ["py38"]
 line-length = 120
