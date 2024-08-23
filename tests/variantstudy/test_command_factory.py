@@ -389,6 +389,10 @@ class TestCommandFactory:
                     },
                 ],
             ),
+            CommandDTO(
+                action=CommandName.GENERATE_THERMAL_CLUSTER_TIMESERIES.value,
+                args=[{}],
+            ),
         ],
     )
     @pytest.mark.unit_test

@@ -16,6 +16,9 @@ from antarest.study.storage.variantstudy.model.command.create_district import Cr
 from antarest.study.storage.variantstudy.model.command.create_link import CreateLink
 from antarest.study.storage.variantstudy.model.command.create_renewables_cluster import CreateRenewablesCluster
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
+from antarest.study.storage.variantstudy.model.command.generate_thermal_cluster_timeseries import (
+    GenerateThermalClusterTimeSeries,
+)
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
 from antarest.study.storage.variantstudy.model.command.remove_binding_constraint import RemoveBindingConstraint
@@ -316,6 +319,12 @@ class CommandReverter:
 
         extractor = base_command.get_command_extractor()
         return [extractor.generate_update_district(base, base_command.id)]
+
+    @staticmethod
+    def _revert_generate_thermal_cluster_timeseries(
+        base_command: GenerateThermalClusterTimeSeries, history: t.List["ICommand"], base: FileStudy
+    ) -> t.List[ICommand]:
+        raise NotImplementedError("The revert function for GenerateThermalClusterTimeSeries is not available")
 
     def revert(
         self,
