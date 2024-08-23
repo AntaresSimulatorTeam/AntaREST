@@ -49,7 +49,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install pydantic --no-binary pydantic
           pip install -r requirements-dev.txt
-          pip install -r installer/requirements.txt 
 
       - name: 🐍 Install Windows dependencies
         if: matrix.os == 'windows-latest'
@@ -63,13 +62,9 @@ jobs:
         run: bash ./package_antares_installer.sh
         working-directory: scripts
 
-      - name: 📜 Install changelog requirements
-        run: npm install -g auto-changelog
-
-      - name: 📜️ Generate changelog file
+      - name: 📜️ Copy changelog file
         run: |
-          auto-changelog -l false --hide-empty-releases
-          mv CHANGELOG.md dist/package/CHANGELOG.md
+          cp docs/CHANGELOG.md dist/package/CHANGELOG.md
 
       - name: 📦 Archive Antares Desktop for Windows
         if: matrix.os == 'windows-latest'
