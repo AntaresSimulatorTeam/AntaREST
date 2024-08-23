@@ -12,20 +12,18 @@ INSTALLER_SRC_DIR="${INSTALLER_DIR}/src/antares_web_installer"
 DIST_DIR="${PROJECT_DIR}/dist/package"
 
 echo "INFO: Initializing the virtual environment .installer"
+python -m venv .installer
 if [[ "$OSTYPE" == "msys"* ]]; then
 # initialize environment on windows
-  python -m venv .installer
   .installer/bin/Activate.ps1
-  python -m pip install -r ${INSTALLER_DIR}/requirements.txt
 else
 # initialize environment on linux
-  python -m venv .installer
   source .installer/bin/activate
-  python -m pip install -r ${INSTALLER_DIR}/requirements.txt
 fi
+python -m pip install -r ${INSTALLER_DIR}/requirements.txt
 
 # build package
-echo "INFO: Generating the Installer for the Desktop application..."
+echo "INFO: Generating the Installer..."
 if [[ "$OSTYPE" == "msys"* ]]; then
     pushd ${PROJECT_DIR}
     pyinstaller --onefile "${INSTALLER_SRC_DIR}/gui/__main__.py" --distpath "${DIST_DIR}" --hidden-import antares_web_installer.shortcuts._linux_shell --hidden-import antares_web_installer.shortcuts._win32_shell --noconsole --name AntaresWebInstaller
