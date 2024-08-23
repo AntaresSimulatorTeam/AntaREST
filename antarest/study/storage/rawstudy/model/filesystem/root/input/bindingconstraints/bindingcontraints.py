@@ -1,4 +1,7 @@
-from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
+from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
+    OPERATOR_MATRICES_MAP,
+    BindingConstraintFrequency,
+)
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
@@ -52,7 +55,8 @@ class BindingConstraints(FolderNode):
             }
             children = {}
             for binding in self.config.bindings:
-                for term in ["lt", "gt", "eq"]:
+                terms = OPERATOR_MATRICES_MAP[binding.operator]
+                for term in terms:
                     matrix_id = f"{binding.id}_{term}"
                     children[matrix_id] = InputSeriesMatrix(
                         self.context,
