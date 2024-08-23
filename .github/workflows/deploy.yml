@@ -62,10 +62,6 @@ jobs:
         run: bash ./package_antares_installer.sh
         working-directory: scripts
 
-      - name: Add installer in package
-        run: bash ./package_antares_installer.sh
-        working-directory: scripts
-
       - name: 📜️ Copy changelog file
         run: |
           cp docs/CHANGELOG.md dist/package/CHANGELOG.md
