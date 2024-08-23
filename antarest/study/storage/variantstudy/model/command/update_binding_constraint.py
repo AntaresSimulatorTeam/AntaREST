@@ -139,8 +139,6 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
         return None
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
-        self._apply_config(study_data.config)
-
         binding_constraints = study_data.tree.get(["input", "bindingconstraints", "bindingconstraints"])
 
         # When all BC of a given group are removed, the group should be removed from the scenario builder
@@ -158,8 +156,10 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
         # rename matrices if the operator has changed for version >= 870
         if self.operator and study_data.config.version >= 870:
             existing_operator = BindingConstraintOperator(actual_cfg.get("operator"))
-            new_operator = BindingConstraintOperator(self.operator)
+            new_operator = self.operator
             _update_matrices_names(study_data, self.id, existing_operator, new_operator)
+
+        self._apply_config(study_data.config)
 
         updated_matrices = [
             term for term in [m.value for m in TermMatrices] if hasattr(self, term) and getattr(self, term)
