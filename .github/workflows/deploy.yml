@@ -4,7 +4,6 @@ on:
     branches:
       - "master"
       - "hotfix/**"
-      - "fix/fix-desktop-changelog"
 
 jobs:
   binary:
