@@ -3,15 +3,15 @@ import typing as t
 
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
+    DEFAULT_GROUP,
     BindingConstraintFrequency,
-    BindingConstraintOperator,
+    BindingConstraintOperator, OPERATOR_MATRICES_MAP,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, BindingConstraintDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import (
-    DEFAULT_GROUP,
     AbstractBindingConstraintCommand,
     TermMatrices,
     create_binding_constraint_config,
@@ -55,12 +55,6 @@ def _update_matrices_names(
     elif existing_operator == new_operator:
         return  # nothing to do
 
-    operator_matrices_map = {
-        BindingConstraintOperator.EQUAL: "eq",
-        BindingConstraintOperator.GREATER: "gt",
-        BindingConstraintOperator.LESS: "lt",
-    }
-
     def _get_matrix_url(node: InputSeriesMatrix, bc_term: str) -> t.List[str]:
         matrix_path = node.config.path.parent / f"{bc_id}_{bc_term}{''.join(node.get_suffixes())}"
         return list(matrix_path.relative_to(file_study.config.study_path).parts)
@@ -68,12 +62,12 @@ def _update_matrices_names(
     parent_folder_node = file_study.tree.get_node(["input", "bindingconstraints"])
     error_msg = "Unhandled node type, expected InputSeriesMatrix, got "
     if existing_operator != BindingConstraintOperator.BOTH and new_operator != BindingConstraintOperator.BOTH:
-        current_node = parent_folder_node.get_node([f"{bc_id}_{operator_matrices_map[existing_operator]}"])
+        current_node = parent_folder_node.get_node([f"{bc_id}_{OPERATOR_MATRICES_MAP[existing_operator][0]}"])
         assert isinstance(current_node, InputSeriesMatrix), f"{error_msg}{type(current_node)}"
-        target_url = _get_matrix_url(current_node, operator_matrices_map[new_operator])
+        target_url = _get_matrix_url(current_node, OPERATOR_MATRICES_MAP[new_operator][0])
         current_node.rename_file(target_url)
     elif new_operator == BindingConstraintOperator.BOTH:
-        current_node = parent_folder_node.get_node([f"{bc_id}_{operator_matrices_map[existing_operator]}"])
+        current_node = parent_folder_node.get_node([f"{bc_id}_{OPERATOR_MATRICES_MAP[existing_operator][0]}"])
         assert isinstance(current_node, InputSeriesMatrix), f"{error_msg}{type(current_node)}"
         if existing_operator == BindingConstraintOperator.EQUAL:
             lt_url = _get_matrix_url(current_node, "lt")
@@ -114,6 +108,31 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
     id: str
 
     def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
+        index = next(i for i, bc in enumerate(study_data.bindings) if bc.id == self.id)
+        existing_constraint = study_data.bindings[index]
+        areas_set = existing_constraint.areas
+        clusters_set = existing_constraint.clusters
+        if self.coeffs:
+            areas_set = set()
+            clusters_set = set()
+            for j in self.coeffs.keys():
+                if "%" in j:
+                    areas_set |= set(j.split("%"))
+                elif "." in j:
+                    clusters_set.add(j)
+                    areas_set.add(j.split(".")[0])
+        group = self.group or existing_constraint.group
+        operator = self.operator or existing_constraint.operator
+        time_step = self.time_step or existing_constraint.time_step
+        new_constraint = BindingConstraintDTO(
+            id=self.id,
+            group=group,
+            areas=areas_set,
+            clusters=clusters_set,
+            operator=operator,
+            time_step=time_step,
+        )
+        study_data.bindings[index] = new_constraint
         return CommandOutput(status=True), {}
 
     def _find_binding_config(self, binding_constraints: t.Mapping[str, JSON]) -> t.Optional[t.Tuple[str, JSON]]:

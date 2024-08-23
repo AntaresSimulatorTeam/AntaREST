@@ -1,6 +1,7 @@
 import typing as t
 
-from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
+from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency, \
+    DEFAULT_TIMESTEP, BindingConstraintOperator
 from antarest.study.storage.rawstudy.model.filesystem.config.model import BindingConstraintDTO, FileStudyTreeConfig
 
 
@@ -8,16 +9,14 @@ def parse_bindings_coeffs_and_save_into_config(
     bd_id: str,
     study_data_config: FileStudyTreeConfig,
     coeffs: t.Mapping[str, t.Union[t.Literal["hourly", "daily", "weekly"], t.Sequence[float]]],
+    operator: BindingConstraintOperator,
+    time_step: BindingConstraintFrequency,
     group: str,
 ) -> None:
     if bd_id not in [bind.id for bind in study_data_config.bindings]:
         areas_set = set()
         clusters_set = set()
-        # Default time_step value
-        time_step = BindingConstraintFrequency.HOURLY
         for k, v in coeffs.items():
-            if k == "type":
-                time_step = BindingConstraintFrequency(v)
             if "%" in k:
                 areas_set |= set(k.split("%"))
             elif "." in k:
@@ -28,6 +27,7 @@ def parse_bindings_coeffs_and_save_into_config(
             group=group,
             areas=areas_set,
             clusters=clusters_set,
+            operator=operator,
             time_step=time_step,
         )
         study_data_config.bindings.append(bc)

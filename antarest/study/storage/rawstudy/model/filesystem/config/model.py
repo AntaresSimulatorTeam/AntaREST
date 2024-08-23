@@ -7,14 +7,11 @@ from pydantic import BaseModel, Field, root_validator
 from antarest.core.utils.utils import DTO
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 
-from .binding_constraint import BindingConstraintFrequency
+from .binding_constraint import DEFAULT_GROUP, BindingConstraintFrequency, BindingConstraintOperator
 from .field_validators import extract_filtering
 from .renewable import RenewableConfigType
 from .st_storage import STStorageConfigType
 from .thermal import ThermalConfigType
-
-DEFAULT_GROUP = "default"
-"""Default group for binding constraints (since v8.7)."""
 
 
 class EnrModelling(EnumIgnoreCase):
@@ -121,15 +118,18 @@ class BindingConstraintDTO(BaseModel):
 
     Attributes:
         id: The ID of the binding constraint.
-        group: The group for the scenario of BC (optional, required since v8.7).
         areas: List of area IDs on which the BC applies (links or clusters).
         clusters: List of thermal cluster IDs on which the BC applies (format: "area.cluster").
+        time_step: The time_step of the BC
+        operator: The operator of the BC
+        group: The group for the scenario of BC (optional, required since v8.7).
     """
 
     id: str
     areas: t.Set[str]
     clusters: t.Set[str]
     time_step: BindingConstraintFrequency
+    operator: BindingConstraintOperator
     # since v8.7
     group: str = DEFAULT_GROUP
 

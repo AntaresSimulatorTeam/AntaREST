@@ -10,14 +10,14 @@ from pathlib import Path
 
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.ini_reader import IniReader
-from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
+from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency, \
+    DEFAULT_GROUP, DEFAULT_OPERATOR, DEFAULT_TIMESTEP
 from antarest.study.storage.rawstudy.model.filesystem.config.exceptions import (
     SimulationParsingError,
     XpansionParsingError,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import extract_filtering
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    DEFAULT_GROUP,
     Area,
     BindingConstraintDTO,
     DistrictSet,
@@ -212,11 +212,14 @@ def _parse_bindings(root: Path) -> t.List[BindingConstraintDTO]:
         # contains a set of strings in the following format: "area.cluster"
         cluster_set = set()
         # Default value for time_step
-        time_step = BindingConstraintFrequency.HOURLY
+        time_step = bind.get("type", DEFAULT_TIMESTEP)
+        # Default value for operator
+        operator = bind.get("operator", DEFAULT_OPERATOR)
+        # Default value for group
+        group = bind.get("group", DEFAULT_GROUP)
+        # Build areas and clusters based on terms
         for key in bind:
-            if key == "type":
-                time_step = BindingConstraintFrequency(bind[key])
-            elif "%" in key:
+            if "%" in key:
                 areas = key.split("%", 1)
                 area_set.add(areas[0])
                 area_set.add(areas[1])
@@ -224,13 +227,13 @@ def _parse_bindings(root: Path) -> t.List[BindingConstraintDTO]:
                 cluster_set.add(key)
                 area_set.add(key.split(".", 1)[0])
 
-        group = bind.get("group", DEFAULT_GROUP)
         bc = BindingConstraintDTO(
             id=bind["id"],
             areas=area_set,
             clusters=cluster_set,
             time_step=time_step,
-            group=group,
+            operator=operator,
+            group=group
         )
         output_list.append(bc)
 

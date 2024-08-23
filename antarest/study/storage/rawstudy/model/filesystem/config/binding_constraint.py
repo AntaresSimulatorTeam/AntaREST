@@ -2,6 +2,7 @@
 Object model used to read and update binding constraint configuration.
 """
 
+import typing as t
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 
 
@@ -35,3 +36,17 @@ class BindingConstraintOperator(EnumIgnoreCase):
     GREATER = "greater"
     BOTH = "both"
     EQUAL = "equal"
+
+
+OPERATOR_MATRICES_MAP: t.Dict[BindingConstraintOperator, t.List[str]] = {
+    BindingConstraintOperator.EQUAL: ["eq"],
+    BindingConstraintOperator.GREATER: ["gt"],
+    BindingConstraintOperator.LESS: ["lt"],
+    BindingConstraintOperator.BOTH: ["lt", "gt"]
+}
+
+
+DEFAULT_GROUP = "default"
+"""Default group for binding constraints (since v8.7)."""
+DEFAULT_OPERATOR = BindingConstraintOperator.EQUAL
+DEFAULT_TIMESTEP = BindingConstraintFrequency.HOURLY
