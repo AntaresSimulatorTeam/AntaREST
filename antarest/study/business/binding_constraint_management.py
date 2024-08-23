@@ -26,8 +26,9 @@ from antarest.study.model import Study
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     DEFAULT_GROUP,
     DEFAULT_OPERATOR,
+    DEFAULT_TIMESTEP,
     BindingConstraintFrequency,
-    BindingConstraintOperator, DEFAULT_TIMESTEP,
+    BindingConstraintOperator,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy

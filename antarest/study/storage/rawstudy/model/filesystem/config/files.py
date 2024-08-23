@@ -10,8 +10,12 @@ from pathlib import Path
 
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.ini_reader import IniReader
-from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency, \
-    DEFAULT_GROUP, DEFAULT_OPERATOR, DEFAULT_TIMESTEP
+from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
+    DEFAULT_GROUP,
+    DEFAULT_OPERATOR,
+    DEFAULT_TIMESTEP,
+    BindingConstraintFrequency,
+)
 from antarest.study.storage.rawstudy.model.filesystem.config.exceptions import (
     SimulationParsingError,
     XpansionParsingError,
@@ -228,12 +232,7 @@ def _parse_bindings(root: Path) -> t.List[BindingConstraintDTO]:
                 area_set.add(key.split(".", 1)[0])
 
         bc = BindingConstraintDTO(
-            id=bind["id"],
-            areas=area_set,
-            clusters=cluster_set,
-            time_step=time_step,
-            operator=operator,
-            group=group
+            id=bind["id"], areas=area_set, clusters=cluster_set, time_step=time_step, operator=operator, group=group
         )
         output_list.append(bc)
 

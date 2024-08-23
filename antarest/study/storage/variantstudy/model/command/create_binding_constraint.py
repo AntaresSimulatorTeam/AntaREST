@@ -10,8 +10,10 @@ from antarest.matrixstore.model import MatrixData
 from antarest.study.business.all_optional_meta import AllOptionalMetaclass
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     DEFAULT_GROUP,
+    DEFAULT_OPERATOR,
+    DEFAULT_TIMESTEP,
     BindingConstraintFrequency,
-    BindingConstraintOperator, DEFAULT_TIMESTEP, DEFAULT_OPERATOR,
+    BindingConstraintOperator,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import validate_filtering
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, transform_name_to_id
@@ -342,16 +344,13 @@ class AbstractBindingConstraintCommand(OptionalProperties, BindingConstraintMatr
         )
 
         existing_constraint = binding_constraints[new_key]
-        current_operator = self.operator or BindingConstraintOperator(existing_constraint.get("operator", DEFAULT_OPERATOR))
+        current_operator = self.operator or BindingConstraintOperator(
+            existing_constraint.get("operator", DEFAULT_OPERATOR)
+        )
         group = self.group or BindingConstraintOperator(existing_constraint.get("group", DEFAULT_GROUP))
         time_step = self.time_step or BindingConstraintFrequency(existing_constraint.get("type", DEFAULT_TIMESTEP))
         parse_bindings_coeffs_and_save_into_config(
-            bd_id,
-            study_data.config,
-            self.coeffs or {},
-            operator=current_operator,
-            time_step=time_step,
-            group=group
+            bd_id, study_data.config, self.coeffs or {}, operator=current_operator, time_step=time_step, group=group
         )
 
         if version >= 870:

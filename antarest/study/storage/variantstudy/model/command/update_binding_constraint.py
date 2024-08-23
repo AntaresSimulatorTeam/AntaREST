@@ -4,10 +4,11 @@ import typing as t
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     DEFAULT_GROUP,
+    OPERATOR_MATRICES_MAP,
     BindingConstraintFrequency,
-    BindingConstraintOperator, OPERATOR_MATRICES_MAP,
+    BindingConstraintOperator,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, BindingConstraintDTO
+from antarest.study.storage.rawstudy.model.filesystem.config.model import BindingConstraintDTO, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput

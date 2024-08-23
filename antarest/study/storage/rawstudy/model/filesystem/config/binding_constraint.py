@@ -3,6 +3,7 @@ Object model used to read and update binding constraint configuration.
 """
 
 import typing as t
+
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 
 
@@ -42,7 +43,7 @@ OPERATOR_MATRICES_MAP: t.Dict[BindingConstraintOperator, t.List[str]] = {
     BindingConstraintOperator.EQUAL: ["eq"],
     BindingConstraintOperator.GREATER: ["gt"],
     BindingConstraintOperator.LESS: ["lt"],
-    BindingConstraintOperator.BOTH: ["lt", "gt"]
+    BindingConstraintOperator.BOTH: ["lt", "gt"],
 }
 
 

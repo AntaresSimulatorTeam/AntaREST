@@ -1,7 +1,10 @@
 import typing as t
 
-from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency, \
-    DEFAULT_TIMESTEP, BindingConstraintOperator
+from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
+    DEFAULT_TIMESTEP,
+    BindingConstraintFrequency,
+    BindingConstraintOperator,
+)
 from antarest.study.storage.rawstudy.model.filesystem.config.model import BindingConstraintDTO, FileStudyTreeConfig
 
 
