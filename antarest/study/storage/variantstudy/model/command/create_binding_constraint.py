@@ -9,6 +9,9 @@ from pydantic import BaseModel, Extra, Field, root_validator, validator
 from antarest.matrixstore.model import MatrixData
 from antarest.study.business.all_optional_meta import AllOptionalMetaclass
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
+    DEFAULT_GROUP,
+    DEFAULT_OPERATOR,
+    DEFAULT_TIMESTEP,
     BindingConstraintFrequency,
     BindingConstraintOperator,
 )
@@ -23,8 +26,6 @@ from antarest.study.storage.variantstudy.business.utils_binding_constraint impor
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
 from antarest.study.storage.variantstudy.model.model import CommandDTO
-
-DEFAULT_GROUP = "default"
 
 MatrixType = t.List[t.List[MatrixData]]
 
@@ -80,8 +81,8 @@ def check_matrix_values(time_step: BindingConstraintFrequency, values: MatrixTyp
 
 class BindingConstraintPropertiesBase(BaseModel, extra=Extra.forbid, allow_population_by_field_name=True):
     enabled: bool = True
-    time_step: BindingConstraintFrequency = Field(BindingConstraintFrequency.HOURLY, alias="type")
-    operator: BindingConstraintOperator = BindingConstraintOperator.EQUAL
+    time_step: BindingConstraintFrequency = Field(DEFAULT_TIMESTEP, alias="type")
+    operator: BindingConstraintOperator = DEFAULT_OPERATOR
     comments: str = ""
 
     @classmethod
@@ -337,16 +338,19 @@ class AbstractBindingConstraintCommand(OptionalProperties, BindingConstraintMatr
                     [str(coeff_val) for coeff_val in self.coeffs[link_or_cluster]]
                 )
 
-        group = self.group or DEFAULT_GROUP
-        parse_bindings_coeffs_and_save_into_config(
-            bd_id,
-            study_data.config,
-            self.coeffs or {},
-            group=group,
-        )
         study_data.tree.save(
             binding_constraints,
             ["input", "bindingconstraints", "bindingconstraints"],
+        )
+
+        existing_constraint = binding_constraints[new_key]
+        current_operator = self.operator or BindingConstraintOperator(
+            existing_constraint.get("operator", DEFAULT_OPERATOR)
+        )
+        group = self.group or existing_constraint.get("group", DEFAULT_GROUP)
+        time_step = self.time_step or BindingConstraintFrequency(existing_constraint.get("type", DEFAULT_TIMESTEP))
+        parse_bindings_coeffs_and_save_into_config(
+            bd_id, study_data.config, self.coeffs or {}, operator=current_operator, time_step=time_step, group=group
         )
 
         if version >= 870:
@@ -369,14 +373,13 @@ class AbstractBindingConstraintCommand(OptionalProperties, BindingConstraintMatr
             BindingConstraintOperator.BOTH: [(self.less_term_matrix, "lt"), (self.greater_term_matrix, "gt")],
         }
 
-        current_operator = self.operator or BindingConstraintOperator(binding_constraints[new_key]["operator"])
-
         for matrix_term, matrix_alias in operator_matrices_map[current_operator]:
             if matrix_term:
                 if not isinstance(matrix_term, str):  # pragma: no cover
                     raise TypeError(repr(matrix_term))
                 if version >= 870:
-                    study_data.tree.save(matrix_term, ["input", "bindingconstraints", f"{bd_id}_{matrix_alias}"])
+                    matrix_id = f"{bd_id}_{matrix_alias}"
+                    study_data.tree.save(matrix_term, ["input", "bindingconstraints", matrix_id])
         return CommandOutput(status=True)
 
 
@@ -394,10 +397,14 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
     def _apply_config(self, study_data_config: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
         bd_id = transform_name_to_id(self.name)
         group = self.group or DEFAULT_GROUP
+        operator = self.operator or DEFAULT_OPERATOR
+        time_step = self.time_step or DEFAULT_TIMESTEP
         parse_bindings_coeffs_and_save_into_config(
             bd_id,
             study_data_config,
             self.coeffs or {},
+            operator=operator,
+            time_step=time_step,
             group=group,
         )
         return CommandOutput(status=True), {}

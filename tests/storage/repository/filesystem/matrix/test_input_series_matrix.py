@@ -1,3 +1,5 @@
+import itertools
+import shutil
 import textwrap
 import typing as t
 from pathlib import Path
@@ -92,3 +94,71 @@ class TestInputSeriesMatrix:
             """
         )
         assert actual == expected
+
+
+class TestCopyAndRenameFile:
+    node: InputSeriesMatrix
+    fake_node: InputSeriesMatrix
+    target: str
+    file: Path
+    link: Path
+    modified_file: Path
+    modified_link: Path
+
+    def _set_up(self, tmp_path: Path) -> None:
+        self.file = tmp_path / "my-study" / "lazy.txt"
+        self.file.parent.mkdir()
+
+        self.link = self.file.parent / f"{self.file.name}.link"
+        self.link.write_text("Link: Mock File Content")
+
+        config = FileStudyTreeConfig(study_path=self.file.parent, path=self.file, version=-1, study_id="")
+        context = ContextServer(matrix=Mock(), resolver=Mock())
+        self.node = InputSeriesMatrix(context=context, config=config)
+
+        self.modified_file = self.file.parent / "lazy_modified.txt"
+        self.modified_link = self.file.parent / f"{self.modified_file.name}.link"
+        config2 = FileStudyTreeConfig(study_path=self.file.parent, path=self.modified_file, version=-1, study_id="")
+        self.fake_node = InputSeriesMatrix(context=Mock(), config=config2)
+        self.target = self.modified_file.stem
+
+    def _checks_behavior(self, rename: bool, target_is_link: bool):
+        # Asserts `_infer_path` fails if there's no file
+        with pytest.raises(ChildNotFoundError):
+            self.fake_node._infer_path()
+
+        # Checks `copy_file`, `rename_file` methods
+        if target_is_link:
+            assert not self.modified_link.exists()
+            assert self.link.exists()
+            assert not self.file.exists()
+            assert not self.modified_file.exists()
+
+            self.node.rename_file(self.target) if rename else self.node.copy_file(self.target)
+
+            assert not self.link.exists() if rename else self.link.exists()
+            assert self.modified_link.exists()
+            assert not self.file.exists()
+            assert not self.modified_file.exists()
+            assert self.modified_link.read_text() == "Link: Mock File Content"
+
+        else:
+            content = b"No Link: Mock File Content"
+            self.node.save(content)
+            assert self.file.read_text() == content.decode("utf-8")
+            assert not self.link.exists()
+            assert not self.modified_file.exists()
+
+            self.node.rename_file(self.target) if rename else self.node.copy_file(self.target)
+
+            assert not self.link.exists()
+            assert not self.file.exists() if rename else self.file.exists()
+            assert self.modified_file.exists()
+            assert not self.modified_link.exists()
+            assert self.modified_file.read_text() == content.decode("utf-8")
+
+    def test_copy_and_rename_file(self, tmp_path: Path):
+        for rename, target_is_link in itertools.product([True, False], repeat=2):
+            self._set_up(tmp_path)
+            self._checks_behavior(rename, target_is_link)
+            shutil.rmtree(tmp_path / "my-study")
