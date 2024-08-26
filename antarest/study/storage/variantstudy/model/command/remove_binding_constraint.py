@@ -1,13 +1,11 @@
 from typing import Any, Dict, List, Tuple
 
 from antarest.core.model import JSON
+from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import DEFAULT_GROUP
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
-from antarest.study.storage.variantstudy.model.command.create_binding_constraint import (
-    DEFAULT_GROUP,
-    remove_bc_from_scenario_builder,
-)
+from antarest.study.storage.variantstudy.model.command.create_binding_constraint import remove_bc_from_scenario_builder
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -50,8 +48,11 @@ class RemoveBindingConstraint(ICommand):
         if study_data.config.version < 870:
             study_data.tree.delete(["input", "bindingconstraints", self.id])
         else:
+            existing_files = study_data.tree.get(["input", "bindingconstraints"], depth=1)
             for term in ["lt", "gt", "eq"]:
-                study_data.tree.delete(["input", "bindingconstraints", f"{self.id}_{term}"])
+                matrix_id = f"{self.id}_{term}"
+                if matrix_id in existing_files:
+                    study_data.tree.delete(["input", "bindingconstraints", matrix_id])
 
             # When all BC of a given group are removed, the group should be removed from the scenario builder
             old_groups = {bd.get("group", DEFAULT_GROUP).lower() for bd in binding_constraints.values()}
