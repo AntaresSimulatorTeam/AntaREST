@@ -49,7 +49,13 @@ from antarest.login.service import LoginService
 from antarest.matrixstore.matrix_editor import MatrixEditInstruction
 from antarest.study.business.adequacy_patch_management import AdequacyPatchManager
 from antarest.study.business.advanced_parameters_management import AdvancedParamsManager
-from antarest.study.business.aggregator_management import AggregatorManager, AreasQueryFile, LinksQueryFile
+from antarest.study.business.aggregator_management import (
+    AggregatorManager,
+    MCAllAreasQueryFile,
+    MCAllLinksQueryFile,
+    MCIndAreasQueryFile,
+    MCIndLinksQueryFile,
+)
 from antarest.study.business.allocation_management import AllocationManager
 from antarest.study.business.area_management import AreaCreationDTO, AreaInfoDTO, AreaManager, AreaType, UpdateAreaUi
 from antarest.study.business.areas.hydro_management import HydroManager
@@ -372,24 +378,25 @@ class StudyService:
         self,
         uuid: str,
         output_id: str,
-        query_file: t.Union[AreasQueryFile, LinksQueryFile],
+        query_file: t.Union[MCIndAreasQueryFile, MCAllAreasQueryFile, MCIndLinksQueryFile, MCAllLinksQueryFile],
         frequency: MatrixFrequency,
-        mc_years: t.Sequence[int],
         columns_names: t.Sequence[str],
         ids_to_consider: t.Sequence[str],
         params: RequestParameters,
+        mc_years: t.Optional[t.Sequence[int]] = None,
     ) -> pd.DataFrame:
         """
         Aggregates output data based on several filtering conditions
+
         Args:
             uuid: study uuid
             output_id: simulation output ID
-            query_file: which types of data to retrieve ("values", "details", "details-st-storage", "details-res")
+            query_file: which types of data to retrieve: "values", "details", "details-st-storage", "details-res", "ids"
             frequency: yearly, monthly, weekly, daily or hourly.
-            mc_years: list of monte-carlo years, if empty, all years are selected
-            columns_names: columns to be selected, if empty, all columns are selected
+            columns_names: regexes (if details) or columns to be selected, if empty, all columns are selected
             ids_to_consider: list of areas or links ids to consider, if empty, all areas are selected
             params: request parameters
+            mc_years: list of monte-carlo years, if empty, all years are selected (only for mc-ind)
 
         Returns: the aggregated data as a DataFrame
 
@@ -397,17 +404,9 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
         study_path = self.storage_service.raw_study_service.get_study_path(study)
-        # fmt: off
         aggregator_manager = AggregatorManager(
-            study_path,
-            output_id,
-            query_file,
-            frequency,
-            mc_years,
-            columns_names,
-            ids_to_consider
+            study_path, output_id, query_file, frequency, ids_to_consider, columns_names, mc_years
         )
-        # fmt: on
         return aggregator_manager.aggregate_output_data()
 
     def get_logs(
