@@ -392,6 +392,20 @@ class OutputNotFound(HTTPException):
         return self.detail
 
 
+class OutputSubFolderNotFound(HTTPException):
+    """
+    Exception raised when an output sub folders do not exist
+    """
+
+    def __init__(self, output_id: str, mc_root: str) -> None:
+        message = f"The output '{output_id}' sub-folder '{mc_root}' does not exist"
+        super().__init__(HTTPStatus.NOT_FOUND, message)
+
+    def __str__(self) -> str:
+        """Return a string representation of the exception."""
+        return self.detail
+
+
 class BadZipBinary(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.UNSUPPORTED_MEDIA_TYPE, message)
@@ -442,6 +456,11 @@ class InvalidConstraintName(HTTPException):
 
 
 class InvalidFieldForVersionError(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, message)
+
+
+class MCRootNotHandled(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, message)
 

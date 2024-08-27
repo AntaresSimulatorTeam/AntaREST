@@ -81,7 +81,7 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
         headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
     )
     res_output = res.json()
-    assert len(res_output) == 5
+    assert len(res_output) == 6
 
     res = client.get(
         f"/v1/studies/{study_id}/outputs/20201014-1427eco/variables",
@@ -178,7 +178,7 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
         f"/v1/studies/{study_id}/outputs",
         headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
     )
-    assert len(res.json()) == 4
+    assert len(res.json()) == 5
 
     # study creation
     created = client.post(
@@ -1400,7 +1400,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
     res_links = client.get(f"/v1/studies/{study_id}/links")
     assert res_links.json() == []
 
-    res = client.put(
+    client.put(
         f"/v1/studies/{study_id}/areas/area%201/ui",
         json={"x": 100, "y": 100, "color_rgb": [255, 0, 100]},
     )
@@ -1662,7 +1662,7 @@ def test_import(client: TestClient, admin_access_token: str, internal_study_id: 
         f"/v1/studies/{internal_study_id}/outputs",
         headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
     )
-    assert len(res.json()) == 6
+    assert len(res.json()) == 7
 
     # tests outputs import for .7z
     output_path_seven_zip = ASSETS_DIR / "output_adq.7z"
@@ -1675,7 +1675,7 @@ def test_import(client: TestClient, admin_access_token: str, internal_study_id: 
         f"/v1/studies/{internal_study_id}/outputs",
         headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
     )
-    assert len(res.json()) == 7
+    assert len(res.json()) == 8
 
     # test matrices import for .zip and .7z files
     matrices_zip_path = ASSETS_DIR / "matrices.zip"
