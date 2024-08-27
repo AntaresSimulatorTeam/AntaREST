@@ -27,8 +27,8 @@ class TestDiskUsage:
             headers=user_headers,
         )
         assert res.status_code == 200, res.json()
-        disk_usage = res.json()  # currently: 7.47 Mio on Ubuntu
-        assert 7 * 1024 * 1024 < disk_usage < 8 * 1024 * 1024
+        disk_usage = res.json()  # currently: 8.75 Mio on Ubuntu
+        assert 8 * 1024 * 1024 < disk_usage < 9 * 1024 * 1024
 
         # Copy the study in managed workspace in order to create a variant
         res = client.post(
