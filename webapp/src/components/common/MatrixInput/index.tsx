@@ -183,7 +183,7 @@ function MatrixInput({
             isPercentDisplayEnabled={enablePercentDisplay}
           />
         ) : (
-          !isLoading && <EmptyView title="matrix.message.matrixEmpty" />
+          !isLoading && <EmptyView title={t("matrix.message.matrixEmpty")} />
         )}
       </Content>
       {openImportDialog && (
