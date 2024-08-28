@@ -305,7 +305,6 @@ class LauncherService:
         if not user:
             return []
 
-        orphan_visibility_threshold = datetime.utcnow() - timedelta(days=ORPHAN_JOBS_VISIBILITY_THRESHOLD)
         allowed_job_results = []
 
         study_ids = [job_result.study_id for job_result in job_results]
@@ -330,9 +329,7 @@ class LauncherService:
                     raising=False,
                 ):
                     allowed_job_results.append(job_result)
-            elif (
-                user and (user.is_site_admin() or user.is_admin_token())
-            ) or job_result.creation_date >= orphan_visibility_threshold:
+            elif user and (user.is_site_admin() or user.is_admin_token()):
                 allowed_job_results.append(job_result)
         return allowed_job_results
 
