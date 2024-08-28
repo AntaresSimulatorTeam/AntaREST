@@ -15,7 +15,7 @@ echo "INFO: Initializing the virtual environment .installer"
 python -m venv .installer
 if [[ "$OSTYPE" == "msys"* ]]; then
 # initialize environment on windows
-  .installer/bin/Activate.ps1
+  source .installer/Scripts/activate
 else
 # initialize environment on linux
   source .installer/bin/activate
@@ -35,4 +35,4 @@ else
 fi
 
 deactivate
-rm -r .installer
+rm -rf .installer
