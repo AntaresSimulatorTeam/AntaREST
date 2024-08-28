@@ -308,7 +308,7 @@ class TestLauncherService:
                     )
                 ),
             )
-            == returned_faked_execution_results
+            == []
         )
 
         with pytest.raises(UserHasNotPermissionError):
