@@ -60,7 +60,10 @@ jobs:
         working-directory: scripts
 
       - name: Add installer to package
-        run: bash ./package_antares_installer.sh
+        shell: bash
+        run: |
+          pip install hatch
+          ./package_antares_installer.sh
         working-directory: scripts
 
       - name: 📜️ Copy changelog file
