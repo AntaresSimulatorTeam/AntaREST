@@ -715,7 +715,7 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
-        accept = request.headers.get("Accept")
+        accept = request.headers["Accept"]
         filetype = ExportFormat.from_dto(accept)
 
         content = study_service.download_outputs(

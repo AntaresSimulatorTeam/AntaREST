@@ -20,7 +20,7 @@ def test_update_config(empty_study: FileStudy, command_context: CommandContext):
     area1 = "Area1"
     area1_id = transform_name_to_id(area1)
 
-    CreateArea.parse_obj(
+    CreateArea.model_validate(
         {
             "area_name": area1,
             "command_context": command_context,

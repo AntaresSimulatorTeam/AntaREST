@@ -38,8 +38,13 @@ where = ["."]
 include = ["antarest*"]
 
 [tool.mypy]
+exclude = "antarest/fastapi_jwt_auth/*"
 strict = true
-files = "antarest/**/*.py"
+files = "antarest"
+
+[[tool.mypy.overrides]]
+module = ["antarest/fastapi_jwt_auth.*"]
+follow_imports = "skip"
 
 [[tool.mypy.overrides]]
 module = [
@@ -71,7 +76,7 @@ line-length = 120
 exclude = "(antares-?launcher/*|alembic/*)"
 
 [tool.coverage.run]
-omit = ["antarest/tools/cli.py", "antarest/tools/admin.py"]
+omit = ["antarest/tools/cli.py", "antarest/tools/admin.py", "antarest/fastapi_jwt_auth/*.py"]
 relative_files = true  # avoids absolute path issues in CI
 
 [tool.isort]

@@ -64,10 +64,8 @@ class TestLauncherNbCores:
         )
         assert res.status_code == http.HTTPStatus.UNPROCESSABLE_ENTITY, res.json()
         actual = res.json()
-        assert actual == {
-            "description": "Unknown solver configuration: 'unknown'",
-            "exception": "UnknownSolverConfig",
-        }
+        assert actual["description"] == "Input should be 'slurm', 'local' or 'default'"
+        assert actual["exception"] == "RequestValidationError"
 
     def test_get_launcher_time_limit(
         self,
@@ -118,7 +116,5 @@ class TestLauncherNbCores:
         )
         assert res.status_code == http.HTTPStatus.UNPROCESSABLE_ENTITY, res.json()
         actual = res.json()
-        assert actual == {
-            "description": "Unknown solver configuration: 'unknown'",
-            "exception": "UnknownSolverConfig",
-        }
+        assert actual["description"] == "Input should be 'slurm', 'local' or 'default'"
+        assert actual["exception"] == "RequestValidationError"

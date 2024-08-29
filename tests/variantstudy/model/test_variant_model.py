@@ -141,7 +141,7 @@ class TestVariantStudyService:
             repository=variant_study_service.repository,
         )
         results = generator.generate_snapshot(saved_id, jwt_user, denormalize=False)
-        assert results.dict() == {
+        assert results.model_dump() == {
             "success": True,
             "details": [
                 {

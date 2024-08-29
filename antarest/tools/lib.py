@@ -8,17 +8,7 @@ from typing import List, Optional, Set, Union
 from zipfile import ZipFile
 
 import numpy as np
-
-try:
-    # The HTTPX equivalent of `requests.Session` is `httpx.Client`.
-    import httpx as requests
-    from httpx import Client as Session
-except ImportError:
-    # noinspection PyUnresolvedReferences, PyPackageRequirements
-    import requests
-
-    # noinspection PyUnresolvedReferences,PyPackageRequirements
-    from requests import Session
+from httpx import Client
 
 from antarest.core.cache.business.local_chache import LocalCache
 from antarest.core.config import CacheConfig
@@ -55,22 +45,17 @@ class RemoteVariantGenerator(IVariantGenerator):
         study_id: str,
         host: Optional[str] = None,
         token: Optional[str] = None,
-        session: Optional[Session] = None,
+        session: Optional[Client] = None,
     ):
         self.study_id = study_id
 
         # todo: find the correct way to handle certificates.
-        #  By default, Requests/Httpx verifies SSL certificates for HTTPS requests.
+        #  By default, Httpx verifies SSL certificates for HTTPS requests.
         #  When verify is set to `False`, requests will accept any TLS certificate presented
-        #  by the server,and will ignore hostname mismatches and/or expired certificates,
+        #  by the server, and will ignore hostname mismatches and/or expired certificates,
         #  which will make your application vulnerable to man-in-the-middle (MitM) attacks.
-        #  Setting verify to False may be useful during local development or testing.
-        if Session.__name__ == "Client":
-            # noinspection PyArgumentList
-            self.session = session or Session(verify=False)
-        else:
-            self.session = session or Session()
-            self.session.verify = False
+        #  Setting verify to `False` may be useful during local development or testing.
+        self.session = session or Client(verify=False)
 
         self.host = host
         if session is None and host is None:
@@ -102,7 +87,7 @@ class RemoteVariantGenerator(IVariantGenerator):
 
         res = self.session.post(
             self.build_url(f"/v1/studies/{self.study_id}/commands"),
-            json=[command.dict() for command in commands],
+            json=[command.model_dump() for command in commands],
         )
         res.raise_for_status()
         stopwatch.log_elapsed(lambda x: logger.info(f"Command upload done in {x}s"))
@@ -212,7 +197,7 @@ def extract_commands(study_path: Path, commands_output_dir: Path) -> None:
 
     (commands_output_dir / COMMAND_FILE).write_text(
         json.dumps(
-            [command.dict(exclude={"id"}) for command in command_list],
+            [command.model_dump(exclude={"id"}) for command in command_list],
             indent=2,
         )
     )
@@ -304,7 +289,7 @@ def generate_diff(
 
     (output_dir / COMMAND_FILE).write_text(
         json.dumps(
-            [command.to_dto().dict(exclude={"id"}) for command in diff_commands],
+            [command.to_dto().model_dump(exclude={"id"}) for command in diff_commands],
             indent=2,
         )
     )

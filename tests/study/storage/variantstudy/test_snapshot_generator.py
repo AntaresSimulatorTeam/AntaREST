@@ -851,7 +851,7 @@ class TestSnapshotGenerator:
         assert len(db_recorder.sql_statements) == 5, str(db_recorder)
 
         # Check: the variant generation must succeed.
-        assert results.dict() == {
+        assert results.model_dump() == {
             "success": True,
             "details": [
                 {
@@ -1036,7 +1036,7 @@ class TestSnapshotGenerator:
         )
 
         # Check the results
-        assert results.dict() == {
+        assert results.model_dump() == {
             "success": True,
             "details": [
                 {
@@ -1159,7 +1159,7 @@ class TestSnapshotGenerator:
             )
 
         # Check the results
-        assert results.dict() == {
+        assert results.model_dump() == {
             "success": True,
             "details": [
                 {
@@ -1241,7 +1241,7 @@ class TestSnapshotGenerator:
         )
 
         # Check the results
-        assert results.dict() == {
+        assert results.model_dump() == {
             "success": True,
             "details": [
                 {

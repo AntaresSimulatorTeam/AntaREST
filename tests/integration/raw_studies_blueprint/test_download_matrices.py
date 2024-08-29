@@ -347,7 +347,7 @@ class TestDownloadMatrices:
         for export_format in ["tsv", "xlsx"]:
             res = client.get(
                 f"/v1/studies/{study_860_id}/raw/download",
-                params={"path": "input/hydro/series/de/mingen", "format": {export_format}},
+                params={"path": "input/hydro/series/de/mingen", "format": export_format},
                 headers=user_headers,
             )
             assert res.status_code == 200

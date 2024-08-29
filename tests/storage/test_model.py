@@ -55,5 +55,5 @@ def test_file_study_tree_config_dto():
         enr_modelling="aggregated",
     )
     config_dto = FileStudyTreeConfigDTO.from_build_config(config)
-    assert sorted(list(config_dto.dict()) + ["cache"]) == sorted(list(config.__dict__))
+    assert sorted(list(config_dto.model_dump()) + ["cache"]) == sorted(list(config.__dict__))
     assert config_dto.to_build_config() == config

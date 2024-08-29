@@ -16,8 +16,8 @@ class UpdateComments(ICommand):
     # Overloaded metadata
     # ===================
 
-    command_name = CommandName.UPDATE_COMMENTS
-    version = 1
+    command_name: CommandName = CommandName.UPDATE_COMMENTS
+    version: int = 1
 
     # Command parameters
     # ==================

@@ -403,7 +403,7 @@ def test_parse_thermal_860(study_path: Path, version, caplog) -> None:
         assert not caplog.text
     else:
         expected = [ThermalConfig(id="t1", name="t1")]
-        assert "extra fields not permitted" in caplog.text
+        assert "Extra inputs are not permitted" in caplog.text
     assert actual == expected
 
 

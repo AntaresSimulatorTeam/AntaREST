@@ -3,10 +3,10 @@ from unittest.mock import Mock
 
 import pytest
 from fastapi import FastAPI
-from fastapi_jwt_auth import AuthJWT
 from starlette.testclient import TestClient
 
 from antarest.core.config import Config, SecurityConfig
+from antarest.fastapi_jwt_auth import AuthJWT
 from antarest.main import JwtSettings
 from antarest.matrixstore.main import build_matrix_service
 from antarest.matrixstore.model import MatrixDTO, MatrixInfoDTO
@@ -62,7 +62,7 @@ def test_create() -> None:
         json=matrix_data,
     )
     assert res.status_code == 200
-    assert res.json() == matrix.dict()
+    assert res.json() == matrix.model_dump()
 
 
 @pytest.mark.unit_test
@@ -84,7 +84,7 @@ def test_get() -> None:
     client = TestClient(app)
     res = client.get("/v1/matrix/123", headers=create_auth_token(app))
     assert res.status_code == 200
-    assert res.json() == matrix.dict()
+    assert res.json() == matrix.model_dump()
     service.get.assert_called_once_with("123")
 
 
@@ -114,4 +114,4 @@ def test_import() -> None:
         files={"file": ("Matrix.zip", bytes(5), "application/zip")},
     )
     assert res.status_code == 200
-    assert res.json() == matrix_info
+    assert [MatrixInfoDTO.model_validate(res.json()[0])] == matrix_info

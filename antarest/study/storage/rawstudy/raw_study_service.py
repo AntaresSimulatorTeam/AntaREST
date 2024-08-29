@@ -92,7 +92,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
                 metadata.updated_at = metadata.updated_at or datetime.utcnow()
                 if metadata.additional_data is None:
                     metadata.additional_data = StudyAdditionalData()
-                metadata.additional_data.patch = metadata.additional_data.patch or Patch().json()
+                metadata.additional_data.patch = metadata.additional_data.patch or Patch().model_dump_json()
                 metadata.additional_data.author = metadata.additional_data.author or "Unknown"
 
             else:

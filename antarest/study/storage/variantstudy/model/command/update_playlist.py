@@ -16,8 +16,8 @@ class UpdatePlaylist(ICommand):
     # Overloaded metadata
     # ===================
 
-    command_name = CommandName.UPDATE_PLAYLIST
-    version = 1
+    command_name: CommandName = CommandName.UPDATE_PLAYLIST
+    version: int = 1
 
     # Command parameters
     # ==================

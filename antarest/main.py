@@ -6,12 +6,11 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Sequence, Tuple, cast
 
 import pydantic
-import uvicorn  # type: ignore
-import uvicorn.config  # type: ignore
+import uvicorn
+import uvicorn.config
 from fastapi import FastAPI, HTTPException
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
-from fastapi_jwt_auth import AuthJWT  # type: ignore
 from ratelimit import RateLimitMiddleware  # type: ignore
 from ratelimit.backends.redis import RedisBackend  # type: ignore
 from ratelimit.backends.simple import MemoryBackend  # type: ignore
@@ -34,6 +33,7 @@ from antarest.core.tasks.model import cancel_orphan_tasks
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.core.utils.utils import get_local_path
 from antarest.core.utils.web import tags_metadata
+from antarest.fastapi_jwt_auth import AuthJWT
 from antarest.login.auth import Auth, JwtSettings
 from antarest.login.model import init_admin_user
 from antarest.matrixstore.matrix_garbage_collector import MatrixGarbageCollector
@@ -249,6 +249,10 @@ def fastapi_app(
     # Database
     engine = init_db_engine(config_file, config, auto_upgrade_db)
     application.add_middleware(DBSessionMiddleware, custom_engine=engine, session_args=SESSION_ARGS)
+    # Since Starlette Version 0.24.0, the middlewares are lazily build inside this function
+    # But we need to instantiate this middleware as it's needed for the study service.
+    # So we manually instantiate it here.
+    DBSessionMiddleware(None, custom_engine=engine, session_args=cast(Dict[str, bool], SESSION_ARGS))
 
     application.add_middleware(LoggingMiddleware)
 

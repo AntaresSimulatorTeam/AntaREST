@@ -1,5 +1,5 @@
 import http
-from typing import Dict, List, Union
+from typing import List, Union
 from unittest.mock import Mock, call
 from uuid import uuid4
 
@@ -74,7 +74,7 @@ def test_result() -> None:
     res = client.get(f"/v1/launcher/jobs/{job}")
 
     assert res.status_code == 200
-    assert JobResultDTO.parse_obj(res.json()) == result.to_dto()
+    assert JobResultDTO.model_validate(res.json()) == result.to_dto()
     service.get_result.assert_called_once_with(job, RequestParameters(DEFAULT_ADMIN_USER))
 
 
@@ -98,11 +98,11 @@ def test_jobs() -> None:
     client = TestClient(app)
     res = client.get(f"/v1/launcher/jobs?study={str(study_id)}")
     assert res.status_code == 200
-    assert [JobResultDTO.parse_obj(j) for j in res.json()] == [result.to_dto()]
+    assert [JobResultDTO.model_validate(j) for j in res.json()] == [result.to_dto()]
 
     res = client.get("/v1/launcher/jobs")
     assert res.status_code == 200
-    assert [JobResultDTO.parse_obj(j) for j in res.json()] == [result.to_dto()]
+    assert [JobResultDTO.model_validate(j) for j in res.json()] == [result.to_dto()]
     service.get_jobs.assert_has_calls(
         [
             call(
@@ -136,7 +136,7 @@ def test_get_solver_versions() -> None:
         pytest.param(
             "",
             http.HTTPStatus.UNPROCESSABLE_ENTITY,
-            {"detail": "Unknown solver configuration: ''"},
+            "Input should be 'slurm', 'local' or 'default'",
             id="empty",
         ),
         pytest.param("default", http.HTTPStatus.OK, ["1", "2", "3"], id="default"),
@@ -145,7 +145,7 @@ def test_get_solver_versions() -> None:
         pytest.param(
             "remote",
             http.HTTPStatus.UNPROCESSABLE_ENTITY,
-            {"detail": "Unknown solver configuration: 'remote'"},
+            "Input should be 'slurm', 'local' or 'default'",
             id="remote",
         ),
     ],
@@ -153,7 +153,7 @@ def test_get_solver_versions() -> None:
 def test_get_solver_versions__with_query_string(
     solver: str,
     status_code: http.HTTPStatus,
-    expected: Union[List[str], Dict[str, str]],
+    expected: Union[List[str], str],
 ) -> None:
     service = Mock()
     if status_code == http.HTTPStatus.OK:
@@ -165,7 +165,12 @@ def test_get_solver_versions__with_query_string(
     client = TestClient(app)
     res = client.get(f"/v1/launcher/versions?solver={solver}")
     assert res.status_code == status_code  # OK or UNPROCESSABLE_ENTITY
-    assert res.json() == expected
+    if status_code == http.HTTPStatus.OK:
+        assert res.json() == expected
+    else:
+        actual = res.json()["detail"][0]
+        assert actual["type"] == "enum"
+        assert actual["msg"] == expected
 
 
 @pytest.mark.unit_test

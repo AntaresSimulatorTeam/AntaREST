@@ -127,7 +127,7 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> XpansionCandidateDTO:
         logger.info(
-            f"Adding new candidate {xpansion_candidate_dto.dict(by_alias=True)} to study {uuid}",
+            f"Adding new candidate {xpansion_candidate_dto.model_dump(by_alias=True)} to study {uuid}",
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)

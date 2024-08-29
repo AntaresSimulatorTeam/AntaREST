@@ -370,7 +370,7 @@ class TestLoginService:
         actual = login_service.get_group_info("superman", _param)
         assert actual is not None
         assert actual.name == "Superman"
-        assert [obj.dict() for obj in actual.users] == [
+        assert [obj.model_dump() for obj in actual.users] == [
             {"id": 2, "name": "Clark Kent", "role": RoleType.ADMIN},
             {"id": 3, "name": "Lois Lane", "role": RoleType.READER},
         ]
@@ -450,7 +450,7 @@ class TestLoginService:
         clark_id = 2
         actual = login_service.get_user_info(clark_id, _param)
         assert actual is not None
-        assert actual.dict() == {
+        assert actual.model_dump() == {
             "id": clark_id,
             "name": "Clark Kent",
             "roles": [
@@ -468,7 +468,7 @@ class TestLoginService:
         lois_id = 3
         actual = login_service.get_user_info(lois_id, _param)
         assert actual is not None
-        assert actual.dict() == {
+        assert actual.model_dump() == {
             "id": lois_id,
             "name": "Lois Lane",
             "roles": [
@@ -491,7 +491,7 @@ class TestLoginService:
         _param = get_user_param(login_service, user_id=lois_id, group_id="superman")
         actual = login_service.get_user_info(lois_id, _param)
         assert actual is not None
-        assert actual.dict() == {
+        assert actual.model_dump() == {
             "id": lois_id,
             "name": "Lois Lane",
             "roles": [
@@ -512,7 +512,7 @@ class TestLoginService:
         _param = get_bot_param(login_service, bot_id=bot.id)
         actual = login_service.get_user_info(lois_id, _param)
         assert actual is not None
-        assert actual.dict() == {
+        assert actual.model_dump() == {
             "id": lois_id,
             "name": "Lois Lane",
             "roles": [
@@ -566,13 +566,13 @@ class TestLoginService:
         _param = get_user_param(login_service, user_id=ADMIN_ID, group_id="admin")
         actual = login_service.get_bot_info(joh_bot.id, _param)
         assert actual is not None
-        assert actual.dict() == {"id": 6, "isAuthor": True, "name": "Maria", "roles": []}
+        assert actual.model_dump() == {"id": 6, "isAuthor": True, "name": "Maria", "roles": []}
 
         # Joh Fredersen can get its own bot
         _param = get_user_param(login_service, user_id=joh_id, group_id="superman")
         actual = login_service.get_bot_info(joh_bot.id, _param)
         assert actual is not None
-        assert actual.dict() == {"id": 6, "isAuthor": True, "name": "Maria", "roles": []}
+        assert actual.model_dump() == {"id": 6, "isAuthor": True, "name": "Maria", "roles": []}
 
         # The bot cannot get itself
         _param = get_bot_param(login_service, bot_id=joh_bot.id)
@@ -601,13 +601,13 @@ class TestLoginService:
         _param = get_user_param(login_service, user_id=ADMIN_ID, group_id="admin")
         actual = login_service.get_all_bots_by_owner(joh_id, _param)
         expected = [{"id": joh_bot.id, "is_author": True, "name": "Maria", "owner": joh_id}]
-        assert [obj.to_dto().dict() for obj in actual] == expected
+        assert [obj.to_dto().model_dump() for obj in actual] == expected
 
         # Freder Fredersen can get its own bot
         _param = get_user_param(login_service, user_id=joh_id, group_id="superman")
         actual = login_service.get_all_bots_by_owner(joh_id, _param)
         expected = [{"id": joh_bot.id, "is_author": True, "name": "Maria", "owner": joh_id}]
-        assert [obj.to_dto().dict() for obj in actual] == expected
+        assert [obj.to_dto().model_dump() for obj in actual] == expected
 
         # The bot cannot get itself
         _param = get_bot_param(login_service, bot_id=joh_bot.id)
@@ -718,7 +718,7 @@ class TestLoginService:
         # The site admin can get all groups
         _param = get_user_param(login_service, user_id=ADMIN_ID, group_id="admin")
         actual = login_service.get_all_groups(_param)
-        assert [g.dict() for g in actual] == [
+        assert [g.model_dump() for g in actual] == [
             {"id": "admin", "name": "X-Men"},
             {"id": "superman", "name": "Superman"},
             {"id": "metropolis", "name": "Metropolis"},
@@ -727,19 +727,19 @@ class TestLoginService:
         # The group admin can its own groups
         _param = get_user_param(login_service, user_id=2, group_id="superman")
         actual = login_service.get_all_groups(_param)
-        assert [g.dict() for g in actual] == [{"id": "superman", "name": "Superman"}]
+        assert [g.model_dump() for g in actual] == [{"id": "superman", "name": "Superman"}]
 
         # The user can get its own groups
         _param = get_user_param(login_service, user_id=3, group_id="superman")
         actual = login_service.get_all_groups(_param)
-        assert [g.dict() for g in actual] == [{"id": "superman", "name": "Superman"}]
+        assert [g.model_dump() for g in actual] == [{"id": "superman", "name": "Superman"}]
 
     @with_db_context
     def test_get_all_users(self, login_service: LoginService) -> None:
         # The site admin can get all users
         _param = get_user_param(login_service, user_id=ADMIN_ID, group_id="admin")
         actual = login_service.get_all_users(_param)
-        assert [u.dict() for u in actual] == [
+        assert [u.model_dump() for u in actual] == [
             {"id": 1, "name": "Professor Xavier"},
             {"id": 2, "name": "Clark Kent"},
             {"id": 3, "name": "Lois Lane"},
@@ -751,7 +751,7 @@ class TestLoginService:
         # note: I don't know why the group admin can get all users -- Laurent
         _param = get_user_param(login_service, user_id=2, group_id="superman")
         actual = login_service.get_all_users(_param)
-        assert [u.dict() for u in actual] == [
+        assert [u.model_dump() for u in actual] == [
             {"id": 1, "name": "Professor Xavier"},
             {"id": 2, "name": "Clark Kent"},
             {"id": 3, "name": "Lois Lane"},
@@ -762,7 +762,7 @@ class TestLoginService:
         # The user can get its own users
         _param = get_user_param(login_service, user_id=3, group_id="superman")
         actual = login_service.get_all_users(_param)
-        assert [u.dict() for u in actual] == [
+        assert [u.model_dump() for u in actual] == [
             {"id": 2, "name": "Clark Kent"},
             {"id": 3, "name": "Lois Lane"},
         ]
@@ -777,7 +777,7 @@ class TestLoginService:
         # The site admin can get all bots
         _param = get_user_param(login_service, user_id=ADMIN_ID, group_id="admin")
         actual = login_service.get_all_bots(_param)
-        assert [b.to_dto().dict() for b in actual] == [
+        assert [b.to_dto().model_dump() for b in actual] == [
             {"id": joh_bot.id, "is_author": True, "name": "Maria", "owner": joh_id},
         ]
 
@@ -796,7 +796,7 @@ class TestLoginService:
         # The site admin can get all roles in a given group
         _param = get_user_param(login_service, user_id=ADMIN_ID, group_id="admin")
         actual = login_service.get_all_roles_in_group("superman", _param)
-        assert [b.to_dto().dict() for b in actual] == [
+        assert [b.to_dto().model_dump() for b in actual] == [
             {
                 "group": {"id": "superman", "name": "Superman"},
                 "identity": {"id": 2, "name": "Clark Kent"},
@@ -812,7 +812,7 @@ class TestLoginService:
         # The group admin can get all roles his own group
         _param = get_user_param(login_service, user_id=2, group_id="superman")
         actual = login_service.get_all_roles_in_group("superman", _param)
-        assert [b.to_dto().dict() for b in actual] == [
+        assert [b.to_dto().model_dump() for b in actual] == [
             {
                 "group": {"id": "superman", "name": "Superman"},
                 "identity": {"id": 2, "name": "Clark Kent"},

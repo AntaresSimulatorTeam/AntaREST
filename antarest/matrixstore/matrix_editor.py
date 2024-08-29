@@ -2,7 +2,7 @@ import functools
 import operator
 from typing import Any, Dict, List, Optional, Tuple
 
-from pydantic import BaseModel, Extra, Field, root_validator, validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class MatrixSlice(BaseModel):
@@ -23,8 +23,8 @@ class MatrixSlice(BaseModel):
     column_to: int
 
     class Config:
-        extra = Extra.forbid
-        schema_extra = {
+        extra = "forbid"
+        json_schema_extra = {
             "example": {
                 "column_from": 5,
                 "column_to": 8,
@@ -33,7 +33,7 @@ class MatrixSlice(BaseModel):
             }
         }
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
     def check_values(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """
         Converts and validates the slice coordinates.
@@ -95,12 +95,12 @@ class Operation(BaseModel):
      - `value`: The value associated with the operation.
     """
 
-    operation: str = Field(regex=r"[=/*+-]|ABS")
+    operation: str = Field(pattern=r"[=/*+-]|ABS")
     value: float
 
     class Config:
-        extra = Extra.forbid
-        schema_extra = {"example": {"operation": "=", "value": 120.0}}
+        extra = "forbid"
+        json_schema_extra = {"example": {"operation": "=", "value": 120.0}}
 
     # noinspection SpellCheckingInspection
     def compute(self, x: Any, use_coords: bool = False) -> Any:
@@ -145,16 +145,9 @@ class MatrixEditInstruction(BaseModel):
     operation: Operation
 
     class Config:
-        extra = Extra.forbid
+        extra = "forbid"
 
-        @staticmethod
-        def schema_extra(schema: Dict[str, Any]) -> None:
-            schema["example"] = MatrixEditInstruction(
-                coordinates=[(0, 10), (0, 11), (0, 12)],
-                operation=Operation(operation="=", value=120.0),
-            )
-
-    @root_validator(pre=True)
+    @model_validator(mode="before")
     def check_slice_coordinates(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """
         Validates the 'slices' and 'coordinates' fields.
@@ -179,7 +172,7 @@ class MatrixEditInstruction(BaseModel):
 
         return values
 
-    @validator("coordinates")
+    @field_validator("coordinates")
     def validate_coordinates(cls, coordinates: Optional[List[Tuple[int, int]]]) -> Optional[List[Tuple[int, int]]]:
         """
         Validates the `coordinates` field.

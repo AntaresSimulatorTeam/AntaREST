@@ -3,7 +3,7 @@ import typing as t
 _ALL_FILTERING = ["hourly", "daily", "weekly", "monthly", "annual"]
 
 
-def extract_filtering(v: t.Any) -> t.Sequence[str]:
+def extract_filtering(v: t.Any) -> t.List[str]:
     """
     Extract filtering values from a comma-separated list of values.
     """

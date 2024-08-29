@@ -107,7 +107,7 @@ def test_service(core_config: Config, event_bus: IEventBus) -> None:
         "status": TaskStatus.FAILED,
         "type": None,
     }
-    assert res.dict() == expected
+    assert res.model_dump() == expected
 
     # Test Case: add a task that fails and wait for it
     # ================================================

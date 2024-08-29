@@ -121,7 +121,7 @@ class SnapshotGenerator:
 
         else:
             try:
-                notifier(results.json())
+                notifier(results.model_dump_json())
             except Exception as exc:
                 # This exception is ignored, because it is not critical.
                 logger.warning(f"Error while sending notification: {exc}", exc_info=True)
@@ -191,7 +191,7 @@ class SnapshotGenerator:
         horizon = file_study.tree.get(url=["settings", "generaldata", "general", "horizon"])
         author = file_study.tree.get(url=["study", "antares", "author"])
         patch = self.patch_service.get_from_filestudy(file_study)
-        study_additional_data = StudyAdditionalData(horizon=horizon, author=author, patch=patch.json())
+        study_additional_data = StudyAdditionalData(horizon=horizon, author=author, patch=patch.model_dump_json())
         return study_additional_data
 
     def _update_cache(self, file_study: FileStudy) -> None:
@@ -199,7 +199,7 @@ class SnapshotGenerator:
         self.cache.invalidate(f"{CacheConstants.RAW_STUDY}/{file_study.config.study_id}")
         self.cache.put(
             f"{CacheConstants.STUDY_FACTORY}/{file_study.config.study_id}",
-            FileStudyTreeConfigDTO.from_build_config(file_study.config).dict(),
+            FileStudyTreeConfigDTO.from_build_config(file_study.config).model_dump(),
         )
 
 

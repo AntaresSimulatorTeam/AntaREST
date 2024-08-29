@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, field_validator
 from sqlalchemy import (  # type: ignore
     Boolean,
     Column,
@@ -339,12 +339,17 @@ class StudyMetadataDTO(BaseModel):
     workspace: str
     managed: bool
     archived: bool
-    horizon: t.Optional[str]
-    scenario: t.Optional[str]
-    status: t.Optional[str]
-    doc: t.Optional[str]
+    horizon: t.Optional[str] = None
+    scenario: t.Optional[str] = None
+    status: t.Optional[str] = None
+    doc: t.Optional[str] = None
     folder: t.Optional[str] = None
     tags: t.List[str] = []
+
+    @field_validator("horizon", mode="before")
+    def transform_horizon_to_str(cls, val: t.Union[str, int, None]) -> t.Optional[str]:
+        # horizon can be an int.
+        return str(val) if val else val  # type: ignore
 
 
 class StudyMetadataPatchDTO(BaseModel):
@@ -354,18 +359,20 @@ class StudyMetadataPatchDTO(BaseModel):
     scenario: t.Optional[str] = None
     status: t.Optional[str] = None
     doc: t.Optional[str] = None
-    tags: t.Sequence[str] = ()
+    tags: t.List[str] = []
 
-    @validator("tags", each_item=True)
-    def _normalize_tags(cls, v: str) -> str:
+    @field_validator("tags", mode="before")
+    def _normalize_tags(cls, v: t.List[str]) -> t.List[str]:
         """Remove leading and trailing whitespaces, and replace consecutive whitespaces by a single one."""
-        tag = " ".join(v.split())
-        if not tag:
-            raise ValueError("Tag cannot be empty")
-        elif len(tag) > 40:
-            raise ValueError(f"Tag is too long: {tag!r}")
-        else:
-            return tag
+        tags = []
+        for tag in v:
+            tag = " ".join(tag.split())
+            if not tag:
+                raise ValueError("Tag cannot be empty")
+            elif len(tag) > 40:
+                raise ValueError(f"Tag is too long: {tag!r}")
+            tags.append(tag)
+        return tags
 
 
 class StudySimSettingsDTO(BaseModel):

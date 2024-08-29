@@ -1,7 +1,6 @@
 import typing as t
 
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
-    DEFAULT_TIMESTEP,
     BindingConstraintFrequency,
     BindingConstraintOperator,
 )

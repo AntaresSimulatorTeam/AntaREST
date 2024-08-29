@@ -905,9 +905,9 @@ def test_get_all__non_admin_permissions_filter(
     user_2 = User(id=102, name="user2")
     user_3 = User(id=103, name="user3")
 
-    group_1 = Group(id=101, name="group1")
-    group_2 = Group(id=102, name="group2")
-    group_3 = Group(id=103, name="group3")
+    group_1 = Group(id="101", name="group1")
+    group_2 = Group(id="102", name="group2")
+    group_3 = Group(id="103", name="group3")
 
     user_groups_mapping = {101: [group_2.id], 102: [group_1.id], 103: []}
 
@@ -1179,23 +1179,23 @@ def test_update_tags(
         (None, [], False, ["5", "6"]),
         (None, [], True, ["1", "2", "3", "4", "7", "8"]),
         (None, [], None, ["1", "2", "3", "4", "5", "6", "7", "8"]),
-        (None, [1, 3, 5, 7], False, ["5"]),
-        (None, [1, 3, 5, 7], True, ["1", "3", "7"]),
-        (None, [1, 3, 5, 7], None, ["1", "3", "5", "7"]),
+        (None, ["1", "3", "5", "7"], False, ["5"]),
+        (None, ["1", "3", "5", "7"], True, ["1", "3", "7"]),
+        (None, ["1", "3", "5", "7"], None, ["1", "3", "5", "7"]),
         (True, [], False, ["5"]),
         (True, [], True, ["1", "2", "3", "4", "8"]),
         (True, [], None, ["1", "2", "3", "4", "5", "8"]),
-        (True, [1, 3, 5, 7], False, ["5"]),
-        (True, [1, 3, 5, 7], True, ["1", "3"]),
-        (True, [1, 3, 5, 7], None, ["1", "3", "5"]),
-        (True, [2, 4, 6, 8], True, ["2", "4", "8"]),
-        (True, [2, 4, 6, 8], None, ["2", "4", "8"]),
+        (True, ["1", "3", "5", "7"], False, ["5"]),
+        (True, ["1", "3", "5", "7"], True, ["1", "3"]),
+        (True, ["1", "3", "5", "7"], None, ["1", "3", "5"]),
+        (True, ["2", "4", "6", "8"], True, ["2", "4", "8"]),
+        (True, ["2", "4", "6", "8"], None, ["2", "4", "8"]),
         (False, [], False, ["6"]),
         (False, [], True, ["7"]),
         (False, [], None, ["6", "7"]),
-        (False, [1, 3, 5, 7], False, []),
-        (False, [1, 3, 5, 7], True, ["7"]),
-        (False, [1, 3, 5, 7], None, ["7"]),
+        (False, ["1", "3", "5", "7"], False, []),
+        (False, ["1", "3", "5", "7"], True, ["7"]),
+        (False, ["1", "3", "5", "7"], None, ["7"]),
     ],
 )
 def test_count_studies__general_case(
@@ -1209,14 +1209,14 @@ def test_count_studies__general_case(
     icache: Mock = Mock(spec=ICache)
     repository = StudyMetadataRepository(cache_service=icache, session=db_session)
 
-    study_1 = VariantStudy(id=1, name="study-1")
-    study_2 = VariantStudy(id=2, name="study-2")
-    study_3 = VariantStudy(id=3, name="study-3")
-    study_4 = VariantStudy(id=4, name="study-4")
-    study_5 = RawStudy(id=5, name="study-5", missing=datetime.datetime.now(), workspace=DEFAULT_WORKSPACE_NAME)
-    study_6 = RawStudy(id=6, name="study-6", missing=datetime.datetime.now(), workspace=test_workspace)
-    study_7 = RawStudy(id=7, name="study-7", missing=None, workspace=test_workspace)
-    study_8 = RawStudy(id=8, name="study-8", missing=None, workspace=DEFAULT_WORKSPACE_NAME)
+    study_1 = VariantStudy(id="1", name="study-1")
+    study_2 = VariantStudy(id="2", name="study-2")
+    study_3 = VariantStudy(id="3", name="study-3")
+    study_4 = VariantStudy(id="4", name="study-4")
+    study_5 = RawStudy(id="5", name="study-5", missing=datetime.datetime.now(), workspace=DEFAULT_WORKSPACE_NAME)
+    study_6 = RawStudy(id="6", name="study-6", missing=datetime.datetime.now(), workspace=test_workspace)
+    study_7 = RawStudy(id="7", name="study-7", missing=None, workspace=test_workspace)
+    study_8 = RawStudy(id="8", name="study-8", missing=None, workspace=DEFAULT_WORKSPACE_NAME)
 
     db_session.add_all([study_1, study_2, study_3, study_4, study_5, study_6, study_7, study_8])
     db_session.commit()

@@ -3,7 +3,7 @@ import re
 import numpy as np
 import pandas as pd
 import pytest
-from requests.exceptions import HTTPError
+from httpx._exceptions import HTTPError
 from starlette.testclient import TestClient
 
 from antarest.study.business.binding_constraint_management import ClusterTerm, ConstraintTerm, LinkTerm
@@ -307,7 +307,7 @@ class TestBindingConstraints:
         assert res.status_code == 422, res.json()
         assert res.json() == {
             "body": {"data": {}, "id": f"{area1_id}.{cluster_id}"},
-            "description": "field required",
+            "description": "Field required",
             "exception": "RequestValidationError",
         }
 

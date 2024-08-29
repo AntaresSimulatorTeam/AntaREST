@@ -46,10 +46,10 @@ class ArchiveWorker(AbstractWorker):
         )
 
     def _execute_task(self, task_info: WorkerTaskCommand) -> TaskResult:
-        logger.info(f"Executing task {task_info.json()}")
+        logger.info(f"Executing task {task_info.model_dump_json()}")
         try:
             # sourcery skip: extract-method
-            archive_args = ArchiveTaskArgs.parse_obj(task_info.task_args)
+            archive_args = ArchiveTaskArgs.model_validate(task_info.task_args)
             dest = self.translate_path(Path(archive_args.dest))
             src = self.translate_path(Path(archive_args.src))
             stopwatch = StopWatch()
@@ -63,7 +63,7 @@ class ArchiveWorker(AbstractWorker):
             return TaskResult(success=True, message="")
         except Exception as e:
             logger.warning(
-                f"Task {task_info.json()} failed",
+                f"Task {task_info.model_dump_json()} failed",
                 exc_info=e,
             )
             return TaskResult(success=False, message=str(e))

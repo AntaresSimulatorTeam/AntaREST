@@ -30,7 +30,7 @@ class ConfigManager:
         file_study = self.storage_service.get_storage(study).get_raw(study)
         command = UpdatePlaylist(
             items=playlist,
-            weights=weights,
+            weights=weights,  # type: ignore
             reverse=reverse,
             active=active,
             command_context=self.storage_service.variant_study_service.command_factory.command_context,

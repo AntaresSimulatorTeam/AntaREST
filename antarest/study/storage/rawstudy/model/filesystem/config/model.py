@@ -2,7 +2,7 @@ import re
 import typing as t
 from pathlib import Path
 
-from pydantic import BaseModel, Field, root_validator
+from pydantic import BaseModel, Field, model_validator
 
 from antarest.core.utils.utils import DTO
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
@@ -52,7 +52,7 @@ class Link(BaseModel, extra="ignore"):
     filters_synthesis: t.List[str] = Field(default_factory=list)
     filters_year: t.List[str] = Field(default_factory=list)
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
     def validation(cls, values: t.MutableMapping[str, t.Any]) -> t.MutableMapping[str, t.Any]:
         # note: field names are in kebab-case in the INI file
         filters_synthesis = values.pop("filter-synthesis", values.pop("filters_synthesis", ""))
@@ -82,7 +82,7 @@ class DistrictSet(BaseModel):
     Object linked to /inputs/sets.ini information
     """
 
-    ALL = ["hourly", "daily", "weekly", "monthly", "annual"]
+    ALL: t.List[str] = ["hourly", "daily", "weekly", "monthly", "annual"]
     name: t.Optional[str] = None
     inverted_set: bool = False
     areas: t.Optional[t.List[str]] = None

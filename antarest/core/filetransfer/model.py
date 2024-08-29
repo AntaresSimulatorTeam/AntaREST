@@ -29,7 +29,7 @@ class FileDownloadDTO(BaseModel):
     id: str
     name: str
     filename: str
-    expiration_date: Optional[str]
+    expiration_date: Optional[str] = None
     ready: bool
     failed: bool = False
     error_message: str = ""

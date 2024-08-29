@@ -64,6 +64,8 @@ ALL_STORAGES = {
     "east": {"list": {}},
 }
 
+GEN = np.random.default_rng(1000)
+
 
 class TestSTStorageManager:
     @pytest.fixture(name="study_storage_service")
@@ -135,7 +137,7 @@ class TestSTStorageManager:
 
         # Check
         actual = {
-            area_id: [form.dict(by_alias=True) for form in clusters_by_ids.values()]
+            area_id: [form.model_dump(by_alias=True) for form in clusters_by_ids.values()]
             for area_id, clusters_by_ids in all_storages.items()
         }
         expected = {
@@ -241,7 +243,7 @@ class TestSTStorageManager:
         groups = manager.get_storages(study, area_id="West")
 
         # Check
-        actual = [form.dict(by_alias=True) for form in groups]
+        actual = [form.model_dump(by_alias=True) for form in groups]
         expected = [
             {
                 "efficiency": 0.94,
@@ -353,7 +355,7 @@ class TestSTStorageManager:
         edit_form = manager.get_storage(study, area_id="West", storage_id="storage1")
 
         # Assert that the returned storage fields match the expected fields
-        actual = edit_form.dict(by_alias=True)
+        actual = edit_form.model_dump(by_alias=True)
         expected = {
             "efficiency": 0.94,
             "group": STStorageGroup.BATTERY,
@@ -443,11 +445,11 @@ class TestSTStorageManager:
         actual = {(call_args[0][0], tuple(call_args[0][1])) for call_args in file_study.tree.save.call_args_list}
         expected = {
             (
-                str(0.0),
+                0.0,
                 ("input", "st-storage", "clusters", "West", "list", "storage1", "initiallevel"),
             ),
             (
-                str(False),
+                False,
                 ("input", "st-storage", "clusters", "West", "list", "storage1", "initialleveloptim"),
             ),
         }
@@ -516,16 +518,15 @@ class TestSTStorageManager:
         # Prepare the mocks
         storage = study_storage_service.get_storage(study)
         file_study = storage.get_raw(study)
-        array = np.random.rand(8760, 1) * 1000
+        array = GEN.random((8760, 1)) * 1000
+        expected = {
+            "index": list(range(8760)),
+            "columns": [0],
+            "data": array.tolist(),
+        }
         file_study.tree = Mock(
             spec=FileStudyTree,
-            get=Mock(
-                return_value={
-                    "index": list(range(8760)),
-                    "columns": [0],
-                    "data": array.tolist(),
-                }
-            ),
+            get=Mock(return_value=expected),
         )
 
         # Given the following arguments
@@ -535,8 +536,8 @@ class TestSTStorageManager:
         matrix = manager.get_matrix(study, area_id="West", storage_id="storage1", ts_name="inflows")
 
         # Assert that the returned storage fields match the expected fields
-        actual = matrix.dict(by_alias=True)
-        assert actual == matrix
+        actual = matrix.model_dump(by_alias=True)
+        assert actual == expected
 
     def test_get_matrix__config_not_found(
         self,
@@ -604,7 +605,7 @@ class TestSTStorageManager:
         # Prepare the mocks
         storage = study_storage_service.get_storage(study)
         file_study = storage.get_raw(study)
-        array = np.random.rand(365, 1) * 1000
+        array = GEN.random((365, 1)) * 1000
         matrix = {
             "index": list(range(365)),
             "columns": [0],
@@ -637,11 +638,11 @@ class TestSTStorageManager:
 
         # prepare some random matrices, insuring `lower_rule_curve` <= `upper_rule_curve`
         matrices = {
-            "pmax_injection": np.random.rand(8760, 1),
-            "pmax_withdrawal": np.random.rand(8760, 1),
-            "lower_rule_curve": np.random.rand(8760, 1) / 2,
-            "upper_rule_curve": np.random.rand(8760, 1) / 2 + 0.5,
-            "inflows": np.random.rand(8760, 1) * 1000,
+            "pmax_injection": GEN.random((8760, 1)),
+            "pmax_withdrawal": GEN.random((8760, 1)),
+            "lower_rule_curve": GEN.random((8760, 1)) / 2,
+            "upper_rule_curve": GEN.random((8760, 1)) / 2 + 0.5,
+            "inflows": GEN.random((8760, 1)) * 1000,
         }
 
         # Prepare the mocks
@@ -674,11 +675,11 @@ class TestSTStorageManager:
 
         # prepare some random matrices, insuring `lower_rule_curve` <= `upper_rule_curve`
         matrices = {
-            "pmax_injection": np.random.rand(8760, 1) * 2 - 0.5,  # out of bound
-            "pmax_withdrawal": np.random.rand(8760, 1) * 2 - 0.5,  # out of bound
-            "lower_rule_curve": np.random.rand(8760, 1) * 2 - 0.5,  # out of bound
-            "upper_rule_curve": np.random.rand(8760, 1) * 2 - 0.5,  # out of bound
-            "inflows": np.random.rand(8760, 1) * 1000,
+            "pmax_injection": GEN.random((8760, 1)) * 2 - 0.5,  # out of bound
+            "pmax_withdrawal": GEN.random((8760, 1)) * 2 - 0.5,  # out of bound
+            "lower_rule_curve": GEN.random((8760, 1)) * 2 - 0.5,  # out of bound
+            "upper_rule_curve": GEN.random((8760, 1)) * 2 - 0.5,  # out of bound
+            "inflows": GEN.random((8760, 1)) * 1000,
         }
 
         # Prepare the mocks
@@ -695,7 +696,6 @@ class TestSTStorageManager:
         file_study = storage.get_raw(study)
         file_study.tree = Mock(spec=FileStudyTree, get=tree_get)
 
-        # Given the following arguments, the validation shouldn't raise any exception
         manager = STStorageManager(study_storage_service)
 
         # Run the method being tested and expect an exception
@@ -704,29 +704,11 @@ class TestSTStorageManager:
             match=re.escape("4 validation errors"),
         ) as ctx:
             manager.validate_matrices(study, area_id="West", storage_id="storage1")
-        errors = ctx.value.errors()
-        assert errors == [
-            {
-                "loc": ("pmax_injection",),
-                "msg": "Matrix values should be between 0 and 1",
-                "type": "value_error",
-            },
-            {
-                "loc": ("pmax_withdrawal",),
-                "msg": "Matrix values should be between 0 and 1",
-                "type": "value_error",
-            },
-            {
-                "loc": ("lower_rule_curve",),
-                "msg": "Matrix values should be between 0 and 1",
-                "type": "value_error",
-            },
-            {
-                "loc": ("upper_rule_curve",),
-                "msg": "Matrix values should be between 0 and 1",
-                "type": "value_error",
-            },
-        ]
+        assert ctx.value.error_count() == 4
+        for error in ctx.value.errors():
+            assert error["type"] == "value_error"
+            assert error["msg"] == "Value error, Matrix values should be between 0 and 1"
+            assert error["loc"][0] in ["upper_rule_curve", "lower_rule_curve", "pmax_withdrawal", "pmax_injection"]
 
     # noinspection SpellCheckingInspection
     def test_validate_matrices__rule_curve(
@@ -738,13 +720,15 @@ class TestSTStorageManager:
         # The study must be fetched from the database
         study: RawStudy = db_session.query(Study).get(study_uuid)
 
-        # prepare some random matrices, insuring `lower_rule_curve` <= `upper_rule_curve`
+        # prepare some random matrices, not respecting `lower_rule_curve` <= `upper_rule_curve`
+        upper_curve = np.zeros((8760, 1))
+        lower_curve = np.ones((8760, 1))
         matrices = {
-            "pmax_injection": np.random.rand(8760, 1),
-            "pmax_withdrawal": np.random.rand(8760, 1),
-            "lower_rule_curve": np.random.rand(8760, 1),
-            "upper_rule_curve": np.random.rand(8760, 1),
-            "inflows": np.random.rand(8760, 1) * 1000,
+            "pmax_injection": GEN.random((8760, 1)),
+            "pmax_withdrawal": GEN.random((8760, 1)),
+            "lower_rule_curve": lower_curve,
+            "upper_rule_curve": upper_curve,
+            "inflows": GEN.random((8760, 1)) * 1000,
         }
 
         # Prepare the mocks
@@ -761,7 +745,7 @@ class TestSTStorageManager:
         file_study = storage.get_raw(study)
         file_study.tree = Mock(spec=FileStudyTree, get=tree_get)
 
-        # Given the following arguments, the validation shouldn't raise any exception
+        # Given the following arguments
         manager = STStorageManager(study_storage_service)
 
         # Run the method being tested and expect an exception
@@ -771,6 +755,8 @@ class TestSTStorageManager:
         ) as ctx:
             manager.validate_matrices(study, area_id="West", storage_id="storage1")
         error = ctx.value.errors()[0]
-        assert error["loc"] == ("__root__",)
-        assert "lower_rule_curve" in error["msg"]
-        assert "upper_rule_curve" in error["msg"]
+        assert error["type"] == "value_error"
+        assert (
+            error["msg"]
+            == "Value error, Each 'lower_rule_curve' value must be lower or equal to each 'upper_rule_curve'"
+        )

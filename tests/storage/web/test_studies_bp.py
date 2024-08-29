@@ -287,7 +287,7 @@ def test_list_studies(tmp_path: str) -> None:
     client = TestClient(app)
     result = client.get("/v1/studies")
 
-    assert {k: StudyMetadataDTO.parse_obj(v) for k, v in result.json().items()} == studies
+    assert {k: StudyMetadataDTO.model_validate(v) for k, v in result.json().items()} == studies
 
 
 def test_study_metadata(tmp_path: str) -> None:
@@ -322,7 +322,7 @@ def test_study_metadata(tmp_path: str) -> None:
     client = TestClient(app)
     result = client.get("/v1/studies/1")
 
-    assert StudyMetadataDTO.parse_obj(result.json()) == study
+    assert StudyMetadataDTO.model_validate(result.json()) == study
 
 
 @pytest.mark.unit_test
@@ -370,7 +370,7 @@ def test_export_files(tmp_path: Path) -> None:
         res.raise_for_status()
         result = json.loads(data.getvalue())
 
-    assert FileDownloadTaskDTO(**result).json() == expected.json()
+    assert FileDownloadTaskDTO(**result).model_dump_json() == expected.model_dump_json()
 
     mock_storage_service.export_study.assert_called_once_with(UUID, PARAMS, True)
 
@@ -554,9 +554,9 @@ def test_output_download(tmp_path: Path) -> None:
     client = TestClient(app, raise_server_exceptions=False)
     res = client.post(
         f"/v1/studies/{UUID}/outputs/my-output-id/download",
-        json=study_download.dict(),
+        json=study_download.model_dump(),
     )
-    assert res.json() == output_data.dict()
+    assert res.json() == output_data.model_dump()
 
 
 @pytest.mark.unit_test
@@ -657,7 +657,8 @@ def test_sim_result() -> None:
     )
     client = TestClient(app, raise_server_exceptions=False)
     res = client.get(f"/v1/studies/{study_id}/outputs")
-    assert res.json() == result_data
+    actual_object = [StudySimResultDTO.parse_obj(res.json()[0])]
+    assert actual_object == result_data
 
 
 @pytest.mark.unit_test

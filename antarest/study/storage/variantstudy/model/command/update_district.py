@@ -16,17 +16,17 @@ class UpdateDistrict(ICommand):
     # Overloaded metadata
     # ===================
 
-    command_name = CommandName.UPDATE_DISTRICT
-    version = 1
+    command_name: CommandName = CommandName.UPDATE_DISTRICT
+    version: int = 1
 
     # Command parameters
     # ==================
 
     id: str
-    base_filter: Optional[DistrictBaseFilter]
-    filter_items: Optional[List[str]]
-    output: Optional[bool]
-    comments: Optional[str]
+    base_filter: Optional[DistrictBaseFilter] = None
+    filter_items: Optional[List[str]] = None
+    output: Optional[bool] = None
+    comments: Optional[str] = None
 
     def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         base_set = study_data.sets[self.id]

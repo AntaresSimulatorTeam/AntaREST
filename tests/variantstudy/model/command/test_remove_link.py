@@ -58,7 +58,7 @@ class TestRemoveLink:
         and that the areas are well-ordered in alphabetical order (Antares Solver convention).
         """
         command = RemoveLink(area1=area1, area2=area2, command_context=Mock(spec=CommandContext))
-        actual = command.dict(include={"area1", "area2"})
+        actual = command.model_dump(include={"area1", "area2"})
         assert actual == expected
 
     @staticmethod

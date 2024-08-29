@@ -11,7 +11,6 @@ from antarest.study.business.xpansion_management import XpansionCandidateDTO
 
 def _create_area(
     client: TestClient,
-    headers: t.Mapping[str, str],
     study_id: str,
     area_name: str,
     *,
@@ -19,7 +18,6 @@ def _create_area(
 ) -> str:
     res = client.post(
         f"/v1/studies/{study_id}/areas",
-        headers=headers,
         json={"name": area_name, "type": "AREA", "metadata": {"country": country}},
     )
     assert res.status_code in {200, 201}, res.json()
@@ -28,32 +26,28 @@ def _create_area(
 
 def _create_link(
     client: TestClient,
-    headers: t.Mapping[str, str],
     study_id: str,
     src_area_id: str,
     dst_area_id: str,
 ) -> None:
-    res = client.post(
-        f"/v1/studies/{study_id}/links",
-        headers=headers,
-        json={"area1": src_area_id, "area2": dst_area_id},
-    )
+    res = client.post(f"/v1/studies/{study_id}/links", json={"area1": src_area_id, "area2": dst_area_id})
     assert res.status_code in {200, 201}, res.json()
 
 
 def test_integration_xpansion(client: TestClient, tmp_path: Path, admin_access_token: str) -> None:
     headers = {"Authorization": f"Bearer {admin_access_token}"}
+    client.headers = headers
 
-    res = client.post("/v1/studies", headers=headers, params={"name": "foo", "version": "860"})
+    res = client.post("/v1/studies", params={"name": "foo", "version": "860"})
     assert res.status_code == 201, res.json()
     study_id = res.json()
 
-    area1_id = _create_area(client, headers, study_id, "area1", country="FR")
-    area2_id = _create_area(client, headers, study_id, "area2", country="DE")
-    area3_id = _create_area(client, headers, study_id, "area3", country="DE")
-    _create_link(client, headers, study_id, area1_id, area2_id)
+    area1_id = _create_area(client, study_id, "area1", country="FR")
+    area2_id = _create_area(client, study_id, "area2", country="DE")
+    area3_id = _create_area(client, study_id, "area3", country="DE")
+    _create_link(client, study_id, area1_id, area2_id)
 
-    res = client.post(f"/v1/studies/{study_id}/extensions/xpansion", headers=headers)
+    res = client.post(f"/v1/studies/{study_id}/extensions/xpansion")
     assert res.status_code in {200, 201}, res.json()
 
     expansion_path = tmp_path / "internal_workspace" / study_id / "user" / "expansion"
@@ -61,9 +55,9 @@ def test_integration_xpansion(client: TestClient, tmp_path: Path, admin_access_t
 
     # Create a client for Xpansion with the xpansion URL
     xpansion_base_url = f"/v1/studies/{study_id}/extensions/xpansion/"
-    xp_client = TestClient(client.app, base_url=urljoin(client.base_url, xpansion_base_url))
-
-    res = xp_client.get("settings", headers=headers)
+    xp_client = TestClient(client.app, base_url=urljoin(str(client.base_url), xpansion_base_url))
+    xp_client.headers = headers
+    res = xp_client.get("settings")
     assert res.status_code == 200
     assert res.json() == {
         "master": "integer",
@@ -82,7 +76,7 @@ def test_integration_xpansion(client: TestClient, tmp_path: Path, admin_access_t
         "sensitivity_config": {"epsilon": 0.0, "projection": [], "capex": False},
     }
 
-    res = xp_client.put("settings", headers=headers, json={"optimality_gap": 42})
+    res = xp_client.put("settings", json={"optimality_gap": 42})
     assert res.status_code == 200
     assert res.json() == {
         "master": "integer",
@@ -101,13 +95,13 @@ def test_integration_xpansion(client: TestClient, tmp_path: Path, admin_access_t
         "sensitivity_config": {"epsilon": 0.0, "projection": [], "capex": False},
     }
 
-    res = xp_client.put("settings", headers=headers, json={"additional-constraints": "missing.txt"})
+    res = xp_client.put("settings", json={"additional-constraints": "missing.txt"})
     assert res.status_code == 404
     err_obj = res.json()
     assert re.search(r"file 'missing.txt' does not exist", err_obj["description"])
     assert err_obj["exception"] == "XpansionFileNotFoundError"
 
-    res = xp_client.put("settings/additional-constraints", headers=headers, params={"filename": "missing.txt"})
+    res = xp_client.put("settings/additional-constraints", params={"filename": "missing.txt"})
     assert res.status_code == 404
     err_obj = res.json()
     assert re.search(r"file 'missing.txt' does not exist", err_obj["description"])
@@ -127,7 +121,7 @@ def test_integration_xpansion(client: TestClient, tmp_path: Path, admin_access_t
             "image/jpeg",
         )
     }
-    res = xp_client.post("resources/constraints", headers=headers, files=files)
+    res = xp_client.post("resources/constraints", files=files)
     assert res.status_code in {200, 201}
     actual_path = expansion_path / "constraints" / filename_constraints1
     assert actual_path.read_text() == content_constraints1
@@ -140,7 +134,7 @@ def test_integration_xpansion(client: TestClient, tmp_path: Path, admin_access_t
         ),
     }
 
-    res = xp_client.post("resources/constraints", headers=headers, files=files)
+    res = xp_client.post("resources/constraints", files=files)
     assert res.status_code == 409
     err_obj = res.json()
     assert re.search(
@@ -157,7 +151,7 @@ def test_integration_xpansion(client: TestClient, tmp_path: Path, admin_access_t
             "image/jpeg",
         ),
     }
-    res = xp_client.post("resources/constraints", headers=headers, files=files)
+    res = xp_client.post("resources/constraints", files=files)
     assert res.status_code in {200, 201}
 
     files = {
@@ -167,14 +161,14 @@ def test_integration_xpansion(client: TestClient, tmp_path: Path, admin_access_t
             "image/jpeg",
         ),
     }
-    res = xp_client.post("resources/constraints", headers=headers, files=files)
+    res = xp_client.post("resources/constraints", files=files)
     assert res.status_code in {200, 201}
 
-    res = xp_client.get(f"resources/constraints/{filename_constraints1}", headers=headers)
+    res = xp_client.get(f"resources/constraints/{filename_constraints1}")
     assert res.status_code == 200
     assert res.json() == content_constraints1
 
-    res = xp_client.get("resources/constraints/", headers=headers)
+    res = xp_client.get("resources/constraints/")
     assert res.status_code == 200
     assert res.json() == [
         filename_constraints1,
@@ -182,14 +176,10 @@ def test_integration_xpansion(client: TestClient, tmp_path: Path, admin_access_t
         filename_constraints3,
     ]
 
-    res = xp_client.put(
-        "settings/additional-constraints",
-        headers=headers,
-        params={"filename": filename_constraints1},
-    )
+    res = xp_client.put("settings/additional-constraints", params={"filename": filename_constraints1})
     assert res.status_code == 200
 
-    res = xp_client.delete(f"resources/constraints/{filename_constraints1}", headers=headers)
+    res = xp_client.delete(f"resources/constraints/{filename_constraints1}")
     assert res.status_code == 409
     err_obj = res.json()
     assert re.search(
@@ -199,10 +189,10 @@ def test_integration_xpansion(client: TestClient, tmp_path: Path, admin_access_t
     )
     assert err_obj["exception"] == "FileCurrentlyUsedInSettings"
 
-    res = xp_client.put("settings/additional-constraints", headers=headers)
+    res = xp_client.put("settings/additional-constraints")
     assert res.status_code == 200
 
-    res = xp_client.delete(f"resources/constraints/{filename_constraints1}", headers=headers)
+    res = xp_client.delete(f"resources/constraints/{filename_constraints1}")
     assert res.status_code == 200
 
     candidate1 = {
@@ -211,7 +201,7 @@ def test_integration_xpansion(client: TestClient, tmp_path: Path, admin_access_t
         "annual-cost-per-mw": 1,
         "max-investment": 1.0,
     }
-    res = xp_client.post("candidates", headers=headers, json=candidate1)
+    res = xp_client.post("candidates", json=candidate1)
     assert res.status_code in {200, 201}
 
     candidate2 = {
@@ -220,7 +210,7 @@ def test_integration_xpansion(client: TestClient, tmp_path: Path, admin_access_t
         "annual-cost-per-mw": 1,
         "max-investment": 1.0,
     }
-    res = xp_client.post("candidates", headers=headers, json=candidate2)
+    res = xp_client.post("candidates", json=candidate2)
     assert res.status_code == 404
     err_obj = res.json()
     assert re.search(
@@ -236,7 +226,7 @@ def test_integration_xpansion(client: TestClient, tmp_path: Path, admin_access_t
         "annual-cost-per-mw": 1,
         "max-investment": 1.0,
     }
-    res = xp_client.post("candidates", headers=headers, json=candidate3)
+    res = xp_client.post("candidates", json=candidate3)
     assert res.status_code == 404
     err_obj = res.json()
     assert re.search(
@@ -259,12 +249,12 @@ def test_integration_xpansion(client: TestClient, tmp_path: Path, admin_access_t
             "txt/csv",
         )
     }
-    res = xp_client.post("resources/capacities", headers=headers, files=files)
+    res = xp_client.post("resources/capacities", files=files)
     assert res.status_code in {200, 201}
     actual_path = expansion_path / "capa" / filename_capa1
     assert actual_path.read_text() == content_capa1
 
-    res = xp_client.post("resources/capacities", headers=headers, files=files)
+    res = xp_client.post("resources/capacities", files=files)
     assert res.status_code == 409
     err_obj = res.json()
     assert re.search(
@@ -281,7 +271,7 @@ def test_integration_xpansion(client: TestClient, tmp_path: Path, admin_access_t
             "txt/csv",
         )
     }
-    res = xp_client.post("resources/capacities", headers=headers, files=files)
+    res = xp_client.post("resources/capacities", files=files)
     assert res.status_code in {200, 201}
 
     files = {
@@ -291,11 +281,11 @@ def test_integration_xpansion(client: TestClient, tmp_path: Path, admin_access_t
             "txt/csv",
         )
     }
-    res = xp_client.post("resources/capacities", headers=headers, files=files)
+    res = xp_client.post("resources/capacities", files=files)
     assert res.status_code in {200, 201}
 
     # get single capa
-    res = xp_client.get(f"resources/capacities/{filename_capa1}", headers=headers)
+    res = xp_client.get(f"resources/capacities/{filename_capa1}")
     assert res.status_code == 200
     assert res.json() == {
         "columns": [0],
@@ -303,7 +293,7 @@ def test_integration_xpansion(client: TestClient, tmp_path: Path, admin_access_t
         "index": [0],
     }
 
-    res = xp_client.get("resources/capacities", headers=headers)
+    res = xp_client.get("resources/capacities")
     assert res.status_code == 200
     assert res.json() == [filename_capa1, filename_capa2, filename_capa3]
 
@@ -314,21 +304,21 @@ def test_integration_xpansion(client: TestClient, tmp_path: Path, admin_access_t
         "max-investment": 1.0,
         "link-profile": filename_capa1,
     }
-    res = xp_client.post("candidates", headers=headers, json=candidate4)
+    res = xp_client.post("candidates", json=candidate4)
     assert res.status_code in {200, 201}
 
-    res = xp_client.get(f"candidates/{candidate1['name']}", headers=headers)
+    res = xp_client.get(f"candidates/{candidate1['name']}")
     assert res.status_code == 200
-    assert res.json() == XpansionCandidateDTO.parse_obj(candidate1).dict(by_alias=True)
+    assert res.json() == XpansionCandidateDTO.model_validate(candidate1).model_dump(by_alias=True)
 
-    res = xp_client.get("candidates", headers=headers)
+    res = xp_client.get("candidates")
     assert res.status_code == 200
     assert res.json() == [
-        XpansionCandidateDTO.parse_obj(candidate1).dict(by_alias=True),
-        XpansionCandidateDTO.parse_obj(candidate4).dict(by_alias=True),
+        XpansionCandidateDTO.model_validate(candidate1).model_dump(by_alias=True),
+        XpansionCandidateDTO.model_validate(candidate4).model_dump(by_alias=True),
     ]
 
-    res = xp_client.delete(f"resources/capacities/{filename_capa1}", headers=headers)
+    res = xp_client.delete(f"resources/capacities/{filename_capa1}")
     assert res.status_code == 409
     err_obj = res.json()
     assert re.search(
@@ -343,13 +333,13 @@ def test_integration_xpansion(client: TestClient, tmp_path: Path, admin_access_t
         "annual-cost-per-mw": 1,
         "max-investment": 1.0,
     }
-    res = xp_client.put(f"candidates/{candidate4['name']}", headers=headers, json=candidate5)
+    res = xp_client.put(f"candidates/{candidate4['name']}", json=candidate5)
     assert res.status_code == 200
 
-    res = xp_client.delete(f"resources/capacities/{filename_capa1}", headers=headers)
+    res = xp_client.delete(f"resources/capacities/{filename_capa1}")
     assert res.status_code == 200
 
-    res = client.delete(f"/v1/studies/{study_id}/extensions/xpansion", headers=headers)
+    res = client.delete(f"/v1/studies/{study_id}/extensions/xpansion")
     assert res.status_code == 200
 
     assert not expansion_path.exists()

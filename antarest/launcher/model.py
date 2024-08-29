@@ -8,12 +8,12 @@ from sqlalchemy import Column, DateTime, Enum, ForeignKey, Integer, Sequence, St
 from sqlalchemy.orm import relationship  # type: ignore
 
 from antarest.core.persistence import Base
-from antarest.core.utils.string import to_camel_case
 from antarest.login.model import Identity, UserInfo
+from antarest.study.business.all_optional_meta import camel_case_model
 
 
 class XpansionParametersDTO(BaseModel):
-    output_id: t.Optional[str]
+    output_id: t.Optional[str] = None
     sensitivity_mode: bool = False
     enabled: bool = True
 
@@ -42,7 +42,7 @@ class LauncherParametersDTO(BaseModel):
         """
         if params is None:
             return cls()
-        return cls.parse_obj(json.loads(params))
+        return cls.model_validate(json.loads(params))
 
 
 class LogType(str, enum.Enum):
@@ -110,24 +110,6 @@ class JobResultDTO(BaseModel):
     exit_code: t.Optional[int]
     solver_stats: t.Optional[str]
     owner: t.Optional[UserInfo]
-
-    class Config:
-        @staticmethod
-        def schema_extra(schema: t.MutableMapping[str, t.Any]) -> None:
-            schema["example"] = JobResultDTO(
-                id="b2a9f6a7-7f8f-4f7a-9a8b-1f9b4c5d6e7f",
-                study_id="b2a9f6a7-7f8f-4f7a-9a8b-1f9b4c5d6e7f",
-                launcher="slurm",
-                launcher_params='{"nb_cpu": 4, "time_limit": 3600}',
-                status=JobStatus.SUCCESS,
-                creation_date="2023-11-25 12:00:00",
-                completion_date="2023-11-25 12:27:31",
-                msg="Study successfully executed",
-                output_id="20231125-1227eco",
-                exit_code=0,
-                solver_stats="time: 1651s, call_count: 1, optimization_issues: []",
-                owner=UserInfo(id=0o007, name="James BOND"),
-            )
 
 
 class JobLog(Base):  # type: ignore
@@ -228,13 +210,8 @@ class LauncherEnginesDTO(BaseModel):
     engines: t.List[str]
 
 
-class LauncherLoadDTO(
-    BaseModel,
-    extra="forbid",
-    validate_assignment=True,
-    allow_population_by_field_name=True,
-    alias_generator=to_camel_case,
-):
+@camel_case_model
+class LauncherLoadDTO(BaseModel, extra="forbid", validate_assignment=True, populate_by_name=True):
     """
     DTO representing the load of the SLURM cluster or local machine.
 

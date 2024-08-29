@@ -1,13 +1,12 @@
-import json
 import typing as t
 from abc import ABCMeta
 from enum import Enum
 
 import numpy as np
-from pydantic import BaseModel, Extra, Field, root_validator, validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from antarest.matrixstore.model import MatrixData
-from antarest.study.business.all_optional_meta import AllOptionalMetaclass
+from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     DEFAULT_GROUP,
     DEFAULT_OPERATOR,
@@ -79,18 +78,24 @@ def check_matrix_values(time_step: BindingConstraintFrequency, values: MatrixTyp
 # =================================================================================
 
 
-class BindingConstraintPropertiesBase(BaseModel, extra=Extra.forbid, allow_population_by_field_name=True):
-    enabled: bool = True
+class BindingConstraintPropertiesBase(BaseModel, extra="forbid", populate_by_name=True):
+    enabled: t.Optional[bool] = True
     time_step: BindingConstraintFrequency = Field(DEFAULT_TIMESTEP, alias="type")
-    operator: BindingConstraintOperator = DEFAULT_OPERATOR
-    comments: str = ""
+    operator: t.Optional[BindingConstraintOperator] = DEFAULT_OPERATOR
+    comments: t.Optional[str] = ""
+
+    @model_validator(mode="before")
+    def replace_with_alias(cls, values: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
+        if "type" in values:
+            values["time_step"] = values.pop("type")
+        return values
 
     @classmethod
     def from_dict(cls, **attrs: t.Any) -> "BindingConstraintPropertiesBase":
         """
         Instantiate a class from a dictionary excluding unknown or `None` fields.
         """
-        attrs = {k: v for k, v in attrs.items() if k in cls.__fields__ and v is not None}
+        attrs = {k: v for k, v in attrs.items() if k in cls.model_fields and v is not None}
         return cls(**attrs)
 
 
@@ -98,7 +103,7 @@ class BindingConstraintProperties830(BindingConstraintPropertiesBase):
     filter_year_by_year: str = Field("", alias="filter-year-by-year")
     filter_synthesis: str = Field("", alias="filter-synthesis")
 
-    @validator("filter_synthesis", "filter_year_by_year", pre=True)
+    @field_validator("filter_synthesis", "filter_year_by_year", mode="before")
     def _validate_filtering(cls, v: t.Any) -> str:
         return validate_filtering(v)
 
@@ -142,7 +147,8 @@ def create_binding_constraint_config(study_version: t.Union[str, int], **kwargs:
     return cls.from_dict(**kwargs)
 
 
-class OptionalProperties(BindingConstraintProperties870, metaclass=AllOptionalMetaclass, use_none=True):
+@all_optional_model
+class OptionalProperties(BindingConstraintProperties870):
     pass
 
 
@@ -151,32 +157,18 @@ class OptionalProperties(BindingConstraintProperties870, metaclass=AllOptionalMe
 # =================================================================================
 
 
-class BindingConstraintMatrices(BaseModel, extra=Extra.forbid, allow_population_by_field_name=True):
+@camel_case_model
+class BindingConstraintMatrices(BaseModel, extra="forbid", populate_by_name=True):
     """
     Class used to store the matrices of a binding constraint.
     """
 
-    values: t.Optional[t.Union[MatrixType, str]] = Field(
-        None,
-        description="2nd member matrix for studies before v8.7",
-    )
-    less_term_matrix: t.Optional[t.Union[MatrixType, str]] = Field(
-        None,
-        description="less term matrix for v8.7+ studies",
-        alias="lessTermMatrix",
-    )
-    greater_term_matrix: t.Optional[t.Union[MatrixType, str]] = Field(
-        None,
-        description="greater term matrix for v8.7+ studies",
-        alias="greaterTermMatrix",
-    )
-    equal_term_matrix: t.Optional[t.Union[MatrixType, str]] = Field(
-        None,
-        description="equal term matrix for v8.7+ studies",
-        alias="equalTermMatrix",
-    )
+    values: t.Optional[t.Union[MatrixType, str]] = None  # 2nd member matrix for studies before v8.7
+    less_term_matrix: t.Optional[t.Union[MatrixType, str]] = None  # less term matrix for v8.7+ studies
+    greater_term_matrix: t.Optional[t.Union[MatrixType, str]] = None  # greater term matrix for v8.7+ studies
+    equal_term_matrix: t.Optional[t.Union[MatrixType, str]] = None  # equal term matrix for v8.7+ studies
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
     def check_matrices(
         cls, values: t.Dict[str, t.Optional[t.Union[MatrixType, str]]]
     ) -> t.Dict[str, t.Optional[t.Union[MatrixType, str]]]:
@@ -203,10 +195,10 @@ class AbstractBindingConstraintCommand(OptionalProperties, BindingConstraintMatr
     Abstract class for binding constraint commands.
     """
 
-    coeffs: t.Optional[t.Dict[str, t.List[float]]]
+    coeffs: t.Optional[t.Dict[str, t.List[float]]] = None
 
     def to_dto(self) -> CommandDTO:
-        json_command = json.loads(self.json(exclude={"command_context"}))
+        json_command = self.model_dump(mode="json", exclude={"command_context"})
         args = {}
         for field in ["enabled", "coeffs", "comments", "time_step", "operator"]:
             if json_command[field]:
@@ -388,7 +380,7 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
     Command used to create a binding constraint.
     """
 
-    command_name = CommandName.CREATE_BINDING_CONSTRAINT
+    command_name: CommandName = CommandName.CREATE_BINDING_CONSTRAINT
     version: int = 1
 
     # Properties of the `CREATE_BINDING_CONSTRAINT` command:
@@ -415,8 +407,8 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
         bd_id = transform_name_to_id(self.name)
 
         study_version = study_data.config.version
-        props = create_binding_constraint_config(study_version, **self.dict())
-        obj = json.loads(props.json(by_alias=True))
+        props = create_binding_constraint_config(study_version, **self.model_dump())
+        obj = props.model_dump(mode="json", by_alias=True)
 
         new_binding = {"id": bd_id, "name": self.name, **obj}
 
@@ -442,9 +434,9 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
         bd_id = transform_name_to_id(self.name)
         args = {"id": bd_id, "command_context": other.command_context}
 
-        excluded_fields = frozenset(ICommand.__fields__)
-        self_command = json.loads(self.json(exclude=excluded_fields))
-        other_command = json.loads(other.json(exclude=excluded_fields))
+        excluded_fields = set(ICommand.model_fields)
+        self_command = self.model_dump(mode="json", exclude=excluded_fields)
+        other_command = other.model_dump(mode="json", exclude=excluded_fields)
         properties = [
             "enabled",
             "coeffs",
@@ -468,7 +460,7 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
             if self_matrix_id != other_matrix_id:
                 args[matrix_name] = other_matrix_id
 
-        return [UpdateBindingConstraint(**args)]
+        return [UpdateBindingConstraint.model_validate(args)]
 
     def match(self, other: "ICommand", equal: bool = False) -> bool:
         if not isinstance(other, self.__class__):

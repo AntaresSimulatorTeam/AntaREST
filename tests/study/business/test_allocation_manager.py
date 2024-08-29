@@ -35,7 +35,7 @@ class TestAllocationField:
 
     def test_camel_case(self):
         field = AllocationField(areaId="NORTH", coefficient=1)
-        assert field.dict(by_alias=True) == {
+        assert field.model_dump(by_alias=True) == {
             "areaId": "NORTH",
             "coefficient": 1,
         }

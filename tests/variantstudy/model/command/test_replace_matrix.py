@@ -20,7 +20,7 @@ class TestReplaceMatrix:
         area1 = "Area1"
         area1_id = transform_name_to_id(area1)
 
-        CreateArea.parse_obj(
+        CreateArea.model_validate(
             {
                 "area_name": area1,
                 "command_context": command_context,
@@ -28,7 +28,7 @@ class TestReplaceMatrix:
         ).apply(empty_study)
 
         target_element = f"input/hydro/common/capacity/maxpower_{area1_id}"
-        replace_matrix = ReplaceMatrix.parse_obj(
+        replace_matrix = ReplaceMatrix.model_validate(
             {
                 "target": target_element,
                 "matrix": [[0]],
@@ -44,7 +44,7 @@ class TestReplaceMatrix:
         assert matrix_id in target_path.read_text()
 
         target_element = "fake/matrix/path"
-        replace_matrix = ReplaceMatrix.parse_obj(
+        replace_matrix = ReplaceMatrix.model_validate(
             {
                 "target": target_element,
                 "matrix": [[0]],

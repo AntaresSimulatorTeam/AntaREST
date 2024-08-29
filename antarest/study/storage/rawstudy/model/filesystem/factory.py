@@ -92,7 +92,7 @@ class StudyFactory:
             from_cache = self.cache.get(cache_id)
             if from_cache is not None:
                 logger.info(f"Study {study_id} read from cache")
-                config = FileStudyTreeConfigDTO.parse_obj(from_cache).to_build_config()
+                config = FileStudyTreeConfigDTO.model_validate(from_cache).to_build_config()
                 if output_path:
                     config.output_path = output_path
                     config.outputs = parse_outputs(output_path)
@@ -106,7 +106,7 @@ class StudyFactory:
             logger.info(f"Cache new entry from StudyFactory (studyID: {study_id})")
             self.cache.put(
                 cache_id,
-                FileStudyTreeConfigDTO.from_build_config(config).dict(),
+                FileStudyTreeConfigDTO.from_build_config(config).model_dump(),
             )
         return result
 

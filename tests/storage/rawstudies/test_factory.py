@@ -53,8 +53,8 @@ def test_factory_cache() -> None:
     cache.get.return_value = None
     study = factory.create_from_fs(path, study_id)
     assert study.config == config
-    cache.put.assert_called_once_with(cache_id, FileStudyTreeConfigDTO.from_build_config(config).dict())
+    cache.put.assert_called_once_with(cache_id, FileStudyTreeConfigDTO.from_build_config(config).model_dump())
 
-    cache.get.return_value = FileStudyTreeConfigDTO.from_build_config(config).dict()
+    cache.get.return_value = FileStudyTreeConfigDTO.from_build_config(config).model_dump()
     study = factory.create_from_fs(path, study_id)
     assert study.config == config

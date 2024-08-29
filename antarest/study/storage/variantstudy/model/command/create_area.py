@@ -49,8 +49,8 @@ class CreateArea(ICommand):
     # Overloaded metadata
     # ===================
 
-    command_name = CommandName.CREATE_AREA
-    version = 1
+    command_name: CommandName = CommandName.CREATE_AREA
+    version: int = 1
 
     # Command parameters
     # ==================

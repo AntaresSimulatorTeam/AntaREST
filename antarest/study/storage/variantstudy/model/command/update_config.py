@@ -32,8 +32,8 @@ class UpdateConfig(ICommand):
     # Overloaded metadata
     # ===================
 
-    command_name = CommandName.UPDATE_CONFIG
-    version = 1
+    command_name: CommandName = CommandName.UPDATE_CONFIG
+    version: int = 1
 
     # Command parameters
     # ==================

@@ -76,7 +76,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
 
         try:
             patch_obj = json.loads(additional_data.patch or "{}")
-            patch = Patch.parse_obj(patch_obj)
+            patch = Patch.model_validate(patch_obj)
         except ValueError as e:
             # The conversion to JSON and the parsing can fail if the patch is not valid
             logger.warning(f"Failed to parse patch for study {study.id}", exc_info=e)
@@ -316,7 +316,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         horizon = file_study.tree.get(url=["settings", "generaldata", "general", "horizon"])
         author = file_study.tree.get(url=["study", "antares", "author"])
         patch = self.patch_service.get_from_filestudy(file_study)
-        study_additional_data = StudyAdditionalData(horizon=horizon, author=author, patch=patch.json())
+        study_additional_data = StudyAdditionalData(horizon=horizon, author=author, patch=patch.model_dump_json())
         return study_additional_data
 
     def archive_study_output(self, study: T, output_id: str) -> bool:

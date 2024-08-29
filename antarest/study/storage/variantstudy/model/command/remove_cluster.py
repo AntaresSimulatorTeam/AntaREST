@@ -18,8 +18,8 @@ class RemoveCluster(ICommand):
     # Overloaded metadata
     # ===================
 
-    command_name = CommandName.REMOVE_THERMAL_CLUSTER
-    version = 1
+    command_name: CommandName = CommandName.REMOVE_THERMAL_CLUSTER
+    version: int = 1
 
     # Command parameters
     # ==================

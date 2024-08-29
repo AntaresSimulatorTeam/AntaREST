@@ -1,7 +1,8 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
-from pydantic import Field
+from pydantic import Field, model_validator
 
+from antarest.study.business.all_optional_meta import all_optional_model
 from antarest.study.business.utils import FieldInfo, FormFieldsBaseModel, execute_or_add_commands
 from antarest.study.model import Study
 from antarest.study.storage.storage_service import StudyStorageService
@@ -24,22 +25,46 @@ class InflowStructure(FormFieldsBaseModel):
     )
 
 
+@all_optional_model
 class ManagementOptionsFormFields(FormFieldsBaseModel):
-    inter_daily_breakdown: Optional[float] = Field(ge=0)
-    intra_daily_modulation: Optional[float] = Field(ge=1)
-    inter_monthly_breakdown: Optional[float] = Field(ge=0)
-    reservoir: Optional[bool]
-    reservoir_capacity: Optional[float] = Field(ge=0)
-    follow_load: Optional[bool]
-    use_water: Optional[bool]
-    hard_bounds: Optional[bool]
-    initialize_reservoir_date: Optional[int] = Field(ge=0, le=11)
-    use_heuristic: Optional[bool]
-    power_to_level: Optional[bool]
-    use_leeway: Optional[bool]
-    leeway_low: Optional[float] = Field(ge=0)
-    leeway_up: Optional[float] = Field(ge=0)
-    pumping_efficiency: Optional[float] = Field(ge=0)
+    inter_daily_breakdown: float
+    intra_daily_modulation: float
+    inter_monthly_breakdown: float
+    reservoir: bool
+    reservoir_capacity: float
+    follow_load: bool
+    use_water: bool
+    hard_bounds: bool
+    initialize_reservoir_date: int
+    use_heuristic: bool
+    power_to_level: bool
+    use_leeway: bool
+    leeway_low: float
+    leeway_up: float
+    pumping_efficiency: float
+
+    @model_validator(mode="before")
+    def check_type_validity(cls, values: Dict[str, Any]) -> Dict[str, Optional[Any]]:
+        cls.validate_ge("inter_daily_breakdown", values.get("inter_daily_breakdown", 0), 0)
+        cls.validate_ge("intra_daily_modulation", values.get("intra_daily_modulation", 1), 1)
+        cls.validate_ge("inter_monthly_breakdown", values.get("inter_monthly_breakdown", 0), 0)
+        cls.validate_ge("reservoir_capacity", values.get("reservoir_capacity", 0), 0)
+        cls.validate_ge("initialize_reservoir_date", values.get("initialize_reservoir_date", 0), 0)
+        cls.validate_le("initialize_reservoir_date", values.get("initialize_reservoir_date", 11), 11)
+        cls.validate_ge("leeway_low", values.get("leeway_low", 0), 0)
+        cls.validate_ge("leeway_up", values.get("leeway_up", 0), 0)
+        cls.validate_ge("pumping_efficiency", values.get("pumping_efficiency", 0), 0)
+        return values
+
+    @staticmethod
+    def validate_ge(field: str, value: Union[int, float], ge: int) -> None:
+        if value < ge:
+            raise ValueError(f"Field {field} must be greater than or equal to {ge}")
+
+    @staticmethod
+    def validate_le(field: str, value: Union[int, float], le: int) -> None:
+        if value > le:
+            raise ValueError(f"Field {field} must be lower than or equal to {le}")
 
 
 HYDRO_PATH = "input/hydro/hydro"

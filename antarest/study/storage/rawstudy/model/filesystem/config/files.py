@@ -14,7 +14,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint 
     DEFAULT_GROUP,
     DEFAULT_OPERATOR,
     DEFAULT_TIMESTEP,
-    BindingConstraintFrequency,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.exceptions import (
     SimulationParsingError,

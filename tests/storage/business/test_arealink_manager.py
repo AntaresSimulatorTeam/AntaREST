@@ -162,35 +162,36 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
         variant_id,
         [
             CommandDTO(
+                id=None,
                 action=CommandName.UPDATE_CONFIG.value,
                 args=[
                     {
                         "target": "input/areas/test/ui/ui/x",
-                        "data": "100",
+                        "data": 100,
                     },
                     {
                         "target": "input/areas/test/ui/ui/y",
-                        "data": "200",
+                        "data": 200,
                     },
                     {
                         "target": "input/areas/test/ui/ui/color_r",
-                        "data": "255",
+                        "data": 255,
                     },
                     {
                         "target": "input/areas/test/ui/ui/color_g",
-                        "data": "0",
+                        "data": 0,
                     },
                     {
                         "target": "input/areas/test/ui/ui/color_b",
-                        "data": "100",
+                        "data": 100,
                     },
                     {
                         "target": "input/areas/test/ui/layerX/0",
-                        "data": "100",
+                        "data": 100,
                     },
                     {
                         "target": "input/areas/test/ui/layerY/0",
-                        "data": "200",
+                        "data": 200,
                     },
                     {
                         "target": "input/areas/test/ui/layerColor/0",
@@ -290,7 +291,7 @@ def test_get_all_area():
     area_manager.patch_service = Mock()
     area_manager.patch_service.get.return_value = Patch(
         areas={"a1": PatchArea(country="fr")},
-        thermal_clusters={"a1.a": PatchCluster.parse_obj({"code-oi": "1"})},
+        thermal_clusters={"a1.a": PatchCluster.model_validate({"code-oi": "1"})},
     )
     file_tree_mock.get.side_effect = [
         {
@@ -350,7 +351,7 @@ def test_get_all_area():
         },
     ]
     areas = area_manager.get_all_areas(study, AreaType.AREA)
-    assert expected_areas == [area.dict() for area in areas]
+    assert expected_areas == [area.model_dump() for area in areas]
 
     expected_clusters = [
         {
@@ -363,7 +364,7 @@ def test_get_all_area():
         }
     ]
     clusters = area_manager.get_all_areas(study, AreaType.DISTRICT)
-    assert expected_clusters == [area.dict() for area in clusters]
+    assert expected_clusters == [area.model_dump() for area in clusters]
 
     file_tree_mock.get.side_effect = [{}, {}, {}]
     expected_all = [
@@ -401,14 +402,14 @@ def test_get_all_area():
         },
     ]
     all_areas = area_manager.get_all_areas(study)
-    assert expected_all == [area.dict() for area in all_areas]
+    assert expected_all == [area.model_dump() for area in all_areas]
 
     links = link_manager.get_all_links(study)
     assert [
         {"area1": "a1", "area2": "a2", "ui": None},
         {"area1": "a1", "area2": "a3", "ui": None},
         {"area1": "a2", "area2": "a3", "ui": None},
-    ] == [link.dict() for link in links]
+    ] == [link.model_dump() for link in links]
 
 
 def test_update_area():
@@ -451,7 +452,7 @@ def test_update_area():
 
     new_area_info = area_manager.update_area_metadata(study, "a1", PatchArea(country="fr"))
     assert new_area_info.id == "a1"
-    assert new_area_info.metadata == {"country": "fr", "tags": []}
+    assert new_area_info.metadata.model_dump() == {"country": "fr", "tags": []}
 
 
 def test_update_clusters():
@@ -484,7 +485,7 @@ def test_update_clusters():
     area_manager.patch_service = Mock()
     area_manager.patch_service.get.return_value = Patch(
         areas={"a1": PatchArea(country="fr")},
-        thermal_clusters={"a1.a": PatchCluster.parse_obj({"code-oi": "1"})},
+        thermal_clusters={"a1.a": PatchCluster.model_validate({"code-oi": "1"})},
     )
     file_tree_mock.get.side_effect = [
         {

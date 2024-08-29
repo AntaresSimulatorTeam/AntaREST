@@ -17,8 +17,8 @@ class UpdateRawFile(ICommand):
     # Overloaded metadata
     # ===================
 
-    command_name = CommandName.UPDATE_FILE
-    version = 1
+    command_name: CommandName = CommandName.UPDATE_FILE
+    version: int = 1
 
     # Command parameters
     # ==================

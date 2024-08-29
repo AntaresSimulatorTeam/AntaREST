@@ -132,7 +132,7 @@ class TaskJobService(ITaskService):
             res_wrapper: t.List[TaskResult],
         ) -> t.Callable[[Event], t.Awaitable[None]]:
             async def _await_task_end(event: Event) -> None:
-                task_event = WorkerTaskResult.parse_obj(event.payload)
+                task_event = WorkerTaskResult.model_validate(event.payload)
                 if task_event.task_id == task_id:
                     res_wrapper.append(task_event.task_result)
 
@@ -240,7 +240,7 @@ class TaskJobService(ITaskService):
                     message=custom_event_messages.start
                     if custom_event_messages is not None
                     else f"Task {task.id} added",
-                ).dict(),
+                ).model_dump(),
                 permissions=PermissionInfo(owner=request_params.user.impersonator),
             )
         )
@@ -349,7 +349,7 @@ class TaskJobService(ITaskService):
                     message=custom_event_messages.running
                     if custom_event_messages is not None
                     else f"Task {task_id} is running",
-                ).dict(),
+                ).model_dump(),
                 permissions=PermissionInfo(public_mode=PublicMode.READ),
                 channel=EventChannelDirectory.TASK + task_id,
             )
@@ -395,7 +395,7 @@ class TaskJobService(ITaskService):
                             if custom_event_messages is not None
                             else f"Task {task_id} {event_msg}"
                         ),
-                    ).dict(),
+                    ).model_dump(),
                     permissions=PermissionInfo(public_mode=PublicMode.READ),
                     channel=EventChannelDirectory.TASK + task_id,
                 )
@@ -420,7 +420,7 @@ class TaskJobService(ITaskService):
             self.event_bus.push(
                 Event(
                     type=EventType.TASK_FAILED,
-                    payload=TaskEventPayload(id=task_id, message=message).dict(),
+                    payload=TaskEventPayload(id=task_id, message=message).model_dump(),
                     permissions=PermissionInfo(public_mode=PublicMode.READ),
                     channel=EventChannelDirectory.TASK + task_id,
                 )

@@ -23,7 +23,7 @@ class PatchService:
             # the `study.additional_data.patch` field is optional
             if study.additional_data.patch:
                 patch_obj = json.loads(study.additional_data.patch or "{}")
-                return Patch.parse_obj(patch_obj)
+                return Patch.model_validate(patch_obj)
 
         patch = Patch()
         patch_path = Path(study.path) / PATCH_JSON
@@ -55,9 +55,9 @@ class PatchService:
     def save(self, study: t.Union[RawStudy, VariantStudy], patch: Patch) -> None:
         if self.repository:
             study.additional_data = study.additional_data or StudyAdditionalData()
-            study.additional_data.patch = patch.json()
+            study.additional_data.patch = patch.model_dump_json()
             self.repository.save(study)
 
         patch_path = (Path(study.path)) / PATCH_JSON
         patch_path.parent.mkdir(parents=True, exist_ok=True)
-        patch_path.write_text(patch.json())
+        patch_path.write_text(patch.model_dump_json())

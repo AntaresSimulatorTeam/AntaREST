@@ -200,7 +200,7 @@ class TestRemoveArea:
         if empty_study.config.version >= 810:
             default_ruleset[f"r,{area_id2},0,{renewable_id.lower()}"] = 1
         if empty_study.config.version >= 870:
-            default_ruleset[f"bc,bd 2,0"] = 1
+            default_ruleset["bc,bd 2,0"] = 1
         if empty_study.config.version >= 920:
             default_ruleset[f"hfl,{area_id2},0"] = 1
         if empty_study.config.version >= 910:

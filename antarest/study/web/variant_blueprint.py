@@ -95,12 +95,7 @@ def create_study_variant_routes(
         "/studies/{uuid}/variants",
         tags=[APITag.study_variant_management],
         summary="Get children variants",
-        responses={
-            200: {
-                "description": "The list of children study variant",
-                "model": List[StudyMetadataDTO],
-            }
-        },
+        response_model=None,
     )
     def get_variants(
         uuid: str,

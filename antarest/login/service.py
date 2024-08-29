@@ -473,7 +473,7 @@ class LoginService:
 
         """
         intern: Optional[User] = self.users.get_by_name(name)
-        if intern and intern.password.check(pwd):  # type: ignore
+        if intern and intern.password.check(pwd):
             logger.info("successful login from intern user %s", name)
             return self.get_jwt(intern.id)
 

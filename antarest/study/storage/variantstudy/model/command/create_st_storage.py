@@ -1,9 +1,7 @@
-import json
 import typing as t
 
 import numpy as np
-from pydantic import Field, validator
-from pydantic.fields import ModelField
+from pydantic import Field, ValidationInfo, model_validator
 
 from antarest.core.model import JSON
 from antarest.matrixstore.model import MatrixData
@@ -40,34 +38,19 @@ class CreateSTStorage(ICommand):
     # Overloaded metadata
     # ===================
 
-    command_name = CommandName.CREATE_ST_STORAGE
-    version = 1
+    command_name: CommandName = CommandName.CREATE_ST_STORAGE
+    version: int = 1
 
     # Command parameters
     # ==================
 
-    area_id: str = Field(description="Area ID", regex=r"[a-z0-9_(),& -]+")
+    area_id: str = Field(description="Area ID", pattern=r"[a-z0-9_(),& -]+")
     parameters: STStorageConfigType
-    pmax_injection: t.Optional[t.Union[MatrixType, str]] = Field(
-        None,
-        description="Charge capacity (modulation)",
-    )
-    pmax_withdrawal: t.Optional[t.Union[MatrixType, str]] = Field(
-        None,
-        description="Discharge capacity (modulation)",
-    )
-    lower_rule_curve: t.Optional[t.Union[MatrixType, str]] = Field(
-        None,
-        description="Lower rule curve (coefficient)",
-    )
-    upper_rule_curve: t.Optional[t.Union[MatrixType, str]] = Field(
-        None,
-        description="Upper rule curve (coefficient)",
-    )
-    inflows: t.Optional[t.Union[MatrixType, str]] = Field(
-        None,
-        description="Inflows (MW)",
-    )
+    pmax_injection: t.Optional[t.Union[MatrixType, str]] = None  # Charge capacity (modulation)
+    pmax_withdrawal: t.Optional[t.Union[MatrixType, str]] = None  # Discharge capacity (modulation)
+    lower_rule_curve: t.Optional[t.Union[MatrixType, str]] = None  # Lower rule curve (coefficient)
+    upper_rule_curve: t.Optional[t.Union[MatrixType, str]] = None  # Upper rule curve (coefficient)
+    inflows: t.Optional[t.Union[MatrixType, str]] = None  # Inflows (MW)
 
     @property
     def storage_id(self) -> str:
@@ -79,12 +62,9 @@ class CreateSTStorage(ICommand):
         """The label representing the name of the storage for the user."""
         return self.parameters.name
 
-    @validator(*_MATRIX_NAMES, always=True)
-    def register_matrix(
-        cls,
-        v: t.Optional[t.Union[MatrixType, str]],
-        values: t.Dict[str, t.Any],
-        field: ModelField,
+    @staticmethod
+    def validate_field(
+        v: t.Optional[t.Union[MatrixType, str]], values: t.Dict[str, t.Any], field: str
     ) -> t.Optional[t.Union[MatrixType, str]]:
         """
         Validates a matrix array or link, and store the matrix array in the matrix repository.
@@ -100,7 +80,7 @@ class CreateSTStorage(ICommand):
         Args:
             v: The matrix array or link to be validated and registered.
             values: A dictionary containing additional values used for validation.
-            field: The field being validated.
+            field: The name of the validated parameter
 
         Returns:
             The ID of the validated and stored matrix prefixed by "matrix://".
@@ -122,7 +102,7 @@ class CreateSTStorage(ICommand):
                 "upper_rule_curve": constants.get_st_storage_upper_rule_curve,
                 "inflows": constants.get_st_storage_inflows,
             }
-            method = methods[field.name]
+            method = methods[field]
             return method()
         if isinstance(v, str):
             # Check the matrix link
@@ -136,13 +116,20 @@ class CreateSTStorage(ICommand):
                 raise ValueError("Matrix values cannot contain NaN")
             # All matrices except "inflows" are constrained between 0 and 1
             constrained = set(_MATRIX_NAMES) - {"inflows"}
-            if field.name in constrained and (np.any(array < 0) or np.any(array > 1)):
+            if field in constrained and (np.any(array < 0) or np.any(array > 1)):
                 raise ValueError("Matrix values should be between 0 and 1")
             v = t.cast(MatrixType, array.tolist())
             return validate_matrix(v, values)
         # Invalid datatype
         # pragma: no cover
         raise TypeError(repr(v))
+
+    @model_validator(mode="before")
+    def validate_matrices(cls, values: t.Union[t.Dict[str, t.Any], ValidationInfo]) -> t.Dict[str, t.Any]:
+        new_values = values if isinstance(values, dict) else values.data
+        for field in _MATRIX_NAMES:
+            new_values[field] = cls.validate_field(new_values.get(field, None), new_values, field)
+        return new_values
 
     def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
         """
@@ -211,14 +198,14 @@ class CreateSTStorage(ICommand):
         Returns:
             The output of the command execution.
         """
-        output, data = self._apply_config(study_data.config)
+        output, _ = self._apply_config(study_data.config)
         if not output.status:
             return output
 
         # Fill-in the "list.ini" file with the parameters.
         # On creation, it's better to write all the parameters in the file.
         config = study_data.tree.get(["input", "st-storage", "clusters", self.area_id, "list"])
-        config[self.storage_id] = json.loads(self.parameters.json(by_alias=True, exclude={"id"}))
+        config[self.storage_id] = self.parameters.model_dump(mode="json", by_alias=True, exclude={"id"})
 
         new_data: JSON = {
             "input": {
@@ -240,7 +227,7 @@ class CreateSTStorage(ICommand):
         Returns:
             The DTO object representing the current command.
         """
-        parameters = json.loads(self.parameters.json(by_alias=True, exclude={"id"}))
+        parameters = self.parameters.model_dump(mode="json", by_alias=True, exclude={"id"})
         return CommandDTO(
             action=self.command_name.value,
             args={
@@ -305,7 +292,7 @@ class CreateSTStorage(ICommand):
             if getattr(self, attr) != getattr(other, attr)
         ]
         if self.parameters != other.parameters:
-            data: t.Dict[str, t.Any] = json.loads(other.parameters.json(by_alias=True, exclude={"id"}))
+            data: t.Dict[str, t.Any] = other.parameters.model_dump(mode="json", by_alias=True, exclude={"id"})
             commands.append(
                 UpdateConfig(
                     target=f"input/st-storage/clusters/{self.area_id}/list/{self.storage_id}",

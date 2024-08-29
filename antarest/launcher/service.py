@@ -10,7 +10,7 @@ from uuid import UUID, uuid4
 
 from fastapi import HTTPException
 
-from antarest.core.config import Config, NbCoresConfig
+from antarest.core.config import Config, Launcher, NbCoresConfig
 from antarest.core.exceptions import StudyNotFoundError
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
@@ -103,7 +103,7 @@ class LauncherService:
     def get_launchers(self) -> List[str]:
         return list(self.launchers.keys())
 
-    def get_nb_cores(self, launcher: str) -> NbCoresConfig:
+    def get_nb_cores(self, launcher: Launcher) -> NbCoresConfig:
         """
         Retrieve the configuration of the launcher's nb of cores.
 
@@ -112,9 +112,6 @@ class LauncherService:
 
         Returns:
             Number of cores of the launcher
-
-        Raises:
-            InvalidConfigurationError: if the launcher configuration is not available
         """
         return self.config.launcher.get_nb_cores(launcher)
 
@@ -175,7 +172,7 @@ class LauncherService:
                 self.event_bus.push(
                     Event(
                         type=EventType.STUDY_JOB_COMPLETED if final_status else EventType.STUDY_JOB_STATUS_UPDATE,
-                        payload=job_result.to_dto().dict(),
+                        payload=job_result.to_dto().model_dump(),
                         permissions=PermissionInfo(public_mode=PublicMode.READ),
                         channel=EventChannelDirectory.JOB_STATUS + job_result.id,
                     )
@@ -236,7 +233,7 @@ class LauncherService:
             study_id=study_uuid,
             job_status=JobStatus.PENDING,
             launcher=launcher,
-            launcher_params=launcher_parameters.json() if launcher_parameters else None,
+            launcher_params=launcher_parameters.model_dump_json() if launcher_parameters else None,
             owner_id=(owner_id or None),
         )
         self.job_result_repository.save(job_status)
@@ -252,7 +249,7 @@ class LauncherService:
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_JOB_STARTED,
-                payload=job_status.to_dto().dict(),
+                payload=job_status.to_dto().model_dump(),
                 permissions=PermissionInfo.from_study(study_info),
             )
         )
@@ -293,7 +290,7 @@ class LauncherService:
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_JOB_CANCELLED,
-                payload=job_status.to_dto().dict(),
+                payload=job_status.to_dto().model_dump(),
                 permissions=PermissionInfo.from_study(study),
                 channel=EventChannelDirectory.JOB_STATUS + job_result.id,
             )
@@ -710,5 +707,7 @@ class LauncherService:
 
         if launcher is None:
             raise ValueError(f"Job {job_id} has no launcher")
-        launch_progress_json = self.launchers[launcher].cache.get(id=f"Launch_Progress_{job_id}") or {"progress": 0}
+        launch_progress_json: Dict[str, float] = self.launchers[launcher].cache.get(id=f"Launch_Progress_{job_id}") or {
+            "progress": 0
+        }
         return launch_progress_json.get("progress", 0)

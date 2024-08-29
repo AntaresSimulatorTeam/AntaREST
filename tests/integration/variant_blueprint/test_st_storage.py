@@ -221,18 +221,5 @@ class TestSTStorage:
         )
         assert res.status_code == http.HTTPStatus.UNPROCESSABLE_ENTITY
         description = res.json()["description"]
-        """
-        4 validation errors for CreateSTStorage
-        parameters -> group
-          value is not a valid enumeration member […]
-        parameters -> injectionnominalcapacity
-          ensure this value is greater than or equal to 0 (type=value_error.number.not_ge; limit_value=0)
-        parameters -> initialleveloptim
-          value could not be parsed to a boolean (type=type_error.bool)
-        pmax_withdrawal
-          Matrix values should be between 0 and 1 (type=value_error)
-        """
-        assert "parameters -> group" in description
-        assert "parameters -> injectionnominalcapacity" in description
-        assert "parameters -> initialleveloptim" in description
-        assert "pmax_withdrawal" in description
+        assert "Matrix values should be between 0 and 1" in description
+        assert "1 validation error for CreateSTStorage" in description

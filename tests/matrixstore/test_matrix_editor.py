@@ -70,7 +70,7 @@ class TestMatrixSlice:
     )
     def test_init(self, kwargs: Dict[str, Any], expected: Dict[str, Any]) -> None:
         obj = MatrixSlice(**kwargs)
-        assert obj.dict(by_alias=False) == expected
+        assert obj.model_dump(by_alias=False) == expected
 
 
 class TestOperation:
@@ -97,12 +97,12 @@ class TestOperation:
     )
     def test_init(self, kwargs: Dict[str, Any], expected: Dict[str, Any]) -> None:
         obj = Operation(**kwargs)
-        assert obj.dict(by_alias=False) == expected
+        assert obj.model_dump(by_alias=False) == expected
 
     @pytest.mark.parametrize("operation", list(OPERATIONS))
     def test_init__valid_operation(self, operation: str) -> None:
         obj = Operation(operation=operation, value=123)
-        assert obj.dict(by_alias=False) == {
+        assert obj.model_dump(by_alias=False) == {
             "operation": operation,
             "value": 123.0,
         }
@@ -192,4 +192,4 @@ class TestMatrixEditInstruction:
     )
     def test_init(self, kwargs: Dict[str, Any], expected: Dict[str, Any]) -> None:
         obj = MatrixEditInstruction(**kwargs)
-        assert obj.dict(by_alias=False) == expected
+        assert obj.model_dump(by_alias=False) == expected

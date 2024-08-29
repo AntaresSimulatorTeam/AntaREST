@@ -97,7 +97,7 @@ class STStorage880Properties(STStorageProperties):
     # Activity status:
     # - True: the plant may generate.
     # - False: Ignored by the simulator.
-    enabled: bool = Field(default=True, description="Activity status")
+    enabled: t.Optional[bool] = True  # Activity status
 
 
 # noinspection SpellCheckingInspection

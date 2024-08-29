@@ -3,7 +3,7 @@ import uuid
 from datetime import datetime
 from enum import Enum
 
-from pydantic import BaseModel, Extra
+from pydantic import BaseModel
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, Sequence, String  # type: ignore
 from sqlalchemy.engine.base import Engine  # type: ignore
 from sqlalchemy.orm import relationship, sessionmaker  # type: ignore
@@ -44,43 +44,43 @@ class TaskStatus(Enum):
         ]
 
 
-class TaskResult(BaseModel, extra=Extra.forbid):
+class TaskResult(BaseModel, extra="forbid"):
     success: bool
     message: str
     # Can be used to store json serialized result
-    return_value: t.Optional[str]
+    return_value: t.Optional[str] = None
 
 
-class TaskLogDTO(BaseModel, extra=Extra.forbid):
+class TaskLogDTO(BaseModel, extra="forbid"):
     id: str
     message: str
 
 
-class CustomTaskEventMessages(BaseModel, extra=Extra.forbid):
+class CustomTaskEventMessages(BaseModel, extra="forbid"):
     start: str
     running: str
     end: str
 
 
-class TaskEventPayload(BaseModel, extra=Extra.forbid):
+class TaskEventPayload(BaseModel, extra="forbid"):
     id: str
     message: str
 
 
-class TaskDTO(BaseModel, extra=Extra.forbid):
+class TaskDTO(BaseModel, extra="forbid"):
     id: str
     name: str
-    owner: t.Optional[int]
+    owner: t.Optional[int] = None
     status: TaskStatus
     creation_date_utc: str
-    completion_date_utc: t.Optional[str]
-    result: t.Optional[TaskResult]
-    logs: t.Optional[t.List[TaskLogDTO]]
+    completion_date_utc: t.Optional[str] = None
+    result: t.Optional[TaskResult] = None
+    logs: t.Optional[t.List[TaskLogDTO]] = None
     type: t.Optional[str] = None
     ref_id: t.Optional[str] = None
 
 
-class TaskListFilter(BaseModel, extra=Extra.forbid):
+class TaskListFilter(BaseModel, extra="forbid"):
     status: t.List[TaskStatus] = []
     name: t.Optional[str] = None
     type: t.List[TaskType] = []
@@ -158,6 +158,15 @@ class TaskJob(Base):  # type: ignore
     study: "Study" = relationship("Study", back_populates="jobs", uselist=False)
 
     def to_dto(self, with_logs: bool = False) -> TaskDTO:
+        result = None
+        if self.completion_date:
+            assert self.result_status is not None
+            assert self.result_msg is not None
+            result = TaskResult(
+                success=self.result_status,
+                message=self.result_msg,
+                return_value=self.result,
+            )
         return TaskDTO(
             id=self.id,
             owner=self.owner_id,
@@ -165,13 +174,7 @@ class TaskJob(Base):  # type: ignore
             completion_date_utc=str(self.completion_date) if self.completion_date else None,
             name=self.name,
             status=TaskStatus(self.status),
-            result=TaskResult(
-                success=self.result_status,
-                message=self.result_msg,
-                return_value=self.result,
-            )
-            if self.completion_date
-            else None,
+            result=result,
             logs=sorted([log.to_dto() for log in self.logs], key=lambda log: log.id) if with_logs else None,
             type=self.type,
             ref_id=self.ref_id,

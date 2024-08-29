@@ -152,7 +152,7 @@ class MatrixService(ISimpleMatrixService):
             created_at=datetime.fromtimestamp(dto.created_at),
         )
 
-        content = MatrixContent(data=dto.data, index=dto.index, columns=dto.columns)
+        content = MatrixContent(data=dto.data, index=dto.index, columns=dto.columns)  # type: ignore
 
         return matrix, content
 
@@ -213,6 +213,7 @@ class MatrixService(ISimpleMatrixService):
             A list of `MatrixInfoDTO` objects containing the SHA256 hash of the imported matrices.
         """
         with file.file as f:
+            assert file.filename is not None
             if file.content_type == "application/zip":
                 with contextlib.closing(f):
                     buffer = io.BytesIO(f.read())

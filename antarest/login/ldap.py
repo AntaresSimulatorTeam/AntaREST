@@ -2,12 +2,7 @@ import logging
 from dataclasses import dataclass
 from typing import Dict, List, Optional
 
-try:
-    # `httpx` is a modern alternative to the `requests` library
-    import httpx as requests
-except ImportError:
-    # noinspection PyUnresolvedReferences, PyPackageRequirements
-    import requests
+import httpx
 
 from antarest.core.config import Config
 from antarest.core.model import JSON
@@ -98,7 +93,7 @@ class LdapService:
 
         auth = AuthDTO(user=name, password=password)
         try:
-            res = requests.post(url=f"{self.url}/auth", json=auth.to_json())
+            res = httpx.post(url=f"{self.url}/auth", json=auth.to_json())
         except Exception as e:
             logger.warning(
                 "Failed to retrieve user from external auth service",

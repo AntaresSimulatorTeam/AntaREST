@@ -440,7 +440,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
         },
     )
 
-    client.post(
+    res = client.post(
         f"/v1/studies/{study_id}/commands",
         json=[
             {
@@ -453,6 +453,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
             }
         ],
     )
+    res.raise_for_status()
 
     client.post(
         f"/v1/studies/{study_id}/commands",
@@ -594,13 +595,14 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
         },
     ]
 
-    client.post(
+    res = client.post(
         f"/v1/studies/{study_id}/links",
         json={
             "area1": "area 1",
             "area2": "area 2",
         },
     )
+    res.raise_for_status()
     res_links = client.get(f"/v1/studies/{study_id}/links?with_ui=true")
     assert res_links.json() == [
         {
@@ -613,15 +615,16 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
     # -- `layers` integration tests
 
     res = client.get(f"/v1/studies/{study_id}/layers")
-    assert res.json() == [LayerInfoDTO(id="0", name="All", areas=["area 1", "area 2"]).dict()]
+    res.raise_for_status()
+    assert res.json() == [LayerInfoDTO(id="0", name="All", areas=["area 1", "area 2"]).model_dump()]
 
     res = client.post(f"/v1/studies/{study_id}/layers?name=test")
     assert res.json() == "1"
 
     res = client.get(f"/v1/studies/{study_id}/layers")
     assert res.json() == [
-        LayerInfoDTO(id="0", name="All", areas=["area 1", "area 2"]).dict(),
-        LayerInfoDTO(id="1", name="test", areas=[]).dict(),
+        LayerInfoDTO(id="0", name="All", areas=["area 1", "area 2"]).model_dump(),
+        LayerInfoDTO(id="1", name="test", areas=[]).model_dump(),
     ]
 
     res = client.put(f"/v1/studies/{study_id}/layers/1?name=test2")
@@ -632,8 +635,8 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
     assert res.status_code in {200, 201}, res.json()
     res = client.get(f"/v1/studies/{study_id}/layers")
     assert res.json() == [
-        LayerInfoDTO(id="0", name="All", areas=["area 1", "area 2"]).dict(),
-        LayerInfoDTO(id="1", name="test2", areas=["area 2"]).dict(),
+        LayerInfoDTO(id="0", name="All", areas=["area 1", "area 2"]).model_dump(),
+        LayerInfoDTO(id="1", name="test2", areas=["area 2"]).model_dump(),
     ]
 
     # Delete the layer '1' that has 1 area
@@ -643,7 +646,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
     # Ensure the layer is deleted
     res = client.get(f"/v1/studies/{study_id}/layers")
     assert res.json() == [
-        LayerInfoDTO(id="0", name="All", areas=["area 1", "area 2"]).dict(),
+        LayerInfoDTO(id="0", name="All", areas=["area 1", "area 2"]).model_dump(),
     ]
 
     # Create the layer again without areas
@@ -657,7 +660,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
     # Ensure the layer is deleted
     res = client.get(f"/v1/studies/{study_id}/layers")
     assert res.json() == [
-        LayerInfoDTO(id="0", name="All", areas=["area 1", "area 2"]).dict(),
+        LayerInfoDTO(id="0", name="All", areas=["area 1", "area 2"]).model_dump(),
     ]
 
     # Try to delete a non-existing layer
@@ -743,7 +746,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
         "simplexOptimizationRange": SimplexOptimizationRange.WEEK.value,
     }
 
-    client.put(
+    res = client.put(
         f"/v1/studies/{study_id}/config/optimization/form",
         json={
             "strategicReserve": False,
@@ -751,6 +754,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
             "simplexOptimizationRange": SimplexOptimizationRange.DAY.value,
         },
     )
+    res.raise_for_status()
     res_optimization_config = client.get(f"/v1/studies/{study_id}/config/optimization/form")
     res_optimization_config_json = res_optimization_config.json()
     assert res_optimization_config_json == {
@@ -813,7 +817,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
     )
     assert res.status_code == 422
     assert res.json()["exception"] == "RequestValidationError"
-    assert res.json()["description"] == "value is not a valid integer"
+    assert res.json()["description"] == "Input should be a valid integer"
 
     # General form
 
@@ -1257,7 +1261,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
         },
         "ntc": {"stochasticTsStatus": False, "intraModal": False},
     }
-    res_ts_config = client.put(
+    client.put(
         f"/v1/studies/{study_id}/config/timeseries/form",
         json={
             "thermal": {"stochasticTsStatus": True},
