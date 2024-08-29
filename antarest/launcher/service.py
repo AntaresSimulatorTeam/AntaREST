@@ -2,7 +2,7 @@ import functools
 import logging
 import os
 import shutil
-from datetime import datetime, timedelta
+from datetime import datetime
 from http import HTTPStatus
 from pathlib import Path
 from typing import Dict, List, Optional, cast
@@ -59,7 +59,6 @@ class LauncherServiceNotAvailableException(HTTPException):
         )
 
 
-ORPHAN_JOBS_VISIBILITY_THRESHOLD = 10  # days
 LAUNCHER_PARAM_NAME_SUFFIX = "output_suffix"
 EXECUTION_INFO_FILE = "execution_info.ini"
 
