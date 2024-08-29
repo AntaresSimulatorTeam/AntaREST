@@ -90,14 +90,6 @@ class BindingConstraintPropertiesBase(BaseModel, extra="forbid", populate_by_nam
             values["time_step"] = values.pop("type")
         return values
 
-    @classmethod
-    def from_dict(cls, **attrs: t.Any) -> "BindingConstraintPropertiesBase":
-        """
-        Instantiate a class from a dictionary excluding unknown or `None` fields.
-        """
-        attrs = {k: v for k, v in attrs.items() if k in cls.model_fields and v is not None}
-        return cls(**attrs)
-
 
 class BindingConstraintProperties830(BindingConstraintPropertiesBase):
     filter_year_by_year: str = Field("", alias="filter-year-by-year")
@@ -144,7 +136,8 @@ def create_binding_constraint_config(study_version: t.Union[str, int], **kwargs:
         The binding_constraint configuration model.
     """
     cls = get_binding_constraint_config_cls(study_version)
-    return cls.from_dict(**kwargs)
+    attrs = {k: v for k, v in kwargs.items() if k in cls.model_fields and v is not None}
+    return cls(**attrs)
 
 
 @all_optional_model

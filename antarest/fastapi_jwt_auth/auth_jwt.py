@@ -625,17 +625,7 @@ class AuthJWT(AuthConfig):
         :return: raw data from the hash token in the form of a dictionary
         """
         algorithms = self._decode_algorithms or [self._algorithm]
-
-        try:
-            unverified_headers = self.get_unverified_jwt_headers(encoded_token)
-        except Exception as err:
-            raise InvalidHeaderError(status_code=422, message=str(err))
-
-        try:
-            secret_key = self._get_secret_key(unverified_headers["alg"], "decode")
-        except Exception:
-            raise
-
+        secret_key = self._get_secret_key(self._algorithm, "decode")
         try:
             return jwt.decode(
                 encoded_token,

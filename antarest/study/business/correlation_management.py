@@ -7,7 +7,7 @@ from typing import Dict, List, Sequence, Union
 
 import numpy as np
 import numpy.typing as npt
-from pydantic import ValidationInfo, conlist, field_validator
+from pydantic import ValidationInfo, field_validator
 
 from antarest.core.exceptions import AreaNotFound
 from antarest.study.business.area_management import AreaInfoDTO
@@ -72,9 +72,15 @@ class CorrelationMatrix(FormFieldsBaseModel):
         data: A 2D-array matrix of correlation coefficients.
     """
 
-    index: conlist(str, min_length=1)  # type: ignore
-    columns: conlist(str, min_length=1)  # type: ignore
+    index: List[str]
+    columns: List[str]
     data: List[List[float]]  # NonNegativeFloat not necessary
+
+    @field_validator("index", "columns", mode="before")
+    def validate_list_length(cls, values: List[str]) -> List[str]:
+        if len(values) == 0:
+            raise ValueError("correlation matrix cannot have 0 columns/index")
+        return values
 
     # noinspection PyMethodParameters
     @field_validator("data", mode="before")
