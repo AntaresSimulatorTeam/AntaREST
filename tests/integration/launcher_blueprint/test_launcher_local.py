@@ -118,3 +118,44 @@ class TestLauncherNbCores:
         actual = res.json()
         assert actual["description"] == "Input should be 'slurm', 'local' or 'default'"
         assert actual["exception"] == "RequestValidationError"
+
+    def test_jobs_permissions(
+        self,
+        client: TestClient,
+        user_access_token: str,
+        admin_access_token: str,
+    ) -> None:
+        # create an admin study with no permissions
+        res = client.post(
+            "/v1/studies",
+            headers={"Authorization": f"Bearer {admin_access_token}"},
+            params={"name": "study_admin"},
+        )
+        res.raise_for_status()
+        # get the study_id
+        study_id = res.json()
+
+        # launch a job with the admin user
+        res = client.post(
+            f"/v1/launcher/run/{study_id}",
+            headers={"Authorization": f"Bearer {admin_access_token}"},
+            json={"launcher": "local"},
+        )
+        res.raise_for_status()
+        job_id = res.json()["job_id"]
+
+        # check that the user cannot see the job
+        res = client.get(
+            "/v1/launcher/jobs",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+        )
+        res.raise_for_status()
+        assert job_id not in [job.get("id") for job in res.json()]
+
+        # check that the admin can see the job
+        res = client.get(
+            "/v1/launcher/jobs",
+            headers={"Authorization": f"Bearer {admin_access_token}"},
+        )
+        res.raise_for_status()
+        assert job_id in [job.get("id") for job in res.json()]
