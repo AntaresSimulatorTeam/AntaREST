@@ -2,17 +2,17 @@ import json
 import typing as t
 
 from antarest.core.model import JSON
-from antarest.matrixstore.model import MatrixData
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
+    DEFAULT_GROUP,
+    OPERATOR_MATRICES_MAP,
     BindingConstraintFrequency,
     BindingConstraintOperator,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.config.model import BindingConstraintDTO, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
+from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import (
-    DEFAULT_GROUP,
     AbstractBindingConstraintCommand,
     TermMatrices,
     create_binding_constraint_config,
@@ -20,44 +20,27 @@ from antarest.study.storage.variantstudy.model.command.create_binding_constraint
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
-MatrixType = t.List[t.List[MatrixData]]
-
-ALIAS_OPERATOR_MAP = {
-    BindingConstraintOperator.EQUAL: "eq",
-    BindingConstraintOperator.LESS: "lt",
-    BindingConstraintOperator.GREATER: "gt",
-}
-
 
 def update_matrices_names(
     file_study: FileStudy,
-    binding_constraint_id: str,
+    bc_id: str,
     existing_operator: BindingConstraintOperator,
     new_operator: BindingConstraintOperator,
 ) -> None:
     """
     Update the matrix file name according to the new operator.
+    Due to legacy matrices generation, we need to check if the new matrix file already exists
+    and if it does, we need to first remove it before renaming the existing matrix file
 
     Args:
         file_study: the file study
-        binding_constraint_id: the binding constraint ID
+        bc_id: the binding constraint ID
         existing_operator: the existing operator
         new_operator: the new operator
 
     Raises:
         NotImplementedError: if the case is not handled
     """
-
-    parent_folder_node = file_study.tree.get_node(["input", "bindingconstraints"])
-    matrix_lt = parent_folder_node.get_node([f"{binding_constraint_id}_lt"])
-    assert isinstance(matrix_lt, LazyNode), f"Node type not handled yet: LazyNode expected, got {type(matrix_lt)}"
-    matrix_eq = parent_folder_node.get_node([f"{binding_constraint_id}_eq"])
-    assert isinstance(matrix_eq, LazyNode), f"Node type not handled yet: LazyNode expected, got {type(matrix_eq)}"
-    matrix_gt = parent_folder_node.get_node([f"{binding_constraint_id}_gt"])
-    assert isinstance(matrix_gt, LazyNode), f"Node type not handled yet: LazyNode expected, got {type(matrix_gt)}"
-
-    # Due to legacy matrices generation, we need to check if the new matrix file already exists
-    #  and if it does, we need to first remove it before renaming the existing matrix file
 
     handled_operators = [
         BindingConstraintOperator.EQUAL,
@@ -72,37 +55,31 @@ def update_matrices_names(
         )
     elif existing_operator == new_operator:
         return  # nothing to do
-    elif existing_operator != BindingConstraintOperator.BOTH and new_operator != BindingConstraintOperator.BOTH:
-        matrix_node = parent_folder_node.get_node([f"{binding_constraint_id}_{ALIAS_OPERATOR_MAP[existing_operator]}"])
-        assert isinstance(
-            matrix_node, LazyNode
-        ), f"Node type not handled yet: LazyNode expected, got {type(matrix_node)}"
-        new_matrix_node = parent_folder_node.get_node([f"{binding_constraint_id}_{ALIAS_OPERATOR_MAP[new_operator]}"])
-        assert isinstance(
-            new_matrix_node, LazyNode
-        ), f"Node type not handled yet: LazyNode expected, got {type(new_matrix_node)}"
-        matrix_node.rename_file(new_matrix_node)
+
+    parent_folder_node = file_study.tree.get_node(["input", "bindingconstraints"])
+    error_msg = "Unhandled node type, expected InputSeriesMatrix, got "
+    if existing_operator != BindingConstraintOperator.BOTH and new_operator != BindingConstraintOperator.BOTH:
+        current_node = parent_folder_node.get_node([f"{bc_id}_{OPERATOR_MATRICES_MAP[existing_operator][0]}"])
+        assert isinstance(current_node, InputSeriesMatrix), f"{error_msg}{type(current_node)}"
+        current_node.rename_file(f"{bc_id}_{OPERATOR_MATRICES_MAP[new_operator][0]}")
     elif new_operator == BindingConstraintOperator.BOTH:
+        current_node = parent_folder_node.get_node([f"{bc_id}_{OPERATOR_MATRICES_MAP[existing_operator][0]}"])
+        assert isinstance(current_node, InputSeriesMatrix), f"{error_msg}{type(current_node)}"
         if existing_operator == BindingConstraintOperator.EQUAL:
-            matrix_eq.rename_file(matrix_lt)
-            matrix_gt.delete()
-            # copy the matrix lt to gt
-            matrix_lt.copy_file(matrix_gt)
-        elif existing_operator == BindingConstraintOperator.LESS:
-            matrix_gt.delete()
-            matrix_lt.copy_file(matrix_gt)
+            current_node.copy_file(f"{bc_id}_gt")
+            current_node.rename_file(f"{bc_id}_lt")
         else:
-            matrix_lt.delete()
-            matrix_gt.copy_file(matrix_lt)
+            term = "lt" if existing_operator == BindingConstraintOperator.GREATER else "gt"
+            current_node.copy_file(f"{bc_id}_{term}")
     else:
-        if new_operator == BindingConstraintOperator.EQUAL:
-            # we may retrieve the mean of the two matrices, but here we just copy the lt matrix
-            matrix_lt.rename_file(matrix_eq)
-            matrix_gt.delete()
-        elif new_operator == BindingConstraintOperator.LESS:
-            matrix_gt.delete()
+        current_node = parent_folder_node.get_node([f"{bc_id}_lt"])
+        assert isinstance(current_node, InputSeriesMatrix), f"{error_msg}{type(current_node)}"
+        if new_operator == BindingConstraintOperator.GREATER:
+            current_node.delete()
         else:
-            matrix_lt.delete()
+            parent_folder_node.get_node([f"{bc_id}_gt"]).delete()
+            if new_operator == BindingConstraintOperator.EQUAL:
+                current_node.rename_file(f"{bc_id}_eq")
 
 
 class UpdateBindingConstraint(AbstractBindingConstraintCommand):
@@ -123,6 +100,31 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
     id: str
 
     def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
+        index = next(i for i, bc in enumerate(study_data.bindings) if bc.id == self.id)
+        existing_constraint = study_data.bindings[index]
+        areas_set = existing_constraint.areas
+        clusters_set = existing_constraint.clusters
+        if self.coeffs:
+            areas_set = set()
+            clusters_set = set()
+            for j in self.coeffs.keys():
+                if "%" in j:
+                    areas_set |= set(j.split("%"))
+                elif "." in j:
+                    clusters_set.add(j)
+                    areas_set.add(j.split(".")[0])
+        group = self.group or existing_constraint.group
+        operator = self.operator or existing_constraint.operator
+        time_step = self.time_step or existing_constraint.time_step
+        new_constraint = BindingConstraintDTO(
+            id=self.id,
+            group=group,
+            areas=areas_set,
+            clusters=clusters_set,
+            operator=operator,
+            time_step=time_step,
+        )
+        study_data.bindings[index] = new_constraint
         return CommandOutput(status=True), {}
 
     def _find_binding_config(self, binding_constraints: t.Mapping[str, JSON]) -> t.Optional[t.Tuple[str, JSON]]:
@@ -154,8 +156,10 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
         # rename matrices if the operator has changed for version >= 870
         if self.operator and study_data.config.version >= 870:
             existing_operator = BindingConstraintOperator(actual_cfg.get("operator"))
-            new_operator = BindingConstraintOperator(self.operator)
+            new_operator = self.operator
             update_matrices_names(study_data, self.id, existing_operator, new_operator)
+
+        self._apply_config(study_data.config)
 
         updated_matrices = [
             term for term in [m.value for m in TermMatrices] if hasattr(self, term) and getattr(self, term)

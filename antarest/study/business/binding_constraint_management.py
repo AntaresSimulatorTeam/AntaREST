@@ -25,6 +25,9 @@ from antarest.study.business.all_optional_meta import camel_case_model
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import Study
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
+    DEFAULT_GROUP,
+    DEFAULT_OPERATOR,
+    DEFAULT_TIMESTEP,
     BindingConstraintFrequency,
     BindingConstraintOperator,
 )
@@ -44,7 +47,6 @@ from antarest.study.storage.variantstudy.business.matrix_constants.binding_const
     default_bc_weekly_daily as default_bc_weekly_daily_86,
 )
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import (
-    DEFAULT_GROUP,
     EXPECTED_MATRIX_SHAPES,
     BindingConstraintMatrices,
     BindingConstraintPropertiesBase,
@@ -480,8 +482,8 @@ class BindingConstraintManager:
             "id": constraint["id"],
             "name": constraint["name"],
             "enabled": constraint.get("enabled", True),
-            "time_step": constraint.get("type", BindingConstraintFrequency.HOURLY),
-            "operator": constraint.get("operator", BindingConstraintOperator.EQUAL),
+            "time_step": constraint.get("type", DEFAULT_TIMESTEP),
+            "operator": constraint.get("operator", DEFAULT_OPERATOR),
             "comments": constraint.get("comments", ""),
             "terms": constraint.get("terms", []),
         }
@@ -704,8 +706,7 @@ class BindingConstraintManager:
         if bc_id in {bc.id for bc in self.get_binding_constraints(study)}:
             raise DuplicateConstraintName(f"A binding constraint with the same name already exists: {bc_id}.")
 
-        # TODO: the default operator should be fixed somewhere so this condition can be consistent
-        check_attributes_coherence(data, version, data.operator or BindingConstraintOperator.EQUAL)
+        check_attributes_coherence(data, version, data.operator or DEFAULT_OPERATOR)
 
         new_constraint = {"name": data.name, **json.loads(data.json(exclude={"terms", "name"}, exclude_none=True))}
         args = {
@@ -719,7 +720,7 @@ class BindingConstraintManager:
 
         # Validates the matrices. Needed when the study is a variant because we only append the command to the list
         if isinstance(study, VariantStudy):
-            time_step = data.time_step or BindingConstraintFrequency.HOURLY
+            time_step = data.time_step or DEFAULT_TIMESTEP
             command.validates_and_fills_matrices(
                 time_step=time_step, specific_matrices=None, version=version, create=True
             )

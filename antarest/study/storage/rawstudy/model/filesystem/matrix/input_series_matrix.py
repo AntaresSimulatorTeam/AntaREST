@@ -1,4 +1,5 @@
 import logging
+import shutil
 from pathlib import Path
 from typing import Any, List, Optional, Union, cast
 
@@ -73,11 +74,11 @@ class InputSeriesMatrix(MatrixNode):
                     raise ChildNotFoundError(f"File '{relpath}' not found in the study '{study_id}'") from e
 
             stopwatch.log_elapsed(lambda x: logger.info(f"Matrix parsed in {x}s"))
-            matrix.dropna(how="any", axis=1, inplace=True)
+            final_matrix = matrix.dropna(how="any", axis=1)
             if return_dataframe:
-                return matrix
+                return final_matrix
 
-            data = cast(JSON, matrix.to_dict(orient="split"))
+            data = cast(JSON, final_matrix.to_dict(orient="split"))
             stopwatch.log_elapsed(lambda x: logger.info(f"Matrix to dict in {x}s"))
 
             return data
@@ -100,3 +101,20 @@ class InputSeriesMatrix(MatrixNode):
         if self.nb_columns and len(data) != self.nb_columns:
             errors.append(f"{self.config.path}: Data was wrong size. expected {self.nb_columns} get {len(data)}")
         return errors
+
+    def _infer_path(self) -> Path:
+        if self.get_link_path().exists():
+            return self.get_link_path()
+        elif self.config.path.exists():
+            return self.config.path
+        raise ChildNotFoundError(f"Neither link file {self.get_link_path()} nor matrix file {self.config.path} exists")
+
+    def rename_file(self, target: str) -> None:
+        target_path = self.config.path.parent.joinpath(f"{target}{''.join(self._infer_path().suffixes)}")
+        target_path.unlink(missing_ok=True)
+        self._infer_path().rename(target_path)
+
+    def copy_file(self, target: str) -> None:
+        target_path = self.config.path.parent.joinpath(f"{target}{''.join(self._infer_path().suffixes)}")
+        target_path.unlink(missing_ok=True)
+        shutil.copy(self._infer_path(), target_path)

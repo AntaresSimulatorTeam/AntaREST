@@ -18,6 +18,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          submodules: true
 
       - name: 🔗 Install wget for Windows
         if: matrix.os == 'windows-latest'
@@ -57,13 +58,16 @@ jobs:
         run: bash ./package_antares_web.sh
         working-directory: scripts
 
-      - name: 📜 Install changelog requirements
-        run: npm install -g auto-changelog
-
-      - name: 📜️ Generate changelog file
+      - name: Add installer to package
+        shell: bash
         run: |
-          auto-changelog -l false --hide-empty-releases
-          mv CHANGELOG.md dist/package/CHANGELOG.md
+          pip install hatch
+          ./package_antares_installer.sh
+        working-directory: scripts
+
+      - name: 📜️ Copy changelog file
+        run: |
+          cp docs/CHANGELOG.md dist/package/CHANGELOG.md
 
       - name: 📦 Archive Antares Desktop for Windows
         if: matrix.os == 'windows-latest'

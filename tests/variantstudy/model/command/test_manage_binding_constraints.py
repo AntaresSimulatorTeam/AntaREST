@@ -589,7 +589,7 @@ def test__update_matrices_names(
     # update matrices names
     update_matrices_names(
         file_study=empty_study,
-        binding_constraint_id="bd_rename_matrices",
+        bc_id="bd_rename_matrices",
         existing_operator=existing_operator,
         new_operator=new_operator,
     )
