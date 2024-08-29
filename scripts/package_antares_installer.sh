@@ -16,7 +16,7 @@ echo "INFO: Generating the Installer..."
 pushd ${INSTALLER_DIR}
 if [[ "$OSTYPE" == "msys"* ]]; then
     # For windows we build the GUI version
-    hatch run pyinstaller:build_cli AntaresWebInstaller
+    hatch run pyinstaller:build_gui AntaresWebInstaller
     mv dist/AntaresWebInstaller ${DIST_DIR}
 else
     # For linux we build the command line version
