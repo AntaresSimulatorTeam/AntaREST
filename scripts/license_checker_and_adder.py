@@ -76,6 +76,7 @@ def cli(path: t.Optional[Path], action: str) -> None:
             click.echo(f"{file_count} files have been fixed")
         else:
             click.echo(f"{file_count} files have an invalid header. Use --action=fix to fix them")
+            click.Abort()
     else:
         click.echo("All good !")
 

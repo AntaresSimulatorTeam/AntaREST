@@ -1,0 +1,22 @@
+name: check license headers
+on:
+  push:
+    branches:
+      - "test-precommit"
+
+jobs:
+  check-license-headers:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout github repo (+ download lfs dependencies)
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.8
+      - name: Check src licenses
+        run: python license_checker_and_adder.py --path=../antarest/
+        working-directory: scripts
+      - name: Check test licenses
+        run: python license_checker_and_adder.py --path=../tests/
+        working-directory: scripts
