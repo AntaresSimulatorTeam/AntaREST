@@ -1,7 +1,6 @@
 import glob
 import os
 from pathlib import Path
-import typing as t
 import click
 
 
@@ -9,9 +8,8 @@ import click
 @click.option(
     "--path",
     nargs=1,
-    required=False,
-    type=str,
-    default=None,
+    required=True,
+    type=click.Path(exists=True),
     help="Path to check",
 )
 @click.option(
@@ -22,9 +20,7 @@ import click
     type=str,
     help="Action to realise. Can either be check or fix",
 )
-def cli(path: t.Optional[Path], action: str) -> None:
-    if not path:
-        path = Path(__file__).parent
+def cli(path: Path, action: str) -> None:
     if action not in ["check", "check-strict", "fix"]:
         raise ValueError(f"Parameter --action should be 'check', 'check-strict' or 'fix' and was '{action}'")
 
