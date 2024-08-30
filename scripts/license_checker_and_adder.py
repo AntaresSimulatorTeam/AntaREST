@@ -1,6 +1,7 @@
 import glob
 import os
 from pathlib import Path
+
 import click
 
 
@@ -46,7 +47,7 @@ def cli(path: Path, action: str) -> None:
         file_path = Path(file)
         if not file_path.is_file():
             continue
-        if file_path.suffixes != ['.py']:
+        if file_path.suffixes != [".py"]:
             continue
         file_content = file_path.read_text().splitlines()
         if len(file_content) < 11 or file_content[:11] != license_as_list:
@@ -60,8 +61,8 @@ def cli(path: Path, action: str) -> None:
                     first_line = lines[0].lower() if len(lines) > 0 else []
                     if "copyright" in first_line or "license" in first_line:  # assumes license follows this
                         already_licensed = True
-                    if already_licensed: # I don't really know what to do here
-                        raise ValueError(f'File {file_path.relative_to(path)} already licensed.')
+                    if already_licensed:  # I don't really know what to do here
+                        raise ValueError(f"File {file_path.relative_to(path)} already licensed.")
                     else:
                         new_lines = license_to_save + lines
             if new_lines:
@@ -78,9 +79,10 @@ def cli(path: Path, action: str) -> None:
     else:
         click.echo("All good !")
 
+
 def main():
     cli(prog_name="cli")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
