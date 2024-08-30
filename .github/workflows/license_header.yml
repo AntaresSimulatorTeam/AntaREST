@@ -2,7 +2,7 @@ name: check license headers
 on:
   push:
     branches:
-      - "test-precommit"
+      - "**"
 
 jobs:
   check-license-headers:
