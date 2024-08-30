@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 
+
 def to_pascal_case(value: str) -> str:
     return "".join(word.capitalize() for word in value.split("_"))
 

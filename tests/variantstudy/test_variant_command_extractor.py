@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 
+
 def test_extract():
     # Already covered by integration test "test_integration_variantmanager_tool"
     pass

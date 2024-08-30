@@ -20,7 +20,6 @@ import redis
 import sqlalchemy.ext.baked  # type: ignore
 import uvicorn  # type: ignore
 from fastapi import FastAPI
-from fastapi_jwt_auth import AuthJWT  # type: ignore
 from ratelimit import RateLimitMiddleware  # type: ignore
 from ratelimit.backends.redis import RedisBackend  # type: ignore
 from ratelimit.backends.simple import MemoryBackend  # type: ignore
@@ -54,6 +53,7 @@ from antarest.study.web.watcher_blueprint import create_watcher_routes
 from antarest.worker.archive_worker import ArchiveWorker
 from antarest.worker.simulator_worker import SimulatorWorker
 from antarest.worker.worker import AbstractWorker
+from fastapi_jwt_auth import AuthJWT  # type: ignore
 
 logger = logging.getLogger(__name__)
 

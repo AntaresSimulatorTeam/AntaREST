@@ -19,7 +19,6 @@ from unittest.mock import Mock
 
 import pytest
 from fastapi import FastAPI
-from fastapi_jwt_auth import AuthJWT
 from starlette.testclient import TestClient
 
 from antarest.core.config import Config, SecurityConfig
@@ -42,6 +41,7 @@ from antarest.login.model import (
     UserInfo,
 )
 from antarest.main import JwtSettings
+from fastapi_jwt_auth import AuthJWT
 
 PARAMS = RequestParameters(
     user=JWTUser(

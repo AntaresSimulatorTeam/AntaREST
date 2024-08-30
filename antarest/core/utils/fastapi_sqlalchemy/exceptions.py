@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 
+
 class MissingSessionError(Exception):
     """Exception raised for when the user tries to access a database session before it is created."""
 

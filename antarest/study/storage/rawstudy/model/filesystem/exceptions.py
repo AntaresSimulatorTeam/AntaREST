@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 
+
 class DenormalizationException(Exception):
     def __init__(self, msg: str):
         super(DenormalizationException, self).__init__(msg)

@@ -23,7 +23,6 @@ import uvicorn.config  # type: ignore
 from fastapi import FastAPI, HTTPException
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
-from fastapi_jwt_auth import AuthJWT  # type: ignore
 from ratelimit import RateLimitMiddleware  # type: ignore
 from ratelimit.backends.redis import RedisBackend  # type: ignore
 from ratelimit.backends.simple import MemoryBackend  # type: ignore
@@ -54,6 +53,7 @@ from antarest.study.storage.auto_archive_service import AutoArchiveService
 from antarest.study.storage.rawstudy.watcher import Watcher
 from antarest.tools.admin_lib import clean_locks
 from antarest.utils import SESSION_ARGS, Module, create_services, init_db_engine
+from fastapi_jwt_auth import AuthJWT  # type: ignore
 
 logger = logging.getLogger(__name__)
 

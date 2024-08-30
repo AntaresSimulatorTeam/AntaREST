@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 
+
 class APITag:
     users = "Users"
     launcher = "Launch Studies"
