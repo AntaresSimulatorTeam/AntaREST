@@ -25,8 +25,8 @@ import click
 def cli(path: t.Optional[Path], action: str) -> None:
     if not path:
         path = Path(__file__).parent
-    if action not in ["check", "fix"]:
-        raise ValueError(f"Parameter --action should be either 'check' or 'fix' and was '{action}'")
+    if action not in ["check", "check-strict", "fix"]:
+        raise ValueError(f"Parameter --action should be 'check', 'check-strict' or 'fix' and was '{action}'")
 
     license_header = """# Copyright (c) 2024, RTE (https://www.rte-france.com)
 #
@@ -76,7 +76,9 @@ def cli(path: t.Optional[Path], action: str) -> None:
             click.echo(f"{file_count} files have been fixed")
         else:
             click.echo(f"{file_count} files have an invalid header. Use --action=fix to fix them")
-            click.Abort()
+            if action == "check-strict":
+                raise ValueError("Some files have invalid headers")
+
     else:
         click.echo("All good !")
 
