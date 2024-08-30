@@ -813,14 +813,3 @@ class AuthJWT(AuthConfig):
         if self._token:
             return self._verified_token(self._token)["sub"]
         return None
-
-    def get_unverified_jwt_headers(self, encoded_token: Optional[str] = None) -> dict:
-        """
-        Returns the Headers of an encoded JWT without verifying the actual signature of JWT
-
-        :param encoded_token: The encoded JWT to get the Header from
-        :return: JWT header parameters as a dictionary
-        """
-        encoded_token = encoded_token or self._token
-
-        return jwt.get_unverified_header(encoded_token)
