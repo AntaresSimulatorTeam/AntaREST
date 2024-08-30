@@ -6,7 +6,6 @@ from pydantic import BaseModel
 from antarest.core.config import Config
 from antarest.core.utils.web import APITag
 from antarest.core.version_info import VersionInfoDTO, get_commit_id, get_dependencies
-from antarest.login.auth import Auth
 
 
 class StatusDTO(BaseModel):
@@ -21,7 +20,6 @@ def create_utils_routes(config: Config) -> APIRouter:
         config: main server configuration
     """
     bp = APIRouter()
-    auth = Auth(config)
 
     @bp.get("/health", tags=[APITag.misc], response_model=StatusDTO)
     def health() -> Any:

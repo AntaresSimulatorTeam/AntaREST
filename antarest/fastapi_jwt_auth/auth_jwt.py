@@ -20,6 +20,8 @@ from .exceptions import (
     RevokedTokenError,
 )
 
+TYPE_ERROR_MSG = "The response must be an object response FastAPI"
+
 
 class AuthJWT(AuthConfig):
     def __init__(self, req: Request = None, res: Response = None):
@@ -331,7 +333,7 @@ class AuthJWT(AuthConfig):
         if max_age and not isinstance(max_age, int):
             raise TypeError("max_age must be a integer")
         if response and not isinstance(response, Response):
-            raise TypeError("The response must be an object response FastAPI")
+            raise TypeError(TYPE_ERROR_MSG)
 
         response = response or self._response
 
@@ -379,7 +381,7 @@ class AuthJWT(AuthConfig):
         if max_age and not isinstance(max_age, int):
             raise TypeError("max_age must be a integer")
         if response and not isinstance(response, Response):
-            raise TypeError("The response must be an object response FastAPI")
+            raise TypeError(TYPE_ERROR_MSG)
 
         response = response or self._response
 
@@ -429,7 +431,7 @@ class AuthJWT(AuthConfig):
             )
 
         if response and not isinstance(response, Response):
-            raise TypeError("The response must be an object response FastAPI")
+            raise TypeError(TYPE_ERROR_MSG)
 
         response = response or self._response
 
@@ -452,7 +454,7 @@ class AuthJWT(AuthConfig):
             )
 
         if response and not isinstance(response, Response):
-            raise TypeError("The response must be an object response FastAPI")
+            raise TypeError(TYPE_ERROR_MSG)
 
         response = response or self._response
 
