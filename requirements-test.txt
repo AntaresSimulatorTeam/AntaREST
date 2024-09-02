@@ -1,6 +1,7 @@
 -r requirements.txt
 checksumdir~=1.2.0
-pytest~=6.2.5
+pytest~=8.3.0
+pytest-xdist~=3.6.0
 pytest-cov~=4.0.0
 
 # In this version DataFrame conversion to Excel is done using 'xlsxwriter' library.
