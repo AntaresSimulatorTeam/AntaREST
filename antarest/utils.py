@@ -1,3 +1,15 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import datetime
 import logging
 from enum import Enum
@@ -8,7 +20,6 @@ import redis
 import sqlalchemy.ext.baked  # type: ignore
 import uvicorn  # type: ignore
 from fastapi import FastAPI
-from fastapi_jwt_auth import AuthJWT  # type: ignore
 from ratelimit import RateLimitMiddleware  # type: ignore
 from ratelimit.backends.redis import RedisBackend  # type: ignore
 from ratelimit.backends.simple import MemoryBackend  # type: ignore
@@ -42,6 +53,7 @@ from antarest.study.web.watcher_blueprint import create_watcher_routes
 from antarest.worker.archive_worker import ArchiveWorker
 from antarest.worker.simulator_worker import SimulatorWorker
 from antarest.worker.worker import AbstractWorker
+from fastapi_jwt_auth import AuthJWT  # type: ignore
 
 logger = logging.getLogger(__name__)
 

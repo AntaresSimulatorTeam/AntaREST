@@ -1,9 +1,20 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import json
 from http import HTTPStatus
 from typing import Any, Optional
 
 from fastapi import FastAPI
-from fastapi_jwt_auth import AuthJWT  # type: ignore
 from fastapi_jwt_auth.exceptions import AuthJWTException  # type: ignore
 from starlette.requests import Request
 from starlette.responses import JSONResponse
@@ -15,6 +26,7 @@ from antarest.login.ldap import LdapService
 from antarest.login.repository import BotRepository, GroupRepository, RoleRepository, UserLdapRepository, UserRepository
 from antarest.login.service import LoginService
 from antarest.login.web import create_login_api
+from fastapi_jwt_auth import AuthJWT  # type: ignore
 
 
 def build_login(
