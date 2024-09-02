@@ -55,7 +55,7 @@ class TestMountPointDTO:
     def test_from_path__missing_file(self) -> None:
         name = "foo"
         path = Path("/path/to/workspaces/internal_studies")
-        dto = asyncio.run(MountPointDTO.from_path(name, path))
+        dto = MountPointDTO.from_path(name, path)
         assert dto.name == name
         assert dto.path == path
         assert dto.total_bytes == 0
@@ -65,7 +65,7 @@ class TestMountPointDTO:
 
     def test_from_path__file(self, tmp_path: Path) -> None:
         name = "foo"
-        dto = asyncio.run(MountPointDTO.from_path(name, tmp_path))
+        dto = MountPointDTO.from_path(name, tmp_path)
         total_bytes, used_bytes, free_bytes = shutil.disk_usage(tmp_path)
         assert dto.name == name
         assert dto.path == tmp_path
