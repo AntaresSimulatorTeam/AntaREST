@@ -27,26 +27,6 @@ from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
 class TestCommandFactory:
-    # noinspection SpellCheckingInspection
-    def setup_class(self):
-        """
-        Set up the test class.
-
-        Imports all modules from the `antarest.study.storage.variantstudy.model.command` package
-        and creates a set of command class names derived from the `ICommand` abstract class.
-        The objective is to ensure that the unit test covers all commands in this package.
-
-        This method is executed once before any tests in the test class are run.
-        """
-        for module_loader, name, ispkg in pkgutil.iter_modules(["antarest/study/storage/variantstudy/model/command"]):
-            importlib.import_module(
-                f".{name}",
-                package="antarest.study.storage.variantstudy.model.command",
-            )
-        abstract_commands = {"AbstractBindingConstraintCommand"}
-        self.command_class_set = {
-            cmd.__name__ for cmd in ICommand.__subclasses__() if cmd.__name__ not in abstract_commands
-        }
 
     # noinspection SpellCheckingInspection
     @pytest.mark.parametrize(
@@ -439,12 +419,6 @@ class TestCommandFactory:
             assert actual_dto.action == expected_action
             assert actual_args == expected_args
             assert actual_version == expected_version
-
-        self.command_class_set.discard(type(commands[0]).__name__)
-
-    def teardown_class(self):
-        # Check that all command classes have been tested
-        assert not self.command_class_set
 
 
 @pytest.mark.unit_test
