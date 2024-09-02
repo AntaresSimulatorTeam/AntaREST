@@ -1,3 +1,16 @@
+
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import logging
 from enum import Enum
 from pathlib import Path
@@ -5,7 +18,14 @@ from typing import Any, Dict, Mapping, Optional, Tuple
 
 import redis
 from fastapi import FastAPI
+from ratelimit import RateLimitMiddleware  # type: ignore
+from ratelimit import RateLimitMiddleware  # type: ignore
+from ratelimit.backends.redis import RedisBackend  # type: ignore
+from ratelimit.backends.redis import RedisBackend  # type: ignore
+from ratelimit.backends.simple import MemoryBackend  # type: ignore
+from ratelimit.backends.simple import MemoryBackend  # type: ignore
 from sqlalchemy import create_engine  # type: ignore
+from sqlalchemy import create_engine
 from sqlalchemy.engine.base import Engine  # type: ignore
 from sqlalchemy.pool import NullPool  # type: ignore
 
@@ -21,6 +41,7 @@ from antarest.core.tasks.main import build_taskjob_manager
 from antarest.core.tasks.service import ITaskService
 from antarest.core.utils.utils import new_redis_instance
 from antarest.eventbus.main import build_eventbus
+from antarest.fastapi_jwt_auth import AuthJWT  # type: ignore
 from antarest.launcher.main import build_launcher
 from antarest.login.main import build_login
 from antarest.login.service import LoginService
