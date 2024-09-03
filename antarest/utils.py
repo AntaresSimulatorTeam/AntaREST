@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-import datetime
 import logging
 from enum import Enum
 from pathlib import Path
