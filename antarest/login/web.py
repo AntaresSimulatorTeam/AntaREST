@@ -16,6 +16,7 @@ from datetime import timedelta
 from typing import Any, List, Optional, Union
 
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi_jwt_auth import AuthJWT  # type: ignore
 from markupsafe import escape
 from pydantic import BaseModel
 
@@ -41,7 +42,6 @@ from antarest.login.model import (
     UserInfo,
 )
 from antarest.login.service import LoginService
-from fastapi_jwt_auth import AuthJWT  # type: ignore
 
 logger = logging.getLogger(__name__)
 
