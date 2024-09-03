@@ -93,7 +93,7 @@ class TestFilesystemEndpoints:
         client: TestClient,
         user_access_token: str,
         admin_access_token: str,
-        mocker: MockerFixture
+        mocker: MockerFixture,
     ) -> None:
         """
         Test the lifecycle of the filesystem endpoints.

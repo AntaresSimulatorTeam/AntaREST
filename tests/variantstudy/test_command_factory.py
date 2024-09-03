@@ -26,7 +26,6 @@ from antarest.study.storage.variantstudy.model.command.common import CommandName
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
-
 COMMANDS: List[CommandDTO] = [
     CommandDTO(
         action=CommandName.CREATE_AREA.value,
@@ -390,7 +389,7 @@ def command_factory() -> CommandFactory:
         # str.removeprefix() is not available in Python 3.8
         prefix = "matrix://"
         if matrix.startswith(prefix):
-            return matrix[len(prefix):]
+            return matrix[len(prefix) :]
         return matrix
 
     return CommandFactory(
@@ -401,7 +400,6 @@ def command_factory() -> CommandFactory:
 
 
 class TestCommandFactory:
-
     def _get_command_classes(self) -> Set[str]:
         """
         Imports all modules from the `antarest.study.storage.variantstudy.model.command` package
@@ -414,12 +412,9 @@ class TestCommandFactory:
                 package="antarest.study.storage.variantstudy.model.command",
             )
         abstract_commands = {"AbstractBindingConstraintCommand"}
-        return {
-            cmd.__name__ for cmd in ICommand.__subclasses__() if cmd.__name__ not in abstract_commands
-        }
+        return {cmd.__name__ for cmd in ICommand.__subclasses__() if cmd.__name__ not in abstract_commands}
 
     def test_all_commands_are_tested(self, command_factory: CommandFactory):
-
         commands = sum([command_factory.to_command(command_dto=cmd) for cmd in COMMANDS], [])
         tested_classes = {c.__class__.__name__ for c in commands}
 
@@ -432,7 +427,6 @@ class TestCommandFactory:
     )
     @pytest.mark.unit_test
     def test_command_factory(self, command_dto: CommandDTO, command_factory: CommandFactory):
-
         commands = command_factory.to_command(command_dto=command_dto)
 
         if isinstance(command_dto.args, dict):

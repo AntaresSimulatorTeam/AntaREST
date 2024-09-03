@@ -15,13 +15,13 @@ from unittest.mock import Mock
 
 import pytest
 from fastapi import FastAPI
-from fastapi_jwt_auth import AuthJWT
 from starlette.testclient import TestClient
 
 from antarest.core.config import Config, SecurityConfig
 from antarest.main import JwtSettings
 from antarest.matrixstore.main import build_matrix_service
 from antarest.matrixstore.model import MatrixDTO, MatrixInfoDTO
+from fastapi_jwt_auth import AuthJWT
 from tests.login.test_web import create_auth_token
 
 
