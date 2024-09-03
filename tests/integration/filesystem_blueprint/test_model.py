@@ -57,7 +57,7 @@ class TestMountPointDTO:
     def test_from_path__missing_file(self) -> None:
         name = "foo"
         path = Path("/path/to/workspaces/internal_studies")
-        dto = MountPointDTO.from_path(name, path)
+        dto = asyncio.run(MountPointDTO.from_path(name, path))
         assert dto.name == name
         assert dto.path == path
         assert dto.total_bytes == 0
@@ -69,7 +69,7 @@ class TestMountPointDTO:
         mocker.patch("shutil.disk_usage", return_value=(100, 200, 300))
 
         name = "foo"
-        dto = MountPointDTO.from_path(name, tmp_path)
+        dto = asyncio.run(MountPointDTO.from_path(name, tmp_path))
         assert dto.name == name
         assert dto.path == tmp_path
         assert dto.total_bytes == 100

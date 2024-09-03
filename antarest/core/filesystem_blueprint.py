@@ -95,7 +95,7 @@ class MountPointDTO(
     message: str = Field("", description="A message describing the status of the mount point")
 
     @classmethod
-    def from_path(cls, name: str, path: Path) -> "MountPointDTO":
+    async def from_path(cls, name: str, path: Path) -> "MountPointDTO":
         obj = cls(name=name, path=path)
         try:
             obj.total_bytes, obj.used_bytes, obj.free_bytes = shutil.disk_usage(obj.path)
@@ -335,7 +335,9 @@ def create_file_system_blueprint(config: Config) -> APIRouter:
         """
 
         mount_dirs = _get_mount_dirs(fs)
-        return [MountPointDTO.from_path(name, path) for name, path in mount_dirs.items()]
+        tasks = [MountPointDTO.from_path(name, path) for name, path in mount_dirs.items()]
+        ws = await asyncio.gather(*tasks)
+        return ws
 
     @bp.get(
         "/{fs}/{mount}",
@@ -363,7 +365,7 @@ def create_file_system_blueprint(config: Config) -> APIRouter:
         """
 
         mount_dir = _get_mount_dir(fs, mount)
-        return MountPointDTO.from_path(mount, mount_dir)
+        return await MountPointDTO.from_path(mount, mount_dir)
 
     @bp.get(
         "/{fs}/{mount}/ls",
