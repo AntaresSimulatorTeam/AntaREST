@@ -20,17 +20,9 @@ import sqlalchemy.ext.baked  # type: ignore
 import uvicorn  # type: ignore
 from fastapi import FastAPI
 from ratelimit import RateLimitMiddleware  # type: ignore
-from ratelimit import RateLimitMiddleware  # type: ignore
-from ratelimit.backends.redis import RedisBackend  # type: ignore
-from ratelimit.backends.redis import RedisBackend  # type: ignore
-from ratelimit.backends.redis import RedisBackend  # type: ignore
 from ratelimit.backends.redis import RedisBackend  # type: ignore
 from ratelimit.backends.simple import MemoryBackend  # type: ignore
-from ratelimit.backends.simple import MemoryBackend  # type: ignore
-from ratelimit.backends.simple import MemoryBackend  # type: ignore
-from ratelimit.backends.simple import MemoryBackend  # type: ignore
-from sqlalchemy import create_engine  # type: ignore
-from sqlalchemy import create_engine  # type: ignore
+from sqlalchemy import create_engine
 from sqlalchemy.engine.base import Engine  # type: ignore
 from sqlalchemy.pool import NullPool  # type: ignore
 
