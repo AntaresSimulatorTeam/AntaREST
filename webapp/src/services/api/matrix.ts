@@ -96,11 +96,12 @@ export const editMatrix = async (
   path: string,
   matrixEdit: MatrixEditDTO[],
 ): Promise<void> => {
-  const res = await client.put(
-    `/v1/studies/${sid}/matrix?path=${encodeURIComponent(path)}`,
+  const sanitizedPath = path.startsWith("/") ? path.substring(1) : path;
+
+  await client.put(
+    `/v1/studies/${sid}/matrix?path=${encodeURIComponent(sanitizedPath)}`,
     matrixEdit,
   );
-  return res.data;
 };
 
 export const getStudyMatrixIndex = async (
