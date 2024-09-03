@@ -16,13 +16,13 @@ from datetime import timedelta
 from typing import Any, Callable, Coroutine, Dict, Optional, Tuple, Union
 
 from fastapi import Depends
+from fastapi_jwt_auth import AuthJWT  # type: ignore
 from pydantic import BaseModel
 from ratelimit.types import Scope  # type: ignore
 from starlette.requests import Request
 
 from antarest.core.config import Config
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
-from fastapi_jwt_auth import AuthJWT  # type: ignore
 
 logger = logging.getLogger(__name__)
 
