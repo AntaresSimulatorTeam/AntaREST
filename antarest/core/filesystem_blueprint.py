@@ -89,10 +89,10 @@ class MountPointDTO(
 
     name: MountPointName
     path: Path = Field(description="Full path of the mount point in Antares Web Server")
-    total_bytes: t.Optional[int] = 0  # Total size of the mount point in bytes
-    used_bytes: t.Optional[int] = 0  # Used size of the mount point in bytes
-    free_bytes: t.Optional[int] = 0  # Free size of the mount point in bytes
-    message: t.Optional[str] = ""  # A message describing the status of the mount point
+    total_bytes: int = Field(default=0, description="Total size of the mount point in bytes")
+    used_bytes: int = Field(default=0, description="Used size of the mount point in bytes")
+    free_bytes: int = Field(default=0, description="Free size of the mount point in bytes")
+    message: str = Field(default="", description="A message describing the status of the mount point")
 
     @classmethod
     async def from_path(cls, name: str, path: Path) -> "MountPointDTO":
