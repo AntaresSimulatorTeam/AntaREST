@@ -36,7 +36,6 @@ from antarest.core.tasks.main import build_taskjob_manager
 from antarest.core.tasks.service import ITaskService
 from antarest.core.utils.utils import new_redis_instance
 from antarest.eventbus.main import build_eventbus
-from antarest.fastapi_jwt_auth import AuthJWT  # type: ignore
 from antarest.launcher.main import build_launcher
 from antarest.login.main import build_login
 from antarest.login.service import LoginService

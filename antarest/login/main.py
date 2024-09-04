@@ -21,8 +21,8 @@ from starlette.responses import JSONResponse
 from antarest.core.config import Config
 from antarest.core.interfaces.eventbus import DummyEventBusService, IEventBus
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.fastapi_jwt_auth import AuthJWT  # type: ignore
-from antarest.fastapi_jwt_auth.exceptions import AuthJWTException  # type: ignore
+from antarest.fastapi_jwt_auth import AuthJWT
+from antarest.fastapi_jwt_auth.exceptions import AuthJWTException
 from antarest.login.ldap import LdapService
 from antarest.login.repository import BotRepository, GroupRepository, RoleRepository, UserLdapRepository, UserRepository
 from antarest.login.service import LoginService
