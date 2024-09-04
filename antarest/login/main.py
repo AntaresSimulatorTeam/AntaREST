@@ -15,19 +15,18 @@ from http import HTTPStatus
 from typing import Any, Optional
 
 from fastapi import FastAPI
-from antarest.fastapi_jwt_auth import AuthJWT  # type: ignore
-from antarest.fastapi_jwt_auth.exceptions import AuthJWTException  # type: ignore
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
 from antarest.core.config import Config
 from antarest.core.interfaces.eventbus import DummyEventBusService, IEventBus
 from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.fastapi_jwt_auth import AuthJWT  # type: ignore
+from antarest.fastapi_jwt_auth.exceptions import AuthJWTException  # type: ignore
 from antarest.login.ldap import LdapService
 from antarest.login.repository import BotRepository, GroupRepository, RoleRepository, UserLdapRepository, UserRepository
 from antarest.login.service import LoginService
 from antarest.login.web import create_login_api
-
 
 
 def build_login(

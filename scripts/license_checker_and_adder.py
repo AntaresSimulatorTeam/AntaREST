@@ -52,7 +52,6 @@ def check_file(file_path: Path, action: str) -> bool:
 
 
 def check_dir(cwd: Path, dir_path: Path, action: str, invalid_files: List[Path]) -> None:
-
     _, dirnames, filenames = next(os.walk(dir_path))
     for f in filenames:
         if dir_path != cwd and is_license_file(f):
