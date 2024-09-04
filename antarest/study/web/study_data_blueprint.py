@@ -508,7 +508,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/areas/{area_id}/hydro/inflow-structure",
         tags=[APITag.study_data],
         summary="Update inflow structure values",
-        response_model=None,
+        response_model=None,  # TODO SL: was InflowStructure
     )
     def update_inflow_structure(
         uuid: str,
@@ -1149,7 +1149,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/bindingconstraints/{binding_constraint_id}",
         tags=[APITag.study_data],
         summary="Get binding constraint",
-        response_model=ConstraintOutput,
+        response_model=ConstraintOutput,  # TODO: redundant ?
     )
     def get_binding_constraint(
         uuid: str,

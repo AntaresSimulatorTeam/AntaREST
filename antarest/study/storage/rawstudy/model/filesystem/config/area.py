@@ -169,9 +169,13 @@ class AreaUI(IniProperties):
     {'colorRgb': '#C0A87F', 'x': 1148, 'y': 144}
     """
 
-    x: t.Optional[int] = 0  # x coordinate of the area in the map
-    y: t.Optional[int] = 0  # y coordinate of the area in the map
-    color_rgb: t.Optional[str] = "#E66C2C"  # color of the area in the map
+    x: int = Field(default=0, description="x coordinate of the area in the map")
+    y: int = Field(default=0, description="y coordinate of the area in the map")
+    color_rgb: str = Field(
+        default="#E66C2C",
+        alias="colorRgb",
+        description="color of the area in the map",
+    )
 
     @field_validator("color_rgb", mode="before")
     def _validate_color_rgb(cls, v: t.Any) -> str:
@@ -256,7 +260,10 @@ class UIProperties(IniProperties):
         default_factory=AreaUI,
         description="style of the area in the map: coordinates and color",
     )
-    layers: t.Set[int] = {0}  # layers where the area is visible
+    layers: t.Set[int] = Field(
+        default_factory=lambda: {0},
+        description="layers where the area is visible",
+    )
     layer_styles: t.Dict[int, AreaUI] = Field(
         default_factory=dict,
         description="style of the area in each layer",

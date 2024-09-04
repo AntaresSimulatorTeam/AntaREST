@@ -138,6 +138,9 @@ class CorrelationMatrix(FormFieldsBaseModel):
         return data
 
 
+# TODO SL : restore schema ?
+
+
 def _config_to_array(
     area_ids: Sequence[str],
     correlation_cfg: Dict[str, str],

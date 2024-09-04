@@ -53,6 +53,7 @@ class UnknownSolverConfig(HTTPException):
         )
 
 
+# TODO SL: restore query example ? for launcher
 def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
     bp = APIRouter(prefix="/v1/launcher")
 
@@ -267,7 +268,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         "/time-limit",
         tags=[APITag.launcher],
         summary="Retrieve the time limit for a job (in hours)",
-    )
+    )  # TODO SL:  check this annotation
     def get_time_limit(launcher: Launcher = Launcher.DEFAULT) -> Dict[str, int]:
         """
         Retrieve the time limit for a job (in hours) of the given launcher: "local" or "slurm".

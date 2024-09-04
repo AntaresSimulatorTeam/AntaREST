@@ -45,6 +45,7 @@ class TimeSeriesInterpretation(EnumIgnoreCase):
     PRODUCTION_FACTOR = "production-factor"
 
 
+# TODO SL : restore schema ?
 @all_optional_model
 @camel_case_model
 class RenewableClusterInput(RenewableProperties):
@@ -73,6 +74,7 @@ class RenewableClusterCreation(RenewableClusterInput):
         return create_renewable_config(study_version=study_version, **values)
 
 
+# TODO SL : restore schema ?
 @all_optional_model
 @camel_case_model
 class RenewableClusterOutput(RenewableConfig):

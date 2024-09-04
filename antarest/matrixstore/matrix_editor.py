@@ -158,6 +158,7 @@ class MatrixEditInstruction(BaseModel):
 
     class Config:
         extra = "forbid"
+        # TODO SL: restore schema extra ?
 
     @model_validator(mode="before")
     def check_slice_coordinates(cls, values: Dict[str, Any]) -> Dict[str, Any]:

@@ -359,7 +359,7 @@ def _get_references_by_widths(
     references_by_width: t.Dict[int, t.List[t.Tuple[str, str]]] = {}
     _total = len(bcs)
     for _index, bc in enumerate(bcs):
-        matrices_name = operator_matrix_file_map[bc.operator] if file_study.config.version >= 870 else ["{bc_id}"]  # type: ignore
+        matrices_name = operator_matrix_file_map[bc.operator] if file_study.config.version >= 870 else ["{bc_id}"]
         for matrix_name in matrices_name:
             matrix_id = matrix_name.format(bc_id=bc.id)
             logger.info(f"⏲ Validating BC '{bc.id}': {matrix_id=} [{_index+1}/{_total}]")
@@ -750,7 +750,7 @@ class BindingConstraintManager:
         existing_constraint = self.get_binding_constraint(study, binding_constraint_id)
 
         study_version = int(study.version)
-        check_attributes_coherence(data, study_version, data.operator or existing_constraint.operator)  # type: ignore
+        check_attributes_coherence(data, study_version, data.operator or existing_constraint.operator)
 
         upd_constraint = {
             "id": binding_constraint_id,

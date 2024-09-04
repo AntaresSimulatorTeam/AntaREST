@@ -58,11 +58,26 @@ class CreateSTStorage(ICommand):
 
     area_id: str = Field(description="Area ID", pattern=r"[a-z0-9_(),& -]+")
     parameters: STStorageConfigType
-    pmax_injection: t.Optional[t.Union[MatrixType, str]] = None  # Charge capacity (modulation)
-    pmax_withdrawal: t.Optional[t.Union[MatrixType, str]] = None  # Discharge capacity (modulation)
-    lower_rule_curve: t.Optional[t.Union[MatrixType, str]] = None  # Lower rule curve (coefficient)
-    upper_rule_curve: t.Optional[t.Union[MatrixType, str]] = None  # Upper rule curve (coefficient)
-    inflows: t.Optional[t.Union[MatrixType, str]] = None  # Inflows (MW)
+    pmax_injection: t.Optional[t.Union[MatrixType, str]] = Field(
+        default=None,
+        description="Charge capacity (modulation)",
+    )
+    pmax_withdrawal: t.Optional[t.Union[MatrixType, str]] = Field(
+        default=None,
+        description="Discharge capacity (modulation)",
+    )
+    lower_rule_curve: t.Optional[t.Union[MatrixType, str]] = Field(
+        default=None,
+        description="Lower rule curve (coefficient)",
+    )
+    upper_rule_curve: t.Optional[t.Union[MatrixType, str]] = Field(
+        default=None,
+        description="Upper rule curve (coefficient)",
+    )
+    inflows: t.Optional[t.Union[MatrixType, str]] = Field(
+        default=None,
+        description="Inflows (MW)",
+    )
 
     @property
     def storage_id(self) -> str:

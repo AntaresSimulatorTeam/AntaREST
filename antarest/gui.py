@@ -18,7 +18,7 @@ import webbrowser
 from multiprocessing import Process
 from pathlib import Path
 
-import httpx
+import httpx  # TODO SL :check its ok on windows
 import uvicorn
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QAction, QApplication, QMenu, QSystemTrayIcon

@@ -122,6 +122,7 @@ class JobResultDTO(BaseModel):
     exit_code: t.Optional[int]
     solver_stats: t.Optional[str]
     owner: t.Optional[UserInfo]
+    # TODO SL: restore example ?
 
 
 class JobLog(Base):  # type: ignore

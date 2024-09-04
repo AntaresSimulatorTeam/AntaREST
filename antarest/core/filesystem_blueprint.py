@@ -142,12 +142,12 @@ class FileInfoDTO(
 
     path: Path = Field(description="Full path of the file or directory in Antares Web Server")
     file_type: str = Field(description="Type of the file or directory")
-    file_count: int = Field(1, description="Number of files and folders in the directory (1 for files)")
-    size_bytes: int = Field(0, description="Size of the file or total size of the directory in bytes")
+    file_count: int = Field(default=1, description="Number of files and folders in the directory (1 for files)")
+    size_bytes: int = Field(default=0, description="Size of the file or total size of the directory in bytes")
     created: datetime.datetime = Field(description="Creation date of the file or directory (local time)")
     modified: datetime.datetime = Field(description="Last modification date of the file or directory (local time)")
     accessed: datetime.datetime = Field(description="Last access date of the file or directory (local time)")
-    message: str = Field("OK", description="A message describing the status of the file")
+    message: str = Field(default="OK", description="A message describing the status of the file")
 
     @classmethod
     async def from_path(cls, full_path: Path, *, details: bool = False) -> "FileInfoDTO":

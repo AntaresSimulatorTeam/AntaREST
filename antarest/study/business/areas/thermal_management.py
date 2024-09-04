@@ -53,6 +53,7 @@ _CLUSTERS_PATH = "input/thermal/clusters/{area_id}/list"
 _ALL_CLUSTERS_PATH = "input/thermal/clusters"
 
 
+# TODO SL : restore schema ?
 @all_optional_model
 @camel_case_model
 class ThermalClusterInput(Thermal870Properties):
@@ -81,6 +82,7 @@ class ThermalClusterCreation(ThermalClusterInput):
         return create_thermal_config(study_version=study_version, **values)
 
 
+# TODO SL : restore schema ?
 @all_optional_model
 @camel_case_model
 class ThermalClusterOutput(Thermal870Config):

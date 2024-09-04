@@ -37,6 +37,7 @@ class InflowStructure(FormFieldsBaseModel):
     )
 
 
+# TODO SL: why field validation is moved to method ?
 @all_optional_model
 class ManagementOptionsFormFields(FormFieldsBaseModel):
     inter_daily_breakdown: float

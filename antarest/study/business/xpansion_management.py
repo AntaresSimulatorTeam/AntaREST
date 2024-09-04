@@ -233,24 +233,25 @@ class UpdateXpansionSettings(XpansionSettings):
     )
 
 
+# TODO SL: None in non optional field ?
 class XpansionCandidateDTO(BaseModel):
     # The id of the candidate is irrelevant, so it should stay hidden for the user
     # The names should be the section titles of the file, and the id should be removed
     name: str
     link: str
     annual_cost_per_mw: float = Field(alias="annual-cost-per-mw", ge=0)
-    unit_size: float = Field(None, alias="unit-size", ge=0)
-    max_units: int = Field(None, alias="max-units", ge=0)
-    max_investment: float = Field(None, alias="max-investment", ge=0)
-    already_installed_capacity: int = Field(None, alias="already-installed-capacity", ge=0)
+    unit_size: float = Field(default=None, alias="unit-size", ge=0)
+    max_units: int = Field(default=None, alias="max-units", ge=0)
+    max_investment: float = Field(default=None, alias="max-investment", ge=0)
+    already_installed_capacity: int = Field(default=None, alias="already-installed-capacity", ge=0)
     # this is obsolete (replaced by direct/indirect)
-    link_profile: str = Field(None, alias="link-profile")
+    link_profile: str = Field(default=None, alias="link-profile")
     # this is obsolete (replaced by direct/indirect)
-    already_installed_link_profile: str = Field(None, alias="already-installed-link-profile")
-    direct_link_profile: str = Field(None, alias="direct-link-profile")
-    indirect_link_profile: str = Field(None, alias="indirect-link-profile")
-    already_installed_direct_link_profile: str = Field(None, alias="already-installed-direct-link-profile")
-    already_installed_indirect_link_profile: str = Field(None, alias="already-installed-indirect-link-profile")
+    already_installed_link_profile: str = Field(default=None, alias="already-installed-link-profile")
+    direct_link_profile: str = Field(default=None, alias="direct-link-profile")
+    indirect_link_profile: str = Field(default=None, alias="indirect-link-profile")
+    already_installed_direct_link_profile: str = Field(default=None, alias="already-installed-direct-link-profile")
+    already_installed_indirect_link_profile: str = Field(default=None, alias="already-installed-indirect-link-profile")
 
 
 class LinkNotFound(HTTPException):

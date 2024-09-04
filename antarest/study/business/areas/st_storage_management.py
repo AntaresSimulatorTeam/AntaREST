@@ -46,6 +46,7 @@ from antarest.study.storage.variantstudy.model.command.replace_matrix import Rep
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 
 
+# TODO SL : restore schema ?
 @all_optional_model
 @camel_case_model
 class STStorageInput(STStorage880Properties):
@@ -75,6 +76,7 @@ class STStorageCreation(STStorageInput):
         return create_st_storage_config(study_version=study_version, **values)
 
 
+# TODO SL : restore schema ?
 @all_optional_model
 @camel_case_model
 class STStorageOutput(STStorage880Config):

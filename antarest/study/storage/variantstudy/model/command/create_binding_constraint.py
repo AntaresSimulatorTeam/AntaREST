@@ -91,10 +91,10 @@ def check_matrix_values(time_step: BindingConstraintFrequency, values: MatrixTyp
 
 
 class BindingConstraintPropertiesBase(BaseModel, extra="forbid", populate_by_name=True):
-    enabled: t.Optional[bool] = True
+    enabled: bool = True
     time_step: BindingConstraintFrequency = Field(DEFAULT_TIMESTEP, alias="type")
-    operator: t.Optional[BindingConstraintOperator] = DEFAULT_OPERATOR
-    comments: t.Optional[str] = ""
+    operator: BindingConstraintOperator = DEFAULT_OPERATOR
+    comments: str = ""
 
     @model_validator(mode="before")
     def replace_with_alias(cls, values: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
@@ -168,10 +168,22 @@ class BindingConstraintMatrices(BaseModel, extra="forbid", populate_by_name=True
     Class used to store the matrices of a binding constraint.
     """
 
-    values: t.Optional[t.Union[MatrixType, str]] = None  # 2nd member matrix for studies before v8.7
-    less_term_matrix: t.Optional[t.Union[MatrixType, str]] = None  # less term matrix for v8.7+ studies
-    greater_term_matrix: t.Optional[t.Union[MatrixType, str]] = None  # greater term matrix for v8.7+ studies
-    equal_term_matrix: t.Optional[t.Union[MatrixType, str]] = None  # equal term matrix for v8.7+ studies
+    values: t.Optional[t.Union[MatrixType, str]] = Field(
+        default=None,
+        description="2nd member matrix for studies before v8.7",
+    )
+    less_term_matrix: t.Optional[t.Union[MatrixType, str]] = Field(
+        default=None,
+        description="less term matrix for v8.7+ studies",
+    )
+    greater_term_matrix: t.Optional[t.Union[MatrixType, str]] = Field(
+        default=None,
+        description="greater term matrix for v8.7+ studies",
+    )
+    equal_term_matrix: t.Optional[t.Union[MatrixType, str]] = Field(
+        default=None,
+        description="equal term matrix for v8.7+ studies",
+    )
 
     @model_validator(mode="before")
     def check_matrices(
