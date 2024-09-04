@@ -16,6 +16,7 @@ function EmptyView(props: EmptyViewProps) {
     <Box
       sx={{
         height: 1,
+        width: 1,
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
