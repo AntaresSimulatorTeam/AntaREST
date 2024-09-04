@@ -13,10 +13,10 @@
 import datetime
 import operator
 import re
-import shutil
 import typing as t
 from pathlib import Path
 
+from pytest_mock import MockerFixture
 from starlette.testclient import TestClient
 
 from tests.integration.conftest import RESOURCES_DIR
@@ -93,6 +93,7 @@ class TestFilesystemEndpoints:
         client: TestClient,
         user_access_token: str,
         admin_access_token: str,
+        mocker: MockerFixture,
     ) -> None:
         """
         Test the lifecycle of the filesystem endpoints.
@@ -102,7 +103,7 @@ class TestFilesystemEndpoints:
             caplog: pytest caplog fixture.
             client: test client (tests.integration.conftest.client_fixture).
             user_access_token: access token of a classic user (tests.integration.conftest.user_access_token_fixture).
-            admin_access_token: access token of an admin user (tests.integration.conftest.admin_access_token_fixture).
+            admin_access_token: access token of an admin user (tests.integration.conftestin_access_token_fixture).
         """
         # NOTE: all the following paths are based on the configuration defined in the app_fixture.
         archive_dir = tmp_path / "archive_dir"
@@ -165,26 +166,25 @@ class TestFilesystemEndpoints:
             err_count += 1
 
             # Known filesystem
+            mocker.patch("shutil.disk_usage", return_value=(100, 200, 300))
             res = client.get("/v1/filesystem/ws", headers=user_headers)
             assert res.status_code == 200, res.json()
             actual = sorted(res.json(), key=operator.itemgetter("name"))
-            # Both mount point are in the same filesystem, which is the `tmp_path` filesystem
-            total_bytes, used_bytes, free_bytes = shutil.disk_usage(tmp_path)
             expected = [
                 {
                     "name": "default",
                     "path": str(default_workspace),
-                    "total_bytes": total_bytes,
-                    "used_bytes": used_bytes,
-                    "free_bytes": free_bytes,
+                    "total_bytes": 100,
+                    "used_bytes": 200,
+                    "free_bytes": 300,
                     "message": AnyDiskUsagePercent(),
                 },
                 {
                     "name": "ext",
                     "path": str(ext_workspace_path),
-                    "total_bytes": total_bytes,
-                    "used_bytes": used_bytes,
-                    "free_bytes": free_bytes,
+                    "total_bytes": 100,
+                    "used_bytes": 200,
+                    "free_bytes": 300,
                     "message": AnyDiskUsagePercent(),
                 },
             ]
@@ -206,9 +206,9 @@ class TestFilesystemEndpoints:
             expected = {
                 "name": "default",
                 "path": str(default_workspace),
-                "total_bytes": total_bytes,
-                "used_bytes": used_bytes,
-                "free_bytes": free_bytes,
+                "total_bytes": 100,
+                "used_bytes": 200,
+                "free_bytes": 300,
                 "message": AnyDiskUsagePercent(),
             }
             assert actual == expected
