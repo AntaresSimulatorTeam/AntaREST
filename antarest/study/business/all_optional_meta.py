@@ -19,6 +19,15 @@ from antarest.core.utils.string import to_camel_case
 
 
 def all_optional_model(model: t.Type[BaseModel]) -> t.Type[BaseModel]:
+    """
+    This decorator can be used to make all fields of a pydantic model optionals.
+
+    Args:
+        model: The pydantic model to modify.
+
+    Returns:
+        The modified model.
+    """
     kwargs = {}
     for field_name, field_info in model.model_fields.items():
         new = copy.deepcopy(field_info)

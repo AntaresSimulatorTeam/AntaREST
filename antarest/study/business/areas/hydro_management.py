@@ -37,47 +37,23 @@ class InflowStructure(FormFieldsBaseModel):
     )
 
 
-# TODO SL: why field validation is moved to method ?
 @all_optional_model
 class ManagementOptionsFormFields(FormFieldsBaseModel):
-    inter_daily_breakdown: float
-    intra_daily_modulation: float
-    inter_monthly_breakdown: float
+    inter_daily_breakdown: float = Field(ge=0)
+    intra_daily_modulation: float = Field(ge=1)
+    inter_monthly_breakdown: float = Field(ge=0)
     reservoir: bool
-    reservoir_capacity: float
+    reservoir_capacity: float = Field(ge=0)
     follow_load: bool
     use_water: bool
     hard_bounds: bool
-    initialize_reservoir_date: int
+    initialize_reservoir_date: int = Field(ge=0, le=11)
     use_heuristic: bool
     power_to_level: bool
     use_leeway: bool
-    leeway_low: float
-    leeway_up: float
-    pumping_efficiency: float
-
-    @model_validator(mode="before")
-    def check_type_validity(cls, values: Dict[str, Any]) -> Dict[str, Optional[Any]]:
-        cls.validate_ge("inter_daily_breakdown", values.get("inter_daily_breakdown", 0), 0)
-        cls.validate_ge("intra_daily_modulation", values.get("intra_daily_modulation", 1), 1)
-        cls.validate_ge("inter_monthly_breakdown", values.get("inter_monthly_breakdown", 0), 0)
-        cls.validate_ge("reservoir_capacity", values.get("reservoir_capacity", 0), 0)
-        cls.validate_ge("initialize_reservoir_date", values.get("initialize_reservoir_date", 0), 0)
-        cls.validate_le("initialize_reservoir_date", values.get("initialize_reservoir_date", 11), 11)
-        cls.validate_ge("leeway_low", values.get("leeway_low", 0), 0)
-        cls.validate_ge("leeway_up", values.get("leeway_up", 0), 0)
-        cls.validate_ge("pumping_efficiency", values.get("pumping_efficiency", 0), 0)
-        return values
-
-    @staticmethod
-    def validate_ge(field: str, value: Union[int, float], ge: int) -> None:
-        if value < ge:
-            raise ValueError(f"Field {field} must be greater than or equal to {ge}")
-
-    @staticmethod
-    def validate_le(field: str, value: Union[int, float], le: int) -> None:
-        if value > le:
-            raise ValueError(f"Field {field} must be lower than or equal to {le}")
+    leeway_low: float = Field(ge=0)
+    leeway_up: float = Field(ge=0)
+    pumping_efficiency: float = Field(ge=0)
 
 
 HYDRO_PATH = "input/hydro/hydro"

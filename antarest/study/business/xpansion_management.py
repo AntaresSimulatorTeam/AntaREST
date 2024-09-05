@@ -233,7 +233,6 @@ class UpdateXpansionSettings(XpansionSettings):
     )
 
 
-# TODO SL: None in non optional field ?
 class XpansionCandidateDTO(BaseModel):
     # The id of the candidate is irrelevant, so it should stay hidden for the user
     # The names should be the section titles of the file, and the id should be removed

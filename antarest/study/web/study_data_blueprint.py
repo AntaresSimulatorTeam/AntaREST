@@ -508,7 +508,6 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/areas/{area_id}/hydro/inflow-structure",
         tags=[APITag.study_data],
         summary="Update inflow structure values",
-        response_model=None,  # TODO SL: was InflowStructure
     )
     def update_inflow_structure(
         uuid: str,
@@ -523,7 +522,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
-        return study_service.hydro_manager.update_inflow_structure(study, area_id, values)
+        study_service.hydro_manager.update_inflow_structure(study, area_id, values)
 
     @bp.put(
         "/studies/{uuid}/matrix",

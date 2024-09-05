@@ -14,8 +14,9 @@ import argparse
 import copy
 import logging
 import re
+from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Any, Dict, Optional, Sequence, Tuple, cast
+from typing import Any, AsyncGenerator, Dict, Optional, Sequence, Tuple, cast
 
 import pydantic
 import uvicorn
@@ -250,12 +251,22 @@ def fastapi_app(
 
     logger.info("Initiating application")
 
+    @asynccontextmanager
+    async def set_default_executor(app: FastAPI) -> AsyncGenerator[None, None]:
+        import asyncio
+        from concurrent.futures import ThreadPoolExecutor
+
+        loop = asyncio.get_running_loop()
+        loop.set_default_executor(ThreadPoolExecutor(max_workers=config.server.worker_threadpool_size))
+        yield
+
     application = FastAPI(
         title="AntaREST",
         version=__version__,
         docs_url=None,
         root_path=config.root_path,
         openapi_tags=tags_metadata,
+        lifespan=set_default_executor,
     )
 
     # Database
@@ -285,18 +296,6 @@ def fastapi_app(
         @application.get("/", include_in_schema=False)
         def home(request: Request) -> Any:
             return ""
-
-    # TODO SL:         on_event is deprecated, use lifespan event handlers instead.
-    #
-    #         Read more about it in the
-    #         [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
-    @application.on_event("startup")
-    def set_default_executor() -> None:
-        import asyncio
-        from concurrent.futures import ThreadPoolExecutor
-
-        loop = asyncio.get_running_loop()
-        loop.set_default_executor(ThreadPoolExecutor(max_workers=config.server.worker_threadpool_size))
 
     # TODO move that elsewhere
     @AuthJWT.load_config  # type: ignore

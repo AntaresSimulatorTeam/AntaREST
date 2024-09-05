@@ -15,7 +15,7 @@ import logging
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from fastapi.exceptions import HTTPException
 
 from antarest.core.config import Config, InvalidConfigurationError, Launcher
@@ -53,7 +53,25 @@ class UnknownSolverConfig(HTTPException):
         )
 
 
-# TODO SL: restore query example ? for launcher
+LauncherQuery = Query(
+    default=Launcher.DEFAULT,
+    openapi_examples={
+        "Default launcher": {
+            "description": "Default solver (auto-detected)",
+            "value": "default",
+        },
+        "SLURM launcher": {
+            "description": "SLURM solver configuration",
+            "value": "slurm",
+        },
+        "Local launcher": {
+            "description": "Local solver configuration",
+            "value": "local",
+        },
+    },
+)
+
+
 def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
     bp = APIRouter(prefix="/v1/launcher")
 
@@ -268,8 +286,8 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         "/time-limit",
         tags=[APITag.launcher],
         summary="Retrieve the time limit for a job (in hours)",
-    )  # TODO SL:  check this annotation
-    def get_time_limit(launcher: Launcher = Launcher.DEFAULT) -> Dict[str, int]:
+    )
+    def get_time_limit(launcher: Launcher = LauncherQuery) -> Dict[str, int]:
         """
         Retrieve the time limit for a job (in hours) of the given launcher: "local" or "slurm".
 
