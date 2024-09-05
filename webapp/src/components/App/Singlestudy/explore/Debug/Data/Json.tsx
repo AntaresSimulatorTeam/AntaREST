@@ -3,14 +3,14 @@ import { useTranslation } from "react-i18next";
 import { AxiosError } from "axios";
 import { useSnackbar } from "notistack";
 import SaveIcon from "@mui/icons-material/Save";
-import { Box, Button, Typography } from "@mui/material";
+import { Box, Button } from "@mui/material";
 import { useUpdateEffect } from "react-use";
 import { editStudy, getStudyData } from "../../../../../../services/api/study";
-import { Header, Root } from "./style";
 import JSONEditor from "../../../../../common/JSONEditor";
 import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithSnackbarError";
 import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
 import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
+import ViewWrapper from "../../../../../common/page/ViewWrapper";
 
 interface Props {
   path: string;
@@ -65,27 +65,22 @@ function Json({ path, studyId }: Props) {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <Root>
-      <Header>
+    <ViewWrapper>
+      <Box>
         <Button
-          variant="outlined"
-          color="primary"
-          startIcon={<SaveIcon sx={{ width: 15, height: 15 }} />}
+          variant="contained"
+          size="small"
+          startIcon={<SaveIcon />}
           onClick={handleSaveJson}
           disabled={!isSaveAllowed}
         >
-          <Typography sx={{ fontSize: "12px" }}>{t("global.save")}</Typography>
+          {t("global.save")}
         </Button>
-      </Header>
+      </Box>
       <UsePromiseCond
         response={res}
         ifResolved={(json) => (
-          <Box
-            sx={{
-              width: 1,
-              height: 1,
-            }}
-          >
+          <Box sx={{ overflow: "auto" }}>
             <JSONEditor
               json={json}
               onChangeText={handleJsonChange}
@@ -96,7 +91,7 @@ function Json({ path, studyId }: Props) {
           </Box>
         )}
       />
-    </Root>
+    </ViewWrapper>
   );
 }
 
