@@ -115,8 +115,7 @@
     "prettier": "3.0.3",
     "typescript": "5.2.2",
     "vite": "5.0.8",
-    "vitest": "1.6.0",
-    "vitest-canvas-mock": "0.3.3"
+    "vitest": "1.6.0"
   },
   "engines": {
     "node": "18.16.1"

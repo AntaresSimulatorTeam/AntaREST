@@ -4,9 +4,12 @@ import Box from "@mui/material/Box";
 import { mockGetBoundingClientRect } from "../../../tests/mocks/mockGetBoundingClientRect";
 import { type EnhancedGridColumn } from "./types";
 import { ColumnDataType } from "./utils";
+import { mockHTMLCanvasElement } from "../../../tests/mocks/mockHTMLCanvasElement";
 
 beforeEach(() => {
+  mockHTMLCanvasElement();
   mockGetBoundingClientRect();
+  vi.clearAllMocks();
 });
 
 function renderMatrixGrid(

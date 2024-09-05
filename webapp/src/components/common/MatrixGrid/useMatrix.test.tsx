@@ -16,7 +16,7 @@ vi.mock("../../../services/api/study");
 
 describe("useMatrix", () => {
   const mockStudyId = "study123";
-  const mockUrl = "http://studies/study123/matrix";
+  const mockUrl = "https://studies/study123/matrix";
 
   beforeEach(() => {
     vi.clearAllMocks();
