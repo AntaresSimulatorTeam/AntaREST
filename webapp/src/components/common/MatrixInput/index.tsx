@@ -4,6 +4,7 @@ import { useState } from "react";
 import { AxiosError } from "axios";
 import { Typography, Box, Divider } from "@mui/material";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
+import GridOffIcon from "@mui/icons-material/GridOff";
 import {
   MatrixEditDTO,
   MatrixStats,
@@ -188,7 +189,12 @@ function MatrixInput({
             isPercentDisplayEnabled={enablePercentDisplay}
           />
         ) : (
-          !isLoading && <EmptyView title={t("matrix.message.matrixEmpty")} />
+          !isLoading && (
+            <EmptyView
+              icon={GridOffIcon}
+              title={t("matrix.message.matrixEmpty")}
+            />
+          )
         )}
       </Content>
       {openImportDialog && (
