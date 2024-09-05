@@ -137,8 +137,19 @@ class CorrelationMatrix(FormFieldsBaseModel):
 
         return data
 
-
-# TODO SL : restore schema ?
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "columns": ["north", "east", "south", "west"],
+                "data": [
+                    [0.0, 0.0, 0.25, 0.0],
+                    [0.0, 0.0, 0.75, 0.12],
+                    [0.25, 0.75, 0.0, 0.75],
+                    [0.0, 0.12, 0.75, 0.0],
+                ],
+                "index": ["north", "east", "south", "west"],
+            }
+        }
 
 
 def _config_to_array(

@@ -240,18 +240,22 @@ class XpansionCandidateDTO(BaseModel):
     name: str
     link: str
     annual_cost_per_mw: float = Field(alias="annual-cost-per-mw", ge=0)
-    unit_size: float = Field(default=None, alias="unit-size", ge=0)
-    max_units: int = Field(default=None, alias="max-units", ge=0)
-    max_investment: float = Field(default=None, alias="max-investment", ge=0)
-    already_installed_capacity: int = Field(default=None, alias="already-installed-capacity", ge=0)
+    unit_size: t.Optional[float] = Field(default=None, alias="unit-size", ge=0)
+    max_units: t.Optional[int] = Field(default=None, alias="max-units", ge=0)
+    max_investment: t.Optional[float] = Field(default=None, alias="max-investment", ge=0)
+    already_installed_capacity: t.Optional[int] = Field(default=None, alias="already-installed-capacity", ge=0)
     # this is obsolete (replaced by direct/indirect)
-    link_profile: str = Field(default=None, alias="link-profile")
+    link_profile: t.Optional[str] = Field(default=None, alias="link-profile")
     # this is obsolete (replaced by direct/indirect)
-    already_installed_link_profile: str = Field(default=None, alias="already-installed-link-profile")
-    direct_link_profile: str = Field(default=None, alias="direct-link-profile")
-    indirect_link_profile: str = Field(default=None, alias="indirect-link-profile")
-    already_installed_direct_link_profile: str = Field(default=None, alias="already-installed-direct-link-profile")
-    already_installed_indirect_link_profile: str = Field(default=None, alias="already-installed-indirect-link-profile")
+    already_installed_link_profile: t.Optional[str] = Field(default=None, alias="already-installed-link-profile")
+    direct_link_profile: t.Optional[str] = Field(default=None, alias="direct-link-profile")
+    indirect_link_profile: t.Optional[str] = Field(default=None, alias="indirect-link-profile")
+    already_installed_direct_link_profile: t.Optional[str] = Field(
+        default=None, alias="already-installed-direct-link-profile"
+    )
+    already_installed_indirect_link_profile: t.Optional[str] = Field(
+        default=None, alias="already-installed-indirect-link-profile"
+    )
 
 
 class LinkNotFound(HTTPException):
@@ -339,7 +343,7 @@ class XpansionManager:
                     )
                     raise BadZipBinary("Only zip file are allowed.")
 
-            xpansion_settings = XpansionSettings()  # type: ignore
+            xpansion_settings = XpansionSettings()
             settings_obj = xpansion_settings.model_dump(
                 by_alias=True, exclude_none=True, exclude={"sensitivity_config"}
             )

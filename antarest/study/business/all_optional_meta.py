@@ -10,8 +10,8 @@
 #
 # This file is part of the Antares project.
 
-import typing as t
 import copy
+import typing as t
 
 from pydantic import BaseModel, create_model
 
@@ -40,6 +40,10 @@ def camel_case_model(model: t.Type[BaseModel]) -> t.Type[BaseModel]:
         The modified model.
     """
     model.model_config["alias_generator"] = to_camel_case
+
+    # Manually overriding already defined alias names (in base classes),
+    # otherwise they have precedence over generated ones.
+    # TODO There is probably a better way to handle those cases
     for field_name, field in model.model_fields.items():
         new_alias = to_camel_case(field_name)
         field.alias = new_alias

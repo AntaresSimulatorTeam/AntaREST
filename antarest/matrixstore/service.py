@@ -164,7 +164,7 @@ class MatrixService(ISimpleMatrixService):
             created_at=datetime.fromtimestamp(dto.created_at),
         )
 
-        content = MatrixContent(data=dto.data, index=dto.index, columns=dto.columns)  # type: ignore
+        content = MatrixContent(data=dto.data, index=dto.index, columns=dto.columns)
 
         return matrix, content
 

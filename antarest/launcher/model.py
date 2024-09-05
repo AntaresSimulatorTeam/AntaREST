@@ -15,7 +15,7 @@ import json
 import typing as t
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import Column, DateTime, Enum, ForeignKey, Integer, Sequence, String  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
 
@@ -122,7 +122,24 @@ class JobResultDTO(BaseModel):
     exit_code: t.Optional[int]
     solver_stats: t.Optional[str]
     owner: t.Optional[UserInfo]
-    # TODO SL: restore example ?
+
+    class Config:
+        @staticmethod
+        def json_schema_extra(schema: t.MutableMapping[str, t.Any]) -> None:
+            schema["example"] = JobResultDTO(
+                id="b2a9f6a7-7f8f-4f7a-9a8b-1f9b4c5d6e7f",
+                study_id="b2a9f6a7-7f8f-4f7a-9a8b-1f9b4c5d6e7f",
+                launcher="slurm",
+                launcher_params='{"nb_cpu": 4, "time_limit": 3600}',
+                status=JobStatus.SUCCESS,
+                creation_date="2023-11-25 12:00:00",
+                completion_date="2023-11-25 12:27:31",
+                msg="Study successfully executed",
+                output_id="20231125-1227eco",
+                exit_code=0,
+                solver_stats="time: 1651s, call_count: 1, optimization_issues: []",
+                owner=UserInfo(id=0o007, name="James BOND"),
+            ).model_dump()
 
 
 class JobLog(Base):  # type: ignore

@@ -158,7 +158,14 @@ class MatrixEditInstruction(BaseModel):
 
     class Config:
         extra = "forbid"
-        # TODO SL: restore schema extra ?
+        json_schema_extra = {
+            "example": {
+                "column_from": 5,
+                "column_to": 8,
+                "row_from": 0,
+                "row_to": 8760,
+            }
+        }
 
     @model_validator(mode="before")
     def check_slice_coordinates(cls, values: Dict[str, Any]) -> Dict[str, Any]:

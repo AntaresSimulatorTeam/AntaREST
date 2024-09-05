@@ -53,7 +53,6 @@ _CLUSTERS_PATH = "input/thermal/clusters/{area_id}/list"
 _ALL_CLUSTERS_PATH = "input/thermal/clusters"
 
 
-# TODO SL : restore schema ?
 @all_optional_model
 @camel_case_model
 class ThermalClusterInput(Thermal870Properties):
@@ -61,7 +60,21 @@ class ThermalClusterInput(Thermal870Properties):
     Model representing the data structure required to edit an existing thermal cluster within a study.
     """
 
+    class Config:
+        @staticmethod
+        def json_schema_extra(schema: t.MutableMapping[str, t.Any]) -> None:
+            schema["example"] = ThermalClusterInput(
+                group="Gas",
+                name="Gas Cluster XY",
+                enabled=False,
+                unit_count=100,
+                nominal_capacity=1000.0,
+                gen_ts="use global",
+                co2=7.0,
+            ).model_dump()
 
+
+@camel_case_model
 class ThermalClusterCreation(ThermalClusterInput):
     """
     Model representing the data structure required to create a new thermal cluster within a study.
@@ -82,13 +95,26 @@ class ThermalClusterCreation(ThermalClusterInput):
         return create_thermal_config(study_version=study_version, **values)
 
 
-# TODO SL : restore schema ?
 @all_optional_model
 @camel_case_model
 class ThermalClusterOutput(Thermal870Config):
     """
     Model representing the output data structure to display the details of a thermal cluster within a study.
     """
+
+    class Config:
+        @staticmethod
+        def json_schema_extra(schema: t.MutableMapping[str, t.Any]) -> None:
+            schema["example"] = ThermalClusterOutput(
+                id="Gas cluster YZ",
+                group="Gas",
+                name="Gas Cluster YZ",
+                enabled=False,
+                unit_count=100,
+                nominal_capacity=1000.0,
+                gen_ts="use global",
+                co2=7.0,
+            ).model_dump()
 
 
 def create_thermal_output(

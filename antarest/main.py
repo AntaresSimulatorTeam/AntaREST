@@ -286,6 +286,10 @@ def fastapi_app(
         def home(request: Request) -> Any:
             return ""
 
+    # TODO SL:         on_event is deprecated, use lifespan event handlers instead.
+    #
+    #         Read more about it in the
+    #         [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
     @application.on_event("startup")
     def set_default_executor() -> None:
         import asyncio

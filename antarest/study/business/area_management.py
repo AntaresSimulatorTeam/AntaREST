@@ -660,7 +660,7 @@ class AreaManager:
         self.patch_service.save(study, patch)
         return AreaInfoDTO(
             id=area_id,
-            name=area_or_set.name if area_or_set is not None else area_id,  # type: ignore
+            name=area_or_set.name if area_or_set is not None else area_id,
             type=AreaType.AREA if isinstance(area_or_set, Area) else AreaType.DISTRICT,
             metadata=patch.areas.get(area_id),
             set=area_or_set.get_areas(list(file_study.config.areas)) if isinstance(area_or_set, DistrictSet) else [],

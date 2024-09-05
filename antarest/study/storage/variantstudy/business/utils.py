@@ -122,7 +122,7 @@ def transform_command_to_dto(
             commands_dto.append(
                 CommandDTO(
                     action=prev_command.command_name.value,
-                    args=cur_command_args_batch,  # type: ignore
+                    args=cur_command_args_batch,
                 )
             )
             cur_command_args_batch = [command.to_dto().args]
@@ -130,5 +130,5 @@ def transform_command_to_dto(
             cur_dto = ref_commands_dto[cur_dto_index]
             cur_dto_arg_count = 1 if isinstance(cur_dto.args, dict) else len(cur_dto.args)
             prev_command = command
-    commands_dto.append(CommandDTO(action=prev_command.command_name.value, args=cur_command_args_batch))  # type: ignore
+    commands_dto.append(CommandDTO(action=prev_command.command_name.value, args=cur_command_args_batch))
     return commands_dto

@@ -36,6 +36,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
     STStorage880Config,
     STStorage880Properties,
     STStorageConfigType,
+    STStorageGroup,
     create_st_storage_config,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -46,13 +47,26 @@ from antarest.study.storage.variantstudy.model.command.replace_matrix import Rep
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 
 
-# TODO SL : restore schema ?
 @all_optional_model
 @camel_case_model
 class STStorageInput(STStorage880Properties):
     """
     Model representing the form used to EDIT an existing short-term storage.
     """
+
+    class Config:
+        @staticmethod
+        def json_schema_extra(schema: t.MutableMapping[str, t.Any]) -> None:
+            schema["example"] = STStorageInput(
+                name="Siemens Battery",
+                group=STStorageGroup.BATTERY,
+                injection_nominal_capacity=150,
+                withdrawal_nominal_capacity=150,
+                reservoir_capacity=600,
+                efficiency=0.94,
+                initial_level=0.5,
+                initial_level_optim=True,
+            ).model_dump()
 
 
 class STStorageCreation(STStorageInput):
@@ -76,13 +90,26 @@ class STStorageCreation(STStorageInput):
         return create_st_storage_config(study_version=study_version, **values)
 
 
-# TODO SL : restore schema ?
 @all_optional_model
 @camel_case_model
 class STStorageOutput(STStorage880Config):
     """
     Model representing the form used to display the details of a short-term storage entry.
     """
+
+    class Config:
+        @staticmethod
+        def json_schema_extra(schema: t.MutableMapping[str, t.Any]) -> None:
+            schema["example"] = STStorageOutput(
+                id="siemens_battery",
+                name="Siemens Battery",
+                group=STStorageGroup.BATTERY,
+                injection_nominal_capacity=150,
+                withdrawal_nominal_capacity=150,
+                reservoir_capacity=600,
+                efficiency=0.94,
+                initial_level_optim=True,
+            ).model_dump()
 
 
 # =============

@@ -45,13 +45,26 @@ class TimeSeriesInterpretation(EnumIgnoreCase):
     PRODUCTION_FACTOR = "production-factor"
 
 
-# TODO SL : restore schema ?
 @all_optional_model
 @camel_case_model
 class RenewableClusterInput(RenewableProperties):
     """
     Model representing the data structure required to edit an existing renewable cluster.
     """
+
+    class Config:
+        populate_by_name = True
+
+        @staticmethod
+        def json_schema_extra(schema: t.MutableMapping[str, t.Any]) -> None:
+            schema["example"] = RenewableClusterInput(
+                group="Gas",
+                name="Gas Cluster XY",
+                enabled=False,
+                unit_count=100,
+                nominal_capacity=1000.0,
+                ts_interpretation="power-generation",
+            ).model_dump()
 
 
 class RenewableClusterCreation(RenewableClusterInput):
@@ -74,13 +87,25 @@ class RenewableClusterCreation(RenewableClusterInput):
         return create_renewable_config(study_version=study_version, **values)
 
 
-# TODO SL : restore schema ?
 @all_optional_model
 @camel_case_model
 class RenewableClusterOutput(RenewableConfig):
     """
     Model representing the output data structure to display the details of a renewable cluster.
     """
+
+    class Config:
+        @staticmethod
+        def json_schema_extra(schema: t.MutableMapping[str, t.Any]) -> None:
+            schema["example"] = RenewableClusterOutput(
+                id="Gas cluster YZ",
+                group="Gas",
+                name="Gas Cluster YZ",
+                enabled=False,
+                unit_count=100,
+                nominal_capacity=1000.0,
+                ts_interpretation="power-generation",
+            ).model_dump()
 
 
 def create_renewable_output(
