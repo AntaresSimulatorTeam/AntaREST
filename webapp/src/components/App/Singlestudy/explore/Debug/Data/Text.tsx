@@ -13,6 +13,7 @@ import plaintext from "react-syntax-highlighter/dist/esm/languages/hljs/plaintex
 import ini from "react-syntax-highlighter/dist/esm/languages/hljs/ini";
 import properties from "react-syntax-highlighter/dist/esm/languages/hljs/properties";
 import { atomOneDark } from "react-syntax-highlighter/dist/esm/styles/hljs";
+import type { DataCompProps } from "../utils";
 
 SyntaxHighlighter.registerLanguage("xml", xml);
 SyntaxHighlighter.registerLanguage("plaintext", plaintext);
@@ -23,11 +24,6 @@ SyntaxHighlighter.registerLanguage("properties", properties);
 const logsRegex = /^(\[[^\]]*\]){3}/;
 // Ex: "EXP : 0"
 const propertiesRegex = /^[^:]+ : [^:]+/;
-
-interface Props {
-  studyId: string;
-  path: string;
-}
 
 function getSyntaxProps(data: string | string[]): SyntaxHighlighterProps {
   const isArray = Array.isArray(data);
@@ -50,15 +46,15 @@ function getSyntaxProps(data: string | string[]): SyntaxHighlighterProps {
   };
 }
 
-function Text({ studyId, path }: Props) {
+function Text({ studyId, filePath }: DataCompProps) {
   const { t } = useTranslation();
   const theme = useTheme();
 
   const res = usePromiseWithSnackbarError(
-    () => getStudyData<string>(studyId, path),
+    () => getStudyData<string>(studyId, filePath),
     {
       errorMessage: t("studies.error.retrieveData"),
-      deps: [studyId, path],
+      deps: [studyId, filePath],
     },
   );
 

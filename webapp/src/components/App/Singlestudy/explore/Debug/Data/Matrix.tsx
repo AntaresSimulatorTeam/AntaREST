@@ -1,24 +1,19 @@
 import { MatrixStats } from "../../../../../../common/types";
 import MatrixInput from "../../../../../common/MatrixInput";
 import ViewWrapper from "../../../../../common/page/ViewWrapper";
+import type { DataCompProps } from "../utils";
 
-interface Props {
-  studyId: string;
-  path: string;
-}
-
-function Matrix({ studyId, path }: Props) {
-  const filename = path.split("/").pop();
-  const isUserFolder = path.startsWith("/user/");
+function Matrix({ studyId, filePath, enableImport }: DataCompProps) {
+  const filename = filePath.split("/").pop();
 
   return (
     <ViewWrapper>
       <MatrixInput
         title={filename}
         study={studyId}
-        url={path}
+        url={filePath}
         computStats={MatrixStats.NOCOL}
-        disableImport={!isUserFolder}
+        disableImport={!enableImport}
       />
     </ViewWrapper>
   );

@@ -11,13 +11,9 @@ import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithS
 import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
 import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
 import ViewWrapper from "../../../../../common/page/ViewWrapper";
+import type { DataCompProps } from "../utils";
 
-interface Props {
-  path: string;
-  studyId: string;
-}
-
-function Json({ path, studyId }: Props) {
+function Json({ filePath, studyId }: DataCompProps) {
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
@@ -25,17 +21,17 @@ function Json({ path, studyId }: Props) {
   const [isSaveAllowed, setIsSaveAllowed] = useState(false);
 
   const res = usePromiseWithSnackbarError(
-    () => getStudyData(studyId, path, -1),
+    () => getStudyData(studyId, filePath, -1),
     {
       errorMessage: t("studies.error.retrieveData"),
-      deps: [studyId, path],
+      deps: [studyId, filePath],
     },
   );
 
   // Reset save button when path changes
   useUpdateEffect(() => {
     setIsSaveAllowed(false);
-  }, [studyId, path]);
+  }, [studyId, filePath]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -44,7 +40,7 @@ function Json({ path, studyId }: Props) {
   const handleSaveJson = async () => {
     if (isSaveAllowed && jsonData) {
       try {
-        await editStudy(jsonData, studyId, path);
+        await editStudy(jsonData, studyId, filePath);
         enqueueSnackbar(t("studies.success.saveData"), {
           variant: "success",
         });

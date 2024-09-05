@@ -25,6 +25,12 @@ export interface TreeFolder {
 
 export type TreeData = TreeFolder | TreeFile;
 
+export interface DataCompProps {
+  studyId: string;
+  filePath: string;
+  enableImport: boolean;
+}
+
 ////////////////////////////////////////////////////////////////
 // File Info
 ////////////////////////////////////////////////////////////////
