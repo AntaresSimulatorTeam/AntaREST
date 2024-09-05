@@ -4,6 +4,7 @@ on:
     branches:
       - "master"
       - "hotfix/**"
+      - "feature/1724-upgrade-python-dependencies"
 
 jobs:
   binary:
