@@ -6,6 +6,10 @@ function Load() {
   const currentArea = useAppSelector(getCurrentAreaId);
   const url = `input/load/series/load_${currentArea}`;
 
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
+
   return <Matrix url={url} />;
 }
 

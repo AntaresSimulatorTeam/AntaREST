@@ -121,8 +121,7 @@ export function generateDateTime({
  * @param [options.style="normal"] - The style of the columns (default is "normal").
  * @returns An array of EnhancedGridColumn objects representing time series data columns.
  *
- * @example
- * // Usage within a column definition array
+ * @example <caption>Usage within a column definition array</caption>
  * const columns = [
  *   { id: "rowHeaders", title: "", type: ColumnDataType.Text, ... },
  *   { id: "date", title: "Date", type: ColumnDataType.DateTime, ... },

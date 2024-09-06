@@ -1,11 +1,10 @@
-import { useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Item } from "@glideapps/glide-data-grid";
 import { AxiosError } from "axios";
 import { enqueueSnackbar } from "notistack";
 import { t } from "i18next";
-import { MatrixEditDTO, Operator } from "../../../common/types";
+import { MatrixEditDTO, MatrixIndex, Operator } from "../../../common/types";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
-import usePromiseWithSnackbarError from "../../../hooks/usePromiseWithSnackbarError";
 import { getStudyMatrixIndex, editMatrix } from "../../../services/api/matrix";
 import { getStudyData, importFile } from "../../../services/api/study";
 import {
@@ -27,31 +26,44 @@ export function useMatrix(
   enableAggregateColumns: boolean,
 ) {
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
+  const [data, setData] = useState<MatrixData["data"]>([]);
+  const [columnCount, setColumnCount] = useState(0);
+  const [index, setIndex] = useState<MatrixIndex | undefined>(undefined);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<Error | undefined>(undefined);
+  const [pendingUpdates, setPendingUpdates] = useState<MatrixEditDTO[]>([]);
 
-  const {
-    data: matrixData,
-    isLoading: isLoadingMatrix,
-    reload: reloadMatrix,
-  } = usePromiseWithSnackbarError(
-    () => getStudyData<MatrixData>(studyId, url),
-    {
-      errorMessage: t("data.error.matrix"),
-      deps: [studyId, url],
-    },
-  );
+  const fetchMatrix = useCallback(async () => {
+    setIsLoading(true);
+    setError(undefined);
+    try {
+      const [matrix, index] = await Promise.all([
+        getStudyData<MatrixData>(studyId, url),
+        getStudyMatrixIndex(studyId, url),
+      ]);
 
-  const { data: matrixIndex, isLoading: isLoadingIndex } =
-    usePromiseWithSnackbarError(() => getStudyMatrixIndex(studyId, url), {
-      errorMessage: t("matrix.error.failedToretrieveIndex"),
-      deps: [studyId, url, matrixData],
-    });
+      setData(matrix.data);
+      setColumnCount(matrix.columns.length);
+      setIndex(index);
+      setIsLoading(false);
+    } catch (error) {
+      setError(new Error(t("data.error.matrix")));
+      enqueueErrorSnackbar(t("data.error.matrix"), error as AxiosError);
+      setIsLoading(false);
+    }
+  }, [enqueueErrorSnackbar, studyId, url]);
+
+  useEffect(() => {
+    fetchMatrix();
+  }, [fetchMatrix]);
 
   const dateTime = useMemo(() => {
-    return matrixIndex ? generateDateTime(matrixIndex as TimeMetadataDTO) : [];
-  }, [matrixIndex]);
+    return index ? generateDateTime(index as TimeMetadataDTO) : [];
+  }, [index]);
 
   const columns: EnhancedGridColumn[] = useMemo(() => {
-    if (!matrixData) {
+    if (!data) {
       return [];
     }
 
@@ -60,13 +72,12 @@ export function useMatrix(
         id: "date",
         title: "Date",
         type: ColumnDataType.DateTime,
-        width: 150,
         editable: false,
       },
     ];
 
     const dataColumns = enableTimeSeriesColumns
-      ? generateTimeSeriesColumns({ count: matrixData.columns.length })
+      ? generateTimeSeriesColumns({ count: columnCount })
       : [];
 
     const aggregateColumns = enableAggregateColumns
@@ -96,73 +107,86 @@ export function useMatrix(
       : [];
 
     return [...baseColumns, ...dataColumns, ...aggregateColumns];
-  }, [matrixData, enableTimeSeriesColumns, enableAggregateColumns]);
+  }, [data, enableTimeSeriesColumns, columnCount, enableAggregateColumns]);
 
-  const handleCellEdit = async function (coordinates: Item, newValue: number) {
-    const [row, col] = coordinates;
+  const updateDataAndPendingUpdates = (
+    updates: Array<{ coordinates: Item; value: number }>,
+  ) => {
+    setData((prevData) => {
+      const newData = prevData.map((col) => [...col]);
+      updates.forEach(({ coordinates: [row, col], value }) => {
+        newData[col][row] = value;
+      });
+      return newData;
+    });
 
-    const update: MatrixEditDTO[] = [
-      {
+    setPendingUpdates((prevUpdates) => [
+      ...prevUpdates,
+      ...updates.map(({ coordinates: [row, col], value }) => ({
         coordinates: [[col, row]],
         operation: {
           operation: Operator.EQ,
-          value: newValue,
+          value,
         },
-      },
-    ];
-
-    try {
-      await editMatrix(studyId, url, update);
-      reloadMatrix();
-      enqueueSnackbar(t("matrix.success.matrixUpdate"), {
-        variant: "success",
-      });
-    } catch (e) {
-      enqueueErrorSnackbar(t("matrix.error.matrixUpdate"), e as AxiosError);
-    }
+      })),
+    ]);
   };
 
-  const handleMultipleCellsEdit = async function (
+  const handleCellEdit = function (coordinates: Item, newValue: number) {
+    updateDataAndPendingUpdates([{ coordinates, value: newValue }]);
+  };
+
+  const handleMultipleCellsEdit = function (
     newValues: Array<{ coordinates: Item; value: number }>,
     fillPattern?: CellFillPattern,
   ) {
-    const updates = newValues.map(({ coordinates, value }) => ({
-      coordinates: [[coordinates[1], coordinates[0]]],
-      operation: {
-        operation: Operator.EQ,
-        value,
-      },
-    }));
-
-    try {
-      await editMatrix(studyId, url, updates);
-      reloadMatrix();
-      enqueueSnackbar(t("matrix.success.matrixUpdate"), {
-        variant: "success",
-      });
-    } catch (e) {
-      enqueueErrorSnackbar(t("matrix.error.matrixUpdate"), e as AxiosError);
-    }
+    updateDataAndPendingUpdates(newValues);
   };
 
   const handleImport = async (file: File) => {
     try {
       await importFile(file, studyId, url);
-      reloadMatrix();
+
       enqueueSnackbar(t("matrix.success.import"), { variant: "success" });
     } catch (e) {
       enqueueErrorSnackbar(t("matrix.error.import"), e as Error);
     }
   };
 
+  const handleSaveUpdates = async () => {
+    if (pendingUpdates.length > 0) {
+      setIsSubmitting(true);
+      setError(undefined);
+      try {
+        await editMatrix(studyId, url, pendingUpdates);
+        setPendingUpdates([]);
+        enqueueSnackbar(t("matrix.success.matrixUpdate"), {
+          variant: "success",
+        });
+      } catch (error) {
+        setError(new Error(t("matrix.error.matrixUpdate")));
+        enqueueErrorSnackbar(
+          t("matrix.error.matrixUpdate"),
+          error as AxiosError,
+        );
+      } finally {
+        await fetchMatrix();
+        setIsSubmitting(false);
+      }
+    }
+  };
+
   return {
-    matrixData,
-    isLoading: isLoadingMatrix || isLoadingIndex,
+    data,
+    error,
+    isLoading,
+    isSubmitting,
     columns,
     dateTime,
     handleCellEdit,
     handleMultipleCellsEdit,
     handleImport,
-    reloadMatrix,
+    handleSaveUpdates,
+    pendingUpdatesCount: pendingUpdates.length,
   };
 }

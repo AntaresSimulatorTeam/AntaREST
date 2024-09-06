@@ -8,6 +8,7 @@ import { useOutletContext } from "react-router";
 import { StudyMetadata } from "../../../common/types";
 import { MatrixContainer, MatrixHeader, MatrixTitle } from "./style";
 import MatrixActions from "./MatrixActions";
+import EmptyView from "../page/SimpleContent";
 
 interface MatrixProps {
   url: string;
@@ -27,22 +28,34 @@ function Matrix({
   const [openImportDialog, setOpenImportDialog] = useState(false);
 
   const {
-    matrixData,
+    data,
+    error,
     isLoading,
+    isSubmitting,
     columns,
     dateTime,
     handleCellEdit,
     handleMultipleCellsEdit,
     handleImport,
+    handleSaveUpdates,
+    pendingUpdatesCount,
   } = useMatrix(study.id, url, enableTimeSeriesColumns, enableAggregateColumns);
-
-  if (isLoading || !matrixData) {
-    return <Skeleton sx={{ height: 1, transform: "none" }} />;
-  }
 
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
+
+  if (isLoading) {
+    return <Skeleton sx={{ height: 1, transform: "none" }} />;
+  }
+
+  if (error) {
+    return <EmptyView title={error.toString()} />;
+  }
+
+  if (!data || data.length === 0) {
+    return <EmptyView title={t("matrix.error.noData")} />;
+  }
 
   return (
     <MatrixContainer>
@@ -50,23 +63,23 @@ function Matrix({
         <MatrixTitle>{t(title)}</MatrixTitle>
         <MatrixActions
           onImport={() => setOpenImportDialog(true)}
+          onSave={handleSaveUpdates}
           studyId={study.id}
           path={url}
-          disabled={matrixData.data.length === 0}
+          disabled={data.length === 0}
+          pendingUpdatesCount={pendingUpdatesCount}
+          isSubmitting={isSubmitting}
         />
       </MatrixHeader>
-
       <Divider sx={{ width: 1, mt: 1, mb: 2 }} />
-
       <MatrixGrid
-        data={matrixData.data}
+        data={data}
         columns={columns}
-        rows={matrixData.data.length}
+        rows={data.length}
         dateTime={dateTime}
         onCellEdit={handleCellEdit}
         onMultipleCellsEdit={handleMultipleCellsEdit}
       />
-
       {openImportDialog && (
         <ImportDialog
           open={openImportDialog}
