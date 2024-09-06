@@ -10,13 +10,6 @@ import * as RA from "ramda-adjunct";
 // Types
 ////////////////////////////////////////////////////////////////
 
-export type FileType = "json" | "matrix" | "text" | "image" | "folder";
-
-export interface FileInfo {
-  fileType: FileType;
-  filePath: string;
-}
-
 export type TreeFile = string | string[];
 
 export interface TreeFolder {
@@ -25,10 +18,19 @@ export interface TreeFolder {
 
 export type TreeData = TreeFolder | TreeFile;
 
-export interface DataCompProps {
-  studyId: string;
+export type FileType = "json" | "matrix" | "text" | "image" | "folder";
+
+export interface FileInfo {
+  fileType: FileType;
+  filename: string;
   filePath: string;
+  treeData: TreeData;
+}
+
+export interface DataCompProps extends FileInfo {
+  studyId: string;
   enableImport: boolean;
+  setSelectedFile: (file: FileInfo) => void;
 }
 
 ////////////////////////////////////////////////////////////////

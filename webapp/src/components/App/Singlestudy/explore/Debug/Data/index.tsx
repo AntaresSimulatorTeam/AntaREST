@@ -2,11 +2,13 @@ import Text from "./Text";
 import Image from "./Image";
 import Json from "./Json";
 import Matrix from "./Matrix";
+import Folder from "./Folder";
 import type { FileInfo, FileType } from "../utils";
 import type { DataCompProps } from "../utils";
 
 interface Props extends FileInfo {
   studyId: string;
+  setSelectedFile: (file: FileInfo) => void;
 }
 
 type DataComponent = React.ComponentType<DataCompProps>;
@@ -16,18 +18,23 @@ const componentByFileType: Record<FileType, DataComponent> = {
   json: Json,
   text: Text,
   image: Image,
-  folder: ({ filePath }) => filePath,
+  folder: Folder,
 } as const;
 
-function Data({ studyId, fileType, filePath }: Props) {
-  const isUserFolder = filePath.startsWith("/user/");
+function Data({ studyId, setSelectedFile, ...fileInfo }: Props) {
+  const { fileType, filePath } = fileInfo;
+  const enableImport =
+    (filePath === "user" || filePath.startsWith("user/")) &&
+    // To remove when Xpansion tool configuration will be moved to "input/expansion" directory
+    !(filePath === "user/expansion" || filePath.startsWith("user/expansion/"));
   const DataViewer = componentByFileType[fileType];
 
   return (
     <DataViewer
+      {...fileInfo}
       studyId={studyId}
-      filePath={filePath}
-      enableImport={isUserFolder}
+      enableImport={enableImport}
+      setSelectedFile={setSelectedFile}
     />
   );
 }

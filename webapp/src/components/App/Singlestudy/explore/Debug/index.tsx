@@ -9,14 +9,20 @@ import UsePromiseCond from "../../../../common/utils/UsePromiseCond";
 import usePromiseWithSnackbarError from "../../../../../hooks/usePromiseWithSnackbarError";
 import { getStudyData } from "../../../../../services/api/study";
 import DebugContext from "./DebugContext";
-import type { FileInfo, TreeFolder } from "./utils";
+import {
+  getFileType,
+  type TreeData,
+  type FileInfo,
+  type TreeFolder,
+} from "./utils";
 import * as R from "ramda";
 import SplitView from "../../../../common/SplitView";
+import { useUpdateEffect } from "react-use";
 
 function Debug() {
   const [t] = useTranslation();
   const { study } = useOutletContext<{ study: StudyMetadata }>();
-  const [selectedFile, setSelectedFile] = useState<FileInfo>();
+  const [selectedFile, setSelectedFile] = useState<FileInfo | null>(null);
 
   const res = usePromiseWithSnackbarError(
     async () => {
@@ -31,11 +37,29 @@ function Debug() {
 
   const contextValue = useMemo(
     () => ({
-      onFileSelect: setSelectedFile,
+      setSelectedFile,
       reloadTreeData: res.reload,
     }),
     [res.reload],
   );
+
+  useUpdateEffect(() => {
+    const firstChildName = Object.keys(res.data ?? {})[0];
+    const treeData = R.path<TreeData>([firstChildName], res.data);
+
+    if (treeData) {
+      const fileInfo = {
+        fileType: getFileType(treeData),
+        filename: firstChildName,
+        filePath: firstChildName,
+        treeData,
+      };
+
+      setSelectedFile(fileInfo);
+    } else {
+      setSelectedFile(null);
+    }
+  }, [res?.data]);
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -48,12 +72,23 @@ function Debug() {
           response={res}
           ifResolved={(data) => (
             <DebugContext.Provider value={contextValue}>
-              <Tree data={data} />
+              <Tree
+                data={data}
+                selectedItemId={selectedFile?.filePath || null}
+              />
             </DebugContext.Provider>
           )}
         />
       </Box>
-      <Box>{selectedFile && <Data {...selectedFile} studyId={study.id} />}</Box>
+      <Box>
+        {selectedFile && (
+          <Data
+            {...selectedFile}
+            setSelectedFile={setSelectedFile}
+            studyId={study.id}
+          />
+        )}
+      </Box>
     </SplitView>
   );
 }

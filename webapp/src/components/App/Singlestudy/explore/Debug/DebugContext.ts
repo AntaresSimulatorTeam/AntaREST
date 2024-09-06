@@ -3,7 +3,7 @@ import type { FileInfo } from "./utils";
 import { voidFn } from "../../../../../utils/fnUtils";
 
 const initialDebugContextValue = {
-  onFileSelect: voidFn<[FileInfo]>,
+  setSelectedFile: voidFn<[FileInfo]>,
   reloadTreeData: voidFn,
 };
 

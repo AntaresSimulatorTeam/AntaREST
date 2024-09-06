@@ -6,14 +6,14 @@ import { useContext } from "react";
 
 interface Props {
   name: string;
-  content: TreeData;
   path: string;
+  treeData: TreeData;
 }
 
-function FileTreeItem({ name, content, path }: Props) {
-  const { onFileSelect } = useContext(DebugContext);
-  const filePath = `${path}/${name}`;
-  const fileType = getFileType(content);
+function FileTreeItem({ name, treeData, path }: Props) {
+  const { setSelectedFile } = useContext(DebugContext);
+  const filePath = path ? `${path}/${name}` : name;
+  const fileType = getFileType(treeData);
   const FileIcon = getFileIcon(fileType);
 
   ////////////////////////////////////////////////////////////////
@@ -21,9 +21,7 @@ function FileTreeItem({ name, content, path }: Props) {
   ////////////////////////////////////////////////////////////////
 
   const handleClick = () => {
-    if (fileType !== "folder") {
-      onFileSelect({ fileType, filePath });
-    }
+    setSelectedFile({ fileType, filename: name, filePath, treeData });
   };
 
   ////////////////////////////////////////////////////////////////
@@ -41,13 +39,13 @@ function FileTreeItem({ name, content, path }: Props) {
       }
       onClick={handleClick}
     >
-      {isFolder(content) &&
-        Object.keys(content).map((childName) => (
+      {isFolder(treeData) &&
+        Object.keys(treeData).map((childName) => (
           <FileTreeItem
             key={childName}
             name={childName}
-            content={content[childName]}
             path={filePath}
+            treeData={treeData[childName]}
           />
         ))}
     </TreeItem>

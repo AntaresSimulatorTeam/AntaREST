@@ -240,6 +240,7 @@
   "study.bindingconstraints": "Binding Constraints",
   "study.debug": "Debug",
   "study.debug.file.image": "Image file",
+  "study.debug.folder.empty": "Folder is empty",
   "study.failtofetchlogs": "Failed to fetch logs",
   "study.failtokilltask": "Failed to kill task",
   "study.publicMode": "Public mode",
