@@ -24,6 +24,7 @@ from antarest.core.utils.utils import sanitize_string, sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.study.model import StudyMetadataDTO
+from antarest.study.repository import StudyFilter, AccessPermissions
 from antarest.study.service import StudyService
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.model import CommandDTO, VariantTreeDTO
@@ -32,8 +33,8 @@ logger = logging.getLogger(__name__)
 
 
 def create_study_variant_routes(
-    study_service: StudyService,
-    config: Config,
+        study_service: StudyService,
+        config: Config,
 ) -> APIRouter:
     """
     Endpoint implementation for studies area management
@@ -59,9 +60,9 @@ def create_study_variant_routes(
         },
     )
     def create_variant(
-        uuid: str,
-        name: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            name: str,
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> str:
         """
         Creates a study variant.
@@ -115,8 +116,8 @@ def create_study_variant_routes(
         },
     )
     def get_variants(
-        uuid: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> VariantTreeDTO:
         logger.info(
             f"Fetching variant children of study {uuid}",
@@ -138,9 +139,9 @@ def create_study_variant_routes(
         },
     )
     def get_parents(
-        uuid: str,
-        direct: Optional[bool] = False,
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            direct: Optional[bool] = False,
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Union[List[StudyMetadataDTO], Optional[StudyMetadataDTO]]:
         logger.info(
             f"Fetching variant parents of study {uuid}",
@@ -166,8 +167,8 @@ def create_study_variant_routes(
         },
     )
     def list_commands(
-        uuid: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> List[CommandDTO]:
         logger.info(
             f"Fetching command list of variant study {uuid}",
@@ -184,8 +185,8 @@ def create_study_variant_routes(
         response_model=FileDownloadTaskDTO,
     )
     def export_matrices(
-        uuid: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> FileDownloadTaskDTO:
         logger.info(
             f"Exporting commands matrices for variant study {uuid}",
@@ -206,9 +207,9 @@ def create_study_variant_routes(
         },
     )
     def append_commands(
-        uuid: str,
-        commands: List[CommandDTO] = Body(...),
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            commands: List[CommandDTO] = Body(...),
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Optional[List[str]]:
         logger.info(
             f"Appending new command to variant study {uuid}",
@@ -229,9 +230,9 @@ def create_study_variant_routes(
         },
     )
     def replace_commands(
-        uuid: str,
-        commands: List[CommandDTO] = Body(...),
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            commands: List[CommandDTO] = Body(...),
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> str:
         logger.info(
             f"Replacing all commands of variant study {uuid}",
@@ -252,9 +253,9 @@ def create_study_variant_routes(
         },
     )
     def append_command(
-        uuid: str,
-        command: CommandDTO,
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            command: CommandDTO,
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> str:
         logger.info(
             f"Appending new command to variant study {uuid}",
@@ -276,9 +277,9 @@ def create_study_variant_routes(
         },
     )
     def get_command(
-        uuid: str,
-        cid: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            cid: str,
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> CommandDTO:
         logger.info(
             f"Fetching command {cid} info of variant study {uuid}",
@@ -295,10 +296,10 @@ def create_study_variant_routes(
         summary="Move a command to an other index",
     )
     def move_command(
-        uuid: str,
-        cid: str,
-        index: int,
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            cid: str,
+            index: int,
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
         logger.info(
             f"Moving command {cid} to index {index} for variant study {uuid}",
@@ -315,10 +316,10 @@ def create_study_variant_routes(
         summary="Move a command to an other index",
     )
     def update_command(
-        uuid: str,
-        cid: str,
-        command: CommandDTO,
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            cid: str,
+            command: CommandDTO,
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
         logger.info(
             f"Update command {cid} for variant study {uuid}",
@@ -335,9 +336,9 @@ def create_study_variant_routes(
         summary="Remove a command",
     )
     def remove_command(
-        uuid: str,
-        cid: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            cid: str,
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
         logger.info(
             f"Removing command {cid} of variant study {uuid}",
@@ -354,8 +355,8 @@ def create_study_variant_routes(
         summary="Clear variant's commands",
     )
     def remove_all_commands(
-        uuid: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
         logger.info(
             f"Removing all commands from variant study {uuid}",
@@ -372,10 +373,10 @@ def create_study_variant_routes(
         response_model=str,
     )
     def generate_variant(
-        uuid: str,
-        denormalize: bool = False,
-        from_scratch: bool = False,
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            denormalize: bool = False,
+            from_scratch: bool = False,
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> str:
         logger.info(
             f"Generating snapshot for variant study {uuid}",
@@ -392,8 +393,8 @@ def create_study_variant_routes(
         response_model=TaskDTO,
     )
     def get_study_generation_task(
-        uuid: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> TaskDTO:
         request_params = RequestParameters(user=current_user)
         sanitized_uuid = sanitize_uuid(uuid)
@@ -410,9 +411,9 @@ def create_study_variant_routes(
         },
     )
     def create_from_variant(
-        uuid: str,
-        name: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
+            uuid: str,
+            name: str,
+            current_user: JWTUser = Depends(auth.get_current_user),
     ) -> str:
         logger.info(
             f"Creating new raw study {name} from variant study {uuid}",
@@ -420,5 +421,33 @@ def create_study_variant_routes(
         )
         params = RequestParameters(user=current_user)
         raise NotImplementedError()
+
+    @bp.put(
+        "/studies/variants/clear-snapshots",
+        tags=[APITag.study_variant_management],
+        summary="Clear variant snapshots",
+        responses={
+            200: {
+                "description": "Delete snapshots older than a specific number of hours. By default, this number is 24."
+            }
+        }
+    )
+    def clear_variant_snapshots(
+            limit: int = 24,
+            current_user: JWTUser = Depends(auth.get_current_user),
+    ):
+        """
+            Endpoint that clear `limit` hours old and older variant snapshots.
+
+            Args: limit (int, optional): Number of hours to clear. Defaults to 24.
+
+            Returns: None
+        """
+        logger.info(
+            f"Delete all variant snapshots older than {limit} hours (24 by default)",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        variant_study_service.clear_all_snapshots(limit, params)
 
     return bp

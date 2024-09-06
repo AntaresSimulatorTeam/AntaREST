@@ -16,7 +16,7 @@ import logging
 import re
 import shutil
 import typing as t
-from datetime import datetime
+from datetime import datetime, timedelta
 from functools import reduce
 from pathlib import Path
 from uuid import uuid4
@@ -48,6 +48,7 @@ from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT, ITaskService,
 from antarest.core.utils.utils import assert_this, suppress_exception
 from antarest.matrixstore.service import MatrixService
 from antarest.study.model import RawStudy, Study, StudyAdditionalData, StudyMetadataDTO, StudySimResultDTO
+from antarest.study.repository import StudyFilter, StudySortBy, AccessPermissions
 from antarest.study.storage.abstract_storage_service import AbstractStorageService
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, FileStudyTreeConfigDTO
@@ -1050,3 +1051,35 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                 exc_info=e,
             )
             return False
+
+    def clear_all_snapshots(self, limit: int, params: t.Optional[RequestParameters] = None) -> None:
+        """
+            Clear all variant snapshots older than `limit` (in hours).
+            Only available for admin users.
+            `limit` must be a positive integer.
+            Raises a UserHasNotPermissionError if the user is not administrator
+            Args:
+                limit (integer): number of hours
+                params: request parameters used to identify the user status
+            Returns: None
+
+            Raises:
+                UserHasNotPermissionError
+                HTTPException
+        """
+        if limit < 0:
+            raise HTTPException(status_code=400, detail=f"Limit cannot be negative (limit={limit})")
+        if params.user.is_site_admin():
+            result = self.repository.get_all(
+                study_filter=StudyFilter(
+                    variant=True,
+                    access_permissions=AccessPermissions(is_admin=True),
+                )
+            )
+            for variant in result:
+                if variant.updated_at < datetime.now() - timedelta(hours=limit) or \
+                        (variant.last_access and
+                         variant.last_access < datetime.now() - timedelta(hours=limit)):
+                    self.clear_snapshot(variant)
+        else:
+            raise UserHasNotPermissionError
