@@ -623,9 +623,9 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                 )
                 return TaskResult(
                     success=generate_result.success,
-                    message=f"{study_id} generated successfully"
-                    if generate_result.success
-                    else f"{study_id} not generated",
+                    message=(
+                        f"{study_id} generated successfully" if generate_result.success else f"{study_id} not generated"
+                    ),
                     return_value=generate_result.json(),
                 )
 
