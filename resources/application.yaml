@@ -26,7 +26,7 @@ launcher:
       700: path/to/700
     enable_nb_cores_detection: true
 
-root_path: "api"
+# root_path: "api"
 
 server:
   worker_threadpool_size: 12
@@ -37,3 +37,7 @@ server:
 logging:
   level: INFO
   logfile: ./tmp/antarest.log
+
+debug: False
+
+api_prefix: "/api"

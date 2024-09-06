@@ -109,7 +109,7 @@ def storage_service(tmp_path: Path, project_path: Path, sta_mini_zip_path: Path)
     )
     matrix_service = SimpleMatrixService(matrix_content_repository=matrix_content_repository)
     storage_service = build_study_service(
-        application=Mock(),
+        app_ctxt=Mock(),
         cache=LocalCache(config=config.cache),
         file_transfer_manager=Mock(),
         task_service=task_service_mock,

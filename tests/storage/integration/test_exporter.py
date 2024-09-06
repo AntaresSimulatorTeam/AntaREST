@@ -21,6 +21,7 @@ import pytest
 from fastapi import FastAPI
 from starlette.testclient import TestClient
 
+from antarest.core.application import create_app_ctxt
 from antarest.core.config import Config, SecurityConfig, StorageConfig, WorkspaceConfig
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.jwt import DEFAULT_ADMIN_USER
@@ -54,10 +55,10 @@ def assert_url_content(url: str, tmp_dir: Path, sta_mini_zip_path: Path) -> byte
     repo = Mock()
     repo.get.return_value = md
 
-    app = FastAPI(title=__name__)
+    build_ctxt = create_app_ctxt(FastAPI(title=__name__))
     ftm = SimpleFileTransferManager(Config(storage=StorageConfig(tmp_dir=tmp_dir)))
     build_study_service(
-        app,
+        build_ctxt,
         cache=Mock(),
         user_service=Mock(),
         task_service=SimpleSyncTaskService(),
@@ -69,7 +70,7 @@ def assert_url_content(url: str, tmp_dir: Path, sta_mini_zip_path: Path) -> byte
     )
 
     # Simulate the download of data using a streamed request
-    client = TestClient(app)
+    client = TestClient(build_ctxt.build())
     if client.stream is False:
         # `TestClient` is based on `Requests` (old way before AntaREST-v2.15)
         # noinspection PyArgumentList

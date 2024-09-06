@@ -11,4 +11,3 @@ npm run build -- --mode=desktop
 cd ..
 rm -fr resources/webapp
 cp -r ./webapp/dist/ resources/webapp
-cp ./webapp/dist/index.html resources/templates/

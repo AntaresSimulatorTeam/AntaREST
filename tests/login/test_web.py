@@ -21,6 +21,7 @@ import pytest
 from fastapi import FastAPI
 from starlette.testclient import TestClient
 
+from antarest.core.application import AppBuildContext, create_app_ctxt
 from antarest.core.config import Config, SecurityConfig
 from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.requests import RequestParameters
@@ -63,15 +64,16 @@ def create_app(service: Mock, auth_disabled=False) -> FastAPI:
             authjwt_token_location=("headers", "cookies"),
         )
 
+    app_ctxt = create_app_ctxt(app)
     build_login(
-        app,
+        app_ctxt,
         service=service,
         config=Config(
             resources_path=Path(),
             security=SecurityConfig(disabled=auth_disabled),
         ),
     )
-    return app
+    return app_ctxt.build()
 
 
 class TokenType:

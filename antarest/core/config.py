@@ -593,6 +593,7 @@ class Config:
     cache: CacheConfig = CacheConfig()
     tasks: TaskConfig = TaskConfig()
     root_path: str = ""
+    api_prefix: str = ""
 
     @classmethod
     def from_dict(cls, data: JSON) -> "Config":
@@ -611,6 +612,7 @@ class Config:
             cache=CacheConfig.from_dict(data["cache"]) if "cache" in data else defaults.cache,
             tasks=TaskConfig.from_dict(data["tasks"]) if "tasks" in data else defaults.tasks,
             root_path=data.get("root_path", defaults.root_path),
+            api_prefix=data.get("api_prefix", defaults.api_prefix),
         )
 
     @classmethod

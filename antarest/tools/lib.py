@@ -20,7 +20,7 @@ from typing import List, Optional, Set, Union
 from zipfile import ZipFile
 
 import numpy as np
-from httpx import Client  # TODO SL: check it work on windows
+from httpx import Client
 
 from antarest.core.cache.business.local_chache import LocalCache
 from antarest.core.config import CacheConfig

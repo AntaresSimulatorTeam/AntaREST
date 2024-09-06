@@ -17,6 +17,7 @@ import pytest
 from fastapi import FastAPI
 from starlette.testclient import TestClient
 
+from antarest.core.application import create_app_ctxt
 from antarest.core.config import Config, SecurityConfig
 from antarest.fastapi_jwt_auth import AuthJWT
 from antarest.main import JwtSettings
@@ -26,7 +27,7 @@ from tests.login.test_web import create_auth_token
 
 
 def create_app(service: Mock, auth_disabled=False) -> FastAPI:
-    app = FastAPI(title=__name__)
+    build_ctxt = create_app_ctxt(FastAPI(title=__name__))
 
     @AuthJWT.load_config
     def get_config():
@@ -37,7 +38,7 @@ def create_app(service: Mock, auth_disabled=False) -> FastAPI:
         )
 
     build_matrix_service(
-        app,
+        build_ctxt,
         user_service=Mock(),
         file_transfer_manager=Mock(),
         task_service=Mock(),
@@ -47,7 +48,7 @@ def create_app(service: Mock, auth_disabled=False) -> FastAPI:
             security=SecurityConfig(disabled=auth_disabled),
         ),
     )
-    return app
+    return build_ctxt.build()
 
 
 @pytest.mark.unit_test
