@@ -35,7 +35,7 @@ describe("useMatrix", () => {
     start_date: "2023-01-01",
     steps: 2,
     first_week_size: 7,
-    level: StudyOutputDownloadLevelDTO.DAILY, // TODO remove this, fix the type
+    level: StudyOutputDownloadLevelDTO.DAILY,
   };
 
   it("should fetch matrix data and index on mount", async () => {
@@ -50,28 +50,56 @@ describe("useMatrix", () => {
       expect(result.current.isLoading).toBe(false);
     });
 
-    expect(result.current.matrixData).toEqual(mockMatrixData);
+    expect(result.current.data).toEqual(mockMatrixData.data);
     expect(result.current.columns.length).toBeGreaterThan(0);
     expect(result.current.dateTime.length).toBeGreaterThan(0);
   });
 
   it("should handle cell edit", async () => {
-    const mockMatrixData: MatrixData = {
-      data: [
-        [1, 2],
-        [3, 4],
-      ],
-      columns: [0, 1],
-      index: [0, 1],
-    };
+    vi.mocked(apiStudy.getStudyData).mockResolvedValue(mockMatrixData);
+    vi.mocked(apiMatrix.getStudyMatrixIndex).mockResolvedValue(mockMatrixIndex);
 
-    const mockMatrixIndex: MatrixIndex = {
-      start_date: "2023-01-01",
-      steps: 2,
-      first_week_size: 7,
-      level: StudyOutputDownloadLevelDTO.DAILY,
-    };
+    const { result } = renderHook(() =>
+      useMatrix(mockStudyId, mockUrl, true, true),
+    );
 
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    act(() => {
+      result.current.handleCellEdit([0, 1], 5);
+    });
+
+    expect(result.current.data[1][0]).toBe(5);
+    expect(result.current.pendingUpdatesCount).toBe(1);
+  });
+
+  it("should handle multiple cells edit", async () => {
+    vi.mocked(apiStudy.getStudyData).mockResolvedValue(mockMatrixData);
+    vi.mocked(apiMatrix.getStudyMatrixIndex).mockResolvedValue(mockMatrixIndex);
+
+    const { result } = renderHook(() =>
+      useMatrix(mockStudyId, mockUrl, true, true),
+    );
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    act(() => {
+      result.current.handleMultipleCellsEdit([
+        { coordinates: [0, 1], value: 5 },
+        { coordinates: [1, 0], value: 6 },
+      ]);
+    });
+
+    expect(result.current.data[1][0]).toBe(5);
+    expect(result.current.data[0][1]).toBe(6);
+    expect(result.current.pendingUpdatesCount).toBe(2);
+  });
+
+  it("should handle save updates", async () => {
     vi.mocked(apiStudy.getStudyData).mockResolvedValue(mockMatrixData);
     vi.mocked(apiMatrix.getStudyMatrixIndex).mockResolvedValue(mockMatrixIndex);
     vi.mocked(apiMatrix.editMatrix).mockResolvedValue(undefined);
@@ -84,8 +112,12 @@ describe("useMatrix", () => {
       expect(result.current.isLoading).toBe(false);
     });
 
+    act(() => {
+      result.current.handleCellEdit([0, 1], 5);
+    });
+
     await act(async () => {
-      await result.current.handleCellEdit([0, 1], 5);
+      await result.current.handleSaveUpdates();
     });
 
     const expectedEdit: MatrixEditDTO = {
@@ -99,12 +131,14 @@ describe("useMatrix", () => {
     expect(apiMatrix.editMatrix).toHaveBeenCalledWith(mockStudyId, mockUrl, [
       expectedEdit,
     ]);
+    expect(result.current.pendingUpdatesCount).toBe(0);
   });
 
   it("should handle file import", async () => {
     const mockFile = new File([""], "test.csv", { type: "text/csv" });
-    const mockImportFile = vi.fn().mockResolvedValue({});
-    vi.mocked(apiStudy.importFile).mockImplementation(mockImportFile);
+    vi.mocked(apiStudy.importFile).mockResolvedValue("");
+    vi.mocked(apiStudy.getStudyData).mockResolvedValue(mockMatrixData);
+    vi.mocked(apiMatrix.getStudyMatrixIndex).mockResolvedValue(mockMatrixIndex);
 
     const { result } = renderHook(() =>
       useMatrix(mockStudyId, mockUrl, true, true),
