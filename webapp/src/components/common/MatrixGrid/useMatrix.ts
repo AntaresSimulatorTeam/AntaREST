@@ -18,6 +18,12 @@ import {
   ColumnDataType,
   generateTimeSeriesColumns,
 } from "./utils";
+import useUndo from "use-undo";
+
+interface DataState {
+  data: number[][];
+  pendingUpdates: MatrixEditDTO[];
+}
 
 export function useMatrix(
   studyId: string,
@@ -26,33 +32,33 @@ export function useMatrix(
   enableAggregateColumns: boolean,
 ) {
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
-  const [data, setData] = useState<MatrixData["data"]>([]);
   const [columnCount, setColumnCount] = useState(0);
   const [index, setIndex] = useState<MatrixIndex | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<Error | undefined>(undefined);
-  const [pendingUpdates, setPendingUpdates] = useState<MatrixEditDTO[]>([]);
+  const [{ present: currentState }, { set: setState, undo, redo, canRedo }] =
+    useUndo<DataState>({ data: [], pendingUpdates: [] });
 
   const fetchMatrix = useCallback(async () => {
     setIsLoading(true);
-    setError(undefined);
     try {
       const [matrix, index] = await Promise.all([
         getStudyData<MatrixData>(studyId, url),
         getStudyMatrixIndex(studyId, url),
       ]);
 
-      setData(matrix.data);
+      setState({ data: matrix.data, pendingUpdates: [] });
       setColumnCount(matrix.columns.length);
       setIndex(index);
       setIsLoading(false);
     } catch (error) {
       setError(new Error(t("data.error.matrix")));
       enqueueErrorSnackbar(t("data.error.matrix"), error as AxiosError);
+    } finally {
       setIsLoading(false);
     }
-  }, [enqueueErrorSnackbar, studyId, url]);
+  }, [enqueueErrorSnackbar, setState, studyId, url]);
 
   useEffect(() => {
     fetchMatrix();
@@ -63,7 +69,7 @@ export function useMatrix(
   }, [index]);
 
   const columns: EnhancedGridColumn[] = useMemo(() => {
-    if (!data) {
+    if (!currentState.data) {
       return [];
     }
 
@@ -107,40 +113,51 @@ export function useMatrix(
       : [];
 
     return [...baseColumns, ...dataColumns, ...aggregateColumns];
-  }, [data, enableTimeSeriesColumns, columnCount, enableAggregateColumns]);
+  }, [
+    currentState.data,
+    enableTimeSeriesColumns,
+    columnCount,
+    enableAggregateColumns,
+  ]);
 
-  const updateDataAndPendingUpdates = (
-    updates: Array<{ coordinates: Item; value: number }>,
-  ) => {
-    setData((prevData) => {
-      const newData = prevData.map((col) => [...col]);
-      updates.forEach(({ coordinates: [row, col], value }) => {
-        newData[col][row] = value;
+  // Apply updates to the matrix data and store them in the pending updates list
+  const applyUpdates = useCallback(
+    (updates: Array<{ coordinates: Item; value: number }>) => {
+      if (!currentState.data) {
+        return;
+      }
+
+      const updatedData = currentState.data.map((col) => [...col]);
+
+      const newUpdates = updates.map(({ coordinates: [row, col], value }) => {
+        updatedData[col][row] = value;
+
+        return {
+          coordinates: [[col, row]],
+          operation: {
+            operation: Operator.EQ,
+            value,
+          },
+        };
       });
-      return newData;
-    });
 
-    setPendingUpdates((prevUpdates) => [
-      ...prevUpdates,
-      ...updates.map(({ coordinates: [row, col], value }) => ({
-        coordinates: [[col, row]],
-        operation: {
-          operation: Operator.EQ,
-          value,
-        },
-      })),
-    ]);
-  };
+      setState({
+        data: updatedData,
+        pendingUpdates: [...currentState.pendingUpdates, ...newUpdates],
+      });
+    },
+    [currentState, setState],
+  );
 
   const handleCellEdit = function (coordinates: Item, newValue: number) {
-    updateDataAndPendingUpdates([{ coordinates, value: newValue }]);
+    applyUpdates([{ coordinates, value: newValue }]);
   };
 
   const handleMultipleCellsEdit = function (
     newValues: Array<{ coordinates: Item; value: number }>,
     fillPattern?: CellFillPattern,
   ) {
-    updateDataAndPendingUpdates(newValues);
+    applyUpdates(newValues);
   };
 
   const handleImport = async (file: File) => {
@@ -154,30 +171,40 @@ export function useMatrix(
   };
 
   const handleSaveUpdates = async () => {
-    if (pendingUpdates.length > 0) {
-      setIsSubmitting(true);
-      setError(undefined);
-      try {
-        await editMatrix(studyId, url, pendingUpdates);
-        setPendingUpdates([]);
-        enqueueSnackbar(t("matrix.success.matrixUpdate"), {
-          variant: "success",
-        });
-      } catch (error) {
-        setError(new Error(t("matrix.error.matrixUpdate")));
-        enqueueErrorSnackbar(
-          t("matrix.error.matrixUpdate"),
-          error as AxiosError,
-        );
-      } finally {
-        await fetchMatrix();
-        setIsSubmitting(false);
-      }
+    if (!currentState.pendingUpdates.length) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await editMatrix(studyId, url, currentState.pendingUpdates);
+      setState({ data: currentState.data, pendingUpdates: [] });
+      enqueueSnackbar(t("matrix.success.matrixUpdate"), {
+        variant: "success",
+      });
+    } catch (error) {
+      setError(new Error(t("matrix.error.matrixUpdate")));
+      enqueueErrorSnackbar(t("matrix.error.matrixUpdate"), error as AxiosError);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
+  const handleUndo = useCallback(() => {
+    undo();
+  }, [undo]);
+
+  const handleRedo = useCallback(() => {
+    redo();
+  }, [redo]);
+
+  const canUndoChanges = useMemo(
+    () => currentState.pendingUpdates.length > 0,
+    [currentState.pendingUpdates],
+  );
+
   return {
-    data,
+    data: currentState.data,
     error,
     isLoading,
     isSubmitting,
@@ -187,6 +214,10 @@ export function useMatrix(
     handleMultipleCellsEdit,
     handleImport,
     handleSaveUpdates,
-    pendingUpdatesCount: pendingUpdates.length,
+    pendingUpdatesCount: currentState.pendingUpdates.length,
+    undo: handleUndo,
+    redo: handleRedo,
+    canUndo: canUndoChanges,
+    canRedo,
   };
 }

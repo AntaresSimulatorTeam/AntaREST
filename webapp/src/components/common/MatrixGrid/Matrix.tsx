@@ -39,6 +39,10 @@ function Matrix({
     handleImport,
     handleSaveUpdates,
     pendingUpdatesCount,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
   } = useMatrix(study.id, url, enableTimeSeriesColumns, enableAggregateColumns);
 
   ////////////////////////////////////////////////////////////////
@@ -54,7 +58,7 @@ function Matrix({
   }
 
   if (!data || data.length === 0) {
-    return <EmptyView title={t("matrix.error.noData")} />;
+    return <EmptyView title={t("matrix.message.matrixEmpty")} />;
   }
 
   return (
@@ -69,6 +73,10 @@ function Matrix({
           disabled={data.length === 0}
           pendingUpdatesCount={pendingUpdatesCount}
           isSubmitting={isSubmitting}
+          undo={undo}
+          redo={redo}
+          canUndo={canUndo}
+          canRedo={canRedo}
         />
       </MatrixHeader>
       <Divider sx={{ width: 1, mt: 1, mb: 2 }} />
