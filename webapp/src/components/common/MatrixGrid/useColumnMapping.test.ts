@@ -1,5 +1,5 @@
 import { renderHook } from "@testing-library/react";
-import { describe, it, expect } from "vitest";
+import { describe, test, expect } from "vitest";
 import { useColumnMapping } from "./useColumnMapping";
 import { EnhancedGridColumn } from "./types";
 import { ColumnDataType } from "./utils";
@@ -43,21 +43,21 @@ describe("useColumnMapping", () => {
     },
   ];
 
-  it("should create gridToData and dataToGrid functions", () => {
+  test("should create gridToData and dataToGrid functions", () => {
     const { result } = renderHook(() => useColumnMapping(testColumns));
     expect(result.current.gridToData).toBeDefined();
     expect(result.current.dataToGrid).toBeDefined();
   });
 
   describe("gridToData", () => {
-    it("should return null for non-data columns", () => {
+    test("should return null for non-data columns", () => {
       const { result } = renderHook(() => useColumnMapping(testColumns));
       expect(result.current.gridToData([0, 0])).toBeNull(); // Text column
       expect(result.current.gridToData([1, 0])).toBeNull(); // DateTime column
       expect(result.current.gridToData([4, 0])).toBeNull(); // Aggregate column
     });
 
-    it("should map grid coordinates to data coordinates for data columns", () => {
+    test("should map grid coordinates to data coordinates for data columns", () => {
       const { result } = renderHook(() => useColumnMapping(testColumns));
       expect(result.current.gridToData([2, 0])).toEqual([0, 0]); // First Number column
       expect(result.current.gridToData([3, 1])).toEqual([1, 1]); // Second Number column
@@ -65,14 +65,14 @@ describe("useColumnMapping", () => {
   });
 
   describe("dataToGrid", () => {
-    it("should map data coordinates to grid coordinates", () => {
+    test("should map data coordinates to grid coordinates", () => {
       const { result } = renderHook(() => useColumnMapping(testColumns));
       expect(result.current.dataToGrid([0, 0])).toEqual([2, 0]); // First data column
       expect(result.current.dataToGrid([1, 1])).toEqual([3, 1]); // Second data column
     });
   });
 
-  it("should handle columns with only non-data types", () => {
+  test("should handle columns with only non-data types", () => {
     const nonDataColumns: EnhancedGridColumn[] = [
       {
         id: "text",
@@ -95,7 +95,7 @@ describe("useColumnMapping", () => {
     expect(result.current.dataToGrid([0, 0])).toEqual([undefined, 0]); // No data columns, so this should return an invalid grid coordinate
   });
 
-  it("should handle columns with only data types", () => {
+  test("should handle columns with only data types", () => {
     const dataOnlyColumns: EnhancedGridColumn[] = [
       {
         id: "num1",
@@ -119,7 +119,7 @@ describe("useColumnMapping", () => {
     expect(result.current.dataToGrid([1, 1])).toEqual([1, 1]);
   });
 
-  it("should memoize the result", () => {
+  test("should memoize the result", () => {
     const { result, rerender } = renderHook(
       (props) => useColumnMapping(props.columns),
       { initialProps: { columns: testColumns } },
