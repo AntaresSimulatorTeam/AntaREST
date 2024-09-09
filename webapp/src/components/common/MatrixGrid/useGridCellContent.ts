@@ -1,71 +1,7 @@
 import { useCallback, useMemo } from "react";
 import { GridCell, GridCellKind, Item } from "@glideapps/glide-data-grid";
 import { type EnhancedGridColumn, type ColumnType } from "./types";
-import { ColumnDataType } from "./utils";
-
-/**
- * Options for formatting date and time strings.
- *
- * Note on Time Zone Handling:
- *
- * The 'timeZone' option is set to "UTC" to ensure consistent date and time
- * representation across different systems and geographical locations. This is
- * crucial for several reasons:
- *
- * 1. Consistency: UTC provides a universal time standard, eliminating
- *    discrepancies caused by daylight saving time or different time zones.
- *
- * 2. Data Integrity: Many systems store timestamps in UTC. By displaying in UTC,
- *    we maintain fidelity to the original data without implicit conversions.
- *
- * 3. Global Applications: For applications used across multiple time zones,
- *    UTC ensures all users see the same time representation.
- *
- * 4. Debugging and Logging: UTC timestamps are easier to compare and analyze,
- *    especially when dealing with events occurring across different time zones.
- *
- * 5. Testing: Using UTC in tests provides consistent results regardless of where
- *    the tests are run, enhancing test reliability and reproducibility.
- *
- */
-const dateTimeFormatOptions: Intl.DateTimeFormatOptions = {
-  year: "numeric",
-  month: "short",
-  day: "numeric",
-  hour: "numeric",
-  minute: "numeric",
-  timeZone: "UTC", // Ensures consistent UTC-based time representation
-};
-
-/**
- * Formats a date and time string using predefined locale and format options.
- *
- * This function takes a date/time string, creates a Date object from it,
- * and then formats it according to the specified options. The formatting
- * is done using the French locale as the primary choice, falling back to
- * English if French is not available.
- *
- * Important: This function will always return the time in UTC, regardless
- * of the system's local time zone. This behavior is controlled by the
- * 'timeZone' option in dateTimeFormatOptions.
- *
- * @param dateTime - The date/time string to format. This should be an ISO 8601 string (e.g., "2024-01-01T00:00:00Z").
- * @returns The formatted date/time string in the format specified by dateTimeFormatOptions, always in UTC.
- *
- * @example
- * // returns "1 janv. 2024, 00:00" (assuming French locale is available)
- * formatDateTime("2024-01-01T00:00:00Z")
- *
- * @example
- * // returns "Jan 1, 2024, 00:00" (if French locale is not available)
- * formatDateTime("2024-01-01T00:00:00Z")
- */
-function formatDateTime(dateTime: string): string {
-  return new Date(dateTime).toLocaleDateString(
-    ["fr", "en"], // TODO check if i18n locale switch this if not fix it
-    dateTimeFormatOptions,
-  );
-}
+import { ColumnDataType, formatDateTime } from "./utils";
 
 type CellContentGenerator = (
   row: number,

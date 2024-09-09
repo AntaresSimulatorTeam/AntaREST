@@ -4,6 +4,7 @@ import {
   DateIncrementStrategy,
   EnhancedGridColumn,
 } from "./types";
+import { getCurrentLanguage } from "../../../utils/i18nUtils";
 
 ////////////////////////////////////////////////////////////////
 // Enums
@@ -19,17 +20,6 @@ export const ColumnDataType = {
 ////////////////////////////////////////////////////////////////
 // Utils
 ////////////////////////////////////////////////////////////////
-
-const dateIncrementStrategies: Record<
-  TimeMetadataDTO["level"],
-  DateIncrementStrategy
-> = {
-  hourly: (date, step) => date.clone().add(step, "hours"),
-  daily: (date, step) => date.clone().add(step, "days"),
-  weekly: (date, step) => date.clone().add(step, "weeks"),
-  monthly: (date, step) => date.clone().add(step, "months"),
-  yearly: (date, step) => date.clone().add(step, "years"),
-};
 
 export const darkTheme = {
   accentColor: "#6366F1",
@@ -61,9 +51,59 @@ export const darkTheme = {
   lineHeight: 1.5,
 };
 
+const dateIncrementStrategies: Record<
+  TimeMetadataDTO["level"],
+  DateIncrementStrategy
+> = {
+  hourly: (date, step) => date.clone().add(step, "hours"),
+  daily: (date, step) => date.clone().add(step, "days"),
+  weekly: (date, step) => date.clone().add(step, "weeks"),
+  monthly: (date, step) => date.clone().add(step, "months"),
+  yearly: (date, step) => date.clone().add(step, "years"),
+};
+
+const dateTimeFormatOptions: Intl.DateTimeFormatOptions = {
+  year: "numeric",
+  month: "short",
+  day: "numeric",
+  hour: "numeric",
+  minute: "numeric",
+  timeZone: "UTC", // Ensures consistent UTC-based time representation
+};
+
 ////////////////////////////////////////////////////////////////
 // Functions
 ////////////////////////////////////////////////////////////////
+
+/**
+ * Formats a date and time string using predefined locale and format options.
+ *
+ * This function takes a date/time string, creates a Date object from it,
+ * and then formats it according to the specified options. The formatting
+ * is done using the French locale as the primary choice, falling back to
+ * English if French is not available.
+ *
+ * Important: This function will always return the time in UTC, regardless
+ * of the system's local time zone. This behavior is controlled by the
+ * 'timeZone' option in dateTimeFormatOptions.
+ *
+ * @param dateTime - The date/time string to format. This should be an ISO 8601 string (e.g., "2024-01-01T00:00:00Z").
+ * @returns The formatted date/time string in the format specified by dateTimeFormatOptions, always in UTC.
+ *
+ * @example <caption>returns "1 janv. 2024, 00:00" (French locale)</caption>
+ * formatDateTime("2024-01-01T00:00:00Z")
+ *
+ * @example <caption>returns "Jan 1, 2024, 12:00 AM" (English locale)</caption>
+ * formatDateTime("2024-01-01T00:00:00Z")
+ */
+export function formatDateTime(dateTime: string): string {
+  const date = moment.utc(dateTime);
+  const currentLocale = getCurrentLanguage();
+
+  const locales = [currentLocale, "en-US"];
+
+  return date.toDate().toLocaleString(locales, dateTimeFormatOptions);
+}
 
 /**
  * Generates an array of date-time strings based on the provided time metadata.
@@ -101,7 +141,7 @@ export function generateDateTime({
   steps,
   level,
 }: TimeMetadataDTO): string[] {
-  const startDate = moment(start_date);
+  const startDate = moment.utc(start_date, "YYYY-MM-DD HH:mm:ss");
   const incrementStrategy = dateIncrementStrategies[level];
 
   return Array.from({ length: steps }, (_, i) =>

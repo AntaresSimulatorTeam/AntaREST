@@ -4,6 +4,40 @@ import { type EnhancedGridColumn } from "./types";
 import { ColumnDataType } from "./utils";
 import { useColumnMapping } from "./useColumnMapping";
 
+// Mocking i18next
+vi.mock("i18next", () => {
+  const i18n = {
+    language: "fr",
+    use: vi.fn().mockReturnThis(),
+    init: vi.fn(),
+    t: vi.fn((key) => key),
+    changeLanguage: vi.fn((lang) => {
+      i18n.language = lang;
+      return Promise.resolve();
+    }),
+    on: vi.fn(),
+  };
+  return { default: i18n };
+});
+
+// Mocking react-i18next
+vi.mock("react-i18next", async (importOriginal) => {
+  const actual = await importOriginal();
+  return Object.assign({}, actual, {
+    useTranslation: () => ({
+      t: vi.fn((key) => key),
+      i18n: {
+        changeLanguage: vi.fn(),
+        language: "fr",
+      },
+    }),
+    initReactI18next: {
+      type: "3rdParty",
+      init: vi.fn(),
+    },
+  });
+});
+
 function renderGridCellContent(
   data: number[][],
   columns: EnhancedGridColumn[],
