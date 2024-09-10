@@ -23,9 +23,9 @@ export const ColumnDataType = {
 ////////////////////////////////////////////////////////////////
 
 export const darkTheme: Theme = {
-  accentColor: "#6366F1",
+  accentColor: "rgba(255, 184, 0, 0.9)",
+  accentLight: "rgba(255, 184, 0, 0.2)",
   accentFg: "#FFFFFF",
-  accentLight: "rgba(99, 102, 241, 0.2)",
   textDark: "#FFFFFF",
   textMedium: "#C1C3D9",
   textLight: "#A1A5B9",

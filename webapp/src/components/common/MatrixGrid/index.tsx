@@ -7,7 +7,7 @@ import DataEditor, {
   Item,
 } from "@glideapps/glide-data-grid";
 import { useGridCellContent } from "./useGridCellContent";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { type CellFillPattern, type EnhancedGridColumn } from "./types";
 import { darkTheme, readOnlyDarkTheme } from "./utils";
 import { useColumnMapping } from "./useColumnMapping";
@@ -46,8 +46,6 @@ function MatrixGrid({
     columns: CompactSelection.empty(),
     rows: CompactSelection.empty(),
   });
-
-  const fillPatternRef = useRef<CellFillPattern | null>(null);
 
   const { gridToData } = useColumnMapping(columns);
 
@@ -119,25 +117,12 @@ function MatrixGrid({
     }
 
     if (onMultipleCellsEdit) {
-      onMultipleCellsEdit(updates, fillPatternRef.current || undefined);
+      onMultipleCellsEdit(updates);
     }
-
-    // Reset fillPatternRef after use
-    fillPatternRef.current = null;
 
     // Return true to prevent calling `onCellEdit`
     // for each cell after`onMultipleCellsEdit` is called
     return true;
-  };
-
-  // Used for fill handle updates to send one batch update object
-  // instead of an array of updates using `onCellsEdited` callback
-  const handleFillPattern = ({
-    patternSource,
-    fillDestination,
-  }: CellFillPattern) => {
-    fillPatternRef.current = { patternSource, fillDestination };
-    // Don't prevent default, allow the grid to apply the fill pattern
   };
 
   ////////////////////////////////////////////////////////////////
@@ -160,7 +145,6 @@ function MatrixGrid({
         getCellsForSelection // Enable copy support
         onPaste
         fillHandle
-        onFillPattern={handleFillPattern}
         rowMarkers="both"
       />
       <div id="portal" />
