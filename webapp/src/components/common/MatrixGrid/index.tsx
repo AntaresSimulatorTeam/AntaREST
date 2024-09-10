@@ -7,9 +7,9 @@ import DataEditor, {
   Item,
 } from "@glideapps/glide-data-grid";
 import { useGridCellContent } from "./useGridCellContent";
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { type CellFillPattern, type EnhancedGridColumn } from "./types";
-import { darkTheme } from "./utils";
+import { darkTheme, readOnlyDarkTheme } from "./utils";
 import { useColumnMapping } from "./useColumnMapping";
 
 export interface MatrixGridProps {
@@ -26,6 +26,7 @@ export interface MatrixGridProps {
     updates: Array<{ coordinates: Item; value: number }>,
     fillPattern?: CellFillPattern,
   ) => void;
+  readOnly?: boolean;
 }
 
 function MatrixGrid({
@@ -39,6 +40,7 @@ function MatrixGrid({
   height = "100%",
   onCellEdit,
   onMultipleCellsEdit,
+  readOnly = false,
 }: MatrixGridProps) {
   const [selection, setSelection] = useState<GridSelection>({
     columns: CompactSelection.empty(),
@@ -49,6 +51,17 @@ function MatrixGrid({
 
   const { gridToData } = useColumnMapping(columns);
 
+  const theme = useMemo(() => {
+    if (readOnly) {
+      return {
+        ...darkTheme,
+        ...readOnlyDarkTheme,
+      };
+    }
+
+    return darkTheme;
+  }, [readOnly]);
+
   const getCellContent = useGridCellContent(
     data,
     columns,
@@ -56,6 +69,7 @@ function MatrixGrid({
     dateTime,
     aggregates,
     rowHeaders,
+    readOnly,
   );
 
   ////////////////////////////////////////////////////////////////
@@ -133,7 +147,7 @@ function MatrixGrid({
   return (
     <>
       <DataEditor
-        theme={darkTheme}
+        theme={theme}
         width={width}
         height={height}
         rows={rows}

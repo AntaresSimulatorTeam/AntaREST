@@ -5,6 +5,7 @@ import {
   EnhancedGridColumn,
 } from "./types";
 import { getCurrentLanguage } from "../../../utils/i18nUtils";
+import { Theme } from "@glideapps/glide-data-grid";
 
 ////////////////////////////////////////////////////////////////
 // Enums
@@ -21,7 +22,7 @@ export const ColumnDataType = {
 // Utils
 ////////////////////////////////////////////////////////////////
 
-export const darkTheme = {
+export const darkTheme: Theme = {
   accentColor: "#6366F1",
   accentFg: "#FFFFFF",
   accentLight: "rgba(99, 102, 241, 0.2)",
@@ -49,6 +50,23 @@ export const darkTheme = {
   fontFamily: "Inter, sans-serif",
   editorFontSize: "13px",
   lineHeight: 1.5,
+  textHeaderSelected: "#FFFFFF",
+  cellHorizontalPadding: 8,
+  cellVerticalPadding: 5,
+  headerIconSize: 16,
+  markerFontStyle: "normal",
+};
+
+export const readOnlyDarkTheme: Partial<Theme> = {
+  bgCell: "#1A1C2A",
+  bgCellMedium: "#22243A",
+  textDark: "#A0A0A0",
+  textMedium: "#808080",
+  textLight: "#606060",
+  accentColor: "#4A4C66",
+  accentLight: "rgba(74, 76, 102, 0.2)",
+  borderColor: "rgba(255, 255, 255, 0.08)",
+  drilldownBorder: "rgba(255, 255, 255, 0.2)",
 };
 
 const dateIncrementStrategies: Record<

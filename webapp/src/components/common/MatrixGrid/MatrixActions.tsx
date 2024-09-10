@@ -1,4 +1,4 @@
-import { Box, Button, Divider, Tooltip } from "@mui/material";
+import { Box, Divider, IconButton, Tooltip } from "@mui/material";
 import SplitButton from "../buttons/SplitButton";
 import DownloadMatrixButton from "../DownloadMatrixButton";
 import FileDownload from "@mui/icons-material/FileDownload";
@@ -44,12 +44,26 @@ function MatrixActions({
     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
       <Tooltip title={t("global.undo")}>
         <span>
-          <Button onClick={undo} disabled={!canUndo} startIcon={<Undo />} />
+          <IconButton
+            onClick={undo}
+            disabled={!canUndo}
+            size="small"
+            color="primary"
+          >
+            <Undo fontSize="small" />
+          </IconButton>
         </span>
       </Tooltip>
       <Tooltip title={t("global.redo")}>
         <span>
-          <Button onClick={redo} disabled={!canRedo} startIcon={<Redo />} />
+          <IconButton
+            onClick={redo}
+            disabled={!canRedo}
+            size="small"
+            color="primary"
+          >
+            <Redo fontSize="small" />
+          </IconButton>
         </span>
       </Tooltip>
       <LoadingButton

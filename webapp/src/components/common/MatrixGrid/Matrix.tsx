@@ -87,6 +87,7 @@ function Matrix({
         dateTime={dateTime}
         onCellEdit={handleCellEdit}
         onMultipleCellsEdit={handleMultipleCellsEdit}
+        readOnly={isSubmitting}
       />
       {openImportDialog && (
         <ImportDialog
