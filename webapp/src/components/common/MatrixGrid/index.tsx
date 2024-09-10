@@ -1,14 +1,15 @@
 import "@glideapps/glide-data-grid/dist/index.css";
 import DataEditor, {
   CompactSelection,
-  EditListItem,
   EditableGridCell,
+  EditListItem,
+  GridCellKind,
   GridSelection,
   Item,
 } from "@glideapps/glide-data-grid";
 import { useGridCellContent } from "./useGridCellContent";
 import { useMemo, useState } from "react";
-import { type CellFillPattern, type EnhancedGridColumn } from "./types";
+import { EnhancedGridColumn, GridUpdate } from "./types";
 import { darkTheme, readOnlyDarkTheme } from "./utils";
 import { useColumnMapping } from "./useColumnMapping";
 
@@ -21,11 +22,8 @@ export interface MatrixGridProps {
   rowHeaders?: string[];
   width?: string;
   height?: string;
-  onCellEdit?: (cell: Item, newValue: number) => void;
-  onMultipleCellsEdit?: (
-    updates: Array<{ coordinates: Item; value: number }>,
-    fillPattern?: CellFillPattern,
-  ) => void;
+  onCellEdit?: (update: GridUpdate) => void;
+  onMultipleCellsEdit?: (updates: GridUpdate[]) => void;
   readOnly?: boolean;
 }
 
@@ -74,36 +72,34 @@ function MatrixGrid({
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleCellEdited = (cell: Item, value: EditableGridCell) => {
-    const updatedValue = value.data;
-
-    if (typeof updatedValue !== "number" || isNaN(updatedValue)) {
+  const handleCellEdited = (coordinates: Item, value: EditableGridCell) => {
+    if (value.kind !== GridCellKind.Number) {
       // Invalid numeric value
       return;
     }
 
-    const dataCell = gridToData(cell);
+    const dataCoordinates = gridToData(coordinates);
 
-    if (dataCell && onCellEdit) {
-      onCellEdit(dataCell, updatedValue);
+    if (dataCoordinates && onCellEdit) {
+      onCellEdit({ coordinates: dataCoordinates, value });
     }
   };
 
   const handleCellsEdited = (newValues: readonly EditListItem[]) => {
     const updates = newValues
-      .map((edit) => {
-        const dataCell = gridToData(edit.location);
-        return dataCell
-          ? {
-              coordinates: dataCell,
-              value: edit.value.data as number,
-            }
-          : null;
+      .map((edit): GridUpdate | null => {
+        const dataCoordinates = gridToData(edit.location);
+
+        if (edit.value.kind !== GridCellKind.Number || !dataCoordinates) {
+          return null;
+        }
+
+        return {
+          coordinates: dataCoordinates,
+          value: edit.value,
+        };
       })
-      .filter(
-        (update): update is { coordinates: Item; value: number } =>
-          update !== null,
-      );
+      .filter((update): update is GridUpdate => update !== null);
 
     if (updates.length === 0) {
       // No valid updates

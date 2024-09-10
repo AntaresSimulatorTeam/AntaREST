@@ -1,26 +1,12 @@
 import moment from "moment";
 import {
-  TimeMetadataDTO,
   DateIncrementStrategy,
   EnhancedGridColumn,
+  ColumnTypes,
 } from "./types";
 import { getCurrentLanguage } from "../../../utils/i18nUtils";
 import { Theme } from "@glideapps/glide-data-grid";
-
-////////////////////////////////////////////////////////////////
-// Enums
-////////////////////////////////////////////////////////////////
-
-export const ColumnDataType = {
-  DateTime: "datetime",
-  Number: "number",
-  Text: "text",
-  Aggregate: "aggregate",
-} as const;
-
-////////////////////////////////////////////////////////////////
-// Utils
-////////////////////////////////////////////////////////////////
+import { MatrixIndex } from "../../../common/types";
 
 export const darkTheme: Theme = {
   accentColor: "rgba(255, 184, 0, 0.9)",
@@ -45,7 +31,7 @@ export const darkTheme: Theme = {
   borderColor: "rgba(255, 255, 255, 0.12)",
   drilldownBorder: "rgba(255, 255, 255, 0.35)",
   linkColor: "#818CF8",
-  headerFontStyle: "bold 13px",
+  headerFontStyle: "bold 11px",
   baseFontStyle: "13px",
   fontFamily: "Inter, sans-serif",
   editorFontSize: "13px",
@@ -70,14 +56,14 @@ export const readOnlyDarkTheme: Partial<Theme> = {
 };
 
 const dateIncrementStrategies: Record<
-  TimeMetadataDTO["level"],
+  MatrixIndex["level"],
   DateIncrementStrategy
 > = {
   hourly: (date, step) => date.clone().add(step, "hours"),
   daily: (date, step) => date.clone().add(step, "days"),
   weekly: (date, step) => date.clone().add(step, "weeks"),
   monthly: (date, step) => date.clone().add(step, "months"),
-  yearly: (date, step) => date.clone().add(step, "years"),
+  annual: (date, step) => date.clone().add(step, "years"),
 };
 
 const dateTimeFormatOptions: Intl.DateTimeFormatOptions = {
@@ -117,7 +103,6 @@ const dateTimeFormatOptions: Intl.DateTimeFormatOptions = {
 export function formatDateTime(dateTime: string): string {
   const date = moment.utc(dateTime);
   const currentLocale = getCurrentLanguage();
-
   const locales = [currentLocale, "en-US"];
 
   return date.toDate().toLocaleString(locales, dateTimeFormatOptions);
@@ -150,7 +135,7 @@ export function formatDateTime(dateTime: string): string {
  *    "2023-01-03T00:00:00.000Z"
  *  ]
  *
- * @see {@link TimeMetadataDTO} for the structure of the timeMetadata object.
+ * @see {@link MatrixIndex} for the structure of the timeMetadata object.
  * @see {@link DateIncrementStrategy} for the date increment strategy type.
  */
 export function generateDateTime({
@@ -158,7 +143,7 @@ export function generateDateTime({
   start_date,
   steps,
   level,
-}: TimeMetadataDTO): string[] {
+}: MatrixIndex): string[] {
   const startDate = moment.utc(start_date, "YYYY-MM-DD HH:mm:ss");
   const incrementStrategy = dateIncrementStrategies[level];
 
@@ -181,12 +166,12 @@ export function generateDateTime({
  *
  * @example <caption>Usage within a column definition array</caption>
  * const columns = [
- *   { id: "rowHeaders", title: "", type: ColumnDataType.Text, ... },
- *   { id: "date", title: "Date", type: ColumnDataType.DateTime, ... },
+ *   { id: "rowHeaders", title: "", type: ColumnTypes.Text, ... },
+ *   { id: "date", title: "Date", type: ColumnTypes.DateTime, ... },
  *   ...generateTimeSeriesColumns({ count: 60 }),
- *   { id: "min", title: "Min", type: ColumnDataType.Aggregate, ... },
- *   { id: "max", title: "Max", type: ColumnDataType.Aggregate, ... },
- *   { id: "avg", title: "Avg", type: ColumnDataType.Aggregate, ... }
+ *   { id: "min", title: "Min", type: ColumnTypes.Aggregate, ... },
+ *   { id: "max", title: "Max", type: ColumnTypes.Aggregate, ... },
+ *   { id: "avg", title: "Avg", type: ColumnTypes.Aggregate, ... }
  * ];
  */
 export function generateTimeSeriesColumns({
@@ -207,7 +192,7 @@ export function generateTimeSeriesColumns({
   return Array.from({ length: count }, (_, index) => ({
     id: `data${startIndex + index}`,
     title: `${prefix} ${startIndex + index}`,
-    type: ColumnDataType.Number,
+    type: ColumnTypes.Number,
     style: style,
     width: width,
     editable: editable,

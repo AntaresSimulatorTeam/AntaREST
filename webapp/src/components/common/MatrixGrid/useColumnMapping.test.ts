@@ -1,43 +1,42 @@
 import { renderHook } from "@testing-library/react";
 import { describe, test, expect } from "vitest";
 import { useColumnMapping } from "./useColumnMapping";
-import { EnhancedGridColumn } from "./types";
-import { ColumnDataType } from "./utils";
+import { EnhancedGridColumn, ColumnTypes } from "./types";
 
 describe("useColumnMapping", () => {
   const testColumns: EnhancedGridColumn[] = [
     {
       id: "text",
       title: "Text",
-      type: ColumnDataType.Text,
+      type: ColumnTypes.Text,
       width: 100,
       editable: false,
     },
     {
       id: "date",
       title: "Date",
-      type: ColumnDataType.DateTime,
+      type: ColumnTypes.DateTime,
       width: 100,
       editable: false,
     },
     {
       id: "num1",
       title: "Number 1",
-      type: ColumnDataType.Number,
+      type: ColumnTypes.Number,
       width: 100,
       editable: true,
     },
     {
       id: "num2",
       title: "Number 2",
-      type: ColumnDataType.Number,
+      type: ColumnTypes.Number,
       width: 100,
       editable: true,
     },
     {
       id: "agg",
       title: "Aggregate",
-      type: ColumnDataType.Aggregate,
+      type: ColumnTypes.Aggregate,
       width: 100,
       editable: false,
     },
@@ -77,14 +76,14 @@ describe("useColumnMapping", () => {
       {
         id: "text",
         title: "Text",
-        type: ColumnDataType.Text,
+        type: ColumnTypes.Text,
         width: 100,
         editable: false,
       },
       {
         id: "date",
         title: "Date",
-        type: ColumnDataType.DateTime,
+        type: ColumnTypes.DateTime,
         width: 100,
         editable: false,
       },
@@ -100,14 +99,14 @@ describe("useColumnMapping", () => {
       {
         id: "num1",
         title: "Number 1",
-        type: ColumnDataType.Number,
+        type: ColumnTypes.Number,
         width: 100,
         editable: true,
       },
       {
         id: "num2",
         title: "Number 2",
-        type: ColumnDataType.Number,
+        type: ColumnTypes.Number,
         width: 100,
         editable: true,
       },

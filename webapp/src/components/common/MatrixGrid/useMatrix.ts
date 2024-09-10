@@ -1,28 +1,28 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Item } from "@glideapps/glide-data-grid";
 import { AxiosError } from "axios";
 import { enqueueSnackbar } from "notistack";
 import { t } from "i18next";
-import { MatrixEditDTO, MatrixIndex, Operator } from "../../../common/types";
+import { MatrixIndex, Operator } from "../../../common/types";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
-import { getStudyMatrixIndex, editMatrix } from "../../../services/api/matrix";
+import {
+  getStudyMatrixIndex,
+  updateMatrix,
+} from "../../../services/api/matrix";
 import { getStudyData, importFile } from "../../../services/api/study";
 import {
   EnhancedGridColumn,
-  CellFillPattern,
-  TimeMetadataDTO,
-  MatrixData,
+  MatrixDataDTO,
+  ColumnTypes,
+  GridUpdate,
+  MatrixUpdateDTO,
 } from "./types";
-import {
-  generateDateTime,
-  ColumnDataType,
-  generateTimeSeriesColumns,
-} from "./utils";
+import { generateDateTime, generateTimeSeriesColumns } from "./utils";
 import useUndo from "use-undo";
+import { GridCellKind } from "@glideapps/glide-data-grid";
 
 interface DataState {
   data: number[][];
-  pendingUpdates: MatrixEditDTO[];
+  pendingUpdates: MatrixUpdateDTO[];
 }
 
 export function useMatrix(
@@ -44,7 +44,7 @@ export function useMatrix(
     setIsLoading(true);
     try {
       const [matrix, index] = await Promise.all([
-        getStudyData<MatrixData>(studyId, url),
+        getStudyData<MatrixDataDTO>(studyId, url),
         getStudyMatrixIndex(studyId, url),
       ]);
 
@@ -65,7 +65,7 @@ export function useMatrix(
   }, [fetchMatrix]);
 
   const dateTime = useMemo(() => {
-    return index ? generateDateTime(index as TimeMetadataDTO) : [];
+    return index ? generateDateTime(index) : [];
   }, [index]);
 
   const columns: EnhancedGridColumn[] = useMemo(() => {
@@ -77,7 +77,7 @@ export function useMatrix(
       {
         id: "date",
         title: "Date",
-        type: ColumnDataType.DateTime,
+        type: ColumnTypes.DateTime,
         editable: false,
       },
     ];
@@ -91,21 +91,21 @@ export function useMatrix(
           {
             id: "min",
             title: "Min",
-            type: ColumnDataType.Aggregate,
+            type: ColumnTypes.Aggregate,
             width: 50,
             editable: false,
           },
           {
             id: "max",
             title: "Max",
-            type: ColumnDataType.Aggregate,
+            type: ColumnTypes.Aggregate,
             width: 50,
             editable: false,
           },
           {
             id: "avg",
             title: "Avg",
-            type: ColumnDataType.Aggregate,
+            type: ColumnTypes.Aggregate,
             width: 50,
             editable: false,
           },
@@ -122,24 +122,28 @@ export function useMatrix(
 
   // Apply updates to the matrix data and store them in the pending updates list
   const applyUpdates = useCallback(
-    (updates: Array<{ coordinates: Item; value: number }>) => {
-      if (!currentState.data) {
-        return;
-      }
-
+    (updates: GridUpdate[]) => {
       const updatedData = currentState.data.map((col) => [...col]);
 
-      const newUpdates = updates.map(({ coordinates: [row, col], value }) => {
-        updatedData[col][row] = value;
+      const newUpdates: MatrixUpdateDTO[] = updates
+        .map(({ coordinates: [row, col], value }) => {
+          if (value.kind === GridCellKind.Number && value.data) {
+            updatedData[col][row] = value.data;
 
-        return {
-          coordinates: [[col, row]],
-          operation: {
-            operation: Operator.EQ,
-            value,
-          },
-        };
-      });
+            return {
+              coordinates: [[col, row]],
+              operation: {
+                operation: Operator.EQ,
+                value: value.data,
+              },
+            };
+          }
+
+          return null;
+        })
+        .filter(
+          (update): update is NonNullable<typeof update> => update !== null,
+        );
 
       setState({
         data: updatedData,
@@ -149,22 +153,18 @@ export function useMatrix(
     [currentState, setState],
   );
 
-  const handleCellEdit = function (coordinates: Item, newValue: number) {
-    applyUpdates([{ coordinates, value: newValue }]);
+  const handleCellEdit = function (update: GridUpdate) {
+    applyUpdates([update]);
   };
 
-  const handleMultipleCellsEdit = function (
-    newValues: Array<{ coordinates: Item; value: number }>,
-    fillPattern?: CellFillPattern,
-  ) {
-    applyUpdates(newValues);
+  const handleMultipleCellsEdit = function (updates: GridUpdate[]) {
+    applyUpdates(updates);
   };
 
   const handleImport = async (file: File) => {
     try {
       await importFile(file, studyId, url);
-
-      enqueueSnackbar(t("matrix.success.import"), { variant: "success" });
+      await fetchMatrix();
     } catch (e) {
       enqueueErrorSnackbar(t("matrix.error.import"), e as Error);
     }
@@ -177,7 +177,7 @@ export function useMatrix(
 
     setIsSubmitting(true);
     try {
-      await editMatrix(studyId, url, currentState.pendingUpdates);
+      await updateMatrix(studyId, url, currentState.pendingUpdates);
       setState({ data: currentState.data, pendingUpdates: [] });
       enqueueSnackbar(t("matrix.success.matrixUpdate"), {
         variant: "success",

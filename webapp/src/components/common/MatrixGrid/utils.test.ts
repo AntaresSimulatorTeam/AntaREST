@@ -1,17 +1,17 @@
-import { TimeMetadataDTO } from "./types";
 import {
-  ColumnDataType,
-  generateDateTime,
-  generateTimeSeriesColumns,
-} from "./utils";
+  MatrixIndex,
+  StudyOutputDownloadLevelDTO,
+} from "../../../common/types";
+import { ColumnTypes } from "./types";
+import { generateDateTime, generateTimeSeriesColumns } from "./utils";
 
 describe("generateDateTime", () => {
   test("generates correct number of dates", () => {
-    const metadata: TimeMetadataDTO = {
+    const metadata: MatrixIndex = {
       start_date: "2023-01-01T00:00:00Z",
       steps: 5,
       first_week_size: 7,
-      level: "daily",
+      level: StudyOutputDownloadLevelDTO.DAILY,
     };
     const result = generateDateTime(metadata);
     expect(result).toHaveLength(5);
@@ -55,18 +55,18 @@ describe("generateDateTime", () => {
       ],
     },
     {
-      level: "yearly",
+      level: "annual",
       start: "2020-02-29T00:00:00Z",
       expected: ["2020-02-29T00:00:00.000Z", "2021-02-28T00:00:00.000Z"],
     },
   ] as const)(
     "generates correct dates for $level level",
     ({ level, start, expected }) => {
-      const metadata: TimeMetadataDTO = {
+      const metadata: MatrixIndex = {
         start_date: start,
         steps: expected.length,
         first_week_size: 7,
-        level: level as TimeMetadataDTO["level"],
+        level: level as MatrixIndex["level"],
       };
 
       const result = generateDateTime(metadata);
@@ -76,11 +76,11 @@ describe("generateDateTime", () => {
   );
 
   test("handles edge cases", () => {
-    const metadata: TimeMetadataDTO = {
+    const metadata: MatrixIndex = {
       start_date: "2023-12-31T23:59:59Z",
       steps: 2,
       first_week_size: 7,
-      level: "hourly",
+      level: StudyOutputDownloadLevelDTO.HOURLY,
     };
     const result = generateDateTime(metadata);
     expect(result).toEqual([
@@ -102,7 +102,7 @@ describe("generateTimeSeriesColumns", () => {
       {
         id: "data1",
         title: "TS 1",
-        type: ColumnDataType.Number,
+        type: ColumnTypes.Number,
         style: "normal",
         width: 50,
         editable: true,
@@ -110,7 +110,7 @@ describe("generateTimeSeriesColumns", () => {
       {
         id: "data2",
         title: "TS 2",
-        type: ColumnDataType.Number,
+        type: ColumnTypes.Number,
         style: "normal",
         width: 50,
         editable: true,
@@ -118,7 +118,7 @@ describe("generateTimeSeriesColumns", () => {
       {
         id: "data3",
         title: "TS 3",
-        type: ColumnDataType.Number,
+        type: ColumnTypes.Number,
         style: "normal",
         width: 50,
         editable: true,
@@ -138,7 +138,7 @@ describe("generateTimeSeriesColumns", () => {
       {
         id: "data10",
         title: "Data 10",
-        type: ColumnDataType.Number,
+        type: ColumnTypes.Number,
         style: "normal",
         width: 80,
         editable: false,
@@ -146,7 +146,7 @@ describe("generateTimeSeriesColumns", () => {
       {
         id: "data11",
         title: "Data 11",
-        type: ColumnDataType.Number,
+        type: ColumnTypes.Number,
         style: "normal",
         width: 80,
         editable: false,
@@ -169,7 +169,7 @@ describe("generateTimeSeriesColumns", () => {
   test("maintains consistent type and style", () => {
     const result = generateTimeSeriesColumns({ count: 1000 });
     result.forEach((column) => {
-      expect(column.type).toBe(ColumnDataType.Number);
+      expect(column.type).toBe(ColumnTypes.Number);
       expect(column.style).toBe("normal");
     });
   });

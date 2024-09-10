@@ -1,16 +1,36 @@
 import {
   BaseGridColumn,
-  FillPatternEventArgs,
+  EditableGridCell,
+  Item,
 } from "@glideapps/glide-data-grid";
-import { ColumnDataType } from "./utils";
 
-export interface MatrixData {
-  data: number[][];
-  columns: number[];
-  index: number[];
-}
+////////////////////////////////////////////////////////////////
+// Enums
+////////////////////////////////////////////////////////////////
 
-export type ColumnType = (typeof ColumnDataType)[keyof typeof ColumnDataType];
+export const ColumnTypes = {
+  DateTime: "datetime",
+  Number: "number",
+  Text: "text",
+  Aggregate: "aggregate",
+} as const;
+
+export const Operations = {
+  ADD: "+",
+  SUB: "-",
+  MUL: "*",
+  DIV: "/",
+  ABS: "ABS",
+  EQ: "=",
+} as const;
+
+////////////////////////////////////////////////////////////////
+// Types
+////////////////////////////////////////////////////////////////
+
+// Derived types
+export type ColumnType = (typeof ColumnTypes)[keyof typeof ColumnTypes];
+export type Operation = (typeof Operations)[keyof typeof Operations];
 
 export interface EnhancedGridColumn extends BaseGridColumn {
   id: string;
@@ -18,15 +38,31 @@ export interface EnhancedGridColumn extends BaseGridColumn {
   type: ColumnType;
   editable: boolean;
 }
+// Represents data coming from the API
+export interface MatrixDataDTO {
+  data: number[][];
+  columns: number[];
+  index: number[];
+}
 
-export type CellFillPattern = Omit<FillPatternEventArgs, "preventDefault">;
+export type Coordinates = [number, number];
 
-// TODO see MatrixIndex type, rundundant types
-export interface TimeMetadataDTO {
-  start_date: string;
-  steps: number;
-  first_week_size: number;
-  level: "hourly" | "daily" | "weekly" | "monthly" | "yearly";
+// Shape of updates provided by Glide Data Grid
+export interface GridUpdate {
+  coordinates: Item; // The cell being updated
+  value: EditableGridCell;
+}
+
+// Shape of updates to be sent to the API
+export interface MatrixUpdate {
+  operation: Operation;
+  value: number;
+}
+
+// Shape of multiple updates to be sent to the API
+export interface MatrixUpdateDTO {
+  coordinates: number[][]; // Array of [col, row] pairs
+  operation: MatrixUpdate;
 }
 
 export type DateIncrementStrategy = (

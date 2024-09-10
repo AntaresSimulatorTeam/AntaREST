@@ -85,10 +85,15 @@ function MatrixActions({
         ButtonProps={{
           startIcon: <FileDownload />,
         }}
+        disabled={isSubmitting}
       >
         {t("global.import")}
       </SplitButton>
-      <DownloadMatrixButton studyId={studyId} path={path} disabled={disabled} />
+      <DownloadMatrixButton
+        studyId={studyId}
+        path={path}
+        disabled={disabled || isSubmitting}
+      />
     </Box>
   );
 }

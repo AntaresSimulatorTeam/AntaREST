@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from "react";
 import { GridCell, GridCellKind, Item } from "@glideapps/glide-data-grid";
-import { type EnhancedGridColumn, type ColumnType } from "./types";
-import { ColumnDataType, formatDateTime } from "./utils";
+import { type EnhancedGridColumn, type ColumnType, ColumnTypes } from "./types";
+import { formatDateTime } from "./utils";
 
 type CellContentGenerator = (
   row: number,
@@ -18,7 +18,7 @@ type CellContentGenerator = (
  * Each generator function creates the appropriate GridCell based on the column type and data.
  */
 const cellContentGenerators: Record<ColumnType, CellContentGenerator> = {
-  [ColumnDataType.Text]: (
+  [ColumnTypes.Text]: (
     row,
     col,
     column,
@@ -33,14 +33,14 @@ const cellContentGenerators: Record<ColumnType, CellContentGenerator> = {
     readonly: !column.editable,
     allowOverlay: false,
   }),
-  [ColumnDataType.DateTime]: (row, col, column, data, dateTime) => ({
+  [ColumnTypes.DateTime]: (row, col, column, data, dateTime) => ({
     kind: GridCellKind.Text,
     data: "", // Date/time columns are not editable
     displayData: formatDateTime(dateTime?.[row] ?? ""),
     readonly: !column.editable,
     allowOverlay: false,
   }),
-  [ColumnDataType.Number]: (row, col, column, data) => {
+  [ColumnTypes.Number]: (row, col, column, data) => {
     const value = data?.[row]?.[col];
 
     return {
@@ -51,14 +51,7 @@ const cellContentGenerators: Record<ColumnType, CellContentGenerator> = {
       allowOverlay: true,
     };
   },
-  [ColumnDataType.Aggregate]: (
-    row,
-    col,
-    column,
-    data,
-    dateTime,
-    aggregates,
-  ) => {
+  [ColumnTypes.Aggregate]: (row, col, column, data, dateTime, aggregates) => {
     const value = aggregates?.[column.id]?.[row];
 
     return {
@@ -142,7 +135,7 @@ export function useGridCellContent(
       // accounting for any non-data columns in the grid
       let adjustedCol = col;
 
-      if (column.type === ColumnDataType.Number && gridToData) {
+      if (column.type === ColumnTypes.Number && gridToData) {
         // Map grid cell to data array index
         const dataCell = gridToData(cell);
 

@@ -9,7 +9,8 @@ import {
   Operator,
   StudyOutputDownloadLevelDTO,
 } from "../../../common/types";
-import { MatrixData } from "./types";
+import { GridUpdate, MatrixDataDTO } from "./types";
+import { GridCellKind } from "@glideapps/glide-data-grid";
 
 vi.mock("../../../services/api/matrix");
 vi.mock("../../../services/api/study");
@@ -18,7 +19,7 @@ describe("useMatrix", () => {
   const mockStudyId = "study123";
   const mockUrl = "https://studies/study123/matrix";
 
-  const mockMatrixData: MatrixData = {
+  const mockMatrixData: MatrixDataDTO = {
     data: [
       [1, 2],
       [3, 4],
@@ -50,6 +51,21 @@ describe("useMatrix", () => {
     return result;
   };
 
+  // Helper function to create a grid update object
+  const createGridUpdate = (
+    row: number,
+    col: number,
+    value: number,
+  ): GridUpdate => ({
+    coordinates: [row, col],
+    value: {
+      kind: GridCellKind.Number,
+      data: value,
+      displayData: value.toString(),
+      allowOverlay: true,
+    },
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -80,7 +96,7 @@ describe("useMatrix", () => {
     });
 
     act(() => {
-      result.current.handleCellEdit([0, 1], 5);
+      result.current.handleCellEdit(createGridUpdate(0, 1, 5));
     });
 
     expect(result.current.data[1][0]).toBe(5);
@@ -99,8 +115,8 @@ describe("useMatrix", () => {
 
     act(() => {
       result.current.handleMultipleCellsEdit([
-        { coordinates: [0, 1], value: 5 },
-        { coordinates: [1, 0], value: 6 },
+        createGridUpdate(0, 1, 5),
+        createGridUpdate(1, 0, 6),
       ]);
     });
 
@@ -112,7 +128,7 @@ describe("useMatrix", () => {
   test("should handle save updates", async () => {
     vi.mocked(apiStudy.getStudyData).mockResolvedValue(mockMatrixData);
     vi.mocked(apiMatrix.getStudyMatrixIndex).mockResolvedValue(mockMatrixIndex);
-    vi.mocked(apiMatrix.editMatrix).mockResolvedValue(undefined);
+    vi.mocked(apiMatrix.updateMatrix).mockResolvedValue(undefined);
 
     const result = await setupHook();
 
@@ -121,7 +137,7 @@ describe("useMatrix", () => {
     });
 
     act(() => {
-      result.current.handleCellEdit([0, 1], 5);
+      result.current.handleCellEdit(createGridUpdate(0, 1, 5));
     });
 
     await act(async () => {
@@ -136,7 +152,7 @@ describe("useMatrix", () => {
       },
     };
 
-    expect(apiMatrix.editMatrix).toHaveBeenCalledWith(mockStudyId, mockUrl, [
+    expect(apiMatrix.updateMatrix).toHaveBeenCalledWith(mockStudyId, mockUrl, [
       expectedEdit,
     ]);
     expect(result.current.pendingUpdatesCount).toBe(0);
@@ -191,7 +207,7 @@ describe("useMatrix", () => {
       });
 
       act(() => {
-        result.current.handleCellEdit([0, 1], 5);
+        result.current.handleCellEdit(createGridUpdate(0, 1, 5));
       });
 
       expect(result.current.canUndo).toBe(true);
@@ -225,7 +241,7 @@ describe("useMatrix", () => {
       });
 
       act(() => {
-        result.current.handleCellEdit([0, 1], 5);
+        result.current.handleCellEdit(createGridUpdate(0, 1, 5));
       });
 
       act(() => {
@@ -235,7 +251,7 @@ describe("useMatrix", () => {
       expect(result.current.canRedo).toBe(true);
 
       act(() => {
-        result.current.handleCellEdit([1, 0], 6);
+        result.current.handleCellEdit(createGridUpdate(1, 0, 6));
       });
 
       expect(result.current.canUndo).toBe(true);
@@ -255,7 +271,7 @@ describe("useMatrix", () => {
       });
 
       act(() => {
-        result.current.handleCellEdit([0, 1], 5);
+        result.current.handleCellEdit(createGridUpdate(0, 1, 5));
       });
 
       act(() => {

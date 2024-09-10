@@ -1,7 +1,6 @@
 import { useMemo } from "react";
 import { Item } from "@glideapps/glide-data-grid";
-import { EnhancedGridColumn } from "./types";
-import { ColumnDataType } from "./utils";
+import { EnhancedGridColumn, ColumnTypes } from "./types";
 
 /**
  * A custom hook that provides coordinate mapping functions for a grid with mixed column types.
@@ -35,7 +34,7 @@ import { ColumnDataType } from "./utils";
 export function useColumnMapping(columns: EnhancedGridColumn[]) {
   return useMemo(() => {
     const dataColumnIndices = columns.reduce((acc, col, index) => {
-      if (col.type === ColumnDataType.Number) {
+      if (col.type === ColumnTypes.Number) {
         acc.push(index);
       }
       return acc;
