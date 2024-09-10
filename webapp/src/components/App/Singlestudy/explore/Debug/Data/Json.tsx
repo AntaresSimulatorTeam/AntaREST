@@ -1,24 +1,16 @@
-import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { AxiosError } from "axios";
 import { useSnackbar } from "notistack";
-import SaveIcon from "@mui/icons-material/Save";
-import { Box, Button } from "@mui/material";
-import { useUpdateEffect } from "react-use";
+import { Box } from "@mui/material";
 import { editStudy, getStudyData } from "../../../../../../services/api/study";
-import JSONEditor from "../../../../../common/JSONEditor";
+import JSONEditor, { JSONEditorProps } from "../../../../../common/JSONEditor";
 import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithSnackbarError";
 import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
-import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
 import ViewWrapper from "../../../../../common/page/ViewWrapper";
 import type { DataCompProps } from "../utils";
 
 function Json({ filePath, studyId }: DataCompProps) {
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
-  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
-  const [jsonData, setJsonData] = useState<string | null>(null);
-  const [isSaveAllowed, setIsSaveAllowed] = useState(false);
 
   const res = usePromiseWithSnackbarError(
     () => getStudyData(studyId, filePath, -1),
@@ -28,32 +20,18 @@ function Json({ filePath, studyId }: DataCompProps) {
     },
   );
 
-  // Reset save button when path changes
-  useUpdateEffect(() => {
-    setIsSaveAllowed(false);
-  }, [studyId, filePath]);
-
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSaveJson = async () => {
-    if (isSaveAllowed && jsonData) {
-      try {
-        await editStudy(jsonData, studyId, filePath);
-        enqueueSnackbar(t("studies.success.saveData"), {
-          variant: "success",
-        });
-        setIsSaveAllowed(false);
-      } catch (e) {
-        enqueueErrorSnackbar(t("studies.error.saveData"), e as AxiosError);
-      }
-    }
+  const handleSave: JSONEditorProps["onSave"] = (json) => {
+    return editStudy(json, studyId, filePath);
   };
 
-  const handleJsonChange = (newJson: string) => {
-    setJsonData(newJson);
-    setIsSaveAllowed(true);
+  const handleSaveSuccessful = () => {
+    enqueueSnackbar(t("studies.success.saveData"), {
+      variant: "success",
+    });
   };
 
   ////////////////////////////////////////////////////////////////
@@ -62,27 +40,17 @@ function Json({ filePath, studyId }: DataCompProps) {
 
   return (
     <ViewWrapper>
-      <Box>
-        <Button
-          variant="contained"
-          size="small"
-          startIcon={<SaveIcon />}
-          onClick={handleSaveJson}
-          disabled={!isSaveAllowed}
-        >
-          {t("global.save")}
-        </Button>
-      </Box>
       <UsePromiseCond
         response={res}
         ifResolved={(json) => (
           <Box sx={{ overflow: "auto" }}>
             <JSONEditor
               json={json}
-              onChangeText={handleJsonChange}
               modes={["tree", "code"]}
               enableSort={false}
               enableTransform={false}
+              onSave={handleSave}
+              onSaveSuccessful={handleSaveSuccessful}
             />
           </Box>
         )}
