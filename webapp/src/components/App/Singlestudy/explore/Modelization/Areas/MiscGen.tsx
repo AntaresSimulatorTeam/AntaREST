@@ -15,15 +15,12 @@
 import { useOutletContext } from "react-router";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../redux/selectors";
-import { MatrixStats, StudyMetadata } from "../../../../../../common/types";
-import MatrixInput from "../../../../../common/MatrixInput";
-import { Root } from "./style";
+import Matrix from "../../../../../common/MatrixGrid/Matrix";
 
 function MiscGen() {
-  const { study } = useOutletContext<{ study: StudyMetadata }>();
   const currentArea = useAppSelector(getCurrentAreaId);
   const url = `input/misc-gen/miscgen-${currentArea}`;
-  const colmunsNames = [
+  const columns = [
     "CHP",
     "Bio Mass",
     "Bio Gaz",
@@ -38,16 +35,7 @@ function MiscGen() {
   // JSX
   ////////////////////////////////////////////////////////////////
 
-  return (
-    <Root>
-      <MatrixInput
-        study={study}
-        url={url}
-        columnsNames={colmunsNames}
-        computStats={MatrixStats.TOTAL}
-      />
-    </Root>
-  );
+  return <Matrix url={url} customColumns={columns} />;
 }
 
 export default MiscGen;
