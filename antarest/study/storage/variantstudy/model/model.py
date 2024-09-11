@@ -14,7 +14,7 @@ import typing as t
 import uuid
 
 import typing_extensions as te
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from antarest.core.model import JSON
 from antarest.study.model import StudyMetadataDTO
@@ -92,7 +92,7 @@ class CommandResultDTO(BaseModel):
     message: str
 
 
-class VariantTreeDTO(BaseModel):
+class VariantTreeDTO:
     """
     This class represents a variant tree structure.
 
@@ -101,5 +101,8 @@ class VariantTreeDTO(BaseModel):
         children: A list of variant children.
     """
 
-    node: StudyMetadataDTO
-    children: t.List["VariantTreeDTO"] = Field(default_factory=list)
+    def __init__(self, node: StudyMetadataDTO, children: t.MutableSequence["VariantTreeDTO"]) -> None:
+        # We are intentionally not using Pydantic’s `BaseModel` here to prevent potential
+        # `RecursionError` exceptions that can occur with Pydantic versions before v2.
+        self.node = node
+        self.children = children or []

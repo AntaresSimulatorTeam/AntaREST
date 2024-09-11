@@ -107,6 +107,7 @@ def create_study_variant_routes(
         "/studies/{uuid}/variants",
         tags=[APITag.study_variant_management],
         summary="Get children variants",
+        response_model=None,  # To cope with recursive models issues
     )
     def get_variants(
         uuid: str,
