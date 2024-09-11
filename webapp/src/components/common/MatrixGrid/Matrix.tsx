@@ -29,6 +29,7 @@ interface MatrixProps {
   title?: string;
   enableTimeSeriesColumns?: boolean;
   enableAggregateColumns?: boolean;
+  customColumns?: string[];
 }
 
 function Matrix({
@@ -36,6 +37,7 @@ function Matrix({
   title = "global.timeSeries",
   enableTimeSeriesColumns = true,
   enableAggregateColumns = false,
+  customColumns,
 }: MatrixProps) {
   const { t } = useTranslation();
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -57,7 +59,13 @@ function Matrix({
     redo,
     canUndo,
     canRedo,
-  } = useMatrix(study.id, url, enableTimeSeriesColumns, enableAggregateColumns);
+  } = useMatrix(
+    study.id,
+    url,
+    enableTimeSeriesColumns,
+    enableAggregateColumns,
+    customColumns,
+  );
 
   ////////////////////////////////////////////////////////////////
   // JSX

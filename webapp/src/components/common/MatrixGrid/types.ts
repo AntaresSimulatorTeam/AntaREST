@@ -46,6 +46,20 @@ export const Operations = {
 export type ColumnType = (typeof ColumnTypes)[keyof typeof ColumnTypes];
 export type Operation = (typeof Operations)[keyof typeof Operations];
 
+export interface TimeSeriesColumnOptions {
+  count: number;
+  startIndex?: number;
+  prefix?: string;
+  width?: number;
+  editable?: boolean;
+  style?: BaseGridColumn["style"];
+}
+
+export interface CustomColumnOptions {
+  titles: string[];
+  width?: number;
+}
+
 export interface EnhancedGridColumn extends BaseGridColumn {
   id: string;
   width?: number;

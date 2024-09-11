@@ -17,6 +17,8 @@ import {
   DateIncrementStrategy,
   EnhancedGridColumn,
   ColumnTypes,
+  TimeSeriesColumnOptions,
+  CustomColumnOptions,
 } from "./types";
 import { getCurrentLanguage } from "../../../utils/i18nUtils";
 import { Theme } from "@glideapps/glide-data-grid";
@@ -195,20 +197,61 @@ export function generateTimeSeriesColumns({
   width = 50,
   editable = true,
   style = "normal",
-}: {
-  count: number;
-  startIndex?: number;
-  prefix?: string;
-  width?: number;
-  editable?: boolean;
-  style?: "normal" | "highlight";
-}): EnhancedGridColumn[] {
+}: TimeSeriesColumnOptions): EnhancedGridColumn[] {
   return Array.from({ length: count }, (_, index) => ({
     id: `data${startIndex + index}`,
     title: `${prefix} ${startIndex + index}`,
     type: ColumnTypes.Number,
-    style: style,
-    width: width,
-    editable: editable,
+    style,
+    width,
+    editable,
   }));
+}
+
+/**
+ * Generates custom columns for a matrix grid.
+ *
+ * @param customColumns - An array of strings representing the custom column titles.
+ * @param customColumns.titles - The titles of the custom columns.
+ * @param customColumns.width - The width of each custom column.
+ * @returns An array of EnhancedGridColumn objects representing the generated custom columns.
+ */
+export function generateCustomColumns({
+  titles,
+  width = 100,
+}: CustomColumnOptions): EnhancedGridColumn[] {
+  return titles.map((title, index) => ({
+    id: `custom${index + 1}`,
+    title,
+    type: ColumnTypes.Number,
+    style: "normal",
+    width,
+    editable: true,
+  }));
+}
+
+/**
+ * Generates an array of data columns for a matrix grid.
+ *
+ * @param enableTimeSeriesColumns - A boolean indicating whether to enable time series columns.
+ * @param columnCount - The number of columns to generate.
+ * @param customColumns - An optional array of custom column titles.
+ * @returns An array of EnhancedGridColumn objects representing the generated data columns.
+ */
+export function generateDataColumns(
+  enableTimeSeriesColumns: boolean,
+  columnCount: number,
+  customColumns?: string[],
+): EnhancedGridColumn[] {
+  // If custom columns are provided, use them
+  if (customColumns) {
+    return generateCustomColumns({ titles: customColumns });
+  }
+
+  // Else, generate time series columns if enabled
+  if (enableTimeSeriesColumns) {
+    return generateTimeSeriesColumns({ count: columnCount });
+  }
+
+  return [];
 }
