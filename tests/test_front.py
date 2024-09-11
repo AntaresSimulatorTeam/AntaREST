@@ -70,7 +70,6 @@ def redirect_app(app_with_home: FastAPI) -> FastAPI:
 
 
 def test_redirect_middleware_does_not_modify_home(redirect_app: FastAPI) -> None:
-    # A simple app which has only a home endpoint and one backend endpoint
     client = TestClient(redirect_app)
     response = client.get("/")
     assert response.status_code == 200
@@ -78,7 +77,6 @@ def test_redirect_middleware_does_not_modify_home(redirect_app: FastAPI) -> None
 
 
 def test_redirect_middleware_redirects_unknown_routes_to_home(redirect_app: FastAPI) -> None:
-    # A simple app which has only a home endpoint and one backend endpoint
     client = TestClient(redirect_app)
     response = client.get("/a-front-route")
     assert response.status_code == 200
