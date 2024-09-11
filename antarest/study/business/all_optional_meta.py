@@ -17,8 +17,10 @@ from pydantic import BaseModel, create_model
 
 from antarest.core.utils.string import to_camel_case
 
+ModelClass = t.TypeVar("ModelClass", bound=BaseModel)
 
-def all_optional_model(model: t.Type[BaseModel]) -> t.Type[BaseModel]:
+
+def all_optional_model(model: t.Type[ModelClass]) -> t.Type[ModelClass]:
     """
     This decorator can be used to make all fields of a pydantic model optionals.
 

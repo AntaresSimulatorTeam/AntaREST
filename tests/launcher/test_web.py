@@ -19,6 +19,7 @@ import pytest
 from fastapi import FastAPI
 from starlette.testclient import TestClient
 
+from antarest.core.application import create_app_ctxt
 from antarest.core.config import Config, SecurityConfig
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTGroup, JWTUser
 from antarest.core.requests import RequestParameters
@@ -35,10 +36,9 @@ ADMIN = JWTUser(
 
 
 def create_app(service: Mock) -> FastAPI:
-    app = FastAPI(title=__name__)
-
+    build_ctxt = create_app_ctxt(FastAPI(title=__name__))
     build_launcher(
-        app,
+        build_ctxt,
         study_service=Mock(),
         file_transfer_manager=Mock(),
         task_service=Mock(),
@@ -46,7 +46,7 @@ def create_app(service: Mock) -> FastAPI:
         config=Config(security=SecurityConfig(disabled=True)),
         cache=Mock(),
     )
-    return app
+    return build_ctxt.build()
 
 
 @pytest.mark.unit_test

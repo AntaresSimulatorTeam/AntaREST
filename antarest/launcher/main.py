@@ -12,8 +12,9 @@
 
 from typing import Optional
 
-from fastapi import FastAPI
+from fastapi import APIRouter, FastAPI
 
+from antarest.core.application import AppBuildContext
 from antarest.core.config import Config
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.interfaces.cache import ICache
@@ -26,7 +27,7 @@ from antarest.study.service import StudyService
 
 
 def build_launcher(
-    application: Optional[FastAPI],
+    app_ctxt: Optional[AppBuildContext],
     config: Config,
     study_service: StudyService,
     file_transfer_manager: FileTransferManager,
@@ -49,7 +50,7 @@ def build_launcher(
             cache=cache,
         )
 
-    if service_launcher and application:
-        application.include_router(create_launcher_api(service_launcher, config))
+    if service_launcher and app_ctxt:
+        app_ctxt.api_root.include_router(create_launcher_api(service_launcher, config))
 
     return service_launcher

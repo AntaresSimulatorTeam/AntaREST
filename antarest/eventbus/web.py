@@ -17,10 +17,11 @@ from enum import Enum
 from http import HTTPStatus
 from typing import List, Optional
 
-from fastapi import Depends, FastAPI, HTTPException, Query
+from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query
 from pydantic import BaseModel
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
+from antarest.core.application import AppBuildContext
 from antarest.core.config import Config
 from antarest.core.interfaces.eventbus import Event, IEventBus
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
@@ -91,7 +92,7 @@ class ConnectionManager:
                 await connection.websocket.send_text(message)
 
 
-def configure_websockets(application: FastAPI, config: Config, event_bus: IEventBus) -> None:
+def configure_websockets(app_ctxt: AppBuildContext, config: Config, event_bus: IEventBus) -> None:
     manager = ConnectionManager()
 
     async def send_event_to_ws(event: Event) -> None:
@@ -100,7 +101,7 @@ def configure_websockets(application: FastAPI, config: Config, event_bus: IEvent
         del event_data["channel"]
         await manager.broadcast(json.dumps(event_data), event.permissions, event.channel)
 
-    @application.websocket("/ws")
+    @app_ctxt.api_root.websocket("/ws")
     async def connect(
         websocket: WebSocket,
         token: str = Query(...),

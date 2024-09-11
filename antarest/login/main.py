@@ -14,10 +14,11 @@ import json
 from http import HTTPStatus
 from typing import Any, Optional
 
-from fastapi import FastAPI
+from fastapi import APIRouter, FastAPI
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
+from antarest.core.application import AppBuildContext
 from antarest.core.config import Config
 from antarest.core.interfaces.eventbus import DummyEventBusService, IEventBus
 from antarest.core.utils.fastapi_sqlalchemy import db
@@ -30,7 +31,7 @@ from antarest.login.web import create_login_api
 
 
 def build_login(
-    application: Optional[FastAPI],
+    app_ctxt: Optional[AppBuildContext],
     config: Config,
     service: Optional[LoginService] = None,
     event_bus: IEventBus = DummyEventBusService(),
@@ -39,7 +40,7 @@ def build_login(
     Login module linking dependency
 
     Args:
-        application: flask application
+        app_ctxt: application
         config: server configuration
         service: used by testing to inject mock. Let None to use true instantiation
         event_bus: used by testing to inject mock. Let None to use true instantiation
@@ -66,9 +67,9 @@ def build_login(
             event_bus=event_bus,
         )
 
-    if application:
+    if app_ctxt:
 
-        @application.exception_handler(AuthJWTException)
+        @app_ctxt.app.exception_handler(AuthJWTException)
         def authjwt_exception_handler(request: Request, exc: AuthJWTException) -> Any:
             return JSONResponse(
                 status_code=HTTPStatus.UNAUTHORIZED,
@@ -83,6 +84,6 @@ def build_login(
         with db():
             return token_type == "bots" and service is not None and not service.exists_bot(user_id)
 
-    if application:
-        application.include_router(create_login_api(service, config))
+    if app_ctxt:
+        app_ctxt.api_root.include_router(create_login_api(service, config))
     return service

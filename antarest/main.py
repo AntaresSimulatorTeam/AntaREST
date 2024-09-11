@@ -13,29 +13,25 @@
 import argparse
 import copy
 import logging
-import re
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Any, AsyncGenerator, Dict, Optional, Sequence, Tuple, cast
+from typing import Any, AsyncGenerator, Dict, Optional, Tuple, cast
 
 import pydantic
 import uvicorn
 import uvicorn.config
-from fastapi import FastAPI, HTTPException
+from fastapi import APIRouter, FastAPI, HTTPException
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from ratelimit import RateLimitMiddleware  # type: ignore
 from ratelimit.backends.redis import RedisBackend  # type: ignore
 from ratelimit.backends.simple import MemoryBackend  # type: ignore
-from starlette.middleware.base import BaseHTTPMiddleware, DispatchFunction, RequestResponseEndpoint
 from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
-from starlette.staticfiles import StaticFiles
-from starlette.templating import Jinja2Templates
-from starlette.types import ASGIApp
 
 from antarest import __version__
+from antarest.core.application import AppBuildContext
 from antarest.core.config import Config
 from antarest.core.core_blueprint import create_utils_routes
 from antarest.core.filesystem_blueprint import create_file_system_blueprint
@@ -47,6 +43,7 @@ from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.core.utils.utils import get_local_path
 from antarest.core.utils.web import tags_metadata
 from antarest.fastapi_jwt_auth import AuthJWT
+from antarest.front import add_front_app
 from antarest.login.auth import Auth, JwtSettings
 from antarest.login.model import init_admin_user
 from antarest.matrixstore.matrix_garbage_collector import MatrixGarbageCollector
@@ -190,55 +187,6 @@ def parse_arguments() -> argparse.Namespace:
     return parser.parse_args()
 
 
-class URLRewriterMiddleware(BaseHTTPMiddleware):
-    """
-    Middleware that rewrites the URL path to "/" (root path) for incoming requests
-    that do not match the known end points. This is useful for redirecting requests
-    to the main page of a ReactJS application when the user refreshes the browser.
-    """
-
-    def __init__(
-        self,
-        app: ASGIApp,
-        dispatch: Optional[DispatchFunction] = None,
-        root_path: str = "",
-        route_paths: Sequence[str] = (),
-    ) -> None:
-        """
-        Initializes an instance of the URLRewriterMiddleware.
-
-        Args:
-            app: The ASGI application to which the middleware is applied.
-            dispatch: The dispatch function to use.
-            root_path: The root path of the application.
-                The URL path will be rewritten relative to this root path.
-            route_paths: The known route paths of the application.
-                Requests that do not match any of these paths will be rewritten to the root path.
-
-        Note:
-            The `root_path` can be set to a specific component of the URL path, such as "api".
-            The `route_paths` should contain all the known endpoints of the application.
-        """
-        dispatch = self.dispatch if dispatch is None else dispatch
-        super().__init__(app, dispatch)
-        self.root_path = f"/{root_path}" if root_path else ""
-        self.known_prefixes = {re.findall(r"/(?:(?!/).)*", p)[0] for p in route_paths if p != "/"}
-
-    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Any:
-        """
-        Intercepts the incoming request and rewrites the URL path if necessary.
-        Passes the modified or original request to the next middleware or endpoint handler.
-        """
-        url_path = request.scope["path"]
-        if url_path in {"", "/"}:
-            pass
-        elif self.root_path and url_path.startswith(self.root_path):
-            request.scope["path"] = url_path[len(self.root_path) :]
-        elif not any(url_path.startswith(ep) for ep in self.known_prefixes):
-            request.scope["path"] = "/"
-        return await call_next(request)
-
-
 def fastapi_app(
     config_file: Path,
     resource_path: Optional[Path] = None,
@@ -267,7 +215,12 @@ def fastapi_app(
         root_path=config.root_path,
         openapi_tags=tags_metadata,
         lifespan=set_default_executor,
+        openapi_url=f"{config.api_prefix}/openapi.json",
     )
+
+    api_root = APIRouter(prefix=config.api_prefix)
+
+    app_ctxt = AppBuildContext(application, api_root)
 
     # Database
     engine = init_db_engine(config_file, config, auto_upgrade_db)
@@ -278,24 +231,6 @@ def fastapi_app(
     DBSessionMiddleware(None, custom_engine=engine, session_args=cast(Dict[str, bool], SESSION_ARGS))
 
     application.add_middleware(LoggingMiddleware)
-
-    if mount_front:
-        application.mount(
-            "/static",
-            StaticFiles(directory=str(res / "webapp")),
-            name="static",
-        )
-        templates = Jinja2Templates(directory=str(res / "templates"))
-
-        @application.get("/", include_in_schema=False)
-        def home(request: Request) -> Any:
-            return templates.TemplateResponse("index.html", {"request": request})
-
-    else:
-        # noinspection PyUnusedLocal
-        @application.get("/", include_in_schema=False)
-        def home(request: Request) -> Any:
-            return ""
 
     # TODO move that elsewhere
     @AuthJWT.load_config  # type: ignore
@@ -315,8 +250,8 @@ def fastapi_app(
         allow_methods=["*"],
         allow_headers=["*"],
     )
-    application.include_router(create_utils_routes(config))
-    application.include_router(create_file_system_blueprint(config))
+    api_root.include_router(create_utils_routes(config))
+    api_root.include_router(create_file_system_blueprint(config))
 
     # noinspection PyUnusedLocal
     @application.exception_handler(HTTPException)
@@ -426,19 +361,9 @@ def fastapi_app(
     )
 
     init_admin_user(engine=engine, session_args=SESSION_ARGS, admin_password=config.security.admin_pwd)
-    services = create_services(config, application)
+    services = create_services(config, app_ctxt)
 
-    if mount_front:
-        # When the web application is running in Desktop mode, the ReactJS web app
-        # is served at the `/static` entry point. Any requests that are not API
-        # requests should be redirected to the `index.html` file, which will handle
-        # the route provided by the URL.
-        route_paths = [r.path for r in application.routes]  # type: ignore
-        application.add_middleware(
-            URLRewriterMiddleware,
-            root_path=application.root_path,
-            route_paths=route_paths,
-        )
+    application.include_router(api_root)
 
     if config.server.services and Module.WATCHER.value in config.server.services:
         watcher = cast(Watcher, services["watcher"])
@@ -453,6 +378,15 @@ def fastapi_app(
         auto_archiver.start()
 
     customize_openapi(application)
+
+    if mount_front:
+        add_front_app(application, res, config.api_prefix)
+    else:
+        # noinspection PyUnusedLocal
+        @application.get("/", include_in_schema=False)
+        def home(request: Request) -> Any:
+            return ""
+
     cancel_orphan_tasks(engine=engine, session_args=SESSION_ARGS)
     return application, services
 
