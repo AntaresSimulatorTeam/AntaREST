@@ -46,6 +46,7 @@ export function useMatrix(
   enableTimeSeriesColumns: boolean,
   enableAggregateColumns: boolean,
   customColumns?: string[],
+  colWidth?: number,
 ) {
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [columnCount, setColumnCount] = useState(0);
@@ -102,6 +103,7 @@ export function useMatrix(
       enableTimeSeriesColumns,
       columnCount,
       customColumns,
+      colWidth,
     );
 
     const aggregateColumns = enableAggregateColumns

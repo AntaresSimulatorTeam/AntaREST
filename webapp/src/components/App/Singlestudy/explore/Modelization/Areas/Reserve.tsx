@@ -27,7 +27,7 @@ function Reserve() {
     "Day Ahead",
   ];
 
-  return <Matrix url={url} customColumns={columns} />;
+  return <Matrix url={url} customColumns={columns} colWidth={150} />;
 }
 
 export default Reserve;
