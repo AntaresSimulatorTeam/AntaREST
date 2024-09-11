@@ -22,7 +22,7 @@ import ImportDialog from "../dialogs/ImportDialog";
 import MatrixAssignDialog from "./MatrixAssignDialog";
 import { fetchMatrixFn } from "../../App/Singlestudy/explore/Modelization/Areas/Hydro/utils";
 import SplitButton from "../buttons/SplitButton";
-import DownloadMatrixButton from "../DownloadMatrixButton.tsx";
+import DownloadMatrixButton from "../buttons/DownloadMatrixButton.tsx";
 
 interface Props {
   study: StudyMetadata | StudyMetadata["id"];
