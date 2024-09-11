@@ -30,7 +30,7 @@ import {
   GridUpdate,
   MatrixUpdateDTO,
 } from "./types";
-import { generateDateTime, generateTimeSeriesColumns } from "./utils";
+import { generateDataColumns, generateDateTime } from "./utils";
 import useUndo from "use-undo";
 import { GridCellKind } from "@glideapps/glide-data-grid";
 import { importFile } from "../../../services/api/studies/raw";
@@ -45,6 +45,7 @@ export function useMatrix(
   url: string,
   enableTimeSeriesColumns: boolean,
   enableAggregateColumns: boolean,
+  customColumns?: string[],
 ) {
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [columnCount, setColumnCount] = useState(0);
@@ -97,9 +98,11 @@ export function useMatrix(
       },
     ];
 
-    const dataColumns = enableTimeSeriesColumns
-      ? generateTimeSeriesColumns({ count: columnCount })
-      : [];
+    const dataColumns = generateDataColumns(
+      enableTimeSeriesColumns,
+      columnCount,
+      customColumns,
+    );
 
     const aggregateColumns = enableAggregateColumns
       ? [
@@ -130,6 +133,7 @@ export function useMatrix(
     return [...baseColumns, ...dataColumns, ...aggregateColumns];
   }, [
     currentState.data,
+    customColumns,
     enableTimeSeriesColumns,
     columnCount,
     enableAggregateColumns,
