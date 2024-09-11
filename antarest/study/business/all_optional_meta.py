@@ -60,5 +60,4 @@ def camel_case_model(model: t.Type[BaseModel]) -> t.Type[BaseModel]:
         field.alias = new_alias
         field.validation_alias = new_alias
         field.serialization_alias = new_alias
-        field.alias_priority = 2
     return model
