@@ -30,6 +30,7 @@ interface MatrixProps {
   enableTimeSeriesColumns?: boolean;
   enableAggregateColumns?: boolean;
   customColumns?: string[];
+  colWidth?: number;
 }
 
 function Matrix({
@@ -38,6 +39,7 @@ function Matrix({
   enableTimeSeriesColumns = true,
   enableAggregateColumns = false,
   customColumns,
+  colWidth,
 }: MatrixProps) {
   const { t } = useTranslation();
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -65,6 +67,7 @@ function Matrix({
     enableTimeSeriesColumns,
     enableAggregateColumns,
     customColumns,
+    colWidth,
   );
 
   ////////////////////////////////////////////////////////////////
