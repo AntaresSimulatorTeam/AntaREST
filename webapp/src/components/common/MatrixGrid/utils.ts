@@ -236,17 +236,18 @@ export function generateCustomColumns({
  * @param enableTimeSeriesColumns - A boolean indicating whether to enable time series columns.
  * @param columnCount - The number of columns to generate.
  * @param customColumns - An optional array of custom column titles.
+ * @param colWidth - The width of each column.
  * @returns An array of EnhancedGridColumn objects representing the generated data columns.
  */
 export function generateDataColumns(
   enableTimeSeriesColumns: boolean,
   columnCount: number,
-  customColumns?: string[] | readonly string[],
+  customColumns?: string[],
   colWidth?: number,
 ): EnhancedGridColumn[] {
   // If custom columns are provided, use them
   if (customColumns) {
-    return generateCustomColumns({ titles: customColumns });
+    return generateCustomColumns({ titles: customColumns, width: colWidth });
   }
 
   // Else, generate time series columns if enabled

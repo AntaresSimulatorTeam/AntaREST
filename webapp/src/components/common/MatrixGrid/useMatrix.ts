@@ -103,6 +103,7 @@ export function useMatrix(
       enableTimeSeriesColumns,
       columnCount,
       customColumns,
+      colWidth,
     );
 
     const aggregateColumns = enableAggregateColumns

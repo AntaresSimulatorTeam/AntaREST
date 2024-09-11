@@ -39,6 +39,7 @@ function Matrix({
   enableTimeSeriesColumns = true,
   enableAggregateColumns = false,
   customColumns,
+  colWidth,
 }: MatrixProps) {
   const { t } = useTranslation();
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -66,6 +67,7 @@ function Matrix({
     enableTimeSeriesColumns,
     enableAggregateColumns,
     customColumns,
+    colWidth,
   );
 
   ////////////////////////////////////////////////////////////////
