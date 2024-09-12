@@ -16,11 +16,12 @@ List of fields of the Thematic Trimming panel
 
 import typing as t
 
-from antarest.study.business.all_optional_meta import AllOptionalMetaclass
+from antarest.study.business.all_optional_meta import all_optional_model
 from antarest.study.business.utils import FormFieldsBaseModel
 
 
-class ThematicTrimmingFormFields(FormFieldsBaseModel, metaclass=AllOptionalMetaclass, use_none=True):
+@all_optional_model
+class ThematicTrimmingFormFields(FormFieldsBaseModel):
     """
     This class manages the configuration of result filtering in a simulation.
 
@@ -237,6 +238,5 @@ FIELDS_INFO: t.Mapping[str, t.Mapping[str, t.Any]] = {
 }
 
 
-def get_fields_info(study_version: t.Union[str, int]) -> t.Mapping[str, t.Mapping[str, t.Any]]:
-    study_version = int(study_version)
+def get_fields_info(study_version: int) -> t.Mapping[str, t.Mapping[str, t.Any]]:
     return {key: info for key, info in FIELDS_INFO.items() if (info.get("start_version") or 0) <= study_version}

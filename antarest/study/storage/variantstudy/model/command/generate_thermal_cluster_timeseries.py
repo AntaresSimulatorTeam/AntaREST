@@ -43,8 +43,8 @@ class GenerateThermalClusterTimeSeries(ICommand):
     Command used to generate thermal cluster timeseries for an entire study
     """
 
-    command_name = CommandName.GENERATE_THERMAL_CLUSTER_TIMESERIES
-    version = 1
+    command_name: CommandName = CommandName.GENERATE_THERMAL_CLUSTER_TIMESERIES
+    version: int = 1
 
     def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:
         return CommandOutput(status=True, message="Nothing to do"), {}

@@ -28,7 +28,7 @@ class VersionInfoDTO(BaseModel):
     dependencies: Dict[str, str]
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "name": "AntaREST",
                 "version": "2.13.2",

@@ -19,15 +19,15 @@ In the near future, this set of classes may be used for solar, wind and hydro cl
 import functools
 import typing as t
 
-from pydantic import BaseModel, Extra, Field
+from pydantic import BaseModel, Field
 
 
 @functools.total_ordering
 class ItemProperties(
     BaseModel,
-    extra=Extra.forbid,
+    extra="forbid",
     validate_assignment=True,
-    allow_population_by_field_name=True,
+    populate_by_name=True,
 ):
     """
     Common properties related to thermal and renewable clusters, and short-term storage.
@@ -47,7 +47,7 @@ class ItemProperties(
 
     group: str = Field(default="", description="Cluster group")
 
-    name: str = Field(description="Cluster name", regex=r"[a-zA-Z0-9_(),& -]+")
+    name: str = Field(description="Cluster name", pattern=r"[a-zA-Z0-9_(),& -]+")
 
     def __lt__(self, other: t.Any) -> bool:
         """

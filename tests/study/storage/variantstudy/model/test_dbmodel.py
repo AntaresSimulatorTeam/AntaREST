@@ -164,7 +164,7 @@ class TestCommandBlock:
         # check CommandBlock.to_dto()
         dto = obj.to_dto()
         # note: it is easier to compare the dict representation of the DTO
-        assert dto.dict() == {
+        assert dto.model_dump() == {
             "id": command_id,
             "action": command,
             "args": json.loads(args),

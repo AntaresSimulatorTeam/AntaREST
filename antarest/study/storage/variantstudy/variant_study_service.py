@@ -627,7 +627,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                     message=(
                         f"{study_id} generated successfully" if generate_result.success else f"{study_id} not generated"
                     ),
-                    return_value=generate_result.json(),
+                    return_value=generate_result.model_dump_json(),
                 )
 
             metadata.generation_task = self.task_service.add_task(
@@ -718,7 +718,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                     success=command_result,
                     message=command_message,
                 )
-                notifier(command_result_obj.json())
+                notifier(command_result_obj.model_dump_json())
                 self.event_bus.push(
                     Event(
                         type=EventType.STUDY_VARIANT_GENERATION_COMMAND_RESULT,

@@ -194,7 +194,7 @@ class TestPatchService:
             additional_data=StudyAdditionalData(
                 author="john.doe",
                 horizon="foo-horizon",
-                patch=patch_outputs.json(),
+                patch=patch_outputs.model_dump_json(),
             ),
             archived=False,
             owner=None,

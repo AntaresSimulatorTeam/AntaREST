@@ -56,13 +56,13 @@ def _init(config_file: Path, services_list: List[Module]) -> Dict[Module, IServi
     services: Dict[Module, IService] = {}
 
     if Module.WATCHER in services_list:
-        watcher = create_watcher(config=config, application=None, study_service=study_service)
+        watcher = create_watcher(config=config, app_ctxt=None, study_service=study_service)
         services[Module.WATCHER] = watcher
 
     if Module.MATRIX_GC in services_list:
         matrix_gc = create_matrix_gc(
             config=config,
-            application=None,
+            app_ctxt=None,
             study_service=study_service,
             matrix_service=matrix_service,
         )

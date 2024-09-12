@@ -27,8 +27,8 @@ class RemoveDistrict(ICommand):
     # Overloaded metadata
     # ===================
 
-    command_name = CommandName.REMOVE_DISTRICT
-    version = 1
+    command_name: CommandName = CommandName.REMOVE_DISTRICT
+    version: int = 1
 
     # Command parameters
     # ==================

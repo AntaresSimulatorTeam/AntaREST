@@ -13,8 +13,8 @@
 import typing as t
 
 import numpy as np
-from requests.structures import CaseInsensitiveDict
 
+from antarest.core.requests import CaseInsensitiveDict
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
@@ -45,13 +45,13 @@ class UpdateScenarioBuilder(ICommand):
     # Overloaded metadata
     # ===================
 
-    command_name = CommandName.UPDATE_SCENARIO_BUILDER
-    version = 1
+    command_name: CommandName = CommandName.UPDATE_SCENARIO_BUILDER
+    version: int = 1
 
     # Command parameters
     # ==================
 
-    data: t.Dict[str, t.Any]
+    data: t.Union[t.Dict[str, t.Any], t.Mapping[str, t.Any], t.MutableMapping[str, t.Any]]
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
         """

@@ -69,7 +69,7 @@ class CommandDTO(BaseModel):
         version: The version of the command.
     """
 
-    id: t.Optional[str]
+    id: t.Optional[str] = None
     action: str
     args: t.Union[t.MutableSequence[JSON], JSON]
     version: int = 1

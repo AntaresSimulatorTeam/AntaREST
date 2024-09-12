@@ -16,7 +16,7 @@ import uuid
 from abc import ABC, abstractmethod
 
 import typing_extensions as te
-from pydantic import BaseModel, Extra
+from pydantic import BaseModel
 
 from antarest.core.utils.utils import assert_this
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 OutputTuple: te.TypeAlias = t.Tuple[CommandOutput, t.Dict[str, t.Any]]
 
 
-class ICommand(ABC, BaseModel, extra=Extra.forbid, arbitrary_types_allowed=True, copy_on_model_validation="deep"):
+class ICommand(ABC, BaseModel, extra="forbid", arbitrary_types_allowed=True):
     """
     Interface for all commands that can be applied to a study.
 
@@ -138,9 +138,9 @@ class ICommand(ABC, BaseModel, extra=Extra.forbid, arbitrary_types_allowed=True,
         """
         if not isinstance(other, self.__class__):
             return False
-        excluded_fields = set(ICommand.__fields__)
-        this_values = self.dict(exclude=excluded_fields)
-        that_values = other.dict(exclude=excluded_fields)
+        excluded_fields = set(ICommand.model_fields)
+        this_values = self.model_dump(exclude=excluded_fields)
+        that_values = other.model_dump(exclude=excluded_fields)
         return this_values == that_values
 
     @abstractmethod

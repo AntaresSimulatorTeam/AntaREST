@@ -32,14 +32,14 @@ class RemoveSTStorage(ICommand):
     # Overloaded metadata
     # ===================
 
-    command_name = CommandName.REMOVE_ST_STORAGE
-    version = 1
+    command_name: CommandName = CommandName.REMOVE_ST_STORAGE
+    version: int = 1
 
     # Command parameters
     # ==================
 
-    area_id: str = Field(description="Area ID", regex=r"[a-z0-9_(),& -]+")
-    storage_id: str = Field(description="Short term storage ID", regex=r"[a-z0-9_(),& -]+")
+    area_id: str = Field(description="Area ID", pattern=r"[a-z0-9_(),& -]+")
+    storage_id: str = Field(description="Short term storage ID", pattern=r"[a-z0-9_(),& -]+")
 
     def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
         """

@@ -262,7 +262,7 @@ def test_variant_manager(
 
         res = client.get(f"/v1/tasks/{res.json()}?wait_for_completion=true", headers=admin_headers)
         assert res.status_code == 200
-        task_result = TaskDTO.parse_obj(res.json())
+        task_result = TaskDTO.model_validate(res.json())
         assert task_result.status == TaskStatus.COMPLETED
         assert task_result.result.success  # type: ignore
 
@@ -309,7 +309,7 @@ def test_comments(client: TestClient, admin_access_token: str, variant_id: str) 
     # Wait for task completion
     res = client.get(f"/v1/tasks/{task_id}", headers=admin_headers, params={"wait_for_completion": True})
     assert res.status_code == 200
-    task_result = TaskDTO.parse_obj(res.json())
+    task_result = TaskDTO.model_validate(res.json())
     assert task_result.status == TaskStatus.COMPLETED
     assert task_result.result is not None
     assert task_result.result.success
@@ -383,7 +383,7 @@ def test_outputs(client: TestClient, admin_access_token: str, variant_id: str, t
     # Wait for task completion
     res = client.get(f"/v1/tasks/{task_id}", headers=admin_headers, params={"wait_for_completion": True})
     res.raise_for_status()
-    task_result = TaskDTO.parse_obj(res.json())
+    task_result = TaskDTO.model_validate(res.json())
     assert task_result.status == TaskStatus.COMPLETED
     assert task_result.result is not None
     assert task_result.result.success

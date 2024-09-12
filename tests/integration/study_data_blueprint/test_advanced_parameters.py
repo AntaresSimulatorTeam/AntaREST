@@ -108,7 +108,7 @@ class TestAdvancedParametersForm:
         )
         assert res.status_code == 422
         assert res.json()["exception"] == "RequestValidationError"
-        assert res.json()["description"] == "Invalid value: fake_correlation"
+        assert res.json()["description"] == "Value error, Invalid value: fake_correlation"
 
         obj = {"unitCommitmentMode": "milp"}
         res = client.put(

@@ -81,7 +81,7 @@ class TestDiskUsage:
         # Wait for task completion
         res = client.get(f"/v1/tasks/{task_id}", headers=user_headers, params={"wait_for_completion": True})
         assert res.status_code == 200
-        task_result = TaskDTO.parse_obj(res.json())
+        task_result = TaskDTO.model_validate(res.json())
         assert task_result.status == TaskStatus.COMPLETED
         assert task_result.result is not None
         assert task_result.result.success

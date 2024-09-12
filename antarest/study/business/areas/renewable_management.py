@@ -11,14 +11,13 @@
 # This file is part of the Antares project.
 
 import collections
-import json
 import typing as t
 
-from pydantic import validator
+from pydantic import field_validator
 
 from antarest.core.exceptions import DuplicateRenewableCluster, RenewableClusterConfigNotFound, RenewableClusterNotFound
 from antarest.core.model import JSON
-from antarest.study.business.all_optional_meta import AllOptionalMetaclass, camel_case_model
+from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import Study
@@ -46,23 +45,26 @@ class TimeSeriesInterpretation(EnumIgnoreCase):
     PRODUCTION_FACTOR = "production-factor"
 
 
+@all_optional_model
 @camel_case_model
-class RenewableClusterInput(RenewableProperties, metaclass=AllOptionalMetaclass, use_none=True):
+class RenewableClusterInput(RenewableProperties):
     """
     Model representing the data structure required to edit an existing renewable cluster.
     """
 
     class Config:
+        populate_by_name = True
+
         @staticmethod
-        def schema_extra(schema: t.MutableMapping[str, t.Any]) -> None:
+        def json_schema_extra(schema: t.MutableMapping[str, t.Any]) -> None:
             schema["example"] = RenewableClusterInput(
                 group="Gas",
                 name="Gas Cluster XY",
                 enabled=False,
-                unitCount=100,
-                nominalCapacity=1000.0,
-                tsInterpretation="power-generation",
-            )
+                unit_count=100,
+                nominal_capacity=1000.0,
+                ts_interpretation="power-generation",
+            ).model_dump()
 
 
 class RenewableClusterCreation(RenewableClusterInput):
@@ -71,7 +73,7 @@ class RenewableClusterCreation(RenewableClusterInput):
     """
 
     # noinspection Pydantic
-    @validator("name", pre=True)
+    @field_validator("name", mode="before")
     def validate_name(cls, name: t.Optional[str]) -> str:
         """
         Validator to check if the name is not empty.
@@ -81,28 +83,29 @@ class RenewableClusterCreation(RenewableClusterInput):
         return name
 
     def to_config(self, study_version: t.Union[str, int]) -> RenewableConfigType:
-        values = self.dict(by_alias=False, exclude_none=True)
+        values = self.model_dump(by_alias=False, exclude_none=True)
         return create_renewable_config(study_version=study_version, **values)
 
 
+@all_optional_model
 @camel_case_model
-class RenewableClusterOutput(RenewableConfig, metaclass=AllOptionalMetaclass, use_none=True):
+class RenewableClusterOutput(RenewableConfig):
     """
     Model representing the output data structure to display the details of a renewable cluster.
     """
 
     class Config:
         @staticmethod
-        def schema_extra(schema: t.MutableMapping[str, t.Any]) -> None:
+        def json_schema_extra(schema: t.MutableMapping[str, t.Any]) -> None:
             schema["example"] = RenewableClusterOutput(
                 id="Gas cluster YZ",
                 group="Gas",
                 name="Gas Cluster YZ",
                 enabled=False,
-                unitCount=100,
-                nominalCapacity=1000.0,
-                tsInterpretation="power-generation",
-            )
+                unit_count=100,
+                nominal_capacity=1000.0,
+                ts_interpretation="power-generation",
+            ).model_dump()
 
 
 def create_renewable_output(
@@ -111,7 +114,7 @@ def create_renewable_output(
     config: t.Mapping[str, t.Any],
 ) -> "RenewableClusterOutput":
     obj = create_renewable_config(study_version=study_version, **config, id=cluster_id)
-    kwargs = obj.dict(by_alias=False)
+    kwargs = obj.model_dump(by_alias=False)
     return RenewableClusterOutput(**kwargs)
 
 
@@ -218,7 +221,7 @@ class RenewableManager:
         command = CreateRenewablesCluster(
             area_id=area_id,
             cluster_name=cluster.id,
-            parameters=cluster.dict(by_alias=True, exclude={"id"}),
+            parameters=cluster.model_dump(mode="json", by_alias=True, exclude={"id"}),
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
         )
         return command
@@ -281,16 +284,16 @@ class RenewableManager:
             old_config = create_renewable_config(study_version, **values)
 
         # use Python values to synchronize Config and Form values
-        new_values = cluster_data.dict(by_alias=False, exclude_none=True)
+        new_values = cluster_data.model_dump(by_alias=False, exclude_none=True)
         new_config = old_config.copy(exclude={"id"}, update=new_values)
-        new_data = json.loads(new_config.json(by_alias=True, exclude={"id"}))
+        new_data = new_config.model_dump(mode="json", by_alias=True, exclude={"id"})
 
         # create the dict containing the new values using aliases
-        data: t.Dict[str, t.Any] = {
-            field.alias: new_data[field.alias]
-            for field_name, field in new_config.__fields__.items()
-            if field_name in new_values
-        }
+        data: t.Dict[str, t.Any] = {}
+        for field_name, field in new_config.model_fields.items():
+            if field_name in new_values:
+                name = field.alias if field.alias else field_name
+                data[name] = new_data[name]
 
         # create the update config commands with the modified data
         command_context = self.storage_service.variant_study_service.command_factory.command_context
@@ -300,7 +303,7 @@ class RenewableManager:
         ]
         execute_or_add_commands(study, file_study, commands, self.storage_service)
 
-        values = new_config.dict(by_alias=False)
+        values = new_config.model_dump(by_alias=False)
         return RenewableClusterOutput(**values, id=cluster_id)
 
     def delete_clusters(self, study: Study, area_id: str, cluster_ids: t.Sequence[str]) -> None:
@@ -352,7 +355,7 @@ class RenewableManager:
         # Cluster duplication
         current_cluster = self.get_cluster(study, area_id, source_id)
         current_cluster.name = new_cluster_name
-        creation_form = RenewableClusterCreation(**current_cluster.dict(by_alias=False, exclude={"id"}))
+        creation_form = RenewableClusterCreation(**current_cluster.model_dump(by_alias=False, exclude={"id"}))
         new_config = creation_form.to_config(study.version)
         create_cluster_cmd = self._make_create_cluster_cmd(area_id, new_config)
 
@@ -370,7 +373,7 @@ class RenewableManager:
 
         execute_or_add_commands(study, self._get_file_study(study), commands, self.storage_service)
 
-        return RenewableClusterOutput(**new_config.dict(by_alias=False))
+        return RenewableClusterOutput(**new_config.model_dump(by_alias=False))
 
     def update_renewables_props(
         self,
@@ -387,17 +390,17 @@ class RenewableManager:
             for renewable_id, update_cluster in update_renewables_by_ids.items():
                 # Update the renewable cluster properties.
                 old_cluster = old_renewables_by_ids[renewable_id]
-                new_cluster = old_cluster.copy(update=update_cluster.dict(by_alias=False, exclude_none=True))
+                new_cluster = old_cluster.copy(update=update_cluster.model_dump(by_alias=False, exclude_none=True))
                 new_renewables_by_areas[area_id][renewable_id] = new_cluster
 
                 # Convert the DTO to a configuration object and update the configuration file.
                 properties = create_renewable_config(
-                    study.version, **new_cluster.dict(by_alias=False, exclude_none=True)
+                    study.version, **new_cluster.model_dump(by_alias=False, exclude_none=True)
                 )
                 path = _CLUSTER_PATH.format(area_id=area_id, cluster_id=renewable_id)
                 cmd = UpdateConfig(
                     target=path,
-                    data=json.loads(properties.json(by_alias=True, exclude={"id"})),
+                    data=properties.model_dump(mode="json", by_alias=True, exclude={"id"}),
                     command_context=self.storage_service.variant_study_service.command_factory.command_context,
                 )
                 commands.append(cmd)

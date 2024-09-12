@@ -28,10 +28,12 @@ from antarest.tools.lib import (
     COMMAND_FILE,
     MATRIX_STORE_DIR,
     RemoteVariantGenerator,
+    create_http_client,
     extract_commands,
     generate_diff,
     generate_study,
     parse_commands,
+    set_auth_token,
 )
 from tests.integration.assets import ASSETS_DIR
 
@@ -62,7 +64,9 @@ def generate_study_with_server(
     )
     assert res.status_code == 200, res.json()
     variant_id = res.json()
-    generator = RemoteVariantGenerator(variant_id, session=client, token=admin_credentials["access_token"])
+
+    set_auth_token(client, admin_credentials["access_token"])
+    generator = RemoteVariantGenerator(variant_id, host="", session=client)
     return generator.apply_commands(commands, matrices_dir), variant_id
 
 

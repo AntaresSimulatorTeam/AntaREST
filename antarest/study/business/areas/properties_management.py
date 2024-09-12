@@ -14,9 +14,10 @@ import re
 import typing as t
 from builtins import sorted
 
-from pydantic import root_validator
+from pydantic import model_validator
 
 from antarest.core.exceptions import ChildNotFoundError
+from antarest.study.business.all_optional_meta import all_optional_model
 from antarest.study.business.utils import FieldInfo, FormFieldsBaseModel, execute_or_add_commands
 from antarest.study.model import Study
 from antarest.study.storage.rawstudy.model.filesystem.config.area import AdequacyPatchMode
@@ -49,18 +50,19 @@ def decode_filter(encoded_value: t.Set[str], current_filter: t.Optional[str] = N
     return ", ".join(sort_filter_options(encoded_value))
 
 
+@all_optional_model
 class PropertiesFormFields(FormFieldsBaseModel):
-    energy_cost_unsupplied: t.Optional[float]
-    energy_cost_spilled: t.Optional[float]
-    non_dispatch_power: t.Optional[bool]
-    dispatch_hydro_power: t.Optional[bool]
-    other_dispatch_power: t.Optional[bool]
-    filter_synthesis: t.Optional[t.Set[str]]
-    filter_by_year: t.Optional[t.Set[str]]
+    energy_cost_unsupplied: float
+    energy_cost_spilled: float
+    non_dispatch_power: bool
+    dispatch_hydro_power: bool
+    other_dispatch_power: bool
+    filter_synthesis: t.Set[str]
+    filter_by_year: t.Set[str]
     # version 830
-    adequacy_patch_mode: t.Optional[AdequacyPatchMode]
+    adequacy_patch_mode: AdequacyPatchMode
 
-    @root_validator
+    @model_validator(mode="before")
     def validation(cls, values: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
         filters = {
             "filter_synthesis": values.get("filter_synthesis"),
@@ -143,7 +145,7 @@ class PropertiesManager:
             encode = field_info.get("encode") or (lambda x: x)
             return encode(val)
 
-        return PropertiesFormFields.construct(**{name: get_value(info) for name, info in FIELDS_INFO.items()})
+        return PropertiesFormFields.model_construct(**{name: get_value(info) for name, info in FIELDS_INFO.items()})
 
     def set_field_values(
         self,

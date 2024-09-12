@@ -66,6 +66,10 @@ launcher:
 
 debug: false
 
+# See https://fastapi.tiangolo.com/advanced/behind-a-proxy/
+# root path is used when the API is served behind a proxy which
+# adds a prefix for clients.
+# It does NOT add any prefix to the URLs which fastapi serve.
 root_path: "api"
 
 #tasks:

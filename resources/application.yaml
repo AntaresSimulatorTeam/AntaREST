@@ -26,7 +26,19 @@ launcher:
       700: path/to/700
     enable_nb_cores_detection: true
 
-root_path: "api"
+# See https://fastapi.tiangolo.com/advanced/behind-a-proxy/
+# root path is used when the API is served behind a proxy which
+# adds a prefix for clients.
+# It does NOT add any prefix to the URLs which fastapi serve.
+
+# root_path: "api"
+
+
+# Uncomment to serve the API under /api prefix
+# (used in standalone mode to emulate the effect of proxy servers
+# used in production deployments).
+
+# api_prefix: "/api"
 
 server:
   worker_threadpool_size: 12
@@ -37,3 +49,6 @@ server:
 logging:
   level: INFO
   logfile: ./tmp/antarest.log
+
+# True to get sqlalchemy logs
+debug: False

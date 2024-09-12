@@ -439,4 +439,4 @@ def create_thermal_config(study_version: t.Union[str, int], **kwargs: t.Any) -> 
         ValueError: If the study version is not supported.
     """
     cls = get_thermal_config_cls(study_version)
-    return cls(**kwargs)
+    return cls.model_validate(kwargs)

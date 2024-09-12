@@ -100,7 +100,7 @@ class AbstractLauncher(ABC):
             )
 
             launch_progress_json = self.cache.get(id=f"Launch_Progress_{job_id}") or {}
-            launch_progress_dto = LaunchProgressDTO.parse_obj(launch_progress_json)
+            launch_progress_dto = LaunchProgressDTO.model_validate(launch_progress_json)
             if launch_progress_dto.parse_log_lines(log_line.splitlines()):
                 self.event_bus.push(
                     Event(
@@ -114,6 +114,6 @@ class AbstractLauncher(ABC):
                         channel=EventChannelDirectory.JOB_STATUS + job_id,
                     )
                 )
-                self.cache.put(f"Launch_Progress_{job_id}", launch_progress_dto.dict())
+                self.cache.put(f"Launch_Progress_{job_id}", launch_progress_dto.model_dump())
 
         return update_log

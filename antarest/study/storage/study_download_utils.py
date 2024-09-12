@@ -345,7 +345,7 @@ class StudyDownloader:
         if filetype == ExportFormat.JSON:
             with open(target_file, "w") as fh:
                 json.dump(
-                    matrix.dict(),
+                    matrix.model_dump(),
                     fh,
                     ensure_ascii=False,
                     allow_nan=True,

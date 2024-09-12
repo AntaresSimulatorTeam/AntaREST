@@ -27,7 +27,7 @@ from typing_extensions import Literal
 
 from antarest.core.config import (
     Config,
-    InvalidConfigurationError,
+    Launcher,
     LauncherConfig,
     LocalConfig,
     NbCoresConfig,
@@ -95,7 +95,7 @@ class TestLauncherService:
             study_id="study_uuid",
             job_status=JobStatus.PENDING,
             launcher="local",
-            launcher_params=LauncherParametersDTO().json(),
+            launcher_params=LauncherParametersDTO().model_dump_json(),
         )
         repository = Mock()
         repository.save.return_value = pending
@@ -136,12 +136,12 @@ class TestLauncherService:
         # so we need to compare them manually.
         mock_call = repository.save.mock_calls[0]
         actual_obj: JobResult = mock_call.args[0]
-        assert actual_obj.to_dto().dict() == pending.to_dto().dict()
+        assert actual_obj.to_dto().model_dump() == pending.to_dto().model_dump()
 
         event_bus.push.assert_called_once_with(
             Event(
                 type=EventType.STUDY_JOB_STARTED,
-                payload=pending.to_dto().dict(),
+                payload=pending.to_dto().model_dump(),
                 permissions=PermissionInfo(owner=0),
             )
         )
@@ -492,11 +492,6 @@ class TestLauncherService:
                 "unknown",
                 {},
                 id="local-config-unknown",
-                marks=pytest.mark.xfail(
-                    reason="Configuration is not available for the 'unknown' launcher",
-                    raises=InvalidConfigurationError,
-                    strict=True,
-                ),
             ),
             pytest.param(
                 {
@@ -524,11 +519,6 @@ class TestLauncherService:
                 "unknown",
                 {},
                 id="slurm-config-unknown",
-                marks=pytest.mark.xfail(
-                    reason="Configuration is not available for the 'unknown' launcher",
-                    raises=InvalidConfigurationError,
-                    strict=True,
-                ),
             ),
             pytest.param(
                 {
@@ -569,10 +559,13 @@ class TestLauncherService:
         )
 
         # Fetch the number of cores
-        actual = launcher_service.get_nb_cores(solver)
-
-        # Check the result
-        assert actual == NbCoresConfig(**expected)
+        try:
+            actual = launcher_service.get_nb_cores(Launcher(solver))
+        except ValueError as e:
+            assert e.args[0] == f"'{solver}' is not a valid Launcher"
+        else:
+            # Check the result
+            assert actual == NbCoresConfig(**expected)
 
     @pytest.mark.unit_test
     def test_service_kill_job(self, tmp_path: Path) -> None:
@@ -896,7 +889,7 @@ class TestLauncherService:
             solver_stats=expected_saved_stats,
             owner_id=1,
         )
-        assert actual_obj.to_dto().dict() == expected_obj.to_dto().dict()
+        assert actual_obj.to_dto().model_dump() == expected_obj.to_dto().model_dump()
 
         zip_file = tmp_path / "test.zip"
         with ZipFile(zip_file, "w", ZIP_DEFLATED) as output_data:
@@ -913,7 +906,7 @@ class TestLauncherService:
             solver_stats="0\n1",
             owner_id=1,
         )
-        assert actual_obj.to_dto().dict() == expected_obj.to_dto().dict()
+        assert actual_obj.to_dto().model_dump() == expected_obj.to_dto().model_dump()
 
     @pytest.mark.parametrize(
         ["running_jobs", "expected_result", "default_launcher"],
@@ -996,7 +989,7 @@ class TestLauncherService:
 
         job_repository.get_running.return_value = running_jobs
 
-        launcher_expected_result = LauncherLoadDTO.parse_obj(expected_result)
+        launcher_expected_result = LauncherLoadDTO.model_validate(expected_result)
         actual_result = launcher_service.get_load()
 
         assert launcher_expected_result.launcher_status == actual_result.launcher_status

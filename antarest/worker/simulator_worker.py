@@ -81,7 +81,7 @@ class SimulatorWorker(AbstractWorker):
 
     def execute_timeseries_generation_task(self, task_info: WorkerTaskCommand) -> TaskResult:
         result = TaskResult(success=True, message="", return_value="")
-        task = GenerateTimeseriesTaskArgs.parse_obj(task_info.task_args)
+        task = GenerateTimeseriesTaskArgs.model_validate(task_info.task_args)
         binary = (
             self.binaries[task.study_version]
             if task.study_version in self.binaries
