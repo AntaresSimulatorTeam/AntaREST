@@ -45,7 +45,8 @@ export function useMatrix(
   url: string,
   enableTimeSeriesColumns: boolean,
   enableAggregateColumns: boolean,
-  customColumns?: string[],
+  customColumns?: string[] | readonly string[],
+  colWidth?: number,
 ) {
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [columnCount, setColumnCount] = useState(0);
@@ -133,9 +134,10 @@ export function useMatrix(
     return [...baseColumns, ...dataColumns, ...aggregateColumns];
   }, [
     currentState.data,
-    customColumns,
     enableTimeSeriesColumns,
     columnCount,
+    customColumns,
+    colWidth,
     enableAggregateColumns,
   ]);
 

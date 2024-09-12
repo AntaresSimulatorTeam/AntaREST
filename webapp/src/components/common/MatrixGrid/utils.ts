@@ -218,7 +218,7 @@ export function generateTimeSeriesColumns({
  */
 export function generateCustomColumns({
   titles,
-  width = 100,
+  width,
 }: CustomColumnOptions): EnhancedGridColumn[] {
   return titles.map((title, index) => ({
     id: `custom${index + 1}`,
@@ -241,7 +241,8 @@ export function generateCustomColumns({
 export function generateDataColumns(
   enableTimeSeriesColumns: boolean,
   columnCount: number,
-  customColumns?: string[],
+  customColumns?: string[] | readonly string[],
+  colWidth?: number,
 ): EnhancedGridColumn[] {
   // If custom columns are provided, use them
   if (customColumns) {

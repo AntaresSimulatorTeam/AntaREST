@@ -56,7 +56,7 @@ export interface TimeSeriesColumnOptions {
 }
 
 export interface CustomColumnOptions {
-  titles: string[];
+  titles: string[] | readonly string[];
   width?: number;
 }
 

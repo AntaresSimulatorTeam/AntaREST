@@ -15,12 +15,9 @@
 import { useOutletContext } from "react-router";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../redux/selectors";
-import { MatrixStats, StudyMetadata } from "../../../../../../common/types";
-import MatrixInput from "../../../../../common/MatrixInput";
-import { Root } from "./style";
+import Matrix from "../../../../../common/MatrixGrid/Matrix";
 
 function Solar() {
-  const { study } = useOutletContext<{ study: StudyMetadata }>();
   const currentArea = useAppSelector(getCurrentAreaId);
   const url = `input/solar/series/solar_${currentArea}`;
 
@@ -28,11 +25,7 @@ function Solar() {
   // JSX
   ////////////////////////////////////////////////////////////////
 
-  return (
-    <Root>
-      <MatrixInput study={study} url={url} computStats={MatrixStats.STATS} />
-    </Root>
-  );
+  return <Matrix url={url} />;
 }
 
 export default Solar;
