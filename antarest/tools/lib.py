@@ -51,29 +51,28 @@ class IVariantGenerator(ABC):
         raise NotImplementedError()
 
 
+def set_auth_token(client: Client, auth_token: Optional[str] = None) -> Client:
+    if auth_token is not None:
+        client.headers.update({"Authorization": f"Bearer {auth_token}"})
+    return client
+
+
+def create_http_client(verify: bool, auth_token: Optional[str] = None) -> Client:
+    client = Client(verify=verify)
+    set_auth_token(client, auth_token)
+    return client
+
+
 class RemoteVariantGenerator(IVariantGenerator):
     def __init__(
         self,
         study_id: str,
-        host: Optional[str] = None,
-        token: Optional[str] = None,
-        session: Optional[Client] = None,
+        host: str,
+        session: Client,
     ):
         self.study_id = study_id
-
-        # todo: find the correct way to handle certificates.
-        #  By default, Httpx verifies SSL certificates for HTTPS requests.
-        #  When verify is set to `False`, requests will accept any TLS certificate presented
-        #  by the server, and will ignore hostname mismatches and/or expired certificates,
-        #  which will make your application vulnerable to man-in-the-middle (MitM) attacks.
-        #  Setting verify to `False` may be useful during local development or testing.
-        self.session = session or Client(verify=False)
-
+        self.session = session
         self.host = host
-        if session is None and host is None:
-            raise ValueError("Missing either session or host")
-        if token is not None:
-            self.session.headers.update({"Authorization": f"Bearer {token}"})
 
     def apply_commands(
         self,
@@ -333,7 +332,7 @@ def generate_study(
     study_id: Optional[str],
     output: Optional[str] = None,
     host: Optional[str] = None,
-    token: Optional[str] = None,
+    session: Optional[Client] = None,
     study_version: str = NEW_DEFAULT_STUDY_VERSION,
 ) -> GenerationResultInfoDTO:
     """
@@ -347,7 +346,7 @@ def generate_study(
             If `study_id` and `host` are not provided, this must be specified.
         host: The URL of the Antares server to use for generating the new study.
             If `study_id` is not provided, this is ignored.
-        token: The authentication token to use when connecting to the Antares server.
+        session: The session to use when connecting to the Antares server.
             If `host` is not provided, this is ignored.
         study_version: The target version of the generated study.
 
@@ -355,8 +354,9 @@ def generate_study(
         GenerationResultInfoDTO: A data transfer object containing information about the generation result.
     """
     generator: Union[RemoteVariantGenerator, LocalVariantGenerator]
-    if study_id is not None and host is not None:
-        generator = RemoteVariantGenerator(study_id, host, token)
+
+    if study_id is not None and host is not None and session is not None:
+        generator = RemoteVariantGenerator(study_id, host, session)
     elif output is None:
         raise TypeError("'output' must be set")
     else:
