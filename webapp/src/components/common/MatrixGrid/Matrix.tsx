@@ -30,6 +30,7 @@ interface MatrixProps {
   enableTimeSeriesColumns?: boolean;
   enableAggregateColumns?: boolean;
   enableRowHeaders?: boolean;
+  enablePercentDisplay?: boolean;
   customColumns?: string[] | readonly string[];
   colWidth?: number;
   rowHeaders?: string[];
@@ -41,6 +42,7 @@ function Matrix({
   enableTimeSeriesColumns = true,
   enableAggregateColumns = false,
   enableRowHeaders = false,
+  enablePercentDisplay = false,
   customColumns,
   colWidth,
   rowHeaders,
@@ -119,6 +121,7 @@ function Matrix({
         onCellEdit={handleCellEdit}
         onMultipleCellsEdit={handleMultipleCellsEdit}
         readOnly={isSubmitting}
+        isPercentDisplayEnabled={enablePercentDisplay}
       />
       {openImportDialog && (
         <ImportDialog
