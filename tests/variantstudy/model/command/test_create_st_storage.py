@@ -29,6 +29,8 @@ from antarest.study.storage.variantstudy.model.command.update_config import Upda
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
+GEN = np.random.default_rng(1000)
+
 
 @pytest.fixture(name="recent_study")
 def recent_study_fixture(empty_study: FileStudy) -> FileStudy:
@@ -75,8 +77,8 @@ OTHER_PARAMETERS = {
 class TestCreateSTStorage:
     # noinspection SpellCheckingInspection
     def test_init(self, command_context: CommandContext):
-        pmax_injection = np.random.rand(8760, 1)
-        inflows = np.random.uniform(0, 1000, size=(8760, 1))
+        pmax_injection = GEN.random((8760, 1))
+        inflows = GEN.uniform(0, 1000, size=(8760, 1))
         cmd = CreateSTStorage(
             command_context=command_context,
             area_id="area_fr",
@@ -112,17 +114,22 @@ class TestCreateSTStorage:
                 parameters=STStorageConfig(**parameters),
             )
         # We get 2 errors because the `storage_name` is duplicated in the `parameters`:
-        assert ctx.value.errors() == [
-            {
-                "loc": ("__root__",),
-                "msg": "Invalid name '?%$$'.",
-                "type": "value_error",
-            }
-        ]
+        assert ctx.value.error_count() == 1
+        raised_error = ctx.value.errors()[0]
+        assert raised_error["type"] == "value_error"
+        assert raised_error["msg"] == "Value error, Invalid name '?%$$'."
+        assert raised_error["input"] == {
+            "efficiency": 0.94,
+            "group": "Battery",
+            "initialleveloptim": True,
+            "injectionnominalcapacity": 1500,
+            "name": "?%$$",
+            "reservoircapacity": 20000,
+            "withdrawalnominalcapacity": 1500,
+        }
 
-    # noinspection SpellCheckingInspection
     def test_init__invalid_matrix_values(self, command_context: CommandContext):
-        array = np.random.rand(8760, 1)  # OK
+        array = GEN.random((8760, 1))
         array[10] = 25  # BAD
         with pytest.raises(ValidationError) as ctx:
             CreateSTStorage(
@@ -131,17 +138,15 @@ class TestCreateSTStorage:
                 parameters=STStorageConfig(**PARAMETERS),
                 pmax_injection=array.tolist(),  # type: ignore
             )
-        assert ctx.value.errors() == [
-            {
-                "loc": ("pmax_injection",),
-                "msg": "Matrix values should be between 0 and 1",
-                "type": "value_error",
-            }
-        ]
+        assert ctx.value.error_count() == 1
+        raised_error = ctx.value.errors()[0]
+        assert raised_error["type"] == "value_error"
+        assert raised_error["msg"] == "Value error, Matrix values should be between 0 and 1"
+        assert "pmax_injection" in raised_error["input"]
 
     # noinspection SpellCheckingInspection
     def test_init__invalid_matrix_shape(self, command_context: CommandContext):
-        array = np.random.rand(24, 1)  # BAD SHAPE
+        array = GEN.random((24, 1))  # BAD SHAPE
         with pytest.raises(ValidationError) as ctx:
             CreateSTStorage(
                 command_context=command_context,
@@ -149,18 +154,14 @@ class TestCreateSTStorage:
                 parameters=STStorageConfig(**PARAMETERS),
                 pmax_injection=array.tolist(),  # type: ignore
             )
-        assert ctx.value.errors() == [
-            {
-                "loc": ("pmax_injection",),
-                "msg": "Invalid matrix shape (24, 1), expected (8760, 1)",
-                "type": "value_error",
-            }
-        ]
-
-        # noinspection SpellCheckingInspection
+        assert ctx.value.error_count() == 1
+        raised_error = ctx.value.errors()[0]
+        assert raised_error["type"] == "value_error"
+        assert raised_error["msg"] == "Value error, Invalid matrix shape (24, 1), expected (8760, 1)"
+        assert "pmax_injection" in raised_error["input"]
 
     def test_init__invalid_nan_value(self, command_context: CommandContext):
-        array = np.random.rand(8760, 1)  # OK
+        array = GEN.random((8760, 1))  # OK
         array[20] = np.nan  # BAD
         with pytest.raises(ValidationError) as ctx:
             CreateSTStorage(
@@ -169,37 +170,25 @@ class TestCreateSTStorage:
                 parameters=STStorageConfig(**PARAMETERS),
                 pmax_injection=array.tolist(),  # type: ignore
             )
-        assert ctx.value.errors() == [
-            {
-                "loc": ("pmax_injection",),
-                "msg": "Matrix values cannot contain NaN",
-                "type": "value_error",
-            }
-        ]
-
-        # noinspection SpellCheckingInspection
+        assert ctx.value.error_count() == 1
+        raised_error = ctx.value.errors()[0]
+        assert raised_error["type"] == "value_error"
+        assert raised_error["msg"] == "Value error, Matrix values cannot contain NaN"
+        assert "pmax_injection" in raised_error["input"]
 
     def test_init__invalid_matrix_type(self, command_context: CommandContext):
-        array = {"data": [1, 2, 3]}
         with pytest.raises(ValidationError) as ctx:
             CreateSTStorage(
                 command_context=command_context,
                 area_id="area_fr",
                 parameters=STStorageConfig(**PARAMETERS),
-                pmax_injection=array,  # type: ignore
+                pmax_injection=[1, 2, 3],
             )
-        assert ctx.value.errors() == [
-            {
-                "loc": ("pmax_injection",),
-                "msg": "value is not a valid list",
-                "type": "type_error.list",
-            },
-            {
-                "loc": ("pmax_injection",),
-                "msg": "str type expected",
-                "type": "type_error.str",
-            },
-        ]
+        assert ctx.value.error_count() == 1
+        raised_error = ctx.value.errors()[0]
+        assert raised_error["type"] == "value_error"
+        assert raised_error["msg"] == "Value error, Invalid matrix shape (3,), expected (8760, 1)"
+        assert "pmax_injection" in raised_error["input"]
 
     def test_apply_config__invalid_version(self, empty_study: FileStudy, command_context: CommandContext):
         # Given an old study in version 720
@@ -305,8 +294,8 @@ class TestCreateSTStorage:
         create_area.apply(recent_study)
 
         # Then, apply the command to create a new ST Storage
-        pmax_injection = np.random.rand(8760, 1)
-        inflows = np.random.uniform(0, 1000, size=(8760, 1))
+        pmax_injection = GEN.random((8760, 1))
+        inflows = GEN.uniform(0, 1000, size=(8760, 1))
         cmd = CreateSTStorage(
             command_context=command_context,
             area_id=transform_name_to_id(create_area.area_name),
@@ -439,8 +428,8 @@ class TestCreateSTStorage:
             area_id="area_fr",
             parameters=STStorageConfig(**PARAMETERS),
         )
-        upper_rule_curve = np.random.rand(8760, 1)
-        inflows = np.random.uniform(0, 1000, size=(8760, 1))
+        upper_rule_curve = GEN.random((8760, 1))
+        inflows = GEN.uniform(0, 1000, size=(8760, 1))
         other = CreateSTStorage(
             command_context=command_context,
             area_id=cmd.area_id,

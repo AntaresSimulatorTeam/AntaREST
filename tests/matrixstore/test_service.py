@@ -497,12 +497,8 @@ def test_dataset_lifecycle() -> None:
     dataset_repo.delete.assert_called_once()
 
 
-def _create_upload_file(filename: str, file: io.BytesIO, content_type: str = "") -> UploadFile:
-    if hasattr(UploadFile, "content_type"):
-        # `content_type` attribute was replace by a read-ony property in starlette-v0.24.
-        headers = Headers(headers={"content-type": content_type})
-        # noinspection PyTypeChecker,PyArgumentList
-        return UploadFile(filename=filename, file=file, headers=headers)
-    else:
-        # noinspection PyTypeChecker,PyArgumentList
-        return UploadFile(filename=filename, file=file, content_type=content_type)
+def _create_upload_file(filename: str, file: t.IO = None, content_type: str = "") -> UploadFile:
+    # `content_type` attribute was replace by a read-ony property in starlette-v0.24.
+    headers = Headers(headers={"content-type": content_type})
+    # noinspection PyTypeChecker,PyArgumentList
+    return UploadFile(filename=filename, file=file, headers=headers)

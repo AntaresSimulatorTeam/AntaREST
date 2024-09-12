@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 
 JSON = Dict[str, Any]
 ELEMENT = Union[str, int, float, bool, bytes]
-SUB_JSON = Union[ELEMENT, JSON, List, None]
+SUB_JSON = Union[ELEMENT, JSON, List[Any], None]
 
 
 class PublicMode(str, enum.Enum):

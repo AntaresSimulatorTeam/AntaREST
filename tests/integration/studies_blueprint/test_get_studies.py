@@ -1483,7 +1483,7 @@ class TestStudiesListing:
         res = client.get(STUDIES_URL, headers=headers, params={"sortBy": "invalid"})
         assert res.status_code == INVALID_PARAMS_STATUS_CODE, res.json()
         description = res.json()["description"]
-        assert re.search(r"not a valid enumeration member", description), f"{description=}"
+        assert re.search("Input should be", description), f"{description=}"
 
         # Invalid `pageNb` parameter (negative integer)
         res = client.get(STUDIES_URL, headers=headers, params={"pageNb": -1})
@@ -1495,7 +1495,7 @@ class TestStudiesListing:
         res = client.get(STUDIES_URL, headers=headers, params={"pageNb": "invalid"})
         assert res.status_code == INVALID_PARAMS_STATUS_CODE, res.json()
         description = res.json()["description"]
-        assert re.search(r"not a valid integer", description), f"{description=}"
+        assert re.search(r"should be a valid integer", description), f"{description=}"
 
         # Invalid `pageSize` parameter (negative integer)
         res = client.get(STUDIES_URL, headers=headers, params={"pageSize": -1})
@@ -1507,43 +1507,43 @@ class TestStudiesListing:
         res = client.get(STUDIES_URL, headers=headers, params={"pageSize": "invalid"})
         assert res.status_code == INVALID_PARAMS_STATUS_CODE, res.json()
         description = res.json()["description"]
-        assert re.search(r"not a valid integer", description), f"{description=}"
+        assert re.search(r"should be a valid integer", description), f"{description=}"
 
         # Invalid `managed` parameter (not a boolean)
         res = client.get(STUDIES_URL, headers=headers, params={"managed": "invalid"})
         assert res.status_code == INVALID_PARAMS_STATUS_CODE, res.json()
         description = res.json()["description"]
-        assert re.search(r"could not be parsed to a boolean", description), f"{description=}"
+        assert re.search(r"should be a valid boolean", description), f"{description=}"
 
         # Invalid `archived` parameter (not a boolean)
         res = client.get(STUDIES_URL, headers=headers, params={"archived": "invalid"})
         assert res.status_code == INVALID_PARAMS_STATUS_CODE, res.json()
         description = res.json()["description"]
-        assert re.search(r"could not be parsed to a boolean", description), f"{description=}"
+        assert re.search(r"should be a valid boolean", description), f"{description=}"
 
         # Invalid `variant` parameter (not a boolean)
         res = client.get(STUDIES_URL, headers=headers, params={"variant": "invalid"})
         assert res.status_code == INVALID_PARAMS_STATUS_CODE, res.json()
         description = res.json()["description"]
-        assert re.search(r"could not be parsed to a boolean", description), f"{description=}"
+        assert re.search(r"should be a valid boolean", description), f"{description=}"
 
         # Invalid `versions` parameter (not a list of integers)
         res = client.get(STUDIES_URL, headers=headers, params={"versions": "invalid"})
         assert res.status_code == INVALID_PARAMS_STATUS_CODE, res.json()
         description = res.json()["description"]
-        assert re.search(r"string does not match regex", description), f"{description=}"
+        assert re.search(r"String should match pattern", description), f"{description=}"
 
         # Invalid `users` parameter (not a list of integers)
         res = client.get(STUDIES_URL, headers=headers, params={"users": "invalid"})
         assert res.status_code == INVALID_PARAMS_STATUS_CODE, res.json()
         description = res.json()["description"]
-        assert re.search(r"string does not match regex", description), f"{description=}"
+        assert re.search(r"String should match pattern", description), f"{description=}"
 
         # Invalid `exists` parameter (not a boolean)
         res = client.get(STUDIES_URL, headers=headers, params={"exists": "invalid"})
         assert res.status_code == INVALID_PARAMS_STATUS_CODE, res.json()
         description = res.json()["description"]
-        assert re.search(r"could not be parsed to a boolean", description), f"{description=}"
+        assert re.search(r"should be a valid boolean", description), f"{description=}"
 
 
 def test_studies_counting(client: TestClient, admin_access_token: str, user_access_token: str) -> None:

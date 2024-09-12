@@ -12,7 +12,7 @@ from starlette.types import ASGIApp
 
 from antarest.core.utils.fastapi_sqlalchemy.exceptions import MissingSessionError, SessionNotInitialisedError
 
-_Session: sessionmaker = None
+_Session: Optional[sessionmaker] = None
 _session: ContextVar[Optional[Session]] = ContextVar("_session", default=None)
 
 
@@ -93,4 +93,4 @@ class DBSession(metaclass=DBSessionMeta):
             _session.reset(self.token)
 
 
-db: DBSessionMeta = DBSession
+db: Type[DBSession] = DBSession

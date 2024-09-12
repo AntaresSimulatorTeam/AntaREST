@@ -12,8 +12,9 @@
 
 from typing import Optional
 
-from fastapi import FastAPI
+from fastapi import APIRouter, FastAPI
 
+from antarest.core.application import AppBuildContext
 from antarest.core.config import Config
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.interfaces.cache import ICache
@@ -39,7 +40,7 @@ from antarest.study.web.xpansion_studies_blueprint import create_xpansion_routes
 
 
 def build_study_service(
-    application: Optional[FastAPI],
+    app_ctxt: Optional[AppBuildContext],
     config: Config,
     user_service: LoginService,
     matrix_service: ISimpleMatrixService,
@@ -124,16 +125,17 @@ def build_study_service(
         config=config,
     )
 
-    if application:
-        application.include_router(create_study_routes(study_service, file_transfer_manager, config))
-        application.include_router(create_raw_study_routes(study_service, config))
-        application.include_router(create_study_data_routes(study_service, config))
-        application.include_router(
+    if app_ctxt:
+        api_root = app_ctxt.api_root
+        api_root.include_router(create_study_routes(study_service, file_transfer_manager, config))
+        api_root.include_router(create_raw_study_routes(study_service, config))
+        api_root.include_router(create_study_data_routes(study_service, config))
+        api_root.include_router(
             create_study_variant_routes(
                 study_service=study_service,
                 config=config,
             )
         )
-        application.include_router(create_xpansion_routes(study_service, config))
+        api_root.include_router(create_xpansion_routes(study_service, config))
 
     return study_service

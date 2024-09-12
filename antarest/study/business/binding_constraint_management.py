@@ -11,13 +11,11 @@
 # This file is part of the Antares project.
 
 import collections
-import json
 import logging
 import typing as t
 
 import numpy as np
-from pydantic import BaseModel, Field, root_validator, validator
-from requests.utils import CaseInsensitiveDict
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from antarest.core.exceptions import (
     BindingConstraintNotFound,
@@ -31,6 +29,7 @@ from antarest.core.exceptions import (
     WrongMatrixHeightError,
 )
 from antarest.core.model import JSON
+from antarest.core.requests import CaseInsensitiveDict
 from antarest.core.utils.string import to_camel_case
 from antarest.study.business.all_optional_meta import camel_case_model
 from antarest.study.business.utils import execute_or_add_commands
@@ -129,12 +128,12 @@ class ConstraintTerm(BaseModel):
         data: the constraint term data (link or cluster), if any.
     """
 
-    id: t.Optional[str]
-    weight: t.Optional[float]
-    offset: t.Optional[int]
-    data: t.Optional[t.Union[LinkTerm, ClusterTerm]]
+    id: t.Optional[str] = None
+    weight: t.Optional[float] = None
+    offset: t.Optional[int] = None
+    data: t.Optional[t.Union[LinkTerm, ClusterTerm]] = None
 
-    @validator("id")
+    @field_validator("id")
     def id_to_lower(cls, v: t.Optional[str]) -> t.Optional[str]:
         """Ensure the ID is lower case."""
         if v is None:
@@ -265,7 +264,7 @@ class ConstraintInput(BindingConstraintMatrices, ConstraintInput870):
 class ConstraintCreation(ConstraintInput):
     name: str
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
     def check_matrices_dimensions(cls, values: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
         for _key in ["time_step"] + [m.value for m in TermMatrices]:
             _camel = to_camel_case(_key)
@@ -316,20 +315,19 @@ class ConstraintCreation(ConstraintInput):
         raise ValueError(err_msg)
 
 
-@camel_case_model
 class ConstraintOutputBase(BindingConstraintPropertiesBase):
     id: str
     name: str
     terms: t.MutableSequence[ConstraintTerm] = Field(default_factory=lambda: [])
+    # I have to redefine the time_step attribute to give him another alias.
+    time_step: t.Optional[BindingConstraintFrequency] = Field(DEFAULT_TIMESTEP, alias="timeStep")  # type: ignore
 
 
-@camel_case_model
 class ConstraintOutput830(ConstraintOutputBase):
-    filter_year_by_year: str = ""
-    filter_synthesis: str = ""
+    filter_year_by_year: str = Field(default="", alias="filterYearByYear")
+    filter_synthesis: str = Field(default="", alias="filterSynthesis")
 
 
-@camel_case_model
 class ConstraintOutput870(ConstraintOutput830):
     group: str = DEFAULT_GROUP
 
@@ -372,7 +370,7 @@ def _get_references_by_widths(
                 continue
 
             matrix_height = matrix.shape[0]
-            expected_height = EXPECTED_MATRIX_SHAPES[bc.time_step][0]
+            expected_height = EXPECTED_MATRIX_SHAPES[bc.time_step][0]  # type: ignore
             if matrix_height != expected_height:
                 raise WrongMatrixHeightError(
                     f"The binding constraint '{bc.name}' should have {expected_height} rows, currently: {matrix_height}"
@@ -443,17 +441,22 @@ class BindingConstraintManager:
                         id=key,
                         weight=weight,
                         offset=offset,
-                        data={
-                            "area1": term_data[0],
-                            "area2": term_data[1],
-                        },
+                        data=LinkTerm.model_validate(
+                            {
+                                "area1": term_data[0],
+                                "area2": term_data[1],
+                            }
+                        ),
                     )
                 )
             # Cluster term
             else:
                 adapted_constraint.terms.append(
                     ConstraintTerm(
-                        id=key, weight=weight, offset=offset, data={"area": term_data[0], "cluster": term_data[1]}
+                        id=key,
+                        weight=weight,
+                        offset=offset,
+                        data=ClusterTerm.model_validate({"area": term_data[0], "cluster": term_data[1]}),
                     )
                 )
 
@@ -601,7 +604,7 @@ class BindingConstraintManager:
         storage_service = self.storage_service.get_storage(study)
         file_study = storage_service.get_raw(study)
         config = file_study.tree.get(["input", "bindingconstraints", "bindingconstraints"])
-        grouped_constraints = CaseInsensitiveDict()  # type: ignore
+        grouped_constraints = CaseInsensitiveDict()
 
         for constraint in config.values():
             constraint_config = self.constraint_model_adapter(constraint, int(study.version))
@@ -710,7 +713,10 @@ class BindingConstraintManager:
 
         check_attributes_coherence(data, version, data.operator or DEFAULT_OPERATOR)
 
-        new_constraint = {"name": data.name, **json.loads(data.json(exclude={"terms", "name"}, exclude_none=True))}
+        new_constraint = {
+            "name": data.name,
+            **data.model_dump(mode="json", exclude={"terms", "name"}, exclude_none=True),
+        }
         args = {
             **new_constraint,
             "command_context": self.storage_service.variant_study_service.command_factory.command_context,
@@ -748,7 +754,7 @@ class BindingConstraintManager:
 
         upd_constraint = {
             "id": binding_constraint_id,
-            **json.loads(data.json(exclude={"terms", "name"}, exclude_none=True)),
+            **data.model_dump(mode="json", exclude={"terms", "name"}, exclude_none=True),
         }
         args = {
             **upd_constraint,
@@ -768,7 +774,7 @@ class BindingConstraintManager:
             updated_matrices = [term for term in [m.value for m in TermMatrices] if getattr(data, term)]
             time_step = data.time_step or existing_constraint.time_step
             command.validates_and_fills_matrices(
-                time_step=time_step, specific_matrices=updated_matrices, version=study_version, create=False
+                time_step=time_step, specific_matrices=updated_matrices, version=study_version, create=False  # type: ignore
             )
 
         execute_or_add_commands(study, file_study, [command], self.storage_service)
@@ -834,11 +840,9 @@ class BindingConstraintManager:
         coeffs = {
             term_id: [term.weight, term.offset] if term.offset else [term.weight] for term_id, term in terms.items()
         }
-        command = UpdateBindingConstraint(
-            id=bc.id,
-            coeffs=coeffs,
-            command_context=self.storage_service.variant_study_service.command_factory.command_context,
-        )
+        command_context = self.storage_service.variant_study_service.command_factory.command_context
+        args = {"id": bc.id, "coeffs": coeffs, "command_context": command_context}
+        command = UpdateBindingConstraint.model_validate(args)
         file_study = self.storage_service.get_storage(study).get_raw(study)
         execute_or_add_commands(study, file_study, [command], self.storage_service)
 
@@ -861,7 +865,7 @@ class BindingConstraintManager:
         if update_mode == "add":
             for term in constraint_terms:
                 if term.data is None:
-                    raise InvalidConstraintTerm(binding_constraint_id, term.json())
+                    raise InvalidConstraintTerm(binding_constraint_id, term.model_dump_json())
 
         constraint = self.get_binding_constraint(study, binding_constraint_id)
         existing_terms = collections.OrderedDict((term.generate_id(), term) for term in constraint.terms)

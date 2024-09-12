@@ -40,7 +40,7 @@ class RedisCache(ICache):
         redis_element = RedisCacheElement(duration=duration, data=data)
         redis_key = f"cache:{id}"
         logger.info(f"Adding cache key {id}")
-        self.redis.set(redis_key, redis_element.json())
+        self.redis.set(redis_key, redis_element.model_dump_json())
         self.redis.expire(redis_key, duration)
 
     def get(self, id: str, refresh_timeout: Optional[int] = None) -> Optional[JSON]:

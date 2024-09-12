@@ -135,7 +135,7 @@ class CommandReverter:
                     if matrix is not None:
                         args[matrix_name] = matrix_service.get_matrix_id(matrix)
 
-                return [UpdateBindingConstraint(**args)]
+                return [UpdateBindingConstraint.model_validate(args)]
 
         return base_command.get_command_extractor().extract_binding_constraint(base, base_command.id)
 

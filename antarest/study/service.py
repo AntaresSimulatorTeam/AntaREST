@@ -1330,7 +1330,7 @@ class StudyService:
 
             else:
                 json_response = json.dumps(
-                    matrix.dict(),
+                    matrix.model_dump(),
                     ensure_ascii=False,
                     allow_nan=True,
                     indent=None,
@@ -1485,6 +1485,7 @@ class StudyService:
         context = self.storage_service.variant_study_service.command_factory.command_context
 
         if isinstance(tree_node, IniFileNode):
+            assert not isinstance(data, (bytes, list))
             return UpdateConfig(
                 target=url,
                 data=data,
@@ -1500,6 +1501,7 @@ class StudyService:
                     matrix=matrix.tolist(),
                     command_context=context,
                 )
+            assert isinstance(data, (list, str))
             return ReplaceMatrix(
                 target=url,
                 matrix=data,
@@ -1507,6 +1509,9 @@ class StudyService:
             )
         elif isinstance(tree_node, RawFileNode):
             if url.split("/")[-1] == "comments":
+                if isinstance(data, bytes):
+                    data = data.decode("utf-8")
+                assert isinstance(data, str)
                 return UpdateComments(
                     comments=data,
                     command_context=context,
@@ -2425,7 +2430,7 @@ class StudyService:
                     src=str(src),
                     dest=str(dest),
                     remove_src=not keep_src_zip,
-                ).dict(),
+                ).model_dump(),
                 name=task_name,
                 ref_id=study.id,
                 request_params=params,

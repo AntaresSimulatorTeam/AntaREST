@@ -12,7 +12,7 @@
 
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
-from pydantic import root_validator, validator
+from pydantic import ValidationInfo, field_validator, model_validator
 
 from antarest.core.model import JSON
 from antarest.core.utils.utils import assert_this
@@ -51,30 +51,31 @@ class CreateLink(ICommand):
     # Overloaded metadata
     # ===================
 
-    command_name = CommandName.CREATE_LINK
-    version = 1
+    command_name: CommandName = CommandName.CREATE_LINK
+    version: int = 1
 
     # Command parameters
     # ==================
 
     area1: str
     area2: str
-    parameters: Optional[Dict[str, str]] = None
+    parameters: Optional[Dict[str, Any]] = None
     series: Optional[Union[List[List[MatrixData]], str]] = None
     direct: Optional[Union[List[List[MatrixData]], str]] = None
     indirect: Optional[Union[List[List[MatrixData]], str]] = None
 
-    @validator("series", "direct", "indirect", always=True)
+    @field_validator("series", "direct", "indirect", mode="before")
     def validate_series(
-        cls, v: Optional[Union[List[List[MatrixData]], str]], values: Any
+        cls, v: Optional[Union[List[List[MatrixData]], str]], values: Union[Dict[str, Any], ValidationInfo]
     ) -> Optional[Union[List[List[MatrixData]], str]]:
-        return validate_matrix(v, values) if v is not None else v
+        new_values = values if isinstance(values, dict) else values.data
+        return validate_matrix(v, new_values) if v is not None else v
 
-    @root_validator
-    def validate_areas(cls, values: Dict[str, Any]) -> Any:
-        if values.get("area1") == values.get("area2"):
+    @model_validator(mode="after")
+    def validate_areas(self) -> "CreateLink":
+        if self.area1 == self.area2:
             raise ValueError("Cannot create link on same node")
-        return values
+        return self
 
     def _create_link_in_config(self, area_from: str, area_to: str, study_data: FileStudyTreeConfig) -> None:
         self.parameters = self.parameters or {}

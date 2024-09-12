@@ -18,16 +18,8 @@ import webbrowser
 from multiprocessing import Process
 from pathlib import Path
 
-try:
-    # `httpx` is a modern alternative to the `requests` library
-    import httpx as requests
-    from httpx import ConnectError as ConnectionError
-except ImportError:
-    # noinspection PyUnresolvedReferences, PyPackageRequirements
-    import requests
-    from requests import ConnectionError
-
-import uvicorn  # type: ignore
+import httpx
+import uvicorn
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QAction, QApplication, QMenu, QSystemTrayIcon
 
@@ -102,8 +94,8 @@ def main() -> None:
     )
     server.start()
     for _ in range(30, 0, -1):
-        with contextlib.suppress(ConnectionError):
-            res = requests.get("http://localhost:8080")
+        with contextlib.suppress(httpx.ConnectError):
+            res = httpx.get("http://localhost:8080")
             if res.status_code == 200:
                 break
         time.sleep(1)

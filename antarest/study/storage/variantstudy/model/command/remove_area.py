@@ -33,7 +33,7 @@ class RemoveArea(ICommand):
     Command used to remove an area.
     """
 
-    command_name = CommandName.REMOVE_AREA
+    command_name: CommandName = CommandName.REMOVE_AREA
     version: int = 1
 
     # Properties of the `REMOVE_AREA` command:

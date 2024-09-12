@@ -16,17 +16,15 @@ from pathlib import Path
 from typing import Any, Dict, Mapping, Optional, Tuple
 
 import redis
-import sqlalchemy.ext.baked  # type: ignore
-import uvicorn  # type: ignore
-from fastapi import FastAPI
-from fastapi_jwt_auth import AuthJWT  # type: ignore
+from fastapi import APIRouter, FastAPI
 from ratelimit import RateLimitMiddleware  # type: ignore
 from ratelimit.backends.redis import RedisBackend  # type: ignore
 from ratelimit.backends.simple import MemoryBackend  # type: ignore
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine  # type: ignore
 from sqlalchemy.engine.base import Engine  # type: ignore
 from sqlalchemy.pool import NullPool  # type: ignore
 
+from antarest.core.application import AppBuildContext
 from antarest.core.cache.main import build_cache
 from antarest.core.config import Config
 from antarest.core.filetransfer.main import build_filetransfer_service
@@ -112,24 +110,24 @@ def init_db_engine(
     return engine
 
 
-def create_event_bus(application: Optional[FastAPI], config: Config) -> Tuple[IEventBus, Optional[redis.Redis]]:  # type: ignore
+def create_event_bus(app_ctxt: Optional[AppBuildContext], config: Config) -> Tuple[IEventBus, Optional[redis.Redis]]:  # type: ignore
     redis_client = new_redis_instance(config.redis) if config.redis is not None else None
     return (
-        build_eventbus(application, config, True, redis_client),
+        build_eventbus(app_ctxt, config, True, redis_client),
         redis_client,
     )
 
 
 def create_core_services(
-    application: Optional[FastAPI], config: Config
+    app_ctxt: Optional[AppBuildContext], config: Config
 ) -> Tuple[ICache, IEventBus, ITaskService, FileTransferManager, LoginService, MatrixService, StudyService,]:
-    event_bus, redis_client = create_event_bus(application, config)
+    event_bus, redis_client = create_event_bus(app_ctxt, config)
     cache = build_cache(config=config, redis_client=redis_client)
-    filetransfer_service = build_filetransfer_service(application, event_bus, config)
-    task_service = build_taskjob_manager(application, config, event_bus)
-    login_service = build_login(application, config, event_bus=event_bus)
+    filetransfer_service = build_filetransfer_service(app_ctxt, event_bus, config)
+    task_service = build_taskjob_manager(app_ctxt, config, event_bus)
+    login_service = build_login(app_ctxt, config, event_bus=event_bus)
     matrix_service = build_matrix_service(
-        application,
+        app_ctxt,
         config=config,
         file_transfer_manager=filetransfer_service,
         task_service=task_service,
@@ -137,7 +135,7 @@ def create_core_services(
         service=None,
     )
     study_service = build_study_service(
-        application,
+        app_ctxt,
         config,
         matrix_service=matrix_service,
         cache=cache,
@@ -159,7 +157,7 @@ def create_core_services(
 
 def create_watcher(
     config: Config,
-    application: Optional[FastAPI],
+    app_ctxt: Optional[AppBuildContext],
     study_service: Optional[StudyService] = None,
 ) -> Watcher:
     if study_service:
@@ -169,22 +167,22 @@ def create_watcher(
             task_service=study_service.task_service,
         )
     else:
-        _, _, task_service, _, _, _, study_service = create_core_services(application, config)
+        _, _, task_service, _, _, _, study_service = create_core_services(app_ctxt, config)
         watcher = Watcher(
             config=config,
             study_service=study_service,
             task_service=task_service,
         )
 
-    if application:
-        application.include_router(create_watcher_routes(watcher=watcher, config=config))
+    if app_ctxt:
+        app_ctxt.api_root.include_router(create_watcher_routes(watcher=watcher, config=config))
 
     return watcher
 
 
 def create_matrix_gc(
     config: Config,
-    application: Optional[FastAPI],
+    app_ctxt: Optional[AppBuildContext],
     study_service: Optional[StudyService] = None,
     matrix_service: Optional[MatrixService] = None,
 ) -> MatrixGarbageCollector:
@@ -195,7 +193,7 @@ def create_matrix_gc(
             matrix_service=matrix_service,
         )
     else:
-        _, _, _, _, _, matrix_service, study_service = create_core_services(application, config)
+        _, _, _, _, _, matrix_service, study_service = create_core_services(app_ctxt, config)
         return MatrixGarbageCollector(
             config=config,
             study_service=study_service,
@@ -224,7 +222,7 @@ def create_simulator_worker(
     return SimulatorWorker(event_bus, matrix_service, config)
 
 
-def create_services(config: Config, application: Optional[FastAPI], create_all: bool = False) -> Dict[str, Any]:
+def create_services(config: Config, app_ctxt: Optional[AppBuildContext], create_all: bool = False) -> Dict[str, Any]:
     services: Dict[str, Any] = {}
 
     (
@@ -235,12 +233,12 @@ def create_services(config: Config, application: Optional[FastAPI], create_all: 
         user_service,
         matrix_service,
         study_service,
-    ) = create_core_services(application, config)
+    ) = create_core_services(app_ctxt, config)
 
-    maintenance_service = build_maintenance_manager(application, config=config, cache=cache, event_bus=event_bus)
+    maintenance_service = build_maintenance_manager(app_ctxt, config=config, cache=cache, event_bus=event_bus)
 
     launcher = build_launcher(
-        application,
+        app_ctxt,
         config,
         study_service=study_service,
         event_bus=event_bus,
@@ -249,13 +247,13 @@ def create_services(config: Config, application: Optional[FastAPI], create_all: 
         cache=cache,
     )
 
-    watcher = create_watcher(config=config, application=application, study_service=study_service)
+    watcher = create_watcher(config=config, app_ctxt=app_ctxt, study_service=study_service)
     services["watcher"] = watcher
 
     if config.server.services and Module.MATRIX_GC.value in config.server.services or create_all:
         matrix_garbage_collector = create_matrix_gc(
             config=config,
-            application=application,
+            app_ctxt=app_ctxt,
             study_service=study_service,
             matrix_service=matrix_service,
         )

@@ -30,8 +30,8 @@ class RemoveCluster(ICommand):
     # Overloaded metadata
     # ===================
 
-    command_name = CommandName.REMOVE_THERMAL_CLUSTER
-    version = 1
+    command_name: CommandName = CommandName.REMOVE_THERMAL_CLUSTER
+    version: int = 1
 
     # Command parameters
     # ==================
@@ -187,7 +187,7 @@ class RemoveCluster(ICommand):
 
         # Collect the binding constraints that are related to the area to remove
         # by searching the terms that contain the ID of the area.
-        bc_to_remove = {}
+        bc_to_remove = []
         lower_area_id = self.area_id.lower()
         lower_cluster_id = self.cluster_id.lower()
         for bc_index, bc in list(binding_constraints.items()):
@@ -200,16 +200,15 @@ class RemoveCluster(ICommand):
                 # noinspection PyTypeChecker
                 related_area_id, related_cluster_id = map(str.lower, key.split("."))
                 if (lower_area_id, lower_cluster_id) == (related_area_id, related_cluster_id):
-                    bc_to_remove[bc_index] = binding_constraints.pop(bc_index)
+                    bc_to_remove.append(binding_constraints.pop(bc_index)["id"])
                     break
 
         matrix_suffixes = ["_lt", "_gt", "_eq"] if study_data.config.version >= 870 else [""]
 
         existing_files = study_data.tree.get(["input", "bindingconstraints"], depth=1)
-        for bc_index, bc in bc_to_remove.items():
-            for suffix in matrix_suffixes:
-                matrix_id = f"{bc['id']}{suffix}"
-                if matrix_id in existing_files:
-                    study_data.tree.delete(["input", "bindingconstraints", matrix_id])
+        for bc_id, suffix in zip(bc_to_remove, matrix_suffixes):
+            matrix_id = f"{bc_id}{suffix}"
+            if matrix_id in existing_files:
+                study_data.tree.delete(["input", "bindingconstraints", matrix_id])
 
         study_data.tree.save(binding_constraints, url)

@@ -17,16 +17,17 @@ from enum import Enum
 from http import HTTPStatus
 from typing import List, Optional
 
-from fastapi import Depends, FastAPI, HTTPException, Query
-from fastapi_jwt_auth import AuthJWT  # type: ignore
+from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query
 from pydantic import BaseModel
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
+from antarest.core.application import AppBuildContext
 from antarest.core.config import Config
 from antarest.core.interfaces.eventbus import Event, IEventBus
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
 from antarest.core.model import PermissionInfo, StudyPermissionType
 from antarest.core.permissions import check_permission
+from antarest.fastapi_jwt_auth import AuthJWT
 from antarest.login.auth import Auth
 
 logger = logging.getLogger(__name__)
@@ -91,16 +92,16 @@ class ConnectionManager:
                 await connection.websocket.send_text(message)
 
 
-def configure_websockets(application: FastAPI, config: Config, event_bus: IEventBus) -> None:
+def configure_websockets(app_ctxt: AppBuildContext, config: Config, event_bus: IEventBus) -> None:
     manager = ConnectionManager()
 
     async def send_event_to_ws(event: Event) -> None:
-        event_data = event.dict()
+        event_data = event.model_dump()
         del event_data["permissions"]
         del event_data["channel"]
         await manager.broadcast(json.dumps(event_data), event.permissions, event.channel)
 
-    @application.websocket("/ws")
+    @app_ctxt.api_root.websocket("/ws")
     async def connect(
         websocket: WebSocket,
         token: str = Query(...),

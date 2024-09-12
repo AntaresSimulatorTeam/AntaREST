@@ -16,7 +16,6 @@ from datetime import timedelta
 from typing import Any, List, Optional, Union
 
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi_jwt_auth import AuthJWT  # type: ignore
 from markupsafe import escape
 from pydantic import BaseModel
 
@@ -25,6 +24,7 @@ from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.roles import RoleType
 from antarest.core.utils.web import APITag
+from antarest.fastapi_jwt_auth import AuthJWT
 from antarest.login.auth import Auth
 from antarest.login.model import (
     BotCreateDTO,
@@ -67,8 +67,8 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
     auth = Auth(config)
 
     def generate_tokens(user: JWTUser, jwt_manager: AuthJWT, expire: Optional[timedelta] = None) -> CredentialsDTO:
-        access_token = jwt_manager.create_access_token(subject=user.json(), expires_time=expire)
-        refresh_token = jwt_manager.create_refresh_token(subject=user.json())
+        access_token = jwt_manager.create_access_token(subject=user.model_dump_json(), expires_time=expire)
+        refresh_token = jwt_manager.create_refresh_token(subject=user.model_dump_json())
         return CredentialsDTO(
             user=user.id,
             access_token=access_token.decode() if isinstance(access_token, bytes) else access_token,
@@ -126,11 +126,7 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
         params = RequestParameters(user=current_user)
         return service.get_all_users(params, details)
 
-    @bp.get(
-        "/users/{id}",
-        tags=[APITag.users],
-        response_model=Union[IdentityDTO, UserInfo],  # type: ignore
-    )
+    @bp.get("/users/{id}", tags=[APITag.users], response_model=Union[IdentityDTO, UserInfo])
     def users_get_id(
         id: int,
         details: bool = False,
@@ -204,11 +200,7 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
         params = RequestParameters(user=current_user)
         return service.get_all_groups(params, details)
 
-    @bp.get(
-        "/groups/{id}",
-        tags=[APITag.users],
-        response_model=Union[GroupDetailDTO, GroupDTO],  # type: ignore
-    )
+    @bp.get("/groups/{id}", tags=[APITag.users], response_model=Union[GroupDetailDTO, GroupDTO])
     def groups_get_id(
         id: str,
         details: bool = False,
@@ -326,11 +318,7 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
         tokens = generate_tokens(jwt, jwt_manager, expire=timedelta(days=368 * 200))
         return tokens.access_token
 
-    @bp.get(
-        "/bots/{id}",
-        tags=[APITag.users],
-        response_model=Union[BotIdentityDTO, BotDTO],  # type: ignore
-    )
+    @bp.get("/bots/{id}", tags=[APITag.users], response_model=Union[BotIdentityDTO, BotDTO])
     def get_bot(
         id: int,
         verbose: Optional[int] = None,
