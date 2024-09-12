@@ -29,8 +29,10 @@ interface MatrixProps {
   title?: string;
   enableTimeSeriesColumns?: boolean;
   enableAggregateColumns?: boolean;
+  enableRowHeaders?: boolean;
   customColumns?: string[] | readonly string[];
   colWidth?: number;
+  rowHeaders?: string[];
 }
 
 function Matrix({
@@ -38,8 +40,10 @@ function Matrix({
   title = "global.timeSeries",
   enableTimeSeriesColumns = true,
   enableAggregateColumns = false,
+  enableRowHeaders = false,
   customColumns,
   colWidth,
+  rowHeaders,
 }: MatrixProps) {
   const { t } = useTranslation();
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -66,6 +70,7 @@ function Matrix({
     url,
     enableTimeSeriesColumns,
     enableAggregateColumns,
+    enableRowHeaders,
     customColumns,
     colWidth,
   );
@@ -109,6 +114,7 @@ function Matrix({
         data={data}
         columns={columns}
         rows={data.length}
+        rowHeaders={rowHeaders}
         dateTime={dateTime}
         onCellEdit={handleCellEdit}
         onMultipleCellsEdit={handleMultipleCellsEdit}
