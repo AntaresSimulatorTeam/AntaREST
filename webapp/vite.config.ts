@@ -30,7 +30,7 @@ export default defineConfig(({ mode }) => {
       },
     },
     test: {
-      globals: true, // Use the APIs globally
+      globals: true, // Use the APIs globally,
       environment: "jsdom",
       css: true,
       setupFiles: "./src/tests/setup.ts",

@@ -88,6 +88,7 @@
   "global.error.delete": "Deletion failed",
   "global.area.add": "Add an area",
   "global.add": "Add",
+  "global.timeSeries": "Time Series",
   "login.error": "Failed to authenticate",
   "tasks.title": "Tasks",
   "api.title": "API",
