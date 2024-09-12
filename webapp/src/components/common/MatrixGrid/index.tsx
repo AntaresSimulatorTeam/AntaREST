@@ -38,7 +38,7 @@ export interface MatrixGridProps {
   height?: string;
   onCellEdit?: (update: GridUpdate) => void;
   onMultipleCellsEdit?: (updates: GridUpdate[]) => void;
-  readOnly?: boolean;
+  isReaOnlyEnabled?: boolean;
   isPercentDisplayEnabled?: boolean;
 }
 
@@ -53,7 +53,7 @@ function MatrixGrid({
   height = "100%",
   onCellEdit,
   onMultipleCellsEdit,
-  readOnly,
+  isReaOnlyEnabled,
   isPercentDisplayEnabled,
 }: MatrixGridProps) {
   const [selection, setSelection] = useState<GridSelection>({
@@ -64,7 +64,7 @@ function MatrixGrid({
   const { gridToData } = useColumnMapping(columns);
 
   const theme = useMemo(() => {
-    if (readOnly) {
+    if (isReaOnlyEnabled) {
       return {
         ...darkTheme,
         ...readOnlyDarkTheme,
@@ -72,7 +72,7 @@ function MatrixGrid({
     }
 
     return darkTheme;
-  }, [readOnly]);
+  }, [isReaOnlyEnabled]);
 
   const getCellContent = useGridCellContent(
     data,
@@ -81,7 +81,7 @@ function MatrixGrid({
     dateTime,
     aggregates,
     rowHeaders,
-    readOnly,
+    isReaOnlyEnabled,
     isPercentDisplayEnabled,
   );
 

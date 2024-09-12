@@ -100,7 +100,7 @@ const cellContentGenerators: Record<ColumnType, CellContentGenerator> = {
  * @param dateTime - Optional array of date-time strings for date columns.
  * @param aggregates - Optional object mapping column IDs to arrays of aggregated values.
  * @param rowHeaders - Optional array of row header labels.
- * @param readOnly - Whether the grid is read-only (default is false).
+ * @param isReadOnlyEnabled - Whether the grid is read-only (default is false).
  * @param isPercentDisplayEnabled - Whether to display number values as percentages (default is false).
  * @returns A function that accepts a grid item and returns the configured grid cell content.
  */
@@ -111,7 +111,7 @@ export function useGridCellContent(
   dateTime?: string[],
   aggregates?: Record<string, number[]>,
   rowHeaders?: string[],
-  readOnly = false,
+  isReadOnlyEnabled = false,
   isPercentDisplayEnabled = false,
 ): (cell: Item) => GridCell {
   const columnMap = useMemo(() => {
@@ -171,7 +171,7 @@ export function useGridCellContent(
       );
 
       // Prevent updates for read-only grids
-      if (readOnly) {
+      if (isReadOnlyEnabled) {
         return {
           ...gridCell,
           allowOverlay: false,
@@ -195,7 +195,7 @@ export function useGridCellContent(
       dateTime,
       aggregates,
       rowHeaders,
-      readOnly,
+      isReadOnlyEnabled,
       isPercentDisplayEnabled,
     ],
   );
