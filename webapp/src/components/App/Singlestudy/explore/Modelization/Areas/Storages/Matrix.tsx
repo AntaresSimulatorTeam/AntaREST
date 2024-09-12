@@ -18,10 +18,10 @@ import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
 import Box from "@mui/material/Box";
 import { useTranslation } from "react-i18next";
-import { MatrixStats, StudyMetadata } from "../../../../../../../common/types";
-import MatrixInput from "../../../../../../common/MatrixInput";
+import { StudyMetadata } from "../../../../../../../common/types";
 import { Storage } from "./utils";
-import SplitLayoutView from "../../../../../../common/SplitLayoutView";
+import SplitView from "../../../../../../common/SplitView";
+import Matrix from "../../../../../../common/MatrixGrid/Matrix";
 
 interface Props {
   study: StudyMetadata;
@@ -29,121 +29,131 @@ interface Props {
   storageId: Storage["id"];
 }
 
-function Matrix({ study, areaId, storageId }: Props) {
-  const [t] = useTranslation();
-  const [value, setValue] = React.useState(0);
+interface MatrixConfig {
+  url: string;
+  titleKey: string;
+}
+
+interface SplitMatrixContent {
+  type: "split";
+  matrices: [MatrixConfig, MatrixConfig];
+}
+
+interface SingleMatrixContent {
+  type: "single";
+  matrix: MatrixConfig;
+}
+
+interface MatrixItem {
+  titleKey: string;
+  content: SplitMatrixContent | SingleMatrixContent;
+}
+
+function StorageMatrices({ areaId, storageId }: Props) {
+  const { t } = useTranslation();
+  const [activeTab, setActiveTab] = useState("modulation");
+
+  const handleTabChange = (event: React.SyntheticEvent, newValue: string) => {
+    setActiveTab(newValue);
+  };
+
+  const MATRICES: MatrixItem[] = useMemo(
+    () => [
+      {
+        titleKey: "modulation",
+        content: {
+          type: "split",
+          matrices: [
+            {
+              url: `input/st-storage/series/${areaId}/${storageId}/pmax_injection`,
+              titleKey: "injectionModulation",
+            },
+            {
+              url: `input/st-storage/series/${areaId}/${storageId}/pmax_withdrawal`,
+              titleKey: "withdrawalModulation",
+            },
+          ],
+        },
+      },
+      {
+        titleKey: "ruleCurves",
+        content: {
+          type: "split",
+          matrices: [
+            {
+              url: `input/st-storage/series/${areaId}/${storageId}/lower_rule_curve`,
+              titleKey: "lowerRuleCurve",
+            },
+            {
+              url: `input/st-storage/series/${areaId}/${storageId}/upper_rule_curve`,
+              titleKey: "upperRuleCurve",
+            },
+          ],
+        },
+      },
+      {
+        titleKey: "inflows",
+        content: {
+          type: "single",
+          matrix: {
+            url: `input/st-storage/series/${areaId}/${storageId}/inflows`,
+            titleKey: "inflows",
+          },
+        },
+      },
+    ],
+    [areaId, storageId],
+  );
 
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
 
   return (
-    <Box
-      sx={{
-        display: "flex",
-        width: 1,
-        height: 1,
-        flexDirection: "column",
-        justifyContent: "flex-start",
-        alignItems: "center",
-      }}
-    >
-      <Tabs sx={{ width: 1 }} value={value} onChange={(_, v) => setValue(v)}>
-        <Tab label={t("study.modelization.storages.modulation")} />
-        <Tab label={t("study.modelization.storages.ruleCurves")} />
-        <Tab label={t("study.modelization.storages.inflows")} />
+    <Box sx={{ display: "flex", flexDirection: "column", width: 1, height: 1 }}>
+      <Tabs value={activeTab} onChange={handleTabChange} sx={{ width: 1 }}>
+        {MATRICES.map(({ titleKey }) => (
+          <Tab
+            key={titleKey}
+            value={titleKey}
+            label={t(`study.modelization.storages.${titleKey}`)}
+          />
+        ))}
       </Tabs>
-      <Box
-        sx={{
-          display: "flex",
-          width: 1,
-          height: 1,
-        }}
-      >
-        {R.cond([
-          [
-            () => value === 0,
-            () => (
-              <SplitLayoutView
-                left={
-                  <MatrixInput
-                    study={study}
-                    url={`input/st-storage/series/${areaId}/${storageId}/pmax_injection`}
-                    computStats={MatrixStats.NOCOL}
-                    title={t("study.modelization.storages.injectionModulation")}
-                  />
-                }
-                right={
-                  <MatrixInput
-                    study={study}
-                    url={`input/st-storage/series/${areaId}/${storageId}/pmax_withdrawal`}
-                    computStats={MatrixStats.NOCOL}
+      <Box sx={{ height: 1, pt: 1 }}>
+        {MATRICES.map(
+          ({ titleKey, content }) =>
+            activeTab === titleKey && (
+              <Box key={titleKey} sx={{ height: 1 }}>
+                {content.type === "split" ? (
+                  <SplitView
+                    id={`storage-${content.matrices[0].titleKey}-${content.matrices[1].titleKey}`}
+                    sizes={[50, 50]}
+                  >
+                    {content.matrices.map(({ url, titleKey }) => (
+                      <Box key={titleKey} sx={{ px: 2 }}>
+                        <Matrix
+                          url={url}
+                          title={t(`study.modelization.storages.${titleKey}`)}
+                        />
+                      </Box>
+                    ))}
+                  </SplitView>
+                ) : (
+                  <Matrix
+                    key={content.matrix.titleKey}
+                    url={content.matrix.url}
                     title={t(
-                      "study.modelization.storages.withdrawalModulation",
+                      `study.modelization.storages.${content.matrix.titleKey}`,
                     )}
                   />
-                }
-                sx={{
-                  mt: 1,
-                  ".SplitLayoutView__Left": {
-                    width: "50%",
-                  },
-                  ".SplitLayoutView__Right": {
-                    height: 1,
-                    width: "50%",
-                  },
-                }}
-              />
+                )}
+              </Box>
             ),
-          ],
-          [
-            () => value === 1,
-            () => (
-              <SplitLayoutView
-                left={
-                  <MatrixInput
-                    study={study}
-                    url={`input/st-storage/series/${areaId}/${storageId}/lower_rule_curve`}
-                    computStats={MatrixStats.NOCOL}
-                    title={t("study.modelization.storages.lowerRuleCurve")}
-                  />
-                }
-                right={
-                  <MatrixInput
-                    study={study}
-                    url={`input/st-storage/series/${areaId}/${storageId}/upper_rule_curve`}
-                    computStats={MatrixStats.NOCOL}
-                    title={t("study.modelization.storages.upperRuleCurve")}
-                  />
-                }
-                sx={{
-                  mt: 1,
-                  ".SplitLayoutView__Left": {
-                    width: "50%",
-                  },
-                  ".SplitLayoutView__Right": {
-                    height: 1,
-                    width: "50%",
-                  },
-                }}
-              />
-            ),
-          ],
-          [
-            R.T,
-            () => (
-              <MatrixInput
-                study={study}
-                url={`input/st-storage/series/${areaId}/${storageId}/inflows`}
-                computStats={MatrixStats.NOCOL}
-                title={t("study.modelization.storages.inflows")}
-              />
-            ),
-          ],
-        ])()}
+        )}
       </Box>
     </Box>
   );
 }
 
-export default Matrix;
+export default StorageMatrices;
