@@ -27,25 +27,27 @@ import EmptyView from "../page/SimpleContent";
 interface MatrixProps {
   url: string;
   title?: string;
+  rowHeaders?: string[];
   enableTimeSeriesColumns?: boolean;
   enableAggregateColumns?: boolean;
   enableRowHeaders?: boolean;
   enablePercentDisplay?: boolean;
+  enableReadOnly?: boolean;
   customColumns?: string[] | readonly string[];
   colWidth?: number;
-  rowHeaders?: string[];
 }
 
 function Matrix({
   url,
   title = "global.timeSeries",
+  rowHeaders = [],
   enableTimeSeriesColumns = true,
   enableAggregateColumns = false,
-  enableRowHeaders = false,
+  enableRowHeaders = rowHeaders.length > 0,
   enablePercentDisplay = false,
-  customColumns,
+  enableReadOnly = false,
+  customColumns = [],
   colWidth,
-  rowHeaders,
 }: MatrixProps) {
   const { t } = useTranslation();
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -86,7 +88,7 @@ function Matrix({
   }
 
   if (error) {
-    return <EmptyView title={error.toString()} />;
+    return <EmptyView title={`Error: ${error.message}`} />;
   }
 
   if (!data || data.length === 0) {
@@ -120,7 +122,7 @@ function Matrix({
         dateTime={dateTime}
         onCellEdit={handleCellEdit}
         onMultipleCellsEdit={handleMultipleCellsEdit}
-        readOnly={isSubmitting}
+        isReaOnlyEnabled={isSubmitting || enableReadOnly}
         isPercentDisplayEnabled={enablePercentDisplay}
       />
       {openImportDialog && (
