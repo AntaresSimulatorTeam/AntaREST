@@ -45,6 +45,7 @@ export function useMatrix(
   url: string,
   enableTimeSeriesColumns: boolean,
   enableAggregateColumns: boolean,
+  enableRowHeaders?: boolean,
   customColumns?: string[] | readonly string[],
   colWidth?: number,
 ) {
@@ -85,12 +86,12 @@ export function useMatrix(
     return index ? generateDateTime(index) : [];
   }, [index]);
 
-  const columns: EnhancedGridColumn[] = useMemo(() => {
+  const columns = useMemo(() => {
     if (!currentState.data) {
       return [];
     }
 
-    const baseColumns = [
+    const baseColumns: EnhancedGridColumn[] = [
       {
         id: "date",
         title: "Date",
@@ -99,6 +100,15 @@ export function useMatrix(
       },
     ];
 
+    if (enableRowHeaders) {
+      baseColumns.unshift({
+        id: "rowHeaders",
+        title: "",
+        type: ColumnTypes.Text,
+        editable: false,
+      });
+    }
+
     const dataColumns = generateDataColumns(
       enableTimeSeriesColumns,
       columnCount,
@@ -106,7 +116,7 @@ export function useMatrix(
       colWidth,
     );
 
-    const aggregateColumns = enableAggregateColumns
+    const aggregateColumns: EnhancedGridColumn[] = enableAggregateColumns
       ? [
           {
             id: "min",
@@ -135,6 +145,7 @@ export function useMatrix(
     return [...baseColumns, ...dataColumns, ...aggregateColumns];
   }, [
     currentState.data,
+    enableRowHeaders,
     enableTimeSeriesColumns,
     columnCount,
     customColumns,
