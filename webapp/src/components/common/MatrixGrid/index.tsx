@@ -39,6 +39,7 @@ export interface MatrixGridProps {
   onCellEdit?: (update: GridUpdate) => void;
   onMultipleCellsEdit?: (updates: GridUpdate[]) => void;
   readOnly?: boolean;
+  isPercentDisplayEnabled?: boolean;
 }
 
 function MatrixGrid({
@@ -52,7 +53,8 @@ function MatrixGrid({
   height = "100%",
   onCellEdit,
   onMultipleCellsEdit,
-  readOnly = false,
+  readOnly,
+  isPercentDisplayEnabled,
 }: MatrixGridProps) {
   const [selection, setSelection] = useState<GridSelection>({
     columns: CompactSelection.empty(),
@@ -80,6 +82,7 @@ function MatrixGrid({
     aggregates,
     rowHeaders,
     readOnly,
+    isPercentDisplayEnabled,
   );
 
   ////////////////////////////////////////////////////////////////
