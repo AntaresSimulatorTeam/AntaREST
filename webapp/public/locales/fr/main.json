@@ -88,6 +88,7 @@
   "global.error.delete": "La suppression a échoué",
   "global.area.add": "Ajouter une zone",
   "global.add": "Ajouter",
+  "global.timeSeries": "Séries temporelles",
   "login.error": "Échec de l'authentification",
   "tasks.title": "Tâches",
   "api.title": "API",

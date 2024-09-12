@@ -1,12 +1,8 @@
-import { useOutletContext } from "react-router";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../redux/selectors";
-import { MatrixStats, StudyMetadata } from "../../../../../../common/types";
-import MatrixInput from "../../../../../common/MatrixInput";
-import { Root } from "./style";
+import Matrix from "../../../../../common/MatrixGrid/Matrix";
 
 function Load() {
-  const { study } = useOutletContext<{ study: StudyMetadata }>();
   const currentArea = useAppSelector(getCurrentAreaId);
   const url = `input/load/series/load_${currentArea}`;
 
@@ -14,11 +10,7 @@ function Load() {
   // JSX
   ////////////////////////////////////////////////////////////////
 
-  return (
-    <Root>
-      <MatrixInput study={study} url={url} computStats={MatrixStats.STATS} />
-    </Root>
-  );
+  return <Matrix url={url} />;
 }
 
 export default Load;
