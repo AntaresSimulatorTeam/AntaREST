@@ -29,7 +29,7 @@ interface MatrixProps {
   title?: string;
   enableTimeSeriesColumns?: boolean;
   enableAggregateColumns?: boolean;
-  customColumns?: string[];
+  customColumns?: string[] | readonly string[];
   colWidth?: number;
 }
 
