@@ -12,6 +12,7 @@
 
 import copy
 import typing as t
+import copy
 
 from antarest.core.model import JSON
 from antarest.matrixstore.service import ISimpleMatrixService
