@@ -3,7 +3,6 @@ import { Box, useTheme } from "@mui/material";
 import { getStudyData } from "../../../../../../services/api/study";
 import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithSnackbarError";
 import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
-import ViewWrapper from "../../../../../common/page/ViewWrapper";
 import {
   Light as SyntaxHighlighter,
   type SyntaxHighlighterProps,
@@ -14,6 +13,9 @@ import ini from "react-syntax-highlighter/dist/esm/languages/hljs/ini";
 import properties from "react-syntax-highlighter/dist/esm/languages/hljs/properties";
 import { atomOneDark } from "react-syntax-highlighter/dist/esm/styles/hljs";
 import type { DataCompProps } from "../utils";
+import DownloadButton from "../../../../../common/buttons/DownloadButton";
+import { downloadFile } from "../../../../../../utils/fileUtils";
+import { Flex, Menubar } from "./styles";
 
 SyntaxHighlighter.registerLanguage("xml", xml);
 SyntaxHighlighter.registerLanguage("plaintext", plaintext);
@@ -46,7 +48,7 @@ function getSyntaxProps(data: string | string[]): SyntaxHighlighterProps {
   };
 }
 
-function Text({ studyId, filePath }: DataCompProps) {
+function Text({ studyId, filePath, filename }: DataCompProps) {
   const { t } = useTranslation();
   const theme = useTheme();
 
@@ -59,14 +61,27 @@ function Text({ studyId, filePath }: DataCompProps) {
   );
 
   ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
+
+  const handleDownload = () => {
+    if (res.data) {
+      downloadFile(res.data, `${filename}.txt`);
+    }
+  };
+
+  ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
 
   return (
-    <ViewWrapper>
-      <UsePromiseCond
-        response={res}
-        ifResolved={(data) => (
+    <UsePromiseCond
+      response={res}
+      ifResolved={(text) => (
+        <Flex>
+          <Menubar>
+            <DownloadButton onClick={handleDownload} />
+          </Menubar>
           <Box sx={{ height: 1, display: "flex", flexDirection: "column" }}>
             <SyntaxHighlighter
               style={atomOneDark}
@@ -81,12 +96,12 @@ function Text({ studyId, filePath }: DataCompProps) {
                 borderRadius: theme.shape.borderRadius,
                 fontSize: theme.typography.body2.fontSize,
               }}
-              {...getSyntaxProps(data)}
+              {...getSyntaxProps(text)}
             />
           </Box>
-        )}
-      />
-    </ViewWrapper>
+        </Flex>
+      )}
+    />
   );
 }
 

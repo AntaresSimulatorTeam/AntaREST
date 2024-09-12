@@ -5,6 +5,7 @@ import Matrix from "./Matrix";
 import Folder from "./Folder";
 import type { FileInfo, FileType } from "../utils";
 import type { DataCompProps } from "../utils";
+import ViewWrapper from "../../../../../common/page/ViewWrapper";
 
 interface Props extends FileInfo {
   studyId: string;
@@ -30,12 +31,14 @@ function Data({ studyId, setSelectedFile, ...fileInfo }: Props) {
   const DataViewer = componentByFileType[fileType];
 
   return (
-    <DataViewer
-      {...fileInfo}
-      studyId={studyId}
-      enableImport={enableImport}
-      setSelectedFile={setSelectedFile}
-    />
+    <ViewWrapper>
+      <DataViewer
+        {...fileInfo}
+        studyId={studyId}
+        enableImport={enableImport}
+        setSelectedFile={setSelectedFile}
+      />
+    </ViewWrapper>
   );
 }
 

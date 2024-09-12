@@ -1,16 +1,19 @@
 import { useTranslation } from "react-i18next";
 import { useSnackbar } from "notistack";
-import { Box } from "@mui/material";
 import { editStudy, getStudyData } from "../../../../../../services/api/study";
 import JSONEditor, { JSONEditorProps } from "../../../../../common/JSONEditor";
 import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithSnackbarError";
 import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
-import ViewWrapper from "../../../../../common/page/ViewWrapper";
 import type { DataCompProps } from "../utils";
+import DownloadButton from "../../../../../common/buttons/DownloadButton";
+import { downloadFile } from "../../../../../../utils/fileUtils";
+import { useEffect, useState } from "react";
+import { Flex, Menubar } from "./styles";
 
-function Json({ filePath, studyId }: DataCompProps) {
+function Json({ filePath, filename, studyId }: DataCompProps) {
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
+  const [currentJson, setCurrentJson] = useState<JSONEditorProps["json"]>();
 
   const res = usePromiseWithSnackbarError(
     () => getStudyData(studyId, filePath, -1),
@@ -20,6 +23,10 @@ function Json({ filePath, studyId }: DataCompProps) {
     },
   );
 
+  useEffect(() => {
+    setCurrentJson(res.data);
+  }, [res.data]);
+
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
@@ -28,10 +35,18 @@ function Json({ filePath, studyId }: DataCompProps) {
     return editStudy(json, studyId, filePath);
   };
 
-  const handleSaveSuccessful = () => {
+  const handleSaveSuccessful: JSONEditorProps["onSaveSuccessful"] = (json) => {
+    setCurrentJson(json);
+
     enqueueSnackbar(t("studies.success.saveData"), {
       variant: "success",
     });
+  };
+
+  const handleDownload = () => {
+    if (currentJson !== undefined) {
+      downloadFile(JSON.stringify(currentJson, null, 2), `${filename}.json`);
+    }
   };
 
   ////////////////////////////////////////////////////////////////
@@ -39,23 +54,24 @@ function Json({ filePath, studyId }: DataCompProps) {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <ViewWrapper>
-      <UsePromiseCond
-        response={res}
-        ifResolved={(json) => (
-          <Box sx={{ overflow: "auto" }}>
-            <JSONEditor
-              json={json}
-              modes={["tree", "code"]}
-              enableSort={false}
-              enableTransform={false}
-              onSave={handleSave}
-              onSaveSuccessful={handleSaveSuccessful}
-            />
-          </Box>
-        )}
-      />
-    </ViewWrapper>
+    <UsePromiseCond
+      response={res}
+      ifResolved={(json) => (
+        <Flex>
+          <Menubar>
+            <DownloadButton onClick={handleDownload} />
+          </Menubar>
+          <JSONEditor
+            json={json}
+            modes={["tree", "code"]}
+            enableSort={false}
+            enableTransform={false}
+            onSave={handleSave}
+            onSaveSuccessful={handleSaveSuccessful}
+          />
+        </Flex>
+      )}
+    />
   );
 }
 
