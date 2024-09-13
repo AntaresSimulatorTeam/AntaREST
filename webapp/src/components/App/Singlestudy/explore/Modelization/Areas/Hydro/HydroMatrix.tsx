@@ -16,16 +16,14 @@ import { useOutletContext } from "react-router";
 import { StudyMetadata } from "../../../../../../../common/types";
 import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../../redux/selectors";
-import MatrixInput from "../../../../../../common/MatrixInput";
-import { Root } from "./style";
 import { MATRICES, HydroMatrixType } from "./utils";
+import Matrix from "../../../../../../common/MatrixGrid/Matrix";
 
 interface Props {
   type: HydroMatrixType;
 }
 
 function HydroMatrix({ type }: Props) {
-  const { study } = useOutletContext<{ study: StudyMetadata }>();
   const areaId = useAppSelector(getCurrentAreaId);
 
   const hydroMatrix = MATRICES[type];
@@ -35,19 +33,14 @@ function HydroMatrix({ type }: Props) {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <Root>
-      <MatrixInput
-        title={hydroMatrix.title}
-        columnsNames={hydroMatrix.cols}
-        rowNames={hydroMatrix.rows}
-        study={study}
-        url={hydroMatrix.url.replace("{areaId}", areaId)}
-        computStats={hydroMatrix.stats}
-        fetchFn={hydroMatrix.fetchFn}
-        disableEdit={hydroMatrix.disableEdit}
-        enablePercentDisplay={hydroMatrix.enablePercentDisplay}
-      />
-    </Root>
+    <Matrix
+      title={hydroMatrix.title}
+      url={hydroMatrix.url.replace("{areaId}", areaId)}
+      customColumns={hydroMatrix.columns}
+      rowHeaders={hydroMatrix.rowHeaders}
+      enableReadOnly={hydroMatrix.enableReadOnly}
+      enablePercentDisplay={hydroMatrix.enablePercentDisplay}
+    />
   );
 }
 

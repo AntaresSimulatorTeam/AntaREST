@@ -46,7 +46,7 @@ function Matrix({
   enableRowHeaders = rowHeaders.length > 0,
   enablePercentDisplay = false,
   enableReadOnly = false,
-  customColumns = [],
+  customColumns,
   colWidth,
 }: MatrixProps) {
   const { t } = useTranslation();
