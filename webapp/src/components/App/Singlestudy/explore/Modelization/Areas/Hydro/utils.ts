@@ -22,34 +22,34 @@ import InflowStructure from "./InflowStructure";
 // Enums
 ////////////////////////////////////////////////////////////////
 
-export enum HydroMatrixType {
-  Dailypower,
-  EnergyCredits,
-  ReservoirLevels,
-  WaterValues,
-  HydroStorage,
-  RunOfRiver,
-  MinGen,
-  InflowPattern,
-  OverallMonthlyHydro,
-  Allocation,
-  Correlation,
-}
+export const HydroMatrix = {
+  Dailypower: "Dailypower",
+  EnergyCredits: "EnergyCredits",
+  ReservoirLevels: "ReservoirLevels",
+  WaterValues: "WaterValues",
+  HydroStorage: "HydroStorage",
+  RunOfRiver: "RunOfRiver",
+  MinGen: "MinGen",
+  InflowPattern: "InflowPattern",
+  OverallMonthlyHydro: "OverallMonthlyHydro",
+  Allocation: "Allocation",
+  Correlation: "Correlation",
+} as const;
 
 ////////////////////////////////////////////////////////////////
 // Types
 ////////////////////////////////////////////////////////////////
 
 export type fetchMatrixFn = (studyId: string) => Promise<MatrixType>;
+export type HydroMatrixType = (typeof HydroMatrix)[keyof typeof HydroMatrix];
 
 export interface HydroMatrixProps {
   title: string;
   url: string;
-  cols?: string[];
-  rows?: string[];
-  stats: MatrixStats;
+  columns?: string[];
+  rowHeaders?: string[];
   fetchFn?: fetchMatrixFn;
-  disableEdit?: boolean;
+  enableReadOnly?: boolean;
   enablePercentDisplay?: boolean;
 }
 
@@ -57,7 +57,7 @@ type Matrices = Record<HydroMatrixType, HydroMatrixProps>;
 
 export interface HydroRoute {
   path: string;
-  type: number;
+  type: HydroMatrixType;
   isSplitView?: boolean;
   splitConfig?: {
     direction: SplitViewProps["direction"];
@@ -79,112 +79,104 @@ export interface AreaCoefficientItem {
 export const HYDRO_ROUTES: HydroRoute[] = [
   {
     path: "inflow-structure",
-    type: HydroMatrixType.InflowPattern,
+    type: HydroMatrix.InflowPattern,
     isSplitView: true,
     splitConfig: {
       direction: "horizontal",
-      partnerType: HydroMatrixType.OverallMonthlyHydro,
+      partnerType: HydroMatrix.OverallMonthlyHydro,
       sizes: [50, 50],
     },
     form: InflowStructure,
   },
   {
     path: "dailypower&energy",
-    type: HydroMatrixType.Dailypower,
+    type: HydroMatrix.Dailypower,
     isSplitView: true,
     splitConfig: {
       direction: "vertical",
-      partnerType: HydroMatrixType.EnergyCredits,
+      partnerType: HydroMatrix.EnergyCredits,
       sizes: [30, 70],
     },
   },
   {
     path: "reservoirlevels",
-    type: HydroMatrixType.ReservoirLevels,
+    type: HydroMatrix.ReservoirLevels,
   },
   {
     path: "watervalues",
-    type: HydroMatrixType.WaterValues,
+    type: HydroMatrix.WaterValues,
   },
   {
     path: "hydrostorage",
-    type: HydroMatrixType.HydroStorage,
+    type: HydroMatrix.HydroStorage,
   },
   {
     path: "ror",
-    type: HydroMatrixType.RunOfRiver,
+    type: HydroMatrix.RunOfRiver,
   },
   {
     path: "mingen",
-    type: HydroMatrixType.MinGen,
+    type: HydroMatrix.MinGen,
   },
 ];
 
 export const MATRICES: Matrices = {
-  [HydroMatrixType.Dailypower]: {
+  [HydroMatrix.Dailypower]: {
     title: "Credit Modulations",
     url: "input/hydro/common/capacity/creditmodulations_{areaId}",
-    cols: generateColumns("%"),
-    rows: ["Generating Power", "Pumping Power"],
-    stats: MatrixStats.NOCOL,
+    columns: generateColumns("%"),
+    rowHeaders: ["Generating Power", "Pumping Power"],
     enablePercentDisplay: true,
   },
-  [HydroMatrixType.EnergyCredits]: {
+  [HydroMatrix.EnergyCredits]: {
     title: "Standard Credits",
     url: "input/hydro/common/capacity/maxpower_{areaId}",
-    cols: [
+    columns: [
       "Generating Max Power (MW)",
       "Generating Max Energy (Hours at Pmax)",
       "Pumping Max Power (MW)",
       "Pumping Max Energy (Hours at Pmax)",
     ],
-    stats: MatrixStats.NOCOL,
   },
-  [HydroMatrixType.ReservoirLevels]: {
+  [HydroMatrix.ReservoirLevels]: {
     title: "Reservoir Levels",
     url: "input/hydro/common/capacity/reservoir_{areaId}",
-    cols: ["Lev Low (%)", "Lev Avg (%)", "Lev High (%)"],
-    stats: MatrixStats.NOCOL,
+    columns: ["Lev Low (%)", "Lev Avg (%)", "Lev High (%)"],
     enablePercentDisplay: true,
   },
-  [HydroMatrixType.WaterValues]: {
+  [HydroMatrix.WaterValues]: {
     title: "Water Values",
     url: "input/hydro/common/capacity/waterValues_{areaId}",
-    cols: generateColumns("%"),
-    stats: MatrixStats.NOCOL,
+    // columns: generateColumns("%"), // TODO this causes the data is undefined error
   },
-  [HydroMatrixType.HydroStorage]: {
+  [HydroMatrix.HydroStorage]: {
     title: "Hydro Storage",
     url: "input/hydro/series/{areaId}/mod",
-    stats: MatrixStats.STATS,
   },
-  [HydroMatrixType.RunOfRiver]: {
+  [HydroMatrix.RunOfRiver]: {
     title: "Run Of River",
     url: "input/hydro/series/{areaId}/ror",
-    stats: MatrixStats.STATS,
   },
-  [HydroMatrixType.MinGen]: {
+  [HydroMatrix.MinGen]: {
     title: "Min Gen",
     url: "input/hydro/series/{areaId}/mingen",
-    stats: MatrixStats.STATS,
   },
-  [HydroMatrixType.InflowPattern]: {
+  [HydroMatrix.InflowPattern]: {
     title: "Inflow Pattern",
     url: "input/hydro/common/capacity/inflowPattern_{areaId}",
-    cols: ["Inflow Pattern (X)"],
-    stats: MatrixStats.NOCOL,
+    columns: ["Inflow Pattern (X)"],
   },
-  [HydroMatrixType.OverallMonthlyHydro]: {
+  [HydroMatrix.OverallMonthlyHydro]: {
     title: "Overall Monthly Hydro",
     url: "input/hydro/prepro/{areaId}/energy",
-    cols: [
+    columns: [
       "Expectation (MWh)",
       "Std Deviation (MWh)",
       "Min. (MWh)",
       "Max. (MWh)",
       "ROR Share",
     ],
-    rows: [
+    rowHeaders: [
       "January",
       "February",
       "March",
@@ -198,22 +190,19 @@ export const MATRICES: Matrices = {
       "November",
       "December",
     ],
-    stats: MatrixStats.NOCOL,
   },
-  [HydroMatrixType.Allocation]: {
+  [HydroMatrix.Allocation]: {
     title: "Allocation",
     url: "",
-    stats: MatrixStats.NOCOL,
     fetchFn: getAllocationMatrix,
-    disableEdit: true,
+    enableReadOnly: true,
     enablePercentDisplay: true,
   },
-  [HydroMatrixType.Correlation]: {
+  [HydroMatrix.Correlation]: {
     title: "Correlation",
     url: "",
-    stats: MatrixStats.NOCOL,
     fetchFn: getCorrelationMatrix,
-    disableEdit: true,
+    enableReadOnly: true,
     enablePercentDisplay: true,
   },
 };
