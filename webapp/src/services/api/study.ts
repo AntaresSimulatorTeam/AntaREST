@@ -243,37 +243,6 @@ export const importStudy = async (
   return res.data;
 };
 
-export const importFile = async (
-  file: File,
-  study: string,
-  path: string,
-  onProgress?: (progress: number) => void,
-): Promise<string> => {
-  const options: AxiosRequestConfig = {};
-  if (onProgress) {
-    options.onUploadProgress = (progressEvent): void => {
-      const percentCompleted = Math.round(
-        (progressEvent.loaded * 100) / (progressEvent.total || 1),
-      );
-      onProgress(percentCompleted);
-    };
-  }
-  const formData = new FormData();
-  formData.append("file", file);
-  const restconfig = {
-    ...options,
-    headers: {
-      "content-type": "multipart/form-data",
-    },
-  };
-  const res = await client.put(
-    `/v1/studies/${study}/raw?path=${encodeURIComponent(path)}`,
-    formData,
-    restconfig,
-  );
-  return res.data;
-};
-
 export const launchStudy = async (
   sid: string,
   options: LaunchOptions = {},

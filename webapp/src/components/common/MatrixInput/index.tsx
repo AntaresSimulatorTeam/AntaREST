@@ -11,7 +11,7 @@ import {
   StudyMetadata,
 } from "../../../common/types";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
-import { getStudyData, importFile } from "../../../services/api/study";
+import { getStudyData } from "../../../services/api/study";
 import usePromiseWithSnackbarError from "../../../hooks/usePromiseWithSnackbarError";
 import { editMatrix, getStudyMatrixIndex } from "../../../services/api/matrix";
 import { Root, Content, Header } from "./style";
@@ -23,6 +23,7 @@ import MatrixAssignDialog from "./MatrixAssignDialog";
 import { fetchMatrixFn } from "../../App/Singlestudy/explore/Modelization/Areas/Hydro/utils";
 import SplitButton from "../buttons/SplitButton";
 import DownloadMatrixButton from "../buttons/DownloadMatrixButton.tsx";
+import { importFile } from "../../../services/api/studies/raw/index.ts";
 
 interface Props {
   study: StudyMetadata | StudyMetadata["id"];
@@ -123,7 +124,7 @@ function MatrixInput({
   };
 
   const handleImport = async (file: File) => {
-    await importFile(file, studyId, url);
+    await importFile({ file, studyId, path: url });
     reloadMatrix();
   };
 

@@ -1,3 +1,4 @@
+import type { AxiosRequestConfig } from "axios";
 import type { StudyMetadata } from "../../../../common/types";
 
 export interface DownloadMatrixParams {
@@ -6,4 +7,12 @@ export interface DownloadMatrixParams {
   format?: "tsv" | "xlsx";
   header?: boolean;
   index?: boolean;
+}
+
+export interface ImportFileParams {
+  studyId: StudyMetadata["id"];
+  path: string;
+  file: File;
+  createMissing?: boolean;
+  onUploadProgress?: AxiosRequestConfig["onUploadProgress"];
 }
