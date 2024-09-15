@@ -35,6 +35,8 @@
   "global.import": "Importer",
   "global.import.fromFile": "Depuis un fichier",
   "global.import.fromDatabase": "Depuis la base de donnée",
+  "global.import.success": "Importation réussie",
+  "global.import.error": "Échec de l'importation",
   "global.launch": "Lancer",
   "global.jobs": "Tâches",
   "global.unknown": "Inconnu",
