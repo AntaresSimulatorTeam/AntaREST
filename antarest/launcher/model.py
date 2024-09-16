@@ -21,6 +21,7 @@ from sqlalchemy.orm import relationship  # type: ignore
 from antarest.core.persistence import Base
 from antarest.login.model import Identity, UserInfo
 from antarest.study.business.all_optional_meta import camel_case_model
+from antarest.utils import from_json
 
 
 class XpansionParametersDTO(BaseModel):
@@ -53,7 +54,7 @@ class LauncherParametersDTO(BaseModel):
         """
         if params is None:
             return cls()
-        return cls.model_validate_strings(params)
+        return cls.model_validate(from_json(params))
 
 
 class LogType(str, enum.Enum):

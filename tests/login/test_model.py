@@ -24,7 +24,7 @@ from antarest.login.model import (
     User,
     init_admin_user,
 )
-from antarest.utils import SESSION_ARGS
+from antarest.service_creator import SESSION_ARGS
 
 TEST_ADMIN_PASS_WORD = "test"
 
