@@ -18,6 +18,7 @@ ADAPTER: pydantic.TypeAdapter[t.Any] = pydantic.TypeAdapter(
     type=t.Any, config=pydantic.config.ConfigDict(ser_json_inf_nan="constants")
 )
 
+
 def from_json(data: t.Union[str, bytes, bytearray]) -> t.Dict[str, t.Any]:
     return ADAPTER.validate_json(data)  # type: ignore
 
