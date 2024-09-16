@@ -243,6 +243,7 @@
   "study.debug": "Debug",
   "study.debug.file.image": "Fichier image",
   "study.debug.folder.empty": "Le dossier est vide",
+  "study.debug.folder.upload.error.replaceFolder": "Un dossier du même nom existe déjà et ne peut pas être remplacé par un fichier",
   "study.failtofetchlogs": "Échec du chargement des logs",
   "study.failtokilltask": "Échec de l'annulation de l'étude",
   "study.publicMode": "Mode public",

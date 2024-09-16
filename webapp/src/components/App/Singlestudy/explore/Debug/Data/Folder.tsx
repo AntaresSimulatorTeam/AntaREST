@@ -12,6 +12,7 @@ import {
   getFileType,
   type TreeFolder,
   type DataCompProps,
+  isFolder,
 } from "../utils";
 import { Fragment } from "react";
 import EmptyView from "../../../../../common/page/SimpleContent";
@@ -42,7 +43,12 @@ function Folder(props: DataCompProps) {
   ////////////////////////////////////////////////////////////////
 
   const handleValidateUpload = (file: File) => {
-    if (treeFolder[file.name]) {
+    const childWithSameName = treeFolder[file.name];
+    if (childWithSameName) {
+      if (isFolder(childWithSameName)) {
+        throw new Error(t("study.debug.folder.upload.error.replaceFolder"));
+      }
+
       return replaceFile.showConfirm();
     }
   };
