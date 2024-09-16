@@ -16,6 +16,7 @@ from alembic import op
 from sqlalchemy.engine import Connection  # type: ignore
 
 from antarest.study.css4_colors import COLOR_NAMES
+from antarest.utils import from_json
 
 # revision identifiers, used by Alembic.
 revision = "dae93f1d9110"
@@ -34,7 +35,7 @@ def _avoid_duplicates(tags: t.Iterable[str]) -> t.Sequence[str]:
 def _load_patch_obj(patch: t.Optional[str]) -> t.MutableMapping[str, t.Any]:
     """Load the patch object from the `patch` field in the `study_additional_data` table."""
 
-    obj: t.MutableMapping[str, t.Any] = json.loads(patch or "{}")
+    obj: t.MutableMapping[str, t.Any] = from_json(patch or "{}")
     obj["study"] = obj.get("study") or {}
     obj["study"]["tags"] = _avoid_duplicates(obj["study"].get("tags") or [])
     return obj

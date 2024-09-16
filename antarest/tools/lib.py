@@ -39,6 +39,7 @@ from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.model import CommandDTO, GenerationResultInfoDTO
 from antarest.study.storage.variantstudy.variant_command_extractor import VariantCommandsExtractor
 from antarest.study.storage.variantstudy.variant_command_generator import VariantCommandGenerator
+from antarest.utils import from_json
 
 logger = logging.getLogger(__name__)
 COMMAND_FILE = "commands.json"
@@ -117,7 +118,7 @@ class RemoteVariantGenerator(IVariantGenerator):
             # This should not happen, but if it does, we return a failed result
             return GenerationResultInfoDTO(success=False, details=[])
 
-        info = json.loads(task_result.result.return_value)
+        info = from_json(task_result.result.return_value)
         return GenerationResultInfoDTO(**info)
 
     def build_url(self, url: str) -> str:

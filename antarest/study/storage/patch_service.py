@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-import json
 import typing as t
 from pathlib import Path
 
@@ -34,8 +33,7 @@ class PatchService:
         if not get_from_file and study.additional_data is not None:
             # the `study.additional_data.patch` field is optional
             if study.additional_data.patch:
-                patch_obj = json.loads(study.additional_data.patch or "{}")
-                return Patch.model_validate(patch_obj)
+                return Patch.model_validate_strings(study.additional_data.patch or "{}")
 
         patch = Patch()
         patch_path = Path(study.path) / PATCH_JSON

@@ -39,6 +39,7 @@ from antarest.study.business.aggregator_management import (
 from antarest.study.service import StudyService
 from antarest.study.storage.df_download import TableExportFormat, export_file
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
+from antarest.utils import from_json
 
 try:
     import tables  # type: ignore
@@ -148,7 +149,7 @@ def create_raw_study_routes(
                 # Use `JSONResponse` to ensure to return a valid JSON response
                 # that checks `NaN` and `Infinity` values.
                 try:
-                    output = json.loads(output)
+                    output = from_json(output)
                     return JSONResponse(content=output)
                 except ValueError as exc:
                     raise HTTPException(

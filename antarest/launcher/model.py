@@ -11,11 +11,10 @@
 # This file is part of the Antares project.
 
 import enum
-import json
 import typing as t
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, Field
 from sqlalchemy import Column, DateTime, Enum, ForeignKey, Integer, Sequence, String  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
 
@@ -54,7 +53,7 @@ class LauncherParametersDTO(BaseModel):
         """
         if params is None:
             return cls()
-        return cls.model_validate(json.loads(params))
+        return cls.model_validate_strings(params)
 
 
 class LogType(str, enum.Enum):

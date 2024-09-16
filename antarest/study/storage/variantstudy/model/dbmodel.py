@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 
 import datetime
-import json
 import typing as t
 import uuid
 from pathlib import Path
@@ -22,6 +21,7 @@ from sqlalchemy.orm import relationship  # type: ignore
 from antarest.core.persistence import Base
 from antarest.study.model import Study
 from antarest.study.storage.variantstudy.model.model import CommandDTO
+from antarest.utils import from_json
 
 
 class VariantStudySnapshot(Base):  # type: ignore
@@ -69,7 +69,7 @@ class CommandBlock(Base):  # type: ignore
     def to_dto(self) -> CommandDTO:
         # Database may lack a version number, defaulting to 1 if so.
         version = self.version or 1
-        return CommandDTO(id=self.id, action=self.command, args=json.loads(self.args), version=version)
+        return CommandDTO(id=self.id, action=self.command, args=from_json(self.args), version=version)
 
     def __str__(self) -> str:
         return (

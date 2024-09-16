@@ -12,7 +12,6 @@
 
 import contextlib
 import io
-import json
 import logging
 import tempfile
 import typing as t
@@ -49,6 +48,7 @@ from antarest.matrixstore.model import (
     MatrixInfoDTO,
 )
 from antarest.matrixstore.repository import MatrixContentRepository, MatrixDataSetRepository, MatrixRepository
+from antarest.utils import from_json
 
 # List of files to exclude from ZIP archives
 EXCLUDED_FILES = {
@@ -263,7 +263,7 @@ class MatrixService(ISimpleMatrixService):
             A SHA256 hash that identifies the imported matrix.
         """
         if is_json:
-            obj = json.loads(file)
+            obj = from_json(file)
             content = MatrixContent(**obj)
             return self.create(content.data)
         # noinspection PyTypeChecker

@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-import json
 import logging
 import shutil
 import tempfile
@@ -87,8 +86,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         additional_data = study.additional_data or StudyAdditionalData()
 
         try:
-            patch_obj = json.loads(additional_data.patch or "{}")
-            patch = Patch.model_validate(patch_obj)
+            patch = Patch.model_validate_strings(additional_data.patch or "{}")
         except ValueError as e:
             # The conversion to JSON and the parsing can fail if the patch is not valid
             logger.warning(f"Failed to parse patch for study {study.id}", exc_info=e)

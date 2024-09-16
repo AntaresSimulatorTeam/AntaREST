@@ -18,6 +18,7 @@ from antarest.core.configdata.model import ConfigData
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.model import JSON
 from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.utils import from_json
 
 
 class ConfigDataRepository:
@@ -43,7 +44,7 @@ class ConfigDataRepository:
     def get_json(self, key: str, owner: Optional[int] = None) -> Optional[JSON]:
         configdata = self.get(key, owner)
         if configdata:
-            data: JSON = json.loads(configdata.value)
+            data: JSON = from_json(configdata.value)
             return data
         return None
 

@@ -15,6 +15,8 @@ import typing as t
 
 from pydantic import BaseModel
 
+from antarest.utils import from_json
+
 
 class IniProperties(
     BaseModel,
@@ -49,7 +51,7 @@ class IniProperties(
             if isinstance(value, IniProperties):
                 config[alias] = value.to_config()
             else:
-                config[alias] = json.loads(json.dumps(value))
+                config[alias] = from_json(json.dumps(value))
         return config
 
     @classmethod

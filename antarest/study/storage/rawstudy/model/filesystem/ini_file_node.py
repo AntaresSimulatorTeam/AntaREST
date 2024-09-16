@@ -13,7 +13,6 @@
 import contextlib
 import functools
 import io
-import json
 import logging
 import os
 import tempfile
@@ -30,6 +29,7 @@ from antarest.study.storage.rawstudy.ini_writer import IniWriter
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode
+from antarest.utils import from_json
 
 
 class IniFileNodeWarning(UserWarning):
@@ -191,7 +191,7 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
             obj = data
             if isinstance(data, str):
                 with contextlib.suppress(JSONDecodeError):
-                    obj = json.loads(data)
+                    obj = from_json(data)
             if len(url) == 2:
                 if url[0] not in info:
                     info[url[0]] = {}

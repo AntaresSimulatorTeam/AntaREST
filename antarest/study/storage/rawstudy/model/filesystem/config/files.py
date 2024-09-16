@@ -51,6 +51,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import ThermalConfigType, create_thermal_config
 from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata import DUPLICATE_KEYS
+from antarest.utils import from_json
 
 logger = logging.getLogger(__name__)
 
@@ -330,7 +331,7 @@ def _parse_xpansion_version(path: Path) -> str:
     xpansion_json = path / "expansion" / "out.json"
     try:
         content = xpansion_json.read_text(encoding="utf-8")
-        obj = json.loads(content)
+        obj = from_json(content)
         return str(obj["antares_xpansion"]["version"])
     except FileNotFoundError:
         return ""
