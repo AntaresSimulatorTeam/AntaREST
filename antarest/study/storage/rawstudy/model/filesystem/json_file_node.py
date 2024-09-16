@@ -60,7 +60,7 @@ class JsonWriter(IniWriter):
     """
 
     def write(self, data: JSON, path: Path) -> None:
-        with open(path, "w") as fh:
+        with open(path, "wb") as fh:
             to_json(data, fh)
 
 

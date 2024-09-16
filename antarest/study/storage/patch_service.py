@@ -17,6 +17,7 @@ from antarest.study.model import Patch, PatchOutputs, RawStudy, StudyAdditionalD
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
+from antarest.utils import from_json
 
 PATCH_JSON = "patch.json"
 
@@ -33,7 +34,7 @@ class PatchService:
         if not get_from_file and study.additional_data is not None:
             # the `study.additional_data.patch` field is optional
             if study.additional_data.patch:
-                return Patch.model_validate_strings(study.additional_data.patch or "{}")
+                return Patch.model_validate(from_json(study.additional_data.patch))
 
         patch = Patch()
         patch_path = Path(study.path) / PATCH_JSON

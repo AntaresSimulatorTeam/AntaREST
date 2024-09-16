@@ -43,6 +43,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import Simula
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
 from antarest.study.storage.utils import extract_output_name, fix_study_root, remove_from_cache
+from antarest.utils import from_json
 
 logger = logging.getLogger(__name__)
 
@@ -86,7 +87,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         additional_data = study.additional_data or StudyAdditionalData()
 
         try:
-            patch = Patch.model_validate_strings(additional_data.patch or "{}")
+            patch = Patch.model_validate(from_json(additional_data.patch or "{}"))
         except ValueError as e:
             # The conversion to JSON and the parsing can fail if the patch is not valid
             logger.warning(f"Failed to parse patch for study {study.id}", exc_info=e)

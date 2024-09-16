@@ -18,9 +18,9 @@ import os
 import tempfile
 import typing as t
 import zipfile
-from json import JSONDecodeError
 from pathlib import Path
 
+import pydantic_core
 from filelock import FileLock
 
 from antarest.core.model import JSON, SUB_JSON
@@ -190,7 +190,7 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
             info = self.reader.read(self.path) if self.path.exists() else {}
             obj = data
             if isinstance(data, str):
-                with contextlib.suppress(JSONDecodeError):
+                with contextlib.suppress(pydantic_core.ValidationError):
                     obj = from_json(data)
             if len(url) == 2:
                 if url[0] not in info:
