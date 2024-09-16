@@ -1,0 +1,130 @@
+import {
+  Divider,
+  List,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  ListSubheader,
+} from "@mui/material";
+import FolderIcon from "@mui/icons-material/Folder";
+import {
+  getFileIcon,
+  getFileType,
+  type TreeFolder,
+  type DataCompProps,
+} from "../utils";
+import { Fragment } from "react";
+import EmptyView from "../../../../../common/page/SimpleContent";
+import { useTranslation } from "react-i18next";
+import { Filename, Menubar } from "./styles";
+import UploadFileButton from "../../../../../common/buttons/UploadFileButton";
+import ConfirmationDialog from "../../../../../common/dialogs/ConfirmationDialog";
+import useConfirm from "../../../../../../hooks/useConfirm";
+
+function Folder(props: DataCompProps) {
+  const {
+    filename,
+    filePath,
+    treeData,
+    enableImport,
+    setSelectedFile,
+    reloadTreeData,
+    studyId,
+  } = props;
+
+  const { t } = useTranslation();
+  const replaceFile = useConfirm();
+  const treeFolder = treeData as TreeFolder;
+  const list = Object.entries(treeFolder);
+
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
+
+  const handleValidateUpload = (file: File) => {
+    if (treeFolder[file.name]) {
+      return replaceFile.showConfirm();
+    }
+  };
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
+
+  return (
+    <>
+      <List
+        subheader={
+          <ListSubheader>
+            <Menubar>
+              <Filename>{filename}</Filename>
+              {enableImport && (
+                <UploadFileButton
+                  studyId={studyId}
+                  path={(file) => `${filePath}/${file.name}`}
+                  onUploadSuccessful={reloadTreeData}
+                  validate={handleValidateUpload}
+                />
+              )}
+            </Menubar>
+          </ListSubheader>
+        }
+        sx={{
+          height: 1,
+          overflow: "auto",
+          // Prevent scroll to display
+          ...(list.length === 0 && {
+            display: "flex",
+            flexDirection: "column",
+          }),
+        }}
+        dense
+      >
+        {list.length > 0 ? (
+          list.map(([filename, data], index, arr) => {
+            const fileType = getFileType(data);
+            const Icon = getFileIcon(fileType);
+            const isLast = index === arr.length - 1;
+
+            return (
+              <Fragment key={filename}>
+                <ListItemButton
+                  onClick={() =>
+                    setSelectedFile({
+                      fileType,
+                      filename,
+                      filePath: `${filePath}/${filename}`,
+                      treeData: data,
+                    })
+                  }
+                >
+                  <ListItemIcon>
+                    <Icon />
+                  </ListItemIcon>
+                  <ListItemText primary={filename} />
+                </ListItemButton>
+                {!isLast && <Divider variant="fullWidth" />}
+              </Fragment>
+            );
+          })
+        ) : (
+          <EmptyView title={t("study.debug.folder.empty")} icon={FolderIcon} />
+        )}
+      </List>
+      <ConfirmationDialog
+        title="Replace File?"
+        confirmButtonText="Replace"
+        cancelButtonText="Cancel"
+        maxWidth="xs"
+        open={replaceFile.isPending}
+        onConfirm={replaceFile.yes}
+        onCancel={replaceFile.no}
+      >
+        Another file with the same name already exists. Replacing it will
+        overwrite its content.
+      </ConfirmationDialog>
+    </>
+  );
+}
+
+export default Folder;

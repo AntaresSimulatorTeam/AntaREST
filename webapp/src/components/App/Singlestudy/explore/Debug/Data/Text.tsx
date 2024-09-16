@@ -1,36 +1,81 @@
-import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@mui/material";
-import UploadOutlinedIcon from "@mui/icons-material/UploadOutlined";
-import { getStudyData, importFile } from "../../../../../../services/api/study";
-import { Content, Header, Root } from "./style";
-import ImportDialog from "../../../../../common/dialogs/ImportDialog";
+import { Box, useTheme } from "@mui/material";
+import { getStudyData } from "../../../../../../services/api/study";
 import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithSnackbarError";
 import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
-import { useDebugContext } from "../DebugContext";
+import {
+  Light as SyntaxHighlighter,
+  type SyntaxHighlighterProps,
+} from "react-syntax-highlighter";
+import xml from "react-syntax-highlighter/dist/esm/languages/hljs/xml";
+import plaintext from "react-syntax-highlighter/dist/esm/languages/hljs/plaintext";
+import ini from "react-syntax-highlighter/dist/esm/languages/hljs/ini";
+import properties from "react-syntax-highlighter/dist/esm/languages/hljs/properties";
+import { atomOneDark } from "react-syntax-highlighter/dist/esm/styles/hljs";
+import type { DataCompProps } from "../utils";
+import DownloadButton from "../../../../../common/buttons/DownloadButton";
+import { downloadFile } from "../../../../../../utils/fileUtils";
+import { Filename, Flex, Menubar } from "./styles";
+import UploadFileButton from "../../../../../common/buttons/UploadFileButton";
 
-interface Props {
-  studyId: string;
-  path: string;
+SyntaxHighlighter.registerLanguage("xml", xml);
+SyntaxHighlighter.registerLanguage("plaintext", plaintext);
+SyntaxHighlighter.registerLanguage("ini", ini);
+SyntaxHighlighter.registerLanguage("properties", properties);
+
+// Ex: "[2024-05-21 17:18:57][solver][check]"
+const logsRegex = /^(\[[^\]]*\]){3}/;
+// Ex: "EXP : 0"
+const propertiesRegex = /^[^:]+ : [^:]+/;
+
+function getSyntaxProps(data: string | string[]): SyntaxHighlighterProps {
+  const isArray = Array.isArray(data);
+  const text = isArray ? data.join("\n") : data;
+
+  return {
+    children: text,
+    showLineNumbers: isArray,
+    language: (() => {
+      const firstLine = text.split("\n")[0];
+      if (firstLine.startsWith("<?xml")) {
+        return "xml";
+      } else if (logsRegex.test(firstLine)) {
+        return "ini";
+      } else if (propertiesRegex.test(firstLine)) {
+        return "properties";
+      }
+      return "plaintext";
+    })(),
+  };
 }
 
-function Text({ studyId, path }: Props) {
-  const [t] = useTranslation();
-  const { reloadTreeData } = useDebugContext();
-  const [openImportDialog, setOpenImportDialog] = useState(false);
+function Text({ studyId, filePath, filename, enableImport }: DataCompProps) {
+  const { t } = useTranslation();
+  const theme = useTheme();
 
-  const res = usePromiseWithSnackbarError(() => getStudyData(studyId, path), {
-    errorMessage: t("studies.error.retrieveData"),
-    deps: [studyId, path],
-  });
+  const res = usePromiseWithSnackbarError(
+    () => getStudyData<string>(studyId, filePath),
+    {
+      errorMessage: t("studies.error.retrieveData"),
+      deps: [studyId, filePath],
+    },
+  );
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleImport = async (file: File) => {
-    await importFile(file, studyId, path);
-    reloadTreeData();
+  const handleDownload = () => {
+    if (res.data) {
+      downloadFile(
+        res.data,
+        filename.endsWith(".txt") ? filename : `${filename}.txt`,
+      );
+    }
+  };
+
+  const handleUploadSuccessful = () => {
+    res.reload();
   };
 
   ////////////////////////////////////////////////////////////////
@@ -38,34 +83,42 @@ function Text({ studyId, path }: Props) {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <Root>
-      <Header>
-        <Button
-          variant="outlined"
-          color="primary"
-          startIcon={<UploadOutlinedIcon />}
-          onClick={() => setOpenImportDialog(true)}
-          sx={{ mb: 1 }}
-        >
-          {t("global.import")}
-        </Button>
-      </Header>
-      <UsePromiseCond
-        response={res}
-        ifResolved={(data) => (
-          <Content>
-            <code style={{ whiteSpace: "pre" }}>{data}</code>
-          </Content>
-        )}
-      />
-      {openImportDialog && (
-        <ImportDialog
-          open={openImportDialog}
-          onCancel={() => setOpenImportDialog(false)}
-          onImport={handleImport}
-        />
+    <UsePromiseCond
+      response={res}
+      ifResolved={(text) => (
+        <Flex>
+          <Menubar>
+            <Filename>{filename}</Filename>
+            {enableImport && (
+              <UploadFileButton
+                studyId={studyId}
+                path={filePath}
+                accept={{ "text/plain": [".txt"] }}
+                onUploadSuccessful={handleUploadSuccessful}
+              />
+            )}
+            <DownloadButton onClick={handleDownload} />
+          </Menubar>
+          <Box sx={{ height: 1, display: "flex", flexDirection: "column" }}>
+            <SyntaxHighlighter
+              style={atomOneDark}
+              lineNumberStyle={{
+                opacity: 0.5,
+                paddingRight: theme.spacing(3),
+              }}
+              customStyle={{
+                margin: 0,
+                overflow: "auto",
+                padding: theme.spacing(2),
+                borderRadius: theme.shape.borderRadius,
+                fontSize: theme.typography.body2.fontSize,
+              }}
+              {...getSyntaxProps(text)}
+            />
+          </Box>
+        </Flex>
       )}
-    </Root>
+    />
   );
 }
 
