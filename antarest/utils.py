@@ -14,16 +14,13 @@ import typing as t
 
 import pydantic
 
+ADAPTER: pydantic.TypeAdapter[t.Any] = pydantic.TypeAdapter(
+    type=t.Any, config=pydantic.config.ConfigDict(ser_json_inf_nan="constants")
+)
 
 def from_json(data: t.Union[str, bytes, bytearray]) -> t.Dict[str, t.Any]:
-    adapter: pydantic.TypeAdapter[t.Any] = pydantic.TypeAdapter(
-        type=t.Any, config=pydantic.config.ConfigDict(ser_json_inf_nan="constants")
-    )
-    return adapter.validate_json(data)  # type: ignore
+    return ADAPTER.validate_json(data)  # type: ignore
 
 
 def to_json(data: t.Dict[str, t.Any], file: io.BufferedWriter) -> None:
-    adapter: pydantic.TypeAdapter[t.Any] = pydantic.TypeAdapter(
-        type=t.Any, config=pydantic.config.ConfigDict(ser_json_inf_nan="constants")
-    )
-    file.write(adapter.dump_json(data))
+    file.write(ADAPTER.dump_json(data))
