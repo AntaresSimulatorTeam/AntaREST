@@ -15,7 +15,8 @@ import { atomOneDark } from "react-syntax-highlighter/dist/esm/styles/hljs";
 import type { DataCompProps } from "../utils";
 import DownloadButton from "../../../../../common/buttons/DownloadButton";
 import { downloadFile } from "../../../../../../utils/fileUtils";
-import { Flex, Menubar } from "./styles";
+import { Filename, Flex, Menubar } from "./styles";
+import UploadFileButton from "../../../../../common/buttons/UploadFileButton";
 
 SyntaxHighlighter.registerLanguage("xml", xml);
 SyntaxHighlighter.registerLanguage("plaintext", plaintext);
@@ -48,7 +49,7 @@ function getSyntaxProps(data: string | string[]): SyntaxHighlighterProps {
   };
 }
 
-function Text({ studyId, filePath, filename }: DataCompProps) {
+function Text({ studyId, filePath, filename, enableImport }: DataCompProps) {
   const { t } = useTranslation();
   const theme = useTheme();
 
@@ -66,8 +67,15 @@ function Text({ studyId, filePath, filename }: DataCompProps) {
 
   const handleDownload = () => {
     if (res.data) {
-      downloadFile(res.data, `${filename}.txt`);
+      downloadFile(
+        res.data,
+        filename.endsWith(".txt") ? filename : `${filename}.txt`,
+      );
     }
+  };
+
+  const handleUploadSuccessful = () => {
+    res.reload();
   };
 
   ////////////////////////////////////////////////////////////////
@@ -80,6 +88,15 @@ function Text({ studyId, filePath, filename }: DataCompProps) {
       ifResolved={(text) => (
         <Flex>
           <Menubar>
+            <Filename>{filename}</Filename>
+            {enableImport && (
+              <UploadFileButton
+                studyId={studyId}
+                path={filePath}
+                accept={{ "text/plain": [".txt"] }}
+                onUploadSuccessful={handleUploadSuccessful}
+              />
+            )}
             <DownloadButton onClick={handleDownload} />
           </Menubar>
           <Box sx={{ height: 1, display: "flex", flexDirection: "column" }}>

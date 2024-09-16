@@ -8,9 +8,10 @@ import type { DataCompProps } from "../utils";
 import DownloadButton from "../../../../../common/buttons/DownloadButton";
 import { downloadFile } from "../../../../../../utils/fileUtils";
 import { useEffect, useState } from "react";
-import { Flex, Menubar } from "./styles";
+import { Filename, Flex, Menubar } from "./styles";
+import UploadFileButton from "../../../../../common/buttons/UploadFileButton";
 
-function Json({ filePath, filename, studyId }: DataCompProps) {
+function Json({ filePath, filename, studyId, enableImport }: DataCompProps) {
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
   const [currentJson, setCurrentJson] = useState<JSONEditorProps["json"]>();
@@ -45,8 +46,15 @@ function Json({ filePath, filename, studyId }: DataCompProps) {
 
   const handleDownload = () => {
     if (currentJson !== undefined) {
-      downloadFile(JSON.stringify(currentJson, null, 2), `${filename}.json`);
+      downloadFile(
+        JSON.stringify(currentJson, null, 2),
+        filename.endsWith(".json") ? filename : `${filename}.json`,
+      );
     }
+  };
+
+  const handleUploadSuccessful = () => {
+    res.reload();
   };
 
   ////////////////////////////////////////////////////////////////
@@ -59,6 +67,15 @@ function Json({ filePath, filename, studyId }: DataCompProps) {
       ifResolved={(json) => (
         <Flex>
           <Menubar>
+            <Filename>{filename}</Filename>
+            {enableImport && (
+              <UploadFileButton
+                studyId={studyId}
+                path={filePath}
+                accept={{ "application/json": [".json"] }}
+                onUploadSuccessful={handleUploadSuccessful}
+              />
+            )}
             <DownloadButton onClick={handleDownload} />
           </Menubar>
           <JSONEditor

@@ -10,6 +10,7 @@ import ViewWrapper from "../../../../../common/page/ViewWrapper";
 interface Props extends FileInfo {
   studyId: string;
   setSelectedFile: (file: FileInfo) => void;
+  reloadTreeData: () => void;
 }
 
 type DataComponent = React.ComponentType<DataCompProps>;
@@ -22,13 +23,15 @@ const componentByFileType: Record<FileType, DataComponent> = {
   folder: Folder,
 } as const;
 
-function Data({ studyId, setSelectedFile, ...fileInfo }: Props) {
+function Data(props: Props) {
+  const { studyId, setSelectedFile, reloadTreeData, ...fileInfo } = props;
   const { fileType, filePath } = fileInfo;
+  const DataViewer = componentByFileType[fileType];
+
   const enableImport =
     (filePath === "user" || filePath.startsWith("user/")) &&
     // To remove when Xpansion tool configuration will be moved to "input/expansion" directory
     !(filePath === "user/expansion" || filePath.startsWith("user/expansion/"));
-  const DataViewer = componentByFileType[fileType];
 
   return (
     <ViewWrapper>
@@ -37,6 +40,7 @@ function Data({ studyId, setSelectedFile, ...fileInfo }: Props) {
         studyId={studyId}
         enableImport={enableImport}
         setSelectedFile={setSelectedFile}
+        reloadTreeData={reloadTreeData}
       />
     </ViewWrapper>
   );

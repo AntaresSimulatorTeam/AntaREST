@@ -1,24 +1,17 @@
 import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
 import FileTreeItem from "./FileTreeItem";
-import type { TreeFolder } from "../utils";
-import { useState } from "react";
+import { getParentPaths, type TreeFolder } from "../utils";
 
 interface Props {
   data: TreeFolder;
-  // `selectedItems` must not be undefined to make `SimpleTreeView` controlled
-  selectedItemId: string | null;
+  // `currentPath` must not be undefined to make `SimpleTreeView` controlled
+  currentPath: string | null;
+  expandedItems: string[];
+  setExpandedItems: React.Dispatch<React.SetStateAction<string[]>>;
 }
 
-function getParentItemIds(itemId: string) {
-  // "a/b/c/d" -> ["a", "a/b", "a/b/c"]
-  return itemId
-    .split("/")
-    .slice(0, -1) // Remove the last item
-    .map((_, index, arr) => arr.slice(0, index + 1).join("/"));
-}
-
-function Tree({ data, selectedItemId }: Props) {
-  const [expandedItems, setExpandedItems] = useState<string[]>([]);
+function Tree(props: Props) {
+  const { data, currentPath, expandedItems, setExpandedItems } = props;
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -36,14 +29,16 @@ function Tree({ data, selectedItemId }: Props) {
   ////////////////////////////////////////////////////////////////
 
   // `SimpleTreeView` must be controlled because selected item can be changed manually
-  // by `Folder` component
+  // by `Folder` component, or by the `path` URL parameter at view mount.
+  // The use of `selectedItems` and `expandedItems` make the component controlled.
 
   return (
     <SimpleTreeView
-      selectedItems={selectedItemId}
+      selectedItems={currentPath}
       expandedItems={
-        selectedItemId
-          ? [...expandedItems, ...getParentItemIds(selectedItemId)]
+        currentPath
+          ? // `getParentPaths` is needed when the selected item is changed by code
+            [...expandedItems, ...getParentPaths(currentPath)]
           : expandedItems
       }
       onExpandedItemsChange={handleExpandedItemsChange}

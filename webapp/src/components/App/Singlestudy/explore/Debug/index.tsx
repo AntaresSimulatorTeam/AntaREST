@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useOutletContext } from "react-router-dom";
+import { useOutletContext, useSearchParams } from "react-router-dom";
 import { Box } from "@mui/material";
 import Tree from "./Tree";
 import Data from "./Data";
@@ -23,6 +23,10 @@ function Debug() {
   const [t] = useTranslation();
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const [selectedFile, setSelectedFile] = useState<FileInfo | null>(null);
+  // Allow to keep expanded items when the tree is reloaded with `reloadTreeData`
+  const [expandedItems, setExpandedItems] = useState<string[]>([]);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const pathInUrl = searchParams.get("path");
 
   const res = usePromiseWithSnackbarError(
     async () => {
@@ -45,21 +49,43 @@ function Debug() {
 
   useUpdateEffect(() => {
     const firstChildName = Object.keys(res.data ?? {})[0];
-    const treeData = R.path<TreeData>([firstChildName], res.data);
+    const firstChildTreeData = R.path<TreeData>([firstChildName], res.data);
 
-    if (treeData) {
-      const fileInfo = {
-        fileType: getFileType(treeData),
+    const pathInUrlParts = pathInUrl?.split("/");
+    const urlPathTreeData = pathInUrlParts
+      ? R.path<TreeData>(pathInUrlParts, res.data)
+      : null;
+
+    let fileInfo: FileInfo | null = null;
+
+    if (urlPathTreeData) {
+      fileInfo = {
+        fileType: getFileType(urlPathTreeData),
+        treeData: urlPathTreeData,
+        filename: R.last(pathInUrlParts!)!,
+        filePath: pathInUrl!,
+      };
+    } else if (firstChildTreeData) {
+      fileInfo = {
+        fileType: getFileType(firstChildTreeData),
+        treeData: firstChildTreeData,
         filename: firstChildName,
         filePath: firstChildName,
-        treeData,
       };
+    }
 
+    if (fileInfo) {
       setSelectedFile(fileInfo);
     } else {
       setSelectedFile(null);
     }
-  }, [res?.data]);
+  }, [res.data, pathInUrl]);
+
+  useUpdateEffect(() => {
+    if (selectedFile?.filePath !== pathInUrl) {
+      setSearchParams({ path: selectedFile?.filePath || "" });
+    }
+  }, [selectedFile?.filePath]);
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -74,7 +100,9 @@ function Debug() {
             <DebugContext.Provider value={contextValue}>
               <Tree
                 data={data}
-                selectedItemId={selectedFile?.filePath || null}
+                currentPath={selectedFile?.filePath || null}
+                expandedItems={expandedItems}
+                setExpandedItems={setExpandedItems}
               />
             </DebugContext.Provider>
           )}
@@ -85,6 +113,7 @@ function Debug() {
           <Data
             {...selectedFile}
             setSelectedFile={setSelectedFile}
+            reloadTreeData={res.reload}
             studyId={study.id}
           />
         )}
