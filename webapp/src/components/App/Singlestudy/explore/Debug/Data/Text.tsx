@@ -99,7 +99,7 @@ function Text({ studyId, filePath, filename, enableImport }: DataCompProps) {
             )}
             <DownloadButton onClick={handleDownload} />
           </Menubar>
-          <Box sx={{ height: 1, display: "flex", flexDirection: "column" }}>
+          <Box sx={{ overflow: "auto" }}>
             <SyntaxHighlighter
               style={atomOneDark}
               lineNumberStyle={{
@@ -108,7 +108,6 @@ function Text({ studyId, filePath, filename, enableImport }: DataCompProps) {
               }}
               customStyle={{
                 margin: 0,
-                overflow: "auto",
                 padding: theme.spacing(2),
                 borderRadius: theme.shape.borderRadius,
                 fontSize: theme.typography.body2.fontSize,
