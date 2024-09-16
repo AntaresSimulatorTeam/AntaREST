@@ -118,16 +118,15 @@ function Folder(props: DataCompProps) {
         )}
       </List>
       <ConfirmationDialog
-        title="Replace File?"
-        confirmButtonText="Replace"
-        cancelButtonText="Cancel"
+        title={t("study.debug.folder.upload.replaceFileConfirm.title")}
+        confirmButtonText={t("global.replace")}
+        cancelButtonText={t("global.cancel")}
         maxWidth="xs"
         open={replaceFile.isPending}
         onConfirm={replaceFile.yes}
         onCancel={replaceFile.no}
       >
-        Another file with the same name already exists. Replacing it will
-        overwrite its content.
+        {t("study.debug.folder.upload.replaceFileConfirm.message")}
       </ConfirmationDialog>
     </>
   );
