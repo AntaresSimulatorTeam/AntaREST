@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 
 import csv
-import json
 import logging
 import os
 import re
@@ -45,6 +44,7 @@ from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
 from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import OutputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.utils import get_start_date
+from antarest.utils import to_json
 
 logger = logging.getLogger(__name__)
 
@@ -343,15 +343,8 @@ class StudyDownloader:
         target_file: Path,
     ) -> None:
         if filetype == ExportFormat.JSON:
-            with open(target_file, "w") as fh:
-                json.dump(
-                    matrix.model_dump(),
-                    fh,
-                    ensure_ascii=False,
-                    allow_nan=True,
-                    indent=None,
-                    separators=(",", ":"),
-                )
+            with open(target_file, "wb") as fh:
+                fh.write(to_json(matrix.model_dump()))
         else:
             StudyDownloader.write_inside_archive(target_file, filetype, matrix)
 

@@ -15,7 +15,6 @@ import collections
 import contextlib
 import http
 import io
-import json
 import logging
 import os
 import time
@@ -147,6 +146,7 @@ from antarest.study.storage.variantstudy.model.command.update_raw_file import Up
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
+from antarest.utils import to_json
 from antarest.worker.archive_worker import ArchiveTaskArgs
 
 logger = logging.getLogger(__name__)
@@ -1329,13 +1329,7 @@ class StudyService:
                 return FileResponse(tmp_export_file, headers=headers, media_type=filetype)
 
             else:
-                json_response = json.dumps(
-                    matrix.model_dump(),
-                    ensure_ascii=False,
-                    allow_nan=True,
-                    indent=None,
-                    separators=(",", ":"),
-                ).encode("utf-8")
+                json_response = to_json(matrix.model_dump())
                 return Response(content=json_response, media_type="application/json")
 
     def get_study_sim_result(self, study_id: str, params: RequestParameters) -> t.List[StudySimResultDTO]:

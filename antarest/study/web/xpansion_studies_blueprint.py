@@ -30,6 +30,7 @@ from antarest.study.business.xpansion_management import (
     XpansionResourceFileType,
 )
 from antarest.study.service import StudyService
+from antarest.utils import to_json
 
 logger = logging.getLogger(__name__)
 
@@ -282,13 +283,7 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
             except (AttributeError, UnicodeDecodeError):
                 pass
 
-        json_response = json.dumps(
-            output,
-            ensure_ascii=False,
-            allow_nan=True,
-            indent=None,
-            separators=(",", ":"),
-        ).encode("utf-8")
+        json_response = to_json(output)
         return Response(content=json_response, media_type="application/json")
 
     @bp.get(

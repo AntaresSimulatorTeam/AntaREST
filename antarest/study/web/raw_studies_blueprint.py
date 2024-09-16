@@ -39,7 +39,7 @@ from antarest.study.business.aggregator_management import (
 from antarest.study.service import StudyService
 from antarest.study.storage.df_download import TableExportFormat, export_file
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
-from antarest.utils import from_json
+from antarest.utils import from_json, to_json
 
 try:
     import tables  # type: ignore
@@ -183,13 +183,7 @@ def create_raw_study_routes(
         # even though they are not standard JSON values because they are supported in JavaScript.
         # Additionally, we cannot use `orjson` because, despite its superior performance, it converts
         # `NaN` and other values to `null`, even when using a custom encoder.
-        json_response = json.dumps(
-            output,
-            ensure_ascii=False,
-            allow_nan=True,
-            indent=None,
-            separators=(",", ":"),
-        ).encode("utf-8")
+        json_response = to_json(output)
         return Response(content=json_response, media_type="application/json")
 
     @bp.get(

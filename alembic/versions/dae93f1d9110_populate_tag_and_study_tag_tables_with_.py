@@ -7,7 +7,6 @@ Create Date: 2024-02-08 10:30:20.590919
 """
 import collections
 import itertools
-import json
 import secrets
 import typing as t
 
@@ -16,7 +15,7 @@ from alembic import op
 from sqlalchemy.engine import Connection  # type: ignore
 
 from antarest.study.css4_colors import COLOR_NAMES
-from antarest.utils import from_json
+from antarest.utils import from_json, to_json
 
 # revision identifiers, used by Alembic.
 revision = "dae93f1d9110"
@@ -114,7 +113,7 @@ def downgrade() -> None:
         objects_by_ids[study_id] = obj
 
     # Updating objects in the `study_additional_data` table
-    bulk_patches = [{"study_id": id_, "patch": json.dumps(obj)} for id_, obj in objects_by_ids.items()]
+    bulk_patches = [{"study_id": id_, "patch": to_json(obj)} for id_, obj in objects_by_ids.items()]
     if bulk_patches:
         sql = sa.text("UPDATE study_additional_data SET patch = :patch WHERE study_id = :study_id")
         connexion.execute(sql, *bulk_patches)

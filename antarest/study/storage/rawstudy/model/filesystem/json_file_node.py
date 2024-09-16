@@ -61,7 +61,7 @@ class JsonWriter(IniWriter):
 
     def write(self, data: JSON, path: Path) -> None:
         with open(path, "wb") as fh:
-            to_json(data, fh)
+            fh.write(to_json(data))
 
 
 class JsonFileNode(IniFileNode):
