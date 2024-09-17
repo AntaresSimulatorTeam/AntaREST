@@ -24,15 +24,3 @@ def from_json(data: t.Union[str, bytes, bytearray]) -> t.Dict[str, t.Any]:
 
 def to_json(data: t.Any, indent: t.Optional[int] = None) -> bytes:
     return ADAPTER.dump_json(data, indent=indent)
-
-    # indent: int | None = None,
-    #         include: IncEx | None = None,
-    #         exclude: IncEx | None = None,
-    #         by_alias: bool = False,
-    #         exclude_unset: bool = False,
-    #         exclude_defaults: bool = False,
-    #         exclude_none: bool = False,
-    #         round_trip: bool = False,
-    #         warnings: bool | Literal['none', 'warn', 'error'] = True,
-    #         serialize_as_any: bool = False,
-    #         context:
