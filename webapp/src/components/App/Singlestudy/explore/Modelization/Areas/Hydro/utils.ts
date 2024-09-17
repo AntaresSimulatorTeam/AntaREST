@@ -40,7 +40,7 @@ export const HydroMatrix = {
 // Types
 ////////////////////////////////////////////////////////////////
 
-export type fetchMatrixFn = (studyId: string) => Promise<MatrixType>;
+export type fetchMatrixFn = (studyId: string) => Promise<MatrixDataDTO>;
 export type HydroMatrixType = (typeof HydroMatrix)[keyof typeof HydroMatrix];
 
 export interface HydroMatrixProps {
@@ -49,6 +49,7 @@ export interface HydroMatrixProps {
   columns?: string[];
   rowHeaders?: string[];
   fetchFn?: fetchMatrixFn;
+  enableDateTimeColumn?: boolean;
   enableReadOnly?: boolean;
   enablePercentDisplay?: boolean;
 }
@@ -126,6 +127,7 @@ export const MATRICES: Matrices = {
     url: "input/hydro/common/capacity/creditmodulations_{areaId}",
     columns: generateColumns("%"),
     rowHeaders: ["Generating Power", "Pumping Power"],
+    enableDateTimeColumn: false,
     enablePercentDisplay: true,
   },
   [HydroMatrix.EnergyCredits]: {
@@ -147,7 +149,7 @@ export const MATRICES: Matrices = {
   [HydroMatrix.WaterValues]: {
     title: "Water Values",
     url: "input/hydro/common/capacity/waterValues_{areaId}",
-    // columns: generateColumns("%"), // TODO this causes the data is undefined error
+    // columns: generateColumns("%"), // TODO this causes Runtime error to be fixed
   },
   [HydroMatrix.HydroStorage]: {
     title: "Hydro Storage",
@@ -195,6 +197,7 @@ export const MATRICES: Matrices = {
     title: "Allocation",
     url: "",
     fetchFn: getAllocationMatrix,
+    enableDateTimeColumn: false,
     enableReadOnly: true,
     enablePercentDisplay: true,
   },
@@ -202,6 +205,7 @@ export const MATRICES: Matrices = {
     title: "Correlation",
     url: "",
     fetchFn: getCorrelationMatrix,
+    enableDateTimeColumn: false,
     enableReadOnly: true,
     enablePercentDisplay: true,
   },

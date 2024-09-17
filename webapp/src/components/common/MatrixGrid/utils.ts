@@ -19,6 +19,7 @@ import {
   ColumnTypes,
   TimeSeriesColumnOptions,
   CustomColumnOptions,
+  MatrixAggregates,
 } from "./types";
 import { getCurrentLanguage } from "../../../utils/i18nUtils";
 import { Theme } from "@glideapps/glide-data-grid";
@@ -69,6 +70,23 @@ export const readOnlyDarkTheme: Partial<Theme> = {
   accentLight: "rgba(74, 76, 102, 0.2)",
   borderColor: "rgba(255, 255, 255, 0.08)",
   drilldownBorder: "rgba(255, 255, 255, 0.2)",
+};
+
+export const aggregatesTheme: Partial<Theme> = {
+  bgCell: "#31324A",
+  bgCellMedium: "#383A5C",
+  textDark: "#1976D2",
+  textMedium: "#2196F3",
+  textLight: "#64B5F6",
+  accentColor: "#2196F3",
+  accentLight: "#64B5F633",
+  fontFamily: "Inter, sans-serif",
+  baseFontStyle: "bold 13px",
+  editorFontSize: "13px",
+  headerFontStyle: "bold 11px",
+  accentFg: "#2196F3", // This affects the selection border
+  borderColor: "#2196F3", // This affects the general cell borders
+  drilldownBorder: "#2196F3", // This affects the border when drilling down into a cell
 };
 
 const dateIncrementStrategies: Record<
@@ -194,7 +212,7 @@ export function generateTimeSeriesColumns({
   count,
   startIndex = 1,
   prefix = "TS",
-  width = 50,
+  width,
   editable = true,
   style = "normal",
 }: TimeSeriesColumnOptions): EnhancedGridColumn[] {
@@ -256,4 +274,51 @@ export function generateDataColumns(
   }
 
   return [];
+}
+
+/**
+ * Calculates aggregate values (min, max, avg, total) for each column in a 2D numeric matrix.
+ *
+ * This function processes a 2D array (matrix) of numbers, computing four types of aggregates
+ * for each column.
+ *
+ * @param matrix - A 2D array of numbers representing the matrix. Each inner array is treated as a column.
+ * @returns An object containing four arrays, each corresponding to an aggregate type:
+ *          min: An array of minimum values for each column.
+ *          max: An array of maximum values for each column.
+ *          avg: An array of average values for each column.
+ *          total: An array of sum totals for each column.
+ *
+ * @example <caption>Calculating aggregates for a 3x3 matrix</caption>
+ * const matrix = [
+ *   [1, 2, 3],
+ *   [4, 5, 6],
+ *   [7, 8, 9]
+ * ];
+ * const result = calculateAggregates(matrix);
+ * console.log(result);
+ *  Output: {
+ *   min: [1, 2, 3],
+ *   max: [7, 8, 9],
+ *   avg: [4, 5, 6],
+ *   total: [12, 15, 18]
+ * }
+ */
+export function calculateMatrixAggregates(matrix: number[][]) {
+  const aggregates: MatrixAggregates = {
+    min: [],
+    max: [],
+    avg: [],
+    total: [],
+  };
+
+  matrix.forEach((row) => {
+    aggregates.min.push(Math.min(...row));
+    aggregates.max.push(Math.max(...row));
+    const sum = row.reduce((sum, num) => sum + num, 0);
+    aggregates.avg.push(Number((sum / row.length).toFixed()));
+    aggregates.total.push(Number(sum.toFixed()));
+  });
+
+  return aggregates;
 }

@@ -18,6 +18,7 @@ import {
   MatrixType,
 } from "../../../../../../../../common/types";
 import client from "../../../../../../../../services/api/client";
+import { MatrixDataDTO } from "../../../../../../../common/MatrixGrid/types";
 import { AreaCoefficientItem } from "../utils";
 
 ////////////////////////////////////////////////////////////////
@@ -58,7 +59,7 @@ export async function setCorrelationFormFields(
 
 export async function getCorrelationMatrix(
   studyId: StudyMetadata["id"],
-): Promise<MatrixType> {
+): Promise<MatrixDataDTO> {
   const res = await client.get(
     `v1/studies/${studyId}/areas/hydro/correlation/matrix`,
   );

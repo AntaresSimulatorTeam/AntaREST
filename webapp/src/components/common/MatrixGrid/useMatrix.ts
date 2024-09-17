@@ -29,25 +29,35 @@ import {
   ColumnTypes,
   GridUpdate,
   MatrixUpdateDTO,
+  MatrixAggregates,
 } from "./types";
-import { generateDataColumns, generateDateTime } from "./utils";
+import {
+  aggregatesTheme,
+  calculateMatrixAggregates,
+  generateDataColumns,
+  generateDateTime,
+} from "./utils";
 import useUndo from "use-undo";
 import { GridCellKind } from "@glideapps/glide-data-grid";
 import { importFile } from "../../../services/api/studies/raw";
+import { fetchMatrixFn } from "../../App/Singlestudy/explore/Modelization/Areas/Hydro/utils";
 
 interface DataState {
-  data: number[][];
+  data: MatrixDataDTO["data"];
+  aggregates: MatrixAggregates;
   pendingUpdates: MatrixUpdateDTO[];
 }
 
 export function useMatrix(
   studyId: string,
   url: string,
+  enableDateTimeColumn: boolean,
   enableTimeSeriesColumns: boolean,
   enableAggregateColumns: boolean,
   enableRowHeaders?: boolean,
   customColumns?: string[] | readonly string[],
   colWidth?: number,
+  fetchMatrixData?: fetchMatrixFn,
 ) {
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [columnCount, setColumnCount] = useState(0);
@@ -56,27 +66,60 @@ export function useMatrix(
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<Error | undefined>(undefined);
   const [{ present: currentState }, { set: setState, undo, redo, canRedo }] =
-    useUndo<DataState>({ data: [], pendingUpdates: [] });
+    useUndo<DataState>({
+      data: [],
+      aggregates: { min: [], max: [], avg: [], total: [] },
+      pendingUpdates: [],
+    });
 
-  const fetchMatrix = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const [matrix, index] = await Promise.all([
-        getStudyData<MatrixDataDTO>(studyId, url),
-        getStudyMatrixIndex(studyId, url),
-      ]);
+  const fetchMatrix = useCallback(
+    async (loadingState = true) => {
+      // !NOTE This is a temporary solution to ensure the matrix is up to date
+      // TODO: Remove this once the matrix API is updated to return the correct data
+      if (loadingState) {
+        setIsLoading(true);
+      }
 
-      setState({ data: matrix.data, pendingUpdates: [] });
-      setColumnCount(matrix.columns.length);
-      setIndex(index);
-      setIsLoading(false);
-    } catch (error) {
-      setError(new Error(t("data.error.matrix")));
-      enqueueErrorSnackbar(t("data.error.matrix"), error as AxiosError);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [enqueueErrorSnackbar, setState, studyId, url]);
+      try {
+        const [matrix, index] = await Promise.all([
+          fetchMatrixData
+            ? // If a custom fetch function is provided, use it
+              fetchMatrixData(studyId)
+            : getStudyData<MatrixDataDTO>(studyId, url, 1),
+          getStudyMatrixIndex(studyId, url),
+        ]);
+
+        setState({
+          data: matrix.data,
+          aggregates: enableAggregateColumns
+            ? calculateMatrixAggregates(matrix.data)
+            : { min: [], max: [], avg: [], total: [] },
+          pendingUpdates: [],
+        });
+        setColumnCount(matrix.columns.length);
+        setIndex(index);
+        setIsLoading(false);
+
+        return {
+          matrix,
+          index,
+        };
+      } catch (error) {
+        setError(new Error(t("data.error.matrix")));
+        enqueueErrorSnackbar(t("data.error.matrix"), error as AxiosError);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [
+      enableAggregateColumns,
+      enqueueErrorSnackbar,
+      fetchMatrixData,
+      setState,
+      studyId,
+      url,
+    ],
+  );
 
   useEffect(() => {
     fetchMatrix();
@@ -91,14 +134,16 @@ export function useMatrix(
       return [];
     }
 
-    const baseColumns: EnhancedGridColumn[] = [
-      {
+    const baseColumns: EnhancedGridColumn[] = [];
+
+    if (enableDateTimeColumn) {
+      baseColumns.push({
         id: "date",
         title: "Date",
         type: ColumnTypes.DateTime,
         editable: false,
-      },
-    ];
+      });
+    }
 
     if (enableRowHeaders) {
       baseColumns.unshift({
@@ -122,22 +167,22 @@ export function useMatrix(
             id: "min",
             title: "Min",
             type: ColumnTypes.Aggregate,
-            width: 50,
             editable: false,
+            themeOverride: aggregatesTheme,
           },
           {
             id: "max",
             title: "Max",
             type: ColumnTypes.Aggregate,
-            width: 50,
             editable: false,
+            themeOverride: aggregatesTheme,
           },
           {
             id: "avg",
             title: "Avg",
             type: ColumnTypes.Aggregate,
-            width: 50,
             editable: false,
+            themeOverride: aggregatesTheme,
           },
         ]
       : [];
@@ -145,6 +190,7 @@ export function useMatrix(
     return [...baseColumns, ...dataColumns, ...aggregateColumns];
   }, [
     currentState.data,
+    enableDateTimeColumn,
     enableRowHeaders,
     enableTimeSeriesColumns,
     columnCount,
@@ -180,6 +226,7 @@ export function useMatrix(
 
       setState({
         data: updatedData,
+        aggregates: currentState.aggregates,
         pendingUpdates: [...currentState.pendingUpdates, ...newUpdates],
       });
     },
@@ -209,12 +256,23 @@ export function useMatrix(
     }
 
     setIsSubmitting(true);
+
     try {
       await updateMatrix(studyId, url, currentState.pendingUpdates);
-      setState({ data: currentState.data, pendingUpdates: [] });
+
+      setState({
+        data: currentState.data,
+        aggregates: currentState.aggregates,
+        pendingUpdates: [],
+      });
+
       enqueueSnackbar(t("matrix.success.matrixUpdate"), {
         variant: "success",
       });
+
+      // !NOTE This is a temporary solution to ensure the matrix is up to date
+      // TODO: Remove this once the matrix API is updated to return the correct data
+      await fetchMatrix(false);
     } catch (error) {
       setError(new Error(t("matrix.error.matrixUpdate")));
       enqueueErrorSnackbar(t("matrix.error.matrixUpdate"), error as AxiosError);
@@ -238,6 +296,7 @@ export function useMatrix(
 
   return {
     data: currentState.data,
+    aggregates: currentState.aggregates,
     error,
     isLoading,
     isSubmitting,
