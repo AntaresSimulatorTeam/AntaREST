@@ -16,11 +16,15 @@ import time
 import datetime
 import typing as t
 
+from requests.exceptions import HTTPError
+
 import pytest
 from starlette.testclient import TestClient
 
 from pathlib import Path
 
+from antarest.core import requests
+from antarest.core.exceptions import VariantAgeMustBePositive
 from antarest.core.tasks.model import TaskDTO, TaskStatus
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
@@ -101,10 +105,6 @@ def generate_snapshot_fixture(
 
                 # Generate snapshot for each variant
                 client.put(f"/v1/studies/{variant_ids[index]}/generate", headers=admin_headers)
-                client.put(f"/v1/studies/{variant_ids[index]}", data={
-                    "last_access": datetime.datetime.utcnow(),
-                }, headers=admin_headers)
-                # simulate an access
         time.sleep(0.1)  # wait for the filesystem to be updated
     return t.cast([str], variant_ids)
 
@@ -413,5 +413,20 @@ def test_clear_snapshots(client: TestClient, admin_access_token: str, tmp_path: 
 
     # Try to call the endpoint with a negative value. Must return a 422 error code
     res = client.put(f"v1/studies/variants/clear-snapshots?limit=-1", headers=admin_headers)
+
     assert res.status_code == 422
+    assert res.json().get('exception') == "VariantAgeMustBePositive"
+
     assert older.exists() and old.exists() and recent.exists()
+
+    # Clear all snapshots older than the default hour limit (older_snapshot must be cleared)
+    # client.put(f"v1/studies/variants/clear-snapshots", headers=admin_headers)
+    # assert (not older.exists()) and old.exists() and recent.exists()
+    #
+    # # clear all snapshots older than 6 hours (old_snapshot must be cleared)
+    # client.put(f"v1/studies/variants/clear-snapshots?limit=6", headers=admin_headers)
+    # assert (not older.exists()) and (not old.exists()) and recent.exists()
+    #
+    # # clear all snapshots older than 0 hours (recent_snapshot must be cleared)
+    # client.put(f"v1/studies/variants/clear-snapshots?limit=0", headers=admin_headers)
+    # assert not (older.exists() and old.exists() and recent.exists())
