@@ -24,3 +24,7 @@ def from_json(data: t.Union[str, bytes, bytearray]) -> t.Dict[str, t.Any]:
 
 def to_json(data: t.Any, indent: t.Optional[int] = None) -> bytes:
     return ADAPTER.dump_json(data, indent=indent)
+
+
+def to_json_as_bytes(data: t.Any, indent: t.Optional[int] = None) -> str:
+    return to_json(data, indent=indent).decode("utf-8")

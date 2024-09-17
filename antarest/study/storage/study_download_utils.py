@@ -25,6 +25,7 @@ from zipfile import ZIP_DEFLATED, ZipFile
 from fastapi import HTTPException
 
 from antarest.core.exceptions import ChildNotFoundError
+from antarest.core.serialization.utils import to_json
 from antarest.study.model import (
     ExportFormat,
     MatrixAggregationResult,
@@ -44,7 +45,6 @@ from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
 from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import OutputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.utils import get_start_date
-from antarest.utils import to_json
 
 logger = logging.getLogger(__name__)
 

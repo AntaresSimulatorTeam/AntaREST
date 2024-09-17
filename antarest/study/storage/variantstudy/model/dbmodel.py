@@ -19,9 +19,9 @@ from sqlalchemy import Column, DateTime, ForeignKey, Integer, String  # type: ig
 from sqlalchemy.orm import relationship  # type: ignore
 
 from antarest.core.persistence import Base
+from antarest.core.serialization.utils import from_json
 from antarest.study.model import Study
 from antarest.study.storage.variantstudy.model.model import CommandDTO
-from antarest.utils import from_json
 
 
 class VariantStudySnapshot(Base):  # type: ignore

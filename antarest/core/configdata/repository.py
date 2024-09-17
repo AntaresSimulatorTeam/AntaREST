@@ -16,8 +16,8 @@ from typing import Optional
 from antarest.core.configdata.model import ConfigData
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.model import JSON
+from antarest.core.serialization.utils import from_json, to_json
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.utils import from_json, to_json
 
 
 class ConfigDataRepository:

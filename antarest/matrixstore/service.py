@@ -30,6 +30,7 @@ from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.jwt import JWTUser
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
+from antarest.core.serialization.utils import from_json
 from antarest.core.tasks.model import TaskResult, TaskType
 from antarest.core.tasks.service import ITaskService, TaskUpdateNotifier
 from antarest.core.utils.fastapi_sqlalchemy import db
@@ -48,7 +49,6 @@ from antarest.matrixstore.model import (
     MatrixInfoDTO,
 )
 from antarest.matrixstore.repository import MatrixContentRepository, MatrixDataSetRepository, MatrixRepository
-from antarest.utils import from_json
 
 # List of files to exclude from ZIP archives
 EXCLUDED_FILES = {

@@ -24,6 +24,7 @@ from httpx import Client
 
 from antarest.core.cache.business.local_chache import LocalCache
 from antarest.core.config import CacheConfig
+from antarest.core.serialization.utils import from_json, to_json_as_bytes
 from antarest.core.tasks.model import TaskDTO
 from antarest.core.utils.utils import StopWatch, get_local_path
 from antarest.matrixstore.repository import MatrixContentRepository
@@ -39,7 +40,6 @@ from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.model import CommandDTO, GenerationResultInfoDTO
 from antarest.study.storage.variantstudy.variant_command_extractor import VariantCommandsExtractor
 from antarest.study.storage.variantstudy.variant_command_generator import VariantCommandGenerator
-from antarest.utils import from_json, to_json
 
 logger = logging.getLogger(__name__)
 COMMAND_FILE = "commands.json"
@@ -208,7 +208,7 @@ def extract_commands(study_path: Path, commands_output_dir: Path) -> None:
     command_list = extractor.extract(study)
 
     (commands_output_dir / COMMAND_FILE).write_text(
-        to_json([command.model_dump(exclude={"id"}) for command in command_list], indent=2).decode("utf-8")
+        to_json_as_bytes([command.model_dump(exclude={"id"}) for command in command_list], indent=2)
     )
 
 
@@ -297,10 +297,7 @@ def generate_diff(
     )
 
     (output_dir / COMMAND_FILE).write_text(
-        to_json(
-            [command.to_dto().model_dump(exclude={"id"}) for command in diff_commands],
-            indent=2,
-        ).decode("utf-8")
+        to_json_as_bytes([command.to_dto().model_dump(exclude={"id"}) for command in diff_commands], indent=2)
     )
 
     needed_matrices: Set[str] = set()

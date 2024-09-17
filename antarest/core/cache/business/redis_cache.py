@@ -18,7 +18,7 @@ from redis.client import Redis
 
 from antarest.core.interfaces.cache import ICache
 from antarest.core.model import JSON
-from antarest.utils import from_json
+from antarest.core.serialization.utils import from_json
 
 logger = logging.getLogger(__name__)
 

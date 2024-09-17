@@ -21,6 +21,7 @@ from enum import Enum
 from pathlib import Path
 
 from antarest.core.model import JSON
+from antarest.core.serialization.utils import from_json
 from antarest.study.storage.rawstudy.ini_reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     DEFAULT_GROUP,
@@ -51,7 +52,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import ThermalConfigType, create_thermal_config
 from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata import DUPLICATE_KEYS
-from antarest.utils import from_json
 
 logger = logging.getLogger(__name__)
 

@@ -42,6 +42,7 @@ from antarest.core.interfaces.eventbus import Event, EventChannelDirectory, Even
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.model import JSON, PermissionInfo, PublicMode, StudyPermissionType
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
+from antarest.core.serialization.utils import to_json
 from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskResult, TaskType
 from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT, ITaskService, TaskUpdateNotifier, noop_notifier
 from antarest.core.utils.utils import assert_this, suppress_exception
@@ -66,7 +67,6 @@ from antarest.study.storage.variantstudy.model.model import (
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
 from antarest.study.storage.variantstudy.snapshot_generator import SnapshotGenerator
 from antarest.study.storage.variantstudy.variant_command_generator import VariantCommandGenerator
-from antarest.utils import to_json
 
 logger = logging.getLogger(__name__)
 

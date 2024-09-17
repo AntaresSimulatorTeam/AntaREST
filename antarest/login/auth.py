@@ -21,8 +21,8 @@ from starlette.requests import Request
 
 from antarest.core.config import Config
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
+from antarest.core.serialization.utils import from_json
 from antarest.fastapi_jwt_auth import AuthJWT
-from antarest.utils import from_json
 
 logger = logging.getLogger(__name__)
 

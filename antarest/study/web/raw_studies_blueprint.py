@@ -13,7 +13,6 @@
 import collections
 import http
 import io
-import json
 import logging
 import typing as t
 from pathlib import Path, PurePosixPath
@@ -26,6 +25,7 @@ from antarest.core.config import Config
 from antarest.core.jwt import JWTUser
 from antarest.core.model import SUB_JSON
 from antarest.core.requests import RequestParameters
+from antarest.core.serialization.utils import from_json, to_json
 from antarest.core.swagger import get_path_examples
 from antarest.core.utils.utils import sanitize_string, sanitize_uuid
 from antarest.core.utils.web import APITag
@@ -39,7 +39,6 @@ from antarest.study.business.aggregator_management import (
 from antarest.study.service import StudyService
 from antarest.study.storage.df_download import TableExportFormat, export_file
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
-from antarest.utils import from_json, to_json
 
 try:
     import tables  # type: ignore

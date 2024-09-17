@@ -14,7 +14,7 @@ import typing as t
 
 from pydantic import BaseModel
 
-from antarest.utils import from_json, to_json
+from antarest.core.serialization.utils import from_json, to_json
 
 
 class IniProperties(

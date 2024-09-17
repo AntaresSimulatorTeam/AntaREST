@@ -51,6 +51,7 @@ from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTGroup, JWTUser
 from antarest.core.model import JSON, SUB_JSON, PermissionInfo, PublicMode, StudyPermissionType
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
+from antarest.core.serialization.utils import to_json
 from antarest.core.tasks.model import TaskListFilter, TaskResult, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskService, TaskUpdateNotifier, noop_notifier
 from antarest.core.utils.fastapi_sqlalchemy import db
@@ -146,7 +147,6 @@ from antarest.study.storage.variantstudy.model.command.update_raw_file import Up
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
-from antarest.utils import to_json
 from antarest.worker.archive_worker import ArchiveTaskArgs
 
 logger = logging.getLogger(__name__)

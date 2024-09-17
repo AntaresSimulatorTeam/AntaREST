@@ -15,7 +15,7 @@ from unittest.mock import Mock
 
 from antarest.core.cache.business.redis_cache import RedisCache, RedisCacheElement
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfigDTO
-from antarest.utils import from_json
+from antarest.core.serialization.utils import from_json
 
 
 def test_lifecycle():

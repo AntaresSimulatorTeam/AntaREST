@@ -22,6 +22,7 @@ from antarest.core.config import Config
 from antarest.core.exceptions import BadOutputError, StudyOutputNotFoundError
 from antarest.core.interfaces.cache import CacheConstants, ICache
 from antarest.core.model import JSON, PublicMode
+from antarest.core.serialization.utils import from_json
 from antarest.core.utils.utils import StopWatch, extract_zip, unzip, zip_dir
 from antarest.login.model import GroupDTO
 from antarest.study.common.studystorage import IStudyStorageService, T
@@ -43,7 +44,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import Simula
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
 from antarest.study.storage.utils import extract_output_name, fix_study_root, remove_from_cache
-from antarest.utils import from_json
 
 logger = logging.getLogger(__name__)
 
