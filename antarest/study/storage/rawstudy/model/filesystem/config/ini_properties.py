@@ -10,10 +10,11 @@
 #
 # This file is part of the Antares project.
 
-import json
 import typing as t
 
 from pydantic import BaseModel
+
+from antarest.core.serialization import from_json, to_json
 
 
 class IniProperties(
@@ -49,7 +50,7 @@ class IniProperties(
             if isinstance(value, IniProperties):
                 config[alias] = value.to_config()
             else:
-                config[alias] = json.loads(json.dumps(value))
+                config[alias] = from_json(to_json(value))
         return config
 
     @classmethod

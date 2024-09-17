@@ -10,17 +10,16 @@
 #
 # This file is part of the Antares project.
 
-import json
 from http import HTTPStatus
 from typing import Any, Optional
 
-from fastapi import APIRouter, FastAPI
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
 from antarest.core.application import AppBuildContext
 from antarest.core.config import Config
 from antarest.core.interfaces.eventbus import DummyEventBusService, IEventBus
+from antarest.core.serialization import from_json
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.fastapi_jwt_auth import AuthJWT
 from antarest.fastapi_jwt_auth.exceptions import AuthJWTException
@@ -78,7 +77,7 @@ def build_login(
 
     @AuthJWT.token_in_denylist_loader  # type: ignore
     def check_if_token_is_revoked(decrypted_token: Any) -> bool:
-        subject = json.loads(decrypted_token["sub"])
+        subject = from_json(decrypted_token["sub"])
         user_id = subject["id"]
         token_type = subject["type"]
         with db():

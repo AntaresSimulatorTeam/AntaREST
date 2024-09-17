@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-import json
 import logging
 from datetime import timedelta
 from typing import Any, List, Optional, Union
@@ -23,6 +22,7 @@ from antarest.core.config import Config
 from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.roles import RoleType
+from antarest.core.serialization import from_json
 from antarest.core.utils.web import APITag
 from antarest.fastapi_jwt_auth import AuthJWT
 from antarest.login.auth import Auth
@@ -103,7 +103,7 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
     )
     def refresh(jwt_manager: AuthJWT = Depends()) -> Any:
         jwt_manager.jwt_refresh_token_required()
-        identity = json.loads(jwt_manager.get_jwt_subject())
+        identity = from_json(jwt_manager.get_jwt_subject())
         logger.debug(f"Refreshing access token for {identity['id']}")
         user = service.get_jwt(identity["id"])
         if user:

@@ -10,11 +10,11 @@
 #
 # This file is part of the Antares project.
 
-import json
 from pathlib import Path
 from unittest.mock import Mock
 
 from antarest.core.cache.business.redis_cache import RedisCache, RedisCacheElement
+from antarest.core.serialization import from_json
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfigDTO
 
 
@@ -44,7 +44,7 @@ def test_lifecycle():
 
     # GET
     redis_client.get.return_value = cache_element
-    load = json.loads(cache_element)
+    load = from_json(cache_element)
     assert cache.get(id=id) == load["data"]
     redis_client.expire.assert_called_with(redis_key, duration)
     redis_client.get.assert_called_once_with(redis_key)

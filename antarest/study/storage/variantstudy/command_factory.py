@@ -10,8 +10,8 @@
 #
 # This file is part of the Antares project.
 
-import typing as t
 import copy
+import typing as t
 
 from antarest.core.model import JSON
 from antarest.matrixstore.service import ISimpleMatrixService

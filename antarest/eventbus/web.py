@@ -11,13 +11,12 @@
 # This file is part of the Antares project.
 
 import dataclasses
-import json
 import logging
 from enum import Enum
 from http import HTTPStatus
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query
+from fastapi import Depends, HTTPException, Query
 from pydantic import BaseModel
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
@@ -27,6 +26,7 @@ from antarest.core.interfaces.eventbus import Event, IEventBus
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
 from antarest.core.model import PermissionInfo, StudyPermissionType
 from antarest.core.permissions import check_permission
+from antarest.core.serialization import to_json_string
 from antarest.fastapi_jwt_auth import AuthJWT
 from antarest.login.auth import Auth
 
@@ -99,7 +99,7 @@ def configure_websockets(app_ctxt: AppBuildContext, config: Config, event_bus: I
         event_data = event.model_dump()
         del event_data["permissions"]
         del event_data["channel"]
-        await manager.broadcast(json.dumps(event_data), event.permissions, event.channel)
+        await manager.broadcast(to_json_string(event_data), event.permissions, event.channel)
 
     @app_ctxt.api_root.websocket("/ws")
     async def connect(

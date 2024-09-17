@@ -15,7 +15,6 @@ import collections
 import contextlib
 import http
 import io
-import json
 import logging
 import os
 import time
@@ -52,6 +51,7 @@ from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTGroup, JWTUser
 from antarest.core.model import JSON, SUB_JSON, PermissionInfo, PublicMode, StudyPermissionType
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
+from antarest.core.serialization import to_json
 from antarest.core.tasks.model import TaskListFilter, TaskResult, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskService, TaskUpdateNotifier, noop_notifier
 from antarest.core.utils.fastapi_sqlalchemy import db
@@ -1329,13 +1329,7 @@ class StudyService:
                 return FileResponse(tmp_export_file, headers=headers, media_type=filetype)
 
             else:
-                json_response = json.dumps(
-                    matrix.model_dump(),
-                    ensure_ascii=False,
-                    allow_nan=True,
-                    indent=None,
-                    separators=(",", ":"),
-                ).encode("utf-8")
+                json_response = to_json(matrix.model_dump())
                 return Response(content=json_response, media_type="application/json")
 
     def get_study_sim_result(self, study_id: str, params: RequestParameters) -> t.List[StudySimResultDTO]:

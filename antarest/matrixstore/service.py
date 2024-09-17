@@ -12,7 +12,6 @@
 
 import contextlib
 import io
-import json
 import logging
 import tempfile
 import typing as t
@@ -31,6 +30,7 @@ from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.jwt import JWTUser
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
+from antarest.core.serialization import from_json
 from antarest.core.tasks.model import TaskResult, TaskType
 from antarest.core.tasks.service import ITaskService, TaskUpdateNotifier
 from antarest.core.utils.fastapi_sqlalchemy import db
@@ -263,7 +263,7 @@ class MatrixService(ISimpleMatrixService):
             A SHA256 hash that identifies the imported matrix.
         """
         if is_json:
-            obj = json.loads(file)
+            obj = from_json(file)
             content = MatrixContent(**obj)
             return self.create(content.data)
         # noinspection PyTypeChecker
