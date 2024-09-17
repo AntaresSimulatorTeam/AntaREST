@@ -66,6 +66,14 @@ export interface EnhancedGridColumn extends BaseGridColumn {
   type: ColumnType;
   editable: boolean;
 }
+
+export interface MatrixAggregates {
+  min: number[];
+  max: number[];
+  avg: number[];
+  total: number[];
+}
+
 // Represents data coming from the API
 export interface MatrixDataDTO {
   data: number[][];

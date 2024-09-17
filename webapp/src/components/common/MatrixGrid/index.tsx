@@ -23,7 +23,7 @@ import DataEditor, {
 } from "@glideapps/glide-data-grid";
 import { useGridCellContent } from "./useGridCellContent";
 import { useMemo, useState } from "react";
-import { EnhancedGridColumn, GridUpdate } from "./types";
+import { EnhancedGridColumn, GridUpdate, MatrixAggregates } from "./types";
 import { darkTheme, readOnlyDarkTheme } from "./utils";
 import { useColumnMapping } from "./useColumnMapping";
 
@@ -32,7 +32,7 @@ export interface MatrixGridProps {
   rows: number;
   columns: EnhancedGridColumn[];
   dateTime?: string[];
-  aggregates?: Record<string, number[]>;
+  aggregates?: MatrixAggregates;
   rowHeaders?: string[];
   width?: string;
   height?: string;
