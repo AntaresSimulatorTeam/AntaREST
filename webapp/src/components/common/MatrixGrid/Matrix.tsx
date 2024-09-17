@@ -23,11 +23,13 @@ import { StudyMetadata } from "../../../common/types";
 import { MatrixContainer, MatrixHeader, MatrixTitle } from "./style";
 import MatrixActions from "./MatrixActions";
 import EmptyView from "../page/SimpleContent";
+import { fetchMatrixFn } from "../../App/Singlestudy/explore/Modelization/Areas/Hydro/utils";
 
 interface MatrixProps {
   url: string;
   title?: string;
-  rowHeaders?: string[];
+  customRowHeaders?: string[];
+  enableDateTimeColumn?: boolean;
   enableTimeSeriesColumns?: boolean;
   enableAggregateColumns?: boolean;
   enableRowHeaders?: boolean;
@@ -35,19 +37,22 @@ interface MatrixProps {
   enableReadOnly?: boolean;
   customColumns?: string[] | readonly string[];
   colWidth?: number;
+  fetchMatrixData?: fetchMatrixFn;
 }
 
 function Matrix({
   url,
   title = "global.timeSeries",
-  rowHeaders = [],
+  customRowHeaders = [],
+  enableDateTimeColumn = true,
   enableTimeSeriesColumns = true,
   enableAggregateColumns = false,
-  enableRowHeaders = rowHeaders.length > 0,
+  enableRowHeaders = customRowHeaders.length > 0,
   enablePercentDisplay = false,
   enableReadOnly = false,
   customColumns,
   colWidth,
+  fetchMatrixData,
 }: MatrixProps) {
   const { t } = useTranslation();
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -55,6 +60,7 @@ function Matrix({
 
   const {
     data,
+    aggregates,
     error,
     isLoading,
     isSubmitting,
@@ -72,11 +78,13 @@ function Matrix({
   } = useMatrix(
     study.id,
     url,
+    enableDateTimeColumn,
     enableTimeSeriesColumns,
     enableAggregateColumns,
     enableRowHeaders,
     customColumns,
     colWidth,
+    fetchMatrixData,
   );
 
   ////////////////////////////////////////////////////////////////
@@ -88,7 +96,7 @@ function Matrix({
   }
 
   if (error) {
-    return <EmptyView title={`Error: ${error.message}`} />;
+    return <EmptyView title={error.message} />;
   }
 
   if (!data || data.length === 0) {
@@ -116,9 +124,10 @@ function Matrix({
       <Divider sx={{ width: 1, mt: 1, mb: 2 }} />
       <MatrixGrid
         data={data}
+        aggregates={aggregates}
         columns={columns}
         rows={data.length}
-        rowHeaders={rowHeaders}
+        rowHeaders={customRowHeaders}
         dateTime={dateTime}
         onCellEdit={handleCellEdit}
         onMultipleCellsEdit={handleMultipleCellsEdit}

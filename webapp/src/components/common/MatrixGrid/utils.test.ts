@@ -17,7 +17,11 @@ import {
   StudyOutputDownloadLevelDTO,
 } from "../../../common/types";
 import { ColumnTypes } from "./types";
-import { generateDateTime, generateTimeSeriesColumns } from "./utils";
+import {
+  calculateMatrixAggregates,
+  generateDateTime,
+  generateTimeSeriesColumns,
+} from "./utils";
 
 describe("generateDateTime", () => {
   test("generates correct number of dates", () => {
@@ -118,7 +122,6 @@ describe("generateTimeSeriesColumns", () => {
         title: "TS 1",
         type: ColumnTypes.Number,
         style: "normal",
-        width: 50,
         editable: true,
       },
       {
@@ -126,7 +129,6 @@ describe("generateTimeSeriesColumns", () => {
         title: "TS 2",
         type: ColumnTypes.Number,
         style: "normal",
-        width: 50,
         editable: true,
       },
       {
@@ -134,7 +136,6 @@ describe("generateTimeSeriesColumns", () => {
         title: "TS 3",
         type: ColumnTypes.Number,
         style: "normal",
-        width: 50,
         editable: true,
       },
     ]);
@@ -145,7 +146,6 @@ describe("generateTimeSeriesColumns", () => {
       count: 2,
       startIndex: 10,
       prefix: "Data",
-      width: 80,
       editable: false,
     });
     expect(result).toEqual([
@@ -154,7 +154,6 @@ describe("generateTimeSeriesColumns", () => {
         title: "Data 10",
         type: ColumnTypes.Number,
         style: "normal",
-        width: 80,
         editable: false,
       },
       {
@@ -162,7 +161,6 @@ describe("generateTimeSeriesColumns", () => {
         title: "Data 11",
         type: ColumnTypes.Number,
         style: "normal",
-        width: 80,
         editable: false,
       },
     ]);
@@ -186,5 +184,80 @@ describe("generateTimeSeriesColumns", () => {
       expect(column.type).toBe(ColumnTypes.Number);
       expect(column.style).toBe("normal");
     });
+  });
+});
+
+describe("calculateMatrixAggregates", () => {
+  it("should calculate correct aggregates for a simple matrix", () => {
+    const matrix = [
+      [1, 2, 3],
+      [4, 5, 6],
+      [7, 8, 9],
+    ];
+    const result = calculateMatrixAggregates(matrix);
+
+    expect(result.min).toEqual([1, 4, 7]);
+    expect(result.max).toEqual([3, 6, 9]);
+    expect(result.avg).toEqual([2, 5, 8]);
+    expect(result.total).toEqual([6, 15, 24]);
+  });
+
+  it("should handle decimal numbers correctly by rounding", () => {
+    const matrix = [
+      [1.1, 2.2, 3.3],
+      [4.4, 5.5, 6.6],
+    ];
+    const result = calculateMatrixAggregates(matrix);
+
+    expect(result.min).toEqual([1.1, 4.4]);
+    expect(result.max).toEqual([3.3, 6.6]);
+    expect(result.avg).toEqual([2, 6]);
+    expect(result.total).toEqual([7, 17]);
+  });
+
+  it("should handle negative numbers", () => {
+    const matrix = [
+      [-1, -2, -3],
+      [-4, 0, 4],
+    ];
+    const result = calculateMatrixAggregates(matrix);
+
+    expect(result.min).toEqual([-3, -4]);
+    expect(result.max).toEqual([-1, 4]);
+    expect(result.avg).toEqual([-2, 0]);
+    expect(result.total).toEqual([-6, 0]);
+  });
+
+  it("should handle single-element rows", () => {
+    const matrix = [[1], [2], [3]];
+    const result = calculateMatrixAggregates(matrix);
+
+    expect(result.min).toEqual([1, 2, 3]);
+    expect(result.max).toEqual([1, 2, 3]);
+    expect(result.avg).toEqual([1, 2, 3]);
+    expect(result.total).toEqual([1, 2, 3]);
+  });
+
+  it("should handle large numbers", () => {
+    const matrix = [
+      [1000000, 2000000, 3000000],
+      [4000000, 5000000, 6000000],
+    ];
+    const result = calculateMatrixAggregates(matrix);
+
+    expect(result.min).toEqual([1000000, 4000000]);
+    expect(result.max).toEqual([3000000, 6000000]);
+    expect(result.avg).toEqual([2000000, 5000000]);
+    expect(result.total).toEqual([6000000, 15000000]);
+  });
+
+  it("should round average correctly", () => {
+    const matrix = [
+      [1, 2, 4],
+      [10, 20, 39],
+    ];
+    const result = calculateMatrixAggregates(matrix);
+
+    expect(result.avg).toEqual([2, 23]);
   });
 });

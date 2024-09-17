@@ -18,6 +18,7 @@ import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../../redux/selectors";
 import { MATRICES, HydroMatrixType } from "./utils";
 import Matrix from "../../../../../../common/MatrixGrid/Matrix";
+import { Box } from "@mui/material";
 
 interface Props {
   type: HydroMatrixType;
@@ -33,14 +34,18 @@ function HydroMatrix({ type }: Props) {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <Matrix
-      title={hydroMatrix.title}
-      url={hydroMatrix.url.replace("{areaId}", areaId)}
-      customColumns={hydroMatrix.columns}
-      rowHeaders={hydroMatrix.rowHeaders}
-      enableReadOnly={hydroMatrix.enableReadOnly}
-      enablePercentDisplay={hydroMatrix.enablePercentDisplay}
-    />
+    <Box sx={{ width: 1, height: 1, p: 1 }}>
+      <Matrix
+        title={hydroMatrix.title}
+        url={hydroMatrix.url.replace("{areaId}", areaId)}
+        customColumns={hydroMatrix.columns}
+        customRowHeaders={hydroMatrix.rowHeaders}
+        enableDateTimeColumn={hydroMatrix.enableDateTimeColumn}
+        enableReadOnly={hydroMatrix.enableReadOnly}
+        enablePercentDisplay={hydroMatrix.enablePercentDisplay}
+        fetchMatrixData={hydroMatrix.fetchFn}
+      />
+    </Box>
   );
 }
 

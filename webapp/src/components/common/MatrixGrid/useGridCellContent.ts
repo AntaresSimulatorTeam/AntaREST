@@ -14,7 +14,12 @@
 
 import { useCallback, useMemo } from "react";
 import { GridCell, GridCellKind, Item } from "@glideapps/glide-data-grid";
-import { type EnhancedGridColumn, type ColumnType, ColumnTypes } from "./types";
+import {
+  type EnhancedGridColumn,
+  type ColumnType,
+  ColumnTypes,
+  MatrixAggregates,
+} from "./types";
 import { formatDateTime } from "./utils";
 
 type CellContentGenerator = (
@@ -23,7 +28,7 @@ type CellContentGenerator = (
   column: EnhancedGridColumn,
   data: number[][],
   dateTime?: string[],
-  aggregates?: Record<string, number[]>,
+  aggregates?: MatrixAggregates,
   rowHeaders?: string[],
 ) => GridCell;
 
@@ -66,14 +71,14 @@ const cellContentGenerators: Record<ColumnType, CellContentGenerator> = {
     };
   },
   [ColumnTypes.Aggregate]: (row, col, column, data, dateTime, aggregates) => {
-    const value = aggregates?.[column.id]?.[row];
+    const value = aggregates?.[column.id as keyof MatrixAggregates]?.[row];
 
     return {
       kind: GridCellKind.Number,
       data: value,
       displayData: value?.toString() ?? "",
       readonly: !column.editable,
-      allowOverlay: false,
+      allowOverlay: true,
     };
   },
 };
@@ -109,7 +114,7 @@ export function useGridCellContent(
   columns: EnhancedGridColumn[],
   gridToData: (cell: Item) => Item | null,
   dateTime?: string[],
-  aggregates?: Record<string, number[]>,
+  aggregates?: MatrixAggregates,
   rowHeaders?: string[],
   isReadOnlyEnabled = false,
   isPercentDisplayEnabled = false,
@@ -170,19 +175,21 @@ export function useGridCellContent(
         rowHeaders,
       );
 
-      // Prevent updates for read-only grids
-      if (isReadOnlyEnabled) {
-        return {
-          ...gridCell,
-          allowOverlay: false,
-        };
-      }
-
       // Display number values as percentages if enabled
       if (isPercentDisplayEnabled && gridCell.kind === GridCellKind.Number) {
         return {
           ...gridCell,
           displayData: `${gridCell.data}%`,
+          // If ReadOnly is enabled, we don't want to allow overlay
+          allowOverlay: !isReadOnlyEnabled,
+        };
+      }
+
+      // Prevent updates for read-only grids
+      if (isReadOnlyEnabled) {
+        return {
+          ...gridCell,
+          allowOverlay: false,
         };
       }
 

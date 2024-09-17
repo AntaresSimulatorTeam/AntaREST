@@ -57,7 +57,7 @@ describe("useMatrix", () => {
     vi.mocked(apiMatrix.getStudyMatrixIndex).mockResolvedValue(mockMatrixIndex);
 
     const { result } = renderHook(() =>
-      useMatrix(mockStudyId, mockUrl, true, true),
+      useMatrix(mockStudyId, mockUrl, true, true, true),
     );
 
     await waitFor(() => {

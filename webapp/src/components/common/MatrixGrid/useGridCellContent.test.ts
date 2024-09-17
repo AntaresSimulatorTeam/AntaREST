@@ -14,7 +14,11 @@
 
 import { renderHook } from "@testing-library/react";
 import { useGridCellContent } from "./useGridCellContent";
-import { ColumnTypes, type EnhancedGridColumn } from "./types";
+import {
+  ColumnTypes,
+  MatrixAggregates,
+  type EnhancedGridColumn,
+} from "./types";
 import { useColumnMapping } from "./useColumnMapping";
 
 // Mocking i18next
@@ -55,7 +59,7 @@ function renderGridCellContent(
   data: number[][],
   columns: EnhancedGridColumn[],
   dateTime?: string[],
-  aggregates?: Record<string, number[]>,
+  aggregates?: MatrixAggregates,
   rowHeaders?: string[],
 ) {
   const { result: mappingResult } = renderHook(() => useColumnMapping(columns));
@@ -130,14 +134,17 @@ describe("useGridCellContent", () => {
     ];
 
     const aggregates = {
-      total: [60, 75, 45],
+      min: [5, 15, 25],
+      max: [15, 25, 35],
+      avg: [10, 20, 30],
+      total: [30, 60, 90],
     };
 
-    // Tests for each row in the aggregates array
+    // Test each row for correct numeric cell content
     test.each([
-      [0, 60], // Row index 0, expected sum 60
-      [1, 75], // Row index 1, expected sum 75
-      [2, 45], // Row index 2, expected sum 45
+      [0, 30], // Total of first row
+      [1, 60], // Total of second row
+      [2, 90], // Total of third row
     ])(
       "ensures the correct numeric cell content is returned for aggregates at row %i",
       (row, expectedData) => {
@@ -148,7 +155,7 @@ describe("useGridCellContent", () => {
           aggregates,
         );
 
-        const cell = getCellContent([0, row]); // Column index is 0 because we only have one column of aggregates
+        const cell = getCellContent([0, row]); // Accessing the only column
 
         if ("data" in cell) {
           expect(cell.kind).toBe("number");
@@ -200,7 +207,10 @@ describe("useGridCellContent", () => {
     ];
 
     const aggregates = {
-      total: [300, 400],
+      min: [100, 200],
+      max: [150, 250],
+      avg: [125, 225],
+      total: [250, 450],
     };
 
     const getCellContent = renderGridCellContent(
@@ -232,7 +242,7 @@ describe("useGridCellContent", () => {
     const aggregateCell = getCellContent([3, 0]);
 
     if (aggregateCell.kind === "number" && "data" in aggregateCell) {
-      expect(aggregateCell.data).toBe(300);
+      expect(aggregateCell.data).toBe(250);
     } else {
       throw new Error("Expected an Aggregate cell with data");
     }
@@ -286,7 +296,10 @@ describe("useGridCellContent with mixed column types", () => {
       [150, 250],
     ];
     const aggregates = {
-      total: [300, 400],
+      min: [100, 200],
+      max: [150, 250],
+      avg: [125, 225],
+      total: [250, 450],
     };
 
     const getCellContent = renderGridCellContent(
@@ -339,7 +352,7 @@ describe("useGridCellContent with mixed column types", () => {
     const aggregateCell = getCellContent([4, 0]);
 
     if (aggregateCell.kind === "number" && "data" in aggregateCell) {
-      expect(aggregateCell.data).toBe(300);
+      expect(aggregateCell.data).toBe(250);
     } else {
       throw new Error("Expected a number cell with data for aggregate column");
     }
