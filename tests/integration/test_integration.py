@@ -620,13 +620,13 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
         {
             "area1": "area 1",
             "area2": "area 2",
-            "asset_type": 'ac',
+            "asset_type": "ac",
             "display_comments": True,
-            "filter_synthesis": 'hourly, daily, weekly, monthly, annual',
-            "filter_year_by_year": 'hourly, daily, weekly, monthly, annual',
+            "filter_synthesis": "hourly, daily, weekly, monthly, annual",
+            "filter_year_by_year": "hourly, daily, weekly, monthly, annual",
             "hurdles_cost": False,
             "loop_flow": False,
-            "transmission_capacities": 'enabled',
+            "transmission_capacities": "enabled",
             "use_phase_shifter": False,
             "ui": {"color": "112,112,112", "style": "plain", "width": 1.0},
         }

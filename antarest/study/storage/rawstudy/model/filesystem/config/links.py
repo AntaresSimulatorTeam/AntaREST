@@ -65,6 +65,7 @@ class TransmissionCapacity(EnumIgnoreCase):
     IGNORE = "ignore"
     ENABLED = "enabled"
 
+
 class LinkStyle(EnumIgnoreCase):
     """
     Enum representing the style of a link in a network visualization.

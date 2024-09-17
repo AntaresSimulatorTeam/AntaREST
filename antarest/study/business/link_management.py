@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 import typing as t
+from typing import Any, Dict, Tuple, Union
 
 from pydantic import BaseModel
 
@@ -19,8 +20,12 @@ from antarest.core.model import JSON
 from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import RawStudy
-from antarest.study.storage.rawstudy.model.filesystem.config.links import LinkProperties, LinkStyle, \
-    TransmissionCapacity, AssetType
+from antarest.study.storage.rawstudy.model.filesystem.config.links import (
+    AssetType,
+    LinkProperties,
+    LinkStyle,
+    TransmissionCapacity,
+)
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.common import FilteringOptions
 from antarest.study.storage.variantstudy.model.command.create_link import CreateLink
@@ -87,7 +92,7 @@ class LinkManager:
                         display_comments=links_config[link].get("display-comments"),
                         filter_synthesis=links_config[link].get("filter-synthesis"),
                         filter_year_by_year=links_config[link].get("filter-year-by-year"),
-                        ui=ui_info
+                        ui=ui_info,
                     )
                 )
 
@@ -113,7 +118,7 @@ class LinkManager:
             asset_type=link_creation_info.asset_type,
             display_comments=link_creation_info.display_comments,
             filter_synthesis=link_creation_info.filter_synthesis,
-            filter_year_by_year=link_creation_info.filter_year_by_year
+            filter_year_by_year=link_creation_info.filter_year_by_year,
         )
 
     def delete_link(self, study: RawStudy, area1_id: str, area2_id: str) -> None:
@@ -125,7 +130,7 @@ class LinkManager:
         )
         execute_or_add_commands(study, file_study, [command], self.storage_service)
 
-    def get_all_links_props(self, study: RawStudy) -> t.Mapping[t.Tuple[str, str], LinkOutput]:
+    def get_all_links_props(self, study: RawStudy) -> dict[tuple[Union[str, Any], Union[str, Any]], BaseModel]:
         """
         Retrieves all links properties from the study.
 
@@ -161,7 +166,7 @@ class LinkManager:
         self,
         study: RawStudy,
         update_links_by_ids: t.Mapping[t.Tuple[str, str], LinkOutput],
-    ) -> t.Mapping[t.Tuple[str, str], LinkOutput]:
+    ) -> dict[tuple[str, str], BaseModel]:
         old_links_by_ids = self.get_all_links_props(study)
         new_links_by_ids = {}
         file_study = self.storage_service.get_storage(study).get_raw(study)
@@ -199,7 +204,7 @@ class LinkManager:
             "asset-type": link_creation_info.asset_type,
             "display-comments": link_creation_info.display_comments,
             "filter-synthesis": link_creation_info.filter_synthesis,
-            "filter-year-by-year": link_creation_info.filter_year_by_year
+            "filter-year-by-year": link_creation_info.filter_year_by_year,
         }
 
         return parameters
