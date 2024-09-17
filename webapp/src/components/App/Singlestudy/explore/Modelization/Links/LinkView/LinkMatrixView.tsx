@@ -18,14 +18,9 @@ import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
 import Box from "@mui/material/Box";
 import { useTranslation } from "react-i18next";
-import { MatrixStats, StudyMetadata } from "../../../../../../../common/types";
-import MatrixInput from "../../../../../../common/MatrixInput";
-
-export const StyledTab = styled(Tabs)({
-  width: "100%",
-  borderBottom: 1,
-  borderColor: "divider",
-});
+import { StudyMetadata } from "../../../../../../../common/types";
+import SplitView from "../../../../../../common/SplitView";
+import Matrix from "../../../../../../common/MatrixGrid/Matrix";
 
 interface Props {
   study: StudyMetadata;
@@ -33,78 +28,124 @@ interface Props {
   area2: string;
 }
 
-function LinkMatrixView(props: Props) {
-  const [t] = useTranslation();
-  const { study, area1, area2 } = props;
-  const [value, setValue] = React.useState(0);
+interface MatrixConfig {
+  url: string;
+  titleKey: string;
+  columnsNames?: string[];
+}
 
-  const columnsNames = [
-    `${t(
-      "study.modelization.links.matrix.columns.hurdleCostsDirect",
-    )} (${area1}->${area2})`,
-    `${t(
-      "study.modelization.links.matrix.columns.hurdleCostsIndirect",
-    )} (${area2}->${area1})`,
-    t("study.modelization.links.matrix.columns.impedances"),
-    t("study.modelization.links.matrix.columns.loopFlow"),
-    t("study.modelization.links.matrix.columns.pShiftMin"),
-    t("study.modelization.links.matrix.columns.pShiftMax"),
-  ];
+interface SplitMatrixContent {
+  type: "split";
+  matrices: [MatrixConfig, MatrixConfig];
+}
 
-  const handleChange = (event: React.SyntheticEvent, newValue: number) => {
-    setValue(newValue);
+interface SingleMatrixContent {
+  type: "single";
+  matrix: MatrixConfig;
+}
+
+interface MatrixItem {
+  titleKey: string;
+  content: SplitMatrixContent | SingleMatrixContent;
+}
+
+function LinkMatrixView({ area1, area2 }: Props) {
+  const { t } = useTranslation();
+  const [activeTab, setActiveTab] = useState("parameters");
+
+  const handleTabChange = (event: React.SyntheticEvent, newValue: string) => {
+    setActiveTab(newValue);
   };
+
+  const MATRICES: MatrixItem[] = useMemo(
+    () => [
+      {
+        titleKey: "parameters",
+        content: {
+          type: "single",
+          matrix: {
+            url: `input/links/${area1.toLowerCase()}/${area2.toLowerCase()}_parameters`,
+            titleKey: "parameters",
+            columnsNames: [
+              `${t(
+                "study.modelization.links.matrix.columns.hurdleCostsDirect",
+              )} (${area1}->${area2})`,
+              `${t(
+                "study.modelization.links.matrix.columns.hurdleCostsIndirect",
+              )} (${area2}->${area1})`,
+              t("study.modelization.links.matrix.columns.impedances"),
+              t("study.modelization.links.matrix.columns.loopFlow"),
+              t("study.modelization.links.matrix.columns.pShiftMin"),
+              t("study.modelization.links.matrix.columns.pShiftMax"),
+            ],
+          },
+        },
+      },
+      {
+        titleKey: "capacities",
+        content: {
+          type: "split",
+          matrices: [
+            {
+              url: `input/links/${area1.toLowerCase()}/capacities/${area2.toLowerCase()}_direct`,
+              titleKey: "transCapaDirect",
+            },
+            {
+              url: `input/links/${area1.toLowerCase()}/capacities/${area2.toLowerCase()}_indirect`,
+              titleKey: "transCapaIndirect",
+            },
+          ],
+        },
+      },
+    ],
+    [area1, area2, t],
+  );
+
   return (
-    <Box
-      width="100%"
-      height="100%"
-      display="flex"
-      flexDirection="column"
-      justifyContent="flex-start"
-      alignItems="center"
-    >
-      <StyledTab
-        value={value}
-        onChange={handleChange}
-        aria-label="basic tabs example"
-      >
-        <Tab label={t("study.modelization.links.matrix.parameters")} />
-        <Tab label={t("study.modelization.links.matrix.capacities")} />
-      </StyledTab>
-      <Box
-        sx={{
-          display: "flex",
-          width: "100%",
-          height: "100%",
-        }}
-      >
-        {value === 0 ? (
-          <MatrixInput
-            study={study}
-            url={`input/links/${area1.toLowerCase()}/${area2.toLowerCase()}_parameters`}
-            columnsNames={columnsNames}
-            computStats={MatrixStats.NOCOL}
+    <Box sx={{ display: "flex", flexDirection: "column", width: 1, height: 1 }}>
+      <Tabs value={activeTab} onChange={handleTabChange} sx={{ width: 1 }}>
+        {MATRICES.map(({ titleKey }) => (
+          <Tab
+            key={titleKey}
+            value={titleKey}
+            label={t(`study.modelization.links.matrix.${titleKey}`)}
           />
-        ) : (
-          <>
-            <MatrixInput
-              study={study}
-              title={`${t(
-                "study.modelization.links.matrix.columns.transCapaDirect",
-              )} (${area1}->${area2})`}
-              url={`input/links/${area1.toLowerCase()}/capacities/${area2.toLowerCase()}_direct`}
-              computStats={MatrixStats.NOCOL}
-            />
-            <Divider sx={{ width: "1px", mx: 2, bgcolor: "divider" }} />
-            <MatrixInput
-              study={study}
-              title={`${t(
-                "study.modelization.links.matrix.columns.transCapaIndirect",
-              )} (${area2}->${area1})`}
-              url={`input/links/${area1.toLowerCase()}/capacities/${area2.toLowerCase()}_indirect`}
-              computStats={MatrixStats.NOCOL}
-            />
-          </>
+        ))}
+      </Tabs>
+      <Box sx={{ height: 1, pt: 1 }}>
+        {MATRICES.map(
+          ({ titleKey, content }) =>
+            activeTab === titleKey && (
+              <Box key={titleKey} sx={{ height: 1 }}>
+                {content.type === "split" ? (
+                  <SplitView
+                    id={`link-${content.matrices[0].titleKey}-${content.matrices[1].titleKey}`}
+                    sizes={[50, 50]}
+                  >
+                    {content.matrices.map(({ url, titleKey }) => (
+                      <Box key={titleKey} sx={{ px: 2 }}>
+                        <Matrix
+                          url={url}
+                          title={t(
+                            `study.modelization.links.matrix.columns.${titleKey}`,
+                            { area1, area2 },
+                          )}
+                        />
+                      </Box>
+                    ))}
+                  </SplitView>
+                ) : (
+                  <Matrix
+                    key={content.matrix.titleKey}
+                    url={content.matrix.url}
+                    title={t(
+                      `study.modelization.links.matrix.${content.matrix.titleKey}`,
+                    )}
+                    customColumns={content.matrix.columnsNames}
+                  />
+                )}
+              </Box>
+            ),
         )}
       </Box>
     </Box>
