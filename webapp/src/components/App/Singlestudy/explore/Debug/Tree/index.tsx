@@ -1,10 +1,12 @@
 import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
+import ArrowRightIcon from "@mui/icons-material/ArrowRight";
+import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import FileTreeItem from "./FileTreeItem";
 import { getParentPaths, type TreeFolder } from "../utils";
 
 interface Props {
   data: TreeFolder;
-  // `currentPath` must not be undefined to make `SimpleTreeView` controlled
+  // `currentPath` must not be `undefined` to make `SimpleTreeView` controlled
   currentPath: string | null;
   expandedItems: string[];
   setExpandedItems: React.Dispatch<React.SetStateAction<string[]>>;
@@ -42,6 +44,10 @@ function Tree(props: Props) {
           : expandedItems
       }
       onExpandedItemsChange={handleExpandedItemsChange}
+      slots={{
+        expandIcon: ArrowRightIcon,
+        collapseIcon: ArrowDropDownIcon,
+      }}
     >
       {Object.keys(data).map((filename) => (
         <FileTreeItem

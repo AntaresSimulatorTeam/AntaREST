@@ -1,5 +1,5 @@
 import { Box } from "@mui/material";
-import { TreeItem } from "@mui/x-tree-view/TreeItem";
+import { TreeItem, type TreeItemProps } from "@mui/x-tree-view/TreeItem";
 import { TreeData, getFileType, getFileIcon, isFolder } from "../utils";
 import DebugContext from "../DebugContext";
 import { useContext } from "react";
@@ -20,7 +20,15 @@ function FileTreeItem({ name, treeData, path }: Props) {
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleClick = () => {
+  const handleClick: TreeItemProps["onClick"] = ({ target }) => {
+    // The item is not selected if the click is on the expand/collapse icon
+    if (
+      target instanceof Element &&
+      target.closest(".MuiTreeItem-iconContainer")
+    ) {
+      return;
+    }
+
     setSelectedFile({ fileType, filename: name, filePath, treeData });
   };
 
@@ -38,6 +46,12 @@ function FileTreeItem({ name, treeData, path }: Props) {
         </Box>
       }
       onClick={handleClick}
+      sx={{
+        // Expand/collapse icon
+        ".MuiTreeItem-iconContainer:hover": {
+          backgroundColor: "rgb(0 0 0 / 50%)",
+        },
+      }}
     >
       {isFolder(treeData) &&
         Object.keys(treeData).map((childName) => (
