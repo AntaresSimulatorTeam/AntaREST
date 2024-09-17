@@ -29,6 +29,7 @@ from antarest.study.model import Patch, PatchArea, PatchCluster, RawStudy, Study
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
+from antarest.study.storage.rawstudy.model.filesystem.config.links import TransmissionCapacity, AssetType
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, DistrictSet, FileStudyTreeConfig, Link
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import ThermalConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -37,10 +38,11 @@ from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
-from antarest.study.storage.variantstudy.model.command.common import CommandName
+from antarest.study.storage.variantstudy.model.command.common import CommandName, FilteringOptions
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
+from tests.conftest_services import study_storage_service_fixture
 from tests.helpers import with_db_context
 from tests.storage.business.assets import ASSETS_DIR
 
@@ -225,7 +227,16 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
                 args={
                     "area1": "test",
                     "area2": "test2",
-                    "parameters": None,
+                    "parameters": {
+                        "hurdles-cost": False,
+                        "loop-flow": False,
+                        "use-phase-shifter": False,
+                        "transmission-capacities": TransmissionCapacity.ENABLED,
+                        "asset-type": AssetType.AC,
+                        "display-comments": True,
+                        'filter-synthesis': 'hourly, daily, weekly, monthly, annual',
+                        'filter-year-by-year': 'hourly, daily, weekly, monthly, annual'
+                    },
                 },
             ),
         ],
@@ -416,11 +427,96 @@ def test_get_all_area():
     all_areas = area_manager.get_all_areas(study)
     assert expected_all == [area.model_dump() for area in all_areas]
 
+    file_tree_mock.get.side_effect = [
+        {
+            'a2': {
+                'hurdles-cost': True,
+                'loop-flow': True,
+                'use-phase-shifter': False,
+                'transmission-capacities': TransmissionCapacity.ENABLED,
+                'asset-type': AssetType.DC,
+                'display-comments': False,
+                'filter-synthesis': FilteringOptions.FILTER_SYNTHESIS,
+                'filter-year-by-year': FilteringOptions.FILTER_YEAR_BY_YEAR,
+            },
+            'a3': {
+                'hurdles-cost': True,
+                'loop-flow': False,
+                'use-phase-shifter': True,
+                'transmission-capacities': TransmissionCapacity.ENABLED,
+                'asset-type': AssetType.AC,
+                'display-comments': True,
+                'filter-synthesis': FilteringOptions.FILTER_SYNTHESIS,
+                'filter-year-by-year': FilteringOptions.FILTER_YEAR_BY_YEAR,
+            },
+        },
+        {
+            'a3': {
+                'hurdles-cost': True,
+                'loop-flow': False,
+                'use-phase-shifter': True,
+                'transmission-capacities': TransmissionCapacity.ENABLED,
+                'asset-type': AssetType.AC,
+                'display-comments': True,
+                'filter-synthesis': FilteringOptions.FILTER_SYNTHESIS,
+                'filter-year-by-year': FilteringOptions.FILTER_YEAR_BY_YEAR,
+            }
+        },
+        {
+            'a3': {
+                'hurdles-cost': False,
+                'loop-flow': False,
+                'use-phase-shifter': True,
+                'transmission-capacities': TransmissionCapacity.ENABLED,
+                'asset-type': AssetType.AC,
+                'display-comments': True,
+                'filter-synthesis': FilteringOptions.FILTER_SYNTHESIS,
+                'filter-year-by-year': FilteringOptions.FILTER_YEAR_BY_YEAR,
+            }
+        }
+    ]
+
     links = link_manager.get_all_links(study)
     assert [
-        {"area1": "a1", "area2": "a2", "ui": None},
-        {"area1": "a1", "area2": "a3", "ui": None},
-        {"area1": "a2", "area2": "a3", "ui": None},
+       {
+           "area1": "a1",
+           "area2": "a2",
+           "asset_type": AssetType.DC,
+           "display_comments": False,
+           "filter_synthesis": "hourly, daily, weekly, monthly, annual",
+           "filter_year_by_year": "hourly, daily, weekly, monthly, annual",
+           "hurdles_cost": True,
+           "loop_flow": True,
+           "transmission_capacities": TransmissionCapacity.ENABLED,
+           "ui": None,
+           "use_phase_shifter": False
+       },
+       {
+           "area1": "a1",
+           "area2": "a3",
+           "asset_type": AssetType.AC,
+           "display_comments": True,
+           "filter_synthesis": "hourly, daily, weekly, monthly, annual",
+           "filter_year_by_year": "hourly, daily, weekly, monthly, annual",
+           "hurdles_cost": True,
+           "loop_flow": False,
+           "transmission_capacities": TransmissionCapacity.ENABLED,
+           "ui": None,
+           "use_phase_shifter": True
+       },
+       {
+           "area1": "a2",
+           "area2": "a3",
+           "asset_type": AssetType.AC,
+           "display_comments": True,
+           "filter_synthesis": "hourly, daily, weekly, monthly, annual",
+           "filter_year_by_year": "hourly, daily, weekly, monthly, annual",
+           "hurdles_cost": True,
+           "loop_flow": False,
+           "transmission_capacities": TransmissionCapacity.ENABLED,
+           "ui": None,
+           "use_phase_shifter": True
+       }
     ] == [link.model_dump() for link in links]
 
 

@@ -65,6 +65,41 @@ class TransmissionCapacity(EnumIgnoreCase):
     IGNORE = "ignore"
     ENABLED = "enabled"
 
+class LinkStyle(EnumIgnoreCase):
+    """
+    Enum representing the style of a link in a network visualization.
+
+    Attributes:
+        DOT: Represents a dotted line style.
+        PLAIN: Represents a solid line style.
+        DASH: Represents a dashed line style.
+        DOT_DASH: Represents a line style with alternating dots and dashes.
+    """
+
+    DOT = "dot"
+    PLAIN = "plain"
+    DASH = "dash"
+    DOT_DASH = "dotdash"
+
+
+class FilterOption(EnumIgnoreCase):
+    """
+    Enum representing the time filter options for data visualization or analysis in Antares Web.
+
+    Attributes:
+        HOURLY: Represents filtering data by the hour.
+        DAILY: Represents filtering data by the day.
+        WEEKLY: Represents filtering data by the week.
+        MONTHLY: Represents filtering data by the month.
+        ANNUAL: Represents filtering data by the year.
+    """
+
+    HOURLY = "hourly"
+    DAILY = "daily"
+    WEEKLY = "weekly"
+    MONTHLY = "monthly"
+    ANNUAL = "annual"
+
 
 class LinkProperties(IniProperties):
     """
