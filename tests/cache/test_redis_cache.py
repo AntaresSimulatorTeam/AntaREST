@@ -14,8 +14,8 @@ from pathlib import Path
 from unittest.mock import Mock
 
 from antarest.core.cache.business.redis_cache import RedisCache, RedisCacheElement
-from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfigDTO
 from antarest.core.serialization.utils import from_json
+from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfigDTO
 
 
 def test_lifecycle():
