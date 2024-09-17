@@ -4,7 +4,7 @@ import { getParentPaths, type TreeFolder } from "../utils";
 
 interface Props {
   data: TreeFolder;
-  // `currentPath` must not be undefined to make `SimpleTreeView` controlled
+  // `currentPath` must not be `undefined` to make `SimpleTreeView` controlled
   currentPath: string | null;
   expandedItems: string[];
   setExpandedItems: React.Dispatch<React.SetStateAction<string[]>>;

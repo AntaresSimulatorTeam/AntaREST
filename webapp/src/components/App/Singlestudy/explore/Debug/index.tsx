@@ -93,7 +93,7 @@ function Debug() {
 
   return (
     <SplitView id="debug" sizes={[15, 85]}>
-      <Box sx={{ overflow: "auto" }}>
+      <Box sx={{ px: 1, overflow: "auto" }}>
         <UsePromiseCond
           response={res}
           ifResolved={(data) => (
