@@ -42,7 +42,7 @@ from antarest.core.interfaces.eventbus import Event, EventChannelDirectory, Even
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.model import JSON, PermissionInfo, PublicMode, StudyPermissionType
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
-from antarest.core.serialization.utils import to_json
+from antarest.core.serialization import to_json_string
 from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskResult, TaskType
 from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT, ITaskService, TaskUpdateNotifier, noop_notifier
 from antarest.core.utils.utils import assert_this, suppress_exception
@@ -189,7 +189,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         new_commands = [
             CommandBlock(
                 command=command.action,
-                args=to_json(command.args).decode("utf-8"),
+                args=to_json_string(command.args),
                 index=(first_index + i),
                 version=command.version,
             )
@@ -226,9 +226,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         validated_commands = transform_command_to_dto(command_objs, commands)
         # noinspection PyArgumentList
         study.commands = [
-            CommandBlock(
-                command=command.action, args=to_json(command.args).decode("utf-8"), index=i, version=command.version
-            )
+            CommandBlock(command=command.action, args=to_json_string(command.args), index=i, version=command.version)
             for i, command in enumerate(validated_commands)
         ]
         self.invalidate_cache(study, invalidate_self_snapshot=True)
@@ -319,7 +317,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         index = [command.id for command in study.commands].index(command_id)
         if index >= 0:
             study.commands[index].command = validated_commands[0].action
-            study.commands[index].args = to_json(validated_commands[0].args).decode("utf-8")
+            study.commands[index].args = to_json_string(validated_commands[0].args)
             self.invalidate_cache(study, invalidate_self_snapshot=True)
 
     def export_commands_matrices(self, study_id: str, params: RequestParameters) -> FileDownloadTaskDTO:

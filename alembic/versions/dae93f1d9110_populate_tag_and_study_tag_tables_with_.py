@@ -15,7 +15,7 @@ from alembic import op
 from sqlalchemy.engine import Connection  # type: ignore
 
 from antarest.study.css4_colors import COLOR_NAMES
-from antarest.core.serialization.utils import from_json, to_json
+from antarest.core.serialization import from_json, to_json
 
 # revision identifiers, used by Alembic.
 revision = "dae93f1d9110"

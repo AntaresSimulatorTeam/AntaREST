@@ -24,7 +24,7 @@ import pydantic_core
 from filelock import FileLock
 
 from antarest.core.model import JSON, SUB_JSON
-from antarest.core.serialization.utils import from_json
+from antarest.core.serialization import from_json
 from antarest.study.storage.rawstudy.ini_reader import IniReader, IReader
 from antarest.study.storage.rawstudy.ini_writer import IniWriter
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig

@@ -14,7 +14,7 @@ from pathlib import Path
 from unittest.mock import Mock
 
 from antarest.core.cache.business.redis_cache import RedisCache, RedisCacheElement
-from antarest.core.serialization.utils import from_json
+from antarest.core.serialization import from_json
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfigDTO
 
 

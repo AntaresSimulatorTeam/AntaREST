@@ -15,7 +15,7 @@ import typing as t
 from pathlib import Path
 
 from antarest.core.model import JSON
-from antarest.core.serialization.utils import from_json, to_json
+from antarest.core.serialization import from_json, to_json
 from antarest.study.storage.rawstudy.ini_reader import IReader
 from antarest.study.storage.rawstudy.ini_writer import IniWriter
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig

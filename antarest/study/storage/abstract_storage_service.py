@@ -22,7 +22,7 @@ from antarest.core.config import Config
 from antarest.core.exceptions import BadOutputError, StudyOutputNotFoundError
 from antarest.core.interfaces.cache import CacheConstants, ICache
 from antarest.core.model import JSON, PublicMode
-from antarest.core.serialization.utils import from_json
+from antarest.core.serialization import from_json
 from antarest.core.utils.utils import StopWatch, extract_zip, unzip, zip_dir
 from antarest.login.model import GroupDTO
 from antarest.study.common.studystorage import IStudyStorageService, T

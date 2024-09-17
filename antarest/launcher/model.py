@@ -19,7 +19,7 @@ from sqlalchemy import Column, DateTime, Enum, ForeignKey, Integer, Sequence, St
 from sqlalchemy.orm import relationship  # type: ignore
 
 from antarest.core.persistence import Base
-from antarest.core.serialization.utils import from_json
+from antarest.core.serialization import from_json
 from antarest.login.model import Identity, UserInfo
 from antarest.study.business.all_optional_meta import camel_case_model
 
