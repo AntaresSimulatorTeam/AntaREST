@@ -13,7 +13,6 @@
 import collections
 import http
 import io
-import json
 import logging
 import typing as t
 from pathlib import Path, PurePosixPath
@@ -26,6 +25,7 @@ from antarest.core.config import Config
 from antarest.core.jwt import JWTUser
 from antarest.core.model import SUB_JSON
 from antarest.core.requests import RequestParameters
+from antarest.core.serialization import from_json, to_json
 from antarest.core.swagger import get_path_examples
 from antarest.core.utils.utils import sanitize_string, sanitize_uuid
 from antarest.core.utils.web import APITag
@@ -148,7 +148,7 @@ def create_raw_study_routes(
                 # Use `JSONResponse` to ensure to return a valid JSON response
                 # that checks `NaN` and `Infinity` values.
                 try:
-                    output = json.loads(output)
+                    output = from_json(output)
                     return JSONResponse(content=output)
                 except ValueError as exc:
                     raise HTTPException(
@@ -182,13 +182,7 @@ def create_raw_study_routes(
         # even though they are not standard JSON values because they are supported in JavaScript.
         # Additionally, we cannot use `orjson` because, despite its superior performance, it converts
         # `NaN` and other values to `null`, even when using a custom encoder.
-        json_response = json.dumps(
-            output,
-            ensure_ascii=False,
-            allow_nan=True,
-            indent=None,
-            separators=(",", ":"),
-        ).encode("utf-8")
+        json_response = to_json(output)
         return Response(content=json_response, media_type="application/json")
 
     @bp.get(
