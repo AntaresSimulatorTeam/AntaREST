@@ -12,6 +12,8 @@
 
 import datetime
 import re
+import typing
+
 from pathlib import Path
 from unittest.mock import Mock
 
@@ -19,12 +21,14 @@ import numpy as np
 import pytest
 
 from antarest.core.model import PublicMode
-from antarest.core.requests import RequestParameters
+from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.core.utils.utils import sanitize_uuid
 from antarest.login.model import Group, User
 from antarest.matrixstore.service import SimpleMatrixService
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import RawStudy, StudyAdditionalData
+from antarest.study.service import StudyService
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import STStorageConfig, STStorageGroup
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
@@ -34,6 +38,8 @@ from antarest.study.storage.variantstudy.model.command.create_area import Create
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
+from antarest.core.exceptions import VariantAgeMustBePositive
+
 from tests.helpers import with_db_context
 
 # noinspection SpellCheckingInspection
@@ -239,3 +245,174 @@ class TestVariantStudyService:
         else:
             expected = EXPECTED_DENORMALIZED
         assert res_study_files == expected
+
+    @with_db_context
+    def test_clear_all_snapshots(
+            self,
+            tmp_path: Path,
+            variant_study_service: VariantStudyService,
+            raw_study_service: RawStudyService,
+            monkeypatch: pytest.MonkeyPatch
+    ):
+        """
+        - Test return value in case the user is not allowed to call the function,
+        - Test return value in case the user give a bad argument (negative
+        integer or other type than integer)
+        - Test deletion of an old snapshot and a recent one
+
+        In order to test date and time of objects, a FakeDateTime class is defined and used
+        by a monkeypatch context
+        """
+
+        class FakeDatetime:
+            """
+            Class that handle fake timestamp creation/update of variant
+            """
+
+            fake_time: typing.Optional[datetime.datetime]
+
+            @classmethod
+            def now(cls):
+                """Method used to get the custom timestamp"""
+                return datetime.datetime(2023, 12, 31)
+
+            @classmethod
+            def utcnow(cls):
+                """Method used while a variant is created"""
+                return cls.now()
+
+        # Set up: we need at least a user, one raw study and one variant
+        # Create two users
+        # an admin user
+        # noinspection PyArgumentList
+        admin_user = User(id=0, name="admin")
+        db.session.add(admin_user)
+        db.session.commit()
+
+        regular_user = User(id=1, name="regular")
+        db.session.add(regular_user)
+        db.session.commit()
+
+        # noinspection PyArgumentList
+        group = Group(id="my-group", name="group")
+        db.session.add(group)
+        db.session.commit()
+
+        # Create a raw study (root of the variant)
+        raw_study_path = tmp_path / "My RAW Study"
+        # noinspection PyArgumentList
+        raw_study = RawStudy(
+            id="my_raw_study",
+            name=raw_study_path.name,
+            version="860",
+            author="John Smith",
+            created_at=datetime.datetime(2023, 7, 15, 16, 45),
+            updated_at=datetime.datetime(2023, 7, 19, 8, 15),
+            last_access=datetime.datetime.utcnow(),
+            public_mode=PublicMode.FULL,
+            owner=admin_user,
+            groups=[group],
+            path=str(raw_study_path),
+            additional_data=StudyAdditionalData(author="John Smith"),
+        )
+
+        db.session.add(raw_study)
+        db.session.commit()
+
+        admin_rights_mock = Mock(impersonator=admin_user.id, is_site_admin=Mock(return_value=True))
+        regular_rights_mock = Mock(impersonator=regular_user.id, is_site_admin=Mock(return_value=None))
+
+        # Set up the Raw Study
+        raw_study_service.create(raw_study)
+
+        # Variant studies
+        variant_list = []
+
+        # For each variant created
+        with monkeypatch.context() as m:
+            # Set the system date older to create older variants
+            m.setattr("antarest.study.storage.variantstudy.variant_study_service.datetime", FakeDatetime)
+
+            for index in range(3):
+                variant_list.append(
+                    variant_study_service.create_variant_study(
+                        raw_study.id,
+                        "Variant{}".format(str(index)),
+                        params=Mock(
+                            spec=RequestParameters,
+                            user=regular_rights_mock,
+                        ),
+                    )
+                )
+
+                # Generate a snapshot for each variant
+                variant_study_service.generate(
+                    sanitize_uuid(variant_list[index].id),
+                    False,
+                    False,
+                    regular_rights_mock
+                )
+
+        variant_study_path = Path(tmp_path).joinpath("internal_studies")
+
+        # Check if everything was correctly initialized
+        assert len(list(variant_study_path.iterdir())) == 3
+
+        for variant in variant_study_path.iterdir():
+            assert variant.is_dir()
+            assert list(variant.iterdir())[0].name == "snapshot"
+
+        # Begin tests
+        # A user without rights cannot clear snapshots
+        try:
+            variant_study_service.clear_all_snapshots(1)  # must raise an error
+        except UserHasNotPermissionError:
+            pass
+        else:
+            raise AssertionError("A non admin user cannot perform an action on snapshots.")
+
+        # The limit value must be positive. Returns an exception otherwise
+        try:
+            variant_study_service.clear_all_snapshots(-1, admin_rights_mock)
+        except VariantAgeMustBePositive:
+            pass
+        else:
+            raise AssertionError("Limit hour cannot be negative")
+
+        # At this point, variants was not accessed yet
+        # Thus snapshot directories must exist still
+        variant_study_service.clear_all_snapshots(5, admin_rights_mock)
+
+        for variant in variant_study_path.iterdir():
+            assert variant.is_dir()
+            assert list(variant.iterdir())
+
+        # Simulate access for two old snapshots
+        variant_list[0].last_access = datetime.datetime.utcnow() - datetime.timedelta(days=60)
+        variant_list[1].last_access = datetime.datetime.utcnow() - datetime.timedelta(hours=6)
+
+        # Simulate access for a recent one
+        variant_list[2].last_access = datetime.datetime.utcnow() - datetime.timedelta(hours=1)
+
+        # Clear old snapshots
+        variant_study_service.clear_all_snapshots(5, admin_rights_mock)
+
+        # Check if old snapshots was successfully cleared
+        nb_snapshot_dir = 0  # after the for iterations, must be equal to 1
+        for variant_path in variant_study_path.iterdir():
+            if variant_path.joinpath("snapshot").exists():
+                nb_snapshot_dir += 1
+        assert nb_snapshot_dir == 1
+
+        # Clear recent snapshots
+        variant_study_service.clear_all_snapshots(0, admin_rights_mock)
+
+        # Check if all snapshots was cleared
+        nb_snapshot_dir = 0  # after the for iterations, must be equal to 0
+        for variant_path in variant_study_path.iterdir():
+            if variant_path.joinpath("snapshot").exists():
+                nb_snapshot_dir += 1
+            assert nb_snapshot_dir == 0
+
+
+
