@@ -206,7 +206,7 @@ export function useMatrix(
 
       const newUpdates: MatrixUpdateDTO[] = updates
         .map(({ coordinates: [row, col], value }) => {
-          if (value.kind === GridCellKind.Number && value.data) {
+          if (value.kind === GridCellKind.Number && value.data !== undefined) {
             updatedData[col][row] = value.data;
 
             return {
