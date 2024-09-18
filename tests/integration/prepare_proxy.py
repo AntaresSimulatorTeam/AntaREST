@@ -90,7 +90,7 @@ class PreparerProxy:
         task_id = res.json()
         assert task_id
 
-        task = wait_task_completion(self.client, self.user_access_token, task_id, timeout=20)
+        task = wait_task_completion(self.client, self.user_access_token, task_id, base_timeout=20)
         assert task.status == TaskStatus.COMPLETED
         return study_id
 
@@ -173,7 +173,7 @@ class PreparerProxy:
         task_id = res.json()
         assert task_id
 
-        task = wait_task_completion(self.client, self.user_access_token, task_id, timeout=20)
+        task = wait_task_completion(self.client, self.user_access_token, task_id, base_timeout=20)
         assert task.status == TaskStatus.COMPLETED
 
     def create_area(self, study_id: str, *, name: str, country: str = "FR") -> t.Dict[str, t.Any]:

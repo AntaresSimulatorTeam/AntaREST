@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-import json
 import logging
 from typing import List, Optional
 
@@ -19,6 +18,7 @@ from redis.client import Redis
 
 from antarest.core.interfaces.cache import ICache
 from antarest.core.model import JSON
+from antarest.core.serialization import from_json
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +49,7 @@ class RedisCache(ICache):
         logger.info(f"Trying to retrieve cache key {id}")
         if result is not None:
             logger.info(f"Cache key {id} found")
-            json_result = json.loads(result)
+            json_result = from_json(result)
             redis_element = RedisCacheElement(duration=json_result["duration"], data=json_result["data"])
             self.redis.expire(
                 redis_key,

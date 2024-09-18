@@ -11,15 +11,15 @@
 # This file is part of the Antares project.
 
 import enum
-import json
 import typing as t
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, Field
 from sqlalchemy import Column, DateTime, Enum, ForeignKey, Integer, Sequence, String  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
 
 from antarest.core.persistence import Base
+from antarest.core.serialization import from_json
 from antarest.login.model import Identity, UserInfo
 from antarest.study.business.all_optional_meta import camel_case_model
 
@@ -54,7 +54,7 @@ class LauncherParametersDTO(BaseModel):
         """
         if params is None:
             return cls()
-        return cls.model_validate(json.loads(params))
+        return cls.model_validate(from_json(params))
 
 
 class LogType(str, enum.Enum):

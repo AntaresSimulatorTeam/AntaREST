@@ -47,11 +47,11 @@ from antarest.front import add_front_app
 from antarest.login.auth import Auth, JwtSettings
 from antarest.login.model import init_admin_user
 from antarest.matrixstore.matrix_garbage_collector import MatrixGarbageCollector
+from antarest.service_creator import SESSION_ARGS, Module, create_services, init_db_engine
 from antarest.singleton_services import start_all_services
 from antarest.study.storage.auto_archive_service import AutoArchiveService
 from antarest.study.storage.rawstudy.watcher import Watcher
 from antarest.tools.admin_lib import clean_locks
-from antarest.utils import SESSION_ARGS, Module, create_services, init_db_engine
 
 logger = logging.getLogger(__name__)
 

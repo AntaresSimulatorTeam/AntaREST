@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 
 import csv
-import json
 import logging
 import os
 import re
@@ -26,6 +25,7 @@ from zipfile import ZIP_DEFLATED, ZipFile
 from fastapi import HTTPException
 
 from antarest.core.exceptions import ChildNotFoundError
+from antarest.core.serialization import to_json
 from antarest.study.model import (
     ExportFormat,
     MatrixAggregationResult,
@@ -343,15 +343,8 @@ class StudyDownloader:
         target_file: Path,
     ) -> None:
         if filetype == ExportFormat.JSON:
-            with open(target_file, "w") as fh:
-                json.dump(
-                    matrix.model_dump(),
-                    fh,
-                    ensure_ascii=False,
-                    allow_nan=True,
-                    indent=None,
-                    separators=(",", ":"),
-                )
+            with open(target_file, "wb") as fh:
+                fh.write(to_json(matrix.model_dump()))
         else:
             StudyDownloader.write_inside_archive(target_file, filetype, matrix)
 

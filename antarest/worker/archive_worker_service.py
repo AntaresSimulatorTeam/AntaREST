@@ -19,7 +19,7 @@ from antarest import __version__
 from antarest.core.config import Config
 from antarest.core.logging.utils import configure_logger
 from antarest.core.utils.utils import get_local_path
-from antarest.utils import create_archive_worker
+from antarest.service_creator import create_archive_worker
 
 # use the real module name instead of `__name__` (because `__name__ == "__main__"`)
 logger = logging.getLogger("antarest.worker.archive_worker_service")
