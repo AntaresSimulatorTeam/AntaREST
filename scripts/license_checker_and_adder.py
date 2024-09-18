@@ -42,7 +42,8 @@ def is_license_file(filename: str) -> bool:
 
 def check_file(file_path: Path, action: str, license_as_list: List[str], license_to_save: List[str]) -> bool:
     file_content = file_path.read_text().splitlines()
-    if len(file_content) >= 11 and file_content[:11] == license_as_list:
+    n = len(license_as_list)
+    if len(file_content) >= n and file_content[:n] == license_as_list:
         return True
     click.echo(f"{file_path} has no valid header.")
     new_lines = []
