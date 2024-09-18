@@ -24,7 +24,13 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.matrixstore.repository import MatrixContentRepository
 from antarest.matrixstore.service import SimpleMatrixService
 from antarest.study.business.area_management import AreaCreationDTO, AreaManager, AreaType, UpdateAreaUi
-from antarest.study.business.link_management import LinkInfoDTO, LinkManager
+from antarest.study.business.link_management import (
+    LinkInfoDTO820,
+    LinkInfoDTOBase,
+    LinkInfoDTOType,
+    LinkInfoFactory,
+    LinkManager,
+)
 from antarest.study.model import Patch, PatchArea, PatchCluster, RawStudy, StudyAdditionalData
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.patch_service import PatchService
@@ -104,6 +110,7 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
     # noinspection PyArgumentList
     study = RawStudy(
         id=study_id,
+        version="-1",
         path=str(empty_study.config.study_path),
         additional_data=StudyAdditionalData(),
     )
@@ -136,7 +143,16 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
     }
 
     area_manager.create_area(study, AreaCreationDTO(name="test2", type=AreaType.AREA))
-    link_manager.create_link(study, LinkInfoDTO(area1="test", area2="test2"))
+    link_manager.create_link(
+        study,
+        LinkInfoFactory.create_link_info(
+            version=-1,
+            area1="test",
+            area2="test2",
+            filter_synthesis=FilteringOptions.FILTER_SYNTHESIS,
+            filter_year_by_year=FilteringOptions.FILTER_YEAR_BY_YEAR,
+        ),
+    )
     assert empty_study.config.areas["test"].links.get("test2") is not None
 
     link_manager.delete_link(study, "test", "test2")
@@ -150,6 +166,7 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
     # noinspection PyArgumentList
     study = VariantStudy(
         id=variant_id,
+        version="900",
         path=str(empty_study.config.study_path),
         additional_data=StudyAdditionalData(),
     )
@@ -218,7 +235,15 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
     )
 
     area_manager.create_area(study, AreaCreationDTO(name="test2", type=AreaType.AREA))
-    link_manager.create_link(study, LinkInfoDTO(area1="test", area2="test2"))
+    link_manager.create_link(
+        study,
+        LinkInfoDTO820(
+            area1="test",
+            area2="test2",
+            filter_synthesis=FilteringOptions.FILTER_SYNTHESIS,
+            filter_year_by_year=FilteringOptions.FILTER_YEAR_BY_YEAR,
+        ),
+    )
     variant_study_service.append_commands.assert_called_with(
         variant_id,
         [
@@ -271,7 +296,7 @@ def test_get_all_area():
     )
     link_manager = LinkManager(storage_service=StudyStorageService(raw_study_service, Mock()))
 
-    study = RawStudy()
+    study = RawStudy(version="900")
     config = FileStudyTreeConfig(
         study_path=Path("somepath"),
         path=Path("somepath"),
@@ -475,7 +500,6 @@ def test_get_all_area():
             }
         },
     ]
-
     links = link_manager.get_all_links(study)
     assert [
         {
