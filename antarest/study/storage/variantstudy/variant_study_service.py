@@ -497,7 +497,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
 
         Returns: study data formatted in json
         """
-        self._safe_generation(metadata, timeout=60)
+        self._safe_generation(metadata, timeout=600)
         self.repository.refresh(metadata)
         return super().get(
             metadata=metadata,
@@ -939,7 +939,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             study: study
         Returns: study output data
         """
-        self._safe_generation(study, timeout=60)
+        self._safe_generation(study, timeout=600)
         return super().get_study_sim_result(study=study)
 
     def set_reference_output(self, metadata: VariantStudy, output_id: str, status: bool) -> None:
