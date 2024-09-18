@@ -39,7 +39,6 @@ import {
 } from "../../../../../../redux/selectors";
 import { getStudyData } from "../../../../../../services/api/study";
 import { isSearchMatching } from "../../../../../../utils/stringUtils";
-import EditableMatrix from "../../../../../common/EditableMatrix";
 import PropertiesView from "../../../../../common/PropertiesView";
 import SplitLayoutView from "../../../../../common/SplitLayoutView";
 import ListElement from "../../common/ListElement";
@@ -60,7 +59,10 @@ import BooleanFE from "../../../../../common/fieldEditors/BooleanFE";
 import SelectFE from "../../../../../common/fieldEditors/SelectFE";
 import NumberFE from "../../../../../common/fieldEditors/NumberFE";
 import moment from "moment";
-import DownloadMatrixButton from "../../../../../common/buttons/DownloadMatrixButton.tsx";
+import DownloadMatrixButton from "../../../../../common/DownloadMatrixButton.tsx";
+import MatrixGrid from "../../../../../common/MatrixGrid/index.tsx";
+import { generateCustomColumns } from "../../../../../common/MatrixGrid/utils.ts";
+import { ColumnTypes } from "../../../../../common/MatrixGrid/types.ts";
 
 function ResultDetails() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -284,16 +286,21 @@ function ResultDetails() {
               ifPending={() => (
                 <Skeleton sx={{ height: 1, transform: "none" }} />
               )}
-              ifResolved={(matrix) =>
-                matrix && (
-                  <EditableMatrix
-                    matrix={matrix}
-                    columnsNames={matrix.columns}
-                    matrixTime={false}
-                    readOnly
-                  />
-                )
-              }
+              ifResolved={(matrix) => {
+                console.log("synthesisRes", matrix);
+                return (
+                  matrix && (
+                    <MatrixGrid
+                      data={matrix.data}
+                      rows={matrix.data.length}
+                      columns={generateCustomColumns({
+                        titles: matrix.columns,
+                      })}
+                      isReaOnlyEnabled
+                    />
+                  )
+                );
+              }}
             />
           </Box>
         ) : (
@@ -412,16 +419,31 @@ function ResultDetails() {
                 ifPending={() => (
                   <Skeleton sx={{ height: 1, transform: "none" }} />
                 )}
-                ifResolved={([, matrix]) =>
-                  matrix && (
-                    <EditableMatrix
-                      matrix={matrix}
-                      matrixTime={false}
-                      rowNames={dateTimeFromIndex}
-                      readOnly
-                    />
-                  )
-                }
+                ifResolved={([, matrix]) => {
+                  return (
+                    matrix && (
+                      <>
+                        <MatrixGrid
+                          data={matrix.data}
+                          rows={matrix.data.length}
+                          columns={[
+                            {
+                              id: "date",
+                              title: "Date",
+                              type: ColumnTypes.DateTime,
+                              editable: false,
+                            },
+                            ...generateCustomColumns({
+                              titles: matrix.columns,
+                            }),
+                          ]}
+                          dateTime={dateTimeFromIndex}
+                          isReaOnlyEnabled
+                        />
+                      </>
+                    )
+                  );
+                }}
                 ifRejected={(err) => (
                   <Box
                     sx={{
