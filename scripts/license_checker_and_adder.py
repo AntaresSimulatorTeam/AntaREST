@@ -8,7 +8,7 @@ import click
 # Use to skip subtrees that have their own licenses (forks)
 LICENSE_FILE_PATTERN = re.compile("LICENSE.*")
 
-ANTARES_LICENSE_HEADER = """# Copyright (c) 2024, RTE (https://www.rte-france.com)
+BACKEND_LICENSE_HEADER = """# Copyright (c) 2024, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -21,17 +21,29 @@ ANTARES_LICENSE_HEADER = """# Copyright (c) 2024, RTE (https://www.rte-france.co
 # This file is part of the Antares project.
 """
 
-LICENSE_AS_LIST = ANTARES_LICENSE_HEADER.splitlines()
-LICENSE_TO_SAVE = [header + "\n" for header in LICENSE_AS_LIST] + ["\n"]
+FRONTEND_LICENSE_HEADER = """/** Copyright (c) 2024, RTE (https://www.rte-france.com)
+ *
+ * See AUTHORS.txt
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This file is part of the Antares project.
+ */
+"""
 
 
 def is_license_file(filename: str) -> bool:
     return LICENSE_FILE_PATTERN.match(filename) is not None
 
 
-def check_file(file_path: Path, action: str) -> bool:
+def check_file(file_path: Path, action: str, license_as_list: List[str], license_to_save: List[str]) -> bool:
     file_content = file_path.read_text().splitlines()
-    if len(file_content) >= 11 and file_content[:11] == LICENSE_AS_LIST:
+    n = len(license_as_list)
+    if len(file_content) >= n and file_content[:n] == license_as_list:
         return True
     click.echo(f"{file_path} has no valid header.")
     new_lines = []
@@ -45,13 +57,21 @@ def check_file(file_path: Path, action: str) -> bool:
             if already_licensed:  # I don't really know what to do here
                 raise ValueError(f"File {file_path} already licensed.")
             else:
-                new_lines = LICENSE_TO_SAVE + lines
+                new_lines = license_to_save + lines
     if new_lines:
         with open(file_path, "w") as f:
             f.writelines(new_lines)
 
 
-def check_dir(cwd: Path, dir_path: Path, action: str, invalid_files: List[Path]) -> None:
+def check_dir(
+    cwd: Path,
+    dir_path: Path,
+    action: str,
+    invalid_files: List[Path],
+    suffixes: List[str],
+    license_as_list: List[str],
+    license_to_save: List[str],
+) -> None:
     _, dirnames, filenames = next(os.walk(dir_path))
     for f in filenames:
         if dir_path != cwd and is_license_file(f):
@@ -61,14 +81,14 @@ def check_dir(cwd: Path, dir_path: Path, action: str, invalid_files: List[Path])
     for f in filenames:
         file_path = dir_path / f
 
-        if file_path.suffixes != [".py"]:
+        if file_path.suffix not in suffixes:
             continue
 
-        if not check_file(file_path, action):
+        if not check_file(file_path, action, license_as_list, license_to_save):
             invalid_files.append(file_path)
 
     for d in dirnames:
-        check_dir(cwd, dir_path / d, action, invalid_files)
+        check_dir(cwd, dir_path / d, action, invalid_files, suffixes, license_as_list, license_to_save)
 
 
 @click.command("license_checker_and_adder")
@@ -93,7 +113,16 @@ def cli(path: Path, action: str) -> None:
 
     invalid_files = []
     cwd = Path.cwd()
-    check_dir(cwd, path, action, invalid_files)
+    # --------- infer which files to check and which license to add
+    suffixes = [".ts", ".tsx"]
+    license_header = FRONTEND_LICENSE_HEADER
+    if path.name in ["antarest", "tests"]:
+        suffixes = [".py"]
+        license_header = BACKEND_LICENSE_HEADER
+    license_as_list = license_header.splitlines()
+    license_to_save = [header + "\n" for header in license_as_list] + ["\n"]
+    # --------
+    check_dir(cwd, path, action, invalid_files, suffixes, license_as_list, license_to_save)
     file_count = len(invalid_files)
     if file_count > 0:
         if action == "fix":
