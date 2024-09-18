@@ -154,7 +154,7 @@ class LinkManager:
         )
         execute_or_add_commands(study, file_study, [command], self.storage_service)
 
-    def get_all_links_props(self, study: RawStudy) -> dict[tuple[Union[str, Any], Union[str, Any]], LinkOutput]:
+    def get_all_links_props(self, study: RawStudy) -> t.Mapping[t.Tuple[str, str], LinkOutput]:
         """
         Retrieves all links properties from the study.
 
@@ -190,7 +190,7 @@ class LinkManager:
         self,
         study: RawStudy,
         update_links_by_ids: t.Mapping[t.Tuple[str, str], LinkOutput],
-    ) -> dict[tuple[str, str], LinkOutput]:
+    ) -> t.Mapping[t.Tuple[str, str], LinkOutput]:
         old_links_by_ids = self.get_all_links_props(study)
         new_links_by_ids = {}
         file_study = self.storage_service.get_storage(study).get_raw(study)
