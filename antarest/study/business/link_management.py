@@ -37,8 +37,8 @@ _ALL_LINKS_PATH = "input/links"
 
 class LinkUIDTO(BaseModel):
     color: str
-    width: float = 1
-    style: LinkStyle = "plain"
+    width: float
+    style: LinkStyle
 
 
 class LinkInfoDTOBase(BaseModel):
@@ -190,7 +190,7 @@ class LinkManager:
         self,
         study: RawStudy,
         update_links_by_ids: t.Mapping[t.Tuple[str, str], LinkOutput],
-    ) -> dict[tuple[str, str], BaseModel]:
+    ) -> dict[tuple[str, str], LinkOutput]:
         old_links_by_ids = self.get_all_links_props(study)
         new_links_by_ids = {}
         file_study = self.storage_service.get_storage(study).get_raw(study)

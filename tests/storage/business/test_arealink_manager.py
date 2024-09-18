@@ -166,7 +166,7 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
     # noinspection PyArgumentList
     study = VariantStudy(
         id=variant_id,
-        version="900",
+        version="-1",
         path=str(empty_study.config.study_path),
         additional_data=StudyAdditionalData(),
     )
@@ -235,6 +235,7 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
     )
 
     area_manager.create_area(study, AreaCreationDTO(name="test2", type=AreaType.AREA))
+    study.version = 880
     link_manager.create_link(
         study,
         LinkInfoDTO820(
@@ -261,6 +262,35 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
                         "display-comments": True,
                         "filter-synthesis": "hourly, daily, weekly, monthly, annual",
                         "filter-year-by-year": "hourly, daily, weekly, monthly, annual",
+                    },
+                },
+            ),
+        ],
+        RequestParameters(DEFAULT_ADMIN_USER),
+    )
+    study.version = 810
+    link_manager.create_link(
+        study,
+        LinkInfoDTOBase(
+            area1="test",
+            area2="test2",
+        ),
+    )
+    variant_study_service.append_commands.assert_called_with(
+        variant_id,
+        [
+            CommandDTO(
+                action=CommandName.CREATE_LINK.value,
+                args={
+                    "area1": "test",
+                    "area2": "test2",
+                    "parameters": {
+                        "hurdles-cost": False,
+                        "loop-flow": False,
+                        "use-phase-shifter": False,
+                        "transmission-capacities": TransmissionCapacity.ENABLED,
+                        "asset-type": AssetType.AC,
+                        "display-comments": True,
                     },
                 },
             ),
