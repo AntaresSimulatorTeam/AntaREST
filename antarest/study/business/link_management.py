@@ -154,7 +154,7 @@ class LinkManager:
         )
         execute_or_add_commands(study, file_study, [command], self.storage_service)
 
-    def get_all_links_props(self, study: RawStudy) -> dict[tuple[Union[str, Any], Union[str, Any]], BaseModel]:
+    def get_all_links_props(self, study: RawStudy) -> dict[tuple[Union[str, Any], Union[str, Any]], LinkOutput]:
         """
         Retrieves all links properties from the study.
 
