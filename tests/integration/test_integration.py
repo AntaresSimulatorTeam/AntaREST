@@ -632,7 +632,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
             "link_width": 1.0,
             "loop_flow": False,
             "transmission_capacities": "enabled",
-            "use_phase_shifter": False
+            "use_phase_shifter": False,
         }
     ]
 

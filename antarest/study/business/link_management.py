@@ -128,7 +128,9 @@ class LinkInfoFactory:
             )
 
     @staticmethod
-    def create_parameters(study_version: int, link_creation_info: LinkInfoDTOType) -> t.Dict[str, t.Union[str, bool, float]]:
+    def create_parameters(
+        study_version: int, link_creation_info: LinkInfoDTOType
+    ) -> t.Dict[str, t.Union[str, bool, float]]:
         """
         Creates the parameters for the link creation command, handling version differences.
 
@@ -158,7 +160,6 @@ class LinkInfoFactory:
             parameters["filter-year-by-year"] = link_creation_info.filter_year_by_year
 
         return parameters
-
 
 
 @all_optional_model
@@ -206,7 +207,7 @@ class LinkManager:
                     )
                     link_creation_data.update(ui_parameters)
                 else:
-                     link_creation_data.update(
+                    link_creation_data.update(
                         {"colorr": None, "colorb": None, "colorg": None, "link_width": None, "link_style": None}
                     )
                 link_info_dto = LinkInfoFactory.create_link_info(**link_creation_data)
@@ -302,7 +303,9 @@ class LinkManager:
         for (area1, area2), update_link_dto in update_links_by_ids.items():
             # Update the link properties.
             old_link_dto = old_links_by_ids[(area1, area2)]
-            updated_link_properties = old_link_dto.copy(update=update_link_dto.model_dump(by_alias=False, exclude_none=True))
+            updated_link_properties = old_link_dto.copy(
+                update=update_link_dto.model_dump(by_alias=False, exclude_none=True)
+            )
             new_links_by_ids[(area1, area2)] = updated_link_properties
 
             # Convert the DTO to a configuration object and update the configuration file.
