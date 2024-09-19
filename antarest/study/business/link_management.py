@@ -13,7 +13,7 @@
 import typing as t
 from typing import Any, Dict, Tuple, Union
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from antarest.core.exceptions import ConfigFileNotFound, InvalidFieldForVersionError
 from antarest.core.model import JSON
@@ -21,10 +21,8 @@ from antarest.study.business.all_optional_meta import all_optional_model, camel_
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import RawStudy
 from antarest.study.storage.rawstudy.model.filesystem.config.links import (
-    AssetType,
     LinkProperties,
     LinkStyle,
-    TransmissionCapacity,
 )
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.common import FilteringOptions
@@ -47,8 +45,8 @@ class LinkInfoDTOBase(BaseModel):
     hurdles_cost: t.Optional[bool] = False
     loop_flow: t.Optional[bool] = False
     use_phase_shifter: t.Optional[bool] = False
-    transmission_capacities: t.Optional[TransmissionCapacity] = "enabled"
-    asset_type: t.Optional[AssetType] = "ac"
+    transmission_capacities: t.Optional[str] = "enabled"
+    asset_type: t.Optional[str] = "ac"
     display_comments: t.Optional[bool] = True
     ui: t.Optional[LinkUIDTO] = None
 
@@ -64,10 +62,15 @@ LinkInfoDTOType = t.Union[LinkInfoDTO820, LinkInfoDTOBase]
 class LinkInfoFactory:
     @staticmethod
     def create_link_info(version: int, **kwargs) -> LinkInfoDTOType:
-        if version >= 820 and ("filter_synthesis" in kwargs or "filter_year_by_year" in kwargs):
-            return LinkInfoDTO820(**kwargs)
+        filters_provided = kwargs.get("filter_synthesis") is not None or kwargs.get("filter_year_by_year") is not None
+
+        if version >= 820:
+            link_info = LinkInfoDTO820(**kwargs)
         else:
-            return LinkInfoDTOBase(**kwargs)
+            link_info = LinkInfoDTOBase(**kwargs)
+
+        link_info._filters_provided = filters_provided
+        return link_info
 
 
 @all_optional_model
@@ -217,12 +220,10 @@ class LinkManager:
     @staticmethod
     def check_version_coherence(study_version: int, link_creation_info: LinkInfoDTOType) -> None:
         if study_version < 820:
-            if isinstance(link_creation_info, LinkInfoDTO820):
-                if link_creation_info.filter_synthesis or link_creation_info.filter_year_by_year:
-                    raise InvalidFieldForVersionError(
-                        f"You cannot specify a filter synthesis or filter year by year as your study version is earlier than v8.2: "
-                        f"{link_creation_info.filter_synthesis, link_creation_info.filter_year_by_year}"
-                    )
+            if getattr(link_creation_info, "_filters_provided", True):
+                raise InvalidFieldForVersionError(
+                    f"You cannot specify a filter synthesis or filter year by year as your study version is earlier than v8.2"
+                )
 
     @staticmethod
     def get_table_schema() -> JSON:
