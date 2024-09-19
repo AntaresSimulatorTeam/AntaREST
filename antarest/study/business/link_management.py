@@ -61,20 +61,104 @@ LinkInfoDTOType = t.Union[LinkInfoDTO820, LinkInfoDTOBase]
 
 class LinkInfoFactory:
     @staticmethod
-    def create_link_info(**kwargs) -> LinkInfoDTOType:
-        filters_provided = kwargs.get("filter_synthesis") is not None or kwargs.get("filter_year_by_year") is not None
+    def create_link_info(version: int, **kwargs) -> LinkInfoDTOType:
+        """
+        Creates a LinkInfoDTO object corresponding to the specified version.
 
-        if kwargs.get("version") >= 820:
-            link_info = LinkInfoDTO820(**kwargs)
+        Args:
+            version (int): The study version.
+            kwargs: The arguments passed for the DTO creation.
+
+        Returns:
+            LinkInfoDTOType: An object of type LinkInfoDTOBase or LinkInfoDTO820 depending on the version.
+        """
+        LinkInfoFactory._check_version_coherence(version, **kwargs)
+        link_info = LinkInfoFactory._initialize_link_info(version, **kwargs)
+        LinkInfoFactory._set_default_filters(version, link_info)
+
+        return link_info
+
+    @staticmethod
+    def _initialize_link_info(version: int, **kwargs) -> LinkInfoDTOType:
+        """
+        Initializes the LinkInfoDTO object based on the study version.
+
+        Args:
+            version (int): The study version.
+            kwargs: The arguments passed for the DTO creation.
+
+        Returns:
+            LinkInfoDTOType: An object of type LinkInfoDTOBase or LinkInfoDTO820 depending on the version.
+        """
+        if version >= 820:
+            return LinkInfoDTO820(**kwargs)
+        return LinkInfoDTOBase(**kwargs)
+
+    @staticmethod
+    def _set_default_filters(version: int, link_info: LinkInfoDTOType) -> None:
+        """
+        Sets default filters if the study version is 820 or higher.
+
+        Args:
+            version (int): The study version.
+            link_info (LinkInfoDTOType): The created DTO object.
+        """
+        if version >= 820 and isinstance(link_info, LinkInfoDTO820):
             if link_info.filter_synthesis is None:
                 link_info.filter_synthesis = FilteringOptions.FILTER_SYNTHESIS
             if link_info.filter_year_by_year is None:
                 link_info.filter_year_by_year = FilteringOptions.FILTER_YEAR_BY_YEAR
-        else:
-            link_info = LinkInfoDTOBase(**kwargs)
 
-        link_info._filters_provided = filters_provided
-        return link_info
+    @staticmethod
+    def _check_version_coherence(version: int, **kwargs) -> None:
+        """
+        Checks if filters are provided for a study version lower than 820.
+
+        Args:
+            version (int): The study version.
+            kwargs: The arguments passed for the DTO creation.
+
+        Raises:
+            InvalidFieldForVersionError: If filters are provided for a version lower than 820.
+        """
+        filters_provided = kwargs.get("filter_synthesis") is not None or kwargs.get("filter_year_by_year") is not None
+        if version < 820 and filters_provided:
+            raise InvalidFieldForVersionError(
+                "Filters filter_synthesis and filter_year_by_year cannot be used for study versions lower than 820."
+            )
+
+    @staticmethod
+    def create_parameters(study_version: int, link_creation_info: LinkInfoDTOType) -> t.Dict[str, t.Union[str, bool, float]]:
+        """
+        Creates the parameters for the link creation command, handling version differences.
+
+        Args:
+            study_version (int): The study version.
+            link_creation_info (LinkInfoDTOType): The link information for creation.
+
+        Returns:
+            t.Dict[str, t.Union[str, bool, float]: A dictionary containing the parameters for the command.
+        """
+        parameters = {
+            "hurdles-cost": link_creation_info.hurdles_cost,
+            "loop-flow": link_creation_info.loop_flow,
+            "use-phase-shifter": link_creation_info.use_phase_shifter,
+            "transmission-capacities": link_creation_info.transmission_capacities,
+            "asset-type": link_creation_info.asset_type,
+            "display-comments": link_creation_info.display_comments,
+            "colorr": link_creation_info.colorr,
+            "colorb": link_creation_info.colorb,
+            "colorg": link_creation_info.colorg,
+            "link-width": link_creation_info.link_width,
+            "link-style": link_creation_info.link_style,
+        }
+
+        if study_version >= 820 and isinstance(link_creation_info, LinkInfoDTO820):
+            parameters["filter-synthesis"] = link_creation_info.filter_synthesis
+            parameters["filter-year-by-year"] = link_creation_info.filter_year_by_year
+
+        return parameters
+
 
 
 @all_optional_model
@@ -96,7 +180,7 @@ class LinkManager:
             links_config = file_study.tree.get(["input", "links", area_id, "properties"])
             for link in area.links:
                 link_properties = links_config[link]
-                link_info_args = {
+                link_creation_data = {
                     "version": int(study.version),
                     "area1": area_id,
                     "area2": link,
@@ -109,21 +193,23 @@ class LinkManager:
                     "filter_synthesis": link_properties.get("filter-synthesis"),
                     "filter_year_by_year": link_properties.get("filter-year-by-year"),
                 }
+                ui_parameters = {}
                 if with_ui and links_config and link in links_config:
-                    link_info_args.update(
+                    ui_parameters.update(
                         {
-                            "colorr": str(link_properties.get("colorr", "112")),
-                            "colorb": str(link_properties.get("colorb", "112")),
-                            "colorg": str(link_properties.get("colorg", "112")),
+                            "colorr": str(link_properties.get("colorr", DEFAULT_COLOR)),
+                            "colorb": str(link_properties.get("colorb", DEFAULT_COLOR)),
+                            "colorg": str(link_properties.get("colorg", DEFAULT_COLOR)),
                             "link_width": link_properties.get("link-width", 1.0),
-                            "link_style": link_properties.get("link-style", "plain"),
+                            "link_style": link_properties.get("link-style", LinkStyle.PLAIN),
                         }
                     )
+                    link_creation_data.update(ui_parameters)
                 else:
-                    link_info_args.update(
+                     link_creation_data.update(
                         {"colorr": None, "colorb": None, "colorg": None, "link_width": None, "link_style": None}
                     )
-                link_info_dto = LinkInfoFactory.create_link_info(**link_info_args)
+                link_info_dto = LinkInfoFactory.create_link_info(**link_creation_data)
 
                 result.append(link_info_dto)
         return result
@@ -148,7 +234,6 @@ class LinkManager:
             filter_synthesis=link_creation_info.filter_synthesis if study_version >= 820 else None,
             filter_year_by_year=link_creation_info.filter_year_by_year if study_version >= 820 else None,
         )
-        self.check_version_coherence(study_version, link_info_dto)
 
         storage_service = self.storage_service.get_storage(study)
         file_study = storage_service.get_raw(study)
@@ -156,7 +241,7 @@ class LinkManager:
         command = CreateLink(
             area1=link_creation_info.area1,
             area2=link_creation_info.area2,
-            parameters=self.create_parameters(int(study.version), link_info_dto),
+            parameters=LinkInfoFactory.create_parameters(int(study.version), link_info_dto),
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
         )
 
@@ -217,11 +302,11 @@ class LinkManager:
         for (area1, area2), update_link_dto in update_links_by_ids.items():
             # Update the link properties.
             old_link_dto = old_links_by_ids[(area1, area2)]
-            new_link_dto = old_link_dto.copy(update=update_link_dto.model_dump(by_alias=False, exclude_none=True))
-            new_links_by_ids[(area1, area2)] = new_link_dto
+            updated_link_properties = old_link_dto.copy(update=update_link_dto.model_dump(by_alias=False, exclude_none=True))
+            new_links_by_ids[(area1, area2)] = updated_link_properties
 
             # Convert the DTO to a configuration object and update the configuration file.
-            properties = LinkProperties(**new_link_dto.model_dump(by_alias=False))
+            properties = LinkProperties(**updated_link_properties.model_dump(by_alias=False))
             path = f"{_ALL_LINKS_PATH}/{area1}/properties/{area2}"
             cmd = UpdateConfig(
                 target=path,
@@ -234,35 +319,5 @@ class LinkManager:
         return new_links_by_ids
 
     @staticmethod
-    def check_version_coherence(study_version: int, link_creation_info: LinkInfoDTOType) -> None:
-        if study_version < 820:
-            if getattr(link_creation_info, "_filters_provided", True):
-                raise InvalidFieldForVersionError(
-                    f"You cannot specify a filter synthesis or filter year by year as your study version is earlier than v8.2"
-                )
-
-    @staticmethod
     def get_table_schema() -> JSON:
         return LinkOutput.schema()
-
-    @staticmethod
-    def create_parameters(study_version: int, link_creation_info: LinkInfoDTOType) -> t.Dict[str, str]:
-        parameters = {
-            "hurdles-cost": link_creation_info.hurdles_cost,
-            "loop-flow": link_creation_info.loop_flow,
-            "use-phase-shifter": link_creation_info.use_phase_shifter,
-            "transmission-capacities": link_creation_info.transmission_capacities,
-            "asset-type": link_creation_info.asset_type,
-            "display-comments": link_creation_info.display_comments,
-            "colorr": link_creation_info.colorr,
-            "colorb": link_creation_info.colorb,
-            "colorg": link_creation_info.colorg,
-            "link-width": link_creation_info.link_width,
-            "link-style": link_creation_info.link_style,
-        }
-
-        if study_version >= 820 and isinstance(link_creation_info, LinkInfoDTO820):
-            parameters["filter-synthesis"] = link_creation_info.filter_synthesis
-            parameters["filter-year-by-year"] = link_creation_info.filter_year_by_year
-
-        return parameters
