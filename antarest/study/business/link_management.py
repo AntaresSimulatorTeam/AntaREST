@@ -11,19 +11,15 @@
 # This file is part of the Antares project.
 
 import typing as t
-from typing import Any, Dict, Tuple, Union
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from antarest.core.exceptions import ConfigFileNotFound, InvalidFieldForVersionError
 from antarest.core.model import JSON
 from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import RawStudy
-from antarest.study.storage.rawstudy.model.filesystem.config.links import (
-    LinkProperties,
-    LinkStyle,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.links import LinkProperties, LinkStyle
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.common import FilteringOptions
 from antarest.study.storage.variantstudy.model.command.create_link import CreateLink
@@ -52,8 +48,8 @@ class LinkInfoDTOBase(BaseModel):
 
 
 class LinkInfoDTO820(LinkInfoDTOBase):
-    filter_synthesis: t.Optional[str] = FilteringOptions.FILTER_SYNTHESIS
-    filter_year_by_year: t.Optional[str] = FilteringOptions.FILTER_YEAR_BY_YEAR
+    filter_synthesis: t.Optional[str] = None
+    filter_year_by_year: t.Optional[str] = None
 
 
 LinkInfoDTOType = t.Union[LinkInfoDTO820, LinkInfoDTOBase]
@@ -66,6 +62,10 @@ class LinkInfoFactory:
 
         if version >= 820:
             link_info = LinkInfoDTO820(**kwargs)
+            if link_info.filter_synthesis is None:
+                link_info.filter_synthesis = FilteringOptions.FILTER_SYNTHESIS
+            if link_info.filter_year_by_year is None:
+                link_info.filter_year_by_year = FilteringOptions.FILTER_YEAR_BY_YEAR
         else:
             link_info = LinkInfoDTOBase(**kwargs)
 
@@ -110,10 +110,8 @@ class LinkManager:
                     asset_type=links_config[link].get("asset-type"),
                     display_comments=links_config[link].get("display-comments"),
                     ui=ui_info,
-                    filter_synthesis=links_config[link].get("filter-synthesis") if int(study.version) >= 820 else None,
-                    filter_year_by_year=links_config[link].get("filter-year-by-year")
-                    if int(study.version) >= 820
-                    else None,
+                    filter_synthesis=links_config[link].get("filter-synthesis"),
+                    filter_year_by_year=links_config[link].get("filter-year-by-year"),
                 )
                 result.append(link_info_dto)
         return result
@@ -140,7 +138,7 @@ class LinkManager:
         command = CreateLink(
             area1=link_creation_info.area1,
             area2=link_creation_info.area2,
-            parameters=self.create_parameters(int(study.version), link_creation_info),
+            parameters=self.create_parameters(int(study.version), link_info_dto),
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
         )
 

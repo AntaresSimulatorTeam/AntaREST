@@ -149,8 +149,6 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
             version=-1,
             area1="test",
             area2="test2",
-            filter_synthesis=FilteringOptions.FILTER_SYNTHESIS,
-            filter_year_by_year=FilteringOptions.FILTER_YEAR_BY_YEAR,
         ),
     )
     assert empty_study.config.areas["test"].links.get("test2") is not None
