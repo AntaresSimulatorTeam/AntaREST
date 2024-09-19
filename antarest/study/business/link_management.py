@@ -19,7 +19,12 @@ from antarest.core.model import JSON
 from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import RawStudy
-from antarest.study.storage.rawstudy.model.filesystem.config.links import LinkProperties, LinkStyle
+from antarest.study.storage.rawstudy.model.filesystem.config.links import (
+    AssetType,
+    LinkProperties,
+    LinkStyle,
+    TransmissionCapacity,
+)
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.common import FilteringOptions
 from antarest.study.storage.variantstudy.model.command.create_link import CreateLink
@@ -27,12 +32,7 @@ from antarest.study.storage.variantstudy.model.command.remove_link import Remove
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 
 _ALL_LINKS_PATH = "input/links"
-
-
-class LinkUIDTO(BaseModel):
-    color: str
-    width: float
-    style: LinkStyle
+DEFAULT_COLOR = "112"
 
 
 class LinkInfoDTOBase(BaseModel):
@@ -41,10 +41,14 @@ class LinkInfoDTOBase(BaseModel):
     hurdles_cost: t.Optional[bool] = False
     loop_flow: t.Optional[bool] = False
     use_phase_shifter: t.Optional[bool] = False
-    transmission_capacities: t.Optional[str] = "enabled"
-    asset_type: t.Optional[str] = "ac"
+    transmission_capacities: t.Optional[str] = TransmissionCapacity.ENABLED
+    asset_type: t.Optional[str] = AssetType.AC
     display_comments: t.Optional[bool] = True
-    ui: t.Optional[LinkUIDTO] = None
+    colorr: t.Optional[str] = DEFAULT_COLOR
+    colorb: t.Optional[str] = DEFAULT_COLOR
+    colorg: t.Optional[str] = DEFAULT_COLOR
+    link_width: t.Optional[float] = 1
+    link_style: t.Optional[str] = LinkStyle.PLAIN
 
 
 class LinkInfoDTO820(LinkInfoDTOBase):
@@ -57,10 +61,10 @@ LinkInfoDTOType = t.Union[LinkInfoDTO820, LinkInfoDTOBase]
 
 class LinkInfoFactory:
     @staticmethod
-    def create_link_info(version: int, **kwargs) -> LinkInfoDTOType:
+    def create_link_info(**kwargs) -> LinkInfoDTOType:
         filters_provided = kwargs.get("filter_synthesis") is not None or kwargs.get("filter_year_by_year") is not None
 
-        if version >= 820:
+        if kwargs.get("version") >= 820:
             link_info = LinkInfoDTO820(**kwargs)
             if link_info.filter_synthesis is None:
                 link_info.filter_synthesis = FilteringOptions.FILTER_SYNTHESIS
@@ -91,28 +95,36 @@ class LinkManager:
         for area_id, area in file_study.config.areas.items():
             links_config = file_study.tree.get(["input", "links", area_id, "properties"])
             for link in area.links:
-                ui_info: t.Optional[LinkUIDTO] = None
+                link_properties = links_config[link]
+                link_info_args = {
+                    "version": int(study.version),
+                    "area1": area_id,
+                    "area2": link,
+                    "hurdles_cost": link_properties.get("hurdles-cost"),
+                    "loop_flow": link_properties.get("loop-flow"),
+                    "use_phase_shifter": link_properties.get("use-phase-shifter"),
+                    "transmission_capacities": link_properties.get("transmission-capacities"),
+                    "asset_type": link_properties.get("asset-type"),
+                    "display_comments": link_properties.get("display-comments"),
+                    "filter_synthesis": link_properties.get("filter-synthesis"),
+                    "filter_year_by_year": link_properties.get("filter-year-by-year"),
+                }
                 if with_ui and links_config and link in links_config:
-                    ui_info = LinkUIDTO(
-                        color=f"{links_config[link].get('colorr', '163')},{links_config[link].get('colorg', '163')},{links_config[link].get('colorb', '163')}",
-                        width=links_config[link].get("link-width", 1),
-                        style=links_config[link].get("link-style", "plain"),
+                    link_info_args.update(
+                        {
+                            "colorr": str(link_properties.get("colorr", "112")),
+                            "colorb": str(link_properties.get("colorb", "112")),
+                            "colorg": str(link_properties.get("colorg", "112")),
+                            "link_width": link_properties.get("link-width", 1.0),
+                            "link_style": link_properties.get("link-style", "plain"),
+                        }
                     )
+                else:
+                    link_info_args.update(
+                        {"colorr": None, "colorb": None, "colorg": None, "link_width": None, "link_style": None}
+                    )
+                link_info_dto = LinkInfoFactory.create_link_info(**link_info_args)
 
-                link_info_dto = LinkInfoFactory.create_link_info(
-                    version=int(study.version),
-                    area1=area_id,
-                    area2=link,
-                    hurdles_cost=links_config[link].get("hurdles-cost"),
-                    loop_flow=links_config[link].get("loop-flow"),
-                    use_phase_shifter=links_config[link].get("use-phase-shifter"),
-                    transmission_capacities=links_config[link].get("transmission-capacities"),
-                    asset_type=links_config[link].get("asset-type"),
-                    display_comments=links_config[link].get("display-comments"),
-                    ui=ui_info,
-                    filter_synthesis=links_config[link].get("filter-synthesis"),
-                    filter_year_by_year=links_config[link].get("filter-year-by-year"),
-                )
                 result.append(link_info_dto)
         return result
 
@@ -128,6 +140,11 @@ class LinkManager:
             transmission_capacities=link_creation_info.transmission_capacities,
             asset_type=link_creation_info.asset_type,
             display_comments=link_creation_info.display_comments,
+            colorr=link_creation_info.colorr,
+            colorb=link_creation_info.colorb,
+            colorg=link_creation_info.colorg,
+            link_width=link_creation_info.link_width,
+            link_style=link_creation_info.link_style,
             filter_synthesis=link_creation_info.filter_synthesis if study_version >= 820 else None,
             filter_year_by_year=link_creation_info.filter_year_by_year if study_version >= 820 else None,
         )
@@ -237,6 +254,11 @@ class LinkManager:
             "transmission-capacities": link_creation_info.transmission_capacities,
             "asset-type": link_creation_info.asset_type,
             "display-comments": link_creation_info.display_comments,
+            "colorr": link_creation_info.colorr,
+            "colorb": link_creation_info.colorb,
+            "colorg": link_creation_info.colorg,
+            "link-width": link_creation_info.link_width,
+            "link-style": link_creation_info.link_style,
         }
 
         if study_version >= 820 and isinstance(link_creation_info, LinkInfoDTO820):
