@@ -12,10 +12,17 @@ module.exports = {
     "plugin:react/jsx-runtime",
     "plugin:react-hooks/recommended",
     "plugin:jsdoc/recommended-typescript",
-    "plugin:prettier/recommended",
+    "plugin:prettier/recommended", // Must be the last one
   ],
-  plugins: ["react-refresh"],
-  ignorePatterns: ["dist", ".eslintrc.cjs"],
+  plugins: [
+    "license-header",
+    "react-refresh",
+  ],
+  ignorePatterns: [
+    "dist", 
+    "license-header.js", 
+    ".eslintrc.cjs",
+  ],
   parser: "@typescript-eslint/parser",
   parserOptions: {
     // `ecmaVersion` is automatically sets by `esXXXX` in `env`
@@ -48,6 +55,7 @@ module.exports = {
     "jsdoc/require-jsdoc": "off",
     "jsdoc/require-hyphen-before-param-description": "warn",
     "jsdoc/tag-lines": ["warn", "any", { startLines: 1 }], // Expected 1 line after block description
+    "license-header/header": ["error", "license-header.js"],
     "no-console": "warn",
     "no-param-reassign": [
       "error",
