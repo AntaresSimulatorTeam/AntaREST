@@ -11,5 +11,3 @@
  *
  * This file is part of the Antares project.
  */
-
-/// <reference types="vite/client" />
