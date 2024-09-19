@@ -35,6 +35,7 @@ from antarest.core.exceptions import (
     BadEditInstructionException,
     ChildNotFoundError,
     CommandApplicationError,
+    FileDeletionNotAllowed,
     IncorrectPathError,
     NotAManagedStudyException,
     ReferencedObjectDeletionNotAllowed,
@@ -2640,3 +2641,32 @@ class StudyService:
             if ref_bcs:
                 binding_ids = [bc.id for bc in ref_bcs]
                 raise ReferencedObjectDeletionNotAllowed(cluster_id, binding_ids, object_type="Cluster")
+
+    def delete_file_or_folder(self, study_id: str, path: str, current_user: JWTUser) -> None:
+        """
+        Deletes a file or a folder of the study.
+        The data must be located inside the 'User' folder.
+        Also, it can not be inside the 'expansion' folder.
+
+        Args:
+            study_id: UUID of the concerned study
+            path: Path corresponding to the resource to be deleted
+            current_user: User that called the endpoint
+
+        Raises:
+            FileDeletionNotAllowed: if the path does not comply with the above rules
+        """
+        study = self.get_study(study_id)
+        assert_permission(current_user, study, StudyPermissionType.WRITE)
+
+        url = [item for item in path.split("/") if item]
+        if len(url) < 2 or url[0] != "user":
+            raise FileDeletionNotAllowed(f"the targeted data isn't inside the 'User' folder: {path}")
+        if url[1] == "expansion":
+            raise FileDeletionNotAllowed(f"you cannot delete a file/folder inside 'expansion' folder : {path}")
+
+        study_tree = self.storage_service.raw_study_service.get_raw(study, True).tree.build()
+        try:
+            study_tree["user"].delete(url[1:])
+        except ChildNotFoundError as e:
+            raise FileDeletionNotAllowed(f"the given path doesn't exist: {e.detail}")

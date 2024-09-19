@@ -191,6 +191,21 @@ def create_raw_study_routes(
         ).encode("utf-8")
         return Response(content=json_response, media_type="application/json")
 
+    @bp.delete(
+        "/studies/{uuid}/raw",
+        tags=[APITag.study_raw_data],
+        summary="Delete files or folders located inside the 'User' folder",
+        response_model=None,
+    )
+    def delete_file(
+        uuid: str,
+        path: str = Param("/", examples=["user/wind_solar/synthesis_windSolar.xlsx"]),  # type: ignore
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> t.Any:
+        uuid = sanitize_uuid(uuid)
+        logger.info(f"Deleting some data for study {uuid}", extra={"user": current_user.id})
+        study_service.delete_file_or_folder(uuid, path, current_user)
+
     @bp.get(
         "/studies/{uuid}/areas/aggregate/mc-ind/{output_id}",
         tags=[APITag.study_raw_data],

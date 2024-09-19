@@ -264,3 +264,51 @@ class TestFetchRawData:
                 headers=headers,
             )
             assert res.status_code == 200, f"Error for path={path} and depth={depth}"
+
+
+def test_delete_raw(client: TestClient, user_access_token: str, internal_study_id: str) -> None:
+    client.headers = {"Authorization": f"Bearer {user_access_token}"}
+
+    # =============================
+    #  SET UP + NOMINAL CASES
+    # =============================
+
+    content = io.BytesIO(b"This is the end!")
+    file_1_path = "user/file_1.txt"
+    file_2_path = "user/folder/file_2.txt"
+    for f in [file_1_path, file_2_path]:
+        # Creates a file / folder inside user folder.
+        res = client.put(
+            f"/v1/studies/{internal_study_id}/raw", params={"path": f, "create_missing": True}, files={"file": content}
+        )
+        assert res.status_code == 204, res.json()
+
+        # Deletes the file / folder
+        res = client.delete(f"/v1/studies/{internal_study_id}/raw?path={f}")
+        assert res.status_code == 200
+        # Asserts it doesn't exist anymore
+        res = client.get(f"/v1/studies/{internal_study_id}/raw?path={f}")
+        assert res.status_code == 404
+        assert "not a child of" in res.json()["description"]
+
+    # =============================
+    #  ERRORS
+    # =============================
+
+    # try to delete expansion folder
+    res = client.delete(f"/v1/studies/{internal_study_id}/raw?path=/user/expansion")
+    assert res.status_code == 403
+    assert res.json()["exception"] == "FileDeletionNotAllowed"
+    assert "you cannot delete a file/folder inside 'expansion' folder" in res.json()["description"]
+
+    # try to delete a file which isn't inside the 'User' folder
+    res = client.delete(f"/v1/studies/{internal_study_id}/raw?path=/input/thermal")
+    assert res.status_code == 403
+    assert res.json()["exception"] == "FileDeletionNotAllowed"
+    assert "the targeted data isn't inside the 'User' folder" in res.json()["description"]
+
+    # With a path that doesn't exist
+    res = client.delete(f"/v1/studies/{internal_study_id}/raw?path=user/fake_folder/fake_file.txt")
+    assert res.status_code == 403
+    assert res.json()["exception"] == "FileDeletionNotAllowed"
+    assert "the given path doesn't exist" in res.json()["description"]
