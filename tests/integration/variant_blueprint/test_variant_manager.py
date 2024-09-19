@@ -65,6 +65,7 @@ def generate_snapshot_fixture(
     caplog: t.Any,
 ) -> [str]:
     """Generate some snapshots with different date of update and last access"""
+
     class FakeDatetime:
         """
         Class that handle fake timestamp creation/update of variant
@@ -396,7 +397,9 @@ def test_outputs(client: TestClient, admin_access_token: str, variant_id: str, t
     assert len(outputs) == 1
 
 
-def test_clear_snapshots(client: TestClient, admin_access_token: str, tmp_path: Path, generate_snapshots, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_clear_snapshots(
+    client: TestClient, admin_access_token: str, tmp_path: Path, generate_snapshots, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """
     The `snapshot/` directory must not exist after a call to `clear-snapshot`.
     """
@@ -415,18 +418,6 @@ def test_clear_snapshots(client: TestClient, admin_access_token: str, tmp_path: 
     res = client.put(f"v1/studies/variants/clear-snapshots?limit=-1", headers=admin_headers)
 
     assert res.status_code == 422
-    assert res.json().get('exception') == "VariantAgeMustBePositive"
+    assert res.json().get("exception") == "VariantAgeMustBePositive"
 
     assert older.exists() and old.exists() and recent.exists()
-
-    # Clear all snapshots older than the default hour limit (older_snapshot must be cleared)
-    # client.put(f"v1/studies/variants/clear-snapshots", headers=admin_headers)
-    # assert (not older.exists()) and old.exists() and recent.exists()
-    #
-    # # clear all snapshots older than 6 hours (old_snapshot must be cleared)
-    # client.put(f"v1/studies/variants/clear-snapshots?limit=6", headers=admin_headers)
-    # assert (not older.exists()) and (not old.exists()) and recent.exists()
-    #
-    # # clear all snapshots older than 0 hours (recent_snapshot must be cleared)
-    # client.put(f"v1/studies/variants/clear-snapshots?limit=0", headers=admin_headers)
-    # assert not (older.exists() and old.exists() and recent.exists())

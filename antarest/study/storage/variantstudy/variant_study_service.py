@@ -37,6 +37,7 @@ from antarest.core.exceptions import (
     VariantGenerationTimeoutError,
     VariantStudyParentNotValid,
     VariantAgeMustBePositive,
+    TaskAlreadyRunning,
 )
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.interfaces.cache import ICache
@@ -44,8 +45,9 @@ from antarest.core.interfaces.eventbus import Event, EventChannelDirectory, Even
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.model import JSON, PermissionInfo, PublicMode, StudyPermissionType
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
-from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskResult, TaskType
+from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskResult, TaskType, TaskListFilter, TaskStatus
 from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT, ITaskService, TaskUpdateNotifier, noop_notifier
+from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import assert_this, suppress_exception
 from antarest.matrixstore.service import MatrixService
 from antarest.study.model import RawStudy, Study, StudyAdditionalData, StudyMetadataDTO, StudySimResultDTO
@@ -74,6 +76,33 @@ logger = logging.getLogger(__name__)
 
 SNAPSHOT_RELATIVE_PATH = "snapshot"
 OUTPUT_RELATIVE_PATH = "output"
+
+
+class SnapshotCleanerTask:
+    def __init__(self, variant_study_service: "VariantStudyService", variant_list: [VariantStudy], limit: int) -> None:
+        self._variant_study_service: "VariantStudyService" = variant_study_service
+        self._variant_list: [VariantStudy] = variant_list
+        self._limit: int = limit
+
+    def _clear_all_snapshots(self):
+        with db():
+            for variant in self._variant_list:
+                if variant.updated_at < datetime.now() - timedelta(hours=self._limit):
+                    if variant.last_access and variant.last_access < datetime.now() - timedelta(hours=self._limit):
+                        logger.info(f"Variant {variant.id} detected.")
+                        path = self._variant_study_service.get_study_path(variant)
+                        shutil.rmtree(path, ignore_errors=True)
+
+    def run_task(self, notifier: TaskUpdateNotifier) -> TaskResult:
+        msg = f"Start cleaning all snapshots updated or accessed {self._limit} hours ago."
+        notifier(msg)
+        with db():
+            self._clear_all_snapshots()
+        msg = f"All selected snapshots were successfully cleared."
+        notifier(msg)
+        return TaskResult(success=True, message=msg)
+
+    __call__ = run_task
 
 
 class VariantStudyService(AbstractStorageService[VariantStudy]):
@@ -1053,7 +1082,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             )
             return False
 
-    def clear_all_snapshots(self, limit: int, params: t.Optional[RequestParameters] = None) -> None:
+    def clear_all_snapshots(self, limit: int, params: t.Optional[RequestParameters] = None) -> str:
         """
         Clear all variant snapshots older than `limit` (in hours).
         Only available for admin users.
@@ -1072,13 +1101,42 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             raise UserHasNotPermissionError()
         if limit < 0:
             raise VariantAgeMustBePositive(f"Limit cannot be negative (limit={limit})")
+
         result = self.repository.get_all(
             study_filter=StudyFilter(
                 variant=True,
                 access_permissions=AccessPermissions(is_admin=True),
             )
         )
-        for variant in result:
-            if variant.updated_at < datetime.now() - timedelta(hours=limit):
-                if variant.last_access and variant.last_access < datetime.now() - timedelta(hours=limit):
-                    self.clear_snapshot(variant)
+
+        if not result:
+            msg = f"No variant updated or accessed {limit} hours ago were found."
+            logger.info(msg)
+            return msg
+
+        # Make sure the task is not running
+        study_tasks = self.task_service.list_tasks(
+            TaskListFilter(
+                ref_id="snapshot_cleaning",
+                type=[TaskType.THERMAL_CLUSTER_SERIES_GENERATION],
+                status=[TaskStatus.RUNNING, TaskStatus.PENDING],
+            ),
+            RequestParameters(user=DEFAULT_ADMIN_USER),
+        )
+        if len(study_tasks) > 0:
+            raise TaskAlreadyRunning()
+
+        task_name = f"Cleaning all snapshot updated or accessed at least {limit} hours ago."
+
+        snapshot_clearing_task_instance = SnapshotCleanerTask(
+            variant_study_service=self, variant_list=result, limit=limit
+        )
+
+        return self.task_service.add_task(
+            snapshot_clearing_task_instance,
+            task_name,
+            task_type=TaskType.SNAPSHOT_CLEARING,
+            ref_id="SNAPSHOT_CLEANING",
+            custom_event_messages=None,
+            request_params=params,
+        )

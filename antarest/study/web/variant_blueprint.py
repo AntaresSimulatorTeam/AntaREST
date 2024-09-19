@@ -24,7 +24,6 @@ from antarest.core.utils.utils import sanitize_string, sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.study.model import StudyMetadataDTO
-from antarest.study.repository import AccessPermissions, StudyFilter
 from antarest.study.service import StudyService
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.model import CommandDTO, VariantTreeDTO
@@ -448,6 +447,6 @@ def create_study_variant_routes(
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
-        variant_study_service.clear_all_snapshots(limit, params)
+        return variant_study_service.clear_all_snapshots(limit, params)
 
     return bp
