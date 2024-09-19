@@ -47,8 +47,8 @@ class LinkInfoDTOBase(BaseModel):
     hurdles_cost: t.Optional[bool] = False
     loop_flow: t.Optional[bool] = False
     use_phase_shifter: t.Optional[bool] = False
-    transmission_capacities: t.Optional[TransmissionCapacity] = 'enabled'
-    asset_type: t.Optional[AssetType] = 'ac'
+    transmission_capacities: t.Optional[TransmissionCapacity] = "enabled"
+    asset_type: t.Optional[AssetType] = "ac"
     display_comments: t.Optional[bool] = True
     ui: t.Optional[LinkUIDTO] = None
 
