@@ -117,6 +117,7 @@ class LinkManager:
         return result
 
     def create_link(self, study: RawStudy, link_creation_info: LinkInfoDTOType) -> LinkInfoDTOType:
+        study_version = int(study.version)
         link_info_dto = LinkInfoFactory.create_link_info(
             version=int(study.version),
             area1=link_creation_info.area1,
@@ -127,10 +128,10 @@ class LinkManager:
             transmission_capacities=link_creation_info.transmission_capacities,
             asset_type=link_creation_info.asset_type,
             display_comments=link_creation_info.display_comments,
-            filter_synthesis=link_creation_info.filter_synthesis if int(study.version) >= 820 else None,
-            filter_year_by_year=link_creation_info.filter_year_by_year if int(study.version) >= 820 else None,
+            filter_synthesis=link_creation_info.filter_synthesis if study_version >= 820 else None,
+            filter_year_by_year=link_creation_info.filter_year_by_year if study_version >= 820 else None,
         )
-        self.check_version_coherence(int(study.version), link_info_dto)
+        self.check_version_coherence(study_version, link_info_dto)
 
         storage_service = self.storage_service.get_storage(study)
         file_study = storage_service.get_raw(study)
