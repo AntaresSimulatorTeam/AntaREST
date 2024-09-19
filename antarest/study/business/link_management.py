@@ -47,8 +47,8 @@ class LinkInfoDTOBase(BaseModel):
     hurdles_cost: t.Optional[bool] = False
     loop_flow: t.Optional[bool] = False
     use_phase_shifter: t.Optional[bool] = False
-    transmission_capacities: t.Optional[TransmissionCapacity] = "enabled"
-    asset_type: t.Optional[AssetType] = "ac"
+    transmission_capacities: t.Optional[TransmissionCapacity] = 'enabled'
+    asset_type: t.Optional[AssetType] = 'ac'
     display_comments: t.Optional[bool] = True
     ui: t.Optional[LinkUIDTO] = None
 
@@ -229,7 +229,7 @@ class LinkManager:
         return LinkOutput.schema()
 
     @staticmethod
-    def create_parameters(study_version: int, link_creation_info: LinkInfoDTOType) -> dict[str, str]:
+    def create_parameters(study_version: int, link_creation_info: LinkInfoDTOType) -> t.Dict[str, str]:
         parameters = {
             "hurdles-cost": link_creation_info.hurdles_cost,
             "loop-flow": link_creation_info.loop_flow,
