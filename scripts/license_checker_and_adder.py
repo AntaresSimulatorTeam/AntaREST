@@ -22,7 +22,7 @@ BACKEND_LICENSE_HEADER = """# Copyright (c) 2024, RTE (https://www.rte-france.co
 """
 
 
-front_license_path = Path(__file__).parent.parent / "webapp" / "license-header.js"
+front_license_path = Path(__file__).resolve().parent.parent / "webapp" / "license-header.js"
 print(front_license_path)
 FRONTEND_LICENSE_HEADER = front_license_path.read_text()
 
