@@ -454,7 +454,7 @@ class TestRawDataAggregationMCInd:
             res = client.get(f"/v1/studies/{internal_study_id}/areas/aggregate/mc-ind/{output_id}", params=params)
             assert res.status_code == 200, res.json()
             content = io.BytesIO(res.content)
-            df = pd.read_csv(content, index_col=0, sep=",")
+            df = pd.read_csv(content, sep=",")
             resource_file = ASSETS_DIR.joinpath(f"aggregate_areas_raw_data/{expected_result_filename}")
             resource_file.parent.mkdir(exist_ok=True, parents=True)
             if not resource_file.exists():
@@ -483,7 +483,7 @@ class TestRawDataAggregationMCInd:
             res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-ind/{output_id}", params=params)
             assert res.status_code == 200, res.json()
             content = io.BytesIO(res.content)
-            df = pd.read_csv(content, index_col=0, sep=",")
+            df = pd.read_csv(content, sep=",")
             resource_file = ASSETS_DIR.joinpath(f"aggregate_links_raw_data/{expected_result_filename}")
             resource_file.parent.mkdir(exist_ok=True, parents=True)
             if not resource_file.exists():
@@ -514,11 +514,11 @@ class TestRawDataAggregationMCInd:
             content = io.BytesIO(res.content)
             export_format = params["format"]
             if export_format == TableExportFormat.CSV.value:
-                df = pd.read_csv(content, index_col=0, sep=",")
+                df = pd.read_csv(content, sep=",")
             elif export_format == TableExportFormat.TSV.value:
-                df = pd.read_csv(content, index_col=0, sep="\t")
+                df = pd.read_csv(content, sep="\t")
             else:
-                df = pd.read_excel(content, index_col=0)  # type: ignore
+                df = pd.read_excel(content)  # type: ignore
             resource_file = ASSETS_DIR.joinpath(f"aggregate_links_raw_data/{expected_result_filename}")
             resource_file.parent.mkdir(exist_ok=True, parents=True)
             if not resource_file.exists():
@@ -542,9 +542,7 @@ class TestRawDataAggregationMCInd:
             output_id = params.pop("output_id")
             res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-ind/{output_id}", params=params)
             assert res.status_code == 200, res.json()
-            content = io.BytesIO(res.content)
-            df = pd.read_csv(content, index_col=0, sep=",")
-            assert df.empty
+            assert res.content == b"\n"
 
     def test_wrongly_typed_request(self, client: TestClient, user_access_token: str, internal_study_id: str):
         """
@@ -603,8 +601,7 @@ class TestRawDataAggregationMCInd:
             },
         )
         assert res.status_code == 200, res.json()
-        df = pd.read_csv(io.BytesIO(res.content), index_col=0, sep=",")
-        assert df.empty
+        assert res.content == b"\n"
 
         # test for links
         res = client.get(
@@ -616,8 +613,7 @@ class TestRawDataAggregationMCInd:
             },
         )
         assert res.status_code == 200, res.json()
-        df = pd.read_csv(io.BytesIO(res.content), index_col=0, sep=",")
-        assert df.empty
+        assert res.content == b"\n"
 
     def test_non_existing_folder(
         self, tmp_path: Path, client: TestClient, user_access_token: str, internal_study_id: str
@@ -662,7 +658,7 @@ class TestRawDataAggregationMCAll:
             res = client.get(f"/v1/studies/{internal_study_id}/areas/aggregate/mc-all/{output_id}", params=params)
             assert res.status_code == 200, res.json()
             content = io.BytesIO(res.content)
-            df = pd.read_csv(content, index_col=0, sep=",")
+            df = pd.read_csv(content, sep=",")
             resource_file = ASSETS_DIR.joinpath(f"aggregate_areas_raw_data/{expected_result_filename}")
             resource_file.parent.mkdir(exist_ok=True, parents=True)
             if not resource_file.exists():
@@ -691,7 +687,7 @@ class TestRawDataAggregationMCAll:
             res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-all/{output_id}", params=params)
             assert res.status_code == 200, res.json()
             content = io.BytesIO(res.content)
-            df = pd.read_csv(content, index_col=0, sep=",")
+            df = pd.read_csv(content, sep=",")
             resource_file = ASSETS_DIR.joinpath(f"aggregate_links_raw_data/{expected_result_filename}")
             resource_file.parent.mkdir(exist_ok=True, parents=True)
             if not resource_file.exists():
@@ -722,11 +718,11 @@ class TestRawDataAggregationMCAll:
             content = io.BytesIO(res.content)
             export_format = params["format"]
             if export_format == TableExportFormat.CSV.value:
-                df = pd.read_csv(content, index_col=0, sep=",")
+                df = pd.read_csv(content, sep=",")
             elif export_format == TableExportFormat.TSV.value:
-                df = pd.read_csv(content, index_col=0, sep="\t")
+                df = pd.read_csv(content, sep="\t")
             else:
-                df = pd.read_excel(content, index_col=0)  # type: ignore
+                df = pd.read_excel(content)  # type: ignore
             resource_file = ASSETS_DIR.joinpath(f"aggregate_links_raw_data/{expected_result_filename}")
             resource_file.parent.mkdir(exist_ok=True, parents=True)
             if not resource_file.exists():
@@ -750,9 +746,7 @@ class TestRawDataAggregationMCAll:
             output_id = params.pop("output_id")
             res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-all/{output_id}", params=params)
             assert res.status_code == 200, res.json()
-            content = io.BytesIO(res.content)
-            df = pd.read_csv(content, index_col=0, sep=",")
-            assert df.empty
+            assert res.content == b"\n"
 
     def test_wrongly_typed_request(self, client: TestClient, user_access_token: str, internal_study_id: str):
         """
@@ -812,8 +806,7 @@ class TestRawDataAggregationMCAll:
             },
         )
         assert res.status_code == 200, res.json()
-        df = pd.read_csv(io.BytesIO(res.content), index_col=0, sep=",")
-        assert df.empty
+        assert res.content == b"\n"
 
         # test for links
         res = client.get(
@@ -825,8 +818,7 @@ class TestRawDataAggregationMCAll:
             },
         )
         assert res.status_code == 200, res.json()
-        df = pd.read_csv(io.BytesIO(res.content), index_col=0, sep=",")
-        assert df.empty
+        assert res.content == b"\n"
 
     def test_non_existing_folder(
         self, tmp_path: Path, client: TestClient, user_access_token: str, internal_study_id: str
