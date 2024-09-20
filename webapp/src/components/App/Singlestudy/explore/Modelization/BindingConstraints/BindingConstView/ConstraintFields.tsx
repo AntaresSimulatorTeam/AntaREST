@@ -174,7 +174,7 @@ function Fields({ study, constraintId }: Props) {
       </Box>
 
       {matrixDialogOpen && (
-        <Matrix
+        <ConstraintMatrix
           study={study}
           constraintId={constraintId}
           operator={currentOperator}
