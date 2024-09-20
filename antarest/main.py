@@ -13,16 +13,11 @@
 import argparse
 import asyncio
 import copy
-import glob
 import logging
-import os
 from contextlib import asynccontextmanager
-from functools import partial
 from pathlib import Path
-from typing import Any, AsyncGenerator, Callable, Dict, Optional, Tuple, cast
+from typing import Any, AsyncGenerator, Dict, Optional, Tuple, cast
 
-import numpy as np
-import pandas as pd
 import pydantic
 import uvicorn
 import uvicorn.config
@@ -53,6 +48,7 @@ from antarest.front import add_front_app
 from antarest.login.auth import Auth, JwtSettings
 from antarest.login.model import init_admin_user
 from antarest.matrixstore.matrix_garbage_collector import MatrixGarbageCollector
+from antarest.matrixstore.migration_script import migrate_matrixstore
 from antarest.service_creator import SESSION_ARGS, Module, create_services, init_db_engine
 from antarest.singleton_services import start_all_services
 from antarest.study.storage.auto_archive_service import AutoArchiveService
@@ -211,45 +207,14 @@ def fastapi_app(
         loop = asyncio.get_running_loop()
         loop.set_default_executor(ThreadPoolExecutor(max_workers=config.server.worker_threadpool_size))
 
-    async def run_in_thread(sync_function: Callable[[], None]) -> None:
-        # Get the loop that's running the handler.
-        loop = asyncio.get_running_loop()
-        # run_in_executor expects a callable with no arguments. We can use `partial` or maybe `lambda` for that.
-        sync_function_noargs = partial(sync_function)
-        return await loop.run_in_executor(None, sync_function_noargs)
-
-    def migrate_matrixstore() -> None:
-        """
-        Migrates matrices inside the matrixstore from tsv files to hdf ones.
-        Does nothing if all files are already hdf ones.
-        """
-        matrix_store_path = config.storage.matrixstore.resolve()
-        matrices = glob.glob(os.path.join(str(matrix_store_path), "*.tsv"))
-        if matrices:
-            logger.info("Matrix store migration starts")
-            for matrix in matrices:
-                matrix_path = Path(matrix)
-                hdf_path = matrix_path.parent.joinpath(matrix_path.stem + ".hdf")
-                data = np.loadtxt(matrix_path, delimiter="\t", dtype=np.float64, ndmin=2)
-                data = data.reshape((1, 0)) if data.size == 0 else data
-                df = pd.DataFrame(data=data)
-                df.to_hdf(hdf_path, "data")
-                old_lock_path = matrix_path.with_suffix(".tsv.lock")
-                new_lock_path = hdf_path.with_suffix(".hdf.lock")
-                new_lock_path.touch()
-                if old_lock_path.exists():
-                    old_lock_path.rename(new_lock_path)
-                matrix_path.unlink()
-            logger.info("Matrix store migration ended successfully")
-
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         """
         Everything before the `yield` will be executed before running the app.
         Everything after will be executed just before the app shutdowns.
         """
+        migrate_matrixstore(config.storage.matrixstore.resolve())
         await set_default_executor()
-        await run_in_thread(migrate_matrixstore)
         yield
 
     application = FastAPI(
