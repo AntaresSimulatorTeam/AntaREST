@@ -1,12 +1,18 @@
 import {
   Divider,
+  IconButton,
   List,
+  ListItem,
   ListItemButton,
   ListItemIcon,
   ListItemText,
   ListSubheader,
+  Menu,
+  MenuItem,
 } from "@mui/material";
 import FolderIcon from "@mui/icons-material/Folder";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
+import DeleteIcon from "@mui/icons-material/Delete";
 import {
   getFileIcon,
   getFileType,
@@ -14,13 +20,16 @@ import {
   type DataCompProps,
   isFolder,
 } from "../utils";
-import { Fragment } from "react";
+import { Fragment, useState } from "react";
 import EmptyView from "../../../../../common/page/SimpleContent";
 import { useTranslation } from "react-i18next";
 import { Filename, Menubar } from "./styles";
 import UploadFileButton from "../../../../../common/buttons/UploadFileButton";
 import ConfirmationDialog from "../../../../../common/dialogs/ConfirmationDialog";
 import useConfirm from "../../../../../../hooks/useConfirm";
+import { deleteFile } from "../../../../../../services/api/studies/raw";
+import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
+import { toError } from "../../../../../../utils/fnUtils";
 
 function Folder(props: DataCompProps) {
   const {
@@ -35,6 +44,13 @@ function Folder(props: DataCompProps) {
 
   const { t } = useTranslation();
   const replaceFile = useConfirm();
+  const removeFile = useConfirm();
+  const [menuData, setMenuData] = useState<null | {
+    anchorEl: HTMLElement;
+    filePath: string;
+  }>(null);
+  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
+
   const treeFolder = treeData as TreeFolder;
   const list = Object.entries(treeFolder);
 
@@ -51,6 +67,27 @@ function Folder(props: DataCompProps) {
 
       return replaceFile.showConfirm();
     }
+  };
+
+  const handleMenuClose = () => {
+    setMenuData(null);
+  };
+
+  const handleDeleteClick = () => {
+    handleMenuClose();
+
+    removeFile.showConfirm().then((confirm) => {
+      const filePath = menuData?.filePath;
+      if (confirm && filePath) {
+        deleteFile({ studyId, path: filePath })
+          .then((res) => {
+            reloadTreeData();
+          })
+          .catch((err) => {
+            enqueueErrorSnackbar("Delete failed", toError(err));
+          });
+      }
+    });
   };
 
   ////////////////////////////////////////////////////////////////
@@ -94,21 +131,45 @@ function Folder(props: DataCompProps) {
 
             return (
               <Fragment key={filename}>
-                <ListItemButton
-                  onClick={() =>
-                    setSelectedFile({
-                      fileType,
-                      filename,
-                      filePath: `${filePath}/${filename}`,
-                      treeData: data,
-                    })
+                <ListItem
+                  secondaryAction={
+                    <IconButton
+                      edge="end"
+                      size="small"
+                      onClick={(event) => {
+                        setMenuData({
+                          anchorEl: event.currentTarget,
+                          filePath: `${filePath}/${filename}`,
+                        });
+                      }}
+                    >
+                      <MoreVertIcon />
+                    </IconButton>
                   }
+                  disablePadding
                 >
-                  <ListItemIcon>
-                    <Icon />
-                  </ListItemIcon>
-                  <ListItemText primary={filename} />
-                </ListItemButton>
+                  <ListItemButton
+                    onClick={() =>
+                      setSelectedFile({
+                        fileType,
+                        filename,
+                        filePath: `${filePath}/${filename}`,
+                        treeData: data,
+                      })
+                    }
+                  >
+                    <ListItemIcon>
+                      <Icon />
+                    </ListItemIcon>
+                    <ListItemText
+                      title={filename}
+                      primary={filename}
+                      primaryTypographyProps={{
+                        sx: { overflow: "hidden", textOverflow: "ellipsis" },
+                      }}
+                    />
+                  </ListItemButton>
+                </ListItem>
                 {!isLast && <Divider variant="fullWidth" />}
               </Fragment>
             );
@@ -117,6 +178,18 @@ function Folder(props: DataCompProps) {
           <EmptyView title={t("study.debug.folder.empty")} icon={FolderIcon} />
         )}
       </List>
+      {/* Items menu */}
+      <Menu
+        anchorEl={menuData?.anchorEl}
+        open={!!menuData}
+        onClose={handleMenuClose}
+      >
+        <MenuItem onClick={handleDeleteClick}>
+          <DeleteIcon sx={{ mr: 1 }} fontSize="small" />
+          Delete
+        </MenuItem>
+      </Menu>
+      {/* Confim file replacement */}
       <ConfirmationDialog
         title={t("study.debug.folder.upload.replaceFileConfirm.title")}
         confirmButtonText={t("global.replace")}
@@ -127,6 +200,18 @@ function Folder(props: DataCompProps) {
         onCancel={replaceFile.no}
       >
         {t("study.debug.folder.upload.replaceFileConfirm.message")}
+      </ConfirmationDialog>
+      {/* Confim file deletion */}
+      <ConfirmationDialog
+        titleIcon={DeleteIcon}
+        confirmButtonText={t("global.delete")}
+        cancelButtonText={t("global.cancel")}
+        maxWidth="xs"
+        open={removeFile.isPending}
+        onConfirm={removeFile.yes}
+        onCancel={removeFile.no}
+      >
+        Delete the file?
       </ConfirmationDialog>
     </>
   );
