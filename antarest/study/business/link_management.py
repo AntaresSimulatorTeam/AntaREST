@@ -222,7 +222,7 @@ class LinkManager:
             link_info_dto_data["filter_year_by_year"] = link_creation_info.filter_year_by_year
         else:
             if isinstance(link_creation_info, LinkInfoDTO820) and (
-                    link_creation_info.filter_synthesis is not None or link_creation_info.filter_year_by_year is not None
+                link_creation_info.filter_synthesis is not None or link_creation_info.filter_year_by_year is not None
             ):
                 link_info_dto_data["_filters_provided"] = True
 
