@@ -17,7 +17,7 @@ from pydantic import ValidationInfo, field_validator, model_validator
 from antarest.core.model import JSON
 from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
-from antarest.study.storage.rawstudy.model.filesystem.config.links import AssetType, TransmissionCapacity, LinkStyle
+from antarest.study.storage.rawstudy.model.filesystem.config.links import AssetType, LinkStyle, TransmissionCapacity
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, Link
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol, validate_matrix
@@ -100,44 +100,44 @@ class CreateLink(ICommand):
     @staticmethod
     def generate_link_properties(parameters: JSON) -> JSON:
         return {
-            "hurdles-cost": parameters.get(
-                "hurdles-cost",
+            "hurdles_cost": parameters.get(
+                "hurdles_cost",
                 LinkProperties.HURDLES_COST,
             ),
-            "loop-flow": parameters.get("loop-flow", LinkProperties.LOOP_FLOW),
-            "use-phase-shifter": parameters.get(
-                "use-phase-shifter",
+            "loop_flow": parameters.get("loop_flow", LinkProperties.LOOP_FLOW),
+            "use_phase_shifter": parameters.get(
+                "use_phase_shifter",
                 LinkProperties.USE_PHASE_SHIFTER,
             ),
-            "transmission-capacities": parameters.get(
-                "transmission-capacities",
+            "transmission_capacities": parameters.get(
+                "transmission_capacities",
                 LinkProperties.TRANSMISSION_CAPACITIES,
             ),
-            "asset-type": parameters.get(
-                "asset-type",
+            "asset_type": parameters.get(
+                "asset_type",
                 LinkProperties.ASSET_TYPE,
             ),
-            "link-style": parameters.get(
-                "link-style",
+            "link_style": parameters.get(
+                "link_style",
                 LinkProperties.LINK_STYLE,
             ),
-            "link-width": parameters.get(
-                "link-width",
+            "link_width": parameters.get(
+                "link_width",
                 LinkProperties.LINK_WIDTH,
             ),
             "colorr": parameters.get("colorr", LinkProperties.COLORR),
             "colorg": parameters.get("colorg", LinkProperties.COLORG),
             "colorb": parameters.get("colorb", LinkProperties.COLORB),
-            "display-comments": parameters.get(
-                "display-comments",
+            "display_comments": parameters.get(
+                "display_comments",
                 LinkProperties.DISPLAY_COMMENTS,
             ),
-            "filter-synthesis": parameters.get(
-                "filter-synthesis",
+            "filter_synthesis": parameters.get(
+                "filter_synthesis",
                 FilteringOptions.FILTER_SYNTHESIS,
             ),
-            "filter-year-by-year": parameters.get(
-                "filter-year-by-year",
+            "filter_year_by_year": parameters.get(
+                "filter_year_by_year",
                 FilteringOptions.FILTER_YEAR_BY_YEAR,
             ),
         }

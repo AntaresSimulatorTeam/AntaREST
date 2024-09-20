@@ -20,8 +20,10 @@ from antarest.study.business.all_optional_meta import all_optional_model, camel_
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import RawStudy
 from antarest.study.storage.rawstudy.model.filesystem.config.links import (
+    AssetType,
     LinkProperties,
-    LinkStyle, TransmissionCapacity, AssetType,
+    LinkStyle,
+    TransmissionCapacity,
 )
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.common import FilteringOptions
@@ -119,8 +121,7 @@ class LinkInfoFactory:
         Raises:
             InvalidFieldForVersionError: If filters are provided for a version lower than 820.
         """
-        filters_provided = kwargs.get("filter_synthesis") is not None or kwargs.get("filter_year_by_year") is not None
-        if version < 820 and filters_provided:
+        if version < 820 and kwargs.get("_filters_provided"):
             raise InvalidFieldForVersionError(
                 "Filters filter_synthesis and filter_year_by_year cannot be used for study versions lower than 820."
             )
@@ -139,24 +140,7 @@ class LinkInfoFactory:
         Returns:
             t.Dict[str, t.Union[str, bool, float, None]: A dictionary containing the parameters for the command.
         """
-        parameters = {
-            "hurdles-cost": link_creation_info.hurdles_cost,
-            "loop-flow": link_creation_info.loop_flow,
-            "use-phase-shifter": link_creation_info.use_phase_shifter,
-            "transmission-capacities": link_creation_info.transmission_capacities,
-            "asset-type": link_creation_info.asset_type,
-            "display-comments": link_creation_info.display_comments,
-            "colorr": link_creation_info.colorr,
-            "colorb": link_creation_info.colorb,
-            "colorg": link_creation_info.colorg,
-            "link-width": link_creation_info.link_width,
-            "link-style": link_creation_info.link_style,
-        }
-
-        if study_version >= 820 and isinstance(link_creation_info, LinkInfoDTO820):
-            parameters["filter-synthesis"] = link_creation_info.filter_synthesis
-            parameters["filter-year-by-year"] = link_creation_info.filter_year_by_year
-
+        parameters = link_creation_info.model_dump(exclude={"area1", "area2"}, exclude_none=True)
         return parameters
 
 
@@ -175,23 +159,26 @@ class LinkManager:
     def get_all_links(self, study: RawStudy, with_ui: bool = False) -> t.List[LinkInfoDTOType]:
         file_study = self.storage_service.get_storage(study).get_raw(study)
         result = []
+
         for area_id, area in file_study.config.areas.items():
             links_config = file_study.tree.get(["input", "links", area_id, "properties"])
+
             for link in area.links:
                 link_properties = links_config[link]
+
                 link_creation_data = {
-                    "version": int(study.version),
                     "area1": area_id,
                     "area2": link,
-                    "hurdles_cost": link_properties.get("hurdles-cost"),
-                    "loop_flow": link_properties.get("loop-flow"),
-                    "use_phase_shifter": link_properties.get("use-phase-shifter"),
-                    "transmission_capacities": link_properties.get("transmission-capacities"),
-                    "asset_type": link_properties.get("asset-type"),
-                    "display_comments": link_properties.get("display-comments"),
-                    "filter_synthesis": link_properties.get("filter-synthesis"),
-                    "filter_year_by_year": link_properties.get("filter-year-by-year"),
+                    "hurdles_cost": link_properties.get("hurdles_cost"),
+                    "loop_flow": link_properties.get("loop_flow"),
+                    "use_phase_shifter": link_properties.get("use_phase_shifter"),
+                    "transmission_capacities": link_properties.get("transmission_capacities"),
+                    "asset_type": link_properties.get("asset_type"),
+                    "display_comments": link_properties.get("display_comments"),
+                    "filter_synthesis": link_properties.get("filter_synthesis"),
+                    "filter_year_by_year": link_properties.get("filter_year_by_year"),
                 }
+
                 ui_parameters = {}
                 if with_ui and links_config and link in links_config:
                     ui_parameters.update(
@@ -199,48 +186,47 @@ class LinkManager:
                             "colorr": str(link_properties.get("colorr", DEFAULT_COLOR)),
                             "colorb": str(link_properties.get("colorb", DEFAULT_COLOR)),
                             "colorg": str(link_properties.get("colorg", DEFAULT_COLOR)),
-                            "link_width": link_properties.get("link-width", 1.0),
-                            "link_style": link_properties.get("link-style", LinkStyle.PLAIN),
+                            "link_width": link_properties.get("link_width", 1.0),
+                            "link_style": link_properties.get("link_style", LinkStyle.PLAIN),
                         }
                     )
-                    link_creation_data.update(ui_parameters)
-                else:
-                    link_creation_data.update(
-                        {"colorr": None, "colorb": None, "colorg": None, "link_width": None, "link_style": None}
-                    )
-                link_info_dto = LinkInfoFactory.create_link_info(**link_creation_data)
+                link_creation_data.update(ui_parameters)
 
+                link_info_dto = LinkInfoFactory.create_link_info(int(study.version), **link_creation_data)
                 result.append(link_info_dto)
+
         return result
 
     def create_link(self, study: RawStudy, link_creation_info: LinkInfoDTOType) -> LinkInfoDTOType:
         study_version = int(study.version)
 
-        if isinstance(link_creation_info, LinkInfoDTO820):
-            filter_synthesis = link_creation_info.filter_synthesis if study_version >= 820 else None
-            filter_year_by_year = link_creation_info.filter_year_by_year if study_version >= 820 else None
-        else:
-            filter_synthesis = None
-            filter_year_by_year = None
+        link_info_dto_data = {
+            "study_version": int(study.version),
+            "area1": link_creation_info.area1,
+            "area2": link_creation_info.area2,
+            "hurdles_cost": link_creation_info.hurdles_cost,
+            "loop_flow": link_creation_info.loop_flow,
+            "use_phase_shifter": link_creation_info.use_phase_shifter,
+            "transmission_capacities": link_creation_info.transmission_capacities,
+            "asset_type": link_creation_info.asset_type,
+            "display_comments": link_creation_info.display_comments,
+            "colorr": link_creation_info.colorr,
+            "colorb": link_creation_info.colorb,
+            "colorg": link_creation_info.colorg,
+            "link_width": link_creation_info.link_width,
+            "link_style": link_creation_info.link_style,
+        }
 
-        link_info_dto = LinkInfoFactory.create_link_info(
-            version=int(study.version),
-            area1=link_creation_info.area1,
-            area2=link_creation_info.area2,
-            hurdles_cost=link_creation_info.hurdles_cost,
-            loop_flow=link_creation_info.loop_flow,
-            use_phase_shifter=link_creation_info.use_phase_shifter,
-            transmission_capacities=link_creation_info.transmission_capacities,
-            asset_type=link_creation_info.asset_type,
-            display_comments=link_creation_info.display_comments,
-            colorr=link_creation_info.colorr,
-            colorb=link_creation_info.colorb,
-            colorg=link_creation_info.colorg,
-            link_width=link_creation_info.link_width,
-            link_style=link_creation_info.link_style,
-            filter_synthesis=filter_synthesis,
-            filter_year_by_year=filter_year_by_year,
-        )
+        if study_version >= 820 and isinstance(link_creation_info, LinkInfoDTO820):
+            link_info_dto_data["filter_synthesis"] = link_creation_info.filter_synthesis
+            link_info_dto_data["filter_year_by_year"] = link_creation_info.filter_year_by_year
+        else:
+            if isinstance(link_creation_info, LinkInfoDTO820) and (
+                    link_creation_info.filter_synthesis is not None or link_creation_info.filter_year_by_year is not None
+            ):
+                link_info_dto_data["_filters_provided"] = True
+
+        link_info_dto = LinkInfoFactory.create_link_info(study_version, **link_info_dto_data)
 
         storage_service = self.storage_service.get_storage(study)
         file_study = storage_service.get_raw(study)
