@@ -167,25 +167,25 @@ export function useMatrix(
     const aggregateColumns: EnhancedGridColumn[] = enableAggregateColumns
       ? [
           {
+            id: "avg",
+            title: "Avg",
+            type: ColumnTypes.Aggregate,
+            editable: false,
+            themeOverride: aggregatesTheme,
+          },
+          {
             id: "min",
             title: "Min",
             type: ColumnTypes.Aggregate,
             editable: false,
-            themeOverride: aggregatesTheme,
+            themeOverride: { ...aggregatesTheme, bgCell: "#464770" },
           },
           {
             id: "max",
             title: "Max",
             type: ColumnTypes.Aggregate,
             editable: false,
-            themeOverride: aggregatesTheme,
-          },
-          {
-            id: "avg",
-            title: "Avg",
-            type: ColumnTypes.Aggregate,
-            editable: false,
-            themeOverride: aggregatesTheme,
+            themeOverride: { ...aggregatesTheme, bgCell: "#464770" },
           },
         ]
       : [];

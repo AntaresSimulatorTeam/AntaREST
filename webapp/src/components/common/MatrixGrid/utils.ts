@@ -73,20 +73,13 @@ export const readOnlyDarkTheme: Partial<Theme> = {
 };
 
 export const aggregatesTheme: Partial<Theme> = {
-  bgCell: "#31324A",
+  bgCell: "#3D3E5F",
   bgCellMedium: "#383A5C",
-  textDark: "#1976D2",
-  textMedium: "#2196F3",
-  textLight: "#64B5F6",
-  accentColor: "#2196F3",
-  accentLight: "#64B5F633",
+  textDark: "#FFFFFF",
   fontFamily: "Inter, sans-serif",
   baseFontStyle: "bold 13px",
   editorFontSize: "13px",
   headerFontStyle: "bold 11px",
-  accentFg: "#2196F3", // This affects the selection border
-  borderColor: "#2196F3", // This affects the general cell borders
-  drilldownBorder: "#2196F3", // This affects the border when drilling down into a cell
 };
 
 const dateIncrementStrategies: Record<
