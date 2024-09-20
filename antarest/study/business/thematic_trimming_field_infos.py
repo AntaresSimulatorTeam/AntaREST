@@ -18,6 +18,7 @@ import typing as t
 
 from antarest.study.business.all_optional_meta import all_optional_model
 from antarest.study.business.utils import FormFieldsBaseModel
+from antares.study.version import StudyVersion
 
 
 @all_optional_model
@@ -238,5 +239,5 @@ FIELDS_INFO: t.Mapping[str, t.Mapping[str, t.Any]] = {
 }
 
 
-def get_fields_info(study_version: int) -> t.Mapping[str, t.Mapping[str, t.Any]]:
-    return {key: info for key, info in FIELDS_INFO.items() if (info.get("start_version") or 0) <= study_version}
+def get_fields_info(study_version: StudyVersion) -> t.Mapping[str, t.Mapping[str, t.Any]]:
+    return {key: info for key, info in FIELDS_INFO.items() if StudyVersion.parse(info.get("start_version") or 0) <= study_version}

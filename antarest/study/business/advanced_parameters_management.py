@@ -22,6 +22,7 @@ from antarest.study.business.utils import GENERAL_DATA_PATH, FieldInfo, FormFiel
 from antarest.study.model import Study
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
+from antares.study.version import StudyVersion
 
 
 class InitialReservoirLevel(EnumIgnoreCase):
@@ -255,7 +256,7 @@ class AdvancedParamsManager:
                 if (
                     field_name == "unit_commitment_mode"
                     and value == UnitCommitmentMode.MILP
-                    and int(study.version) < 880
+                    and StudyVersion.parse(study.version) < StudyVersion.parse(880)
                 ):
                     raise InvalidFieldForVersionError("Unit commitment mode `MILP` only exists in v8.8+ studies")
 

@@ -36,6 +36,8 @@ from antarest.core.model import PublicMode
 from antarest.core.persistence import Base
 from antarest.login.model import Group, GroupDTO, Identity
 from antarest.study.css4_colors import COLOR_NAMES
+from antares.study.version import StudyVersion
+
 
 if t.TYPE_CHECKING:
     # avoid circular import
@@ -341,7 +343,7 @@ class OwnerInfo(BaseModel):
 class StudyMetadataDTO(BaseModel):
     id: str
     name: str
-    version: int
+    version: StudyVersion
     created: str
     updated: str
     type: str
@@ -362,6 +364,10 @@ class StudyMetadataDTO(BaseModel):
     def transform_horizon_to_str(cls, val: t.Union[str, int, None]) -> t.Optional[str]:
         # horizon can be an int.
         return str(val) if val else val  # type: ignore
+
+    @field_validator("version", mode="before")
+    def _validate_version(cls, v: t.Any) -> StudyVersion:
+        return StudyVersion.parse(v)
 
 
 class StudyMetadataPatchDTO(BaseModel):

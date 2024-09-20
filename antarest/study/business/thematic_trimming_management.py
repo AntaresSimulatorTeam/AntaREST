@@ -17,6 +17,7 @@ from antarest.study.business.utils import GENERAL_DATA_PATH, execute_or_add_comm
 from antarest.study.model import Study
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
+from antares.study.version import StudyVersion
 
 
 class ThematicTrimmingManager:
@@ -40,7 +41,7 @@ class ThematicTrimmingManager:
             var_name = field_info["path"]
             return var_name not in exclude_vars if selected_vars_reset else var_name in include_vars
 
-        fields_info = get_fields_info(int(study.version))
+        fields_info = get_fields_info(StudyVersion.parse(study.version))
         fields_values = {name: get_value(info) for name, info in fields_info.items()}
         return ThematicTrimmingFormFields(**fields_values)
 
@@ -52,7 +53,7 @@ class ThematicTrimmingManager:
         field_values_dict = field_values.model_dump()
 
         keys_by_bool: t.Dict[bool, t.List[t.Any]] = {True: [], False: []}
-        fields_info = get_fields_info(int(study.version))
+        fields_info = get_fields_info(StudyVersion.parse(study.version))
         for name, info in fields_info.items():
             keys_by_bool[field_values_dict[name]].append(info["path"])
 
