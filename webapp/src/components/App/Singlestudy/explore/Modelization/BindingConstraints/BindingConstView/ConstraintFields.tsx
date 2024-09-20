@@ -28,9 +28,9 @@ import { useFormContextPlus } from "../../../../../../common/Form";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { validateString } from "../../../../../../../utils/validationUtils";
-import Matrix from "./Matrix";
 import { Box, Button } from "@mui/material";
 import { Dataset } from "@mui/icons-material";
+import ConstraintMatrix from "./Matrix";
 
 interface Props {
   study: StudyMetadata;
@@ -174,7 +174,7 @@ function Fields({ study, constraintId }: Props) {
       </Box>
 
       {matrixDialogOpen && (
-        <Matrix
+        <ConstraintMatrix
           study={study}
           constraintId={constraintId}
           operator={currentOperator}
