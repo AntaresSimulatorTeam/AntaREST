@@ -33,11 +33,11 @@ from antarest.core.exceptions import (
     StudyNotFoundError,
     StudyTypeUnsupported,
     StudyValidationError,
+    TaskAlreadyRunning,
+    VariantAgeMustBePositive,
     VariantGenerationError,
     VariantGenerationTimeoutError,
     VariantStudyParentNotValid,
-    VariantAgeMustBePositive,
-    TaskAlreadyRunning,
 )
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.interfaces.cache import ICache
@@ -45,13 +45,13 @@ from antarest.core.interfaces.eventbus import Event, EventChannelDirectory, Even
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.model import JSON, PermissionInfo, PublicMode, StudyPermissionType
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
-from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskResult, TaskType, TaskListFilter, TaskStatus
+from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskListFilter, TaskResult, TaskStatus, TaskType
 from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT, ITaskService, TaskUpdateNotifier, noop_notifier
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import assert_this, suppress_exception
 from antarest.matrixstore.service import MatrixService
 from antarest.study.model import RawStudy, Study, StudyAdditionalData, StudyMetadataDTO, StudySimResultDTO
-from antarest.study.repository import StudyFilter, AccessPermissions
+from antarest.study.repository import AccessPermissions, StudyFilter
 from antarest.study.storage.abstract_storage_service import AbstractStorageService
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, FileStudyTreeConfigDTO
@@ -1055,7 +1055,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             )
             return False
 
-    def clear_all_snapshots(self, limit: int, params: t.Optional[RequestParameters] = None) -> str:
+    def clear_all_snapshots(self, limit: int, params: t.Optional[RequestParameters]) -> str:
         """
         Clear all variant snapshots older than `limit` (in hours).
         Only available for admin users.
@@ -1070,7 +1070,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             UserHasNotPermissionError
             VariantAgeMustBePositive
         """
-        if params is None or not params.user.is_site_admin():
+        if params is None:
             raise UserHasNotPermissionError()
         if limit < 0:
             raise VariantAgeMustBePositive(f"Limit cannot be negative (limit={limit})")

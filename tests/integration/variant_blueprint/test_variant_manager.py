@@ -10,21 +10,16 @@
 #
 # This file is part of the Antares project.
 
+import datetime
 import io
 import logging
 import time
-import datetime
 import typing as t
-
-from requests.exceptions import HTTPError
+from pathlib import Path
 
 import pytest
 from starlette.testclient import TestClient
 
-from pathlib import Path
-
-from antarest.core import requests
-from antarest.core.exceptions import VariantAgeMustBePositive
 from antarest.core.tasks.model import TaskDTO, TaskStatus
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService

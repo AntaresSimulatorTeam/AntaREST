@@ -13,13 +13,13 @@
 import datetime
 import re
 import typing
-
 from pathlib import Path
 from unittest.mock import Mock
 
 import numpy as np
 import pytest
 
+from antarest.core.exceptions import VariantAgeMustBePositive
 from antarest.core.model import PublicMode
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.utils.fastapi_sqlalchemy import db
@@ -28,7 +28,6 @@ from antarest.login.model import Group, User
 from antarest.matrixstore.service import SimpleMatrixService
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import RawStudy, StudyAdditionalData
-from antarest.study.service import StudyService
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import STStorageConfig, STStorageGroup
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
@@ -38,8 +37,6 @@ from antarest.study.storage.variantstudy.model.command.create_area import Create
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
-from antarest.core.exceptions import VariantAgeMustBePositive
-
 from tests.helpers import with_db_context
 
 # noinspection SpellCheckingInspection
@@ -248,11 +245,11 @@ class TestVariantStudyService:
 
     @with_db_context
     def test_clear_all_snapshots(
-            self,
-            tmp_path: Path,
-            variant_study_service: VariantStudyService,
-            raw_study_service: RawStudyService,
-            monkeypatch: pytest.MonkeyPatch
+        self,
+        tmp_path: Path,
+        variant_study_service: VariantStudyService,
+        raw_study_service: RawStudyService,
+        monkeypatch: pytest.MonkeyPatch,
     ):
         """
         - Test return value in case the user is not allowed to call the function,
@@ -348,12 +345,7 @@ class TestVariantStudyService:
                 )
 
                 # Generate a snapshot for each variant
-                variant_study_service.generate(
-                    sanitize_uuid(variant_list[index].id),
-                    False,
-                    False,
-                    regular_rights_mock
-                )
+                variant_study_service.generate(sanitize_uuid(variant_list[index].id), False, False, regular_rights_mock)
 
         variant_study_path = Path(tmp_path).joinpath("internal_studies")
 
@@ -367,7 +359,7 @@ class TestVariantStudyService:
         # Begin tests
         # A user without rights cannot clear snapshots
         try:
-            variant_study_service.clear_all_snapshots(1)  # must raise an error
+            variant_study_service.clear_all_snapshots(1, None)  # must raise an error
         except UserHasNotPermissionError:
             pass
         else:
@@ -415,6 +407,3 @@ class TestVariantStudyService:
             if variant_path.joinpath("snapshot").exists():
                 nb_snapshot_dir += 1
             assert nb_snapshot_dir == 0
-
-
-
