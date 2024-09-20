@@ -227,16 +227,25 @@ export function useMatrix(
           (update): update is NonNullable<typeof update> => update !== null,
         );
 
+      // Recalculate aggregates with the updated data
+      const newAggregates = enableAggregateColumns
+        ? calculateMatrixAggregates(updatedData)
+        : { min: [], max: [], avg: [], total: [] };
+
       setState({
         data: updatedData,
-        aggregates: currentState.aggregates,
+        aggregates: newAggregates,
         pendingUpdates: [...currentState.pendingUpdates, ...newUpdates],
-        updateCount: currentState.updateCount
-          ? currentState.updateCount + 1
-          : 1,
+        updateCount: currentState.updateCount + 1 || 1,
       });
     },
-    [currentState, setState],
+    [
+      currentState.data,
+      currentState.pendingUpdates,
+      currentState.updateCount,
+      enableAggregateColumns,
+      setState,
+    ],
   );
 
   const handleCellEdit = function (update: GridUpdate) {
