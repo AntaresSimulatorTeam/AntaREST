@@ -46,6 +46,7 @@ interface DataState {
   data: MatrixDataDTO["data"];
   aggregates: MatrixAggregates;
   pendingUpdates: MatrixUpdateDTO[];
+  updateCount: number;
 }
 
 export function useMatrix(
@@ -70,6 +71,7 @@ export function useMatrix(
       data: [],
       aggregates: { min: [], max: [], avg: [], total: [] },
       pendingUpdates: [],
+      updateCount: 0,
     });
 
   const fetchMatrix = useCallback(
@@ -95,6 +97,7 @@ export function useMatrix(
             ? calculateMatrixAggregates(matrix.data)
             : { min: [], max: [], avg: [], total: [] },
           pendingUpdates: [],
+          updateCount: 0,
         });
         setColumnCount(matrix.columns.length);
         setIndex(index);
@@ -228,6 +231,9 @@ export function useMatrix(
         data: updatedData,
         aggregates: currentState.aggregates,
         pendingUpdates: [...currentState.pendingUpdates, ...newUpdates],
+        updateCount: currentState.updateCount
+          ? currentState.updateCount + 1
+          : 1,
       });
     },
     [currentState, setState],
@@ -261,9 +267,9 @@ export function useMatrix(
       await updateMatrix(studyId, url, currentState.pendingUpdates);
 
       setState({
-        data: currentState.data,
-        aggregates: currentState.aggregates,
+        ...currentState,
         pendingUpdates: [],
+        updateCount: 0,
       });
 
       enqueueSnackbar(t("matrix.success.matrixUpdate"), {
@@ -306,7 +312,7 @@ export function useMatrix(
     handleMultipleCellsEdit,
     handleImport,
     handleSaveUpdates,
-    pendingUpdatesCount: currentState.pendingUpdates.length,
+    pendingUpdatesCount: currentState.updateCount,
     undo: handleUndo,
     redo: handleRedo,
     canUndo: canUndoChanges,
