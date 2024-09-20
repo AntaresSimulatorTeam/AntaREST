@@ -1055,7 +1055,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             )
             return False
 
-    def clear_all_snapshots(self, limit: int, params: t.Optional[RequestParameters]) -> str:
+    def clear_all_snapshots(self, limit: int, params: t.Optional[RequestParameters] = None) -> str:
         """
         Clear all variant snapshots older than `limit` (in hours).
         Only available for admin users.
@@ -1070,7 +1070,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             UserHasNotPermissionError
             VariantAgeMustBePositive
         """
-        if params is None:
+        if params is None or not params.user.is_site_admin():
             raise UserHasNotPermissionError()
         if limit < 0:
             raise VariantAgeMustBePositive(f"Limit cannot be negative (limit={limit})")

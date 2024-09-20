@@ -320,7 +320,9 @@ class TestVariantStudyService:
         db.session.commit()
 
         admin_rights_mock = Mock(impersonator=admin_user.id, is_site_admin=Mock(return_value=True))
-        regular_rights_mock = Mock(impersonator=regular_user.id, is_site_admin=Mock(return_value=None))
+        regular_rights_mock = Mock(
+            impersonator=regular_user.id,
+        )
 
         # Set up the Raw Study
         raw_study_service.create(raw_study)
