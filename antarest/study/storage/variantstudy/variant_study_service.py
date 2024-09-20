@@ -78,33 +78,6 @@ SNAPSHOT_RELATIVE_PATH = "snapshot"
 OUTPUT_RELATIVE_PATH = "output"
 
 
-class SnapshotCleanerTask:
-    def __init__(self, variant_study_service: "VariantStudyService", variant_list: [VariantStudy], limit: int) -> None:
-        self._variant_study_service: "VariantStudyService" = variant_study_service
-        self._variant_list: [VariantStudy] = variant_list
-        self._limit: int = limit
-
-    def _clear_all_snapshots(self):
-        with db():
-            for variant in self._variant_list:
-                if variant.updated_at < datetime.now() - timedelta(hours=self._limit):
-                    if variant.last_access and variant.last_access < datetime.now() - timedelta(hours=self._limit):
-                        logger.info(f"Variant {variant.id} detected.")
-                        path = self._variant_study_service.get_study_path(variant)
-                        shutil.rmtree(path, ignore_errors=True)
-
-    def run_task(self, notifier: TaskUpdateNotifier) -> TaskResult:
-        msg = f"Start cleaning all snapshots updated or accessed {self._limit} hours ago."
-        notifier(msg)
-        with db():
-            self._clear_all_snapshots()
-        msg = f"All selected snapshots were successfully cleared."
-        notifier(msg)
-        return TaskResult(success=True, message=msg)
-
-    __call__ = run_task
-
-
 class VariantStudyService(AbstractStorageService[VariantStudy]):
     def __init__(
         self,
@@ -1082,7 +1055,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             )
             return False
 
-    def clear_all_snapshots(self, limit: int, params: t.Optional[RequestParameters] = None) -> str:
+    def clear_all_snapshots(self, limit: int, params: t.Optional[RequestParameters]) -> str:
         """
         Clear all variant snapshots older than `limit` (in hours).
         Only available for admin users.
@@ -1140,3 +1113,31 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             custom_event_messages=None,
             request_params=params,
         )
+
+
+class SnapshotCleanerTask:
+    def __init__(
+        self, variant_study_service: VariantStudyService, variant_list: t.Sequence[VariantStudy], limit: int
+    ) -> None:
+        self._variant_study_service = variant_study_service
+        self._variant_list = variant_list
+        self._limit = limit
+
+    def _clear_all_snapshots(self) -> None:
+        with db():
+            for variant in self._variant_list:
+                if variant.updated_at < datetime.now() - timedelta(hours=self._limit):
+                    if variant.last_access and variant.last_access < datetime.now() - timedelta(hours=self._limit):
+                        logger.info(f"Variant {variant.id} detected.")
+                        path = self._variant_study_service.get_study_path(variant)
+                        shutil.rmtree(path, ignore_errors=True)
+
+    def run_task(self, notifier: TaskUpdateNotifier) -> TaskResult:
+        msg = f"Start cleaning all snapshots updated or accessed {self._limit} hours ago."
+        notifier(msg)
+        self._clear_all_snapshots()
+        msg = f"All selected snapshots were successfully cleared."
+        notifier(msg)
+        return TaskResult(success=True, message=msg)
+
+    __call__ = run_task

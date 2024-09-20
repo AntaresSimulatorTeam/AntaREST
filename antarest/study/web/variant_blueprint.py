@@ -19,7 +19,7 @@ from antarest.core.config import Config
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.jwt import JWTUser
 from antarest.core.requests import RequestParameters
-from antarest.core.tasks.model import TaskDTO
+from antarest.core.tasks.model import TaskDTO, TaskResult
 from antarest.core.utils.utils import sanitize_string, sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
@@ -434,7 +434,7 @@ def create_study_variant_routes(
     def clear_variant_snapshots(
         limit: int = 24,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> None:
+    ) -> str:
         """
         Endpoint that clear `limit` hours old and older variant snapshots.
 
