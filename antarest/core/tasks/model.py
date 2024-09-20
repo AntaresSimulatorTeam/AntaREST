@@ -40,7 +40,6 @@ class TaskType(str, Enum):
     SNAPSHOT_CLEARING = "SNAPSHOT_CLEARING"
 
 
-
 class TaskStatus(Enum):
     PENDING = 1
     RUNNING = 2
@@ -179,13 +178,15 @@ class TaskJob(Base):  # type: ignore
             completion_date_utc=str(self.completion_date) if self.completion_date else None,
             name=self.name,
             status=TaskStatus(self.status),
-            result=TaskResult(
-                success=self.result_status,
-                message=self.result_msg,
-                return_value=self.result,
-            )
-            if self.completion_date
-            else None,
+            result=(
+                TaskResult(
+                    success=self.result_status,
+                    message=self.result_msg,
+                    return_value=self.result,
+                )
+                if self.completion_date
+                else None
+            ),
             logs=sorted([log.to_dto() for log in self.logs], key=lambda log: log.id) if with_logs else None,
             type=self.type,
             ref_id=self.ref_id,
