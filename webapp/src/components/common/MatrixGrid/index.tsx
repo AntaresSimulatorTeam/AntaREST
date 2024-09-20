@@ -159,6 +159,7 @@ function MatrixGrid({
         onPaste
         fillHandle
         rowMarkers="both"
+        freezeColumns={1} // Make the first column sticky
       />
       <div id="portal" />
     </>
