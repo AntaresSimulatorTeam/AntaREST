@@ -27,7 +27,6 @@ from antarest.study.business.area_management import AreaCreationDTO, AreaManager
 from antarest.study.business.link_management import (
     LinkInfoDTO820,
     LinkInfoDTOBase,
-    LinkInfoDTOType,
     LinkInfoFactory,
     LinkManager,
 )
@@ -48,7 +47,6 @@ from antarest.study.storage.variantstudy.model.command.common import CommandName
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
-from tests.conftest_services import study_storage_service_fixture
 from tests.helpers import with_db_context
 from tests.storage.business.assets import ASSETS_DIR
 

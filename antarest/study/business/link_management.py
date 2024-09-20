@@ -20,10 +20,8 @@ from antarest.study.business.all_optional_meta import all_optional_model, camel_
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import RawStudy
 from antarest.study.storage.rawstudy.model.filesystem.config.links import (
-    AssetType,
     LinkProperties,
-    LinkStyle,
-    TransmissionCapacity,
+    LinkStyle, TransmissionCapacity, AssetType,
 )
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.common import FilteringOptions
@@ -41,14 +39,14 @@ class LinkInfoDTOBase(BaseModel):
     hurdles_cost: t.Optional[bool] = False
     loop_flow: t.Optional[bool] = False
     use_phase_shifter: t.Optional[bool] = False
-    transmission_capacities: t.Optional[str] = TransmissionCapacity.ENABLED
-    asset_type: t.Optional[str] = AssetType.AC
+    transmission_capacities: t.Optional[str] = TransmissionCapacity.ENABLED.value
+    asset_type: t.Optional[str] = AssetType.AC.value
     display_comments: t.Optional[bool] = True
     colorr: t.Optional[str] = DEFAULT_COLOR
     colorb: t.Optional[str] = DEFAULT_COLOR
     colorg: t.Optional[str] = DEFAULT_COLOR
     link_width: t.Optional[float] = 1
-    link_style: t.Optional[str] = LinkStyle.PLAIN
+    link_style: t.Optional[str] = LinkStyle.PLAIN.value
 
 
 class LinkInfoDTO820(LinkInfoDTOBase):
@@ -61,7 +59,7 @@ LinkInfoDTOType = t.Union[LinkInfoDTO820, LinkInfoDTOBase]
 
 class LinkInfoFactory:
     @staticmethod
-    def create_link_info(version: int, **kwargs) -> LinkInfoDTOType:
+    def create_link_info(version: int, **kwargs: t.Any) -> LinkInfoDTOType:
         """
         Creates a LinkInfoDTO object corresponding to the specified version.
 
@@ -79,7 +77,7 @@ class LinkInfoFactory:
         return link_info
 
     @staticmethod
-    def _initialize_link_info(version: int, **kwargs) -> LinkInfoDTOType:
+    def _initialize_link_info(version: int, **kwargs: t.Any) -> LinkInfoDTOType:
         """
         Initializes the LinkInfoDTO object based on the study version.
 
@@ -110,7 +108,7 @@ class LinkInfoFactory:
                 link_info.filter_year_by_year = FilteringOptions.FILTER_YEAR_BY_YEAR
 
     @staticmethod
-    def _check_version_coherence(version: int, **kwargs) -> None:
+    def _check_version_coherence(version: int, **kwargs: t.Any) -> None:
         """
         Checks if filters are provided for a study version lower than 820.
 
@@ -130,7 +128,7 @@ class LinkInfoFactory:
     @staticmethod
     def create_parameters(
         study_version: int, link_creation_info: LinkInfoDTOType
-    ) -> t.Dict[str, t.Union[str, bool, float]]:
+    ) -> t.Dict[str, t.Union[str, bool, float, None]]:
         """
         Creates the parameters for the link creation command, handling version differences.
 
@@ -139,7 +137,7 @@ class LinkInfoFactory:
             link_creation_info (LinkInfoDTOType): The link information for creation.
 
         Returns:
-            t.Dict[str, t.Union[str, bool, float]: A dictionary containing the parameters for the command.
+            t.Dict[str, t.Union[str, bool, float, None]: A dictionary containing the parameters for the command.
         """
         parameters = {
             "hurdles-cost": link_creation_info.hurdles_cost,
@@ -217,6 +215,14 @@ class LinkManager:
 
     def create_link(self, study: RawStudy, link_creation_info: LinkInfoDTOType) -> LinkInfoDTOType:
         study_version = int(study.version)
+
+        if isinstance(link_creation_info, LinkInfoDTO820):
+            filter_synthesis = link_creation_info.filter_synthesis if study_version >= 820 else None
+            filter_year_by_year = link_creation_info.filter_year_by_year if study_version >= 820 else None
+        else:
+            filter_synthesis = None
+            filter_year_by_year = None
+
         link_info_dto = LinkInfoFactory.create_link_info(
             version=int(study.version),
             area1=link_creation_info.area1,
@@ -232,8 +238,8 @@ class LinkManager:
             colorg=link_creation_info.colorg,
             link_width=link_creation_info.link_width,
             link_style=link_creation_info.link_style,
-            filter_synthesis=link_creation_info.filter_synthesis if study_version >= 820 else None,
-            filter_year_by_year=link_creation_info.filter_year_by_year if study_version >= 820 else None,
+            filter_synthesis=filter_synthesis,
+            filter_year_by_year=filter_year_by_year,
         )
 
         storage_service = self.storage_service.get_storage(study)
@@ -242,7 +248,7 @@ class LinkManager:
         command = CreateLink(
             area1=link_creation_info.area1,
             area2=link_creation_info.area2,
-            parameters=LinkInfoFactory.create_parameters(int(study.version), link_info_dto),
+            parameters=LinkInfoFactory.create_parameters(study_version, link_info_dto),
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
         )
 

@@ -17,7 +17,7 @@ from pydantic import ValidationInfo, field_validator, model_validator
 from antarest.core.model import JSON
 from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
-from antarest.study.storage.rawstudy.model.filesystem.config.links import AssetType, LinkStyle, TransmissionCapacity
+from antarest.study.storage.rawstudy.model.filesystem.config.links import AssetType, TransmissionCapacity, LinkStyle
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, Link
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol, validate_matrix
@@ -31,9 +31,9 @@ class LinkProperties:
     LOOP_FLOW: bool = False
     USE_PHASE_SHIFTER: bool = False
     DISPLAY_COMMENTS: bool = True
-    TRANSMISSION_CAPACITIES: TransmissionCapacity = "enabled"
-    ASSET_TYPE: AssetType = "ac"
-    LINK_STYLE: str = "plain"
+    TRANSMISSION_CAPACITIES: str = TransmissionCapacity.ENABLED.value
+    ASSET_TYPE: str = AssetType.AC.value
+    LINK_STYLE: str = LinkStyle.PLAIN.value
     LINK_WIDTH: int = 1
     COLORR: int = 112
     COLORG: int = 112
