@@ -145,6 +145,7 @@ export function useMatrix(
         title: "Date",
         type: ColumnTypes.DateTime,
         editable: false,
+        themeOverride: { bgCell: "#2D2E40" },
       });
     }
 
