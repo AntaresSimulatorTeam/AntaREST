@@ -1,8 +1,8 @@
 import { Box } from "@mui/material";
-import { TreeItem, type TreeItemProps } from "@mui/x-tree-view/TreeItem";
 import { TreeData, getFileType, getFileIcon, isFolder } from "../utils";
 import DebugContext from "../DebugContext";
 import { useContext } from "react";
+import TreeItemEnhanced from "../../../../../common/TreeItemEnhanced";
 
 interface Props {
   name: string;
@@ -15,22 +15,12 @@ function FileTreeItem({ name, treeData, path }: Props) {
   const filePath = path ? `${path}/${name}` : name;
   const fileType = getFileType(treeData);
   const FileIcon = getFileIcon(fileType);
-  const canExpand = isFolder(treeData) && Object.keys(treeData).length > 0;
 
   ////////////////////////////////////////////////////////////////
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleClick: TreeItemProps["onClick"] = ({ target }) => {
-    // The item is not selected if the click is on the expand/collapse icon
-    if (
-      canExpand &&
-      target instanceof Element &&
-      target.closest(".MuiTreeItem-iconContainer")
-    ) {
-      return;
-    }
-
+  const handleClick = () => {
     setSelectedFile({ fileType, filename: name, filePath, treeData });
   };
 
@@ -39,7 +29,7 @@ function FileTreeItem({ name, treeData, path }: Props) {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <TreeItem
+    <TreeItemEnhanced
       itemId={filePath}
       label={
         <Box sx={{ display: "flex" }}>
@@ -48,24 +38,6 @@ function FileTreeItem({ name, treeData, path }: Props) {
         </Box>
       }
       onClick={handleClick}
-      sx={{
-        ".MuiTreeItem-content": {
-          p: 0,
-          alignItems: "normal",
-          // Expand/collapse icon
-          ".MuiTreeItem-iconContainer": {
-            alignItems: "center",
-            borderTopLeftRadius: "inherit",
-            borderBottomLeftRadius: "inherit",
-            "&:hover": {
-              background: canExpand ? "inherit" : "none",
-            },
-          },
-          ".MuiTreeItem-label": {
-            py: 0.5,
-          },
-        },
-      }}
     >
       {isFolder(treeData) &&
         Object.keys(treeData).map((childName) => (
@@ -76,7 +48,7 @@ function FileTreeItem({ name, treeData, path }: Props) {
             treeData={treeData[childName]}
           />
         ))}
-    </TreeItem>
+    </TreeItemEnhanced>
   );
 }
 
