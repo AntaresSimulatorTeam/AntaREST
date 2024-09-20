@@ -1,9 +1,22 @@
-from typing import Any, Dict, List, Optional
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
 
-from pydantic import validator
+from typing import Any, Dict, List
+
+from pydantic import field_validator
 from pydantic.types import StrictInt, StrictStr
 
 from antarest.core.exceptions import InvalidFieldForVersionError
+from antarest.study.business.all_optional_meta import all_optional_model
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.utils import GENERAL_DATA_PATH, FieldInfo, FormFieldsBaseModel, execute_or_add_commands
 from antarest.study.model import Study
@@ -60,33 +73,34 @@ class RenewableGenerationModeling(EnumIgnoreCase):
     CLUSTERS = "clusters"
 
 
+@all_optional_model
 class AdvancedParamsFormFields(FormFieldsBaseModel):
     # Advanced parameters
-    accuracy_on_correlation: Optional[StrictStr]
+    accuracy_on_correlation: StrictStr
     # Other preferences
-    initial_reservoir_levels: Optional[InitialReservoirLevel]
-    power_fluctuations: Optional[PowerFluctuation]
-    shedding_policy: Optional[SheddingPolicy]
-    hydro_pricing_mode: Optional[HydroPricingMode]
-    hydro_heuristic_policy: Optional[HydroHeuristicPolicy]
-    unit_commitment_mode: Optional[UnitCommitmentMode]
-    number_of_cores_mode: Optional[SimulationCore]
-    day_ahead_reserve_management: Optional[ReserveManagement]
-    renewable_generation_modelling: Optional[RenewableGenerationModeling]
+    initial_reservoir_levels: InitialReservoirLevel
+    power_fluctuations: PowerFluctuation
+    shedding_policy: SheddingPolicy
+    hydro_pricing_mode: HydroPricingMode
+    hydro_heuristic_policy: HydroHeuristicPolicy
+    unit_commitment_mode: UnitCommitmentMode
+    number_of_cores_mode: SimulationCore
+    day_ahead_reserve_management: ReserveManagement
+    renewable_generation_modelling: RenewableGenerationModeling
     # Seeds
-    seed_tsgen_wind: Optional[StrictInt]
-    seed_tsgen_load: Optional[StrictInt]
-    seed_tsgen_hydro: Optional[StrictInt]
-    seed_tsgen_thermal: Optional[StrictInt]
-    seed_tsgen_solar: Optional[StrictInt]
-    seed_tsnumbers: Optional[StrictInt]
-    seed_unsupplied_energy_costs: Optional[StrictInt]
-    seed_spilled_energy_costs: Optional[StrictInt]
-    seed_thermal_costs: Optional[StrictInt]
-    seed_hydro_costs: Optional[StrictInt]
-    seed_initial_reservoir_levels: Optional[StrictInt]
+    seed_tsgen_wind: StrictInt
+    seed_tsgen_load: StrictInt
+    seed_tsgen_hydro: StrictInt
+    seed_tsgen_thermal: StrictInt
+    seed_tsgen_solar: StrictInt
+    seed_tsnumbers: StrictInt
+    seed_unsupplied_energy_costs: StrictInt
+    seed_spilled_energy_costs: StrictInt
+    seed_thermal_costs: StrictInt
+    seed_hydro_costs: StrictInt
+    seed_initial_reservoir_levels: StrictInt
 
-    @validator("accuracy_on_correlation")
+    @field_validator("accuracy_on_correlation")
     def check_accuracy_on_correlation(cls, v: str) -> str:
         sanitized_v = v.strip().replace(" ", "")
         if not sanitized_v:

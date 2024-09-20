@@ -1,3 +1,15 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import contextlib
 import shlex
 import socket
@@ -31,7 +43,7 @@ class SlurmError(Exception):
 def execute_command(ssh_config: SSHConfigDTO, args: List[str]) -> Any:
     command = " ".join(args)
     try:
-        with ssh_client(ssh_config) as client:  # type: ignore
+        with ssh_client(ssh_config) as client:  # type: paramiko.SSHClient
             _, stdout, stderr = client.exec_command(command, timeout=10)
             output = stdout.read().decode("utf-8").strip()
             error = stderr.read().decode("utf-8").strip()

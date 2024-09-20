@@ -1,4 +1,15 @@
-import shutil
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import typing as t
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -6,7 +17,6 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from zipfile import ZipFile
 
-from antarest.core.exceptions import ChildNotFoundError
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.inode import G, INode, S, V
@@ -109,22 +119,6 @@ class LazyNode(INode, ABC, t.Generic[G, S, V]):  # type: ignore
         elif self.config.path.exists():
             self.config.path.unlink()
 
-    def _infer_path(self) -> Path:
-        if self.get_link_path().exists():
-            return self.get_link_path()
-        elif self.config.path.exists():
-            return self.config.path
-        else:
-            raise ChildNotFoundError(
-                f"Neither link file {self.get_link_path} nor matrix file {self.config.path} exists"
-            )
-
-    def _infer_target_path(self, is_link: bool) -> Path:
-        if is_link:
-            return self.get_link_path()
-        else:
-            return self.config.path
-
     def get_link_path(self) -> Path:
         path = self.config.path.parent / (self.config.path.name + ".link")
         return path
@@ -143,16 +137,6 @@ class LazyNode(INode, ABC, t.Generic[G, S, V]):  # type: ignore
         if self.get_link_path().exists():
             self.get_link_path().unlink()
         return None
-
-    def rename_file(self, target: "LazyNode[t.Any, t.Any, t.Any]") -> None:
-        target_path = target._infer_target_path(self.get_link_path().exists())
-        target_path.unlink(missing_ok=True)
-        self._infer_path().rename(target_path)
-
-    def copy_file(self, target: "LazyNode[t.Any, t.Any, t.Any]") -> None:
-        target_path = target._infer_target_path(self.get_link_path().exists())
-        target_path.unlink(missing_ok=True)
-        shutil.copy(self._infer_path(), target_path)
 
     def get_lazy_content(
         self,

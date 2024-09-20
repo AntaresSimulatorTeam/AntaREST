@@ -1,3 +1,15 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import base64
 import logging
 import typing as t
@@ -211,7 +223,7 @@ class CommandExtractor(ICommandExtractor):
             create_cluster_command(
                 area_id=area_id,
                 cluster_name=cluster.id,
-                parameters=cluster.dict(by_alias=True, exclude_defaults=True, exclude={"id"}),
+                parameters=cluster.model_dump(by_alias=True, exclude_defaults=True, exclude={"id"}),
                 command_context=self.command_context,
             ),
             self.generate_replace_matrix(
@@ -311,6 +323,7 @@ class CommandExtractor(ICommandExtractor):
         district_config = study_config.sets[district_id]
         base_filter = DistrictBaseFilter.add_all if district_config.inverted_set else DistrictBaseFilter.remove_all
         district_fetched_config = study_tree.get(["input", "areas", "sets", district_id])
+        assert district_config.name is not None
         study_commands.append(
             CreateDistrict(
                 name=district_config.name,
@@ -370,7 +383,8 @@ class CommandExtractor(ICommandExtractor):
                 matrices[name] = matrix["data"]
 
         # Create the command to create the binding constraint
-        create_cmd = CreateBindingConstraint(**binding, **matrices, coeffs=terms, command_context=self.command_context)
+        kwargs = {**binding, **matrices, "coeffs": terms, "command_context": self.command_context}
+        create_cmd = CreateBindingConstraint.model_validate(kwargs)
 
         return [create_cmd]
 
@@ -404,8 +418,8 @@ class CommandExtractor(ICommandExtractor):
         config = study_tree.get(["settings", "generaldata"])
         playlist = get_playlist(config)
         return UpdatePlaylist(
-            items=playlist.keys() if playlist else None,
-            weights=({year for year, weight in playlist.items() if weight != 1} if playlist else None),
+            items=list(playlist.keys()) if playlist else None,
+            weights=({year: weight for year, weight in playlist.items() if weight != 1} if playlist else None),
             active=bool(playlist and len(playlist) > 0),
             reverse=False,
             command_context=self.command_context,
@@ -441,6 +455,7 @@ class CommandExtractor(ICommandExtractor):
         study_tree = study.tree
         district_config = study_config.sets[district_id]
         district_fetched_config = study_tree.get(["input", "areas", "sets", district_id])
+        assert district_config.name is not None
         return UpdateDistrict(
             id=district_config.name,
             base_filter=DistrictBaseFilter.add_all if district_config.inverted_set else DistrictBaseFilter.remove_all,

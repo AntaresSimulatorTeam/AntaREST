@@ -1,6 +1,17 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import contextlib
 import io
-import json
 import logging
 import tempfile
 import typing as t
@@ -19,6 +30,7 @@ from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.jwt import JWTUser
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
+from antarest.core.serialization import from_json
 from antarest.core.tasks.model import TaskResult, TaskType
 from antarest.core.tasks.service import ITaskService, TaskUpdateNotifier
 from antarest.core.utils.fastapi_sqlalchemy import db
@@ -213,6 +225,7 @@ class MatrixService(ISimpleMatrixService):
             A list of `MatrixInfoDTO` objects containing the SHA256 hash of the imported matrices.
         """
         with file.file as f:
+            assert file.filename is not None
             if file.content_type == "application/zip":
                 with contextlib.closing(f):
                     buffer = io.BytesIO(f.read())
@@ -250,7 +263,7 @@ class MatrixService(ISimpleMatrixService):
             A SHA256 hash that identifies the imported matrix.
         """
         if is_json:
-            obj = json.loads(file)
+            obj = from_json(file)
             content = MatrixContent(**obj)
             return self.create(content.data)
         # noinspection PyTypeChecker

@@ -53,11 +53,7 @@ jobs:
           pip install -r requirements-dev.txt
       - name: Test with pytest
         run: |
-          pytest --cov antarest --cov-report xml
-      - name: Fix code coverage paths
-        if: matrix.os == 'ubuntu-20.04'
-        run: |
-          sed -i 's/\/home\/runner\/work\/AntaREST\/AntaREST/\/github\/workspace/g' coverage.xml
+          pytest --cov antarest --cov-report xml -n logical
       - name: Archive code coverage results
         if: matrix.os == 'ubuntu-20.04'
         uses: actions/upload-artifact@v4

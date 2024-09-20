@@ -1,3 +1,15 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import configparser
 import re
 from unittest import mock
@@ -34,7 +46,7 @@ class TestCreateRenewablesCluster:
         # Check the command data
         assert cl.area_id == "foo"
         assert cl.cluster_name == "Cluster1"
-        assert cl.parameters == {"group": "Solar Thermal", "nominalcapacity": "2400", "unitcount": "2"}
+        assert cl.parameters == {"group": "Solar Thermal", "nominalcapacity": 2400, "unitcount": 2}
 
     def test_validate_cluster_name(self, command_context: CommandContext) -> None:
         with pytest.raises(ValidationError, match="cluster_name"):
@@ -119,12 +131,12 @@ class TestCreateRenewablesCluster:
             command_context=command_context,
         )
         dto = command.to_dto()
-        assert dto.dict() == {
+        assert dto.model_dump() == {
             "action": "create_renewables_cluster",  # "renewables" with a final "s".
             "args": {
                 "area_id": "foo",
                 "cluster_name": "Cluster1",
-                "parameters": {"group": "Solar Thermal", "nominalcapacity": "2400", "unitcount": "2"},
+                "parameters": {"group": "Solar Thermal", "nominalcapacity": 2400, "unitcount": 2},
             },
             "id": None,
             "version": 1,

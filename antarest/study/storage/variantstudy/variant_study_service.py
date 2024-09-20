@@ -1,5 +1,16 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import concurrent.futures
-import json
 import logging
 import re
 import shutil
@@ -31,6 +42,7 @@ from antarest.core.interfaces.eventbus import Event, EventChannelDirectory, Even
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.model import JSON, PermissionInfo, PublicMode, StudyPermissionType
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
+from antarest.core.serialization import to_json_string
 from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskResult, TaskType
 from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT, ITaskService, TaskUpdateNotifier, noop_notifier
 from antarest.core.utils.utils import assert_this, suppress_exception
@@ -176,7 +188,10 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         # noinspection PyArgumentList
         new_commands = [
             CommandBlock(
-                command=command.action, args=json.dumps(command.args), index=(first_index + i), version=command.version
+                command=command.action,
+                args=to_json_string(command.args),
+                index=(first_index + i),
+                version=command.version,
             )
             for i, command in enumerate(validated_commands)
         ]
@@ -211,7 +226,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         validated_commands = transform_command_to_dto(command_objs, commands)
         # noinspection PyArgumentList
         study.commands = [
-            CommandBlock(command=command.action, args=json.dumps(command.args), index=i, version=command.version)
+            CommandBlock(command=command.action, args=to_json_string(command.args), index=i, version=command.version)
             for i, command in enumerate(validated_commands)
         ]
         self.invalidate_cache(study, invalidate_self_snapshot=True)
@@ -302,7 +317,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         index = [command.id for command in study.commands].index(command_id)
         if index >= 0:
             study.commands[index].command = validated_commands[0].action
-            study.commands[index].args = json.dumps(validated_commands[0].args)
+            study.commands[index].args = to_json_string(validated_commands[0].args)
             self.invalidate_cache(study, invalidate_self_snapshot=True)
 
     def export_commands_matrices(self, study_id: str, params: RequestParameters) -> FileDownloadTaskDTO:
@@ -482,7 +497,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
 
         Returns: study data formatted in json
         """
-        self._safe_generation(metadata, timeout=60)
+        self._safe_generation(metadata, timeout=600)
         self.repository.refresh(metadata)
         return super().get(
             metadata=metadata,
@@ -613,7 +628,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                     message=f"{study_id} generated successfully"
                     if generate_result.success
                     else f"{study_id} not generated",
-                    return_value=generate_result.json(),
+                    return_value=generate_result.model_dump_json(),
                 )
 
             metadata.generation_task = self.task_service.add_task(
@@ -704,7 +719,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                     success=command_result,
                     message=command_message,
                 )
-                notifier(command_result_obj.json())
+                notifier(command_result_obj.model_dump_json())
                 self.event_bus.push(
                     Event(
                         type=EventType.STUDY_VARIANT_GENERATION_COMMAND_RESULT,
@@ -924,7 +939,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             study: study
         Returns: study output data
         """
-        self._safe_generation(study, timeout=60)
+        self._safe_generation(study, timeout=600)
         return super().get_study_sim_result(study=study)
 
     def set_reference_output(self, metadata: VariantStudy, output_id: str, status: bool) -> None:

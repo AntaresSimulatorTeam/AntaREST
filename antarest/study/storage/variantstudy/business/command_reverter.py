@@ -1,3 +1,15 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import logging
 import typing as t
 from pathlib import Path
@@ -16,6 +28,9 @@ from antarest.study.storage.variantstudy.model.command.create_district import Cr
 from antarest.study.storage.variantstudy.model.command.create_link import CreateLink
 from antarest.study.storage.variantstudy.model.command.create_renewables_cluster import CreateRenewablesCluster
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
+from antarest.study.storage.variantstudy.model.command.generate_thermal_cluster_timeseries import (
+    GenerateThermalClusterTimeSeries,
+)
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
 from antarest.study.storage.variantstudy.model.command.remove_binding_constraint import RemoveBindingConstraint
@@ -120,7 +135,7 @@ class CommandReverter:
                     if matrix is not None:
                         args[matrix_name] = matrix_service.get_matrix_id(matrix)
 
-                return [UpdateBindingConstraint(**args)]
+                return [UpdateBindingConstraint.model_validate(args)]
 
         return base_command.get_command_extractor().extract_binding_constraint(base, base_command.id)
 
@@ -316,6 +331,12 @@ class CommandReverter:
 
         extractor = base_command.get_command_extractor()
         return [extractor.generate_update_district(base, base_command.id)]
+
+    @staticmethod
+    def _revert_generate_thermal_cluster_timeseries(
+        base_command: GenerateThermalClusterTimeSeries, history: t.List["ICommand"], base: FileStudy
+    ) -> t.List[ICommand]:
+        raise NotImplementedError("The revert function for GenerateThermalClusterTimeSeries is not available")
 
     def revert(
         self,

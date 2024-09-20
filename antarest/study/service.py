@@ -1,9 +1,20 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import base64
 import collections
 import contextlib
 import http
 import io
-import json
 import logging
 import os
 import time
@@ -32,7 +43,6 @@ from antarest.core.exceptions import (
     StudyVariantUpgradeError,
     TaskAlreadyRunning,
     UnsupportedOperationOnArchivedStudy,
-    UnsupportedStudyVersion,
 )
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
@@ -41,6 +51,7 @@ from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTGroup, JWTUser
 from antarest.core.model import JSON, SUB_JSON, PermissionInfo, PublicMode, StudyPermissionType
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
+from antarest.core.serialization import to_json
 from antarest.core.tasks.model import TaskListFilter, TaskResult, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskService, TaskUpdateNotifier, noop_notifier
 from antarest.core.utils.fastapi_sqlalchemy import db
@@ -50,7 +61,13 @@ from antarest.login.service import LoginService
 from antarest.matrixstore.matrix_editor import MatrixEditInstruction
 from antarest.study.business.adequacy_patch_management import AdequacyPatchManager
 from antarest.study.business.advanced_parameters_management import AdvancedParamsManager
-from antarest.study.business.aggregator_management import AggregatorManager, AreasQueryFile, LinksQueryFile
+from antarest.study.business.aggregator_management import (
+    AggregatorManager,
+    MCAllAreasQueryFile,
+    MCAllLinksQueryFile,
+    MCIndAreasQueryFile,
+    MCIndLinksQueryFile,
+)
 from antarest.study.business.allocation_management import AllocationManager
 from antarest.study.business.area_management import AreaCreationDTO, AreaInfoDTO, AreaManager, AreaType, UpdateAreaUi
 from antarest.study.business.areas.hydro_management import HydroManager
@@ -116,14 +133,12 @@ from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFi
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.study_download_utils import StudyDownloader, get_output_variables_information
-from antarest.study.storage.study_upgrader import (
-    find_next_version,
-    get_current_version,
-    should_study_be_denormalized,
-    upgrade_study,
-)
+from antarest.study.storage.study_upgrader import StudyUpgrader, check_versions_coherence, find_next_version
 from antarest.study.storage.utils import assert_permission, get_start_date, is_managed, remove_from_cache
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
+from antarest.study.storage.variantstudy.model.command.generate_thermal_cluster_timeseries import (
+    GenerateThermalClusterTimeSeries,
+)
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command.update_comments import UpdateComments
@@ -133,7 +148,6 @@ from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 from antarest.worker.archive_worker import ArchiveTaskArgs
-from antarest.worker.simulator_worker import GenerateTimeseriesTaskArgs
 
 logger = logging.getLogger(__name__)
 
@@ -153,6 +167,51 @@ def get_disk_usage(path: t.Union[str, Path]) -> int:
             elif entry.is_dir():
                 total_size += get_disk_usage(path=str(entry.path))
     return total_size
+
+
+class ThermalClusterTimeSeriesGeneratorTask:
+    """
+    Task to generate thermal clusters time series
+    """
+
+    def __init__(
+        self,
+        _study_id: str,
+        repository: StudyMetadataRepository,
+        storage_service: StudyStorageService,
+        event_bus: IEventBus,
+    ):
+        self._study_id = _study_id
+        self.repository = repository
+        self.storage_service = storage_service
+        self.event_bus = event_bus
+
+    def _generate_timeseries(self) -> None:
+        """Run the task (lock the database)."""
+        command_context = self.storage_service.variant_study_service.command_factory.command_context
+        command = GenerateThermalClusterTimeSeries(command_context=command_context)
+        with db():
+            study = self.repository.one(self._study_id)
+            file_study = self.storage_service.get_storage(study).get_raw(study)
+            execute_or_add_commands(study, file_study, [command], self.storage_service)
+            self.event_bus.push(
+                Event(
+                    type=EventType.STUDY_EDITED,
+                    payload=study.to_json_summary(),
+                    permissions=PermissionInfo.from_study(study),
+                )
+            )
+
+    def run_task(self, notifier: TaskUpdateNotifier) -> TaskResult:
+        msg = f"Generating thermal timeseries for study '{self._study_id}'"
+        notifier(msg)
+        self._generate_timeseries()
+        msg = f"Successfully generated thermal timeseries for study '{self._study_id}'"
+        notifier(msg)
+        return TaskResult(success=True, message=msg)
+
+    # Make `ThermalClusterTimeSeriesGeneratorTask` object callable
+    __call__ = run_task
 
 
 class StudyUpgraderTask:
@@ -192,13 +251,13 @@ class StudyUpgraderTask:
                     self.storage_service.variant_study_service.clear_snapshot(study_to_upgrade)
                 else:
                     study_path = Path(study_to_upgrade.path)
-                    current_version = get_current_version(study_path)
-                    if is_managed(study_to_upgrade) and should_study_be_denormalized(current_version, target_version):
+                    study_upgrader = StudyUpgrader(study_path, target_version)
+                    if is_managed(study_to_upgrade) and study_upgrader.should_denormalize_study():
                         # We have to denormalize the study because the upgrade impacts study matrices
                         file_study = self.storage_service.get_storage(study_to_upgrade).get_raw(study_to_upgrade)
                         file_study.tree.denormalize()
                         is_study_denormalized = True
-                    upgrade_study(study_path, target_version)
+                    study_upgrader.upgrade()
                 remove_from_cache(self.cache_service, study_to_upgrade.id)
                 study_to_upgrade.version = target_version
                 self.repository.save(study_to_upgrade)
@@ -331,24 +390,25 @@ class StudyService:
         self,
         uuid: str,
         output_id: str,
-        query_file: t.Union[AreasQueryFile, LinksQueryFile],
+        query_file: t.Union[MCIndAreasQueryFile, MCAllAreasQueryFile, MCIndLinksQueryFile, MCAllLinksQueryFile],
         frequency: MatrixFrequency,
-        mc_years: t.Sequence[int],
         columns_names: t.Sequence[str],
         ids_to_consider: t.Sequence[str],
         params: RequestParameters,
+        mc_years: t.Optional[t.Sequence[int]] = None,
     ) -> pd.DataFrame:
         """
         Aggregates output data based on several filtering conditions
+
         Args:
             uuid: study uuid
             output_id: simulation output ID
-            query_file: which types of data to retrieve ("values", "details", "details-st-storage", "details-res")
+            query_file: which types of data to retrieve: "values", "details", "details-st-storage", "details-res", "ids"
             frequency: yearly, monthly, weekly, daily or hourly.
-            mc_years: list of monte-carlo years, if empty, all years are selected
-            columns_names: columns to be selected, if empty, all columns are selected
+            columns_names: regexes (if details) or columns to be selected, if empty, all columns are selected
             ids_to_consider: list of areas or links ids to consider, if empty, all areas are selected
             params: request parameters
+            mc_years: list of monte-carlo years, if empty, all years are selected (only for mc-ind)
 
         Returns: the aggregated data as a DataFrame
 
@@ -356,17 +416,9 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
         study_path = self.storage_service.raw_study_service.get_study_path(study)
-        # fmt: off
         aggregator_manager = AggregatorManager(
-            study_path,
-            output_id,
-            query_file,
-            frequency,
-            mc_years,
-            columns_names,
-            ids_to_consider
+            study_path, output_id, query_file, frequency, ids_to_consider, columns_names, mc_years
         )
-        # fmt: on
         return aggregator_manager.aggregate_output_data()
 
     def get_logs(
@@ -1277,13 +1329,7 @@ class StudyService:
                 return FileResponse(tmp_export_file, headers=headers, media_type=filetype)
 
             else:
-                json_response = json.dumps(
-                    matrix.dict(),
-                    ensure_ascii=False,
-                    allow_nan=True,
-                    indent=None,
-                    separators=(",", ":"),
-                ).encode("utf-8")
+                json_response = to_json(matrix.model_dump())
                 return Response(content=json_response, media_type="application/json")
 
     def get_study_sim_result(self, study_id: str, params: RequestParameters) -> t.List[StudySimResultDTO]:
@@ -1433,6 +1479,7 @@ class StudyService:
         context = self.storage_service.variant_study_service.command_factory.command_context
 
         if isinstance(tree_node, IniFileNode):
+            assert not isinstance(data, (bytes, list))
             return UpdateConfig(
                 target=url,
                 data=data,
@@ -1448,6 +1495,7 @@ class StudyService:
                     matrix=matrix.tolist(),
                     command_context=context,
                 )
+            assert isinstance(data, (list, str))
             return ReplaceMatrix(
                 target=url,
                 matrix=data,
@@ -1455,6 +1503,9 @@ class StudyService:
             )
         elif isinstance(tree_node, RawFileNode):
             if url.split("/")[-1] == "comments":
+                if isinstance(data, bytes):
+                    data = data.decode("utf-8")
+                assert isinstance(data, str)
                 return UpdateComments(
                     comments=data,
                     command_context=context,
@@ -2373,7 +2424,7 @@ class StudyService:
                     src=str(src),
                     dest=str(dest),
                     remove_src=not keep_src_zip,
-                ).dict(),
+                ).model_dump(),
                 name=task_name,
                 ref_id=study.id,
                 request_params=params,
@@ -2391,19 +2442,32 @@ class StudyService:
 
         return task_id
 
-    def generate_timeseries(self, study: Study, params: RequestParameters) -> None:
-        self._assert_study_unarchived(study)
-        self.task_service.add_worker_task(
-            TaskType.WORKER_TASK,
-            "generate-timeseries",
-            GenerateTimeseriesTaskArgs(
-                study_id=study.id,
-                managed=is_managed(study),
-                study_path=str(study.path),
-                study_version=str(study.version),
-            ).dict(),
-            name=f"Generate timeseries for study {study.id}",
+    def generate_timeseries(self, study: Study, params: RequestParameters) -> str:
+        task_name = f"Generating thermal timeseries for study {study.name} ({study.id})"
+        study_tasks = self.task_service.list_tasks(
+            TaskListFilter(
+                ref_id=study.id,
+                type=[TaskType.THERMAL_CLUSTER_SERIES_GENERATION],
+                status=[TaskStatus.RUNNING, TaskStatus.PENDING],
+            ),
+            RequestParameters(user=DEFAULT_ADMIN_USER),
+        )
+        if len(study_tasks) > 0:
+            raise TaskAlreadyRunning()
+
+        thermal_cluster_timeseries_generation_task = ThermalClusterTimeSeriesGeneratorTask(
+            study.id,
+            repository=self.repository,
+            storage_service=self.storage_service,
+            event_bus=self.event_bus,
+        )
+
+        return self.task_service.add_task(
+            thermal_cluster_timeseries_generation_task,
+            task_name,
+            task_type=TaskType.THERMAL_CLUSTER_SERIES_GENERATION,
             ref_id=study.id,
+            custom_event_messages=None,
             request_params=params,
         )
 
@@ -2426,13 +2490,15 @@ class StudyService:
         # First check if the study is a variant study, if so throw an error
         if isinstance(study, VariantStudy):
             raise StudyVariantUpgradeError(True)
-        # If the study is a parent raw study, throw an error
+        # If the study is a parent raw study and has variants, throw an error
         elif self.repository.has_children(study_id):
             raise StudyVariantUpgradeError(False)
 
-        target_version = target_version or find_next_version(study.version)
+        # Checks versions coherence before launching the task
         if not target_version:
-            raise UnsupportedStudyVersion(study.version)
+            target_version = find_next_version(study.version)
+        else:
+            check_versions_coherence(study.version, target_version)
 
         task_name = f"Upgrade study {study.name} ({study.id}) to version {target_version}"
         study_tasks = self.task_service.list_tasks(

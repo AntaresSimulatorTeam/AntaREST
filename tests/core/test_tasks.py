@@ -1,4 +1,15 @@
-import dataclasses
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import datetime
 import time
 import typing as t
@@ -10,7 +21,7 @@ from sqlalchemy import create_engine  # type: ignore
 from sqlalchemy.engine.base import Engine  # type: ignore
 from sqlalchemy.orm import Session, sessionmaker  # type: ignore
 
-from antarest.core.config import Config, RemoteWorkerConfig, TaskConfig
+from antarest.core.config import Config
 from antarest.core.interfaces.eventbus import EventType, IEventBus
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.model import PermissionInfo, PublicMode
@@ -31,8 +42,8 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.eventbus.business.local_eventbus import LocalEventBus
 from antarest.eventbus.service import EventBusService
 from antarest.login.model import User
+from antarest.service_creator import SESSION_ARGS
 from antarest.study.model import RawStudy
-from antarest.utils import SESSION_ARGS
 from antarest.worker.worker import AbstractWorker, WorkerTaskCommand
 from tests.helpers import with_db_context
 
@@ -108,7 +119,7 @@ def test_service(core_config: Config, event_bus: IEventBus) -> None:
         "status": TaskStatus.FAILED,
         "type": None,
     }
-    assert res.dict() == expected
+    assert res.model_dump() == expected
 
     # Test Case: add a task that fails and wait for it
     # ================================================
@@ -177,34 +188,6 @@ class DummyWorker(AbstractWorker):
         relative_path = t.cast(str, task_info.task_args["file"])
         (self.tmp_path / relative_path).touch()
         return TaskResult(success=True, message="")
-
-
-@with_db_context
-def test_worker_tasks(tmp_path: Path, core_config: Config, event_bus: IEventBus) -> None:
-    # Create a TaskJobService
-    task_job_repo = TaskJobRepository()
-    task_config = TaskConfig(remote_workers=[RemoteWorkerConfig(name="test", queues=["test"])])
-    config = dataclasses.replace(core_config, tasks=task_config)
-    service = TaskJobService(config=config, repository=task_job_repo, event_bus=event_bus)
-
-    worker = DummyWorker(event_bus, ["test"], tmp_path)
-    worker.start(threaded=True)
-
-    file_to_create = "foo"
-    assert not (tmp_path / file_to_create).exists()
-
-    task_id = service.add_worker_task(
-        TaskType.WORKER_TASK,
-        "test",
-        {"file": file_to_create},
-        None,
-        None,
-        request_params=RequestParameters(user=DEFAULT_ADMIN_USER),
-    )
-    assert task_id is not None
-    service.await_task(task_id, timeout_sec=2)
-
-    assert (tmp_path / file_to_create).exists()
 
 
 def test_repository(db_session: Session) -> None:

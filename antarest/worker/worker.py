@@ -1,3 +1,15 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import logging
 import time
 from abc import abstractmethod
@@ -100,8 +112,8 @@ class AbstractWorker(IService):
             time.sleep(1)
 
     async def _listen_for_tasks(self, event: Event) -> None:
-        logger.info(f"Accepting new task {event.json()}")
-        task_info = WorkerTaskCommand.parse_obj(event.payload)
+        logger.info(f"Accepting new task {event.model_dump_json()}")
+        task_info = WorkerTaskCommand.model_validate(event.payload)
         self.event_bus.push(
             Event(
                 type=EventType.WORKER_TASK_STARTED,
@@ -119,7 +131,7 @@ class AbstractWorker(IService):
             return self._execute_task(task_info)
         except Exception as e:
             logger.error(
-                f"Unexpected error occurred when executing task {task_info.json()}",
+                f"Unexpected error occurred when executing task {task_info.model_dump_json()}",
                 exc_info=e,
             )
             return TaskResult(success=False, message=repr(e))

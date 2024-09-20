@@ -1,10 +1,22 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 """
 Object model used to read and update link configuration.
 """
 
 import typing as t
 
-from pydantic import Field, root_validator, validator
+from pydantic import Field, field_validator, model_validator
 
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import (
@@ -84,7 +96,7 @@ class LinkProperties(IniProperties):
 
     >>> opt = LinkProperties(**obj)
 
-    >>> pprint(opt.dict(by_alias=True), width=80)
+    >>> pprint(opt.model_dump(by_alias=True), width=80)
     {'asset-type': <AssetType.AC: 'ac'>,
      'colorRgb': '#50C0FF',
      'comments': 'This is a link',
@@ -134,20 +146,20 @@ class LinkProperties(IniProperties):
         description="color of the area in the map",
     )
 
-    @validator("filter_synthesis", "filter_year_by_year", pre=True)
+    @field_validator("filter_synthesis", "filter_year_by_year", mode="before")
     def _validate_filtering(cls, v: t.Any) -> str:
         return validate_filtering(v)
 
-    @validator("color_rgb", pre=True)
+    @field_validator("color_rgb", mode="before")
     def _validate_color_rgb(cls, v: t.Any) -> str:
         return validate_color_rgb(v)
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
     def _validate_colors(cls, values: t.MutableMapping[str, t.Any]) -> t.Mapping[str, t.Any]:
         return validate_colors(values)
 
     # noinspection SpellCheckingInspection
-    def to_config(self) -> t.Mapping[str, t.Any]:
+    def to_config(self) -> t.Dict[str, t.Any]:
         """
         Convert the object to a dictionary for writing to a configuration file.
         """

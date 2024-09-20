@@ -1,3 +1,15 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import logging
 import os.path
 import tempfile
@@ -92,7 +104,7 @@ class StudyFactory:
             from_cache = self.cache.get(cache_id)
             if from_cache is not None:
                 logger.info(f"Study {study_id} read from cache")
-                config = FileStudyTreeConfigDTO.parse_obj(from_cache).to_build_config()
+                config = FileStudyTreeConfigDTO.model_validate(from_cache).to_build_config()
                 if output_path:
                     config.output_path = output_path
                     config.outputs = parse_outputs(output_path)
@@ -106,7 +118,7 @@ class StudyFactory:
             logger.info(f"Cache new entry from StudyFactory (studyID: {study_id})")
             self.cache.put(
                 cache_id,
-                FileStudyTreeConfigDTO.from_build_config(config).dict(),
+                FileStudyTreeConfigDTO.from_build_config(config).model_dump(),
             )
         return result
 

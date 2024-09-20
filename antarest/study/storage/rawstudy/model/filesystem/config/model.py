@@ -1,20 +1,35 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import re
 import typing as t
 from pathlib import Path
 
-from pydantic import BaseModel, Field, root_validator
+from pydantic import BaseModel, Field, model_validator
 
 from antarest.core.utils.utils import DTO
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 
-from .binding_constraint import BindingConstraintFrequency
+from .binding_constraint import (
+    DEFAULT_GROUP,
+    DEFAULT_OPERATOR,
+    DEFAULT_TIMESTEP,
+    BindingConstraintFrequency,
+    BindingConstraintOperator,
+)
 from .field_validators import extract_filtering
 from .renewable import RenewableConfigType
 from .st_storage import STStorageConfigType
 from .thermal import ThermalConfigType
-
-DEFAULT_GROUP = "default"
-"""Default group for binding constraints (since v8.7)."""
 
 
 class EnrModelling(EnumIgnoreCase):
@@ -49,7 +64,7 @@ class Link(BaseModel, extra="ignore"):
     filters_synthesis: t.List[str] = Field(default_factory=list)
     filters_year: t.List[str] = Field(default_factory=list)
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
     def validation(cls, values: t.MutableMapping[str, t.Any]) -> t.MutableMapping[str, t.Any]:
         # note: field names are in kebab-case in the INI file
         filters_synthesis = values.pop("filter-synthesis", values.pop("filters_synthesis", ""))
@@ -79,7 +94,7 @@ class DistrictSet(BaseModel):
     Object linked to /inputs/sets.ini information
     """
 
-    ALL = ["hourly", "daily", "weekly", "monthly", "annual"]
+    ALL: t.List[str] = ["hourly", "daily", "weekly", "monthly", "annual"]
     name: t.Optional[str] = None
     inverted_set: bool = False
     areas: t.Optional[t.List[str]] = None
@@ -121,15 +136,18 @@ class BindingConstraintDTO(BaseModel):
 
     Attributes:
         id: The ID of the binding constraint.
-        group: The group for the scenario of BC (optional, required since v8.7).
         areas: List of area IDs on which the BC applies (links or clusters).
         clusters: List of thermal cluster IDs on which the BC applies (format: "area.cluster").
+        time_step: The time_step of the BC
+        operator: The operator of the BC
+        group: The group for the scenario of BC (optional, required since v8.7).
     """
 
     id: str
     areas: t.Set[str]
     clusters: t.Set[str]
-    time_step: BindingConstraintFrequency
+    time_step: BindingConstraintFrequency = DEFAULT_TIMESTEP
+    operator: BindingConstraintOperator = DEFAULT_OPERATOR
     # since v8.7
     group: str = DEFAULT_GROUP
 

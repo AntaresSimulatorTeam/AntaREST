@@ -1,3 +1,15 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import io
 import os
 import typing as t
@@ -197,7 +209,7 @@ def test_get_xpansion_settings(tmp_path: Path, version: int, expected_output: JS
     xpansion_manager.create_xpansion_configuration(study)
 
     actual = xpansion_manager.get_xpansion_settings(study)
-    assert actual.dict(by_alias=True) == expected_output
+    assert actual.model_dump(by_alias=True) == expected_output
 
 
 @pytest.mark.unit_test
@@ -244,7 +256,7 @@ def test_update_xpansion_settings(tmp_path: Path) -> None:
         "timelimit": int(1e12),
         "sensitivity_config": {"epsilon": 10500.0, "projection": ["foo"], "capex": False},
     }
-    assert actual.dict(by_alias=True) == expected
+    assert actual.model_dump(by_alias=True) == expected
 
 
 @pytest.mark.unit_test
@@ -254,7 +266,7 @@ def test_add_candidate(tmp_path: Path) -> None:
     actual = empty_study.tree.get(["user", "expansion", "candidates"])
     assert actual == {}
 
-    new_candidate = XpansionCandidateDTO.parse_obj(
+    new_candidate = XpansionCandidateDTO.model_validate(
         {
             "name": "candidate_1",
             "link": "area1 - area2",
@@ -263,7 +275,7 @@ def test_add_candidate(tmp_path: Path) -> None:
         }
     )
 
-    new_candidate2 = XpansionCandidateDTO.parse_obj(
+    new_candidate2 = XpansionCandidateDTO.model_validate(
         {
             "name": "candidate_2",
             "link": "area1 - area2",
@@ -284,13 +296,13 @@ def test_add_candidate(tmp_path: Path) -> None:
 
     xpansion_manager.add_candidate(study, new_candidate)
 
-    candidates = {"1": new_candidate.dict(by_alias=True, exclude_none=True)}
+    candidates = {"1": new_candidate.model_dump(by_alias=True, exclude_none=True)}
 
     actual = empty_study.tree.get(["user", "expansion", "candidates"])
     assert actual == candidates
 
     xpansion_manager.add_candidate(study, new_candidate2)
-    candidates["2"] = new_candidate2.dict(by_alias=True, exclude_none=True)
+    candidates["2"] = new_candidate2.model_dump(by_alias=True, exclude_none=True)
 
     actual = empty_study.tree.get(["user", "expansion", "candidates"])
     assert actual == candidates
@@ -302,7 +314,7 @@ def test_get_candidate(tmp_path: Path) -> None:
 
     assert empty_study.tree.get(["user", "expansion", "candidates"]) == {}
 
-    new_candidate = XpansionCandidateDTO.parse_obj(
+    new_candidate = XpansionCandidateDTO.model_validate(
         {
             "name": "candidate_1",
             "link": "area1 - area2",
@@ -311,7 +323,7 @@ def test_get_candidate(tmp_path: Path) -> None:
         }
     )
 
-    new_candidate2 = XpansionCandidateDTO.parse_obj(
+    new_candidate2 = XpansionCandidateDTO.model_validate(
         {
             "name": "candidate_2",
             "link": "area1 - area2",
@@ -335,7 +347,7 @@ def test_get_candidates(tmp_path: Path) -> None:
 
     assert empty_study.tree.get(["user", "expansion", "candidates"]) == {}
 
-    new_candidate = XpansionCandidateDTO.parse_obj(
+    new_candidate = XpansionCandidateDTO.model_validate(
         {
             "name": "candidate_1",
             "link": "area1 - area2",
@@ -344,7 +356,7 @@ def test_get_candidates(tmp_path: Path) -> None:
         }
     )
 
-    new_candidate2 = XpansionCandidateDTO.parse_obj(
+    new_candidate2 = XpansionCandidateDTO.model_validate(
         {
             "name": "candidate_2",
             "link": "area1 - area2",
@@ -372,7 +384,7 @@ def test_update_candidates(tmp_path: Path) -> None:
 
     make_link_and_areas(empty_study)
 
-    new_candidate = XpansionCandidateDTO.parse_obj(
+    new_candidate = XpansionCandidateDTO.model_validate(
         {
             "name": "candidate_1",
             "link": "area1 - area2",
@@ -382,7 +394,7 @@ def test_update_candidates(tmp_path: Path) -> None:
     )
     xpansion_manager.add_candidate(study, new_candidate)
 
-    new_candidate2 = XpansionCandidateDTO.parse_obj(
+    new_candidate2 = XpansionCandidateDTO.model_validate(
         {
             "name": "candidate_1",
             "link": "area1 - area2",
@@ -403,7 +415,7 @@ def test_delete_candidate(tmp_path: Path) -> None:
 
     make_link_and_areas(empty_study)
 
-    new_candidate = XpansionCandidateDTO.parse_obj(
+    new_candidate = XpansionCandidateDTO.model_validate(
         {
             "name": "candidate_1",
             "link": "area1 - area2",
@@ -413,7 +425,7 @@ def test_delete_candidate(tmp_path: Path) -> None:
     )
     xpansion_manager.add_candidate(study, new_candidate)
 
-    new_candidate2 = XpansionCandidateDTO.parse_obj(
+    new_candidate2 = XpansionCandidateDTO.model_validate(
         {
             "name": "candidate_2",
             "link": "area1 - area2",
@@ -488,14 +500,14 @@ def test_add_resources(tmp_path: Path) -> None:
 
     settings = xpansion_manager.get_xpansion_settings(study)
     settings.yearly_weights = filename3
-    update_settings = UpdateXpansionSettings(**settings.dict())
+    update_settings = UpdateXpansionSettings(**settings.model_dump())
     xpansion_manager.update_xpansion_settings(study, update_settings)
 
     with pytest.raises(FileCurrentlyUsedInSettings):
         xpansion_manager.delete_resource(study, XpansionResourceFileType.WEIGHTS, filename3)
 
     settings.yearly_weights = ""
-    update_settings = UpdateXpansionSettings(**settings.dict())
+    update_settings = UpdateXpansionSettings(**settings.model_dump())
     xpansion_manager.update_xpansion_settings(study, update_settings)
     xpansion_manager.delete_resource(study, XpansionResourceFileType.WEIGHTS, filename3)
 

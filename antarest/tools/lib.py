@@ -1,3 +1,15 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import json
 import logging
 import os
@@ -7,22 +19,12 @@ from pathlib import Path
 from typing import List, Optional, Set, Union, cast
 from zipfile import ZipFile
 
-import numpy as np
 import pandas as pd
-
-try:
-    # The HTTPX equivalent of `requests.Session` is `httpx.Client`.
-    import httpx as requests
-    from httpx import Client as Session
-except ImportError:
-    # noinspection PyUnresolvedReferences, PyPackageRequirements
-    import requests
-
-    # noinspection PyUnresolvedReferences,PyPackageRequirements
-    from requests import Session
+from httpx import Client
 
 from antarest.core.cache.business.local_chache import LocalCache
 from antarest.core.config import CacheConfig
+from antarest.core.serialization import from_json, to_json_string
 from antarest.core.tasks.model import TaskDTO
 from antarest.core.utils.utils import StopWatch, get_local_path
 from antarest.matrixstore.repository import MatrixContentRepository
@@ -50,34 +52,28 @@ class IVariantGenerator(ABC):
         raise NotImplementedError()
 
 
+def set_auth_token(client: Client, auth_token: Optional[str] = None) -> Client:
+    if auth_token is not None:
+        client.headers.update({"Authorization": f"Bearer {auth_token}"})
+    return client
+
+
+def create_http_client(verify: bool, auth_token: Optional[str] = None) -> Client:
+    client = Client(verify=verify)
+    set_auth_token(client, auth_token)
+    return client
+
+
 class RemoteVariantGenerator(IVariantGenerator):
     def __init__(
         self,
         study_id: str,
-        host: Optional[str] = None,
-        token: Optional[str] = None,
-        session: Optional[Session] = None,
+        host: str,
+        session: Client,
     ):
         self.study_id = study_id
-
-        # todo: find the correct way to handle certificates.
-        #  By default, Requests/Httpx verifies SSL certificates for HTTPS requests.
-        #  When verify is set to `False`, requests will accept any TLS certificate presented
-        #  by the server,and will ignore hostname mismatches and/or expired certificates,
-        #  which will make your application vulnerable to man-in-the-middle (MitM) attacks.
-        #  Setting verify to False may be useful during local development or testing.
-        if Session.__name__ == "Client":
-            # noinspection PyArgumentList
-            self.session = session or Session(verify=False)
-        else:
-            self.session = session or Session()
-            self.session.verify = False
-
+        self.session = session
         self.host = host
-        if session is None and host is None:
-            raise ValueError("Missing either session or host")
-        if token is not None:
-            self.session.headers.update({"Authorization": f"Bearer {token}"})
 
     def apply_commands(
         self,
@@ -105,7 +101,7 @@ class RemoteVariantGenerator(IVariantGenerator):
 
         res = self.session.post(
             self.build_url(f"/v1/studies/{self.study_id}/commands"),
-            json=[command.dict() for command in commands],
+            json=[command.model_dump() for command in commands],
         )
         res.raise_for_status()
         stopwatch.log_elapsed(lambda x: logger.info(f"Command upload done in {x}s"))
@@ -124,7 +120,7 @@ class RemoteVariantGenerator(IVariantGenerator):
             # This should not happen, but if it does, we return a failed result
             return GenerationResultInfoDTO(success=False, details=[])
 
-        info = json.loads(task_result.result.return_value)
+        info = from_json(task_result.result.return_value)
         return GenerationResultInfoDTO(**info)
 
     def build_url(self, url: str) -> str:
@@ -214,10 +210,7 @@ def extract_commands(study_path: Path, commands_output_dir: Path) -> None:
     command_list = extractor.extract(study)
 
     (commands_output_dir / COMMAND_FILE).write_text(
-        json.dumps(
-            [command.dict(exclude={"id"}) for command in command_list],
-            indent=2,
-        )
+        to_json_string([command.model_dump(exclude={"id"}) for command in command_list], indent=2)
     )
 
 
@@ -306,10 +299,7 @@ def generate_diff(
     )
 
     (output_dir / COMMAND_FILE).write_text(
-        json.dumps(
-            [command.to_dto().dict(exclude={"id"}) for command in diff_commands],
-            indent=2,
-        )
+        to_json_string([command.to_dto().model_dump(exclude={"id"}) for command in diff_commands], indent=2)
     )
 
     needed_matrices: Set[str] = set()
@@ -339,7 +329,7 @@ def generate_study(
     study_id: Optional[str],
     output: Optional[str] = None,
     host: Optional[str] = None,
-    token: Optional[str] = None,
+    session: Optional[Client] = None,
     study_version: str = NEW_DEFAULT_STUDY_VERSION,
 ) -> GenerationResultInfoDTO:
     """
@@ -353,7 +343,7 @@ def generate_study(
             If `study_id` and `host` are not provided, this must be specified.
         host: The URL of the Antares server to use for generating the new study.
             If `study_id` is not provided, this is ignored.
-        token: The authentication token to use when connecting to the Antares server.
+        session: The session to use when connecting to the Antares server.
             If `host` is not provided, this is ignored.
         study_version: The target version of the generated study.
 
@@ -361,8 +351,9 @@ def generate_study(
         GenerationResultInfoDTO: A data transfer object containing information about the generation result.
     """
     generator: Union[RemoteVariantGenerator, LocalVariantGenerator]
-    if study_id is not None and host is not None:
-        generator = RemoteVariantGenerator(study_id, host, token)
+
+    if study_id is not None and host is not None and session is not None:
+        generator = RemoteVariantGenerator(study_id, host, session)
     elif output is None:
         raise TypeError("'output' must be set")
     else:

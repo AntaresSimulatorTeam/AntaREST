@@ -1,3 +1,15 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import re
 
 import pytest
@@ -5,7 +17,7 @@ from pydantic import ValidationError
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.study_upgrader import upgrade_study
+from antarest.study.storage.study_upgrader import StudyUpgrader
 from antarest.study.storage.variantstudy.model.command.common import CommandName
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
@@ -25,7 +37,7 @@ def recent_study_fixture(empty_study: FileStudy) -> FileStudy:
     Returns:
         FileStudy: The FileStudy object upgraded to the required version.
     """
-    upgrade_study(empty_study.config.study_path, str(REQUIRED_VERSION))
+    StudyUpgrader(empty_study.config.study_path, str(REQUIRED_VERSION)).upgrade()
     empty_study.config.version = REQUIRED_VERSION
     return empty_study
 
@@ -71,9 +83,11 @@ class TestRemoveSTStorage:
         assert ctx.value.errors() == [
             {
                 "ctx": {"pattern": "[a-z0-9_(),& -]+"},
+                "input": "?%$$",
                 "loc": ("storage_id",),
-                "msg": 'string does not match regex "[a-z0-9_(),& -]+"',
-                "type": "value_error.str.regex",
+                "msg": "String should match pattern '[a-z0-9_(),& -]+'",
+                "type": "string_pattern_mismatch",
+                "url": "https://errors.pydantic.dev/2.8/v/string_pattern_mismatch",
             }
         ]
 

@@ -1,10 +1,22 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import typing as t
 
 from pydantic import BaseModel
 
 from antarest.core.exceptions import ConfigFileNotFound
 from antarest.core.model import JSON
-from antarest.study.business.all_optional_meta import AllOptionalMetaclass, camel_case_model
+from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import RawStudy
 from antarest.study.storage.rawstudy.model.filesystem.config.links import LinkProperties
@@ -28,8 +40,9 @@ class LinkInfoDTO(BaseModel):
     ui: t.Optional[LinkUIDTO] = None
 
 
+@all_optional_model
 @camel_case_model
-class LinkOutput(LinkProperties, metaclass=AllOptionalMetaclass, use_none=True):
+class LinkOutput(LinkProperties):
     """
     DTO object use to get the link information.
     """
@@ -109,7 +122,7 @@ class LinkManager:
             for area2_id, properties_cfg in property_map.items():
                 area1_id, area2_id = sorted([area1_id, area2_id])
                 properties = LinkProperties(**properties_cfg)
-                links_by_ids[(area1_id, area2_id)] = LinkOutput(**properties.dict(by_alias=False))
+                links_by_ids[(area1_id, area2_id)] = LinkOutput(**properties.model_dump(by_alias=False))
 
         return links_by_ids
 
@@ -125,11 +138,11 @@ class LinkManager:
         for (area1, area2), update_link_dto in update_links_by_ids.items():
             # Update the link properties.
             old_link_dto = old_links_by_ids[(area1, area2)]
-            new_link_dto = old_link_dto.copy(update=update_link_dto.dict(by_alias=False, exclude_none=True))
+            new_link_dto = old_link_dto.copy(update=update_link_dto.model_dump(by_alias=False, exclude_none=True))
             new_links_by_ids[(area1, area2)] = new_link_dto
 
             # Convert the DTO to a configuration object and update the configuration file.
-            properties = LinkProperties(**new_link_dto.dict(by_alias=False))
+            properties = LinkProperties(**new_link_dto.model_dump(by_alias=False))
             path = f"{_ALL_LINKS_PATH}/{area1}/properties/{area2}"
             cmd = UpdateConfig(
                 target=path,

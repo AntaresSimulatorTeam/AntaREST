@@ -1,3 +1,15 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import configparser
 
 import numpy as np
@@ -25,16 +37,15 @@ class TestCreateLink:
         area1_id = transform_name_to_id(area1)
 
         area2 = "Area2"
-        area2_id = transform_name_to_id(area2)
 
-        CreateArea.parse_obj(
+        CreateArea.model_validate(
             {
                 "area_name": area1,
                 "command_context": command_context,
             }
         ).apply(empty_study)
 
-        CreateArea.parse_obj(
+        CreateArea.model_validate(
             {
                 "area_name": area2,
                 "command_context": command_context,
@@ -42,7 +53,7 @@ class TestCreateLink:
         ).apply(empty_study)
 
         with pytest.raises(ValidationError):
-            create_link_command: ICommand = CreateLink(
+            CreateLink(
                 area1=area1_id,
                 area2=area1_id,
                 parameters={},
@@ -61,21 +72,21 @@ class TestCreateLink:
         area3 = "Area3"
         area3_id = transform_name_to_id(area3)
 
-        CreateArea.parse_obj(
+        CreateArea.model_validate(
             {
                 "area_name": area1,
                 "command_context": command_context,
             }
         ).apply(empty_study)
 
-        CreateArea.parse_obj(
+        CreateArea.model_validate(
             {
                 "area_name": area2,
                 "command_context": command_context,
             }
         ).apply(empty_study)
 
-        CreateArea.parse_obj(
+        CreateArea.model_validate(
             {
                 "area_name": area3,
                 "command_context": command_context,
@@ -133,7 +144,7 @@ class TestCreateLink:
 
         # TODO:assert matrix default content : 1 column, 8760 rows, value = 1
 
-        output = CreateLink.parse_obj(
+        output = CreateLink.model_validate(
             {
                 "area1": area1_id,
                 "area2": area2_id,
@@ -161,7 +172,7 @@ class TestCreateLink:
             "filter-year-by-year": "hourly",
         }
 
-        create_link_command: ICommand = CreateLink.parse_obj(
+        create_link_command: ICommand = CreateLink.model_validate(
             {
                 "area1": area3_id,
                 "area2": area1_id,

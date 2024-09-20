@@ -1,8 +1,21 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import typing as t
 
-from pydantic import StrictBool, StrictInt, root_validator, validator
+from pydantic import StrictBool, StrictInt, field_validator, model_validator
 
 from antarest.core.model import JSON
+from antarest.study.business.all_optional_meta import all_optional_model
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.utils import GENERAL_DATA_PATH, FormFieldsBaseModel, execute_or_add_commands
 from antarest.study.model import Study
@@ -27,28 +40,30 @@ class SeasonCorrelation(EnumIgnoreCase):
     ANNUAL = "annual"
 
 
+@all_optional_model
 class TSFormFieldsForType(FormFieldsBaseModel):
-    stochastic_ts_status: t.Optional[StrictBool]
-    number: t.Optional[StrictInt]
-    refresh: t.Optional[StrictBool]
-    refresh_interval: t.Optional[StrictInt]
-    season_correlation: t.Optional[SeasonCorrelation]
-    store_in_input: t.Optional[StrictBool]
-    store_in_output: t.Optional[StrictBool]
-    intra_modal: t.Optional[StrictBool]
-    inter_modal: t.Optional[StrictBool]
+    stochastic_ts_status: StrictBool
+    number: StrictInt
+    refresh: StrictBool
+    refresh_interval: StrictInt
+    season_correlation: SeasonCorrelation
+    store_in_input: StrictBool
+    store_in_output: StrictBool
+    intra_modal: StrictBool
+    inter_modal: StrictBool
 
 
+@all_optional_model
 class TSFormFields(FormFieldsBaseModel):
-    load: t.Optional[TSFormFieldsForType] = None
-    hydro: t.Optional[TSFormFieldsForType] = None
-    thermal: t.Optional[TSFormFieldsForType] = None
-    wind: t.Optional[TSFormFieldsForType] = None
-    solar: t.Optional[TSFormFieldsForType] = None
-    renewables: t.Optional[TSFormFieldsForType] = None
-    ntc: t.Optional[TSFormFieldsForType] = None
+    load: TSFormFieldsForType
+    hydro: TSFormFieldsForType
+    thermal: TSFormFieldsForType
+    wind: TSFormFieldsForType
+    solar: TSFormFieldsForType
+    renewables: TSFormFieldsForType
+    ntc: TSFormFieldsForType
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
     def check_type_validity(
         cls, values: t.Dict[str, t.Optional[TSFormFieldsForType]]
     ) -> t.Dict[str, t.Optional[TSFormFieldsForType]]:
@@ -61,7 +76,7 @@ class TSFormFields(FormFieldsBaseModel):
             )
         return values
 
-    @validator("thermal")
+    @field_validator("thermal")
     def thermal_validation(cls, v: TSFormFieldsForType) -> TSFormFieldsForType:
         if v.season_correlation is not None:
             raise ValueError("season_correlation is not allowed for 'thermal' type")
@@ -118,7 +133,7 @@ class TimeSeriesConfigManager:
         field_values: TSFormFieldsForType,
     ) -> None:
         commands: t.List[UpdateConfig] = []
-        values = field_values.dict()
+        values = field_values.model_dump()
 
         for field, path in PATH_BY_TS_STR_FIELD.items():
             field_val = values[field]

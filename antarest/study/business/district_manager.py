@@ -1,3 +1,15 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 from typing import List
 
 from pydantic import BaseModel
@@ -57,16 +69,19 @@ class DistrictManager:
         """
         file_study = self.storage_service.get_storage(study).get_raw(study)
         all_areas = list(file_study.config.areas)
-        return [
-            DistrictInfoDTO(
-                id=district_id,
-                name=district.name,
-                areas=district.get_areas(all_areas),
-                output=district.output,
-                comments=file_study.tree.get(["input", "areas", "sets", district_id]).get("comments", ""),
+        districts = []
+        for district_id, district in file_study.config.sets.items():
+            assert district.name is not None
+            districts.append(
+                DistrictInfoDTO(
+                    id=district_id,
+                    name=district.name,
+                    areas=district.get_areas(all_areas),
+                    output=district.output,
+                    comments=file_study.tree.get(["input", "areas", "sets", district_id]).get("comments", ""),
+                )
             )
-            for district_id, district in file_study.config.sets.items()
-        ]
+        return districts
 
     def create_district(
         self,
@@ -136,14 +151,14 @@ class DistrictManager:
         file_study = self.storage_service.get_storage(study).get_raw(study)
         if district_id not in file_study.config.sets:
             raise DistrictNotFound(district_id)
-        areas = frozenset(dto.areas or [])
-        all_areas = frozenset(file_study.config.areas)
+        areas = set(dto.areas or [])
+        all_areas = set(file_study.config.areas)
         if invalid_areas := areas - all_areas:
             raise AreaNotFound(*invalid_areas)
         command = UpdateDistrict(
             id=district_id,
             base_filter=DistrictBaseFilter.remove_all,
-            filter_items=areas,
+            filter_items=dto.areas or [],
             output=dto.output,
             comments=dto.comments,
             command_context=self.storage_service.variant_study_service.command_factory.command_context,

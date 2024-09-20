@@ -1,3 +1,15 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import os
 import uuid
 from pathlib import Path
@@ -44,7 +56,7 @@ def file_study_720(tmpdir: Path) -> FileStudy:
 
 def test_ts_field_values(file_study_820: FileStudy, file_study_720: FileStudy):
     command_factory_mock = Mock()
-    command_factory_mock.command_context = CommandContext.construct()
+    command_factory_mock.command_context = CommandContext.model_construct()
 
     raw_study_service = Mock(spec=RawStudyService)
 

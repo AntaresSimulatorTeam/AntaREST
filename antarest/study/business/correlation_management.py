@@ -1,13 +1,25 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 """
 Management of spatial correlations between the different generators.
 The generators are of the same category and can be hydraulic, wind, load or solar.
 """
 import collections
-from typing import Dict, List, Sequence
+from typing import Dict, List, Sequence, Union
 
 import numpy as np
 import numpy.typing as npt
-from pydantic import conlist, validator
+from pydantic import ValidationInfo, field_validator
 
 from antarest.core.exceptions import AreaNotFound
 from antarest.study.business.area_management import AreaInfoDTO
@@ -28,7 +40,7 @@ class AreaCoefficientItem(FormFieldsBaseModel):
     """
 
     class Config:
-        allow_population_by_field_name = True
+        populate_by_name = True
 
     area_id: str
     coefficient: float
@@ -45,7 +57,7 @@ class CorrelationFormFields(FormFieldsBaseModel):
     correlation: List[AreaCoefficientItem]
 
     # noinspection PyMethodParameters
-    @validator("correlation")
+    @field_validator("correlation")
     def check_correlation(cls, correlation: List[AreaCoefficientItem]) -> List[AreaCoefficientItem]:
         if not correlation:
             raise ValueError("correlation must not be empty")
@@ -72,13 +84,21 @@ class CorrelationMatrix(FormFieldsBaseModel):
         data: A 2D-array matrix of correlation coefficients.
     """
 
-    index: conlist(str, min_items=1)  # type: ignore
-    columns: conlist(str, min_items=1)  # type: ignore
+    index: List[str]
+    columns: List[str]
     data: List[List[float]]  # NonNegativeFloat not necessary
 
+    @field_validator("index", "columns", mode="before")
+    def validate_list_length(cls, values: List[str]) -> List[str]:
+        if len(values) == 0:
+            raise ValueError("correlation matrix cannot have 0 columns/index")
+        return values
+
     # noinspection PyMethodParameters
-    @validator("data")
-    def validate_correlation_matrix(cls, data: List[List[float]], values: Dict[str, List[str]]) -> List[List[float]]:
+    @field_validator("data", mode="before")
+    def validate_correlation_matrix(
+        cls, data: List[List[float]], values: Union[Dict[str, List[str]], ValidationInfo]
+    ) -> List[List[float]]:
         """
         Validates the correlation matrix by checking its shape and range of coefficients.
 
@@ -100,8 +120,9 @@ class CorrelationMatrix(FormFieldsBaseModel):
         """
 
         array = np.array(data)
-        rows = len(values.get("index", []))
-        cols = len(values.get("columns", []))
+        new_values = values if isinstance(values, dict) else values.data
+        rows = len(new_values.get("index", []))
+        cols = len(new_values.get("columns", []))
 
         if array.size == 0:
             raise ValueError("correlation matrix must not be empty")
@@ -117,7 +138,7 @@ class CorrelationMatrix(FormFieldsBaseModel):
         return data
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "columns": ["north", "east", "south", "west"],
                 "data": [

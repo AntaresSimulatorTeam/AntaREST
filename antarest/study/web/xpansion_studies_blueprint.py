@@ -1,4 +1,15 @@
-import json
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import logging
 import typing as t
 
@@ -9,6 +20,7 @@ from antarest.core.config import Config
 from antarest.core.jwt import JWTUser
 from antarest.core.model import JSON, StudyPermissionType
 from antarest.core.requests import RequestParameters
+from antarest.core.serialization import to_json
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.study.business.xpansion_management import (
@@ -127,7 +139,7 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> XpansionCandidateDTO:
         logger.info(
-            f"Adding new candidate {xpansion_candidate_dto.dict(by_alias=True)} to study {uuid}",
+            f"Adding new candidate {xpansion_candidate_dto.model_dump(by_alias=True)} to study {uuid}",
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
@@ -270,13 +282,7 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
             except (AttributeError, UnicodeDecodeError):
                 pass
 
-        json_response = json.dumps(
-            output,
-            ensure_ascii=False,
-            allow_nan=True,
-            indent=None,
-            separators=(",", ":"),
-        ).encode("utf-8")
+        json_response = to_json(output)
         return Response(content=json_response, media_type="application/json")
 
     @bp.get(

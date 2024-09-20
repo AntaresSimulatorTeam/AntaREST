@@ -1,3 +1,15 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import filecmp
 import glob
 import os
@@ -5,17 +17,82 @@ import re
 import shutil
 import zipfile
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 import pandas
 import pytest
+from pandas.errors import EmptyDataError
 
+from antarest.core.exceptions import UnsupportedStudyVersion
 from antarest.study.storage.rawstudy.ini_reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata import DUPLICATE_KEYS
-from antarest.study.storage.study_upgrader import UPGRADE_METHODS, InvalidUpgrade, upgrade_study
-from antarest.study.storage.study_upgrader.upgrader_840 import MAPPING_TRANSMISSION_CAPACITIES
+from antarest.study.storage.study_upgrader import (
+    InvalidUpgrade,
+    StudyUpgrader,
+    check_versions_coherence,
+    find_next_version,
+)
 from tests.storage.business.assets import ASSETS_DIR
+
+MAPPING_TRANSMISSION_CAPACITIES = {
+    True: "local-values",
+    False: "null-for-all-links",
+    "infinite": "infinite-for-all-links",
+}
+
+
+class TestFindNextVersion:
+    @pytest.mark.parametrize(
+        "from_version, expected",
+        [("700", "710"), ("870", "880")],
+    )
+    def test_find_next_version_nominal(self, from_version: str, expected: str):
+        actual = find_next_version(from_version)
+        assert actual == expected
+
+    @pytest.mark.parametrize(
+        "from_version, message",
+        [
+            ("3.14", "Version '3.14' isn't among supported versions"),
+            ("880", "Your study is already in the latest supported version: '880'"),
+            ("900", "Version '900' isn't among supported versions"),
+        ],
+    )
+    def test_find_next_version_fails(self, from_version: str, message: str):
+        with pytest.raises(UnsupportedStudyVersion, match=message):
+            find_next_version(from_version)
+
+
+class TestCheckVersionCoherence:
+    @pytest.mark.parametrize(
+        "from_version, target_version",
+        [("700", "710"), ("870", "880"), ("820", "840")],
+    )
+    def test_check_version_coherence_nominal(self, from_version: str, target_version: str):
+        check_versions_coherence(from_version, target_version)
+
+    @pytest.mark.parametrize(
+        "from_version, target_version, message",
+        [
+            ("1000", "710", "Version '1000' isn't among supported versions"),
+            ("820", "32", "Version '32' isn't among supported versions"),
+        ],
+    )
+    def test_invalid_versions_fails(self, from_version: str, target_version: str, message: str):
+        with pytest.raises(UnsupportedStudyVersion, match=message):
+            check_versions_coherence(from_version, target_version)
+
+    @pytest.mark.parametrize(
+        "from_version, target_version, message",
+        [
+            ("860", "860", "Your study is already in the version you asked: 860"),
+            ("870", "840", "Cannot downgrade your study version : from 870 to 840"),
+        ],
+    )
+    def test_check_version_coherence_fails(self, from_version: str, target_version: str, message: str):
+        with pytest.raises(InvalidUpgrade, match=message):
+            check_versions_coherence(from_version, target_version)
 
 
 def test_end_to_end_upgrades(tmp_path: Path):
@@ -32,7 +109,8 @@ def test_end_to_end_upgrades(tmp_path: Path):
     old_binding_constraint_values = get_old_binding_constraint_values(study_dir)
     # Only checks if the study_upgrader can go from the first supported version to the last one
     target_version = "880"
-    upgrade_study(study_dir, target_version)
+    study_upgrader = StudyUpgrader(study_dir, target_version)
+    study_upgrader.upgrade()
     assert_study_antares_file_is_updated(study_dir, target_version)
     assert_settings_are_updated(study_dir, old_values)
     assert_inputs_are_updated(study_dir, old_areas_values, old_binding_constraint_values)
@@ -46,26 +124,20 @@ def test_fails_because_of_versions_asked(tmp_path: Path):
     with zipfile.ZipFile(path_study) as zip_output:
         zip_output.extractall(path=study_dir)
     # Try to upgrade with an unknown version
-    with pytest.raises(
-        InvalidUpgrade,
-        match=f"Version '600' unknown: possible versions are {', '.join([u[1] for u in UPGRADE_METHODS])}",
-    ):
-        upgrade_study(study_dir, "600")
+    with pytest.raises(InvalidUpgrade, match="Cannot downgrade from version '7.2' to '6'"):
+        StudyUpgrader(study_dir, "600").upgrade()
     # Try to upgrade with the current version
-    with pytest.raises(InvalidUpgrade, match="Your study is already in version '720'"):
-        upgrade_study(study_dir, "720")
+    with pytest.raises(InvalidUpgrade, match="Your study is already in version '7.2'"):
+        StudyUpgrader(study_dir, "720").upgrade()
     # Try to upgrade with an old version
     with pytest.raises(
         InvalidUpgrade,
-        match="Impossible to upgrade from version '720' to version '710'",
+        match="Cannot downgrade from version '7.2' to '7.1'",
     ):
-        upgrade_study(study_dir, "710")
+        StudyUpgrader(study_dir, "710").upgrade()
     # Try to upgrade with a version that does not exist
-    with pytest.raises(
-        InvalidUpgrade,
-        match=f"Version '820.rc' unknown: possible versions are {', '.join([u[1] for u in UPGRADE_METHODS])}",
-    ):
-        upgrade_study(study_dir, "820.rc")
+    with pytest.raises(InvalidUpgrade, match="Invalid version number '820.rc'"):
+        StudyUpgrader(study_dir, "820.rc").upgrade()
 
 
 def test_fallback_if_study_input_broken(tmp_path):
@@ -78,10 +150,10 @@ def test_fallback_if_study_input_broken(tmp_path):
     before_upgrade_dir = tmp_path / "backup"
     shutil.copytree(study_dir, before_upgrade_dir, dirs_exist_ok=True)
     with pytest.raises(
-        expected_exception=pandas.errors.EmptyDataError,
+        expected_exception=EmptyDataError,
         match="No columns to parse from file",
     ):
-        upgrade_study(study_dir, "850")
+        StudyUpgrader(study_dir, "850").upgrade()
     assert are_same_dir(study_dir, before_upgrade_dir)
 
 
@@ -231,8 +303,8 @@ def assert_folder_is_created(path: Path) -> None:
     assert (path / "series").is_dir()
 
 
-def are_same_dir(dir1, dir2) -> bool:
-    dirs_cmp = filecmp.dircmp(dir1, dir2)
+def are_same_dir(dir1, dir2, ignore: Optional[List[str]] = None) -> bool:
+    dirs_cmp = filecmp.dircmp(dir1, dir2, ignore=ignore)
     if len(dirs_cmp.left_only) > 0 or len(dirs_cmp.right_only) > 0 or len(dirs_cmp.funny_files) > 0:
         return False
     path_dir1 = Path(dir1)

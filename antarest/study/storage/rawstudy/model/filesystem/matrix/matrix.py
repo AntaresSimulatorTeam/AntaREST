@@ -1,3 +1,15 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import logging
 from abc import ABC, abstractmethod
 from enum import Enum
@@ -27,6 +39,19 @@ class MatrixFrequency(str, Enum):
     WEEKLY = "weekly"
     DAILY = "daily"
     HOURLY = "hourly"
+
+
+def dump_dataframe(df: pd.DataFrame, path: Path, float_format: Optional[str] = "%.6f") -> None:
+    if df.empty:
+        path.write_bytes(b"")
+    else:
+        df.to_csv(
+            path,
+            sep="\t",
+            header=False,
+            index=False,
+            float_format=float_format,
+        )
 
 
 class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
@@ -142,13 +167,4 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
             self.config.path.write_bytes(data)
         else:
             df = pd.DataFrame(**data)
-            if df.empty:
-                self.config.path.write_bytes(b"")
-            else:
-                df.to_csv(
-                    self.config.path,
-                    sep="\t",
-                    header=False,
-                    index=False,
-                    float_format="%.6f",
-                )
+            dump_dataframe(df, self.config.path)

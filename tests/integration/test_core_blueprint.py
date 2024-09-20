@@ -1,4 +1,15 @@
-import http
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import re
 from unittest import mock
 
@@ -36,23 +47,3 @@ class TestVersionInfo:
             "dependencies": mock.ANY,
         }
         assert actual == expected
-
-
-class TestKillWorker:
-    def test_kill_worker__not_granted(self, app: FastAPI):
-        client = TestClient(app, raise_server_exceptions=False)
-        res = client.get("/kill")
-        assert res.status_code == http.HTTPStatus.UNAUTHORIZED, res.json()
-        assert res.json() == {"detail": "Missing cookie access_token_cookie"}
-
-    def test_kill_worker__nominal_case(self, app: FastAPI):
-        client = TestClient(app, raise_server_exceptions=False)
-        # login as "admin"
-        res = client.post("/v1/login", json={"username": "admin", "password": "admin"})
-        res.raise_for_status()
-        credentials = res.json()
-        admin_access_token = credentials["access_token"]
-        # kill the worker
-        res = client.get("/kill", headers={"Authorization": f"Bearer {admin_access_token}"})
-        assert res.status_code == 500, res.json()
-        assert not res.content

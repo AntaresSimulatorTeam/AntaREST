@@ -1,3 +1,15 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 from typing import Any, Dict, List, Optional, Tuple
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
@@ -16,17 +28,17 @@ class UpdateDistrict(ICommand):
     # Overloaded metadata
     # ===================
 
-    command_name = CommandName.UPDATE_DISTRICT
-    version = 1
+    command_name: CommandName = CommandName.UPDATE_DISTRICT
+    version: int = 1
 
     # Command parameters
     # ==================
 
     id: str
-    base_filter: Optional[DistrictBaseFilter]
-    filter_items: Optional[List[str]]
-    output: Optional[bool]
-    comments: Optional[str]
+    base_filter: Optional[DistrictBaseFilter] = None
+    filter_items: Optional[List[str]] = None
+    output: Optional[bool] = None
+    comments: Optional[str] = None
 
     def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         base_set = study_data.sets[self.id]

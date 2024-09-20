@@ -1,3 +1,15 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import string
 
 import pytest
@@ -21,12 +33,12 @@ def test_transform_name_to_id__valid_chars(name):
     assert transform_name_to_id(name, lower=False) == name
 
 
-@pytest.mark.parametrize("name", set(string.punctuation) - set(VALID_CHARS))
+@pytest.mark.parametrize("name", sorted(set(string.punctuation) - set(VALID_CHARS)))
 def test_transform_name_to_id__punctuation(name):
     assert not transform_name_to_id(name)
 
 
-@pytest.mark.parametrize("name", set(string.whitespace) - set(VALID_CHARS))
+@pytest.mark.parametrize("name", sorted(set(string.whitespace) - set(VALID_CHARS)))
 def test_transform_name_to_id__whitespace(name):
     assert not transform_name_to_id(name)
 

@@ -1,3 +1,15 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import typing as t
 
 from pydantic import Field
@@ -20,14 +32,14 @@ class RemoveSTStorage(ICommand):
     # Overloaded metadata
     # ===================
 
-    command_name = CommandName.REMOVE_ST_STORAGE
-    version = 1
+    command_name: CommandName = CommandName.REMOVE_ST_STORAGE
+    version: int = 1
 
     # Command parameters
     # ==================
 
-    area_id: str = Field(description="Area ID", regex=r"[a-z0-9_(),& -]+")
-    storage_id: str = Field(description="Short term storage ID", regex=r"[a-z0-9_(),& -]+")
+    area_id: str = Field(description="Area ID", pattern=r"[a-z0-9_(),& -]+")
+    storage_id: str = Field(description="Short term storage ID", pattern=r"[a-z0-9_(),& -]+")
 
     def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
         """

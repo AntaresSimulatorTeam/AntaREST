@@ -1,3 +1,15 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import io
 import json
 import logging
@@ -9,15 +21,19 @@ from enum import Enum
 from pathlib import Path
 
 from antarest.core.model import JSON
+from antarest.core.serialization import from_json
 from antarest.study.storage.rawstudy.ini_reader import IniReader
-from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
+from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
+    DEFAULT_GROUP,
+    DEFAULT_OPERATOR,
+    DEFAULT_TIMESTEP,
+)
 from antarest.study.storage.rawstudy.model.filesystem.config.exceptions import (
     SimulationParsingError,
     XpansionParsingError,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import extract_filtering
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    DEFAULT_GROUP,
     Area,
     BindingConstraintDTO,
     DistrictSet,
@@ -212,11 +228,14 @@ def _parse_bindings(root: Path) -> t.List[BindingConstraintDTO]:
         # contains a set of strings in the following format: "area.cluster"
         cluster_set = set()
         # Default value for time_step
-        time_step = BindingConstraintFrequency.HOURLY
+        time_step = bind.get("type", DEFAULT_TIMESTEP)
+        # Default value for operator
+        operator = bind.get("operator", DEFAULT_OPERATOR)
+        # Default value for group
+        group = bind.get("group", DEFAULT_GROUP)
+        # Build areas and clusters based on terms
         for key in bind:
-            if key == "type":
-                time_step = BindingConstraintFrequency(bind[key])
-            elif "%" in key:
+            if "%" in key:
                 areas = key.split("%", 1)
                 area_set.add(areas[0])
                 area_set.add(areas[1])
@@ -224,13 +243,8 @@ def _parse_bindings(root: Path) -> t.List[BindingConstraintDTO]:
                 cluster_set.add(key)
                 area_set.add(key.split(".", 1)[0])
 
-        group = bind.get("group", DEFAULT_GROUP)
         bc = BindingConstraintDTO(
-            id=bind["id"],
-            areas=area_set,
-            clusters=cluster_set,
-            time_step=time_step,
-            group=group,
+            id=bind["id"], areas=area_set, clusters=cluster_set, time_step=time_step, operator=operator, group=group
         )
         output_list.append(bc)
 
@@ -317,7 +331,7 @@ def _parse_xpansion_version(path: Path) -> str:
     xpansion_json = path / "expansion" / "out.json"
     try:
         content = xpansion_json.read_text(encoding="utf-8")
-        obj = json.loads(content)
+        obj = from_json(content)
         return str(obj["antares_xpansion"]["version"])
     except FileNotFoundError:
         return ""

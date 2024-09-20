@@ -1,3 +1,15 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import json
 import math
 import os
@@ -15,7 +27,7 @@ from typing_extensions import Literal
 
 from antarest.core.config import (
     Config,
-    InvalidConfigurationError,
+    Launcher,
     LauncherConfig,
     LocalConfig,
     NbCoresConfig,
@@ -40,13 +52,7 @@ from antarest.launcher.model import (
     LauncherParametersDTO,
     LogType,
 )
-from antarest.launcher.service import (
-    EXECUTION_INFO_FILE,
-    LAUNCHER_PARAM_NAME_SUFFIX,
-    ORPHAN_JOBS_VISIBILITY_THRESHOLD,
-    JobNotFound,
-    LauncherService,
-)
+from antarest.launcher.service import EXECUTION_INFO_FILE, LAUNCHER_PARAM_NAME_SUFFIX, JobNotFound, LauncherService
 from antarest.login.auth import Auth
 from antarest.login.model import Identity
 from antarest.study.model import OwnerInfo, PublicMode, Study, StudyMetadataDTO
@@ -89,7 +95,7 @@ class TestLauncherService:
             study_id="study_uuid",
             job_status=JobStatus.PENDING,
             launcher="local",
-            launcher_params=LauncherParametersDTO().json(),
+            launcher_params=LauncherParametersDTO().model_dump_json(),
         )
         repository = Mock()
         repository.save.return_value = pending
@@ -130,12 +136,12 @@ class TestLauncherService:
         # so we need to compare them manually.
         mock_call = repository.save.mock_calls[0]
         actual_obj: JobResult = mock_call.args[0]
-        assert actual_obj.to_dto().dict() == pending.to_dto().dict()
+        assert actual_obj.to_dto().model_dump() == pending.to_dto().model_dump()
 
         event_bus.push.assert_called_once_with(
             Event(
                 type=EventType.STUDY_JOB_STARTED,
-                payload=pending.to_dto().dict(),
+                payload=pending.to_dto().model_dump(),
                 permissions=PermissionInfo(owner=0),
             )
         )
@@ -257,7 +263,7 @@ class TestLauncherService:
                 job_status=JobStatus.SUCCESS,
                 msg="Hello, World!",
                 exit_code=0,
-                creation_date=now - timedelta(days=ORPHAN_JOBS_VISIBILITY_THRESHOLD + 1),
+                creation_date=now - timedelta(days=11),
                 owner=identity_instance,
             )
         ]
@@ -308,7 +314,7 @@ class TestLauncherService:
                     )
                 ),
             )
-            == returned_faked_execution_results
+            == []
         )
 
         with pytest.raises(UserHasNotPermissionError):
@@ -486,11 +492,6 @@ class TestLauncherService:
                 "unknown",
                 {},
                 id="local-config-unknown",
-                marks=pytest.mark.xfail(
-                    reason="Configuration is not available for the 'unknown' launcher",
-                    raises=InvalidConfigurationError,
-                    strict=True,
-                ),
             ),
             pytest.param(
                 {
@@ -518,11 +519,6 @@ class TestLauncherService:
                 "unknown",
                 {},
                 id="slurm-config-unknown",
-                marks=pytest.mark.xfail(
-                    reason="Configuration is not available for the 'unknown' launcher",
-                    raises=InvalidConfigurationError,
-                    strict=True,
-                ),
             ),
             pytest.param(
                 {
@@ -563,10 +559,13 @@ class TestLauncherService:
         )
 
         # Fetch the number of cores
-        actual = launcher_service.get_nb_cores(solver)
-
-        # Check the result
-        assert actual == NbCoresConfig(**expected)
+        try:
+            actual = launcher_service.get_nb_cores(Launcher(solver))
+        except ValueError as e:
+            assert e.args[0] == f"'{solver}' is not a valid Launcher"
+        else:
+            # Check the result
+            assert actual == NbCoresConfig(**expected)
 
     @pytest.mark.unit_test
     def test_service_kill_job(self, tmp_path: Path) -> None:
@@ -890,7 +889,7 @@ class TestLauncherService:
             solver_stats=expected_saved_stats,
             owner_id=1,
         )
-        assert actual_obj.to_dto().dict() == expected_obj.to_dto().dict()
+        assert actual_obj.to_dto().model_dump() == expected_obj.to_dto().model_dump()
 
         zip_file = tmp_path / "test.zip"
         with ZipFile(zip_file, "w", ZIP_DEFLATED) as output_data:
@@ -907,7 +906,7 @@ class TestLauncherService:
             solver_stats="0\n1",
             owner_id=1,
         )
-        assert actual_obj.to_dto().dict() == expected_obj.to_dto().dict()
+        assert actual_obj.to_dto().model_dump() == expected_obj.to_dto().model_dump()
 
     @pytest.mark.parametrize(
         ["running_jobs", "expected_result", "default_launcher"],
@@ -990,7 +989,7 @@ class TestLauncherService:
 
         job_repository.get_running.return_value = running_jobs
 
-        launcher_expected_result = LauncherLoadDTO.parse_obj(expected_result)
+        launcher_expected_result = LauncherLoadDTO.model_validate(expected_result)
         actual_result = launcher_service.get_load()
 
         assert launcher_expected_result.launcher_status == actual_result.launcher_status

@@ -1,3 +1,15 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 """
 Filesystem Blueprint
 """
@@ -11,21 +23,21 @@ from pathlib import Path
 
 import typing_extensions as te
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, Extra, Field
+from pydantic import BaseModel, Field
 from starlette.responses import PlainTextResponse, StreamingResponse
 
 from antarest.core.config import Config
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 
-FilesystemName = te.Annotated[str, Field(regex=r"^\w+$", description="Filesystem name")]
-MountPointName = te.Annotated[str, Field(regex=r"^\w+$", description="Mount point name")]
+FilesystemName = te.Annotated[str, Field(pattern=r"^\w+$", description="Filesystem name")]
+MountPointName = te.Annotated[str, Field(pattern=r"^\w+$", description="Mount point name")]
 
 
 class FilesystemDTO(
     BaseModel,
-    extra=Extra.forbid,
-    schema_extra={
+    extra="forbid",
+    json_schema_extra={
         "example": {
             "name": "ws",
             "mount_dirs": {
@@ -50,8 +62,8 @@ class FilesystemDTO(
 
 class MountPointDTO(
     BaseModel,
-    extra=Extra.forbid,
-    schema_extra={
+    extra="forbid",
+    json_schema_extra={
         "example": {
             "name": "default",
             "path": "/path/to/workspaces/internal_studies",
@@ -77,10 +89,10 @@ class MountPointDTO(
 
     name: MountPointName
     path: Path = Field(description="Full path of the mount point in Antares Web Server")
-    total_bytes: int = Field(0, description="Total size of the mount point in bytes")
-    used_bytes: int = Field(0, description="Used size of the mount point in bytes")
-    free_bytes: int = Field(0, description="Free size of the mount point in bytes")
-    message: str = Field("", description="A message describing the status of the mount point")
+    total_bytes: int = Field(default=0, description="Total size of the mount point in bytes")
+    used_bytes: int = Field(default=0, description="Used size of the mount point in bytes")
+    free_bytes: int = Field(default=0, description="Free size of the mount point in bytes")
+    message: str = Field(default="", description="A message describing the status of the mount point")
 
     @classmethod
     async def from_path(cls, name: str, path: Path) -> "MountPointDTO":
@@ -98,8 +110,8 @@ class MountPointDTO(
 
 class FileInfoDTO(
     BaseModel,
-    extra=Extra.forbid,
-    schema_extra={
+    extra="forbid",
+    json_schema_extra={
         "example": {
             "path": "/path/to/workspaces/internal_studies/5a503c20-24a3-4734-9cf8-89565c9db5ec/study.antares",
             "file_type": "file",
@@ -130,12 +142,12 @@ class FileInfoDTO(
 
     path: Path = Field(description="Full path of the file or directory in Antares Web Server")
     file_type: str = Field(description="Type of the file or directory")
-    file_count: int = Field(1, description="Number of files and folders in the directory (1 for files)")
-    size_bytes: int = Field(0, description="Size of the file or total size of the directory in bytes")
+    file_count: int = Field(default=1, description="Number of files and folders in the directory (1 for files)")
+    size_bytes: int = Field(default=0, description="Size of the file or total size of the directory in bytes")
     created: datetime.datetime = Field(description="Creation date of the file or directory (local time)")
     modified: datetime.datetime = Field(description="Last modification date of the file or directory (local time)")
     accessed: datetime.datetime = Field(description="Last access date of the file or directory (local time)")
-    message: str = Field("OK", description="A message describing the status of the file")
+    message: str = Field(default="OK", description="A message describing the status of the file")
 
     @classmethod
     async def from_path(cls, full_path: Path, *, details: bool = False) -> "FileInfoDTO":
@@ -148,6 +160,7 @@ class FileInfoDTO(
                 path=full_path,
                 file_type="unknown",
                 file_count=0,  # missing
+                size_bytes=0,  # missing
                 created=datetime.datetime.min,
                 modified=datetime.datetime.min,
                 accessed=datetime.datetime.min,
@@ -162,6 +175,7 @@ class FileInfoDTO(
             created=datetime.datetime.fromtimestamp(file_stat.st_ctime),
             modified=datetime.datetime.fromtimestamp(file_stat.st_mtime),
             accessed=datetime.datetime.fromtimestamp(file_stat.st_atime),
+            message="OK",
         )
 
         if stat.S_ISDIR(file_stat.st_mode):

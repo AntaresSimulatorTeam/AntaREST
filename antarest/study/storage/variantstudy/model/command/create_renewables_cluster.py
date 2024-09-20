@@ -1,6 +1,18 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import typing as t
 
-from pydantic import validator
+from pydantic import field_validator
 
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -24,17 +36,17 @@ class CreateRenewablesCluster(ICommand):
     # Overloaded metadata
     # ===================
 
-    command_name = CommandName.CREATE_RENEWABLES_CLUSTER
-    version = 1
+    command_name: CommandName = CommandName.CREATE_RENEWABLES_CLUSTER
+    version: int = 1
 
     # Command parameters
     # ==================
 
     area_id: str
     cluster_name: str
-    parameters: t.Dict[str, str]
+    parameters: t.Dict[str, t.Any]
 
-    @validator("cluster_name")
+    @field_validator("cluster_name")
     def validate_cluster_name(cls, val: str) -> str:
         valid_name = transform_name_to_id(val, lower=False)
         if valid_name != val:

@@ -1,8 +1,20 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import functools
 import logging
 import os
 import shutil
-from datetime import datetime, timedelta
+from datetime import datetime
 from http import HTTPStatus
 from pathlib import Path
 from typing import Dict, List, Optional, cast
@@ -10,7 +22,7 @@ from uuid import UUID, uuid4
 
 from fastapi import HTTPException
 
-from antarest.core.config import Config, NbCoresConfig
+from antarest.core.config import Config, Launcher, NbCoresConfig
 from antarest.core.exceptions import StudyNotFoundError
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
@@ -59,7 +71,6 @@ class LauncherServiceNotAvailableException(HTTPException):
         )
 
 
-ORPHAN_JOBS_VISIBILITY_THRESHOLD = 10  # days
 LAUNCHER_PARAM_NAME_SUFFIX = "output_suffix"
 EXECUTION_INFO_FILE = "execution_info.ini"
 
@@ -103,7 +114,7 @@ class LauncherService:
     def get_launchers(self) -> List[str]:
         return list(self.launchers.keys())
 
-    def get_nb_cores(self, launcher: str) -> NbCoresConfig:
+    def get_nb_cores(self, launcher: Launcher) -> NbCoresConfig:
         """
         Retrieve the configuration of the launcher's nb of cores.
 
@@ -112,9 +123,6 @@ class LauncherService:
 
         Returns:
             Number of cores of the launcher
-
-        Raises:
-            InvalidConfigurationError: if the launcher configuration is not available
         """
         return self.config.launcher.get_nb_cores(launcher)
 
@@ -175,7 +183,7 @@ class LauncherService:
                 self.event_bus.push(
                     Event(
                         type=EventType.STUDY_JOB_COMPLETED if final_status else EventType.STUDY_JOB_STATUS_UPDATE,
-                        payload=job_result.to_dto().dict(),
+                        payload=job_result.to_dto().model_dump(),
                         permissions=PermissionInfo(public_mode=PublicMode.READ),
                         channel=EventChannelDirectory.JOB_STATUS + job_result.id,
                     )
@@ -236,7 +244,7 @@ class LauncherService:
             study_id=study_uuid,
             job_status=JobStatus.PENDING,
             launcher=launcher,
-            launcher_params=launcher_parameters.json() if launcher_parameters else None,
+            launcher_params=launcher_parameters.model_dump_json() if launcher_parameters else None,
             owner_id=(owner_id or None),
         )
         self.job_result_repository.save(job_status)
@@ -252,7 +260,7 @@ class LauncherService:
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_JOB_STARTED,
-                payload=job_status.to_dto().dict(),
+                payload=job_status.to_dto().model_dump(),
                 permissions=PermissionInfo.from_study(study_info),
             )
         )
@@ -293,7 +301,7 @@ class LauncherService:
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_JOB_CANCELLED,
-                payload=job_status.to_dto().dict(),
+                payload=job_status.to_dto().model_dump(),
                 permissions=PermissionInfo.from_study(study),
                 channel=EventChannelDirectory.JOB_STATUS + job_result.id,
             )
@@ -305,7 +313,6 @@ class LauncherService:
         if not user:
             return []
 
-        orphan_visibility_threshold = datetime.utcnow() - timedelta(days=ORPHAN_JOBS_VISIBILITY_THRESHOLD)
         allowed_job_results = []
 
         study_ids = [job_result.study_id for job_result in job_results]
@@ -330,9 +337,7 @@ class LauncherService:
                     raising=False,
                 ):
                     allowed_job_results.append(job_result)
-            elif (
-                user and (user.is_site_admin() or user.is_admin_token())
-            ) or job_result.creation_date >= orphan_visibility_threshold:
+            elif user and (user.is_site_admin() or user.is_admin_token()):
                 allowed_job_results.append(job_result)
         return allowed_job_results
 
@@ -710,5 +715,7 @@ class LauncherService:
 
         if launcher is None:
             raise ValueError(f"Job {job_id} has no launcher")
-        launch_progress_json = self.launchers[launcher].cache.get(id=f"Launch_Progress_{job_id}") or {"progress": 0}
+        launch_progress_json: Dict[str, float] = self.launchers[launcher].cache.get(id=f"Launch_Progress_{job_id}") or {
+            "progress": 0
+        }
         return launch_progress_json.get("progress", 0)

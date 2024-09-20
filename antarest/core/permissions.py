@@ -1,4 +1,17 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import logging
+import typing as t
 
 from antarest.core.jwt import JWTUser
 from antarest.core.model import PermissionInfo, PublicMode, StudyPermissionType
@@ -7,8 +20,8 @@ from antarest.core.roles import RoleType
 logger = logging.getLogger(__name__)
 
 
-permission_matrix = {
-    StudyPermissionType.READ: {
+permission_matrix: t.Dict[str, t.Dict[str, t.Sequence[t.Union[RoleType, PublicMode]]]] = {
+    StudyPermissionType.READ.value: {
         "roles": [
             RoleType.ADMIN,
             RoleType.RUNNER,
@@ -22,15 +35,15 @@ permission_matrix = {
             PublicMode.READ,
         ],
     },
-    StudyPermissionType.RUN: {
+    StudyPermissionType.RUN.value: {
         "roles": [RoleType.ADMIN, RoleType.RUNNER, RoleType.WRITER],
         "public_modes": [PublicMode.FULL, PublicMode.EDIT, PublicMode.EXECUTE],
     },
-    StudyPermissionType.WRITE: {
+    StudyPermissionType.WRITE.value: {
         "roles": [RoleType.ADMIN, RoleType.WRITER],
         "public_modes": [PublicMode.FULL, PublicMode.EDIT],
     },
-    StudyPermissionType.MANAGE_PERMISSIONS: {
+    StudyPermissionType.MANAGE_PERMISSIONS.value: {
         "roles": [RoleType.ADMIN],
         "public_modes": [],
     },
@@ -65,11 +78,11 @@ def check_permission(
 
     allowed_roles = permission_matrix[permission]["roles"]
     group_permission = any(
-        role in allowed_roles  # type: ignore
+        role in allowed_roles
         for role in [group.role for group in (user.groups or []) if group.id in permission_info.groups]
     )
     if group_permission:
         return True
 
     allowed_public_modes = permission_matrix[permission]["public_modes"]
-    return permission_info.public_mode in allowed_public_modes  # type: ignore
+    return permission_info.public_mode in allowed_public_modes

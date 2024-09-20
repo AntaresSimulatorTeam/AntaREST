@@ -1,3 +1,15 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import typing as t
 
 from pydantic import BaseModel
@@ -5,7 +17,7 @@ from pydantic import BaseModel
 from antarest.core.exceptions import CommandApplicationError
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.requests import RequestParameters
-from antarest.core.utils.string import to_camel_case
+from antarest.study.business.all_optional_meta import camel_case_model
 from antarest.study.model import RawStudy, Study
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.storage_service import StudyStorageService
@@ -57,12 +69,12 @@ def execute_or_add_commands(
         )
 
 
+@camel_case_model
 class FormFieldsBaseModel(
     BaseModel,
-    alias_generator=to_camel_case,
     extra="forbid",
     validate_assignment=True,
-    allow_population_by_field_name=True,
+    populate_by_name=True,
 ):
     """
     Pydantic Model for webapp form
