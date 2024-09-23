@@ -18,6 +18,7 @@ import DataEditor, {
   EditableGridCell,
   EditListItem,
   GridCellKind,
+  GridColumn,
   GridSelection,
   Item,
 } from "@glideapps/glide-data-grid";
@@ -45,7 +46,7 @@ export interface MatrixGridProps {
 function MatrixGrid({
   data,
   rows,
-  columns,
+  columns: initialColumns,
   dateTime,
   aggregates,
   rowHeaders,
@@ -56,6 +57,7 @@ function MatrixGrid({
   isReaOnlyEnabled,
   isPercentDisplayEnabled,
 }: MatrixGridProps) {
+  const [columns, setColumns] = useState<EnhancedGridColumn[]>(initialColumns);
   const [selection, setSelection] = useState<GridSelection>({
     columns: CompactSelection.empty(),
     rows: CompactSelection.empty(),
@@ -88,6 +90,18 @@ function MatrixGrid({
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
+  const handleColumnResize = (
+    column: GridColumn,
+    newSize: number,
+    colIndex: number,
+    newSizeWithGrow: number,
+  ) => {
+    const newColumns = columns.map((col, index) =>
+      index === colIndex ? { ...col, width: newSize } : col,
+    );
+
+    setColumns(newColumns);
+  };
 
   const handleCellEdited = (coordinates: Item, value: EditableGridCell) => {
     if (value.kind !== GridCellKind.Number) {
@@ -160,6 +174,7 @@ function MatrixGrid({
         fillHandle
         rowMarkers="both"
         freezeColumns={1} // Make the first column sticky
+        onColumnResize={handleColumnResize}
       />
       <div id="portal" />
     </>
