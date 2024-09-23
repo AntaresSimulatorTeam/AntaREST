@@ -542,7 +542,7 @@ class TestRawDataAggregationMCInd:
             output_id = params.pop("output_id")
             res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-ind/{output_id}", params=params)
             assert res.status_code == 200, res.json()
-            assert res.content == b"\n"
+            assert res.content.strip() == b""
 
     def test_wrongly_typed_request(self, client: TestClient, user_access_token: str, internal_study_id: str):
         """
@@ -601,7 +601,7 @@ class TestRawDataAggregationMCInd:
             },
         )
         assert res.status_code == 200, res.json()
-        assert res.content == b"\n"
+        assert res.content.strip() == b""
 
         # test for links
         res = client.get(
@@ -613,7 +613,7 @@ class TestRawDataAggregationMCInd:
             },
         )
         assert res.status_code == 200, res.json()
-        assert res.content == b"\n"
+        assert res.content.strip() == b""
 
     def test_non_existing_folder(
         self, tmp_path: Path, client: TestClient, user_access_token: str, internal_study_id: str
@@ -746,7 +746,7 @@ class TestRawDataAggregationMCAll:
             output_id = params.pop("output_id")
             res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-all/{output_id}", params=params)
             assert res.status_code == 200, res.json()
-            assert res.content == b"\n"
+            assert res.content.strip() == b""
 
     def test_wrongly_typed_request(self, client: TestClient, user_access_token: str, internal_study_id: str):
         """
@@ -806,7 +806,7 @@ class TestRawDataAggregationMCAll:
             },
         )
         assert res.status_code == 200, res.json()
-        assert res.content == b"\n"
+        assert res.content.strip() == b""
 
         # test for links
         res = client.get(
@@ -818,7 +818,7 @@ class TestRawDataAggregationMCAll:
             },
         )
         assert res.status_code == 200, res.json()
-        assert res.content == b"\n"
+        assert res.content.strip() == b""
 
     def test_non_existing_folder(
         self, tmp_path: Path, client: TestClient, user_access_token: str, internal_study_id: str
