@@ -179,18 +179,22 @@ class LinkManager:
                     "filter_year_by_year": link_properties.get("filter_year_by_year"),
                 }
 
-                ui_parameters = {}
-                if with_ui and links_config and link in links_config:
-                    ui_parameters.update(
-                        {
-                            "colorr": str(link_properties.get("colorr", DEFAULT_COLOR)),
-                            "colorb": str(link_properties.get("colorb", DEFAULT_COLOR)),
-                            "colorg": str(link_properties.get("colorg", DEFAULT_COLOR)),
-                            "link_width": link_properties.get("link_width", 1.0),
-                            "link_style": link_properties.get("link_style", LinkStyle.PLAIN),
-                        }
-                    )
-                link_creation_data.update(ui_parameters)
+                if with_ui:
+                    link_creation_data.update({
+                        "colorr": str(link_properties.get("colorr", DEFAULT_COLOR)),
+                        "colorb": str(link_properties.get("colorb", DEFAULT_COLOR)),
+                        "colorg": str(link_properties.get("colorg", DEFAULT_COLOR)),
+                        "link_width": link_properties.get("link_width", 1.0),
+                        "link_style": link_properties.get("link_style", LinkStyle.PLAIN),
+                    })
+                else:
+                    link_creation_data.update({
+                        "colorr": None,
+                        "colorb": None,
+                        "colorg": None,
+                        "link_width": None,
+                        "link_style": None,
+                    })
 
                 link_info_dto = LinkInfoFactory.create_link_info(int(study.version), **link_creation_data)
                 result.append(link_info_dto)
