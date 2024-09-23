@@ -21,8 +21,6 @@ import pytest
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskDTO, TaskStatus
-from antarest.study.storage.variantstudy.repository import VariantStudyRepository
-from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 from tests.integration.assets import ASSETS_DIR
 
 
@@ -55,8 +53,6 @@ def generate_snapshot_fixture(
     admin_access_token: str,
     base_study_id: str,
     monkeypatch: pytest.MonkeyPatch,
-    variant_study_service: VariantStudyService,
-    variant_study_repository: VariantStudyRepository,
     caplog: t.Any,
 ) -> [str]:
     """Generate some snapshots with different date of update and last access"""
@@ -401,9 +397,9 @@ def test_clear_snapshots(
     # Set up
     admin_headers = {"Authorization": f"Bearer {admin_access_token}"}
 
-    older = Path(tmp_path).joinpath(f"internal_workspace/{generate_snapshots[0]}/snapshot")
-    old = Path(tmp_path).joinpath(f"internal_workspace/{generate_snapshots[1]}/snapshot")
-    recent = Path(tmp_path).joinpath(f"internal_workspace/{generate_snapshots[2]}/snapshot")
+    older = Path(tmp_path).joinpath(f"internal_workspace", generate_snapshots[0], "snapshot")
+    old = Path(tmp_path).joinpath(f"internal_workspace", generate_snapshots[1], "snapshot")
+    recent = Path(tmp_path).joinpath(f"internal_workspace", generate_snapshots[2], "snapshot")
 
     # Test
     # Check intitial data
