@@ -276,7 +276,8 @@ def test_delete_raw(client: TestClient, user_access_token: str, internal_study_i
     content = io.BytesIO(b"This is the end!")
     file_1_path = "user/file_1.txt"
     file_2_path = "user/folder/file_2.txt"
-    for f in [file_1_path, file_2_path]:
+    file_3_path = "user/folder_2/file_3.txt"
+    for f in [file_1_path, file_2_path, file_3_path]:
         # Creates a file / folder inside user folder.
         res = client.put(
             f"/v1/studies/{internal_study_id}/raw", params={"path": f, "create_missing": True}, files={"file": content}
@@ -284,12 +285,26 @@ def test_delete_raw(client: TestClient, user_access_token: str, internal_study_i
         assert res.status_code == 204, res.json()
 
         # Deletes the file / folder
+        if f == file_2_path:
+            f = "user/folder"
         res = client.delete(f"/v1/studies/{internal_study_id}/raw?path={f}")
         assert res.status_code == 200
         # Asserts it doesn't exist anymore
         res = client.get(f"/v1/studies/{internal_study_id}/raw?path={f}")
         assert res.status_code == 404
         assert "not a child of" in res.json()["description"]
+
+        # checks debug view
+        res = client.get(f"/v1/studies/{internal_study_id}/raw?path=&depth=-1")
+        assert res.status_code == 200
+        tree = res.json()["user"]
+        if f == file_3_path:
+            # asserts the folder that wasn't deleted is still here.
+            assert list(tree.keys()) == ["expansion", "folder_2"]
+            assert tree["folder_2"] == {}
+        else:
+            # asserts deleted files cannot be seen inside the debug view
+            assert list(tree.keys()) == ["expansion"]
 
     # =============================
     #  ERRORS
