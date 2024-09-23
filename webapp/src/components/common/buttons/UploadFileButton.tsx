@@ -36,7 +36,10 @@ function UploadFileButton(props: UploadFileButtonProps) {
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { enqueueSnackbar } = useSnackbar();
   const [isUploading, setIsUploading] = useState(false);
-  const { open } = useDropzone({ onDropAccepted: handleDropAccepted, accept });
+  const { getInputProps, open } = useDropzone({
+    onDropAccepted: handleDropAccepted,
+    accept,
+  });
 
   // Prevent the user from accidentally leaving the page while uploading
   useEffect(() => {
@@ -95,17 +98,21 @@ function UploadFileButton(props: UploadFileButtonProps) {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <LoadingButton
-      variant="outlined"
-      size="small"
-      onClick={open}
-      startIcon={<FileDownloadIcon />}
-      loadingPosition="start"
-      loading={isUploading}
-      disabled={disabled}
-    >
-      {label}
-    </LoadingButton>
+    <>
+      {/* `open()` no working without the `<input>` in Firefox */}
+      <input {...getInputProps()} />
+      <LoadingButton
+        variant="outlined"
+        size="small"
+        onClick={open}
+        startIcon={<FileDownloadIcon />}
+        loadingPosition="start"
+        loading={isUploading}
+        disabled={disabled}
+      >
+        {label}
+      </LoadingButton>
+    </>
   );
 }
 
