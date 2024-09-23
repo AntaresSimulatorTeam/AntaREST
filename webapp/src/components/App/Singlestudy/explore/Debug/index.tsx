@@ -114,7 +114,7 @@ function Debug() {
             {...selectedFile}
             setSelectedFile={setSelectedFile}
             reloadTreeData={res.reload}
-            studyId={study.id}
+            study={study}
           />
         )}
       </Box>
