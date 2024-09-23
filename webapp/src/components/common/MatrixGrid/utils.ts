@@ -107,6 +107,19 @@ const dateTimeFormatOptions: Intl.DateTimeFormatOptions = {
 ////////////////////////////////////////////////////////////////
 
 /**
+ * Formats a number by adding spaces as thousand separators.
+ *
+ * @param num - The number to format.
+ * @returns The formatted number as a string.
+ */
+export function formatNumber(num: number): string {
+  // TODO: Add tests
+  const parts = num.toString().split(".");
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+  return parts.join(".");
+}
+
+/**
  * Formats a date and time string using predefined locale and format options.
  *
  * This function takes a date/time string, creates a Date object from it,

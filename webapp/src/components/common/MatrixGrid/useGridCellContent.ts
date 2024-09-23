@@ -20,7 +20,7 @@ import {
   ColumnTypes,
   MatrixAggregates,
 } from "./types";
-import { formatDateTime } from "./utils";
+import { formatDateTime, formatNumber } from "./utils";
 
 type CellContentGenerator = (
   row: number,
@@ -65,9 +65,11 @@ const cellContentGenerators: Record<ColumnType, CellContentGenerator> = {
     return {
       kind: GridCellKind.Number,
       data: value,
-      displayData: value?.toString(),
+      displayData: formatNumber(value), // Format thousands and decimal separator
       readonly: !column.editable,
       allowOverlay: true,
+      decimalSeparator: ".",
+      thousandSeparator: " ",
     };
   },
   [ColumnTypes.Aggregate]: (row, col, column, data, dateTime, aggregates) => {
@@ -76,9 +78,11 @@ const cellContentGenerators: Record<ColumnType, CellContentGenerator> = {
     return {
       kind: GridCellKind.Number,
       data: value,
-      displayData: value?.toString() ?? "",
+      displayData: formatNumber(value ?? 0), // Format thousands and decimal separator
       readonly: !column.editable,
-      allowOverlay: true,
+      allowOverlay: false,
+      decimalSeparator: ".",
+      thousandSeparator: " ",
     };
   },
 };
