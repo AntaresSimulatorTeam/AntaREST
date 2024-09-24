@@ -12,8 +12,7 @@
 
 import typing as t
 
-from pydantic import BaseModel, model_validator
-from starlette.exceptions import HTTPException
+from pydantic import BaseModel
 
 from antarest.core.exceptions import ConfigFileNotFound, InvalidFieldForVersionError
 from antarest.core.model import JSON
