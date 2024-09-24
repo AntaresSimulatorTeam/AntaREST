@@ -15,6 +15,7 @@ import logging
 import typing as t
 
 import numpy as np
+from antares.study.version import StudyVersion
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from antarest.core.exceptions import (
@@ -67,7 +68,6 @@ from antarest.study.storage.variantstudy.model.command.create_binding_constraint
 from antarest.study.storage.variantstudy.model.command.remove_binding_constraint import RemoveBindingConstraint
 from antarest.study.storage.variantstudy.model.command.update_binding_constraint import UpdateBindingConstraint
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
-from antares.study.version import StudyVersion
 
 logger = logging.getLogger(__name__)
 

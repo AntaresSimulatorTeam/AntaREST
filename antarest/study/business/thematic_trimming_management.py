@@ -12,12 +12,13 @@
 
 import typing as t
 
+from antares.study.version import StudyVersion
+
 from antarest.study.business.thematic_trimming_field_infos import ThematicTrimmingFormFields, get_fields_info
 from antarest.study.business.utils import GENERAL_DATA_PATH, execute_or_add_commands
 from antarest.study.model import Study
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
-from antares.study.version import StudyVersion
 
 
 class ThematicTrimmingManager:

@@ -12,12 +12,12 @@
 
 import typing as t
 
+from antares.study.version import StudyVersion
 from pydantic import Field
 
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.storage.rawstudy.model.filesystem.config.cluster import ClusterProperties
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import IgnoreCaseIdentifier
-from antares.study.version import StudyVersion
 
 
 class LocalTSGenerationBehavior(EnumIgnoreCase):

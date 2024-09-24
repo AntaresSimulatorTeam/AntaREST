@@ -12,6 +12,7 @@
 
 from typing import Any, Dict, List
 
+from antares.study.version import StudyVersion
 from pydantic import field_validator
 from pydantic.types import StrictInt, StrictStr
 
@@ -22,7 +23,6 @@ from antarest.study.business.utils import GENERAL_DATA_PATH, FieldInfo, FormFiel
 from antarest.study.model import Study
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
-from antares.study.version import StudyVersion
 
 
 class InitialReservoirLevel(EnumIgnoreCase):

@@ -14,6 +14,7 @@ import re
 import typing as t
 from pathlib import Path
 
+from antares.study.version import StudyVersion
 from pydantic import BaseModel, Field, model_validator
 
 from antarest.core.utils.utils import DTO
@@ -30,7 +31,7 @@ from .field_validators import extract_filtering
 from .renewable import RenewableConfigType
 from .st_storage import STStorageConfigType
 from .thermal import ThermalConfigType
-from antares.study.version import StudyVersion
+
 
 class EnrModelling(EnumIgnoreCase):
     """

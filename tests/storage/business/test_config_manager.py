@@ -13,6 +13,8 @@
 from pathlib import Path
 from unittest.mock import Mock
 
+from antares.study.version import StudyVersion
+
 from antarest.study.business.thematic_trimming_field_infos import FIELDS_INFO
 from antarest.study.business.thematic_trimming_management import (
     ThematicTrimmingFormFields,
@@ -28,8 +30,6 @@ from antarest.study.storage.variantstudy.model.command.update_config import Upda
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
-from antares.study.version import StudyVersion
-
 
 
 def test_thematic_trimming_config() -> None:

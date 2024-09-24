@@ -14,6 +14,7 @@ import collections
 import typing as t
 from pathlib import Path
 
+from antares.study.version import StudyVersion
 from pydantic import field_validator
 
 from antarest.core.exceptions import (
@@ -40,8 +41,6 @@ from antarest.study.storage.variantstudy.model.command.create_cluster import Cre
 from antarest.study.storage.variantstudy.model.command.remove_cluster import RemoveCluster
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
-from antares.study.version import StudyVersion
-
 
 __all__ = (
     "ThermalClusterInput",

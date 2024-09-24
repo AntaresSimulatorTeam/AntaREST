@@ -20,6 +20,8 @@ import zipfile
 from enum import Enum
 from pathlib import Path
 
+from antares.study.version import StudyVersion
+
 from antarest.core.model import JSON
 from antarest.core.serialization import from_json
 from antarest.study.storage.rawstudy.ini_reader import IniReader
@@ -52,7 +54,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import ThermalConfigType, create_thermal_config
 from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata import DUPLICATE_KEYS
-from antares.study.version import StudyVersion
 
 logger = logging.getLogger(__name__)
 

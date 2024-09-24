@@ -13,6 +13,7 @@
 import collections
 import typing as t
 
+from antares.study.version import StudyVersion
 from pydantic import field_validator
 
 from antarest.core.exceptions import DuplicateRenewableCluster, RenewableClusterConfigNotFound, RenewableClusterNotFound
@@ -34,7 +35,6 @@ from antarest.study.storage.variantstudy.model.command.create_renewables_cluster
 from antarest.study.storage.variantstudy.model.command.remove_renewables_cluster import RemoveRenewablesCluster
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
-from antares.study.version import StudyVersion
 
 _CLUSTER_PATH = "input/renewables/clusters/{area_id}/list/{cluster_id}"
 _CLUSTERS_PATH = "input/renewables/clusters/{area_id}/list"

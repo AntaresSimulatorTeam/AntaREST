@@ -20,6 +20,8 @@ from threading import Thread
 from uuid import uuid4
 from zipfile import ZipFile
 
+from antares.study.version import StudyVersion
+
 from antarest.core.config import Config
 from antarest.core.exceptions import StudyDeletionNotAllowed
 from antarest.core.interfaces.cache import ICache
@@ -40,7 +42,6 @@ from antarest.study.storage.utils import (
     remove_from_cache,
     update_antares_info,
 )
-from antares.study.version import StudyVersion
 
 logger = logging.getLogger(__name__)
 

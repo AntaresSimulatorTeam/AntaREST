@@ -15,6 +15,7 @@ import operator
 import typing as t
 
 import numpy as np
+from antares.study.version import StudyVersion
 from pydantic import BaseModel, field_validator, model_validator
 from typing_extensions import Literal
 
@@ -45,7 +46,6 @@ from antarest.study.storage.variantstudy.model.command.create_st_storage import 
 from antarest.study.storage.variantstudy.model.command.remove_st_storage import RemoveSTStorage
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
-from antares.study.version import StudyVersion
 
 
 @all_optional_model

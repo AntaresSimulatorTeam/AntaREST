@@ -15,6 +15,7 @@ from abc import ABCMeta
 from enum import Enum
 
 import numpy as np
+from antares.study.version import StudyVersion
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from antarest.matrixstore.model import MatrixData
@@ -37,7 +38,6 @@ from antarest.study.storage.variantstudy.business.utils_binding_constraint impor
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
 from antarest.study.storage.variantstudy.model.model import CommandDTO
-from antares.study.version import StudyVersion
 
 MatrixType = t.List[t.List[MatrixData]]
 
@@ -254,7 +254,11 @@ class AbstractBindingConstraintCommand(OptionalProperties, BindingConstraintMatr
         ]
 
     def get_corresponding_matrices(
-        self, v: t.Optional[t.Union[MatrixType, str]], time_step: BindingConstraintFrequency, version: StudyVersion, create: bool
+        self,
+        v: t.Optional[t.Union[MatrixType, str]],
+        time_step: BindingConstraintFrequency,
+        version: StudyVersion,
+        create: bool,
     ) -> t.Optional[str]:
         constants: GeneratorMatrixConstants = self.command_context.generator_matrix_constants
 
@@ -275,7 +279,11 @@ class AbstractBindingConstraintCommand(OptionalProperties, BindingConstraintMatr
                     BindingConstraintFrequency.WEEKLY: constants.get_binding_constraint_daily_weekly_87,
                 },
             }
-            return methods["before_v87"][time_step]() if version < StudyVersion.parse(870) else methods["after_v87"][time_step]()
+            return (
+                methods["before_v87"][time_step]()
+                if version < StudyVersion.parse(870)
+                else methods["after_v87"][time_step]()
+            )
         if isinstance(v, str):
             # Check the matrix link
             return validate_matrix(v, {"command_context": self.command_context})

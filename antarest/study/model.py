@@ -18,6 +18,7 @@ import uuid
 from datetime import datetime, timedelta
 from pathlib import Path
 
+from antares.study.version import StudyVersion
 from pydantic import BaseModel, field_validator
 from sqlalchemy import (  # type: ignore
     Boolean,
@@ -36,8 +37,6 @@ from antarest.core.model import PublicMode
 from antarest.core.persistence import Base
 from antarest.login.model import Group, GroupDTO, Identity
 from antarest.study.css4_colors import COLOR_NAMES
-from antares.study.version import StudyVersion
-
 
 if t.TYPE_CHECKING:
     # avoid circular import

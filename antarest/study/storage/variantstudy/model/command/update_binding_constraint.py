@@ -12,6 +12,8 @@
 
 import typing as t
 
+from antares.study.version import StudyVersion
+
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     DEFAULT_GROUP,
@@ -30,7 +32,7 @@ from antarest.study.storage.variantstudy.model.command.create_binding_constraint
 )
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
 from antarest.study.storage.variantstudy.model.model import CommandDTO
-from antares.study.version import StudyVersion
+
 
 def _update_matrices_names(
     file_study: FileStudy,
