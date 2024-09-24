@@ -172,9 +172,9 @@ def get_st_storage_config_cls(study_version: StudyVersion) -> t.Type[STStorageCo
     Returns:
         The short-term storage configuration class.
     """
-    if study_version >= StudyVersion.parse(880):
+    if study_version >= 880:
         return STStorage880Config
-    elif study_version >= StudyVersion.parse(860):
+    elif study_version >= 860:
         return STStorageConfig
     raise ValueError(f"Unsupported study version: {study_version}")
 

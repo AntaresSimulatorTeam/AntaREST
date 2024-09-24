@@ -77,7 +77,7 @@ def check_matrix_values(time_step: BindingConstraintFrequency, values: MatrixTyp
     array = np.array(values, dtype=np.float64)
     expected_shape = EXPECTED_MATRIX_SHAPES[time_step]
     actual_shape = array.shape
-    if version < StudyVersion.parse(870):
+    if version < 870:
         if actual_shape != expected_shape:
             raise ValueError(f"Invalid matrix shape {actual_shape}, expected {expected_shape}")
     elif actual_shape[0] != expected_shape[0]:
@@ -279,11 +279,7 @@ class AbstractBindingConstraintCommand(OptionalProperties, BindingConstraintMatr
                     BindingConstraintFrequency.WEEKLY: constants.get_binding_constraint_daily_weekly_87,
                 },
             }
-            return (
-                methods["before_v87"][time_step]()
-                if version < StudyVersion.parse(870)
-                else methods["after_v87"][time_step]()
-            )
+            return methods["before_v87"][time_step]() if version < 870 else methods["after_v87"][time_step]()
         if isinstance(v, str):
             # Check the matrix link
             return validate_matrix(v, {"command_context": self.command_context})

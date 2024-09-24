@@ -549,7 +549,7 @@ class STStorageManager:
         fields_to_exclude = {"id"}
         # We should remove the field 'enabled' for studies before v8.8 as it didn't exist
         study_version = StudyVersion.parse(study.version)
-        if study_version < StudyVersion.parse(880):
+        if study_version < 880:
             fields_to_exclude.add("enabled")
         creation_form = STStorageCreation(**current_cluster.model_dump(by_alias=False, exclude=fields_to_exclude))
 

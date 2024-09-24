@@ -786,9 +786,9 @@ class BindingConstraintManager:
         upd_constraint["type"] = upd_constraint.get("time_step", existing_constraint.time_step)
         upd_constraint["terms"] = data.terms or existing_constraint.terms
         new_fields = ["enabled", "operator", "comments", "terms"]
-        if study_version >= StudyVersion.parse(830):
+        if study_version >= 830:
             new_fields.extend(["filter_year_by_year", "filter_synthesis"])
-        if study_version >= StudyVersion.parse(870):
+        if study_version >= 870:
             new_fields.append("group")
         for field in new_fields:
             if field not in upd_constraint:
@@ -929,7 +929,7 @@ class BindingConstraintManager:
 def _replace_matrices_according_to_frequency_and_version(
     data: ConstraintInput, version: StudyVersion, args: t.Dict[str, t.Any]
 ) -> t.Dict[str, t.Any]:
-    if version < StudyVersion.parse(870):
+    if version < 870:
         if "values" not in args:
             matrix = {
                 BindingConstraintFrequency.HOURLY.value: default_bc_hourly_86,
@@ -954,7 +954,7 @@ def check_attributes_coherence(
     study_version: StudyVersion,
     operator: BindingConstraintOperator,
 ) -> None:
-    if study_version < StudyVersion.parse(870):
+    if study_version < 870:
         if data.group:
             raise InvalidFieldForVersionError(
                 f"You cannot specify a group as your study version is older than v8.7: {data.group}"

@@ -416,10 +416,9 @@ def get_thermal_config_cls(study_version: StudyVersion) -> t.Type[ThermalConfigT
     Returns:
         The thermal configuration class.
     """
-    version = study_version
-    if version >= 870:
+    if study_version >= 870:
         return Thermal870Config
-    elif version == 860:
+    elif study_version == 860:
         return Thermal860Config
     else:
         return ThermalConfig
