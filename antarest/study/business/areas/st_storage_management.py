@@ -453,7 +453,7 @@ class STStorageManager:
         Returns:
             Updated form of short-term storage.
         """
-        study_version = study.version
+        study_version = StudyVersion.parse(study.version)
 
         #  For variants, this method requires generating a snapshot, which takes time.
         #  But sadly, there's no other way to prevent creating wrong commands.

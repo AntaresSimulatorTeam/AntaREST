@@ -228,7 +228,7 @@ class LauncherService:
         job_uuid = self._generate_new_id()
         logger.info(f"New study launch (study={study_uuid}, job_id={job_uuid})")
         study_info = self.study_service.get_study_information(uuid=study_uuid, params=params)
-        solver_version = study_version or study_info.version
+        solver_version = study_version or study_info.version.__format__(format_spec="ddd")
 
         self._assert_launcher_is_initialized(launcher)
         assert_permission(
@@ -252,7 +252,7 @@ class LauncherService:
         self.launchers[launcher].run_study(
             study_uuid,
             job_uuid,
-            str(solver_version),
+            solver_version,
             launcher_parameters,
             params,
         )

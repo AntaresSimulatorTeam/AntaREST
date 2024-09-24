@@ -341,7 +341,7 @@ class ThermalManager:
             in the provided cluster_data.
         """
 
-        study_version = study.version
+        study_version = StudyVersion.parse(study.version)
         file_study = self._get_file_study(study)
         path = _CLUSTER_PATH.format(area_id=area_id, cluster_id=cluster_id)
         try:
