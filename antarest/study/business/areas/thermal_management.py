@@ -425,7 +425,7 @@ class ThermalManager:
         source_cluster = self.get_cluster(study, area_id, source_id)
         source_cluster.name = new_cluster_name
         creation_form = ThermalClusterCreation(**source_cluster.model_dump(by_alias=False, exclude={"id"}))
-        new_config = creation_form.to_config(study.version)
+        new_config = creation_form.to_config(StudyVersion.parse(study.version))
         create_cluster_cmd = self._make_create_cluster_cmd(area_id, new_config)
 
         # Matrix edition

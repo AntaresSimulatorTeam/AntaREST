@@ -272,7 +272,7 @@ class RenewableManager:
             RenewableClusterNotFound: If the cluster to update is not found.
         """
 
-        study_version = study.version
+        study_version = StudyVersion.parse(study.version)
         file_study = self._get_file_study(study)
         path = _CLUSTER_PATH.format(area_id=area_id, cluster_id=cluster_id)
 
