@@ -87,6 +87,32 @@ class GeneralFormFields(FormFieldsBaseModel):
     geographic_trimming: StrictBool
     thematic_trimming: StrictBool
 
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "mode": "Economy",
+                    "first_day": 1,
+                    "last_day": 365,
+                    "horizon": "2020",
+                    "first_month": "january",
+                    "first_week_day": "Monday",
+                    "first_january": "Monday",
+                    "leap_year": True,
+                    "nb_years": 5,
+                    "building_mode": "Automatic",
+                    "selection_mode": True,
+                    "year_by_year": True,
+                    "simulation_synthesis": True,
+                    "mc_scenario": True,
+                    "filtering": True,
+                    "geographic_trimming": True,
+                    "thematic_trimming": True,
+                }
+            ]
+        }
+    }
+
     @model_validator(mode="before")
     def day_fields_validation(cls, values: Union[Dict[str, Any], ValidationInfo]) -> Dict[str, Any]:
         new_values = values if isinstance(values, dict) else values.data
