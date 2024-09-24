@@ -81,6 +81,7 @@ class LinkStyle(EnumIgnoreCase):
     PLAIN = "plain"
     DASH = "dash"
     DOT_DASH = "dotdash"
+    OTHER = 'other'
 
 
 class FilterOption(EnumIgnoreCase):
@@ -195,11 +196,12 @@ class LinkProperties(IniProperties):
         return validate_colors(values)
 
     # noinspection SpellCheckingInspection
-    def to_config(self) -> t.Dict[str, t.Any]:
+    def to_ini(self, version: int) -> t.Dict[str, t.Any]:
         """
         Convert the object to a dictionary for writing to a configuration file.
         """
-        obj = dict(super().to_config())
+        excludes = set() if version >= 820 else {"filter_synthesis", "filter_year_by_year"}
+        obj = self.model_dump(mode='json', exclude_none=True, by_alias=True, exclude=excludes)
         color_rgb = obj.pop("colorRgb", "#707070")
         return {
             "colorr": int(color_rgb[1:3], 16),

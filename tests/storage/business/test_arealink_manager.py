@@ -29,7 +29,7 @@ from antarest.study.model import Patch, PatchArea, PatchCluster, RawStudy, Study
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
-from antarest.study.storage.rawstudy.model.filesystem.config.links import AssetType, TransmissionCapacity
+from antarest.study.storage.rawstudy.model.filesystem.config.links import AssetType, TransmissionCapacity, LinkStyle
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, DistrictSet, FileStudyTreeConfig, Link
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import ThermalConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -248,14 +248,14 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
                         "hurdles_cost": False,
                         "loop_flow": False,
                         "use_phase_shifter": False,
-                        "transmission_capacities": "enabled",
-                        "asset_type": "ac",
+                        "transmission_capacities": TransmissionCapacity.ENABLED,
+                        "asset_type": AssetType.AC,
                         "display_comments": True,
                         "colorr": 112,
                         "colorg": 112,
                         "colorb": 112,
                         "link_width": 1.0,
-                        "link_style": "plain",
+                        "link_style": LinkStyle.PLAIN,
                         "filter_synthesis": "hourly, daily, weekly, monthly, annual",
                         "filter_year_by_year": "hourly, daily, weekly, monthly, annual",
                     },
@@ -284,14 +284,14 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
                         "hurdles_cost": False,
                         "loop_flow": False,
                         "use_phase_shifter": False,
-                        "transmission_capacities": "enabled",
-                        "asset_type": "ac",
+                        "transmission_capacities": TransmissionCapacity.ENABLED,
+                        "asset_type": AssetType.AC,
                         "display_comments": True,
                         "colorr": 112,
                         "colorg": 112,
                         "colorb": 112,
                         "link_width": 1.0,
-                        "link_style": "plain",
+                        "link_style": LinkStyle.PLAIN,
                     },
                 },
             ),
@@ -486,17 +486,17 @@ def test_get_all_area():
     file_tree_mock.get.side_effect = [
         {
             "a2": {
-                "hurdles-cost": False,
-                "loop-flow": False,
-                "use-phase-shifter": True,
+                "hurdles-cost": True,
+                "loop-flow": True,
+                "use-phase-shifter": False,
                 "transmission-capacities": TransmissionCapacity.ENABLED,
-                "asset-type": AssetType.AC,
-                "display-comments": True,
+                "asset-type": AssetType.DC,
+                "display-comments": False,
                 "filter-synthesis": FilteringOptions.FILTER_SYNTHESIS,
                 "filter-year-by-year": FilteringOptions.FILTER_YEAR_BY_YEAR,
             },
             "a3": {
-                "hurdles-cost": False,
+                "hurdles-cost": True,
                 "loop-flow": False,
                 "use-phase-shifter": True,
                 "transmission-capacities": TransmissionCapacity.ENABLED,
@@ -508,7 +508,7 @@ def test_get_all_area():
         },
         {
             "a3": {
-                "hurdles-cost": False,
+                "hurdles-cost": True,
                 "loop-flow": False,
                 "use-phase-shifter": True,
                 "transmission-capacities": TransmissionCapacity.ENABLED,
@@ -548,12 +548,12 @@ def test_get_all_area():
             "link_width": 1.0,
             "loop_flow": False,
             "transmission_capacities": "enabled",
-            "use_phase_shifter": True,
+            "use_phase_shifter": False,
         },
         {
             "area1": "a1",
             "area2": "a3",
-            "asset_type": "ac",
+            "asset_type": 'ac',
             "colorb": 112,
             "colorg": 112,
             "colorr": 112,
@@ -565,12 +565,12 @@ def test_get_all_area():
             "link_width": 1.0,
             "loop_flow": False,
             "transmission_capacities": "enabled",
-            "use_phase_shifter": True,
+            "use_phase_shifter": False,
         },
         {
             "area1": "a2",
             "area2": "a3",
-            "asset_type": "ac",
+            "asset_type": 'ac',
             "colorb": 112,
             "colorg": 112,
             "colorr": 112,
@@ -582,9 +582,9 @@ def test_get_all_area():
             "link_width": 1.0,
             "loop_flow": False,
             "transmission_capacities": "enabled",
-            "use_phase_shifter": True,
+            "use_phase_shifter": False,
         },
-    ] == [link.model_dump() for link in links]
+    ] == [link.model_dump(mode='json') for link in links]
 
 
 def test_update_area():

@@ -12,48 +12,33 @@
 
 import typing as t
 
-from pydantic import BaseModel
-
 from antarest.core.exceptions import ConfigFileNotFound, InvalidFieldForVersionError
 from antarest.core.model import JSON
 from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import RawStudy
-from antarest.study.storage.rawstudy.model.filesystem.config.links import (
-    AssetType,
-    LinkProperties,
-    LinkStyle,
-    TransmissionCapacity,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.links import LinkStyle, LinkProperties
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.common import FilteringOptions
-from antarest.study.storage.variantstudy.model.command.create_link import CreateLink
+from antarest.study.storage.variantstudy.model.command.create_link import (
+    DEFAULT_COLOR,
+    AreaInfo,
+    CreateLink,
+    LinkInfoProperties,
+    LinkInfoProperties820
+)
 from antarest.study.storage.variantstudy.model.command.remove_link import RemoveLink
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 
 _ALL_LINKS_PATH = "input/links"
-DEFAULT_COLOR = 112
 
 
-class LinkInfoDTOBase(BaseModel):
-    area1: str
-    area2: str
-    hurdles_cost: t.Optional[bool] = False
-    loop_flow: t.Optional[bool] = False
-    use_phase_shifter: t.Optional[bool] = False
-    transmission_capacities: t.Optional[str] = TransmissionCapacity.ENABLED.value
-    asset_type: t.Optional[str] = AssetType.AC.value
-    display_comments: t.Optional[bool] = True
-    colorr: t.Optional[int] = DEFAULT_COLOR
-    colorb: t.Optional[int] = DEFAULT_COLOR
-    colorg: t.Optional[int] = DEFAULT_COLOR
-    link_width: t.Optional[float] = 1
-    link_style: t.Optional[str] = LinkStyle.PLAIN.value
+class LinkInfoDTOBase(AreaInfo, LinkInfoProperties):
+    pass
 
 
-class LinkInfoDTO820(LinkInfoDTOBase):
-    filter_synthesis: t.Optional[str] = None
-    filter_year_by_year: t.Optional[str] = None
+class LinkInfoDTO820(AreaInfo, LinkInfoProperties820):
+    pass
 
 
 LinkInfoDTOType = t.Union[LinkInfoDTO820, LinkInfoDTOBase]
@@ -166,37 +151,16 @@ class LinkManager:
             for link in area.links:
                 link_properties = links_config[link]
 
-                link_creation_data = {
-                    "area1": area_id,
-                    "area2": link,
-                    "hurdles_cost": link_properties.get("hurdles-cost"),
-                    "loop_flow": link_properties.get("loop-flow"),
-                    "use_phase_shifter": link_properties.get("use-phase-shifter"),
-                    "transmission_capacities": link_properties.get("transmission-capacities"),
-                    "asset_type": link_properties.get("asset-type"),
-                    "display_comments": link_properties.get("display-comments"),
-                    "filter_synthesis": link_properties.get("filter-synthesis"),
-                    "filter_year_by_year": link_properties.get("filter-year-by-year"),
-                }
-
-                if with_ui:
-                    link_creation_data.update(
-                        {
-                            "colorr": link_properties.get("colorr", DEFAULT_COLOR),
-                            "colorb": link_properties.get("colorb", DEFAULT_COLOR),
-                            "colorg": link_properties.get("colorg", DEFAULT_COLOR),
-                            "link_width": link_properties.get("link-width", 1.0),
-                            "link_style": link_properties.get("link-style", LinkStyle.PLAIN),
-                        }
-                    )
-                else:
+                link_creation_data: t.Dict[str, t.Any] = {"area1": area_id, "area2": link}
+                link_creation_data.update(link_properties)
+                if not with_ui:
                     link_creation_data.update(
                         {
                             "colorr": None,
                             "colorb": None,
                             "colorg": None,
-                            "link_width": None,
-                            "link_style": None,
+                            "link-width": None,
+                            "link-style": None,
                         }
                     )
 
@@ -313,7 +277,7 @@ class LinkManager:
             path = f"{_ALL_LINKS_PATH}/{area1}/properties/{area2}"
             cmd = UpdateConfig(
                 target=path,
-                data=properties.to_config(),
+                data=properties.to_ini(int(study.version)),
                 command_context=self.storage_service.variant_study_service.command_factory.command_context,
             )
             commands.append(cmd)

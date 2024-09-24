@@ -12,9 +12,9 @@
 
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
-from pydantic import ValidationInfo, field_validator, model_validator
+from pydantic import BaseModel, ValidationInfo, field_validator, model_validator, AliasGenerator
 
-from antarest.core.model import JSON
+from antarest.core.utils.string import to_kebab_case
 from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
 from antarest.study.storage.rawstudy.model.filesystem.config.links import AssetType, LinkStyle, TransmissionCapacity
@@ -25,22 +25,34 @@ from antarest.study.storage.variantstudy.model.command.common import CommandName
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
-
-class LinkProperties:
-    HURDLES_COST: bool = False
-    LOOP_FLOW: bool = False
-    USE_PHASE_SHIFTER: bool = False
-    DISPLAY_COMMENTS: bool = True
-    TRANSMISSION_CAPACITIES: str = TransmissionCapacity.ENABLED.value
-    ASSET_TYPE: str = AssetType.AC.value
-    LINK_STYLE: str = LinkStyle.PLAIN.value
-    LINK_WIDTH: int = 1
-    COLORR: int = 112
-    COLORG: int = 112
-    COLORB: int = 112
+DEFAULT_COLOR = 112
 
 
-class LinkAlreadyExistError(Exception):
+class AreaInfo(BaseModel):
+    area1: str
+    area2: str
+
+
+class LinkInfoProperties(BaseModel):
+    hurdles_cost: Optional[bool] = False
+    loop_flow: Optional[bool] = False
+    use_phase_shifter: Optional[bool] = False
+    transmission_capacities: Optional[TransmissionCapacity] = TransmissionCapacity.ENABLED
+    asset_type: Optional[AssetType] = AssetType.AC
+    display_comments: Optional[bool] = True
+    colorr: Optional[int] = DEFAULT_COLOR
+    colorb: Optional[int] = DEFAULT_COLOR
+    colorg: Optional[int] = DEFAULT_COLOR
+    link_width: Optional[float] = 1
+    link_style: Optional[LinkStyle] = LinkStyle.PLAIN
+
+
+class LinkInfoProperties820(LinkInfoProperties):
+    filter_synthesis: Optional[str] = None
+    filter_year_by_year: Optional[str] = None
+
+
+class LinkProperties(LinkInfoProperties820, alias_generator=AliasGenerator(serialization_alias=to_kebab_case)):
     pass
 
 
@@ -133,51 +145,6 @@ class CreateLink(ICommand):
             ],
         )
 
-    @staticmethod
-    def generate_link_properties(parameters: JSON) -> JSON:
-        return {
-            "hurdles-cost": parameters.get(
-                "hurdles_cost",
-                LinkProperties.HURDLES_COST,
-            ),
-            "loop-flow": parameters.get("loop_flow", LinkProperties.LOOP_FLOW),
-            "use-phase-shifter": parameters.get(
-                "use_phase_shifter",
-                LinkProperties.USE_PHASE_SHIFTER,
-            ),
-            "transmission-capacities": parameters.get(
-                "transmission_capacities",
-                LinkProperties.TRANSMISSION_CAPACITIES,
-            ),
-            "asset-type": parameters.get(
-                "asset_type",
-                LinkProperties.ASSET_TYPE,
-            ),
-            "link-style": parameters.get(
-                "link_style",
-                LinkProperties.LINK_STYLE,
-            ),
-            "link-width": parameters.get(
-                "link_width",
-                LinkProperties.LINK_WIDTH,
-            ),
-            "colorr": parameters.get("colorr", LinkProperties.COLORR),
-            "colorg": parameters.get("colorg", LinkProperties.COLORG),
-            "colorb": parameters.get("colorb", LinkProperties.COLORB),
-            "display-comments": parameters.get(
-                "display_comments",
-                LinkProperties.DISPLAY_COMMENTS,
-            ),
-            "filter-synthesis": parameters.get(
-                "filter_synthesis",
-                FilteringOptions.FILTER_SYNTHESIS,
-            ),
-            "filter-year-by-year": parameters.get(
-                "filter_year_by_year",
-                FilteringOptions.FILTER_YEAR_BY_YEAR,
-            ),
-        }
-
     def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         if self.area1 not in study_data.areas:
             return (
@@ -249,8 +216,9 @@ class CreateLink(ICommand):
         area_from = data["area_from"]
         area_to = data["area_to"]
 
-        self.parameters = self.parameters or {}
-        link_property = CreateLink.generate_link_properties(self.parameters)
+        properties = LinkProperties.model_validate(self.parameters or {})
+        excludes = set() if version >= 820 else {"filter_synthesis", "filter_year_by_year"}
+        link_property = properties.model_dump(mode="json", exclude=excludes, by_alias=True, exclude_none=True)
 
         study_data.tree.save(link_property, ["input", "links", area_from, "properties", area_to])
         self.series = self.series or (self.command_context.generator_matrix_constants.get_link(version=version))
@@ -339,7 +307,8 @@ class CreateLink(ICommand):
         commands: List[ICommand] = []
         area_from, area_to = sorted([self.area1, self.area2])
         if self.parameters != other.parameters:
-            link_property = CreateLink.generate_link_properties(other.parameters or {})
+            properties = LinkProperties.model_validate(other.parameters or {})
+            link_property = properties.model_dump(mode="json", by_alias=True, exclude_none=True)
             commands.append(
                 UpdateConfig(
                     target=f"input/links/{area_from}/properties/{area_to}",
