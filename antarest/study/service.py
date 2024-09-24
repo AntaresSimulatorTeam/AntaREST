@@ -131,6 +131,7 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import OutputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
+from antarest.study.storage.rawstudy.model.filesystem.root.user.user import User
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.study_download_utils import StudyDownloader, get_output_variables_information
@@ -2662,13 +2663,15 @@ class StudyService:
         url = [item for item in path.split("/") if item]
         if len(url) < 2 or url[0] != "user":
             raise FileDeletionNotAllowed(f"the targeted data isn't inside the 'User' folder: {path}")
-        if url[1] == "expansion":
-            raise FileDeletionNotAllowed(f"you cannot delete a file/folder inside 'expansion' folder : {path}")
 
         study_tree = self.storage_service.raw_study_service.get_raw(study, True).tree
-        builded_tree = study_tree.build()
+        user_node = study_tree.build()["user"]
+        assert isinstance(user_node, User)
+        if url[1] in [file.filename for file in user_node.registered_files]:
+            raise FileDeletionNotAllowed(f"you are not allowed to delete this resource : {path}")
+
         try:
-            builded_tree["user"].delete(url[1:])
+            user_node.delete(url[1:])
         except ChildNotFoundError as e:
             raise FileDeletionNotAllowed("the given path doesn't exist") from e
 

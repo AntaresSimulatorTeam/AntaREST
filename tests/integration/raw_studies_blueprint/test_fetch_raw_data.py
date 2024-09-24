@@ -314,7 +314,7 @@ def test_delete_raw(client: TestClient, user_access_token: str, internal_study_i
     res = client.delete(f"/v1/studies/{internal_study_id}/raw?path=/user/expansion")
     assert res.status_code == 403
     assert res.json()["exception"] == "FileDeletionNotAllowed"
-    assert "you cannot delete a file/folder inside 'expansion' folder" in res.json()["description"]
+    assert "you are not allowed to delete this resource" in res.json()["description"]
 
     # try to delete a file which isn't inside the 'User' folder
     res = client.delete(f"/v1/studies/{internal_study_id}/raw?path=/input/thermal")
