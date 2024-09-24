@@ -629,12 +629,12 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/config/playlist",
         tags=[APITag.study_data],
         summary="Get playlist config",
-        response_model=t.Dict[int, float],
+        response_model=t.Optional[t.Dict[int, float]],
     )
     def get_playlist_config(
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> t.Any:
+    ) -> t.Optional[t.Dict[int, float]]:
         logger.info(
             f"Fetching playlist config for study {uuid}",
             extra={"user": current_user.id},
