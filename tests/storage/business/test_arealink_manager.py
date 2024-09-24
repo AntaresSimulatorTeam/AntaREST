@@ -24,7 +24,7 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.matrixstore.repository import MatrixContentRepository
 from antarest.matrixstore.service import SimpleMatrixService
 from antarest.study.business.area_management import AreaCreationDTO, AreaManager, AreaType, UpdateAreaUi
-from antarest.study.business.link_management import LinkInfoDTO820, LinkInfoDTOBase, LinkInfoFactory, LinkManager
+from antarest.study.business.link_management import LinkInfoDTO820, LinkInfoDTOBase, LinkManager
 from antarest.study.model import Patch, PatchArea, PatchCluster, RawStudy, StudyAdditionalData
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.patch_service import PatchService
@@ -138,7 +138,7 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
     area_manager.create_area(study, AreaCreationDTO(name="test2", type=AreaType.AREA))
     link_manager.create_link(
         study,
-        LinkInfoFactory.create_link_info(
+        LinkInfoDTO820(
             version=-1,
             area1="test",
             area2="test2",
@@ -245,19 +245,19 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
                     "area1": "test",
                     "area2": "test2",
                     "parameters": {
-                        "hurdles_cost": False,
-                        "loop_flow": False,
-                        "use_phase_shifter": False,
-                        "transmission_capacities": TransmissionCapacity.ENABLED,
-                        "asset_type": AssetType.AC,
-                        "display_comments": True,
+                        "hurdles-cost": False,
+                        "loop-flow": False,
+                        "use-phase-shifter": False,
+                        "transmission-capacities": TransmissionCapacity.ENABLED,
+                        "asset-type": AssetType.AC,
+                        "display-comments": True,
                         "colorr": 112,
                         "colorg": 112,
                         "colorb": 112,
-                        "link_width": 1.0,
-                        "link_style": LinkStyle.PLAIN,
-                        "filter_synthesis": "hourly, daily, weekly, monthly, annual",
-                        "filter_year_by_year": "hourly, daily, weekly, monthly, annual",
+                        "link-width": 1.0,
+                        "link-style": LinkStyle.PLAIN,
+                        "filter-synthesis": "hourly, daily, weekly, monthly, annual",
+                        "filter-year-by-year": "hourly, daily, weekly, monthly, annual",
                     },
                 },
             ),
@@ -281,17 +281,17 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
                     "area1": "test",
                     "area2": "test2",
                     "parameters": {
-                        "hurdles_cost": False,
-                        "loop_flow": False,
-                        "use_phase_shifter": False,
-                        "transmission_capacities": TransmissionCapacity.ENABLED,
-                        "asset_type": AssetType.AC,
-                        "display_comments": True,
+                        "hurdles-cost": False,
+                        "loop-flow": False,
+                        "use-phase-shifter": False,
+                        "transmission-capacities": TransmissionCapacity.ENABLED,
+                        "asset-type": AssetType.AC,
+                        "display-comments": True,
                         "colorr": 112,
                         "colorg": 112,
                         "colorb": 112,
-                        "link_width": 1.0,
-                        "link_style": LinkStyle.PLAIN,
+                        "link-width": 1.0,
+                        "link-style": LinkStyle.PLAIN,
                     },
                 },
             ),
@@ -486,34 +486,34 @@ def test_get_all_area():
     file_tree_mock.get.side_effect = [
         {
             "a2": {
-                "hurdles-cost": True,
-                "loop-flow": True,
+                "hurdles-cost": False,
+                "loop-flow": False,
                 "use-phase-shifter": False,
                 "transmission-capacities": TransmissionCapacity.ENABLED,
-                "asset-type": AssetType.DC,
+                "asset-type": AssetType.AC,
                 "display-comments": False,
                 "filter-synthesis": FilteringOptions.FILTER_SYNTHESIS,
                 "filter-year-by-year": FilteringOptions.FILTER_YEAR_BY_YEAR,
             },
             "a3": {
-                "hurdles-cost": True,
+                "hurdles-cost": False,
                 "loop-flow": False,
-                "use-phase-shifter": True,
+                "use-phase-shifter": False,
                 "transmission-capacities": TransmissionCapacity.ENABLED,
                 "asset-type": AssetType.AC,
-                "display-comments": True,
+                "display-comments": False,
                 "filter-synthesis": FilteringOptions.FILTER_SYNTHESIS,
                 "filter-year-by-year": FilteringOptions.FILTER_YEAR_BY_YEAR,
             },
         },
         {
             "a3": {
-                "hurdles-cost": True,
+                "hurdles-cost": False,
                 "loop-flow": False,
-                "use-phase-shifter": True,
+                "use-phase-shifter": False,
                 "transmission-capacities": TransmissionCapacity.ENABLED,
                 "asset-type": AssetType.AC,
-                "display-comments": True,
+                "display-comments": False,
                 "filter-synthesis": FilteringOptions.FILTER_SYNTHESIS,
                 "filter-year-by-year": FilteringOptions.FILTER_YEAR_BY_YEAR,
             }
@@ -522,10 +522,10 @@ def test_get_all_area():
             "a3": {
                 "hurdles-cost": False,
                 "loop-flow": False,
-                "use-phase-shifter": True,
+                "use-phase-shifter": False,
                 "transmission-capacities": TransmissionCapacity.ENABLED,
                 "asset-type": AssetType.AC,
-                "display-comments": True,
+                "display-comments": False,
                 "filter-synthesis": FilteringOptions.FILTER_SYNTHESIS,
                 "filter-year-by-year": FilteringOptions.FILTER_YEAR_BY_YEAR,
             }
@@ -540,7 +540,7 @@ def test_get_all_area():
             "colorb": 112,
             "colorg": 112,
             "colorr": 112,
-            "display_comments": True,
+            "display_comments": False,
             "filter_synthesis": "hourly, daily, weekly, monthly, annual",
             "filter_year_by_year": "hourly, daily, weekly, monthly, annual",
             "hurdles_cost": False,
@@ -557,7 +557,7 @@ def test_get_all_area():
             "colorb": 112,
             "colorg": 112,
             "colorr": 112,
-            "display_comments": True,
+            "display_comments": False,
             "filter_synthesis": "hourly, daily, weekly, monthly, annual",
             "filter_year_by_year": "hourly, daily, weekly, monthly, annual",
             "hurdles_cost": False,
@@ -574,7 +574,7 @@ def test_get_all_area():
             "colorb": 112,
             "colorg": 112,
             "colorr": 112,
-            "display_comments": True,
+            "display_comments": False,
             "filter_synthesis": "hourly, daily, weekly, monthly, annual",
             "filter_year_by_year": "hourly, daily, weekly, monthly, annual",
             "hurdles_cost": False,

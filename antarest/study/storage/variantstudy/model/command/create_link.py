@@ -9,10 +9,10 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
+import typing as t
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
-from pydantic import AliasGenerator, BaseModel, ValidationInfo, field_validator, model_validator
+from pydantic import AliasGenerator, BaseModel, Field, ValidationInfo, field_validator, model_validator
 
 from antarest.core.utils.string import to_kebab_case
 from antarest.core.utils.utils import assert_this
@@ -34,22 +34,59 @@ class AreaInfo(BaseModel):
 
 
 class LinkInfoProperties(BaseModel):
-    hurdles_cost: Optional[bool] = False
-    loop_flow: Optional[bool] = False
-    use_phase_shifter: Optional[bool] = False
-    transmission_capacities: Optional[TransmissionCapacity] = TransmissionCapacity.ENABLED
-    asset_type: Optional[AssetType] = AssetType.AC
-    display_comments: Optional[bool] = True
+    hurdles_cost: Optional[bool] = Field(False, alias="hurdles-cost")
+    loop_flow: Optional[bool] = Field(False, alias="loop-flow")
+    use_phase_shifter: Optional[bool] = Field(False, alias="use-phase-shifter")
+    transmission_capacities: Optional[TransmissionCapacity] = Field(
+        TransmissionCapacity.ENABLED, alias="transmission-capacities"
+    )
+    asset_type: Optional[AssetType] = Field(AssetType.AC, alias="asset-type")
+    display_comments: Optional[bool] = Field(True, alias="display-comments")
     colorr: Optional[int] = DEFAULT_COLOR
     colorb: Optional[int] = DEFAULT_COLOR
     colorg: Optional[int] = DEFAULT_COLOR
-    link_width: Optional[float] = 1
-    link_style: Optional[LinkStyle] = LinkStyle.PLAIN
+    link_width: Optional[float] = Field(1, alias="link-width")
+    link_style: Optional[LinkStyle] = Field(LinkStyle.PLAIN, alias="link-style")
+
+    @model_validator(mode="before")
+    def validate_colors(cls, values: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
+        if type(values) is dict:
+            colors = {
+                "colorr": values.get("colorr"),
+                "colorb": values.get("colorb"),
+                "colorg": values.get("colorg"),
+            }
+            for color_name, color_value in colors.items():
+                if color_value is not None and (color_value < 0 or color_value > 255):
+                    raise ValueError(f"Invalid value for {color_name}. Must be between 0 and 255.")
+
+        return values
 
 
 class LinkInfoProperties820(LinkInfoProperties):
-    filter_synthesis: Optional[str] = None
-    filter_year_by_year: Optional[str] = None
+    filter_synthesis: Optional[str] = Field(None, alias="filter-synthesis")
+    filter_year_by_year: Optional[str] = Field(None, alias="filter-year-by-year")
+
+    @model_validator(mode="before")
+    def validate_filters(cls, values: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
+        if type(values) is dict:
+            filter_options = ["hourly", "daily", "weekly", "monthly", "annual"]
+
+            filters = {
+                "filter-synthesis": values.get("filter-synthesis"),
+                "filter-year-by-year": values.get("filter-year-by-year"),
+            }
+            for filter_name, val in filters.items():
+                if val is not None:
+                    options = val.replace(" ", "").split(",")
+                    invalid_options = [opt for opt in options if opt not in filter_options]
+                    if invalid_options:
+                        raise ValueError(
+                            f"Invalid value(s) in '{filter_name}': {', '.join(invalid_options)}. "
+                            f"Allowed values are: {', '.join(filter_options)}."
+                        )
+
+        return values
 
 
 class LinkProperties(LinkInfoProperties820, alias_generator=AliasGenerator(serialization_alias=to_kebab_case)):
@@ -83,48 +120,6 @@ class CreateLink(ICommand):
     ) -> Optional[Union[List[List[MatrixData]], str]]:
         new_values = values if isinstance(values, dict) else values.data
         return validate_matrix(v, new_values) if v is not None else v
-
-    @model_validator(mode="after")
-    def validate_colors(self) -> "CreateLink":
-        parameters = self.parameters or {}
-
-        colors = {
-            "colorr": parameters.get("colorr"),
-            "colorb": parameters.get("colorb"),
-            "colorg": parameters.get("colorg"),
-        }
-        for color_name, color_value in colors.items():
-            if color_value is not None and (color_value < 0 or color_value > 255):
-                raise ValueError(f"Invalid value for {color_name}. Must be between 0 and 255.")
-
-        return self
-
-    @model_validator(mode="after")
-    def validate_filters(self) -> "CreateLink":
-        parameters = self.parameters or {}
-        filter_options = ["hourly", "daily", "weekly", "monthly", "annual"]
-
-        filters = {
-            "filter_synthesis": parameters.get("filter_synthesis"),
-            "filter_year_by_year": parameters.get("filter_year_by_year"),
-        }
-        for filter_name, val in filters.items():
-            if val is not None:
-                options = val.replace(" ", "").split(",")
-                invalid_options = [opt for opt in options if opt not in filter_options]
-                if invalid_options:
-                    raise ValueError(
-                        f"Invalid value(s) in '{filter_name}': {', '.join(invalid_options)}. "
-                        f"Allowed values are: {', '.join(filter_options)}."
-                    )
-
-        return self
-
-    @model_validator(mode="after")
-    def validate_areas(self) -> "CreateLink":
-        if self.area1 == self.area2:
-            raise ValueError("Cannot create link on same node")
-        return self
 
     def _create_link_in_config(self, area_from: str, area_to: str, study_data: FileStudyTreeConfig) -> None:
         self.parameters = self.parameters or {}
