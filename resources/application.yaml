@@ -52,3 +52,7 @@ logging:
 
 # True to get sqlalchemy logs
 debug: False
+
+redis:
+  host: localhost
+  port: 6379
