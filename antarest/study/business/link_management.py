@@ -12,7 +12,8 @@
 
 import typing as t
 
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
+from starlette.exceptions import HTTPException
 
 from antarest.core.exceptions import ConfigFileNotFound, InvalidFieldForVersionError
 from antarest.core.model import JSON
@@ -32,7 +33,7 @@ from antarest.study.storage.variantstudy.model.command.remove_link import Remove
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 
 _ALL_LINKS_PATH = "input/links"
-DEFAULT_COLOR = "112"
+DEFAULT_COLOR = 112
 
 
 class LinkInfoDTOBase(BaseModel):
@@ -44,17 +45,17 @@ class LinkInfoDTOBase(BaseModel):
     transmission_capacities: t.Optional[str] = TransmissionCapacity.ENABLED.value
     asset_type: t.Optional[str] = AssetType.AC.value
     display_comments: t.Optional[bool] = True
-    colorr: t.Optional[str] = DEFAULT_COLOR
-    colorb: t.Optional[str] = DEFAULT_COLOR
-    colorg: t.Optional[str] = DEFAULT_COLOR
+    colorr: t.Optional[int] = DEFAULT_COLOR
+    colorb: t.Optional[int] = DEFAULT_COLOR
+    colorg: t.Optional[int] = DEFAULT_COLOR
     link_width: t.Optional[float] = 1
     link_style: t.Optional[str] = LinkStyle.PLAIN.value
+
 
 
 class LinkInfoDTO820(LinkInfoDTOBase):
     filter_synthesis: t.Optional[str] = None
     filter_year_by_year: t.Optional[str] = None
-
 
 LinkInfoDTOType = t.Union[LinkInfoDTO820, LinkInfoDTOBase]
 
@@ -169,24 +170,24 @@ class LinkManager:
                 link_creation_data = {
                     "area1": area_id,
                     "area2": link,
-                    "hurdles_cost": link_properties.get("hurdles_cost"),
-                    "loop_flow": link_properties.get("loop_flow"),
-                    "use_phase_shifter": link_properties.get("use_phase_shifter"),
-                    "transmission_capacities": link_properties.get("transmission_capacities"),
-                    "asset_type": link_properties.get("asset_type"),
-                    "display_comments": link_properties.get("display_comments"),
-                    "filter_synthesis": link_properties.get("filter_synthesis"),
-                    "filter_year_by_year": link_properties.get("filter_year_by_year"),
+                    "hurdles_cost": link_properties.get("hurdles-cost"),
+                    "loop_flow": link_properties.get("loop-flow"),
+                    "use_phase_shifter": link_properties.get("use-phase-shifter"),
+                    "transmission_capacities": link_properties.get("transmission-capacities"),
+                    "asset_type": link_properties.get("asset-type"),
+                    "display_comments": link_properties.get("display-comments"),
+                    "filter_synthesis": link_properties.get("filter-synthesis"),
+                    "filter_year_by_year": link_properties.get("filter-year-by-year"),
                 }
 
                 if with_ui:
                     link_creation_data.update(
                         {
-                            "colorr": str(link_properties.get("colorr", DEFAULT_COLOR)),
-                            "colorb": str(link_properties.get("colorb", DEFAULT_COLOR)),
-                            "colorg": str(link_properties.get("colorg", DEFAULT_COLOR)),
-                            "link_width": link_properties.get("link_width", 1.0),
-                            "link_style": link_properties.get("link_style", LinkStyle.PLAIN),
+                            "colorr": link_properties.get("colorr", DEFAULT_COLOR),
+                            "colorb": link_properties.get("colorb", DEFAULT_COLOR),
+                            "colorg": link_properties.get("colorg", DEFAULT_COLOR),
+                            "link_width": link_properties.get("link-width", 1.0),
+                            "link_style": link_properties.get("link-style", LinkStyle.PLAIN),
                         }
                     )
                 else:

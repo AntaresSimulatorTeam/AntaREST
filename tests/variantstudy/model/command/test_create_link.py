@@ -110,17 +110,17 @@ class TestCreateLink:
 
         link = IniReader()
         link_data = link.read(study_path / "input" / "links" / area1_id / "properties.ini")
-        assert link_data[area2_id]["hurdles_cost"] == LinkProperties.HURDLES_COST
-        assert link_data[area2_id]["loop_flow"] == LinkProperties.LOOP_FLOW
-        assert link_data[area2_id]["use_phase_shifter"] == LinkProperties.USE_PHASE_SHIFTER
-        assert str(link_data[area2_id]["transmission_capacities"]) == LinkProperties.TRANSMISSION_CAPACITIES
-        assert str(link_data[area2_id]["asset_type"]) == LinkProperties.ASSET_TYPE
-        assert str(link_data[area2_id]["link_style"]) == LinkProperties.LINK_STYLE
-        assert int(link_data[area2_id]["link_width"]) == LinkProperties.LINK_WIDTH
+        assert link_data[area2_id]["hurdles-cost"] == LinkProperties.HURDLES_COST
+        assert link_data[area2_id]["loop-flow"] == LinkProperties.LOOP_FLOW
+        assert link_data[area2_id]["use-phase-shifter"] == LinkProperties.USE_PHASE_SHIFTER
+        assert str(link_data[area2_id]["transmission-capacities"]) == LinkProperties.TRANSMISSION_CAPACITIES
+        assert str(link_data[area2_id]["asset-type"]) == LinkProperties.ASSET_TYPE
+        assert str(link_data[area2_id]["link-style"]) == LinkProperties.LINK_STYLE
+        assert int(link_data[area2_id]["link-width"]) == LinkProperties.LINK_WIDTH
         assert int(link_data[area2_id]["colorr"]) == LinkProperties.COLORR
         assert int(link_data[area2_id]["colorg"]) == LinkProperties.COLORG
         assert int(link_data[area2_id]["colorb"]) == LinkProperties.COLORB
-        assert link_data[area2_id]["display_comments"] == LinkProperties.DISPLAY_COMMENTS
+        assert link_data[area2_id]["display-comments"] == LinkProperties.DISPLAY_COMMENTS
 
         empty_study.config.version = 820
         create_link_command: ICommand = CreateLink(
@@ -189,17 +189,17 @@ class TestCreateLink:
 
         link = configparser.ConfigParser()
         link.read(study_path / "input" / "links" / area1_id / "properties.ini")
-        assert str(link[area3_id]["hurdles_cost"]) == parameters["hurdles_cost"]
-        assert str(link[area3_id]["loop_flow"]) == parameters["loop_flow"]
-        assert str(link[area3_id]["use_phase_shifter"]) == parameters["use_phase_shifter"]
-        assert str(link[area3_id]["transmission_capacities"]) == parameters["transmission_capacities"]
-        assert str(link[area3_id]["asset_type"]) == parameters["asset_type"]
-        assert str(link[area3_id]["link_style"]) == parameters["link_style"]
-        assert int(link[area3_id]["link_width"]) == parameters["link_width"]
+        assert str(link[area3_id]["hurdles-cost"]) == parameters["hurdles_cost"]
+        assert str(link[area3_id]["loop-flow"]) == parameters["loop_flow"]
+        assert str(link[area3_id]["use-phase-shifter"]) == parameters["use_phase_shifter"]
+        assert str(link[area3_id]["transmission-capacities"]) == parameters["transmission_capacities"]
+        assert str(link[area3_id]["asset-type"]) == parameters["asset_type"]
+        assert str(link[area3_id]["link-style"]) == parameters["link_style"]
+        assert int(link[area3_id]["link-width"]) == parameters["link_width"]
         assert int(link[area3_id]["colorr"]) == parameters["colorr"]
         assert int(link[area3_id]["colorg"]) == parameters["colorg"]
         assert int(link[area3_id]["colorb"]) == parameters["colorb"]
-        assert str(link[area3_id]["display_comments"]) == parameters["display_comments"]
+        assert str(link[area3_id]["display-comments"]) == parameters["display_comments"]
 
         output = create_link_command.apply(
             study_data=empty_study,
