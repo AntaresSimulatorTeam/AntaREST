@@ -17,15 +17,14 @@ from antarest.core.model import JSON
 from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import RawStudy
-from antarest.study.storage.rawstudy.model.filesystem.config.links import LinkStyle, LinkProperties
+from antarest.study.storage.rawstudy.model.filesystem.config.links import LinkProperties, LinkStyle
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.common import FilteringOptions
 from antarest.study.storage.variantstudy.model.command.create_link import (
-    DEFAULT_COLOR,
     AreaInfo,
     CreateLink,
     LinkInfoProperties,
-    LinkInfoProperties820
+    LinkInfoProperties820,
 )
 from antarest.study.storage.variantstudy.model.command.remove_link import RemoveLink
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig

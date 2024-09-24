@@ -109,7 +109,7 @@ class TestCreateLink:
         link_data = link.read(study_path / "input" / "links" / area1_id / "properties.ini")
         assert link_data[area2_id]["hurdles-cost"] is False
         assert link_data[area2_id]["loop-flow"] is False
-        assert  link_data[area2_id]["use-phase-shifter"] is False
+        assert link_data[area2_id]["use-phase-shifter"] is False
         assert link_data[area2_id]["transmission-capacities"] == "enabled"
         assert link_data[area2_id]["asset-type"] == "ac"
         assert link_data[area2_id]["link-style"] == "plain"

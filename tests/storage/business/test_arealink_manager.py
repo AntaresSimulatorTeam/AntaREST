@@ -29,7 +29,7 @@ from antarest.study.model import Patch, PatchArea, PatchCluster, RawStudy, Study
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
-from antarest.study.storage.rawstudy.model.filesystem.config.links import AssetType, TransmissionCapacity, LinkStyle
+from antarest.study.storage.rawstudy.model.filesystem.config.links import AssetType, LinkStyle, TransmissionCapacity
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, DistrictSet, FileStudyTreeConfig, Link
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import ThermalConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -553,7 +553,7 @@ def test_get_all_area():
         {
             "area1": "a1",
             "area2": "a3",
-            "asset_type": 'ac',
+            "asset_type": "ac",
             "colorb": 112,
             "colorg": 112,
             "colorr": 112,
@@ -570,7 +570,7 @@ def test_get_all_area():
         {
             "area1": "a2",
             "area2": "a3",
-            "asset_type": 'ac',
+            "asset_type": "ac",
             "colorb": 112,
             "colorg": 112,
             "colorr": 112,
@@ -584,7 +584,7 @@ def test_get_all_area():
             "transmission_capacities": "enabled",
             "use_phase_shifter": False,
         },
-    ] == [link.model_dump(mode='json') for link in links]
+    ] == [link.model_dump(mode="json") for link in links]
 
 
 def test_update_area():

@@ -12,7 +12,7 @@
 
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
-from pydantic import BaseModel, ValidationInfo, field_validator, model_validator, AliasGenerator
+from pydantic import AliasGenerator, BaseModel, ValidationInfo, field_validator, model_validator
 
 from antarest.core.utils.string import to_kebab_case
 from antarest.core.utils.utils import assert_this
