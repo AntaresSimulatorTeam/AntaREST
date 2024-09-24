@@ -2665,8 +2665,7 @@ class StudyService:
             raise FileDeletionNotAllowed(f"the targeted data isn't inside the 'User' folder: {path}")
 
         study_tree = self.storage_service.raw_study_service.get_raw(study, True).tree
-        user_node = study_tree.build()["user"]
-        assert isinstance(user_node, User)
+        user_node = t.cast(User,study_tree.get_node(["user"]))
         if url[1] in [file.filename for file in user_node.registered_files]:
             raise FileDeletionNotAllowed(f"you are not allowed to delete this resource : {path}")
 
