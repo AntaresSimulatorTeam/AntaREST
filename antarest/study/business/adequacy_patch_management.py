@@ -113,7 +113,7 @@ class AdequacyPatchManager:
             path = field_info["path"]
             start_version = field_info.get("start_version", -1)
             target_name = path.split("/")[-1]
-            is_in_version = file_study.config.version >= start_version  # type: ignore
+            is_in_version = file_study.config.version >= start_version
 
             return parent.get(target_name, field_info["default_value"]) if is_in_version else None
 

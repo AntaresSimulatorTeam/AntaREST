@@ -14,6 +14,7 @@ import tempfile
 from pathlib import Path
 from typing import Dict
 
+from antares.study.version import StudyVersion
 from filelock import FileLock
 
 from antarest.matrixstore.service import ISimpleMatrixService
@@ -125,13 +126,13 @@ class GeneratorMatrixConstants:
             matrix_constants.st_storage.series.pmax_injection
         )
 
-    def get_hydro_max_power(self, version: int) -> str:
+    def get_hydro_max_power(self, version: StudyVersion) -> str:
         if version > 650:
             return MATRIX_PROTOCOL_PREFIX + self.hashes[HYDRO_COMMON_CAPACITY_MAX_POWER_V7]
         else:
             return MATRIX_PROTOCOL_PREFIX + self.hashes[NULL_MATRIX_NAME]
 
-    def get_hydro_reservoir(self, version: int) -> str:
+    def get_hydro_reservoir(self, version: StudyVersion) -> str:
         if version > 650:
             return MATRIX_PROTOCOL_PREFIX + self.hashes[HYDRO_COMMON_CAPACITY_RESERVOIR_V7]
         return MATRIX_PROTOCOL_PREFIX + self.hashes[HYDRO_COMMON_CAPACITY_RESERVOIR_V6]
@@ -154,7 +155,7 @@ class GeneratorMatrixConstants:
     def get_thermal_prepro_modulation(self) -> str:
         return MATRIX_PROTOCOL_PREFIX + self.hashes[THERMAL_PREPRO_MODULATION]
 
-    def get_link(self, version: int) -> str:
+    def get_link(self, version: StudyVersion) -> str:
         if version < 820:
             return MATRIX_PROTOCOL_PREFIX + self.hashes[LINK_V7]
         return MATRIX_PROTOCOL_PREFIX + self.hashes[LINK_V8]

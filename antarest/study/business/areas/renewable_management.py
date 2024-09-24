@@ -396,7 +396,7 @@ class RenewableManager:
 
                 # Convert the DTO to a configuration object and update the configuration file.
                 properties = create_renewable_config(
-                    study.version, **new_cluster.model_dump(by_alias=False, exclude_none=True)
+                    StudyVersion.parse(study.version), **new_cluster.model_dump(by_alias=False, exclude_none=True)
                 )
                 path = _CLUSTER_PATH.format(area_id=area_id, cluster_id=renewable_id)
                 cmd = UpdateConfig(
