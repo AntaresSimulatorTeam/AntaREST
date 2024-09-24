@@ -110,11 +110,11 @@ class RenewableClusterOutput(RenewableConfig):
 
 
 def create_renewable_output(
-    study_version: t.Union[str, int],
+    study_version: str,
     cluster_id: str,
     config: t.Mapping[str, t.Any],
 ) -> "RenewableClusterOutput":
-    obj = create_renewable_config(study_version=study_version, **config, id=cluster_id)
+    obj = create_renewable_config(study_version=StudyVersion.parse(study_version), **config, id=cluster_id)
     kwargs = obj.model_dump(by_alias=False)
     return RenewableClusterOutput(**kwargs)
 
@@ -183,12 +183,11 @@ class RenewableManager:
         except KeyError:
             raise RenewableClusterConfigNotFound(path)
 
-        study_version = study.version
         renewables_by_areas: t.MutableMapping[str, t.MutableMapping[str, RenewableClusterOutput]]
         renewables_by_areas = collections.defaultdict(dict)
         for area_id, cluster_obj in clusters.items():
             for cluster_id, cluster in cluster_obj.items():
-                renewables_by_areas[area_id][cluster_id] = create_renewable_output(study_version, cluster_id, cluster)
+                renewables_by_areas[area_id][cluster_id] = create_renewable_output(study.version, cluster_id, cluster)
 
         return renewables_by_areas
 
