@@ -52,10 +52,10 @@ class LinkInfoDTOBase(BaseModel):
     link_style: t.Optional[str] = LinkStyle.PLAIN.value
 
 
-
 class LinkInfoDTO820(LinkInfoDTOBase):
     filter_synthesis: t.Optional[str] = None
     filter_year_by_year: t.Optional[str] = None
+
 
 LinkInfoDTOType = t.Union[LinkInfoDTO820, LinkInfoDTOBase]
 

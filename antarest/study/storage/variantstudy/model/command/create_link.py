@@ -101,8 +101,10 @@ class CreateLink(ICommand):
                 options = val.replace(" ", "").split(",")
                 invalid_options = [opt for opt in options if opt not in filter_options]
                 if invalid_options:
-                    raise ValueError(f"Invalid value(s) in '{filter_name}': {', '.join(invalid_options)}. "
-                            f"Allowed values are: {', '.join(filter_options)}.")
+                    raise ValueError(
+                        f"Invalid value(s) in '{filter_name}': {', '.join(invalid_options)}. "
+                        f"Allowed values are: {', '.join(filter_options)}."
+                    )
 
         return self
 
@@ -111,7 +113,6 @@ class CreateLink(ICommand):
         if self.area1 == self.area2:
             raise ValueError("Cannot create link on same node")
         return self
-
 
     def _create_link_in_config(self, area_from: str, area_to: str, study_data: FileStudyTreeConfig) -> None:
         self.parameters = self.parameters or {}
