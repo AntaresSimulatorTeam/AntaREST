@@ -261,7 +261,7 @@ class CreateArea(ICommand):
             ] = self.command_context.generator_matrix_constants.get_hydro_inflow_pattern()
             new_area_data["input"]["hydro"]["common"]["capacity"][f"waterValues_{area_id}"] = null_matrix
 
-        has_renewables = config.version >= 810 and EnrModelling(config.enr_modelling) == EnrModelling.CLUSTERS
+        has_renewables = version >= 810 and EnrModelling(config.enr_modelling) == EnrModelling.CLUSTERS
         if has_renewables:
             new_area_data["input"]["renewables"] = {"clusters": {area_id: {"list": {}}}}
 

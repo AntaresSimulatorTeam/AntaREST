@@ -30,7 +30,7 @@ from .field_validators import extract_filtering
 from .renewable import RenewableConfigType
 from .st_storage import STStorageConfigType
 from .thermal import ThermalConfigType
-
+from antares.study.version import StudyVersion
 
 class EnrModelling(EnumIgnoreCase):
     """
@@ -162,7 +162,7 @@ class FileStudyTreeConfig(DTO):
         study_path: Path,
         path: Path,
         study_id: str,
-        version: int,
+        version: StudyVersion,
         output_path: t.Optional[Path] = None,
         areas: t.Optional[t.Dict[str, Area]] = None,
         sets: t.Optional[t.Dict[str, DistrictSet]] = None,
@@ -306,7 +306,7 @@ class FileStudyTreeConfigDTO(BaseModel):
     study_path: Path
     path: Path
     study_id: str
-    version: int
+    version: StudyVersion
     output_path: t.Optional[Path] = None
     areas: t.Dict[str, Area] = dict()
     sets: t.Dict[str, DistrictSet] = dict()

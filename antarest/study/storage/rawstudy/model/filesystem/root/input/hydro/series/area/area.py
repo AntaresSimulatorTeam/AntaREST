@@ -25,8 +25,9 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import Matri
 
 class InputHydroSeriesArea(FolderNode):
     def build(self) -> TREE:
-        freq = MatrixFrequency.DAILY if self.config.version >= 650 else MatrixFrequency.MONTHLY
-        default_empty = default_scenario_daily if self.config.version >= 650 else default_scenario_monthly
+        study_version = self.config.version
+        freq = MatrixFrequency.DAILY if study_version >= 650 else MatrixFrequency.MONTHLY
+        default_empty = default_scenario_daily if study_version >= 650 else default_scenario_monthly
         hydro_series_matrices: Dict[str, INode[Any, Any, Any]] = {
             "mod": InputSeriesMatrix(
                 self.context,
@@ -42,7 +43,7 @@ class InputHydroSeriesArea(FolderNode):
                 default_empty=default_scenario_hourly,
             ),
         }
-        if self.config.version >= 860:
+        if study_version >= 860:
             hydro_series_matrices["mingen"] = InputSeriesMatrix(
                 self.context,
                 self.config.next_file("mingen.txt"),

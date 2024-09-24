@@ -49,11 +49,12 @@ class Input(FolderNode):
             "wind": InputPreproSeries(self.context, config.next_file("wind"), "wind_"),
         }
 
-        has_renewables = config.version >= 810 and EnrModelling(config.enr_modelling) == EnrModelling.CLUSTERS
+        study_version = config.version
+        has_renewables = study_version >= 810 and EnrModelling(config.enr_modelling) == EnrModelling.CLUSTERS
         if has_renewables:
             children["renewables"] = ClusteredRenewables(self.context, config.next_file("renewables"))
 
-        if config.version >= 860:
+        if study_version >= 860:
             children["st-storage"] = InputSTStorage(self.context, config.next_file("st-storage"))
 
         return children

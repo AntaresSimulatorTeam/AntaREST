@@ -37,6 +37,7 @@ from antarest.study.storage.variantstudy.business.utils_binding_constraint impor
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
 from antarest.study.storage.variantstudy.model.model import CommandDTO
+from antares.study.version import StudyVersion
 
 MatrixType = t.List[t.List[MatrixData]]
 
@@ -53,7 +54,7 @@ class TermMatrices(Enum):
     EQUAL = "equal_term_matrix"
 
 
-def check_matrix_values(time_step: BindingConstraintFrequency, values: MatrixType, version: int) -> None:
+def check_matrix_values(time_step: BindingConstraintFrequency, values: MatrixType, version: StudyVersion) -> None:
     """
     Check the binding constraint's matrix values for the specified time step.
 
@@ -76,7 +77,7 @@ def check_matrix_values(time_step: BindingConstraintFrequency, values: MatrixTyp
     array = np.array(values, dtype=np.float64)
     expected_shape = EXPECTED_MATRIX_SHAPES[time_step]
     actual_shape = array.shape
-    if version < 870:
+    if version < StudyVersion.parse(870):
         if actual_shape != expected_shape:
             raise ValueError(f"Invalid matrix shape {actual_shape}, expected {expected_shape}")
     elif actual_shape[0] != expected_shape[0]:
@@ -123,11 +124,11 @@ BindingConstraintProperties = t.Union[
 ]
 
 
-def get_binding_constraint_config_cls(study_version: t.Union[str, int]) -> t.Type[BindingConstraintProperties]:
+def get_binding_constraint_config_cls(study_version: StudyVersion) -> t.Type[BindingConstraintProperties]:
     """
     Retrieves the binding constraint configuration class based on the study version.
     """
-    version = int(study_version)
+    version = study_version
     if version >= 870:
         return BindingConstraintProperties870
     elif version >= 830:
@@ -136,7 +137,7 @@ def get_binding_constraint_config_cls(study_version: t.Union[str, int]) -> t.Typ
         return BindingConstraintPropertiesBase
 
 
-def create_binding_constraint_config(study_version: t.Union[str, int], **kwargs: t.Any) -> BindingConstraintProperties:
+def create_binding_constraint_config(study_version: StudyVersion, **kwargs: t.Any) -> BindingConstraintProperties:
     """
     Factory method to create a binding constraint configuration model.
 
@@ -253,7 +254,7 @@ class AbstractBindingConstraintCommand(OptionalProperties, BindingConstraintMatr
         ]
 
     def get_corresponding_matrices(
-        self, v: t.Optional[t.Union[MatrixType, str]], time_step: BindingConstraintFrequency, version: int, create: bool
+        self, v: t.Optional[t.Union[MatrixType, str]], time_step: BindingConstraintFrequency, version: StudyVersion, create: bool
     ) -> t.Optional[str]:
         constants: GeneratorMatrixConstants = self.command_context.generator_matrix_constants
 
@@ -274,7 +275,7 @@ class AbstractBindingConstraintCommand(OptionalProperties, BindingConstraintMatr
                     BindingConstraintFrequency.WEEKLY: constants.get_binding_constraint_daily_weekly_87,
                 },
             }
-            return methods["before_v87"][time_step]() if version < 870 else methods["after_v87"][time_step]()
+            return methods["before_v87"][time_step]() if version < StudyVersion.parse(870) else methods["after_v87"][time_step]()
         if isinstance(v, str):
             # Check the matrix link
             return validate_matrix(v, {"command_context": self.command_context})
@@ -290,7 +291,7 @@ class AbstractBindingConstraintCommand(OptionalProperties, BindingConstraintMatr
         *,
         time_step: BindingConstraintFrequency,
         specific_matrices: t.Optional[t.List[str]],
-        version: int,
+        version: StudyVersion,
         create: bool,
     ) -> None:
         if version < 870:

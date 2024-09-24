@@ -30,7 +30,7 @@ from antarest.study.storage.variantstudy.model.command.create_binding_constraint
 )
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
 from antarest.study.storage.variantstudy.model.model import CommandDTO
-
+from antares.study.version import StudyVersion
 
 def _update_matrices_names(
     file_study: FileStudy,
@@ -164,8 +164,9 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
 
         index, actual_cfg = index_and_cfg
 
+        study_version = study_data.config.version
         # rename matrices if the operator has changed for version >= 870
-        if self.operator and study_data.config.version >= 870:
+        if self.operator and study_version >= StudyVersion.parse(870):
             existing_operator = BindingConstraintOperator(actual_cfg.get("operator"))
             new_operator = self.operator
             _update_matrices_names(study_data, self.id, existing_operator, new_operator)
@@ -175,13 +176,12 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
         updated_matrices = [
             term for term in [m.value for m in TermMatrices] if hasattr(self, term) and getattr(self, term)
         ]
-        study_version = study_data.config.version
+
         time_step = self.time_step or BindingConstraintFrequency(actual_cfg.get("type"))
         self.validates_and_fills_matrices(
             time_step=time_step, specific_matrices=updated_matrices or None, version=study_version, create=False
         )
 
-        study_version = study_data.config.version
         props = create_binding_constraint_config(study_version, **self.model_dump())
         obj = props.model_dump(mode="json", by_alias=True, exclude_unset=True)
 

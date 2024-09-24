@@ -210,7 +210,7 @@ class TimeSeriesConfigManager:
 
         config = file_study.config
         study_version = config.version
-        has_renewables = config.version >= 810 and EnrModelling(config.enr_modelling) == EnrModelling.CLUSTERS
+        has_renewables = study_version >= 810 and EnrModelling(config.enr_modelling) == EnrModelling.CLUSTERS
 
         if ts_type == TSType.RENEWABLES and not has_renewables:
             return None

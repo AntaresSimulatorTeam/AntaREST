@@ -17,6 +17,7 @@ from pydantic import Field
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.storage.rawstudy.model.filesystem.config.cluster import ClusterProperties
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import IgnoreCaseIdentifier
+from antares.study.version import StudyVersion
 
 
 class LocalTSGenerationBehavior(EnumIgnoreCase):
@@ -405,7 +406,7 @@ class Thermal870Config(Thermal870Properties, IgnoreCaseIdentifier):
 ThermalConfigType = t.Union[Thermal870Config, Thermal860Config, ThermalConfig]
 
 
-def get_thermal_config_cls(study_version: t.Union[str, int]) -> t.Type[ThermalConfigType]:
+def get_thermal_config_cls(study_version: StudyVersion) -> t.Type[ThermalConfigType]:
     """
     Retrieves the thermal configuration class based on the study version.
 
@@ -415,7 +416,7 @@ def get_thermal_config_cls(study_version: t.Union[str, int]) -> t.Type[ThermalCo
     Returns:
         The thermal configuration class.
     """
-    version = int(study_version)
+    version = study_version
     if version >= 870:
         return Thermal870Config
     elif version == 860:
@@ -424,7 +425,7 @@ def get_thermal_config_cls(study_version: t.Union[str, int]) -> t.Type[ThermalCo
         return ThermalConfig
 
 
-def create_thermal_config(study_version: t.Union[str, int], **kwargs: t.Any) -> ThermalConfigType:
+def create_thermal_config(study_version: StudyVersion, **kwargs: t.Any) -> ThermalConfigType:
     """
     Factory method to create a thermal configuration model.
 

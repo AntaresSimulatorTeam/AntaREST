@@ -45,6 +45,7 @@ from antarest.study.storage.variantstudy.model.command.create_st_storage import 
 from antarest.study.storage.variantstudy.model.command.remove_st_storage import RemoveSTStorage
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
+from antares.study.version import StudyVersion
 
 
 @all_optional_model
@@ -85,7 +86,7 @@ class STStorageCreation(STStorageInput):
         return name
 
     # noinspection PyUnusedLocal
-    def to_config(self, study_version: t.Union[str, int]) -> STStorageConfigType:
+    def to_config(self, study_version: StudyVersion) -> STStorageConfigType:
         values = self.model_dump(by_alias=False, exclude_none=True)
         return create_st_storage_config(study_version=study_version, **values)
 
@@ -239,7 +240,7 @@ def _get_values_by_ids(file_study: FileStudy, area_id: str) -> t.Mapping[str, t.
 
 
 def create_storage_output(
-    study_version: t.Union[str, int],
+    study_version: StudyVersion,
     cluster_id: str,
     config: t.Mapping[str, t.Any],
 ) -> "STStorageOutput":
@@ -283,7 +284,7 @@ class STStorageManager:
         file_study = self._get_file_study(study)
         values_by_ids = _get_values_by_ids(file_study, area_id)
 
-        storage = form.to_config(study.version)
+        storage = form.to_config(StudyVersion.parse(study.version))
         values = values_by_ids.get(storage.id)
         if values is not None:
             raise DuplicateSTStorage(area_id, storage.id)
@@ -333,7 +334,7 @@ class STStorageManager:
 
         # Sort STStorageConfig by groups and then by name
         order_by = operator.attrgetter("group", "name")
-        study_version = int(study.version)
+        study_version = StudyVersion.parse(study.version)
         storages = [create_storage_output(study_version, storage_id, options) for storage_id, options in config.items()]
         return sorted(storages, key=order_by)
 
@@ -364,7 +365,7 @@ class STStorageManager:
         except KeyError:
             raise STStorageConfigNotFound(path) from None
 
-        study_version = study.version
+        study_version = StudyVersion.parse(study.version)
         storages_by_areas: t.MutableMapping[str, t.MutableMapping[str, STStorageOutput]]
         storages_by_areas = collections.defaultdict(dict)
         for area_id, cluster_obj in storages.items():
@@ -432,7 +433,7 @@ class STStorageManager:
             config = file_study.tree.get(path.split("/"), depth=1)
         except KeyError:
             raise STStorageNotFound(path, storage_id) from None
-        return create_storage_output(int(study.version), storage_id, config)
+        return create_storage_output(StudyVersion.parse(study.version), storage_id, config)
 
     def update_storage(
         self,
@@ -547,11 +548,12 @@ class STStorageManager:
         current_cluster.name = new_cluster_name
         fields_to_exclude = {"id"}
         # We should remove the field 'enabled' for studies before v8.8 as it didn't exist
-        if int(study.version) < 880:
+        study_version = StudyVersion.parse(study.version)
+        if study_version < StudyVersion.parse(880):
             fields_to_exclude.add("enabled")
         creation_form = STStorageCreation(**current_cluster.model_dump(by_alias=False, exclude=fields_to_exclude))
 
-        new_config = creation_form.to_config(study.version)
+        new_config = creation_form.to_config(study_version)
         create_cluster_cmd = self._make_create_cluster_cmd(area_id, new_config)
 
         # Matrix edition

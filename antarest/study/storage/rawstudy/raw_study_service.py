@@ -40,6 +40,7 @@ from antarest.study.storage.utils import (
     remove_from_cache,
     update_antares_info,
 )
+from antares.study.version import StudyVersion
 
 logger = logging.getLogger(__name__)
 
@@ -442,7 +443,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
                     study_path=study_path,
                     path=study_path,
                     study_id="",
-                    version=-1,
+                    version=StudyVersion.parse(-1),
                 )
                 raw_study = self.study_factory.create_from_config(config)
                 file_metadata = raw_study.get(url=["study", "antares"])

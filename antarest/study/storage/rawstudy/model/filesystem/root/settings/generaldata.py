@@ -113,25 +113,26 @@ class GeneralData(IniFileNode):
         general = types["general"]
         optimization = types["optimization"]
         other_preferences = types["other preferences"]
-        if config.version >= 650:
+        study_version = config.version
+        if study_version >= 650:
             other_preferences["initial-reservoir-levels"] = str
-        if config.version >= 700:
+        if study_version >= 700:
             optimization["link-type"] = str
-        if config.version >= 710:
+        if study_version >= 710:
             general["thematic-trimming"] = bool
             general["geographic-trimming"] = bool
             del general["filtering"]
-        if config.version >= 720:
+        if study_version >= 720:
             other_preferences["hydro-pricing-mode"] = str
-        if config.version >= 800:
+        if study_version >= 800:
             other_preferences["hydro-heuristic-policy"] = str
             optimization["include-exportstructure"] = bool
             optimization["include-unfeasible-problem-behavior"] = str
             general["custom-scenario"] = bool
             del general["custom-ts-numbers"]
-        if config.version >= 810:
+        if study_version >= 810:
             other_preferences["renewable-generation-modelling"] = str
-        if config.version >= 830:
+        if study_version >= 830:
             types["adequacy patch"] = {
                 "include-adq-patch": bool,
                 "set-to-null-ntc-from-physical-out-to-physical-in-for-first-step": bool,
@@ -140,9 +141,9 @@ class GeneralData(IniFileNode):
             optimization["include-split-exported-mps"] = bool
             # include-exportmps: none, optim-1, optim-2, both-optims
             optimization["include-exportmps"] = str
-        if config.version >= 840:
+        if study_version >= 840:
             del optimization["include-split-exported-mps"]
-        if config.version >= 850:
+        if study_version >= 850:
             adequacy = types["adequacy patch"]
             adequacy["price-taking-order"] = str
             adequacy["include-hurdle-cost-csr"] = bool
@@ -151,7 +152,7 @@ class GeneralData(IniFileNode):
             adequacy["threshold-display-local-matching-rule-violations"] = float
             adequacy["threshold-csr-variable-bounds-relaxation"] = int
 
-        if config.version >= 860:
+        if study_version >= 860:
             types["adequacy patch"]["enable-first-step "] = bool
 
         IniFileNode.__init__(

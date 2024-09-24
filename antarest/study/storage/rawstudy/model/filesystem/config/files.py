@@ -52,6 +52,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import ThermalConfigType, create_thermal_config
 from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata import DUPLICATE_KEYS
+from antares.study.version import StudyVersion
 
 logger = logging.getLogger(__name__)
 
@@ -191,14 +192,14 @@ def _extract_data_from_file(
         raise NotImplementedError(file_type)
 
 
-def _parse_version(path: Path) -> int:
+def _parse_version(path: Path) -> StudyVersion:
     study_info = _extract_data_from_file(
         root=path,
         inside_root_path=Path("study.antares"),
         file_type=FileType.SIMPLE_INI,
     )
-    version: int = study_info.get("antares", {}).get("version", -1)
-    return version
+    version = study_info.get("antares", {}).get("version", -1)
+    return StudyVersion.parse(version)
 
 
 def _parse_parameters(path: Path) -> t.Tuple[bool, t.List[str], str]:

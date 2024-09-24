@@ -34,6 +34,7 @@ from antarest.study.storage.variantstudy.model.command.create_renewables_cluster
 from antarest.study.storage.variantstudy.model.command.remove_renewables_cluster import RemoveRenewablesCluster
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
+from antares.study.version import StudyVersion
 
 _CLUSTER_PATH = "input/renewables/clusters/{area_id}/list/{cluster_id}"
 _CLUSTERS_PATH = "input/renewables/clusters/{area_id}/list"
@@ -82,7 +83,7 @@ class RenewableClusterCreation(RenewableClusterInput):
             raise ValueError("name must not be empty")
         return name
 
-    def to_config(self, study_version: t.Union[str, int]) -> RenewableConfigType:
+    def to_config(self, study_version: StudyVersion) -> RenewableConfigType:
         values = self.model_dump(by_alias=False, exclude_none=True)
         return create_renewable_config(study_version=study_version, **values)
 
@@ -206,7 +207,7 @@ class RenewableManager:
             The newly created cluster.
         """
         file_study = self._get_file_study(study)
-        cluster = cluster_data.to_config(study.version)
+        cluster = cluster_data.to_config(StudyVersion.parse(study.version))
         command = self._make_create_cluster_cmd(area_id, cluster)
         execute_or_add_commands(
             study,
@@ -356,7 +357,7 @@ class RenewableManager:
         current_cluster = self.get_cluster(study, area_id, source_id)
         current_cluster.name = new_cluster_name
         creation_form = RenewableClusterCreation(**current_cluster.model_dump(by_alias=False, exclude={"id"}))
-        new_config = creation_form.to_config(study.version)
+        new_config = creation_form.to_config(StudyVersion.parse(study.version))
         create_cluster_cmd = self._make_create_cluster_cmd(area_id, new_config)
 
         # Matrix edition
