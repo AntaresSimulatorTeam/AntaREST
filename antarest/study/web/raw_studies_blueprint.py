@@ -203,7 +203,7 @@ def create_raw_study_routes(
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> t.Any:
         uuid = sanitize_uuid(uuid)
-        logger.info(f"Deleting some data for study {uuid}", extra={"user": current_user.id})
+        logger.info(f"Deleting path {path} inside study {uuid}", extra={"user": current_user.id})
         study_service.delete_file_or_folder(uuid, path, current_user)
 
     @bp.get(

@@ -2665,13 +2665,14 @@ class StudyService:
         if url[1] == "expansion":
             raise FileDeletionNotAllowed(f"you cannot delete a file/folder inside 'expansion' folder : {path}")
 
-        study_tree = self.storage_service.raw_study_service.get_raw(study, True).tree.build()
+        study_tree = self.storage_service.raw_study_service.get_raw(study, True).tree
+        builded_tree = study_tree.build()
         try:
-            study_tree["user"].delete(url[1:])
+            builded_tree["user"].delete(url[1:])
         except ChildNotFoundError as e:
-            raise FileDeletionNotAllowed(f"the given path doesn't exist: {e.detail}")
+            raise FileDeletionNotAllowed("the given path doesn't exist") from e
 
         # update cache
         cache_id = f"{CacheConstants.RAW_STUDY}/{study.id}"
-        updated_tree = self.storage_service.raw_study_service.get_raw(study, False).tree.get()
+        updated_tree = study_tree.get()
         self.storage_service.get_storage(study).cache.put(cache_id, updated_tree)  # type: ignore
