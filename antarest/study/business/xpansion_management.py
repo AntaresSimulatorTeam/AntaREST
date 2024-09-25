@@ -26,10 +26,7 @@ from antarest.core.model import JSON
 from antarest.study.business.all_optional_meta import all_optional_model
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.model import Study
-from antarest.study.storage.rawstudy.model.filesystem.bucket_node import BucketNode
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
-from antarest.study.storage.rawstudy.model.filesystem.root.user.expansion.expansion import Expansion
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.utils import fix_study_root
 
@@ -714,17 +711,6 @@ class XpansionManager:
             return [filename for filename in file_study.tree.get(self._raw_file_dir(resource_type)).keys()]
         except ChildNotFoundError:
             return []
-
-    def list_root_files(self, study: Study) -> t.List[str]:
-        logger.info(f"Getting xpansion root resources file from study '{study.id}'")
-        file_study = self.study_storage_service.get_storage(study).get_raw(study)
-        registered_filenames = [registered_file.key for registered_file in Expansion.registered_files]
-        root_files = [
-            key
-            for key, node in t.cast(FolderNode, file_study.tree.get_node(["user", "expansion"])).build().items()
-            if key not in registered_filenames and not isinstance(node, BucketNode)
-        ]
-        return root_files
 
     @staticmethod
     def _is_constraints_file_used(file_study: FileStudy, filename: str) -> bool:  # type: ignore

@@ -304,8 +304,6 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
             StudyPermissionType.READ,
             RequestParameters(user=current_user),
         )
-        if resource_type is None:
-            return study_service.xpansion_manager.list_root_files(study)
         return study_service.xpansion_manager.list_resources(study, resource_type)
 
     return bp
