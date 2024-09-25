@@ -8,6 +8,7 @@ import Fieldset from "../../../../../common/Fieldset";
 import { useFormContextPlus } from "../../../../../common/Form";
 import { AdequacyPatchFormFields, PRICE_TAKING_ORDER_OPTIONS } from "./utils";
 import { StudyMetadata } from "../../../../../../common/types";
+import { validateNumber } from "../../../../../../utils/validationUtils";
 
 function Fields() {
   const { t } = useTranslation();
@@ -81,10 +82,7 @@ function Fields() {
               name="thresholdInitiateCurtailmentSharingRule"
               control={control}
               rules={{
-                min: {
-                  value: 0,
-                  message: t("form.field.minValue", { 0: 0 }),
-                },
+                validate: validateNumber({ min: 0 }),
               }}
             />
             <NumberFE
@@ -94,10 +92,7 @@ function Fields() {
               name="thresholdDisplayLocalMatchingRuleViolations"
               control={control}
               rules={{
-                min: {
-                  value: 0,
-                  message: t("form.field.minValue", { 0: 0 }),
-                },
+                validate: validateNumber({ min: 0 }),
               }}
             />
             <NumberFE
@@ -107,10 +102,10 @@ function Fields() {
               name="thresholdCsrVariableBoundsRelaxation"
               control={control}
               rules={{
-                min: {
-                  value: 0,
-                  message: t("form.field.minValue", { 0: 0 }),
-                },
+                validate: validateNumber({
+                  min: 0,
+                  integer: true,
+                }),
               }}
             />
             <Fieldset.Break />

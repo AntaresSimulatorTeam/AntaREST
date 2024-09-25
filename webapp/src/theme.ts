@@ -75,6 +75,13 @@ const theme = createTheme({
         },
       },
     },
+    MuiListSubheader: {
+      styleOverrides: {
+        root: {
+          backgroundColor: "#222333",
+        },
+      },
+    },
     MuiAlert: {
       styleOverrides: {
         root: {

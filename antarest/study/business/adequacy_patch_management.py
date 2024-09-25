@@ -1,6 +1,18 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 from typing import Any, Dict, List, Optional
 
-from pydantic.types import StrictBool, confloat
+from pydantic.types import StrictBool, confloat, conint
 
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.utils import GENERAL_DATA_PATH, FieldInfo, FormFieldsBaseModel, execute_or_add_commands
@@ -28,7 +40,7 @@ class AdequacyPatchFormFields(FormFieldsBaseModel):
     check_csr_cost_function: Optional[StrictBool]
     threshold_initiate_curtailment_sharing_rule: Optional[ThresholdType]  # type: ignore
     threshold_display_local_matching_rule_violations: Optional[ThresholdType]  # type: ignore
-    threshold_csr_variable_bounds_relaxation: Optional[ThresholdType]  # type: ignore
+    threshold_csr_variable_bounds_relaxation: Optional[conint(ge=0, strict=True)]  # type: ignore
 
 
 ADEQUACY_PATCH_PATH = f"{GENERAL_DATA_PATH}/adequacy patch"

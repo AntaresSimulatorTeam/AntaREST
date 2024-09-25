@@ -3,7 +3,7 @@ import HT from "handsontable";
 import { startCase } from "lodash";
 import * as R from "ramda";
 import { Box, type SxProps } from "@mui/material";
-import type { Theme } from "@mui/system";
+import type { Theme } from "@mui/material";
 import { useMemo } from "react";
 import { DefaultValues } from "react-hook-form";
 import type { IdType } from "../../../common/types";

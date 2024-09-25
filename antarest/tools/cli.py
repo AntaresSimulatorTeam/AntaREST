@@ -1,3 +1,15 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import logging
 from pathlib import Path
 from typing import Optional
@@ -5,7 +17,7 @@ from typing import Optional
 import click
 
 from antarest.study.model import NEW_DEFAULT_STUDY_VERSION
-from antarest.study.storage.study_upgrader import upgrade_study
+from antarest.study.storage.study_upgrader import StudyUpgrader
 from antarest.tools.lib import extract_commands, generate_diff, generate_study
 
 
@@ -164,7 +176,8 @@ def cli_upgrade_study(study_path: Path, target_version: str) -> None:
 
     TARGET_VERSION is the version you want your study to be at (example 8.4.0 or 840)
     """
-    upgrade_study(Path(study_path), target_version.replace(".", ""))
+    study_upgrader = StudyUpgrader(study_path, target_version.replace(".", ""))
+    study_upgrader.upgrade()
 
 
 if __name__ == "__main__":

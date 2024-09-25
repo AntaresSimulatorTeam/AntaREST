@@ -1,3 +1,15 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import typing as t
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfig
@@ -193,9 +205,11 @@ class RemoveCluster(ICommand):
 
         matrix_suffixes = ["_lt", "_gt", "_eq"] if study_data.config.version >= 870 else [""]
 
+        existing_files = study_data.tree.get(["input", "bindingconstraints"], depth=1)
         for bc_index, bc in bc_to_remove.items():
             for suffix in matrix_suffixes:
-                # noinspection SpellCheckingInspection
-                study_data.tree.delete(["input", "bindingconstraints", f"{bc['id']}{suffix}"])
+                matrix_id = f"{bc['id']}{suffix}"
+                if matrix_id in existing_files:
+                    study_data.tree.delete(["input", "bindingconstraints", matrix_id])
 
         study_data.tree.save(binding_constraints, url)

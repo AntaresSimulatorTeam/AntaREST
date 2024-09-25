@@ -1,3 +1,15 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import re
 import typing as t
 from pathlib import Path
@@ -7,14 +19,17 @@ from pydantic import BaseModel, Field, root_validator
 from antarest.core.utils.utils import DTO
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 
-from .binding_constraint import BindingConstraintFrequency
+from .binding_constraint import (
+    DEFAULT_GROUP,
+    DEFAULT_OPERATOR,
+    DEFAULT_TIMESTEP,
+    BindingConstraintFrequency,
+    BindingConstraintOperator,
+)
 from .field_validators import extract_filtering
 from .renewable import RenewableConfigType
 from .st_storage import STStorageConfigType
 from .thermal import ThermalConfigType
-
-DEFAULT_GROUP = "default"
-"""Default group for binding constraints (since v8.7)."""
 
 
 class EnrModelling(EnumIgnoreCase):
@@ -121,15 +136,18 @@ class BindingConstraintDTO(BaseModel):
 
     Attributes:
         id: The ID of the binding constraint.
-        group: The group for the scenario of BC (optional, required since v8.7).
         areas: List of area IDs on which the BC applies (links or clusters).
         clusters: List of thermal cluster IDs on which the BC applies (format: "area.cluster").
+        time_step: The time_step of the BC
+        operator: The operator of the BC
+        group: The group for the scenario of BC (optional, required since v8.7).
     """
 
     id: str
     areas: t.Set[str]
     clusters: t.Set[str]
-    time_step: BindingConstraintFrequency
+    time_step: BindingConstraintFrequency = DEFAULT_TIMESTEP
+    operator: BindingConstraintOperator = DEFAULT_OPERATOR
     # since v8.7
     group: str = DEFAULT_GROUP
 

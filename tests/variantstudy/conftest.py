@@ -1,4 +1,17 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import hashlib
+import re
 import typing as t
 import zipfile
 from pathlib import Path
@@ -8,7 +21,7 @@ import numpy as np
 import numpy.typing as npt
 import pytest
 
-from antarest.study.storage.study_upgrader import get_current_version
+from antarest.core.exceptions import StudyValidationError
 
 if t.TYPE_CHECKING:
     # noinspection PyPackageRequirements
@@ -163,7 +176,7 @@ def empty_study_fixture(request: "SubRequest", tmp_path: Path, matrix_service: M
         zip_empty_study.extractall(empty_study_destination_path)
 
     # Detect the version of the study from `study.antares` file.
-    version = get_current_version(empty_study_destination_path)
+    version = _get_current_version(empty_study_destination_path)
 
     config = FileStudyTreeConfig(
         study_path=empty_study_destination_path,
@@ -185,3 +198,16 @@ def empty_study_fixture(request: "SubRequest", tmp_path: Path, matrix_service: M
         ),
     )
     return file_study
+
+
+def _get_current_version(study_path: Path) -> str:
+    antares_path = study_path / "study.antares"
+    pattern = r"version\s*=\s*([\w.-]+)\s*"
+    with antares_path.open(encoding="utf-8") as lines:
+        for line in lines:
+            if match := re.fullmatch(pattern, line):
+                return match[1].rstrip()
+    raise StudyValidationError(
+        f"File parsing error: the version number is not found in '{antares_path}'"
+        f" or does not match the expected '{pattern}' format."
+    )

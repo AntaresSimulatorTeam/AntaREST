@@ -11,6 +11,11 @@ export default defineConfig(({ mode }) => {
   return {
     // Serve the web app at the `/static` entry point on Desktop mode (cf. 'antarest/main.py')
     base: isDesktopMode ? "/static/" : "/",
+    // Entries will be defined as globals during dev and statically replaced during build
+    define: {
+      // Not working in dev without `JSON.stringify`
+      __BUILD_TIMESTAMP__: JSON.stringify(Date.now()),
+    },
     esbuild: {
       // Remove logs safely when building production bundle
       // https://esbuild.github.io/api/#pure

@@ -1,99 +1,55 @@
-import { useCallback, Fragment } from "react";
-import { Typography } from "@mui/material";
-import TreeView from "@mui/lab/TreeView";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import ChevronRightIcon from "@mui/icons-material/ChevronRight";
-import TreeItem from "@mui/lab/TreeItem";
 import { StudyTreeNode } from "./utils";
 import useAppSelector from "../../../redux/hooks/useAppSelector";
 import { getStudiesTree, getStudyFilters } from "../../../redux/selectors";
 import useAppDispatch from "../../../redux/hooks/useAppDispatch";
 import { updateStudyFilters } from "../../../redux/ducks/studies";
+import TreeItemEnhanced from "../../common/TreeItemEnhanced";
+import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
+import { getParentPaths } from "../../../utils/pathUtils";
+import * as R from "ramda";
 
 function StudyTree() {
-  const folder = useAppSelector((state) => getStudyFilters(state).folder);
+  const folder = useAppSelector((state) => getStudyFilters(state).folder, R.T);
   const studiesTree = useAppSelector(getStudiesTree);
   const dispatch = useAppDispatch();
 
-  const getExpandedTab = (nodeId: string): string[] => {
-    const expandedTab: string[] = [];
-    const tab = nodeId.split("/");
-    let lastnodeId = "";
-    for (let i = 0; i < tab.length; i += 1) {
-      lastnodeId += i === 0 ? tab[i] : `/${tab[i]}`;
-      expandedTab.push(lastnodeId);
-    }
-    return expandedTab;
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
+
+  const handleTreeItemClick = (itemId: string) => {
+    dispatch(updateStudyFilters({ folder: itemId }));
   };
 
-  const buildTree = (children: StudyTreeNode[], parentId: string) =>
-    children.map((elm) => {
-      const newId = `${parentId}/${elm.name}`;
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
+
+  const buildTree = (children: StudyTreeNode[], parentId?: string) => {
+    return children.map((elm) => {
+      const id = parentId ? `${parentId}/${elm.name}` : elm.name;
+
       return (
-        <Fragment key={newId}>
-          <TreeItem
-            key={`treeitem-${newId}`}
-            nodeId={newId}
-            label={
-              <Typography
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  dispatch(updateStudyFilters({ folder: newId }));
-                }}
-              >
-                {elm.name}
-              </Typography>
-            }
-            collapseIcon={
-              elm.children.length > 0 ? <ExpandMoreIcon /> : undefined
-            }
-            expandIcon={
-              elm.children.length > 0 ? <ChevronRightIcon /> : undefined
-            }
-          >
-            {buildTree((elm as StudyTreeNode).children, newId)}
-          </TreeItem>
-        </Fragment>
+        <TreeItemEnhanced
+          key={id}
+          itemId={id}
+          label={elm.name}
+          onClick={() => handleTreeItemClick(id)}
+        >
+          {buildTree(elm.children, id)}
+        </TreeItemEnhanced>
       );
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const getDefaultSelected = useCallback(() => [folder], []);
-
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const getDefaultExpanded = useCallback(() => getExpandedTab(folder), []);
+  };
 
   return (
-    <TreeView
-      aria-label="Study tree"
-      defaultSelected={getDefaultSelected()}
-      defaultExpanded={getDefaultExpanded()}
-      selected={[folder]}
-      sx={{ flexGrow: 1, height: 0, width: "100%", py: 1 }}
+    <SimpleTreeView
+      defaultExpandedItems={[...getParentPaths(folder), folder]}
+      defaultSelectedItems={folder}
+      sx={{ flexGrow: 1, height: 0, width: 1, py: 1 }}
     >
-      <TreeItem
-        nodeId={studiesTree.name}
-        label={
-          <Typography
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              dispatch(updateStudyFilters({ folder: studiesTree.name }));
-            }}
-          >
-            {studiesTree.name}
-          </Typography>
-        }
-        collapseIcon={
-          studiesTree.children.length > 0 ? <ExpandMoreIcon /> : undefined
-        }
-        expandIcon={
-          studiesTree.children.length > 0 ? <ChevronRightIcon /> : undefined
-        }
-      >
-        {buildTree(studiesTree.children, studiesTree.name)}
-      </TreeItem>
-    </TreeView>
+      {buildTree([studiesTree])}
+    </SimpleTreeView>
   );
 }
 

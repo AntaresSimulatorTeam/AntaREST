@@ -1,3 +1,15 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import http
 import io
 import itertools
@@ -252,3 +264,66 @@ class TestFetchRawData:
                 headers=headers,
             )
             assert res.status_code == 200, f"Error for path={path} and depth={depth}"
+
+
+def test_delete_raw(client: TestClient, user_access_token: str, internal_study_id: str) -> None:
+    client.headers = {"Authorization": f"Bearer {user_access_token}"}
+
+    # =============================
+    #  SET UP + NOMINAL CASES
+    # =============================
+
+    content = io.BytesIO(b"This is the end!")
+    file_1_path = "user/file_1.txt"
+    file_2_path = "user/folder/file_2.txt"
+    file_3_path = "user/folder_2/file_3.txt"
+    for f in [file_1_path, file_2_path, file_3_path]:
+        # Creates a file / folder inside user folder.
+        res = client.put(
+            f"/v1/studies/{internal_study_id}/raw", params={"path": f, "create_missing": True}, files={"file": content}
+        )
+        assert res.status_code == 204, res.json()
+
+        # Deletes the file / folder
+        if f == file_2_path:
+            f = "user/folder"
+        res = client.delete(f"/v1/studies/{internal_study_id}/raw?path={f}")
+        assert res.status_code == 200
+        # Asserts it doesn't exist anymore
+        res = client.get(f"/v1/studies/{internal_study_id}/raw?path={f}")
+        assert res.status_code == 404
+        assert "not a child of" in res.json()["description"]
+
+        # checks debug view
+        res = client.get(f"/v1/studies/{internal_study_id}/raw?path=&depth=-1")
+        assert res.status_code == 200
+        tree = res.json()["user"]
+        if f == file_3_path:
+            # asserts the folder that wasn't deleted is still here.
+            assert list(tree.keys()) == ["expansion", "folder_2"]
+            assert tree["folder_2"] == {}
+        else:
+            # asserts deleted files cannot be seen inside the debug view
+            assert list(tree.keys()) == ["expansion"]
+
+    # =============================
+    #  ERRORS
+    # =============================
+
+    # try to delete expansion folder
+    res = client.delete(f"/v1/studies/{internal_study_id}/raw?path=/user/expansion")
+    assert res.status_code == 403
+    assert res.json()["exception"] == "FileDeletionNotAllowed"
+    assert "you are not allowed to delete this resource" in res.json()["description"]
+
+    # try to delete a file which isn't inside the 'User' folder
+    res = client.delete(f"/v1/studies/{internal_study_id}/raw?path=/input/thermal")
+    assert res.status_code == 403
+    assert res.json()["exception"] == "FileDeletionNotAllowed"
+    assert "the targeted data isn't inside the 'User' folder" in res.json()["description"]
+
+    # With a path that doesn't exist
+    res = client.delete(f"/v1/studies/{internal_study_id}/raw?path=user/fake_folder/fake_file.txt")
+    assert res.status_code == 403
+    assert res.json()["exception"] == "FileDeletionNotAllowed"
+    assert "the given path doesn't exist" in res.json()["description"]

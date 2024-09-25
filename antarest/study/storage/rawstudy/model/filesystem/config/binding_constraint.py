@@ -1,6 +1,20 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 """
 Object model used to read and update binding constraint configuration.
 """
+
+import typing as t
 
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 
@@ -35,3 +49,17 @@ class BindingConstraintOperator(EnumIgnoreCase):
     GREATER = "greater"
     BOTH = "both"
     EQUAL = "equal"
+
+
+OPERATOR_MATRICES_MAP: t.Dict[BindingConstraintOperator, t.List[str]] = {
+    BindingConstraintOperator.EQUAL: ["eq"],
+    BindingConstraintOperator.GREATER: ["gt"],
+    BindingConstraintOperator.LESS: ["lt"],
+    BindingConstraintOperator.BOTH: ["lt", "gt"],
+}
+
+
+DEFAULT_GROUP = "default"
+"""Default group for binding constraints (since v8.7)."""
+DEFAULT_OPERATOR = BindingConstraintOperator.EQUAL
+DEFAULT_TIMESTEP = BindingConstraintFrequency.HOURLY

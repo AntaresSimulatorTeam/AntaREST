@@ -18,7 +18,7 @@ import UsePromiseCond from "../utils/UsePromiseCond";
 import SplitView from "../SplitView";
 
 interface Props {
-  study: StudyMetadata;
+  studyId: StudyMetadata["id"];
   path: string;
   open: BasicDialogProps["open"];
   onClose: VoidFunction;
@@ -26,7 +26,7 @@ interface Props {
 
 function MatrixAssignDialog(props: Props) {
   const [t] = useTranslation();
-  const { study, path, open, onClose } = props;
+  const { studyId, path, open, onClose } = props;
   const [selectedItem, setSelectedItem] = useState("");
   const [currentMatrix, setCurrentMatrix] = useState<MatrixInfoDTO>();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
@@ -72,7 +72,7 @@ function MatrixAssignDialog(props: Props) {
 
   const handleAssignation = async (matrixId: string) => {
     try {
-      await appendCommands(study.id, [
+      await appendCommands(studyId, [
         {
           action: CommandEnum.REPLACE_MATRIX,
           args: {

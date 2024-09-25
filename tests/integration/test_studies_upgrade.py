@@ -1,3 +1,15 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import os
 
 import pytest
@@ -38,7 +50,6 @@ class TestStudyUpgrade:
         assert task.status == TaskStatus.COMPLETED
         assert target_version in task.result.message, f"Version not in {task.result.message=}"
 
-    @pytest.mark.skipif(RUN_ON_WINDOWS, reason="This test runs randomly on Windows")
     def test_upgrade_study__bad_target_version(
         self, client: TestClient, user_access_token: str, internal_study_id: str
     ):
@@ -48,12 +59,9 @@ class TestStudyUpgrade:
             headers={"Authorization": f"Bearer {user_access_token}"},
             params={"target_version": target_version},
         )
-        assert res.status_code == 200
-        task_id = res.json()
-        assert task_id
-        task = wait_task_completion(client, user_access_token, task_id)
-        assert task.status == TaskStatus.FAILED
-        assert target_version in task.result.message, f"Version not in {task.result.message=}"
+        assert res.status_code == 400
+        assert res.json()["exception"] == "UnsupportedStudyVersion"
+        assert f"Version '{target_version}' isn't among supported versions" in res.json()["description"]
 
     def test_upgrade_study__unmet_requirements(self, client: TestClient, admin_access_token: str):
         """

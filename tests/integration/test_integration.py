@@ -1,3 +1,15 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import io
 import os
 from http import HTTPStatus
@@ -81,7 +93,7 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
         headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
     )
     res_output = res.json()
-    assert len(res_output) == 5
+    assert len(res_output) == 6
 
     res = client.get(
         f"/v1/studies/{study_id}/outputs/20201014-1427eco/variables",
@@ -178,7 +190,7 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
         f"/v1/studies/{study_id}/outputs",
         headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
     )
-    assert len(res.json()) == 4
+    assert len(res.json()) == 5
 
     # study creation
     created = client.post(
@@ -806,6 +818,15 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
         "thresholdCsrVariableBoundsRelaxation": 3,
     }
 
+    # asserts csr field is an int
+    res = client.put(
+        f"/v1/studies/{study_id}/config/adequacypatch/form",
+        json={"thresholdCsrVariableBoundsRelaxation": 0.8},
+    )
+    assert res.status_code == 422
+    assert res.json()["exception"] == "RequestValidationError"
+    assert res.json()["description"] == "value is not a valid integer"
+
     # General form
 
     res_general_config = client.get(f"/v1/studies/{study_id}/config/general/form")
@@ -1391,7 +1412,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
     res_links = client.get(f"/v1/studies/{study_id}/links")
     assert res_links.json() == []
 
-    res = client.put(
+    client.put(
         f"/v1/studies/{study_id}/areas/area%201/ui",
         json={"x": 100, "y": 100, "color_rgb": [255, 0, 100]},
     )
@@ -1653,7 +1674,7 @@ def test_import(client: TestClient, admin_access_token: str, internal_study_id: 
         f"/v1/studies/{internal_study_id}/outputs",
         headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
     )
-    assert len(res.json()) == 6
+    assert len(res.json()) == 7
 
     # tests outputs import for .7z
     output_path_seven_zip = ASSETS_DIR / "output_adq.7z"
@@ -1666,7 +1687,7 @@ def test_import(client: TestClient, admin_access_token: str, internal_study_id: 
         f"/v1/studies/{internal_study_id}/outputs",
         headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
     )
-    assert len(res.json()) == 7
+    assert len(res.json()) == 8
 
     # test matrices import for .zip and .7z files
     matrices_zip_path = ASSETS_DIR / "matrices.zip"

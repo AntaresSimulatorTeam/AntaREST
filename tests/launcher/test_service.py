@@ -1,3 +1,15 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import json
 import math
 import os
@@ -40,13 +52,7 @@ from antarest.launcher.model import (
     LauncherParametersDTO,
     LogType,
 )
-from antarest.launcher.service import (
-    EXECUTION_INFO_FILE,
-    LAUNCHER_PARAM_NAME_SUFFIX,
-    ORPHAN_JOBS_VISIBILITY_THRESHOLD,
-    JobNotFound,
-    LauncherService,
-)
+from antarest.launcher.service import EXECUTION_INFO_FILE, LAUNCHER_PARAM_NAME_SUFFIX, JobNotFound, LauncherService
 from antarest.login.auth import Auth
 from antarest.login.model import Identity
 from antarest.study.model import OwnerInfo, PublicMode, Study, StudyMetadataDTO
@@ -257,7 +263,7 @@ class TestLauncherService:
                 job_status=JobStatus.SUCCESS,
                 msg="Hello, World!",
                 exit_code=0,
-                creation_date=now - timedelta(days=ORPHAN_JOBS_VISIBILITY_THRESHOLD + 1),
+                creation_date=now - timedelta(days=11),
                 owner=identity_instance,
             )
         ]
@@ -308,7 +314,7 @@ class TestLauncherService:
                     )
                 ),
             )
-            == returned_faked_execution_results
+            == []
         )
 
         with pytest.raises(UserHasNotPermissionError):

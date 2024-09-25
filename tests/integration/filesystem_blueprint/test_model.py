@@ -1,8 +1,22 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import asyncio
 import datetime
 import re
 import shutil
 from pathlib import Path
+
+from pytest_mock import MockerFixture
 
 from antarest.core.filesystem_blueprint import FileInfoDTO, FilesystemDTO, MountPointDTO
 
@@ -51,15 +65,16 @@ class TestMountPointDTO:
         assert dto.free_bytes == 0
         assert dto.message.startswith("N/A:"), dto.message
 
-    def test_from_path__file(self, tmp_path: Path) -> None:
+    def test_from_path__file(self, tmp_path: Path, mocker: MockerFixture) -> None:
+        mocker.patch("shutil.disk_usage", return_value=(100, 200, 300))
+
         name = "foo"
         dto = asyncio.run(MountPointDTO.from_path(name, tmp_path))
-        total_bytes, used_bytes, free_bytes = shutil.disk_usage(tmp_path)
         assert dto.name == name
         assert dto.path == tmp_path
-        assert dto.total_bytes == total_bytes
-        assert dto.used_bytes == used_bytes
-        assert dto.free_bytes == free_bytes
+        assert dto.total_bytes == 100
+        assert dto.used_bytes == 200
+        assert dto.free_bytes == 300
         assert re.fullmatch(r"\d+(?:\.\d+)?% used", dto.message), dto.message
 
 

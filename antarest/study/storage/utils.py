@@ -1,3 +1,15 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import calendar
 import logging
 import math
@@ -152,7 +164,8 @@ def remove_from_cache(cache: ICache, root_id: str) -> None:
 def create_new_empty_study(version: str, path_study: Path, path_resources: Path) -> None:
     version_template: t.Optional[str] = STUDY_REFERENCE_TEMPLATES.get(version, None)
     if version_template is None:
-        raise UnsupportedStudyVersion(version)
+        msg = f"{version} is not a supported version, supported versions are: {list(STUDY_REFERENCE_TEMPLATES.keys())}"
+        raise UnsupportedStudyVersion(msg)
 
     empty_study_zip = path_resources / version_template
 

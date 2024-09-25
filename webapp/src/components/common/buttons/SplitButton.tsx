@@ -33,6 +33,7 @@ export default function SplitButton<OptionValue extends string>(
     onClick,
     children,
     ButtonProps: loadingButtonProps,
+    disabled,
     ...buttonGroupProps
   } = props;
   const [open, setOpen] = useState(false);
@@ -95,7 +96,11 @@ export default function SplitButton<OptionValue extends string>(
 
   return (
     <>
-      <ButtonGroup {...buttonGroupProps} ref={anchorRef}>
+      <ButtonGroup
+        {...buttonGroupProps}
+        disabled={disabled || formattedOptions.length === 0}
+        ref={anchorRef}
+      >
         <LoadingButton
           variant={buttonGroupProps.variant || "outlined"} // `LoadingButton` doesn't inherit from `ButtonGroup`
           {...loadingButtonProps}
@@ -106,7 +111,7 @@ export default function SplitButton<OptionValue extends string>(
         <Button
           size="small"
           onClick={handleToggle}
-          disabled={buttonGroupProps.disabled || loadingButtonProps?.loading}
+          disabled={disabled || loadingButtonProps?.loading}
         >
           <ArrowDropDownIcon />
         </Button>
