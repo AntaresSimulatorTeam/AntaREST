@@ -131,7 +131,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     )
     def get_areas(
         uuid: str,
-        type: t.Optional[AreaType] = None,
+        type: AreaType = Query(None),
         ui: bool = False,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> t.Union[t.List[AreaInfoDTO], t.Dict[str, t.Any]]:
@@ -1095,10 +1095,10 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     def get_binding_constraint_list(
         uuid: str,
         enabled: t.Optional[bool] = Query(None, description="Filter results based on enabled status"),
-        operator: t.Optional[BindingConstraintOperator] = Query(None, description="Filter results based on operator"),
+        operator: BindingConstraintOperator = Query(None, description="Filter results based on operator"),
         comments: str = Query("", description="Filter results based on comments (word match)"),
         group: str = Query("", description="filter binding constraints based on group name (exact match)"),
-        time_step: t.Optional[BindingConstraintFrequency] = Query(
+        time_step: BindingConstraintFrequency = Query(
             None,
             description="Filter results based on time step",
             alias="timeStep",

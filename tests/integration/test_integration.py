@@ -453,7 +453,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
                 "args": {
                     "area_id": "area 2",
                     "cluster_name": "cluster 2",
-                    "parameters": {},
+                    "parameters": {"nominalcapacity": 2.5},
                 },
             }
         ],
@@ -566,7 +566,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
                     "min-stable-power": None,
                     "min-up-time": None,
                     "name": "cluster 2",
-                    "nominalcapacity": 0,
+                    "nominalcapacity": 2.5,
                     "spinning": None,
                     "spread-cost": None,
                     "type": None,
@@ -1478,7 +1478,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
                     "min-stable-power": None,
                     "min-up-time": None,
                     "name": "cluster 2",
-                    "nominalcapacity": 0,
+                    "nominalcapacity": 2.5,
                     "spinning": None,
                     "spread-cost": None,
                     "type": None,
