@@ -15,7 +15,7 @@ import typing as t
 from pathlib import Path
 
 from antares.study.version import StudyVersion
-from pydantic import BaseModel, Field, model_validator, field_serializer, field_validator
+from pydantic import BaseModel, Field, field_serializer, field_validator, model_validator
 
 from antarest.core.utils.utils import DTO
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
@@ -318,14 +318,13 @@ class FileStudyTreeConfigDTO(BaseModel):
     enr_modelling: str = str(EnrModelling.AGGREGATED)
     zip_path: t.Optional[Path] = None
 
-    @field_serializer('version')
+    @field_serializer("version")
     def serialize_version(self, version: StudyVersion) -> int:
         return version.__int__()
 
     @field_validator("version", mode="before")
     def _validate_version(cls, v: t.Any) -> StudyVersion:
         return StudyVersion.parse(v)
-
 
     @staticmethod
     def from_build_config(
