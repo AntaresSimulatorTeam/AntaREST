@@ -98,7 +98,7 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         exists: t.Optional[bool] = Query(None, description="Filter studies based on their existence on disk."),
         workspace: str = Query("", description="Filter studies based on their workspace."),
         folder: str = Query("", description="Filter studies based on their folder."),
-        sort_by: t.Optional[StudySortBy] = Query(
+        sort_by: StudySortBy = Query(
             None,
             description="Sort studies based on their name (case-insensitive) or creation date.",
             alias="sortBy",
