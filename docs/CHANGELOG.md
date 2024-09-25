@@ -4,6 +4,50 @@ Antares Web Changelog
 v2.17.6 (2024-09-25)
 --------------------
 
+## What's Changed
+
+### Features
+
+* **upgrader**: use `antares-study-version` package [`2108`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2108)
+* **ts-gen**: add timeseries generation [`2112`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2112)
+* **bc**: show existing matrices only [`2109`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2109)
+* **aggregation-api**: add new endpoint for `economy/mc-all` aggregation [`2092`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2092)
+* **installer**: add installer as a submodule [`2110`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2110)
+* **ui-debug**: update the view [`2093`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2093)
+
+### Bug Fixes
+
+* **ui-areas**: add correct unit in title in Properties form [`2115`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2115)
+* **hydro**: wrong frequency for inflow pattern [`2116`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2116)
+* **adequacy-patch**: csr relaxation must be an integer [`2123`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2123)
+* **launcher-api**: remove orphan JobResults visibility permissions [`2128`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2128)
+* **ui**: add missing `i18n` key and styles on `EmptyView` [`2127`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2127)
+
+### Continuous integration
+
+* **github**: split npm jobs and add dependency caching [`2118`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2118)
+* **test**: parallel pytest execution [`2133`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2133)
+
+### Documentation
+
+* Add installer directions [`2114`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2114)
+
+### Build
+
+* Move all build and project configuration to pyproject.toml [`2122`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2122)
+* Use relative paths in coverage report [`2125`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2125)
+* Remove auto-generated changelog from desktop package [`2126`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2126)
+
+### Chore
+
+* Fix licensing-related issues [`2132`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2132)
+* Add license headers for projects files [`2130`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2130)
+
+### BREAKING CHANGES
+
+* **aggregation-api**: add new endpoint for `economy/mc-all` aggregation [`2092`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2092)
+
+**Full Changelog**: https://github.com/AntaresSimulatorTeam/AntaREST/compare/v2.17.5...v2.17.6
 
 v2.17.5 (2024-08-05)
 --------------------
