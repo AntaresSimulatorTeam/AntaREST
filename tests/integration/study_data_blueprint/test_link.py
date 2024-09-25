@@ -17,12 +17,11 @@ from tests.integration.prepare_proxy import PreparerProxy
 
 # check error filter and version > 820
 
+
 @pytest.mark.unit_test
 class TestLink:
     @pytest.mark.parametrize("study_type", ["raw", "variant"])
-    def test_create_link_with_default_value(
-        self, client: TestClient, user_access_token: str, study_type: str
-    ) -> None:
+    def test_create_link_with_default_value(self, client: TestClient, user_access_token: str, study_type: str) -> None:
         client.headers = {"Authorization": f"Bearer {user_access_token}"}  # type: ignore
 
         preparer = PreparerProxy(client, user_access_token)
@@ -105,7 +104,7 @@ class TestLink:
 
     @pytest.mark.parametrize("study_type", ["raw", "variant"])
     def test_create_two_links_and_count_then_delete_one(
-            self, client: TestClient, user_access_token: str, study_type: str
+        self, client: TestClient, user_access_token: str, study_type: str
     ) -> None:
         client.headers = {"Authorization": f"Bearer {user_access_token}"}  # type: ignore
 
@@ -135,9 +134,7 @@ class TestLink:
         assert 1 == len(res5.json())
 
     @pytest.mark.parametrize("study_type", ["raw", "variant"])
-    def test_create_link_with_same_area(
-            self, client: TestClient, user_access_token: str, study_type: str
-    ) -> None:
+    def test_create_link_with_same_area(self, client: TestClient, user_access_token: str, study_type: str) -> None:
         client.headers = {"Authorization": f"Bearer {user_access_token}"}  # type: ignore
 
         preparer = PreparerProxy(client, user_access_token)
@@ -149,9 +146,7 @@ class TestLink:
         assert res.status_code == 500, res.json()
 
     @pytest.mark.parametrize("study_type", ["raw", "variant"])
-    def test_create_already_existing_link(
-            self, client: TestClient, user_access_token: str, study_type: str
-    ) -> None:
+    def test_create_already_existing_link(self, client: TestClient, user_access_token: str, study_type: str) -> None:
         client.headers = {"Authorization": f"Bearer {user_access_token}"}  # type: ignore
 
         preparer = PreparerProxy(client, user_access_token)
@@ -166,7 +161,7 @@ class TestLink:
 
     @pytest.mark.parametrize("study_type", ["raw", "variant"])
     def test_create_link_wrong_parameter_color(
-            self, client: TestClient, user_access_token: str, study_type: str
+        self, client: TestClient, user_access_token: str, study_type: str
     ) -> None:
         client.headers = {"Authorization": f"Bearer {user_access_token}"}  # type: ignore
 
@@ -181,7 +176,7 @@ class TestLink:
 
     @pytest.mark.parametrize("study_type", ["raw", "variant"])
     def test_create_link_wrong_parameter_filter(
-            self, client: TestClient, user_access_token: str, study_type: str
+        self, client: TestClient, user_access_token: str, study_type: str
     ) -> None:
         client.headers = {"Authorization": f"Bearer {user_access_token}"}  # type: ignore
 
@@ -190,13 +185,16 @@ class TestLink:
         area1_id = preparer.create_area(study_id, name="Area 1")["id"]
         area2_id = preparer.create_area(study_id, name="Area 2")["id"]
 
-        res = client.post(f"/v1/studies/{study_id}/links", json={"area1": area1_id, "area2": area2_id, "filter-synthesis": "centurial"})
+        res = client.post(
+            f"/v1/studies/{study_id}/links",
+            json={"area1": area1_id, "area2": area2_id, "filter-synthesis": "centurial"},
+        )
 
         assert res.status_code == 500, res.json()
 
     @pytest.mark.parametrize("study_type", ["raw", "variant"])
     def test_create_link_with_wrong_parameter_for_version_810(
-            self, client: TestClient, user_access_token: str, study_type: str
+        self, client: TestClient, user_access_token: str, study_type: str
     ) -> None:
         client.headers = {"Authorization": f"Bearer {user_access_token}"}  # type: ignore
 
@@ -205,6 +203,8 @@ class TestLink:
         area1_id = preparer.create_area(study_id, name="Area 1")["id"]
         area2_id = preparer.create_area(study_id, name="Area 2")["id"]
 
-        res = client.post(f"/v1/studies/{study_id}/links", json={"area1": area1_id, "area2": area2_id, "filter-synthesis": "hourly"})
+        res = client.post(
+            f"/v1/studies/{study_id}/links", json={"area1": area1_id, "area2": area2_id, "filter-synthesis": "hourly"}
+        )
 
         assert res.status_code == 500, res.json()

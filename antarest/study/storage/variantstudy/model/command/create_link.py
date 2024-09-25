@@ -67,7 +67,7 @@ class LinkInfoProperties820(LinkInfoProperties):
     filter_synthesis: Optional[str] = Field(None, alias="filter-synthesis")
     filter_year_by_year: Optional[str] = Field(None, alias="filter-year-by-year")
 
-    @field_validator('filter_synthesis', 'filter_year_by_year', mode="before")
+    @field_validator("filter_synthesis", "filter_year_by_year", mode="before")
     def validate_individual_filters(cls, value: Optional[str], field) -> Optional[str]:
         if value is not None:
             filter_options = ["hourly", "daily", "weekly", "monthly", "annual"]
