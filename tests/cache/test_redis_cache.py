@@ -27,7 +27,7 @@ def test_lifecycle():
         study_path=Path("somepath"),
         path=Path("somepath"),
         study_id="",
-        version=StudyVersion.parse(-1),
+        version=StudyVersion.parse(0),
         areas={
             "a1": Area(
                 name="a1",

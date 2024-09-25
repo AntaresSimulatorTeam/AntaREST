@@ -463,7 +463,7 @@ class ThermalManager:
         lower_cluster_id = cluster_id.lower()
         thermal_cluster_path = Path(f"input/thermal/series/{area_id}/{lower_cluster_id}")
         series_path = [thermal_cluster_path / "series"]
-        if StudyVersion(study.version) >= 870:
+        if StudyVersion.parse(study.version) >= 870:
             series_path.append(thermal_cluster_path / "CO2Cost")
             series_path.append(thermal_cluster_path / "fuelCost")
 

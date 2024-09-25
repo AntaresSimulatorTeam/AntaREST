@@ -359,8 +359,8 @@ class StudyMetadataDTO(BaseModel):
     folder: t.Optional[str] = None
     tags: t.List[str] = []
 
-    @field_serializer('version', when_used='json')
-    def serialize_version(self, version: StudyVersion):
+    @field_serializer('version')
+    def serialize_version(self, version: StudyVersion) -> int:
         return version.__int__()
 
     @field_validator("horizon", mode="before")

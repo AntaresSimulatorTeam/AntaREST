@@ -199,7 +199,7 @@ def _parse_version(path: Path) -> StudyVersion:
         inside_root_path=Path("study.antares"),
         file_type=FileType.SIMPLE_INI,
     )
-    version = study_info.get("antares", {}).get("version", -1)
+    version = study_info.get("antares", {}).get("version", 0)
     return StudyVersion.parse(version)
 
 
