@@ -131,7 +131,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     )
     def get_areas(
         uuid: str,
-        type: t.Optional[AreaType] = None,
+        type: AreaType = Query(None),
         ui: bool = False,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> t.Union[t.List[AreaInfoDTO], t.Dict[str, t.Any]]:
