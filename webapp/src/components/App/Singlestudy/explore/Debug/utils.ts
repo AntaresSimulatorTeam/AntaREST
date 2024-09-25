@@ -5,6 +5,7 @@ import FolderIcon from "@mui/icons-material/Folder";
 import DatasetIcon from "@mui/icons-material/Dataset";
 import { SvgIconComponent } from "@mui/icons-material";
 import * as RA from "ramda-adjunct";
+import type { StudyMetadata } from "../../../../../common/types";
 
 ////////////////////////////////////////////////////////////////
 // Types
@@ -29,7 +30,7 @@ export interface FileInfo {
 
 export interface DataCompProps extends FileInfo {
   studyId: string;
-  enableImport: boolean;
+  canEdit: boolean;
   setSelectedFile: (file: FileInfo) => void;
   reloadTreeData: () => void;
 }
@@ -83,4 +84,24 @@ export function getFileType(treeData: TreeData): FileType {
     }
   }
   return isFolder(treeData) ? "folder" : "text";
+}
+
+////////////////////////////////////////////////////////////////
+// Rights
+////////////////////////////////////////////////////////////////
+
+/**
+ * Checks if a study's file can be edited.
+ *
+ * @param study  - The study where the file is located.
+ * @param filePath - The path of the file.
+ * @returns True if the file can be edited, false otherwise.
+ */
+export function canEditFile(study: StudyMetadata, filePath: string): boolean {
+  return (
+    !study.archived &&
+    (filePath === "user" || filePath.startsWith("user/")) &&
+    // To remove when Xpansion tool configuration will be moved to "input/expansion" directory
+    !(filePath === "user/expansion" || filePath.startsWith("user/expansion/"))
+  );
 }

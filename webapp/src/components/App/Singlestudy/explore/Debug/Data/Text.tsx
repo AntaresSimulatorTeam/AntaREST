@@ -49,7 +49,7 @@ function getSyntaxProps(data: string | string[]): SyntaxHighlighterProps {
   };
 }
 
-function Text({ studyId, filePath, filename, enableImport }: DataCompProps) {
+function Text({ studyId, filePath, filename, canEdit }: DataCompProps) {
   const { t } = useTranslation();
   const theme = useTheme();
 
@@ -89,7 +89,7 @@ function Text({ studyId, filePath, filename, enableImport }: DataCompProps) {
         <Flex>
           <Menubar>
             <Filename>{filename}</Filename>
-            {enableImport && (
+            {canEdit && (
               <UploadFileButton
                 studyId={studyId}
                 path={filePath}

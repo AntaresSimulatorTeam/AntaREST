@@ -16,3 +16,8 @@ export interface ImportFileParams {
   createMissing?: boolean;
   onUploadProgress?: AxiosRequestConfig["onUploadProgress"];
 }
+
+export interface DeleteFileParams {
+  studyId: StudyMetadata["id"];
+  path: string;
+}

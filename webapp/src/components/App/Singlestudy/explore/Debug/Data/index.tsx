@@ -3,7 +3,7 @@ import Image from "./Image";
 import Json from "./Json";
 import Matrix from "./Matrix";
 import Folder from "./Folder";
-import type { FileInfo, FileType } from "../utils";
+import { canEditFile, type FileInfo, type FileType } from "../utils";
 import type { DataCompProps } from "../utils";
 import ViewWrapper from "../../../../../common/page/ViewWrapper";
 import type { StudyMetadata } from "../../../../../../common/types";
@@ -27,20 +27,15 @@ const componentByFileType: Record<FileType, DataComponent> = {
 function Data(props: Props) {
   const { study, setSelectedFile, reloadTreeData, ...fileInfo } = props;
   const { fileType, filePath } = fileInfo;
+  const canEdit = canEditFile(study, filePath);
   const DataViewer = componentByFileType[fileType];
-
-  const enableImport =
-    !study.archived &&
-    (filePath === "user" || filePath.startsWith("user/")) &&
-    // To remove when Xpansion tool configuration will be moved to "input/expansion" directory
-    !(filePath === "user/expansion" || filePath.startsWith("user/expansion/"));
 
   return (
     <ViewWrapper>
       <DataViewer
         {...fileInfo}
         studyId={study.id}
-        enableImport={enableImport}
+        canEdit={canEdit}
         setSelectedFile={setSelectedFile}
         reloadTreeData={reloadTreeData}
       />
