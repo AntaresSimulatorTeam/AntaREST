@@ -13,7 +13,7 @@
 import logging
 import typing as t
 
-from fastapi import APIRouter, Depends, File, UploadFile, Query
+from fastapi import APIRouter, Depends, File, UploadFile
 from starlette.responses import Response
 
 from antarest.core.config import Config
@@ -292,7 +292,7 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
     )
     def list_resources(
         uuid: str,
-        resource_type: XpansionResourceFileType = Query(None),
+        resource_type: XpansionResourceFileType,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> t.Any:
         logger.info(
