@@ -87,6 +87,11 @@ function Debug() {
     }
   }, [selectedFile?.filePath]);
 
+  // TODO: to remove after ANT-2217 solved
+  useUpdateEffect(() => {
+    contextValue.reloadTreeData();
+  }, [study.archived]);
+
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
