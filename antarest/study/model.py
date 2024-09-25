@@ -19,7 +19,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 from antares.study.version import StudyVersion
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, field_serializer
 from sqlalchemy import (  # type: ignore
     Boolean,
     Column,
@@ -358,6 +358,10 @@ class StudyMetadataDTO(BaseModel):
     doc: t.Optional[str] = None
     folder: t.Optional[str] = None
     tags: t.List[str] = []
+
+    @field_serializer('version', when_used='json')
+    def serialize_version(self, version: StudyVersion):
+        return version.__int__()
 
     @field_validator("horizon", mode="before")
     def transform_horizon_to_str(cls, val: t.Union[str, int, None]) -> t.Optional[str]:
