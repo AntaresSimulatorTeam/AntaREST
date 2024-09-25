@@ -35,6 +35,7 @@ from antarest.core.exceptions import (
     BadEditInstructionException,
     ChildNotFoundError,
     CommandApplicationError,
+    FileDeletionNotAllowed,
     IncorrectPathError,
     NotAManagedStudyException,
     ReferencedObjectDeletionNotAllowed,
@@ -47,7 +48,7 @@ from antarest.core.exceptions import (
 )
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
-from antarest.core.interfaces.cache import ICache
+from antarest.core.interfaces.cache import CacheConstants, ICache
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTGroup, JWTUser
 from antarest.core.model import JSON, SUB_JSON, PermissionInfo, PublicMode, StudyPermissionType
@@ -130,6 +131,7 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import OutputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
+from antarest.study.storage.rawstudy.model.filesystem.root.user.user import User
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.study_download_utils import StudyDownloader, get_output_variables_information
@@ -2640,3 +2642,39 @@ class StudyService:
             if ref_bcs:
                 binding_ids = [bc.id for bc in ref_bcs]
                 raise ReferencedObjectDeletionNotAllowed(cluster_id, binding_ids, object_type="Cluster")
+
+    def delete_file_or_folder(self, study_id: str, path: str, current_user: JWTUser) -> None:
+        """
+        Deletes a file or a folder of the study.
+        The data must be located inside the 'User' folder.
+        Also, it can not be inside the 'expansion' folder.
+
+        Args:
+            study_id: UUID of the concerned study
+            path: Path corresponding to the resource to be deleted
+            current_user: User that called the endpoint
+
+        Raises:
+            FileDeletionNotAllowed: if the path does not comply with the above rules
+        """
+        study = self.get_study(study_id)
+        assert_permission(current_user, study, StudyPermissionType.WRITE)
+
+        url = [item for item in path.split("/") if item]
+        if len(url) < 2 or url[0] != "user":
+            raise FileDeletionNotAllowed(f"the targeted data isn't inside the 'User' folder: {path}")
+
+        study_tree = self.storage_service.raw_study_service.get_raw(study, True).tree
+        user_node = t.cast(User, study_tree.get_node(["user"]))
+        if url[1] in [file.filename for file in user_node.registered_files]:
+            raise FileDeletionNotAllowed(f"you are not allowed to delete this resource : {path}")
+
+        try:
+            user_node.delete(url[1:])
+        except ChildNotFoundError as e:
+            raise FileDeletionNotAllowed("the given path doesn't exist") from e
+
+        # update cache
+        cache_id = f"{CacheConstants.RAW_STUDY}/{study.id}"
+        updated_tree = study_tree.get()
+        self.storage_service.get_storage(study).cache.put(cache_id, updated_tree)  # type: ignore
