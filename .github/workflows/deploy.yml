@@ -4,6 +4,7 @@ on:
     branches:
       - "master"
       - "hotfix/**"
+      - "feature/update-installer"
 
 jobs:
   binary:
