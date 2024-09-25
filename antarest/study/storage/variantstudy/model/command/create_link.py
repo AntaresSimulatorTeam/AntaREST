@@ -67,26 +67,18 @@ class LinkInfoProperties820(LinkInfoProperties):
     filter_synthesis: Optional[str] = Field(None, alias="filter-synthesis")
     filter_year_by_year: Optional[str] = Field(None, alias="filter-year-by-year")
 
-    @model_validator(mode="before")
-    def validate_filters(cls, values: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
-        if type(values) is dict:
+    @field_validator('filter_synthesis', 'filter_year_by_year', mode="before")
+    def validate_individual_filters(cls, value: Optional[str], field) -> Optional[str]:
+        if value is not None:
             filter_options = ["hourly", "daily", "weekly", "monthly", "annual"]
-
-            filters = {
-                "filter-synthesis": values.get("filter-synthesis"),
-                "filter-year-by-year": values.get("filter-year-by-year"),
-            }
-            for filter_name, val in filters.items():
-                if val is not None:
-                    options = val.replace(" ", "").split(",")
-                    invalid_options = [opt for opt in options if opt not in filter_options]
-                    if invalid_options:
-                        raise ValueError(
-                            f"Invalid value(s) in '{filter_name}': {', '.join(invalid_options)}. "
-                            f"Allowed values are: {', '.join(filter_options)}."
-                        )
-
-        return values
+            options = value.replace(" ", "").split(",")
+            invalid_options = [opt for opt in options if opt not in filter_options]
+            if invalid_options:
+                raise ValueError(
+                    f"Invalid value(s) in '{field.alias}': {', '.join(invalid_options)}. "
+                    f"Allowed values are: {', '.join(filter_options)}."
+                )
+        return value
 
 
 class LinkProperties(LinkInfoProperties820, alias_generator=AliasGenerator(serialization_alias=to_kebab_case)):
