@@ -12,8 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import * as React from "react";
-import { Divider, styled } from "@mui/material";
+import { SyntheticEvent, useMemo, useState } from "react";
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
 import Box from "@mui/material/Box";
@@ -53,7 +52,7 @@ function LinkMatrixView({ area1, area2 }: Props) {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState("parameters");
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: string) => {
+  const handleTabChange = (event: SyntheticEvent, newValue: string) => {
     setActiveTab(newValue);
   };
 

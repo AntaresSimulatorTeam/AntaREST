@@ -12,17 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import * as React from "react";
-import Tabs from "@mui/material/Tabs";
-import Tab from "@mui/material/Tab";
-import Box from "@mui/material/Box";
-import { useTranslation } from "react-i18next";
-import {
-  Cluster,
-  MatrixStats,
-  StudyMetadata,
-} from "../../../../../../../common/types";
-import MatrixInput from "../../../../../../common/MatrixInput";
+import { Cluster } from "../../../../../../../common/types";
+import Matrix from "../../../../../../common/MatrixGrid/Matrix";
 
 interface Props {
   areaId: string;
