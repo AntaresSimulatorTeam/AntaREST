@@ -1069,7 +1069,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         Raises:
             UserHasNotPermissionError
         """
-        if params is None or not params.user.is_site_admin():
+        if params is None or (params.user and not params.user.is_site_admin()):
             raise UserHasNotPermissionError()
 
         task_name = f"Cleaning all snapshot updated or accessed at least {retention_hours} hours ago."
