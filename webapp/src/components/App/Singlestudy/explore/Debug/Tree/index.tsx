@@ -12,28 +12,61 @@
  * This file is part of the Antares project.
  */
 
-import { TreeView } from "@mui/x-tree-view";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
 import FileTreeItem from "./FileTreeItem";
-import { TreeData } from "../utils";
+import type { TreeFolder } from "../utils";
+import { getParentPaths } from "../../../../../../utils/pathUtils";
 
 interface Props {
-  data: TreeData;
+  data: TreeFolder;
+  // `currentPath` must not be `undefined` to make `SimpleTreeView` controlled
+  currentPath: string | null;
+  expandedItems: string[];
+  setExpandedItems: React.Dispatch<React.SetStateAction<string[]>>;
 }
 
-function Tree({ data }: Props) {
+function Tree(props: Props) {
+  const { data, currentPath, expandedItems, setExpandedItems } = props;
+
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
+
+  const handleExpandedItemsChange = (
+    event: React.SyntheticEvent,
+    itemIds: string[],
+  ) => {
+    setExpandedItems(itemIds);
+  };
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
+
+  // `SimpleTreeView` must be controlled because selected item can be changed manually
+  // by `Folder` component, or by the `path` URL parameter at view mount.
+  // The use of `selectedItems` and `expandedItems` make the component controlled.
+
   return (
-    <TreeView
-      multiSelect
-      defaultCollapseIcon={<ExpandMoreIcon />}
-      defaultExpandIcon={<ChevronRightIcon />}
+    <SimpleTreeView
+      selectedItems={currentPath}
+      expandedItems={
+        currentPath
+          ? // `getParentPaths` is needed when the selected item is changed by code
+            [...expandedItems, ...getParentPaths(currentPath)]
+          : expandedItems
+      }
+      onExpandedItemsChange={handleExpandedItemsChange}
     >
-      {typeof data === "object" &&
-        Object.keys(data).map((key) => (
-          <FileTreeItem key={key} name={key} content={data[key]} path="" />
-        ))}
-    </TreeView>
+      {Object.keys(data).map((filename) => (
+        <FileTreeItem
+          key={filename}
+          name={filename}
+          treeData={data[filename]}
+          path=""
+        />
+      ))}
+    </SimpleTreeView>
   );
 }
 
