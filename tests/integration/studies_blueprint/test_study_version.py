@@ -11,14 +11,13 @@
 # This file is part of the Antares project.
 
 import io
+import os
+import zipfile
 from pathlib import Path
 
 from starlette.testclient import TestClient
 
 from tests.integration.assets import ASSETS_DIR
-
-import zipfile
-import os
 
 
 class TestStudyVersions:
@@ -43,17 +42,17 @@ author = Unknown
         zip_path = ASSETS_DIR / "STA-mini.zip"
         # Extract zip inside tmp_dir
         new_zip_path = tmp_dir / "test_version_90"
-        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+        with zipfile.ZipFile(zip_path, "r") as zip_ref:
             zip_ref.extractall(new_zip_path)
 
         # Change file content
         target_path = os.path.join(new_zip_path, "STA-mini", "study.antares")
-        with open(target_path, 'w') as file:
+        with open(target_path, "w") as file:
             file.write(data)
 
         final_path = tmp_dir / "test_version_90.zip"
         # Rezip it
-        with zipfile.ZipFile(final_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+        with zipfile.ZipFile(final_path, "w", zipfile.ZIP_DEFLATED) as zipf:
             for root, dirs, files in os.walk(new_zip_path):
                 for file in files:
                     file_path = os.path.join(root, file)
@@ -64,7 +63,6 @@ author = Unknown
         # =============================
 
         for f in [zip_path, final_path]:
-
             # Imports a study
             res = client.post("/v1/studies/_import", files={"study": io.BytesIO(f.read_bytes())})
             res.raise_for_status()
@@ -78,7 +76,7 @@ author = Unknown
             # Reads `study.version` file
             res = client.get(f"v1/studies/{study_id}/raw?path=study")
             res.raise_for_status()
-            version = str(res.json()['antares']['version'])
+            version = str(res.json()["antares"]["version"])
             assert version == "9.0" if f == final_path else "700"
 
             # Delete the study
