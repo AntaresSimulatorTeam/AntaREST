@@ -24,7 +24,7 @@ from antarest.core.model import PublicMode
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import sanitize_uuid
-from antarest.login.model import Group, User, ADMIN_ID, ADMIN_NAME
+from antarest.login.model import ADMIN_ID, ADMIN_NAME, Group, User
 from antarest.matrixstore.service import SimpleMatrixService
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import RawStudy, StudyAdditionalData
