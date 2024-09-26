@@ -200,6 +200,8 @@ def _parse_version(path: Path) -> StudyVersion:
         file_type=FileType.SIMPLE_INI,
     )
     version = study_info.get("antares", {}).get("version", 0)
+    if isinstance(version, float):  # study 9.0 or newer
+        version = str(version)
     return StudyVersion.parse(version)
 
 
