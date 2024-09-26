@@ -49,6 +49,7 @@ export interface HydroMatrixProps {
   columns?: string[];
   rowHeaders?: string[];
   fetchFn?: fetchMatrixFn;
+  aggregates?: AggregateConfig;
   enableDateTimeColumn?: boolean;
   enableReadOnly?: boolean;
   enablePercentDisplay?: boolean;
@@ -154,10 +155,12 @@ export const MATRICES: Matrices = {
   [HydroMatrix.HydroStorage]: {
     title: "Hydro Storage",
     url: "input/hydro/series/{areaId}/mod",
+    aggregates: "stats",
   },
   [HydroMatrix.RunOfRiver]: {
     title: "Run Of River",
     url: "input/hydro/series/{areaId}/ror",
+    aggregates: "stats",
   },
   [HydroMatrix.MinGen]: {
     title: "Min Gen",

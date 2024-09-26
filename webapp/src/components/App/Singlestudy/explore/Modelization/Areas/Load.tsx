@@ -24,7 +24,7 @@ function Load() {
   // JSX
   ////////////////////////////////////////////////////////////////
 
-  return <Matrix url={url} enableAggregateColumns />;
+  return <Matrix url={url} aggregateColumns="stats" />;
 }
 
 export default Load;

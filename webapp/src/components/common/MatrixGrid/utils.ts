@@ -20,6 +20,9 @@ import {
   TimeSeriesColumnOptions,
   CustomColumnOptions,
   MatrixAggregates,
+  AggregateType,
+  AggregateConfig,
+  Aggregates,
 } from "./types";
 import { getCurrentLanguage } from "../../../utils/i18nUtils";
 import { Theme } from "@glideapps/glide-data-grid";
@@ -112,11 +115,18 @@ const dateTimeFormatOptions: Intl.DateTimeFormatOptions = {
  * @param num - The number to format.
  * @returns The formatted number as a string.
  */
-export function formatNumber(num: number): string {
-  // TODO: Add tests
-  const parts = num.toString().split(".");
-  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, " ");
-  return parts.join(".");
+export function formatNumber(num: number | undefined): string {
+  if (num === undefined) {
+    return "";
+  }
+
+  const [integerPart, decimalPart] = num.toString().split(".");
+
+  // Format integer part with thousand separators
+  const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+
+  // Return formatted number, preserving decimal part if it exists
+  return decimalPart ? `${formattedInteger}.${decimalPart}` : formattedInteger;
 }
 
 /**
@@ -282,48 +292,67 @@ export function generateDataColumns(
   return [];
 }
 
-/**
- * Calculates aggregate values (min, max, avg, total) for each column in a 2D numeric matrix.
- *
- * This function processes a 2D array (matrix) of numbers, computing four types of aggregates
- * for each column.
- *
- * @param matrix - A 2D array of numbers representing the matrix. Each inner array is treated as a column.
- * @returns An object containing four arrays, each corresponding to an aggregate type:
- *          min: An array of minimum values for each column.
- *          max: An array of maximum values for each column.
- *          avg: An array of average values for each column.
- *          total: An array of sum totals for each column.
- *
- * @example <caption>Calculating aggregates for a 3x3 matrix</caption>
- * const matrix = [
- *   [1, 2, 3],
- *   [4, 5, 6],
- *   [7, 8, 9]
- * ];
- * const result = calculateAggregates(matrix);
- * console.log(result);
- *  Output: {
- *   min: [1, 2, 3],
- *   max: [7, 8, 9],
- *   avg: [4, 5, 6],
- *   total: [12, 15, 18]
- * }
- */
-export function calculateMatrixAggregates(matrix: number[][]) {
-  const aggregates: MatrixAggregates = {
-    min: [],
-    max: [],
-    avg: [],
-    total: [],
-  };
+export function getAggregateTypes(
+  aggregateConfig: AggregateConfig,
+): AggregateType[] {
+  if (aggregateConfig === "stats") {
+    return [Aggregates.Avg, Aggregates.Min, Aggregates.Max];
+  }
+
+  if (aggregateConfig === "all") {
+    return [Aggregates.Min, Aggregates.Max, Aggregates.Avg, Aggregates.Total];
+  }
+
+  if (Array.isArray(aggregateConfig)) {
+    return aggregateConfig;
+  }
+
+  return [];
+}
+
+export function calculateMatrixAggregates(
+  matrix: number[][],
+  aggregateTypes: AggregateType[],
+): Partial<MatrixAggregates> {
+  const aggregates: Partial<MatrixAggregates> = {};
 
   matrix.forEach((row) => {
-    aggregates.min.push(Math.min(...row));
-    aggregates.max.push(Math.max(...row));
-    const sum = row.reduce((sum, num) => sum + num, 0);
-    aggregates.avg.push(Number((sum / row.length).toFixed()));
-    aggregates.total.push(Number(sum.toFixed()));
+    if (aggregateTypes.includes(Aggregates.Min)) {
+      if (!aggregates.min) {
+        aggregates.min = [];
+      }
+      aggregates.min.push(Math.min(...row));
+    }
+
+    if (aggregateTypes.includes(Aggregates.Max)) {
+      if (!aggregates.max) {
+        aggregates.max = [];
+      }
+      aggregates.max.push(Math.max(...row));
+    }
+
+    if (
+      aggregateTypes.includes(Aggregates.Avg) ||
+      aggregateTypes.includes(Aggregates.Total)
+    ) {
+      const sum = row.reduce((sum, num) => sum + num, 0);
+
+      if (aggregateTypes.includes(Aggregates.Avg)) {
+        if (!aggregates.avg) {
+          aggregates.avg = [];
+        }
+
+        aggregates.avg.push(Number((sum / row.length).toFixed()));
+      }
+
+      if (aggregateTypes.includes(Aggregates.Total)) {
+        if (!aggregates.total) {
+          aggregates.total = [];
+        }
+
+        aggregates.total.push(Number(sum.toFixed()));
+      }
+    }
   });
 
   return aggregates;
