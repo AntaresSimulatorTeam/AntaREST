@@ -44,6 +44,8 @@ if t.TYPE_CHECKING:
 
 DEFAULT_WORKSPACE_NAME = "default"
 
+NEW_DEFAULT_STUDY_VERSION: StudyVersion = StudyVersion.parse(880)
+
 STUDY_REFERENCE_TEMPLATES: t.Mapping[StudyVersion, str] = {
     StudyVersion.parse("600"): "empty_study_613.zip",
     StudyVersion.parse("610"): "empty_study_613.zip",
@@ -59,10 +61,8 @@ STUDY_REFERENCE_TEMPLATES: t.Mapping[StudyVersion, str] = {
     StudyVersion.parse("850"): "empty_study_850.zip",
     StudyVersion.parse("860"): "empty_study_860.zip",
     StudyVersion.parse("870"): "empty_study_870.zip",
-    StudyVersion.parse("880"): "empty_study_880.zip",
+    NEW_DEFAULT_STUDY_VERSION: "empty_study_880.zip",
 }
-
-NEW_DEFAULT_STUDY_VERSION: StudyVersion = StudyVersion.parse(880)
 
 
 class StudyGroup(Base):  # type:ignore
