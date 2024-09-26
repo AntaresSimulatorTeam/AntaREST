@@ -245,5 +245,5 @@ def get_fields_info(study_version: StudyVersion) -> t.Mapping[str, t.Mapping[str
     return {
         key: info
         for key, info in FIELDS_INFO.items()
-        if info.get("start_version") or StudyVersion.parse(0) <= study_version
+        if (info.get("start_version") or StudyVersion.parse(0)) <= study_version
     }

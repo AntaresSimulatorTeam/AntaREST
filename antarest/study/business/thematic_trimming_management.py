@@ -36,9 +36,9 @@ class ThematicTrimmingManager:
         include_vars = trimming_config.get("select_var +") or []
         selected_vars_reset = trimming_config.get("selected_vars_reset", True)
 
-        def get_value(field_info: t.Mapping[str, t.Any]) -> t.Any:
+        def get_value(field_info: t.Mapping[str, t.Any]) -> bool:
             if selected_vars_reset is None:
-                return field_info["default_value"]
+                return t.cast(bool, field_info["default_value"])
             var_name = field_info["path"]
             return var_name not in exclude_vars if selected_vars_reset else var_name in include_vars
 
