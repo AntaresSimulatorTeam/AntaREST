@@ -17,6 +17,7 @@ import { vi, describe, expect, beforeEach } from "vitest";
 import { useMatrix } from "./useMatrix";
 import * as apiMatrix from "../../../services/api/matrix";
 import * as apiStudy from "../../../services/api/study";
+import * as rawStudy from "../../../services/api/studies/raw";
 import {
   MatrixEditDTO,
   MatrixIndex,
@@ -28,6 +29,7 @@ import { GridCellKind } from "@glideapps/glide-data-grid";
 
 vi.mock("../../../services/api/matrix");
 vi.mock("../../../services/api/study");
+vi.mock("../../../services/api/studies/raw");
 
 describe("useMatrix", () => {
   const mockStudyId = "study123";
@@ -174,7 +176,7 @@ describe("useMatrix", () => {
 
   test("should handle file import", async () => {
     const mockFile = new File([""], "test.csv", { type: "text/csv" });
-    vi.mocked(apiStudy.importFile).mockResolvedValue("");
+    vi.mocked(rawStudy.importFile).mockResolvedValue();
     vi.mocked(apiStudy.getStudyData).mockResolvedValue(mockMatrixData);
     vi.mocked(apiMatrix.getStudyMatrixIndex).mockResolvedValue(mockMatrixIndex);
 
@@ -184,11 +186,11 @@ describe("useMatrix", () => {
       await result.current.handleImport(mockFile);
     });
 
-    expect(apiStudy.importFile).toHaveBeenCalledWith(
-      mockFile,
-      mockStudyId,
-      mockUrl,
-    );
+    expect(rawStudy.importFile).toHaveBeenCalledWith({
+      file: mockFile,
+      studyId: mockStudyId,
+      path: mockUrl,
+    });
   });
 
   describe("Undo and Redo functionality", () => {
