@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
+import datetime
 import logging
 from typing import List, Optional, Union
 
@@ -19,7 +19,7 @@ from antarest.core.config import Config
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.jwt import JWTUser
 from antarest.core.requests import RequestParameters
-from antarest.core.tasks.model import TaskDTO, TaskResult
+from antarest.core.tasks.model import TaskDTO
 from antarest.core.utils.utils import sanitize_string, sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
@@ -432,7 +432,7 @@ def create_study_variant_routes(
         },
     )
     def clear_variant_snapshots(
-        limit: int = 24,
+        hours: int = 24,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> str:
         """
@@ -442,11 +442,12 @@ def create_study_variant_routes(
 
         Returns: None
         """
+        retention_hours = datetime.timedelta(hours=hours)
         logger.info(
-            f"Delete all variant snapshots older than {limit} hours (24 by default)",
+            f"Delete all variant snapshots older than {retention_hours} hours (24 by default)",
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
-        return variant_study_service.clear_all_snapshots(limit, params)
+        return variant_study_service.clear_all_snapshots(retention_hours, params)
 
     return bp

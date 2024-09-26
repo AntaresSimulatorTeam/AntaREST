@@ -636,8 +636,3 @@ class CannotScanInternalWorkspace(HTTPException):
 class ChildNotFoundError(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.NOT_FOUND, message)
-
-
-class VariantAgeMustBePositive(HTTPException):
-    def __init__(self, message: str) -> None:
-        super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, message)

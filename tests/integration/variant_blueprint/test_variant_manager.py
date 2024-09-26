@@ -22,6 +22,7 @@ from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskDTO, TaskStatus
 from tests.integration.assets import ASSETS_DIR
+from tests.integration.utils import wait_task_completion
 
 
 @pytest.fixture(name="base_study_id")
@@ -88,7 +89,10 @@ def generate_snapshot_fixture(
         with monkeypatch.context() as m:
             # Patch the datetime import instance of the variant_study_service package to hack
             # the `created_at` and `updated_at` fields
+            # useful when a variant is created
             m.setattr("antarest.study.storage.variantstudy.variant_study_service.datetime", FakeDatetime)
+            # useful when a study is accessed
+            m.setattr("antarest.study.service.datetime", FakeDatetime)
 
             for index, different_time in enumerate([older_time, old_time, recent_time]):
                 FakeDatetime.fake_time = different_time
@@ -96,8 +100,11 @@ def generate_snapshot_fixture(
                 variant_ids.append(res.json())
 
                 # Generate snapshot for each variant
-                client.put(f"/v1/studies/{variant_ids[index]}/generate", headers=admin_headers)
-        time.sleep(0.1)  # wait for the filesystem to be updated
+                task_id = client.put(f"/v1/studies/{variant_ids[index]}/generate", headers=admin_headers)
+                wait_task_completion(
+                    client, admin_access_token, task_id.json()
+                )  # wait for the filesystem to be updated
+                client.get(f"v1/studies/{variant_ids[index]}", headers=admin_headers)
     return t.cast([str], variant_ids)
 
 
@@ -402,13 +409,24 @@ def test_clear_snapshots(
     recent = Path(tmp_path).joinpath(f"internal_workspace", generate_snapshots[2], "snapshot")
 
     # Test
-    # Check intitial data
+    # Check initial data
     assert older.exists() and old.exists() and recent.exists()
 
-    # Try to call the endpoint with a negative value. Must return a 422 error code
-    res = client.put(f"v1/studies/variants/clear-snapshots?limit=-1", headers=admin_headers)
+    # Delete the older snapshot (default retention hours implicitly equals to 24 hours)
+    # and check if it was successfully deleted
+    response = client.put(f"v1/studies/variants/clear-snapshots", headers=admin_headers)
+    task = response.json()
+    wait_task_completion(client, admin_access_token, task)
+    assert (not older.exists()) and old.exists() and recent.exists()
 
-    assert res.status_code == 422
-    assert res.json().get("exception") == "VariantAgeMustBePositive"
+    # Delete the old snapshot and check if it was successfully deleted
+    response = client.put(f"v1/studies/variants/clear-snapshots?hours=6", headers=admin_headers)
+    task = response.json()
+    wait_task_completion(client, admin_access_token, task)
+    assert (not older.exists()) and (not old.exists()) and recent.exists()
 
-    assert older.exists() and old.exists() and recent.exists()
+    # Delete the recent snapshot and check if it was successfully deleted
+    response = client.put(f"v1/studies/variants/clear-snapshots?hours=-1", headers=admin_headers)
+    task = response.json()
+    wait_task_completion(client, admin_access_token, task)
+    assert not (older.exists() and old.exists() and recent.exists())

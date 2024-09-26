@@ -19,12 +19,12 @@ from unittest.mock import Mock
 import numpy as np
 import pytest
 
-from antarest.core.exceptions import VariantAgeMustBePositive
+from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
 from antarest.core.model import PublicMode
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import sanitize_uuid
-from antarest.login.model import Group, User
+from antarest.login.model import Group, User, ADMIN_ID, ADMIN_NAME
 from antarest.matrixstore.service import SimpleMatrixService
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import RawStudy, StudyAdditionalData
@@ -282,11 +282,11 @@ class TestVariantStudyService:
         # Create two users
         # an admin user
         # noinspection PyArgumentList
-        admin_user = User(id=0, name="admin")
+        admin_user = User(id=ADMIN_ID, name=ADMIN_NAME)
         db.session.add(admin_user)
         db.session.commit()
 
-        regular_user = User(id=1, name="regular")
+        regular_user = User(id=99, name="regular")
         db.session.add(regular_user)
         db.session.commit()
 
@@ -316,11 +316,6 @@ class TestVariantStudyService:
         db.session.add(raw_study)
         db.session.commit()
 
-        admin_rights_mock = Mock(impersonator=admin_user.id, is_site_admin=Mock(return_value=True))
-        regular_rights_mock = Mock(
-            impersonator=regular_user.id,
-        )
-
         # Set up the Raw Study
         raw_study_service.create(raw_study)
 
@@ -331,6 +326,7 @@ class TestVariantStudyService:
         with monkeypatch.context() as m:
             # Set the system date older to create older variants
             m.setattr("antarest.study.storage.variantstudy.variant_study_service.datetime", FakeDatetime)
+            m.setattr("antarest.study.service.datetime", FakeDatetime)
 
             for index in range(3):
                 variant_list.append(
@@ -339,13 +335,23 @@ class TestVariantStudyService:
                         "Variant{}".format(str(index)),
                         params=Mock(
                             spec=RequestParameters,
-                            user=regular_rights_mock,
+                            user=DEFAULT_ADMIN_USER,
                         ),
                     )
                 )
 
                 # Generate a snapshot for each variant
-                variant_study_service.generate(sanitize_uuid(variant_list[index].id), False, False, regular_rights_mock)
+                variant_study_service.generate(
+                    sanitize_uuid(variant_list[index].id),
+                    False,
+                    False,
+                    params=Mock(
+                        spec=RequestParameters,
+                        user=Mock(spec=JWTUser, id=regular_user.id, impersonator=regular_user.id),
+                    ),
+                )
+
+                variant_study_service.get(variant_list[index])
 
         variant_study_path = Path(tmp_path).joinpath("internal_studies")
 
@@ -358,25 +364,17 @@ class TestVariantStudyService:
 
         # Begin tests
         # A user without rights cannot clear snapshots
-        try:
-            variant_study_service.clear_all_snapshots(1, None)  # must raise an error
-        except UserHasNotPermissionError:
-            pass
-        else:
-            raise AssertionError("A non admin user cannot perform an action on snapshots.")
-
-        # The limit value must be positive. Returns an exception otherwise
-        try:
-            variant_study_service.clear_all_snapshots(-1, admin_rights_mock)
-        except VariantAgeMustBePositive:
-            pass
-        else:
-            raise AssertionError("Limit hour cannot be negative")
+        with pytest.raises(UserHasNotPermissionError):
+            variant_study_service.clear_all_snapshots(
+                datetime.timedelta(1),
+                params=Mock(
+                    spec=RequestParameters,
+                    user=Mock(spec=JWTUser, id=regular_user.id, is_site_admin=Mock(return_value=False)),
+                ),
+            )
 
         # At this point, variants was not accessed yet
         # Thus snapshot directories must exist still
-        variant_study_service.clear_all_snapshots(5, admin_rights_mock)
-
         for variant in variant_study_path.iterdir():
             assert variant.is_dir()
             assert list(variant.iterdir())
@@ -387,22 +385,37 @@ class TestVariantStudyService:
 
         # Simulate access for a recent one
         variant_list[2].last_access = datetime.datetime.utcnow() - datetime.timedelta(hours=1)
+        db.session.commit()
 
         # Clear old snapshots
-        variant_study_service.clear_all_snapshots(5, admin_rights_mock)
+        task_id = variant_study_service.clear_all_snapshots(
+            datetime.timedelta(hours=5),
+            Mock(
+                spec=RequestParameters,
+                user=DEFAULT_ADMIN_USER,
+            ),
+        )
+        variant_study_service.task_service.await_task(task_id)
 
         # Check if old snapshots was successfully cleared
-        nb_snapshot_dir = 0  # after the for iterations, must be equal to 1
+        nb_snapshot_dir = 0  # after the for iterations, must equal 1
         for variant_path in variant_study_path.iterdir():
             if variant_path.joinpath("snapshot").exists():
                 nb_snapshot_dir += 1
         assert nb_snapshot_dir == 1
 
-        # Clear recent snapshots
-        variant_study_service.clear_all_snapshots(0, admin_rights_mock)
+        # Clear most recent snapshots
+        task_id = variant_study_service.clear_all_snapshots(
+            datetime.timedelta(hours=-1),
+            Mock(
+                spec=RequestParameters,
+                user=DEFAULT_ADMIN_USER,
+            ),
+        )
+        variant_study_service.task_service.await_task(task_id)
 
         # Check if all snapshots was cleared
-        nb_snapshot_dir = 0  # after the for iterations, must be equal to 0
+        nb_snapshot_dir = 0  # after the for iterations, must equal 0
         for variant_path in variant_study_path.iterdir():
             if variant_path.joinpath("snapshot").exists():
                 nb_snapshot_dir += 1
