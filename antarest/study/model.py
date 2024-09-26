@@ -44,25 +44,25 @@ if t.TYPE_CHECKING:
 
 DEFAULT_WORKSPACE_NAME = "default"
 
-STUDY_REFERENCE_TEMPLATES: t.Mapping[str, str] = {
-    "600": "empty_study_613.zip",
-    "610": "empty_study_613.zip",
-    "640": "empty_study_613.zip",
-    "700": "empty_study_700.zip",
-    "710": "empty_study_710.zip",
-    "720": "empty_study_720.zip",
-    "800": "empty_study_803.zip",
-    "810": "empty_study_810.zip",
-    "820": "empty_study_820.zip",
-    "830": "empty_study_830.zip",
-    "840": "empty_study_840.zip",
-    "850": "empty_study_850.zip",
-    "860": "empty_study_860.zip",
-    "870": "empty_study_870.zip",
-    "880": "empty_study_880.zip",
+STUDY_REFERENCE_TEMPLATES: t.Mapping[StudyVersion, str] = {
+    StudyVersion.parse("600"): "empty_study_613.zip",
+    StudyVersion.parse("610"): "empty_study_613.zip",
+    StudyVersion.parse("640"): "empty_study_613.zip",
+    StudyVersion.parse("700"): "empty_study_700.zip",
+    StudyVersion.parse("710"): "empty_study_710.zip",
+    StudyVersion.parse("720"): "empty_study_720.zip",
+    StudyVersion.parse("800"): "empty_study_803.zip",
+    StudyVersion.parse("810"): "empty_study_810.zip",
+    StudyVersion.parse("820"): "empty_study_820.zip",
+    StudyVersion.parse("830"): "empty_study_830.zip",
+    StudyVersion.parse("840"): "empty_study_840.zip",
+    StudyVersion.parse("850"): "empty_study_850.zip",
+    StudyVersion.parse("860"): "empty_study_860.zip",
+    StudyVersion.parse("870"): "empty_study_870.zip",
+    StudyVersion.parse("880"): "empty_study_880.zip",
 }
 
-NEW_DEFAULT_STUDY_VERSION: str = "880"
+NEW_DEFAULT_STUDY_VERSION: StudyVersion = StudyVersion.parse(880)
 
 
 class StudyGroup(Base):  # type:ignore

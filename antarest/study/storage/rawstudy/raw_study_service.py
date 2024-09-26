@@ -204,7 +204,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         path_study.mkdir()
 
         create_new_empty_study(
-            version=metadata.version,
+            version=StudyVersion.parse(metadata.version),
             path_study=path_study,
             path_resources=self.path_resources,
         )
