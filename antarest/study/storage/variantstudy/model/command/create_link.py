@@ -14,6 +14,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 from pydantic import AliasGenerator, BaseModel, Field, ValidationInfo, field_validator, model_validator
 
+from antarest.core.exceptions import LinkValidationError
 from antarest.core.utils.string import to_kebab_case
 from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
@@ -58,7 +59,7 @@ class LinkInfoProperties(BaseModel):
             }
             for color_name, color_value in colors.items():
                 if color_value is not None and (color_value < 0 or color_value > 255):
-                    raise ValueError(f"Invalid value for {color_name}. Must be between 0 and 255.")
+                    raise LinkValidationError(f"Invalid value for {color_name}. Must be between 0 and 255.")
 
         return values
 
@@ -74,8 +75,8 @@ class LinkInfoProperties820(LinkInfoProperties):
             options = value.replace(" ", "").split(",")
             invalid_options = [opt for opt in options if opt not in filter_options]
             if invalid_options:
-                raise ValueError(
-                    f"Invalid value(s) in '{field.alias}': {', '.join(invalid_options)}. "
+                raise LinkValidationError(
+                    f"Invalid value(s) in filters: {', '.join(invalid_options)}. "
                     f"Allowed values are: {', '.join(filter_options)}."
                 )
         return value
@@ -146,15 +147,6 @@ class CreateLink(ICommand):
                 CommandOutput(
                     status=False,
                     message=f"The area '{self.area2}' does not exist",
-                ),
-                {},
-            )
-
-        if self.area1 == self.area2:
-            return (
-                CommandOutput(
-                    status=False,
-                    message="Cannot create link between the same node",
                 ),
                 {},
             )

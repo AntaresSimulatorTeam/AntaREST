@@ -139,7 +139,6 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
     link_manager.create_link(
         study,
         LinkInfoDTO820(
-            version=-1,
             area1="test",
             area2="test2",
         ),
@@ -232,8 +231,6 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
         LinkInfoDTO820(
             area1="test",
             area2="test2",
-            filter_synthesis=FilteringOptions.FILTER_SYNTHESIS,
-            filter_year_by_year=FilteringOptions.FILTER_YEAR_BY_YEAR,
         ),
     )
     variant_study_service.append_commands.assert_called_with(

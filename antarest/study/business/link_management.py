@@ -12,7 +12,9 @@
 
 import typing as t
 
-from antarest.core.exceptions import ConfigFileNotFound
+from antares.study.version.model.exceptions import ValidationError
+
+from antarest.core.exceptions import ConfigFileNotFound, LinkValidationError
 from antarest.core.model import JSON
 from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
 from antarest.study.business.utils import execute_or_add_commands
@@ -90,12 +92,12 @@ class LinkManager:
 
     def create_link(self, study: RawStudy, link_creation_info: LinkInfoDTOType) -> LinkInfoDTOType:
         if link_creation_info.area1 == link_creation_info.area2:
-            raise ValueError("Cannot create link on same node")
+            raise LinkValidationError("Cannot create link on same node")
 
         study_version = int(study.version)
         if study_version < 820 and isinstance(link_creation_info, LinkInfoDTO820):
             if link_creation_info.filter_synthesis is not None or link_creation_info.filter_year_by_year is not None:
-                raise ValueError("Cannot specify a filter value for study's version earlier than v8.2")
+                raise LinkValidationError("Cannot specify a filter value for study's version earlier than v8.2")
 
         link_info = link_creation_info.model_dump(exclude_none=True, by_alias=True)
 
