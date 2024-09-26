@@ -744,7 +744,7 @@ class StudyService:
             path=str(study_path),
             created_at=datetime.utcnow(),
             updated_at=datetime.utcnow(),
-            version=version or NEW_DEFAULT_STUDY_VERSION,
+            version=version or NEW_DEFAULT_STUDY_VERSION.__format__("ddd"),
             additional_data=StudyAdditionalData(author=author),
         )
 
