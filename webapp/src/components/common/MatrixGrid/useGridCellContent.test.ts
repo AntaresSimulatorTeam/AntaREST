@@ -527,7 +527,7 @@ describe("useGridCellContent additional tests", () => {
     }
   });
 
-  test("handles very large numbers correctly", () => {
+  test("formats number cells correctly", () => {
     const columns: EnhancedGridColumn[] = [
       {
         id: "data1",
@@ -537,17 +537,104 @@ describe("useGridCellContent additional tests", () => {
         editable: true,
       },
     ];
-    const largeNumber = 1e20;
-    const data = [[largeNumber]];
+
+    const data = [[1234567.89]];
+
+    const getCellContent = renderGridCellContent(data, columns);
+    const cell = getCellContent([0, 0]);
+
+    if (cell.kind === "number" && "data" in cell) {
+      expect(cell.data).toBe(1234567.89);
+      expect(cell.displayData).toBe("1 234 567.89");
+    } else {
+      throw new Error("Expected a number cell with formatted display data");
+    }
+  });
+
+  test("handles very large and very small numbers correctly", () => {
+    const columns: EnhancedGridColumn[] = [
+      {
+        id: "large",
+        title: "Large",
+        type: ColumnTypes.Number,
+        width: 50,
+        editable: true,
+      },
+      {
+        id: "small",
+        title: "Small",
+        type: ColumnTypes.Number,
+        width: 50,
+        editable: true,
+      },
+    ];
+
+    const data = [[1e20, 0.00001]];
 
     const getCellContent = renderGridCellContent(data, columns);
 
-    const cell = getCellContent([0, 0]);
-    if (cell.kind === "number" && "data" in cell) {
-      expect(cell.data).toBe(largeNumber);
-      expect(cell.displayData).toBe(largeNumber.toString());
+    const largeCell = getCellContent([0, 0]);
+    if (largeCell.kind === "number" && "data" in largeCell) {
+      expect(largeCell.data).toBe(1e20);
+      expect(largeCell.displayData).toBe("100 000 000 000 000 000 000");
     } else {
-      throw new Error("Expected a number cell with correct large number data");
+      throw new Error("Expected a number cell for large number");
+    }
+
+    const smallCell = getCellContent([1, 0]);
+    if (smallCell.kind === "number" && "data" in smallCell) {
+      expect(smallCell.data).toBe(0.00001);
+      expect(smallCell.displayData).toBe("0.00001");
+    } else {
+      throw new Error("Expected a number cell for small number");
+    }
+  });
+
+  test("handles negative numbers correctly", () => {
+    const columns: EnhancedGridColumn[] = [
+      {
+        id: "negative",
+        title: "Negative",
+        type: ColumnTypes.Number,
+        width: 50,
+        editable: true,
+      },
+    ];
+
+    const data = [[-1234567.89]];
+
+    const getCellContent = renderGridCellContent(data, columns);
+    const cell = getCellContent([0, 0]);
+
+    if (cell.kind === "number" && "data" in cell) {
+      expect(cell.data).toBe(-1234567.89);
+      expect(cell.displayData).toBe("-1 234 567.89");
+    } else {
+      throw new Error("Expected a number cell with formatted negative number");
+    }
+  });
+
+  test("handles zero correctly", () => {
+    const columns: EnhancedGridColumn[] = [
+      {
+        id: "zero",
+        title: "Zero",
+        type: ColumnTypes.Number,
+        width: 50,
+        editable: true,
+      },
+    ];
+
+    const data = [[0]];
+
+    const getCellContent = renderGridCellContent(data, columns);
+    const cell = getCellContent([0, 0]);
+
+    if (cell.kind === "number" && "data" in cell) {
+      expect(cell.data).toBe(0);
+      expect(cell.displayData).toBe("0");
+    } else {
+      throw new Error("Expected a number cell for zero");
     }
   });
 });

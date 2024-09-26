@@ -28,7 +28,7 @@ type CellContentGenerator = (
   column: EnhancedGridColumn,
   data: number[][],
   dateTime?: string[],
-  aggregates?: MatrixAggregates,
+  aggregates?: Partial<MatrixAggregates>,
   rowHeaders?: string[],
 ) => GridCell;
 
@@ -118,7 +118,7 @@ export function useGridCellContent(
   columns: EnhancedGridColumn[],
   gridToData: (cell: Item) => Item | null,
   dateTime?: string[],
-  aggregates?: MatrixAggregates,
+  aggregates?: Partial<MatrixAggregates>,
   rowHeaders?: string[],
   isReadOnlyEnabled = false,
   isPercentDisplayEnabled = false,

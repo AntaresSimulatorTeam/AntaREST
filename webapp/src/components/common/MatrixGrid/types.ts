@@ -30,12 +30,20 @@ export const ColumnTypes = {
 } as const;
 
 export const Operations = {
-  ADD: "+",
-  SUB: "-",
-  MUL: "*",
-  DIV: "/",
-  ABS: "ABS",
-  EQ: "=",
+  Add: "+",
+  Sub: "-",
+  Mul: "*",
+  Div: "/",
+  Abs: "ABS",
+  Eq: "=",
+} as const;
+
+// !NOTE: Keep lowercase to match Glide Data Grid column ids
+export const Aggregates = {
+  Min: "min",
+  Max: "max",
+  Avg: "avg",
+  Total: "total",
 } as const;
 
 ////////////////////////////////////////////////////////////////
@@ -66,6 +74,9 @@ export interface EnhancedGridColumn extends BaseGridColumn {
   type: ColumnType;
   editable: boolean;
 }
+
+export type AggregateType = (typeof Aggregates)[keyof typeof Aggregates];
+export type AggregateConfig = AggregateType[] | boolean | "stats" | "all";
 
 export interface MatrixAggregates {
   min: number[];

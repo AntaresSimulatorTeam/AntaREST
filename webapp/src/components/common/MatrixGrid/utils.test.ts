@@ -19,6 +19,7 @@ import {
 import { ColumnTypes } from "./types";
 import {
   calculateMatrixAggregates,
+  formatNumber,
   generateDateTime,
   generateTimeSeriesColumns,
 } from "./utils";
@@ -194,7 +195,12 @@ describe("calculateMatrixAggregates", () => {
       [4, 5, 6],
       [7, 8, 9],
     ];
-    const result = calculateMatrixAggregates(matrix);
+    const result = calculateMatrixAggregates(matrix, [
+      "min",
+      "max",
+      "avg",
+      "total",
+    ]);
 
     expect(result.min).toEqual([1, 4, 7]);
     expect(result.max).toEqual([3, 6, 9]);
@@ -207,7 +213,12 @@ describe("calculateMatrixAggregates", () => {
       [1.1, 2.2, 3.3],
       [4.4, 5.5, 6.6],
     ];
-    const result = calculateMatrixAggregates(matrix);
+    const result = calculateMatrixAggregates(matrix, [
+      "min",
+      "max",
+      "avg",
+      "total",
+    ]);
 
     expect(result.min).toEqual([1.1, 4.4]);
     expect(result.max).toEqual([3.3, 6.6]);
@@ -220,7 +231,12 @@ describe("calculateMatrixAggregates", () => {
       [-1, -2, -3],
       [-4, 0, 4],
     ];
-    const result = calculateMatrixAggregates(matrix);
+    const result = calculateMatrixAggregates(matrix, [
+      "min",
+      "max",
+      "avg",
+      "total",
+    ]);
 
     expect(result.min).toEqual([-3, -4]);
     expect(result.max).toEqual([-1, 4]);
@@ -230,7 +246,12 @@ describe("calculateMatrixAggregates", () => {
 
   it("should handle single-element rows", () => {
     const matrix = [[1], [2], [3]];
-    const result = calculateMatrixAggregates(matrix);
+    const result = calculateMatrixAggregates(matrix, [
+      "min",
+      "max",
+      "avg",
+      "total",
+    ]);
 
     expect(result.min).toEqual([1, 2, 3]);
     expect(result.max).toEqual([1, 2, 3]);
@@ -243,7 +264,12 @@ describe("calculateMatrixAggregates", () => {
       [1000000, 2000000, 3000000],
       [4000000, 5000000, 6000000],
     ];
-    const result = calculateMatrixAggregates(matrix);
+    const result = calculateMatrixAggregates(matrix, [
+      "min",
+      "max",
+      "avg",
+      "total",
+    ]);
 
     expect(result.min).toEqual([1000000, 4000000]);
     expect(result.max).toEqual([3000000, 6000000]);
@@ -256,8 +282,24 @@ describe("calculateMatrixAggregates", () => {
       [1, 2, 4],
       [10, 20, 39],
     ];
-    const result = calculateMatrixAggregates(matrix);
+    const result = calculateMatrixAggregates(matrix, ["avg"]);
 
     expect(result.avg).toEqual([2, 23]);
+  });
+});
+
+describe("formatNumber", () => {
+  test("formats numbers correctly", () => {
+    expect(formatNumber(1234567.89)).toBe("1 234 567.89");
+    expect(formatNumber(1000000)).toBe("1 000 000");
+    expect(formatNumber(1234.5678)).toBe("1 234.5678");
+    expect(formatNumber(undefined)).toBe("");
+  });
+
+  test("handles edge cases", () => {
+    expect(formatNumber(0)).toBe("0");
+    expect(formatNumber(-1234567.89)).toBe("-1 234 567.89");
+    expect(formatNumber(0.00001)).toBe("0.00001");
+    expect(formatNumber(1e20)).toBe("100 000 000 000 000 000 000");
   });
 });
