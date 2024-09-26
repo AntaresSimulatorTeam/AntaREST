@@ -22,12 +22,12 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union, cast
 from zipfile import ZIP_DEFLATED, ZipFile
 
-from antares.study.version import StudyVersion
 from fastapi import HTTPException
 
 from antarest.core.exceptions import ChildNotFoundError
 from antarest.core.serialization import to_json
 from antarest.study.model import (
+    STUDY_VERSION_810,
     ExportFormat,
     MatrixAggregationResult,
     MatrixAggregationResultDTO,
@@ -117,7 +117,7 @@ class StudyDownloader:
 
         config = study.config
         has_renewables = (
-            config.version >= StudyVersion.parse(810) and EnrModelling(config.enr_modelling) == EnrModelling.CLUSTERS
+            config.version >= STUDY_VERSION_810 and EnrModelling(config.enr_modelling) == EnrModelling.CLUSTERS
         )
         if has_renewables:
             cluster_details += [f"details-res-{data.level.value}"]

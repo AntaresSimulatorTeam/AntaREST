@@ -444,7 +444,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
                     study_path=study_path,
                     path=study_path,
                     study_id="",
-                    version=StudyVersion.parse(-1),
+                    version=StudyVersion.parse(0),
                 )
                 raw_study = self.study_factory.create_from_config(config)
                 file_metadata = raw_study.get(url=["study", "antares"])

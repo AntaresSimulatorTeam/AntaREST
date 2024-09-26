@@ -12,14 +12,13 @@
 
 import typing as t
 
-from antares.study.version import StudyVersion
 from pydantic import StrictBool, StrictInt, field_validator, model_validator
 
 from antarest.core.model import JSON
 from antarest.study.business.all_optional_meta import all_optional_model
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.utils import GENERAL_DATA_PATH, FormFieldsBaseModel, execute_or_add_commands
-from antarest.study.model import Study
+from antarest.study.model import STUDY_VERSION_810, STUDY_VERSION_820, Study
 from antarest.study.storage.rawstudy.model.filesystem.config.model import EnrModelling
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.storage_service import StudyStorageService
@@ -212,7 +211,7 @@ class TimeSeriesConfigManager:
         config = file_study.config
         study_version = config.version
         has_renewables = (
-            study_version >= StudyVersion.parse(810) and EnrModelling(config.enr_modelling) == EnrModelling.CLUSTERS
+            study_version >= STUDY_VERSION_810 and EnrModelling(config.enr_modelling) == EnrModelling.CLUSTERS
         )
 
         if ts_type == TSType.RENEWABLES and not has_renewables:
@@ -221,7 +220,7 @@ class TimeSeriesConfigManager:
         if ts_type in [TSType.WIND, TSType.SOLAR] and has_renewables:
             return None
 
-        if ts_type == TSType.NTC and study_version < StudyVersion.parse(820):
+        if ts_type == TSType.NTC and study_version < STUDY_VERSION_820:
             return None
 
         is_special_type = ts_type == TSType.RENEWABLES or ts_type == TSType.NTC

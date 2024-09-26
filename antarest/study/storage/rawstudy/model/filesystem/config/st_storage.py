@@ -16,6 +16,7 @@ from antares.study.version import StudyVersion
 from pydantic import Field
 
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
+from antarest.study.model import STUDY_VERSION_860, STUDY_VERSION_880
 from antarest.study.storage.rawstudy.model.filesystem.config.cluster import ItemProperties
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import LowerCaseIdentifier
 
@@ -172,9 +173,9 @@ def get_st_storage_config_cls(study_version: StudyVersion) -> t.Type[STStorageCo
     Returns:
         The short-term storage configuration class.
     """
-    if study_version >= StudyVersion.parse(880):
+    if study_version >= STUDY_VERSION_880:
         return STStorage880Config
-    elif study_version >= StudyVersion.parse(860):
+    elif study_version >= STUDY_VERSION_860:
         return STStorageConfig
     raise ValueError(f"Unsupported study version: {study_version}")
 

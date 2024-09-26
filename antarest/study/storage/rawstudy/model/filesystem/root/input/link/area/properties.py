@@ -10,8 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from antares.study.version import StudyVersion
-
+from antarest.study.model import STUDY_VERSION_650
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
@@ -32,7 +31,7 @@ class InputLinkAreaProperties(IniFileNode):
             "filter-year-by-year": str,
         }
 
-        if config.version >= StudyVersion.parse(650):
+        if config.version >= STUDY_VERSION_650:
             section["loop-flow"] = bool
             section["use-phase-shifter"] = bool
             section["asset-type"] = str

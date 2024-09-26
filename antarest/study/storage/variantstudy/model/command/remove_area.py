@@ -14,10 +14,15 @@ import contextlib
 import logging
 import typing as t
 
-from antares.study.version import StudyVersion
-
 from antarest.core.exceptions import ChildNotFoundError
 from antarest.core.model import JSON
+from antarest.study.model import (
+    STUDY_VERSION_650,
+    STUDY_VERSION_810,
+    STUDY_VERSION_820,
+    STUDY_VERSION_860,
+    STUDY_VERSION_870,
+)
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.utils_binding_constraint import (
@@ -77,7 +82,7 @@ class RemoveArea(ICommand):
                 if link == self.id:
                     study_data.tree.delete(["input", "links", area_name, "properties", self.id])
                     try:
-                        if study_data.config.version < StudyVersion.parse(820):
+                        if study_data.config.version < STUDY_VERSION_820:
                             study_data.tree.delete(["input", "links", area_name, self.id])
                         else:
                             study_data.tree.delete(["input", "links", area_name, f"{self.id}_parameters"])
@@ -131,7 +136,7 @@ class RemoveArea(ICommand):
                     bc_to_remove[bc_index] = binding_constraints.pop(bc_index)
                     break
 
-        matrix_suffixes = ["_lt", "_gt", "_eq"] if study_data.config.version >= StudyVersion.parse(870) else [""]
+        matrix_suffixes = ["_lt", "_gt", "_eq"] if study_data.config.version >= STUDY_VERSION_870 else [""]
 
         for bc_index, bc in bc_to_remove.items():
             for suffix in matrix_suffixes:
@@ -242,7 +247,7 @@ class RemoveArea(ICommand):
         study_data.tree.delete(["input", "links", self.id])
 
         study_version = study_data.config.version
-        if study_version > StudyVersion.parse(650):
+        if study_version > STUDY_VERSION_650:
             study_data.tree.delete(["input", "hydro", "hydro", "initialize reservoir date", self.id])
             study_data.tree.delete(["input", "hydro", "hydro", "leeway low", self.id])
             study_data.tree.delete(["input", "hydro", "hydro", "leeway up", self.id])
@@ -251,13 +256,13 @@ class RemoveArea(ICommand):
             study_data.tree.delete(["input", "hydro", "common", "capacity", f"inflowPattern_{self.id}"])
             study_data.tree.delete(["input", "hydro", "common", "capacity", f"waterValues_{self.id}"])
 
-        if study_version >= StudyVersion.parse(810):
+        if study_version >= STUDY_VERSION_810:
             with contextlib.suppress(ChildNotFoundError):
                 #  renewables folder only exist in tree if study.renewable-generation-modelling is "clusters"
                 study_data.tree.delete(["input", "renewables", "clusters", self.id])
                 study_data.tree.delete(["input", "renewables", "series", self.id])
 
-        if study_version >= StudyVersion.parse(860):
+        if study_version >= STUDY_VERSION_860:
             study_data.tree.delete(["input", "st-storage", "clusters", self.id])
             study_data.tree.delete(["input", "st-storage", "series", self.id])
 

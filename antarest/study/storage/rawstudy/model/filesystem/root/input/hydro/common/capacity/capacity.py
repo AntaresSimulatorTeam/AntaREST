@@ -14,6 +14,7 @@ from typing import List, TypedDict
 
 from antares.study.version import StudyVersion
 
+from antarest.study.model import STUDY_VERSION_650
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
@@ -27,7 +28,6 @@ class MatrixInfo(TypedDict, total=False):
 
 
 INITIAL_VERSION = StudyVersion.parse(0)
-VERSION_650 = StudyVersion.parse(650)
 # noinspection SpellCheckingInspection
 MATRICES_INFO: List[MatrixInfo] = [
     {
@@ -43,17 +43,17 @@ MATRICES_INFO: List[MatrixInfo] = [
     {
         "name": "inflowPattern",
         "freq": MatrixFrequency.DAILY,
-        "start_version": VERSION_650,
+        "start_version": STUDY_VERSION_650,
     },
     {
         "name": "creditmodulations",
         "freq": MatrixFrequency.HOURLY,
-        "start_version": VERSION_650,
+        "start_version": STUDY_VERSION_650,
     },
     {
         "name": "waterValues",
         "freq": MatrixFrequency.DAILY,
-        "start_version": VERSION_650,
+        "start_version": STUDY_VERSION_650,
     },
 ]
 

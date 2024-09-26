@@ -31,7 +31,7 @@ from antarest.core.model import JSON
 from antarest.core.requests import CaseInsensitiveDict
 from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
 from antarest.study.business.utils import execute_or_add_commands
-from antarest.study.model import Study
+from antarest.study.model import STUDY_VERSION_880, Study
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
     STStorage880Config,
@@ -549,7 +549,7 @@ class STStorageManager:
         fields_to_exclude = {"id"}
         # We should remove the field 'enabled' for studies before v8.8 as it didn't exist
         study_version = StudyVersion.parse(study.version)
-        if study_version < StudyVersion.parse(880):
+        if study_version < STUDY_VERSION_880:
             fields_to_exclude.add("enabled")
         creation_form = STStorageCreation(**current_cluster.model_dump(by_alias=False, exclude=fields_to_exclude))
 

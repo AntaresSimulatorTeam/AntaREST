@@ -15,12 +15,12 @@ import logging
 import typing as t
 
 import numpy as np
-from antares.study.version import StudyVersion
 
 from antarest.core.model import JSON
 from antarest.core.utils.utils import StopWatch
 from antarest.matrixstore.model import MatrixData
 from antarest.matrixstore.service import ISimpleMatrixService
+from antarest.study.model import STUDY_VERSION_650, STUDY_VERSION_820, STUDY_VERSION_870
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.files import get_playlist
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -174,7 +174,7 @@ class CommandExtractor(ICommandExtractor):
         )
         null_matrix_id = strip_matrix_protocol(self.generator_matrix_constants.get_null_matrix())
         commands: t.List[ICommand] = [link_command, link_config_command]
-        if study.config.version < StudyVersion.parse(820):
+        if study.config.version < STUDY_VERSION_820:
             commands.append(
                 self.generate_replace_matrix(
                     study_tree,
@@ -289,7 +289,7 @@ class CommandExtractor(ICommandExtractor):
             ),
         ]
 
-        if study_tree.config.version > StudyVersion.parse(650):
+        if study_tree.config.version > STUDY_VERSION_650:
             commands += [
                 self.generate_replace_matrix(
                     study_tree,
@@ -368,7 +368,7 @@ class CommandExtractor(ICommandExtractor):
                 del binding[term_id]
 
         # Extract the matrices associated with the binding constraint
-        if study.config.version < StudyVersion.parse(870):
+        if study.config.version < STUDY_VERSION_870:
             urls = {"values": ["input", "bindingconstraints", bc_id]}
         else:
             urls = {

@@ -12,13 +12,12 @@
 
 from typing import Any, Dict, List, Union, cast
 
-from antares.study.version import StudyVersion
 from pydantic import PositiveInt, StrictBool, ValidationInfo, conint, model_validator
 
 from antarest.study.business.all_optional_meta import all_optional_model
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.utils import GENERAL_DATA_PATH, FieldInfo, FormFieldsBaseModel, execute_or_add_commands
-from antarest.study.model import Study
+from antarest.study.model import STUDY_VERSION_710, STUDY_VERSION_800, Study
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
@@ -149,8 +148,6 @@ GENERAL_PATH = f"{GENERAL_DATA_PATH}/{GENERAL}"
 OUTPUT_PATH = f"{GENERAL_DATA_PATH}/{OUTPUT}"
 BUILDING_MODE = "building_mode"
 
-VERSION_710 = StudyVersion.parse(710)
-
 FIELDS_INFO: Dict[str, FieldInfo] = {
     "mode": {
         "path": f"{GENERAL_PATH}/mode",
@@ -203,17 +200,17 @@ FIELDS_INFO: Dict[str, FieldInfo] = {
     "filtering": {
         "path": f"{GENERAL_PATH}/filtering",
         "default_value": False,
-        "end_version": VERSION_710,
+        "end_version": STUDY_VERSION_710,
     },
     "geographic_trimming": {
         "path": f"{GENERAL_PATH}/geographic-trimming",
         "default_value": False,
-        "start_version": VERSION_710,
+        "start_version": STUDY_VERSION_710,
     },
     "thematic_trimming": {
         "path": f"{GENERAL_PATH}/thematic-trimming",
         "default_value": False,
-        "start_version": VERSION_710,
+        "start_version": STUDY_VERSION_710,
     },
     "simulation_synthesis": {
         "path": f"{OUTPUT_PATH}/synthesis",
@@ -305,7 +302,7 @@ class GeneralManager:
         return [
             UpdateConfig(
                 target=f"{GENERAL_PATH}/custom-scenario"
-                if file_study.config.version >= StudyVersion.parse(800)
+                if file_study.config.version >= STUDY_VERSION_800
                 else f"{GENERAL_PATH}/custom-ts-numbers",
                 data=new_value == BuildingMode.CUSTOM,
                 command_context=cmd_context,
