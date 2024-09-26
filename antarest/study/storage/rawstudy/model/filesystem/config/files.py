@@ -471,7 +471,7 @@ def _parse_renewables(root: Path, area: str) -> t.List[RenewableConfigType]:
     # Before version 8.1, we only have "Load", "Wind" and "Solar" objects.
     # We can't use renewable clusters.
     version = _parse_version(root)
-    if version < 810:
+    if version < StudyVersion.parse(810):
         return []
 
     # Since version 8.1 of the solver, we can use "renewable clusters" objects.
@@ -498,7 +498,7 @@ def _parse_st_storage(root: Path, area: str) -> t.List[STStorageConfigType]:
 
     # st_storage feature exists only since 8.6 version
     version = _parse_version(root)
-    if version < 860:
+    if version < StudyVersion.parse(860):
         return []
 
     relpath = Path(f"input/st-storage/clusters/{area}/list.ini")

@@ -14,6 +14,7 @@ import re
 import typing as t
 
 import typing_extensions as te
+from antares.study.version import StudyVersion
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import EnrModelling, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
@@ -64,15 +65,18 @@ class ScenarioBuilder(IniFileNode):
 
         # Rules are defined for a specific version of the study.
         study_version = config.version
-        if study_version >= 810 and EnrModelling(self.config.enr_modelling) == EnrModelling.CLUSTERS:
+        if (
+            study_version >= StudyVersion.parse(810)
+            and EnrModelling(self.config.enr_modelling) == EnrModelling.CLUSTERS
+        ):
             self._populate_renewable_rules(rules)
-        if study_version >= 870:
+        if study_version >= StudyVersion.parse(870):
             self._populate_binding_constraints_rules(rules)
-        if study_version >= 800:
+        if study_version >= StudyVersion.parse(800):
             self._populate_hydro_initial_level_rules(rules)
-        if study_version >= 920:
+        if study_version >= StudyVersion.parse(920):
             self._populate_hydro_final_level_rules(rules)
-        if study_version >= 910:
+        if study_version >= StudyVersion.parse(910):
             self._populate_hydro_generation_power_rules(rules)
 
         super().__init__(

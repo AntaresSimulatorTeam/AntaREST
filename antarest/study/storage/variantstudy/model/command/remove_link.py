@@ -12,6 +12,7 @@
 
 import typing as t
 
+from antares.study.version import StudyVersion
 from pydantic import field_validator, model_validator
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, transform_name_to_id
@@ -137,7 +138,7 @@ class RemoveLink(ICommand):
         output = self._check_link_exists(study_data.config)[0]
 
         if output.status:
-            if study_data.config.version < 820:
+            if study_data.config.version < StudyVersion.parse(820):
                 study_data.tree.delete(["input", "links", self.area1, self.area2])
             else:
                 study_data.tree.delete(["input", "links", self.area1, f"{self.area2}_parameters"])

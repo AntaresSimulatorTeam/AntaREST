@@ -17,6 +17,7 @@ import typing as t
 from pathlib import Path
 
 import pandas as pd
+from antares.study.version import StudyVersion
 
 
 class _MatrixProfile(t.NamedTuple):
@@ -191,11 +192,11 @@ def adjust_matrix_columns_index(
         study_version: The version of the study.
     """
     # Get the matrix profiles for a given study version
-    if study_version < 820:
+    if study_version < StudyVersion.parse(820):
         matrix_profiles = _SPECIFIC_MATRICES
-    elif study_version < 860:
+    elif study_version < StudyVersion.parse(860):
         matrix_profiles = _SPECIFIC_MATRICES_820
-    elif study_version < 870:
+    elif study_version < StudyVersion.parse(870):
         matrix_profiles = _SPECIFIC_MATRICES_860
     else:
         matrix_profiles = _SPECIFIC_MATRICES_870

@@ -12,6 +12,7 @@
 
 import typing as t
 
+from antares.study.version import StudyVersion
 from pydantic import StrictBool, StrictInt, field_validator, model_validator
 
 from antarest.core.model import JSON
@@ -210,7 +211,9 @@ class TimeSeriesConfigManager:
 
         config = file_study.config
         study_version = config.version
-        has_renewables = study_version >= 810 and EnrModelling(config.enr_modelling) == EnrModelling.CLUSTERS
+        has_renewables = (
+            study_version >= StudyVersion.parse(810) and EnrModelling(config.enr_modelling) == EnrModelling.CLUSTERS
+        )
 
         if ts_type == TSType.RENEWABLES and not has_renewables:
             return None
@@ -218,7 +221,7 @@ class TimeSeriesConfigManager:
         if ts_type in [TSType.WIND, TSType.SOLAR] and has_renewables:
             return None
 
-        if ts_type == TSType.NTC and study_version < 820:
+        if ts_type == TSType.NTC and study_version < StudyVersion.parse(820):
             return None
 
         is_special_type = ts_type == TSType.RENEWABLES or ts_type == TSType.NTC

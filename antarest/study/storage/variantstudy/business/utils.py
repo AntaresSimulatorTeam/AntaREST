@@ -12,6 +12,8 @@
 
 import typing as t
 
+from antares.study.version import StudyVersion
+
 from antarest.core.model import JSON
 from antarest.matrixstore.model import MatrixData
 from antarest.matrixstore.service import ISimpleMatrixService
@@ -87,7 +89,7 @@ class AliasDecoder:
         data = alias.split("/")
         area_from = data[1]
         area_to = data[2]
-        if study.config.version < 820:
+        if study.config.version < StudyVersion.parse(820):
             return f"input/links/{area_from}/{area_to}"
         return f"input/links/{area_from}/{area_to}_parameters"
 

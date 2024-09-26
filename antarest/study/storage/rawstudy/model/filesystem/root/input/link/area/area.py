@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from antares.study.version import StudyVersion
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
@@ -35,7 +36,7 @@ class InputLinkArea(FolderNode):
         children: TREE
         ctx = self.context
         cfg = self.config
-        if cfg.version < 820:
+        if cfg.version < StudyVersion.parse(820):
             children = {link: InputSeriesMatrix(ctx, cfg.next_file(f"{link}.txt")) for link in cfg.get_links(self.area)}
         else:
             children = {

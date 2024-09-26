@@ -22,6 +22,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union, cast
 from zipfile import ZIP_DEFLATED, ZipFile
 
+from antares.study.version import StudyVersion
 from fastapi import HTTPException
 
 from antarest.core.exceptions import ChildNotFoundError
@@ -115,7 +116,9 @@ class StudyDownloader:
         cluster_details = [f"details-{data.level.value}"]
 
         config = study.config
-        has_renewables = config.version >= 810 and EnrModelling(config.enr_modelling) == EnrModelling.CLUSTERS
+        has_renewables = (
+            config.version >= StudyVersion.parse(810) and EnrModelling(config.enr_modelling) == EnrModelling.CLUSTERS
+        )
         if has_renewables:
             cluster_details += [f"details-res-{data.level.value}"]
 

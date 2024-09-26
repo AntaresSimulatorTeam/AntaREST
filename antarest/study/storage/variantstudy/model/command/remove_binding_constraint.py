@@ -12,6 +12,8 @@
 
 from typing import Any, Dict, List, Tuple
 
+from antares.study.version import StudyVersion
+
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import DEFAULT_GROUP
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
@@ -57,7 +59,7 @@ class RemoveBindingConstraint(ICommand):
             new_binding_constraints,
             ["input", "bindingconstraints", "bindingconstraints"],
         )
-        if study_data.config.version < 870:
+        if study_data.config.version < StudyVersion.parse(870):
             study_data.tree.delete(["input", "bindingconstraints", self.id])
         else:
             existing_files = study_data.tree.get(["input", "bindingconstraints"], depth=1)

@@ -12,6 +12,7 @@
 
 import typing as t
 
+from antares.study.version import StudyVersion
 from pydantic import Field
 
 from antarest.core.model import JSON
@@ -247,7 +248,7 @@ class CreateArea(ICommand):
         new_correlation.setdefault("annual", {})
         new_area_data["input"]["hydro"]["prepro"]["correlation"] = new_correlation
 
-        if version > 650:
+        if version > StudyVersion.parse(650):
             hydro_config.setdefault("initialize reservoir date", {})[area_id] = 0
             hydro_config.setdefault("leeway low", {})[area_id] = 1
             hydro_config.setdefault("leeway up", {})[area_id] = 1
@@ -261,16 +262,18 @@ class CreateArea(ICommand):
             ] = self.command_context.generator_matrix_constants.get_hydro_inflow_pattern()
             new_area_data["input"]["hydro"]["common"]["capacity"][f"waterValues_{area_id}"] = null_matrix
 
-        has_renewables = version >= 810 and EnrModelling(config.enr_modelling) == EnrModelling.CLUSTERS
+        has_renewables = (
+            version >= StudyVersion.parse(810) and EnrModelling(config.enr_modelling) == EnrModelling.CLUSTERS
+        )
         if has_renewables:
             new_area_data["input"]["renewables"] = {"clusters": {area_id: {"list": {}}}}
 
-        if version >= 830:
+        if version >= StudyVersion.parse(830):
             new_area_data["input"]["areas"][area_id]["adequacy_patch"] = {
                 "adequacy-patch": {"adequacy-patch-mode": "outside"}
             }
 
-        if version >= 860:
+        if version >= StudyVersion.parse(860):
             new_area_data["input"]["st-storage"] = {"clusters": {area_id: {"list": {}}}}
             new_area_data["input"]["hydro"]["series"][area_id]["mingen"] = null_matrix
 

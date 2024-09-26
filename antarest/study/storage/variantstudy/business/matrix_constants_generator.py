@@ -64,6 +64,9 @@ ST_STORAGE_INFLOWS = EMPTY_SCENARIO_MATRIX
 MATRIX_PROTOCOL_PREFIX = "matrix://"
 _LOCK_FILE_NAME = "matrix_constant_init.lock"
 
+VERSION_650 = StudyVersion.parse(650)
+VERSION_820 = StudyVersion.parse(820)
+
 
 # noinspection SpellCheckingInspection
 class GeneratorMatrixConstants:
@@ -127,13 +130,13 @@ class GeneratorMatrixConstants:
         )
 
     def get_hydro_max_power(self, version: StudyVersion) -> str:
-        if version > 650:
+        if version > VERSION_650:
             return MATRIX_PROTOCOL_PREFIX + self.hashes[HYDRO_COMMON_CAPACITY_MAX_POWER_V7]
         else:
             return MATRIX_PROTOCOL_PREFIX + self.hashes[NULL_MATRIX_NAME]
 
     def get_hydro_reservoir(self, version: StudyVersion) -> str:
-        if version > 650:
+        if version > VERSION_650:
             return MATRIX_PROTOCOL_PREFIX + self.hashes[HYDRO_COMMON_CAPACITY_RESERVOIR_V7]
         return MATRIX_PROTOCOL_PREFIX + self.hashes[HYDRO_COMMON_CAPACITY_RESERVOIR_V6]
 
@@ -156,7 +159,7 @@ class GeneratorMatrixConstants:
         return MATRIX_PROTOCOL_PREFIX + self.hashes[THERMAL_PREPRO_MODULATION]
 
     def get_link(self, version: StudyVersion) -> str:
-        if version < 820:
+        if version < VERSION_820:
             return MATRIX_PROTOCOL_PREFIX + self.hashes[LINK_V7]
         return MATRIX_PROTOCOL_PREFIX + self.hashes[LINK_V8]
 

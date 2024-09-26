@@ -79,6 +79,9 @@ OPERATOR_CONFLICT_MAP = {
     BindingConstraintOperator.BOTH: [TermMatrices.EQUAL.value],
 }
 
+VERSION_830 = StudyVersion.parse(830)
+VERSION_870 = StudyVersion.parse(870)
+
 
 class LinkTerm(BaseModel):
     """
@@ -495,19 +498,19 @@ class BindingConstraintManager:
         }
 
         version = study_version
-        if version >= 830:
+        if version >= VERSION_830:
             _filter_year_by_year = constraint.get("filter_year_by_year") or constraint.get("filter-year-by-year", "")
             _filter_synthesis = constraint.get("filter_synthesis") or constraint.get("filter-synthesis", "")
             constraint_output["filter_year_by_year"] = _filter_year_by_year
             constraint_output["filter_synthesis"] = _filter_synthesis
-        if version >= 870:
+        if version >= VERSION_870:
             constraint_output["group"] = constraint.get("group", DEFAULT_GROUP)
 
         # Choose the right model according to the version
         adapted_constraint: ConstraintOutput
-        if version >= 870:
+        if version >= VERSION_870:
             adapted_constraint = ConstraintOutput870(**constraint_output)
-        elif version >= 830:
+        elif version >= VERSION_830:
             adapted_constraint = ConstraintOutput830(**constraint_output)
         else:
             adapted_constraint = ConstraintOutputBase(**constraint_output)
@@ -786,9 +789,9 @@ class BindingConstraintManager:
         upd_constraint["type"] = upd_constraint.get("time_step", existing_constraint.time_step)
         upd_constraint["terms"] = data.terms or existing_constraint.terms
         new_fields = ["enabled", "operator", "comments", "terms"]
-        if study_version >= 830:
+        if study_version >= VERSION_830:
             new_fields.extend(["filter_year_by_year", "filter_synthesis"])
-        if study_version >= 870:
+        if study_version >= VERSION_870:
             new_fields.append("group")
         for field in new_fields:
             if field not in upd_constraint:
@@ -929,7 +932,7 @@ class BindingConstraintManager:
 def _replace_matrices_according_to_frequency_and_version(
     data: ConstraintInput, version: StudyVersion, args: t.Dict[str, t.Any]
 ) -> t.Dict[str, t.Any]:
-    if version < 870:
+    if version < VERSION_870:
         if "values" not in args:
             matrix = {
                 BindingConstraintFrequency.HOURLY.value: default_bc_hourly_86,
@@ -954,7 +957,7 @@ def check_attributes_coherence(
     study_version: StudyVersion,
     operator: BindingConstraintOperator,
 ) -> None:
-    if study_version < 870:
+    if study_version < VERSION_870:
         if data.group:
             raise InvalidFieldForVersionError(
                 f"You cannot specify a group as your study version is older than v8.7: {data.group}"

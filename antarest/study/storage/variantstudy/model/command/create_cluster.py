@@ -12,6 +12,7 @@
 
 import typing as t
 
+from antares.study.version import StudyVersion
 from pydantic import Field, ValidationInfo, field_validator
 
 from antarest.core.model import JSON
@@ -149,7 +150,7 @@ class CreateCluster(ICommand):
                 }
             }
         }
-        if study_data.config.version >= 870:
+        if study_data.config.version >= StudyVersion.parse(870):
             new_cluster_data["input"]["thermal"]["series"][self.area_id][series_id]["CO2Cost"] = null_matrix
             new_cluster_data["input"]["thermal"]["series"][self.area_id][series_id]["fuelCost"] = null_matrix
         study_data.tree.save(new_cluster_data)

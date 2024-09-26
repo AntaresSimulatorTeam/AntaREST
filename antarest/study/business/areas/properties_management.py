@@ -14,6 +14,7 @@ import re
 import typing as t
 from builtins import sorted
 
+from antares.study.version import StudyVersion
 from pydantic import model_validator
 
 from antarest.core.exceptions import ChildNotFoundError
@@ -113,7 +114,7 @@ FIELDS_INFO: t.Dict[str, FieldInfo] = {
     "adequacy_patch_mode": {
         "path": f"{AREA_PATH}/adequacy_patch/adequacy-patch/adequacy-patch-mode",
         "default_value": AdequacyPatchMode.OUTSIDE.value,
-        "start_version": 830,
+        "start_version": StudyVersion.parse(830),
     },
 }
 

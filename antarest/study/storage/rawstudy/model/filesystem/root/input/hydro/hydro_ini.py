@@ -10,6 +10,8 @@
 #
 # This file is part of the Antares project.
 
+from antares.study.version import StudyVersion
+
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
@@ -40,7 +42,7 @@ class InputHydroIni(IniFileNode):
             "use leeway",  # bool
             "power to level",  # bool
         ]
-        if config.version >= 650:
+        if config.version >= StudyVersion.parse(650):
             sections += [
                 "initialize reservoir date",
                 "leeway low",

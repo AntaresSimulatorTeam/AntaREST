@@ -12,6 +12,7 @@
 
 import typing as t
 
+from antares.study.version import StudyVersion
 from pydantic import Field
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfig
@@ -21,7 +22,7 @@ from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIG
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 # minimum required version.
-REQUIRED_VERSION = 860
+REQUIRED_VERSION = StudyVersion.parse(860)
 
 
 class RemoveSTStorage(ICommand):

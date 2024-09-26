@@ -13,6 +13,7 @@
 import typing as t
 
 import numpy as np
+from antares.study.version import StudyVersion
 from pydantic import Field, ValidationInfo, model_validator
 
 from antarest.core.model import JSON
@@ -36,7 +37,7 @@ _MATRIX_NAMES = (
 )
 
 # Minimum required version.
-REQUIRED_VERSION = 860
+REQUIRED_VERSION = StudyVersion.parse(860)
 
 MatrixType = t.List[t.List[MatrixData]]
 

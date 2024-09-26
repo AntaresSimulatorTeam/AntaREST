@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from antares.study.version import StudyVersion
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import EnrModelling
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
@@ -50,11 +51,13 @@ class Input(FolderNode):
         }
 
         study_version = config.version
-        has_renewables = study_version >= 810 and EnrModelling(config.enr_modelling) == EnrModelling.CLUSTERS
+        has_renewables = (
+            study_version >= StudyVersion.parse(810) and EnrModelling(config.enr_modelling) == EnrModelling.CLUSTERS
+        )
         if has_renewables:
             children["renewables"] = ClusteredRenewables(self.context, config.next_file("renewables"))
 
-        if study_version >= 860:
+        if study_version >= StudyVersion.parse(860):
             children["st-storage"] = InputSTStorage(self.context, config.next_file("st-storage"))
 
         return children

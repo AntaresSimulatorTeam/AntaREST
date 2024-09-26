@@ -12,6 +12,7 @@
 
 from typing import Any, Dict, List, Union, cast
 
+from antares.study.version import StudyVersion
 from pydantic import PositiveInt, StrictBool, ValidationInfo, conint, model_validator
 
 from antarest.study.business.all_optional_meta import all_optional_model
@@ -148,6 +149,7 @@ GENERAL_PATH = f"{GENERAL_DATA_PATH}/{GENERAL}"
 OUTPUT_PATH = f"{GENERAL_DATA_PATH}/{OUTPUT}"
 BUILDING_MODE = "building_mode"
 
+VERSION_710 = StudyVersion.parse(710)
 
 FIELDS_INFO: Dict[str, FieldInfo] = {
     "mode": {
@@ -201,17 +203,17 @@ FIELDS_INFO: Dict[str, FieldInfo] = {
     "filtering": {
         "path": f"{GENERAL_PATH}/filtering",
         "default_value": False,
-        "end_version": 710,
+        "end_version": VERSION_710,
     },
     "geographic_trimming": {
         "path": f"{GENERAL_PATH}/geographic-trimming",
         "default_value": False,
-        "start_version": 710,
+        "start_version": VERSION_710,
     },
     "thematic_trimming": {
         "path": f"{GENERAL_PATH}/thematic-trimming",
         "default_value": False,
-        "start_version": 710,
+        "start_version": VERSION_710,
     },
     "simulation_synthesis": {
         "path": f"{OUTPUT_PATH}/synthesis",
@@ -303,7 +305,7 @@ class GeneralManager:
         return [
             UpdateConfig(
                 target=f"{GENERAL_PATH}/custom-scenario"
-                if file_study.config.version >= 800
+                if file_study.config.version >= StudyVersion.parse(800)
                 else f"{GENERAL_PATH}/custom-ts-numbers",
                 data=new_value == BuildingMode.CUSTOM,
                 command_context=cmd_context,
