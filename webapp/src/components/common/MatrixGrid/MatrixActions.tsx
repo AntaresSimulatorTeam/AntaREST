@@ -14,12 +14,12 @@
 
 import { Box, Divider, IconButton, Tooltip } from "@mui/material";
 import SplitButton from "../buttons/SplitButton";
-import DownloadMatrixButton from "../DownloadMatrixButton";
 import FileDownload from "@mui/icons-material/FileDownload";
 import { useTranslation } from "react-i18next";
 import { LoadingButton } from "@mui/lab";
 import Save from "@mui/icons-material/Save";
 import { Undo, Redo } from "@mui/icons-material";
+import DownloadMatrixButton from "../buttons/DownloadMatrixButton";
 
 interface MatrixActionsProps {
   onImport: VoidFunction;
