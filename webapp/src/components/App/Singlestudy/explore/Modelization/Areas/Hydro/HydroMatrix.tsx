@@ -40,6 +40,7 @@ function HydroMatrix({ type }: Props) {
         url={hydroMatrix.url.replace("{areaId}", areaId)}
         customColumns={hydroMatrix.columns}
         customRowHeaders={hydroMatrix.rowHeaders}
+        aggregateColumns={hydroMatrix.aggregates}
         enableDateTimeColumn={hydroMatrix.enableDateTimeColumn}
         enableReadOnly={hydroMatrix.enableReadOnly}
         enablePercentDisplay={hydroMatrix.enablePercentDisplay}

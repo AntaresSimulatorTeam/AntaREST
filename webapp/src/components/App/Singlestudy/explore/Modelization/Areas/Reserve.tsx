@@ -31,7 +31,9 @@ function Reserve() {
   // JSX
   ////////////////////////////////////////////////////////////////
 
-  return <Matrix url={url} customColumns={columns} colWidth={150} />;
+  return (
+    <Matrix url={url} customColumns={columns} aggregateColumns={["total"]} />
+  );
 }
 
 export default Reserve;

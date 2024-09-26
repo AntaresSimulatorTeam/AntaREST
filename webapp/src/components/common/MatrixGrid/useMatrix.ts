@@ -16,7 +16,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { AxiosError } from "axios";
 import { enqueueSnackbar } from "notistack";
 import { t } from "i18next";
-import { MatrixIndex, Operator } from "../../../common/types";
+import { MatrixIndex } from "../../../common/types";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import {
   getStudyMatrixIndex,
@@ -30,12 +30,16 @@ import {
   GridUpdate,
   MatrixUpdateDTO,
   MatrixAggregates,
+  AggregateConfig,
+  Aggregates,
+  Operations,
 } from "./types";
 import {
   aggregatesTheme,
   calculateMatrixAggregates,
   generateDataColumns,
   generateDateTime,
+  getAggregateTypes,
 } from "./utils";
 import useUndo from "use-undo";
 import { GridCellKind } from "@glideapps/glide-data-grid";
@@ -44,7 +48,7 @@ import { fetchMatrixFn } from "../../App/Singlestudy/explore/Modelization/Areas/
 
 interface DataState {
   data: MatrixDataDTO["data"];
-  aggregates: MatrixAggregates;
+  aggregates: Partial<MatrixAggregates>;
   pendingUpdates: MatrixUpdateDTO[];
   updateCount: number;
 }
@@ -54,8 +58,8 @@ export function useMatrix(
   url: string,
   enableDateTimeColumn: boolean,
   enableTimeSeriesColumns: boolean,
-  enableAggregateColumns: boolean,
   enableRowHeaders?: boolean,
+  aggregatesConfig?: AggregateConfig,
   customColumns?: string[] | readonly string[],
   colWidth?: number,
   fetchMatrixData?: fetchMatrixFn,
@@ -73,6 +77,12 @@ export function useMatrix(
       pendingUpdates: [],
       updateCount: 0,
     });
+
+  // Determine the aggregate types to display in the matrix
+  const aggregateTypes = useMemo(
+    () => getAggregateTypes(aggregatesConfig || []),
+    [aggregatesConfig],
+  );
 
   const fetchMatrix = useCallback(
     async (loadingState = true) => {
@@ -93,9 +103,7 @@ export function useMatrix(
 
         setState({
           data: matrix.data,
-          aggregates: enableAggregateColumns
-            ? calculateMatrixAggregates(matrix.data)
-            : { min: [], max: [], avg: [], total: [] },
+          aggregates: calculateMatrixAggregates(matrix.data, aggregateTypes),
           pendingUpdates: [],
           updateCount: 0,
         });
@@ -115,7 +123,7 @@ export function useMatrix(
       }
     },
     [
-      enableAggregateColumns,
+      aggregateTypes,
       enqueueErrorSnackbar,
       fetchMatrixData,
       setState,
@@ -165,33 +173,20 @@ export function useMatrix(
       colWidth,
     );
 
-    const aggregateColumns: EnhancedGridColumn[] = enableAggregateColumns
-      ? [
-          {
-            id: "avg",
-            title: "Avg",
-            type: ColumnTypes.Aggregate,
-            editable: false,
-            themeOverride: aggregatesTheme,
-          },
-          {
-            id: "min",
-            title: "Min",
-            type: ColumnTypes.Aggregate,
-            editable: false,
-            themeOverride: { ...aggregatesTheme, bgCell: "#464770" },
-          },
-          {
-            id: "max",
-            title: "Max",
-            type: ColumnTypes.Aggregate,
-            editable: false,
-            themeOverride: { ...aggregatesTheme, bgCell: "#464770" },
-          },
-        ]
-      : [];
+    const aggregatesColumns: EnhancedGridColumn[] = aggregateTypes.map(
+      (aggregateType) => ({
+        id: aggregateType,
+        title: aggregateType.charAt(0).toUpperCase() + aggregateType.slice(1), // Capitalize first letter
+        type: ColumnTypes.Aggregate,
+        editable: false,
+        themeOverride:
+          aggregateType === Aggregates.Avg
+            ? aggregatesTheme
+            : { ...aggregatesTheme, bgCell: "#464770" },
+      }),
+    );
 
-    return [...baseColumns, ...dataColumns, ...aggregateColumns];
+    return [...baseColumns, ...dataColumns, ...aggregatesColumns];
   }, [
     currentState.data,
     enableDateTimeColumn,
@@ -200,7 +195,7 @@ export function useMatrix(
     columnCount,
     customColumns,
     colWidth,
-    enableAggregateColumns,
+    aggregateTypes,
   ]);
 
   // Apply updates to the matrix data and store them in the pending updates list
@@ -216,7 +211,7 @@ export function useMatrix(
             return {
               coordinates: [[col, row]],
               operation: {
-                operation: Operator.EQ,
+                operation: Operations.Eq,
                 value: value.data,
               },
             };
@@ -229,9 +224,10 @@ export function useMatrix(
         );
 
       // Recalculate aggregates with the updated data
-      const newAggregates = enableAggregateColumns
-        ? calculateMatrixAggregates(updatedData)
-        : { min: [], max: [], avg: [], total: [] };
+      const newAggregates = calculateMatrixAggregates(
+        updatedData,
+        aggregateTypes,
+      );
 
       setState({
         data: updatedData,
@@ -244,7 +240,7 @@ export function useMatrix(
       currentState.data,
       currentState.pendingUpdates,
       currentState.updateCount,
-      enableAggregateColumns,
+      aggregateTypes,
       setState,
     ],
   );

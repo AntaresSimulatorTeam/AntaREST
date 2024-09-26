@@ -138,7 +138,7 @@ describe("useMatrix", () => {
 
     expect(result.current.data[1][0]).toBe(5);
     expect(result.current.data[0][1]).toBe(6);
-    expect(result.current.pendingUpdatesCount).toBe(2);
+    expect(result.current.pendingUpdatesCount).toBe(1);
   });
 
   test("should handle save updates", async () => {

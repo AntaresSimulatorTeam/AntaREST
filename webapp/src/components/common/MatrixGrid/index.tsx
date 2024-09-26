@@ -33,7 +33,7 @@ export interface MatrixGridProps {
   rows: number;
   columns: EnhancedGridColumn[];
   dateTime?: string[];
-  aggregates?: MatrixAggregates;
+  aggregates?: Partial<MatrixAggregates>;
   rowHeaders?: string[];
   width?: string;
   height?: string;

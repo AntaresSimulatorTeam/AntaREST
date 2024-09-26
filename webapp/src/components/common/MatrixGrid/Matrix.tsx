@@ -24,6 +24,7 @@ import { MatrixContainer, MatrixHeader, MatrixTitle } from "./style";
 import MatrixActions from "./MatrixActions";
 import EmptyView from "../page/SimpleContent";
 import { fetchMatrixFn } from "../../App/Singlestudy/explore/Modelization/Areas/Hydro/utils";
+import { AggregateConfig } from "./types";
 
 interface MatrixProps {
   url: string;
@@ -31,7 +32,7 @@ interface MatrixProps {
   customRowHeaders?: string[];
   enableDateTimeColumn?: boolean;
   enableTimeSeriesColumns?: boolean;
-  enableAggregateColumns?: boolean;
+  aggregateColumns?: AggregateConfig;
   enableRowHeaders?: boolean;
   enablePercentDisplay?: boolean;
   enableReadOnly?: boolean;
@@ -46,7 +47,7 @@ function Matrix({
   customRowHeaders = [],
   enableDateTimeColumn = true,
   enableTimeSeriesColumns = true,
-  enableAggregateColumns = false,
+  aggregateColumns = false,
   enableRowHeaders = customRowHeaders.length > 0,
   enablePercentDisplay = false,
   enableReadOnly = false,
@@ -80,8 +81,8 @@ function Matrix({
     url,
     enableDateTimeColumn,
     enableTimeSeriesColumns,
-    enableAggregateColumns,
     enableRowHeaders,
+    aggregateColumns,
     customColumns,
     colWidth,
     fetchMatrixData,
