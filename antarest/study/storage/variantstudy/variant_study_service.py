@@ -1106,7 +1106,7 @@ class SnapshotCleanerTask:
                 )
             )
             for variant in variant_list:
-                if variant.updated_at < datetime.utcnow() - self._retention_hours:
+                if variant.updated_at and variant.updated_at < datetime.utcnow() - self._retention_hours:
                     if variant.last_access and variant.last_access < datetime.utcnow() - self._retention_hours:
                         self._variant_study_service.clear_snapshot(variant)
 
