@@ -15,8 +15,8 @@ import multiprocessing
 import platform
 import time
 import webbrowser
-from multiprocessing import Process
 from pathlib import Path
+from threading import Thread
 
 import httpx
 import uvicorn
@@ -88,11 +88,14 @@ def main() -> None:
     tray.setContextMenu(menu)
     app.processEvents()
     tray.setToolTip("AntaresWebServer")
-    server = Process(
+
+    server = multiprocessing.Process(
         target=run_server,
         args=(arguments.config_file,),
     )
     server.start()
+    Thread(target=monitor_server_process, args=(server, app)).start()
+
     for _ in range(30, 0, -1):
         with contextlib.suppress(httpx.ConnectError):
             res = httpx.get("http://localhost:8080")
@@ -101,6 +104,14 @@ def main() -> None:
         time.sleep(1)
     app.exec_()
     server.kill()
+
+
+def monitor_server_process(server, app) -> None:
+    """
+    Quits the application when server process ends.
+    """
+    server.join()
+    app.quit()
 
 
 if __name__ == "__main__":
