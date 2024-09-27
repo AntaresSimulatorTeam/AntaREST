@@ -1856,6 +1856,25 @@ class StudyService:
         )
         return new_link
 
+    def update_link(
+        self,
+        uuid: str,
+        link_update_dto: LinkInfoDTOType,
+        params: RequestParameters,
+    ) -> LinkInfoDTOType:
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        self._assert_study_unarchived(study)
+        updated_link = self.links.update_link(study, link_update_dto)
+        self.event_bus.push(
+            Event(
+                type=EventType.STUDY_DATA_EDITED,
+                payload=study.to_json_summary(),
+                permissions=PermissionInfo.from_study(study),
+            )
+        )
+        return updated_link
+
     def update_area(
         self,
         uuid: str,

@@ -124,6 +124,33 @@ class LinkManager:
 
         return link_data
 
+    def update_link(self, study: RawStudy, link_creation_info: LinkInfoDTOType) -> LinkInfoDTOType:
+        file_study = self.storage_service.get_storage(study).get_raw(study)
+        existing_link = self.get_one_link(study, link_creation_info.area1, link_creation_info.area2)
+
+
+
+        execute_or_add_commands(study, file_study, [command], self.storage_service)
+
+        return existing_link
+
+    def get_one_link(self, study: RawStudy, area1: str, area2: str) -> LinkInfoDTOType:
+        file_study = self.storage_service.get_storage(study).get_raw(study)
+
+        area_from, area_to = sorted([area1, area2])
+        try:
+            link_config = file_study.tree.get(["input", "links", area_from, "properties", area_to])
+        except KeyError:
+            raise LinkValidationError(f"The link {area_from} -> {area_to} is not present in the study")
+
+        link_config["area1"] = area_from
+        link_config["area2"] = area_to
+
+        link_data: LinkInfoDTOType
+        if int(study.version) < 820:
+            return LinkInfoDTOBase(**link_config)
+        return LinkInfoDTO820(**link_config)
+
     def delete_link(self, study: RawStudy, area1_id: str, area2_id: str) -> None:
         file_study = self.storage_service.get_storage(study).get_raw(study)
         command = RemoveLink(

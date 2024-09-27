@@ -199,6 +199,24 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         return study_service.create_link(uuid, link_creation_info, params)
 
     @bp.put(
+        "/studies/{uuid}/links",
+        tags=[APITag.study_data],
+        summary="Update a link",
+        response_model=LinkInfoDTOType,
+    )
+    def update_link(
+        uuid: str,
+        link_creation_info: LinkInfoDTOType,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> t.Any:
+        logger.info(
+            f"Updating link for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        return study_service.update_link(uuid, link_creation_info, params)
+
+    @bp.put(
         "/studies/{uuid}/areas/{area_id}/ui",
         tags=[APITag.study_data],
         summary="Update area information",
