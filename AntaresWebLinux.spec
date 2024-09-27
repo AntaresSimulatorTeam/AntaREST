@@ -9,7 +9,7 @@ block_cipher = None
 # dedicated analyse for this.
 versions_dir = Path('alembic/versions')
 versions_files = [str(f) for f in versions_dir.iterdir() if f.is_file() and f.suffix == '.py']
-alembic_analysis = Analysis([alembic/env.py] + versions_files)
+alembic_analysis = Analysis(["alembic/env.py"] + versions_files)
 
 antares_web_server_a = Analysis(['antarest/gui.py'],
              pathex=[],
