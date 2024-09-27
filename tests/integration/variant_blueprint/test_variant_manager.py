@@ -55,7 +55,7 @@ def generate_snapshot_fixture(
     base_study_id: str,
     monkeypatch: pytest.MonkeyPatch,
     caplog: t.Any,
-) -> [str]:
+) -> t.List[str]:
     """Generate some snapshots with different date of update and last access"""
 
     class FakeDatetime:
@@ -63,15 +63,15 @@ def generate_snapshot_fixture(
         Class that handle fake timestamp creation/update of variant
         """
 
-        fake_time: t.Optional[datetime.datetime]
+        fake_time: datetime.datetime
 
         @classmethod
-        def now(cls):
+        def now(cls) -> datetime.datetime:
             """Method used to get the custom timestamp"""
             return cls.fake_time
 
         @classmethod
-        def utcnow(cls):
+        def utcnow(cls) -> datetime.datetime:
             """Method used while a variant is created"""
             return cls.now()
 
@@ -82,9 +82,11 @@ def generate_snapshot_fixture(
 
     with caplog.at_level(level=logging.WARNING):
         # Generate three different timestamp
-        older_time = datetime.datetime.now() - datetime.timedelta(hours=25)  # older than the default value which is 24
-        old_time = datetime.datetime.now() - datetime.timedelta(hours=8)  # older than 6 hours
-        recent_time = datetime.datetime.now() - datetime.timedelta(hours=2)  # older than 0 hours
+        older_time = datetime.datetime.utcnow() - datetime.timedelta(
+            hours=25
+        )  # older than the default value which is 24
+        old_time = datetime.datetime.utcnow() - datetime.timedelta(hours=8)  # older than 6 hours
+        recent_time = datetime.datetime.utcnow() - datetime.timedelta(hours=2)  # older than 0 hours
 
         with monkeypatch.context() as m:
             # Patch the datetime import instance of the variant_study_service package to hack
@@ -105,7 +107,7 @@ def generate_snapshot_fixture(
                     client, admin_access_token, task_id.json()
                 )  # wait for the filesystem to be updated
                 client.get(f"v1/studies/{variant_ids[index]}", headers=admin_headers)
-    return t.cast([str], variant_ids)
+    return t.cast(t.List[str], variant_ids)
 
 
 def test_variant_manager(
@@ -396,7 +398,11 @@ def test_outputs(client: TestClient, admin_access_token: str, variant_id: str, t
 
 
 def test_clear_snapshots(
-    client: TestClient, admin_access_token: str, tmp_path: Path, generate_snapshots, monkeypatch: pytest.MonkeyPatch
+    client: TestClient,
+    admin_access_token: str,
+    tmp_path: Path,
+    generate_snapshots: t.List[str],
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """
     The `snapshot/` directory must not exist after a call to `clear-snapshot`.

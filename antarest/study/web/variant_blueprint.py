@@ -435,11 +435,11 @@ def create_study_variant_routes(
 
         Args: limit (int, optional): Number of hours to clear. Defaults to 24.
 
-        Returns: None
+        Returns: ID of the task running the snapshot clearing.
         """
         retention_hours = datetime.timedelta(hours=hours)
         logger.info(
-            f"Delete all variant snapshots older than {retention_hours} hours (24 by default)",
+            f"Delete all variant snapshots older than {retention_hours} hours.",
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)

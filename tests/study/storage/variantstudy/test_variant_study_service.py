@@ -250,7 +250,7 @@ class TestVariantStudyService:
         variant_study_service: VariantStudyService,
         raw_study_service: RawStudyService,
         monkeypatch: pytest.MonkeyPatch,
-    ):
+    ) -> None:
         """
         - Test return value in case the user is not allowed to call the function,
         - Test return value in case the user give a bad argument (negative
@@ -266,19 +266,21 @@ class TestVariantStudyService:
             Class that handle fake timestamp creation/update of variant
             """
 
-            fake_time: typing.Optional[datetime.datetime]
+            fake_time: datetime.datetime
 
             @classmethod
-            def now(cls):
+            def now(cls) -> datetime.datetime:
                 """Method used to get the custom timestamp"""
                 return datetime.datetime(2023, 12, 31)
 
             @classmethod
-            def utcnow(cls):
+            def utcnow(cls) -> datetime.datetime:
                 """Method used while a variant is created"""
                 return cls.now()
 
-        # Set up: we need at least a user, one raw study and one variant
+        # =============================
+        #  SET UP
+        # =============================
         # Create two users
         # an admin user
         # noinspection PyArgumentList
@@ -362,14 +364,21 @@ class TestVariantStudyService:
             assert variant.is_dir()
             assert list(variant.iterdir())[0].name == "snapshot"
 
-        # Begin tests
+        # =============================
+        #  TEST
+        # =============================
         # A user without rights cannot clear snapshots
         with pytest.raises(UserHasNotPermissionError):
             variant_study_service.clear_all_snapshots(
                 datetime.timedelta(1),
                 params=Mock(
                     spec=RequestParameters,
-                    user=Mock(spec=JWTUser, id=regular_user.id, is_site_admin=Mock(return_value=False)),
+                    user=Mock(
+                        spec=JWTUser,
+                        id=regular_user.id,
+                        is_site_admin=Mock(return_value=False),
+                        is_admin_token=Mock(return_value=False),
+                    ),
                 ),
             )
 
@@ -414,9 +423,7 @@ class TestVariantStudyService:
         )
         variant_study_service.task_service.await_task(task_id)
 
-        # Check if all snapshots was cleared
+        # Check if all snapshots were cleared
         nb_snapshot_dir = 0  # after the for iterations, must equal 0
         for variant_path in variant_study_path.iterdir():
-            if variant_path.joinpath("snapshot").exists():
-                nb_snapshot_dir += 1
-            assert nb_snapshot_dir == 0
+            assert not variant_path.joinpath("snapshot").exists()

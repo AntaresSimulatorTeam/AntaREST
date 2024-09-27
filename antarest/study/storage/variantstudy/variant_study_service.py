@@ -627,9 +627,9 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                 )
                 return TaskResult(
                     success=generate_result.success,
-                    message=f"{study_id} generated successfully"
-                    if generate_result.success
-                    else f"{study_id} not generated",
+                    message=(
+                        f"{study_id} generated successfully" if generate_result.success else f"{study_id} not generated"
+                    ),
                     return_value=generate_result.model_dump_json(),
                 )
 
@@ -1069,7 +1069,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         Raises:
             UserHasNotPermissionError
         """
-        if params is None or (params.user and not params.user.is_site_admin()):
+        if params is None or (params.user and not params.user.is_site_admin() and not params.user.is_admin_token()):
             raise UserHasNotPermissionError()
 
         task_name = f"Cleaning all snapshot updated or accessed at least {retention_hours} hours ago."
@@ -1106,9 +1106,8 @@ class SnapshotCleanerTask:
                 )
             )
             for variant in variant_list:
-                if variant.updated_at < datetime.now() - self._retention_hours:
-                    if variant.last_access and variant.last_access < datetime.now() - self._retention_hours:
-                        logger.info(f"Variant {variant.id} detected.")
+                if variant.updated_at < datetime.utcnow() - self._retention_hours:
+                    if variant.last_access and variant.last_access < datetime.utcnow() - self._retention_hours:
                         self._variant_study_service.clear_snapshot(variant)
 
     def run_task(self, notifier: TaskUpdateNotifier) -> TaskResult:
