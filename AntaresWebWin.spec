@@ -13,7 +13,7 @@ alembic_analysis = Analysis(["alembic/env.py"] + versions_files)
 
 antares_web_server_a = Analysis(['antarest/gui.py'],
              pathex=[],
-             binaries=binaries,
+             binaries=[],
              datas=[('./resources', './resources'), ('./alembic', './alembic'), ('./alembic.ini', './')],
              hiddenimports=[
                  'cmath',
