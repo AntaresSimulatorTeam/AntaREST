@@ -12,7 +12,6 @@
 
 import typing as t
 
-from antares.study.version.model.exceptions import ValidationError
 
 from antarest.core.exceptions import ConfigFileNotFound, LinkValidationError
 from antarest.core.model import JSON
