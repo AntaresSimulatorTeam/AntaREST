@@ -44,42 +44,42 @@ if t.TYPE_CHECKING:
 
 DEFAULT_WORKSPACE_NAME = "default"
 
-NEW_DEFAULT_STUDY_VERSION: StudyVersion = StudyVersion.parse(880)
-STUDY_VERSION_600 = StudyVersion.parse("600")
-STUDY_VERSION_610 = StudyVersion.parse("610")
-STUDY_VERSION_640 = StudyVersion.parse("640")
-STUDY_VERSION_650 = StudyVersion.parse("650")
-STUDY_VERSION_700 = StudyVersion.parse("700")
-STUDY_VERSION_710 = StudyVersion.parse("710")
-STUDY_VERSION_720 = StudyVersion.parse("720")
-STUDY_VERSION_800 = StudyVersion.parse("800")
-STUDY_VERSION_810 = StudyVersion.parse("810")
-STUDY_VERSION_820 = StudyVersion.parse("820")
-STUDY_VERSION_830 = StudyVersion.parse("830")
-STUDY_VERSION_840 = StudyVersion.parse("840")
-STUDY_VERSION_850 = StudyVersion.parse("850")
-STUDY_VERSION_860 = StudyVersion.parse("860")
-STUDY_VERSION_870 = StudyVersion.parse("870")
-STUDY_VERSION_880 = NEW_DEFAULT_STUDY_VERSION
-STUDY_VERSION_910 = StudyVersion.parse("910")
-STUDY_VERSION_920 = StudyVersion.parse("920")
+NEW_DEFAULT_STUDY_VERSION: StudyVersion = StudyVersion.parse("8.8")
+STUDY_VERSION_6_0 = StudyVersion.parse("6.0")
+STUDY_VERSION_6_1 = StudyVersion.parse("6.1")
+STUDY_VERSION_6_4 = StudyVersion.parse("6.4")
+STUDY_VERSION_6_5 = StudyVersion.parse("6.5")
+STUDY_VERSION_7_0 = StudyVersion.parse("7.0")
+STUDY_VERSION_7_1 = StudyVersion.parse("7.1")
+STUDY_VERSION_7_2 = StudyVersion.parse("7.2")
+STUDY_VERSION_8 = StudyVersion.parse("8.0")
+STUDY_VERSION_8_1 = StudyVersion.parse("8.1")
+STUDY_VERSION_8_2 = StudyVersion.parse("8.2")
+STUDY_VERSION_8_3 = StudyVersion.parse("8.3")
+STUDY_VERSION_8_4 = StudyVersion.parse("8.4")
+STUDY_VERSION_8_5 = StudyVersion.parse("8.5")
+STUDY_VERSION_8_6 = StudyVersion.parse("8.6")
+STUDY_VERSION_8_7 = StudyVersion.parse("8.7")
+STUDY_VERSION_8_8 = NEW_DEFAULT_STUDY_VERSION
+STUDY_VERSION_9_1 = StudyVersion.parse("9.1")
+STUDY_VERSION_9_2 = StudyVersion.parse("9.2")
 
 STUDY_REFERENCE_TEMPLATES: t.Mapping[StudyVersion, str] = {
-    STUDY_VERSION_600: "empty_study_613.zip",
-    STUDY_VERSION_610: "empty_study_613.zip",
-    STUDY_VERSION_640: "empty_study_613.zip",
-    STUDY_VERSION_700: "empty_study_700.zip",
-    STUDY_VERSION_710: "empty_study_710.zip",
-    STUDY_VERSION_720: "empty_study_720.zip",
-    STUDY_VERSION_800: "empty_study_803.zip",
-    STUDY_VERSION_810: "empty_study_810.zip",
-    STUDY_VERSION_820: "empty_study_820.zip",
-    STUDY_VERSION_830: "empty_study_830.zip",
-    STUDY_VERSION_840: "empty_study_840.zip",
-    STUDY_VERSION_850: "empty_study_850.zip",
-    STUDY_VERSION_860: "empty_study_860.zip",
-    STUDY_VERSION_870: "empty_study_870.zip",
-    STUDY_VERSION_880: "empty_study_880.zip",
+    STUDY_VERSION_6_0: "empty_study_613.zip",
+    STUDY_VERSION_6_1: "empty_study_613.zip",
+    STUDY_VERSION_6_4: "empty_study_613.zip",
+    STUDY_VERSION_7_0: "empty_study_700.zip",
+    STUDY_VERSION_7_1: "empty_study_710.zip",
+    STUDY_VERSION_7_2: "empty_study_720.zip",
+    STUDY_VERSION_8: "empty_study_803.zip",
+    STUDY_VERSION_8_1: "empty_study_810.zip",
+    STUDY_VERSION_8_2: "empty_study_820.zip",
+    STUDY_VERSION_8_3: "empty_study_830.zip",
+    STUDY_VERSION_8_4: "empty_study_840.zip",
+    STUDY_VERSION_8_5: "empty_study_850.zip",
+    STUDY_VERSION_8_6: "empty_study_860.zip",
+    STUDY_VERSION_8_7: "empty_study_870.zip",
+    STUDY_VERSION_8_8: "empty_study_880.zip",
 }
 
 

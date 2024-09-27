@@ -16,7 +16,7 @@ from antares.study.version import StudyVersion
 from pydantic import Field
 
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
-from antarest.study.model import STUDY_VERSION_810
+from antarest.study.model import STUDY_VERSION_8_1
 from antarest.study.storage.rawstudy.model.filesystem.config.cluster import ClusterProperties
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import IgnoreCaseIdentifier
 
@@ -122,7 +122,7 @@ def get_renewable_config_cls(study_version: StudyVersion) -> t.Type[RenewableCon
     Returns:
         The renewable configuration class.
     """
-    if study_version >= STUDY_VERSION_810:
+    if study_version >= STUDY_VERSION_8_1:
         return RenewableConfig
     raise ValueError(f"Unsupported study version {study_version}, required 810 or above.")
 

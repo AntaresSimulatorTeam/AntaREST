@@ -14,16 +14,16 @@ from copy import deepcopy
 from typing import Any, Dict
 
 from antarest.study.model import (
-    STUDY_VERSION_650,
-    STUDY_VERSION_700,
-    STUDY_VERSION_710,
-    STUDY_VERSION_720,
-    STUDY_VERSION_800,
-    STUDY_VERSION_810,
-    STUDY_VERSION_830,
-    STUDY_VERSION_840,
-    STUDY_VERSION_850,
-    STUDY_VERSION_860,
+    STUDY_VERSION_6_5,
+    STUDY_VERSION_7_0,
+    STUDY_VERSION_7_1,
+    STUDY_VERSION_7_2,
+    STUDY_VERSION_8,
+    STUDY_VERSION_8_1,
+    STUDY_VERSION_8_3,
+    STUDY_VERSION_8_4,
+    STUDY_VERSION_8_5,
+    STUDY_VERSION_8_6,
 )
 from antarest.study.storage.rawstudy.ini_reader import IniReader
 from antarest.study.storage.rawstudy.ini_writer import IniWriter
@@ -126,25 +126,25 @@ class GeneralData(IniFileNode):
         optimization = types["optimization"]
         other_preferences = types["other preferences"]
         study_version = config.version
-        if study_version >= STUDY_VERSION_650:
+        if study_version >= STUDY_VERSION_6_5:
             other_preferences["initial-reservoir-levels"] = str
-        if study_version >= STUDY_VERSION_700:
+        if study_version >= STUDY_VERSION_7_0:
             optimization["link-type"] = str
-        if study_version >= STUDY_VERSION_710:
+        if study_version >= STUDY_VERSION_7_1:
             general["thematic-trimming"] = bool
             general["geographic-trimming"] = bool
             del general["filtering"]
-        if study_version >= STUDY_VERSION_720:
+        if study_version >= STUDY_VERSION_7_2:
             other_preferences["hydro-pricing-mode"] = str
-        if study_version >= STUDY_VERSION_800:
+        if study_version >= STUDY_VERSION_8:
             other_preferences["hydro-heuristic-policy"] = str
             optimization["include-exportstructure"] = bool
             optimization["include-unfeasible-problem-behavior"] = str
             general["custom-scenario"] = bool
             del general["custom-ts-numbers"]
-        if study_version >= STUDY_VERSION_810:
+        if study_version >= STUDY_VERSION_8_1:
             other_preferences["renewable-generation-modelling"] = str
-        if study_version >= STUDY_VERSION_830:
+        if study_version >= STUDY_VERSION_8_3:
             types["adequacy patch"] = {
                 "include-adq-patch": bool,
                 "set-to-null-ntc-from-physical-out-to-physical-in-for-first-step": bool,
@@ -153,9 +153,9 @@ class GeneralData(IniFileNode):
             optimization["include-split-exported-mps"] = bool
             # include-exportmps: none, optim-1, optim-2, both-optims
             optimization["include-exportmps"] = str
-        if study_version >= STUDY_VERSION_840:
+        if study_version >= STUDY_VERSION_8_4:
             del optimization["include-split-exported-mps"]
-        if study_version >= STUDY_VERSION_850:
+        if study_version >= STUDY_VERSION_8_5:
             adequacy = types["adequacy patch"]
             adequacy["price-taking-order"] = str
             adequacy["include-hurdle-cost-csr"] = bool
@@ -164,7 +164,7 @@ class GeneralData(IniFileNode):
             adequacy["threshold-display-local-matching-rule-violations"] = float
             adequacy["threshold-csr-variable-bounds-relaxation"] = int
 
-        if study_version >= STUDY_VERSION_860:
+        if study_version >= STUDY_VERSION_8_6:
             types["adequacy patch"]["enable-first-step "] = bool
 
         IniFileNode.__init__(

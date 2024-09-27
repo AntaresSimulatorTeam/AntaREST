@@ -18,7 +18,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from antarest.study.model import STUDY_VERSION_820, STUDY_VERSION_860, STUDY_VERSION_870
+from antarest.study.model import STUDY_VERSION_8_2, STUDY_VERSION_8_6, STUDY_VERSION_8_7
 
 
 class _MatrixProfile(t.NamedTuple):
@@ -146,10 +146,10 @@ _SPECIFIC_MATRICES = {
     ),
 }
 
-_SPECIFIC_MATRICES_820 = copy.deepcopy(_SPECIFIC_MATRICES)
+_SPECIFIC_MATRICES_8_2 = copy.deepcopy(_SPECIFIC_MATRICES)
 """Specific matrices for study version 8.2."""
 
-_SPECIFIC_MATRICES_820["input/links/*/*"] = _MatrixProfile(
+_SPECIFIC_MATRICES_8_2["input/links/*/*"] = _MatrixProfile(
     cols=[
         "Hurdle costs direct",
         "Hurdle costs indirect",
@@ -162,19 +162,19 @@ _SPECIFIC_MATRICES_820["input/links/*/*"] = _MatrixProfile(
 )
 
 # Specific matrices for study version 8.6
-_SPECIFIC_MATRICES_860 = copy.deepcopy(_SPECIFIC_MATRICES_820)
+_SPECIFIC_MATRICES_8_6 = copy.deepcopy(_SPECIFIC_MATRICES_8_2)
 """Specific matrices for study version 8.6."""
 
 # noinspection SpellCheckingInspection
 #
-_SPECIFIC_MATRICES_860["input/hydro/series/*/mingen"] = _MatrixProfile(cols=[], rows=[])
+_SPECIFIC_MATRICES_8_6["input/hydro/series/*/mingen"] = _MatrixProfile(cols=[], rows=[])
 
-_SPECIFIC_MATRICES_870 = copy.deepcopy(_SPECIFIC_MATRICES_820)
+_SPECIFIC_MATRICES_8_7 = copy.deepcopy(_SPECIFIC_MATRICES_8_2)
 """Specific matrices for study version 8.7."""
 
 # noinspection SpellCheckingInspection
 # Scenarized RHS for binding constraints
-_SPECIFIC_MATRICES_870["input/bindingconstraints/*"] = _MatrixProfile(cols=[], rows=[])
+_SPECIFIC_MATRICES_8_7["input/bindingconstraints/*"] = _MatrixProfile(cols=[], rows=[])
 
 
 def adjust_matrix_columns_index(
@@ -193,14 +193,14 @@ def adjust_matrix_columns_index(
         study_version: The version of the study.
     """
     # Get the matrix profiles for a given study version
-    if study_version < STUDY_VERSION_820:
+    if study_version < STUDY_VERSION_8_2:
         matrix_profiles = _SPECIFIC_MATRICES
-    elif study_version < STUDY_VERSION_860:
-        matrix_profiles = _SPECIFIC_MATRICES_820
-    elif study_version < STUDY_VERSION_870:
-        matrix_profiles = _SPECIFIC_MATRICES_860
+    elif study_version < STUDY_VERSION_8_6:
+        matrix_profiles = _SPECIFIC_MATRICES_8_2
+    elif study_version < STUDY_VERSION_8_7:
+        matrix_profiles = _SPECIFIC_MATRICES_8_6
     else:
-        matrix_profiles = _SPECIFIC_MATRICES_870
+        matrix_profiles = _SPECIFIC_MATRICES_8_7
 
     # Apply the matrix profile to the dataframe to adjust the column names and index
     for pattern, matrix_profile in matrix_profiles.items():

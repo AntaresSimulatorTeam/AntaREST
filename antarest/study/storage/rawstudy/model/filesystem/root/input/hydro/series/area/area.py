@@ -12,7 +12,7 @@
 
 from typing import Any, Dict
 
-from antarest.study.model import STUDY_VERSION_650, STUDY_VERSION_860
+from antarest.study.model import STUDY_VERSION_6_5, STUDY_VERSION_8_6
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE, INode
 from antarest.study.storage.rawstudy.model.filesystem.matrix.constants import (
@@ -27,8 +27,8 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import Matri
 class InputHydroSeriesArea(FolderNode):
     def build(self) -> TREE:
         study_version = self.config.version
-        freq = MatrixFrequency.DAILY if study_version >= STUDY_VERSION_650 else MatrixFrequency.MONTHLY
-        default_empty = default_scenario_daily if study_version >= STUDY_VERSION_650 else default_scenario_monthly
+        freq = MatrixFrequency.DAILY if study_version >= STUDY_VERSION_6_5 else MatrixFrequency.MONTHLY
+        default_empty = default_scenario_daily if study_version >= STUDY_VERSION_6_5 else default_scenario_monthly
         hydro_series_matrices: Dict[str, INode[Any, Any, Any]] = {
             "mod": InputSeriesMatrix(
                 self.context,
@@ -44,7 +44,7 @@ class InputHydroSeriesArea(FolderNode):
                 default_empty=default_scenario_hourly,
             ),
         }
-        if study_version >= STUDY_VERSION_860:
+        if study_version >= STUDY_VERSION_8_6:
             hydro_series_matrices["mingen"] = InputSeriesMatrix(
                 self.context,
                 self.config.next_file("mingen.txt"),

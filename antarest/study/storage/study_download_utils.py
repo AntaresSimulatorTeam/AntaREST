@@ -27,7 +27,7 @@ from fastapi import HTTPException
 from antarest.core.exceptions import ChildNotFoundError
 from antarest.core.serialization import to_json
 from antarest.study.model import (
-    STUDY_VERSION_810,
+    STUDY_VERSION_8_1,
     ExportFormat,
     MatrixAggregationResult,
     MatrixAggregationResultDTO,
@@ -117,7 +117,7 @@ class StudyDownloader:
 
         config = study.config
         has_renewables = (
-            config.version >= STUDY_VERSION_810 and EnrModelling(config.enr_modelling) == EnrModelling.CLUSTERS
+            config.version >= STUDY_VERSION_8_1 and EnrModelling(config.enr_modelling) == EnrModelling.CLUSTERS
         )
         if has_renewables:
             cluster_details += [f"details-res-{data.level.value}"]

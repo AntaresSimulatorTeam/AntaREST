@@ -22,6 +22,7 @@ import traceback
 import typing as t
 from pathlib import Path
 
+from antares.study.version import SolverVersion
 from antareslauncher.data_repo.data_repo_tinydb import DataRepoTinydb
 from antareslauncher.main import MainParameters, run_with
 from antareslauncher.main_option_parser import MainOptionParser, ParserParameters
@@ -496,7 +497,7 @@ class SlurmLauncher(AbstractLauncher):
         study_uuid: str,
         launch_uuid: str,
         launcher_params: LauncherParametersDTO,
-        version: str,
+        version: SolverVersion,
     ) -> None:
         study_path = Path(self.launcher_args.studies_in) / launch_uuid
 
@@ -512,7 +513,7 @@ class SlurmLauncher(AbstractLauncher):
 
                 append_log(launch_uuid, "Checking study version...")
                 available_versions = self.slurm_config.antares_versions_on_remote_server
-                if version not in available_versions:
+                if f"{version:ddd}" not in available_versions:
                     raise VersionNotSupportedError(
                         f"Study version '{version}' is not supported. Currently supported versions are"
                         f" {', '.join(available_versions)}"
@@ -591,7 +592,7 @@ class SlurmLauncher(AbstractLauncher):
         self,
         study_uuid: str,
         job_id: str,
-        version: str,
+        version: SolverVersion,
         launcher_parameters: LauncherParametersDTO,
         params: RequestParameters,
     ) -> None:
@@ -644,11 +645,11 @@ class SlurmLauncher(AbstractLauncher):
             )
 
 
-def _override_solver_version(study_path: Path, version: str) -> None:
+def _override_solver_version(study_path: Path, version: SolverVersion) -> None:
     study_info_path = study_path / "study.antares"
     study_info = IniReader().read(study_info_path)
     if "antares" in study_info:
-        study_info["antares"]["solver_version"] = version
+        study_info["antares"]["solver_version"] = str(version)
         IniWriter().write(study_info, study_info_path)
     else:
         logger.warning("Failed to find antares study info")

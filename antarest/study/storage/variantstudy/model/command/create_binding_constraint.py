@@ -20,7 +20,7 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 
 from antarest.matrixstore.model import MatrixData
 from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
-from antarest.study.model import STUDY_VERSION_830, STUDY_VERSION_870
+from antarest.study.model import STUDY_VERSION_8_3, STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     DEFAULT_GROUP,
     DEFAULT_OPERATOR,
@@ -130,9 +130,9 @@ def get_binding_constraint_config_cls(study_version: StudyVersion) -> t.Type[Bin
     Retrieves the binding constraint configuration class based on the study version.
     """
     version = study_version
-    if version >= STUDY_VERSION_870:
+    if version >= STUDY_VERSION_8_7:
         return BindingConstraintProperties870
-    elif version >= STUDY_VERSION_830:
+    elif version >= STUDY_VERSION_8_3:
         return BindingConstraintProperties830
     else:
         return BindingConstraintPropertiesBase
@@ -299,7 +299,7 @@ class AbstractBindingConstraintCommand(OptionalProperties, BindingConstraintMatr
         version: StudyVersion,
         create: bool,
     ) -> None:
-        if version < STUDY_VERSION_870:
+        if version < STUDY_VERSION_8_7:
             self.values = self.get_corresponding_matrices(self.values, time_step, version, create)
         elif specific_matrices:
             for matrix in specific_matrices:
@@ -368,7 +368,7 @@ class AbstractBindingConstraintCommand(OptionalProperties, BindingConstraintMatr
             bd_id, study_data.config, self.coeffs or {}, operator=current_operator, time_step=time_step, group=group
         )
 
-        if version >= STUDY_VERSION_870:
+        if version >= STUDY_VERSION_8_7:
             # When all BC of a given group are removed, the group should be removed from the scenario builder
             old_groups = old_groups or set()
             new_groups = {bd.get("group", DEFAULT_GROUP).lower() for bd in binding_constraints.values()}
@@ -378,7 +378,7 @@ class AbstractBindingConstraintCommand(OptionalProperties, BindingConstraintMatr
         if self.values:
             if not isinstance(self.values, str):  # pragma: no cover
                 raise TypeError(repr(self.values))
-            if version < STUDY_VERSION_870:
+            if version < STUDY_VERSION_8_7:
                 study_data.tree.save(self.values, ["input", "bindingconstraints", bd_id])
 
         operator_matrices_map = {
@@ -392,7 +392,7 @@ class AbstractBindingConstraintCommand(OptionalProperties, BindingConstraintMatr
             if matrix_term:
                 if not isinstance(matrix_term, str):  # pragma: no cover
                     raise TypeError(repr(matrix_term))
-                if version >= STUDY_VERSION_870:
+                if version >= STUDY_VERSION_8_7:
                     matrix_id = f"{bd_id}_{matrix_alias}"
                     study_data.tree.save(matrix_term, ["input", "bindingconstraints", matrix_id])
         return CommandOutput(status=True)

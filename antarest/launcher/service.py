@@ -20,6 +20,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, cast
 from uuid import UUID, uuid4
 
+from antares.study.version import SolverVersion
 from fastapi import HTTPException
 
 from antarest.core.config import Config, Launcher, NbCoresConfig
@@ -228,7 +229,7 @@ class LauncherService:
         job_uuid = self._generate_new_id()
         logger.info(f"New study launch (study={study_uuid}, job_id={job_uuid})")
         study_info = self.study_service.get_study_information(uuid=study_uuid, params=params)
-        solver_version = study_version or study_info.version.__format__(format_spec="ddd")
+        solver_version = SolverVersion.parse(study_version or study_info.version)
 
         self._assert_launcher_is_initialized(launcher)
         assert_permission(

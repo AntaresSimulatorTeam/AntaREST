@@ -27,7 +27,7 @@ from antarest.core.exceptions import (
 from antarest.core.model import JSON
 from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
 from antarest.study.business.utils import execute_or_add_commands
-from antarest.study.model import STUDY_VERSION_870, Study
+from antarest.study.model import STUDY_VERSION_8_7, Study
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
     Thermal870Config,
@@ -440,7 +440,7 @@ class ThermalManager:
             f"input/thermal/prepro/{area_id}/{lower_new_id}/modulation",
             f"input/thermal/prepro/{area_id}/{lower_new_id}/data",
         ]
-        if StudyVersion.parse(study.version) >= STUDY_VERSION_870:
+        if StudyVersion.parse(study.version) >= STUDY_VERSION_8_7:
             source_paths.append(f"input/thermal/series/{area_id}/{lower_source_id}/CO2Cost")
             source_paths.append(f"input/thermal/series/{area_id}/{lower_source_id}/fuelCost")
             new_paths.append(f"input/thermal/series/{area_id}/{lower_new_id}/CO2Cost")
@@ -463,7 +463,7 @@ class ThermalManager:
         lower_cluster_id = cluster_id.lower()
         thermal_cluster_path = Path(f"input/thermal/series/{area_id}/{lower_cluster_id}")
         series_path = [thermal_cluster_path / "series"]
-        if StudyVersion.parse(study.version) >= STUDY_VERSION_870:
+        if StudyVersion.parse(study.version) >= STUDY_VERSION_8_7:
             series_path.append(thermal_cluster_path / "CO2Cost")
             series_path.append(thermal_cluster_path / "fuelCost")
 

@@ -22,6 +22,8 @@ from pathlib import Path
 from typing import Callable, Dict, Optional, Tuple, cast
 from uuid import UUID
 
+from antares.study.version import SolverVersion
+
 from antarest.core.config import Config
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus
@@ -75,11 +77,11 @@ class LocalLauncher(AbstractLauncher):
         self,
         study_uuid: str,
         job_id: str,
-        version: str,
+        version: SolverVersion,
         launcher_parameters: LauncherParametersDTO,
         params: RequestParameters,
     ) -> None:
-        antares_solver_path = self._select_best_binary(version)
+        antares_solver_path = self._select_best_binary(f"{version}ddd")
 
         job = threading.Thread(
             target=LocalLauncher._compute,

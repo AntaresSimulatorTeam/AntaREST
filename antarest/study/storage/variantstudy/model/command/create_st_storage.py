@@ -17,7 +17,7 @@ from pydantic import Field, ValidationInfo, model_validator
 
 from antarest.core.model import JSON
 from antarest.matrixstore.model import MatrixData
-from antarest.study.model import STUDY_VERSION_860
+from antarest.study.model import STUDY_VERSION_8_6
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import STStorageConfigType
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -37,7 +37,7 @@ _MATRIX_NAMES = (
 )
 
 # Minimum required version.
-REQUIRED_VERSION = STUDY_VERSION_860
+REQUIRED_VERSION = STUDY_VERSION_8_6
 
 MatrixType = t.List[t.List[MatrixData]]
 

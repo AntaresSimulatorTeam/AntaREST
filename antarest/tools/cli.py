@@ -81,7 +81,7 @@ def commands() -> None:
     required=False,
     type=str,
     help=f"Study version. Default:{NEW_DEFAULT_STUDY_VERSION}",
-    default=NEW_DEFAULT_STUDY_VERSION.__format__("ddd"),
+    default=f"{NEW_DEFAULT_STUDY_VERSION:ddd}",
 )
 def cli_apply_script(
     input: str,
@@ -162,7 +162,7 @@ def cli_generate_script(input: str, output: str) -> None:
     required=False,
     type=str,
     help=f"Study version. Default:{NEW_DEFAULT_STUDY_VERSION}",
-    default=NEW_DEFAULT_STUDY_VERSION.__format__("ddd"),
+    default=f"{NEW_DEFAULT_STUDY_VERSION:ddd}",
 )
 def cli_generate_script_diff(base: str, variant: str, output: str, version: str) -> None:
     """Generate variant script commands from two variant script directories"""

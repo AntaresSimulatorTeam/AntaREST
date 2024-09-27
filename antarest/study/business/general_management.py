@@ -17,7 +17,7 @@ from pydantic import PositiveInt, StrictBool, ValidationInfo, conint, model_vali
 from antarest.study.business.all_optional_meta import all_optional_model
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.utils import GENERAL_DATA_PATH, FieldInfo, FormFieldsBaseModel, execute_or_add_commands
-from antarest.study.model import STUDY_VERSION_710, STUDY_VERSION_800, Study
+from antarest.study.model import STUDY_VERSION_7_1, STUDY_VERSION_8, Study
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
@@ -200,17 +200,17 @@ FIELDS_INFO: Dict[str, FieldInfo] = {
     "filtering": {
         "path": f"{GENERAL_PATH}/filtering",
         "default_value": False,
-        "end_version": STUDY_VERSION_710,
+        "end_version": STUDY_VERSION_7_1,
     },
     "geographic_trimming": {
         "path": f"{GENERAL_PATH}/geographic-trimming",
         "default_value": False,
-        "start_version": STUDY_VERSION_710,
+        "start_version": STUDY_VERSION_7_1,
     },
     "thematic_trimming": {
         "path": f"{GENERAL_PATH}/thematic-trimming",
         "default_value": False,
-        "start_version": STUDY_VERSION_710,
+        "start_version": STUDY_VERSION_7_1,
     },
     "simulation_synthesis": {
         "path": f"{OUTPUT_PATH}/synthesis",
@@ -302,7 +302,7 @@ class GeneralManager:
         return [
             UpdateConfig(
                 target=f"{GENERAL_PATH}/custom-scenario"
-                if file_study.config.version >= STUDY_VERSION_800
+                if file_study.config.version >= STUDY_VERSION_8
                 else f"{GENERAL_PATH}/custom-ts-numbers",
                 data=new_value == BuildingMode.CUSTOM,
                 command_context=cmd_context,

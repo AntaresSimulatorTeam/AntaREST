@@ -24,7 +24,7 @@ from antares.study.version import StudyVersion
 
 from antarest.core.model import JSON
 from antarest.core.serialization import from_json
-from antarest.study.model import STUDY_VERSION_810, STUDY_VERSION_860
+from antarest.study.model import STUDY_VERSION_8_1, STUDY_VERSION_8_6
 from antarest.study.storage.rawstudy.ini_reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     DEFAULT_GROUP,
@@ -472,7 +472,7 @@ def _parse_renewables(root: Path, area: str) -> t.List[RenewableConfigType]:
     # Before version 8.1, we only have "Load", "Wind" and "Solar" objects.
     # We can't use renewable clusters.
     version = _parse_version(root)
-    if version < STUDY_VERSION_810:
+    if version < STUDY_VERSION_8_1:
         return []
 
     # Since version 8.1 of the solver, we can use "renewable clusters" objects.
@@ -499,7 +499,7 @@ def _parse_st_storage(root: Path, area: str) -> t.List[STStorageConfigType]:
 
     # st_storage feature exists only since 8.6 version
     version = _parse_version(root)
-    if version < STUDY_VERSION_860:
+    if version < STUDY_VERSION_8_6:
         return []
 
     relpath = Path(f"input/st-storage/clusters/{area}/list.ini")

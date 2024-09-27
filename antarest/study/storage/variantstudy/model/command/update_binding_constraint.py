@@ -13,7 +13,7 @@
 import typing as t
 
 from antarest.core.model import JSON
-from antarest.study.model import STUDY_VERSION_870
+from antarest.study.model import STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     DEFAULT_GROUP,
     OPERATOR_MATRICES_MAP,
@@ -167,7 +167,7 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
 
         study_version = study_data.config.version
         # rename matrices if the operator has changed for version >= 870
-        if self.operator and study_version >= STUDY_VERSION_870:
+        if self.operator and study_version >= STUDY_VERSION_8_7:
             existing_operator = BindingConstraintOperator(actual_cfg.get("operator"))
             new_operator = self.operator
             _update_matrices_names(study_data, self.id, existing_operator, new_operator)

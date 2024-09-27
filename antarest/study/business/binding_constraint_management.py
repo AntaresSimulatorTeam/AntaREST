@@ -34,7 +34,7 @@ from antarest.core.requests import CaseInsensitiveDict
 from antarest.core.utils.string import to_camel_case
 from antarest.study.business.all_optional_meta import camel_case_model
 from antarest.study.business.utils import execute_or_add_commands
-from antarest.study.model import STUDY_VERSION_830, STUDY_VERSION_870, Study
+from antarest.study.model import STUDY_VERSION_8_3, STUDY_VERSION_8_7, Study
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     DEFAULT_GROUP,
     DEFAULT_OPERATOR,
@@ -495,19 +495,19 @@ class BindingConstraintManager:
         }
 
         version = study_version
-        if version >= STUDY_VERSION_830:
+        if version >= STUDY_VERSION_8_3:
             _filter_year_by_year = constraint.get("filter_year_by_year") or constraint.get("filter-year-by-year", "")
             _filter_synthesis = constraint.get("filter_synthesis") or constraint.get("filter-synthesis", "")
             constraint_output["filter_year_by_year"] = _filter_year_by_year
             constraint_output["filter_synthesis"] = _filter_synthesis
-        if version >= STUDY_VERSION_870:
+        if version >= STUDY_VERSION_8_7:
             constraint_output["group"] = constraint.get("group", DEFAULT_GROUP)
 
         # Choose the right model according to the version
         adapted_constraint: ConstraintOutput
-        if version >= STUDY_VERSION_870:
+        if version >= STUDY_VERSION_8_7:
             adapted_constraint = ConstraintOutput870(**constraint_output)
-        elif version >= STUDY_VERSION_830:
+        elif version >= STUDY_VERSION_8_3:
             adapted_constraint = ConstraintOutput830(**constraint_output)
         else:
             adapted_constraint = ConstraintOutputBase(**constraint_output)
@@ -786,9 +786,9 @@ class BindingConstraintManager:
         upd_constraint["type"] = upd_constraint.get("time_step", existing_constraint.time_step)
         upd_constraint["terms"] = data.terms or existing_constraint.terms
         new_fields = ["enabled", "operator", "comments", "terms"]
-        if study_version >= STUDY_VERSION_830:
+        if study_version >= STUDY_VERSION_8_3:
             new_fields.extend(["filter_year_by_year", "filter_synthesis"])
-        if study_version >= STUDY_VERSION_870:
+        if study_version >= STUDY_VERSION_8_7:
             new_fields.append("group")
         for field in new_fields:
             if field not in upd_constraint:
@@ -929,7 +929,7 @@ class BindingConstraintManager:
 def _replace_matrices_according_to_frequency_and_version(
     data: ConstraintInput, version: StudyVersion, args: t.Dict[str, t.Any]
 ) -> t.Dict[str, t.Any]:
-    if version < STUDY_VERSION_870:
+    if version < STUDY_VERSION_8_7:
         if "values" not in args:
             matrix = {
                 BindingConstraintFrequency.HOURLY.value: default_bc_hourly_86,
@@ -954,7 +954,7 @@ def check_attributes_coherence(
     study_version: StudyVersion,
     operator: BindingConstraintOperator,
 ) -> None:
-    if study_version < STUDY_VERSION_870:
+    if study_version < STUDY_VERSION_8_7:
         if data.group:
             raise InvalidFieldForVersionError(
                 f"You cannot specify a group as your study version is older than v8.7: {data.group}"

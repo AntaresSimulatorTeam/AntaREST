@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from antarest.study.model import STUDY_VERSION_830
+from antarest.study.model import STUDY_VERSION_8_3
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
 from antarest.study.storage.rawstudy.model.filesystem.root.input.areas.item.adequacy_patch import (
@@ -29,7 +29,7 @@ class InputAreasItem(FolderNode):
                 self.config.next_file("optimization.ini"),
             ),
         }
-        if self.config.version >= STUDY_VERSION_830:
+        if self.config.version >= STUDY_VERSION_8_3:
             children["adequacy_patch"] = InputAreasAdequacyPatch(
                 self.context, self.config.next_file("adequacy_patch.ini")
             )
