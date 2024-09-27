@@ -81,7 +81,7 @@ class LocalLauncher(AbstractLauncher):
         launcher_parameters: LauncherParametersDTO,
         params: RequestParameters,
     ) -> None:
-        antares_solver_path = self._select_best_binary(f"{version}ddd")
+        antares_solver_path = self._select_best_binary(f"{version:ddd}")
 
         job = threading.Thread(
             target=LocalLauncher._compute,
