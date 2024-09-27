@@ -348,6 +348,16 @@ class StudyVariantUpgradeError(HTTPException):
             super().__init__(HTTPStatus.EXPECTATION_FAILED, "Upgrade not supported for parent of variants")
 
 
+class FileDeletionNotAllowed(HTTPException):
+    """
+    Exception raised when deleting a file or a folder which isn't inside the 'User' folder.
+    """
+
+    def __init__(self, message: str) -> None:
+        msg = f"Raw deletion failed because {message}"
+        super().__init__(HTTPStatus.FORBIDDEN, msg)
+
+
 class ReferencedObjectDeletionNotAllowed(HTTPException):
     """
     Exception raised when a binding constraint is not allowed to be deleted because it references

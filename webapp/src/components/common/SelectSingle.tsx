@@ -14,18 +14,18 @@
 
 import {
   FormControl,
+  InputBaseProps,
   InputLabel,
   MenuItem,
   Select,
   SelectChangeEvent,
-  SelectProps,
   SxProps,
   Theme,
 } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { GenericInfo } from "../../common/types";
 
-interface Props extends SelectProps {
+interface Props {
   name: string;
   label?: string;
   list: GenericInfo[];
@@ -37,6 +37,7 @@ interface Props extends SelectProps {
   handleChange?: (key: string, value: string | number) => void;
   required?: boolean;
   disabled?: boolean;
+  size?: InputBaseProps["size"];
 }
 
 function SelectSingle(props: Props) {
