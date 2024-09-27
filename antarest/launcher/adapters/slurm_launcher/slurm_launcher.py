@@ -649,7 +649,11 @@ def _override_solver_version(study_path: Path, version: SolverVersion) -> None:
     study_info_path = study_path / "study.antares"
     study_info = IniReader().read(study_info_path)
     if "antares" in study_info:
-        study_info["antares"]["solver_version"] = str(version)
+        if version.major < 9:  # should be written as XYZ
+            version_to_write = f"{version:ddd}"
+        else:  # should be written as X.Y
+            version_to_write = f"{version:2d}"
+        study_info["antares"]["solver_version"] = version_to_write
         IniWriter().write(study_info, study_info_path)
     else:
         logger.warning("Failed to find antares study info")
