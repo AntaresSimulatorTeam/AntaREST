@@ -15,6 +15,7 @@ import multiprocessing
 import platform
 import time
 import webbrowser
+from dataclasses import dataclass
 from multiprocessing import Process
 from pathlib import Path
 from threading import Thread
@@ -54,34 +55,45 @@ def open_app() -> None:
     webbrowser.open("http://localhost:8080")
 
 
-def create_systray_app() -> QApplication:
+@dataclass(frozen=True)
+class AntaresSystrayApp:
+    """
+    Used to keep ownership of root Qt objects.
+    QMenu can only be owned by QWidgets, but we don't have one.
+    """
+    app: QApplication
+    menu: QMenu
+
+
+def create_systray_app() -> AntaresSystrayApp:
     """
     Creates the small application that allows to open
     the browser or shutdown the server.
     """
     app = QApplication([])
     app.setQuitOnLastWindowClosed(False)
+
     # Adding an icon
     icon = QIcon(str(RESOURCE_PATH / "webapp" / "logo16.png"))
     # Adding item on the menu bar
-    tray = QSystemTrayIcon(icon, app)
-    tray.setVisible(True)
+    tray = QSystemTrayIcon()
+    tray.setToolTip("AntaresWebServer")
+    tray.setIcon(icon)
 
     # Creating the options
     menu = QMenu()
-    open_app_action = QAction("Open application")
-    menu.addAction(open_app_action)
+    open_app_action = menu.addAction("Open application")
     open_app_action.triggered.connect(open_app)
     # To quit the app
-    quit_action = QAction("Quit")
+    quit_action = menu.addAction("Quit")
     quit_action.triggered.connect(app.quit)
-    menu.addAction(quit_action)
+
     # Adding options to the System Tray
     tray.setContextMenu(menu)
-    app.processEvents()
-    tray.setToolTip("AntaresWebServer")
 
-    return app
+    tray.setVisible(True)
+
+    return AntaresSystrayApp(app, menu)
 
 
 def monitor_server_process(server, app) -> None:
@@ -134,12 +146,12 @@ def main() -> None:
 
     arguments = parse_arguments()
     notification_popup("Antares Web Server starting...")
-    app = create_systray_app()
+    systray_app = create_systray_app()
     server = start_server(arguments.config_file)
-    setup_exit_application_on_server_end(server, app)
+    setup_exit_application_on_server_end(server, systray_app.app)
     wait_for_server_start()
     notification_popup("Antares Web Server started, you can manage the application within the systray app")
-    app.exec_()
+    systray_app.app.exec_()
     server.kill()
 
 
