@@ -53,14 +53,17 @@ import UsePromiseCond, {
 } from "../../../../../common/utils/UsePromiseCond";
 import useStudySynthesis from "../../../../../../redux/hooks/useStudySynthesis";
 import ButtonBack from "../../../../../common/ButtonBack";
-import moment from "moment";
 import MatrixGrid from "../../../../../common/MatrixGrid/index.tsx";
-import { generateCustomColumns } from "../../../../../common/MatrixGrid/utils.ts";
+import {
+  generateCustomColumns,
+  generateDateTime,
+} from "../../../../../common/MatrixGrid/utils.ts";
 import { ColumnTypes } from "../../../../../common/MatrixGrid/types.ts";
 import SplitView from "../../../../../common/SplitView/index.tsx";
 import ResultFilters from "./ResultFilters.tsx";
 import { toError } from "../../../../../../utils/fnUtils.ts";
 import EmptyView from "../../../../../common/page/SimpleContent.tsx";
+import { getStudyMatrixIndex } from "../../../../../../services/api/matrix.ts";
 
 function ResultDetails() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -151,6 +154,15 @@ function ResultDetails() {
     },
   );
 
+  const { data: dateTimeMetadata } = usePromise(
+    () => getStudyMatrixIndex(study.id, path),
+    {
+      deps: [study.id, path],
+    },
+  );
+
+  const dateTime = dateTimeMetadata && generateDateTime(dateTimeMetadata);
+
   const synthesisRes = usePromise(
     () => {
       if (outputId && selectedItem && isSynthesis) {
@@ -163,47 +175,6 @@ function ResultDetails() {
       deps: [study.id, outputId, selectedItem],
     },
   );
-
-  // !NOTE: Workaround to display the date in the correct format, to be replaced by a proper solution.
-  const dateTimeFromIndex = useMemo(() => {
-    if (!matrixRes.data) {
-      return [];
-    }
-
-    // Annual format has a static string
-    if (timestep === Timestep.Annual) {
-      return ["Annual"];
-    }
-
-    // Directly use API's week index (handles 53 weeks) as no formatting is required.
-    // !NOTE: Suboptimal: Assumes API consistency, lacks flexibility.
-    if (timestep === Timestep.Weekly) {
-      return matrixRes.data.index.map((weekNumber) => weekNumber.toString());
-    }
-
-    // Original date/time format mapping for moment parsing
-    const parseFormat = {
-      [Timestep.Hourly]: "MM/DD HH:mm",
-      [Timestep.Daily]: "MM/DD",
-      [Timestep.Monthly]: "MM",
-    }[timestep];
-
-    // Output formats for each timestep to match legacy UI requirements
-    const outputFormat = {
-      [Timestep.Hourly]: "DD MMM HH:mm  I",
-      [Timestep.Daily]: "DD MMM  I",
-      [Timestep.Monthly]: "MMM",
-    }[timestep];
-
-    const needsIndex =
-      timestep === Timestep.Hourly || timestep === Timestep.Daily;
-
-    return matrixRes.data.index.map((dateTime, i) =>
-      moment(dateTime, parseFormat).format(
-        outputFormat.replace("I", needsIndex ? ` - ${i + 1}` : ""),
-      ),
-    );
-  }, [matrixRes.data, timestep]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -320,7 +291,7 @@ function ResultDetails() {
                       titles: matrix.columns,
                     }),
                   ]}
-                  dateTime={dateTimeFromIndex}
+                  dateTime={dateTime}
                   isReaOnlyEnabled
                 />
               )
