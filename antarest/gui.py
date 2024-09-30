@@ -23,7 +23,7 @@ from typing import Tuple
 
 import httpx
 import uvicorn
-from PyQt5.QtGui import QIcon
+from PyQt5.QtGui import QIcon, QCursor
 from PyQt5.QtWidgets import QAction, QApplication, QMenu, QSystemTrayIcon
 
 from antarest.core.utils.utils import get_local_path
@@ -88,7 +88,17 @@ def create_systray_app() -> AntaresSystrayApp:
     quit_action.triggered.connect(app.quit)
 
     # Adding options to the System Tray
+    def handle_action(reason: int) -> None:
+        """
+        - shows context menu also on left click
+        - open browser on double click
+        """
+        if reason == QSystemTrayIcon.Trigger:
+            tray.contextMenu().popup(QCursor.pos())
+        if reason == QSystemTrayIcon.DoubleClick:
+            open_app()
     tray.setContextMenu(menu)
+    tray.activated.connect(handle_action)
 
     tray.setVisible(True)
 
