@@ -23,7 +23,7 @@ from typing import Tuple
 
 import httpx
 import uvicorn
-from PyQt5.QtGui import QIcon, QCursor
+from PyQt5.QtGui import QCursor, QIcon
 from PyQt5.QtWidgets import QAction, QApplication, QMenu, QSystemTrayIcon
 
 from antarest.core.utils.utils import get_local_path
@@ -61,6 +61,7 @@ class AntaresSystrayApp:
     Used to keep ownership of root Qt objects.
     QMenu can only be owned by QWidgets, but we don't have one.
     """
+
     app: QApplication
     menu: QMenu
 
@@ -82,9 +83,11 @@ def create_systray_app() -> AntaresSystrayApp:
     # Creating the options
     menu = QMenu()
     open_app_action = menu.addAction("Open application")
+    assert open_app_action is not None
     open_app_action.triggered.connect(open_app)
     # To quit the app
     quit_action = menu.addAction("Quit")
+    assert quit_action is not None
     quit_action.triggered.connect(app.quit)
 
     # Adding options to the System Tray
@@ -93,10 +96,13 @@ def create_systray_app() -> AntaresSystrayApp:
         - shows context menu also on left click
         - open browser on double click
         """
-        if reason == QSystemTrayIcon.Trigger:
-            tray.contextMenu().popup(QCursor.pos())
-        if reason == QSystemTrayIcon.DoubleClick:
+        if reason == QSystemTrayIcon.Trigger:  # type: ignore
+            menu = tray.contextMenu()
+            assert menu is not None
+            menu.popup(QCursor.pos())
+        if reason == QSystemTrayIcon.DoubleClick:  # type: ignore
             open_app()
+
     tray.setContextMenu(menu)
     tray.activated.connect(handle_action)
 
@@ -105,7 +111,7 @@ def create_systray_app() -> AntaresSystrayApp:
     return AntaresSystrayApp(app, menu)
 
 
-def monitor_server_process(server, app) -> None:
+def monitor_server_process(server: Process, app: QApplication) -> None:
     """
     Quits the application when server process ends.
     """
@@ -117,12 +123,18 @@ def setup_exit_application_on_server_end(server: Process, app: QApplication) -> 
     Thread(target=monitor_server_process, args=(server, app)).start()
 
 
+def check_server_started() -> bool:
+    with contextlib.suppress(httpx.ConnectError):
+        res = httpx.get("http://localhost:8080/health")
+        if res.status_code == 200:
+            return True
+    return False
+
+
 def wait_for_server_start() -> None:
     for _ in range(30, 0, -1):
-        with contextlib.suppress(httpx.ConnectError):
-            res = httpx.get("http://localhost:8080")
-            if res.status_code == 200:
-                break
+        if check_server_started():
+            break
         time.sleep(1)
 
 
@@ -154,12 +166,14 @@ def main() -> None:
     multiprocessing.freeze_support()
 
     arguments = parse_arguments()
-    notification_popup("Antares Web Server starting...")
+    if check_server_started():
+        notification_popup("Antares Web Server already started, you can manage the application within the system tray.")
+    notification_popup("Starting Antares Web Server...")
     systray_app = create_systray_app()
     server = start_server(arguments.config_file)
     setup_exit_application_on_server_end(server, systray_app.app)
     wait_for_server_start()
-    notification_popup("Antares Web Server started, you can manage the application within the systray app")
+    notification_popup("Antares Web Server started, you can manage the application within the system tray.")
     systray_app.app.exec_()
     server.kill()
 
