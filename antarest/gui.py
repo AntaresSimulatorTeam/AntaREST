@@ -18,6 +18,7 @@ import webbrowser
 from multiprocessing import Process
 from pathlib import Path
 from threading import Thread
+from typing import Tuple
 
 import httpx
 import uvicorn
@@ -123,7 +124,7 @@ def notification_popup(message: str) -> None:
             title="AntaresWebServer",
             message=message,
             app_name="AntaresWebServer",
-            app_icon=RESOURCE_PATH / "webapp" / "favicon.ico",
+            app_icon=str(RESOURCE_PATH / "webapp" / "favicon.ico"),
             timeout=600,
         )
 
