@@ -853,7 +853,7 @@ class BindingConstraintManager:
                 raise BindingConstraintNotFound(f"Binding constraint '{bc_id}' not found")
 
             props = create_binding_constraint_config(study_version, **value.dict())
-            new_values = props.model_dump(mode='json', by_alias=True, exclude_unset=True)
+            new_values = props.model_dump(mode="json", by_alias=True, exclude_unset=True)
             upd_obj = config[dict_config[bc_id]]
             current_value = copy.deepcopy(upd_obj)
             upd_obj.update(new_values)
