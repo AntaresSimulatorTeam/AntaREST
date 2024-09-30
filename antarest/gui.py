@@ -19,12 +19,11 @@ from dataclasses import dataclass
 from multiprocessing import Process
 from pathlib import Path
 from threading import Thread
-from typing import Tuple
 
 import httpx
 import uvicorn
 from PyQt5.QtGui import QCursor, QIcon
-from PyQt5.QtWidgets import QAction, QApplication, QMenu, QSystemTrayIcon
+from PyQt5.QtWidgets import QApplication, QMenu, QSystemTrayIcon
 
 from antarest.core.utils.utils import get_local_path
 from antarest.main import fastapi_app, parse_arguments
@@ -141,15 +140,14 @@ def wait_for_server_start() -> None:
 def notification_popup(message: str) -> None:
     if platform.system() == "Windows":
         # noinspection PyPackageRequirements
-        from win10toast import ToastNotifier  # type: ignore
+        from windows_toasts import Toast, ToastDisplayImage, WindowsToaster  # type: ignore
 
-        toaster = ToastNotifier()
-        toaster.show_toast(
-            "AntaresWebServer",
-            message,
-            icon_path=RESOURCE_PATH / "webapp" / "favicon.ico",
-            threaded=True,
-        )
+        toaster = WindowsToaster("AntaresWebServer")
+        toast = Toast()
+        toast.text_fields = [message]
+        icon = ToastDisplayImage.fromPath(str(RESOURCE_PATH / "webapp" / "favicon.ico"))
+        toast.AddImage(icon)
+        toaster.show_toast(toast)
     else:
         from plyer import notification  # type: ignore
 
