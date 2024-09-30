@@ -1,3 +1,15 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import datetime
 from pathlib import Path
 from unittest.mock import Mock
@@ -97,7 +109,7 @@ def storage_service(tmp_path: Path, project_path: Path, sta_mini_zip_path: Path)
     )
     matrix_service = SimpleMatrixService(matrix_content_repository=matrix_content_repository)
     storage_service = build_study_service(
-        application=Mock(),
+        app_ctxt=Mock(),
         cache=LocalCache(config=config.cache),
         file_transfer_manager=Mock(),
         task_service=task_service_mock,

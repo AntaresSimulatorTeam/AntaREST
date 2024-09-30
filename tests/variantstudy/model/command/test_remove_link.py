@@ -1,3 +1,15 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import os
 import typing as t
 import uuid
@@ -58,7 +70,7 @@ class TestRemoveLink:
         and that the areas are well-ordered in alphabetical order (Antares Solver convention).
         """
         command = RemoveLink(area1=area1, area2=area2, command_context=Mock(spec=CommandContext))
-        actual = command.dict(include={"area1", "area2"})
+        actual = command.model_dump(include={"area1", "area2"})
         assert actual == expected
 
     @staticmethod

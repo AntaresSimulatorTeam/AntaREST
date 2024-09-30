@@ -1,3 +1,17 @@
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ *
+ * See AUTHORS.txt
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This file is part of the Antares project.
+ */
+
 import React, { useEffect, useState } from "react";
 import Split, { SplitProps } from "react-split";
 import { Box } from "@mui/material";
@@ -25,9 +39,9 @@ export interface SplitViewProps {
  * @param props - The component props.
  * @param props.id - Identifier to uniquely store the sizes of the panes.
  * @param props.children - Child components to be rendered within the split views.
- * @param props.direction - The orientation of the split view ("horizontal" or "vertical").
- * @param props.sizes - Initial sizes of each view in percentages. The array must sum to 100 and match the number of children.
- * @param props.gutterSize - The size of the gutter between split views. Defaults to 4.
+ * @param [props.direction=horizontal] - The orientation of the split view ("horizontal" or "vertical").
+ * @param [props.sizes] - Initial sizes of each view in percentages. The array must sum to 100 and match the number of children.
+ * @param [props.gutterSize=3] - The size of the gutter between split views.
  * @returns A React component displaying a split layout view with resizable panes.
  */
 function SplitView({

@@ -1,3 +1,15 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import filecmp
 import glob
 import os
@@ -176,7 +188,7 @@ def assert_settings_are_updated(tmp_path: Path, old_values: List[str]) -> None:
     assert adequacy_patch["threshold-initiate-curtailment-sharing-rule"] == 0.0
     assert adequacy_patch["threshold-display-local-matching-rule-violations"] == 0.0
     assert adequacy_patch["threshold-csr-variable-bounds-relaxation"] == 3
-    assert adequacy_patch["enable-first-step"]
+    assert not adequacy_patch["enable-first-step"]
 
 
 def get_old_settings_values(tmp_path: Path) -> List[str]:

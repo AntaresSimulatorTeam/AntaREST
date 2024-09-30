@@ -1,3 +1,17 @@
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ *
+ * See AUTHORS.txt
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This file is part of the Antares project.
+ */
+
 import { useState, useEffect } from "react";
 import { AxiosError } from "axios";
 import { useSnackbar } from "notistack";
@@ -174,9 +188,10 @@ function Data() {
                           lineHeight: 1.334,
                         }}
                       >
-                        {`Matrices - ${dataList.find(
-                          (item) => item.id === selectedItem,
-                        )?.name}`}
+                        {`Matrices - ${
+                          dataList.find((item) => item.id === selectedItem)
+                            ?.name
+                        }`}
                       </Typography>
                       <Box>
                         <IconButton>
@@ -223,9 +238,9 @@ function Data() {
                         alignItems: "center",
                       }}
                     >
-                      {`Matrices - ${dataList.find(
-                        (item) => item.id === selectedItem,
-                      )?.name}`}
+                      {`Matrices - ${
+                        dataList.find((item) => item.id === selectedItem)?.name
+                      }`}
                     </Typography>
                   )
                 }

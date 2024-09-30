@@ -1,4 +1,15 @@
-import json
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import logging
 import shutil
 import tempfile
@@ -11,6 +22,7 @@ from antarest.core.config import Config
 from antarest.core.exceptions import BadOutputError, StudyOutputNotFoundError
 from antarest.core.interfaces.cache import CacheConstants, ICache
 from antarest.core.model import JSON, PublicMode
+from antarest.core.serialization import from_json
 from antarest.core.utils.utils import StopWatch, extract_zip, unzip, zip_dir
 from antarest.login.model import GroupDTO
 from antarest.study.common.studystorage import IStudyStorageService, T
@@ -75,8 +87,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         additional_data = study.additional_data or StudyAdditionalData()
 
         try:
-            patch_obj = json.loads(additional_data.patch or "{}")
-            patch = Patch.parse_obj(patch_obj)
+            patch = Patch.model_validate(from_json(additional_data.patch or "{}"))
         except ValueError as e:
             # The conversion to JSON and the parsing can fail if the patch is not valid
             logger.warning(f"Failed to parse patch for study {study.id}", exc_info=e)
@@ -316,7 +327,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         horizon = file_study.tree.get(url=["settings", "generaldata", "general", "horizon"])
         author = file_study.tree.get(url=["study", "antares", "author"])
         patch = self.patch_service.get_from_filestudy(file_study)
-        study_additional_data = StudyAdditionalData(horizon=horizon, author=author, patch=patch.json())
+        study_additional_data = StudyAdditionalData(horizon=horizon, author=author, patch=patch.model_dump_json())
         return study_additional_data
 
     def archive_study_output(self, study: T, output_id: str) -> bool:

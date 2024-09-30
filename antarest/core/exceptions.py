@@ -1,3 +1,15 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import re
 import typing as t
 from http import HTTPStatus
@@ -329,6 +341,16 @@ class StudyVariantUpgradeError(HTTPException):
             )
         else:
             super().__init__(HTTPStatus.EXPECTATION_FAILED, "Upgrade not supported for parent of variants")
+
+
+class FileDeletionNotAllowed(HTTPException):
+    """
+    Exception raised when deleting a file or a folder which isn't inside the 'User' folder.
+    """
+
+    def __init__(self, message: str) -> None:
+        msg = f"Raw deletion failed because {message}"
+        super().__init__(HTTPStatus.FORBIDDEN, msg)
 
 
 class ReferencedObjectDeletionNotAllowed(HTTPException):

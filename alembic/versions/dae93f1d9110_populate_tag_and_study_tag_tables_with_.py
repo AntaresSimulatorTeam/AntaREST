@@ -7,7 +7,6 @@ Create Date: 2024-02-08 10:30:20.590919
 """
 import collections
 import itertools
-import json
 import secrets
 import typing as t
 
@@ -16,6 +15,7 @@ from alembic import op
 from sqlalchemy.engine import Connection  # type: ignore
 
 from antarest.study.css4_colors import COLOR_NAMES
+from antarest.core.serialization import from_json, to_json
 
 # revision identifiers, used by Alembic.
 revision = "dae93f1d9110"
@@ -34,7 +34,7 @@ def _avoid_duplicates(tags: t.Iterable[str]) -> t.Sequence[str]:
 def _load_patch_obj(patch: t.Optional[str]) -> t.MutableMapping[str, t.Any]:
     """Load the patch object from the `patch` field in the `study_additional_data` table."""
 
-    obj: t.MutableMapping[str, t.Any] = json.loads(patch or "{}")
+    obj: t.MutableMapping[str, t.Any] = from_json(patch or "{}")
     obj["study"] = obj.get("study") or {}
     obj["study"]["tags"] = _avoid_duplicates(obj["study"].get("tags") or [])
     return obj
@@ -113,7 +113,7 @@ def downgrade() -> None:
         objects_by_ids[study_id] = obj
 
     # Updating objects in the `study_additional_data` table
-    bulk_patches = [{"study_id": id_, "patch": json.dumps(obj)} for id_, obj in objects_by_ids.items()]
+    bulk_patches = [{"study_id": id_, "patch": to_json(obj)} for id_, obj in objects_by_ids.items()]
     if bulk_patches:
         sql = sa.text("UPDATE study_additional_data SET patch = :patch WHERE study_id = :study_id")
         connexion.execute(sql, *bulk_patches)

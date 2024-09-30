@@ -1,5 +1,16 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import enum
-import json
 import typing as t
 from datetime import datetime
 
@@ -8,12 +19,13 @@ from sqlalchemy import Column, DateTime, Enum, ForeignKey, Integer, Sequence, St
 from sqlalchemy.orm import relationship  # type: ignore
 
 from antarest.core.persistence import Base
-from antarest.core.utils.string import to_camel_case
+from antarest.core.serialization import from_json
 from antarest.login.model import Identity, UserInfo
+from antarest.study.business.all_optional_meta import camel_case_model
 
 
 class XpansionParametersDTO(BaseModel):
-    output_id: t.Optional[str]
+    output_id: t.Optional[str] = None
     sensitivity_mode: bool = False
     enabled: bool = True
 
@@ -42,7 +54,7 @@ class LauncherParametersDTO(BaseModel):
         """
         if params is None:
             return cls()
-        return cls.parse_obj(json.loads(params))
+        return cls.model_validate(from_json(params))
 
 
 class LogType(str, enum.Enum):
@@ -113,7 +125,7 @@ class JobResultDTO(BaseModel):
 
     class Config:
         @staticmethod
-        def schema_extra(schema: t.MutableMapping[str, t.Any]) -> None:
+        def json_schema_extra(schema: t.MutableMapping[str, t.Any]) -> None:
             schema["example"] = JobResultDTO(
                 id="b2a9f6a7-7f8f-4f7a-9a8b-1f9b4c5d6e7f",
                 study_id="b2a9f6a7-7f8f-4f7a-9a8b-1f9b4c5d6e7f",
@@ -127,7 +139,7 @@ class JobResultDTO(BaseModel):
                 exit_code=0,
                 solver_stats="time: 1651s, call_count: 1, optimization_issues: []",
                 owner=UserInfo(id=0o007, name="James BOND"),
-            )
+            ).model_dump()
 
 
 class JobLog(Base):  # type: ignore
@@ -228,13 +240,8 @@ class LauncherEnginesDTO(BaseModel):
     engines: t.List[str]
 
 
-class LauncherLoadDTO(
-    BaseModel,
-    extra="forbid",
-    validate_assignment=True,
-    allow_population_by_field_name=True,
-    alias_generator=to_camel_case,
-):
+@camel_case_model
+class LauncherLoadDTO(BaseModel, extra="forbid", validate_assignment=True, populate_by_name=True):
     """
     DTO representing the load of the SLURM cluster or local machine.
 

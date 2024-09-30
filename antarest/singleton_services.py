@@ -1,3 +1,15 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import time
 from pathlib import Path
 from typing import Dict, List, cast
@@ -7,8 +19,7 @@ from antarest.core.interfaces.service import IService
 from antarest.core.logging.utils import configure_logger
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.core.utils.utils import get_local_path
-from antarest.study.storage.auto_archive_service import AutoArchiveService
-from antarest.utils import (
+from antarest.service_creator import (
     SESSION_ARGS,
     Module,
     create_archive_worker,
@@ -18,6 +29,7 @@ from antarest.utils import (
     create_watcher,
     init_db_engine,
 )
+from antarest.study.storage.auto_archive_service import AutoArchiveService
 
 
 def _init(config_file: Path, services_list: List[Module]) -> Dict[Module, IService]:
@@ -44,13 +56,13 @@ def _init(config_file: Path, services_list: List[Module]) -> Dict[Module, IServi
     services: Dict[Module, IService] = {}
 
     if Module.WATCHER in services_list:
-        watcher = create_watcher(config=config, application=None, study_service=study_service)
+        watcher = create_watcher(config=config, app_ctxt=None, study_service=study_service)
         services[Module.WATCHER] = watcher
 
     if Module.MATRIX_GC in services_list:
         matrix_gc = create_matrix_gc(
             config=config,
-            application=None,
+            app_ctxt=None,
             study_service=study_service,
             matrix_service=matrix_service,
         )

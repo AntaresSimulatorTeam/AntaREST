@@ -46,7 +46,8 @@ launcher:
 
 debug: false
 
-root_path: "api"
+# Serve the API at /api
+api_prefix: "/api"
 
 server:
   worker_threadpool_size: 12

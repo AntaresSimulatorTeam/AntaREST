@@ -1,3 +1,15 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import io
 import shutil
 from pathlib import Path
@@ -7,14 +19,7 @@ import pandas as pd
 import pytest
 from starlette.testclient import TestClient
 
-from antarest.study.business.aggregator_management import (
-    MCAllAreasQueryFile,
-    MCAllLinksQueryFile,
-    MCIndAreasQueryFile,
-    MCIndLinksQueryFile,
-)
 from antarest.study.storage.df_download import TableExportFormat
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from tests.integration.raw_studies_blueprint.assets import ASSETS_DIR
 
 # define the requests parameters for the `economy/mc-ind` outputs aggregation
@@ -22,8 +27,8 @@ AREAS_REQUESTS__IND = [
     (
         {
             "output_id": "20201014-1425eco-goodbye",
-            "query_file": MCIndAreasQueryFile.VALUES,
-            "frequency": MatrixFrequency.HOURLY,
+            "query_file": "values",
+            "frequency": "hourly",
             "mc_years": "",
             "areas_ids": "",
             "columns_names": "",
@@ -33,8 +38,8 @@ AREAS_REQUESTS__IND = [
     (
         {
             "output_id": "20201014-1425eco-goodbye",
-            "query_file": MCIndAreasQueryFile.DETAILS,
-            "frequency": MatrixFrequency.HOURLY,
+            "query_file": "details",
+            "frequency": "hourly",
             "mc_years": "1",
             "areas_ids": "de,fr,it",
             "columns_names": "",
@@ -44,8 +49,8 @@ AREAS_REQUESTS__IND = [
     (
         {
             "output_id": "20201014-1425eco-goodbye",
-            "query_file": MCIndAreasQueryFile.VALUES,
-            "frequency": MatrixFrequency.WEEKLY,
+            "query_file": "values",
+            "frequency": "weekly",
             "mc_years": "1,2",
             "areas_ids": "",
             "columns_names": "OP. COST,MRG. PRICE",
@@ -55,8 +60,8 @@ AREAS_REQUESTS__IND = [
     (
         {
             "output_id": "20201014-1425eco-goodbye",
-            "query_file": MCIndAreasQueryFile.VALUES,
-            "frequency": MatrixFrequency.HOURLY,
+            "query_file": "values",
+            "frequency": "hourly",
             "mc_years": "2",
             "areas_ids": "es,fr,de",
             "columns_names": "",
@@ -66,8 +71,8 @@ AREAS_REQUESTS__IND = [
     (
         {
             "output_id": "20201014-1425eco-goodbye",
-            "query_file": MCIndAreasQueryFile.VALUES,
-            "frequency": MatrixFrequency.ANNUAL,
+            "query_file": "values",
+            "frequency": "annual",
             "mc_years": "",
             "areas_ids": "",
             "columns_names": "",
@@ -77,8 +82,8 @@ AREAS_REQUESTS__IND = [
     (
         {
             "output_id": "20201014-1425eco-goodbye",
-            "query_file": MCIndAreasQueryFile.VALUES,
-            "frequency": MatrixFrequency.HOURLY,
+            "query_file": "values",
+            "frequency": "hourly",
             "columns_names": "COSt,NODu",
         },
         "test-06.result.tsv",
@@ -86,8 +91,8 @@ AREAS_REQUESTS__IND = [
     (
         {
             "output_id": "20201014-1425eco-goodbye",
-            "query_file": MCIndAreasQueryFile.DETAILS,
-            "frequency": MatrixFrequency.HOURLY,
+            "query_file": "details",
+            "frequency": "hourly",
             "columns_names": "COSt,NODu",
         },
         "test-07.result.tsv",
@@ -98,8 +103,8 @@ LINKS_REQUESTS__IND = [
     (
         {
             "output_id": "20201014-1425eco-goodbye",
-            "query_file": MCIndLinksQueryFile.VALUES,
-            "frequency": MatrixFrequency.HOURLY,
+            "query_file": "values",
+            "frequency": "hourly",
             "mc_years": "",
             "columns_names": "",
         },
@@ -108,8 +113,8 @@ LINKS_REQUESTS__IND = [
     (
         {
             "output_id": "20201014-1425eco-goodbye",
-            "query_file": MCIndLinksQueryFile.VALUES,
-            "frequency": MatrixFrequency.HOURLY,
+            "query_file": "values",
+            "frequency": "hourly",
             "mc_years": "1",
             "columns_names": "",
         },
@@ -118,8 +123,8 @@ LINKS_REQUESTS__IND = [
     (
         {
             "output_id": "20201014-1425eco-goodbye",
-            "query_file": MCIndLinksQueryFile.VALUES,
-            "frequency": MatrixFrequency.HOURLY,
+            "query_file": "values",
+            "frequency": "hourly",
             "mc_years": "1,2",
             "columns_names": "UCAP LIn.,FLOw qUAD.",
         },
@@ -128,8 +133,8 @@ LINKS_REQUESTS__IND = [
     (
         {
             "output_id": "20201014-1425eco-goodbye",
-            "query_file": MCIndLinksQueryFile.VALUES,
-            "frequency": MatrixFrequency.HOURLY,
+            "query_file": "values",
+            "frequency": "hourly",
             "mc_years": "1",
             "links_ids": "de - fr",
         },
@@ -138,8 +143,8 @@ LINKS_REQUESTS__IND = [
     (
         {
             "output_id": "20201014-1425eco-goodbye",
-            "query_file": MCIndLinksQueryFile.VALUES,
-            "frequency": MatrixFrequency.HOURLY,
+            "query_file": "values",
+            "frequency": "hourly",
             "columns_names": "MArG. COsT,CONG. PRoB +",
         },
         "test-05.result.tsv",
@@ -150,8 +155,8 @@ SAME_REQUEST_DIFFERENT_FORMATS__IND = [
     (
         {
             "output_id": "20201014-1425eco-goodbye",
-            "query_file": MCIndLinksQueryFile.VALUES,
-            "frequency": MatrixFrequency.HOURLY,
+            "query_file": "values",
+            "frequency": "hourly",
             "format": "csv",
         },
         "test-01.result.tsv",
@@ -159,8 +164,8 @@ SAME_REQUEST_DIFFERENT_FORMATS__IND = [
     (
         {
             "output_id": "20201014-1425eco-goodbye",
-            "query_file": MCIndLinksQueryFile.VALUES,
-            "frequency": MatrixFrequency.HOURLY,
+            "query_file": "values",
+            "frequency": "hourly",
             "format": "tsv",
         },
         "test-01.result.tsv",
@@ -168,8 +173,8 @@ SAME_REQUEST_DIFFERENT_FORMATS__IND = [
     (
         {
             "output_id": "20201014-1425eco-goodbye",
-            "query_file": MCIndLinksQueryFile.VALUES,
-            "frequency": MatrixFrequency.HOURLY,
+            "query_file": "values",
+            "frequency": "hourly",
             "format": "xlsx",
         },
         "test-01.result.tsv",
@@ -180,20 +185,20 @@ SAME_REQUEST_DIFFERENT_FORMATS__IND = [
 INCOHERENT_REQUESTS_BODIES__IND = [
     {
         "output_id": "20201014-1425eco-goodbye",
-        "query_file": MCIndAreasQueryFile.VALUES,
-        "frequency": MatrixFrequency.HOURLY,
+        "query_file": "values",
+        "frequency": "hourly",
         "mc_years": "123456789",
     },
     {
         "output_id": "20201014-1425eco-goodbye",
-        "query_file": MCIndLinksQueryFile.VALUES,
-        "frequency": MatrixFrequency.HOURLY,
+        "query_file": "values",
+        "frequency": "hourly",
         "columns_names": "fake_col",
     },
     {
         "output_id": "20201014-1425eco-goodbye",
-        "query_file": MCIndAreasQueryFile.VALUES,
-        "frequency": MatrixFrequency.HOURLY,
+        "query_file": "values",
+        "frequency": "hourly",
         "links_ids": "fake_id",
     },
 ]
@@ -202,17 +207,17 @@ WRONGLY_TYPED_REQUESTS__IND = [
     {
         "output_id": "20201014-1425eco-goodbye",
         "query_file": "fake_query_file",
-        "frequency": MatrixFrequency.HOURLY,
+        "frequency": "hourly",
     },
     {
         "output_id": "20201014-1425eco-goodbye",
-        "query_file": MCIndAreasQueryFile.VALUES,
+        "query_file": "values",
         "frequency": "fake_frequency",
     },
     {
         "output_id": "20201014-1425eco-goodbye",
-        "query_file": MCIndAreasQueryFile.VALUES,
-        "frequency": MatrixFrequency.HOURLY,
+        "query_file": "values",
+        "frequency": "hourly",
         "format": "fake_format",
     },
 ]
@@ -222,8 +227,8 @@ AREAS_REQUESTS__ALL = [
     (
         {
             "output_id": "20201014-1427eco",
-            "query_file": MCAllAreasQueryFile.VALUES,
-            "frequency": MatrixFrequency.DAILY,
+            "query_file": "values",
+            "frequency": "daily",
             "areas_ids": "",
             "columns_names": "",
         },
@@ -232,8 +237,8 @@ AREAS_REQUESTS__ALL = [
     (
         {
             "output_id": "20201014-1427eco",
-            "query_file": MCAllAreasQueryFile.DETAILS,
-            "frequency": MatrixFrequency.MONTHLY,
+            "query_file": "details",
+            "frequency": "monthly",
             "areas_ids": "de,fr,it",
             "columns_names": "",
         },
@@ -242,8 +247,8 @@ AREAS_REQUESTS__ALL = [
     (
         {
             "output_id": "20201014-1427eco",
-            "query_file": MCAllAreasQueryFile.VALUES,
-            "frequency": MatrixFrequency.DAILY,
+            "query_file": "values",
+            "frequency": "daily",
             "areas_ids": "",
             "columns_names": "OP. CoST,MRG. PrICE",
         },
@@ -252,8 +257,8 @@ AREAS_REQUESTS__ALL = [
     (
         {
             "output_id": "20201014-1427eco",
-            "query_file": MCAllAreasQueryFile.VALUES,
-            "frequency": MatrixFrequency.DAILY,
+            "query_file": "values",
+            "frequency": "daily",
             "areas_ids": "es,fr,de",
             "columns_names": "",
         },
@@ -262,8 +267,8 @@ AREAS_REQUESTS__ALL = [
     (
         {
             "output_id": "20201014-1427eco",
-            "query_file": MCAllAreasQueryFile.VALUES,
-            "frequency": MatrixFrequency.MONTHLY,
+            "query_file": "values",
+            "frequency": "monthly",
             "areas_ids": "",
             "columns_names": "",
         },
@@ -272,8 +277,8 @@ AREAS_REQUESTS__ALL = [
     (
         {
             "output_id": "20201014-1427eco",
-            "query_file": MCAllAreasQueryFile.ID,
-            "frequency": MatrixFrequency.DAILY,
+            "query_file": "id",
+            "frequency": "daily",
             "areas_ids": "",
             "columns_names": "",
         },
@@ -282,8 +287,8 @@ AREAS_REQUESTS__ALL = [
     (
         {
             "output_id": "20201014-1427eco",
-            "query_file": MCAllAreasQueryFile.VALUES,
-            "frequency": MatrixFrequency.DAILY,
+            "query_file": "values",
+            "frequency": "daily",
             "columns_names": "COsT,NoDU",
         },
         "test-07-all.result.tsv",
@@ -291,8 +296,8 @@ AREAS_REQUESTS__ALL = [
     (
         {
             "output_id": "20201014-1427eco",
-            "query_file": MCAllAreasQueryFile.DETAILS,
-            "frequency": MatrixFrequency.MONTHLY,
+            "query_file": "details",
+            "frequency": "monthly",
             "columns_names": "COsT,NoDU",
         },
         "test-08-all.result.tsv",
@@ -303,8 +308,8 @@ LINKS_REQUESTS__ALL = [
     (
         {
             "output_id": "20241807-1540eco-extra-outputs",
-            "query_file": MCAllLinksQueryFile.VALUES,
-            "frequency": MatrixFrequency.DAILY,
+            "query_file": "values",
+            "frequency": "daily",
             "columns_names": "",
         },
         "test-01-all.result.tsv",
@@ -312,8 +317,8 @@ LINKS_REQUESTS__ALL = [
     (
         {
             "output_id": "20241807-1540eco-extra-outputs",
-            "query_file": MCAllLinksQueryFile.VALUES,
-            "frequency": MatrixFrequency.MONTHLY,
+            "query_file": "values",
+            "frequency": "monthly",
             "columns_names": "",
         },
         "test-02-all.result.tsv",
@@ -321,8 +326,8 @@ LINKS_REQUESTS__ALL = [
     (
         {
             "output_id": "20241807-1540eco-extra-outputs",
-            "query_file": MCAllLinksQueryFile.VALUES,
-            "frequency": MatrixFrequency.DAILY,
+            "query_file": "values",
+            "frequency": "daily",
             "columns_names": "",
         },
         "test-03-all.result.tsv",
@@ -330,8 +335,8 @@ LINKS_REQUESTS__ALL = [
     (
         {
             "output_id": "20241807-1540eco-extra-outputs",
-            "query_file": MCAllLinksQueryFile.VALUES,
-            "frequency": MatrixFrequency.MONTHLY,
+            "query_file": "values",
+            "frequency": "monthly",
             "links_ids": "de - fr",
         },
         "test-04-all.result.tsv",
@@ -339,8 +344,8 @@ LINKS_REQUESTS__ALL = [
     (
         {
             "output_id": "20241807-1540eco-extra-outputs",
-            "query_file": MCAllLinksQueryFile.ID,
-            "frequency": MatrixFrequency.DAILY,
+            "query_file": "id",
+            "frequency": "daily",
             "links_ids": "",
         },
         "test-05-all.result.tsv",
@@ -348,8 +353,8 @@ LINKS_REQUESTS__ALL = [
     (
         {
             "output_id": "20241807-1540eco-extra-outputs",
-            "query_file": MCAllLinksQueryFile.VALUES,
-            "frequency": MatrixFrequency.DAILY,
+            "query_file": "values",
+            "frequency": "daily",
             "columns_names": "MARG. COsT,CONG. ProB +",
         },
         "test-06-all.result.tsv",
@@ -360,8 +365,8 @@ SAME_REQUEST_DIFFERENT_FORMATS__ALL = [
     (
         {
             "output_id": "20241807-1540eco-extra-outputs",
-            "query_file": MCAllLinksQueryFile.VALUES,
-            "frequency": MatrixFrequency.DAILY,
+            "query_file": "values",
+            "frequency": "daily",
             "format": "csv",
         },
         "test-01-all.result.tsv",
@@ -369,8 +374,8 @@ SAME_REQUEST_DIFFERENT_FORMATS__ALL = [
     (
         {
             "output_id": "20241807-1540eco-extra-outputs",
-            "query_file": MCAllLinksQueryFile.VALUES,
-            "frequency": MatrixFrequency.DAILY,
+            "query_file": "values",
+            "frequency": "daily",
             "format": "tsv",
         },
         "test-01-all.result.tsv",
@@ -378,8 +383,8 @@ SAME_REQUEST_DIFFERENT_FORMATS__ALL = [
     (
         {
             "output_id": "20241807-1540eco-extra-outputs",
-            "query_file": MCAllLinksQueryFile.VALUES,
-            "frequency": MatrixFrequency.DAILY,
+            "query_file": "values",
+            "frequency": "daily",
             "format": "xlsx",
         },
         "test-01-all.result.tsv",
@@ -390,19 +395,19 @@ SAME_REQUEST_DIFFERENT_FORMATS__ALL = [
 INCOHERENT_REQUESTS_BODIES__ALL = [
     {
         "output_id": "20201014-1427eco",
-        "query_file": MCAllAreasQueryFile.VALUES,
-        "frequency": MatrixFrequency.DAILY,
+        "query_file": "values",
+        "frequency": "daily",
     },
     {
         "output_id": "20201014-1427eco",
-        "query_file": MCAllLinksQueryFile.VALUES,
-        "frequency": MatrixFrequency.DAILY,
+        "query_file": "values",
+        "frequency": "daily",
         "columns_names": "fake_col",
     },
     {
         "output_id": "20201014-1427eco",
-        "query_file": MCAllAreasQueryFile.VALUES,
-        "frequency": MatrixFrequency.MONTHLY,
+        "query_file": "values",
+        "frequency": "monthly",
         "links_ids": "fake_id",
     },
 ]
@@ -411,17 +416,17 @@ WRONGLY_TYPED_REQUESTS__ALL = [
     {
         "output_id": "20201014-1427eco",
         "query_file": "fake_query_file",
-        "frequency": MatrixFrequency.MONTHLY,
+        "frequency": "monthly",
     },
     {
         "output_id": "20201014-1427eco",
-        "query_file": MCAllAreasQueryFile.VALUES,
+        "query_file": "values",
         "frequency": "fake_frequency",
     },
     {
         "output_id": "20201014-1427eco",
-        "query_file": MCAllAreasQueryFile.VALUES,
-        "frequency": MatrixFrequency.DAILY,
+        "query_file": "values",
+        "frequency": "daily",
         "format": "fake_format",
     },
 ]
@@ -449,7 +454,7 @@ class TestRawDataAggregationMCInd:
             res = client.get(f"/v1/studies/{internal_study_id}/areas/aggregate/mc-ind/{output_id}", params=params)
             assert res.status_code == 200, res.json()
             content = io.BytesIO(res.content)
-            df = pd.read_csv(content, index_col=0, sep=",")
+            df = pd.read_csv(content, sep=",")
             resource_file = ASSETS_DIR.joinpath(f"aggregate_areas_raw_data/{expected_result_filename}")
             resource_file.parent.mkdir(exist_ok=True, parents=True)
             if not resource_file.exists():
@@ -478,7 +483,7 @@ class TestRawDataAggregationMCInd:
             res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-ind/{output_id}", params=params)
             assert res.status_code == 200, res.json()
             content = io.BytesIO(res.content)
-            df = pd.read_csv(content, index_col=0, sep=",")
+            df = pd.read_csv(content, sep=",")
             resource_file = ASSETS_DIR.joinpath(f"aggregate_links_raw_data/{expected_result_filename}")
             resource_file.parent.mkdir(exist_ok=True, parents=True)
             if not resource_file.exists():
@@ -509,11 +514,11 @@ class TestRawDataAggregationMCInd:
             content = io.BytesIO(res.content)
             export_format = params["format"]
             if export_format == TableExportFormat.CSV.value:
-                df = pd.read_csv(content, index_col=0, sep=",")
+                df = pd.read_csv(content, sep=",")
             elif export_format == TableExportFormat.TSV.value:
-                df = pd.read_csv(content, index_col=0, sep="\t")
+                df = pd.read_csv(content, sep="\t")
             else:
-                df = pd.read_excel(content, index_col=0)  # type: ignore
+                df = pd.read_excel(content)  # type: ignore
             resource_file = ASSETS_DIR.joinpath(f"aggregate_links_raw_data/{expected_result_filename}")
             resource_file.parent.mkdir(exist_ok=True, parents=True)
             if not resource_file.exists():
@@ -537,9 +542,7 @@ class TestRawDataAggregationMCInd:
             output_id = params.pop("output_id")
             res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-ind/{output_id}", params=params)
             assert res.status_code == 200, res.json()
-            content = io.BytesIO(res.content)
-            df = pd.read_csv(content, index_col=0, sep=",")
-            assert df.empty
+            assert res.content.strip() == b""
 
     def test_wrongly_typed_request(self, client: TestClient, user_access_token: str, internal_study_id: str):
         """
@@ -562,8 +565,8 @@ class TestRawDataAggregationMCInd:
         res = client.get(
             f"/v1/studies/{internal_study_id}/areas/aggregate/mc-ind/unknown_id",
             params={
-                "query_file": MCIndAreasQueryFile.VALUES,
-                "frequency": MatrixFrequency.HOURLY,
+                "query_file": "values",
+                "frequency": "hourly",
             },
         )
         assert res.status_code == 404, res.json()
@@ -574,8 +577,8 @@ class TestRawDataAggregationMCInd:
         res = client.get(
             f"/v1/studies/{internal_study_id}/links/aggregate/mc-ind/unknown_id",
             params={
-                "query_file": MCIndLinksQueryFile.VALUES,
-                "frequency": MatrixFrequency.HOURLY,
+                "query_file": "values",
+                "frequency": "hourly",
             },
         )
         assert res.status_code == 404, res.json()
@@ -592,27 +595,25 @@ class TestRawDataAggregationMCInd:
         res = client.get(
             f"/v1/studies/{internal_study_id}/areas/aggregate/mc-ind/20201014-1425eco-goodbye",
             params={
-                "query_file": MCIndAreasQueryFile.DETAILS,
-                "frequency": MatrixFrequency.HOURLY,
+                "query_file": "details",
+                "frequency": "hourly",
                 "columns_names": "fake_col",
             },
         )
         assert res.status_code == 200, res.json()
-        df = pd.read_csv(io.BytesIO(res.content), index_col=0, sep=",")
-        assert df.empty
+        assert res.content.strip() == b""
 
         # test for links
         res = client.get(
             f"/v1/studies/{internal_study_id}/links/aggregate/mc-ind/20201014-1425eco-goodbye",
             params={
-                "query_file": MCIndLinksQueryFile.VALUES,
-                "frequency": MatrixFrequency.HOURLY,
+                "query_file": "values",
+                "frequency": "hourly",
                 "columns_names": "fake_col",
             },
         )
         assert res.status_code == 200, res.json()
-        df = pd.read_csv(io.BytesIO(res.content), index_col=0, sep=",")
-        assert df.empty
+        assert res.content.strip() == b""
 
     def test_non_existing_folder(
         self, tmp_path: Path, client: TestClient, user_access_token: str, internal_study_id: str
@@ -628,7 +629,7 @@ class TestRawDataAggregationMCInd:
         shutil.rmtree(mc_ind_folder)
         res = client.get(
             f"/v1/studies/{internal_study_id}/areas/aggregate/mc-ind/20201014-1425eco-goodbye",
-            params={"query_file": MCIndAreasQueryFile.VALUES, "frequency": MatrixFrequency.HOURLY},
+            params={"query_file": "values", "frequency": "hourly"},
         )
         assert res.status_code == 404, res.json()
         assert "economy/mc-ind" in res.json()["description"]
@@ -657,7 +658,7 @@ class TestRawDataAggregationMCAll:
             res = client.get(f"/v1/studies/{internal_study_id}/areas/aggregate/mc-all/{output_id}", params=params)
             assert res.status_code == 200, res.json()
             content = io.BytesIO(res.content)
-            df = pd.read_csv(content, index_col=0, sep=",")
+            df = pd.read_csv(content, sep=",")
             resource_file = ASSETS_DIR.joinpath(f"aggregate_areas_raw_data/{expected_result_filename}")
             resource_file.parent.mkdir(exist_ok=True, parents=True)
             if not resource_file.exists():
@@ -686,7 +687,7 @@ class TestRawDataAggregationMCAll:
             res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-all/{output_id}", params=params)
             assert res.status_code == 200, res.json()
             content = io.BytesIO(res.content)
-            df = pd.read_csv(content, index_col=0, sep=",")
+            df = pd.read_csv(content, sep=",")
             resource_file = ASSETS_DIR.joinpath(f"aggregate_links_raw_data/{expected_result_filename}")
             resource_file.parent.mkdir(exist_ok=True, parents=True)
             if not resource_file.exists():
@@ -717,11 +718,11 @@ class TestRawDataAggregationMCAll:
             content = io.BytesIO(res.content)
             export_format = params["format"]
             if export_format == TableExportFormat.CSV.value:
-                df = pd.read_csv(content, index_col=0, sep=",")
+                df = pd.read_csv(content, sep=",")
             elif export_format == TableExportFormat.TSV.value:
-                df = pd.read_csv(content, index_col=0, sep="\t")
+                df = pd.read_csv(content, sep="\t")
             else:
-                df = pd.read_excel(content, index_col=0)  # type: ignore
+                df = pd.read_excel(content)  # type: ignore
             resource_file = ASSETS_DIR.joinpath(f"aggregate_links_raw_data/{expected_result_filename}")
             resource_file.parent.mkdir(exist_ok=True, parents=True)
             if not resource_file.exists():
@@ -745,9 +746,7 @@ class TestRawDataAggregationMCAll:
             output_id = params.pop("output_id")
             res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-all/{output_id}", params=params)
             assert res.status_code == 200, res.json()
-            content = io.BytesIO(res.content)
-            df = pd.read_csv(content, index_col=0, sep=",")
-            assert df.empty
+            assert res.content.strip() == b""
 
     def test_wrongly_typed_request(self, client: TestClient, user_access_token: str, internal_study_id: str):
         """
@@ -770,8 +769,8 @@ class TestRawDataAggregationMCAll:
         res = client.get(
             f"/v1/studies/{internal_study_id}/areas/aggregate/mc-all/unknown_id",
             params={
-                "query_file": MCIndAreasQueryFile.VALUES,
-                "frequency": MatrixFrequency.HOURLY,
+                "query_file": "values",
+                "frequency": "hourly",
             },
         )
         assert res.status_code == 404, res.json()
@@ -782,8 +781,8 @@ class TestRawDataAggregationMCAll:
         res = client.get(
             f"/v1/studies/{internal_study_id}/links/aggregate/mc-all/unknown_id",
             params={
-                "query_file": MCIndLinksQueryFile.VALUES,
-                "frequency": MatrixFrequency.HOURLY,
+                "query_file": "values",
+                "frequency": "hourly",
             },
         )
         assert res.status_code == 404, res.json()
@@ -801,27 +800,25 @@ class TestRawDataAggregationMCAll:
         res = client.get(
             f"/v1/studies/{internal_study_id}/areas/aggregate/mc-all/20201014-1427eco",
             params={
-                "query_file": MCAllAreasQueryFile.DETAILS,
-                "frequency": MatrixFrequency.MONTHLY,
+                "query_file": "details",
+                "frequency": "monthly",
                 "columns_names": "fake_col",
             },
         )
         assert res.status_code == 200, res.json()
-        df = pd.read_csv(io.BytesIO(res.content), index_col=0, sep=",")
-        assert df.empty
+        assert res.content.strip() == b""
 
         # test for links
         res = client.get(
             f"/v1/studies/{internal_study_id}/links/aggregate/mc-all/20241807-1540eco-extra-outputs",
             params={
-                "query_file": MCAllLinksQueryFile.VALUES,
-                "frequency": MatrixFrequency.DAILY,
+                "query_file": "values",
+                "frequency": "daily",
                 "columns_names": "fake_col",
             },
         )
         assert res.status_code == 200, res.json()
-        df = pd.read_csv(io.BytesIO(res.content), index_col=0, sep=",")
-        assert df.empty
+        assert res.content.strip() == b""
 
     def test_non_existing_folder(
         self, tmp_path: Path, client: TestClient, user_access_token: str, internal_study_id: str
@@ -835,7 +832,7 @@ class TestRawDataAggregationMCAll:
         shutil.rmtree(mc_all_path)
         res = client.get(
             f"/v1/studies/{internal_study_id}/links/aggregate/mc-all/20241807-1540eco-extra-outputs",
-            params={"query_file": MCAllLinksQueryFile.VALUES, "frequency": MatrixFrequency.DAILY},
+            params={"query_file": "values", "frequency": "daily"},
         )
         assert res.status_code == 404, res.json()
         assert "economy/mc-all" in res.json()["description"]

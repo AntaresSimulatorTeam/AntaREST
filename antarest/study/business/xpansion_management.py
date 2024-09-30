@@ -1,3 +1,15 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import contextlib
 import http
 import io
@@ -7,17 +19,14 @@ import typing as t
 import zipfile
 
 from fastapi import HTTPException, UploadFile
-from pydantic import BaseModel, Extra, Field, ValidationError, root_validator, validator
+from pydantic import BaseModel, Field, ValidationError, field_validator, model_validator
 
 from antarest.core.exceptions import BadZipBinary, ChildNotFoundError
 from antarest.core.model import JSON
-from antarest.study.business.all_optional_meta import AllOptionalMetaclass
+from antarest.study.business.all_optional_meta import all_optional_model
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.model import Study
-from antarest.study.storage.rawstudy.model.filesystem.bucket_node import BucketNode
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
-from antarest.study.storage.rawstudy.model.filesystem.root.user.expansion.expansion import Expansion
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.utils import fix_study_root
 
@@ -62,12 +71,12 @@ class XpansionSensitivitySettings(BaseModel):
     projection: t.List[str] = Field(default_factory=list, description="List of candidate names to project")
     capex: bool = Field(default=False, description="Whether to include capex in the sensitivity analysis")
 
-    @validator("projection", pre=True)
+    @field_validator("projection", mode="before")
     def projection_validation(cls, v: t.Optional[t.Sequence[str]]) -> t.Sequence[str]:
         return [] if v is None else v
 
 
-class XpansionSettings(BaseModel, extra=Extra.ignore, validate_assignment=True, allow_population_by_field_name=True):
+class XpansionSettings(BaseModel, extra="ignore", validate_assignment=True, populate_by_name=True):
     """
     A data transfer object representing the general settings used for Xpansion.
 
@@ -140,8 +149,8 @@ class XpansionSettings(BaseModel, extra=Extra.ignore, validate_assignment=True, 
     # The sensitivity analysis is optional
     sensitivity_config: t.Optional[XpansionSensitivitySettings] = None
 
-    @root_validator(pre=True)
-    def normalize_values(cls, values: t.MutableMapping[str, t.Any]) -> t.MutableMapping[str, t.Any]:
+    @model_validator(mode="before")
+    def validate_float_values(cls, values: t.MutableMapping[str, t.Any]) -> t.MutableMapping[str, t.Any]:
         if "relaxed-optimality-gap" in values:
             values["relaxed_optimality_gap"] = values.pop("relaxed-optimality-gap")
 
@@ -196,7 +205,8 @@ class GetXpansionSettings(XpansionSettings):
             return cls.construct(**config_obj)
 
 
-class UpdateXpansionSettings(XpansionSettings, metaclass=AllOptionalMetaclass, use_none=True):
+@all_optional_model
+class UpdateXpansionSettings(XpansionSettings):
     """
     DTO object used to update the Xpansion settings.
 
@@ -207,13 +217,6 @@ class UpdateXpansionSettings(XpansionSettings, metaclass=AllOptionalMetaclass, u
 
     # note: for some reason, the alias is not taken into account when using the metaclass,
     # so we have to redefine the fields with the alias.
-
-    # On the other hand, we make these fields mandatory, because there is an anomaly on the front side:
-    # When the user does not select any file, the front sends a request without the "yearly-weights"
-    # or "additional-constraints" field, instead of sending the field with an empty value.
-    # This is not a problem as long as the front sends a request with all the fields (PUT case),
-    # but it is a problem for partial requests (PATCH case).
-
     yearly_weights: str = Field(
         "",
         alias="yearly-weights",
@@ -233,19 +236,21 @@ class XpansionCandidateDTO(BaseModel):
     name: str
     link: str
     annual_cost_per_mw: float = Field(alias="annual-cost-per-mw", ge=0)
-    unit_size: t.Optional[float] = Field(None, alias="unit-size", ge=0)
-    max_units: t.Optional[int] = Field(None, alias="max-units", ge=0)
-    max_investment: t.Optional[float] = Field(None, alias="max-investment", ge=0)
-    already_installed_capacity: t.Optional[int] = Field(None, alias="already-installed-capacity", ge=0)
+    unit_size: t.Optional[float] = Field(default=None, alias="unit-size", ge=0)
+    max_units: t.Optional[int] = Field(default=None, alias="max-units", ge=0)
+    max_investment: t.Optional[float] = Field(default=None, alias="max-investment", ge=0)
+    already_installed_capacity: t.Optional[int] = Field(default=None, alias="already-installed-capacity", ge=0)
     # this is obsolete (replaced by direct/indirect)
-    link_profile: t.Optional[str] = Field(None, alias="link-profile")
+    link_profile: t.Optional[str] = Field(default=None, alias="link-profile")
     # this is obsolete (replaced by direct/indirect)
-    already_installed_link_profile: t.Optional[str] = Field(None, alias="already-installed-link-profile")
-    direct_link_profile: t.Optional[str] = Field(None, alias="direct-link-profile")
-    indirect_link_profile: t.Optional[str] = Field(None, alias="indirect-link-profile")
-    already_installed_direct_link_profile: t.Optional[str] = Field(None, alias="already-installed-direct-link-profile")
+    already_installed_link_profile: t.Optional[str] = Field(default=None, alias="already-installed-link-profile")
+    direct_link_profile: t.Optional[str] = Field(default=None, alias="direct-link-profile")
+    indirect_link_profile: t.Optional[str] = Field(default=None, alias="indirect-link-profile")
+    already_installed_direct_link_profile: t.Optional[str] = Field(
+        default=None, alias="already-installed-direct-link-profile"
+    )
     already_installed_indirect_link_profile: t.Optional[str] = Field(
-        None, alias="already-installed-indirect-link-profile"
+        default=None, alias="already-installed-indirect-link-profile"
     )
 
 
@@ -335,9 +340,11 @@ class XpansionManager:
                     raise BadZipBinary("Only zip file are allowed.")
 
             xpansion_settings = XpansionSettings()
-            settings_obj = xpansion_settings.dict(by_alias=True, exclude_none=True, exclude={"sensitivity_config"})
+            settings_obj = xpansion_settings.model_dump(
+                by_alias=True, exclude_none=True, exclude={"sensitivity_config"}
+            )
             if xpansion_settings.sensitivity_config:
-                sensitivity_obj = xpansion_settings.sensitivity_config.dict(by_alias=True, exclude_none=True)
+                sensitivity_obj = xpansion_settings.sensitivity_config.model_dump(by_alias=True, exclude_none=True)
             else:
                 sensitivity_obj = {}
 
@@ -377,7 +384,9 @@ class XpansionManager:
         logger.info(f"Updating xpansion settings for study '{study.id}'")
 
         actual_settings = self.get_xpansion_settings(study)
-        settings_fields = new_xpansion_settings.dict(by_alias=False, exclude_none=True, exclude={"sensitivity_config"})
+        settings_fields = new_xpansion_settings.model_dump(
+            by_alias=False, exclude_none=True, exclude={"sensitivity_config"}
+        )
         updated_settings = actual_settings.copy(deep=True, update=settings_fields)
 
         file_study = self.study_storage_service.get_storage(study).get_raw(study)
@@ -397,11 +406,11 @@ class XpansionManager:
                 msg = f"Additional constraints file '{constraints_file}' does not exist"
                 raise XpansionFileNotFoundError(msg) from None
 
-        config_obj = updated_settings.dict(by_alias=True, exclude={"sensitivity_config"})
+        config_obj = updated_settings.model_dump(by_alias=True, exclude={"sensitivity_config"})
         file_study.tree.save(config_obj, ["user", "expansion", "settings"])
 
         if new_xpansion_settings.sensitivity_config:
-            sensitivity_obj = new_xpansion_settings.sensitivity_config.dict(by_alias=True)
+            sensitivity_obj = new_xpansion_settings.sensitivity_config.model_dump(by_alias=True)
             file_study.tree.save(sensitivity_obj, ["user", "expansion", "sensitivity", "sensitivity_in"])
 
         return self.get_xpansion_settings(study)
@@ -541,7 +550,7 @@ class XpansionManager:
         )  # The primary key is actually the name, the id does not matter and is never checked.
 
         logger.info(f"Adding candidate '{xpansion_candidate.name}' to study '{study.id}'")
-        candidates_obj[next_id] = xpansion_candidate.dict(by_alias=True, exclude_none=True)
+        candidates_obj[next_id] = xpansion_candidate.model_dump(by_alias=True, exclude_none=True)
         candidates_data = {"user": {"expansion": {"candidates": candidates_obj}}}
         file_study.tree.save(candidates_data)
         # Should we add a field in the study config containing the xpansion candidates like the links or the areas ?
@@ -582,7 +591,7 @@ class XpansionManager:
         for candidate_id, candidate in candidates.items():
             if candidate["name"] == candidate_name:
                 logger.info(f"Updating candidate '{candidate_name}' of study '{study.id}'")
-                candidates[candidate_id] = xpansion_candidate_dto.dict(by_alias=True, exclude_none=True)
+                candidates[candidate_id] = xpansion_candidate_dto.model_dump(by_alias=True, exclude_none=True)
                 file_study.tree.save(candidates, ["user", "expansion", "candidates"])
                 return
         raise CandidateNotFoundError(f"The candidate '{xpansion_candidate_dto.name}' does not exist")
@@ -602,7 +611,8 @@ class XpansionManager:
         # Make sure filename is not `None`, because `None` values are ignored by the update.
         constraints_file_name = constraints_file_name or ""
         # noinspection PyArgumentList
-        xpansion_settings = UpdateXpansionSettings(additional_constraints=constraints_file_name)
+        args = {"additional_constraints": constraints_file_name}
+        xpansion_settings = UpdateXpansionSettings.model_validate(args)
         return self.update_xpansion_settings(study, xpansion_settings)
 
     def _raw_file_dir(self, raw_file_type: XpansionResourceFileType) -> t.List[str]:
@@ -643,6 +653,7 @@ class XpansionManager:
             content = file.file.read()
             if isinstance(content, str):
                 content = content.encode(encoding="utf-8")
+            assert file.filename is not None
             buffer[file.filename] = content
 
         file_study.tree.save(data)
@@ -700,17 +711,6 @@ class XpansionManager:
             return [filename for filename in file_study.tree.get(self._raw_file_dir(resource_type)).keys()]
         except ChildNotFoundError:
             return []
-
-    def list_root_files(self, study: Study) -> t.List[str]:
-        logger.info(f"Getting xpansion root resources file from study '{study.id}'")
-        file_study = self.study_storage_service.get_storage(study).get_raw(study)
-        registered_filenames = [registered_file.key for registered_file in Expansion.registered_files]
-        root_files = [
-            key
-            for key, node in t.cast(FolderNode, file_study.tree.get_node(["user", "expansion"])).build().items()
-            if key not in registered_filenames and not isinstance(node, BucketNode)
-        ]
-        return root_files
 
     @staticmethod
     def _is_constraints_file_used(file_study: FileStudy, filename: str) -> bool:  # type: ignore

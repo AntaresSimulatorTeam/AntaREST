@@ -1,3 +1,15 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 from pathlib import Path
 
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
@@ -55,5 +67,5 @@ def test_file_study_tree_config_dto():
         enr_modelling="aggregated",
     )
     config_dto = FileStudyTreeConfigDTO.from_build_config(config)
-    assert sorted(list(config_dto.dict()) + ["cache"]) == sorted(list(config.__dict__))
+    assert sorted(list(config_dto.model_dump()) + ["cache"]) == sorted(list(config.__dict__))
     assert config_dto.to_build_config() == config

@@ -1,3 +1,15 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import collections
 import io
 import logging
@@ -86,7 +98,7 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         exists: t.Optional[bool] = Query(None, description="Filter studies based on their existence on disk."),
         workspace: str = Query("", description="Filter studies based on their workspace."),
         folder: str = Query("", description="Filter studies based on their folder."),
-        sort_by: t.Optional[StudySortBy] = Query(
+        sort_by: StudySortBy = Query(
             None,
             description="Sort studies based on their name (case-insensitive) or creation date.",
             alias="sortBy",
@@ -715,7 +727,7 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
-        accept = request.headers.get("Accept")
+        accept = request.headers["Accept"]
         filetype = ExportFormat.from_dto(accept)
 
         content = study_service.download_outputs(

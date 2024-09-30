@@ -1,3 +1,15 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 from typing import Any, Dict, List, Tuple
 
 from antarest.core.model import JSON
@@ -15,7 +27,7 @@ class RemoveBindingConstraint(ICommand):
     Command used to remove a binding constraint.
     """
 
-    command_name = CommandName.REMOVE_BINDING_CONSTRAINT
+    command_name: CommandName = CommandName.REMOVE_BINDING_CONSTRAINT
     version: int = 1
 
     # Properties of the `REMOVE_BINDING_CONSTRAINT` command:

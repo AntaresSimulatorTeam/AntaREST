@@ -1,10 +1,22 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 """
 Object model used to read and update area configuration.
 """
 
 import typing as t
 
-from pydantic import Field, root_validator, validator
+from pydantic import Field, field_validator, model_validator
 
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import (
@@ -42,7 +54,7 @@ class OptimizationProperties(IniProperties):
 
     >>> opt = OptimizationProperties(**obj)
 
-    >>> pprint(opt.dict(by_alias=True), width=80)
+    >>> pprint(opt.model_dump(by_alias=True), width=80)
     {'filtering': {'filter-synthesis': 'hourly, daily, weekly, monthly, annual',
                    'filter-year-by-year': 'hourly, annual'},
      'nodal optimization': {'dispatchable-hydro-power': False,
@@ -63,7 +75,7 @@ class OptimizationProperties(IniProperties):
 
     Convert the object to a dictionary for writing to a configuration file:
 
-    >>> pprint(opt.dict(by_alias=True, exclude_defaults=True), width=80)
+    >>> pprint(opt.model_dump(by_alias=True, exclude_defaults=True), width=80)
     {'filtering': {'filter-synthesis': 'hourly, weekly, monthly, annual',
                    'filter-year-by-year': 'hourly, monthly, annual'},
      'nodal optimization': {'dispatchable-hydro-power': False,
@@ -77,7 +89,7 @@ class OptimizationProperties(IniProperties):
         filter_synthesis: str = Field("", alias="filter-synthesis")
         filter_year_by_year: str = Field("", alias="filter-year-by-year")
 
-        @validator("filter_synthesis", "filter_year_by_year", pre=True)
+        @field_validator("filter_synthesis", "filter_year_by_year", mode="before")
         def _validate_filtering(cls, v: t.Any) -> str:
             return validate_filtering(v)
 
@@ -147,33 +159,33 @@ class AreaUI(IniProperties):
     ...     "color_b": 255,
     ... }
     >>> ui = AreaUI(**obj)
-    >>> pprint(ui.dict(by_alias=True), width=80)
+    >>> pprint(ui.model_dump(by_alias=True), width=80)
     {'colorRgb': '#0080FF', 'x': 1148, 'y': 144}
 
     Update the color:
 
     >>> ui.color_rgb = (192, 168, 127)
-    >>> pprint(ui.dict(by_alias=True), width=80)
+    >>> pprint(ui.model_dump(by_alias=True), width=80)
     {'colorRgb': '#C0A87F', 'x': 1148, 'y': 144}
     """
 
-    x: int = Field(0, description="x coordinate of the area in the map")
-    y: int = Field(0, description="y coordinate of the area in the map")
+    x: int = Field(default=0, description="x coordinate of the area in the map")
+    y: int = Field(default=0, description="y coordinate of the area in the map")
     color_rgb: str = Field(
-        "#E66C2C",
+        default="#E66C2C",
         alias="colorRgb",
         description="color of the area in the map",
     )
 
-    @validator("color_rgb", pre=True)
+    @field_validator("color_rgb", mode="before")
     def _validate_color_rgb(cls, v: t.Any) -> str:
         return validate_color_rgb(v)
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
     def _validate_colors(cls, values: t.MutableMapping[str, t.Any]) -> t.Mapping[str, t.Any]:
         return validate_colors(values)
 
-    def to_config(self) -> t.Mapping[str, t.Any]:
+    def to_config(self) -> t.Dict[str, t.Any]:
         """
         Convert the object to a dictionary for writing to a configuration file:
 
@@ -186,6 +198,7 @@ class AreaUI(IniProperties):
         >>> pprint(ui.to_config(), width=80)
         {'color_b': 255, 'color_g': 128, 'color_r': 0, 'x': 1148, 'y': 144}
         """
+        assert self.color_rgb is not None
         r = int(self.color_rgb[1:3], 16)
         g = int(self.color_rgb[3:5], 16)
         b = int(self.color_rgb[5:7], 16)
@@ -204,7 +217,7 @@ class UIProperties(IniProperties):
     UIProperties has default values for `style` and `layers`:
 
     >>> ui = UIProperties()
-    >>> pprint(ui.dict(), width=80)
+    >>> pprint(ui.model_dump(), width=80)
     {'layer_styles': {0: {'color_rgb': '#E66C2C', 'x': 0, 'y': 0}},
      'layers': {0},
      'style': {'color_rgb': '#E66C2C', 'x': 0, 'y': 0}}
@@ -232,7 +245,7 @@ class UIProperties(IniProperties):
     ... }
 
     >>> ui = UIProperties(**obj)
-    >>> pprint(ui.dict(), width=80)
+    >>> pprint(ui.model_dump(), width=80)
     {'layer_styles': {0: {'color_rgb': '#0080FF', 'x': 1148, 'y': 144},
                       4: {'color_rgb': '#0080FF', 'x': 1148, 'y': 144},
                       6: {'color_rgb': '#C0A863', 'x': 1148, 'y': 144},
@@ -248,7 +261,7 @@ class UIProperties(IniProperties):
         description="style of the area in the map: coordinates and color",
     )
     layers: t.Set[int] = Field(
-        default_factory=set,
+        default_factory=lambda: {0},
         description="layers where the area is visible",
     )
     layer_styles: t.Dict[int, AreaUI] = Field(
@@ -257,28 +270,20 @@ class UIProperties(IniProperties):
         alias="layerStyles",
     )
 
-    @root_validator(pre=True)
-    def _set_default_style(cls, values: t.MutableMapping[str, t.Any]) -> t.Mapping[str, t.Any]:
+    @staticmethod
+    def _set_default_style(values: t.MutableMapping[str, t.Any]) -> t.Mapping[str, t.Any]:
         """Defined the default style if missing."""
-        style = values.get("style")
+        style = values.get("style", None)
         if style is None:
             values["style"] = AreaUI()
         elif isinstance(style, dict):
             values["style"] = AreaUI(**style)
         else:
-            values["style"] = AreaUI(**style.dict())
+            values["style"] = AreaUI(**style.model_dump())
         return values
 
-    @root_validator(pre=True)
-    def _set_default_layers(cls, values: t.MutableMapping[str, t.Any]) -> t.Mapping[str, t.Any]:
-        """Define the default layers if missing."""
-        _layers = values.get("layers")
-        if _layers is None:
-            values["layers"] = {0}
-        return values
-
-    @root_validator(pre=True)
-    def _set_default_layer_styles(cls, values: t.MutableMapping[str, t.Any]) -> t.Mapping[str, t.Any]:
+    @staticmethod
+    def _set_default_layer_styles(values: t.MutableMapping[str, t.Any]) -> t.Mapping[str, t.Any]:
         """Define the default layer styles if missing."""
         layer_styles = values.get("layer_styles")
         if layer_styles is None:
@@ -290,13 +295,15 @@ class UIProperties(IniProperties):
                 if isinstance(style, dict):
                     values["layer_styles"][key] = AreaUI(**style)
                 else:
-                    values["layer_styles"][key] = AreaUI(**style.dict())
+                    values["layer_styles"][key] = AreaUI(**style.model_dump())
         else:
             raise TypeError(f"Invalid type for layer_styles: {type(layer_styles)}")
         return values
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
     def _validate_layers(cls, values: t.MutableMapping[str, t.Any]) -> t.Mapping[str, t.Any]:
+        cls._set_default_style(values)
+        cls._set_default_layer_styles(values)
         # Parse the `[ui]` section (if any)
         ui_section = values.pop("ui", {})
         if ui_section:
@@ -335,7 +342,7 @@ class UIProperties(IniProperties):
 
         return values
 
-    def to_config(self) -> t.Mapping[str, t.Mapping[str, t.Any]]:
+    def to_config(self) -> t.Dict[str, t.Dict[str, t.Any]]:
         """
         Convert the object to a dictionary for writing to a configuration file:
 
@@ -363,7 +370,7 @@ class UIProperties(IniProperties):
                 'x': 1148,
                 'y': 144}}
         """
-        obj: t.MutableMapping[str, t.MutableMapping[str, t.Any]] = {
+        obj: t.Dict[str, t.Dict[str, t.Any]] = {
             "ui": {},
             "layerX": {},
             "layerY": {},
@@ -374,6 +381,7 @@ class UIProperties(IniProperties):
         for layer, style in self.layer_styles.items():
             obj["layerX"][str(layer)] = style.x
             obj["layerY"][str(layer)] = style.y
+            assert style.color_rgb is not None
             r = int(style.color_rgb[1:3], 16)
             g = int(style.color_rgb[3:5], 16)
             b = int(style.color_rgb[5:7], 16)
@@ -393,7 +401,7 @@ class AreaFolder(IniProperties):
     Create and validate a new AreaProperties object from a dictionary read from a configuration file.
 
     >>> obj = AreaFolder()
-    >>> pprint(obj.dict(), width=80)
+    >>> pprint(obj.model_dump(), width=80)
     {'adequacy_patch': None,
      'optimization': {'filtering': {'filter_synthesis': '',
                                     'filter_year_by_year': ''},
@@ -438,7 +446,7 @@ class AreaFolder(IniProperties):
     ... }
 
     >>> obj = AreaFolder.construct(**data)
-    >>> pprint(obj.dict(), width=80)
+    >>> pprint(obj.model_dump(), width=80)
     {'adequacy_patch': None,
      'optimization': {'filtering': {'filter-synthesis': 'annual, centennial'},
                       'nodal optimization': {'spread-spilled-energy-cost': '15.5',
@@ -500,7 +508,7 @@ class ThermalAreasProperties(IniProperties):
     ...     },
     ... }
     >>> area = ThermalAreasProperties(**obj)
-    >>> pprint(area.dict(), width=80)
+    >>> pprint(area.model_dump(), width=80)
     {'spilled_energy_cost': {'cz': 100.0},
      'unserverd_energy_cost': {'at': 4000.8,
                                'be': 3500.0,
@@ -511,7 +519,7 @@ class ThermalAreasProperties(IniProperties):
 
     >>> area.unserverd_energy_cost["at"] = 6500.0
     >>> area.unserverd_energy_cost["fr"] = 0.0
-    >>> pprint(area.dict(), width=80)
+    >>> pprint(area.model_dump(), width=80)
     {'spilled_energy_cost': {'cz': 100.0},
      'unserverd_energy_cost': {'at': 6500.0, 'be': 3500.0, 'de': 1250.0, 'fr': 0.0}}
 
@@ -534,7 +542,7 @@ class ThermalAreasProperties(IniProperties):
         description="spilled energy cost (€/MWh) of each area",
     )
 
-    @validator("unserverd_energy_cost", "spilled_energy_cost", pre=True)
+    @field_validator("unserverd_energy_cost", "spilled_energy_cost", mode="before")
     def _validate_energy_cost(cls, v: t.Any) -> t.MutableMapping[str, float]:
         if isinstance(v, dict):
             return {str(k): float(v) for k, v in v.items()}

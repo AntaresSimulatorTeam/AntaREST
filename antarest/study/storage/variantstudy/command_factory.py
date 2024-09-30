@@ -1,3 +1,16 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
+import copy
 import typing as t
 
 from antarest.core.model import JSON
@@ -105,10 +118,15 @@ class CommandFactory:
         """
         args = command_dto.args
         if isinstance(args, dict):
-            return [self._to_single_command(command_dto.action, args, command_dto.version, command_dto.id)]
+            # In some cases, pydantic can modify inplace the given args.
+            # We don't want that so before doing so we copy the dictionnary.
+            new_args = copy.deepcopy(args)
+            return [self._to_single_command(command_dto.action, new_args, command_dto.version, command_dto.id)]
         elif isinstance(args, list):
             return [
-                self._to_single_command(command_dto.action, argument, command_dto.version, command_dto.id)
+                self._to_single_command(
+                    command_dto.action, copy.deepcopy(argument), command_dto.version, command_dto.id
+                )
                 for argument in args
             ]
         raise NotImplementedError()

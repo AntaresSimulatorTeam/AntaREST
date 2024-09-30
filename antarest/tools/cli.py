@@ -1,12 +1,25 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import logging
 from pathlib import Path
 from typing import Optional
 
 import click
+from httpx import Client
 
 from antarest.study.model import NEW_DEFAULT_STUDY_VERSION
 from antarest.study.storage.study_upgrader import StudyUpgrader
-from antarest.tools.lib import extract_commands, generate_diff, generate_study
+from antarest.tools.lib import create_http_client, extract_commands, generate_diff, generate_study
 
 
 @click.group(context_settings={"max_content_width": 120})
@@ -30,6 +43,12 @@ def commands() -> None:
     default=None,
     type=str,
     help="Authentication token if server needs one",
+)
+@click.option(
+    "--no-verify",
+    is_flag=True,
+    default=False,
+    help="Disables SSL certificate verification",
 )
 @click.option(
     "--output",
@@ -70,6 +89,7 @@ def cli_apply_script(
     output: Optional[str],
     host: Optional[str],
     auth_token: Optional[str],
+    no_verify: bool,
     version: str,
 ) -> None:
     """Apply a variant script onto an AntaresWeb study variant"""
@@ -83,7 +103,10 @@ def cli_apply_script(
         print("--study_id must be set")
         exit(1)
 
-    res = generate_study(Path(input), study_id, output, host, auth_token, version)
+    client = None
+    if host:
+        client = create_http_client(verify=not no_verify, auth_token=auth_token)
+    res = generate_study(Path(input), study_id, output, host, client, version)
     print(res)
 
 

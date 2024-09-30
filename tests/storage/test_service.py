@@ -1,3 +1,15 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import contextlib
 import os
 import textwrap
@@ -585,7 +597,7 @@ def test_download_output() -> None:
                 name="east",
                 type=StudyDownloadType.AREA,
                 data={
-                    1: [
+                    "1": [
                         TimeSerie(name="H. VAL", unit="Euro/MWh", data=[0.5]),
                         TimeSerie(name="some cluster", unit="Euro/MWh", data=[0.8]),
                     ]
@@ -649,7 +661,7 @@ def test_download_output() -> None:
             TimeSeriesData(
                 name="east^west",
                 type=StudyDownloadType.LINK,
-                data={1: [TimeSerie(name="H. VAL", unit="Euro/MWh", data=[0.5])]},
+                data={"1": [TimeSerie(name="H. VAL", unit="Euro/MWh", data=[0.5])]},
             )
         ],
         warnings=[],
@@ -683,7 +695,7 @@ def test_download_output() -> None:
                 name="north",
                 type=StudyDownloadType.DISTRICT,
                 data={
-                    1: [
+                    "1": [
                         TimeSerie(name="H. VAL", unit="Euro/MWh", data=[0.5]),
                         TimeSerie(name="some cluster", unit="Euro/MWh", data=[0.8]),
                     ]
@@ -1379,7 +1391,7 @@ def test_unarchive_output(tmp_path: Path) -> None:
             src=str(tmp_path / "output" / f"{output_id}.zip"),
             dest=str(tmp_path / "output" / output_id),
             remove_src=False,
-        ).dict(),
+        ).model_dump(),
         name=f"Unarchive output {study_name}/{output_id} ({study_id})",
         ref_id=study_id,
         request_params=RequestParameters(user=DEFAULT_ADMIN_USER),
@@ -1510,7 +1522,7 @@ def test_archive_output_locks(tmp_path: Path) -> None:
             src=str(tmp_path / "output" / f"{output_id}.zip"),
             dest=str(tmp_path / "output" / output_id),
             remove_src=False,
-        ).dict(),
+        ).model_dump(),
         name=f"Unarchive output {study_name}/{output_id} ({study_id})",
         ref_id=study_id,
         request_params=RequestParameters(user=DEFAULT_ADMIN_USER),

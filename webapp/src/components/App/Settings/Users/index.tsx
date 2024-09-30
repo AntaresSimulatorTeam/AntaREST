@@ -1,3 +1,17 @@
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ *
+ * See AUTHORS.txt
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This file is part of the Antares project.
+ */
+
 import {
   Box,
   CircularProgress,
@@ -31,10 +45,6 @@ import UpdateUserDialog from "./dialog/UpdateUserDialog";
 import { sortByName } from "../../../../services/utils";
 import { isSearchMatching } from "../../../../utils/stringUtils";
 
-/**
- * Types
- */
-
 enum UserActionKind {
   ADD = "ADD",
   EDIT = "EDIT",
@@ -47,10 +57,6 @@ export type UserEdit = Partial<UserDetailsDTO> & { id: UserDetailsDTO["id"] };
 interface UserAction extends Action<string> {
   payload?: UserDetailsDTO["id"] | UserDetailsDTO | UserDetailsDTO[] | UserEdit;
 }
-
-/**
- * Utils
- */
 
 const reducer = produce<UserDetailsDTO[], [UserAction]>((draft, action) => {
   const { payload } = action;
@@ -79,10 +85,6 @@ const reducer = produce<UserDetailsDTO[], [UserAction]>((draft, action) => {
       return payload as UserDetailsDTO[];
   }
 });
-
-/**
- * Component
- */
 
 function Users() {
   const [userToDelete, setUserToDelete] = useState<UserDetailsDTO>();

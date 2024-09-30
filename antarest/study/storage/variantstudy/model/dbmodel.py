@@ -1,5 +1,16 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import datetime
-import json
 import typing as t
 import uuid
 from pathlib import Path
@@ -8,6 +19,7 @@ from sqlalchemy import Column, DateTime, ForeignKey, Integer, String  # type: ig
 from sqlalchemy.orm import relationship  # type: ignore
 
 from antarest.core.persistence import Base
+from antarest.core.serialization import from_json
 from antarest.study.model import Study
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -57,7 +69,7 @@ class CommandBlock(Base):  # type: ignore
     def to_dto(self) -> CommandDTO:
         # Database may lack a version number, defaulting to 1 if so.
         version = self.version or 1
-        return CommandDTO(id=self.id, action=self.command, args=json.loads(self.args), version=version)
+        return CommandDTO(id=self.id, action=self.command, args=from_json(self.args), version=version)
 
     def __str__(self) -> str:
         return (

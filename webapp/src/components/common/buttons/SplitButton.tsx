@@ -1,3 +1,17 @@
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ *
+ * See AUTHORS.txt
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This file is part of the Antares project.
+ */
+
 import Button from "@mui/material/Button";
 import ButtonGroup, { ButtonGroupProps } from "@mui/material/ButtonGroup";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
@@ -33,6 +47,7 @@ export default function SplitButton<OptionValue extends string>(
     onClick,
     children,
     ButtonProps: loadingButtonProps,
+    disabled,
     ...buttonGroupProps
   } = props;
   const [open, setOpen] = useState(false);
@@ -95,7 +110,11 @@ export default function SplitButton<OptionValue extends string>(
 
   return (
     <>
-      <ButtonGroup {...buttonGroupProps} ref={anchorRef}>
+      <ButtonGroup
+        {...buttonGroupProps}
+        disabled={disabled || formattedOptions.length === 0}
+        ref={anchorRef}
+      >
         <LoadingButton
           variant={buttonGroupProps.variant || "outlined"} // `LoadingButton` doesn't inherit from `ButtonGroup`
           {...loadingButtonProps}
@@ -106,7 +125,7 @@ export default function SplitButton<OptionValue extends string>(
         <Button
           size="small"
           onClick={handleToggle}
-          disabled={buttonGroupProps.disabled || loadingButtonProps?.loading}
+          disabled={disabled || loadingButtonProps?.loading}
         >
           <ArrowDropDownIcon />
         </Button>

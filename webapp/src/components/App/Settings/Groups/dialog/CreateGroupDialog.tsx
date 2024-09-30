@@ -1,3 +1,17 @@
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ *
+ * See AUTHORS.txt
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This file is part of the Antares project.
+ */
+
 import GroupAddIcon from "@mui/icons-material/GroupAdd";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
@@ -13,10 +27,6 @@ import { createGroup, createRole } from "../../../../../services/api/user";
 import { SubmitHandlerPlus } from "../../../../common/Form/types";
 import GroupFormDialog, { GroupFormDialogProps } from "./GroupFormDialog";
 
-/**
- * Types
- */
-
 type InheritPropsToOmit = "title" | "titleIcon" | "onSubmit" | "onCancel";
 
 interface Props extends Omit<GroupFormDialogProps, InheritPropsToOmit> {
@@ -24,10 +34,6 @@ interface Props extends Omit<GroupFormDialogProps, InheritPropsToOmit> {
   reloadFetchGroups: VoidFunction;
   closeDialog: VoidFunction;
 }
-
-/**
- * Component
- */
 
 function CreateGroupDialog(props: Props) {
   const { addGroup, reloadFetchGroups, closeDialog, ...dialogProps } = props;

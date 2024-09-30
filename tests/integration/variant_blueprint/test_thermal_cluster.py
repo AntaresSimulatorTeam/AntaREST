@@ -1,3 +1,15 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import http
 import random
 import typing as t
@@ -128,7 +140,7 @@ class TestThermalCluster:
         )
         assert res.status_code == http.HTTPStatus.OK, res.json()
         task = TaskDTO(**res.json())
-        assert task.dict() == {
+        assert task.model_dump() == {
             "completion_date_utc": mock.ANY,
             "creation_date_utc": mock.ANY,
             "id": task_id,

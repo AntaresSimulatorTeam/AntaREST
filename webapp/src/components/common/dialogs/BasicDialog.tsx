@@ -1,3 +1,17 @@
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ *
+ * See AUTHORS.txt
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This file is part of the Antares project.
+ */
+
 import {
   Dialog,
   DialogActions,
@@ -12,10 +26,6 @@ import * as RA from "ramda-adjunct";
 import { SvgIconComponent } from "@mui/icons-material";
 import * as R from "ramda";
 import { mergeSxProp } from "../../../utils/muiUtils";
-
-/**
- * Types
- */
 
 enum Alert {
   success,
@@ -34,10 +44,6 @@ export interface BasicDialogProps extends Omit<DialogProps, "title"> {
   contentProps?: DialogContentProps;
 }
 
-/**
- * Styled
- */
-
 const AlertBorder = styled("span", {
   shouldForwardProp: (prop: string) => !prop.startsWith("$"),
 })<{ $type: AlertValues }>(({ theme, $type }) => ({
@@ -52,10 +58,6 @@ const AlertBorder = styled("span", {
     [R.equals(Alert.info), () => theme.palette.info.main],
   ])(Alert[$type]),
 }));
-
-/**
- * Component
- */
 
 function BasicDialog(props: BasicDialogProps) {
   const {
@@ -103,13 +105,5 @@ function BasicDialog(props: BasicDialogProps) {
     </Dialog>
   );
 }
-
-BasicDialog.defaultProps = {
-  title: null,
-  titleIcon: null,
-  actions: null,
-  alert: false,
-  contentProps: null,
-};
 
 export default BasicDialog;

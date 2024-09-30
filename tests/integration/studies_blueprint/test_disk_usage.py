@@ -1,3 +1,15 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 from pathlib import Path
 
 from starlette.testclient import TestClient
@@ -69,7 +81,7 @@ class TestDiskUsage:
         # Wait for task completion
         res = client.get(f"/v1/tasks/{task_id}", headers=user_headers, params={"wait_for_completion": True})
         assert res.status_code == 200
-        task_result = TaskDTO.parse_obj(res.json())
+        task_result = TaskDTO.model_validate(res.json())
         assert task_result.status == TaskStatus.COMPLETED
         assert task_result.result is not None
         assert task_result.result.success

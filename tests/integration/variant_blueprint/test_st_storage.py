@@ -1,3 +1,15 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import http
 from unittest.mock import ANY
 
@@ -221,18 +233,5 @@ class TestSTStorage:
         )
         assert res.status_code == http.HTTPStatus.UNPROCESSABLE_ENTITY
         description = res.json()["description"]
-        """
-        4 validation errors for CreateSTStorage
-        parameters -> group
-          value is not a valid enumeration member […]
-        parameters -> injectionnominalcapacity
-          ensure this value is greater than or equal to 0 (type=value_error.number.not_ge; limit_value=0)
-        parameters -> initialleveloptim
-          value could not be parsed to a boolean (type=type_error.bool)
-        pmax_withdrawal
-          Matrix values should be between 0 and 1 (type=value_error)
-        """
-        assert "parameters -> group" in description
-        assert "parameters -> injectionnominalcapacity" in description
-        assert "parameters -> initialleveloptim" in description
-        assert "pmax_withdrawal" in description
+        assert "Matrix values should be between 0 and 1" in description
+        assert "1 validation error for CreateSTStorage" in description

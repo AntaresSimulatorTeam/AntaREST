@@ -1,3 +1,15 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 from antarest.study.storage.rawstudy.ini_reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
@@ -14,7 +26,6 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 
 
 def test_manage_district(empty_study: FileStudy, command_context: CommandContext):
-    study_path = empty_study.config.study_path
     area1 = "Area1"
     area1_id = transform_name_to_id(area1)
 
@@ -22,23 +33,22 @@ def test_manage_district(empty_study: FileStudy, command_context: CommandContext
     area2_id = transform_name_to_id(area2)
 
     area3 = "Area3"
-    area3_id = transform_name_to_id(area3)
 
-    CreateArea.parse_obj(
+    CreateArea.model_validate(
         {
             "area_name": area1,
             "command_context": command_context,
         }
     ).apply(empty_study)
 
-    CreateArea.parse_obj(
+    CreateArea.model_validate(
         {
             "area_name": area2,
             "command_context": command_context,
         }
     ).apply(empty_study)
 
-    CreateArea.parse_obj(
+    CreateArea.model_validate(
         {
             "area_name": area3,
             "command_context": command_context,

@@ -1,10 +1,22 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import re
 import time
 
 import numpy as np
 import pandas as pd
 import pytest
-from requests.exceptions import HTTPError
+from httpx._exceptions import HTTPError
 from starlette.testclient import TestClient
 
 from antarest.study.business.binding_constraint_management import ClusterTerm, ConstraintTerm, LinkTerm
@@ -383,7 +395,7 @@ class TestBindingConstraints:
         assert res.status_code == 422, res.json()
         assert res.json() == {
             "body": {"data": {}, "id": f"{area1_id}.{cluster_id}"},
-            "description": "field required",
+            "description": "Field required",
             "exception": "RequestValidationError",
         }
 

@@ -1,3 +1,15 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import re
 
 import pytest
@@ -71,9 +83,11 @@ class TestRemoveSTStorage:
         assert ctx.value.errors() == [
             {
                 "ctx": {"pattern": "[a-z0-9_(),& -]+"},
+                "input": "?%$$",
                 "loc": ("storage_id",),
-                "msg": 'string does not match regex "[a-z0-9_(),& -]+"',
-                "type": "value_error.str.regex",
+                "msg": "String should match pattern '[a-z0-9_(),& -]+'",
+                "type": "string_pattern_mismatch",
+                "url": "https://errors.pydantic.dev/2.8/v/string_pattern_mismatch",
             }
         ]
 

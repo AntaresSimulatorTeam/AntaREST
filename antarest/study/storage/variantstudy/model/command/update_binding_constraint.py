@@ -1,4 +1,15 @@
-import json
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import typing as t
 
 from antarest.core.model import JSON
@@ -90,7 +101,7 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
     # Overloaded metadata
     # ===================
 
-    command_name = CommandName.UPDATE_BINDING_CONSTRAINT
+    command_name: CommandName = CommandName.UPDATE_BINDING_CONSTRAINT
     version: int = 1
 
     # Command parameters
@@ -171,14 +182,14 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
         )
 
         study_version = study_data.config.version
-        props = create_binding_constraint_config(study_version, **self.dict())
-        obj = json.loads(props.json(by_alias=True, exclude_unset=True))
+        props = create_binding_constraint_config(study_version, **self.model_dump())
+        obj = props.model_dump(mode="json", by_alias=True, exclude_unset=True)
 
         updated_cfg = binding_constraints[index]
         updated_cfg.update(obj)
 
-        excluded_fields = set(ICommand.__fields__) | {"id"}
-        updated_properties = self.dict(exclude=excluded_fields, exclude_none=True)
+        excluded_fields = set(ICommand.model_fields) | {"id"}
+        updated_properties = self.model_dump(exclude=excluded_fields, exclude_none=True)
         # This 2nd check is here to remove the last term.
         if self.coeffs or updated_properties == {"coeffs": {}}:
             # Remove terms which IDs contain a "%" or a "." in their name
@@ -191,8 +202,8 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
         matrices = ["values"] + [m.value for m in TermMatrices]
         matrix_service = self.command_context.matrix_service
 
-        excluded_fields = frozenset(ICommand.__fields__)
-        json_command = json.loads(self.json(exclude=excluded_fields, exclude_none=True))
+        excluded_fields = set(ICommand.model_fields)
+        json_command = self.model_dump(mode="json", exclude=excluded_fields, exclude_none=True)
         for key in json_command:
             if key in matrices:
                 json_command[key] = matrix_service.get_matrix_id(json_command[key])

@@ -1,7 +1,20 @@
-from typing import Any, Dict, List, Optional
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
+from typing import Any, Dict, List
 
 from pydantic.types import StrictBool, confloat, conint
 
+from antarest.study.business.all_optional_meta import all_optional_model
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.utils import GENERAL_DATA_PATH, FieldInfo, FormFieldsBaseModel, execute_or_add_commands
 from antarest.study.model import Study
@@ -17,18 +30,19 @@ class PriceTakingOrder(EnumIgnoreCase):
 ThresholdType = confloat(ge=0)
 
 
+@all_optional_model
 class AdequacyPatchFormFields(FormFieldsBaseModel):
     # version 830
-    enable_adequacy_patch: Optional[StrictBool]
-    ntc_from_physical_areas_out_to_physical_areas_in_adequacy_patch: Optional[StrictBool]
-    ntc_between_physical_areas_out_adequacy_patch: Optional[StrictBool]
+    enable_adequacy_patch: StrictBool
+    ntc_from_physical_areas_out_to_physical_areas_in_adequacy_patch: StrictBool
+    ntc_between_physical_areas_out_adequacy_patch: StrictBool
     # version 850
-    price_taking_order: Optional[PriceTakingOrder]
-    include_hurdle_cost_csr: Optional[StrictBool]
-    check_csr_cost_function: Optional[StrictBool]
-    threshold_initiate_curtailment_sharing_rule: Optional[ThresholdType]  # type: ignore
-    threshold_display_local_matching_rule_violations: Optional[ThresholdType]  # type: ignore
-    threshold_csr_variable_bounds_relaxation: Optional[conint(ge=0, strict=True)]  # type: ignore
+    price_taking_order: PriceTakingOrder
+    include_hurdle_cost_csr: StrictBool
+    check_csr_cost_function: StrictBool
+    threshold_initiate_curtailment_sharing_rule: ThresholdType  # type: ignore
+    threshold_display_local_matching_rule_violations: ThresholdType  # type: ignore
+    threshold_csr_variable_bounds_relaxation: conint(ge=0, strict=True)  # type: ignore
 
 
 ADEQUACY_PATCH_PATH = f"{GENERAL_DATA_PATH}/adequacy patch"

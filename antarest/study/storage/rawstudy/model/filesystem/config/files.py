@@ -1,3 +1,15 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import io
 import json
 import logging
@@ -9,12 +21,12 @@ from enum import Enum
 from pathlib import Path
 
 from antarest.core.model import JSON
+from antarest.core.serialization import from_json
 from antarest.study.storage.rawstudy.ini_reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     DEFAULT_GROUP,
     DEFAULT_OPERATOR,
     DEFAULT_TIMESTEP,
-    BindingConstraintFrequency,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.exceptions import (
     SimulationParsingError,
@@ -319,7 +331,7 @@ def _parse_xpansion_version(path: Path) -> str:
     xpansion_json = path / "expansion" / "out.json"
     try:
         content = xpansion_json.read_text(encoding="utf-8")
-        obj = json.loads(content)
+        obj = from_json(content)
         return str(obj["antares_xpansion"]["version"])
     except FileNotFoundError:
         return ""

@@ -1,10 +1,21 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import concurrent.futures
-import json
 import logging
 import re
 import shutil
 import typing as t
-from datetime import datetime
+from datetime import datetime, timedelta
 from functools import reduce
 from pathlib import Path
 from uuid import uuid4
@@ -31,11 +42,14 @@ from antarest.core.interfaces.eventbus import Event, EventChannelDirectory, Even
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.model import JSON, PermissionInfo, PublicMode, StudyPermissionType
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
+from antarest.core.serialization import to_json_string
 from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskResult, TaskType
 from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT, ITaskService, TaskUpdateNotifier, noop_notifier
+from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import assert_this, suppress_exception
 from antarest.matrixstore.service import MatrixService
 from antarest.study.model import RawStudy, Study, StudyAdditionalData, StudyMetadataDTO, StudySimResultDTO
+from antarest.study.repository import AccessPermissions, StudyFilter
 from antarest.study.storage.abstract_storage_service import AbstractStorageService
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, FileStudyTreeConfigDTO
@@ -176,7 +190,10 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         # noinspection PyArgumentList
         new_commands = [
             CommandBlock(
-                command=command.action, args=json.dumps(command.args), index=(first_index + i), version=command.version
+                command=command.action,
+                args=to_json_string(command.args),
+                index=(first_index + i),
+                version=command.version,
             )
             for i, command in enumerate(validated_commands)
         ]
@@ -211,7 +228,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         validated_commands = transform_command_to_dto(command_objs, commands)
         # noinspection PyArgumentList
         study.commands = [
-            CommandBlock(command=command.action, args=json.dumps(command.args), index=i, version=command.version)
+            CommandBlock(command=command.action, args=to_json_string(command.args), index=i, version=command.version)
             for i, command in enumerate(validated_commands)
         ]
         self.invalidate_cache(study, invalidate_self_snapshot=True)
@@ -302,7 +319,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         index = [command.id for command in study.commands].index(command_id)
         if index >= 0:
             study.commands[index].command = validated_commands[0].action
-            study.commands[index].args = json.dumps(validated_commands[0].args)
+            study.commands[index].args = to_json_string(validated_commands[0].args)
             self.invalidate_cache(study, invalidate_self_snapshot=True)
 
     def export_commands_matrices(self, study_id: str, params: RequestParameters) -> FileDownloadTaskDTO:
@@ -482,7 +499,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
 
         Returns: study data formatted in json
         """
-        self._safe_generation(metadata, timeout=60)
+        self._safe_generation(metadata, timeout=600)
         self.repository.refresh(metadata)
         return super().get(
             metadata=metadata,
@@ -610,10 +627,10 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                 )
                 return TaskResult(
                     success=generate_result.success,
-                    message=f"{study_id} generated successfully"
-                    if generate_result.success
-                    else f"{study_id} not generated",
-                    return_value=generate_result.json(),
+                    message=(
+                        f"{study_id} generated successfully" if generate_result.success else f"{study_id} not generated"
+                    ),
+                    return_value=generate_result.model_dump_json(),
                 )
 
             metadata.generation_task = self.task_service.add_task(
@@ -704,7 +721,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                     success=command_result,
                     message=command_message,
                 )
-                notifier(command_result_obj.json())
+                notifier(command_result_obj.model_dump_json())
                 self.event_bus.push(
                     Event(
                         type=EventType.STUDY_VARIANT_GENERATION_COMMAND_RESULT,
@@ -924,7 +941,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             study: study
         Returns: study output data
         """
-        self._safe_generation(study, timeout=60)
+        self._safe_generation(study, timeout=600)
         return super().get_study_sim_result(study=study)
 
     def set_reference_output(self, metadata: VariantStudy, output_id: str, status: bool) -> None:
@@ -1038,3 +1055,67 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                 exc_info=e,
             )
             return False
+
+    def clear_all_snapshots(self, retention_hours: timedelta, params: t.Optional[RequestParameters] = None) -> str:
+        """
+        Admin command that clear all variant snapshots older than `retention_hours` (in hours).
+        Only available for admin users.
+
+        Args:
+            retention_hours: number of retention hours
+            params: request parameters used to identify the user status
+        Returns: None
+
+        Raises:
+            UserHasNotPermissionError
+        """
+        if params is None or (params.user and not params.user.is_site_admin() and not params.user.is_admin_token()):
+            raise UserHasNotPermissionError()
+
+        task_name = f"Cleaning all snapshot updated or accessed at least {retention_hours} hours ago."
+
+        snapshot_clearing_task_instance = SnapshotCleanerTask(
+            variant_study_service=self, retention_hours=retention_hours
+        )
+
+        return self.task_service.add_task(
+            snapshot_clearing_task_instance,
+            task_name,
+            task_type=TaskType.SNAPSHOT_CLEARING,
+            ref_id="SNAPSHOT_CLEANING",
+            custom_event_messages=None,
+            request_params=params,
+        )
+
+
+class SnapshotCleanerTask:
+    def __init__(
+        self,
+        variant_study_service: VariantStudyService,
+        retention_hours: timedelta,
+    ) -> None:
+        self._variant_study_service = variant_study_service
+        self._retention_hours = retention_hours
+
+    def _clear_all_snapshots(self) -> None:
+        with db():
+            variant_list = self._variant_study_service.repository.get_all(
+                study_filter=StudyFilter(
+                    variant=True,
+                    access_permissions=AccessPermissions(is_admin=True),
+                )
+            )
+            for variant in variant_list:
+                if variant.updated_at and variant.updated_at < datetime.utcnow() - self._retention_hours:
+                    if variant.last_access and variant.last_access < datetime.utcnow() - self._retention_hours:
+                        self._variant_study_service.clear_snapshot(variant)
+
+    def run_task(self, notifier: TaskUpdateNotifier) -> TaskResult:
+        msg = f"Start cleaning all snapshots updated or accessed {self._retention_hours} hours ago."
+        notifier(msg)
+        self._clear_all_snapshots()
+        msg = f"All selected snapshots were successfully cleared."
+        notifier(msg)
+        return TaskResult(success=True, message=msg)
+
+    __call__ = run_task

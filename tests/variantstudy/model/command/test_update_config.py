@@ -1,3 +1,15 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import json
 from unittest.mock import Mock, patch
 
@@ -20,7 +32,7 @@ def test_update_config(empty_study: FileStudy, command_context: CommandContext):
     area1 = "Area1"
     area1_id = transform_name_to_id(area1)
 
-    CreateArea.parse_obj(
+    CreateArea.model_validate(
         {
             "area_name": area1,
             "command_context": command_context,

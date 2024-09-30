@@ -1,7 +1,20 @@
-from typing import Any, Dict, List, Optional, Union, cast
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
+from typing import Any, Dict, List, Union, cast
 
 from pydantic.types import StrictBool
 
+from antarest.study.business.all_optional_meta import all_optional_model
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.utils import GENERAL_DATA_PATH, FieldInfo, FormFieldsBaseModel, execute_or_add_commands
 from antarest.study.model import Study
@@ -33,24 +46,20 @@ class SimplexOptimizationRange(EnumIgnoreCase):
     WEEK = "week"
 
 
+@all_optional_model
 class OptimizationFormFields(FormFieldsBaseModel):
-    binding_constraints: Optional[StrictBool]
-    hurdle_costs: Optional[StrictBool]
-    transmission_capacities: Optional[
-        Union[
-            StrictBool,
-            Union[LegacyTransmissionCapacities, TransmissionCapacities],
-        ]
-    ]
-    thermal_clusters_min_stable_power: Optional[StrictBool]
-    thermal_clusters_min_ud_time: Optional[StrictBool]
-    day_ahead_reserve: Optional[StrictBool]
-    primary_reserve: Optional[StrictBool]
-    strategic_reserve: Optional[StrictBool]
-    spinning_reserve: Optional[StrictBool]
-    export_mps: Optional[Union[bool, str]]
-    unfeasible_problem_behavior: Optional[UnfeasibleProblemBehavior]
-    simplex_optimization_range: Optional[SimplexOptimizationRange]
+    binding_constraints: StrictBool
+    hurdle_costs: StrictBool
+    transmission_capacities: Union[StrictBool, LegacyTransmissionCapacities, TransmissionCapacities]
+    thermal_clusters_min_stable_power: StrictBool
+    thermal_clusters_min_ud_time: StrictBool
+    day_ahead_reserve: StrictBool
+    primary_reserve: StrictBool
+    strategic_reserve: StrictBool
+    spinning_reserve: StrictBool
+    export_mps: Union[bool, str]
+    unfeasible_problem_behavior: UnfeasibleProblemBehavior
+    simplex_optimization_range: SimplexOptimizationRange
 
 
 OPTIMIZATION_PATH = f"{GENERAL_DATA_PATH}/optimization"

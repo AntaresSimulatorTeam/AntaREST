@@ -1,7 +1,20 @@
-from typing import Any, Dict, List, Optional
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
 
-from pydantic import Field
+from typing import Any, Dict, List, Optional, Union
 
+from pydantic import Field, model_validator
+
+from antarest.study.business.all_optional_meta import all_optional_model
 from antarest.study.business.utils import FieldInfo, FormFieldsBaseModel, execute_or_add_commands
 from antarest.study.model import Study
 from antarest.study.storage.storage_service import StudyStorageService
@@ -24,22 +37,23 @@ class InflowStructure(FormFieldsBaseModel):
     )
 
 
+@all_optional_model
 class ManagementOptionsFormFields(FormFieldsBaseModel):
-    inter_daily_breakdown: Optional[float] = Field(ge=0)
-    intra_daily_modulation: Optional[float] = Field(ge=1)
-    inter_monthly_breakdown: Optional[float] = Field(ge=0)
-    reservoir: Optional[bool]
-    reservoir_capacity: Optional[float] = Field(ge=0)
-    follow_load: Optional[bool]
-    use_water: Optional[bool]
-    hard_bounds: Optional[bool]
-    initialize_reservoir_date: Optional[int] = Field(ge=0, le=11)
-    use_heuristic: Optional[bool]
-    power_to_level: Optional[bool]
-    use_leeway: Optional[bool]
-    leeway_low: Optional[float] = Field(ge=0)
-    leeway_up: Optional[float] = Field(ge=0)
-    pumping_efficiency: Optional[float] = Field(ge=0)
+    inter_daily_breakdown: float = Field(ge=0)
+    intra_daily_modulation: float = Field(ge=1)
+    inter_monthly_breakdown: float = Field(ge=0)
+    reservoir: bool
+    reservoir_capacity: float = Field(ge=0)
+    follow_load: bool
+    use_water: bool
+    hard_bounds: bool
+    initialize_reservoir_date: int = Field(ge=0, le=11)
+    use_heuristic: bool
+    power_to_level: bool
+    use_leeway: bool
+    leeway_low: float = Field(ge=0)
+    leeway_up: float = Field(ge=0)
+    pumping_efficiency: float = Field(ge=0)
 
 
 HYDRO_PATH = "input/hydro/hydro"

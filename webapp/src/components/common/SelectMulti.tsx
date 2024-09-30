@@ -1,3 +1,17 @@
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ *
+ * See AUTHORS.txt
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This file is part of the Antares project.
+ */
+
 import * as React from "react";
 import {
   Box,
@@ -13,6 +27,7 @@ import {
   Theme,
 } from "@mui/material";
 import { GenericInfo } from "../../common/types";
+import { mergeSxProp } from "../../utils/muiUtils";
 
 interface Props {
   name: string;
@@ -65,7 +80,7 @@ function SelectMulti(props: Props) {
       .join(", ");
 
   return (
-    <FormControl sx={sx} required={required}>
+    <FormControl sx={mergeSxProp({ m: 1, width: 200 }, sx)} required={required}>
       <InputLabel id={`multiple-checkbox-label-${name}`}>{name}</InputLabel>
       <Select
         labelId={`multiple-checkbox-label-${name}`}
@@ -87,12 +102,5 @@ function SelectMulti(props: Props) {
     </FormControl>
   );
 }
-
-SelectMulti.defaultProps = {
-  sx: { m: 1, width: 200 },
-  placeholder: undefined,
-  tagsMode: undefined,
-  required: false,
-};
 
 export default SelectMulti;

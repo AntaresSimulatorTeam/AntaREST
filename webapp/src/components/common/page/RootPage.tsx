@@ -1,10 +1,20 @@
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ *
+ * See AUTHORS.txt
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This file is part of the Antares project.
+ */
+
 import { SvgIconComponent } from "@mui/icons-material";
 import { Box, Typography } from "@mui/material";
 import BasicPage from "./BasicPage";
-
-/**
- * Types
- */
 
 interface Props {
   title: string;
@@ -14,10 +24,6 @@ interface Props {
   hideHeaderDivider?: boolean;
   children?: React.ReactNode;
 }
-
-/**
- * Component
- */
 
 function RootPage(props: Props) {
   const {
@@ -81,12 +87,5 @@ function RootPage(props: Props) {
     </BasicPage>
   );
 }
-
-RootPage.defaultProps = {
-  titleIcon: null,
-  headerTopRight: null,
-  headerBottom: null,
-  hideHeaderDivider: false,
-};
 
 export default RootPage;

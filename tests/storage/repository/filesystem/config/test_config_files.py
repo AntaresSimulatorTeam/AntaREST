@@ -1,3 +1,15 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import logging
 import textwrap
 import typing as t
@@ -403,7 +415,7 @@ def test_parse_thermal_860(study_path: Path, version, caplog) -> None:
         assert not caplog.text
     else:
         expected = [ThermalConfig(id="t1", name="t1")]
-        assert "extra fields not permitted" in caplog.text
+        assert "Extra inputs are not permitted" in caplog.text
     assert actual == expected
 
 

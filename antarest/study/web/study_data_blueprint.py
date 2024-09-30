@@ -1,3 +1,15 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import enum
 import logging
 import typing as t
@@ -17,7 +29,7 @@ from antarest.login.auth import Auth
 from antarest.matrixstore.matrix_editor import MatrixEditInstruction
 from antarest.study.business.adequacy_patch_management import AdequacyPatchFormFields
 from antarest.study.business.advanced_parameters_management import AdvancedParamsFormFields
-from antarest.study.business.allocation_management import AllocationFormFields, AllocationMatrix
+from antarest.study.business.allocation_management import AllocationField, AllocationFormFields, AllocationMatrix
 from antarest.study.business.area_management import AreaCreationDTO, AreaInfoDTO, AreaType, LayerInfoDTO, UpdateAreaUi
 from antarest.study.business.areas.hydro_management import InflowStructure, ManagementOptionsFormFields
 from antarest.study.business.areas.properties_management import PropertiesFormFields
@@ -48,7 +60,12 @@ from antarest.study.business.binding_constraint_management import (
     ConstraintOutput,
     ConstraintTerm,
 )
-from antarest.study.business.correlation_management import CorrelationFormFields, CorrelationManager, CorrelationMatrix
+from antarest.study.business.correlation_management import (
+    AreaCoefficientItem,
+    CorrelationFormFields,
+    CorrelationManager,
+    CorrelationMatrix,
+)
 from antarest.study.business.district_manager import DistrictCreationDTO, DistrictInfoDTO, DistrictUpdateDTO
 from antarest.study.business.general_management import GeneralFormFields
 from antarest.study.business.link_management import LinkInfoDTO
@@ -110,11 +127,11 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/areas",
         tags=[APITag.study_data],
         summary="Get all areas basic info",
-        response_model=t.Union[t.List[AreaInfoDTO], t.Dict[str, t.Any]],  # type: ignore
+        response_model=t.Union[t.List[AreaInfoDTO], t.Dict[str, t.Any]],
     )
     def get_areas(
         uuid: str,
-        type: t.Optional[AreaType] = None,
+        type: AreaType = Query(None),
         ui: bool = False,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> t.Union[t.List[AreaInfoDTO], t.Dict[str, t.Any]]:
@@ -491,7 +508,6 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/areas/{area_id}/hydro/inflow-structure",
         tags=[APITag.study_data],
         summary="Update inflow structure values",
-        response_model=InflowStructure,
     )
     def update_inflow_structure(
         uuid: str,
@@ -506,7 +522,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
-        return study_service.hydro_manager.update_inflow_structure(study, area_id, values)
+        study_service.hydro_manager.update_inflow_structure(study, area_id, values)
 
     @bp.put(
         "/studies/{uuid}/matrix",
@@ -613,12 +629,12 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/config/playlist",
         tags=[APITag.study_data],
         summary="Get playlist config",
-        response_model=t.Dict[int, float],
+        response_model=t.Optional[t.Dict[int, float]],
     )
     def get_playlist_config(
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> t.Any:
+    ) -> t.Optional[t.Dict[int, float]]:
         logger.info(
             f"Fetching playlist config for study {uuid}",
             extra={"user": current_user.id},
@@ -1079,10 +1095,10 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     def get_binding_constraint_list(
         uuid: str,
         enabled: t.Optional[bool] = Query(None, description="Filter results based on enabled status"),
-        operator: t.Optional[BindingConstraintOperator] = Query(None, description="Filter results based on operator"),
+        operator: BindingConstraintOperator = Query(None, description="Filter results based on operator"),
         comments: str = Query("", description="Filter results based on comments (word match)"),
         group: str = Query("", description="filter binding constraints based on group name (exact match)"),
-        time_step: t.Optional[BindingConstraintFrequency] = Query(
+        time_step: BindingConstraintFrequency = Query(
             None,
             description="Filter results based on time step",
             alias="timeStep",
@@ -1132,7 +1148,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/bindingconstraints/{binding_constraint_id}",
         tags=[APITag.study_data],
         summary="Get binding constraint",
-        response_model=ConstraintOutput,  # type: ignore
+        response_model=ConstraintOutput,  # TODO: redundant ?
     )
     def get_binding_constraint(
         uuid: str,
@@ -1520,8 +1536,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
             ...,
             example=AllocationFormFields(
                 allocation=[
-                    {"areaId": "EAST", "coefficient": 1},
-                    {"areaId": "NORTH", "coefficient": 0.20},
+                    AllocationField.model_validate({"areaId": "EAST", "coefficient": 1}),
+                    AllocationField.model_validate({"areaId": "NORTH", "coefficient": 0.20}),
                 ]
             ),
         ),
@@ -1553,8 +1569,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     def get_correlation_matrix(
         uuid: str,
         columns: t.Optional[str] = Query(
-            None,
-            examples={
+            default=None,
+            openapi_examples={
                 "all areas": {
                     "description": "get the correlation matrix for all areas (by default)",
                     "value": "",
@@ -1686,8 +1702,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
             ...,
             example=CorrelationFormFields(
                 correlation=[
-                    {"areaId": "east", "coefficient": 80},
-                    {"areaId": "north", "coefficient": 20},
+                    AreaCoefficientItem.model_validate({"areaId": "east", "coefficient": 80}),
+                    AreaCoefficientItem.model_validate({"areaId": "north", "coefficient": 20}),
                 ]
             ),
         ),

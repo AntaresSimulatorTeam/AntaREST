@@ -1,3 +1,15 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import logging
 import shutil
 import time
@@ -92,7 +104,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
                 metadata.updated_at = metadata.updated_at or datetime.utcnow()
                 if metadata.additional_data is None:
                     metadata.additional_data = StudyAdditionalData()
-                metadata.additional_data.patch = metadata.additional_data.patch or Patch().json()
+                metadata.additional_data.patch = metadata.additional_data.patch or Patch().model_dump_json()
                 metadata.additional_data.author = metadata.additional_data.author or "Unknown"
 
             else:

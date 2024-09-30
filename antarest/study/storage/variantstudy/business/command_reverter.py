@@ -1,3 +1,15 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import logging
 import typing as t
 from pathlib import Path
@@ -123,7 +135,7 @@ class CommandReverter:
                     if matrix is not None:
                         args[matrix_name] = matrix_service.get_matrix_id(matrix)
 
-                return [UpdateBindingConstraint(**args)]
+                return [UpdateBindingConstraint.model_validate(args)]
 
         return base_command.get_command_extractor().extract_binding_constraint(base, base_command.id)
 

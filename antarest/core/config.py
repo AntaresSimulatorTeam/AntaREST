@@ -1,6 +1,19 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import multiprocessing
 import tempfile
 from dataclasses import asdict, dataclass, field
+from enum import Enum
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -10,6 +23,12 @@ from antarest.core.model import JSON
 from antarest.core.roles import RoleType
 
 DEFAULT_WORKSPACE_NAME = "default"
+
+
+class Launcher(str, Enum):
+    SLURM = "slurm"
+    LOCAL = "local"
+    DEFAULT = "default"
 
 
 @dataclass(frozen=True)
@@ -387,7 +406,7 @@ class LauncherConfig:
         msg = f"Invalid configuration: {self.default=} must be one of {possible!r}"
         raise ValueError(msg)
 
-    def get_nb_cores(self, launcher: str) -> "NbCoresConfig":
+    def get_nb_cores(self, launcher: Launcher) -> "NbCoresConfig":
         """
         Retrieve the number of cores configuration for a given launcher: "local" or "slurm".
         If "default" is specified, retrieve the configuration of the default launcher.
@@ -404,12 +423,12 @@ class LauncherConfig:
         """
         config_map = {"local": self.local, "slurm": self.slurm}
         config_map["default"] = config_map[self.default]
-        launcher_config = config_map.get(launcher)
+        launcher_config = config_map.get(launcher.value)
         if launcher_config is None:
-            raise InvalidConfigurationError(launcher)
+            raise InvalidConfigurationError(launcher.value)
         return launcher_config.nb_cores
 
-    def get_time_limit(self, launcher: str) -> TimeLimitConfig:
+    def get_time_limit(self, launcher: Launcher) -> TimeLimitConfig:
         """
         Retrieve the time limit for a job of the given launcher: "local" or "slurm".
         If "default" is specified, retrieve the configuration of the default launcher.
@@ -426,7 +445,7 @@ class LauncherConfig:
         """
         config_map = {"local": self.local, "slurm": self.slurm}
         config_map["default"] = config_map[self.default]
-        launcher_config = config_map.get(launcher)
+        launcher_config = config_map.get(launcher.value)
         if launcher_config is None:
             raise InvalidConfigurationError(launcher)
         return launcher_config.time_limit
@@ -574,6 +593,7 @@ class Config:
     cache: CacheConfig = CacheConfig()
     tasks: TaskConfig = TaskConfig()
     root_path: str = ""
+    api_prefix: str = ""
 
     @classmethod
     def from_dict(cls, data: JSON) -> "Config":
@@ -592,6 +612,7 @@ class Config:
             cache=CacheConfig.from_dict(data["cache"]) if "cache" in data else defaults.cache,
             tasks=TaskConfig.from_dict(data["tasks"]) if "tasks" in data else defaults.tasks,
             root_path=data.get("root_path", defaults.root_path),
+            api_prefix=data.get("api_prefix", defaults.api_prefix),
         )
 
     @classmethod
