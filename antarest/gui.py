@@ -63,9 +63,9 @@ def create_systray_app() -> QApplication:
     # Adding an icon
     icon = QIcon(str(RESOURCE_PATH / "webapp" / "logo16.png"))
     # Adding item on the menu bar
-    tray = QSystemTrayIcon()
-    tray.setIcon(icon)
+    tray = QSystemTrayIcon(icon, app)
     tray.setVisible(True)
+
     # Creating the options
     menu = QMenu()
     open_app_action = QAction("Open application")
@@ -79,6 +79,7 @@ def create_systray_app() -> QApplication:
     tray.setContextMenu(menu)
     app.processEvents()
     tray.setToolTip("AntaresWebServer")
+
     return app
 
 
@@ -118,7 +119,7 @@ def notification_popup(message: str) -> None:
     else:
         from plyer import notification  # type: ignore
 
-        notification.notification_popup(
+        notification.notify(
             title="AntaresWebServer",
             message=message,
             app_name="AntaresWebServer",
