@@ -62,14 +62,14 @@ class LinkInfoProperties820(LinkInfoProperties):
     @field_validator("filter_synthesis", "filter_year_by_year", mode="before")
     def validate_individual_filters(cls, value: Optional[str]) -> Optional[str]:
         if value is not None:
-            from antarest.study.business.areas.properties_management import DEFAULT_FILTER_VALUE
+            filter_values = ["hourly", "daily", "weekly", "monthly", "annual"]
 
             options = value.replace(" ", "").split(",")
-            invalid_options = [opt for opt in options if opt not in DEFAULT_FILTER_VALUE]
+            invalid_options = [opt for opt in options if opt not in filter_values]
             if invalid_options:
                 raise LinkValidationError(
                     f"Invalid value(s) in filters: {', '.join(invalid_options)}. "
-                    f"Allowed values are: {', '.join(DEFAULT_FILTER_VALUE)}."
+                    f"Allowed values are: {', '.join(filter_values)}."
                 )
         return value
 
