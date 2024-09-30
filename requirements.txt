@@ -31,11 +31,13 @@ gunicorn~=20.1.0
 jsonref~=0.2
 PyJWT~=2.9.0
 MarkupSafe~=2.0.1
-numpy~=1.22.1
-pandas~=1.4.0
+numpy~=1.22.1; python_version <= '3.8'
+numpy~=1.26.4; python_version > '3.8'
+pandas~=1.4.0; python_version <= '3.8'
+pandas~=2.2.3; python_version > '3.8'
 paramiko~=2.12.0
 plyer~=2.0.0
-psycopg2-binary==2.9.4
+psycopg2-binary~=2.9.9
 py7zr~=0.20.6
 PyQt5~=5.15.6
 python-json-logger~=2.0.7
