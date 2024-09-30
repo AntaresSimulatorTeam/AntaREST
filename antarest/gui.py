@@ -15,6 +15,7 @@ import multiprocessing
 import platform
 import time
 import webbrowser
+from multiprocessing import Process
 from pathlib import Path
 from threading import Thread
 
@@ -39,34 +40,24 @@ def run_server(config_file: Path) -> None:
     uvicorn.run(app, host="127.0.0.1", port=8080)
 
 
+def start_server(config_file: Path) -> Process:
+    server = multiprocessing.Process(
+        target=run_server,
+        args=(config_file,),
+    )
+    server.start()
+    return server
+
+
 def open_app() -> None:
     webbrowser.open("http://localhost:8080")
 
 
-def main() -> None:
-    multiprocessing.freeze_support()
-    arguments = parse_arguments()
-    if platform.system() == "Windows":
-        # noinspection PyPackageRequirements
-        from win10toast import ToastNotifier  # type: ignore
-
-        toaster = ToastNotifier()
-        toaster.show_toast(
-            "AntaresWebServer",
-            "Antares Web Server started, you can manage the application within the systray app",
-            icon_path=RESOURCE_PATH / "webapp" / "favicon.ico",
-            threaded=True,
-        )
-    else:
-        from plyer import notification  # type: ignore
-
-        notification.notify(
-            title="AntaresWebServer",
-            message="Antares Web Server started, you can manage the application within the systray app",
-            app_name="AntaresWebServer",
-            app_icon=RESOURCE_PATH / "webapp" / "favicon.ico",
-            timeout=600,
-        )
+def create_systray_app() -> QApplication:
+    """
+    Creates the small application that allows to open
+    the browser or shutdown the server.
+    """
     app = QApplication([])
     app.setQuitOnLastWindowClosed(False)
     # Adding an icon
@@ -88,22 +79,7 @@ def main() -> None:
     tray.setContextMenu(menu)
     app.processEvents()
     tray.setToolTip("AntaresWebServer")
-
-    server = multiprocessing.Process(
-        target=run_server,
-        args=(arguments.config_file,),
-    )
-    server.start()
-    Thread(target=monitor_server_process, args=(server, app)).start()
-
-    for _ in range(30, 0, -1):
-        with contextlib.suppress(httpx.ConnectError):
-            res = httpx.get("http://localhost:8080")
-            if res.status_code == 200:
-                break
-        time.sleep(1)
-    app.exec_()
-    server.kill()
+    return app
 
 
 def monitor_server_process(server, app) -> None:
@@ -112,6 +88,57 @@ def monitor_server_process(server, app) -> None:
     """
     server.join()
     app.quit()
+
+
+def setup_exit_application_on_server_end(server: Process, app: QApplication) -> None:
+    Thread(target=monitor_server_process, args=(server, app)).start()
+
+
+def wait_for_server_start() -> None:
+    for _ in range(30, 0, -1):
+        with contextlib.suppress(httpx.ConnectError):
+            res = httpx.get("http://localhost:8080")
+            if res.status_code == 200:
+                break
+        time.sleep(1)
+
+
+def notification_popup(message: str) -> None:
+    if platform.system() == "Windows":
+        # noinspection PyPackageRequirements
+        from win10toast import ToastNotifier  # type: ignore
+
+        toaster = ToastNotifier()
+        toaster.show_toast(
+            "AntaresWebServer",
+            message,
+            icon_path=RESOURCE_PATH / "webapp" / "favicon.ico",
+            threaded=True,
+        )
+    else:
+        from plyer import notification  # type: ignore
+
+        notification.notification_popup(
+            title="AntaresWebServer",
+            message=message,
+            app_name="AntaresWebServer",
+            app_icon=RESOURCE_PATH / "webapp" / "favicon.ico",
+            timeout=600,
+        )
+
+
+def main() -> None:
+    multiprocessing.freeze_support()
+
+    arguments = parse_arguments()
+    notification_popup("Antares Web Server starting...")
+    app = create_systray_app()
+    server = start_server(arguments.config_file)
+    setup_exit_application_on_server_end(server, app)
+    wait_for_server_start()
+    notification_popup("Antares Web Server started, you can manage the application within the systray app")
+    app.exec_()
+    server.kill()
 
 
 if __name__ == "__main__":
