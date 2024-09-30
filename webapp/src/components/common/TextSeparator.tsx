@@ -45,9 +45,4 @@ function TextSeparator(props: Props) {
   );
 }
 
-TextSeparator.defaultProps = {
-  rootStyle: undefined,
-  textStyle: undefined,
-};
-
 export default TextSeparator;
