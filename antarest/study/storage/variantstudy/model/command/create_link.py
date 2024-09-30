@@ -39,7 +39,7 @@ class LinkInfoProperties(BaseModel):
     loop_flow: bool = False
     use_phase_shifter: bool = False
     transmission_capacities: TransmissionCapacity = TransmissionCapacity.ENABLED
-    asset_type: AssetType= AssetType.AC
+    asset_type: AssetType = AssetType.AC
     display_comments: bool = True
     colorr: int = Field(default=DEFAULT_COLOR, gt=0, lt=255)
     colorb: int = Field(default=DEFAULT_COLOR, gt=0, lt=255)
