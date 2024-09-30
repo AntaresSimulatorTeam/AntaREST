@@ -12,9 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import moment from "moment";
 import {
-  DateIncrementStrategy,
   EnhancedGridColumn,
   ColumnTypes,
   TimeSeriesColumnOptions,
@@ -23,10 +21,28 @@ import {
   AggregateType,
   AggregateConfig,
   Aggregates,
+  DateIncrementFunction,
+  FormatFunction,
+  TimeFrequency,
+  TimeFrequencyType,
+  DateTimeMetadataDTO,
 } from "./types";
+import {
+  type FirstWeekContainsDate,
+  parseISO,
+  addHours,
+  addDays,
+  addWeeks,
+  addMonths,
+  addYears,
+  format,
+  startOfWeek,
+  Locale,
+} from "date-fns";
+import { fr, enUS } from "date-fns/locale";
 import { getCurrentLanguage } from "../../../utils/i18nUtils";
 import { Theme } from "@glideapps/glide-data-grid";
-import { MatrixIndex } from "../../../common/types";
+import { t } from "i18next";
 
 export const darkTheme: Theme = {
   accentColor: "rgba(255, 184, 0, 0.9)",
@@ -85,26 +101,6 @@ export const aggregatesTheme: Partial<Theme> = {
   headerFontStyle: "bold 11px",
 };
 
-const dateIncrementStrategies: Record<
-  MatrixIndex["level"],
-  DateIncrementStrategy
-> = {
-  hourly: (date, step) => date.clone().add(step, "hours"),
-  daily: (date, step) => date.clone().add(step, "days"),
-  weekly: (date, step) => date.clone().add(step, "weeks"),
-  monthly: (date, step) => date.clone().add(step, "months"),
-  annual: (date, step) => date.clone().add(step, "years"),
-};
-
-const dateTimeFormatOptions: Intl.DateTimeFormatOptions = {
-  year: "numeric",
-  month: "short",
-  day: "numeric",
-  hour: "numeric",
-  minute: "numeric",
-  timeZone: "UTC", // Ensures consistent UTC-based time representation
-};
-
 ////////////////////////////////////////////////////////////////
 // Functions
 ////////////////////////////////////////////////////////////////
@@ -121,7 +117,6 @@ export function formatNumber(num: number | undefined): string {
   }
 
   const [integerPart, decimalPart] = num.toString().split(".");
-
   // Format integer part with thousand separators
   const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 
@@ -129,78 +124,80 @@ export function formatNumber(num: number | undefined): string {
   return decimalPart ? `${formattedInteger}.${decimalPart}` : formattedInteger;
 }
 
-/**
- * Formats a date and time string using predefined locale and format options.
- *
- * This function takes a date/time string, creates a Date object from it,
- * and then formats it according to the specified options. The formatting
- * is done using the French locale as the primary choice, falling back to
- * English if French is not available.
- *
- * Important: This function will always return the time in UTC, regardless
- * of the system's local time zone. This behavior is controlled by the
- * 'timeZone' option in dateTimeFormatOptions.
- *
- * @param dateTime - The date/time string to format. This should be an ISO 8601 string (e.g., "2024-01-01T00:00:00Z").
- * @returns The formatted date/time string in the format specified by dateTimeFormatOptions, always in UTC.
- *
- * @example <caption>returns "1 janv. 2024, 00:00" (French locale)</caption>
- * formatDateTime("2024-01-01T00:00:00Z")
- *
- * @example <caption>returns "Jan 1, 2024, 12:00 AM" (English locale)</caption>
- * formatDateTime("2024-01-01T00:00:00Z")
- */
-export function formatDateTime(dateTime: string): string {
-  const date = moment.utc(dateTime);
-  const currentLocale = getCurrentLanguage();
-  const locales = [currentLocale, "en-US"];
-
-  return date.toDate().toLocaleString(locales, dateTimeFormatOptions);
+function getLocale(): Locale {
+  const lang = getCurrentLanguage();
+  return lang && lang.startsWith("fr") ? fr : enUS;
 }
 
 /**
- * Generates an array of date-time strings based on the provided time metadata.
+ * Configuration object for different time frequencies
  *
- * This function creates a series of date-time strings, starting from the given start date
- * and incrementing based on the specified level (hourly, daily, weekly, monthly, or yearly).
- * It uses the Moment.js library for date manipulation and the ISO 8601 format for date-time strings.
- *
- * @param timeMetadata - The time metadata object.
- * @param timeMetadata.start_date - The starting date-time in ISO 8601 format (e.g., "2023-01-01T00:00:00Z").
- * @param timeMetadata.steps - The number of date-time strings to generate.
- * @param timeMetadata.level - The increment level for date-time generation.
- *
- * @returns An array of ISO 8601 formatted date-time strings.
- *
- * @example
- * const result = generateDateTime({
- *   start_date: "2023-01-01T00:00:00Z",
- *   steps: 3,
- *   level: "daily"
- * });
- *
- *  Returns: [
- *    "2023-01-01T00:00:00.000Z",
- *    "2023-01-02T00:00:00.000Z",
- *    "2023-01-03T00:00:00.000Z"
- *  ]
- *
- * @see {@link MatrixIndex} for the structure of the timeMetadata object.
- * @see {@link DateIncrementStrategy} for the date increment strategy type.
+ * This object defines how to increment and format dates for various time frequencies.
+ * The WEEKLY frequency is of particular interest as it implements custom week starts
+ * and handles ISO week numbering.
  */
-export function generateDateTime({
+const TIME_FREQUENCY_CONFIG: Record<
+  TimeFrequencyType,
+  {
+    increment: DateIncrementFunction;
+    format: FormatFunction;
+  }
+> = {
+  [TimeFrequency.ANNUAL]: {
+    increment: addYears,
+    format: () => t("global.time.annual"),
+  },
+  [TimeFrequency.MONTHLY]: {
+    increment: addMonths,
+    format: (date: Date) => format(date, "MMM", { locale: getLocale() }),
+  },
+  [TimeFrequency.WEEKLY]: {
+    increment: addWeeks,
+    format: (date: Date, firstWeekSize: number) => {
+      const weekStart = startOfWeek(date, { locale: getLocale() });
+
+      return format(weekStart, `'${t("global.time.weekShort")}' ww`, {
+        locale: getLocale(),
+        weekStartsOn: firstWeekSize === 1 ? 0 : 1,
+        firstWeekContainsDate: firstWeekSize as FirstWeekContainsDate,
+      });
+    },
+  },
+  [TimeFrequency.DAILY]: {
+    increment: addDays,
+    format: (date: Date) => format(date, "EEE d", { locale: getLocale() }),
+  },
+  [TimeFrequency.HOURLY]: {
+    increment: addHours,
+    format: (date: Date) =>
+      format(date, "EEE d HH:mm", { locale: getLocale() }),
+  },
+};
+
+/**
+ * Generates an array of formatted date/time strings based on the provided configuration
+ *
+ * This function handles various time frequencies, with special attention to weekly formatting.
+ * For weekly frequency, it respects custom week starts while maintaining ISO week numbering.
+ *
+ * @param config - Configuration object for date/time generation
+ * @param config.start_date - The starting date for generation
+ * @param config.steps - Number of increments to generate
+ * @param config.first_week_size - Defines the number of days for the first the week (from 1 to 7)
+ * @param config.level - The time frequency level (ANNUAL, MONTHLY, WEEKLY, DAILY, HOURLY)
+ * @returns An array of formatted date/time strings
+ */
+export const generateDateTime = (config: DateTimeMetadataDTO): string[] => {
   // eslint-disable-next-line camelcase
-  start_date,
-  steps,
-  level,
-}: MatrixIndex): string[] {
-  const startDate = moment.utc(start_date, "YYYY-MM-DD HH:mm:ss");
-  const incrementStrategy = dateIncrementStrategies[level];
+  const { start_date, steps, first_week_size, level } = config;
+  const { increment, format } = TIME_FREQUENCY_CONFIG[level];
+  const initialDate = parseISO(start_date);
 
-  return Array.from({ length: steps }, (_, i) =>
-    incrementStrategy(startDate, i).toISOString(),
-  );
-}
+  return Array.from({ length: steps }, (_, index) => {
+    const currentDate = increment(initialDate, index);
+    return format(currentDate, first_week_size);
+  });
+};
 
 /**
  * Generates an array of EnhancedGridColumn objects representing time series data columns.
@@ -292,6 +289,7 @@ export function generateDataColumns(
   return [];
 }
 
+// TODO add docs + refactor
 export function getAggregateTypes(
   aggregateConfig: AggregateConfig,
 ): AggregateType[] {

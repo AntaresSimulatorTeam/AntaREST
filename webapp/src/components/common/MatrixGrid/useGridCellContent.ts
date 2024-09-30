@@ -20,7 +20,7 @@ import {
   ColumnTypes,
   MatrixAggregates,
 } from "./types";
-import { formatDateTime, formatNumber } from "./utils";
+import { formatNumber } from "./utils";
 
 type CellContentGenerator = (
   row: number,
@@ -55,7 +55,7 @@ const cellContentGenerators: Record<ColumnType, CellContentGenerator> = {
   [ColumnTypes.DateTime]: (row, col, column, data, dateTime) => ({
     kind: GridCellKind.Text,
     data: "", // Date/time columns are not editable
-    displayData: formatDateTime(dateTime?.[row] ?? ""),
+    displayData: dateTime?.[row] ?? "",
     readonly: !column.editable,
     allowOverlay: false,
   }),
