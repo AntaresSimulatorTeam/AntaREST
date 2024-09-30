@@ -136,6 +136,7 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
     }
 
     area_manager.create_area(study, AreaCreationDTO(name="test2", type=AreaType.AREA))
+    study.version = 820
     link_manager.create_link(
         study,
         LinkInfoDTO820(
@@ -144,6 +145,7 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
         ),
     )
     assert empty_study.config.areas["test"].links.get("test2") is not None
+    study.version = -1
 
     link_manager.delete_link(study, "test", "test2")
     assert empty_study.config.areas["test"].links.get("test2") is None
@@ -528,7 +530,7 @@ def test_get_all_area():
             }
         },
     ]
-    links = link_manager.get_all_links(study, with_ui=True)
+    links = link_manager.get_all_links(study)
     assert [
         {
             "area1": "a1",

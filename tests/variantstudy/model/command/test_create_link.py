@@ -47,6 +47,15 @@ class TestCreateLink:
             }
         ).apply(empty_study)
 
+        with pytest.raises(ValidationError):
+            CreateLink(
+                area1=area1,
+                area2=area1,
+                parameters={},
+                command_context=command_context,
+                series=[[0]],
+            )
+
     def test_apply(self, empty_study: FileStudy, command_context: CommandContext):
         study_path = empty_study.config.study_path
         area1 = "Area1"
