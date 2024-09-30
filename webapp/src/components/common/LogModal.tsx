@@ -210,12 +210,4 @@ function LogModal(props: Props) {
   );
 }
 
-LogModal.defaultProps = {
-  content: undefined,
-  jobId: undefined,
-  followLogs: false,
-  loading: false,
-  style: {},
-};
-
 export default LogModal;

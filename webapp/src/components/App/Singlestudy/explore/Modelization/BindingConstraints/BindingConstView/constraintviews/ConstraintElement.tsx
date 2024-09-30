@@ -25,11 +25,11 @@ interface ElementProps {
   onToggleType?: () => void;
 }
 
-export default function ConstraintElement({
+function ConstraintElement({
   isLink,
   left,
   right,
-  operator,
+  operator = "x",
   onToggleType,
 }: ElementProps) {
   const { t } = useTranslation();
@@ -53,6 +53,4 @@ export default function ConstraintElement({
   );
 }
 
-ConstraintElement.defaultProps = {
-  operator: "x",
-};
+export default ConstraintElement;

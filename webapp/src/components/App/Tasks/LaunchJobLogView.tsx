@@ -132,9 +132,4 @@ function LaunchJobLogView(props: PropsType) {
   );
 }
 
-LaunchJobLogView.defaultProps = {
-  logButton: false,
-  logErrorButton: false,
-};
-
 export default LaunchJobLogView;
