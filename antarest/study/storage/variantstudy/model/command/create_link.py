@@ -49,7 +49,7 @@ class LinkInfoProperties(BaseModel):
 
     class Config:
         alias_generator = to_kebab_case
-        allow_population_by_field_name = True
+        populate_by_name = True
 
 
 class LinkInfoProperties820(LinkInfoProperties):
@@ -58,7 +58,7 @@ class LinkInfoProperties820(LinkInfoProperties):
 
     class Config:
         alias_generator = to_kebab_case
-        allow_population_by_field_name = True
+        populate_by_name = True
 
     @field_validator("filter_synthesis", "filter_year_by_year", mode="before")
     def validate_individual_filters(cls, value: Optional[str]) -> Optional[str]:
