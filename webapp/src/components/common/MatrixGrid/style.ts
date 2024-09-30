@@ -12,8 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import styled from "@emotion/styled";
-import { Box, Typography } from "@mui/material";
+import { Box, styled, Typography } from "@mui/material";
 
 export const MatrixContainer = styled(Box)(() => ({
   width: "100%",

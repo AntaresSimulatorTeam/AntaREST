@@ -1811,12 +1811,11 @@ class StudyService:
     def get_all_links(
         self,
         uuid: str,
-        with_ui: bool,
         params: RequestParameters,
     ) -> t.List[LinkInfoDTOType]:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
-        return self.links.get_all_links(study, with_ui)
+        return self.links.get_all_links(study)
 
     def create_area(
         self,

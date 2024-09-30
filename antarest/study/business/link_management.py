@@ -12,7 +12,6 @@
 
 import typing as t
 
-
 from antarest.core.exceptions import ConfigFileNotFound, LinkValidationError
 from antarest.core.model import JSON
 from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
@@ -56,7 +55,7 @@ class LinkManager:
     def __init__(self, storage_service: StudyStorageService) -> None:
         self.storage_service = storage_service
 
-    def get_all_links(self, study: RawStudy, with_ui: bool = False) -> t.List[LinkInfoDTOType]:
+    def get_all_links(self, study: RawStudy) -> t.List[LinkInfoDTOType]:
         file_study = self.storage_service.get_storage(study).get_raw(study)
         result: t.List[LinkInfoDTOType] = []
 
@@ -68,16 +67,6 @@ class LinkManager:
 
                 link_creation_data: t.Dict[str, t.Any] = {"area1": area_id, "area2": link}
                 link_creation_data.update(link_properties)
-                if not with_ui:
-                    link_creation_data.update(
-                        {
-                            "colorr": None,
-                            "colorb": None,
-                            "colorg": None,
-                            "link-width": None,
-                            "link-style": None,
-                        }
-                    )
 
                 link_data: LinkInfoDTOType
                 if int(study.version) < 820:
@@ -91,7 +80,7 @@ class LinkManager:
 
     def create_link(self, study: RawStudy, link_creation_info: LinkInfoDTOType) -> LinkInfoDTOType:
         if link_creation_info.area1 == link_creation_info.area2:
-            raise LinkValidationError("Cannot create link on same node")
+            raise LinkValidationError(f"Cannot create link on same area: {link_creation_info.area1}")
 
         study_version = int(study.version)
         if study_version < 820 and isinstance(link_creation_info, LinkInfoDTO820):

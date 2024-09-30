@@ -237,14 +237,4 @@ function FileTable(props: PropType) {
   );
 }
 
-FileTable.defaultProps = {
-  onDelete: undefined,
-  onAssign: undefined,
-  uploadFile: undefined,
-  allowImport: false,
-  allowDelete: false,
-  onFileDownload: undefined,
-  copyId: false,
-};
-
 export default FileTable;

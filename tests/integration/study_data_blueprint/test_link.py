@@ -13,6 +13,7 @@
 import pytest
 from starlette.testclient import TestClient
 
+from antarest.study.storage.rawstudy.model.filesystem.config.links import TransmissionCapacity
 from tests.integration.prepare_proxy import PreparerProxy
 
 
@@ -23,7 +24,10 @@ class TestLink:
         client.headers = {"Authorization": f"Bearer {user_access_token}"}  # type: ignore
 
         preparer = PreparerProxy(client, user_access_token)
-        study_id = preparer.create_study("foo", version=880)
+        study_id = preparer.create_study("foo", version=820)
+        if study_type == "variant":
+            study_id = preparer.create_variant(study_id, name="Variant 1")
+
         area1_id = preparer.create_area(study_id, name="Area 1")["id"]
         area2_id = preparer.create_area(study_id, name="Area 2")["id"]
         area3_id = preparer.create_area(study_id, name="Area 3")["id"]
@@ -51,42 +55,20 @@ class TestLink:
             "use-phase-shifter": False,
         }
         assert expected == res.json()
-        client.delete(f"/v1/studies/{study_id}/links/{area1_id}/{area2_id}")
+        res = client.delete(f"/v1/studies/{study_id}/links/{area1_id}/{area2_id}")
+        res.raise_for_status()
 
         # Test create link with parameters
 
-        res = client.post(
-            f"/v1/studies/{study_id}/links",
-            json={
-                "area1": area1_id,
-                "area2": area2_id,
-                "asset-type": "dc",
-                "colorb": 160,
-                "colorg": 170,
-                "colorr": 180,
-                "display-comments": True,
-                "filter-synthesis": "hourly",
-                "hurdles-cost": True,
-                "link-style": "plain",
-                "link-width": 2.0,
-                "loop-flow": False,
-                "transmission-capacities": "enabled",
-                "use-phase-shifter": True,
-            },
-        )
-
-        assert res.status_code == 200, res.json()
-
-        expected = {
-            "area1": "area 1",
-            "area2": "area 2",
+        parameters = {
+            "area1": area1_id,
+            "area2": area2_id,
             "asset-type": "dc",
             "colorb": 160,
             "colorg": 170,
             "colorr": 180,
             "display-comments": True,
             "filter-synthesis": "hourly",
-            "filter-year-by-year": "hourly, daily, weekly, monthly, annual",
             "hurdles-cost": True,
             "link-style": "plain",
             "link-width": 2.0,
@@ -94,8 +76,17 @@ class TestLink:
             "transmission-capacities": "enabled",
             "use-phase-shifter": True,
         }
-        assert expected == res.json()
+        res = client.post(
+            f"/v1/studies/{study_id}/links",
+            json=parameters,
+        )
+
+        assert res.status_code == 200, res.json()
+        parameters["filter-year-by-year"] = "hourly, daily, weekly, monthly, annual"
+
+        assert parameters == res.json()
         res = client.delete(f"/v1/studies/{study_id}/links/{area1_id}/{area2_id}")
+        res.raise_for_status()
 
         # Create two links, count them, then delete one
 
@@ -111,20 +102,35 @@ class TestLink:
         assert 2 == len(res.json())
 
         res = client.delete(f"/v1/studies/{study_id}/links/{area1_id}/{area3_id}")
-        assert res.status_code == 200, res.json()
+        res.raise_for_status()
 
         res = client.get(f"/v1/studies/{study_id}/links")
 
         assert res.status_code == 200, res.json()
         assert 1 == len(res.json())
         client.delete(f"/v1/studies/{study_id}/links/{area1_id}/{area2_id}")
+        res.raise_for_status()
 
         # Test create link with same area
 
         res = client.post(f"/v1/studies/{study_id}/links", json={"area1": area1_id, "area2": area1_id})
 
         assert res.status_code == 422, res.json()
-        expected = {"description": "Cannot create link on same node", "exception": "LinkValidationError"}
+        expected = {"description": "Cannot create link on same area: area 1", "exception": "LinkValidationError"}
+        assert expected == res.json()
+
+        # Test create link with wrong value for enum
+
+        res = client.post(
+            f"/v1/studies/{study_id}/links",
+            json={"area1": area1_id, "area2": area1_id, "asset-type": TransmissionCapacity.ENABLED},
+        )
+        assert res.status_code == 422, res.json()
+        expected = {
+            "body": {"area1": "area 1", "area2": "area 1", "asset-type": "enabled"},
+            "description": "Input should be 'ac', 'dc', 'gaz', 'virt' or 'other'",
+            "exception": "RequestValidationError",
+        }
         assert expected == res.json()
 
         # Test create link with wrong color parameter
@@ -133,8 +139,9 @@ class TestLink:
 
         assert res.status_code == 422, res.json()
         expected = {
-            "description": "Invalid value for colorr. Must be between 0 and 255.",
-            "exception": "LinkValidationError",
+            "body": {"area1": "area 1", "area2": "area 2", "colorr": 260},
+            "description": "Input should be less than 255",
+            "exception": "RequestValidationError",
         }
         assert expected == res.json()
 
@@ -152,8 +159,7 @@ class TestLink:
         }
         assert expected == res.json()
 
-    @pytest.mark.parametrize("study_type", ["raw", "variant"])
-    def test_create_link_810(self, client: TestClient, user_access_token: str, study_type: str) -> None:
+    def test_create_link_810(self, client: TestClient, user_access_token: str) -> None:
         client.headers = {"Authorization": f"Bearer {user_access_token}"}  # type: ignore
 
         preparer = PreparerProxy(client, user_access_token)
