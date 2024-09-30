@@ -80,6 +80,7 @@
   "global.time.weekly": "Hebdomadaire",
   "global.time.monthly": "Mensuel",
   "global.time.annual": "Annuel",
+  "global.time.weekShort": "S.",
   "global.update.success": "Mise à jour réussie",
   "global.errorLogs": "Logs d'erreurs",
   "global.error.emptyName": "Le nom ne peut pas être vide",

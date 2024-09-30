@@ -80,6 +80,7 @@
   "global.time.weekly": "Weekly",
   "global.time.monthly": "Monthly",
   "global.time.annual": "Annual",
+  "global.time.weekShort": "W.",
   "global.update.success": "Update successful",
   "global.errorLogs": "Error logs",
   "global.error.emptyName": "Name cannot be empty",
